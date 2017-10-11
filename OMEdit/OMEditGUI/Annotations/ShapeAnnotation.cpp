@@ -484,6 +484,14 @@ QRectF ShapeAnnotation::getBoundingRect() const
 void ShapeAnnotation::applyLinePattern(QPainter *painter)
 {
   qreal thickness = Utilities::convertMMToPixel(mLineThickness);
+  /* Ticket #4490
+   * The specification doesn't say anything about it.
+   * But just to keep this consist with Dymola set a default line thickness for border patterns raised & sunken.
+   * We need better handling of border patterns.
+   */
+  if (mBorderPattern == StringHandler::BorderRaised || mBorderPattern == StringHandler::BorderSunken) {
+    thickness = Utilities::convertMMToPixel(0.25);
+  }
   QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
   /* The specification doesn't say anything about it.
    * But just to keep this consist with Dymola we use Qt::BevelJoin for Line shapes.
@@ -493,12 +501,9 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
     pen.setJoinStyle(Qt::BevelJoin);
   }
   /* Ticket #3222
-   * Make all the shapes use cosmetic pens so that they perserve their pen widht when scaled i.e zoomed in/out.
-   * Only shapes with border patterns raised & sunken don't use cosmetic pens. We need better handling of border patterns.
+   * Make all the shapes use cosmetic pens so that they perserve their pen width when scaled i.e zoomed in/out.
    */
-  if (mBorderPattern != StringHandler::BorderRaised && mBorderPattern != StringHandler::BorderSunken) {
-    pen.setCosmetic(true);
-  }
+  pen.setCosmetic(true);
   /* Ticket #2272, Ticket #2268.
    * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
    */
