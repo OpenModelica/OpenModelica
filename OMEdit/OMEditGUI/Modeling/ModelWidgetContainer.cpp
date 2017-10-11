@@ -2260,7 +2260,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
     // finish creating the polygon
     setIsCreatingPolygonShape(false);
     // set the transformation matrix
-    mpPolygonShapeAnnotation->setOrigin(mpPolygonShapeAnnotation->sceneBoundingRect().center());
+    mpPolygonShapeAnnotation->setOrigin(roundPoint(mpPolygonShapeAnnotation->sceneBoundingRect().center()));
     mpPolygonShapeAnnotation->adjustPointsWithOrigin();
     mpPolygonShapeAnnotation->initializeTransformation();
     // draw corner items for the polygon shape
