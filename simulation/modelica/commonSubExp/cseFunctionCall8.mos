@@ -77,15 +77,15 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // ########### Updated Variable List (jacobian) (5)
 // ========================================
 // 1: i.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
-// 2: $DER.u2.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
-// 3: $res.1.$pDERLSJac0.dummyVarLSJac0:STATE_DER()  type: Real  unreplaceable
+// 2: $DER.u2.$pDERLSJac0.dummyVarLSJac0:VARIABLE(fixed = false )  type: Real 
+// 3: $res1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real  unreplaceable
 // 4: $cse2:VARIABLE()  type: Real  unreplaceable
 // 5: $cse1:VARIABLE()  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (5, 5)
 // ========================================
-// 1/1 (1): $res.1.$pDERLSJac0.dummyVarLSJac0 = C * $DER.u2.$pDERLSJac0.dummyVarLSJac0 - i.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 1/1 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = C * $DER.u2.$pDERLSJac0.dummyVarLSJac0 - i.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 2/2 (1): i.$pDERLSJac0.dummyVarLSJac0 = C * $DER_u1SeedLSJac0   [dynamic]
 // 3/3 (1): 0.0 = $cse1 * $DER_u1SeedLSJac0 + $DER.u2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 4/4 (1): $cse2 = CSE.FunctionCallTest8.g(time ^ 2.0)   [unknown]
@@ -94,10 +94,10 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 //
 // ########### Updated globalKnownVars (jacobian) (6)
 // ========================================
-// 1: input $DER_u1SeedLSJac0:STATE_DER()  type: Real 
+// 1: input $DER_u1SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input u1:VARIABLE()  type: Real 
 // 3: input C:PARAM()  = 1.0  type: Real 
-// 4: input $res[1]:VARIABLE()  type: Real 
+// 4: input $res1:VARIABLE()  type: Real 
 // 5: input $DER.u2:DUMMY_DER(fixed = false )  type: Real 
 // 6: input i:VARIABLE()  type: Real 
 //

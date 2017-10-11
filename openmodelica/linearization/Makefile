@@ -22,6 +22,7 @@ test_04.mos \
 test_05.mos \
 test_06.mos \
 test_07.mos \
+testArrayAlg.mos \
 testDrumBoiler.mos \
 testknownvar.mos \
 testMathFuncs.mos \
