@@ -13038,7 +13038,8 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, Sim
  "Generates defines for jacobian vars."
 ::=
   let analyticVars = (JacobianMatrixes |> JAC_MATRIX(columns=jacColumn, seedVars=vars, matrixName=name, jacobianIndex=jacIndex)  =>
-    let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
+    //let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
+    let varsDef = ""
     <<
     <%varsDef%>
     >>
@@ -13082,7 +13083,7 @@ match simVar
     let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%><%typeName%>)<%\n%>'
     if createDebugCode then
        'double& <%jacobianVar%>;' else
-      '#define <%jacobianVar%> _<%matrixName%><%typeName%>'
+       '#define <%jacobianVar%> _<%matrixName%><%typeName%>'
   end match
 end jacobianVarDefine;
 

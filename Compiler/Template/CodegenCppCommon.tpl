@@ -212,7 +212,7 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
 end cref1;
 
 template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i) =>
+  cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
   match varKind
     case STATE() then
       '__z[<%i%>]'
@@ -220,6 +220,12 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
       '__zDot[<%i%>]'
     case DAE_RESIDUAL_VAR() then
       '__daeResidual[<%i%>]'
+    case JAC_VAR() then
+      '_<%getOption(matrixName)%>jac_y(<%i%>)'
+    case JAC_DIFF_VAR() then
+      '_<%getOption(matrixName)%>jac_tmp(<%i%>)'
+    case SEED_VAR() then
+      '_<%getOption(matrixName)%>jac_x(<%i%>)'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
