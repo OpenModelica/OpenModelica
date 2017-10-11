@@ -1544,10 +1544,10 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
   Generates Matrixes for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name)
+    jacobianVarDefine(var, indexJacobian, index0, name)
     ;separator="\n")
   let columnVarsResult = (jacobianColumn |> JAC_COLUMN(columnVars=vars) =>
-    (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name);separator="\n")
+    (vars |> var hasindex index0 => jacobianVarDefine(var, indexJacobian, index0, name);separator="\n")
     ;separator="\n\n")
   /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
@@ -1557,32 +1557,33 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
   >>
 end variableDefinitionsJacobians2;
 
-template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0, String matrixName) "template jacobianVarDefine
+template jacobianVarDefine(SimVar simVar, Integer indexJac, Integer index0, String matrixName) "template jacobianVarDefine
   "
 ::=
-  match array
-  case "jacobianVars" then
-    match simVar
-    case SIMVAR(aliasvar=NOALIAS(),name=name) then
+  match simVar
+    case SIMVAR(arrayCref=arrayCref,aliasvar=NOALIAS(),name=name,index=index) then
       let crefName = crefDefine(name)
-      let arrayName = match index case -1 then 'tmpVars[<%index0%>]' else 'resultVars[<%index%>]'
+      let typeName = match varKind
+                       case BackendDAE.JAC_VAR() then 'resultVars[<%index%>]'
+                       case BackendDAE.JAC_DIFF_VAR() then 'tmpVars[<%index%>]'
+                       case BackendDAE.SEED_VAR() then 'seedVars[<%index0%>]'
+                       else 'UNKNOWN KIND'
+      let arrayCrefString = if Util.isSome(arrayCref) then cref(Util.getOption(arrayCref)) else ''
+      let arrayDefine =  if Util.isSome(arrayCref) then
         <<
-        #define _<%crefName%>(i) data->simulationInfo->analyticJacobians[<%indexJac%>].<%arrayName%>
-        #define <%crefName%> _<%crefName%>(0)
-        <%if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationMayerTermName%>$P$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>'
-        %><%if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERB$PdummyVarB') then "\n"+'#define <%crefName%>$indexdiffed <%index%>'
-        %><%if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>'%>
-        >>
-    end match
-  case "jacobianVarsSeed" then
-    match simVar
-    case SIMVAR(aliasvar=NOALIAS()) then
-      let tmp = System.tmpTick()
-      let crefName = crefDefine(name)
+        /* array <%arrayCrefString%> */
+        #define _<%arrayCrefString%>(i) data->simulationInfo->analyticJacobians[<%indexJac%>].<%typeName%>
+        #define <%arrayCrefString%> _<%arrayCrefString%>(0)
+        >> else ''
       <<
-      #define <%crefName%> data->simulationInfo->analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
+      <%arrayDefine%>
+      /* <%crefName%> */
+      #define _<%crefName%>(i) data->simulationInfo->analyticJacobians[<%indexJac%>].<%typeName%>
+      #define <%crefName%> _<%crefName%>(0)
+      <%if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationMayerTermName%>$P$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>'
+      %><%if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERB$PdummyVarB') then "\n"+'#define <%crefName%>$indexdiffed <%index%>'
+      %><%if stringEq('<%crefName%>', '$P<%BackendDAE.optimizationLagrangeTermName%>$P$pDERC$PdummyVarC') then "\n"+'#define <%crefName%>$indexdiffed <%index%>'%>
       >>
-    end match
   end match
 end jacobianVarDefine;
 
@@ -4646,18 +4647,16 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
 ::=
-match seedVars
-case {} then
-<<
-int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData, threadData_t *threadData)
-{
-  TRACE_PUSH
-  TRACE_POP
-  return 1;
-}
->>
-case _ then
-  match sparsepattern
+match sparsepattern
+  case {} then
+    <<
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData, threadData_t *threadData)
+    {
+      TRACE_PUSH
+      TRACE_POP
+      return 1;
+    }
+    >>
   case _ then
       let &eachCrefParts = buffer ""
       let sp_size_index =  lengthListElements(unzipSecond(sparsepattern))
@@ -4707,7 +4706,6 @@ case _ then
         return 0;
       }
       >>
-   end match
 end match
 end initialAnalyticJacobians;
 

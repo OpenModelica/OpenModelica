@@ -13054,10 +13054,10 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
  "Generates Matrixes for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
+    jacobianVarDefine(var, indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
     ;separator="\n";empty)
   let columnVarsResult = (jacobianColumn |> JAC_COLUMN(columnVars=vars) =>
-      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
+      (vars |> var hasindex index0 => jacobianVarDefine(var, indexJacobian, index0, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
       ;separator="\n";empty)
     ;separator="\n\n")
 
@@ -13068,36 +13068,21 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
 end variableDefinitionsJacobians2;
 
 
-template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0, String matrixName, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
+template jacobianVarDefine(SimVar simVar, Integer indexJac, Integer index0, String matrixName, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& jacobianVarsInit, Boolean createDebugCode)
 ""
 ::=
-match array
-case "jacobianVars" then
-  match simVar
-  case SIMVAR(aliasvar=NOALIAS(),name=name) then
-    match index
-    case -1 then
-      let jacobianVar = '_<%crefToCStr(name, false)%>'
-      let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%>jac_tmp(<%index0%>))<%\n%>'
-      if createDebugCode then
-        'double& <%jacobianVar%>;' else
-        '#define <%jacobianVar%> _<%matrixName%>jac_tmp(<%index0%>)'
-    case _ then
-      let jacobianVar = '_<%crefToCStr(name, false)%>'
-      let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%>jac_y(<%index%>))<%\n%>'
-      if createDebugCode then
-        'double& <%jacobianVar%>;' else
-        '#define <%jacobianVar%> _<%matrixName%>jac_y(<%index%>)'
-    end match
-  end match
-case "jacobianVarsSeed" then
-  match simVar
-  case SIMVAR(aliasvar=NOALIAS()) then
+match simVar
+  case SIMVAR(aliasvar=NOALIAS(),name=name,index=index) then
     let jacobianVar = '_<%crefToCStr(name, false)%>'
-    let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%>jac_x(<%index0%>))<%\n%>'
+    let typeName = match varKind
+                     case BackendDAE.JAC_VAR() then 'jac_y(<%index%>)'
+                     case BackendDAE.JAC_DIFF_VAR() then 'jac_tmp(<%index%>)'
+                     case BackendDAE.SEED_VAR() then 'jac_x(<%index0%>)'
+                     else 'UNKNOWN KIND'
+    let &jacobianVarsInit += if createDebugCode then ', <%jacobianVar%>(_<%matrixName%><%typeName%>)<%\n%>'
     if createDebugCode then
-      'double& <%jacobianVar%>;' else
-      '#define <%jacobianVar%> _<%matrixName%>jac_x(<%index0%>)'
+       'double& <%jacobianVar%>;' else
+      '#define <%jacobianVar%> _<%matrixName%><%typeName%>'
   end match
 end jacobianVarDefine;
 

@@ -258,6 +258,7 @@ package SimCodeVar
       Boolean isValueChangeable;
       Boolean isProtected;
       Boolean hideResult;
+      Option<String> matrixName;
     end SIMVAR;
   end SimVar;
 
@@ -2983,6 +2984,12 @@ package Util
     input Option<Type_a> inOption;
     output Boolean out;
   end isSome;
+
+  function getOption
+    replaceable type Type_a subtypeof Any;
+    input Option<Type_a> inOption;
+    output Type_a out;
+  end getOption;
 
   function stringBool
   input String inString;
