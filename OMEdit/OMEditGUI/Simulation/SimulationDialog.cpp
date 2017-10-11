@@ -1266,15 +1266,17 @@ void SimulationDialog::performSimulation()
   MainWindow::instance()->getProgressBar()->setRange(0, 0);
   MainWindow::instance()->showProgressBar();
   // create a folder with model name to dump the files in it.
-  QString modelDirPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
-  if (!QDir().exists(modelDirPath)) {
-    QDir().mkpath(modelDirPath);
+  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
+  if (!QDir().exists(modelDirectoryPath)) {
+    QDir().mkpath(modelDirectoryPath);
   }
   // set the folder as working directory.
-  MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirPath);
+  QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
   bool isTranslationSuccessful = mIsReSimulate ? true : translateModel(simulationParameters);
-  simulationOptions.setWorkingDirectory(modelDirPath);
-  MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  if (!modelDirectory.isEmpty()) {
+    simulationOptions.setWorkingDirectory(modelDirectoryPath);
+    MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  }
   // hide the progress bar
   MainWindow::instance()->hideProgressBar();
   MainWindow::instance()->getStatusBar()->clearMessage();
