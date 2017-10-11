@@ -2875,10 +2875,11 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
   "Generates function in simulation file."
 ::=
   <<
-  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n")
-  %><%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n")
-  %><%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n")
-  %><%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl(-1, eq, contextOther, modelNamePrefix) ; separator="\n") %>
+  <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, true /* No optimization */) ; separator="\n")
+  %><%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, true /* No optimization */) ; separator="\n")
+  %><%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, true /* No optimization */) ; separator="\n")
+  %><%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_impl_options(-1, eq, contextOther, modelNamePrefix, /* Static? */ true, true /* No optimization */) ; separator="\n") %>
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
@@ -2939,7 +2940,9 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   "Generates function in simulation file."
 ::=
   let &eqFuncs = buffer ""
-  let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations), Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix, "updateBoundParameters", "08bnd", &eqFuncs)
+  let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations),
+    Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
+    "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ true, true /* No optimization */)
   <<
   <%eqFuncs%>
   OMC_DISABLE_OPT
@@ -2954,7 +2957,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   >>
 end functionUpdateBoundParameters;
 
-template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs)
+template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, Integer equationsPerFile, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, String funcName, String partName, Text &eqFuncs, Boolean static, Boolean noOpt)
 ::=
   let () = System.tmpTickReset(0)
   let &file = buffer ""
@@ -2973,10 +2976,11 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   extern "C" {
                   #endif
                   >>)) +
-                  (eqs |> eq => equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix) ; separator="\n") +
+                  (eqs |> eq => equation_impl_options(-1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt) ; separator="\n") +
                   <<
+                  <%\n%>
                   OMC_DISABLE_OPT
-                  <%\n%>void <%name%>(DATA *data, threadData_t *threadData)
+                  void <%name%>(DATA *data, threadData_t *threadData)
                   {
                     TRACE_PUSH
                     <%eqs |> eq => equation_call(eq, modelNamePrefix) %>
@@ -3012,7 +3016,8 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
                 (initalEquations |> eq hasindex i0 =>
                     equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix)
                     ;separator="\n")
-                else functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix, "functionInitialEquations", "06inz", &eqfuncs)
+                else functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
+                  "functionInitialEquations", "06inz", &eqfuncs, /* not static */ false, /* do optimize */ false)
   let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
                 <<
                 static void (*functionInitialEquations_systems[<%listLength(initalEquations)%>])(DATA *, threadData_t*) = {
@@ -4496,6 +4501,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
     equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
     ;separator="\n")%>
   /* function to check assert after a step is done */
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
@@ -4891,6 +4897,23 @@ template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, Stri
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
+  equation_impl2(clockIndex, eq, context, modelNamePrefix, false, false)
+end equation_impl;
+
+template equation_impl_options(Integer clockIndex, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  equation_impl2(clockIndex, eq, context, modelNamePrefix, static, noOpt)
+end equation_impl_options;
+
+template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, String modelNamePrefix, Boolean static, Boolean noOpt)
+ "Generates an equation.
+  This template should not be used for a SES_RESIDUAL.
+  Residual equations are handled differently."
+::=
+  let OMC_NO_OPT = if noOpt then 'OMC_DISABLE_OPT<%\n%>'
   match eq
   case e as SES_ALGORITHM(statements={})
   then ""
@@ -4963,7 +4986,7 @@ template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, Stri
   /*
    <%dumpEqs(fill(eq,1))%>
    */
-  int <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
+  <%OMC_NO_OPT%><% if static then "static "%>int <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     <%clockIndex_%>
@@ -4977,7 +5000,7 @@ template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, Stri
   /*
    <%dumpEqsAlternativeTearing(fill(eq,1))%>
    */
-  void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(DATA *data, threadData_t *threadData)
+  <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     <%clockIndex_%>
@@ -4996,7 +5019,7 @@ template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, Stri
   /*
    <%dumpEqs(fill(eq,1))%>
    */
-  void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
+  <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     <%clockIndex_%>
@@ -5007,7 +5030,7 @@ template equation_impl(Integer clockIndex, SimEqSystem eq, Context context, Stri
   }
   >>
   )
-end equation_impl;
+end equation_impl2;
 
 template equation_call(SimEqSystem eq, String modelNamePrefix)
  "Generates an equation.
