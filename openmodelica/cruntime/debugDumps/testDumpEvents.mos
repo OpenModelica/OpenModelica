@@ -331,12 +331,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 3.10061
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0 to 3.10061
 // |                 | |       | | discrete var changed: n_bounce from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=0.451523641008
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -345,8 +345,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=0.451523641008
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=0.451523641008
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -376,12 +376,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 2.17043
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 3.10061 to 2.17043
 // |                 | |       | | discrete var changed: n_bounce from 1 to 2
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=1.08365673842
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -390,8 +390,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.08365673842
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=1.08365673842
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -421,12 +421,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 1.5193
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 2.17043 to 1.5193
 // |                 | |       | | discrete var changed: n_bounce from 2 to 3
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=1.52614990659
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -435,8 +435,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.52614990659
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=1.52614990659
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -466,12 +466,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 1.06351
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 1.5193 to 1.06351
 // |                 | |       | | discrete var changed: n_bounce from 3 to 4
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=1.83589512431
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -480,8 +480,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=1.83589512431
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=1.83589512431
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -511,12 +511,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.744457
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 1.06351 to 0.744457
 // |                 | |       | | discrete var changed: n_bounce from 4 to 5
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.0527167767
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -525,8 +525,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.0527167767
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.0527167767
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -556,12 +556,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.52112
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.744457 to 0.52112
 // |                 | |       | | discrete var changed: n_bounce from 5 to 6
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.20449193337
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -570,8 +570,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.20449193337
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.20449193337
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -601,12 +601,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.364784
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.52112 to 0.364784
 // |                 | |       | | discrete var changed: n_bounce from 6 to 7
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.31073454302
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -615,8 +615,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.31073454302
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.31073454302
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -646,12 +646,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.255349
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.364784 to 0.255349
 // |                 | |       | | discrete var changed: n_bounce from 7 to 8
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.38510436977
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -660,8 +660,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.38510436977
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.38510436977
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -691,12 +691,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.178744
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.255349 to 0.178744
 // |                 | |       | | discrete var changed: n_bounce from 8 to 9
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.43716324847
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -705,8 +705,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.43716324847
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.43716324847
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -736,12 +736,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.125121
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.178744 to 0.125121
 // |                 | |       | | discrete var changed: n_bounce from 9 to 10
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.47360446354
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -750,8 +750,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.47360446354
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.47360446354
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -781,12 +781,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0875846
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.125121 to 0.0875846
 // |                 | |       | | discrete var changed: n_bounce from 10 to 11
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.49911331406
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -795,8 +795,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.49911331406
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.49911331406
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -826,12 +826,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0613092
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0875846 to 0.0613092
 // |                 | |       | | discrete var changed: n_bounce from 11 to 12
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.51696950938
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -840,8 +840,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.51696950938
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.51696950938
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -871,12 +871,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0429165
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0613092 to 0.0429165
 // |                 | |       | | discrete var changed: n_bounce from 12 to 13
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.52946884606
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -885,8 +885,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.52946884606
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.52946884606
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -916,12 +916,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0300415
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0429165 to 0.0300415
 // |                 | |       | | discrete var changed: n_bounce from 13 to 14
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.53821838167
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -930,8 +930,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.53821838167
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.53821838167
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -961,12 +961,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0210291
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0300415 to 0.0210291
 // |                 | |       | | discrete var changed: n_bounce from 14 to 15
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.5443430565
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -975,8 +975,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.5443430565
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.5443430565
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1006,12 +1006,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0147203
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0210291 to 0.0147203
 // |                 | |       | | discrete var changed: n_bounce from 15 to 16
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.54863032877
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1020,8 +1020,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.54863032877
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.54863032877
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1051,12 +1051,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.0103042
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0147203 to 0.0103042
 // |                 | |       | | discrete var changed: n_bounce from 16 to 17
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55163141919
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1065,8 +1065,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55163141919
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55163141919
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1096,12 +1096,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.00721297
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.0103042 to 0.00721297
 // |                 | |       | | discrete var changed: n_bounce from 17 to 18
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55373218227
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1110,8 +1110,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55373218227
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55373218227
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1141,12 +1141,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.00504908
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.00721297 to 0.00504908
 // |                 | |       | | discrete var changed: n_bounce from 18 to 19
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55520271612
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1155,8 +1155,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55520271612
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55520271612
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1186,12 +1186,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.00353435
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.00504908 to 0.00353435
 // |                 | |       | | discrete var changed: n_bounce from 19 to 20
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55623208942
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1200,8 +1200,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55623208942
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55623208942
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1231,12 +1231,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.00247404
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.00353435 to 0.00247404
 // |                 | |       | | discrete var changed: n_bounce from 20 to 21
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55695265019
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1245,8 +1245,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55695265019
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55695265019
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1276,12 +1276,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.00173183
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.00247404 to 0.00173183
 // |                 | |       | | discrete var changed: n_bounce from 21 to 22
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.557457042
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1290,8 +1290,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.557457042
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.557457042
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1321,12 +1321,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.00121227
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.00173183 to 0.00121227
 // |                 | |       | | discrete var changed: n_bounce from 22 to 23
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55781011528
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1335,8 +1335,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55781011528
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55781011528
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1366,12 +1366,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.000848586
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.00121227 to 0.000848586
 // |                 | |       | | discrete var changed: n_bounce from 23 to 24
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55805726525
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1380,8 +1380,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55805726525
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55805726525
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1411,12 +1411,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.000594002
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.000848586 to 0.000594002
 // |                 | |       | | discrete var changed: n_bounce from 24 to 25
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55823026845
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1425,8 +1425,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55823026845
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55823026845
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1456,12 +1456,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.000415791
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.000594002 to 0.000415791
 // |                 | |       | | discrete var changed: n_bounce from 25 to 26
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55835136827
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1470,8 +1470,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55835136827
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55835136827
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1501,12 +1501,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.000291038
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.000415791 to 0.000291038
 // |                 | |       | | discrete var changed: n_bounce from 26 to 27
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55843613483
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1515,8 +1515,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55843613483
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55843613483
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1546,12 +1546,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.000203706
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.000291038 to 0.000203706
 // |                 | |       | | discrete var changed: n_bounce from 27 to 28
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55849546686
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1560,8 +1560,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55849546686
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55849546686
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1591,12 +1591,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0.000142567
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.000203706 to 0.000142567
 // |                 | |       | | discrete var changed: n_bounce from 28 to 29
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55853699312
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1605,8 +1605,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55853699312
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55853699312
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1636,12 +1636,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 9.97582e-05
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 0.000142567 to 9.97582e-05
 // |                 | |       | | discrete var changed: n_bounce from 29 to 30
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55856605309
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1650,8 +1650,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55856605309
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55856605309
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1681,12 +1681,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 6.97784e-05
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 9.97582e-05 to 6.97784e-05
 // |                 | |       | | discrete var changed: n_bounce from 30 to 31
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55858638353
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1695,8 +1695,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55858638353
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55858638353
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1726,12 +1726,12 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 4.87753e-05
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: impact from 0 to 1
 // |                 | |       | | discrete var changed: v_new from 6.97784e-05 to 4.87753e-05
 // |                 | |       | | discrete var changed: n_bounce from 31 to 32
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition2 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: impact from 0 to 1
 // LOG_EVENTS_V      | info    | status of relations at time=2.55860059936
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
@@ -1740,8 +1740,8 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [2] (pre: -1)  1 = h <= 0.0
 // |                 | |       | | [3] (pre:  1)  1 = v <= 0.0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860059936
-// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // |                 | |       | | discrete var changed: $whenCondition1 from 1 to 0
+// |                 | |       | | discrete var changed: $whenCondition3 from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55860059936
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre: false) false = v <= 0.0
@@ -1755,11 +1755,11 @@ simulate(bbTestDump, stopTime=3.0, simflags="-lv LOG_EVENTS_V");
 // |                 | |       | | [1] h <= 0.0 and v <= 0.0
 // |                 | |       | | reinit v = 0
 // LOG_EVENTS_V      | info    | check for discrete changes at time=2.55860557137
-// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
-// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
-// |                 | |       | | discrete var changed: flying from 1 to 0
 // |                 | |       | | discrete var changed: v_new from 4.87753e-05 to 0
 // |                 | |       | | discrete var changed: n_bounce from 32 to 33
+// |                 | |       | | discrete var changed: $whenCondition1 from 0 to 1
+// |                 | |       | | discrete var changed: $whenCondition3 from 0 to 1
+// |                 | |       | | discrete var changed: flying from 1 to 0
 // LOG_EVENTS_V      | info    | status of relations at time=2.55860557137
 // |                 | |       | | [1] (pre:  true)  true = h <= 0.0
 // |                 | |       | | [2] (pre:  true)  true = v <= 0.0
