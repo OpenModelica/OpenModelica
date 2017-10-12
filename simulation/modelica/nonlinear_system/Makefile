@@ -48,6 +48,7 @@ problem12.mos \
 TestInputIteration.mos \
 TestFalseIterationNLS.mos \
 ScalingTest1.mos \
+inverseTest.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
