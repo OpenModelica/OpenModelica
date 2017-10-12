@@ -370,10 +370,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     fputc('\n', stdout);
     infoStreamPrint(LOG_STDOUT, 0, "Simulation call terminate() at initialization (time %f)\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     data->simulationInfo->stopTime = solverInfo->currentTime;
-    retValue =  -1;
-  }
-  else
-  {
+  } else {
     modelica_boolean syncStep = 0;
 
     /***** Start main simulation loop *****/
