@@ -47,6 +47,7 @@ startValue.mos \
 startValue1.mos \
 startValue2.mos \
 startValue3.mos \
+terminate.mos \
 underdeterminedTest1.mos \
 underdeterminedTest2.mos \
 underdeterminedTest3.mos \
