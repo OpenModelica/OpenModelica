@@ -35,21 +35,12 @@
 #define _EVENTS_H_
 
 #include "simulation_data.h"
-#include "simulation/solver/solver_main.h"
-#include "util/list.h"
-#include "simulation/solver/fmi_events.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int maxBisectionIterations;
-void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime);
-
-void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo);
-
-double findRoot(DATA *data, threadData_t *threadData, LIST *eventList);
+int checkForDiscreteChanges(DATA* data, threadData_t *threadData);
 
 #ifdef __cplusplus
 }

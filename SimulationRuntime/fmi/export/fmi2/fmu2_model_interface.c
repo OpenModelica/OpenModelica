@@ -41,6 +41,7 @@
 #include "simulation/solver/mixedSystem.h"
 #endif
 #include "simulation/solver/delay.h"
+#include "simulation/solver/fmi_events.h"
 #include "simulation/simulation_info_json.h"
 #include "simulation/simulation_input_xml.h"
 /*
@@ -163,8 +164,9 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
 
-  if (nullPointer(comp, "fmi2EventUpdate", "eventInfo", eventInfo))
+  if (nullPointer(comp, "fmi2EventUpdate", "eventInfo", eventInfo)) {
     return fmi2Error;
+  }
   eventInfo->valuesOfContinuousStatesChanged = fmi2False;
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
@@ -173,8 +175,7 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
 #if !defined(OMC_NO_STATESELECTION)
-    if (stateSelection(comp->fmuData, comp->threadData, 1, 1))
-    {
+    if (stateSelection(comp->fmuData, comp->threadData, 1, 1)) {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate state values changed!")
       /* if new set is calculated reinit the solver */
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
@@ -183,10 +184,8 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     storePreValues(comp->fmuData);
 
     /* activate sample event */
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
-    {
-      if(comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue)
-      {
+    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
+      if(comp->fmuData->simulationInfo->nextSampleTimes[i] <= comp->fmuData->localData[0]->timeValue) {
         comp->fmuData->simulationInfo->samples[i] = 1;
         infoStreamPrint(LOG_EVENTS, 0, "[%ld] sample(%g, %g)", comp->fmuData->modelData->samplesInfo[i].index, comp->fmuData->modelData->samplesInfo[i].start, comp->fmuData->modelData->samplesInfo[i].interval);
       }
@@ -195,29 +194,26 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     comp->fmuData->callback->functionDAE(comp->fmuData, comp->threadData);
 
     /* deactivate sample events */
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
-    {
-      if(comp->fmuData->simulationInfo->samples[i])
-      {
+    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
+      if(comp->fmuData->simulationInfo->samples[i]) {
         comp->fmuData->simulationInfo->samples[i] = 0;
         comp->fmuData->simulationInfo->nextSampleTimes[i] += comp->fmuData->modelData->samplesInfo[i].interval;
       }
     }
 
-    for(i=0; i<comp->fmuData->modelData->nSamples; ++i)
-      if((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent))
+    for(i=0; i<comp->fmuData->modelData->nSamples; ++i) {
+      if((i == 0) || (comp->fmuData->simulationInfo->nextSampleTimes[i] < comp->fmuData->simulationInfo->nextSampleEvent)) {
         comp->fmuData->simulationInfo->nextSampleEvent = comp->fmuData->simulationInfo->nextSampleTimes[i];
+      }
+    }
 
-    if(comp->fmuData->callback->checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged)
-    {
+    if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || eventInfo->valuesOfContinuousStatesChanged) {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
       eventInfo->newDiscreteStatesNeeded  = fmi2True;
       eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
       eventInfo->valuesOfContinuousStatesChanged  = fmi2True;
       eventInfo->terminateSimulation = fmi2False;
-    }
-    else
-    {
+    } else {
       eventInfo->newDiscreteStatesNeeded  = fmi2False;
       eventInfo->nominalsOfContinuousStatesChanged = fmi2False;
       eventInfo->terminateSimulation = fmi2False;
@@ -237,12 +233,9 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     //Get Next Event Time
     double nextSampleEvent=0;
     nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-    if (nextSampleEvent == -1)
-    {
+    if (nextSampleEvent == -1) {
       eventInfo->nextEventTimeDefined = fmi2False;
-    }
-    else
-    {
+    } else {
       eventInfo->nextEventTimeDefined = fmi2True;
       eventInfo->nextEventTime = nextSampleEvent;
     }

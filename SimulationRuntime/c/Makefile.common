@@ -52,6 +52,7 @@ RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h
 
 RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/epsilon.h \
+./simulation/solver/fmi_events.h \
 ./simulation/solver/mixedSystem.h \
 ./simulation/solver/linearSystem.h \
 ./simulation/solver/linearSolverLapack.h \

@@ -104,7 +104,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
 
   relationChanged = checkRelations(data);
-  discreteChanged = data->callback->checkForDiscreteChanges(data, threadData);
+  discreteChanged = checkForDiscreteChanges(data, threadData);
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
     if(data->simulationInfo->needToIterate) {
@@ -131,7 +131,7 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     }
 
     relationChanged = checkRelations(data);
-    discreteChanged = data->callback->checkForDiscreteChanges(data, threadData);
+    discreteChanged = checkForDiscreteChanges(data, threadData);
   }
   storeRelations(data);
 

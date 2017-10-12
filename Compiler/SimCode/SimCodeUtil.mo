@@ -13462,6 +13462,25 @@ algorithm
     else t1>t2;
 end simvarGraterThan;
 
+public function sortCrefBasedOnSimCodeIndex
+  input output list<DAE.ComponentRef> crs;
+  input SimCode.SimCode simCode;
+algorithm
+  crs := List.sort(crs, function crefSimCodeIndexGreaterThan(simCode=simCode));
+end sortCrefBasedOnSimCodeIndex;
+
+protected function crefSimCodeIndexGreaterThan
+  input DAE.ComponentRef cr1, cr2;
+  input SimCode.SimCode simCode;
+  output Boolean b;
+protected
+  SimCodeVar.SimVar v1, v2;
+algorithm
+  v1 := cref2simvar(cr1, simCode);
+  v2 := cref2simvar(cr2, simCode);
+  b := simvarGraterThan(v1, v2);
+end crefSimCodeIndexGreaterThan;
+
 public function lookupVR
   input DAE.ComponentRef cr;
   input SimCode.SimCode simCode;

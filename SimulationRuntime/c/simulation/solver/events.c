@@ -527,6 +527,7 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
   TRACE_POP
 }
 
+
 #ifdef __cplusplus
 }
 #endif

@@ -209,14 +209,6 @@ int (*function_ZeroCrossings)(DATA *data, threadData_t*, double* gout);
  */
 int (*function_updateRelations)(DATA *data, threadData_t*, int evalZeroCross);
 
-/*! \fn checkForDiscreteChanges
- *
- *  This function checks if any discrete variable changed
- *
- *  \param [ref] [data]
- */
-int (*checkForDiscreteChanges)(DATA *data, threadData_t*);
-
 /*! \var zeroCrossingDescription
  *
  * This variable contains a description string for zero crossing condition.

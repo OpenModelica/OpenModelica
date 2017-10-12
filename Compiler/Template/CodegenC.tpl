@@ -152,7 +152,6 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double* gout);
     extern int <%symbolName(modelNamePrefixStr,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalZeroCross);
-    extern int <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>(DATA *data, threadData_t *threadData);
     extern const char* <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>(int i, int **out_EquationIndexes);
     extern const char* <%symbolName(modelNamePrefixStr,"relationDescription")%>(int i);
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
@@ -581,8 +580,6 @@ template simulationFile_evt(SimCode simCode)
     <%functionZeroCrossing(zeroCrossings, equationsForZeroCrossings, modelNamePrefix(simCode))%>
 
     <%functionRelations(relations, modelNamePrefix(simCode))%>
-
-    <%functionCheckForDiscreteChanges(discreteModelVars, modelNamePrefix(simCode))%>
 
     #if defined(__cplusplus)
     }
@@ -1022,6 +1019,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     <<
     /* Main Simulation File */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
+    #include "simulation/solver/events.h"
 
     <% if boolNot(isModelExchangeFMU) then
     <<
@@ -1119,7 +1117,6 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"function_ZeroCrossingsEquations")%>,
        <%symbolName(modelNamePrefixStr,"function_ZeroCrossings")%>,
        <%symbolName(modelNamePrefixStr,"function_updateRelations")%>,
-       <%symbolName(modelNamePrefixStr,"checkForDiscreteChanges")%>,
        <%symbolName(modelNamePrefixStr,"zeroCrossingDescription")%>,
        <%symbolName(modelNamePrefixStr,"relationDescription")%>,
        <%symbolName(modelNamePrefixStr,"function_initSample")%>,
@@ -4429,39 +4426,6 @@ template relationTpl(Integer index1, Exp relation, Context context, Text &varDec
     >>
 end relationTpl;
 
-template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars, String modelNamePrefix) "template functionCheckForDiscreteChanges
-  Generates function in simulation file.
-  This is a helper of template simulationFile."
-::=
-  let changediscreteVars = (discreteModelVars |> var =>
-    match var
-    case CREF_QUAL(__)
-    case CREF_IDENT(__) then
-      <<
-      if(<%cref(var)%> != <%crefPre(var)%>)
-      {
-        infoStreamPrint(LOG_EVENTS_V, 0, "discrete var changed: %s from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", <%crefVarInfo(var)%>.name, <%crefPre(var)%>, <%cref(var)%>);
-        needToIterate = 1;
-      }
-      >>
-      ;separator="\n")
-
-  <<
-  int <%symbolName(modelNamePrefix, "checkForDiscreteChanges")%>(DATA *data, threadData_t *threadData)
-  {
-    TRACE_PUSH
-    int needToIterate = 0;
-
-    infoStreamPrint(LOG_EVENTS_V, 1, "check for discrete changes at time=%.12g", data->localData[0]->timeValue);
-    <%changediscreteVars%>
-    if (ACTIVE_STREAM(LOG_EVENTS_V)) messageClose(LOG_EVENTS_V);
-
-    TRACE_POP
-    return needToIterate;
-  }
-  >>
-end functionCheckForDiscreteChanges;
-
 template crefToPrintfArg(ComponentRef cr)
 ::=
   match crefType(cr)
@@ -4492,6 +4456,12 @@ template crefShortType(ComponentRef cr) "template crefType
   else "crefType:ERROR"
   end match
 end crefShortType;
+
+template crefIndexInArray(ComponentRef cr, SimCode simCode)
+::=
+  match cref2simvar(cr, simCode)
+  case SIMVAR(__) then index
+end crefIndexInArray;
 
 template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, String modelNamePrefix) "template functionAssertsforCheck
   Generates function in simulation file.
