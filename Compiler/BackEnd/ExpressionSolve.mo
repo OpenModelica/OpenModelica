@@ -506,7 +506,7 @@ preprocessing for solve1,
      // TODO: use new defined function, which missing in the cpp runtime
      if not stringEqual(Config.simCodeTarget(), "Cpp") then
        (x, y, new_x, eqnForNewVars, newVarsCrefs, depth) := preprocessingSolveTmpVars(x, y, inExp3, uniqueEqIndex, eqnForNewVars, newVarsCrefs, depth);
-     con := new_x or con;
+       con := new_x or con;
      end if;
 
      if (not con) then
@@ -1218,7 +1218,7 @@ end removeSimpleCalls2;
 
 protected function inlineCallX
 "
-inline function call if depends on X where X is cref oder der(cref)
+inline function call if depends on X where X is cref or der(cref)
 DAE.Exp inExp2 DAE.CREF or 'der(DAE.CREF())'
 author: vitalij
 "
@@ -1346,7 +1346,7 @@ algorithm
       (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SINH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
 
       tp = Expression.typeof(e1);
-      exP = makeIntialGuess(e1,tp,inExp3,e1);
+      exP = makeInitialGuess(tp,inExp3,e1);
       (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$SINH", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
 
@@ -1373,7 +1373,7 @@ algorithm
     acosy = Expression.makePureBuiltinCall("acos", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ACOS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    exP = makeInitialGuess(tp,inExp3,e1);
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
     k1 = helpInvCos(acosy, exP, tp, true);
@@ -1404,7 +1404,7 @@ algorithm
     acosy = Expression.makePureBuiltinCall("asin", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ASIN$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    exP = makeInitialGuess(tp,inExp3,e1);
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
 
     k1 = helpInvSin(acosy, e1, tp, true);
@@ -1433,7 +1433,7 @@ algorithm
     acosy = Expression.makePureBuiltinCall("atan", {rhs}, tp);
     (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ATAN$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
 
-    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    exP = makeInitialGuess(tp,inExp3,e1);
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
     e = DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
 
@@ -1453,7 +1453,7 @@ algorithm
     false = expHasCref(inExp2, inExp3);
 
     tp = Expression.typeof(e1);
-    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    exP = makeInitialGuess(tp,inExp3,e1);
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
     e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
     lhs = Expression.expMul(e_1, inExp2);
@@ -1466,11 +1466,14 @@ algorithm
     true = expHasCref(e1, inExp3);
     false = expHasCref(e2, inExp3);
     tp = Expression.typeof(e1);
-    exP = makeIntialGuess(e1,tp,inExp3,e1);
+    exP = makeInitialGuess(tp,inExp3,e1);
+    // exP = makeInitialGuess(tp,inExp3,inExp2);
     (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
     e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
     lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
     lhs = Expression.makePureBuiltinCall("abs", {lhs}, tp);
+    // lhs = Expression.makePureBuiltinCall("abs", {inExp2}, tp);
+    // lhs = Expression.expPow(lhs,Expression.inverseFactors(e2));
     lhs = Expression.expMul(e_1,lhs);
 
   then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
@@ -1643,7 +1646,7 @@ algorithm
     (x2, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
     tp := Expression.typeof(e2);
-    exP := makeIntialGuess(e2,tp,inExp3,e2);
+    exP := makeInitialGuess(tp,inExp3,e2);
     (exP, eqnForNewVars, newVarsCrefs) := makeTmpEqnAndCrefFromExp(exP, tp, "prex$QE", uniqueEqIndex, idepth, eqnForNewVars, newVarsCrefs, false);
 
     x := helpInvCos3(x1,x2,exP,tp);
@@ -1933,22 +1936,21 @@ algorithm
   end if;
 end makeTmpEqnAndCrefFromExp;
 
-protected function makeIntialGuess
-  input DAE.Exp iExp;
+protected function makeInitialGuess
   input DAE.Type tp;
-  input DAE.Exp iExp3;
+  input DAE.Exp iExp1;
   input DAE.Exp iExp2;
   output DAE.Exp oExp;
 protected
   DAE.Exp con, e;
 algorithm
  con := Expression.makePureBuiltinCall("initial", {}, tp);
- e := Expression.traverseExpBottomUp(iExp2, makeIntialGuess2, (iExp3, "pre", tp, true));
- oExp := Expression.traverseExpBottomUp(iExp2, makeIntialGuess2, (iExp3, "pre", tp, false));
+ e := Expression.traverseExpBottomUp(iExp2, makeInitialGuess2, (iExp1, "pre", tp, true));
+ oExp := Expression.traverseExpBottomUp(iExp2, makeInitialGuess2, (iExp1, "pre", tp, false));
  oExp := DAE.IFEXP(con, e, oExp);
-end makeIntialGuess;
+end makeInitialGuess;
 
-protected function makeIntialGuess2
+protected function makeInitialGuess2
   input DAE.Exp iExp;
   input tuple<DAE.Exp, String, DAE.Type, Boolean> itpl;
   output DAE.Exp oExp;
@@ -1968,7 +1970,7 @@ algorithm
 
     case (_, (_, _, tp, true)) algorithm
       try
-        SOME(e) := makeIntialGuess3(iExp, tp);
+        SOME(e) := makeInitialGuess3(iExp, tp);
       else
         e := iExp;
       end try;
@@ -1976,9 +1978,9 @@ algorithm
 
     else iExp;
   end match;
-end makeIntialGuess2;
+end makeInitialGuess2;
 
-protected function makeIntialGuess3
+protected function makeInitialGuess3
   input DAE.Exp iExp;
   input DAE.Type tp;
   output Option<DAE.Exp> oExp;
@@ -2014,7 +2016,7 @@ algorithm
 
          end match;
 
-end makeIntialGuess3;
+end makeInitialGuess3;
 
 protected function helpInvCos
   input DAE.Exp acosy;

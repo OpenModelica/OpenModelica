@@ -904,9 +904,6 @@ protected
   HashTable3.HashTable invHt;
 algorithm
   REPLACEMENTS(ht,invHt) := outRepl;
-  if BaseHashTable.hasKey(src, ht) then // TODO: Is this correct? Previously, we skipped this code which was a dead case
-    return;
-  end if;
   ht := BaseHashTable.add((src, dst), ht);
   invHt := addReplacementInv(invHt, src, dst);
   outRepl := REPLACEMENTS(ht,invHt);
