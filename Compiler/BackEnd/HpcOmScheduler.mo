@@ -42,6 +42,7 @@ public import SimCode;
 public import SimCodeVar;
 
 protected
+import AdjacencyMatrix;
 import Array;
 import BackendDAEUtil;
 import BackendVarTransform;
@@ -53,8 +54,8 @@ import Flags;
 import HpcOmSchedulerExt;
 import HpcOmSimCodeMain;
 import List;
-import SimCodeUtil;
 import SimCodeFunctionUtil;
+import SimCodeUtil;
 import System;
 import Util;
 
@@ -81,7 +82,7 @@ protected
   Real calcTime, timeFinished;
   list<Integer> eqIdc;
 algorithm
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
   allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
   for taskIdx in listReverse(List.intRange(arrayLength(allCalcTasks))) loop
     ((HpcOmSimCode.CALCTASK(weighting, index, calcTime, timeFinished, threadIdx, eqIdc),_)) := arrayGet(allCalcTasks, taskIdx);
@@ -117,7 +118,7 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
   allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
   nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
@@ -264,7 +265,7 @@ protected
   HpcOmSimCode.Schedule tmpSchedule;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts, inComps=inComps) := iTaskGraphMeta;
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph, arrayLength(iTaskGraph));
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph, arrayLength(iTaskGraph));
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
   allCalcTasks := convertTaskGraphToTasks(taskGraphT, iTaskGraphMeta, convertNodeToTask);
   nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
@@ -450,7 +451,7 @@ protected
   array<list<Integer>> inComps;
 algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
   commCostsT := HpcOmTaskGraph.transposeCommCosts(commCosts);
   leaveNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
   //print("Leave nodes: " + stringDelimitList(List.map(leaveNodes,intString),", ") + "\n");
@@ -1554,7 +1555,7 @@ protected
 algorithm
   targetCost := 1000.0;
   HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iMeta;
-  graphT := BackendDAEUtil.transposeMatrix(iGraph,arrayLength(iGraph));
+  graphT := AdjacencyMatrix.transposeAdjacencyMatrix(iGraph,arrayLength(iGraph));
 
   // assign initial level
   //(_,startNodes) := List.filterOnTrueSync(arrayList(graphT),listEmpty,List.intRange(arrayLength(graphT)));
@@ -2373,7 +2374,7 @@ algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
       equation
-        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         ((_,nodeLevelMap)) = Array.fold3(taskGraphT, createNodeLevelMapping, nodeMark, inComps, iSccSimEqMapping, (1,{}));
         nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
         filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
@@ -2493,7 +2494,7 @@ algorithm
 
         //print("Metis scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
-        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
 
         //sort the tasks in the partitions, always the tasks that are predecessors of other partitions first.
@@ -2664,7 +2665,7 @@ algorithm
         print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
-        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allCalcTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
@@ -2911,7 +2912,7 @@ algorithm
         extInfoArr = listArray(extInfo);
         true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
         //print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
-        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
         allCalcTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
         nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
@@ -3083,7 +3084,7 @@ algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
   //compute the necessary node parameters
   size := arrayLength(iTaskGraph);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   (_,_,ectArray) := computeGraphValuesBottomUp(iTaskGraph,iTaskGraphMeta);
   (_,lastArray,lactArray,tdsLevelArray) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
   fpredArray := computeFavouritePred(iTaskGraph,iTaskGraphMeta,ectArray); //the favourite predecessor of each node
@@ -3312,7 +3313,7 @@ algorithm
         (simCode,newIdxAss) = TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);
 
         // insert Locks
-        taskGraphT = BackendDAEUtil.transposeMatrix(taskGraph,arrayLength(taskGraph));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph,arrayLength(taskGraph));
         schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss,iCommCosts,iCompTaskMapping,iSimVarMapping);
         schedule = TDS_replaceSimEqSysIdxsInSchedule(schedule,newIdxAss);
 /*
@@ -4469,7 +4470,7 @@ protected
   HpcOmTaskGraph.TaskGraph taskGraphT;
 algorithm
   size := arrayLength(iTaskGraph);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   fpred := arrayCreate(size,-1);
   fpredOut := List.fold3(List.intRange(size),computeFavouritePred1,taskGraphT,iTaskGraphMeta,ect,fpred);
 end computeFavouritePred;
@@ -4547,7 +4548,7 @@ algorithm
         taskMap := arrayCreate(nTasks,-1);
         partMap := arrayCreate(listLength(rootNodes),{});
         _ := arrayCreate(numProc,0.0);
-        graphT := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        graphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         // get all existing partitions
         (taskMap,partMap,_) := List.fold1(rootNodes,assignPartitions,iTaskGraph,(taskMap,partMap,1));
           //print("taskMap \n"+stringDelimitList(List.map(arrayList(taskMap), intString),"\n")+"\n");
@@ -4694,7 +4695,7 @@ protected
 algorithm
   nTasks := arrayLength(iTaskGraph);
   size := arrayLength(iTaskGraph);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   // create the schedule
   allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
 
@@ -4742,7 +4743,7 @@ algorithm
   HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps) := iTaskGraphMeta;
   //compute the ALAP
   size := arrayLength(iTaskGraph);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   (alapArray,_,_,_) := computeGraphValuesTopDown(iTaskGraph,iTaskGraphMeta);
   //printRealArray(alapArray,"alap");
   alapLst := arrayList(alapArray);
@@ -5390,7 +5391,7 @@ protected
 algorithm
   size := arrayLength(iTaskGraph);
   rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   asap := arrayCreate(size,-1.0);
   est := arrayCreate(size,-1.0);
   ect := arrayCreate(size,-1.0);
@@ -5504,7 +5505,7 @@ protected
 algorithm
   size := arrayLength(iTaskGraph);
   // traverse the taskGraph topdown to get the alap times
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   endNodes := HpcOmTaskGraph.getLeafNodes(iTaskGraph);
   alap := arrayCreate(size,-1.0);
   last := arrayCreate(size,-1.0);
@@ -6009,7 +6010,7 @@ algorithm
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks),_,_,_)
       equation
         taskIdcs = arrayCreate(arrayLength(threadTasks),1);  // the TaskIdcs to be checked for every thread
-        taskGraphT = BackendDAEUtil.transposeMatrix(taskGraphIn,arrayLength(taskGraphIn));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(taskGraphIn,arrayLength(taskGraphIn));
         checkedTasks = arrayCreate(arrayLength(taskGraphIn),HpcOmSimCode.TASKEMPTY());
         computeTimeFinished(threadTasks,taskIdcs,1,checkedTasks,taskGraphIn,taskGraphT,taskGraphMetaIn,numProc,{});
         finTimes = Array.map(threadTasks,getTimeFinishedOfLastTask);

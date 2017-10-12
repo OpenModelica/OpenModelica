@@ -47,6 +47,7 @@ public import SimCode;
 
 // protected imports
 protected
+import AdjacencyMatrix;
 import Array;
 import BackendDAEUtil;
 import BackendDAEOptimize;
@@ -354,7 +355,7 @@ algorithm
 
       //Create Memory-Map and Sim-Code
       //------------------------------
-      (optTmpMemoryMap, varToArrayIndexMapping, varToIndexMapping) = HpcOmMemory.createMemoryMap(simCode.modelInfo, simCode.varToArrayIndexMapping, simCode.varToIndexMapping, taskGraphOdeSimplified, BackendDAEUtil.transposeMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, HpcOmTaskGraph.getSystemComponents(inBackendDAE));
+      (optTmpMemoryMap, varToArrayIndexMapping, varToIndexMapping) = HpcOmMemory.createMemoryMap(simCode.modelInfo, simCode.varToArrayIndexMapping, simCode.varToIndexMapping, taskGraphOdeSimplified, AdjacencyMatrix.transposeAdjacencyMatrix(taskGraphOdeSimplified,arrayLength(taskGraphOdeSimplified)), taskGraphDataOdeSimplified, eqs, filenamePrefix, schedulerInfo, scheduleOde, sccSimEqMapping, criticalPaths, criticalPathsWoC, criticalPathInfo, numProc, HpcOmTaskGraph.getSystemComponents(inBackendDAE));
 
       //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
 
@@ -460,7 +461,7 @@ protected
     String fileName;
  algorithm
    taskGraph1 := arrayCopy(iTaskGraph);
-   taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph1,arrayLength(taskGraph1));
+   taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph1,arrayLength(taskGraph1));
    taskGraphMeta1 := HpcOmTaskGraph.copyTaskGraphMeta(iTaskGraphMeta);
    contractedTasks := arrayCreate(arrayLength(taskGraph1),0);
    // contract nodes in the graph
@@ -469,7 +470,7 @@ protected
 /*
    //DEBUG
    (taskGraph1,taskGraphMeta1) := GRS_newGraph(taskGraph1,taskGraphMeta1,contractedTasks);
-   taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph1,arrayLength(taskGraph1));
+   taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph1,arrayLength(taskGraph1));
    fileName := ("taskGraphMergeDebug.graphml");
    schedulerInfo := arrayCreate(arrayLength(taskGraph1), (-1,-1,-1.0));
    HpcOmTaskGraph.dumpAsGraphMLSccLevel(taskGraph1, taskGraphMeta1, fileName, "", {}, {}, iSccSimEqMapping, schedulerInfo, HpcOmTaskGraph.GRAPHDUMPOPTIONS(false,false,true,true));

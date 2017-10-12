@@ -42,7 +42,7 @@ import BackendDAE;
 import DAE;
 
 protected
-
+import AdjacencyMatrix;
 import Array;
 import BackendDAEEXT;
 import BackendDAEOptimize;
@@ -525,8 +525,8 @@ algorithm
   // create incidence matrices w/o tvar and residual
   m1 := arrayCreate(size,{});
   mt1 := arrayCreate(size,{});
-  m1 := getOtherEqSysIncidenceMatrix(m,size,1,ass2,ass1,m1);
-  mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,ass1,ass2,mt1);
+  m1 := AdjacencyMatrix.getOtherEqSysAdjacencyMatrix(m,size,1,ass2,ass1,m1);
+  mt1 := AdjacencyMatrix.getOtherEqSysAdjacencyMatrix(mt,size,1,ass1,ass2,mt1);
 
   // run tarjan to get order of other equations
   othercomps := Sorting.TarjanTransposed(mt1, ass2);
@@ -608,48 +608,7 @@ algorithm
 end unassignTVars;
 
 
-protected function isAssigned "  author: Frenkel TUD 2012-05"
-  input array<Integer> ass;
-  input Integer i;
-  output Boolean b;
-algorithm
-  b := intGt(ass[i],0);
-end isAssigned;
 
-
-protected function getOtherEqSysIncidenceMatrix " function to remove tvar and res from incidence matrix
-  author: Frenkel TUD 2012-05"
-  input BackendDAE.IncidenceMatrix m;
-  input Integer size;
-  input Integer index;
-  input array<Integer> skip;
-  input array<Integer> rowskip;
-  input BackendDAE.IncidenceMatrix mnew;
-  output BackendDAE.IncidenceMatrix outMNew;
-algorithm
-  outMNew := matchcontinue(m,size,index,skip,rowskip,mnew)
-    local
-      list<Integer> row;
-    case (_,_,_,_,_,_)
-      equation
-        true = intGt(index,size);
-      then
-        mnew;
-    case (_,_,_,_,_,_)
-      equation
-        true = intGt(skip[index],0);
-        row = List.select(m[index], Util.intPositive);
-        row = List.select1r(row,isAssigned,rowskip);
-        arrayUpdate(mnew,index,row);
-      then
-        getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
-    case (_,_,_,_,_,_)
-      equation
-        arrayUpdate(mnew,index,{});
-      then
-        getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
-  end matchcontinue;
-end getOtherEqSysIncidenceMatrix;
 
 protected function getDependenciesOfVars " function to determine which variables are influenced by the tvars"
   input list<list<Integer>> iComps;

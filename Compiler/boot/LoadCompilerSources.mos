@@ -245,6 +245,7 @@ if true then /* Suppress output */
     "../Stubs/ZeroCrossings.mo"
   }
   else {
+    "../BackEnd/AdjacencyMatrix.mo",
     "../BackEnd/BackendDAEFunc.mo",
     "../BackEnd/BackendDAECreate.mo",
     "../BackEnd/BackendDAEEXT.mo",

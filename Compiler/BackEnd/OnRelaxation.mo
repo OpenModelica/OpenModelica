@@ -38,28 +38,30 @@ encapsulated package OnRelaxation "
 public import BackendDAE;
 public import DAE;
 
-protected import Array;
-protected import BackendDAEUtil;
-protected import BackendDAEEXT;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendDAETransform;
-protected import BaseHashSet;
-protected import ComponentReference;
-protected import Differentiate;
-protected import DumpGraphML;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import HashSet;
-protected import HashTable4;
-protected import List;
-protected import Matching;
-protected import Sorting;
-protected import SymbolicJacobian;
-protected import Util;
-protected import MetaModelica.Dangerous;
+protected
+import AdjacencyMatrix;
+import Array;
+import BackendDAEEXT;
+import BackendDAETransform;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import BaseHashSet;
+import ComponentReference;
+import Differentiate;
+import DumpGraphML;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import HashSet;
+import HashTable4;
+import List;
+import Matching;
+import MetaModelica.Dangerous;
+import Sorting;
+import SymbolicJacobian;
+import Util;
 
 
 /*
@@ -1466,7 +1468,7 @@ algorithm
   // add links to the order
   omark := getOrphansOrderEdvanced4(linkslst, m, mt, mark, rowmarks, order, {});
   //  BackendDump.dumpIncidenceMatrix(m);
-  mt := BackendDAEUtil.transposeMatrix(m, arrayLength(mt));
+  mt := AdjacencyMatrix.transposeAdjacencyMatrix(m, arrayLength(mt));
   comps := Sorting.TarjanTransposed(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   sortvorphans := List.flattenReverse(comps);

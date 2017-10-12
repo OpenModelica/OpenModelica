@@ -630,31 +630,22 @@ end TimeEvent;
 //
 // AdjacencyMatrixes
 //
-
 public
 type IncidenceMatrixElementEntry = Integer;
-
-public
 type IncidenceMatrixElement = list<IncidenceMatrixElementEntry>;
-
-public
 type IncidenceMatrix = array<IncidenceMatrixElement> "array<list<Integer>>";
-
-public
 type IncidenceMatrixT = IncidenceMatrix
 "a list of equation indices (1..n), one for each variable. Equations that -only-
  contain the state variable and not the derivative have a negative index.";
 
 public
+type AdjacencyMatrix = IncidenceMatrix;
+type AdjacencyMatrixT = IncidenceMatrixT;
+
+public
 type AdjacencyMatrixElementEnhancedEntry = tuple<Integer,Solvability,Constraints>;
-
-public
 type AdjacencyMatrixElementEnhanced = list<AdjacencyMatrixElementEnhancedEntry>;
-
-public
 type AdjacencyMatrixEnhanced = array<AdjacencyMatrixElementEnhanced>;
-
-public
 type AdjacencyMatrixTEnhanced = AdjacencyMatrixEnhanced;
 
 public

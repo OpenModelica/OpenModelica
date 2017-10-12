@@ -42,18 +42,20 @@ public import BackendDAE;
 public import BackendDAEFunc;
 public import DAE;
 
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import DAEUtil;
-protected import Debug;
-protected import DumpGraphML;
-protected import ElementSource;
-protected import Error;
-protected import Flags;
-protected import List;
-protected import Matching;
+protected
+import AdjacencyMatrix;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import DAEUtil;
+import Debug;
+import DumpGraphML;
+import ElementSource;
+import Error;
+import Flags;
+import List;
+import Matching;
 
 
 protected type DAEHandler = tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc,String,BackendDAEFunc.stateDeselectionFunc,String>;
@@ -148,8 +150,8 @@ algorithm
   BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT)) := iSyst;
   (matchingFunc,_) :=  matchingAlgorithm;
   // get absolute Incidence Matrix
-  m := BackendDAEUtil.absIncidenceMatrix(m);
-  mT := BackendDAEUtil.absIncidenceMatrix(mT);
+  m := AdjacencyMatrix.absAdjacencyMatrix(m);
+  mT := AdjacencyMatrix.absAdjacencyMatrix(mT);
   // try to match
   syst := BackendDAEUtil.setEqSystMatrices(iSyst, SOME(m), SOME(mT));
   syst.matching := BackendDAE.NO_MATCHING();

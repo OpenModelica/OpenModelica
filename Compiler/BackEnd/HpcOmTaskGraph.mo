@@ -39,26 +39,28 @@ public import BackendDAE;
 public import DAE;
 public import GraphML;
 
-protected import Array;
-protected import BackendDAEOptimize;
-protected import BackendDAEUtil;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import ComponentReference;
-protected import DAEDump;
-protected import Error;
-protected import ExpandableArray;
-protected import Expression;
-protected import Flags;
-protected import HpcOmBenchmark;
-protected import HpcOmScheduler;
-protected import List;
-protected import SimCodeUtil;
-protected import SimCodeVar;
-protected import SCode;
-protected import System;
-protected import Util;
+protected
+import AdjacencyMatrix;
+import Array;
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendVariable;
+import ComponentReference;
+import DAEDump;
+import Error;
+import ExpandableArray;
+import Expression;
+import Flags;
+import HpcOmBenchmark;
+import HpcOmScheduler;
+import List;
+import SCode;
+import SimCodeUtil;
+import SimCodeVar;
+import System;
+import Util;
 
 
 //----------------------------
@@ -1672,7 +1674,7 @@ algorithm
       equation
         // remove the algebraic branches
         sizeDAE = arrayLength(graphIn);
-        graphT = BackendDAEUtil.transposeMatrix(graphIn,sizeDAE);
+        graphT = AdjacencyMatrix.transposeAdjacencyMatrix(graphIn,sizeDAE);
         odeNodes = listAppend(exceptNodes,getAllSuccessors(exceptNodes,graphT));//the ODE-System
         (_,odeNodes,_) = List.intersection1OnTrue(odeNodes,whenNodes,intEq);
         (odeNodes,_,_) = List.intersection1OnTrue(List.intRange(sizeDAE),odeNodes,intEq);
@@ -2034,7 +2036,7 @@ protected
   TaskGraph taskGraphT;
 algorithm
   size := arrayLength(iTaskGraph);
-  taskGraphT := BackendDAEUtil.transposeMatrix(iTaskGraph,size);
+  taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,size);
   rootsOut := getLeafNodes(taskGraphT);  // gets the leaf nodes of the transposed graph
 end getRootNodes;
 
@@ -2236,7 +2238,7 @@ algorithm
   whenNodeMarks := arrayCreate(arrayLength(iTaskGraph), false);
   sccNodeMapping := getSccNodeMapping(iNumberOfSccs, iTaskGraphMeta);
   iTaskGraphCopy := arrayCopy(iTaskGraph);
-  iTaskGraphTCopy := BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+  iTaskGraphTCopy := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
 
   //Mark all nodes that are part of the zero funcs system
   for eqIdx in iZeroCrossingEquationIdc loop
@@ -3373,7 +3375,7 @@ algorithm
     case(_,_,_)
       equation
         numProc = Flags.getConfigInt(Flags.NUM_PROC);
-        taskGraphT = BackendDAEUtil.transposeMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
         //get the single nodes, sort them according to their exeCosts in decreasing order
         (_,singleNodes) = List.filterOnTrueSync(arrayList(iTaskGraph),listEmpty,List.intRange(arrayLength(iTaskGraph)));  //nodes without successor
         (_,singleNodes1) = List.filterOnTrueSync(arrayList(taskGraphT),listEmpty,List.intRange(arrayLength(taskGraphT))); //nodes without predecessor
@@ -4094,7 +4096,7 @@ protected
   TaskGraph graphTmp;
 algorithm
   //This function contracts all nodes into the startNode
-  graphInT := BackendDAEUtil.transposeMatrix(graphIn,arrayLength(graphIn));
+  graphInT := AdjacencyMatrix.transposeAdjacencyMatrix(graphIn,arrayLength(graphIn));
   //print("HpcOmTaskGraph.contractNodesInGraph1 contractNodes: " + stringDelimitList(List.map(contractNodes,intString),",") + "\n");
   //print("HpcOmTaskGraph.contractNodesInGraph1 startNode: " + intString(List.last(contractNodes)) + "\n");
   startNode := List.last(contractNodes);
@@ -4464,7 +4466,7 @@ protected function getParentNodes "author: Waurich TUD 2013-07
 protected
   TaskGraph graphInT;
 algorithm
-  graphInT := BackendDAEUtil.transposeMatrix(graphIn,arrayLength(graphIn));
+  graphInT := AdjacencyMatrix.transposeAdjacencyMatrix(graphIn,arrayLength(graphIn));
   parentNodes := arrayGet(graphInT, nodeIdx);
 end getParentNodes;
 
@@ -6356,7 +6358,7 @@ algorithm
    print("stateTasks "+intLstString(stateTasks)+"\n");
 
   //traverse levels top down and colour according to the states
-  odeGraphT := BackendDAEUtil.transposeMatrix(odeGraph,arrayLength(odeGraph));
+  odeGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(odeGraph,arrayLength(odeGraph));
   stateTaskAssign := multirate_assignTasksToStates(tasksPerLevel,stateTasks,odeGraphT);
   dumpStateAssign(stateTaskAssign);
 

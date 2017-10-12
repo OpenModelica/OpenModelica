@@ -48,6 +48,7 @@ public import FCore;
 public import HashTable2;
 
 protected
+import AdjacencyMatrix;
 import Algorithm;
 import Array;
 import BackendDAETransform;
@@ -318,141 +319,6 @@ algorithm
   end match;
 end traverseZeroCrossingExps;
 
-// =============================================================================
-// =============================================================================
-
-protected function traverseIncidenceMatrix "author: Frenkel TUD 2010-12"
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.IncidenceMatrix inM;
-  input FuncType func;
-  input Type_a inTypeA;
-  output BackendDAE.IncidenceMatrix outM;
-  output Type_a outTypeA;
-  partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
-    input Integer pos;
-    input Type_a inTpl;
-    output list<Integer> outList;
-    output Type_a outTpl;
-  end FuncType;
-algorithm
-  (outM,outTypeA) := traverseIncidenceMatrix1(inM,func,1,arrayLength(inM),inTypeA);
-end traverseIncidenceMatrix;
-
-protected function traverseIncidenceMatrix1 "author: Frenkel TUD 2010-12"
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.IncidenceMatrix inM;
-  input FuncType func;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Type_a inTypeA;
-  output BackendDAE.IncidenceMatrix outM;
-  output Type_a outTypeA;
-  partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
-    input Integer pos;
-    input Type_a inTpl;
-    output list<Integer> outList;
-    output Type_a outTpl;
-  end FuncType;
-algorithm
-  (outM,outTypeA) := traverseIncidenceMatrix2(inM,func,pos,len,intGt(pos,len),inTypeA);
-  annotation(__OpenModelica_EarlyInline = true);
-end traverseIncidenceMatrix1;
-
-protected function traverseIncidenceMatrix2
-"  author: Frenkel TUD 2010-12"
-  replaceable type Type_a subtypeof Any;
-  input BackendDAE.IncidenceMatrix inM;
-  input FuncType func;
-  input Integer pos "iterated 1..len";
-  input Integer len "length of array";
-  input Boolean stop;
-  input Type_a inTypeA;
-  output BackendDAE.IncidenceMatrix outM;
-  output Type_a outTypeA;
-  partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
-    input Integer pos;
-    input Type_a inTpl;
-    output list<Integer> outList;
-    output Type_a outTpl;
-  end FuncType;
-algorithm
-  (outM,outTypeA) := match (inM,func,pos,len,stop,inTypeA)
-    local
-      BackendDAE.IncidenceMatrix m,m1,m2;
-      Type_a extArg,extArg1,extArg2;
-      list<Integer> eqns,eqns1;
-
-    case(_,_,_,_,true,_)
-    then (inM,inTypeA);
-
-    case(_,_,_,_,false,_)
-      equation
-        (eqns,extArg) = func(inM[pos],pos,inTypeA);
-        eqns1 = List.removeOnTrue(pos,intLt,eqns);
-        (m1,extArg1) = traverseIncidenceMatrixList(eqns1,inM,func,arrayLength(inM),pos,extArg);
-        (m2,extArg2) = traverseIncidenceMatrix2(m1,func,pos+1,len,intGt(pos+1,len),extArg1);
-      then (m2,extArg2);
-
-  end match;
-end traverseIncidenceMatrix2;
-
-protected function traverseIncidenceMatrixList
-"  author: Frenkel TUD 2011-04"
-  replaceable type Type_a subtypeof Any;
-  input list<Integer> inLst "elements to traverse";
-  input BackendDAE.IncidenceMatrix inM;
-  input FuncType func;
-  input Integer len "length of array";
-  input Integer maxpos "do not go further than this position";
-  input Type_a inTypeA;
-  output BackendDAE.IncidenceMatrix outM;
-  output Type_a outTypeA;
-  partial function FuncType
-    input BackendDAE.IncidenceMatrixElement elem;
-    input Integer pos;
-    input Type_a inTpl;
-    output list<Integer> outList;
-    output Type_a outTpl;
-  end FuncType;
-algorithm
-  (outM,outTypeA) := matchcontinue(inLst,inM,func,len,maxpos,inTypeA)
-    local
-      BackendDAE.IncidenceMatrix m,m1;
-      Type_a extArg,extArg1;
-      list<Integer> rest,eqns,eqns1,alleqns;
-      Integer pos;
-
-    case({},_,_,_,_,_) then (inM,inTypeA);
-
-    case(pos::rest,_,_,_,_,_) equation
-      // do not leave the list
-      true = intLt(pos,len+1);
-      // do not more than necesary
-      true = intLt(pos,maxpos);
-      (eqns,extArg) = func(inM[pos],pos,inTypeA);
-      eqns1 = List.removeOnTrue(maxpos,intLt,eqns);
-      alleqns = List.unionOnTrueList({rest, eqns1},intEq);
-      (m1,extArg1) = traverseIncidenceMatrixList(alleqns,inM,func,len,maxpos,extArg);
-    then (m1,extArg1);
-
-    case(pos::rest,_,_,_,_,_) equation
-      // do not leave the list
-      true = intLt(pos,len+1);
-      (m,extArg) = traverseIncidenceMatrixList(rest,inM,func,len,maxpos,inTypeA);
-    then (m,extArg);
-
-    case (_,_,_,_,_,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- BackendDAEOptimize.traverseIncidenceMatrixList failed\n");
-      then
-        fail();
-  end matchcontinue;
-end traverseIncidenceMatrixList;
-
 protected function toplevelInputOrUnfixed
   input BackendDAE.Var inVar;
   output Boolean b;
@@ -526,7 +392,7 @@ algorithm
     case (dlow,_)
       equation
         // check equations
-       (_,(_,n)) = traverseIncidenceMatrix(inM,countSimpleEquationsFinder,(dlow,0));
+       (_,(_,n)) = AdjacencyMatrix.traverseAdjacencyMatrix(inM,countSimpleEquationsFinder,(dlow,0));
       then n;
   end match;
 end countSimpleEquations;
@@ -944,7 +810,7 @@ algorithm
         funcs := BackendDAEUtil.getFunctions(ishared);
         (syst, m, mT) := BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL(), SOME(funcs));
         // check equations
-        (m, (mT,_,_,changed)) := traverseIncidenceMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}));
+        (m, (mT,_,_,changed)) := AdjacencyMatrix.traverseAdjacencyMatrix(m, removeEqualFunctionCallFinder, (mT,vars,eqns,{}));
         // update arrayeqns and algorithms, collect info for wrappers
         syst.m := SOME(m); syst.mT := SOME(mT); syst.matching := BackendDAE.NO_MATCHING();
         syst := BackendDAEUtil.updateIncidenceMatrix(syst, BackendDAE.NORMAL(), NONE(), changed);
@@ -5694,7 +5560,7 @@ algorithm
     (taskGraph,taskGraphData,_) := HpcOmTaskGraph.createTaskGraph0(syst,shared,false,(taskGraph,taskGraphData,1));
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping, eqCompMapping=eqCompMapping) := taskGraphData;
     size := arrayLength(taskGraph);
-    taskGraphT := BackendDAEUtil.transposeMatrix(taskGraph,size);
+    taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph,size);
 
     //get output variables
     BackendDAE.EQSYSTEM(orderedVars = vars) := syst;

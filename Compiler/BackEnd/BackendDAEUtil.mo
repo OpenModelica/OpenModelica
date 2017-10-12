@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2017, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -55,6 +55,7 @@ import FCore;
 import Util;
 
 protected
+import AdjacencyMatrix;
 import Algorithm;
 import Array;
 import BackendDAEOptimize;
@@ -488,8 +489,8 @@ algorithm
   vars := BackendVariable.copyVariables(inSystem.orderedVars);
   eqns := BackendEquation.copyEquationArray(inSystem.orderedEqs);
   removedEqs := BackendEquation.copyEquationArray(inSystem.removedEqs);
-  m := copyIncidenceMatrix(inSystem.m);
-  mt := copyIncidenceMatrix(inSystem.mT);
+  m := AdjacencyMatrix.copyAdjacencyMatrix(inSystem.m);
+  mt := AdjacencyMatrix.copyAdjacencyMatrixT(inSystem.mT);
   matching := copyMatching(inSystem.matching);
   outSystem := BackendDAE.EQSYSTEM(vars, eqns, m, mt, matching, inSystem.stateSets, inSystem.partitionKind, removedEqs);
 end copyEqSystem;
@@ -3057,76 +3058,6 @@ algorithm
   end match;
 end incidenceRowExp1withInput;
 
-
-public function transposeMatrix
-"author: Frenkel TUD 2012-11
-  Calculates the transpose of the incidence matrix,
-  i.e. which equations each variable is present in."
-  input BackendDAE.IncidenceMatrix m;
-  input Integer nRowsMt;
-  output BackendDAE.IncidenceMatrixT mt;
-algorithm
-  mt := arrayCreate(nRowsMt,{});
-  ((mt,_)) := Array.fold(m,transposeRow,(mt,1));
-end transposeMatrix;
-
-protected function transposeRow
-"author: PA
-  Helper function to transposeMatrix2.
-  Input: BackendDAE.IncidenceMatrix (eqn => var)
-  Input: row number (variable)
-  Input: iterator (start with one)
-  inputs:  (int list list, int /* row */,int /* iter */)
-  outputs:  int list"
-  input list<Integer> row;
-  input tuple<BackendDAE.IncidenceMatrixT,Integer> inTpl "(m,index)";
-  output tuple<BackendDAE.IncidenceMatrixT,Integer> outTpl;
-algorithm
-  outTpl := match (row,inTpl)
-    local
-      Integer i,indx,indx1,iabs;
-      list<Integer> res,col;
-      BackendDAE.IncidenceMatrixT mt;
-    case ({},(mt,indx)) then ((mt,indx+1));
-    case (i::res,(mt,indx))
-      equation
-        iabs = intAbs(i);
-        mt = Array.expand(iabs - arrayLength(mt),mt,{});
-        col = mt[iabs];
-        indx1 = if intLt(i,0) then -indx else indx;
-        arrayUpdate(mt,iabs,indx1::col);
-      then
-        transposeRow(res, (mt,indx));
-  end match;
-end transposeRow;
-
-public function absIncidenceMatrix
-"author: PA
-  Applies absolute value to all entries in the incidence matrix.
-  This can be used when e.g. der(x) and x are considered the same variable."
-  input BackendDAE.IncidenceMatrix m;
-  output BackendDAE.IncidenceMatrix res;
-protected
-  list<list<Integer>> lst,lst_1;
-algorithm
-  lst := arrayList(m);
-  lst_1 := List.mapList(lst, intAbs);
-  res := listArray(lst_1);
-end absIncidenceMatrix;
-
-public function varsIncidenceMatrix
-"author: PA
-  Return all variable indices in the incidence
-  matrix, i.e. all elements of the matrix."
-  input BackendDAE.IncidenceMatrix m;
-  output list<Integer> res;
-protected
-  list<list<Integer>> mlst;
-algorithm
-  mlst := arrayList(m);
-  res := List.flatten(mlst);
-end varsIncidenceMatrix;
-
 public function updateIncidenceMatrix
 "author: PA
   Takes a daelow and the incidence matrix and its transposed
@@ -3466,21 +3397,6 @@ algorithm
   end matchcontinue;
 end addValuetoMatrix;
 
-protected function copyIncidenceMatrix
-  input Option<BackendDAE.IncidenceMatrix> inM;
-  output Option<BackendDAE.IncidenceMatrix> outM;
-algorithm
-  outM := match(inM)
-  local
-    BackendDAE.IncidenceMatrix m,m1;
-    case (SOME(m))
-      equation
-        m1 = arrayCopy(m);
-      then SOME(m1);
-    else NONE();
-   end match;
-end copyIncidenceMatrix;
-
 public function getIncidenceMatrixfromOptionForMapEqSystem "function getIncidenceMatrixfromOption"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
@@ -3517,7 +3433,7 @@ algorithm
     then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
 
     case BackendDAE.EQSYSTEM(orderedVars=v, m=SOME(m), mT=NONE()) equation
-      mT = transposeMatrix(m, BackendVariable.varsSize(v));
+      mT = AdjacencyMatrix.transposeAdjacencyMatrix(m, BackendVariable.varsSize(v));
     then (BackendDAEUtil.setEqSystMatrices(inSyst, SOME(m), SOME(mT)), m, mT);
 
     case BackendDAE.EQSYSTEM(m=SOME(m), mT=SOME(mT))

@@ -41,37 +41,39 @@ encapsulated package IndexReduction
 public import BackendDAE;
 public import DAE;
 
-protected import Array;
-protected import Absyn;
-protected import BackendDAEEXT;
-protected import BackendDump;
-protected import BackendEquation;
-protected import BackendInline;
-protected import BackendDAEUtil;
-protected import BackendVariable;
-protected import BackendVarTransform;
-protected import BaseHashTable;
-protected import ComponentReference;
-protected import Differentiate;
-protected import ElementSource;
-protected import Error;
-protected import ErrorExt;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import HashTable2;
-protected import HashTable3;
-protected import HashTableCG;
-protected import HashTableCrIntToExp;
-protected import Inline;
-protected import InlineArrayEquations;
-protected import List;
-protected import Matching;
-protected import SCode;
-protected import Sorting;
-protected import System;
-protected import Util;
+protected
+import Absyn;
+import AdjacencyMatrix;
+import Array;
+import BackendDAEEXT;
+import BackendDAEUtil;
+import BackendDump;
+import BackendEquation;
+import BackendInline;
+import BackendVariable;
+import BackendVarTransform;
+import BaseHashTable;
+import ComponentReference;
+import Differentiate;
+import ElementSource;
+import Error;
+import ErrorExt;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import HashTable2;
+import HashTable3;
+import HashTableCG;
+import HashTableCrIntToExp;
+import Inline;
+import InlineArrayEquations;
+import List;
+import Matching;
+import SCode;
+import Sorting;
+import System;
+import Util;
 
 
 // =============================================================================
@@ -2016,7 +2018,7 @@ algorithm
         syst = BackendDAEUtil.createEqSystem(hovvars, eqns1);
         (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inShared,false);
         m1 = incidenceMatrixfromEnhanced2(me,hovvars);
-        mT1 = BackendDAEUtil.transposeMatrix(m1,nfreeStates);
+        mT1 = AdjacencyMatrix.transposeAdjacencyMatrix(m1,nfreeStates);
         //  BackendDump.printEqSystem(syst);
         hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(inSystem),SOME(mT1));
         if Flags.isSet(Flags.BLT_DUMP) then
@@ -2081,7 +2083,7 @@ algorithm
         m = incidenceMatrixfromEnhanced2(me,vars);
         nv = BackendVariable.varsSize(vars);
         ne = BackendEquation.equationArraySize(eqns);
-        mT = BackendDAEUtil.transposeMatrix(m,nv);
+        mT = AdjacencyMatrix.transposeAdjacencyMatrix(m,nv);
         // match the variables not the equations, to have prevered states unmatched
         Matching.matchingExternalsetIncidenceMatrix(ne,nv,mT);
         BackendDAEEXT.matching(ne,nv,3,-1,1.0,1);
