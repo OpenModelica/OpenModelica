@@ -1041,8 +1041,8 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
 
 QPointF GraphicsView::movePointByGrid(QPointF point)
 {
-  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep();
-  qreal stepY = mCoOrdinateSystem.getVerticalGridStep();
+  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep() * (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ? 5 : 1);
+  qreal stepY = mCoOrdinateSystem.getVerticalGridStep() * (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ? 5 : 1);
   point.setX(qRound(point.x() / stepX) * stepX);
   point.setY(qRound(point.y() / stepY) * stepY);
   return point;
