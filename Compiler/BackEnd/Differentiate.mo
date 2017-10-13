@@ -1002,6 +1002,7 @@ algorithm
     matchcontinue(inExp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree)
     local
 
+      BackendDAE.DifferentiationType diffType;
       Absyn.Path path;
 
       BackendDAE.Variables timevars;
@@ -1035,14 +1036,6 @@ algorithm
       then
         (res, outFunctionTree);
 
-   // case for array without expanding the array
-   // for generic gradient
-   case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY(ty=arrayType)), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
-      equation
-        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
-        res = DAE.CREF(cr, tp);
-      then
-        (res, inFunctionTree);
 
    // case for array without expanding the array
    case (DAE.CREF(componentRef = cr,ty=tp as DAE.T_ARRAY()), _, BackendDAE.DIFFINPUTDATA(matrixName=SOME(matrixName)), BackendDAE.DIFFERENTIATION_FUNCTION(), _)
@@ -1055,7 +1048,7 @@ algorithm
         (res, inFunctionTree);
 
     // case for arrays
-    case ((e as DAE.CREF(ty = DAE.T_ARRAY())), _, _, _, _)
+    case ((e as DAE.CREF(ty = DAE.T_ARRAY())), _, _, diffType, _) guard ( match diffType case BackendDAE.GENERIC_GRADIENT() then false; else true; end match )
       equation
         (e1,true) = Expression.extendArrExp(e,false);
         (res, outFunctionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
