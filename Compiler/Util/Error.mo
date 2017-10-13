@@ -907,6 +907,8 @@ public constant Message EQN_NO_SPACE_TO_SOLVE = MESSAGE(581, SYMBOLIC(), WARNING
   Util.gettext("Equation %s (size: %s) %s is not big enough to solve for enough variables.\n  Remaining unsolved variables are: %s\n  Already solved: %s\n  Equations used to solve those variables:%s"));
 public constant Message VAR_NO_REMAINING_EQN = MESSAGE(582, SYMBOLIC(), WARNING(),
   Util.gettext("Variable %s does not have any remaining equation to be solved in.\n  The original equations were:%s"));
+public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE(582, TRANSLATION(), NOTIFICATION(),
+  Util.gettext("Moving binding to equation section and setting fixed attribute of %s to false. This is done to work around a compiler design flaw (there is no good way to represent bindings that span multiple variables)."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

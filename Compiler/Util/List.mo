@@ -6221,7 +6221,7 @@ public function deletePositions<T>
 protected
   list<Integer> sorted_pos;
 algorithm
-  sorted_pos := sort(inPositions, intGt);
+  sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
   outList := deletePositionsSorted(inList, sorted_pos);
 end deletePositions;
 

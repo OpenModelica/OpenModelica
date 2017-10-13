@@ -6499,6 +6499,23 @@ algorithm
 
 end mergeAlgorithmSections;
 
+public function moveElementToInitialSection "Converts DAE.Element from the equation section to the initial equation section"
+  input output DAE.Element elt;
+algorithm
+  elt := match elt
+    case DAE.EQUATION() then DAE.INITIALEQUATION(elt.exp, elt.scalar, elt.source);
+    case DAE.DEFINE() then DAE.INITIALDEFINE(elt.componentRef, elt.exp, elt.source);
+    case DAE.ARRAY_EQUATION() then DAE.INITIAL_ARRAY_EQUATION(elt.dimension, elt.exp, elt.array, elt.source);
+    case DAE.COMPLEX_EQUATION() then DAE.INITIAL_COMPLEX_EQUATION(elt.lhs, elt.rhs, elt.source);
+    case DAE.IF_EQUATION() then DAE.INITIAL_IF_EQUATION(elt.condition1, elt.equations2, elt.equations3, elt.source);
+    case DAE.ALGORITHM() then DAE.INITIALALGORITHM(elt.algorithm_, elt.source);
+    case DAE.ASSERT() then DAE.INITIAL_ASSERT(elt.condition, elt.message, elt.level, elt.source);
+    case DAE.TERMINATE() then DAE.INITIAL_TERMINATE(elt.message, elt.source);
+    case DAE.NORETCALL() then DAE.INITIAL_NORETCALL(elt.exp, elt.source);
+    else elt;
+  end match;
+end moveElementToInitialSection;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
 

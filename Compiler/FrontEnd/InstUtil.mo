@@ -7033,88 +7033,106 @@ This function modifies equations into bindings for parameters"
   input DAE.DAElist inVarsDae;
   input DAE.DAElist inEquationsDae "Note: functions from here are not considered";
   output DAE.DAElist outVarsDae;
+protected
+  list<DAE.Element> vars, vars1, equations, equations1;
+  DAE.Element v1;
+  Integer i;
+  list<Integer> is;
+  DAE.Exp e;
+  DAE.ComponentRef cr;
+  Absyn.Path path;
 algorithm
-  outVarsDae := matchcontinue(inVarsDae,inEquationsDae)
-  local
-    list<DAE.Element> vars, vars1, equations;
-    DAE.Element var;
-    DAE.Exp e;
-    DAE.ComponentRef componentRef;
-    DAE.VarKind kind;
-    DAE.VarDirection direction;
-    DAE.VarParallelism parallelism;
-    DAE.VarVisibility protection;
-    DAE.Type ty;
-    DAE.InstDims  dims;
-    DAE.ConnectorType ct;
-    Option<DAE.VariableAttributes> variableAttributesOption;
-    Option<SCode.Comment> absynCommentOption;
-    Absyn.InnerOuter innerOuter;
-    DAE.ElementSource source "the origin of the element";
-    case (DAE.DAE(vars),DAE.DAE({})) then DAE.DAE(vars);
-    case (DAE.DAE({}),_) then DAE.DAE({});
-    case (DAE.DAE(DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,NONE(),
-                          dims,ct,source,variableAttributesOption,
-                          absynCommentOption,innerOuter)::vars), DAE.DAE(equations))
-      equation
-        SOME(e)=findCorrespondingBinding(componentRef, equations);
-        DAE.DAE(vars1) = propagateBinding(DAE.DAE(vars),DAE.DAE(equations));
-      then
-        DAE.DAE(DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(e),dims,
-                ct,source,variableAttributesOption, absynCommentOption,innerOuter)::vars1);
-
-    case (DAE.DAE(var::vars), DAE.DAE(equations))
-      equation
-        DAE.DAE(vars1)=propagateBinding(DAE.DAE(vars),DAE.DAE(equations));
-      then
-        DAE.DAE(var::vars1);
-  end matchcontinue;
+  DAE.DAE(vars) := inVarsDae;
+  DAE.DAE(equations) := inEquationsDae;
+  if listEmpty(vars) or listEmpty(equations) then
+    outVarsDae := inVarsDae;
+    return;
+  end if;
+  vars1 := {};
+  is := {};
+  for v in vars loop
+    v1 := matchcontinue v
+      case v1 as DAE.VAR()
+        algorithm
+          (e,i) := findCorrespondingBinding(v1.componentRef, equations);
+          v1.binding := SOME(e);
+          is := i::is;
+        then v1;
+      else v;
+    end matchcontinue;
+    vars1 := v1::vars1;
+  end for;
+  vars1 := listReverse(vars1);
+  equations1 := List.deletePositions(equations, is);
+  equations1 := list(DAEUtil.moveElementToInitialSection(eq) for eq in equations);
+  i := 0;
+  for eq in equations1 loop
+    _ := match eq
+      case DAE.INITIALEQUATION(exp1=DAE.CREF(ty=DAE.T_COMPLEX()), exp2=DAE.CALL(path=path))
+        guard Absyn.pathLastIdent(path)=="constructor"
+        algorithm
+          // Don't duplicate constructor calls
+          is := i::is;
+        then ();
+      case DAE.INITIAL_COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr))
+        algorithm
+          vars1 := list(match v
+            case DAE.VAR(binding=SOME(_)) guard ComponentReference.crefPrefixOf(cr, v.componentRef)
+              algorithm
+                is := i::is;
+              then v;
+            // Moving parameter bindings into initial equation section means we need to force fixed=false...
+            case DAE.VAR(binding=NONE()) guard ComponentReference.crefPrefixOf(cr, v.componentRef)
+              algorithm
+                v.variableAttributesOption := DAEUtil.setFixedAttr(v.variableAttributesOption, SOME(DAE.BCONST(false)));
+                Error.addSourceMessage(Error.MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION, {ComponentReference.printComponentRefStr(v.componentRef)}, eq.source.info);
+              then v;
+            else v;
+            end match for v in vars1);
+        then ();
+      else /* algorithm print(anyString(eq)); */ then ();
+    end match;
+    i := i+1;
+  end for;
+  equations1 := List.deletePositions(equations1, is);
+  outVarsDae := DAE.DAE(listAppend(equations1, vars1));
 end propagateBinding;
 
 protected function findCorrespondingBinding "
 Helper function for propagateBinding"
   input DAE.ComponentRef inCref;
   input list<DAE.Element> inEquations;
-  output Option<DAE.Exp> outExp;
+  output DAE.Exp outExp;
+  input output Integer i=0;
 algorithm
-  outExp:=matchcontinue(inCref, inEquations)
+  outExp :=match (inCref, inEquations)
     local
       DAE.ComponentRef cref,cref2,cref3;
       DAE.Exp e;
       list<DAE.Element> equations;
 
-    case (_, {}) then NONE();
-
     case (cref, DAE.DEFINE(componentRef=cref2, exp=e)::_)
-      equation
-        true = ComponentReference.crefEqual(cref,cref2);
-      then
-        SOME(e);
+      guard ComponentReference.crefEqual(cref,cref2)
+      then e;
 
     case (cref, DAE.EQUATION(exp=DAE.CREF(cref2,_),scalar=e)::_)
-      equation
-        true = ComponentReference.crefEqual(cref,cref2);
-      then
-        SOME(e);
+      guard ComponentReference.crefEqual(cref,cref2)
+      then e;
 
     case (cref, DAE.EQUEQUATION(cr1=cref2,cr2=cref3)::_)
-      equation
-        true = ComponentReference.crefEqual(cref,cref2);
-        e = Expression.crefExp(cref3);
-      then
-        SOME(e);
+      guard ComponentReference.crefEqual(cref,cref2)
+      then Expression.crefExp(cref3);
 
     case (cref, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(cref2,_),rhs=e)::_)
-      equation
-        true = ComponentReference.crefEqual(cref,cref2);
-      then
-        SOME(e);
+      guard ComponentReference.crefEqual(cref,cref2)
+      then e;
 
     case (cref, _::equations)
-      then
-        findCorrespondingBinding(cref,equations);
+      algorithm
+        (outExp,i) := findCorrespondingBinding(cref,equations,i+1);
+      then outExp;
 
-  end matchcontinue;
+  end match;
 end findCorrespondingBinding;
 
 public function isPartial
