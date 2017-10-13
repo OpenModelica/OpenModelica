@@ -1,0 +1,27 @@
+// name:     SMGraphicalTestCases_DeepHierarchy
+// keywords: state machines
+// status: correct
+//
+
+loadFile("SMGraphicalTestCases.mo");
+echo(false);
+setCommandLineOptions({"+simCodeTarget=Cpp"}); getErrorString();
+simulate(SMGraphicalTestCases.DeepHierarchy, startTime=0, stopTime=30, numberOfIntervals = 0); getErrorString();
+echo(true);
+val(l1Composite.l2Composite.l3Final.active,4.0);
+val(l1Composite.l2Composite.l3Final.active,5.0);
+val(l1Composite.l2Composite.l3Final.active,6.0);
+val(l1Composite.l2Composite.l3Final.active,28.0);
+val(l1Composite.l2Composite.l3Final.active,29.0);
+val(l1Composite.l2Composite.l3Final.active,30.0);
+
+// Result:
+// true
+// true
+// 0.0
+// 1.0
+// 0.0
+// 0.0
+// 1.0
+// 0.0
+// endResult

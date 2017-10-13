@@ -838,5 +838,255 @@ Connector with one output signal of type Integer.
     end Prev;
   end Components;
 
+  model DeepHierarchy "SM Example with a slightly deeper hierarchy"
+    block L1Start
+      annotation (
+        Icon(graphics={Text(
+              extent={{-100,100},{100,-100}},
+              lineColor={0,0,0},
+              textString="%name")}),
+        Diagram(graphics={Text(
+              extent={{-100,100},{100,-100}},
+              lineColor={0,0,0},
+              textString="%stateText",
+              fontSize=10)}),
+        __Dymola_state=true,
+        showDiagram=true,
+        singleInstance=true);
+    end L1Start;
+    L1Start l1Start
+      annotation (Placement(transformation(extent={{-18,22},{18,58}})));
+    block L1Composite
+      Integer count(start=0);
+      block L2Start
+
+        annotation (
+          Icon(graphics={Text(
+                extent={{-100,100},{100,-100}},
+                lineColor={0,0,0},
+                textString="%name")}),
+          Diagram(graphics={Text(
+                extent={{-100,100},{100,-100}},
+                lineColor={0,0,0},
+                textString="%stateText",
+                fontSize=10)}),
+          __Dymola_state=true,
+          showDiagram=true,
+          singleInstance=true);
+      end L2Start;
+      L2Start l2Start
+        annotation (Placement(transformation(extent={{-58,2},{-22,38}})));
+      block L2Composite
+        block L3Start
+
+          annotation (
+            Icon(graphics={Text(
+                  extent={{-100,100},{100,-100}},
+                  lineColor={0,0,0},
+                  textString="%name")}),
+            Diagram(graphics={Text(
+                  extent={{-100,100},{100,-100}},
+                  lineColor={0,0,0},
+                  textString="%stateName",
+                  fontSize=10)}),
+            __Dymola_state=true,
+            showDiagram=true,
+            singleInstance=true);
+        end L3Start;
+        L3Start l3Start
+          annotation (Placement(transformation(extent={{-38,2},{38,78}})));
+        block L3Final
+
+          annotation (
+            Icon(graphics={Text(
+                  extent={{-100,100},{100,-100}},
+                  lineColor={0,0,0},
+                  textString="%name")}),
+            Diagram(graphics={Text(
+                  extent={{-100,100},{100,-100}},
+                  lineColor={0,0,0},
+                  textString="%stateText",
+                  fontSize=10)}),
+            __Dymola_state=true,
+            showDiagram=true,
+            singleInstance=true);
+        end L3Final;
+        L3Final l3Final
+          annotation (Placement(transformation(extent={{-38,-98},{38,-22}})));
+      equation
+        transition(
+            l3Start,
+            l3Final,
+            true,
+            immediate=false) annotation (Line(
+            points={{0,0},{0,-20}},
+            color={175,175,175},
+            thickness=0.25,
+            smooth=Smooth.Bezier), Text(
+            string="%condition",
+            extent={{-4,-4},{-4,-10}},
+            fontSize=10,
+            textStyle={TextStyle.Bold},
+            horizontalAlignment=TextAlignment.Right));
+        initialState(l3Start) annotation (Line(
+            points={{-40,40},{-72,40}},
+            color={175,175,175},
+            thickness=0.25,
+            smooth=Smooth.Bezier,
+            arrow={Arrow.Filled,Arrow.None}));
+        annotation (
+          Icon(graphics={Text(
+                extent={{-100,100},{100,-100}},
+                lineColor={0,0,0},
+                textString="%name")}),
+          Diagram(graphics={Text(
+                extent={{-100,100},{100,-100}},
+                lineColor={0,0,0},
+                textString="%stateText",
+                fontSize=10)}),
+          __Dymola_state=true,
+          showDiagram=true,
+          singleInstance=true);
+      end L2Composite;
+      L2Composite l2Composite
+        annotation (Placement(transformation(extent={{-78,-98},{-2,-22}})));
+      L2Final l2Final
+        annotation (Placement(transformation(extent={{60,2},{96,38}})));
+    equation
+      transition(
+        l2Start,
+        l2Composite,
+        true,
+        immediate=false,
+        reset=true,
+        synchronize=false,
+        priority=2) annotation (Line(
+          points={{-20,10},{92,-34},{0,-60}},
+          color={175,175,175},
+          thickness=0.25,
+          smooth=Smooth.Bezier), Text(
+          string="%condition",
+          extent={{40,0},{40,-6}},
+          fontSize=10,
+          textStyle={TextStyle.Bold},
+          horizontalAlignment=TextAlignment.Right));
+      transition(
+        l2Composite,
+        l2Start,
+        activeState(l2Composite.l3Final),
+        immediate=false,
+        reset=true,
+        synchronize=false,
+        priority=1) annotation (Line(
+          points={{-79,-21},{-59,1}},
+          color={175,175,175},
+          thickness=0.25,
+          smooth=Smooth.Bezier), Text(
+          string="%condition",
+          extent={{4,4},{4,10}},
+          fontSize=10,
+          textStyle={TextStyle.Bold},
+          horizontalAlignment=TextAlignment.Left));
+      initialState(l2Start) annotation (Line(
+          points={{-60,20},{-80,20}},
+          color={175,175,175},
+          thickness=0.25,
+          smooth=Smooth.Bezier,
+          arrow={Arrow.Filled,Arrow.None}));
+    public
+      block L2Final
+
+        annotation (
+          Icon(graphics={Text(
+                extent={{-100,100},{100,-100}},
+                lineColor={0,0,0},
+                textString="%name")}),
+          Diagram(graphics={Text(
+                extent={{-100,100},{100,-100}},
+                lineColor={0,0,0},
+                textString="%stateText",
+                fontSize=10)}),
+          __Dymola_state=true,
+          showDiagram=true,
+          singleInstance=true);
+      end L2Final;
+    equation
+      count = previous(count) + 1;
+      transition(
+        l2Start,
+        l2Final,count >= 2,
+        immediate=false,
+        priority=1,
+        reset=true,
+        synchronize=false) annotation (Line(
+          points={{-20,22},{58,22}},
+          color={175,175,175},
+          thickness=0.25,
+          smooth=Smooth.Bezier), Text(
+          string="%condition",
+          extent={{4,4},{4,10}},
+          fontSize=10,
+          textStyle={TextStyle.Bold},
+          horizontalAlignment=TextAlignment.Left));
+      annotation (
+        Icon(graphics={Text(
+              extent={{-100,100},{100,-100}},
+              lineColor={0,0,0},
+              textString="%name")}),
+        Diagram(graphics={Text(
+              extent={{-100,98},{100,-102}},
+              lineColor={0,0,0},
+              textString="%stateText",
+              fontSize=10)}),
+        __Dymola_state=true,
+        showDiagram=true,
+        singleInstance=true);
+    end L1Composite;
+    L1Composite l1Composite
+      annotation (Placement(transformation(extent={{-38,-78},{38,-2}})));
+  equation
+    initialState(l1Start) annotation (Line(
+        points={{-3.6,60},{-4,82}},
+        color={175,175,175},
+        thickness=0.25,
+        smooth=Smooth.Bezier,
+        arrow={Arrow.Filled,Arrow.None}));
+    transition(
+        l1Start,
+        l1Composite,
+        timeInState() > 1.9,
+        immediate=false,
+        reset=true,
+        synchronize=false,
+        priority=1) annotation (Line(
+        points={{20,40},{34,0}},
+        color={175,175,175},
+        thickness=0.25,
+        smooth=Smooth.Bezier), Text(
+        string="%condition",
+        extent={{36,-6},{36,-12}},
+        fontSize=10,
+        textStyle={TextStyle.Bold},
+        horizontalAlignment=TextAlignment.Right));
+    transition(
+        l1Composite,
+        l1Start,
+        activeState(l1Composite.l2Final),
+        immediate=false,
+        reset=true,
+        synchronize=false,
+        priority=1) annotation (Line(
+        points={{-39,-1},{-20,40}},
+        color={175,175,175},
+        thickness=0.25,
+        smooth=Smooth.Bezier), Text(
+        string="%condition",
+        extent={{4,4},{4,10}},
+        fontSize=10,
+        textStyle={TextStyle.Bold},
+        horizontalAlignment=TextAlignment.Left));
+    annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
+          coordinateSystem(preserveAspectRatio=false)));
+  end DeepHierarchy;
   annotation (uses(Modelica(version="3.2.2")));
 end SMGraphicalTestCases;
