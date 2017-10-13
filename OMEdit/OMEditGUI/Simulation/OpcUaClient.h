@@ -37,9 +37,6 @@ public:
   OpcUaWorker* getOpcUaWorker() {return mpOpcUaWorker;}
   QThread* getSampleThread() {return mpSampleThread;}
 private:
-  bool writeReal(int id, UA_Double value);
-  bool writeBool(int id, UA_Boolean value);
-
   UA_Client *mpClient;
   QThread *mpSampleThread;
   OpcUaWorker* mpOpcUaWorker;
@@ -79,12 +76,11 @@ private:
   OpcUaClient *mpParentClient;
   VariablesTreeItem *mpVariablesTreeItemRoot;
   QTime mClock;
-  double mInterval;
+  double mInterval, mSpeedValue;
   bool mIsRunning;
 
   void createSubscription();
   void monitorTime();
-  static bool writeStep(void *pClient, UA_Boolean value);
   static void timeChanged(UA_UInt32 handle, UA_DataValue *pValue, void *pClient);
   static void realChanged(UA_UInt32 handle, UA_DataValue *pValue, void *pClient);
   static void boolChanged(UA_UInt32 handle, UA_DataValue *pValue, void *pClient);

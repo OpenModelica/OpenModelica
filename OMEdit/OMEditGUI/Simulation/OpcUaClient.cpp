@@ -8,6 +8,62 @@
 #include <QDebug>
 
 /*!
+  Write the value value to the real node with id id.
+  */
+static bool writeReal(UA_Client *client, UA_NodeId id, UA_Double value)
+{
+  UA_WriteRequest wReq;
+  UA_WriteRequest_init(&wReq);
+  wReq.nodesToWrite = UA_WriteValue_new();
+  wReq.nodesToWriteSize = 1;
+  wReq.nodesToWrite[0].nodeId = id;
+  wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
+  wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
+  wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_DOUBLE];
+  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
+  wReq.nodesToWrite[0].value.value.data = &value;
+
+  UA_WriteResponse wResp = UA_Client_Service_write(client, wReq);
+  if (wResp.responseHeader.serviceResult != UA_STATUSCODE_GOOD) {
+    UA_WriteRequest_deleteMembers(&wReq);
+    UA_WriteResponse_deleteMembers(&wResp);
+    return false;
+  }
+  UA_WriteRequest_deleteMembers(&wReq);
+  UA_WriteResponse_deleteMembers(&wResp);
+
+  return true;
+}
+
+/*!
+  Write the value value to the bool node with id id.
+  */
+static bool writeBool(UA_Client *client, UA_NodeId id, UA_Boolean value)
+{
+  UA_WriteRequest wReq;
+  UA_WriteRequest_init(&wReq);
+  wReq.nodesToWrite = UA_WriteValue_new();
+  wReq.nodesToWriteSize = 1;
+  wReq.nodesToWrite[0].nodeId = id;
+  wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
+  wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
+  wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_BOOLEAN];
+  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
+  wReq.nodesToWrite[0].value.value.data = &value;
+
+  UA_WriteResponse wResp = UA_Client_Service_write(client, wReq);
+  if (wResp.responseHeader.serviceResult == UA_STATUSCODE_GOOD) {
+    UA_WriteRequest_deleteMembers(&wReq);
+    UA_WriteResponse_deleteMembers(&wResp);
+    return true;
+  }
+  UA_WriteRequest_deleteMembers(&wReq);
+  UA_WriteResponse_deleteMembers(&wResp);
+  return false;
+}
+
+
+/*!
   Contains OPC UA functionality to interact with an OPC UA server.
   */
 OpcUaClient::OpcUaClient(SimulationOptions simulationOptions)
@@ -36,7 +92,7 @@ bool OpcUaClient::connectToServer()
     Sleep::currentThread()->msleep(100);
     returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
   } while (returnValue != UA_STATUSCODE_GOOD);
-  std::cerr << "Connected to OPC-UA server " << endPoint << std::endl;
+  // qDebug() << "Connected to OPC-UA server " << endPoint;
   return true;
 }
 
@@ -47,7 +103,6 @@ bool OpcUaClient::connectToServer()
   */
 QStringList OpcUaClient::fetchVariableNamesFromServer()
 {
-  qDebug() << "fetchVariableNamesFromServer";
   UA_BrowseRequest browseRequest;
   UA_BrowseRequest_init(&browseRequest);
   browseRequest.requestedMaxReferencesPerNode = 0;
@@ -88,7 +143,6 @@ QStringList OpcUaClient::fetchVariableNamesFromServer()
   }
   UA_BrowseRequest_deleteMembers(&browseRequest);
   UA_BrowseResponse_deleteMembers(&browseResponse);
-  qDebug() << "fetchVariableNamesFromServer" << variablesList;
   return variablesList;
 }
 
@@ -208,34 +262,6 @@ double OpcUaClient::readReal(int id)
 }
 
 /*!
-  Write the value value to the real node with id id.
-  */
-bool OpcUaClient::writeReal(int id, UA_Double value)
-{
-  UA_WriteRequest wReq;
-  UA_WriteRequest_init(&wReq);
-  wReq.nodesToWrite = UA_WriteValue_new();
-  wReq.nodesToWriteSize = 1;
-  wReq.nodesToWrite[0].nodeId = UA_NODEID_NUMERIC(1, id);
-  wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
-  wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
-  wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_DOUBLE];
-  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
-  wReq.nodesToWrite[0].value.value.data = &value;
-
-  UA_WriteResponse wResp = UA_Client_Service_write(mpClient, wReq);
-  if (wResp.responseHeader.serviceResult != UA_STATUSCODE_GOOD) {
-    UA_WriteRequest_deleteMembers(&wReq);
-    UA_WriteResponse_deleteMembers(&wResp);
-    return false;
-  }
-  UA_WriteRequest_deleteMembers(&wReq);
-  UA_WriteResponse_deleteMembers(&wResp);
-
-  return true;
-}
-
-/*!
   Read the bool value of the provided id, return the result as an integer.
   -1 indicates an error.
   */
@@ -262,33 +288,6 @@ int OpcUaClient::readBool(int id)
 }
 
 /*!
-  Write the value value to the bool node with id id.
-  */
-bool OpcUaClient::writeBool(int id, UA_Boolean value)
-{
-  UA_WriteRequest wReq;
-  UA_WriteRequest_init(&wReq);
-  wReq.nodesToWrite = UA_WriteValue_new();
-  wReq.nodesToWriteSize = 1;
-  wReq.nodesToWrite[0].nodeId = UA_NODEID_NUMERIC(1, id);
-  wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
-  wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
-  wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_BOOLEAN];
-  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
-  wReq.nodesToWrite[0].value.value.data = &value;
-
-  UA_WriteResponse wResp = UA_Client_Service_write(mpClient, wReq);
-  if (wResp.responseHeader.serviceResult == UA_STATUSCODE_GOOD) {
-    UA_WriteRequest_deleteMembers(&wReq);
-    UA_WriteResponse_deleteMembers(&wResp);
-    return true;
-  }
-  UA_WriteRequest_deleteMembers(&wReq);
-  UA_WriteResponse_deleteMembers(&wResp);
-  return false;
-}
-
-/*!
   Called when a value is entered in the variable tree.
   Write the new value to the corresponding node.
   */
@@ -296,9 +295,9 @@ void OpcUaClient::writeValue(const QVariant &value, const QString &name)
 {
   int nodeId = mVariables.value(name)->getNodeId();
   if (variableIsReal(nodeId)) {
-    writeReal(nodeId, value.toDouble());
+    writeReal(mpClient, UA_NODEID_NUMERIC(1, nodeId), value.toDouble());
   } else if (variableIsBool(nodeId)) {
-    writeBool(nodeId, value.toBool());
+    writeBool(mpClient, UA_NODEID_NUMERIC(1, nodeId), value.toBool());
   }
 }
 
@@ -317,7 +316,7 @@ double OpcUaClient::getCurrentSimulationTime()
   It can be done by using subscriptions or contacting the remote directly each time step (simulate with steps).
   */
 OpcUaWorker::OpcUaWorker(OpcUaClient *pClient, bool simulateWithSteps)
- : mpParentClient(pClient), mSimulateWithSteps(simulateWithSteps), mSampleInterval(100)
+ : mpParentClient(pClient), mSimulateWithSteps(simulateWithSteps), mSampleInterval(100), mSpeedValue(1.0)
 {
   setInterval(mSampleInterval);
   if (!mSimulateWithSteps) {
@@ -339,6 +338,11 @@ void OpcUaWorker::startInteractiveSimulation()
   mClock.start();
   mIsRunning = true;
 
+  if (!mSimulateWithSteps) {
+    writeReal(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10002), mSpeedValue);
+    writeBool(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10001), true);
+  }
+
   while(mIsRunning) {
     const double elapsed = mClock.elapsed();
     sample();
@@ -357,6 +361,9 @@ void OpcUaWorker::startInteractiveSimulation()
 void OpcUaWorker::pauseInteractiveSimulation()
 {
   mIsRunning = false;
+  if (!mSimulateWithSteps) {
+    writeBool(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10001), false);
+  }
 }
 
 /*!
@@ -391,7 +398,13 @@ void OpcUaWorker::setSpeed(QString value)
   bool isFloat = true;
   double speedValue = value.toFloat(&isFloat);
   if (isFloat && speedValue > 0.0) {
+    mSpeedValue = speedValue;
     setInterval(mSampleInterval / speedValue);
+  } else if (isFloat && speedValue == 0.0) {
+    mSpeedValue = 0.0;
+  }
+  if (isFloat) {
+    writeReal(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10002), mSpeedValue);
   }
 }
 
@@ -452,7 +465,6 @@ void OpcUaWorker::createSubscription()
   UA_SubscriptionSettings subscriptionSettings = UA_SubscriptionSettings_standard;
   subscriptionSettings.requestedPublishingInterval = 1;
   UA_Client_Subscriptions_new(mpParentClient->getClient(), subscriptionSettings, &mSubscriptionId);
-  qDebug() << "createSubscription";
   monitorTime();
 }
 
@@ -488,7 +500,7 @@ void OpcUaWorker::timeChanged(UA_UInt32 handle, UA_DataValue *pValue, void *pCli
     // catch the time value
     mCurrentTime.setLocalData(*(UA_Double*)pValue->value.data);
   }
-  writeStep(pClient, UA_TRUE);
+  writeBool((UA_Client*) pClient, UA_NODEID_NUMERIC(0, 10000), UA_TRUE);
 }
 
 /*!
@@ -563,33 +575,6 @@ void OpcUaWorker::removeMonitoredItem(const QString& variableName)
   Variable *pVariable = mpParentClient->getVariables()->value(variableName);
   UA_Client_Subscriptions_removeMonitoredItem(mpParentClient->getClient(), mSubscriptionId, pVariable->getMonitoredItemId());
   mMonitorIds.localData().remove(pVariable->getMonitoredItemId());
-}
-
-/*!
-  Writes true to the step variable with help of the raw OPC UA services.
-  */
-bool OpcUaWorker::writeStep(void *pClient, UA_Boolean value)
-{
-  UA_WriteRequest wReq;
-  UA_WriteRequest_init(&wReq);
-  wReq.nodesToWrite = UA_WriteValue_new();
-  wReq.nodesToWriteSize = 1;
-  wReq.nodesToWrite[0].nodeId = UA_NODEID_NUMERIC(0, 10000);
-  wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
-  wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
-  wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_BOOLEAN];
-  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
-  wReq.nodesToWrite[0].value.value.data = &value;
-
-  UA_WriteResponse wResp = UA_Client_Service_write((UA_Client *)pClient, wReq);
-  if (wResp.responseHeader.serviceResult == UA_STATUSCODE_GOOD) {
-    UA_WriteRequest_deleteMembers(&wReq);
-    UA_WriteResponse_deleteMembers(&wResp);
-    return true;
-  }
-  UA_WriteRequest_deleteMembers(&wReq);
-  UA_WriteResponse_deleteMembers(&wResp);
-  return false;
 }
 
 /*!
