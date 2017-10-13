@@ -1263,7 +1263,7 @@ algorithm
       Option<Absyn.Exp> optExp1,optExp2;
       String iter;
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch1,elseifbranch2,whenlst;
-      list<SCode.Statement> truebranch1,truebranch2,elsebranch1,elsebranch2,forbody1,forbody2,whilebody1,whilebody2;
+      list<SCode.Statement> truebranch1,truebranch2,elsebranch1,elsebranch2,body1,body2;
       SCode.Comment comment;
       SourceInfo info;
       SCode.Statement stmt;
@@ -1283,23 +1283,23 @@ algorithm
         elsebranch2 = fixList(cache,inEnv,elsebranch1,tree,fixStatement);
       then if referenceEq(exp1,exp2) and referenceEq(truebranch1,truebranch2) and referenceEq(elseifbranch1,elseifbranch2) and referenceEq(elsebranch1,elsebranch2) then inStmt else SCode.ALG_IF(exp2,truebranch2,elseifbranch2,elsebranch2,comment,info);
 
-    case SCode.ALG_FOR(iter,optExp1,forbody1,comment,info)
+    case SCode.ALG_FOR(iter,optExp1,body1,comment,info)
       equation
         optExp2 = fixOption(cache,inEnv,optExp1,tree,fixExp);
-        forbody2 = fixList(cache,inEnv,forbody1,tree,fixStatement);
-      then if referenceEq(optExp1,optExp2) and referenceEq(forbody1,forbody2) then inStmt else SCode.ALG_FOR(iter,optExp2,forbody2,comment,info);
+        body2 = fixList(cache,inEnv,body1,tree,fixStatement);
+      then if referenceEq(optExp1,optExp2) and referenceEq(body1,body2) then inStmt else SCode.ALG_FOR(iter,optExp2,body2,comment,info);
 
-    case SCode.ALG_PARFOR(iter,optExp1,forbody1,comment,info)
+    case SCode.ALG_PARFOR(iter,optExp1,body1,comment,info)
       equation
         optExp2 = fixOption(cache,inEnv,optExp1,tree,fixExp);
-        forbody2 = fixList(cache,inEnv,forbody1,tree,fixStatement);
-      then if referenceEq(optExp1,optExp2) and referenceEq(forbody1,forbody2) then inStmt else SCode.ALG_PARFOR(iter,optExp2,forbody2,comment,info);
+        body2 = fixList(cache,inEnv,body1,tree,fixStatement);
+      then if referenceEq(optExp1,optExp2) and referenceEq(body1,body2) then inStmt else SCode.ALG_PARFOR(iter,optExp2,body2,comment,info);
 
-    case SCode.ALG_WHILE(exp1,whilebody1,comment,info)
+    case SCode.ALG_WHILE(exp1,body1,comment,info)
       equation
         exp2 = fixExp(cache,inEnv,exp1,tree);
-        whilebody2 = fixList(cache,inEnv,whilebody1,tree,fixStatement);
-      then if referenceEq(exp1,exp2) and referenceEq(whilebody1,whilebody2) then inStmt else SCode.ALG_WHILE(exp2,whilebody2,comment,info);
+        body2 = fixList(cache,inEnv,body1,tree,fixStatement);
+      then if referenceEq(exp1,exp2) and referenceEq(body1,body2) then inStmt else SCode.ALG_WHILE(exp2,body2,comment,info);
 
     case SCode.ALG_WHEN_A(whenlst,comment,info)
       equation
@@ -1330,8 +1330,23 @@ algorithm
       then if referenceEq(exp1,exp2) then inStmt else SCode.ALG_NORETCALL(exp2,comment,info);
 
     case SCode.ALG_RETURN() then inStmt;
-
     case SCode.ALG_BREAK() then inStmt;
+
+    case SCode.ALG_FAILURE(body1, comment, info)
+      algorithm
+        body2 := fixList(cache, inEnv, body1, tree, fixStatement);
+      then
+        if referenceEq(body1, body2) then inStmt else SCode.ALG_FAILURE(body2, comment, info);
+
+    case SCode.ALG_TRY(truebranch1, elsebranch1, comment, info)
+      algorithm
+        truebranch2 := fixList(cache, inEnv, truebranch1, tree, fixStatement);
+        elsebranch2 := fixList(cache, inEnv, elsebranch1, tree, fixStatement);
+      then
+        if referenceEq(truebranch1, truebranch2) and referenceEq(elsebranch1, elsebranch2) then
+          inStmt else SCode.ALG_TRY(truebranch2, elsebranch2, comment, info);
+
+    case SCode.ALG_CONTINUE() then inStmt;
 
     else
       equation
