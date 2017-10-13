@@ -5,7 +5,7 @@
 
 loadFile("DeadEnd.mo");
 echo(false);
-setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+//setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
 simulate(DeadEnd, startTime=0, stopTime=2, numberOfIntervals=0); getErrorString();
 echo(true);
 val(state1.active,2);
