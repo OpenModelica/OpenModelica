@@ -1596,18 +1596,21 @@ algorithm
   end for;
 
   // Boolean nextResetStates[nStates] = if active then {if selectedState == i then false else activeResetStates[i] for i in 1:nStates} else previous(nextResetStates);
+  // 2017-10-10 BTH NOTE: Replaced "selectedState" from MLS v3.3r1 by "activeState"!!!
   for i in 1:nStates loop
     exp := DAE.CREF(arrayGet(nextResetStatesRefs,i), DAE.T_BOOL_DEFAULT);
     expCond := DAE.CREF(activeRef, DAE.T_BOOL_DEFAULT);
+    /*===== MLS v3.3r1 specification semantics (probably wrong!): ===== */
     // selectedState == i:
-    exp1 := DAE.RELATION(DAE.CREF(selectedStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
-    /*===== specification semantics (probably wrong!): ===== */
+    //exp1 := DAE.RELATION(DAE.CREF(selectedStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
     // if (selectedState == i) then false else activeResetStates[i]
+    //expThen := DAE.IFEXP(exp1, DAE.BCONST(false), DAE.CREF(arrayGet(activeResetStatesRefs,i), DAE.T_BOOL_DEFAULT));
+    /*===== FIXED semantics: ===== */
+    // activeState == i:
+    exp1 := DAE.RELATION(DAE.CREF(activeStateRef, DAE.T_INTEGER_DEFAULT), DAE.EQUAL(DAE.T_INTEGER_DEFAULT), DAE.ICONST(i),-1, NONE());
+    // if (activeState == i) then false else activeResetStates[i]
     expThen := DAE.IFEXP(exp1, DAE.BCONST(false), DAE.CREF(arrayGet(activeResetStatesRefs,i), DAE.T_BOOL_DEFAULT));
-    /*===== ??FIXED?? semantics: ===== */
-    // if (selectedState == i) then false else activeReset
-    //expThen := DAE.IFEXP(exp1, DAE.BCONST(false), DAE.CREF(activeResetRef, DAE.T_BOOL_DEFAULT));
-
+    /*========== */
     // previous(nextResetStates[i])
     expElse := DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(arrayGet(nextResetStatesRefs,i), DAE.T_BOOL_DEFAULT)}, DAE.callAttrBuiltinImpureBool);
     // if active then (if selectedState == i then false else activeResetStates[i]) else previous(nextResetStates[i])
