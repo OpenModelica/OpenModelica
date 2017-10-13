@@ -100,44 +100,78 @@ end translateModel;
   match simCode
     case simCode as SIMCODE(__) then
      // external objects
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_exo(simCode), '<%modelNamePrefix%>_01exo.c')
      // non-linear systems
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_nls(simCode), '<%modelNamePrefix%>_02nls.c')
      // linear systems
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_lsy(simCode), '<%modelNamePrefix%>_03lsy.c')
      // state set
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_set(simCode), '<%modelNamePrefix%>_04set.c')
      // events: sample, zero crossings, relations
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_evt(simCode), '<%modelNamePrefix%>_05evt.c')
      // initialization
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_inz(simCode), '<%modelNamePrefix%>_06inz.c')
      // delay
      let()= textFileConvertLines(simulationFile_dly(simCode), '<%modelNamePrefix%>_07dly.c')
      // update bound start values, update bound parameters
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_bnd(simCode), '<%modelNamePrefix%>_08bnd.c')
      // algebraic
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_alg(simCode), '<%modelNamePrefix%>_09alg.c')
      // asserts
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_asr(simCode), '<%modelNamePrefix%>_10asr.c')
      // mixed systems
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let &mixheader = buffer ""
      let()= textFileConvertLines(simulationFile_mix(simCode,&mixheader), '<%modelNamePrefix%>_11mix.c')
      let()= textFile(&mixheader, '<%modelNamePrefix%>_11mix.h')
      // jacobians
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_jac(simCode), '<%modelNamePrefix%>_12jac.c')
      let()= textFile(simulationFile_jac_header(simCode), '<%modelNamePrefix%>_12jac.h')
      // optimization
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_opt(simCode), '<%modelNamePrefix%>_13opt.c')
      let()= textFile(simulationFile_opt_header(simCode), '<%modelNamePrefix%>_13opt.h')
      // linearization
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_lnz(simCode), '<%modelNamePrefix%>_14lnz.c')
      // synchronous
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_syn(simCode), '<%modelNamePrefix%>_15syn.c')
      // residuals
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_dae(simCode), '<%modelNamePrefix%>_16dae.c')
      // inline solver
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile_inl(simCode), '<%modelNamePrefix%>_17inl.c')
      // main file
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile(simCode,guid,true), '<%modelNamePrefix%>.c')
      ""
   end match
