@@ -179,16 +179,21 @@ algorithm
   outStack := eqn::outStack;
 
   // Consider successors of eqn
-  for eqn2 in Matching.reachableEquations(eqn, mT, ass2) loop
-    if number[eqn2] == -1 then
-      // Successor eqn2 has not yet been visited; recurse on it
-      (outStack, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
-    elseif onStack[eqn2] then
-      // Successor eqn2 is in the stack and hence in the current SCC
-      arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
-    end if;
-  end for;
+  var := ass2[eqn] "get the variable that is solved in given equation";
+  if var > 0 then
+    for eqn2 in mT[var] loop
+      if eqn2 > 0 and eqn2 <> eqn then
+        if number[eqn2] == -1 then
+          // Successor eqn2 has not yet been visited; recurse on it
+          (outStack, outIndex, outComponents) := StrongConnectTransposed(mT, ass2, eqn2, outStack, outIndex, number, lowlink, onStack, outComponents);
+          arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], lowlink[eqn2]));
+        elseif onStack[eqn2] then
+          // Successor eqn2 is in the stack and hence in the current SCC
+          arrayUpdate(lowlink, eqn, intMin(lowlink[eqn], number[eqn2]));
+        end if;
+      end if;
+    end for;
+  end if;
 
   // If eqn is a root node, pop the stack and generate an SCC
   if lowlink[eqn] == number[eqn] then
