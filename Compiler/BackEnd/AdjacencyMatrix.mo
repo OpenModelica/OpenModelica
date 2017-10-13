@@ -38,6 +38,7 @@ import Array;
 import Debug;
 import Flags;
 import List;
+import MetaModelica.Dangerous;
 
 public function copyAdjacencyMatrix
   input Option<BackendDAE.AdjacencyMatrix> inAdjacencyMatrix;
@@ -267,10 +268,19 @@ public function absAdjacencyMatrix "author: PA
   output BackendDAE.AdjacencyMatrix res;
 protected
   list<list<Integer>> lst, lst_1;
+  Integer i = 1;
+  Integer minn;
 algorithm
-  lst := arrayList(m);
-  lst_1 := List.mapList(lst, intAbs);
-  res := listArray(lst_1);
+  res := Dangerous.arrayCreateNoInit(arrayLength(m),{});
+  for v in m loop
+    minn := List.fold(v,intMin,0);
+    if minn < 0 then
+      Dangerous.arrayUpdateNoBoundsChecking(res, i, List.map(v,intAbs));
+    else
+      Dangerous.arrayUpdateNoBoundsChecking(res, i, v);
+    end if;
+    i := i+1;
+  end for;
 end absAdjacencyMatrix;
 
 annotation(__OpenModelica_Interface="backend");
