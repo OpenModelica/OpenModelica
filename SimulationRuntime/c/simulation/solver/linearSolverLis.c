@@ -197,7 +197,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_LIS* solverData = (DATA_LIS*)systemData->solverData;
+  DATA_LIS* solverData = (DATA_LIS*)systemData->solverData[0];
   int i, ret, success = 1, ni, iflag = 1, n = systemData->size, eqSystemNumber = systemData->equationIndex;
   char *lis_returncode[] = {"LIS_SUCCESS", "LIS_ILL_OPTION", "LIS_BREAKDOWN", "LIS_OUT_OF_MEMORY", "LIS_MAXITER", "LIS_NOT_IMPLEMENTED", "LIS_ERR_FILE_IO"};
   LIS_INT err;

@@ -193,7 +193,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData;
+  DATA_UMFPACK* solverData = (DATA_UMFPACK*)systemData->solverData[0];
 
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
@@ -354,7 +354,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
 int solveSingularSystem(LINEAR_SYSTEM_DATA* systemData)
 {
 
-  DATA_UMFPACK* solverData = (DATA_UMFPACK*) systemData->solverData;
+  DATA_UMFPACK* solverData = (DATA_UMFPACK*) systemData->solverData[0];
   double *Ux, *Rs, r_ii, *b, sum, *y, *z;
   int *Up, *Ui, *Q, do_recip, rank = 0, current_rank, current_unz, i, j, k, l,
       success = 0, status, stop = 0;

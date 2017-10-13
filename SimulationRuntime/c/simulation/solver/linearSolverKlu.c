@@ -178,7 +178,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_KLU* solverData = (DATA_KLU*)systemData->solverData;
+  DATA_KLU* solverData = (DATA_KLU*)systemData->solverData[0];
 
   int i, j, status = 0, success = 0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   double tmpJacEvalTime;

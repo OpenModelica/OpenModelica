@@ -281,7 +281,7 @@ int allocateTotalPivotData(int size, void** voiddata)
   data->indRow =(int*) calloc(size,sizeof(int));
   data->indCol =(int*) calloc(size+1,sizeof(int));
 
-  *voiddata = (void*)data;
+  voiddata[1] = (void*)data;
   return 0;
 }
 
@@ -291,7 +291,7 @@ int allocateTotalPivotData(int size, void** voiddata)
  */
 int freeTotalPivotData(void** voiddata)
 {
-  DATA_TOTALPIVOT* data = (DATA_TOTALPIVOT*) *voiddata;
+  DATA_TOTALPIVOT* data = (DATA_TOTALPIVOT*) voiddata[1];
 
   /* memory for linear system */
   free(data->Ab);
@@ -301,6 +301,9 @@ int freeTotalPivotData(void** voiddata)
    /* used for pivot strategy */
   free(data->indRow);
   free(data->indCol);
+
+  free(voiddata[1]);
+  voiddata[1] = 0;
 
   return 0;
 }
@@ -383,7 +386,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
   void *dataAndThreadData[2] = {data, threadData};
   int i, j;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*)systemData->solverData;
+  DATA_TOTALPIVOT* solverData = (DATA_TOTALPIVOT*) systemData->solverData[1];
   int n = systemData->size, status;
   double fdeps = 1e-8;
   double xTol = 1e-8;

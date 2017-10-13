@@ -54,9 +54,9 @@ extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
  */
 int allocateLapackData(int size, void** voiddata)
 {
-  DATA_LAPACK* data = (DATA_LAPACK*) malloc(sizeof(DATA_LAPACK));
+  DATA_LAPACK* data = (DATA_LAPACK*) calloc(1, sizeof(DATA_LAPACK));
 
-  data->ipiv = (int*) malloc(size*sizeof(int));
+  data->ipiv = (int*) calloc(size, sizeof(int));
   assertStreamPrint(NULL, 0 != data->ipiv, "Could not allocate data for linear solver lapack.");
   data->nrhs = 1;
   data->info = 0;
@@ -83,6 +83,9 @@ int freeLapackData(void **voiddata)
   _omc_destroyVector(data->x);
   _omc_destroyVector(data->b);
   _omc_destroyMatrix(data->A);
+
+  free(data);
+  voiddata[0] = 0;
 
   return 0;
 }
@@ -160,7 +163,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
   void *dataAndThreadData[2] = {data, threadData};
   int i, iflag = 1;
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
-  DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData;
+  DATA_LAPACK* solverData = (DATA_LAPACK*)systemData->solverData[0];
 
   int success = 1;
 
