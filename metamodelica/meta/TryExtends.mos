@@ -1,0 +1,33 @@
+// name: TryExtends
+// status: correct
+//
+// Checks that the compiler handles try in inherited functions correctly.
+//
+
+setCommandLineOptions("-g=MetaModelica");
+loadString("
+  package P1
+    function f
+    algorithm
+      try
+      else
+      end try;
+    end f;
+  end P1;
+
+  package P2
+    extends P1;
+  end P2;
+"); getErrorString();
+
+instantiateModel(P2.f); getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// "class P2.f
+// end P2.f;
+// "
+// ""
+// endResult

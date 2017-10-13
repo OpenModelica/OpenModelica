@@ -112,6 +112,7 @@ Ticket2974.mos \
 Ticket3005.mos \
 ThreadedReduction.mos \
 Try.mos \
+TryExtends.mos \
 TupleInteractive.mos \
 UnboundLocal.mo \
 UnboxCond.mo \
