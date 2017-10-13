@@ -4,6 +4,9 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "Plotting/VariablesWidget.h"
 
+#include <QThread>
+#include <QDebug>
+
 /*!
   Contains OPC UA functionality to interact with an OPC UA server.
   */
@@ -28,12 +31,12 @@ bool OpcUaClient::connectToServer()
 {
   std::string endPoint = "opc.tcp://localhost:" + std::to_string(mSimulationOptions.getInteractiveSimulationPortNumber());
   mpClient = UA_Client_new(UA_ClientConfig_standard, Logger_Stdout);
-  UA_StatusCode returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
-
-  if (returnValue != UA_STATUSCODE_GOOD) {
-    UA_Client_delete(mpClient);
-    return false;
-  }
+  UA_StatusCode returnValue;
+  do {
+    Sleep::currentThread()->msleep(100);
+    returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
+  } while (returnValue != UA_STATUSCODE_GOOD);
+  std::cerr << "Connected to OPC-UA server " << endPoint << std::endl;
   return true;
 }
 
@@ -44,6 +47,7 @@ bool OpcUaClient::connectToServer()
   */
 QStringList OpcUaClient::fetchVariableNamesFromServer()
 {
+  qDebug() << "fetchVariableNamesFromServer";
   UA_BrowseRequest browseRequest;
   UA_BrowseRequest_init(&browseRequest);
   browseRequest.requestedMaxReferencesPerNode = 0;
@@ -84,6 +88,7 @@ QStringList OpcUaClient::fetchVariableNamesFromServer()
   }
   UA_BrowseRequest_deleteMembers(&browseRequest);
   UA_BrowseResponse_deleteMembers(&browseResponse);
+  qDebug() << "fetchVariableNamesFromServer" << variablesList;
   return variablesList;
 }
 
@@ -447,6 +452,7 @@ void OpcUaWorker::createSubscription()
   UA_SubscriptionSettings subscriptionSettings = UA_SubscriptionSettings_standard;
   subscriptionSettings.requestedPublishingInterval = 1;
   UA_Client_Subscriptions_new(mpParentClient->getClient(), subscriptionSettings, &mSubscriptionId);
+  qDebug() << "createSubscription";
   monitorTime();
 }
 
@@ -458,8 +464,10 @@ void OpcUaWorker::monitorTime()
 {
   UA_UInt32 monitorId = 1;
   UA_NodeId time = UA_NODEID_NUMERIC(0, 10004);
-  UA_Client_Subscriptions_addMonitoredItem(mpParentClient->getClient(), mSubscriptionId, time, UA_ATTRIBUTEID_VALUE,
-                                           &timeChanged, mpParentClient->getClient(), &monitorId);
+  if (UA_STATUSCODE_GOOD != UA_Client_Subscriptions_addMonitoredItem(mpParentClient->getClient(), mSubscriptionId, time, UA_ATTRIBUTEID_VALUE,
+                                           &timeChanged, mpParentClient->getClient(), &monitorId)) {
+    qDebug() << "Monitor time failed";
+  }
 }
 
 /*!
