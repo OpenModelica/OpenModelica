@@ -1,9 +1,9 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+ATotal.mos \
 InOutRecord.mos \
-ATotal.mos
-
+TestComplexSum1.mos
 
 
 # test that currently fail. Move up when fixed. 
