@@ -87,10 +87,10 @@ val(s, 1);
 // [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:682:3-682:217:writable] Warning: Parameter lever_arm_simple_2D1_ausleger1_actuatedPrismatic1_box_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="box") as default value.
 // [openmodelica/fmi/ModelExchange/1.0/JuliansBib_Connector_Hebelarm_einfach_me_FMU.mo:681:3-681:215:writable] Warning: Parameter lever_arm_simple_2D1_actuatedRevolute_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start="cylinder") as default value.
 // "
-// 29.87032083226751
-// -2.843354040232016
-// 2987.032083226751
-// -1.180467185044787
+// 127.2093118472222
+// -1.473680740896133
+// 12720.93118472221
+// -2.525875342395301
 // 0.0
-// 2.726903938446205
+// -0.5326886633768133
 // endResult
