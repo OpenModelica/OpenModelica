@@ -935,10 +935,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* set default solvers for algebraic loops */
 #if !defined(OMC_MINIMAL_RUNTIME)
-  data->simulationInfo->nlsMethod = NLS_HYBRID;
+  data->simulationInfo->nlsMethod = NLS_MIXED;
 #else
   data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
 #endif
+  data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
   data->simulationInfo->lsMethod = LS_LAPACK;
   data->simulationInfo->lssMethod = LS_UMFPACK;
   data->simulationInfo->mixedMethod = MIXED_SEARCH;

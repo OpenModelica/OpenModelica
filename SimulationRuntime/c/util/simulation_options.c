@@ -653,6 +653,8 @@ const char *LS_NAME[LS_MAX] = {
   /* LS_LAPACK */       "lapack",
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
+#else
+  /* LS_LIS */          "lis-not-available",
 #endif
   /* LS_KLU */          "klu",
   /* LS_UMFPACK */      "umfpack",
@@ -666,6 +668,8 @@ const char *LS_DESC[LS_MAX] = {
   /* LS_LAPACK */       "method using lapack LU factorization",
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
+#else
+  /* LS_LIS */          "iterative solver Lis is not available",
 #endif
   /* LS_KLU */          "method using klu sparse linear solver",
   /* LS_UMFPACK */      "method using umfpack sparse linear solver",
@@ -678,6 +682,8 @@ const char *LSS_NAME[LS_MAX] = {
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
+#else
+  /* LS_LIS */          "lis-not-available",
 #endif
   /* LS_KLU */          "klu",
   /* LS_UMFPACK */      "umfpack"
@@ -688,6 +694,8 @@ const char *LSS_DESC[LS_MAX] = {
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
+#else
+  /* LS_LIS */          "iterative solver Lis not available",
 #endif
   /* LS_KLU */          "method using klu sparse linear solver",
   /* LS_UMFPACK */      "method using umfpack sparse linear solver"
@@ -700,11 +708,14 @@ const char *NLS_NAME[NLS_MAX+1] = {
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_NEWTON */       "newton",
+  /* NLS_MIXED */        "mixed",
+#else
+  /* NLS_HYBRID */       "hybrid-not-available",
+  /* NLS_KINSOL */       "kinsol-not-available",
+  /* NLS_NEWTON */       "newton-not-available",
+  /* NLS_MIXED */        "mixed-not-available",
 #endif
   /* NLS_HOMOTOPY */     "homotopy",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_MIXED */        "mixed",
-#endif
   "NLS_MAX"
 };
 
@@ -715,11 +726,14 @@ const char *NLS_DESC[NLS_MAX+1] = {
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
   /* NLS_KINSOL */       "sundials/kinsol - prototype implementation",
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
+  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
+#else
+  /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver. Not available in minimal runtime.",
+  /* NLS_KINSOL */       "sundials/kinsol - prototype implementation. Not available in minimal runtime.",
+  /* NLS_NEWTON */       "Newton Raphson - prototype implementation. Not available in minimal runtime.",
+  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver. Not available in minimal runtime.",
 #endif
   /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried.",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
-#endif
   "NLS_MAX"
 };
 
