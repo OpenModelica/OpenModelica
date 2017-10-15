@@ -118,11 +118,11 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = SIMVARS(s
   let numberOfEventIndicators = getNumberOfEventIndicators(simCode)
   <<
   fmiVersion="<%fmiVersion%>"
-  modelName="<%modelName%>"
+  modelName="<%Util.escapeModelicaStringToXmlString(modelName)%>"
   guid="{<%guid%>}"
-  description="<%description%>"
-  generationTool="<%generationTool%>"
-  generationDateAndTime="<%generationDateAndTime%>"
+  description="<%Util.escapeModelicaStringToXmlString(description)%>"
+  generationTool="<%Util.escapeModelicaStringToXmlString(generationTool)%>"
+  generationDateAndTime="<%Util.escapeModelicaStringToXmlString(generationDateAndTime)%>"
   variableNamingConvention="<%variableNamingConvention%>"
   numberOfEventIndicators="<%numberOfEventIndicators%>"
   >>
@@ -136,7 +136,7 @@ case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
   <<
   <CoSimulation
-    modelIdentifier="<%modelIdentifier%>"
+    modelIdentifier="<%Util.escapeModelicaStringToXmlString(modelIdentifier)%>"
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canInterpolateInputs="false"
