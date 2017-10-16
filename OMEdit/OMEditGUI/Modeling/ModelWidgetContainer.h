@@ -238,7 +238,7 @@ public:
   void createBitmapShape(QPointF point);
   QRectF itemsBoundingRect();
   QPointF snapPointToGrid(QPointF point);
-  QPointF movePointByGrid(QPointF point);
+  QPointF movePointByGrid(QPointF point, QPointF origin = QPointF(0, 0), bool useShiftModifier = false);
   QPointF roundPoint(QPointF point);
   bool hasAnnotation();
   void addItem(QGraphicsItem *pGraphicsItem);

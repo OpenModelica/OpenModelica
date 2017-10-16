@@ -1039,10 +1039,28 @@ QPointF GraphicsView::snapPointToGrid(QPointF point)
   return point;
 }
 
-QPointF GraphicsView::movePointByGrid(QPointF point)
+QPointF GraphicsView::movePointByGrid(QPointF point, QPointF origin, bool useShiftModifier)
 {
-  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep() * (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ? 5 : 1);
-  qreal stepY = mCoOrdinateSystem.getVerticalGridStep() * (QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier) ? 5 : 1);
+  qreal stepX = mCoOrdinateSystem.getHorizontalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
+  qreal stepY = mCoOrdinateSystem.getVerticalGridStep() * ((useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) ? 5 : 1);
+  if (useShiftModifier && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
+    int modX = (int)fabs(origin.x()) % (int)stepX;
+    int modY = (int)fabs(origin.y()) % (int)stepY;
+    if (modX != 0) {
+      if ((point.x() < 0 && origin.x() > 0) || (point.x() > 0 && origin.x() < 0)) {
+        stepX = modX;
+      } else if ((point.x() > 0 && origin.x() > 0) || (point.x() < 0 && origin.x() < 0)) {
+        stepX = stepX - modX;
+      }
+    }
+    if (modY != 0) {
+      if ((point.y() < 0 && origin.y() > 0) || (point.y() > 0 && origin.y() < 0)) {
+        stepY = modY;
+      } else if ((point.y() > 0 && origin.y() > 0) || (point.y() < 0 && origin.y() < 0)) {
+        stepY = stepY - modY;
+      }
+    }
+  }
   point.setX(qRound(point.x() / stepX) * stepX);
   point.setY(qRound(point.y() / stepY) * stepY);
   return point;

@@ -2712,7 +2712,7 @@ QVariant Component::itemChange(GraphicsItemChange change, const QVariant &value)
   }
   else if (change == QGraphicsItem::ItemPositionChange) {
     // move by grid distance while dragging component
-    QPointF positionDifference = mpGraphicsView->movePointByGrid(value.toPointF() - pos());
+    QPointF positionDifference = mpGraphicsView->movePointByGrid(value.toPointF() - pos(), mTransformation.getOrigin() + pos(), true);
     return pos() + positionDifference;
   }
   return value;
