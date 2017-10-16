@@ -120,36 +120,47 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     {
       switch(data->simulationInfo->lssMethod)
       {
-    #if !defined(OMC_MINIMAL_RUNTIME)
-      case LSS_LIS:
-        linsys[i].setAElement = setAElementLis;
-        linsys[i].setBElement = setBElementLis;
-        allocateLisData(size, size, nnz, linsys[i].solverData);
-        break;
-    #endif
     #ifdef WITH_UMFPACK
       case LSS_UMFPACK:
         linsys[i].setAElement = setAElementUmfpack;
         linsys[i].setBElement = setBElement;
         allocateUmfPackData(size, size, nnz, linsys[i].solverData);
         break;
+      case LSS_DEFAULT:
       case LSS_KLU:
         linsys[i].setAElement = setAElementKlu;
         linsys[i].setBElement = setBElement;
         allocateKluData(size, size, nnz, linsys[i].solverData);
         break;
     #else
+      case LSS_KLU:
       case LSS_UMFPACK:
-        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+        throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use klu or umfpack please compile OMC with UMFPACK.");
         break;
     #endif
-
+    #if !defined(OMC_MINIMAL_RUNTIME)
+    #if !defined(WITH_UMFPACK)
+      case LSS_DEFAULT:
+    #endif
+      case LSS_LIS:
+        linsys[i].setAElement = setAElementLis;
+        linsys[i].setBElement = setBElementLis;
+        allocateLisData(size, size, nnz, linsys[i].solverData);
+        break;
+    #endif
+    #if defined(OMC_MINIMAL_RUNTIME) && !defined(WITH_UMFPACK)
+      case LSS_DEFAULT:
+        {
+          int indexes[2] = {1, linsys[i].index};
+          infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
+          break;
+        }
+    #endif
       default:
         throwStreamPrint(threadData, "unrecognized linear solver");
       }
     }
-
-    else{
+    if(linsys[i].useSparseSolver == 0) { /* Not an else-statement because there might not be a sparse linear solver available */
     switch(data->simulationInfo->lsMethod)
     {
       case LS_LAPACK:

@@ -268,8 +268,9 @@ static int getlinearSparseSolverMethod()
   const char *cflags = omc_flagValue[FLAG_LSS];
   const string *method = cflags ? new string(cflags) : NULL;
 
-  if(!method)
-    return LSS_KLU; /* default method */
+  if (!method) {
+    return LSS_DEFAULT; /* default method */
+  }
 
   for(i=1; i<LSS_MAX; ++i)
     if(*method == LSS_NAME[i])

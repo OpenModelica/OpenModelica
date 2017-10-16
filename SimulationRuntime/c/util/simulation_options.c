@@ -679,7 +679,7 @@ const char *LS_DESC[LS_MAX] = {
 
 const char *LSS_NAME[LS_MAX] = {
   "LS_UNKNOWN",
-
+                        "default",
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "lis",
 #else
@@ -691,7 +691,7 @@ const char *LSS_NAME[LS_MAX] = {
 
 const char *LSS_DESC[LS_MAX] = {
   "unknown",
-
+                        "the default sparse linear solver (or a dense solver if there is none available)"
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
 #else

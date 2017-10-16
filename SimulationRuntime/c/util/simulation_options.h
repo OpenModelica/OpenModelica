@@ -214,6 +214,7 @@ enum LINEAR_SPARSE_SOLVER
 {
   LSS_NONE = 0,
 
+  LSS_DEFAULT,
 #if !defined(OMC_MINIMAL_RUNTIME)
   LSS_LIS,
 #else
@@ -221,7 +222,6 @@ enum LINEAR_SPARSE_SOLVER
 #endif
   LSS_KLU,
   LSS_UMFPACK,
-
   LSS_MAX
 };
 

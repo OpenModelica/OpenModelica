@@ -940,8 +940,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
 #endif
   data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
-  data->simulationInfo->lsMethod = LS_LAPACK;
-  data->simulationInfo->lssMethod = LS_UMFPACK;
+  data->simulationInfo->lsMethod = LS_DEFAULT;
+  data->simulationInfo->lssMethod = LSS_DEFAULT;
   data->simulationInfo->mixedMethod = MIXED_SEARCH;
   data->simulationInfo->newtonStrategy = NEWTON_PURE;
   data->simulationInfo->nlsCsvInfomation = 0;
