@@ -151,7 +151,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     #if defined(OMC_MINIMAL_RUNTIME) && !defined(WITH_UMFPACK)
       case LSS_DEFAULT:
         {
-          int indexes[2] = {1, linsys[i].index};
+          int indexes[2] = {1, linsys[i].equationIndex};
           infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
           break;
         }
