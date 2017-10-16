@@ -84,9 +84,8 @@ typedef struct {
   fmi2Real stopTime;
 
   int _need_update;
-#ifdef FMU_EXPERIMENTAL
   int _has_jacobian;
-#endif
+  ANALYTIC_JACOBIAN* fmiDerJac;
 } ModelInstance;
 
 #ifdef __cplusplus

@@ -2318,6 +2318,17 @@ algorithm
   end match;
 end isVarKindVariable;
 
+public function isVarKindState
+  input BackendDAE.VarKind inVarKind;
+  output Boolean result;
+algorithm
+  result :=
+  match (inVarKind)
+    case (BackendDAE.STATE()) then true;
+    else false;
+  end match;
+end isVarKindState;
+
 public function isTopLevelInputOrOutput "author: LP
 
   This function checks if the provided cr is from a var that is on top model

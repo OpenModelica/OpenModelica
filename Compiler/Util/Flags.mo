@@ -454,7 +454,7 @@ constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(139, "dumpRecursiveTearing", false
   Util.gettext("Dump between steps of recursiveTearing"));
 constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(140, "disableSimplifyComplexFunction", false,
   Util.gettext("disable simplifyComplexFunction\nDeprecated flag: Use --postOptModules-=simplifyComplexFunction/--initOptModules-=simplifyComplexFunction instead."));
-constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(141, "disableSymbolicLinearization", false,
+constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(141, "disableDirectionalDerivatives", false,
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(142, "evalOutputOnly", false,
   Util.gettext("Generates equations to calculate outputs only."));
@@ -873,6 +873,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("collapseArrayExpressions", collapseArrayExpressionsText),
     ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time.")),
     ("countOperations", Util.gettext("Count the mathematical operations of the system.")),
+    ("createAliasVarsForOutputStates", Util.gettext("Module creates alias variables for output states.")),
     ("cseBinary", Util.gettext("Common Sub-expression Elimination")),
     ("detectJacobianSparsePattern", Util.gettext("Detects the sparse pattern for jacobian :math:`\\frac{f_{ode}}{x}` in the causalized representation :math:`\\dot{x} = f(x,t)`.")),
     ("dumpComponentsGraphStr", Util.notrans("Dumps the assignment graph used to determine strong components to format suitable for Mathematica")),

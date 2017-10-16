@@ -737,7 +737,7 @@ template simulationFile_jac(SimCode simCode)
   match simCode
     case simCode as SIMCODE(__) then
     <<
-    /* Jacobians */
+    /* Jacobians <%listLength(jacobianMatrixes)%> */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
     <%functionAnalyticJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
@@ -754,7 +754,7 @@ template simulationFile_jac_header(SimCode simCode)
   match simCode
     case simCode as SIMCODE(__) then
     <<
-    /* Jacobians <%listLength(jacobianMatrixes)%> */
+    /* Jacobians */
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
     <%variableDefinitionsJacobians(jacobianMatrixes, modelNamePrefix(simCode))%>
     <%\n%>
@@ -1049,35 +1049,6 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
 
     <%functionODE(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr)%>
 
-    #ifdef FMU_EXPERIMENTAL
-    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then functionODEPartial(odeEquations,(match simulationSettingsOpt case SOME(settings as SIMULATION_SETTINGS(__)) then settings.method else ""), hpcomData.schedules, modelNamePrefixStr, modelInfo)%>
-    <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then
-    <<
-    void <%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>(DATA *data, threadData_t *threadData, const unsigned *unknown, int nUnk, const unsigned *ders, int nKnown, double *dvKnown, double *out) {
-        int i;
-        /* TODO: Use the literal names instead of the data-> structure
-         * Beware! This code assumes that the FMI variables are sorted putting
-         * states first (0 to nStates-1) and state derivatives (nStates to 2*nStates-1) second. */
-        for (i=0;i<data->modelData->nStates; i++) {
-          // Clear out the seeds
-          data->simulationInfo->analyticJacobians[0].seedVars[i]=0;
-        }
-        for (i=0;i<nUnk; i++) {
-          /* Put the supplied value in the seeds */
-          data->simulationInfo->analyticJacobians[0].seedVars[unknown[i]]=dvKnown[i];
-        }
-        /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
-         * More efficient code could only evaluate the equations needed for the
-         * known variables only */
-        <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(data,threadData);
-
-        // Write the results back to the array
-        for (i=0;i<nKnown; i++) {
-          out[ders[i]-data->modelData->nStates] = data->simulationInfo->analyticJacobians[0].resultVars[ders[i]-data->modelData->nStates];
-        }
-    }
-    >> %>
-    #endif
     /* forward the main in the simulation runtime */
     extern int _main_SimulationRuntime(int argc, char**argv, DATA *data, threadData_t *threadData);
 
@@ -1143,12 +1114,12 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
+       <%symbolName(modelNamePrefixStr,"inputNames")%>,
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
-       #ifdef FMU_EXPERIMENTAL
-       <%symbolName(modelNamePrefixStr,"functionODE_Partial")%>,
-       <%symbolName(modelNamePrefixStr,"functionFMIJacobian")%>,
-       #endif
-       <%symbolName(modelNamePrefixStr,"inputNames")%>
+       <% if isSome(modelStructure) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL" %>,
+       <% if isSome(modelStructure) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL" %>,
+       <% if isSome(modelStructure) then symbolName(modelNamePrefixStr,"INDEX_JAC_FMIDER") else "-1" %>
+    <%\n%>
     };
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, delayedExps, modelNamePrefixStr, isModelExchangeFMU)%>
@@ -5683,7 +5654,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '/DFMU_EXPERIMENTAL' %>
+  CFLAGS=/MP /Od /ZI /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/c" /I"<%makefileParams.omhome%>/include/omc/msvc/" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY /DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME <%if (Flags.isSet(Flags.HPCOM)) then '/openmp'%>
   # /ZI enable Edit and Continue debug info
   CDFLAGS=/ZI
 
@@ -5742,7 +5713,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "-O0 -g"%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%> <% if Flags.isSet(Flags.FMU_EXPERIMENTAL) then '-DFMU_EXPERIMENTAL' %>
+  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
   LDFLAGS=<%dirExtra%> <%
@@ -5995,36 +5966,6 @@ template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Te
     };
     >>
 end functionXXX_systemsPartial;
-
-template functionODEPartial(list<list<SimEqSystem>> derivativEquations, Text method, Option<tuple<Schedule,Schedule,Schedule>> hpcOmSchedules, String modelNamePrefix, ModelInfo modelInfo)
- "Generates function in simulation file."
-::=
-  let () = System.tmpTickReset(0)
-  let &nrfuncs = buffer ""
-  let &varDecls2 = buffer ""
-  let &varDecls = buffer ""
-  let &fncalls = buffer ""
-  let systems = (functionXXX_systemsPartial(derivativEquations, "ODE_Partial", &fncalls, &varDecls, modelNamePrefix, modelInfo))
-  let &tmp = buffer ""
-  <<
-  <%tmp%>
-  <%systems%>
-
-  void <%symbolName(modelNamePrefix,"functionODE_Partial")%>(DATA *data, threadData_t *threadData, int i)
-  {
-    TRACE_PUSH
-    <% if profileFunctions() then "rt_tick(SIM_TIMER_FUNCTION_ODE);" %>
-
-    <%varDecls%>
-
-    //data->simulationInfo->callStatistics.functionODE++;
-
-    <%fncalls%>
-
-    TRACE_POP
-  }
-  >>
-end functionODEPartial;
 
 template equationNames_Partial(list<SimEqSystem> eqs, String modelNamePrefixStr, Integer i0, String cref_der)
  "Generates an equation.

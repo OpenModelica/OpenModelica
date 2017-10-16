@@ -709,6 +709,7 @@ public constant Integer SymbolicJacobianDIndex = 4;
 public constant String derivativeNamePrefix = "$DERAlias";
 public constant String partialDerivativeNamePrefix = "$pDER";
 public constant String functionDerivativeNamePrefix = "$funDER";
+public constant String outputStateAliasPrefix = "$outputStateAlias_";
 
 public constant String optimizationMayerTermName = "$OMC$objectMayerTerm";
 public constant String optimizationLagrangeTermName = "$OMC$objectLagrangeTerm";

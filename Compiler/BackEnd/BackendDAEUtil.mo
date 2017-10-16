@@ -93,6 +93,7 @@ import ExpressionSimplify;
 import ExpressionSolve;
 import FindZeroCrossings;
 import Flags;
+import FMI;
 import Global;
 import HpcOmEqSystems;
 import IndexReduction;
@@ -1706,6 +1707,53 @@ algorithm
       then BackendDAEUtil.clearEqSyst(syst);
   end match;
 end reduceEqSystem;
+
+public function createAliasVarsForOutputStates
+" creates for every state that is also output an
+  alias variable $outputStateAlias.stateName and
+  the corresponding equation"
+  input BackendDAE.BackendDAE inBDAE;
+  output BackendDAE.BackendDAE outBDAE = inBDAE;
+protected
+  BackendDAE.EqSystems systems, returnSysts = {};
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqs;
+  list<BackendDAE.Var> states;
+  DAE.ComponentRef newCref;
+  BackendDAE.Var newVar;
+  BackendDAE.Equation newEqn;
+algorithm
+  systems := inBDAE.eqs;
+  for system in systems loop
+    eqs  := system.orderedEqs;
+    vars := system.orderedVars;
+    states := BackendVariable.getAllStateVarFromVariables(vars);
+    for v in states loop
+      if BackendVariable.isVarOnTopLevelAndOutput(v) then
+        // generate new output var and add it
+        newCref := ComponentReference.prependStringCref(BackendDAE.outputStateAliasPrefix, BackendVariable.varCref(v));
+        newVar := BackendVariable.copyVarNewName(newCref, v);
+        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        vars := BackendVariable.addVar(newVar, vars);
+
+        //update states to remove the output direction
+        v := BackendVariable.setVarDirection(v, DAE.BIDIR());
+        vars := BackendVariable.addVar(v, vars);
+
+        // generate new equation and add it
+        newEqn := BackendEquation.generateEquation(Expression.crefToExp(newCref), Expression.crefToExp(BackendVariable.varCref(v)), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+        eqs := BackendEquation.add(newEqn, eqs);
+      end if;
+    end for;
+    system.orderedVars := vars;
+    system.orderedEqs := eqs;
+    system := BackendDAEUtil.clearEqSyst(system);
+    returnSysts := system::returnSysts;
+  end for;
+  returnSysts := listReverse(returnSysts);
+  outBDAE.eqs := returnSysts;
+  outBDAE := BackendDAEUtil.transformBackendDAE(outBDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+end createAliasVarsForOutputStates;
 
 protected function translateArrayList
   input Integer inElement;
@@ -7436,6 +7484,7 @@ end allPreOptimizationModules;
 protected function allPostOptimizationModules
   "This list contains all back end sim-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPostOptimizationModules = {
+    (BackendDAEUtil.createAliasVarsForOutputStates, "createAliasVarsForOutputStates"),
     (BackendInline.lateInlineFunction, "lateInlineFunction"),
     (DynamicOptimization.simplifyConstraints, "simplifyConstraints"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
@@ -8637,6 +8686,17 @@ algorithm
       then shared;
   end match;
 end setSharedSymJacs;
+
+public function getSharedSymJacs
+  input BackendDAE.Shared inShared;
+  output BackendDAE.SymbolicJacobians outSymjacs;
+algorithm
+  outSymjacs := match inShared
+    local
+      BackendDAE.Shared shared;
+    case shared as BackendDAE.SHARED() then shared.symjacs;
+  end match;
+end getSharedSymJacs;
 
 public function setSharedFunctionTree
   input BackendDAE.Shared inShared;

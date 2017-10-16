@@ -324,7 +324,7 @@ algorithm
   case(_) equation
     true = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
     BackendDAE.DAE(eqs=eqs,shared=shared) = inBackendDAE;
-    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar(), Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    (linearModelMatrixes, funcs) = createLinearModelMatrixes(inBackendDAE, Config.acceptOptimicaGrammar());
     shared = BackendDAEUtil.setSharedSymJacs(shared, linearModelMatrixes);
     functionTree = BackendDAEUtil.getFunctions(shared);
     functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
@@ -1582,17 +1582,102 @@ algorithm
   end if;
 end createBipartiteGraph;
 
+public function createFMIModelDerivatives
+"This function genererate the stucture output and the
+ partial derivatives for FMI, which are basically the jacobian matrices.
+ author: wbraun"
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.SymbolicJacobians outJacobianMatrixes = {};
+  output DAE.FunctionTree outFunctionTree;
+protected
+  BackendDAE.BackendDAE backendDAE,emptyBDAE;
+  BackendDAE.EqSystem eqSyst;
+  Option<BackendDAE.SymbolicJacobian> outJacobian;
+
+  list<BackendDAE.Var> varlst, knvarlst, states, inputvars, outputvars, paramvars, indepVars, depVars;
+
+  BackendDAE.Variables v,globalKnownVars,statesarr,inputvarsarr,paramvarsarr,outputvarsarr, depVarsArr;
+
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparseColoring sparseColoring;
+
+  DAE.FunctionTree funcs, functionTree;
+
+  BackendDAE.ExtraInfo ei;
+  FCore.Cache cache;
+  FCore.Graph graph;
+algorithm
+try
+  // for now perform on collapsed system
+  backendDAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+  backendDAE := BackendDAEOptimize.collapseIndependentBlocks(backendDAE);
+  backendDAE := BackendDAEUtil.transformBackendDAE(backendDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+
+  // get all variables
+  eqSyst::{} := backendDAE.eqs;
+  v := eqSyst.orderedVars;
+  globalKnownVars := backendDAE.shared.globalKnownVars;
+
+  // prepare all needed variables
+  varlst := BackendVariable.varList(v);
+  knvarlst := BackendVariable.varList(globalKnownVars);
+  states := BackendVariable.getAllStateVarFromVariables(v);
+
+  inputvars := List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
+  outputvars := List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
+
+  // independent varibales states + inputs
+  indepVars := listAppend(states, inputvars);
+
+  // dependent varibales der(states) + outputs
+  depVars := listAppend(states, outputvars);
+
+  // Generate sparse pattern for matrices states
+  // prepare more needed variables
+  if Flags.isSet(Flags.DIS_SYMJAC_FMI20) then
+    // empty BackendDAE in case derivates should not calclulated
+    cache := backendDAE.shared.cache;
+    graph := backendDAE.shared.graph;
+    ei := backendDAE.shared.info;
+    emptyBDAE := BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
+
+    (sparsePattern, sparseColoring) := generateSparsePattern(backendDAE, indepVars, depVars);
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
+    end if;
+    outJacobianMatrixes := (SOME((emptyBDAE,"FMIDER",{},{},{})), sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outFunctionTree := inBackendDAE.shared.functionTree;
+  else
+    // prepare more needed variables
+    paramvars := List.select(knvarlst, BackendVariable.isParam);
+    statesarr := BackendVariable.listVar1(states);
+    inputvarsarr := BackendVariable.listVar1(inputvars);
+    paramvarsarr := BackendVariable.listVar1(paramvars);
+    depVarsArr := BackendVariable.listVar1(depVars);
+
+    (outJacobian, outFunctionTree, sparsePattern, sparseColoring) := generateGenericJacobian(backendDAE,indepVars,statesarr,inputvarsarr,paramvarsarr,depVarsArr,varlst,"FMIDER", Flags.isSet(Flags.DIS_SYMJAC_FMI20));
+    if Flags.isSet(Flags.JAC_DUMP2) then
+      BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
+    end if;
+    outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring)::outJacobianMatrixes;
+  end if;
+else
+  Error.addInternalError("function createFMIModelDerivatives failed", sourceInfo());
+  outJacobianMatrixes := {};
+  outFunctionTree := inBackendDAE.shared.functionTree;
+end try;
+end createFMIModelDerivatives;
+
 protected function createLinearModelMatrixes "This function creates the linear model matrices column-wise
   author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
   input Boolean useOptimica;
-  input Boolean noGenSymbolicJac;
   output BackendDAE.SymbolicJacobians outJacobianMatrixes;
   output DAE.FunctionTree outFunctionTree;
 
 algorithm
   (outJacobianMatrixes, outFunctionTree) :=
-  match (inBackendDAE, useOptimica, noGenSymbolicJac)
+  match (inBackendDAE, useOptimica)
     local
       BackendDAE.BackendDAE backendDAE,backendDAE2,emptyBDAE;
 
@@ -1616,42 +1701,7 @@ algorithm
       FCore.Cache cache;
       FCore.Graph graph;
 
-    case (backendDAE, false, true)
-      equation
-        backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
-        backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
-        backendDAE2 = BackendDAEUtil.transformBackendDAE(backendDAE2,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = v)}, BackendDAE.SHARED(globalKnownVars = globalKnownVars, functionTree = functionTree, cache=cache, graph=graph, info=ei)) = backendDAE2;
-
-        emptyBDAE = BackendDAE.DAE({BackendDAEUtil.createEqSystem(BackendVariable.emptyVars(), BackendEquation.emptyEqns())}, BackendDAEUtil.createEmptyShared(BackendDAE.JACOBIAN(), ei, cache, graph));
-        // Prepare all needed variables
-        varlst = BackendVariable.varList(v);
-        knvarlst = BackendVariable.varList(globalKnownVars);
-        states = BackendVariable.getAllStateVarFromVariables(v);
-        _ = List.select(knvarlst,BackendVariable.isInput);
-        _ = List.select(knvarlst, BackendVariable.isParam);
-        inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
-        outputvars = List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
-
-        // Generate sparse pattern for matrices A
-        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, states);
-        linearModelMatrices = {(SOME((emptyBDAE,"A",{},{},{})), sparsePattern, sparseColoring)};
-
-        // Generate sparse pattern for matrices B
-        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, inputvars2, states);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"B",{},{},{})), sparsePattern, sparseColoring)});
-
-        // Generate sparse pattern for matrices C
-        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, states, outputvars);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"C",{},{},{})), sparsePattern, sparseColoring)});
-
-        // Generate sparse pattern for matrices D
-        (sparsePattern, sparseColoring) = generateSparsePattern(backendDAE2, inputvars2, outputvars);
-        linearModelMatrices = listAppend(linearModelMatrices,{(SOME((emptyBDAE,"D",{},{},{})), sparsePattern, sparseColoring)});
-      then
-        (linearModelMatrices, functionTree);
-
-    case (backendDAE, false, _)
+    case (backendDAE, false)
       equation
         backendDAE2 = BackendDAEUtil.copyBackendDAE(backendDAE);
         backendDAE2 = BackendDAEOptimize.collapseIndependentBlocks(backendDAE2);
@@ -1709,7 +1759,7 @@ algorithm
       then
         (linearModelMatrices, functionTree);
 
-    case (backendDAE, true, _) //  created linear model (matrixes) for optimization
+    case (backendDAE, true) //  created linear model (matrixes) for optimization
       equation
         // A := der(x)
         // B := {der(x), con(x), L(x)}

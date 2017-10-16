@@ -167,6 +167,7 @@ public function createSimCode "entry point to create SimCode from BackendDAE."
   input Boolean isFMU=false;
   input String FMUVersion="";
   input String fmuTargetName="";
+  input BackendDAE.SymbolicJacobians inFMIDer = {};
   output SimCode.SimCode simCode;
   output tuple<Integer, list<tuple<Integer, Integer>>> outMapping "the highest simEqIndex in the mapping and the mapping simEq-Index -> scc-Index itself";
 protected
@@ -181,7 +182,7 @@ protected
   HashTableCrILst.HashTable varToIndexMapping "maps each variable to an array position";
   Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
   Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberofFixedParameters;
-  Option<SimCode.FmiModelStructure> modelStruct;
+  Option<SimCode.FmiModelStructure> modelStructure = NONE();
   SimCode.BackendMapping backendMapping;
   SimCode.ExtObjInfo extObjInfo;
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
@@ -201,7 +202,7 @@ protected
   list<DAE.Constraint> constraints;
   list<DAE.Exp> lits;
   list<SimCode.ClockedPartition> clockedPartitions;
-  list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, SymbolicJacsNLS;
+  list<SimCode.JacobianMatrix> LinearMatrices, SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal, SymbolicJacsNLS, SymbolicJacsFMI={};
   list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
   list<SimCode.SimEqSystem> localKnownVars;
   list<SimCode.SimEqSystem> allEquations;
@@ -436,9 +437,15 @@ algorithm
     // collect symbolic jacobians from state selection
     (stateSets, modelInfo, SymbolicJacsStateSelect) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
 
+    // collect fmi partial derivative
+    if FMI.isFMIVersion20(FMUVersion) then
+      (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex);
+      SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+    end if;
     // collect symbolic jacobians in linear loops of the overall jacobians
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
+    SymbolicJacs := listAppend(SymbolicJacsFMI, SymbolicJacs);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
     // collect jacobian equation only for equantion info file
@@ -513,12 +520,6 @@ algorithm
     backendMapping := setBackendVarMapping(inBackendDAE, crefToSimVarHT, modelInfo, backendMapping);
     //dumpBackendMapping(backendMapping);
 
-    if if isFMU then FMI.isFMIVersion20(FMUVersion) else false then
-      modelStruct := createFMIModelStructure(symJacs, modelInfo, crefToSimVarHT);
-    else
-      modelStruct := NONE();
-    end if;
-
     (varToArrayIndexMapping, varToIndexMapping) := createVarToArrayIndexMapping(modelInfo);
     //print("HASHTABLE MAPPING\n\n");
     //BaseHashTable.dumpHashTable(varToArrayIndexMapping);
@@ -569,7 +570,7 @@ algorithm
                               crefToSimVarHT,
                               crefToClockIndexHT,
                               SOME(backendMapping),
-                              modelStruct,
+                              modelStructure,
                               SimCode.emptyPartitionData,
                               daeModeData,
                               inlineEquations
@@ -4543,6 +4544,7 @@ algorithm
     case (NONE())
       then true;
     case (SOME((_,_,{},{},{})))
+      equation
       then true;
     else
       false;
@@ -12678,13 +12680,17 @@ algorithm
    noOut := noIn+1;
 end dumpVarMappingTuple;
 
-protected function createFMIModelStructure
+public function createFMIModelStructure
 " function detectes the model stucture for FMI 2.0
   by analyzing the symbolic jacobian matrixes and sparsity pattern"
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
-  input SimCode.HashTableCrefToSimVar crefSimVarHT;
+  input Integer inUniqueEqIndex;
+  output list<SimCode.JacobianMatrix> symJacFMI = {};
   output Option<SimCode.FmiModelStructure> outFmiModelStructure;
+  output SimCode.ModelInfo outModelInfo = inModelInfo;
+  output list<SimCode.JacobianMatrix> symJacs = {};
+  output Integer uniqueEqIndex = inUniqueEqIndex;
 protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
@@ -12693,67 +12699,63 @@ protected
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
    DoubleEndedList<SimCodeVar.SimVar> delst;
+   SimCode.VarInfo varInfo;
+   Option<BackendDAE.SymbolicJacobian> optcontPartDer;
+   BackendDAE.SparsePattern spPattern;
+   BackendDAE.SparseColoring spColors;
+   BackendDAE.Jacobian contPartDer;
+   SimCode.JacobianMatrix contSimJac;
+   Option<SimCode.JacobianMatrix> contPartSimDer;
+   list<SimCodeVar.SimVar> tempvars;
+   SimCodeVar.SimVars vars;
+   SimCode.HashTableCrefToSimVar crefSimVarHT;
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
     // combine the transposed sparse pattern of matrix A and B
-    // to obtain dependencies for the derivatives
-    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "A");
-    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "B");
+    // to obtain dependencies for the derivativesq
+    SOME((optcontPartDer, spPattern as (_, spTA, (diffCrefsA, diffedCrefsA),_), spColors)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "FMIDER");
 
+    crefSimVarHT := createCrefToSimVarHT(inModelInfo);
     //print("-- Got matrixes\n");
-    spTA  := mergeSparsePatter(spTA, spTB, {});
-    (spTA, derdiffCrefsA) := translateSparsePatterCref2DerCref(spTA, {}, {});
+    (spTA, derdiffCrefsA) := translateSparsePatterCref2DerCref(spTA, crefSimVarHT, {}, {});
     //print("-- translateSparsePatterCref2DerCref matrixes AB\n");
 
     // collect all variable
-    varsA := getSimVars2Crefs(diffedCrefsB, crefSimVarHT);
-    varsB := getSimVars2Crefs(diffCrefsB, crefSimVarHT);
-    varsA := listAppend(varsB, varsA);
-    varsB := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);
-    varsA := listAppend(varsB, varsA);
+    varsA := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);
     varsB := getSimVars2Crefs(derdiffCrefsA, crefSimVarHT);
-    varsA := listAppend(varsB, varsA);
+    varsA := listAppend(varsA, varsB);
     varsB := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
-    varsA := listAppend(varsB, varsA);
+    varsA := listAppend(varsA, varsB);
     //print("-- created vars for AB\n");
     sparseInts := sortSparsePattern(varsA, spTA, true);
     //print("-- sorted vars for AB\n");
 
     derivatives := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
-    //print("-- created derivatives \n");
-    // combine the transposed sparse pattern of matrix C and D
-    // to obtain dependencies for the outputs
-    SOME((_, (_, spTA, (diffCrefsA, diffedCrefsA),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "C");
-    SOME((_, (_, spTB, (diffCrefsB, diffedCrefsB),_), _)) := SymbolicJacobian.getJacobianMatrixbyName(inSymjacs, "D");
-    //print("-- Got matrixes CD\n");
-    spTA  := mergeSparsePatter(spTA, spTB, {});
-    //print("-- merged matrixes CD\n");
+    (derivatives, outputs) := List.split(derivatives, inModelInfo.varInfo.numStateVars);
 
-    delst := DoubleEndedList.fromList(getSimVars2Crefs(diffedCrefsB, crefSimVarHT));
-    DoubleEndedList.push_list_front(delst, getSimVars2Crefs(diffCrefsB, crefSimVarHT));
-    DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffedCrefsA, crefSimVarHT));
-    DoubleEndedList.push_list_back(delst, getSimVars2Crefs(diffCrefsA, crefSimVarHT));
-    varsA := DoubleEndedList.toListAndClear(delst);
-
-    //print("-- created vars for CD\n");
-
-    sparseInts := sortSparsePattern(varsA, spTA, true);
-    //print("-- sorted vars for CD\n");
-
-    outputs := translateSparsePatterInts2FMIUnknown(sparseInts, {});
+    if not checkForEmptyBDAE(optcontPartDer) then
+      contPartDer := BackendDAE.GENERIC_JACOBIAN(optcontPartDer,spPattern,spColors);
+      (SOME(contSimJac), uniqueEqIndex, _) := createSymbolicSimulationJacobian(contPartDer, uniqueEqIndex, {});
+      // collect algebraic loops and symjacs for FMIDer
+      ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
+      contPartSimDer := SOME(contSimJac);
+      symJacFMI := {contSimJac};
+    else
+      contPartSimDer := NONE();
+    end if;
 
     //TODO: create DiscreteStates with dependencies, like derivatives
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
     discreteStates := List.map1(clockedStates, createFmiUnknownFromSimVar, 2*listLength(derivatives)+1);
 
-    //print("-- finished createFMIModelStructure\n");
     outFmiModelStructure :=
       SOME(
         SimCode.FMIMODELSTRUCTURE(
           SimCode.FMIOUTPUTS(outputs),
           SimCode.FMIDERIVATIVES(derivatives),
+          contPartSimDer,
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS({})));
 else
@@ -12810,26 +12812,31 @@ end translateSparsePatterInts2FMIUnknown;
 protected function translateSparsePatterCref2DerCref
 "function translates the first cref of sparse pattern to der(cref)"
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> sparsePattern;
+  input SimCode.HashTableCrefToSimVar inSimVarHT;
   input list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> inAccum;
   input list<DAE.ComponentRef> inAccum2;
   output list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> outSparsePattern;
   output list<DAE.ComponentRef> outDerCrefs;
 algorithm
-  (outSparsePattern, outDerCrefs) := match(sparsePattern, inAccum, inAccum2)
+  (outSparsePattern, outDerCrefs) := match(sparsePattern)
     local
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> rest;
+      SimCodeVar.SimVar simVar;
 
-    case ({}, _, _) then (listReverse(inAccum), listReverse(inAccum2));
+    case ({}) then (listReverse(inAccum), listReverse(inAccum2));
 
-    case ( ((cref, crefs))::rest, _, _)
+    case ( ((cref, crefs))::rest)
       equation
-        cref = ComponentReference.crefPrefixDer(cref);
+        simVar = BaseHashTable.get(cref, inSimVarHT);
+        if BackendVariable.isVarKindState(simVar.varKind) then
+          cref = ComponentReference.crefPrefixDer(cref);
+        end if;
       then
-        translateSparsePatterCref2DerCref(rest, (cref, crefs)::inAccum, cref::inAccum2);
+        translateSparsePatterCref2DerCref(rest, inSimVarHT, (cref, crefs)::inAccum, cref::inAccum2);
 
-     end match;
+  end match;
 end translateSparsePatterCref2DerCref;
 
 protected function mergeSparsePatter

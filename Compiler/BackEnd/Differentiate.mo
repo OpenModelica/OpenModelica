@@ -1762,6 +1762,25 @@ algorithm
         (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
        (res1, inFunctionTree);
+    /* floor ceil and interger are expanded by the zeroCrossing index, thus they
+       have 2 arguments */
+    case ("floor", _, DAE.CALL_ATTR(ty=tp))
+      equation
+        (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (res1, inFunctionTree);
+
+    case ("ceil", _, DAE.CALL_ATTR(ty=tp))
+      equation
+        (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (res1, inFunctionTree);
+
+    case ("integer", _, DAE.CALL_ATTR(ty=tp))
+      equation
+        (res1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+       (res1, inFunctionTree);
 
   end match;
 end differentiateCallExpNArg;

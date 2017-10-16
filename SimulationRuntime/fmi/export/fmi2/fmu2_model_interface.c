@@ -402,10 +402,10 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
 #endif
-#ifdef FMU_EXPERIMENTAL
+
   /* allocate memory for Jacobian */
-  comp->_has_jacobian = !comp->fmuData->callback->initialAnalyticJacobianA(comp->fmuData, comp->threadData);
-#endif
+  comp->_has_jacobian = !comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData);
+  comp->fmiDerJac = &(comp->fmuData->simulationInfo->analyticJacobians[comp->fmuData->callback->INDEX_JAC_FMIDER]);
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
@@ -853,41 +853,52 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
 fmi2Status fmi2GetDirectionalDerivative(fmi2Component c, const fmi2ValueReference vUnknown_ref[], size_t nUnknown, const fmi2ValueReference vKnown_ref[] , size_t nKnown,
     const fmi2Real dvKnown[], fmi2Real dvUnknown[])
 {
-#ifndef FMU_EXPERIMENTAL
-  return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
-#else
-  int i,j;
   ModelInstance *comp = (ModelInstance *)c;
+  DATA* fmudata = (DATA *) comp->fmuData;
+  SIMULATION_INFO* simInfo = (SIMULATION_INFO*) fmudata->simulationInfo;
+  MODEL_DATA* modelData = (MODEL_DATA*) fmudata->modelData;
+  threadData_t* td = comp->threadData;
+
+  int i,j;
+
+  int independent = modelData->nStates+modelData->nInputVars;
+  int dependent = modelData->nStates+modelData->nOutputVars;
+
   if (invalidState(comp, "fmi2GetDirectionalDerivative", modelInstantiated|modelEventMode|modelContinuousTimeMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetDirectionalDerivative")
   if (!comp->_has_jacobian)
     return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
   /***************************************/
-#if NUMBER_OF_STATES>0
   // This code assumes that the FMU variables are always sorted,
   // states first and then derivatives.
   // This is true for the actual OMC FMUs.
-  // Anyway we'll check that the references are in the valid range
-  for (i = 0; i < nUnknown; i++) {
-    if (vUnknown_ref[i]>=NUMBER_OF_STATES)
-        // We are only computing the A part of the Jacobian for now
-        // so unknowns can only be states
-        return fmi2Error;
+
+  /* TODO: Use the literal names instead of the data-> structure
+   * Beware! This code assumes that the FMI variables are sorted putting
+   * states first (0 to nStates-1) and state derivatives (nStates to 2*nStates-1) second. */
+  for (i=0;i<independent; i++) {
+    // Clear out the seeds
+    comp->fmiDerJac->seedVars[i]=0;
   }
-  for (i = 0; i < nKnown; i++) {
-    if (vKnown_ref[i]>=2*NUMBER_OF_STATES) {
-        // We are only computing the A part of the Jacobian for now
-        // so knowns can only be states derivatives
-        return fmi2Error;
-    }
+  for (i=0;i<nUnknown; i++) {
+    /* Put the supplied value in the seeds */
+    comp->fmiDerJac->seedVars[vUnknown_ref[i]]=dvKnown[i];
   }
-  comp->fmuData->callback->functionFMIJacobian(comp->fmuData, comp->threadData, vUnknown_ref, nUnknown, vKnown_ref, nKnown, (double*)dvKnown, dvUnknown);
-#endif
+  /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
+   * More efficient code could only evaluate the equations needed for the
+   * known variables only */
+  fmudata->callback->functionJacFMIDER_column(fmudata, td);
+
+  // Write the results back to the array
+  for (i=0;i<nKnown; i++) {
+    dvUnknown[vKnown_ref[i]-dependent] = comp->fmiDerJac->resultVars[vKnown_ref[i]-dependent];
+  }
   /***************************************/
   return fmi2OK;
-#endif
 }
+
+
 
 /***************************************************
 Functions for FMI2 for Model Exchange
@@ -1367,41 +1378,3 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
   }
   return fmi2OK;
 }
-
-#ifdef FMU_EXPERIMENTAL
-fmi2Status fmi2GetSpecificDerivatives(fmi2Component c, fmi2Real derivatives[], const fmi2ValueReference dr[], size_t nvr)
-{
-  int i,nx;
-  ModelInstance* comp = (ModelInstance *)c;
-  threadData_t *threadData = comp->threadData;
-  /* TODO
-  if (invalidState(comp, "fmi2GetSpecificDerivatives", modelEventMode|modelContinuousTimeMode|modelTerminated|modelError))
-    return fmi2Error;
-  if (invalidNumber(comp, "fmi2GetSpecificDerivatives", "nx", nx, NUMBER_OF_STATES))
-    return fmi2Error;
-  if (nullPointer(comp, "fmi2GetSpecificDerivatives", "derivatives[]", derivatives))
-    return fmi2Error;
-  */
-
-  /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
-
-
-  #if NUMBER_OF_STATES>0
-  for (i = 0; i < nvr; i++) {
-    // This assumes that OMC layouts first the states then the derivatives
-    nx = dr[i]-NUMBER_OF_STATES;
-    comp->fmuData->callback->functionODEPartial(comp->fmuData, comp->threadData, nx);
-    derivatives[i] = getReal(comp, dr[i]); // to be implemented by the includer of this file
-    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetSpecificDerivatives: #r%d# = %.16g", dr[i], derivatives[i])
-  }
-  #endif
-
-  return fmi2OK;
-
-  /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
-  FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetSpecificDerivatives: terminated by an assertion.")
-  return fmi2Error;
-}
-#endif

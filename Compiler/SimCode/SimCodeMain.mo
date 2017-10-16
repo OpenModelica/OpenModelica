@@ -91,6 +91,7 @@ import Serializer;
 import SimCodeUtil;
 import StackOverflow;
 import StringUtil;
+import SymbolicJacobian;
 import System;
 import Util;
 
@@ -123,6 +124,7 @@ protected function generateModelCodeFMU "
   input BackendDAE.BackendDAE inBackendDAE;
   input BackendDAE.BackendDAE inInitDAE;
   input Option<BackendDAE.BackendDAE> inInitDAE_lambda0;
+  input BackendDAE.SymbolicJacobians inFMIDer;
   input list<BackendDAE.Equation> inRemovedInitialEquationLst;
   input Absyn.Program p;
   input Absyn.Path className;
@@ -151,8 +153,12 @@ algorithm
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
     SimCodeUtil.createFunctions(p, inBackendDAE);
-  simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
-    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, libPaths, p, SOME(simSettings), recordDecls, literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName);
+  simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
+    inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions,
+    includes, includeDirs, libs, libPaths, p, SOME(simSettings), recordDecls,
+    literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion,
+    fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
+
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -242,12 +248,13 @@ algorithm
       DAE.FunctionTree funcs;
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       String description;
-      Boolean symbolicJacActivated;
-      Boolean fmi20;
-      Boolean notExperimental, flagValue;
+
       BackendDAE.BackendDAE initDAE;
       Option<BackendDAE.BackendDAE> initDAE_lambda0;
       list<BackendDAE.Equation> removedInitialEquationLst;
+      BackendDAE.SymbolicJacobians fmiDer;
+      list<String> strPostOptModules;
+      Option<list<String>> strOptPostOptModules;
 
     case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,FMUType,filenameprefix)
       equation
@@ -258,31 +265,33 @@ algorithm
         timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
         System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
 
-        // activate symolic jacobains for fmi 2.0
-        // to provide dependence information and partial derivatives
-        fmi20 = FMI.isFMIVersion20(FMUVersion);
-        symbolicJacActivated = Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION);
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, fmi20);
-        notExperimental = not Flags.isSet(Flags.FMU_EXPERIMENTAL);
-        if notExperimental then
-          flagValue = Flags.enableDebug(Flags.DIS_SYMJAC_FMI20);
-        end if;
-
         _ = FCore.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
         description = DAEUtil.daeDescription(dae);
         dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-        (dlow_1, initDAE, initDAE_lambda0, _, removedInitialEquationLst) = BackendDAEUtil.getSolvedSystem(dlow, inFileNamePrefix);
+
+        //enable postOptModule to create alias variables for output states
+        if FMI.isFMIVersion20(FMUVersion) then
+          strPostOptModules = BackendDAEUtil.getPostOptModulesString();
+          strPostOptModules = "createAliasVarsForOutputStates"::strPostOptModules;
+          strOptPostOptModules = SOME(strPostOptModules);
+        else
+          strOptPostOptModules = NONE();
+        end if;
+        (dlow_1, initDAE, initDAE_lambda0, _, removedInitialEquationLst) = BackendDAEUtil.getSolvedSystem(dlow, inFileNamePrefix, strPostOptModules=strOptPostOptModules);
+        // generate derivatives
+        if FMI.isFMIVersion20(FMUVersion) then
+          // activate symolic jacobains for fmi 2.0
+          // to provide dependence information and partial derivatives
+          (fmiDer, funcs) = SymbolicJacobian.createFMIModelDerivatives(dlow_1);
+          dlow_1 = BackendDAEUtil.setFunctionTree(dlow_1, funcs);
+        else
+          fmiDer = {};
+        end if;
         timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
         (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, initDAE, initDAE_lambda0, removedInitialEquationLst, p, className, FMUVersion, FMUType, filenameprefix, fmuTargetName, inSimSettings);
-
-        //reset config flag
-        Flags.setConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION, symbolicJacActivated);
-        if notExperimental then
-          Flags.set(Flags.DIS_SYMJAC_FMI20, flagValue);
-        end if;
+          generateModelCodeFMU(dlow_1, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, p, className, FMUVersion, FMUType, filenameprefix, fmuTargetName, inSimSettings);
 
         resultValues =
         {("timeTemplates",Values.REAL(timeTemplates)),
@@ -470,6 +479,7 @@ protected function createSimCode "
   input Boolean isFMU=false;
   input String FMUVersion="";
   input String fmuTargetName="";
+  input BackendDAE.SymbolicJacobians inFMIDer = {};
   output SimCode.SimCode simCode;
 algorithm
   simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths, program,simSettingsOpt, recordDecls, literals, args)
@@ -508,7 +518,7 @@ algorithm
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths,program,simSettingsOpt, recordDecls, literals, args);
 
     else equation
-      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName);
+      (tmpSimCode, _) = SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args, isFMU=isFMU, FMUVersion=FMUVersion, fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
     then tmpSimCode;
   end matchcontinue;
 end createSimCode;
