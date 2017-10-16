@@ -140,7 +140,7 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 public function getKnownUnits
   output NFHashTableStringToUnit.HashTable outKnownUnits;
 algorithm
-  outKnownUnits := NFHashTableStringToUnit.emptyHashTableSized(Util.nextPrime(2 * listLength(LU_COMPLEXUNITS)));
+  outKnownUnits := NFHashTableStringToUnit.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
 
   for unit in LU_COMPLEXUNITS loop
     outKnownUnits := BaseHashTable.add(unit, outKnownUnits);
@@ -153,7 +153,7 @@ protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := NFHashTableUnitToString.emptyHashTableSized(Util.nextPrime(2 * listLength(LU_COMPLEXUNITS)));
+  outKnownUnitsInverse := NFHashTableUnitToString.emptyHashTableSized(Util.nextPrime(4 * listLength(LU_COMPLEXUNITS)));
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
