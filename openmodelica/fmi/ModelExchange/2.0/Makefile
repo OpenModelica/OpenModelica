@@ -21,13 +21,13 @@ EnumerationTest.mos \
 Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-testExperimentalFMU.mos \
 FMIExercise.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES= \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
+testExperimentalFMU.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

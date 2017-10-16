@@ -67,7 +67,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"y1\"
 //     valueReference=\"0\"
 //     variability=\"continuous\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
@@ -76,7 +76,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"y2\"
 //     valueReference=\"1\"
 //     variability=\"continuous\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     initial=\"calculated\">
 //     <Real/>
 //   </ScalarVariable>
@@ -100,23 +100,41 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"u\"
+//     name=\"_D_outputStateAlias_y1\"
 //     valueReference=\"4\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"_D_outputStateAlias_y2\"
+//     valueReference=\"5\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"calculated\">
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"7\" -->
+//   <ScalarVariable
+//     name=\"u\"
+//     valueReference=\"6\"
 //     variability=\"continuous\"
 //     causality=\"input\"
 //     >
 //     <Real start=\"-2.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"6\" -->
+//   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
 //     name=\"p\"
-//     valueReference=\"5\"
+//     valueReference=\"7\"
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
 //     <Real start=\"23.0\"/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"7\" -->
+//   <!-- Index of variable = \"9\" -->
 //   <ScalarVariable
 //     name=\"i\"
 //     valueReference=\"0\"
@@ -125,7 +143,7 @@ readFile("modelDescription.tmp.xml");
 //     initial=\"calculated\">
 //     <Integer/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"8\" -->
+//   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
 //     name=\"_D_whenCondition1\"
 //     valueReference=\"0\"
@@ -134,7 +152,7 @@ readFile("modelDescription.tmp.xml");
 //     initial=\"calculated\">
 //     <Boolean/>
 //   </ScalarVariable>
-//   <!-- Index of variable = \"9\" -->
+//   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
 //     name=\"b\"
 //     valueReference=\"1\"
@@ -146,11 +164,11 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"1\" dependencies=\"5\" dependenciesKind=\"dependent\" />
-//       <Unknown index=\"2\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"5\" dependencies=\"1\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"6\" dependencies=\"2\" dependenciesKind=\"dependent\" />
 //     </Outputs>
 //     <Derivatives>
-//       <Unknown index=\"3\" dependencies=\"5\" dependenciesKind=\"dependent\" />
+//       <Unknown index=\"3\" dependencies=\"7\" dependenciesKind=\"dependent\" />
 //       <Unknown index=\"4\" dependencies=\"1\" dependenciesKind=\"dependent\" />
 //     </Derivatives>
 //   </ModelStructure>
