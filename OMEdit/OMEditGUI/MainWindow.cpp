@@ -3430,6 +3430,7 @@ void MainWindow::switchToWelcomePerspective()
   mpModelSwitcherToolBar->setVisible(false);
   mpCheckToolBar->setVisible(false);
   mpSimulationToolBar->setVisible(false);
+  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(false);
@@ -3453,6 +3454,7 @@ void MainWindow::switchToModelingPerspective()
   mpModelSwitcherToolBar->setVisible(true);
   mpCheckToolBar->setVisible(true);
   mpSimulationToolBar->setVisible(true);
+  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(true);
@@ -3501,6 +3503,7 @@ void MainWindow::switchToPlottingPerspective()
   mpModelSwitcherToolBar->setVisible(false);
   mpCheckToolBar->setVisible(false);
   mpSimulationToolBar->setVisible(false);
+  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(true);
   mpPlotToolBar->setEnabled(true);
   mpTLMSimulationToolbar->setVisible(false);
@@ -3537,6 +3540,7 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   mpModelSwitcherToolBar->setVisible(true);
   mpCheckToolBar->setVisible(true);
   mpSimulationToolBar->setVisible(true);
+  enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(true);
@@ -3672,18 +3676,6 @@ void MainWindow::createToolbars()
   mpShapesToolBar->addAction(mpConnectModeAction);
   mpShapesToolBar->addSeparator();
   mpShapesToolBar->addAction(mpTransitionModeAction);
-  // Simulation Toolbar
-  mpSimulationToolBar = addToolBar(tr("Simulation Toolbar"));
-  mpSimulationToolBar->setObjectName("Simulation Toolbar");
-  mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  // add actions to Simulation Toolbar
-  mpSimulationToolBar->addAction(mpInstantiateModelAction);
-  mpSimulationToolBar->addAction(mpCheckModelAction);
-  mpSimulationToolBar->addAction(mpCheckAllModelsAction);
-  mpSimulationToolBar->addAction(mpSimulateModelAction);
-  mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
-  mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);
-  mpSimulationToolBar->addAction(mpSimulationSetupAction);
   // Model Swithcer Toolbar
   mpModelSwitcherToolBar = addToolBar(tr("ModelSwitcher Toolbar"));
   mpModelSwitcherToolBar->setObjectName("ModelSwitcher Toolbar");
