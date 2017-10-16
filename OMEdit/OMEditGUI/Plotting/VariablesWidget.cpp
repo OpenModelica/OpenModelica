@@ -1778,7 +1778,7 @@ void VariablesWidget::simulationTimeChanged(int timePercent)
     }
   }
   return;
-
+}
 /*!
  * \brief VariablesWidget::valueEntered
  * Handles the case when a new value is entered in VariablesTreeView.\n

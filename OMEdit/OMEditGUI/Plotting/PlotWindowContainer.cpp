@@ -312,9 +312,11 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     if (maximized) {
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
+    return pPlotWindow;
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
+    return 0;
   }
 }
 
@@ -344,11 +346,9 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(QIcon(":/Resources/icons/array-parametric-plot-window.svg"));
     pPlotWindow->show();
-    return pPlotWindow;
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, e.what(), Helper::scriptingKind, Helper::errorLevel));
-    return 0;
   }
 }
 
