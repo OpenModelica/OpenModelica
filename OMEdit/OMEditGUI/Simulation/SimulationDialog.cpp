@@ -614,6 +614,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     }
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
     if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
+      QMap<QString, QString> additionalSimulationFlags;
       // if the class has __OpenModelica_simulationFlags annotation then use its values.
       QList<QString> simulationFlags = MainWindow::instance()->getOMCProxy()->getAnnotationNamedModifiers(mClassName, "__OpenModelica_simulationFlags");
       foreach (QString simulationFlag, simulationFlags) {
@@ -672,10 +673,24 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             }
             i++;
           }
-        } else if (simulationFlag.compare("additionalSimulationFlags") == 0) {
-          mpAdditionalSimulationFlagsTextBox->setText(value);
+        } else { // put everything else in the Additional Simulation Flags textbox
+          additionalSimulationFlags.insert(simulationFlag, value);
         }
       }
+      QStringList additionalSimulationFlagsList;
+      QMapIterator<QString, QString> additionalSimulationFlagsIterator(additionalSimulationFlags);
+      additionalSimulationFlagsIterator.toFront();
+      while (additionalSimulationFlagsIterator.hasNext()) {
+        additionalSimulationFlagsIterator.next();
+        if (additionalSimulationFlagsIterator.value().compare("()") == 0) {
+          additionalSimulationFlagsList.append(QString("-%1").arg(additionalSimulationFlagsIterator.key()));
+        } else {
+          additionalSimulationFlagsList.append(QString("-%1=%2")
+                                               .arg(additionalSimulationFlagsIterator.key())
+                                               .arg(additionalSimulationFlagsIterator.value()));
+        }
+      }
+      mpAdditionalSimulationFlagsTextBox->setText(additionalSimulationFlagsList.join(" "));
     }
     mpCflagsTextBox->setEnabled(true);
     mpFileNameTextBox->setEnabled(true);
@@ -1131,66 +1146,68 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   // old simulation flags
   QString oldSimulationFlags = QString("annotate=%1").arg(MainWindow::instance()->getOMCProxy()->getSimulationFlagsAnnotation(mpLibraryTreeItem->getNameStructure()));
   // new simulation flags
-  QStringList simulationFlags;
+  QMap<QString, QString> simulationFlags;
   if (!mpClockComboBox->currentText().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("clock").arg(mpClockComboBox->currentText()));
+    simulationFlags.insert("clock", mpClockComboBox->currentText());
   }
   if (mpCPUTimeCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("cpu"));
+    simulationFlags.insert("cpu", "()");
   }
   if (!mpRestartAfterEventCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("noRestart"));
+    simulationFlags.insert("noRestart", "()");
   }
   if (!mpRootFindingCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("noRootFinding"));
+    simulationFlags.insert("noRootFinding", "()");
   }
   if (mpProtectedVariablesCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("emit_protected"));
+    simulationFlags.insert("emit_protected", "()");
   }
   if (!mpModelSetupFileTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("f").arg(mpModelSetupFileTextBox->text()));
+    simulationFlags.insert("f", mpModelSetupFileTextBox->text());
   }
   if (!mpEquationSystemInitializationFileTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("iif").arg(mpEquationSystemInitializationFileTextBox->text()));
+    simulationFlags.insert("iif", mpEquationSystemInitializationFileTextBox->text());
   }
   if (!mpInitializationMethodComboBox->currentText().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("iim").arg(mpInitializationMethodComboBox->currentText()));
+    simulationFlags.insert("iim", mpInitializationMethodComboBox->currentText());
   }
   if (!mpEquationSystemInitializationTimeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("iit").arg(mpEquationSystemInitializationTimeTextBox->text()));
+    simulationFlags.insert("iit", mpEquationSystemInitializationTimeTextBox->text());
   }
   if (!mpInitialStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("initialStepSize").arg(mpInitialStepSizeTextBox->text()));
+    simulationFlags.insert("initialStepSize", mpInitialStepSizeTextBox->text());
   }
-  simulationFlags.append(QString("%1=\"%2\"").arg("jacobian").arg(mpJacobianComboBox->currentText()));
+  if (!mpJacobianComboBox->currentText().isEmpty()) {
+    simulationFlags.insert("jacobian", mpJacobianComboBox->currentText());
+  }
   if (!mpLinearizationTimeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("l").arg(mpLinearizationTimeTextBox->text()));
+    simulationFlags.insert("l", mpLinearizationTimeTextBox->text());
   }
   if (!mpLinearSolverComboBox->currentText().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("ls").arg(mpLinearSolverComboBox->currentText()));
+    simulationFlags.insert("ls", mpLinearSolverComboBox->currentText());
   }
   if (mpMaxIntegrationOrderSpinBox->value() != 5) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("maxIntegrationOrder").arg(mpMaxIntegrationOrderSpinBox->value()));
+    simulationFlags.insert("maxIntegrationOrder", QString::number(mpMaxIntegrationOrderSpinBox->value()));
   }
   if (!mpMaxStepSizeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("maxStepSize").arg(mpMaxStepSizeTextBox->text()));
+    simulationFlags.insert("maxStepSize", mpMaxStepSizeTextBox->text());
   }
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("nls").arg(mpNonLinearSolverComboBox->currentText()));
+    simulationFlags.insert("nls", mpNonLinearSolverComboBox->currentText());
   }
   if (mpEquidistantTimeGridCheckBox->isEnabled() && !mpEquidistantTimeGridCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("noEquidistantTimeGrid"));
+    simulationFlags.insert("noEquidistantTimeGrid", "()");
   }
   if (!mpStoreVariablesAtEventsCheckBox->isChecked()) {
-    simulationFlags.append(QString("%1=\"()\"").arg("noEventEmit"));
+    simulationFlags.insert("noEventEmit", "()");
   }
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("output").arg(mpOutputVariablesTextBox->text()));
+    simulationFlags.insert("output", mpOutputVariablesTextBox->text());
   }
   if (!mpResultFileName->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("r").arg(mpResultFileName->text()));
+    simulationFlags.insert("r", mpResultFileName->text());
   }
-  simulationFlags.append(QString("%1=\"%2\"").arg("s").arg(mpMethodComboBox->currentText()));
+  simulationFlags.insert("s", mpMethodComboBox->currentText());
   QStringList logStreams;
   int i = 0;
   while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
@@ -1203,12 +1220,29 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     i++;
   }
   if (logStreams.size() > 0) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("lv").arg(logStreams.join(",")));
+    simulationFlags.insert("lv", logStreams.join(","));
   }
-  if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("%1=\"%2\"").arg("additionalSimulationFlags").arg(mpAdditionalSimulationFlagsTextBox->text()));
+  QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
+  foreach (QString additionalSimulationFlag, additionalSimulationFlags) {
+    additionalSimulationFlag = additionalSimulationFlag.trimmed();
+    if (additionalSimulationFlag.startsWith('-')) {
+      additionalSimulationFlag.remove(0, 1);
+    }
+    QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);
+    if (nameValueList.size() < 2) {
+      simulationFlags.insert(nameValueList.at(0), "()");
+    } else {
+      simulationFlags.insert(nameValueList.at(0), nameValueList.at(1));
+    }
   }
-  QString newSimulationFlags = QString("__OpenModelica_simulationFlags(%1)").arg(simulationFlags.join(","));
+  QStringList simulationFlagsList;
+  QMapIterator<QString, QString> simulationFlagsIterator(simulationFlags);
+  simulationFlagsIterator.toFront();
+  while (simulationFlagsIterator.hasNext()) {
+    simulationFlagsIterator.next();
+    simulationFlagsList.append(QString("%1=\"%2\"").arg(simulationFlagsIterator.key(), simulationFlagsIterator.value()));
+  }
+  QString newSimulationFlags = QString("__OpenModelica_simulationFlags(%1)").arg(simulationFlagsList.join(","));
   // if we have ModelWidget for class then put the change on undo stack.
   if (mpLibraryTreeItem->getModelWidget()) {
     UpdateClassSimulationFlagsAnnotationCommand *pUpdateClassSimulationFlagsAnnotationCommand;
