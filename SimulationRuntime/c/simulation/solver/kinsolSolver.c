@@ -211,7 +211,7 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
   }
 
   /* Specify linear solver and/or corresponding jacobian function*/
-  if (kinsolData->linearSolverMethod == 3)
+  if (kinsolData->linearSolverMethod == NLS_LS_KLU)
   {
     if(nlsData->isPatternAvailable)
     {
@@ -229,23 +229,21 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
       if (checkReturnFlag(flag)){
         errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Something goes wrong while initialize KINSOL Sparse Solver!");
       }
-    }
-    else
-    {
+    } else {
       flag = KINDense(kinsolData->kinsolMemory, size);
       if (checkReturnFlag(flag)){
         errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Something goes wrong while initialize KINSOL solver!");
       }
     }
   }
-  else if (kinsolData->linearSolverMethod == 1)
+  else if (kinsolData->linearSolverMethod == NLS_LS_TOTALPIVOT)
   {
     flag = KINDense(kinsolData->kinsolMemory, size);
     if (checkReturnFlag(flag)){
       errorStreamPrint(LOG_STDOUT, 0, "##KINSOL## Something goes wrong while initialize KINSOL solver!");
     }
   }
-  else if (kinsolData->linearSolverMethod == 2)
+  else if (kinsolData->linearSolverMethod == NLS_LS_LAPACK)
   {
     flag = KINDense(kinsolData->kinsolMemory, size);
     if (checkReturnFlag(flag)){
@@ -261,12 +259,13 @@ int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, int linearSolver
   nlsKinsolConfigSetup(kinsolData);
 
   /* debug print level of kinsol */
-  if (ACTIVE_STREAM(LOG_NLS_V))
+  if (ACTIVE_STREAM(LOG_NLS_V)) {
     printLevel = 3;
-  else if (ACTIVE_STREAM(LOG_NLS))
+  } else if (ACTIVE_STREAM(LOG_NLS)) {
     printLevel = 1;
-  else
+  } else {
     printLevel = 0;
+  }
   KINSetPrintLevel(kinsolData->kinsolMemory, printLevel);
 
   return 0;
@@ -751,7 +750,7 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
       nlsKinsolResiduals(x, kinsolData->fTmp, &kinsolData->userData);
 
       /* calculate the right jacobian */
-      if(nlsData->isPatternAvailable && kinsolData->linearSolverMethod == 3)
+      if(nlsData->isPatternAvailable && kinsolData->linearSolverMethod == NLS_LS_KLU)
       {
         spJac = NewSparseMat(kinsolData->size,kinsolData->size,kinsolData->nnz);
         if (nlsData->analyticalJacobianColumn != NULL){
@@ -871,7 +870,7 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     break;
   case KIN_LSETUP_FAIL:
     /* in case of something goes wrong with the symbolic jacobian try the numerical */
-    if ( kinsolData->linearSolverMethod == 3 && nlsData->isPatternAvailable && nlsData->analyticalJacobianColumn != NULL){
+    if ( kinsolData->linearSolverMethod == NLS_LS_KLU && nlsData->isPatternAvailable && nlsData->analyticalJacobianColumn != NULL){
       flag = KINSlsSetSparseJacFn(kinsolData->kinsolMemory, nlsSparseJac);
     }
     if (checkReturnFlag(flag)){

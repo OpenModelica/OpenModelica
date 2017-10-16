@@ -1146,7 +1146,7 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
   debugVectorDouble(LOG_NLS_JAC,"vector b:", x, n);
 
   switch(method){
-    case (1): /* NLS_LS_TOTALPIVOT */
+    case NLS_LS_TOTALPIVOT:
 
       solverinfo = solveSystemWithTotalPivotSearch(n, x, A, indRow, indCol, pos, rank, casualTearingSet);
       /* in case of failing */
@@ -1165,7 +1165,7 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
         returnValue = 0;
       }
       break;
-    case 2: /* NLS_LS_LAPACK */
+    case NLS_LS_LAPACK:
       /* Solve system with lapack */
       dgesv_((int*) &n,
           (int*) &nrhs,
@@ -1200,7 +1200,7 @@ int linearSolverWrapper(int n, double* x, double* A, int* indRow, int* indCol, i
       }
       break;
     default:
-      warningStreamPrint(LOG_STDOUT, 0, "Non-Linear solver try to run with a unknown linear solver.");
+      throwStreamPrint(0, "Non-Linear solver try to run with a unknown linear solver (%d).", method);
   }
 
   /* Debugging error of linear system */

@@ -803,6 +803,7 @@ const char *IDA_LS_METHOD_DESC[IDA_LS_MAX] = {
 const char *NLS_LS_METHOD[NLS_LS_MAX] = {
   "unknown",
 
+  "default",
   "totalpivot",
   "lapack",
   "klu"
@@ -811,6 +812,7 @@ const char *NLS_LS_METHOD[NLS_LS_MAX] = {
 const char *NLS_LS_METHOD_DESC[NLS_LS_MAX] = {
   "unknown",
 
+  "chooses the nls linear solver based on which nls is being used.",
   "internal total pivot implementation. Solve in some case even under-determined systems.",
   "use external lapack implementation.",
   "use klu direct sparse solver."

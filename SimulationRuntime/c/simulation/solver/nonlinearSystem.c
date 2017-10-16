@@ -34,6 +34,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "util/simulation_options.h"
 #include "util/omc_error.h"
 #include "nonlinearSystem.h"
 #include "nonlinearValuesList.h"
@@ -348,6 +349,17 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
   infoStreamPrint(LOG_NLS, 0, "%ld non-linear systems", data->modelData->nNonLinearSystems);
+  if (data->simulationInfo->nlsLinearSolver == NLS_LS_DEFAULT) {
+#if !defined(OMC_MINIMAL_RUNTIME)
+    if (data->simulationInfo->nlsMethod == NLS_KINSOL) {
+      data->simulationInfo->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+    }
+#else
+    data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+#endif
+  }
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
@@ -837,16 +849,17 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     /* SOLVE!
      If the new global homotopy approach is activated and the component contains the homotopy operator
      use the HOMOTOPY SOLVER, otherwise use the selected solver */
-    if(data->callback->useHomotopy == 2 && nonlinsys->homotopySupport)
+    if(data->callback->useHomotopy == 2 && nonlinsys->homotopySupport) {
       nonlinsys->solved = solveHomotopy(data, threadData, sysNumber);
-    else
+    } else {
       nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+    }
   }
 
   if (lambda_steps > 1 && !nonlinsys->solved) {
-    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve initial system %d without homotopy method. The homotopy method is used now.", sysNumber);
-
+    }
 #if !defined(OMC_NO_FILESYSTEM)
     if(ACTIVE_STREAM(LOG_INIT))
     {
@@ -864,9 +877,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     {
       data->simulationInfo->lambda = ((double)step)/(lambda_steps-1);
 
-      if(data->simulationInfo->lambda > 1.0) {
-          data->simulationInfo->lambda = 1.0;
-        }
+      if (data->simulationInfo->lambda > 1.0) {
+        data->simulationInfo->lambda = 1.0;
+      }
 
       infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
       nonlinsys->solved = solveNLS(data, threadData, sysNumber);

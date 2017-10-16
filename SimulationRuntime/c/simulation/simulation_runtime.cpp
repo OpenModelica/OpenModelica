@@ -218,124 +218,26 @@ void setGlobalVerboseLevel(int argc, char**argv)
   delete flags;
 }
 
-static int getNonlinearSolverMethod()
+static void readFlag(int *flag, int max, const char *value, const char *flagName, const char **names, const char **desc)
 {
   int i;
-  const char *cflags = omc_flagValue[FLAG_NLS];
-  const string *method = cflags ? new string(cflags) : NULL;
-
-  if(!method)
-    return NLS_MIXED; /* default method */
-
-  for(i=1; i<NLS_MAX; ++i)
-    if(*method == NLS_NAME[i])
-      return i;
-
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -nls=%s, current options are:", method->c_str());
-  for(i=1; i<NLS_MAX; ++i)
-    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[i], NLS_DESC[i]);
-  messageClose(LOG_STDOUT);
-  throwStreamPrint(NULL,"see last warning");
-
-  return NLS_NONE;
-}
-
-static int getlinearSolverMethod()
-{
-  int i;
-  const char *cflags = omc_flagValue[FLAG_LS];
-  const string *method = cflags ? new string(cflags) : NULL;
-
-  if(!method)
-    return LS_DEFAULT; /* default method */
-
-  for(i=1; i<LS_MAX; ++i)
-    if(*method == LS_NAME[i])
-      return i;
-
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -ls=%s, current options are:", method->c_str());
-  for(i=1; i<LS_MAX; ++i)
-    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LS_NAME[i], LS_DESC[i]);
-  messageClose(LOG_STDOUT);
-  throwStreamPrint(NULL,"see last warning");
-
-  return LS_NONE;
-}
-
-static int getlinearSparseSolverMethod()
-{
-  int i;
-  const char *cflags = omc_flagValue[FLAG_LSS];
-  const string *method = cflags ? new string(cflags) : NULL;
-
-  if (!method) {
-    return LSS_DEFAULT; /* default method */
+  if (!value) {
+    return; /* keep the default value */
   }
 
-  for(i=1; i<LSS_MAX; ++i)
-    if(*method == LSS_NAME[i])
-      return i;
-
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -lss=%s, current options are:", method->c_str());
-  for(i=1; i<LSS_MAX; ++i)
-    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LSS_NAME[i], LSS_DESC[i]);
-  messageClose(LOG_STDOUT);
-  throwStreamPrint(NULL,"see last warning");
-
-  return LSS_NONE;
-}
-
-static int getNewtonStrategy()
-{
-  int i;
-  const char *cflags = omc_flagValue[FLAG_NEWTON_STRATEGY];
-  const string *method = cflags ? new string(cflags) : NULL;
-
-  if(!method)
-    return NEWTON_DAMPED2; /* default method */
-
-  for(i=1; i<NEWTON_MAX; ++i)
-    if(*method == NEWTONSTRATEGY_NAME[i])
-      return i;
-
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -nls=%s, current options are:", method->c_str());
-  for(i=1; i<NEWTON_MAX; ++i)
-    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[i], NEWTONSTRATEGY_DESC[i]);
-  messageClose(LOG_STDOUT);
-  throwStreamPrint(NULL,"see last warning");
-
-  return NEWTON_NONE;
-}
-
-static int getNlsLSSolver(int nlsSolver)
-{
-  int i;
-  const char *cflags = omc_flagValue[FLAG_NLS_LS];
-  const string *method = cflags ? new string(cflags) : NULL;
-
-  if(!method)
-  {
-    if (nlsSolver == NLS_KINSOL)
-    {
-      return NLS_LS_KLU; /* default kinsol linear solver method */
-    }
-    else
-    {
-      return NLS_LS_LAPACK; /* default method */
+  for (i=1; i<max; ++i) {
+    if (0 == strcmp(value, names[i])) {
+      *flag = i;
+      return;
     }
   }
 
-  for(i=1; i<NLS_LS_MAX; ++i)
-    if(*method == NLS_LS_METHOD[i])
-      return i;
-
-  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option -nls=%s, current options are:", method->c_str());
-  for(i=1; i<NLS_LS_MAX; ++i)
-    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD[i], NLS_LS_METHOD_DESC[i]);
+  warningStreamPrint(LOG_STDOUT, 1, "unrecognized option %s=%s, current options are:", flagName, value);
+  for (i=1; i<LS_MAX; ++i) {
+    warningStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", names[i], desc[i]);
+  }
   messageClose(LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
-
-  return NLS_LS_UNKNOWN;
 }
 
 static double getFlagReal(enum _FLAG flag, double res)
@@ -839,12 +741,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     EXIT(1);
   }
 
-  data->simulationInfo->nlsMethod = getNonlinearSolverMethod();
-  data->simulationInfo->lsMethod = getlinearSolverMethod();
-  data->simulationInfo->lssMethod = getlinearSparseSolverMethod();
-  data->simulationInfo->newtonStrategy = getNewtonStrategy();
+  readFlag(&data->simulationInfo->nlsMethod, NLS_MAX, omc_flagValue[FLAG_NLS], "-nls", NLS_NAME, NLS_DESC);
+  readFlag(&data->simulationInfo-> lsMethod,  LS_MAX, omc_flagValue[FLAG_LS ],  "-ls",  LS_NAME,  LS_DESC);
+  readFlag(&data->simulationInfo->lssMethod, LSS_MAX, omc_flagValue[FLAG_LSS], "-lss", LSS_NAME, LSS_DESC);
+  readFlag(&data->simulationInfo->newtonStrategy, NEWTON_MAX, omc_flagValue[FLAG_NEWTON_STRATEGY], "-newton", NEWTONSTRATEGY_NAME, NEWTONSTRATEGY_DESC);
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
-  data->simulationInfo->nlsLinearSolver = getNlsLSSolver(data->simulationInfo->nlsMethod);
+  readFlag(&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD, NLS_LS_METHOD_DESC);
 
   if(omc_flag[FLAG_HOMOTOPY_ADAPT_BEND]) {
     homAdaptBend = atof(omc_flagValue[FLAG_HOMOTOPY_ADAPT_BEND]);

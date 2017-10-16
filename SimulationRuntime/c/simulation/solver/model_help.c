@@ -47,6 +47,7 @@
 #include "mixedSystem.h"
 #include "delay.h"
 #include "epsilon.h"
+#include "simulation/solver/fmi_events.h"
 #include "simulation/solver/stateset.h"
 #include "meta/meta_modelica.h"
 
@@ -939,11 +940,11 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 #else
   data->simulationInfo->nlsMethod = NLS_HOMOTOPY;
 #endif
-  data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+  data->simulationInfo->nlsLinearSolver = NLS_LS_DEFAULT;
   data->simulationInfo->lsMethod = LS_DEFAULT;
   data->simulationInfo->lssMethod = LSS_DEFAULT;
   data->simulationInfo->mixedMethod = MIXED_SEARCH;
-  data->simulationInfo->newtonStrategy = NEWTON_PURE;
+  data->simulationInfo->newtonStrategy = NEWTON_DAMPED2;
   data->simulationInfo->nlsCsvInfomation = 0;
   data->simulationInfo->currentContext = CONTEXT_ALGEBRAIC;
   data->simulationInfo->jacobianEvals = data->modelData->nStates;
