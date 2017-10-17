@@ -45,6 +45,19 @@
 
 extern "C" {
 
+typedef enum {
+  MAT4_DOUBLE_PRECISION_FULL_MATRIX=0,
+  MAT4_SINGLE_PRECISION_FULL_MATRIX,
+  MAT4_32BIT_INTEGER_FULL_MATRIX,
+  MAT4_16BIT_INTEGER_FULL_MATRIX,
+  MAT4_8BIT_INTEGER_FULL_MATRIX,
+  MAT4_STRING_TEXT_MATRIX,
+  MAT4_MATRIX_TYPE_MAX
+} MAT4_MATRIX_TYPE;
+
+static const int MAT4_MOPT_OF_MATRIX_TYPE[MAT4_MATRIX_TYPE_MAX]={0,10,20,30,40,51};
+static const int MAT4_SIZE_OF_MATRIX_TYPE[MAT4_MATRIX_TYPE_MAX]={8,4,4,2,1,1};
+
 typedef std::pair<void*,int> indx_type;
 typedef std::map<int,int> INTMAP;
 
@@ -69,8 +82,8 @@ typedef struct mat_data {
 } mat_data;
 
 static long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment);
-static void mat_writeMatVer4MatrixHeader(simulation_result *self,DATA *data, threadData_t *threadData,const char *name, int rows, int cols, unsigned int size);
-static void mat_writeMatVer4Matrix(simulation_result *self,DATA *data, threadData_t *threadData, const char *name, int rows, int cols, const void *, unsigned int size);
+static void mat_writeMatVer4MatrixHeader(simulation_result *self,DATA *data, threadData_t *threadData,const char *name, int rows, int cols, MAT4_MATRIX_TYPE mat4_matrix_type);
+static void mat_writeMatVer4Matrix(simulation_result *self,DATA *data, threadData_t *threadData, const char *name, int rows, int cols, const void *, MAT4_MATRIX_TYPE mat4_matrix_type);
 static void generateDataInfo(simulation_result *self,DATA *data, threadData_t *threadData,int* &dataInfo, int& rows, int& cols, int nVars, int nParams);
 static void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop);
 
@@ -89,49 +102,51 @@ static int calcDataSize(simulation_result *self,DATA *data)
 
   int sz = 1; /* start with one for the timeValue */
 
-  if(self->cpuTime)
+  if (self->cpuTime) {
     sz++;
-
-  if(omc_flag[FLAG_SOLVER_STEPS])
+  }
+  if (omc_flag[FLAG_SOLVER_STEPS]) {
     sz++;
-
-  for(int i = 0; i < modelData->nVariablesReal; i++)
-    if(!modelData->realVarsData[i].filterOutput)
-    {
+  }
+  for(int i = 0; i < modelData->nVariablesReal; i++) {
+    if(!modelData->realVarsData[i].filterOutput) {
        matData->r_indx_map[i] = sz;
        sz++;
     }
+  }
 
   /* put sensitivity analysis also to the result file */
-  if (omc_flag[FLAG_IDAS])
-  {
+  if (omc_flag[FLAG_IDAS]) {
     sz += (data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars);
   }
 
-  for(int i = 0; i < modelData->nVariablesInteger; i++)
-    if(!modelData->integerVarsData[i].filterOutput)
-    {
+  for (int i = 0; i < modelData->nVariablesInteger; i++) {
+    if(!modelData->integerVarsData[i].filterOutput) {
        matData->i_indx_map[i] = sz;
        sz++;
     }
-  for(int i = 0; i < modelData->nVariablesBoolean; i++)
-    if(!modelData->booleanVarsData[i].filterOutput)
-    {
+  }
+  for (int i = 0; i < modelData->nVariablesBoolean; i++) {
+    if(!modelData->booleanVarsData[i].filterOutput) {
        matData->b_indx_map[i] = sz;
        sz++;
     }
-  for(int i = 0; i < modelData->nAliasReal; i++)
+  }
+  for(int i = 0; i < modelData->nAliasReal; i++) {
     if(!modelData->realAlias[i].filterOutput) sz++;
-  for(int i = 0; i < modelData->nAliasInteger; i++)
+  }
+  for(int i = 0; i < modelData->nAliasInteger; i++) {
     if(!modelData->integerAlias[i].filterOutput) sz++;
+  }
   matData->negatedboolaliases = 0;
-  for(int i = 0; i < modelData->nAliasBoolean; i++)
-    if(!modelData->booleanAlias[i].filterOutput)
-    {
-       if(modelData->booleanAlias[i].negate)
-          matData->negatedboolaliases++;
-       sz++;
+  for(int i = 0; i < modelData->nAliasBoolean; i++) {
+    if(!modelData->booleanAlias[i].filterOutput) {
+      if(modelData->booleanAlias[i].negate) {
+        matData->negatedboolaliases++;
+      }
+      sz++;
     }
+  }
   return sz;
 }
 
@@ -142,26 +157,26 @@ static int calcParamsSize(simulation_result *self, DATA *data)
 
   int i, sz = 1;
 
-  for (i = 0; i < modelData->nParametersReal; i++)
-    if (!modelData->realParameterData[i].filterOutput)
-    {
+  for (i = 0; i < modelData->nParametersReal; i++) {
+    if (!modelData->realParameterData[i].filterOutput) {
       matData->r_indx_parammap[i] = sz;
       sz ++;
     }
+  }
 
-  for (i = 0; i < modelData->nParametersInteger; i++)
-    if(!modelData->integerParameterData[i].filterOutput)
-    {
+  for (i = 0; i < modelData->nParametersInteger; i++) {
+    if(!modelData->integerParameterData[i].filterOutput) {
       matData->i_indx_parammap[i] = sz;
       sz ++;
     }
+  }
 
-  for (i = 0; i < modelData->nParametersBoolean; i++)
-    if(!modelData->booleanParameterData[i].filterOutput)
-    {
+  for (i = 0; i < modelData->nParametersBoolean; i++) {
+    if(!modelData->booleanParameterData[i].filterOutput) {
       matData->b_indx_parammap[i] = sz;
       sz ++;
     }
+  }
 
   return sz - 1;
 }
@@ -175,48 +190,54 @@ static const VAR_INFO** calcDataNames(simulation_result *self,DATA *data,int dat
 
   names[curVar++] = &timeValName;
 
-  if(self->cpuTime)
+  if (self->cpuTime) {
     names[curVar++] = &cpuTimeValName;
+  }
 
-  if(omc_flag[FLAG_SOLVER_STEPS])
+  if (omc_flag[FLAG_SOLVER_STEPS]) {
     names[curVar++] = &solverStepsValName;
+  }
 
-  for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
+  for (int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
     names[curVar++] = &(modelData->realVarsData[i].info);
+  }
 
   /* put sensitivity analysis also to the result file */
-  if (omc_flag[FLAG_IDAS])
-  {
-    for(int i = data->modelData->nSensitivityParamVars; i < data->modelData->nSensitivityVars; i++)
-    {
+  if (omc_flag[FLAG_IDAS]) {
+    for(int i = data->modelData->nSensitivityParamVars; i < data->modelData->nSensitivityVars; i++) {
       names[curVar++] = &(modelData->realSensitivityData[i].info);
     }
   }
-  for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
     names[curVar++] = &(modelData->integerVarsData[i].info);
-  for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
+  }
+  for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
     names[curVar++] = &(modelData->booleanVarsData[i].info);
-  for(int i = 0; i < modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput)
+  }
+  for(int i = 0; i < modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
     names[curVar++] = &(modelData->realAlias[i].info);
-  for(int i = 0; i < modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput)
+  }
+  for(int i = 0; i < modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
     names[curVar++] = &(modelData->integerAlias[i].info);
-  for(int i = 0; i < modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput)
+  }
+  for(int i = 0; i < modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
     names[curVar++] = &(modelData->booleanAlias[i].info);
+  }
 
-  for(int i = 0; i < modelData->nParametersReal; i++)
-  {
-    if (!modelData->realParameterData[i].filterOutput)
+  for(int i = 0; i < modelData->nParametersReal; i++) {
+    if (!modelData->realParameterData[i].filterOutput) {
       names[curVar++] = &(modelData->realParameterData[i].info);
+    }
   }
-  for(int i = 0; i < modelData->nParametersInteger; i++)
-  {
-    if (!modelData->integerParameterData[i].filterOutput)
+  for(int i = 0; i < modelData->nParametersInteger; i++) {
+    if (!modelData->integerParameterData[i].filterOutput) {
       names[curVar++] = &(modelData->integerParameterData[i].info);
+    }
   }
-  for(int i = 0; i < modelData->nParametersBoolean; i++)
-  {
-    if (!modelData->booleanParameterData[i].filterOutput)
+  for(int i = 0; i < modelData->nParametersBoolean; i++) {
+    if (!modelData->booleanParameterData[i].filterOutput) {
       names[curVar++] = &(modelData->booleanParameterData[i].info);
+    }
   }
 
   return names;
@@ -228,19 +249,16 @@ void mat4_writeParameterData(simulation_result *self,DATA *data, threadData_t *t
   mat_data *matData = (mat_data*) self->storage;
   int rows, cols;
   double *doubleMatrix = NULL;
-  try
-  {
+  try {
     std::ofstream::pos_type remember = matData->fp.tellp();
     matData->fp.seekp(matData->data1HdrPos);
     /* generate `data_1' matrix (with parameter data) */
     generateData_1(data, threadData, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
-    mat_writeMatVer4Matrix(self,data, threadData,"data_1", cols, rows, doubleMatrix, sizeof(double));
+    mat_writeMatVer4Matrix(self,data, threadData,"data_1", cols, rows, doubleMatrix, MAT4_DOUBLE_PRECISION_FULL_MATRIX);
     free(doubleMatrix); doubleMatrix = NULL;
     matData->fp.seekp(remember);
-  }
-  catch(...)
-  {
+  } catch(...) {
     matData->fp.close();
     free(doubleMatrix);
     throw;
@@ -281,23 +299,23 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
     }
 
     /* write `AClass' matrix */
-    mat_writeMatVer4Matrix(self,data, threadData,"Aclass", 4, 11, Aclass, sizeof(int8_t));
+    mat_writeMatVer4Matrix(self,data, threadData,"Aclass", 4, 11, Aclass, MAT4_STRING_TEXT_MATRIX);
     /* flatten variables' names */
     flattenStrBuf(matData->numVars + matData->numParams, names, stringMatrix, rows, cols, false /* We cannot plot derivatives if we fix the names ... */, false);
     /* write `name' matrix */
-    mat_writeMatVer4Matrix(self,data,threadData,"name", rows, cols, stringMatrix, sizeof(int8_t));
+    mat_writeMatVer4Matrix(self,data,threadData,"name", rows, cols, stringMatrix, MAT4_STRING_TEXT_MATRIX);
     free(stringMatrix); stringMatrix = NULL;
 
     /* flatten variables' comments */
     flattenStrBuf(matData->numVars + matData->numParams, names, stringMatrix, rows, cols, false, true);
     /* write `description' matrix */
-    mat_writeMatVer4Matrix(self,data,threadData,"description", rows, cols, stringMatrix, sizeof(int8_t));
+    mat_writeMatVer4Matrix(self,data,threadData,"description", rows, cols, stringMatrix, MAT4_STRING_TEXT_MATRIX);
     free(stringMatrix); stringMatrix = NULL;
 
     /* generate dataInfo table */
     generateDataInfo(self, data, threadData, intMatrix, rows, cols, matData->numVars, matData->numParams);
     /* write `dataInfo' matrix */
-    mat_writeMatVer4Matrix(self, data, threadData, "dataInfo", cols, rows, intMatrix, sizeof(int32_t));
+    mat_writeMatVer4Matrix(self, data, threadData, "dataInfo", cols, rows, intMatrix, MAT4_32BIT_INTEGER_FULL_MATRIX);
 
     /* remember data1HdrPos */
     matData->data1HdrPos = matData->fp.tellp();
@@ -306,12 +324,14 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
     /* generate `data_1' matrix (with parameter data) */
     generateData_1(data, threadData, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
-    mat_writeMatVer4Matrix(self,data,threadData,"data_1", cols, rows, doubleMatrix, sizeof(double));
+    mat_writeMatVer4Matrix(self,data,threadData,"data_1", cols, rows, doubleMatrix, MAT4_DOUBLE_PRECISION_FULL_MATRIX);
 
     /* remember data2HdrPos */
     matData->data2HdrPos = matData->fp.tellp();
     /* write `data_2' header */
-    mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, 0, sizeof(double));
+    mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2",
+                                 matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, 0,
+                                 omc_flag[FLAG_SINGLE_PRECISION] ? MAT4_SINGLE_PRECISION_FULL_MATRIX : MAT4_DOUBLE_PRECISION_FULL_MATRIX);
 
     free(doubleMatrix);
     free(intMatrix);
@@ -319,9 +339,7 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
     intMatrix = NULL;
     matData->fp.flush();
 
-  }
-  catch(...)
-  {
+  } catch(...) {
     matData->fp.close();
     free(names); names=NULL;
     free(stringMatrix);
@@ -348,7 +366,7 @@ void mat4_free(simulation_result *self,DATA *data, threadData_t *threadData)
     try
     {
       matData->fp.seekp(matData->data2HdrPos);
-      mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, matData->ntimepoints, sizeof(double));
+      mat_writeMatVer4MatrixHeader(self,data,threadData,"data_2", matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, matData->ntimepoints, omc_flag[FLAG_SINGLE_PRECISION] ? MAT4_SINGLE_PRECISION_FULL_MATRIX : MAT4_DOUBLE_PRECISION_FULL_MATRIX);
       matData->fp.close();
     }
     catch (...)
@@ -359,6 +377,16 @@ void mat4_free(simulation_result *self,DATA *data, threadData_t *threadData)
   delete matData;
   self->storage = NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
+}
+
+static inline void writeSingleRealOutput(mat_data *matData, double v)
+{
+  if (omc_flag[FLAG_SINGLE_PRECISION]) {
+    float datPoint = v;
+    matData->fp.write((char*)&datPoint, sizeof(float));
+  } else {
+    matData->fp.write((char*)&v, sizeof(double));
+  }
 }
 
 void mat4_emit(simulation_result *self,DATA *data, threadData_t *threadData)
@@ -374,41 +402,43 @@ void mat4_emit(simulation_result *self,DATA *data, threadData_t *threadData)
   /* this is done wrong -- a buffering should be used
      although ofstream does have some buffering, but it is not enough and
      not for this purpose */
-  matData->fp.write((char*)&(data->localData[0]->timeValue), sizeof(double));
+  writeSingleRealOutput(matData, data->localData[0]->timeValue);
 
-  if(self->cpuTime)
-    matData->fp.write((char*)&cpuTimeValue, sizeof(double));
+  if(self->cpuTime) {
+    writeSingleRealOutput(matData, cpuTimeValue);
+  }
 
-  if(omc_flag[FLAG_SOLVER_STEPS])
-    matData->fp.write((char*)&(data->simulationInfo->solverSteps), sizeof(double));
+  if(omc_flag[FLAG_SOLVER_STEPS]) {
+    writeSingleRealOutput(matData, data->simulationInfo->solverSteps);
+  }
 
-  for(int i = 0; i < data->modelData->nVariablesReal; i++) if(!data->modelData->realVarsData[i].filterOutput)
-    matData->fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
+  for(int i = 0; i < data->modelData->nVariablesReal; i++) if(!data->modelData->realVarsData[i].filterOutput) {
+    writeSingleRealOutput(matData, data->localData[0]->realVars[i]);
+  }
 
   /* put parameter sensitivity analysis also to the result file */
-  if (omc_flag[FLAG_IDAS])
-  {
-    for(int i = 0; i < data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars; i++)
-      matData->fp.write((char*)&(data->simulationInfo->sensitivityMatrix[i]),sizeof(double));
+  if (omc_flag[FLAG_IDAS]) {
+    for(int i = 0; i < data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars; i++) {
+      writeSingleRealOutput(matData, data->simulationInfo->sensitivityMatrix[i]);
+    }
   }
-  for(int i = 0; i < data->modelData->nVariablesInteger; i++) if(!data->modelData->integerVarsData[i].filterOutput)
-    {
-      datPoint = (double) data->localData[0]->integerVars[i];
-      matData->fp.write((char*)&datPoint,sizeof(double));
+  for (int i = 0; i < data->modelData->nVariablesInteger; i++) {
+    if(!data->modelData->integerVarsData[i].filterOutput) {
+      writeSingleRealOutput(matData, (double) data->localData[0]->integerVars[i]);
     }
-  for(int i = 0; i < data->modelData->nVariablesBoolean; i++) if(!data->modelData->booleanVarsData[i].filterOutput)
-    {
-      datPoint = (double) data->localData[0]->booleanVars[i];
-      matData->fp.write((char*)&datPoint,sizeof(double));
+  }
+  for (int i = 0; i < data->modelData->nVariablesBoolean; i++) {
+    if(!data->modelData->booleanVarsData[i].filterOutput) {
+      writeSingleRealOutput(matData, (double) data->localData[0]->booleanVars[i]);
     }
-  for(int i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput)
-    {
-      if(data->modelData->booleanAlias[i].negate)
-      {
-        datPoint = (double) (data->localData[0]->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1);
-        matData->fp.write((char*)&datPoint,sizeof(double));
+  }
+  for (int i = 0; i < data->modelData->nAliasBoolean; i++) {
+    if(!data->modelData->booleanAlias[i].filterOutput) {
+      if(data->modelData->booleanAlias[i].negate) {
+        writeSingleRealOutput(matData, (double) (data->localData[0]->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1));
       }
     }
+  }
   if (!matData->fp) {
     throwStreamPrint(threadData, "Error while writing file %s",self->filename);
   }
@@ -435,7 +465,7 @@ static inline void fixDerInName(char *str, size_t len)
   }
 }
 
-long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment)
+static long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& longest, int& nstrings, bool fixNames, bool useComment)
 {
   int i,len;
   nstrings = dims;
@@ -468,7 +498,7 @@ long flattenStrBuf(int dims, const struct VAR_INFO** src, char* &dest, int& long
 }
 
 // writes MAT-file matrix header to file
-void mat_writeMatVer4MatrixHeader(simulation_result *self, DATA *data, threadData_t *threadData, const char *name, int rows, int cols, unsigned int size)
+static void mat_writeMatVer4MatrixHeader(simulation_result *self, DATA *data, threadData_t *threadData, const char *name, int rows, int cols, MAT4_MATRIX_TYPE mat4_matrix_type)
 {
   mat_data *matData = (mat_data*) self->storage;
   typedef struct MHeader {
@@ -480,12 +510,8 @@ void mat_writeMatVer4MatrixHeader(simulation_result *self, DATA *data, threadDat
   } MHeader_t;
   const int endian_test = 1;
   MHeader_t hdr;
-
-  int type = 0;
-  if(size == 1 /* char */)
-    type = 51;
-  if(size == 4 /* int32 */)
-    type = 20;
+  int size = MAT4_SIZE_OF_MATRIX_TYPE[mat4_matrix_type];
+  int type = MAT4_MOPT_OF_MATRIX_TYPE[mat4_matrix_type];
 
   /* create matrix header structure */
   hdr.type = 1000*((*(char*)&endian_test) == 0) + type;
@@ -504,20 +530,20 @@ void mat_writeMatVer4MatrixHeader(simulation_result *self, DATA *data, threadDat
   }
 }
 
-void mat_writeMatVer4Matrix(simulation_result *self, DATA *data, threadData_t *threadData, const char *name, int rows, int cols, const void *matrixData, unsigned int size)
+static void mat_writeMatVer4Matrix(simulation_result *self, DATA *data, threadData_t *threadData, const char *name, int rows, int cols, const void *matrixData, MAT4_MATRIX_TYPE mat4_matrix_type)
 {
   mat_data *matData = (mat_data*) self->storage;
-  mat_writeMatVer4MatrixHeader(self, data, threadData, name, rows, cols, size);
+  mat_writeMatVer4MatrixHeader(self, data, threadData, name, rows, cols, mat4_matrix_type);
 
   /* write data */
-  matData->fp.write((const char*)matrixData, (size)*rows*cols);
+  matData->fp.write((const char*)matrixData, MAT4_SIZE_OF_MATRIX_TYPE[mat4_matrix_type]*rows*cols);
   if(!matData->fp) {
     throwStreamPrint(threadData, "Cannot write to file %s",self->filename);
   }
 }
 
 
-void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadData, int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
+static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadData, int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
 {
   mat_data *matData = (mat_data*) self->storage;
   const MODEL_DATA *mdl_data = data->modelData;
@@ -681,7 +707,7 @@ void generateDataInfo(simulation_result *self, DATA *data, threadData_t *threadD
   /* ccol += mdl_data->nParameters*4; */
 }
 
-void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop)
+static void generateData_1(DATA *data, threadData_t *threadData, double* &data_1, int& rows, int& cols, double tstart, double tstop)
 {
   const SIMULATION_INFO *sInfo = data->simulationInfo;
   const MODEL_DATA      *mData = data->modelData;

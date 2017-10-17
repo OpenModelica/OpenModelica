@@ -124,6 +124,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_R */                            "r",
   /* FLAG_RT */                           "rt",
   /* FLAG_S */                            "s",
+  /* FLAG_SINGLE_PRECISION */             "single",
   /* FLAG_SOLVER_STEPS */                 "steps",
   /* FLAG_STEADY_STATE */                 "steadyState",
   /* FLAG_STEADY_STATE_TOL */             "steadyStateTol",
@@ -227,6 +228,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_R */                            "value specifies a new result file than the default Model_res.mat",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                            "value specifies the integration method",
+  /* FLAG_SINGLE */                       "output in single precision",
   /* FLAG_SOLVER_STEPS */                 "dumps the number of integration steps into the result file",
   /* FLAG_STEADY_STATE */                 "aborts if steady state is reached",
   /* FLAG_STEADY_STATE_TOL */             "[double (default 1e-3)] This relative tolerance is used to detect steady state.",
@@ -484,6 +486,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
   "  Value specifies the integration method.",
+  /* FLAG_SINGLE */
+  "  Output results in single precision (mat-format only).",
   /* FLAG_SOLVER_STEPS */
   "  dumps the number of integration steps into the result file",
   /* FLAG_STEADY_STATE */
@@ -592,6 +596,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_R */                            FLAG_TYPE_OPTION,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,
   /* FLAG_S */                            FLAG_TYPE_OPTION,
+  /* FLAG_SINGLE */                       FLAG_TYPE_FLAG,
   /* FLAG_SOLVER_STEPS */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE_TOL */             FLAG_TYPE_OPTION,
