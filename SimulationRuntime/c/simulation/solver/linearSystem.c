@@ -73,6 +73,14 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
   infoStreamPrint(LOG_LS, 1, "initialize linear system solvers");
   infoStreamPrint(LOG_LS, 0, "%ld linear systems", data->modelData->nLinearSystems);
 
+  if (LSS_DEFAULT == data->simulationInfo->lssMethod) {
+#ifdef WITH_UMFPACK
+    data->simulationInfo->lssMethod = LSS_KLU;
+#elif !defined(OMC_MINIMAL_RUNTIME)
+    data->simulationInfo->lssMethod = LSS_LIS;
+#endif
+  }
+
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     size = linsys[i].size;
@@ -126,7 +134,6 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         linsys[i].setBElement = setBElement;
         allocateUmfPackData(size, size, nnz, linsys[i].solverData);
         break;
-      case LSS_DEFAULT:
       case LSS_KLU:
         linsys[i].setAElement = setAElementKlu;
         linsys[i].setBElement = setBElement;
@@ -139,13 +146,14 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         break;
     #endif
     #if !defined(OMC_MINIMAL_RUNTIME)
-    #if !defined(WITH_UMFPACK)
-      case LSS_DEFAULT:
-    #endif
       case LSS_LIS:
         linsys[i].setAElement = setAElementLis;
         linsys[i].setBElement = setBElementLis;
         allocateLisData(size, size, nnz, linsys[i].solverData);
+        break;
+    #else
+      case LSS_LIS:
+        throwStreamPrint(threadData, "OMC is compiled without sparse linear solver Lis.");
         break;
     #endif
     #if defined(OMC_MINIMAL_RUNTIME) && !defined(WITH_UMFPACK)
@@ -153,11 +161,12 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         {
           int indexes[2] = {1, linsys[i].equationIndex};
           infoStreamPrintWithEquationIndexes(LOG_STDOUT, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
+          linsys[i].useSparseSolver = 0;
           break;
         }
     #endif
       default:
-        throwStreamPrint(threadData, "unrecognized linear solver");
+        throwStreamPrint(threadData, "unrecognized sparse linear solver (%d)", data->simulationInfo->lssMethod);
       }
     }
     if(linsys[i].useSparseSolver == 0) { /* Not an else-statement because there might not be a sparse linear solver available */
@@ -212,7 +221,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         break;
 
       default:
-        throwStreamPrint(threadData, "unrecognized linear solver");
+        throwStreamPrint(threadData, "unrecognized dense linear solver (%d)", data->simulationInfo->lsMethod);
       }
     }
   }
@@ -315,7 +324,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     #endif
 
       default:
-        throwStreamPrint(threadData, "unrecognized linear solver");
+        throwStreamPrint(threadData, "unrecognized sparse linear solver (%d)", data->simulationInfo->lssMethod);
       }
     }
 
@@ -358,7 +367,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
         break;
 
       default:
-        throwStreamPrint(threadData, "unrecognized linear solver");
+        throwStreamPrint(threadData, "unrecognized dense linear solver (data->simulationInfo->lsMethod)");
       }
     }
 
