@@ -1660,6 +1660,7 @@ try
       BackendDump.dumpSparsityPattern(sparsePattern, "FMI sparsity");
     end if;
     outJacobianMatrixes := (outJacobian, sparsePattern, sparseColoring)::outJacobianMatrixes;
+    outFunctionTree := DAE.AvlTreePathFunction.join(inBackendDAE.shared.functionTree, outFunctionTree);
   end if;
 else
   Error.addInternalError("function createFMIModelDerivatives failed", sourceInfo());
