@@ -10,6 +10,7 @@ testOutputIntervalDASSLstepsnoEquidistant.mos \
 testOutputIntervalEuler.mos \
 testOutputIntervalIDAstepsnoEquidistant.mos \
 testOutputIntervalRK.mos \
+testSinglePrecision.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
