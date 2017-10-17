@@ -1637,6 +1637,16 @@ algorithm
   exists := Internal.stat(dirName) == Internal.FileType.Directory;
 end directoryExists;
 
+impure function stat
+  input String fileName;
+  output Boolean success;
+  output Real fileSize;
+  output Real mtime;
+external "builtin" annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+<p>Like <a href=\"http://linux.die.net/man/2/stat\">stat(2)</a>, except the output is of type real because of limited precision of Integer.</p>
+</html>"));
+end stat;
+
 impure function readFile
   "The contents of the given file are returned.
   Note that if the function fails, the error message is returned as a string instead of multiple output or similar."

@@ -1871,6 +1871,11 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
+    case (cache,_,"stat",{Values.STRING(str)},st as GlobalScript.SYMBOLTABLE(ast=p),_)
+      algorithm
+        (b,r1,r2) := System.stat(str);
+      then (cache,Values.TUPLE({Values.BOOL(b),Values.REAL(r1),Values.REAL(r2)}),st);
+
     case (cache,_,"isType",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isType(classpath, p);
