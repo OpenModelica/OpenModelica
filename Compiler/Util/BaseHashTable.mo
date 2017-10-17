@@ -399,6 +399,51 @@ algorithm
   end for;
 end dumpHashTable;
 
+
+public function debugDump
+  input HashTable ht;
+protected
+  FuncKeyString printKey;
+  FuncValString printValue;
+  Key k;
+  Value v;
+
+  Integer n, size, i, j, szBucket;
+  array<Option<HashEntry>> arr;
+  HashEntry he;
+  array<HashNode> hashVector;
+algorithm
+  (hashVector, (n, size, arr), szBucket, (_, _, printKey, printValue)) := ht;
+  print("Debug HashTable:\n");
+  print("szBucket: " + intString(szBucket) + "\n");
+
+  print("Debug ValueArray:\n");
+  print("number of entires: " + intString(n) + "\n");
+  print("size: " + intString(size) + "\n");
+  i := 0;
+  for entry in arr loop
+    i := i+1;
+    if isSome(entry) then
+      SOME(he) := entry;
+      print(intString(i) + ": " + dumpTuple(he, printKey, printValue)  + "\n");
+    end if;
+  end for;
+
+  print("Debug HashVector:\n");
+  i := 0;
+  for node in hashVector loop
+    i := i+1;
+    if not listEmpty(node) then
+      print(intString(i) + ":");
+      for n in node loop
+        (k, j) := n;
+        print(" {" + printKey(k) + ", " + intString(j) + "}");
+      end for;
+      print("\n");
+    end if;
+  end for;
+end debugDump;
+
 protected function dumpTuple
   input HashEntry tpl;
   input FuncKeyString printKey;
