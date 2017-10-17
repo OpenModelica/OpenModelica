@@ -1449,6 +1449,28 @@ void ComponentAttributes::updateComponentAttributes()
       return;
     }
   }
+  // check for spaces
+  if (StringHandler::containsSpace(mpNameTextBox->text())) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          tr("A component name should not have spaces. Please choose another name."), Helper::ok);
+    return;
+  }
+  // check for comma
+  if (mpNameTextBox->text().contains(',')) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
+    return;
+  }
+  // check for invalid names
+  MainWindow::instance()->getOMCProxy()->setLoggingEnabled(false);
+  QList<QString> result = MainWindow::instance()->getOMCProxy()->parseString(QString("model M N %1; end M;").arg(mpNameTextBox->text()),
+                                                                             "M", false);
+  MainWindow::instance()->getOMCProxy()->setLoggingEnabled(true);
+  if (result.isEmpty()) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
+                          GUIMessages::getMessage(GUIMessages::INVALID_INSTANCE_NAME).arg(mpNameTextBox->text()), Helper::ok);
+    return;
+  }
   QString variability;
   if (mpConstantRadio->isChecked()) {
     variability = "constant";

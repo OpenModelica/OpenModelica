@@ -80,6 +80,7 @@ private:
   QList<UnitConverion> mUnitConversionList;
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
+  bool mIsLoggingEnabled;
 public:
   OMCProxy(QWidget *pParent = 0);
   ~OMCProxy();
@@ -92,6 +93,8 @@ public:
   QString getResult();
   void exitApplication();
   void removeObjectRefFile();
+  void setLoggingEnabled(bool enable) {mIsLoggingEnabled = enable;}
+  bool isLoggingEnabled() {return mIsLoggingEnabled;}
   QString getErrorString(bool warningsAsErrors = false);
   bool printMessagesStringInternal();
   int getMessagesStringInternal();
@@ -153,7 +156,7 @@ public:
   bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
-  QList<QString> parseString(QString value, QString fileName);
+  QList<QString> parseString(QString value, QString fileName, bool printErrors = true);
   bool createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem, LibraryTreeItem *pExtendsLibraryTreeItem);
   bool existClass(QString className);

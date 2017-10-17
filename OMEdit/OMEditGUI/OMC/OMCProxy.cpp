@@ -124,6 +124,7 @@ OMCProxy::OMCProxy(QWidget *pParent)
   }
   mUnitConversionList.clear();
   mDerivedUnitsMap.clear();
+  setLoggingEnabled(true);
   //start the server
   if(!initializeOMC()) {  // if we are unable to start OMC. Exit the application.
     MainWindow::instance()->setExitApplicationStatus(true);
@@ -321,26 +322,28 @@ QString OMCProxy::getResult()
  */
 void OMCProxy::logCommand(QString command, QTime *commandTime)
 {
-  // insert the command to the logger window.
-  QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
-  QTextCharFormat format;
-  format.setFont(font);
-  Utilities::insertText(mpOMCLoggerTextBox, command + "\n", format);
-  // add the expression to commands list
-  mCommandsList.append(command);
-  // set the current command index.
-  mCurrentCommandIndex = mCommandsList.count();
-  mpExpressionTextBox->setText("");
-  // write the log to communication log file
-  if (mpCommunicationLogFile) {
-    fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
-  }
-  // write commands mos file
-  if (mpCommandsLogFile) {
-    if (command.compare("quit()") == 0) {
-      fputs(QString("%1;\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
-    } else {
-      fputs(QString("%1; getErrorString();\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
+  if (isLoggingEnabled()) {
+    // insert the command to the logger window.
+    QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+    QTextCharFormat format;
+    format.setFont(font);
+    Utilities::insertText(mpOMCLoggerTextBox, command + "\n", format);
+    // add the expression to commands list
+    mCommandsList.append(command);
+    // set the current command index.
+    mCurrentCommandIndex = mCommandsList.count();
+    mpExpressionTextBox->setText("");
+    // write the log to communication log file
+    if (mpCommunicationLogFile) {
+      fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
+    }
+    // write commands mos file
+    if (mpCommandsLogFile) {
+      if (command.compare("quit()") == 0) {
+        fputs(QString("%1;\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
+      } else {
+        fputs(QString("%1; getErrorString();\n").arg(command).toStdString().c_str(), mpCommandsLogFile);
+      }
     }
   }
 }
@@ -354,16 +357,18 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
  */
 void OMCProxy::logResponse(QString response, QTime *responseTime)
 {
-  // insert the response to the logger window.
-  QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-  QTextCharFormat format;
-  format.setFont(font);
-  Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
-  // write the log to communication log file
-  if (mpCommunicationLogFile) {
-    fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
-    mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-    fputs(QString("%1 secs (%2 secs)\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).toStdString().c_str(), mpCommunicationLogFile);
+  if (isLoggingEnabled()) {
+    // insert the response to the logger window.
+    QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
+    QTextCharFormat format;
+    format.setFont(font);
+    Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
+    // write the log to communication log file
+    if (mpCommunicationLogFile) {
+      fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
+      mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
+      fputs(QString("%1 secs (%2 secs)\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).toStdString().c_str(), mpCommunicationLogFile);
+    }
   }
 }
 
@@ -1451,11 +1456,15 @@ QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
   \param value - the string to parse.
   \return the list of models inside the string.
   */
-QList<QString> OMCProxy::parseString(QString value, QString fileName)
+QList<QString> OMCProxy::parseString(QString value, QString fileName, bool printErrors)
 {
   QList<QString> result;
   result = mpOMCInterface->parseString(value, fileName);
-  printMessagesStringInternal();
+  if (printErrors) {
+    printMessagesStringInternal();
+  } else {
+    getErrorString();
+  }
   return result;
 }
 

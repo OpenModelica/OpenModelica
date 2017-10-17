@@ -732,6 +732,8 @@ QString GUIMessages::getMessage(int type)
       return tr("Multiple declarations of component <b>%1</b> are found.");
     case GDB_ERROR:
       return tr("Following error has occurred <b>%1</b> GDB arguments are <b>\"%2\"</b>");
+    case INVALID_INSTANCE_NAME:
+      return tr("Name <b>%1</b> is not a valid identifier.<br />A name must start with a letter, and all characters must be letters or digits. It may not be a reserved word.");
     default:
       return "";
   }
