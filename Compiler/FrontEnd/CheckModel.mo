@@ -274,6 +274,14 @@ algorithm
     case DAE.CONSTRAINT()
       then inArg;
 
+    // flat state machine section
+    case DAE.FLAT_SM(dAElist = daeElts)
+      then List.fold(daeElts, countVarEqnSize, inArg);
+
+    // a state/mode component in a state machine
+    case DAE.SM_COMP(dAElist = daeElts)
+      then List.fold(daeElts, countVarEqnSize, inArg);
+
     else
       equation
         // show only on failtrace!
