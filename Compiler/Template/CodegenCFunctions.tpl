@@ -4084,7 +4084,7 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
 ::=
   match cr
   case CREF_QUAL(ident="$PRE", subscriptLst={}) then
-    (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStr(cr)%>')
+    (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStrNoUnderscore(cr)%>')
     else crefToCStr(componentRef, ix, true, isStart))
   case CREF_QUAL(ident="$START") then
     crefToCStr(componentRef, ix, isPre, true)
@@ -4100,7 +4100,7 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
   then
     if intEq(ix,0) then (if isPre then "$P$PRE")+crefDefine(cr)
     else '_<%if isPre then "$P$PRE"%><%crefDefine(cr)%>(<%ix%>)'
-  case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStr(name)%>')
+  case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
   case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre, isStart)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -4127,6 +4127,7 @@ template subscriptToCStr(Subscript subscript)
   case SLICE(exp=ICONST(integer=i)) then i
   case SLICE(__) then error(sourceInfo(), "Unknown slice " + ExpressionDumpTpl.dumpExp(exp,"\""))
   case WHOLEDIM(__) then "WHOLEDIM"
+  case WHOLE_NONEXP(__) then "WHOLE_NONEXP"
   case INDEX(__) then
    match exp
     case ICONST(integer=i) then i
@@ -4552,6 +4553,7 @@ template subscriptToMStr(Subscript subscript)
   case SLICE(exp=ICONST(integer=i)) then i
   case SLICE(__) then error(sourceInfo(), "Unknown slice " + ExpressionDumpTpl.dumpExp(exp,"\""))
   case WHOLEDIM(__) then "WHOLEDIM"
+  case WHOLE_NONEXP(__) then "WHOLE_NONEXP"
   case INDEX(__) then
    match exp
     case ICONST(integer=i) then i
@@ -4758,7 +4760,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     let vars = var_lst |> v => (", " + daeExp(makeCrefRecordExp(cr,v), context, &preExp, &varDecls, &auxFunction))
     let record_type_name = underscorePath(ClassInf.getStateName(record_state))
     // 'omc_<%record_type_name%>(threadData<%vars%>)'
-    error(sourceInfo(), 'daeExpCrefLhsSimContext got record <%crefStr(cr)%>. This does not make sense. Assigning to records is handled in a different way in the code generator, and reaching here is probably an error...') // '<%ret_var%>.c1'
+    error(sourceInfo(), 'daeExpCrefLhsSimContext got record <%crefStrNoUnderscore(cr)%>. This does not make sense. Assigning to records is handled in a different way in the code generator, and reaching here is probably an error...') // '<%ret_var%>.c1'
 
   case ecr as CREF(componentRef=cr, ty=T_ARRAY(ty=aty, dims=dims)) then
     let type = expTypeShort(aty)
@@ -6966,7 +6968,7 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
   case SIMVAR(varKind=OPT_TGRID())
   then 'data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]'
   case SIMVAR(varKind=EXTOBJ()) then 'data->simulationInfo->extObjs[<%index%>]'
-  case SIMVAR(__) then '<%if isStart then '<%varAttributes(var)%>.start' else if isPre then 'data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>] /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */' else 'data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>] /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */'%>'
+  case SIMVAR(__) then '<%if isStart then '<%varAttributes(var)%>.start' else if isPre then 'data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */' else 'data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'%>'
 end varArrayNameValues;
 
 template varArrayName(SimVar var)
@@ -6980,7 +6982,7 @@ template crefVarInfo(ComponentRef cr)
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%escapeCComments(crefStrNoUnderscore(name))%> */'
 end crefVarInfo;
 
 template varAttributes(SimVar var)
@@ -6988,7 +6990,7 @@ template varAttributes(SimVar var)
   match var
   case SIMVAR(index=-1) then crefAttributes(name) // input variable?
   case SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%Util.escapeModelicaStringToCString(crefStr(name))%> <%variabilityString(varKind)%> */'
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
 end varAttributes;
 
 template crefAttributes(ComponentRef cr)
@@ -6997,7 +6999,7 @@ template crefAttributes(ComponentRef cr)
   case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
   case var as SIMVAR(index=-1) then error(sourceInfo(), 'varAttributes got index=-1 for <%crefStr(name)%>')
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%Util.escapeModelicaStringToCString(crefStr(name))%> */'
+  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%escapeCComments(crefStrNoUnderscore(name))%> */'
 end crefAttributes;
 
 annotation(__OpenModelica_Interface="backend");

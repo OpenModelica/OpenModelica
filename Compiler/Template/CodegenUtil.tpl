@@ -131,7 +131,10 @@ template subscriptStr(Subscript subscript)
   case INDEX(exp=ICONST(integer=i)) then i
   case INDEX(exp=ENUM_LITERAL(name=n)) then dotPath(n)
   case SLICE(exp=ICONST(integer=i)) then i
+  case INDEX(__)
+  case SLICE(__) then 'UNKNOWN_SUBSCRIPT /* <%escapeCComments(printExpStr(exp))%> */'
   case WHOLEDIM(__) then "WHOLEDIM"
+  case WHOLE_NONEXP(__) then "WHOLE_NONEXP"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 

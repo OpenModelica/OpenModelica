@@ -2611,9 +2611,9 @@ match system
     let innerNLSSystems = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
     let backupOutputs = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-        let body = (alg.knownOutputCrefs |> cr =>
-          let &varDecls += '<%crefType(cr)%> $OLD_<%crefDefine(cr)%>;<%\n%>'
-          '$OLD_<%crefDefine(cr)%> = <%cref(cr)%>;'
+        let body = (alg.knownOutputCrefs |> cr hasindex i0 =>
+          let &varDecls += '<%crefType(cr)%> OLD_<%i0%>;<%\n%>'
+          'OLD_<%i0%> = <%cref(cr)%>;'
         ;separator="\n")
         <<
         /* backup outputs of the algorithm */
@@ -2621,7 +2621,7 @@ match system
         >>
     let restoreKnownOutputs = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-        let body = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr)%> = $OLD_<%crefDefine(cr)%>;' ;separator="\n")
+        let body = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr)%> = OLD_<%i0%>;' ;separator="\n")
         <<
         /* restore previously known outputs of the algorithm */
         <%body%>
@@ -2632,7 +2632,7 @@ match system
     ;separator="\n")
     let body = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-        (alg.knownOutputCrefs |> cr hasindex i0 => 'res[<%i0%>] = $OLD_<%crefDefine(cr)%> - <%cref(cr)%>;' ;separator="\n")
+        (alg.knownOutputCrefs |> cr hasindex i0 => 'res[<%i0%>] = OLD_<%i0%> - <%cref(cr)%>;' ;separator="\n")
       else
         (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
           let &preExp = buffer ""

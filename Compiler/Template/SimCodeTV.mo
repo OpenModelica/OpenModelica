@@ -2252,6 +2252,7 @@ package DAE
 
   uniontype Subscript
     record WHOLEDIM end WHOLEDIM;
+    record WHOLE_NONEXP end WHOLE_NONEXP;
     record SLICE
       Exp exp;
     end SLICE;
