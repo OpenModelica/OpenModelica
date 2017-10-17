@@ -6260,6 +6260,68 @@ algorithm
   end match;
 end extractCrefsStatment;
 
+public function getLhsCrefsFromStatements "Extracts all lhs crefs from Statements.
+  author: ptaeuber"
+  input list<DAE.Statement> inStmts;
+  output list<DAE.ComponentRef> lhsCrefs;
+protected
+  list<list<DAE.ComponentRef>> lhsCrefsLst;
+algorithm
+  lhsCrefsLst := List.map(inStmts,getLhsCrefsFromStatement);
+  lhsCrefs := List.flatten(lhsCrefsLst);
+end getLhsCrefsFromStatements;
+
+protected function getLhsCrefsFromStatement "Extracts all lhs crefs from a statement.
+  author: ptaeuber"
+  input DAE.Statement inStmt;
+  output list<DAE.ComponentRef> lhsCrefs;
+algorithm
+  lhsCrefs := match(inStmt)
+    local
+      Exp exp1,exp2;
+      list<DAE.Exp> expLst;
+      list<DAE.Statement> stmtLst;
+
+    case DAE.STMT_ASSIGN(exp1 = exp1)
+      equation
+        lhsCrefs = extractCrefsFromExpDerPreStart(exp1);
+      then lhsCrefs;
+
+    case DAE.STMT_TUPLE_ASSIGN(expExpLst = expLst)
+      equation
+        lhsCrefs = List.flatten(List.map(expLst, extractCrefsFromExpDerPreStart));
+      then lhsCrefs;
+
+    case DAE.STMT_ASSIGN_ARR(lhs = exp1)
+      equation
+        lhsCrefs = extractCrefsFromExpDerPreStart(exp1);
+      then lhsCrefs;
+
+    case DAE.STMT_IF(statementLst = stmtLst)
+      equation
+        lhsCrefs = getLhsCrefsFromStatements(stmtLst);
+      then lhsCrefs;
+
+    case DAE.STMT_FOR(statementLst = stmtLst)
+      equation
+        lhsCrefs = getLhsCrefsFromStatements(stmtLst);
+      then lhsCrefs;
+
+    case DAE.STMT_WHILE(statementLst = stmtLst)
+      equation
+        lhsCrefs = getLhsCrefsFromStatements(stmtLst);
+      then lhsCrefs;
+
+    case DAE.STMT_WHEN(statementLst = stmtLst)
+      equation
+        lhsCrefs = getLhsCrefsFromStatements(stmtLst);
+      then lhsCrefs;
+
+    else {};
+
+  end match;
+end getLhsCrefsFromStatement;
+
 public function expHasInitial "
  returns true if the expression contains any initial() call"
   input DAE.Exp exp;

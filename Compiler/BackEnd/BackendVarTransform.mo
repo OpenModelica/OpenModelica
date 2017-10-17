@@ -1729,7 +1729,7 @@ algorithm
 
     case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(statementLst=stmts), source=source, expand=crefExpand, attr=eqAttr), repl, _, _, _)
       equation
-        (crefs,_) = Expression.extractUniqueCrefsFromStatmentS(stmts);
+        crefs = Expression.getLhsCrefsFromStatements(stmts);
         // if there is no need for expanding the original equation, the replaced one shouldn't either
         hasArrayCref = List.exist(crefs,ComponentReference.isArrayElement);
         crefExpand = if hasArrayCref then crefExpand else DAE.NOT_EXPAND();
