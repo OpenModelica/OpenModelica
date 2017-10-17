@@ -454,7 +454,7 @@ constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(139, "dumpRecursiveTearing", false
   Util.gettext("Dump between steps of recursiveTearing"));
 constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(140, "disableSimplifyComplexFunction", false,
   Util.gettext("disable simplifyComplexFunction\nDeprecated flag: Use --postOptModules-=simplifyComplexFunction/--initOptModules-=simplifyComplexFunction instead."));
-constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(141, "disableDirectionalDerivatives", false,
+constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(141, "disableDirectionalDerivatives", true,
   Util.gettext("For FMI 2.0 only dependecy analysis will be perform."));
 constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(142, "evalOutputOnly", false,
   Util.gettext("Generates equations to calculate outputs only."));

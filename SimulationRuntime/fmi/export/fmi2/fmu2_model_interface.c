@@ -404,8 +404,14 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 #endif
 
   /* allocate memory for Jacobian */
-  comp->_has_jacobian = !comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData);
-  comp->fmiDerJac = &(comp->fmuData->simulationInfo->analyticJacobians[comp->fmuData->callback->INDEX_JAC_FMIDER]);
+  if (comp->fmuData->callback->initialPartialFMIDER != NULL){
+    comp->_has_jacobian = 1;
+    comp->fmiDerJac = &(comp->fmuData->simulationInfo->analyticJacobians[comp->fmuData->callback->INDEX_JAC_FMIDER]);
+  }
+  else{
+    comp->_has_jacobian = 0;
+    comp->fmiDerJac = NULL;
+  }
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   return comp;
