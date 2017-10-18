@@ -908,7 +908,7 @@ public constant Message EQN_NO_SPACE_TO_SOLVE = MESSAGE(581, SYMBOLIC(), WARNING
 public constant Message VAR_NO_REMAINING_EQN = MESSAGE(582, SYMBOLIC(), WARNING(),
   Util.gettext("Variable %s does not have any remaining equation to be solved in.\n  The original equations were:%s"));
 public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE(582, TRANSLATION(), NOTIFICATION(),
-  Util.gettext("Moving binding to equation section and setting fixed attribute of %s to false. This is done to work around a compiler design flaw (there is no good way to represent bindings that span multiple variables)."));
+  Util.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
