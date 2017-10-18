@@ -48,7 +48,8 @@ typedef struct {
   uint32_t nall;
   ModelicaMatVariable_t *allInfo; /* Sorted array of variables and their associated information */
   uint32_t nparam;
-  double *params; /* This has size 2*nparam; the first parameter has row0=startTime,row1=stopTime. Other variables are stored as row0=row1 */
+  double startTime, stopTime;
+  double *params; /* This has size nparam */
   uint32_t nvar,nrows;
   size_t var_offset; /* This is the offset in the file */
   int readAll; /* Read all variables already */
@@ -88,8 +89,8 @@ int omc_matlab4_read_vars_val(double *res, ModelicaMatReader *reader, ModelicaMa
 void omc_matlab4_print_all_vars(FILE *stream, ModelicaMatReader *reader);
 
 double omc_matlab4_startTime(ModelicaMatReader *reader);
-
 double omc_matlab4_stopTime(ModelicaMatReader *reader);
+
 void matrix_transpose(double *m, int w, int h);
 void matrix_transpose_uint32(uint32_t *m, int w, int h);
 int omc_matlab4_read_all_vals(ModelicaMatReader *reader);

@@ -256,7 +256,10 @@ void mat4_writeParameterData(simulation_result *self,DATA *data, threadData_t *t
     generateData_1(data, threadData, doubleMatrix, rows, cols, matData->startTime, matData->stopTime);
     /*  write `data_1' matrix */
     mat_writeMatVer4Matrix(self,data, threadData,"data_1", cols, rows, doubleMatrix, MAT4_DOUBLE_PRECISION_FULL_MATRIX);
-    free(doubleMatrix); doubleMatrix = NULL;
+    if (doubleMatrix) {
+      free(doubleMatrix);
+      doubleMatrix = NULL;
+    }
     matData->fp.seekp(remember);
   } catch(...) {
     matData->fp.close();
@@ -333,9 +336,11 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
                                  matData->r_indx_map.size() + matData->i_indx_map.size() + matData->b_indx_map.size() + matData->negatedboolaliases + 1 /* add one more for timeValue*/ + self->cpuTime + /* add one more for solverSteps*/ + omc_flag[FLAG_SOLVER_STEPS] + nSensitivities, 0,
                                  omc_flag[FLAG_SINGLE_PRECISION] ? MAT4_SINGLE_PRECISION_FULL_MATRIX : MAT4_DOUBLE_PRECISION_FULL_MATRIX);
 
-    free(doubleMatrix);
+    if (doubleMatrix) {
+      free(doubleMatrix);
+      doubleMatrix = NULL;
+    }
     free(intMatrix);
-    doubleMatrix = NULL;
     intMatrix = NULL;
     matData->fp.flush();
 
@@ -343,7 +348,10 @@ void mat4_init(simulation_result *self,DATA *data, threadData_t *threadData)
     matData->fp.close();
     free(names); names=NULL;
     free(stringMatrix);
-    free(doubleMatrix);
+    if (doubleMatrix) {
+      free(doubleMatrix);
+      doubleMatrix = NULL;
+    }
     free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
     throwStreamPrint(threadData, "Error while writing mat file %s",self->filename);
@@ -558,7 +566,6 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
   /* assign rows & cols */
   rows = nVars + nParams;
   cols = 4;
-
   dataInfo = (int*) calloc(rows*cols,sizeof(int));
   assertStreamPrint(threadData, 0!=dataInfo,"Cannot alloc memory");
   /* continuous and discrete variables, including time */
@@ -593,7 +600,7 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
         if(it != matData->r_indx_parammap.end())
         {
           table = 1;
-          aliascol = it->second+1;
+          aliascol = it->second;
         }
       } else if(mdl_data->realAlias[i].aliasType == 2) /* time */
       {
@@ -612,7 +619,7 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
         /* row 3 - linear interpolation == 0 */
         dataInfo[ccol+2] = 0;
         /* row 4 - not defined outside of the defined time range == -1 */
-        dataInfo[ccol+3] = -1;
+        dataInfo[ccol+3] = mdl_data->realAlias[i].aliasType == 1 ? 0 : -1;
         ccol += 4;
       }
     }
@@ -624,14 +631,18 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
       if(mdl_data->integerAlias[i].aliasType == 0) /* variable */
       {
         it = matData->i_indx_map.find(mdl_data->integerAlias[i].nameID);
-        if(it != matData->i_indx_map.end())
+        if(it != matData->i_indx_map.end()) {
           table = 2;
+        }
+        aliascol = it->second+1;
       }
       else if(mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
         it = matData->i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
-        if(it != matData->i_indx_parammap.end())
+        if(it != matData->i_indx_parammap.end()) {
           table = 1;
+        }
+        aliascol = it->second;
       }
       if(table)
       {
@@ -639,9 +650,9 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
         dataInfo[ccol] = table;
         /* row 2 - index of var in table */
         if(mdl_data->integerAlias[i].negate)
-          dataInfo[ccol+1] = -(it->second+1);
+          dataInfo[ccol+1] = -aliascol;
         else
-          dataInfo[ccol+1] = it->second+1;
+          dataInfo[ccol+1] = aliascol;
         /* row 3 - linear interpolation == 0 */
         dataInfo[ccol+2] = 0;
         /* row 4 - not defined outside of the defined time range == -1 */
@@ -662,14 +673,18 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
         if(mdl_data->booleanAlias[i].aliasType == 0) /* variable */
         {
           it = matData->b_indx_map.find(mdl_data->booleanAlias[i].nameID);
-          if(it != matData->b_indx_map.end())
+          if(it != matData->b_indx_map.end()) {
             table = 2;
+          }
+          aliascol = it->second+1;
         }
         else if(mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
         {
           it = matData->b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-          if(it != matData->b_indx_parammap.end())
+          if(it != matData->b_indx_parammap.end()) {
             table = 1;
+          }
+          aliascol = it->second;
         }
       }
       if(table)
@@ -677,13 +692,12 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
         /* row 1 - which table */
         dataInfo[ccol] = table;
         /* row 2 - index of var in table */
-        if(mdl_data->booleanAlias[i].negate)
-        {
+        if(mdl_data->booleanAlias[i].negate) {
           dataInfo[ccol+1] = indx;
           indx++;
+        } else {
+          dataInfo[ccol+1] = aliascol;
         }
-        else
-          dataInfo[ccol+1] = it->second+1;
         /* row 3 - linear interpolation == 0 */
         dataInfo[ccol+2] = 0;
         /* row 4 - not defined outside of the defined time range == -1 */
@@ -696,13 +710,12 @@ static void generateDataInfo(simulation_result *self, DATA *data, threadData_t *
   for(size_t i = 0; i < (size_t)nParams; ++i) {
       /* col 1 - which table */
       dataInfo[ccol+4*i] = 1;
-      /* col 2 - index of var in the table (first parameter has index 2) */
-      dataInfo[ccol+4*i+1] = i+2;
+      /* col 2 - index of var in the table (first parameter has index 1) */
+      dataInfo[ccol+4*i+1] = i+1;
       /* col 3 (== 0 <- interpolation doesn't matter here) */
       dataInfo[ccol+4*i+2] = 0;
       /* col 4 - keep first/last value outside of time range */
       dataInfo[ccol+4*i+3] = 0;
-
   }
   /* ccol += mdl_data->nParameters*4; */
 }
@@ -712,47 +725,47 @@ static void generateData_1(DATA *data, threadData_t *threadData, double* &data_1
   const SIMULATION_INFO *sInfo = data->simulationInfo;
   const MODEL_DATA      *mData = data->modelData;
 
-  int offset = 1;
+  int offset = 0;
   long i = 0;
 
   /* calculate number of rows and columns */
-  rows = 2;
-  cols = 1 + mData->nParametersReal +
-             mData->nParametersInteger +
-             mData->nParametersBoolean;
+  cols = mData->nParametersReal +
+         mData->nParametersInteger +
+         mData->nParametersBoolean;
+  if (cols) {
+    rows = 1;
+  } else {
+    rows = 0;
+  }
 
   /* allocate data buffer */
-  data_1 = (double*)calloc(rows*cols, sizeof(double));
-  assertStreamPrint(threadData, 0!=data_1, "Malloc failed");
-  data_1[0] = tstart;     /* start time */
-  data_1[cols] = tstop;   /* stop time */
+  if (rows) {
+    data_1 = (double*)calloc(rows*cols, sizeof(double));
+    assertStreamPrint(threadData, 0!=data_1, "Malloc failed");
+  } else {
+    data_1 = NULL;
+  }
 
   /* double variables */
-  for(i = 0; i < mData->nParametersReal; ++i)
-  {
+  for(i = 0; i < mData->nParametersReal; ++i) {
     if (!mData->realParameterData[i].filterOutput) {
       data_1[offset] = sInfo->realParameter[i];
-      data_1[offset+cols] = sInfo->realParameter[i];
       offset ++;
     }
   }
 
   /* integer variables */
-  for(i = 0; i < mData->nParametersInteger; ++i)
-  {
+  for(i = 0; i < mData->nParametersInteger; ++i) {
     if (!mData->integerParameterData[i].filterOutput) {
       data_1[offset] = (double)sInfo->integerParameter[i];
-      data_1[offset+cols] = (double)sInfo->integerParameter[i];
       offset ++;
     }
   }
 
   /* bool variables */
-  for(i = 0; i < mData->nParametersBoolean; ++i)
-  {
+  for(i = 0; i < mData->nParametersBoolean; ++i) {
     if (!mData->booleanParameterData[i].filterOutput) {
       data_1[offset] = (double)sInfo->booleanParameter[i];
-      data_1[offset+cols] = (double)sInfo->booleanParameter[i];
       offset ++;
     }
   }

@@ -413,13 +413,10 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
   }
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
-  if(pError)
-  {
+  if(pError) {
     throwStreamPrint(threadData, "unable to read input-file <%s> [%s]", pInitFile, pError);
     return 1;
-  }
-  else
-  {
+  } else {
     infoStreamPrint(LOG_INIT, 0, "import real variables");
     for(i=0; i<mData->nVariablesReal; ++i) {
       pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
@@ -429,7 +426,6 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         pVar = omc_matlab4_find_var(&reader, newVarname);
         free(newVarname);
       }
-
       if(pVar) {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
         infoStreamPrint(LOG_INIT, 0, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
