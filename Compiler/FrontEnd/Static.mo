@@ -1350,7 +1350,7 @@ algorithm
         inDoVect, inPrefix, inInfo);
 
     // Figure out the type of the reduction.
-    c := exp_const; // Types.constAnd(exp_const, iter_const);
+    c := Types.constAnd(exp_const, iter_const);
     fn := match inReductionFn
       case Absyn.CREF_IDENT("$array",{}) then Absyn.IDENT("array");
       else Absyn.crefToPath(inReductionFn);
@@ -1463,7 +1463,7 @@ algorithm
       dim := DAE.DIM_UNKNOWN();
     end if;
 
-    outConst := Types.constAnd(guard_const, iter_const);
+    outConst := Types.constAnd(outConst, Types.constAnd(guard_const, iter_const));
     outIterators := DAE.REDUCTIONITER(iter_name, iter_exp, guard_exp, iter_ty) :: outIterators;
     outDims := dim :: outDims;
   end for;
