@@ -2563,6 +2563,10 @@ void LibraryTreeView::createActions()
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // new Modelica Class Empty Action
+  mpNewModelicaClassEmptyAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
+  mpNewModelicaClassEmptyAction->setStatusTip(Helper::createNewModelicaClass);
+  connect(mpNewModelicaClassEmptyAction, SIGNAL(triggered()), SLOT(createNewModelicaClassEmpty()));
   // save Action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setStatusTip(Helper::saveTip);
@@ -2659,10 +2663,18 @@ void LibraryTreeView::createActions()
   mpNewFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
   mpNewFileAction->setStatusTip(tr("Creates a new file"));
   connect(mpNewFileAction, SIGNAL(triggered()), SLOT(createNewFile()));
+  // new file empty Action
+  mpNewFileEmptyAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New File"), this);
+  mpNewFileEmptyAction->setStatusTip(tr("Creates a new file"));
+  connect(mpNewFileEmptyAction, SIGNAL(triggered()), SLOT(createNewFileEmpty()));
   // new file Action
   mpNewFolderAction = new QAction(tr("New Folder"), this);
   mpNewFolderAction->setStatusTip(tr("Creates a new folder"));
   connect(mpNewFolderAction, SIGNAL(triggered()), SLOT(createNewFolder()));
+  // new file empty Action
+  mpNewFolderEmptyAction = new QAction(tr("New Folder"), this);
+  mpNewFolderEmptyAction->setStatusTip(tr("Creates a new folder"));
+  connect(mpNewFolderEmptyAction, SIGNAL(triggered()), SLOT(createNewFolderEmpty()));
   // rename Action
   mpRenameAction = new QAction(Helper::rename, this);
   mpRenameAction->setStatusTip(Helper::renameTip);
@@ -2767,103 +2779,107 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
  */
 void LibraryTreeView::showContextMenu(QPoint point)
 {
-  if (!indexAt(point).isValid()) {
-    return;
-  }
-  QModelIndex index = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(indexAt(point));
-  LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
-  if (pLibraryTreeItem) {
-    QMenu menu(this);
-    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-    switch (pLibraryTreeItem->getLibraryType()) {
-      case LibraryTreeItem::Modelica:
-      default:
-        menu.addAction(mpOpenClassAction);
-        menu.addAction(mpViewDocumentationAction);
-        menu.addAction(mpInformationAction);
-        if (!pLibraryTreeItem->isSystemLibrary()) {
-          menu.addSeparator();
-          menu.addAction(mpNewModelicaClassAction);
-          if (!pLibraryTreeItem->isTopLevel()) {
-            menu.addMenu(mpOrderMenu);
+  QMenu menu(this);
+  if (indexAt(point).isValid()) {
+    QModelIndex index = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(indexAt(point));
+    LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
+    if (pLibraryTreeItem) {
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      switch (pLibraryTreeItem->getLibraryType()) {
+        case LibraryTreeItem::Modelica:
+        default:
+          menu.addAction(mpOpenClassAction);
+          menu.addAction(mpViewDocumentationAction);
+          menu.addAction(mpInformationAction);
+          if (!pLibraryTreeItem->isSystemLibrary()) {
+            menu.addSeparator();
+            menu.addAction(mpNewModelicaClassAction);
+            if (!pLibraryTreeItem->isTopLevel()) {
+              menu.addMenu(mpOrderMenu);
+            }
+            menu.addSeparator();
+            menu.addAction(mpSaveAction);
+            menu.addAction(mpSaveAsAction);
+            menu.addAction(mpSaveTotalAction);
+          } else {
+            menu.addSeparator();
+            menu.addAction(mpSaveTotalAction);
           }
           menu.addSeparator();
-          menu.addAction(mpSaveAction);
-          menu.addAction(mpSaveAsAction);
-          menu.addAction(mpSaveTotalAction);
-        } else {
+          menu.addAction(mpInstantiateModelAction);
+          menu.addAction(mpCheckModelAction);
+          menu.addAction(mpCheckAllModelsAction);
+          /* Ticket #3040.
+           * Only show the simulation actions for Modelica types on which the simulation is allowed.
+           */
+          if (pLibraryTreeItem->isSimulationAllowed()) {
+            menu.addAction(mpSimulateAction);
+            menu.addAction(mpSimulateWithTransformationalDebuggerAction);
+            menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
+  #if !defined(WITHOUT_OSG)
+            menu.addAction(mpSimulateWithAnimationAction);
+  #endif
+            menu.addAction(mpSimulationSetupAction);
+          }
+          /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
+          if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
+            menu.addSeparator();
+            menu.addAction(mpDuplicateClassAction);
+          }
+          if (pLibraryTreeItem->isTopLevel()) {
+            mpUnloadClassAction->setText(Helper::unloadClass);
+            mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
+          } else {
+            mpUnloadClassAction->setText(Helper::deleteStr);
+            mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
+          }
+          // only add unload/delete option for top level system libraries
+          if (!pLibraryTreeItem->isSystemLibrary()) {
+            menu.addAction(mpUnloadClassAction);
+          } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
+            menu.addAction(mpUnloadClassAction);
+          }
           menu.addSeparator();
-          menu.addAction(mpSaveTotalAction);
-        }
-        menu.addSeparator();
-        menu.addAction(mpInstantiateModelAction);
-        menu.addAction(mpCheckModelAction);
-        menu.addAction(mpCheckAllModelsAction);
-        /* Ticket #3040.
-         * Only show the simulation actions for Modelica types on which the simulation is allowed.
-         */
-        if (pLibraryTreeItem->isSimulationAllowed()) {
-          menu.addAction(mpSimulateAction);
-          menu.addAction(mpSimulateWithTransformationalDebuggerAction);
-          menu.addAction(mpSimulateWithAlgorithmicDebuggerAction);
-#if !defined(WITHOUT_OSG)
-          menu.addAction(mpSimulateWithAnimationAction);
-#endif
-          menu.addAction(mpSimulationSetupAction);
-        }
-        /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
-        if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
-          menu.addSeparator();
-          menu.addAction(mpDuplicateClassAction);
-        }
-        if (pLibraryTreeItem->isTopLevel()) {
-          mpUnloadClassAction->setText(Helper::unloadClass);
-          mpUnloadClassAction->setStatusTip(Helper::unloadClassTip);
-        } else {
-          mpUnloadClassAction->setText(Helper::deleteStr);
-          mpUnloadClassAction->setStatusTip(tr("Deletes the Modelica class"));
-        }
-        // only add unload/delete option for top level system libraries
-        if (!pLibraryTreeItem->isSystemLibrary()) {
-          menu.addAction(mpUnloadClassAction);
-        } else if (pLibraryTreeItem->isSystemLibrary() && pLibraryTreeItem->isTopLevel()) {
-          menu.addAction(mpUnloadClassAction);
-        }
-        menu.addSeparator();
-        menu.addAction(mpExportFMUAction);
-        menu.addAction(mpExportXMLAction);
-        menu.addAction(mpExportFigaroAction);
-        if (pLibraryTreeItem->isSimulationAllowed()) {
-          menu.addSeparator();
-          menu.addAction(mpUpdateBindingsAction);
-        }
-        if (pLibraryTreeItem->getRestriction() == StringHandler::Package) {
-          menu.addSeparator();
-          menu.addAction(mpGenerateVerificationScenariosAction);
-        }
-        break;
-      case LibraryTreeItem::Text:
-        if (fileInfo.isDir()) {
-          menu.addAction(mpNewFileAction);
-          menu.addAction(mpNewFolderAction);
-          menu.addSeparator();
-        }
-        menu.addAction(mpRenameAction);
-        menu.addAction(mpDeleteAction);
-        if (pLibraryTreeItem->isTopLevel()) {
+          menu.addAction(mpExportFMUAction);
+          menu.addAction(mpExportXMLAction);
+          menu.addAction(mpExportFigaroAction);
+          if (pLibraryTreeItem->isSimulationAllowed()) {
+            menu.addSeparator();
+            menu.addAction(mpUpdateBindingsAction);
+          }
+          if (pLibraryTreeItem->getRestriction() == StringHandler::Package) {
+            menu.addSeparator();
+            menu.addAction(mpGenerateVerificationScenariosAction);
+          }
+          break;
+        case LibraryTreeItem::Text:
+          if (fileInfo.isDir()) {
+            menu.addAction(mpNewFileAction);
+            menu.addAction(mpNewFolderAction);
+            menu.addSeparator();
+          }
+          menu.addAction(mpRenameAction);
+          menu.addAction(mpDeleteAction);
+          if (pLibraryTreeItem->isTopLevel()) {
+            menu.addSeparator();
+            menu.addAction(mpUnloadCompositeModelFileAction);
+          }
+          break;
+        case LibraryTreeItem::CompositeModel:
+          menu.addAction(mpFetchInterfaceDataAction);
+          menu.addAction(mpTLMCoSimulationAction);
           menu.addSeparator();
           menu.addAction(mpUnloadCompositeModelFileAction);
-        }
-        break;
-      case LibraryTreeItem::CompositeModel:
-        menu.addAction(mpFetchInterfaceDataAction);
-        menu.addAction(mpTLMCoSimulationAction);
-        menu.addSeparator();
-        menu.addAction(mpUnloadCompositeModelFileAction);
-        break;
+          break;
+      }
     }
-    menu.exec(viewport()->mapToGlobal(point));
+  } else {
+    menu.addAction(mpNewModelicaClassEmptyAction);
+    menu.addSeparator();
+    menu.addAction(mpNewFileEmptyAction);
+    menu.addAction(mpNewFolderEmptyAction);
   }
+  menu.exec(viewport()->mapToGlobal(point));
 }
 
 /*!
@@ -2930,6 +2946,16 @@ void LibraryTreeView::createNewModelicaClass()
     pModelicaClassDialog->getParentClassTextBox()->setText(pLibraryTreeItem->getNameStructure());
     pModelicaClassDialog->exec();
   }
+}
+
+/*!
+ * \brief LibraryTreeView::createNewModelicaClassEmpty
+ * Opens the create new ModelicaClassDialog for creating a new top level class.
+ */
+void LibraryTreeView::createNewModelicaClassEmpty()
+{
+  ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(MainWindow::instance());
+  pModelicaClassDialog->exec();
 }
 
 /*!
@@ -3168,6 +3194,16 @@ void LibraryTreeView::createNewFile()
 }
 
 /*!
+ * \brief LibraryTreeView::createNewFileEmpty
+ * Creates a new file. Needs to provide path.
+ */
+void LibraryTreeView::createNewFileEmpty()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, MainWindow::instance());
+  pCreateNewItemDialog->exec();
+}
+
+/*!
  * \brief LibraryTreeView::createNewFolder
  * Creates a new folder.
  */
@@ -3178,6 +3214,15 @@ void LibraryTreeView::createNewFolder()
     return;
   }
   CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog(pLibraryTreeItem->getFileName(), false, MainWindow::instance());
+  pCreateNewItemDialog->exec();
+}
+/*!
+ * \brief LibraryTreeView::createNewFolderEmpty
+ * Creates a new folder. Needs to provide path.
+ */
+void LibraryTreeView::createNewFolderEmpty()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", false, MainWindow::instance());
   pCreateNewItemDialog->exec();
 }
 

@@ -306,6 +306,7 @@ private:
   QAction *mpViewDocumentationAction;
   QAction *mpInformationAction;
   QAction *mpNewModelicaClassAction;
+  QAction *mpNewModelicaClassEmptyAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveTotalAction;
@@ -328,7 +329,9 @@ private:
   QAction *mpUnloadClassAction;
   QAction *mpUnloadCompositeModelFileAction;
   QAction *mpNewFileAction;
+  QAction *mpNewFileEmptyAction;
   QAction *mpNewFolderAction;
+  QAction *mpNewFolderEmptyAction;
   QAction *mpRenameAction;
   QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
@@ -348,6 +351,7 @@ public slots:
   void viewDocumentation();
   void openInformationDialog();
   void createNewModelicaClass();
+  void createNewModelicaClassEmpty();
   void saveClass();
   void saveAsClass();
   void saveTotalClass();
@@ -367,7 +371,9 @@ public slots:
   void unloadClass();
   void unloadCompositeModelOrTextFile();
   void createNewFile();
+  void createNewFileEmpty();
   void createNewFolder();
+  void createNewFolderEmpty();
   void renameLibraryTreeItem();
   void deleteTextFile();
   void exportModelFMU();
