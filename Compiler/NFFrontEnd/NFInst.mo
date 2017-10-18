@@ -643,6 +643,10 @@ algorithm
 end updateComponentClass;
 
 function instPackage
+  "This function instantiates a package given a package node. If the package has
+   already been instantiated, then the cached instance from the node is
+   returned. Otherwise the node is fully instantiated, the instance is added to
+   the node's cache, and the instantiated node is returned."
   input output InstNode node;
 protected
   CachedData cache;
@@ -655,7 +659,12 @@ algorithm
 
     case CachedData.NO_CACHE()
       algorithm
+        // Cache the package node itself first, to avoid instantiation loops if
+        // the package uses itself somehow.
+        InstNode.setCachedData(CachedData.PACKAGE(node), node);
+        // Instantiate the node.
         inst := instantiate(node);
+        // Cache the instantiated node and instantiate expressions in it too.
         InstNode.setCachedData(CachedData.PACKAGE(inst), node);
         instExpressions(inst);
       then

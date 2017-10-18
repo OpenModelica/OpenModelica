@@ -350,7 +350,7 @@ algorithm
         return;
       else
         // Otherwise, continue in the enclosing scope.
-        cur_scope := InstNode.parent(cur_scope);
+        cur_scope := InstNode.parentScope(cur_scope);
       end if;
     end try;
   end for;
