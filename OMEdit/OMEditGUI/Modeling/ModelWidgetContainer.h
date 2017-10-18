@@ -100,7 +100,6 @@ private:
   Component *mpClickedState;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
-  bool mSkipFoucusOutEvent;
   QList<Component*> mComponentsList;
   QList<LineAnnotation*> mConnectionsList;
   QList<LineAnnotation*> mTransitionsList;

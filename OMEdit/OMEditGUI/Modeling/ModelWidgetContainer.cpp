@@ -118,7 +118,6 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
-  mSkipFoucusOutEvent = false;
   mpConnectionLineAnnotation = 0;
   mpTransitionLineAnnotation = 0;
   mpLineShapeAnnotation = 0;
@@ -1500,26 +1499,6 @@ void GraphicsView::addTransition(Component *pComponent)
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
       removeCurrentTransition();
     } else {
-      // check of any of starting or ending components are array
-      //      bool showConnectionArrayDialog = false;
-      //      if ((pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-      //          (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-      //          (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-      //          (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray()) ||
-      //          (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
-      //          (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-      //          (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
-      //          (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
-      //        showConnectionArrayDialog = true;
-      //      }
-      //      if (showConnectionArrayDialog) {
-      //        CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation,
-      //                                                                              mpModelWidget->getModelWidgetContainer()->getMainWindow());
-      //        // if user cancels the array connection
-      //        if (!pConnectionArray->exec()) {
-      //          removeCurrentConnection();
-      //        }
-      //      } else {
       QString startComponentName, endComponentName;
       if (pStartComponent->getParentComponent()) {
         startComponentName = QString(pStartComponent->getRootParentComponent()->getName()).append(".").append(pStartComponent->getName());
@@ -1538,15 +1517,6 @@ void GraphicsView::addTransition(Component *pComponent)
       if (!pCreateOrEditTransitionDialog->exec()) {
         removeCurrentTransition();
       }
-      //        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::MetaModel) {
-      //          MetaModelConnectionAttributes *pMetaModelConnectionAttributes;
-      //          pMetaModelConnectionAttributes = new MetaModelConnectionAttributes(this, mpConnectionLineAnnotation,
-      //                                                                             mpModelWidget->getModelWidgetContainer()->getMainWindow(), false);
-      //          // if user cancels the metamodel connection
-      //          if (!pMetaModelConnectionAttributes->exec()) {
-      //            removeCurrentConnection();
-      //          }
-      //        } else {
     }
     setIsCreatingTransition(false);
   }
@@ -2349,10 +2319,6 @@ void GraphicsView::focusOutEvent(QFocusEvent *event)
   if (QApplication::overrideCursor() && QApplication::overrideCursor()->shape() == Qt::CrossCursor) {
     QApplication::restoreOverrideCursor();
   }
-  if (mpTransitionLineAnnotation && !mSkipFoucusOutEvent) {
-    removeCurrentTransition();
-  }
-  mSkipFoucusOutEvent = false;
   QGraphicsView::focusOutEvent(event);
 }
 
@@ -2537,7 +2503,6 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
   }
   // if creating a transition
   if (isCreatingTransition()) {
-    mSkipFoucusOutEvent = true;
     QMenu menu(MainWindow::instance());
     menu.addAction(mpSetInitialStateAction);
     menu.addSeparator();
