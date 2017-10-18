@@ -152,7 +152,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         allocateLisData(size, size, nnz, linsys[i].solverData);
         break;
     #else
-      case LSS_LIS:
+      case LSS_LIS_NOT_AVAILABLE:
         throwStreamPrint(threadData, "OMC is compiled without sparse linear solver Lis.");
         break;
     #endif
