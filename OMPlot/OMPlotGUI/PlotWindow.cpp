@@ -947,8 +947,7 @@ void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
             } else {
               varNameQS.append("["+QString::number(i)+"]");
             }
-            const char* varName = varNameQS.toStdString().c_str();
-            if (!(arrElement = read_csv_dataset(csvReader, varName))) break;
+            if (!(arrElement = read_csv_dataset(csvReader, varNameQS.toStdString().c_str()))) break;
             i++;
 
             if (it == 0)
@@ -1008,8 +1007,7 @@ void PlotWindow::plotArray(double timePercent, PlotCurve *pPlotCurve)
             } else {
               varNameQS.append("["+QString::number(i)+"]");
             }
-            const char* varName = varNameQS.toStdString().c_str();
-            if(!(var = omc_matlab4_find_var(&reader, varName))) break;
+            if(!(var = omc_matlab4_find_var(&reader, varNameQS.toStdString().c_str()))) break;
             i++;
             vars.push_back(var);
            } while (true);
@@ -1175,8 +1173,7 @@ void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
               } else {
                 varNameQS.append("["+QString::number(i)+"]");
               }
-              const char* varName = varNameQS.toStdString().c_str();
-              if (!(arrElement = read_csv_dataset(csvReader, varName))) break;
+              if (!(arrElement = read_csv_dataset(csvReader, varNameQS.toStdString().c_str()))) break;
 
               if (it == 0)
                   res.push_back(arrElement[0]);
@@ -1245,8 +1242,7 @@ void PlotWindow::plotArrayParametric(double timePercent, PlotCurve *pPlotCurve)
               } else {
                 varNameQS.append("["+QString::number(i)+"]");
               }
-              const char* varName = varNameQS.toStdString().c_str();
-              if(!(var = omc_matlab4_find_var(&reader, varName))) break;
+              if(!(var = omc_matlab4_find_var(&reader, varNameQS.toStdString().c_str()))) break;
               i++;
               vars.push_back(var);
              } while (true);
