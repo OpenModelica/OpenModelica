@@ -227,32 +227,24 @@ public function addUnique
   input HashEntry entry;
   input HashTable hashTable;
   output HashTable outHashTable;
+protected
+  Integer indx, newpos, bsize;
+  ValueArray varr;
+  HashNode indexes;
+  HashVector hashvec;
+  Key key;
+  FuncsTuple fntpl;
+  FuncHash hashFunc;
 algorithm
-  outHashTable := match(entry, hashTable)
-    local
-      Integer indx, newpos, n, bsize;
-      ValueArray varr;
-      HashNode indexes;
-      HashVector hashvec;
-      HashEntry v;
-      Key key;
-      Value value;
-      FuncsTuple fntpl;
-      FuncHash hashFunc;
-
-    // Adding when not existing previously
-    case ((v as (key, _)),
-        ((hashvec, varr, bsize, fntpl as (hashFunc, _, _, _))))
-      equation
-        failure((_) = get(key, hashTable));
-        indx = hashFunc(key, bsize)+1;
-        (varr,newpos) = valueArrayAdd(varr, v);
-        indexes = hashvec[indx];
-        hashvec = arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
-      then
-        ((hashvec, varr, bsize, fntpl));
-
-  end match;
+  // Adding when not existing previously
+  (key, _) := entry;
+  (hashvec, varr, bsize, fntpl as (hashFunc, _, _, _)) := hashTable;
+  failure((_) := get(key, hashTable));
+  indx := hashFunc(key, bsize)+1;
+  (varr, newpos) := valueArrayAdd(varr, entry);
+  indexes := hashvec[indx];
+  hashvec := arrayUpdate(hashvec, indx, ((key, newpos) :: indexes));
+  outHashTable := (hashvec, varr, bsize, fntpl);
 end addUnique;
 
 public function update
@@ -261,14 +253,12 @@ public function update
   input HashEntry entry;
   input HashTable hashTable;
 protected
-  HashVector hashvec;
   ValueArray varr;
-  Integer bsize, n, index;
-  FuncsTuple functpl;
+  Integer index;
   Key key;
 algorithm
   (key, _) := entry;
-  (hashvec, varr, bsize, functpl) := hashTable;
+  (_, varr, _, _) := hashTable;
   index := hasKeyIndex(key, hashTable);
   true := valueArrayKeyIndexExists(varr, index);
   valueArraySet(varr, index, entry);
@@ -339,25 +329,17 @@ protected function hasKeyIndex
   input Key key;
   input HashTable hashTable;
   output Integer indx;
+protected
+  Integer hashindx, bsize;
+  HashNode indexes;
+  HashVector hashvec;
+  FuncEq keyEqual;
+  FuncHash hashFunc;
 algorithm
-  indx := match hashTable
-    local
-      Integer hashindx, bsize, n;
-      HashNode indexes;
-      Value v;
-      HashVector hashvec;
-      Key k;
-      FuncEq keyEqual;
-      FuncHash hashFunc;
-      Boolean eq;
-
-    case (hashvec, _, bsize, (hashFunc, keyEqual, _, _))
-      equation
-        hashindx = hashFunc(key, bsize)+1;
-        indexes = hashvec[hashindx];
-      then hasKeyIndex2(key, indexes, keyEqual);
-
-  end match;
+  (hashvec, _, bsize, (hashFunc, keyEqual, _, _)) := hashTable;
+  hashindx := hashFunc(key, bsize) + 1;
+  indexes := hashvec[hashindx];
+  indx := hasKeyIndex2(key, indexes, keyEqual);
 end hasKeyIndex;
 
 protected function hasKeyIndex2
@@ -370,7 +352,7 @@ protected
   Key key2;
 algorithm
   for keyIndex in keyIndices loop
-    (key2,index) := keyIndex;
+    (key2, index) := keyIndex;
     if keyEqual(key, key2) then
       return;
     end if;
