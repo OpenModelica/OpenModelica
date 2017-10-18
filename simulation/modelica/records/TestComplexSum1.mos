@@ -17,7 +17,7 @@ simulate(TestComplexSum1,simflags="-output sum1.re,sum1.im,sum2.re,sum2.im");get
 // stdout            | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[simulation/modelica/records/TestComplexSum.mo:11:3-11:36:writable] Notification: Moving binding to equation section and setting fixed attribute of sum1.re to false. This is done to work around a compiler design flaw (there is no good way to represent bindings that span multiple variables).
-// [simulation/modelica/records/TestComplexSum.mo:11:3-11:36:writable] Notification: Moving binding to equation section and setting fixed attribute of sum1.im to false. This is done to work around a compiler design flaw (there is no good way to represent bindings that span multiple variables).
+// "[simulation/modelica/records/TestComplexSum.mo:11:3-11:36:writable] Notification: Moving binding to initial equation section and setting fixed attribute of sum1.re to false.
+// [simulation/modelica/records/TestComplexSum.mo:11:3-11:36:writable] Notification: Moving binding to initial equation section and setting fixed attribute of sum1.im to false.
 // "
 // endResult
