@@ -1679,7 +1679,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
             MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
             AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
             if (pAnimationWindow) {
-              pAnimationWindow->openAnimationFile(simulationOptions.getResultFileName());
+              pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
             }
           } else {
             QString msg = tr("Animation is only supported with mat result files.");
