@@ -24,10 +24,12 @@ simulate(OverdeterminedInitialization.Fluid.TwoVolumesFullInitialInconsistent); 
 // |                 | |       | Use -lv=LOG_INIT -w for more information.
 // "
 // end SimulationResult;
-// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: V1.medium.p = V1.p_start (V2.p_start = V1.p_start)
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: V1.medium.p = V1.p_start (V2.p_start = V1.p_start)
 // Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
 //          V1.medium.p = V1.p_start.
 // Warning: Iteration variables with default zero start attribute in torn nonlinear equation system:
 //          V1.ports[2].m_flow:VARIABLE(flow=true min = -100000.0 max = 100000.0 unit = "kg/s" )  "Mass flow rate from the connection point into the component" type: Real  [2]
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // endResult

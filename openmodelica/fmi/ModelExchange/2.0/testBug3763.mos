@@ -13,5 +13,6 @@ translateModelFMU(DrumBoiler);getErrorString();
 // ""
 // true
 // "DrumBoiler.fmu"
-// ""
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
 // endResult

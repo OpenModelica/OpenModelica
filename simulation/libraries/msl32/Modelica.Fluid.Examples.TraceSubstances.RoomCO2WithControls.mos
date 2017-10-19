@@ -46,6 +46,7 @@ runScript(modelTesting);getErrorString();
 // [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:112:17-112:29:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:122:23-122:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1/Fluid/Examples/TraceSubstances.mo:168:23-168:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 //
 // "true
 // "
