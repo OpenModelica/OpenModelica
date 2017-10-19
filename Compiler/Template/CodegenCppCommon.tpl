@@ -221,11 +221,23 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
     case DAE_RESIDUAL_VAR() then
       '__daeResidual[<%i%>]'
     case JAC_VAR() then
-      '_<%getOption(matrixName)%>jac_y(<%i%>)'
+       match context
+           case ALGLOOP_CONTEXT(__) then
+                '_system->_<%getOption(matrixName)%>jac_y(<%i%>)'
+            else
+                '_<%getOption(matrixName)%>jac_y(<%i%>)'
     case JAC_DIFF_VAR() then
-      '_<%getOption(matrixName)%>jac_tmp(<%i%>)'
+      match context
+        case ALGLOOP_CONTEXT(__) then
+          '_system->_<%getOption(matrixName)%>jac_tmp(<%i%>)'
+        else
+             '_<%getOption(matrixName)%>jac_tmp(<%i%>)'
     case SEED_VAR() then
-      '_<%getOption(matrixName)%>jac_x(<%i%>)'
+      match context
+       case ALGLOOP_CONTEXT(__) then
+         '_system->_<%getOption(matrixName)%>jac_x(<%i%>)'
+       else
+         '_<%getOption(matrixName)%>jac_x(<%i%>)'
     case VARIABLE() then
       match var
         case SIMVAR(index=-2) then
