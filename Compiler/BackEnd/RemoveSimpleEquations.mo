@@ -417,7 +417,7 @@ public function fastAcausal "author: Frenkel TUD 2012-12
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendVarTransform.VariableReplacements repl;
-  Boolean b;
+  Boolean b, warnAliasConflicts;
   Integer size;
   HashSet.HashSet unReplaceable;
 algorithm
@@ -434,7 +434,10 @@ algorithm
     BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
   // traverse all systems and remove simple equations
-  (outDAE, (repl, b, _, _)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS)));
+  (outDAE, (repl, b, _, _, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, fastAcausal1, (repl, false, unReplaceable, Flags.getConfigInt(Flags.MAXTRAVERSALS), false));
+  if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
+    Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+  end if;
   // traverse the shared parts
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
 end fastAcausal;
@@ -459,10 +462,10 @@ protected function fastAcausal1 "author: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem = BackendDAEUtil.copyEqSystem(inSystem);
   output BackendDAE.Shared outShared;
-  output tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements, Boolean, HashSet.HashSet, Integer, Boolean> outTpl;
 protected
   BackendVarTransform.VariableReplacements repl;
   HashSet.HashSet unReplaceable;
@@ -471,7 +474,7 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   array<list<Integer>> mT; //[varIdx] = simpleContainer
-  Boolean foundSimple, globalFindSimple, b;
+  Boolean foundSimple, globalFoundSimple, warnAliasConflicts;
   Integer maxTraversals;
 algorithm
   // Don't apply removeSimpleEquations to clocked partitions
@@ -484,7 +487,7 @@ algorithm
 
   try
     BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := outSystem;
-    ((repl, globalFindSimple, unReplaceable, maxTraversals)) := inTpl;
+    ((repl, globalFoundSimple, unReplaceable, maxTraversals, warnAliasConflicts)) := inTpl;
     // transform to list, this is later not neccesary because the acausal system should save the equations as list
     eqnslst := BackendEquation.equationList(eqns);
     mT := arrayCreate(BackendVariable.varsSize(vars), {});
@@ -495,11 +498,10 @@ algorithm
     //print("Found "+intString(listLength(simpleeqnslst))+" SimpleEquationsContainers\n");
     //print(stringDelimitList(List.map(simpleeqnslst, dumpSimpleContainer),"\n")+"\n");
 
-    ((_, vars, outShared, repl, unReplaceable, _, eqnslst, b)) :=
-        causalFinder( foundSimple, simpleeqnslst, eqnslst, 1, maxTraversals, vars, inShared,
-                      repl, unReplaceable, mT, {}, globalFindSimple );
-    outSystem := updateSystem(b, eqnslst, vars, repl, outSystem);
-    outTpl := ((repl, b, unReplaceable, maxTraversals));
+    (vars, outShared, repl, unReplaceable, eqnslst, globalFoundSimple, warnAliasConflicts) := causalFinder(foundSimple, simpleeqnslst, eqnslst, 1, maxTraversals, vars, inShared, repl, unReplaceable, mT, {}, globalFoundSimple, warnAliasConflicts);
+
+    outSystem := updateSystem(globalFoundSimple, eqnslst, vars, repl, outSystem);
+    outTpl := ((repl, globalFoundSimple, unReplaceable, maxTraversals, warnAliasConflicts));
     GC.free(mT);
   else
     //Error.addCompilerWarning("The module removeSimpleEquations failed for a subsystem. The relevant subsystem get skipped and the transformation is proceeded.");
@@ -521,13 +523,18 @@ protected function causalFinder "author: Frenkel TUD 2012-12"
   input HashSet.HashSet iUnreplaceable;
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
-  input Boolean globalFoundSimple;
-  output tuple< Integer, BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements,
-                HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean > oTpl;
+  input Boolean inGlobalFoundSimple;
+  output BackendDAE.Variables outVars = iVars;
+  output BackendDAE.Shared outShared = ishared;
+  output BackendVarTransform.VariableReplacements outRepl = iRepl;
+  output HashSet.HashSet outUnReplaceable = iUnreplaceable;
+  output list<BackendDAE.Equation> outEqnslst;
+  output Boolean outGlobalFoundSimple = inGlobalFoundSimple;
+  input output Boolean warnAliasConflicts;
 protected
   BackendDAE.Variables vars;
   BackendVarTransform.VariableReplacements repl;
-  Boolean b1;
+  Boolean b, b1;
   array<SimpleContainer> simpleContainer;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.Shared shared;
@@ -536,14 +543,15 @@ algorithm
     // transform simpleeqns to array
     simpleContainer := List.listArrayReverse(simpleContainerIn);
     // collect and handle sets
-    (vars, eqnslst, shared, repl) := handleSets(arrayLength(simpleContainer), 1, simpleContainer, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
-    //BackendVarTransform.dumpReplacements(repl);
+    (vars, eqnslst, shared, repl, b) := handleSets(arrayLength(simpleContainer), 1, simpleContainer, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+    warnAliasConflicts := warnAliasConflicts or b;
 
     // perform replacements and try again
     (eqnslst, b1) := BackendVarTransform.replaceEquations(eqnslst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-    oTpl := causalFinder1(intGt(traversalIdx, maxTraversals), b1, eqnslst, traversalIdx+1, maxTraversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
+    (outVars, outShared, outRepl, outUnReplaceable, outEqnslst, warnAliasConflicts) := causalFinder1(intGt(traversalIdx, maxTraversals), b1, eqnslst, traversalIdx+1, maxTraversals, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, inGlobalFoundSimple, warnAliasConflicts);
+    outGlobalFoundSimple := true;
   else
-    oTpl := ((maxTraversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
+    outEqnslst := listAppend(iEqnslst, iGlobalEqnslst);
   end if;
 end causalFinder;
 
@@ -552,31 +560,38 @@ protected function causalFinder1 "author: Frenkel TUD 2012-12"
   input Boolean b;
   input list<BackendDAE.Equation> iEqnslst;
   input Integer index;
-  input Integer traversals;
+  input Integer maxTraversals;
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements iRepl;
   input HashSet.HashSet iUnreplaceable;
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
-  input Boolean globalFoundSimple;
-  output tuple<Integer, BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> outTpl;
+  input Boolean inGlobalFoundSimple;
+  output BackendDAE.Variables outVars = iVars;
+  output BackendDAE.Shared outShared = ishared;
+  output BackendVarTransform.VariableReplacements outRepl = iRepl;
+  output HashSet.HashSet outUnReplaceable = iUnreplaceable;
+  output list<BackendDAE.Equation> outEqnslst = listAppend(iEqnslst, iGlobalEqnslst);
+  input output Boolean warnAliasConflicts;
 algorithm
-  outTpl := match (finished, b, iEqnslst, index, traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple)
+  (outVars, outShared, outRepl, outUnReplaceable, outEqnslst) :=
+  match (finished, b, iEqnslst, index, iVars, ishared, iRepl, iUnreplaceable, iGlobalEqnslst)
     local
       Boolean b1;
       list<BackendDAE.Equation> eqnslst;
       list<SimpleContainer> simpleeqnslst;
       BackendDAE.Variables vars;
       BackendDAE.Shared shared;
-    case(true, _, _, _, _, _, _, _, _, _, _, _) then ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
-    case(_, false, {}, _, _, _, _, _, _, _, _, _) then ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple));
-    case(_, false, _, _, _, _, _, _, _, _, _, _) then ((traversals, iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
-    case(_, true, _, _, _, _, _, _, _, _, _, _)
+    case(true, _, _, _, _, _, _, _, _) then (iVars, ishared, iRepl, iUnreplaceable, listAppend(iEqnslst, iGlobalEqnslst));
+    case(_, false, {}, _, _, _, _, _, _) then (iVars, ishared, iRepl, iUnreplaceable, iGlobalEqnslst);
+    case(_, false, _, _, _, _, _, _, _) then (iVars, ishared, iRepl, iUnreplaceable, listAppend(iEqnslst, iGlobalEqnslst));
+    case(_, true, _, _, _, _, _, _, _)
       equation
         ((vars, shared, eqnslst, simpleeqnslst, _, _, b1)) = List.fold(iEqnslst, simpleEquationsFinder, (iVars, ishared, {}, {}, 1, iMT, false));
+        (outVars, outShared, outRepl, outUnReplaceable, outEqnslst, _, warnAliasConflicts) = causalFinder(b1, simpleeqnslst, eqnslst, index, maxTraversals, vars, shared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, inGlobalFoundSimple, warnAliasConflicts);
       then
-        causalFinder(b1, simpleeqnslst, eqnslst, index, traversals, vars, shared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple);
+        (outVars, outShared, outRepl, outUnReplaceable, outEqnslst);
   end match;
 end causalFinder1;
 
@@ -591,7 +606,7 @@ public function allAcausal "author: Frenkel TUD 2012-12"
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendVarTransform.VariableReplacements repl;
-  Boolean b;
+  Boolean b, warnAliasConflicts;
   Integer size;
   HashSet.HashSet unReplaceable;
 algorithm
@@ -607,7 +622,10 @@ algorithm
   if Flags.isSet(Flags.DUMP_REPL) then
     BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
-  (outDAE, (repl, _, b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, allAcausal1, (repl, unReplaceable, false));
+  (outDAE, (repl, _, b, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, allAcausal1, (repl, unReplaceable, false, false));
+  if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
+    Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+  end if;
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
   // until remove simple equations does not update assignments and comps remove them
 end allAcausal;
@@ -617,16 +635,16 @@ protected function allAcausal1 "author: Frenkel TUD 2012-12
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
-  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendVarTransform.VariableReplacements repl;
   HashSet.HashSet unReplaceable;
-  Boolean b, b1;
+  Boolean b, b1, warnAliasConflicts;
   array<list<Integer>> mT;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.EqSystem syst;
@@ -640,16 +658,17 @@ algorithm
   end if;
 
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := inSystem;
-  ((repl, unReplaceable, b1)) := inTpl;
+  ((repl, unReplaceable, b1, warnAliasConflicts)) := inTpl;
 
   // transform to list, this is later not neccesary because the acausal system should save the equations as list
   eqnslst := BackendEquation.equationList(eqns);
   mT := arrayCreate(BackendVariable.varsSize(vars), {});
 
   // check equations
-  ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := allCausalFinder(eqnslst, (vars, inShared, repl, unReplaceable, mT, {}, false));
+  ((vars, outShared, repl, unReplaceable, _, eqnslst, b, warnAliasConflicts)) := allCausalFinder(eqnslst, (vars, inShared, repl, unReplaceable, mT, {}, false, warnAliasConflicts));
+
   outSystem := updateSystem(b, eqnslst, vars, repl, inSystem);
-  outTpl := ((repl, unReplaceable, b or b1));
+  outTpl := ((repl, unReplaceable, b or b1, warnAliasConflicts));
 end allAcausal1;
 
 
@@ -663,7 +682,7 @@ public function causal "author: Frenkel TUD 2012-12"
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendVarTransform.VariableReplacements repl;
-  Boolean b;
+  Boolean b, warnAliasConflicts;
   Integer size;
   HashSet.HashSet unReplaceable;
 algorithm
@@ -681,7 +700,10 @@ algorithm
   if Flags.isSet(Flags.DUMP_REPL) then
     BackendDump.dumpHashSet(unReplaceable, "Unreplaceable Crefs:");
   end if;
-  (outDAE, (repl, _, b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, causal1, (repl, unReplaceable, false));
+  (outDAE, (repl, _, b, warnAliasConflicts)) := BackendDAEUtil.mapEqSystemAndFold(inDAE, causal1, (repl, unReplaceable, false, false));
+  if warnAliasConflicts and BackendDAEUtil.isSimulationDAE(inDAE.shared) then
+    Error.addMessage(Error.CONFLICTING_ALIAS_SET, {});
+  end if;
   outDAE := removeSimpleEquationsShared(b, outDAE, repl);
   // until remove simple equations does not update assignments and comps remove them
 end causal;
@@ -691,17 +713,17 @@ protected function causal1 "author: Frenkel TUD 2012-12
   a=f(not time) in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
-  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> inTpl;
+  input tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> inTpl;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
-  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean> outTpl;
+  output tuple<BackendVarTransform.VariableReplacements, HashSet.HashSet, Boolean, Boolean> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendDAE.StrongComponents comps;
   BackendVarTransform.VariableReplacements repl;
   HashSet.HashSet unReplaceable;
-  Boolean b, b1;
+  Boolean b, b1, warnAliasConflicts;
   array<list<Integer>> mT;
   list<BackendDAE.Equation> eqnslst;
   BackendDAE.EqSystem syst;
@@ -715,14 +737,15 @@ algorithm
   end if;
 
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=BackendDAE.MATCHING(comps=comps)) := inSystem;
-  ((repl, unReplaceable, b1)) := inTpl;
+  ((repl, unReplaceable, b1, warnAliasConflicts)) := inTpl;
 
   mT := arrayCreate(BackendVariable.varsSize(vars), {});
 
   // check equations
-  ((vars, outShared, repl, unReplaceable, _, eqnslst, b)) := traverseComponents(comps, eqns, allCausalFinder, (vars, inShared, repl, unReplaceable, mT, {}, false));
+  ((vars, outShared, repl, unReplaceable, _, eqnslst, b, warnAliasConflicts)) := traverseComponents(comps, eqns, allCausalFinder, (vars, inShared, repl, unReplaceable, mT, {}, false, warnAliasConflicts));
+
   outSystem := updateSystem(b, eqnslst, vars, repl, inSystem);
-  outTpl := ((repl, unReplaceable, b or b1));
+  outTpl := ((repl, unReplaceable, b or b1, warnAliasConflicts));
 end causal1;
 
 protected function traverseComponents "author: Frenkel TUD 2010-12"
@@ -808,22 +831,24 @@ end traverseComponents;
 
 protected function allCausalFinder "author: Frenkel TUD 2012-12"
   input list<BackendDAE.Equation> eqns;
-  input tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> inTpl;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> outTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean, Boolean> inTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean, Boolean> outTpl;
 protected
   BackendDAE.Variables vars;
   BackendDAE.Shared shared;
   BackendVarTransform.VariableReplacements repl;
   HashSet.HashSet unReplaceable;
   array<list<Integer>> mt;
-  Boolean b, b1, b2;
+  Boolean b, b1, b2, b3, globalFoundSimple, warnAliasConflicts;
   list<BackendDAE.Equation> globaleqnslst, eqnslst;
   list<SimpleContainer> simpleeqnslst;
 algorithm
-  (vars, shared, repl, unReplaceable, mt, globaleqnslst, b) := inTpl;
+  (vars, shared, repl, unReplaceable, mt, globaleqnslst, b, warnAliasConflicts) := inTpl;
   (eqnslst, b2) := BackendVarTransform.replaceEquations(eqns, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
   ((_, _, eqnslst, simpleeqnslst, _, _, b1)) := List.fold(eqnslst, simpleEquationsFinder, (vars, shared, {}, {}, 1, mt, false));
-  outTpl := allCausalFinder1(b1, b2, simpleeqnslst, eqnslst, vars, shared, repl, unReplaceable, mt, globaleqnslst, b);
+  (vars, shared, repl, unReplaceable, eqnslst, globalFoundSimple, b3) := allCausalFinder1(b1, b2, simpleeqnslst, eqnslst, vars, shared, repl, unReplaceable, mt, globaleqnslst, b, warnAliasConflicts);
+  warnAliasConflicts := warnAliasConflicts or b3;
+  outTpl := (vars, shared, repl, unReplaceable, mt, eqnslst, globalFoundSimple, warnAliasConflicts);
 end allCausalFinder;
 
 protected function allCausalFinder1 "author: Frenkel TUD 2012-12"
@@ -838,31 +863,39 @@ protected function allCausalFinder1 "author: Frenkel TUD 2012-12"
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean globalFoundSimple;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> oTpl;
+  output BackendDAE.Variables outVars;
+  output BackendDAE.Shared outShared;
+  output BackendVarTransform.VariableReplacements outRepl;
+  output HashSet.HashSet outUnReplaceable;
+  output list<BackendDAE.Equation> outEqnslst;
+  output Boolean outGlobalFoundSimple;
+  input output Boolean warnAliasConflicts;
 algorithm
-  oTpl:=
-  match (foundSimple, didReplacement, iSimpleeqnslst, iEqnslst, iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple)
+  (outVars, outShared, outRepl, outUnReplaceable, outEqnslst, outGlobalFoundSimple, warnAliasConflicts) :=
+  match (foundSimple, didReplacement, iSimpleeqnslst, iEqnslst, iVars, ishared, iRepl, iUnreplaceable, iGlobalEqnslst, globalFoundSimple)
     local
       BackendDAE.Variables vars;
       BackendVarTransform.VariableReplacements repl;
-      Boolean b1;
+      Boolean b, b1;
       array<SimpleContainer> simpleeqns;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
-    case (false, _, _, {}, _, _, _, _, _, _, _)
-      then ((iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, didReplacement or globalFoundSimple));
-    case (false, _, _, _, _, _, _, _, _, _, _)
-      then ((iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), didReplacement or globalFoundSimple));
-    case (true, _, _, _, _, _, _, _, _, _, _)
+    case (false, _, _, {}, _, _, _, _, _, _)
+      then (iVars, ishared, iRepl, iUnreplaceable, iGlobalEqnslst, didReplacement or globalFoundSimple, warnAliasConflicts);
+    case (false, _, _, _, _, _, _, _, _, _)
+      then (iVars, ishared, iRepl, iUnreplaceable, listAppend(iEqnslst, iGlobalEqnslst), didReplacement or globalFoundSimple, warnAliasConflicts);
+    case (true, _, _, _, _, _, _, _, _, _)
       equation
         // transform simpleeqns to array
         simpleeqns = List.listArrayReverse(iSimpleeqnslst);
         // collect and handle sets
-        (vars, eqnslst, shared, repl) = handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+        (vars, eqnslst, shared, repl, b) = handleSets(arrayLength(simpleeqns), 1, simpleeqns, iMT, iUnreplaceable, iVars, iEqnslst, ishared, iRepl);
+        warnAliasConflicts = warnAliasConflicts or b;
+
         // perform replacements and try again
         (eqnslst, b1) = BackendVarTransform.replaceEquations(eqnslst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
       then
-        allCausalFinder2(b1, eqnslst, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true);
+        allCausalFinder2(b1, eqnslst, vars, shared, repl, iUnreplaceable, iMT, iGlobalEqnslst, true, warnAliasConflicts);
   end match;
 end allCausalFinder1;
 
@@ -876,22 +909,29 @@ protected function allCausalFinder2 "author: Frenkel TUD 2012-12"
   input array<list<Integer>> iMT;
   input list<BackendDAE.Equation> iGlobalEqnslst;
   input Boolean globalFoundSimple;
-  output tuple<BackendDAE.Variables, BackendDAE.Shared, BackendVarTransform.VariableReplacements, HashSet.HashSet, array<list<Integer>>, list<BackendDAE.Equation>, Boolean> outTpl;
+  output BackendDAE.Variables outVars;
+  output BackendDAE.Shared outShared;
+  output BackendVarTransform.VariableReplacements outRepl;
+  output HashSet.HashSet outUnReplaceable;
+  output list<BackendDAE.Equation> outEqnslst;
+  output Boolean outGlobalFoundSimple;
+  input output Boolean warnAliasConflicts;
 algorithm
-  outTpl := match (b, iEqnslst, iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple)
+  (outVars, outShared, outRepl, outUnReplaceable, outEqnslst, outGlobalFoundSimple, warnAliasConflicts) :=
+  match (b, iEqnslst, iVars, ishared, iRepl, iUnreplaceable, iGlobalEqnslst, globalFoundSimple)
     local
       Boolean b1;
       list<BackendDAE.Equation> eqnslst;
       list<SimpleContainer> simpleeqnslst;
       BackendDAE.Variables vars;
       BackendDAE.Shared shared;
-    case(false, {}, _, _, _, _, _, _, _) then ((iVars, ishared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple));
-    case(false, _, _, _, _, _, _, _, _) then ((iVars, ishared, iRepl, iUnreplaceable, iMT, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple));
-    case(true, _, _, _, _, _, _, _, _)
+    case(false, {}, _, _, _, _, _, _) then (iVars, ishared, iRepl, iUnreplaceable, iGlobalEqnslst, globalFoundSimple, warnAliasConflicts);
+    case(false, _, _, _, _, _, _, _) then (iVars, ishared, iRepl, iUnreplaceable, listAppend(iEqnslst, iGlobalEqnslst), globalFoundSimple, warnAliasConflicts);
+    case(true, _, _, _, _, _, _, _)
       equation
         ((vars, shared, eqnslst, simpleeqnslst, _, _, b1)) = List.fold(iEqnslst, simpleEquationsFinder, (iVars, ishared, {}, {}, 1, iMT, false));
       then
-        allCausalFinder1(b1, false, simpleeqnslst, eqnslst, vars, shared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple);
+        allCausalFinder1(b1, false, simpleeqnslst, eqnslst, vars, shared, iRepl, iUnreplaceable, iMT, iGlobalEqnslst, globalFoundSimple, warnAliasConflicts);
   end match;
 end allCausalFinder2;
 
@@ -1962,10 +2002,12 @@ protected function handleSets "author: Frenkel TUD 2012-12
   input output list<BackendDAE.Equation> eqnslst;
   input output BackendDAE.Shared shared;
   input output BackendVarTransform.VariableReplacements repl;
+  output Boolean warnAliasConflicts = false;
 protected
   Option<tuple<Integer, Integer>> rmax, smax;
   Option<Integer> unremovable, const;
   Integer mark = inMark;
+  Boolean b;
 algorithm
   for idx in containerIdx:-1:1 loop
     if not intGt(getVisited(containerArr[idx]), 0) then
@@ -1976,8 +2018,9 @@ algorithm
       //print("Check Simple Container "+dumpSimpleContainer(containerArr[idx])+"\n");
       (rmax, smax, unremovable, const, _) := getAlias({idx}, NONE(), mark, containerArr, iMT, vars, unReplaceable, false, {}, NONE(), NONE(), NONE(), NONE());
       // traverse set and add replacements, move vars, ...
-      (vars, eqnslst, shared, repl) := handleSet(rmax, smax, unremovable, const, mark+1, containerArr, iMT, unReplaceable, vars, eqnslst, shared, repl);
+      (vars, eqnslst, shared, repl, b) := handleSet(rmax, smax, unremovable, const, mark+1, containerArr, iMT, unReplaceable, vars, eqnslst, shared, repl);
       mark := mark+2;
+      warnAliasConflicts := warnAliasConflicts or b;
     end if;
   end for;
 end handleSets;
@@ -2398,6 +2441,7 @@ protected function handleSet "author: Frenkel TUD 2012-12
   output list<BackendDAE.Equation> oEqnslst;
   output BackendDAE.Shared oshared;
   output BackendVarTransform.VariableReplacements oRepl;
+  output Boolean warnAliasConflicts = false;
 algorithm
   (oVars, oEqnslst, oshared, oRepl):=
   matchcontinue (iRmax, iSmax, iUnremovable, iConst, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl)
@@ -2520,7 +2564,7 @@ algorithm
        oexp = varStateDerivative(v);
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(iMT[i], i, exp, NONE(), false, oexp, mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, vsattr);
        arrayUpdate(iMT, i, {});
-       vars = handleVarSetAttributes(vsattr, v, vars, shared);
+       (vars, warnAliasConflicts) = handleVarSetAttributes(vsattr, v, vars, shared);
      then
        (vars, eqnslst, shared, repl);
 
@@ -2532,7 +2576,7 @@ algorithm
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(iMT[i], i, exp, NONE(), false, NONE(), mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, vsattr);
        arrayUpdate(iMT, i, {});
-       vars = handleVarSetAttributes(vsattr, v, vars, shared);
+       (vars, warnAliasConflicts) = handleVarSetAttributes(vsattr, v, vars, shared);
      then
        (vars, eqnslst, shared, repl);
 
@@ -2544,7 +2588,7 @@ algorithm
        vsattr = addVarSetAttributes(v, false, mark, simpleeqnsarr, EMPTYVARSETATTRIBUTES);
        (vars, eqnslst, shared, repl, vsattr) = traverseAliasTree(iMT[i], i, exp, NONE(), false, NONE(), mark, simpleeqnsarr, iMT, unReplaceable, iVars, iEqnslst, ishared, iRepl, vsattr);
        arrayUpdate(iMT, i, {});
-       vars = handleVarSetAttributes(vsattr, v, vars, shared);
+       (vars, warnAliasConflicts) = handleVarSetAttributes(vsattr, v, vars, shared);
      then
        (vars, eqnslst, shared, repl);
 
@@ -2977,6 +3021,7 @@ protected function mergeStartFixedAttributes "author: Frenkel TUD 2012-12"
   input tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
   input BackendDAE.Shared ishared;
   output BackendDAE.Var outVar;
+  output Boolean warnAliasConflicts = false;
 algorithm
   outVar := matchcontinue(inVar, fixed, startvalues, ishared)
     local
@@ -3002,11 +3047,12 @@ algorithm
       ((_, start, _)) = equalNonFreeStartValues(values, globalKnownVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(v, start);
 
-    case (_, true, (_, values), BackendDAE.SHARED()) equation
+    case (_, true, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
       v = BackendVariable.setVarFixed(inVar, true);
       // get all nonzero values
       zerofreevalues = List.fold(values, getZeroFreeValues, {});
-    then selectFreeValue1(zerofreevalues, {}, "fixed Alias set with several free start values\n", "start", BackendVariable.setVarStartValue, v);
+      warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
+    then selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values having the same priority\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
 
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
@@ -3018,10 +3064,11 @@ algorithm
       ((_, start, _)) = equalFreeStartValues(values, globalKnownVars, (start1, start, cr));
     then BackendVariable.setVarStartValueOption(inVar, start);
 
-    case (_, false, (_, values), _) equation
+    case (_, false, (_, values), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
       // get all nonzero values
       zerofreevalues = List.fold(values, getZeroFreeValues, {});
-    then selectFreeValue(zerofreevalues, inVar);
+      (v, warnAliasConflicts) = selectFreeValue(zerofreevalues, inVar, globalKnownVars);
+    then v;
   end matchcontinue;
 end mergeStartFixedAttributes;
 
@@ -3045,7 +3092,9 @@ end addNominalValue;
 protected function mergeNominalAttribute
   input list<tuple<DAE.Exp, DAE.ComponentRef>> nominalList;
   input BackendDAE.Var inVar;
+  input BackendDAE.Variables globalKnownVars;
   output BackendDAE.Var outVar;
+  output Boolean warnAliasConflicts = false;
 algorithm
   outVar := matchcontinue (nominalList, inVar)
     local
@@ -3055,12 +3104,16 @@ algorithm
     case ({}, _) then inVar;
 
     //check if all expressions are equal take just one
-    case (_, _) equation
-      allExp = List.map(nominalList, Util.tuple21);
-      {e} = List.uniqueOnTrue(allExp, Expression.expEqual);
-    then BackendVariable.setVarNominalValue(inVar, e);
+    case (_, _)
+      equation
+        allExp = List.map(nominalList, Util.tuple21);
+        {e} = List.uniqueOnTrue(allExp, Expression.expEqual);
+      then BackendVariable.setVarNominalValue(inVar, e);
 
-    else selectFreeValue1(nominalList, {}, "Alias set with different nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar);
+    else
+      equation
+        warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
+      then selectFreeValue1(nominalList, {}, "Alias set with conflicting nominal values\n", "nominal", BackendVariable.setVarNominalValue, inVar, globalKnownVars);
   end matchcontinue;
 end mergeNominalAttribute;
 
@@ -3192,30 +3245,34 @@ protected function handleVarSetAttributes "author: Frenkel TUD 2012-12"
   input BackendDAE.Variables inVars;
   input BackendDAE.Shared inShared;
   output BackendDAE.Variables outVars;
+  output Boolean warnAliasConflicts = false;
 algorithm
   outVars := matchcontinue(inAttributes, inVar, inVars, inShared)
     local
-      Boolean fixedset, isdiscrete;
+      Boolean fixedset, isdiscrete, b1=false, b2=false;
       list<tuple<DAE.Exp, DAE.ComponentRef>> nominalset;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minmaxset;
       tuple<Integer, list<tuple<Option<DAE.Exp>, DAE.ComponentRef>>> startvalues;
-      BackendDAE.Var v;
-      BackendDAE.Variables vars;
+      BackendDAE.Var v = inVar;
+      BackendDAE.Variables vars, globalKnownVars;
       Option<DAE.Exp> min, max;
 
-    case((fixedset, startvalues, nominalset, minmaxset), _, _, _) equation
+    case((fixedset, startvalues, nominalset, minmaxset), _, _, BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
       isdiscrete = BackendVariable.isVarDiscrete(inVar);
 
       // start and fixed
-      v = if not isdiscrete then mergeStartFixedAttributes(inVar, fixedset, startvalues, inShared) else inVar;
+      if not isdiscrete then
+        (v, b1) = mergeStartFixedAttributes(inVar, fixedset, startvalues, inShared);
+      end if;
       // nominal
-      v = mergeNominalAttribute(nominalset, v);
+      (v, b2) = mergeNominalAttribute(nominalset, v, globalKnownVars);
       // min max
       (min, max) = minmaxset;
       v = BackendVariable.setVarMinMax(v, min, max);
 
       // update vars
       vars = BackendVariable.addVar(v, inVars);
+      warnAliasConflicts = b1 or b2;
     then vars;
 
     else equation
@@ -3362,11 +3419,16 @@ end getZeroFreeValues;
 protected function selectFreeValue "author: Frenkel TUD 2012-12"
   input list<tuple<DAE.Exp, DAE.ComponentRef>> iZeroFreeValues;
   input BackendDAE.Var inVar;
+  input BackendDAE.Variables globalKnownVars;
   output BackendDAE.Var outVar;
+  output Boolean warnAliasConflicts = false;
 algorithm
   outVar := match(iZeroFreeValues, inVar)
     case ({}, _) then inVar;
-    case (_, _) then selectFreeValue1(iZeroFreeValues, {}, "Alias set with several free start values\n", "start", BackendVariable.setVarStartValue, inVar);
+    case (_, _)
+      equation
+        warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
+      then selectFreeValue1(iZeroFreeValues, {}, "Alias set with conflicting start values having the same priority\n", "start", BackendVariable.setVarStartValue, inVar, globalKnownVars);
   end match;
 end selectFreeValue;
 
@@ -3402,6 +3464,7 @@ protected function selectFreeValue1 "author: Frenkel TUD 2012-12
   input String iAttributeName;
   input FuncSetAttribute inFunc;
   input BackendDAE.Var inVar;
+  input BackendDAE.Variables globalKnownVars;
   output BackendDAE.Var outVar;
   partial function FuncSetAttribute
     input BackendDAE.Var iVar;
@@ -3411,14 +3474,15 @@ protected function selectFreeValue1 "author: Frenkel TUD 2012-12
 algorithm
   outVar := matchcontinue(iZeroFreeValues, iFavorit, iStr, iAttributeName, inFunc, inVar)
     local
-      DAE.Exp e, es;
+      DAE.Exp e, e1, es;
       DAE.ComponentRef cr, crs, crVar;
       BackendDAE.Var v;
       list<tuple<DAE.Exp, DAE.ComponentRef>> zerofreevalues;
       Integer i, is;
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> favorit;
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
-      String s;
+      String s="", s2;
+      Boolean b;
 
     case ({}, {}, _, _, _, _) then inVar;
 
@@ -3426,8 +3490,11 @@ algorithm
     case ({}, rest, _, _, _, _) equation
       ((e, cr, _)) = selectNonZeroExpression(rest);
       crVar = BackendVariable.varCref(inVar);
-      s = iStr + "=> select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
-      if Flags.isSet(Flags.DEBUG_ALIAS) then
+      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, _) = ExpressionSimplify.condsimplify(b, e1);
+        s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
+        s = iStr + "=> Select value from " +  ComponentReference.printComponentRefStr(cr) +  "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ") for variable: " +  ComponentReference.printComponentRefStr(crVar) + "\n";
         Error.addMessage(Error.COMPILER_WARNING, {s});
       end if;
       v = inFunc(inVar, e);
@@ -3435,28 +3502,43 @@ algorithm
 
     // none, push it in
     case ((e, cr)::zerofreevalues, {}, _, _, _, _) equation
-      s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
+      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, _) = ExpressionSimplify.condsimplify(b, e1);
+        s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
+        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ")\n";
+      end if;
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
-    then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar);
+    then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
     // equal, put it in
     case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _, _, _) equation
-      s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
+      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, _) = ExpressionSimplify.condsimplify(b, e1);
+        s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
+        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ")\n";
+      end if;
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       true = intEq(i, is);
       crVar = BackendVariable.varCref(inVar);
       favorit = if ComponentReference.crefEqual(crVar, cr) then {(e, cr, i),(es, crs, is)} else {(es, crs, is),(e, cr, i)};
       favorit = listAppend(favorit,rest);
-    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
+    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
     // less than, remove all from list, return just this one
     case ((e, cr)::zerofreevalues, (es, crs, is)::_, _, _, _, _) equation
-      s = iStr + " * candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + ")\n";
+      if Flags.isSet(Flags.ALIAS_CONFLICTS) then
+        (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
+        (e1, _) = ExpressionSimplify.condsimplify(b, e1);
+        s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
+        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ")\n";
+      end if;
       i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       favorit = if intLt(i, is) then {(e, cr, i)} else iFavorit;
       crVar = BackendVariable.varCref(inVar);
       favorit = if ComponentReference.crefEqual(crVar, crs) then {(es, crs, is),(e, cr, i)} else favorit;
-    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar);
+    then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
   end matchcontinue;
 end selectFreeValue1;
 

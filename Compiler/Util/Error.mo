@@ -1040,6 +1040,8 @@ public constant Message FMU_EXPORT_NOT_SUPPORTED_CPP = MESSAGE(7015, SCRIPTING()
   Util.gettext("Export of FMU type %s is not supported with Cpp target. FMU will be for Model Exchange (me)."));
 public constant Message DEPRECATED_API_CALL = MESSAGE(7016, SCRIPTING(), WARNING(),
   Util.gettext("'%1' is deprecated. It is recommended to use '%2' instead."));
+public constant Message CONFLICTING_ALIAS_SET = MESSAGE(7017, SYMBOLIC(), WARNING(),
+  Util.gettext("The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
 
 protected import ErrorExt;
 

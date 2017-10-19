@@ -258,7 +258,7 @@ constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(42, "dumpPPrepl", false,
 constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(43, "dumpEArepl", false,
   Util.gettext("Dump the found replacements for evaluate annotations (evaluate=true) parameters."));
 constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(44, "debugAlias", false,
-  Util.gettext("Dump the found alias variables."));
+  Util.gettext("Dumps some information about the process of removeSimpleEquations."));
 constant DebugFlag TEARING_DUMP = DEBUG_FLAG(45, "tearingdump", false,
   Util.gettext("Dumps tearing information."));
 constant DebugFlag JAC_DUMP = DEBUG_FLAG(46, "symjacdump", false,
@@ -518,6 +518,8 @@ constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(171, "warnNoNominal", false,
   Util.gettext("Prints the iteration variables in the initialization and simulation DAE, which do not have a nominal value."));
 constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(172, "ignoreCycles", false,
   Util.gettext("Ignores cycles between constant/parameter components."));
+constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(173, "aliasConflicts", false,
+  Util.gettext("Dumps alias sets with different start or nominal values."));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -697,7 +699,8 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_COLORING,
   MERGE_ALGORITHM_SECTIONS,
   WARN_NO_NOMINAL,
-  IGNORE_CYCLES
+  IGNORE_CYCLES,
+  ALIAS_CONFLICTS
 };
 
 public
