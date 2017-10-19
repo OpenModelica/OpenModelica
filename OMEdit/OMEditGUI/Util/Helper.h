@@ -271,6 +271,12 @@ public:
   static QString filterVariables;
   static QString openClass;
   static QString openClassTip;
+  static QString viewIcon;
+  static QString viewIconTip;
+  static QString viewDiagram;
+  static QString viewDiagramTip;
+  static QString viewText;
+  static QString viewTextTip;
   static QString viewDocumentation;
   static QString viewDocumentationTip;
   static QString dontShowThisMessageAgain;

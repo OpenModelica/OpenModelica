@@ -5487,7 +5487,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
 }
 
-void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView)
+void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
 {
   if (pModelWidget->isVisible() || pModelWidget->isMinimized()) {
     QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
@@ -5526,8 +5526,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->getEditor()->show();
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
-  }
-  else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
@@ -5537,33 +5536,33 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
   if (!checkPreferedView || pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::Modelica) {
     return;
   }
-  // get the preferred view to display
-  QString preferredView = pModelWidget->getLibraryTreeItem()->mClassInformation.preferredView;
-  if (!preferredView.isEmpty()) {
-    if (preferredView.compare("info") == 0) {
-      pModelWidget->showDocumentationView();
-      loadPreviousViewType(pModelWidget);
-    } else if (preferredView.compare("text") == 0) {
-      pModelWidget->getTextViewToolButton()->setChecked(true);
-    } else {
-      pModelWidget->getDiagramViewToolButton()->setChecked(true);
-    }
-  } else if (pModelWidget->getLibraryTreeItem()->isDocumentationClass()) {
-    pModelWidget->showDocumentationView();
-    loadPreviousViewType(pModelWidget);
-  } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
-    loadPreviousViewType(pModelWidget);
+  // show the view user wants
+  if (viewType == StringHandler::Icon) {
+    pModelWidget->getIconViewToolButton()->setChecked(true);
+  } else if (viewType == StringHandler::Diagram) {
+    pModelWidget->getDiagramViewToolButton()->setChecked(true);
+  } else if (viewType == StringHandler::ModelicaText) {
+    pModelWidget->getTextViewToolButton()->setChecked(true);
   } else {
-    QString defaultView = OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView();
-    if (defaultView.compare(Helper::iconView) == 0) {
-      pModelWidget->getIconViewToolButton()->setChecked(true);
-    } else if (defaultView.compare(Helper::textView) == 0) {
-      pModelWidget->getTextViewToolButton()->setChecked(true);
-    } else if (defaultView.compare(Helper::documentationView) == 0) {
-      pModelWidget->showDocumentationView();
+    // get the preferred view to display
+    QString preferredView = pModelWidget->getLibraryTreeItem()->mClassInformation.preferredView;
+    if (!preferredView.isEmpty()) {
+      if (preferredView.compare("text") == 0) {
+        pModelWidget->getTextViewToolButton()->setChecked(true);
+      } else {
+        pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      }
+    } else if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
-      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      QString defaultView = OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView();
+      if (defaultView.compare(Helper::iconView) == 0) {
+        pModelWidget->getIconViewToolButton()->setChecked(true);
+      } else if (defaultView.compare(Helper::textView) == 0) {
+        pModelWidget->getTextViewToolButton()->setChecked(true);
+      } else {
+        pModelWidget->getDiagramViewToolButton()->setChecked(true);
+      }
     }
   }
 }

@@ -488,7 +488,7 @@ class ModelWidgetContainer : public QMdiArea
   Q_OBJECT
 public:
   ModelWidgetContainer(QWidget *pParent = 0);
-  void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true);
+  void addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView = true, StringHandler::ViewType viewType = StringHandler::NoView);
   ModelWidget* getCurrentModelWidget();
   ModelWidget* getModelWidget(const QString &className);
   QMdiSubWindow* getCurrentMdiSubWindow();

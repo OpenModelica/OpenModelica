@@ -1600,25 +1600,36 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
  * \param text
  * \param show
  */
-void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show)
+void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show, StringHandler::ViewType viewType)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  // only switch to modeling perspective if show is true and we are not in a debugging perspective.
-  if (show && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 3) {
-    MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(1);
-  }
-  if (!pLibraryTreeItem->getModelWidget()) {
-    ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
-    pLibraryTreeItem->setModelWidget(pModelWidget);
-  }
-  /* Ticket #3797
-   * Only show the class Name as window title instead of full path
-   */
-  pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
-  if (show) {
-    MainWindow::instance()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true);
+  if (show && ((viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
+               (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
+                pLibraryTreeItem->isDocumentationClass()) ||
+               (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
+                OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView().compare(Helper::documentationView) == 0))) {
+    MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
+    bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
+    MainWindow::instance()->getDocumentationDockWidget()->show();
+    MainWindow::instance()->getDocumentationDockWidget()->blockSignals(state);
   } else {
-    pLibraryTreeItem->getModelWidget()->hide();
+    // only switch to modeling perspective if show is true and we are not in a debugging perspective.
+    if (show && MainWindow::instance()->getPerspectiveTabBar()->currentIndex() != 3) {
+      MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(1);
+    }
+    if (!pLibraryTreeItem->getModelWidget()) {
+      ModelWidget *pModelWidget = new ModelWidget(pLibraryTreeItem, MainWindow::instance()->getModelWidgetContainer());
+      pLibraryTreeItem->setModelWidget(pModelWidget);
+    }
+    /* Ticket #3797
+     * Only show the class Name as window title instead of full path
+     */
+    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName() + (pLibraryTreeItem->isSaved() ? "" : "*"));
+    if (show) {
+      MainWindow::instance()->getModelWidgetContainer()->addModelWidget(pLibraryTreeItem->getModelWidget(), true, viewType);
+    } else {
+      pLibraryTreeItem->getModelWidget()->hide();
+    }
   }
   QApplication::restoreOverrideCursor();
 }
@@ -2551,6 +2562,18 @@ void LibraryTreeView::createActions()
   mpOpenClassAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::openClass, this);
   mpOpenClassAction->setStatusTip(Helper::openClassTip);
   connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
+  // view icon Action
+  mpViewIconAction = new QAction(QIcon(":/Resources/icons/model.svg"), Helper::viewIcon, this);
+  mpViewIconAction->setStatusTip(Helper::viewIconTip);
+  connect(mpViewIconAction, SIGNAL(triggered()), SLOT(viewIcon()));
+  // view diagram Action
+  mpViewDiagramAction = new QAction(QIcon(":/Resources/icons/modeling.png"), Helper::viewDiagram, this);
+  mpViewDiagramAction->setStatusTip(Helper::viewDiagramTip);
+  connect(mpViewDiagramAction, SIGNAL(triggered()), SLOT(viewDiagram()));
+  // view text Action
+  mpViewTextAction = new QAction(QIcon(":/Resources/icons/modeltext.svg"), Helper::viewText, this);
+  mpViewTextAction->setStatusTip(Helper::viewTextTip);
+  connect(mpViewTextAction, SIGNAL(triggered()), SLOT(viewText()));
   // view documentation Action
   mpViewDocumentationAction = new QAction(QIcon(":/Resources/icons/info-icon.svg"), Helper::viewDocumentation, this);
   mpViewDocumentationAction->setStatusTip(Helper::viewDocumentationTip);
@@ -2789,6 +2812,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
         case LibraryTreeItem::Modelica:
         default:
           menu.addAction(mpOpenClassAction);
+          menu.addAction(mpViewIconAction);
+          menu.addAction(mpViewDiagramAction);
+          menu.addAction(mpViewTextAction);
           menu.addAction(mpViewDocumentationAction);
           menu.addAction(mpInformationAction);
           if (!pLibraryTreeItem->isSystemLibrary()) {
@@ -2891,6 +2917,42 @@ void LibraryTreeView::openClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::viewIcon
+ * Shows the icon view of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::viewIcon()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, true, StringHandler::Icon);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::viewDiagram
+ * Shows the diagram view of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::viewDiagram()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, true, StringHandler::Diagram);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::viewText
+ * Shows the text view of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::viewText()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, true, StringHandler::ModelicaText);
   }
 }
 
