@@ -958,6 +958,13 @@ NOTE: Make sure you do NOT create cycles as infinite lists are not handled well 
 external "builtin";
 end listSetRest;
 
+function listArrayLiteral<A>
+  "O(n)"
+  input list<A> lst;
+  output array<A> arr;
+external "builtin";
+end listArrayLiteral;
+
 end Dangerous;
 
 end MetaModelica;

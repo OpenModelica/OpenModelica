@@ -1166,23 +1166,24 @@ algorithm
         true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
       then cevalBuiltinClock; */
     // MetaModelica type conversions
-    case "intString" equation true = Config.acceptMetaModelicaGrammar(); then cevalIntString;
-    case "realString" equation true = Config.acceptMetaModelicaGrammar(); then cevalRealString;
-    case "stringCharInt" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringCharInt;
-    case "intStringChar" equation true = Config.acceptMetaModelicaGrammar(); then cevalIntStringChar;
-    case "stringLength" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringLength;
-    case "stringInt" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringInt;
-    case "stringListStringChar" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringListStringChar;
-    case "listStringCharString" equation true = Config.acceptMetaModelicaGrammar(); then cevalListStringCharString;
-    case "stringAppendList" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringAppendList;
-    case "stringDelimitList" equation true = Config.acceptMetaModelicaGrammar(); then cevalStringDelimitList;
-    case "listLength" equation true = Config.acceptMetaModelicaGrammar(); then cevalListLength;
-    case "listAppend" equation true = Config.acceptMetaModelicaGrammar(); then cevalListAppend;
-    case "listReverse" equation true = Config.acceptMetaModelicaGrammar(); then cevalListReverse;
-    case "listHead" equation true = Config.acceptMetaModelicaGrammar(); then cevalListFirst;
-    case "listRest" equation true = Config.acceptMetaModelicaGrammar(); then cevalListRest;
-    case "listMember" equation true = Config.acceptMetaModelicaGrammar(); then cevalListMember;
-    case "anyString" equation true = Config.acceptMetaModelicaGrammar(); then cevalAnyString;
+    case "intString" guard Config.acceptMetaModelicaGrammar() then cevalIntString;
+    case "realString" guard Config.acceptMetaModelicaGrammar() then cevalRealString;
+    case "stringCharInt" guard Config.acceptMetaModelicaGrammar() then cevalStringCharInt;
+    case "intStringChar" guard Config.acceptMetaModelicaGrammar() then cevalIntStringChar;
+    case "stringLength" guard Config.acceptMetaModelicaGrammar() then cevalStringLength;
+    case "stringInt" guard Config.acceptMetaModelicaGrammar() then cevalStringInt;
+    case "stringListStringChar" guard Config.acceptMetaModelicaGrammar() then cevalStringListStringChar;
+    case "listStringCharString" guard Config.acceptMetaModelicaGrammar() then cevalListStringCharString;
+    case "stringAppendList" guard Config.acceptMetaModelicaGrammar() then cevalStringAppendList;
+    case "stringDelimitList" guard Config.acceptMetaModelicaGrammar() then cevalStringDelimitList;
+    case "listLength" guard Config.acceptMetaModelicaGrammar() then cevalListLength;
+    case "listAppend" guard Config.acceptMetaModelicaGrammar() then cevalListAppend;
+    case "listReverse" guard Config.acceptMetaModelicaGrammar() then cevalListReverse;
+    case "listHead" guard Config.acceptMetaModelicaGrammar() then cevalListFirst;
+    case "listRest" guard Config.acceptMetaModelicaGrammar() then cevalListRest;
+    case "listMember" guard Config.acceptMetaModelicaGrammar() then cevalListMember;
+    case "anyString" guard Config.acceptMetaModelicaGrammar() then cevalAnyString;
+    case "listArrayLiteral" guard Config.acceptMetaModelicaGrammar() then cevalListArrayLiteral;
     case "numBits" then cevalNumBits;
     case "integerMax" then cevalIntegerMax;
     case "getLoadedLibraries" then cevalGetLoadedLibraries;
@@ -2601,6 +2602,38 @@ algorithm
         (cache,Values.BOOL(b),st);
   end match;
 end cevalListMember;
+
+protected function cevalListArrayLiteral
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<GlobalScript.SymbolTable> inST;
+  input Absyn.Msg inMsg;
+  input Integer numIter;
+  output FCore.Cache outCache;
+  output Values.Value outValue;
+  output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg,numIter)
+    local
+      FCore.Graph env;
+      DAE.Exp exp;
+      Boolean impl;
+      Option<GlobalScript.SymbolTable> st;
+      Absyn.Msg msg;
+      FCore.Cache cache;
+      list<Values.Value> vals;
+      Values.Value val;
+      Boolean b;
+    case (cache,env,{exp},impl,st,msg,_)
+      equation
+        (cache,Values.LIST(vals),st) = ceval(cache,env,exp,impl,st,msg,numIter+1);
+      then
+        (cache,Values.META_ARRAY(vals),st);
+  end match;
+end cevalListArrayLiteral;
 
 protected function cevalAnyString
   input FCore.Cache inCache;

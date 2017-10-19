@@ -1324,6 +1324,7 @@ algorithm
     case DAE.META_TUPLE(expl) equation List.map_0(expl, isLiteralExp); then ();
     case DAE.METARECORDCALL(args=expl) equation List.map_0(expl, isLiteralExp); then ();
     case DAE.SHARED_LITERAL() then ();
+    case DAE.CALL(path=Absyn.IDENT("listArrayLiteral"), expLst=expl) algorithm List.map_0(expl, isLiteralExp); then ();
     else fail();
   end match;
 end isLiteralExp;

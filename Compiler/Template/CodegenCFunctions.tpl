@@ -3417,6 +3417,13 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
     %>static const MMC_DEFSTRUCTLIT(<%tmp%>,<%intAdd(1,listLength(args))%>,<%newIndex%>) {&<%underscorePath(path)%>__desc,<%args |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0); separator=","%>}};
     #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
     >>
+  case CALL(path=IDENT(name="listArrayLiteral"), expLst=args) then
+    /* We need to use #define's to be C-compliant. Yea, total crap :) */
+    <<
+    <%args |> exp hasindex i0 => literalExpConstBoxedValPreLit(exp,litindex+"_"+i0) ; empty
+    %>static const MMC_DEFSTRUCTLIT(<%tmp%>,<%listLength(args)%>,MMC_ARRAY_TAG) {<%args |> exp hasindex i0 => literalExpConstBoxedVal(exp,litindex+"_"+i0); separator=","%>}};
+    #define <%name%> MMC_REFSTRUCTLIT(<%tmp%>)
+    >>
   else error(sourceInfo(), 'literalExpConst failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConst;
 
