@@ -659,6 +659,7 @@ public:
   QCheckBox* getInnerModelNameChangedCheckBox() {return mpInnerModelNameChangedCheckBox;}
   QCheckBox* getSaveModelForBitmapInsertionCheckBox() {return mpSaveModelForBitmapInsertionCheckBox;}
   QCheckBox* getAlwaysAskForDraggedComponentName() {return mpAlwaysAskForDraggedComponentName;}
+  QCheckBox* getAlwaysAskForTextEditorErrorCheckBox() {return mpAlwaysAskForTextEditorErrorCheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpNotificationsGroupBox;
@@ -668,6 +669,7 @@ private:
   QCheckBox *mpInnerModelNameChangedCheckBox;
   QCheckBox *mpSaveModelForBitmapInsertionCheckBox;
   QCheckBox *mpAlwaysAskForDraggedComponentName;
+  QCheckBox *mpAlwaysAskForTextEditorErrorCheckBox;
 };
 
 class LineStylePage : public QWidget

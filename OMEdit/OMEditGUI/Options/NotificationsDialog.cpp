@@ -76,7 +76,7 @@ NotificationsDialog::NotificationsDialog(NotificationType notificationType, Noti
   connect(mpOkButton, SIGNAL(clicked()), SLOT(saveNotification()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(rejectNotification()));
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
@@ -149,6 +149,8 @@ QString NotificationsDialog::getNotificationTitleString()
     case NotificationsDialog::InnerModelNameChanged:
     case NotificationsDialog::SaveModelForBitmapInsertion:
       return Helper::information;
+    case NotificationsDialog::RevertPreviousOrFixErrorsManually:
+      return Helper::error;
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationTitleString()";
@@ -169,6 +171,7 @@ QString NotificationsDialog::getNotificationLabelString()
       return GUIMessages::getMessage(GUIMessages::ITEM_DROPPED_ON_ITSELF);
     case NotificationsDialog::ReplaceableIfPartial:
     case NotificationsDialog::InnerModelNameChanged:
+    case RevertPreviousOrFixErrorsManually:
       return "this string needs argument and will be set via NotificationsDialog::setNotificationLabelString(QString label)";
     case NotificationsDialog::SaveModelForBitmapInsertion:
       return tr("You must save the class before referencing a bitmap from local directory.");
@@ -194,6 +197,8 @@ QString NotificationsDialog::getNotificationCheckBoxString()
     case NotificationsDialog::InnerModelNameChanged:
     case NotificationsDialog::SaveModelForBitmapInsertion:
       return Helper::dontShowThisMessageAgain;
+    case NotificationsDialog::RevertPreviousOrFixErrorsManually:
+      return tr("Remember my decision and do not ask again");
     default:
       // should never be reached
       return "No String is defined for your notification type in NotificationsDialog::getNotificationCheckBoxString()";
@@ -259,6 +264,18 @@ void NotificationsDialog::saveModelForBitmapInsertionNotificationSettings()
 }
 
 /*!
+ * \brief NotificationsDialog::saveAlwaysAskForTextEditorErrorSettings
+ * Saves the notifications/alwaysAskForTextEditorError key settings to omedit.ini file.\n
+ * Sets the notifications/alwaysAskForTextEditorError notification checkbox on the NotificationsPage.
+ */
+void NotificationsDialog::saveAlwaysAskForTextEditorErrorSettings()
+{
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  pSettings->setValue("notifications/alwaysAskForTextEditorError", false);
+  OptionsDialog::instance()->getNotificationsPage()->getAlwaysAskForTextEditorErrorCheckBox()->setChecked(false);
+}
+
+/*!
  * \brief NotificationsDialog::saveNotification
  * Slot activated when mpOkButton clicked signal is raised.\n
  * Checks the notification type and calls the appropriate method.
@@ -282,10 +299,41 @@ void NotificationsDialog::saveNotification()
       case NotificationsDialog::SaveModelForBitmapInsertion:
         saveModelForBitmapInsertionNotificationSettings();
         break;
+      case NotificationsDialog::RevertPreviousOrFixErrorsManually:
+        saveAlwaysAskForTextEditorErrorSettings();
+        break;
       default:
         // should never be reached
         break;
     }
   }
+  if (mNotificationType == NotificationsDialog::RevertPreviousOrFixErrorsManually) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 1);
+  }
   accept();
+}
+
+/*!
+ * \brief NotificationsDialog::rejectNotification
+ * Slot activated when mpCancelButton clicked signal is raised.\n
+ * Checks the notification type and calls the appropriate method.
+ */
+void NotificationsDialog::rejectNotification()
+{
+  if (mpNotificationCheckBox->isChecked()) {
+    switch (mNotificationType) {
+      case NotificationsDialog::RevertPreviousOrFixErrorsManually:
+        saveAlwaysAskForTextEditorErrorSettings();
+        break;
+      default:
+        // should never be reached
+        break;
+    }
+  }
+  if (mNotificationType == NotificationsDialog::RevertPreviousOrFixErrorsManually) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 0);
+  }
+  reject();
 }

@@ -33,6 +33,7 @@
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
+#include "Options/NotificationsDialog.h"
 
 #include <QMessageBox>
 #include <QMenu>
@@ -81,19 +82,30 @@ bool CompositeModelEditor::validateText()
   if (mTextChanged) {
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!mpModelWidget->compositeModelEditorTextChanged()) {
-      QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Composite Model")
-                           .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
-                           .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
-      QPushButton *pAcceptRoleButton = pMessageBox->addButton(Helper::fixErrorsManually, QMessageBox::AcceptRole);
-      pMessageBox->addButton(Helper::revertToLastCorrectVersion, QMessageBox::RejectRole);
-      pMessageBox->setEscapeButton(pAcceptRoleButton);
-      // we set focus to this widget here so when the error dialog is closed Qt gives back the focus to this widget.
-      mpPlainTextEdit->setFocus(Qt::ActiveWindowFocusReason);
-      int answer = pMessageBox->exec();
+      QSettings *pSettings = Utilities::getApplicationSettings();
+      int answer = 1;
+      if (pSettings->contains("textEditor/revertPreviousOrFixErrorsManually")) {
+        answer = pSettings->value("textEditor/revertPreviousOrFixErrorsManually").toInt();
+      }
+      if (OptionsDialog::instance()->getNotificationsPage()->getAlwaysAskForTextEditorErrorCheckBox()->isChecked()) {
+        NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::RevertPreviousOrFixErrorsManually,
+                                                                            NotificationsDialog::CriticalIcon,
+                                                                            MainWindow::instance());
+        pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Composite Model")
+                                                         .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER))
+                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+        pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);
+        pNotificationsDialog->getOkButton()->setAutoDefault(false);
+        pNotificationsDialog->getCancelButton()->setText(Helper::fixErrorsManually);
+        pNotificationsDialog->getCancelButton()->setAutoDefault(true);
+        pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getOkButton());
+        pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getCancelButton());
+        pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getCancelButton(), QDialogButtonBox::ActionRole);
+        pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getOkButton(), QDialogButtonBox::ActionRole);
+        // we set focus to this widget here so when the error dialog is closed Qt gives back the focus to this widget.
+        mpPlainTextEdit->setFocus(Qt::ActiveWindowFocusReason);
+        answer = pNotificationsDialog->exec();
+      }
       switch (answer) {
         case QMessageBox::RejectRole:
           mTextChanged = false;

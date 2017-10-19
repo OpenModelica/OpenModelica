@@ -599,6 +599,9 @@ void OptionsDialog::readNotificationsSettings()
   if (mpSettings->contains("notifications/alwaysAskForDraggedComponentName")) {
     mpNotificationsPage->getAlwaysAskForDraggedComponentName()->setChecked(mpSettings->value("notifications/alwaysAskForDraggedComponentName").toBool());
   }
+  if (mpSettings->contains("notifications/alwaysAskForTextEditorError")) {
+    mpNotificationsPage->getAlwaysAskForTextEditorErrorCheckBox()->setChecked(mpSettings->value("notifications/alwaysAskForTextEditorError").toBool());
+  }
 }
 
 //! Reads the LineStyle section settings from omedit.ini
@@ -1087,6 +1090,7 @@ void OptionsDialog::saveNotificationsSettings()
   mpSettings->setValue("notifications/innerModelNameChanged", mpNotificationsPage->getInnerModelNameChangedCheckBox()->isChecked());
   mpSettings->setValue("notifications/saveModelForBitmapInsertion", mpNotificationsPage->getSaveModelForBitmapInsertionCheckBox()->isChecked());
   mpSettings->setValue("notifications/alwaysAskForDraggedComponentName", mpNotificationsPage->getAlwaysAskForDraggedComponentName()->isChecked());
+  mpSettings->setValue("notifications/alwaysAskForTextEditorError", mpNotificationsPage->getAlwaysAskForTextEditorErrorCheckBox()->isChecked());
 }
 
 //! Saves the LineStyle section settings to omedit.ini
@@ -3582,6 +3586,9 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   // create the save model for bitmap insertion checkbox
   mpAlwaysAskForDraggedComponentName = new QCheckBox(tr("Always ask for the dragged component name"));
   mpAlwaysAskForDraggedComponentName->setChecked(true);
+  // create the always ask for text editor error
+  mpAlwaysAskForTextEditorErrorCheckBox = new QCheckBox(tr("Always ask for what to do with the text editor error"));
+  mpAlwaysAskForTextEditorErrorCheckBox->setChecked(true);
   // set the layout of notifications group
   QGridLayout *pNotificationsLayout = new QGridLayout;
   pNotificationsLayout->setAlignment(Qt::AlignTop);
@@ -3591,6 +3598,7 @@ NotificationsPage::NotificationsPage(OptionsDialog *pOptionsDialog)
   pNotificationsLayout->addWidget(mpInnerModelNameChangedCheckBox, 3, 0);
   pNotificationsLayout->addWidget(mpSaveModelForBitmapInsertionCheckBox, 4, 0);
   pNotificationsLayout->addWidget(mpAlwaysAskForDraggedComponentName, 5, 0);
+  pNotificationsLayout->addWidget(mpAlwaysAskForTextEditorErrorCheckBox, 6, 0);
   mpNotificationsGroupBox->setLayout(pNotificationsLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;

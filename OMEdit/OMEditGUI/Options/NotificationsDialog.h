@@ -49,12 +49,16 @@ public:
     ItemDroppedOnItself,
     ReplaceableIfPartial,
     InnerModelNameChanged,
-    SaveModelForBitmapInsertion
+    SaveModelForBitmapInsertion,
+    RevertPreviousOrFixErrorsManually
   };
   enum NotificationIcon {NoIcon, QuestionIcon, InformationIcon, WarningIcon, CriticalIcon};
   NotificationsDialog(NotificationType notificationType, NotificationIcon notificationIcon, QWidget *pParent = 0);
   void setNotificationLabelString(QString label);
   QCheckBox* getNotificationCheckBox() {return mpNotificationCheckBox;}
+  QPushButton* getOkButton() {return mpOkButton;}
+  QPushButton* getCancelButton() {return mpCancelButton;}
+  QDialogButtonBox* getButtonBox() {return mpButtonBox;}
 private:
   Label *mpNotificationLabel;
   QCheckBox *mpNotificationCheckBox;
@@ -71,8 +75,10 @@ private:
   void saveReplaceableIfPartialNotificationSettings();
   void saveInnerModelNameChangedNotificationSettings();
   void saveModelForBitmapInsertionNotificationSettings();
+  void saveAlwaysAskForTextEditorErrorSettings();
 private slots:
   void saveNotification();
+  void rejectNotification();
 };
 
 #endif // NOTIFICATIONSDIALOG_H
