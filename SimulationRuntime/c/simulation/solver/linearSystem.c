@@ -415,6 +415,10 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
     case LSS_LIS:
       success = solveLis(data, threadData, sysNumber);
       break;
+  #else
+    case LSS_LIS_NOT_AVAILABLE:
+      throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
+      break;
   #endif
   #ifdef WITH_UMFPACK
     case LSS_KLU:
@@ -429,13 +433,13 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
       }
       break;
   #else
+    case LSS_KLU:
     case LSS_UMFPACK:
       throwStreamPrint(threadData, "OMC is compiled without UMFPACK, if you want use umfpack please compile OMC with UMFPACK.");
       break;
   #endif
-
     default:
-      throwStreamPrint(threadData, "unrecognized linear solver");
+      throwStreamPrint(threadData, "unrecognized sparse linear solver (%d)", data->simulationInfo->lssMethod);
     }
   }
 
@@ -506,7 +510,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
       break;
 
     default:
-      throwStreamPrint(threadData, "unrecognized linear solver");
+      throwStreamPrint(threadData, "unrecognized dense linear solver (%d)", data->simulationInfo->lsMethod);
     }
   }
   linsys->solved = success;
