@@ -283,6 +283,7 @@ void NotificationsDialog::saveAlwaysAskForTextEditorErrorSettings()
 void NotificationsDialog::saveNotification()
 {
   if (mpNotificationCheckBox->isChecked()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
     switch (mNotificationType) {
       case NotificationsDialog::QuitApplication:
         saveQuitNotificationSettings();
@@ -301,15 +302,12 @@ void NotificationsDialog::saveNotification()
         break;
       case NotificationsDialog::RevertPreviousOrFixErrorsManually:
         saveAlwaysAskForTextEditorErrorSettings();
+        pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 1);
         break;
       default:
         // should never be reached
         break;
     }
-  }
-  if (mNotificationType == NotificationsDialog::RevertPreviousOrFixErrorsManually) {
-    QSettings *pSettings = Utilities::getApplicationSettings();
-    pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 1);
   }
   accept();
 }
@@ -322,18 +320,16 @@ void NotificationsDialog::saveNotification()
 void NotificationsDialog::rejectNotification()
 {
   if (mpNotificationCheckBox->isChecked()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
     switch (mNotificationType) {
       case NotificationsDialog::RevertPreviousOrFixErrorsManually:
         saveAlwaysAskForTextEditorErrorSettings();
+        pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 0);
         break;
       default:
         // should never be reached
         break;
     }
-  }
-  if (mNotificationType == NotificationsDialog::RevertPreviousOrFixErrorsManually) {
-    QSettings *pSettings = Utilities::getApplicationSettings();
-    pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 0);
   }
   reject();
 }

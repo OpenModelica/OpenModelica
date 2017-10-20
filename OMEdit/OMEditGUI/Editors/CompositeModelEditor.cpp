@@ -83,11 +83,11 @@ bool CompositeModelEditor::validateText()
     // if the user makes few mistakes in the text then dont let him change the perspective
     if (!mpModelWidget->compositeModelEditorTextChanged()) {
       QSettings *pSettings = Utilities::getApplicationSettings();
-      int answer = 1;
+      int answer = -1;
       if (pSettings->contains("textEditor/revertPreviousOrFixErrorsManually")) {
         answer = pSettings->value("textEditor/revertPreviousOrFixErrorsManually").toInt();
       }
-      if (OptionsDialog::instance()->getNotificationsPage()->getAlwaysAskForTextEditorErrorCheckBox()->isChecked()) {
+      if (answer < 0 || OptionsDialog::instance()->getNotificationsPage()->getAlwaysAskForTextEditorErrorCheckBox()->isChecked()) {
         NotificationsDialog *pNotificationsDialog = new NotificationsDialog(NotificationsDialog::RevertPreviousOrFixErrorsManually,
                                                                             NotificationsDialog::CriticalIcon,
                                                                             MainWindow::instance());
