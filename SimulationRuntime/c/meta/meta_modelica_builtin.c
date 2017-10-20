@@ -591,6 +591,11 @@ modelica_metatype listArray(modelica_metatype lst)
   return arr;
 }
 
+modelica_metatype listArrayLiteral(modelica_metatype lst)
+{
+  return listArray(lst);
+}
+
 modelica_metatype arrayCopy(modelica_metatype arr)
 {
   int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));

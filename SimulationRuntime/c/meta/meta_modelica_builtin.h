@@ -131,6 +131,7 @@ extern modelica_metatype arrayList(modelica_metatype);
 extern modelica_metatype listArray(modelica_metatype);
 extern modelica_metatype arrayCopy(modelica_metatype);
 #define arrayGet(X,Y) nobox_arrayGet(threadData,X,Y)
+extern modelica_metatype listArrayLiteral(modelica_metatype);
 
 static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica_metatype arr,modelica_integer ix)
 {
