@@ -1638,7 +1638,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           if (pPlotWindow->getInteractiveOwner() != pVariablesTreeRootItem->getFileName()) {
             pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getInteractiveWindow(pVariablesTreeRootItem->getFileName());
             MainWindow::instance()->getPlotWindowContainer()->setActiveSubWindow(pPlotWindow->getSubWindow());
-            emit MainWindow::instance()->getPlotWindowContainer()->subWindowActivated(pPlotWindow->getSubWindow());
           } else {
             pPlotWindow->setCurveWidth(curveThickness);
             pPlotWindow->setCurveStyle(curveStyle);
