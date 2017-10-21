@@ -89,7 +89,7 @@ bool OpcUaClient::connectToServer()
   mpClient = UA_Client_new(UA_ClientConfig_standard, Logger_Stdout);
   UA_StatusCode returnValue;
   do {
-    Sleep::currentThread()->msleep(100);
+    Sleep::msleep(100);
     returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
   } while (returnValue != UA_STATUSCODE_GOOD);
   // qDebug() << "Connected to OPC-UA server " << endPoint;
@@ -154,7 +154,7 @@ void OpcUaClient::checkVariable(int nodeId, VariablesTreeItem *pVariablesTreeIte
   // item checked, inform the backend
   mCheckedVariables.insert(nodeId, pVariablesTreeItem);
   if (!mSimulationOptions.isInteractiveSimulationWithSteps()) {
-    emit mpOpcUaWorker->sendAddMonitoredItem(nodeId, pVariablesTreeItem->getPlotVariable());
+    emit mpOpcUaWorker->emitSendAddMonitoredItem(nodeId, pVariablesTreeItem->getPlotVariable());
   }
 }
 
@@ -165,7 +165,7 @@ void OpcUaClient::unCheckVariable(int nodeId, const QString &name)
 {
   mCheckedVariables.remove(nodeId);
   if (!mSimulationOptions.isInteractiveSimulationWithSteps()) {
-    emit mpOpcUaWorker->sendRemoveMonitoredItem(name);
+    emit mpOpcUaWorker->emitSendRemoveMonitoredItem(name);
   }
 }
 
