@@ -1175,3 +1175,20 @@ Double click the transition or right click and choose *Edit Transition* to modif
 .. |transition-mode| image:: media/omedit-icons/transition-mode.*
   :height: 14pt
   :alt: OMEdit transition mode icon
+
+State Machine Simulation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Support for Modelica state machines was added in the Modelica Language Specification
+v3.3. A subtle problem can occur if Modelica v3.2 libraries are loaded, e.g., the
+Modelica Standard Library v3.2.2, because
+in this case OMC automatically switches into Modelica v3.2 compatibility mode.
+Trying to simulate a state machine in Modelica v3.2 compatibility mode results
+in an error. It is possible to use the OMC flag *--std=3.3* in order to enforce
+Modelica v3.3 support. In OMEdit this can be achieved by setting that flag in
+the *Tools > Options > Simulation* dialog.
+
+.. figure :: media/omedit-state-machine-simulation-settings.png
+  :name: omedit-state-machine-simulation-settings
+
+  Ensure Modelica v3.3 support.
