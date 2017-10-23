@@ -2018,6 +2018,14 @@ void BaseEditor::createActions()
   connect(mpUnFoldAllAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(unFoldAll()));
 }
 
+static inline void setActionIcon(QAction *pAction, const QString &name)
+{
+  const QIcon icon = QIcon::fromTheme(name);
+  if (!icon.isNull()) {
+    pAction->setIcon(icon);
+  }
+}
+
 /*!
  * \brief BaseEditor::createStandardContextMenu
  * Creates a standard context menu for ediotr.
@@ -2035,6 +2043,41 @@ QMenu* BaseEditor::createStandardContextMenu()
   pMenu->addAction(MainWindow::instance()->getUndoAction());
   pMenu->addAction(MainWindow::instance()->getRedoAction());
   pMenu->addSeparator();
+  /* ticket:4585
+   * Since we are not using QPlainTextEdit->createStandardContextMenu()
+   * so we need to create cut, copy, paste and select all here
+   */
+  const bool showTextSelectionActions = mpPlainTextEdit->textInteractionFlags() & (Qt::TextEditable | Qt::TextSelectableByKeyboard | Qt::TextSelectableByMouse);
+  if (showTextSelectionActions) {
+    QAction *pAction;
+#ifndef QT_NO_CLIPBOARD
+    // cut
+    if (mpPlainTextEdit->textInteractionFlags() & Qt::TextEditable) {
+      pAction = pMenu->addAction(tr("Cu&t"), mpPlainTextEdit, SLOT(cut()));
+      pAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
+      pAction->setObjectName(QStringLiteral("edit-cut"));
+      setActionIcon(pAction, QStringLiteral("edit-cut"));
+    }
+    // copy
+    pAction = pMenu->addAction(tr("&Copy"), mpPlainTextEdit, SLOT(copy()));
+    pAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
+    pAction->setObjectName(QStringLiteral("edit-copy"));
+    setActionIcon(pAction, QStringLiteral("edit-copy"));
+    // paster
+    if (mpPlainTextEdit->textInteractionFlags() & Qt::TextEditable) {
+      pAction = pMenu->addAction(tr("&Paste"), mpPlainTextEdit, SLOT(paste()));
+      pAction->setEnabled(mpPlainTextEdit->canPaste());
+      pAction->setObjectName(QStringLiteral("edit-paste"));
+      setActionIcon(pAction, QStringLiteral("edit-paste"));
+    }
+#endif // QT_NO_CLIPBOARD
+    pMenu->addSeparator();
+    // select all
+    pAction = pMenu->addAction(tr("Select All"), mpPlainTextEdit, SLOT(selectAll()));
+    pAction->setEnabled(!mpPlainTextEdit->document()->isEmpty());
+    pAction->setObjectName(QStringLiteral("select-all"));
+    pMenu->addSeparator();
+  }
   pMenu->addAction(mpFindReplaceAction);
   pMenu->addAction(mpClearFindReplaceTextsAction);
   pMenu->addAction(mpGotoLineNumberAction);
