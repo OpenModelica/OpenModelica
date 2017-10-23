@@ -1580,11 +1580,10 @@ void Component::createClassShapes()
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    /* Ticket:4505
-     * If extends class is connector then don't use the diagram annotation.
+    /* ticket:4505
+     * Only use the diagram annotation when connector is inside the component instance.
      */
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram &&
-        mComponentType != Component::Port && mComponentType != Component::Extend) {
+    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
         pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
@@ -1910,6 +1909,24 @@ void Component::updateToolTip()
   } else {
     setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(comment));
   }
+}
+
+/*!
+ * \brief Component::canUseDiagramAnnotation
+ * If the component is a port component or has a port component as parent in the hirerchy
+ * then we should not use the diagram annotation.
+ * \return
+ */
+bool Component::canUseDiagramAnnotation()
+{
+  Component *pComponent = this;
+  while (pComponent->getParentComponent()) {
+    if (pComponent->getComponentType() == Component::Port) {
+      return false;
+    }
+    pComponent = pComponent->getParentComponent();
+  }
+  return true;
 }
 
 void Component::updatePlacementAnnotation()

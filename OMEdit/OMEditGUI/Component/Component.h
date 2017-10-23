@@ -307,6 +307,7 @@ private:
   QString getParameterDisplayStringFromExtendsParameters(QString parameterName, QString modifierString);
   bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
+  bool canUseDiagramAnnotation();
 signals:
   void added();
   void transformChange();
