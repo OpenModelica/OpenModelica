@@ -547,7 +547,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] steps", rt_accumulated(SIM_TIMER_STEP), rt_accumulated(SIM_TIMER_STEP)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] creating output-file", rt_accumulated(SIM_TIMER_OUTPUT), rt_accumulated(SIM_TIMER_OUTPUT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] event-handling", rt_accumulated(SIM_TIMER_EVENT), rt_accumulated(SIM_TIMER_EVENT)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
-    infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] jacobian calculation", rt_accumulated(SIM_TIMER_JACOBIAN), rt_accumulated(SIM_TIMER_JACOBIAN)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
     infoStreamPrint(LOG_STATS, 0, "%12gs [%5.1f%%] overhead", rt_accumulated(SIM_TIMER_OVERHEAD), rt_accumulated(SIM_TIMER_OVERHEAD)/rt_accumulated(SIM_TIMER_TOTAL)*100.0);
 
     if(S_OPTIMIZATION != solverInfo->solverMethod)
@@ -579,6 +578,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats[2]);
       infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats[3]);
       infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats[4]);
+      infoStreamPrint(LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
       messageClose(LOG_STATS);
     }
 
