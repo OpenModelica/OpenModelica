@@ -1118,7 +1118,7 @@ extern int SystemImpl__removeDirectory(const char *path)
   return retval==0;
 }
 
-extern char* SystemImpl__readFileNoNumeric(const char* filename)
+extern const char* SystemImpl__readFileNoNumeric(const char* filename)
 {
   char* buf, *bufRes;
   int res,numCount;
@@ -2229,7 +2229,7 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   return 1;
 }
 
-char* SystemImpl__iconv__ascii(const char * str)
+const char* SystemImpl__iconv__ascii(const char * str)
 {
   char *buf = 0;
   size_t sz;
@@ -2247,7 +2247,7 @@ static int isUtf8Encoding(const char *str)
   return strcasecmp(str, "UTF-8") || strcasecmp(str, "UTF8");
 }
 
-extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
+extern const char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
 {
   char *in_str,*res=NULL;
   size_t sz,out_sz,buflen;
@@ -2257,31 +2257,31 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   sz = strlen(str);
   if (isUtf8Encoding(from) && isUtf8Encoding(to))
   {
-    is_utf8(str, sz, &res, &count);
+    is_utf8((unsigned char*)str, sz, &res, &count);
     if (res==NULL) {
       /* Converting from UTF-8 to UTF-8 and the sequence is already UTF-8... */
       return str;
     }
     /* Converting from UTF-8, but is not valid UTF-8. Just quit early. */
     if (printError) {
-      char *ignore = SystemImpl__iconv__ascii(str);
+      const char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {res,from,to,ignore};
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
-      omc_alloc_interface.free_uncollectable(ignore);
+      omc_alloc_interface.free_uncollectable((char*)ignore);
     }
-    return (char*) "";
+    return (const char*) "";
   }
   buflen = sz*4;
   /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
   ic = iconv_open(to, from);
   if (ic == (iconv_t) -1) {
     if (printError) {
-      char *ignore = SystemImpl__iconv__ascii(str);
+      const char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
-      omc_alloc_interface.free_uncollectable(ignore);
+      omc_alloc_interface.free_uncollectable((char*)ignore);
     }
-    return (char*) "";
+    return (const char*) "";
   }
   buf = (char*) omc_alloc_interface.malloc_atomic(buflen);
   if (0 == buf) {
@@ -2289,7 +2289,7 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
       /* Make the error message small so we perhaps have a chance to recover */
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv() ran out of memory"),NULL,0);
     }
-    return (char*) "";
+    return (const char*) "";
   }
   *buf = 0;
   in_str = (char*) str;
@@ -2299,24 +2299,24 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   iconv_close(ic);
   if (count == -1) {
     if (printError) {
-      char *ignore = SystemImpl__iconv__ascii(str);
+      const char *ignore = SystemImpl__iconv__ascii(str);
       const char *tokens[4] = {strerror(errno),from,to,ignore};
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
-      omc_alloc_interface.free_uncollectable(ignore);
+      omc_alloc_interface.free_uncollectable((char*)ignore);
     }
     omc_alloc_interface.free_uncollectable(buf);
-    return (char*) "";
+    return (const char*) "";
   }
   buf[(buflen-1)-out_sz] = 0;
   if (strlen(buf) != (buflen-1)-out_sz) {
     if (printError) c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
     omc_alloc_interface.free_uncollectable(buf);
-    return (char*) "";
+    return (const char*) "";
   }
   if (!strcmp(from, to) && !strcmp(str, buf))
   {
     omc_alloc_interface.free_uncollectable(buf);
-    return (char*)str;
+    return (const char*)str;
   }
   return buf;
 }

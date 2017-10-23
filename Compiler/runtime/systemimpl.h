@@ -99,11 +99,11 @@ extern double SystemImpl__time(void);
 extern int SystemImpl__directoryExists(const char* str);
 extern int SystemImpl__createDirectory(const char *str);
 extern int SystemImpl__removeDirectory(const char *str);
-extern char* SystemImpl__readFileNoNumeric(const char* filename);
+extern const char* SystemImpl__readFileNoNumeric(const char* filename);
 extern double SystemImpl__getCurrentTime(void);
 extern int SystemImpl__unescapedStringLength(const char* str);
-extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
-extern char* SystemImpl__iconv__ascii(const char * str);
+extern const char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
+extern const char* SystemImpl__iconv__ascii(const char * str);
 extern void SystemImpl__initGarbageCollector(void);
 extern int SystemImpl__regularFileWritable(const char* str);
 
