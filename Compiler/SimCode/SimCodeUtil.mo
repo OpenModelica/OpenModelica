@@ -446,12 +446,12 @@ algorithm
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
     SymbolicJacs := listAppend(SymbolicJacsFMI, SymbolicJacs);
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
     // collect jacobian equation only for equantion info file
     jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
 
     SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
     seedVars := collectAllSeedVars(SymbolicJacs);
