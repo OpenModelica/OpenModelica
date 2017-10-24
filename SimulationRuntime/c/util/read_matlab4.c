@@ -567,7 +567,9 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
   size_t absVarIndex = abs(varIndex);
   size_t ix = (varIndex < 0 ? absVarIndex + reader->nvar : absVarIndex) -1;
   assert(absVarIndex > 0 && absVarIndex <= reader->nvar);
-  if(!reader->vars[ix]) {
+  if (0 == reader->nrows) {
+    return NULL;
+  } else if(!reader->vars[ix]) {
     unsigned int i;
     double *tmp = (double*) malloc(reader->nrows*sizeof(double));
     if(reader->doublePrecision==1)
