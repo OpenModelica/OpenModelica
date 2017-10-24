@@ -43,6 +43,9 @@
 #include <QMessageBox>
 #include <QTextDocumentFragment>
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#define QStringLiteral QString::fromUtf8
+#endif
 /*!
  * \class TabSettings
  * \brief Defines the tabs and indentation settings for the editor.
