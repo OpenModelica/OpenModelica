@@ -79,6 +79,7 @@ interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs lib
 
 opc: .testvariables mkbuilddirs boehm-gc
 	$(MAKE) -C SimulationRuntime/opc/ua -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+	test ! `uname` = Darwin || (install_name_tool -id @rpath/libomopcua.dylib "$(builddir_lib_omc)/libomopcua.dylib")
 
 docs: mkbuilddirs
 	mkdir -p $(builddir_doc)/omc/testmodels
@@ -386,17 +387,17 @@ install: install-dirs
 3rdParty/msgpack-0.5.8/Makefile:
 	cd 3rdParty/msgpack-0.5.8 && ./configure "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
 
-build/$(LIB_OMC)/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
+$(builddir_lib_omc)/libmsgpackc.so.2.0.0: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.so* build/$(LIB_OMC)/
 
-build/$(LIB_OMC)/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
+$(builddir_lib_omc)/libmsgpackc.2.dylib: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	install_name_tool -id @rpath/libmsgpackc.2.dylib 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.2.dylib
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc*dylib build/$(LIB_OMC)/
 	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
 
-build/$(LIB_OMC)/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
+$(builddir_lib_omc)/libmsgpackc.a: 3rdParty/msgpack-0.5.8/Makefile
 	$(MAKE) -C 3rdParty/msgpack-0.5.8
 	cp -a 3rdParty/msgpack-0.5.8/src/.libs/libmsgpackc.a build/$(LIB_OMC)/
 	cp -a 3rdParty/msgpack-0.5.8/src/msgpack.h 3rdParty/msgpack-0.5.8/src/msgpack/ $(builddir_inc)/c
