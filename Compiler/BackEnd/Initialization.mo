@@ -99,6 +99,7 @@ protected
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2, outAllPrimaryParameters;
+  AvlSetCR.Tree allPrimaryParameters;
   list<tuple<BackendDAEFunc.optimizationModule, String>> initOptModules, initOptModulesLambda0;
   tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
@@ -144,9 +145,14 @@ algorithm
                                          + 2*BackendDAEUtil.daeSize(dae));
     reeqns := BackendEquation.emptyEqnsSized(BackendEquation.getNumberOfEquations(dae.shared.removedEqs));
 
+    allPrimaryParameters := AvlSetCR.EMPTY();
+    for v in outAllPrimaryParameters loop
+      allPrimaryParameters := AvlSetCR.add(allPrimaryParameters, BackendVariable.varCref(v));
+    end for;
+
     ((vars, fixvars, eqns, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.aliasVars, introducePreVarsForAliasVariables, (vars, fixvars, eqns, hs));
-    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
-    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.localKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, outAllPrimaryParameters));
+    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, allPrimaryParameters));
+    ((vars, fixvars, eqns, _, _)) := BackendVariable.traverseBackendDAEVars(dae.shared.localKnownVars, collectInitialVars, (vars, fixvars, eqns, hs, allPrimaryParameters));
     ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.initialEqs, collectInitialEqns, (eqns, reeqns));
     ((eqns, reeqns)) := BackendEquation.traverseEquationArray(dae.shared.removedEqs, collectInitialEqns, (eqns, reeqns));
     //if Flags.isSet(Flags.DUMP_INITIAL_SYSTEM) then
@@ -154,8 +160,8 @@ algorithm
     //end if;
     execStat("collectInitialEqns (initialization)");
 
-    //((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters)));
-    (vars, fixvars, eqns, reeqns) := collectInitialVarsEqnsSystem(dae.eqs, vars, fixvars, eqns, reeqns, hs, outAllPrimaryParameters);
+    //((vars, fixvars, eqns, reeqns, _, _)) := List.fold(dae.eqs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, hs, allPrimaryParameters)));
+    (vars, fixvars, eqns, reeqns) := collectInitialVarsEqnsSystem(dae.eqs, vars, fixvars, eqns, reeqns, hs, allPrimaryParameters);
     ((eqns, reeqns)) := BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
     execStat("collectInitialBindings (initialization)");
 
@@ -2047,7 +2053,7 @@ protected function collectInitialVarsEqnsSystem
   input output BackendDAE.EquationArray eqns;
   input output BackendDAE.EquationArray reEqns;
   input HashSet.HashSet hs;
-  input list<BackendDAE.Var> allPrimaryParams;
+  input AvlSetCR.Tree allPrimaryParams;
 algorithm
   for eq in eqSystems loop
     () := match eq
@@ -2073,9 +2079,9 @@ protected function collectInitialVars "author: lochel
   This function collects all the vars for the initial system.
   TODO: return additional equations for pre-variables"
   input BackendDAE.Var inVar;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet, list<BackendDAE.Var>> inTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet, AvlSetCR.Tree> inTpl;
   output BackendDAE.Var outVar;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet, list<BackendDAE.Var>> outTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, HashSet.HashSet, AvlSetCR.Tree> outTpl;
 algorithm
   (outVar, outTpl) := matchcontinue (inVar, inTpl)
     local
@@ -2094,7 +2100,7 @@ algorithm
       HashSet.HashSet hs;
       String s, str, sv;
       SourceInfo info;
-      list<BackendDAE.Var> allPrimaryParameters;
+      AvlSetCR.Tree allPrimaryParameters;
       list<DAE.ComponentRef> parameters;
 
     // state
@@ -2116,7 +2122,7 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-      if not BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) then
+      if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
         eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
         eqns = BackendEquation.add(eqn, eqns);
 
@@ -2307,7 +2313,7 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-      if not BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) then
+      if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
         eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
         eqns = BackendEquation.add(eqn, eqns);
 
@@ -2353,7 +2359,7 @@ algorithm
       startExp = BackendVariable.varStartValue(var);
       parameters = Expression.getAllCrefs(startExp);
 
-      if not BackendVariable.areAllCrefsInVarList(parameters, allPrimaryParameters) then
+      if not min(AvlSetCR.hasKey(allPrimaryParameters, p) for p in parameters) then
         eqn = BackendDAE.EQUATION(Expression.crefExp(startCR), startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL);
         eqns = BackendEquation.add(eqn, eqns);
 
