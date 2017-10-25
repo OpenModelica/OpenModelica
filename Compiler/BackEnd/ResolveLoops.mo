@@ -36,24 +36,26 @@ encapsulated package ResolveLoops
                resolveLoops."
 
 
-public import BackendDAE;
-public import DAE;
+import BackendDAE;
+import DAE;
 
-protected import Array;
-protected import BackendDAEUtil;
-protected import BackendEquation;
-protected import BackendVariable;
-protected import BackendDump;
-protected import ComponentReference;
-protected import Expression;
-protected import ExpressionSimplify;
-protected import ExpressionSolve;
-protected import ExpressionDump;
-protected import Flags;
-protected import HpcOmTaskGraph;
-protected import List;
-protected import Util;
-protected import Tearing;
+protected
+
+import Array;
+import BackendDAEUtil;
+import BackendEquation;
+import BackendVariable;
+import BackendDump;
+import ComponentReference;
+import Expression;
+import ExpressionSimplify;
+import ExpressionSolve;
+import ExpressionDump;
+import Flags;
+import HpcOmTaskGraph;
+import List;
+import Util;
+import Tearing;
 
 public function resolveLoops "author:Waurich TUD 2013-12
   traverses the equations and finds simple equations(i.e. linear functions
@@ -366,13 +368,17 @@ public function resolveLoops_findLoops "author:Waurich TUD 2014-02
 protected
   list<list<Integer>> loops, eqVars;
   list<Integer> eqCrossLst, varCrossLst, partitionVars;
+  AvlSetInt.Tree set;
 algorithm
   for partition in partitionsIn loop
     try
       // get the eqCrossNodes and varCrossNodes i.e. nodes with more than 2 edges
       eqVars := List.map1(partition,Array.getIndexFirst,mIn);
-      partitionVars := List.flatten(eqVars);
-      partitionVars := List.unique(partitionVars);
+      set := AvlSetInt.EMPTY();
+      for vars in eqVars loop
+        set := AvlSetInt.addList(set, vars);
+      end for;
+      partitionVars := AvlSetInt.listKeys(set);
       eqCrossLst := List.fold2(partition,gatherCrossNodes,mIn,mTIn,{});
       varCrossLst := List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
 
