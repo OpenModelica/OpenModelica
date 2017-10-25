@@ -883,6 +883,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
       infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
       nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+      if (!nonlinsys->solved) break;
 
 #if !defined(OMC_NO_FILESYSTEM)
       if(ACTIVE_STREAM(LOG_INIT))
@@ -992,10 +993,10 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
   {
     int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
     if (!printFailingSystems) return 1;
-    warningStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "nonlinear system %d fails: at t=%g", index, data->localData[0]->timeValue);
     if(data->simulationInfo->initial)
     {
-      warningStreamPrint(LOG_NLS_V, 0, "proper start-values for some of the following iteration variables might help");
+      warningStreamPrint(LOG_INIT, 1, "proper start-values for some of the following iteration variables might help");
     }
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
       int done=0;
@@ -1006,7 +1007,7 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(LOG_NLS_V, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+        warningStreamPrint(LOG_INIT, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
                                      mData->realVarsData[k].info.name,
                                      mData->realVarsData[k].attribute.start,
                                      mData->realVarsData[k].attribute.nominal);
@@ -1014,10 +1015,10 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
       if (!done)
       {
-        warningStreamPrint(LOG_NLS_V, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
-    messageCloseWarning(LOG_NLS);
+    messageCloseWarning(LOG_INIT);
     return 1;
   }
   if(nonlinsys[i].solved == 2)

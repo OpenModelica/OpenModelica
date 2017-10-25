@@ -273,11 +273,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
         fprintf(pFile, "\n");
       }
 #endif
-
-      if (check_nonlinear_solutions(data, 0) ||
-          check_linear_solutions(data, 0) ||
-          check_mixed_solutions(data, 0))
-        break;
     }
     data->simulationInfo->homotopyUsed = 1;
     messageClose(LOG_INIT);
