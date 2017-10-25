@@ -194,6 +194,25 @@ algorithm
   end match;
 end listKeys;
 
+function listKeysReverse
+  "Converts the tree to a flat list of keys (in order)."
+  input Tree inTree;
+  input output list<Key> lst={};
+algorithm
+  lst := match inTree
+    case LEAF() then inTree.key::lst;
+    case NODE()
+      algorithm
+        lst := listKeysReverse(inTree.left, lst);
+        lst := inTree.key::lst;
+        lst := listKeysReverse(inTree.right, lst);
+      then
+        lst;
+
+    else lst;
+  end match;
+end listKeysReverse;
+
 replaceable function join
   "Joins two trees by adding the second one to the first."
   input output Tree tree;

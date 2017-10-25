@@ -40,8 +40,8 @@ import BackendDAE;
 import DAE;
 
 protected
-
 import Array;
+import AvlSetInt;
 import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
@@ -414,9 +414,10 @@ algorithm
       list<list<Integer>> paths, allPaths, simpleLoops, varEqsLst, crossEqLst, paths0, paths1, closedPaths, loopConnectors, connectedPaths;
       BackendDAE.Equation resolvedEq, startEq;
       list<BackendDAE.Equation> eqLst;
+      AvlSetInt.Tree eqCrossSet;
     case(_,_::_,{},_,_)
       equation
-          //print("partition has only eqCrossNodes\n");
+        //print("partition has only eqCrossNodes\n");
         // get the paths between the crossEqNodes and order them according to their length
         allPaths = getPathTillNextCrossEq(eqCrossLstIn,mIn,mTIn,eqCrossLstIn,{},{});
         allPaths = List.sort(allPaths,List.listIsLonger);
@@ -485,7 +486,8 @@ algorithm
         for i in 1:arrayLength(mTIn) loop
           arrayUpdate(mTIn, i, List.sort(mTIn[i], intGt));
         end for;
-        paths := getShortPathsBetweenEqCrossNodes(List.sort(eqCrossLstIn,intGt), mIn, mTIn, {});
+        eqCrossSet := AvlSetInt.addList(AvlSetInt.EMPTY(), eqCrossLstIn);
+        paths := getShortPathsBetweenEqCrossNodes(AvlSetInt.listKeysReverse(eqCrossSet), eqCrossSet, mIn, mTIn, {});
         //
          //print("GOT SOME NEW LOOPS: \n"+stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
@@ -540,6 +542,7 @@ end hasSameIntSortedExcept;
 protected function getShortPathsBetweenEqCrossNodes"find closedLoops between 2 eqCrossNode, no matter whether there are var cross nodes between them.
 author: vwaurich TUD 12-2016"
   input list<Integer> eqCrossLstIn;
+  input AvlSetInt.Tree eqCrossSet;
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrixT mTIn;
   input list<list<Integer>> pathsIn;
@@ -557,19 +560,19 @@ algorithm
       for adjVar in adjVars loop
           //print("all adj eqs "+stringDelimitList(List.map(adjEqs, intString),",")+"\n");
         //all adjEqs which are crossnodes as well
-        adjEqs := List.intersectionIntSorted(arrayGet(mTIn, adjVar), rest);
-        for adjEq in adjEqs loop
-          if adjEq <> crossEq then
-              //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
-            if hasSameIntSortedExcept(adjVars, arrayGet(mIn, adjEq), adjVar) then
-              newPath := adjEq::{crossEq};
-              paths := List.unionElt(newPath, paths);
-                //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
-            end if;
+        for adjEq in arrayGet(mTIn, adjVar) loop
+          if if adjEq > crossEq then (not AvlSetInt.hasKey(eqCrossSet, adjEq)) else true then
+            continue;
+          end if;
+          //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
+          if hasSameIntSortedExcept(adjVars, arrayGet(mIn, adjEq), adjVar) then
+            newPath := adjEq::{crossEq};
+            paths := List.unionElt(newPath, paths);
+            //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
           end if;
         end for;
       end for;
-      paths := getShortPathsBetweenEqCrossNodes(rest, mIn, mTIn, listAppend(paths, pathsIn));
+      paths := getShortPathsBetweenEqCrossNodes(rest, eqCrossSet, mIn, mTIn, listAppend(paths, pathsIn));
     then paths;
   case({},_,_,_)
     then pathsIn;
@@ -838,8 +841,7 @@ algorithm
   else
     equation
       print("resolveLoops_resolveAndReplace failed!\n");
-    then
-      fail();
+    then fail();
   end matchcontinue;
 end resolveLoops_resolveAndReplace;
 
