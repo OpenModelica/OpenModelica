@@ -7095,7 +7095,7 @@ algorithm
       list<T> rest1,rest2;
 
     case (el1 :: rest1, el2 :: rest2)
-      then referenceEq(el1,el2) and allReferenceEq(rest1,rest2);
+      then if referenceEq(el1,el2) then allReferenceEq(rest1,rest2) else false;
 
     case ({},{}) then true;
     else false;

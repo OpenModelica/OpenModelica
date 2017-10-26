@@ -1103,7 +1103,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("max"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
-        es = List.union(es,es);
+        es = List.union(es,{});
         i2 = listLength(es);
         if i1 == i2
         then
@@ -1122,7 +1122,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array=es)},attr=DAE.CALL_ATTR(ty=tp)))
       equation
         i1 = listLength(es);
-        es = List.union(es,es);
+        es = List.union(es,{});
         i2 = listLength(es);
         if i1 == i2
         then

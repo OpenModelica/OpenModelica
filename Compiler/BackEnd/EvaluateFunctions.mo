@@ -614,7 +614,7 @@ algorithm
       list<DAE.Exp> eLst;
   case(DAE.TUPLE(PR = eLst))
     algorithm
-      then List.fold(List.map(eLst,hasUnknownType),boolOr,false);
+      then List.mapBoolOr(eLst,hasUnknownType);
   case(DAE.CREF(ty=DAE.T_UNKNOWN()))
     then true;
   else
@@ -634,7 +634,7 @@ algorithm
     list<DAE.Exp> eLst;
   case(DAE.TUPLE(PR = eLst))
     algorithm
-      then List.fold(List.map(eLst,hasMultipleArrayDimensions),boolOr,false);
+      then List.mapBoolOr(eLst,hasMultipleArrayDimensions);
   case(DAE.CREF(ty=ty))
     algorithm
     if Types.isArray(ty) then

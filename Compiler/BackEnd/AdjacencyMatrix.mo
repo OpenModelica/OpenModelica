@@ -191,25 +191,23 @@ public function getOtherEqSysAdjacencyMatrix
   input BackendDAE.AdjacencyMatrix mnew;
   output BackendDAE.AdjacencyMatrix outMNew;
 algorithm
-  outMNew := matchcontinue (m)
+  outMNew := match (m)
     local
       list<Integer> row;
 
-    case (_) equation
-      true = intGt(index, size);
+    case (_) guard intGt(index, size)
     then mnew;
 
-    case (_) equation
-      true = intGt(skip[index], 0);
-      row = List.select(m[index], Util.intPositive);
-      row = List.select1r(row, isAssigned, rowskip);
+    case (_) guard intGt(skip[index], 0)
+      equation
+      row = list(r for r guard intGt(r,0) and intGt(rowskip[r], 0) in m[index]);
       arrayUpdate(mnew, index, row);
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
 
     case (_) equation
       arrayUpdate(mnew,index,{});
     then getOtherEqSysAdjacencyMatrix(m, size, index+1, skip, rowskip, mnew);
-  end matchcontinue;
+  end match;
 end getOtherEqSysAdjacencyMatrix;
 
 protected function isAssigned
@@ -226,9 +224,13 @@ public function transposeAdjacencyMatrix
   input BackendDAE.AdjacencyMatrix m;
   input Integer nRowsMt;
   output BackendDAE.AdjacencyMatrixT mt;
+protected
+  Integer i = 1;
 algorithm
   mt := arrayCreate(nRowsMt, {});
-  ((mt, _)) := Array.fold(m, transposeRow, (mt, 1));
+  for e in m loop
+    (mt, i) := transposeRow(e, mt, i);
+  end for;
 end transposeAdjacencyMatrix;
 
 protected function transposeRow "author: PA
@@ -239,25 +241,24 @@ protected function transposeRow "author: PA
   inputs:  (int list list, int /* row */,int /* iter */)
   outputs:  int list"
   input list<Integer> row;
-  input tuple<BackendDAE.AdjacencyMatrixT, Integer> inTpl "(m,index)";
-  output tuple<BackendDAE.AdjacencyMatrixT, Integer> outTpl;
+  input output BackendDAE.AdjacencyMatrixT mt;
+  input output Integer indx;
 algorithm
-  outTpl := match (row, inTpl)
+  (mt, indx) := match (row)
     local
-      Integer i, indx, indx1, iabs;
+      Integer i, indx1, iabs;
       list<Integer> res, col;
-      BackendDAE.AdjacencyMatrixT mt;
 
-    case ({}, (mt, indx))
-    then ((mt, indx+1));
+    case {}
+    then (mt, indx+1);
 
-    case (i::res, (mt, indx)) equation
+    case i::res equation
       iabs = intAbs(i);
       mt = Array.expand(iabs - arrayLength(mt), mt, {});
       col = mt[iabs];
       indx1 = if intLt(i, 0) then -indx else indx;
       arrayUpdate(mt, iabs, indx1::col);
-    then transposeRow(res, (mt, indx));
+    then transposeRow(res, mt, indx);
   end match;
 end transposeRow;
 

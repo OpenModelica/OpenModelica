@@ -4726,10 +4726,7 @@ algorithm
 
   case(_, _ :: _ , _)
     equation
-      i = listLength(iDims) - 1;
-      d = List.last(iDims);
-      (dims, _) = List.split(iDims,i);
-
+      (d, dims) = List.splitLast(iDims);
       explst = listToArray3(inList,d,inType);
       arrexp = listToArray2(explst,dims,inType);
     then
