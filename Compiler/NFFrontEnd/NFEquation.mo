@@ -29,14 +29,16 @@
  *
  */
 
-encapsulated package NFEquation
+encapsulated uniontype NFEquation
+  import Absyn;
+  import Expression = NFExpression;
+  import Type = NFType;
+  import NFInstNode.InstNode;
 
-import Absyn;
-import Expression = NFExpression;
-import Type = NFType;
-import NFInstNode.InstNode;
+protected
+  import Equation = NFEquation;
 
-public uniontype Equation
+public
   record EQUALITY
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
@@ -102,7 +104,6 @@ public uniontype Equation
     Expression exp;
     SourceInfo info;
   end NORETCALL;
-end Equation;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;

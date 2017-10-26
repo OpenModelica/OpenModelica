@@ -41,12 +41,12 @@ encapsulated package NFTyping
 import Binding = NFBinding;
 import NFComponent.Component;
 import Dimension = NFDimension;
-import NFEquation.Equation;
+import Equation = NFEquation;
 import NFClass.Class;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
-import NFStatement.Statement;
+import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
 import NFPrefixes.Variability;

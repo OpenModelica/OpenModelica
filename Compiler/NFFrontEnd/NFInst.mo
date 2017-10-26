@@ -52,8 +52,8 @@ import NFInstNode.InstNodeType;
 import NFMod.Modifier;
 import NFMod.ModifierScope;
 import Operator = NFOperator;
-import NFEquation.Equation;
-import NFStatement.Statement;
+import Equation = NFEquation;
+import Statement = NFStatement;
 import Type = NFType;
 import Subscript = NFSubscript;
 
@@ -80,6 +80,12 @@ import NFInstNode.NodeTree;
 import StringUtil;
 import NFPrefixes.*;
 import Prefixes = NFPrefixes;
+import NFFlatten.FunctionTree;
+import NFFlatten.Elements;
+import ConvertDAE = NFConvertDAE;
+import Scalarize = NFScalarize;
+
+type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
 public
 function instClassInProgram
@@ -88,12 +94,14 @@ function instClassInProgram
   input Absyn.Path classPath;
   input SCode.Program program;
   output DAE.DAElist dae;
-  output DAE.FunctionTree funcs;
+  output DAE.FunctionTree daeFuncs;
 protected
   InstNode top, cls, inst_cls;
   Component top_comp;
   InstNode top_comp_node;
   String name;
+  Elements elems;
+  FunctionTree funcs;
 algorithm
   execStatReset();
 
@@ -122,8 +130,10 @@ algorithm
   // Type the class.
   Typing.typeClass(inst_cls, name);
 
-  // Flatten the class into a DAE.
-  (dae, funcs) := Flatten.flatten(inst_cls, name);
+  // Flatten and convert the class into a DAE.
+  (elems, funcs) := Flatten.flatten(inst_cls, name);
+  elems := Scalarize.scalarize(elems, name);
+  (dae, daeFuncs) := ConvertDAE.convert(elems, funcs, name, InstNode.info(inst_cls));
 end instClassInProgram;
 
 function instantiate
@@ -1382,8 +1392,6 @@ function instCref
   input InstNode scope;
   input SourceInfo info;
   output Expression crefExp;
-
-  import NFComponentRef.Origin;
 protected
   ComponentRef cref, prefixed_cref;
   InstNode found_scope;
@@ -1404,7 +1412,7 @@ algorithm
               algorithm
                 checkUnsubscriptable(cref.subscripts, cref.node, info);
               then
-                Expression.CREF(Type.UNKNOWN(), ComponentRef.fromNode(cref.node, comp.ty, {}, Origin.ITERATOR));
+                Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(cref.node, comp.ty));
 
             case Component.ENUM_LITERAL()
               algorithm
@@ -1529,8 +1537,8 @@ algorithm
 
     case SCode.PARTS()
       algorithm
-        eq := instEquations(parts.normalEquationLst, scope);
-        ieq := instEquations(parts.initialEquationLst, scope);
+        eq := instEquations(parts.normalEquationLst, scope, EquationScope.NORMAL);
+        ieq := instEquations(parts.initialEquationLst, scope, EquationScope.INITIAL);
         alg := instAlgorithmSections(parts.normalAlgorithmLst, scope);
         ialg := instAlgorithmSections(parts.initialAlgorithmLst, scope);
       then
@@ -1542,35 +1550,37 @@ end instSections2;
 function instEquations
   input list<SCode.Equation> scodeEql;
   input InstNode scope;
+  input EquationScope eqScope;
   output list<Equation> instEql;
 algorithm
-  instEql := list(instEquation(eq, scope) for eq in scodeEql);
+  instEql := list(instEquation(eq, scope, eqScope) for eq in scodeEql);
 end instEquations;
 
 function instEquation
   input SCode.Equation scodeEq;
   input InstNode scope;
+  input EquationScope eqScope;
   output Equation instEq;
 protected
   SCode.EEquation eq;
 algorithm
   SCode.EQUATION(eEquation = eq) := scodeEq;
-  instEq := instEEquation(eq, scope);
+  instEq := instEEquation(eq, scope, eqScope);
 end instEquation;
 
 function instEEquations
   input list<SCode.EEquation> scodeEql;
   input InstNode scope;
-  input Boolean insideWhen = false;
+  input EquationScope eqScope;
   output list<Equation> instEql;
 algorithm
-  instEql := list(instEEquation(eq, scope, insideWhen) for eq in scodeEql);
+  instEql := list(instEEquation(eq, scope, eqScope) for eq in scodeEql);
 end instEEquations;
 
 function instEEquation
   input SCode.EEquation scodeEq;
   input InstNode scope;
-  input Boolean insideWhen = false;
+  input EquationScope eqScope;
   output Equation instEq;
 algorithm
   instEq := match scodeEq
@@ -1589,7 +1599,7 @@ algorithm
         exp1 := instExp(scodeEq.expLeft, scope, info);
         exp2 := instExp(scodeEq.expRight, scope, info);
 
-        if insideWhen and not checkLhsInWhen(exp1) then
+        if eqScope == EquationScope.WHEN and not checkLhsInWhen(exp1) then
           Error.addSourceMessage(Error.WHEN_EQ_LHS, {Expression.toString(exp1)}, info);
           fail();
         end if;
@@ -1598,7 +1608,7 @@ algorithm
 
     case SCode.EEquation.EQ_CONNECT(info = info)
       algorithm
-        if insideWhen then
+        if eqScope == EquationScope.WHEN then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
             {Dump.printComponentRefStr(scodeEq.crefLeft),
              Dump.printComponentRefStr(scodeEq.crefRight)}, info);
@@ -1616,7 +1626,7 @@ algorithm
         binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
-        eql := instEEquations(scodeEq.eEquationLst, for_scope, insideWhen);
+        eql := instEEquations(scodeEq.eEquationLst, for_scope, eqScope);
       then
         Equation.FOR(iter, eql, info);
 
@@ -1628,7 +1638,7 @@ algorithm
         // Instantiate each branch and pair it up with a condition.
         branches := {};
         for branch in scodeEq.thenBranch loop
-          eql := instEEquations(branch, scope, insideWhen);
+          eql := instEEquations(branch, scope, eqScope);
           exp1 :: expl := expl;
           branches := (exp1, eql) :: branches;
         end for;
@@ -1636,7 +1646,7 @@ algorithm
         // Instantiate the else-branch, if there is one, and make it a branch
         // with condition true (so we only need a simple list of branches).
         if not listEmpty(scodeEq.elseBranch) then
-          eql := instEEquations(scodeEq.elseBranch, scope, insideWhen);
+          eql := instEEquations(scodeEq.elseBranch, scope, eqScope);
           branches := (Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
@@ -1644,18 +1654,19 @@ algorithm
 
     case SCode.EEquation.EQ_WHEN(info = info)
       algorithm
-        if insideWhen then
-          Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
-          fail();
+        if eqScope == EquationScope.WHEN then
+          Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
+        elseif eqScope == EquationScope.INITIAL then
+          Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
         end if;
 
         exp1 := instExp(scodeEq.condition, scope, info);
-        eql := instEEquations(scodeEq.eEquationLst, scope, insideWhen = true);
+        eql := instEEquations(scodeEq.eEquationLst, scope, EquationScope.WHEN);
         branches := {(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
           exp1 := instExp(Util.tuple21(branch), scope, info);
-          eql := instEEquations(Util.tuple22(branch), scope, insideWhen = true);
+          eql := instEEquations(Util.tuple22(branch), scope, EquationScope.WHEN);
           branches := (exp1, eql) :: branches;
         end for;
       then
@@ -1677,7 +1688,7 @@ algorithm
 
     case SCode.EEquation.EQ_REINIT(info = info)
       algorithm
-        if not insideWhen then
+        if eqScope <> EquationScope.WHEN then
           Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
           fail();
         end if;

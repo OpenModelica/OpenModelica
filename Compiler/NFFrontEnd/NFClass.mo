@@ -31,7 +31,6 @@
 
 encapsulated package NFClass
 
-import NFEquation.Equation;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
 import NFStatement.Statement;
@@ -289,6 +288,16 @@ uniontype Class
       else Component.Attributes.DEFAULT();
     end match;
   end getAttributes;
+
+  function getTypeAttributes
+    input Class cls;
+    output list<Modifier> attributes;
+  algorithm
+    attributes := match cls
+      case INSTANCED_BUILTIN() then cls.attributes;
+      else {};
+    end match;
+  end getTypeAttributes;
 
 end Class;
 

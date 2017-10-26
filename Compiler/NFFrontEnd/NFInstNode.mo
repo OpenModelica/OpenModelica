@@ -760,7 +760,7 @@ uniontype InstNode
       case COMPONENT_NODE() then Component.isOnlyOuter(Pointer.access(node.component));
       case CLASS_NODE()
         then Absyn.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(node.definition)));
-      case INNER_OUTER_NODE() then isOuter(node.outerNode);
+      case INNER_OUTER_NODE() then isOnlyOuter(node.outerNode);
       else false;
     end match;
   end isOnlyOuter;

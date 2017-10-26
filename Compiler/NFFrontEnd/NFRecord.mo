@@ -42,12 +42,10 @@ import Binding = NFBinding;
 import NFClass.Class;
 import NFComponent.Component;
 import Dimension = NFDimension;
-import NFEquation.Equation;
 import Expression = NFExpression;
 import NFExpression.CallAttributes;
 import NFInstNode.InstNode;
 import NFMod.Modifier;
-import NFStatement.Statement;
 import Type = NFType;
 import Subscript = NFSubscript;
 

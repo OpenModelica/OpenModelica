@@ -29,14 +29,16 @@
  *
  */
 
-encapsulated package NFStatement
+encapsulated uniontype NFStatement
+  import Absyn;
+  import Type = NFType;
+  import Expression = NFExpression;
+  import NFInstNode.InstNode;
 
-import Absyn;
-import Type = NFType;
-import Expression = NFExpression;
-import NFInstNode.InstNode;
+protected
+  import Statement = NFStatement;
 
-public uniontype Statement
+public
   record ASSIGNMENT
     Expression lhs "The asignee";
     Expression rhs "The expression";
@@ -122,7 +124,6 @@ public uniontype Statement
       case FAILURE() then stmt.info;
     end match;
   end info;
-end Statement;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFStatement;

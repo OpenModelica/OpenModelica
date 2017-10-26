@@ -53,7 +53,6 @@ import NFInstNode.NodeTree;
 import NFInstNode.CachedData;
 import NFComponent.Component;
 import Subscript = NFSubscript;
-import Origin = NFComponentRef.Origin;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -178,13 +177,13 @@ algorithm
           (node, foundScope) := lookupSimpleCref(cref.name, scope);
           state := LookupState.nodeState(node);
         then
-          (ComponentRef.fromAbsyn(node, cref.subscripts, Origin.CREF), foundScope, state);
+          (ComponentRef.fromAbsyn(node, cref.subscripts), foundScope, state);
 
       case Absyn.ComponentRef.CREF_QUAL()
         algorithm
           (node, foundScope) := lookupSimpleCref(cref.name, scope);
           state := LookupState.nodeState(node);
-          foundCref := ComponentRef.fromAbsyn(node, cref.subscripts, Origin.CREF);
+          foundCref := ComponentRef.fromAbsyn(node, cref.subscripts);
           (foundCref, foundScope, state) :=
             lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
         then
@@ -646,14 +645,14 @@ algorithm
         (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
         state := LookupState.next(n, state);
       then
-        (ComponentRef.fromAbsyn(n, cref.subscripts, Origin.CREF, foundCref), foundScope, state);
+        (ComponentRef.fromAbsyn(n, cref.subscripts, foundCref), foundScope, state);
 
     case Absyn.ComponentRef.CREF_QUAL()
       algorithm
         n := Class.lookupElement(cref.name, InstNode.getClass(scope));
         (n, foundCref, foundScope) := resolveInnerCref(n, foundCref, foundScope);
         state := LookupState.next(n, state);
-        foundCref := ComponentRef.fromAbsyn(n, cref.subscripts, Origin.CREF, foundCref);
+        foundCref := ComponentRef.fromAbsyn(n, cref.subscripts, foundCref);
       then
         lookupCrefInNode(cref.componentRef, n, foundCref, foundScope, state);
   end match;

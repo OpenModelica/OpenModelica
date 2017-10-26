@@ -4540,6 +4540,22 @@ algorithm
   outList2 := listReverseInPlace(outList2);
 end unzip;
 
+public function unzipReverse<T1, T2>
+  "Like unzip, but returns the lists in reverse order."
+  input list<tuple<T1, T2>> inTuples;
+  output list<T1> outList1 = {};
+  output list<T2> outList2 = {};
+protected
+  T1 e1;
+  T2 e2;
+algorithm
+  for tpl in inTuples loop
+    (e1, e2) := tpl;
+    outList1 := e1 :: outList1;
+    outList2 := e2 :: outList2;
+  end for;
+end unzipReverse;
+
 public function unzipFirst<T1, T2>
   "Takes a list of two-element tuples and creates a list from the first element
    of each tuple. Example: unzipFirst({(1, 2), (3, 4)}) => {1, 3}"

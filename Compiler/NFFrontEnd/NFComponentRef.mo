@@ -71,17 +71,32 @@ public
     output ComponentRef cref = CREF(node, subs, ty, origin, EMPTY());
   end fromNode;
 
+  function prefixCref
+    input InstNode node;
+    input Type ty;
+    input list<Subscript> subs;
+    input ComponentRef restCref;
+    output ComponentRef cref = CREF(node, subs, ty, Origin.CREF, restCref);
+  end prefixCref;
+
+  function prefixScope
+    input InstNode node;
+    input Type ty;
+    input list<Subscript> subs;
+    input ComponentRef restCref;
+    output ComponentRef cref = CREF(node, subs, ty, Origin.SCOPE, restCref);
+  end prefixScope;
+
   function fromAbsyn
     input InstNode node;
     input list<Absyn.Subscript> subs;
-    input Origin origin = Origin.CREF;
     input ComponentRef restCref = EMPTY();
     output ComponentRef cref;
   protected
     list<Subscript> sl;
   algorithm
     sl := list(Subscript.RAW_SUBSCRIPT(s) for s in subs);
-    cref := CREF(node, sl, Type.UNKNOWN(), origin, restCref);
+    cref := CREF(node, sl, Type.UNKNOWN(), Origin.CREF, restCref);
   end fromAbsyn;
 
   function fromBuiltin
@@ -89,6 +104,12 @@ public
     input Type ty;
     output ComponentRef cref = CREF(node, {}, ty, Origin.SCOPE, EMPTY());
   end fromBuiltin;
+
+  function makeIterator
+    input InstNode node;
+    input Type ty;
+    output ComponentRef cref = CREF(node, {}, ty, Origin.ITERATOR, EMPTY());
+  end makeIterator;
 
   function isEmpty
     input ComponentRef cref;
@@ -166,12 +187,10 @@ public
     input Subscript subscript;
     input output ComponentRef cref;
   algorithm
-    () := match cref
+    cref := match cref
       case CREF()
-        algorithm
-          cref.subscripts := listAppend(cref.subscripts, {subscript});
-        then
-          ();
+        then CREF(cref.node, listAppend(cref.subscripts, {subscript}),
+            Type.unliftArray(cref.ty), cref.origin, cref.restCref);
     end match;
   end addSubscript;
 
@@ -205,6 +224,16 @@ public
     input list<Subscript> subscripts;
     input output ComponentRef cref;
   algorithm
+    cref := match cref
+      case CREF()
+        then CREF(cref.node, subscripts, Type.arrayElementType(cref.ty), cref.origin, cref.restCref);
+    end match;
+  end setSubscripts;
+
+  function replaceSubscripts
+    input list<Subscript> subscripts;
+    input output ComponentRef cref;
+  algorithm
     () := match cref
       case CREF()
         algorithm
@@ -212,18 +241,36 @@ public
         then
           ();
     end match;
-  end setSubscripts;
+  end replaceSubscripts;
 
-  function allSubscripts
+  function subscriptsAll
+    "Returns all subscripts of a cref in reverse order.
+     Ex: a[1, 2].b[4].c[6, 3] => {{6,3}, {4}, {1,2}}"
     input ComponentRef cref;
     input list<list<Subscript>> accumSubs = {};
     output list<list<Subscript>> subscripts;
   algorithm
     subscripts := match cref
-      case CREF() then allSubscripts(cref.restCref, cref.subscripts :: accumSubs);
+      case CREF() then subscriptsAll(cref.restCref, cref.subscripts :: accumSubs);
       else accumSubs;
     end match;
-  end allSubscripts;
+  end subscriptsAll;
+
+  function subscriptsN
+    "Returns the subscripts of the N first parts of a cref in reverse order.
+     Fails if the cref is fewer than N parts."
+    input ComponentRef cref;
+    input Integer n;
+    output list<list<Subscript>> subscripts = {};
+  protected
+    list<Subscript> subs;
+    ComponentRef rest = cref;
+  algorithm
+    for i in 1:n loop
+      CREF(subscripts = subs, restCref = rest) := rest;
+      subscripts := subs :: subscripts;
+    end for;
+  end subscriptsN;
 
   function transferSubscripts
     input ComponentRef srcCref;
@@ -346,7 +393,7 @@ public
     end for;
   end fromNodeList;
 
-  function vectorize
+  function scalarize
     input ComponentRef cref;
     output list<ComponentRef> crefs;
   algorithm
@@ -358,6 +405,7 @@ public
         list<list<Subscript>> subs;
         list<list<Subscript>> new_subs;
         Subscript sub;
+        ComponentRef scalar_cref;
 
       case CREF()
         algorithm
@@ -377,12 +425,13 @@ public
             subs := new_subs;
           end for;
 
+          scalar_cref := setType(Type.arrayElementType(cref.ty), cref);
         then
-          listReverse(setSubscripts(s, cref) for s in subs);
+          listReverse(replaceSubscripts(s, scalar_cref) for s in subs);
 
       else {cref};
     end match;
-  end vectorize;
+  end scalarize;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

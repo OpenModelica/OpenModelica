@@ -30,8 +30,8 @@
  */
 
 encapsulated uniontype NFSections
-  import NFEquation.Equation;
-  import NFStatement.Statement;
+  import Equation = NFEquation;
+  import Statement = NFStatement;
 
 protected
   import Sections = NFSections;
@@ -79,6 +79,21 @@ public
       else SECTIONS(equations, initialEquations, algorithms, initialAlgorithms);
     end match;
   end prepend;
+
+  function prependEquation
+    input Equation eq;
+    input output Sections sections;
+  algorithm
+    sections := match sections
+      case SECTIONS()
+        algorithm
+          sections.equations := eq :: sections.equations;
+        then
+          sections;
+
+      else SECTIONS({eq}, {}, {}, {});
+    end match;
+  end prependEquation;
 
   function append
     input list<Equation> equations;

@@ -182,20 +182,21 @@ public
 
   function toList
     input RangeIterator iterator;
+    output list<Expression> expl = listReverse(toListReverse(iterator));
+  end toList;
+
+  function toListReverse
+    input RangeIterator iterator;
     output list<Expression> expl = {};
   protected
-    RangeIterator iter;
+    RangeIterator iter = iterator;
     Expression exp;
   algorithm
-    iter := iterator;
-
     while hasNext(iter) loop
       (iter, exp) := next(iter);
       expl := exp :: expl;
     end while;
-
-    expl := listReverse(expl);
-  end toList;
+  end toListReverse;
 
   function map<T>
     input RangeIterator iterator;

@@ -67,6 +67,10 @@ public
     SourceInfo info;
   end TYPED_BINDING;
 
+  record FLAT_BINDING
+    Expression bindingExp;
+  end FLAT_BINDING;
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
