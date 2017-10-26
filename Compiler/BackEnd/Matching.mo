@@ -5666,7 +5666,7 @@ algorithm
       arrayUpdate(m,idx,row);
       //update mt
       for varIdx in varIdxs loop
-        row := arrayGet(m,varIdx);
+        row := arrayGet(mt,varIdx);
         row := List.deleteMember(row,idx);
         arrayUpdate(mt,varIdx,row);
       end for;
@@ -5677,30 +5677,18 @@ algorithm
   mtOut := mt;
 end removeEdgesForNoDerivativeFunctionInputs;
 
-protected function countincidenceMatrixElementEntries
-  input Integer i;
-  input Integer inCount;
-  output Integer outCount;
-algorithm
-  outCount := if intGt(i,0) then inCount+1 else inCount;
-end countincidenceMatrixElementEntries;
-
 protected function countincidenceMatrixEntries
-  input Integer i;
+  input Integer n;
   input BackendDAE.IncidenceMatrix m;
-  input Integer inCount;
-  output Integer outCount;
+  output Integer outCount = 0;
 algorithm
-  outCount := match(i,m,inCount)
-    local
-      Integer l;
-    case(0,_,_) then inCount;
-    else
-      equation
-        l = List.fold(m[i], countincidenceMatrixElementEntries, inCount);
-      then
-        countincidenceMatrixEntries(i-1,m,l);
-  end match;
+  for i in 1:n loop
+    for e in m[i] loop
+      if intGt(e,0) then
+        outCount := outCount + 1;
+      end if;
+    end for;
+  end for;
 end countincidenceMatrixEntries;
 
 public function matchingExternalsetIncidenceMatrix
@@ -5712,7 +5700,7 @@ public function matchingExternalsetIncidenceMatrix
 protected
  Integer nz;
 algorithm
-  nz := countincidenceMatrixEntries(ne,m,0);
+  nz := countincidenceMatrixEntries(ne,m);
   BackendDAEEXT.setIncidenceMatrix(nv,ne,nz,m);
 end matchingExternalsetIncidenceMatrix;
 
