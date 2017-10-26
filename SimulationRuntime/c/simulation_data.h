@@ -223,6 +223,7 @@ typedef struct STATIC_REAL_DATA
   VAR_INFO info;
   REAL_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
+  modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 }STATIC_REAL_DATA;
 
 typedef struct STATIC_INTEGER_DATA
@@ -230,6 +231,7 @@ typedef struct STATIC_INTEGER_DATA
   VAR_INFO info;
   INTEGER_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
+  modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 }STATIC_INTEGER_DATA;
 
 typedef struct STATIC_BOOLEAN_DATA
@@ -237,6 +239,7 @@ typedef struct STATIC_BOOLEAN_DATA
   VAR_INFO info;
   BOOLEAN_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
+  modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 }STATIC_BOOLEAN_DATA;
 
 typedef struct STATIC_STRING_DATA
@@ -244,6 +247,7 @@ typedef struct STATIC_STRING_DATA
   VAR_INFO info;
   STRING_ATTRIBUTE attribute;
   modelica_boolean filterOutput;       /* true if this variable should be filtered */
+  modelica_boolean time_unvarying;     /* true if the value is only computed once during initialization */
 }STATIC_STRING_DATA;
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0

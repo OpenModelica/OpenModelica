@@ -656,7 +656,7 @@ template simulationFile_bnd(SimCode simCode)
 
     <%functionUpdateBoundVariableAttributes(simCode, startValueEquations, nominalValueEquations, minValueEquations, maxValueEquations, modelNamePrefix(simCode))%>
 
-    <%functionUpdateBoundParameters(selectScalarLiteralAssignments(parameterEquations), filterScalarLiteralAssignments(parameterEquations), simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode))%>
+    <%functionUpdateBoundParameters(selectScalarLiteralAssignments(parameterEquations), filterScalarLiteralAssignments(parameterEquations), simCode.fileNamePrefix, simCode.fullPathPrefix, modelNamePrefix(simCode), simCode)%>
 
     #if defined(__cplusplus)
     }
@@ -2917,10 +2917,11 @@ template functionUpdateBoundVariableAttributes(SimCode simCode, list<SimEqSystem
   >>
 end functionUpdateBoundVariableAttributes;
 
-template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquations, list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix)
+template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquations, list<SimEqSystem> parameterEquations, String fileNamePrefix, String fullPathPrefix, String modelNamePrefix, SimCode simCode)
   "Generates function in simulation file."
 ::=
   let &eqFuncs = buffer ""
+  let &auxFunction = buffer ""
   let fncalls = functionEquationsMultiFiles(parameterEquations, listLength(parameterEquations),
     Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
     "updateBoundParameters", "08bnd", &eqFuncs, /* Static? */ true, true /* No optimization */)
@@ -2930,7 +2931,15 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
-    <%sortSimpleAssignmentBasedOnLhs(simpleParameterEquations) |> eq as SES_SIMPLE_ASSIGN(__) => '<%cref(cref)%> = <%daeExpSimpleLiteral(exp)%>;' ; separator="\n" %>
+    <%sortSimpleAssignmentBasedOnLhs(simpleParameterEquations) |> eq as SES_SIMPLE_ASSIGN(__) =>
+      <<
+      <%cref(cref)%> = <%daeExpSimpleLiteral(exp)%>;
+      <%match cref2simvar(cref, simCode)
+        case SIMVAR(varKind=PARAM()) then
+          'data->modelData-><%expTypeShort(type_)%>ParameterData[<%index%>].time_unvarying = 1;'
+        case SIMVAR(__) then
+          'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].time_unvarying = 1;'%>
+      >> ; separator="\n" %>
     <%fncalls%>
     TRACE_POP
     return 0;

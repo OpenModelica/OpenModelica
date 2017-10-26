@@ -84,14 +84,14 @@ OPTIMIZATION_OBJS=
 OPTIMIZATION_HFILES=
 endif
 
-RESULTS_OBJS_MINIMAL=simulation_result$(OBJ_EXT) simulation_result_csv$(OBJ_EXT) simulation_result_mat$(OBJ_EXT)
+RESULTS_OBJS_MINIMAL=simulation_result$(OBJ_EXT) simulation_result_csv$(OBJ_EXT) simulation_result_mat$(OBJ_EXT) simulation_result_mat4$(OBJ_EXT) MatVer4$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
 RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL) simulation_result_ia$(OBJ_EXT) simulation_result_plt$(OBJ_EXT) simulation_result_wall$(OBJ_EXT)
 else
 RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL)
 endif
-RESULTS_HFILES = simulation_result_ia.h simulation_result.h simulation_result_csv.h simulation_result_mat.h simulation_result_plt.h simulation_result_wall.h
-RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_plt.cpp simulation_result_wall.cpp
+RESULTS_HFILES = simulation_result_ia.h simulation_result.h simulation_result_csv.h simulation_result_mat.h simulation_result_mat4.h MatVer4.h simulation_result_plt.h simulation_result_wall.h
+RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_result_mat.cpp simulation_result_mat4.cpp MatVer4.cpp simulation_result_plt.cpp simulation_result_wall.cpp
 
 SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
