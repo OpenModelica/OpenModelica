@@ -362,6 +362,7 @@ public function resolveLoops_findLoops "author:Waurich TUD 2014-02
   input list<list<Integer>> partitionsIn;
   input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
   input BackendDAE.IncidenceMatrixT mTIn;
+  input Boolean findExactlyOneLoop=false;
   output list<list<Integer>> loopsOut = {};
   output list<Integer> crossEqsOut = {};
   output list<Integer> crossVarsOut = {};
@@ -383,7 +384,10 @@ algorithm
       varCrossLst := List.fold2(partitionVars,gatherCrossNodes,mTIn,mIn,{});
 
       // search the partitions for loops
-      loops := resolveLoops_findLoops2(partition,eqCrossLst,varCrossLst,mIn,mTIn);
+      loops := resolveLoops_findLoops2(partition,eqCrossLst,varCrossLst,mIn,mTIn,findExactlyOneLoop);
+      if if findExactlyOneLoop then (not listEmpty(loops) and not listEmpty(loopsOut)) else false then
+        fail();
+      end if;
       loopsOut := listAppend(loops,loopsOut);
       if isPresent(crossEqsOut) then
         crossEqsOut := listAppend(eqCrossLst,crossEqsOut);
@@ -404,6 +408,7 @@ protected function resolveLoops_findLoops2 "author: Waurich TUD 2014-01
   input list<Integer> varCrossLstIn;
   input BackendDAE.IncidenceMatrix mIn;  // the whole system of simpleEquations
   input BackendDAE.IncidenceMatrixT mTIn;
+  input Boolean findExactlyOneLoop;
   output list<list<Integer>> loopsOut;
 algorithm
   loopsOut := match(eqsIn,eqCrossLstIn,varCrossLstIn,mIn,mTIn)
@@ -439,6 +444,11 @@ algorithm
         simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
         paths0 = listAppend(simpleLoops,connectedPaths);
         paths0 = sortPathsAsChain(paths0);
+        if findExactlyOneLoop then
+          if not listEmpty(paths0) then
+            {_} = paths0;
+          end if;
+        end if;
 
         //print("all paths to be resolved: \n"+stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+"\n");
       then
@@ -461,8 +471,12 @@ algorithm
         closedPaths = List.map(closedPaths,List.unique);
         closedPaths = List.map1(closedPaths,getEqNodesForVarLoop,mTIn);// get the eqs for these varLoops
           //print("solve the smallest loops: \n"+stringDelimitList(List.map(closedPaths,HpcOmTaskGraph.intLstString)," / ")+"\n");
-       then
-        closedPaths;
+        if findExactlyOneLoop then
+          if not listEmpty(closedPaths) then
+            {_} = closedPaths;
+          end if;
+        end if;
+      then closedPaths;
     case(_,{},{},_,_)
       algorithm
         // no crossNodes
@@ -474,8 +488,7 @@ algorithm
             break;
           end if;
         end for;
-       then
-         {subLoop};
+      then {subLoop};
     case(_,_::_,_::_,_,_)
       algorithm
         //print("there are both varCrossNodes and eqNodes\n");
@@ -487,11 +500,10 @@ algorithm
           arrayUpdate(mTIn, i, List.sort(mTIn[i], intGt));
         end for;
         eqCrossSet := AvlSetInt.addList(AvlSetInt.EMPTY(), eqCrossLstIn);
-        paths := getShortPathsBetweenEqCrossNodes(AvlSetInt.listKeysReverse(eqCrossSet), eqCrossSet, mIn, mTIn, {});
+        paths := getShortPathsBetweenEqCrossNodes(AvlSetInt.listKeysReverse(eqCrossSet), eqCrossSet, mIn, mTIn, {}, findExactlyOneLoop);
         //
          //print("GOT SOME NEW LOOPS: \n"+stringDelimitList(List.map(paths,HpcOmTaskGraph.intLstString)," / ")+"\n");
-      then
-        paths;
+      then paths;
     else
       equation
         Error.addInternalError("function resolveLoops_findLoops2 failed", sourceInfo());
@@ -546,6 +558,7 @@ author: vwaurich TUD 12-2016"
   input BackendDAE.IncidenceMatrix mIn;
   input BackendDAE.IncidenceMatrixT mTIn;
   input list<list<Integer>> pathsIn;
+  input Boolean findExactlyOneLoop;
   output list<list<Integer>> pathsOut;
 algorithm
   pathsOut := match(eqCrossLstIn, mIn, mTIn, pathsIn)
@@ -567,12 +580,16 @@ algorithm
           //print("all sharedVars "+stringDelimitList(List.map(sharedVars, intString),",")+"\n");
           if hasSameIntSortedExcept(adjVars, arrayGet(mIn, adjEq), adjVar) then
             newPath := adjEq::{crossEq};
+            // TODO: List.unionElt is slow
             paths := List.unionElt(newPath, paths);
             //print("found path "+stringDelimitList(List.map(newPath,intString)," ; ")+"\n");
+            if if findExactlyOneLoop then (not listEmpty(pathsIn)) else false then
+              fail();
+            end if;
           end if;
         end for;
       end for;
-      paths := getShortPathsBetweenEqCrossNodes(rest, eqCrossSet, mIn, mTIn, listAppend(paths, pathsIn));
+      paths := getShortPathsBetweenEqCrossNodes(rest, eqCrossSet, mIn, mTIn, listAppend(paths, pathsIn), findExactlyOneLoop);
     then paths;
   case({},_,_,_)
     then pathsIn;

@@ -2179,7 +2179,7 @@ algorithm
     equation
           //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
       // partition has only one loop
-      ({loop1}, _, _) = ResolveLoops.resolveLoops_findLoops({partition}, m, mT);
+      ({loop1}, _, _) = ResolveLoops.resolveLoops_findLoops({partition}, m, mT, findExactlyOneLoop=true);
           //print("loop1 "+stringDelimitList(List.map(loop1, intString), ", ")+"\n");
       {eqIdx1, eqIdx2} = loop1;
       varIdcs1 = arrayGet(m, eqIdx1);
