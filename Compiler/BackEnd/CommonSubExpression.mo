@@ -42,6 +42,7 @@ import DAE;
 
 protected
 import Array;
+import AvlSetInt;
 import BackendDAEUtil;
 import BackendDump;
 import BackendEquation;
@@ -1970,6 +1971,7 @@ protected
   list<BackendDAE.Var> varLst;
   list<CommonSubExp> cseLst2, cseLst3, shortenPathsCSE;
   list<tuple<Boolean, String>> varAtts, eqAtts;
+  AvlSetInt.Tree varIdcsSet;
 algorithm
   try
     range := List.intRange(arrayLength(mIn));
@@ -2005,9 +2007,12 @@ algorithm
     (_, eqIdcs) := List.filter1OnTrueSync(lengthLst, intEq, 3, range);
     (eqLst, eqIdcs) := List.filterOnTrueSync(BackendEquation.getList(eqIdcs, eqsIn),BackendEquation.isNotAlgorithm,eqIdcs); // no algorithms
     eqs := BackendEquation.listEquation(eqLst);
-    varIdcs := List.unique(List.flatten(List.map1(eqIdcs, Array.getIndexFirst, mIn)));
+    varIdcsSet := AvlSetInt.EMPTY();
+    for eq in eqIdcs loop
+      varIdcsSet := AvlSetInt.addList(varIdcsSet, arrayGet(mIn, eq));
+    end for;
+    varIdcs := AvlSetInt.listKeysReverse(varIdcsSet);
     varLst := List.map1(varIdcs, BackendVariable.getVarAtIndexFirst, varsIn);
-    //(varLst,varIdcs) := List.filterOnTrueSync(varLst,BackendVariable.isVarNonDiscrete,varIdcs);// no discrete vars
     vars := BackendVariable.listVar1(varLst);
     eqSys := BackendDAEUtil.createEqSystem(vars, eqs);
     (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.ABSOLUTE(), NONE());
@@ -2175,6 +2180,7 @@ algorithm
     BackendDAE.Equation eq1, eq2;
     BackendDAE.Var var1, var2;
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
+    array<Integer> varMapArr, eqMapArr;
   case(_, _, _, _, _, _, _, _)
     equation
           //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
@@ -2206,10 +2212,14 @@ algorithm
          //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
          //print("is equal\n");
       // build CSE
-      sharedVarIdcs = List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
+      eqMapArr = listArray(eqMap);
+      varMapArr = listArray(varMap);
+      sharedVarIdcs = list(arrayGet(varMapArr, i) for i in sharedVarIdcs);
       varIdcs1 = listAppend(varIdcs1, varIdcs2);
-      varIdcs1 = List.map1(varIdcs1, List.getIndexFirst, varMap);
-      eqIdcs = List.map1(loop1, List.getIndexFirst, eqMap);
+      varIdcs1 = list(arrayGet(varMapArr, i) for i in varIdcs1);
+      eqIdcs = list(arrayGet(eqMapArr,i) for i in loop1);
+      GC.free(eqMapArr);
+      GC.free(varMapArr);
     then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs1)::cseIn;
   else cseIn;
   end matchcontinue;
