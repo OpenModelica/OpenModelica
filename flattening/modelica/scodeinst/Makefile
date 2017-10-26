@@ -1,6 +1,9 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
+Algorithm1.mo \
+Algorithm2.mo \
+Algorithm3.mo \
 arrfunc.mo \
 Assert1.mo \
 Assert2.mo \
@@ -46,9 +49,11 @@ ComponentAsTypeError.mo \
 ComponentAttributes1.mo \
 ComponentAttributes2.mo \
 cond4.mo \
-conn1.mo \
-conn2.mo \
-conn4.mo \
+ConnectAlgorithm.mo \
+ConnectInitial.mo \
+ConnectNonConnector1.mo \
+ConnectNonConnector2.mo \
+ConnectNonConnector5.mo \
 const1.mo \
 const10.mo \
 const11.mo \
@@ -343,12 +348,23 @@ usertype4.mo \
 usertype5.mo \
 usertype6.mo \
 when1.mo \
+WhenInitial1.mo \
 WhenNested1.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-ComponentAttr1.mo \
+Connect1.mo \
+Connect2.mo \
+Connect3.mo \
+Connect4.mo \
+Connect5.mo \
+ConnectInvalidForm1.mo \
+ConnectInvalidType1.mo \
+ConnectNonConnector3.mo \
+ConnectNonConnector4.mo \
+ConnectNonConnector6.mo \
+ProtectedMod1.mo \
 dim2.mo \
 DuplicateElements5.mo \
 DuplicateElements6.mo \
@@ -365,8 +381,6 @@ conn11.mo \
 conn12.mo \
 conn13.mo \
 conn14.mo \
-conn3.mo \
-conn5.mo \
 conn6.mo \
 conn7.mo \
 conn8.mo \

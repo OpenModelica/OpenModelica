@@ -49,18 +49,18 @@ end ExtendSections;
 //   Real z;
 //   Real w;
 // initial equation
-//   b = 2;
-//   y = 2;
+//   y = 2.0;
+//   b = 2.0;
 // initial algorithm
-//   d := 4;
+//   w := 5.0;
 // initial algorithm
-//   w := 5;
+//   d := 4.0;
 // equation
-//   a = 1;
-//   x = 4;
+//   a = 1.0;
+//   x = 4.0;
 // algorithm
-//   c := 3;
+//   c := 3.0;
 // algorithm
-//   z := 3;
+//   z := 3.0;
 // end ExtendSections;
 // endResult
