@@ -638,7 +638,23 @@ algorithm
       then
         ();
 
-    else ();
+    // If a class has an instance of a encapsulating class, then the encapsulating
+    // class will have been fully instantiated to allow lookup in it. This is a
+    // rather uncommon case hopefully, so in that case just reinstantiate the class.
+    case (Class.INSTANCED_CLASS(), _)
+      algorithm
+        node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
+        node := expand(node);
+        node := instClass(node, modifier, attributes, parent);
+      then
+        ();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got unknown class.");
+      then
+        ();
+
   end match;
 end instClass;
 
