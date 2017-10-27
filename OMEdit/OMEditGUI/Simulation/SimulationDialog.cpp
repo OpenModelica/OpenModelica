@@ -895,6 +895,8 @@ bool SimulationDialog::translateModel(QString simulationParameters)
 {
   // reset simulation setting
   OptionsDialog::instance()->saveSimulationSettings();
+  // set profiling
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   // set the infoXMLOperations flag
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
@@ -1388,7 +1390,6 @@ void SimulationDialog::performSimulation()
   if (!mpCflagsTextBox->text().isEmpty()) {
     simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
   }
-  MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   simulationOptions = createSimulationOptions();
   // change the cursor to Qt::WaitCursor
   QApplication::setOverrideCursor(Qt::WaitCursor);
