@@ -2054,6 +2054,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
          TRACE_POP
        }
+       OMC_DISABLE_OPT
        void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          DATA* data = (DATA*) inData;
@@ -2086,6 +2087,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
            >> ;separator="\n")
        <<
        <%auxFunction%>
+       OMC_DISABLE_OPT
        void setLinearMatrixA<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
@@ -2094,6 +2096,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%varDecls%>
          <%MatrixA%>
        }
+       OMC_DISABLE_OPT
        void setLinearVectorb<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
@@ -2102,6 +2105,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%varDecls2%>
          <%vectorb%>
        }
+       OMC_DISABLE_OPT
        void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          DATA* data = (DATA*) inData;
@@ -2184,6 +2188,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
          TRACE_POP
        }
+       OMC_DISABLE_OPT
        void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          DATA* data = (DATA*) inData;
@@ -2210,6 +2215,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
          TRACE_POP
        }
+       OMC_DISABLE_OPT
        void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          DATA* data = (DATA*) inData;
@@ -2266,6 +2272,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
 
        <<
        <%auxFunction%>
+       OMC_DISABLE_OPT
        void setLinearMatrixA<%ls.index%>(void *inData, void *systemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
@@ -2274,6 +2281,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%varDecls%>
          <%MatrixA%>
        }
+       OMC_DISABLE_OPT
        void setLinearVectorb<%ls.index%>(void *inData, void *systemData)
        {
          const int equationIndexes[2] = {1,<%ls.index%>};
@@ -2282,6 +2290,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%varDecls2%>
          <%vectorb%>
        }
+       OMC_DISABLE_OPT
        void initializeStaticLSData<%ls.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          DATA* data = (DATA*) inData;
@@ -2291,6 +2300,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
        }
 
        <%auxFunction2%>
+       OMC_DISABLE_OPT
        void setLinearMatrixA<%at.index%>(void *inData, void *systemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
@@ -2299,6 +2309,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%varDecls3%>
          <%MatrixA2%>
        }
+       OMC_DISABLE_OPT
        void setLinearVectorb<%at.index%>(void *inData, void *systemData)
        {
          const int equationIndexes[2] = {1,<%at.index%>};
@@ -2307,6 +2318,7 @@ template functionSetupLinearSystemsTemp(list<SimEqSystem> linearSystems, String 
          <%varDecls4%>
          <%vectorb2%>
        }
+       OMC_DISABLE_OPT
        void initializeStaticLSData<%at.index%>(void *inData, threadData_t *threadData, void *systemData)
        {
          DATA* data = (DATA*) inData;
@@ -3798,6 +3810,7 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     /* Text before the function head */
     <<
     <%funcs%>
+    OMC_DISABLE_OPT
     static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, threadData_t *threadData) = {
       <%funcNames%>
     };
@@ -4123,7 +4136,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   <%&eqfuncs%>
 
   <%eqArrayDecl%>
-
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
@@ -4769,6 +4782,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   let &tmp = buffer ""
   let &varD = buffer ""
   let &tempeqns = buffer ""
+  let &OMC_DISABLE_OPT = buffer ""
   let() = System.tmpTickResetIndex(0,1) /* Boxed array indices */
   let disc = match context
   case SIMULATION_CONTEXT(genDiscrete=true) then 1
@@ -4786,7 +4800,9 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   case e as SES_INVERSE_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
-    then equationLinear(e, context, &varD)
+    then
+    let &OMC_DISABLE_OPT += 'OMC_DISABLE_OPT<%\n%>'
+    equationLinear(e, context, &varD)
   // no dynamic tearing
   case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__), alternativeTearing=NONE()) then
     let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*,threadData_t*);' ; separator = "\n")
@@ -4815,7 +4831,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   /*
    <%dumpEqs(fill(eq,1))%>
    */
-  void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
+  <%OMC_DISABLE_OPT%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     const int equationIndexes[2] = {1,<%ix%>};
@@ -4852,7 +4868,7 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-  let OMC_NO_OPT = if noOpt then 'OMC_DISABLE_OPT<%\n%>'
+  let OMC_NO_OPT = if noOpt then 'OMC_DISABLE_OPT<%\n%>' else (match eq case SES_LINEAR(__) then 'OMC_DISABLE_OPT<%\n%>')
   match eq
   case e as SES_ALGORITHM(statements={})
   then ""
