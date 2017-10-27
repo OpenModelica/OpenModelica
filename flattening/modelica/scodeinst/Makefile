@@ -107,6 +107,7 @@ DuplicateMod2.mo \
 DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
+EncapsulatingInst1.mo \
 End1.mo \
 EndInvalid1.mo \
 EndInvalid2.mo \
