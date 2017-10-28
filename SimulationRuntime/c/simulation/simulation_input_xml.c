@@ -374,12 +374,15 @@ static void read_var_info(omc_ScalarVariable *v, VAR_INFO *info)
 
 static void read_var_attribute_real(omc_ScalarVariable *v, REAL_ATTRIBUTE *attribute)
 {
+  const char *unit = NULL;
   read_value_real(findHashStringStringEmpty(v,"start"), &(attribute->start), 0.0);
   read_value_bool(findHashStringString(v,"fixed"), (modelica_boolean*)&(attribute->fixed));
   read_value_bool(findHashStringString(v,"useNominal"), (modelica_boolean*)&(attribute->useNominal));
   read_value_real(findHashStringStringEmpty(v,"nominal"), &(attribute->nominal), 1.0);
   read_value_real(findHashStringStringEmpty(v,"min"), &(attribute->min), REAL_MIN);
   read_value_real(findHashStringStringEmpty(v,"max"), &(attribute->max), REAL_MAX);
+  read_value_string(findHashStringStringEmpty(v,"unit"), &unit);
+  attribute->unit = mmc_mk_scon_persist(unit);
 
   infoStreamPrint(LOG_DEBUG, 0, "Real %s(start=%g, fixed=%s, %snominal=%g%s, min=%g, max=%g)", findHashStringString(v,"name"), attribute->start, (attribute->fixed)?"true":"false", (attribute->useNominal)?"":"{", attribute->nominal, attribute->useNominal?"":"}", attribute->min, attribute->max);
 }

@@ -112,9 +112,12 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   for (int i=0; i < mData->nVariablesReal; i++)
     if (!mData->realVarsData[i].filterOutput) {
+      const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
+      size_t unitLength = unitStr ? strlen(unitStr) + 3 : 0;
+
       len = strlen(mData->realVarsData[i].info.name) + 1;
       if (len > maxLengthName) maxLengthName = len;
-      len = strlen(mData->realVarsData[i].info.comment) + 1;
+      len = strlen(mData->realVarsData[i].info.comment) + 1 + unitLength;
       if (len > maxLengthDesc) maxLengthDesc = len;
       matData->nSignals++;
     }
@@ -222,8 +225,19 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   for (int i=0; i < mData->nVariablesReal; i++)
     if (!mData->realVarsData[i].filterOutput) {
+      const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
+      size_t unitLength = unitStr ? strlen(unitStr) : 0;
+
       memcpy((uint8_t*)name + maxLengthName * cur, mData->realVarsData[i].info.name, strlen(mData->realVarsData[i].info.name));
       memcpy((uint8_t*)description + maxLengthDesc * cur, mData->realVarsData[i].info.comment, strlen(mData->realVarsData[i].info.comment));
+      // unit information
+      if (unitLength > 0)
+      {
+        memcpy((uint8_t*)description + maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2, unitStr, unitLength);
+        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 0] = ' ';
+        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 1] = '[';
+        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2 + unitLength] = ']';
+      }
       cur++;
     }
 
