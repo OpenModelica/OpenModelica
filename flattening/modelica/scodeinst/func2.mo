@@ -20,7 +20,7 @@ end B;
 
 // Result:
 // Error processing file: func2.mo
-// [flattening/modelica/scodeinst/func2.mo:12:3-12:15:writable] Error: Type mismatch in binding x = A.f(), expected subtype of Real, got type ().
+// [flattening/modelica/scodeinst/func2.mo:12:3-12:15:writable] Error: Type mismatch in binding x = f(), expected subtype of Real, got type ().
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
