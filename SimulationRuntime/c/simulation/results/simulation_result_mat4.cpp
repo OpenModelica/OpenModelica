@@ -55,6 +55,7 @@ typedef struct mat_data {
   size_t nSignals;
   size_t nEmits;
   void* data_2;
+  MatVer4Type_t type;
 } mat_data;
 
 static const char timeName[] = "time";
@@ -74,6 +75,8 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   rt_tick(SIM_TIMER_OUTPUT);
 
+  matData->type = omc_flag[FLAG_SINGLE_PRECISION] ? MatVer4Type_SINGLE : MatVer4Type_DOUBLE;
+
   matData->pFile = fopen(self->filename, "wb+");
   if (!matData->pFile)
   {
@@ -86,7 +89,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   // Class Type: Character Array
   //  Data Type: 8-bit, unsigned integer
   const char Aclass[] = "A1\0bt.\0ir1\0na\0\0Tj\0\0re\0\0ac\0\0nt\0\0so\0\0\0r\0\0\0y\0\0\0";
-  writeMatVer4Matrix_4(matData->pFile, "Aclass", 4, 11, Aclass, MatVer4Type_CHAR);
+  writeMatrix_matVer4(matData->pFile, "Aclass", 4, 11, Aclass, MatVer4Type_CHAR);
 
   /* Find the longest var name and description. */
   size_t maxLengthName = strlen(timeName) + 1;
@@ -309,7 +312,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   // Dimensions: maxLength x nVars
   // Class Type: Character Array
   //  Data Type: 8-bit, unsigned integer
-  writeMatVer4Matrix_4(matData->pFile, "name", maxLengthName, matData->nSignals, name, MatVer4Type_CHAR);
+  writeMatrix_matVer4(matData->pFile, "name", maxLengthName, matData->nSignals, name, MatVer4Type_CHAR);
   free(name);
   name = NULL;
 
@@ -318,7 +321,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   // Dimensions: maxLength x nVars
   // Class Type: Character Array
   //  Data Type: 8-bit, unsigned integer
-  writeMatVer4Matrix_4(matData->pFile, "description", maxLengthDesc, matData->nSignals, description, MatVer4Type_CHAR);
+  writeMatrix_matVer4(matData->pFile, "description", maxLengthDesc, matData->nSignals, description, MatVer4Type_CHAR);
   free(description);
   description = NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -565,11 +568,11 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   // Dimensions: 4 x nVars
   // Class Type: 32-bit, signed integer array
   //  Data Type: 32-bit, signed integer
-  writeMatVer4Matrix_4(matData->pFile, "dataInfo", 4, matData->nSignals, dataInfo, MatVer4Type_INT32);
+  writeMatrix_matVer4(matData->pFile, "dataInfo", 4, matData->nSignals, dataInfo, MatVer4Type_INT32);
   free(dataInfo);
   dataInfo = NULL;
 
-  size_t size = omc_flag[FLAG_SINGLE_PRECISION] ? sizeof(float) : sizeof(double);
+  size_t size = sizeofMatVer4Type(matData->type);
   cur = 0;
   void* data_1 = malloc(size * matData->nData1 * 2);
 
@@ -624,7 +627,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   // Dimensions: nParams x 2
   // Class Type: Double Precision Array
   //  Data Type: IEEE 754 double-precision
-  writeMatVer4Matrix_4(matData->pFile, "data_1", matData->nData1, 2, data_1, omc_flag[FLAG_SINGLE_PRECISION] ? MatVer4Type_SINGLE : MatVer4Type_DOUBLE);
+  writeMatrix_matVer4(matData->pFile, "data_1", matData->nData1, 2, data_1, matData->type);
   if (data_1)
   {
     free(data_1);
@@ -638,7 +641,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   //  Data Type: IEEE 754 double-precision
   matData->data2HdrPos = ftell(matData->pFile);
   matData->data_2 = malloc(size * matData->nData2);
-  writeMatVer4Matrix_4(matData->pFile, "data_2", matData->nData2, 0, NULL, omc_flag[FLAG_SINGLE_PRECISION] ? MatVer4Type_SINGLE : MatVer4Type_DOUBLE);
+  writeMatrix_matVer4(matData->pFile, "data_2", matData->nData2, 0, NULL, matData->type);
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
@@ -688,8 +691,8 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
         if (mData->booleanAlias[i].negate)
           WRITE_REAL_VALUE(matData->data_2, cur++, (1-data->localData[0]->booleanVars[mData->booleanAlias[i].nameID]));
 
-  //appendMatVer4Matrix_4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, 1, matData->data_2, omc_flag[FLAG_SINGLE_PRECISION] ? MatVer4Type_SINGLE : MatVer4Type_DOUBLE);
-  fwrite(matData->data_2, omc_flag[FLAG_SINGLE_PRECISION] ? sizeof(float) : sizeof(double), matData->nData2, matData->pFile);
+  //appendMatVer4Matrix_4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, 1, matData->data_2, matData->type);
+  fwrite(matData->data_2, sizeofMatVer4Type(matData->type), matData->nData2, matData->pFile);
   matData->nEmits++;
 
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -706,7 +709,7 @@ void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
     return;
   }
 
-  writeMatVer4Header_4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, omc_flag[FLAG_SINGLE_PRECISION] ? MatVer4Type_SINGLE : MatVer4Type_DOUBLE);
+  updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
 
   if (matData->data_2) {
     free(matData->data_2);

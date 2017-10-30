@@ -62,14 +62,16 @@ typedef struct MatVer4Matrix
   void *data;
 } MatVer4Matrix;
 
-int writeMatVer4Matrix_4(FILE* file, const char* name, size_t rows, size_t cols, const void* matrixData, MatVer4Type_t type);
-int appendMatVer4Matrix_4(FILE* file, long position, const char* name, size_t rows, size_t cols, const void* matrixData, MatVer4Type_t type);
-int writeMatVer4Header_4(FILE* file, long position, const char* name, size_t rows, size_t cols, MatVer4Type_t type);
+size_t sizeofMatVer4Type(MatVer4Type_t type);
 
-MatVer4Matrix* readMatVer4Matrix_4(FILE* file);
-void freeMatVer4Matrix_4(MatVer4Matrix** matrix);
+void writeMatrix_matVer4(FILE* file, const char* name, size_t rows, size_t cols, const void* matrixData, MatVer4Type_t type);
+void updateHeader_matVer4(FILE* file, long position, const char* name, size_t rows, size_t additional_cols, MatVer4Type_t type);
+void appendMatrix_matVer4(FILE* file, long position, const char* name, size_t rows, size_t cols, const void* matrixData, MatVer4Type_t type);
 
-int skipMatVer4Matrix_4(FILE* file);
+MatVer4Matrix* readMatrix_matVer4(FILE* file);
+void freeMatrix_matVer4(MatVer4Matrix** matrix);
+
+void skipMatrix_matVer4(FILE* file);
 
 #ifdef __cplusplus
 }
