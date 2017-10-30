@@ -705,7 +705,7 @@ public
         then DAE.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
 
       case CREF()
-        then DAE.CREF(ComponentRef.toDAE(exp.cref), DAE.T_UNKNOWN_DEFAULT);
+        then DAE.CREF(ComponentRef.toDAE(exp.cref), Type.toDAE(exp.ty));
 
       // TYPENAME() doesn't have a DAE representation, and shouldn't need to be
       // converted anyway.

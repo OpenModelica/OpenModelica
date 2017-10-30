@@ -78,6 +78,7 @@ import NFSections.Sections;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
 import StringUtil;
+import UnitCheck = NFUnitCheck;
 import NFPrefixes.*;
 import Prefixes = NFPrefixes;
 import NFFlatten.FunctionTree;
@@ -134,6 +135,11 @@ algorithm
   (elems, funcs) := Flatten.flatten(inst_cls, name);
   elems := Scalarize.scalarize(elems, name);
   (dae, daeFuncs) := ConvertDAE.convert(elems, funcs, name, InstNode.info(inst_cls));
+
+  // Do unit checking
+  if Flags.isSet(Flags.NF_UNITCHECK) then
+    UnitCheck.unitChecking(dae,daeFuncs);
+  end if;
 end instClassInProgram;
 
 function instantiate

@@ -41,10 +41,9 @@ end Functionargs;
 
 public function unitChecking
   input DAE.DAElist inDAE;
-  input FCore.Cache inCache;
+  input DAE.FunctionTree func;
 protected
   DAE.DAElist elts1, elts2, elts3;
-  DAE.FunctionTree func;
   list<DAE.Element> eqlist, varlist, newdaelist;
   list<DAE.Function> functionlist;
   list<Functionargs> args;
@@ -56,7 +55,6 @@ algorithm
     (elts1, elts2) := DAEUtil.splitDAEIntoVarsAndEquations(inDAE);
     varlist := GetVarList(elts1);
     eqlist := GetElementList(elts2);
-    func := FCore.getFunctionTree(inCache);
     functionlist := DAEUtil.getFunctionList(func);
 
     HtCr2U1 := NFHashTableCrToUnit.emptyHashTableSized(2053);
