@@ -167,6 +167,10 @@ public
     Type ty;
   end TUPLE_ELEMENT;
 
+  record BOX "MetaModelica boxed value"
+    Expression exp;
+  end BOX;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -752,6 +756,9 @@ public
         then DAE.IFEXP(toDAE(exp.condition), toDAE(exp.trueBranch), toDAE(exp.falseBranch));
 
       case CAST() then DAE.CAST(Type.toDAE(exp.ty), toDAE(exp.exp));
+
+      case BOX()
+        then DAE.BOX(toDAE(exp.exp));
 
       case UNBOX()
         then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));

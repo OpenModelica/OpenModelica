@@ -130,6 +130,16 @@ uniontype LookupState
       LookupStateName.CREF(name), info);
   end assertComponent;
 
+  function isCallable
+    input InstNode node;
+    output Boolean b = false;
+  protected
+    SCode.Element def;
+  algorithm
+    def := InstNode.definition(node);
+    b := SCode.isRecord(def) or SCode.isOperator(def);
+  end isCallable;
+
   function assertState
     input LookupState endState;
     input LookupState expectedState;
@@ -152,6 +162,9 @@ uniontype LookupState
       case (FUNC(),         CLASS()) then ();
       case (FUNC(),         FUNC()) then ();
       case (COMP_FUNC(),    FUNC()) then ();
+
+
+      case (CLASS(), FUNC()) guard isCallable(node) then ();
 
       // Found a class via a component, but expected a function.
       case (COMP_CLASS(), FUNC())

@@ -58,192 +58,305 @@ import Types;
 import Typing = NFTyping;
 import NFInstUtil;
 import NFPrefixes.Variability;
+import NFFunction.Function;
+import ClassTree = NFClassTree.ClassTree;
 
 public
-function typeRecordCall
-  input Absyn.ComponentRef recName;
-  input Absyn.FunctionArgs callArgs;
-  input InstNode classNode;
-  input Type classType;
-  input InstNode callScope;
-  input SourceInfo info;
-  output Expression typedExp;
-  output Type ty;
-  output Variability variability;
-//protected
-//  InstNode instClassNode;
-//  list<InstNode> inputs;
-//  Component comp;
-//  DAE.VarKind vari;
-//  list<Func.FunctionSlot> slots;
-//  list<Dimension> vectDims;
-//  NFExpression.CallAttributes ca;
-//  list <Expression> recElems, recExps;
-//  Absyn.Path recPath;
+
+function newDefaultConstructor
+  input Absyn.Path path;
+  input InstNode node;
+  output Function fn;
+protected
+  Class cls;
+  list<InstNode> inputs, outputs, locals;
+  DAE.FunctionAttributes attr;
+  Pointer<Boolean> collected;
+  Absyn.Path con_path;
 algorithm
-  typedExp := Expression.INTEGER(0);
-  ty := Type.UNKNOWN();
-  variability := Variability.CONTINUOUS;
-//
-//  inputs := getRecordConstructorInputs(classNode);
-//
-//  slots := Func.createAndFillSlots(recName, prefix, inputs, callArgs, callScope, info);
-//
-//  (slots,vectDims) := Func.typeCheckFunctionSlots(slots, Absyn.crefToPath(recName), prefix, info);
-//  (recElems, variability) := Func.argsFromSlots(slots);
-//
-//  ty := classType;
-//  // Prefix?
-//  recPath := Absyn.crefToPath(recName);
-//
-//  if listLength(vectDims) == 0 then
-//    typedExp := Expression.RECORD(recPath, ty, recElems);
-//  else
-//    recExps := vectorizeRecordCall(recPath, ty, recElems, vectDims);
-//    typedExp := Expression.arrayFromList(recExps, ty, vectDims);
-//  end if;
+  (inputs, locals) := collectRecordParams(node);
+  attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
+  // attr := makeAttributes(node, inputs, outputs);
+  collected := Pointer.create(false);
+  con_path := Absyn.suffixPath(path,"'$constructor'");
+  fn := Function.FUNCTION(con_path, node, inputs, {}, locals, {}, Type.UNKNOWN(), attr, collected);
+end newDefaultConstructor;
 
-end typeRecordCall;
 
-//function createAndFillSlots
-//  input Absyn.ComponentRef funcName;
-//  input list<InstNode> funcInputs;
-//  input Absyn.FunctionArgs callArgs;
-//  input InstNode callScope;
-//  input SourceInfo info;
-//  output list<Func.FunctionSlot> filledSlots;
-//protected
-//  Component comp;
-//  DAE.VarKind vari;
-//  DAE.Const const;
-//  list<Absyn.Exp> posargs;
-//  list<Absyn.NamedArg> namedargs;
-//  Func.FunctionSlot sl;
-//  list<Func.FunctionSlot> slots, posfilled;
-//  Expression argExp;
-//  Type argTy;
-//  DAE.Const argConst;
-//algorithm
-//
-//  slots := {};
-//  for compnode in funcInputs loop
-//    // argName := InstNode.name(compnode);
-//    comp := InstNode.component(compnode);
-//    vari := Component.variability(comp);
-//    const := Typing.variabilityToConst(NFInstUtil.daeToSCodeVariability(vari));
-//    // bind := Component.getBinding(comp)
-//    // ty := Component.getType(comp);
-//    slots := Func.SLOT(InstNode.name(compnode),
-//                  NONE(),
-//                  Component.getBinding(comp),
-//                  SOME((Component.getType(comp), const)),
-//                  false)::slots;
-//  end for;
-//  slots := listReverse(slots);
-//
-//  Absyn.FUNCTIONARGS(args = posargs, argNames = namedargs) := callArgs;
-//
-//  posfilled := {};
-//  // handle positional args
-//  for arg in posargs loop
-//    (argExp, argTy, argConst) := Typing.typeExp(arg, callScope, info);
-//    sl::slots := slots;
-//    sl := Func.fillPosSlotWithArg(sl,(argExp, argTy, argConst));
-//    posfilled := sl::posfilled;
-//  end for;
-//  slots := listAppend(listReverse(posfilled), slots);
-//
-//  // handle named args
-//  for narg in namedargs loop
-//    Absyn.NAMEDARG() := narg;
-//    (argExp, argTy, argConst) := Typing.typeExp(narg.argValue, callScope, info);
-//    slots := Func.fillNamedSlot(slots, narg.argName, (argExp, argTy, argConst), Absyn.crefToPath(funcName), info);
-//  end for;
-//
-//  filledSlots := slots;
-//end createAndFillSlots;
-//
-//function getRecordConstructorInputs
-//  input InstNode classNode;
-//  output list<InstNode> inputs = {};
-//protected
-//  InstNode compnode;
-//  Component.Attributes attr;
-//  array<InstNode> components;
-//  Component comp;
-//algorithm
-//  Class.INSTANCED_CLASS(components = components) := InstNode.getClass(classNode);
-//
-//  for i in arrayLength(components):-1:1 loop
-//     comp := InstNode.component(components[i]);
-//     if Component.isPublic(comp) then
-//       if Component.isConst(comp) then
-//         if not Component.hasBinding(comp) then
-//           inputs := components[i]::inputs;
-//         end if;
-//       else
-//         inputs := components[i]::inputs;
-//       end if;
-//     end if;
-//  end for;
-//end getRecordConstructorInputs;
-//
-//function vectorizeRecordCall
-//  input Absyn.Path inRecName;
-//  input Type recType;
-//  input list<Expression> valExps;
-//  input list<Dimension> vecDims;
-//  output list<Expression> outRecs;
-//protected
-//  list<list<Subscript>> vectsubs;
-//  list<list<Expression>> vecargslst;
-//algorithm
-//
-//  // Create combinations of each dims subs, i.e., expand an array[dims]
-//  vectsubs := Func.vectorizeDims(vecDims);
-//
-//  // Apply the set of subs to each argument, i.e., expand each arg.
-//  vecargslst := {};
-//  for currsubs in vectsubs loop
-//    vecargslst := list(Expression.subscript(arg, currsubs) for arg in valExps)::vecargslst;
-//  end for;
-//
-//
-//  outRecs := {};
-//  for vals in vecargslst loop
-//    outRecs := Expression.RECORD(inRecName, recType, vals)::outRecs;
-//  end for;
-//
-//end vectorizeRecordCall;
-//
-//function recVariabilityfromSlots
-//  "Not sure about how to deal with record variability. But this should do for now."
-//  input list<Func.FunctionSlot> slots;
-//  output DAE.Const variability;
-//protected
-//  DAE.Const const;
-//  Binding b;
-//algorithm
-//  variability := DAE.C_CONST();
-//  for s in slots loop
-//    Func.SLOT() := s;
-//    if isSome(s.arg) then
-//      SOME((_, _, const)) := s.arg;
-//      variability := Types.constAnd(variability, const);
-//    else
-//      variability := match s.default
-//      // TODO FIXME what do we do with the propagatedDims?
-//        case b as Binding.TYPED_BINDING()
-//          then Types.constAnd(variability, b.variability);
-//        else
-//          algorithm
-//            Error.addMessage(Error.INTERNAL_ERROR, {"NFRecord.typeRecordCall failed."});
-//          then fail();
-//        end match;
-//    end if;
-//  end for;
-//end recVariabilityfromSlots;
+function collectRecordParams
+  input InstNode recNode;
+  output list<InstNode> inputs = {};
+  output list<InstNode> locals = {};
+protected
 
+  Class cls;
+  array<InstNode> components;
+  InstNode n;
+  Component comp;
+algorithm
+
+  assert(InstNode.isClass(recNode), getInstanceName() + " got non-class node");
+  cls := InstNode.getClass(recNode);
+
+  () := match cls
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components))
+      algorithm
+        for i in arrayLength(components):-1:1 loop
+          comp := InstNode.component(components[i]);
+          if Component.isPublic(comp) then
+            if Component.isConst(comp) then
+              if not Component.hasBinding(comp) then
+                inputs := components[i]::inputs;
+              else
+                locals := components[i]::locals;
+              end if;
+            else
+              inputs := components[i]::inputs;
+            end if;
+          else
+            locals := components[i]::locals;
+          end if;
+        end for;
+      then
+        ();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got non-instantiated function");
+      then
+        fail();
+  end match;
+
+
+  // Class.INSTANCED_CLASS(components = components) := InstNode.getClass(recNode);
+
+  // for i in arrayLength(components):-1:1 loop
+     // comp := InstNode.component(components[i]);
+     // if Component.isPublic(comp) then
+       // if Component.isConst(comp) then
+         // if not Component.hasBinding(comp) then
+           // inputs := components[i]::inputs;
+         // else
+           // locals := components[i]::inputs;
+         // end if;
+       // else
+         // inputs := components[i]::inputs;
+       // end if;
+     // else
+       // locals := components[i]::inputs;
+     // end if;
+  // end for;
+
+end collectRecordParams;
+
+
+function instOperatorFunctions
+  input InstNode node;
+  input SourceInfo info;
+  output list<Function> outFuncs = {};
+protected
+  Class cls;
+  array<InstNode> clss;
+  InstNode op;
+  Absyn.Path path;
+algorithm
+  cls := InstNode.getClass(node);
+
+    () := match cls
+      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(classes = clss))  algorithm
+        for i in arrayLength(clss):-1:1 loop
+          op := clss[i];
+          path := InstNode.scopePath(op);
+          Function.instFunc2(path, op, info);
+          outFuncs := listAppend(outFuncs,Function.getCachedFuncs(op));
+        end for;
+      then ();
+    end match;
+end instOperatorFunctions;
+
+// function typeRecordCall
+  // input Absyn.ComponentRef recName;
+  // input Absyn.FunctionArgs callArgs;
+  // input InstNode classNode;
+  // input Type classType;
+  // input InstNode callScope;
+  // input SourceInfo info;
+  // output Expression typedExp;
+  // output Type ty;
+  // output DAE.Const variability;
+// protected
+ // InstNode instClassNode;
+ // list<InstNode> inputs;
+ // Component comp;
+ // DAE.VarKind vari;
+ // list<Func.FunctionSlot> slots;
+ // list<Dimension> vectDims;
+ // NFExpression.CallAttributes ca;
+ // list <Expression> recElems, recExps;
+ // Absyn.Path recPath;
+// algorithm
+  // typedExp := Expression.INTEGER(0);
+  // ty := Type.UNKNOWN();
+  // variability := DAE.Const.C_VAR();
+
+ // inputs := getRecordConstructorInputs(classNode);
+
+ // slots := Func.createAndFillSlots(recName, prefix, inputs, callArgs, callScope, info);
+
+ // (slots,vectDims) := Func.typeCheckFunctionSlots(slots, Absyn.crefToPath(recName), prefix, info);
+ // (recElems, variability) := Func.argsFromSlots(slots);
+
+ // ty := classType;
+ // // Prefix?
+ // recPath := Absyn.crefToPath(recName);
+
+ // if listLength(vectDims) == 0 then
+   // typedExp := Expression.RECORD(recPath, ty, recElems);
+ // else
+   // recExps := vectorizeRecordCall(recPath, ty, recElems, vectDims);
+   // typedExp := Expression.arrayFromList(recExps, ty, vectDims);
+ // end if;
+
+// end typeRecordCall;
+
+// function createAndFillSlots
+ // input Absyn.ComponentRef funcName;
+ // input list<InstNode> funcInputs;
+ // input Absyn.FunctionArgs callArgs;
+ // input InstNode callScope;
+ // input SourceInfo info;
+ // output list<Func.FunctionSlot> filledSlots;
+// protected
+ // Component comp;
+ // DAE.VarKind vari;
+ // DAE.Const const;
+ // list<Absyn.Exp> posargs;
+ // list<Absyn.NamedArg> namedargs;
+ // Func.FunctionSlot sl;
+ // list<Func.FunctionSlot> slots, posfilled;
+ // Expression argExp;
+ // Type argTy;
+ // DAE.Const argConst;
+// algorithm
+
+ // slots := {};
+ // for compnode in funcInputs loop
+   // // argName := InstNode.name(compnode);
+   // comp := InstNode.component(compnode);
+   // vari := Component.variability(comp);
+   // const := Typing.variabilityToConst(NFInstUtil.daeToSCodeVariability(vari));
+   // // bind := Component.getBinding(comp)
+   // // ty := Component.getType(comp);
+   // slots := Func.SLOT(InstNode.name(compnode),
+                 // NONE(),
+                 // Component.getBinding(comp),
+                 // SOME((Component.getType(comp), const)),
+                 // false)::slots;
+ // end for;
+ // slots := listReverse(slots);
+
+ // Absyn.FUNCTIONARGS(args = posargs, argNames = namedargs) := callArgs;
+
+ // posfilled := {};
+ // // handle positional args
+ // for arg in posargs loop
+   // (argExp, argTy, argConst) := Typing.typeExp(arg, callScope, info);
+   // sl::slots := slots;
+   // sl := Func.fillPosSlotWithArg(sl,(argExp, argTy, argConst));
+   // posfilled := sl::posfilled;
+ // end for;
+ // slots := listAppend(listReverse(posfilled), slots);
+
+ // // handle named args
+ // for narg in namedargs loop
+   // Absyn.NAMEDARG() := narg;
+   // (argExp, argTy, argConst) := Typing.typeExp(narg.argValue, callScope, info);
+   // slots := Func.fillNamedSlot(slots, narg.argName, (argExp, argTy, argConst), Absyn.crefToPath(funcName), info);
+ // end for;
+
+ // filledSlots := slots;
+// end createAndFillSlots;
+
+// function getRecordConstructorInputs
+ // input InstNode classNode;
+ // output list<InstNode> inputs = {};
+// protected
+ // InstNode compnode;
+ // Component.Attributes attr;
+ // array<InstNode> components;
+ // Component comp;
+// algorithm
+ // Class.INSTANCED_CLASS(components = components) := InstNode.getClass(classNode);
+
+ // for i in arrayLength(components):-1:1 loop
+    // comp := InstNode.component(components[i]);
+    // if Component.isPublic(comp) then
+      // if Component.isConst(comp) then
+        // if not Component.hasBinding(comp) then
+          // inputs := components[i]::inputs;
+        // end if;
+      // else
+        // inputs := components[i]::inputs;
+      // end if;
+    // end if;
+ // end for;
+// end getRecordConstructorInputs;
+
+// function vectorizeRecordCall
+ // input Absyn.Path inRecName;
+ // input Type recType;
+ // input list<Expression> valExps;
+ // input list<Dimension> vecDims;
+ // output list<Expression> outRecs;
+// protected
+ // list<list<Subscript>> vectsubs;
+ // list<list<Expression>> vecargslst;
+// algorithm
+
+ // // Create combinations of each dims subs, i.e., expand an array[dims]
+ // vectsubs := Func.vectorizeDims(vecDims);
+
+ // // Apply the set of subs to each argument, i.e., expand each arg.
+ // vecargslst := {};
+ // for currsubs in vectsubs loop
+   // vecargslst := list(Expression.subscript(arg, currsubs) for arg in valExps)::vecargslst;
+ // end for;
+
+
+ // outRecs := {};
+ // for vals in vecargslst loop
+   // outRecs := Expression.RECORD(inRecName, recType, vals)::outRecs;
+ // end for;
+
+// end vectorizeRecordCall;
+
+// function recVariabilityfromSlots
+ // "Not sure about how to deal with record variability. But this should do for now."
+ // input list<Func.FunctionSlot> slots;
+ // output DAE.Const variability;
+// protected
+ // DAE.Const const;
+ // Binding b;
+// algorithm
+ // variability := DAE.C_CONST();
+ // for s in slots loop
+   // Func.SLOT() := s;
+   // if isSome(s.arg) then
+     // SOME((_, _, const)) := s.arg;
+     // variability := Types.constAnd(variability, const);
+   // else
+     // variability := match s.default
+     // // TODO FIXME what do we do with the propagatedDims?
+       // case b as Binding.TYPED_BINDING()
+         // then Types.constAnd(variability, b.variability);
+       // else
+         // algorithm
+           // Error.addMessage(Error.INTERNAL_ERROR, {"NFRecord.typeRecordCall failed."});
+         // then fail();
+       // end match;
+   // end if;
+ // end for;
+// end recVariabilityfromSlots;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

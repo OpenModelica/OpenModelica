@@ -41,6 +41,9 @@ import NFFunction.Function;
 import Pointer;
 import Error;
 
+protected
+import List;
+
 public
 uniontype InstNodeType
   record NORMAL_CLASS
@@ -87,12 +90,15 @@ encapsulated package NodeTree
   annotation(__OpenModelica_Interface="util");
 end NodeTree;
 
-uniontype CachedData
-  record NO_CACHE end NO_CACHE;
 
-  record CLASS
-    InstNode instance;
-  end CLASS;
+constant Integer NUMBER_OF_CACHES = 3;
+constant Integer FUNCTION_CACHE = 1;
+constant Integer PACKAGE_CACHE = 2;
+constant Integer TOP_SCOPE_CACHE = 3;
+
+uniontype CachedData
+
+  record NO_CACHE end NO_CACHE;
 
   record PACKAGE
     InstNode instance;
@@ -110,26 +116,70 @@ uniontype CachedData
   end TOP_SCOPE;
 
   function empty
-    output Pointer<CachedData> cache = Pointer.create(NO_CACHE());
+    output array<CachedData> cache = arrayCreate(NUMBER_OF_CACHES, NO_CACHE());
   end empty;
 
   function addFunc
     input Function fn;
     input Boolean specialBuiltin;
-    input output CachedData cache;
+    input array<CachedData> caches;
+  protected
+    CachedData func_cache;
   algorithm
-    cache := match cache
+    func_cache := getFuncCache(caches);
+    func_cache := match func_cache
       case NO_CACHE() then FUNCTION({fn}, false, specialBuiltin);
       // Append to end so the error messages are ordered properly.
-      case FUNCTION() then FUNCTION(listAppend(cache.funcs,{fn}), false,
-                                    cache.specialBuiltin or specialBuiltin);
+      case FUNCTION() then FUNCTION(listAppend(func_cache.funcs,{fn}), false,
+                                    func_cache.specialBuiltin or specialBuiltin);
       else
         algorithm
           assert(false, getInstanceName() + ": Invalid cache for function");
         then
           fail();
     end match;
+
+    setFuncCache(caches, func_cache);
   end addFunc;
+
+  function getFuncCache
+    input array<CachedData> in_caches;
+    output CachedData out_cache = arrayGet(in_caches, 1);
+  end getFuncCache;
+
+  function setFuncCache
+    input array<CachedData> in_caches;
+    input CachedData in_cache;
+    algorithm
+      arrayUpdate(in_caches, 1, in_cache);
+  end setFuncCache;
+
+  function getPackageCache
+    input array<CachedData> in_caches;
+    output CachedData out_cache = arrayGet(in_caches, 2);
+  end getPackageCache;
+
+  function setPackageCache
+    input array<CachedData> in_caches;
+    input CachedData in_cache;
+    output array<CachedData> out_caches = arrayUpdate(in_caches, 2, in_cache);
+  end setPackageCache;
+
+  function clearPackageCache
+    input array<CachedData> in_caches;
+    output array<CachedData> out_caches = arrayUpdate(in_caches, 2, NO_CACHE());
+  end clearPackageCache;
+
+  function getInnerOuterCache
+    input array<CachedData> in_caches;
+    output CachedData out_cache = arrayGet(in_caches, 3);
+  end getInnerOuterCache;
+
+  function setInnerOuterCache
+    input array<CachedData> in_caches;
+    input CachedData in_cache;
+    output array<CachedData> out_caches = arrayUpdate(in_caches, 3, in_cache);
+  end setInnerOuterCache;
 end CachedData;
 
 uniontype InstNode
@@ -137,7 +187,7 @@ uniontype InstNode
     String name;
     SCode.Element definition;
     Pointer<Class> cls;
-    Pointer<CachedData> cached;
+    array<CachedData> caches;
     InstNode parentScope;
     InstNodeType nodeType;
   end CLASS_NODE;
@@ -586,6 +636,7 @@ uniontype InstNode
             case Class.DERIVED_CLASS() then getType(cls.baseClass);
             case Class.INSTANCED_CLASS() then Type.COMPLEX(node);
             case Class.PARTIAL_BUILTIN() then cls.ty;
+            case Class.INSTANCED_BUILTIN(ty = ANY_TYPE("unknown")) then ANY_TYPE(InstNode.name(node));
             case Class.INSTANCED_BUILTIN() then cls.ty;
             else Type.UNKNOWN();
           end match;
@@ -795,60 +846,85 @@ uniontype InstNode
     end match;
   end resolveOuter;
 
-  function cachedData
-    input InstNode node;
-    output CachedData cached;
-  algorithm
-    cached := match node
-      case CLASS_NODE() then Pointer.access(node.cached);
-      else CachedData.NO_CACHE();
-    end match;
-  end cachedData;
-
-  function setCachedData
-    input CachedData cached;
-    input output InstNode node;
-  algorithm
-    () := match node
-      case CLASS_NODE()
-        algorithm
-          Pointer.update(node.cached, cached);
-        then
-          ();
-    end match;
-  end setCachedData;
-
-  function resetCache
-    input output InstNode node;
-  algorithm
-    () := match node
-      case CLASS_NODE()
-        algorithm
-          node.cached := CachedData.empty();
-        then
-          ();
-    end match;
-  end resetCache;
-
   function cacheAddFunc
+    input output InstNode node;
     input Function fn;
     input Boolean specialBuiltin;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm CachedData.addFunc(fn, specialBuiltin, node.caches); then ();
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end cacheAddFunc;
+
+  function getFuncCache
+    input InstNode inNode;
+    output CachedData func_cache;
+  algorithm
+    func_cache := match inNode
+      case CLASS_NODE() then CachedData.getFuncCache(inNode.caches);
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end getFuncCache;
+
+  function setFuncCache
+    input output InstNode node;
+    input CachedData in_func_cache;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm CachedData.setFuncCache(node.caches, in_func_cache); then ();
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end setFuncCache;
+
+  function getPackageCache
+    input InstNode inNode;
+    output CachedData pack_cache;
+  algorithm
+    pack_cache := match inNode
+      case CLASS_NODE() then CachedData.getPackageCache(inNode.caches);
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end getPackageCache;
+
+  function setPackageCache
+    input output InstNode node;
+    input CachedData in_pack_cache;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, in_pack_cache); then ();
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end setPackageCache;
+
+  function clearPackageCache
     input output InstNode node;
   algorithm
     () := match node
-      case CLASS_NODE()
-        algorithm
-          Pointer.update(node.cached, CachedData.addFunc(fn, specialBuiltin, Pointer.access(node.cached)));
-        then
-          ();
-
-      else
-        algorithm
-          assert(false, getInstanceName() + " got node without cache");
-        then
-          fail();
+      case CLASS_NODE() algorithm CachedData.clearPackageCache(node.caches); then ();
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
     end match;
-  end cacheAddFunc;
+  end clearPackageCache;
+
+  function getInnerOuterCache
+    input InstNode inNode;
+    output CachedData pack_cache;
+  algorithm
+    pack_cache := match inNode
+      case CLASS_NODE() then CachedData.getInnerOuterCache(inNode.caches);
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end getInnerOuterCache;
+
+  function setInnerOuterCache
+    input output InstNode node;
+    input CachedData in_out_cache;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm CachedData.setInnerOuterCache(node.caches, in_out_cache); then ();
+      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+    end match;
+  end setInnerOuterCache;
 
   function openImplicitScope
     input output InstNode scope;

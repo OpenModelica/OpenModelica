@@ -57,6 +57,9 @@ import NFInstNode.CachedData;
 import Lookup = NFLookup;
 import ClassTree = NFClassTree.ClassTree;
 import Prefixes = NFPrefixes;
+import NFLookupState.LookupState;
+import Record = NFRecord;
+
 import MatchKind = NFTypeCheck.MatchKind;
 
 public
@@ -182,17 +185,15 @@ uniontype Function
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
   end new;
 
-  protected
   function lookupFunction
     input Absyn.ComponentRef functionName;
     input InstNode scope;
     input SourceInfo info;
-    output InstNode node;
     output ComponentRef functionRef;
-    output Absyn.Path functionPath;
   protected
-    ComponentRef cref;
     InstNode found_scope;
+    LookupState state;
+    Absyn.Path functionPath;
   algorithm
     try
       // Make sure the name is a path.
@@ -202,16 +203,9 @@ uniontype Function
         {Dump.printComponentRefStr(functionName)}, info);
     end try;
 
-    // Look up the function and create a cref for it.
-    (cref, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
-    node := ComponentRef.node(cref);
+    (functionRef, found_scope) := Lookup.lookupCallableName(functionName, scope, info);
+    // (functionRef, found_scope, state) := Lookup.lookupCref(functionName, scope, info);
 
-    for s in InstNode.scopeList(found_scope) loop
-      functionPath := Absyn.QUALIFIED(InstNode.name(s), functionPath);
-    end for;
-
-    functionRef := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-    functionRef := ComponentRef.append(cref, functionRef);
   end lookupFunction;
 
   public
@@ -224,40 +218,67 @@ uniontype Function
     output Boolean specialBuiltin;
   protected
     CachedData cache;
-    Absyn.Path fn_path;
   algorithm
     // Look up the the function.
-    (fn_node, fn_ref, fn_path) := lookupFunction(functionName, scope, info);
-    cache := InstNode.cachedData(fn_node);
+    fn_ref := lookupFunction(functionName, scope, info);
+    fn_node := ComponentRef.node(fn_ref);
+    cache := InstNode.getFuncCache(fn_node);
 
     // Check if a cached instantiation of this function already exists.
     (fn_node, specialBuiltin) := match cache
       case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
-      else instFunc2(fn_path,fn_node, info);
+      else instFunc2(ComponentRef.toPath(fn_ref),fn_node, info);
     end match;
   end instFunc;
 
-  protected
   function instFunc2
     input Absyn.Path fnPath;
     input output InstNode fnNode;
     input SourceInfo info;
           output Boolean specialBuiltin;
+  protected
+    SCode.Element def;
   algorithm
-    (fnNode, specialBuiltin) := match InstNode.definition(fnNode)
+
+    def := InstNode.definition(fnNode);
+
+    (fnNode, specialBuiltin) := match def
       local
         SCode.ClassDef cdef;
         Function fn;
         Absyn.ComponentRef cr;
         InstNode sub_fnNode;
+        list<Function> funcs;
+
+      case SCode.CLASS(classDef = cdef as SCode.PARTS()) guard SCode.isRecord(def)
+        algorithm
+          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
+          fnNode := Inst.instantiate(fnNode);
+          Inst.instExpressions(fnNode);
+          fn := Record.newDefaultConstructor(fnPath, fnNode);
+          fnNode := InstNode.cacheAddFunc(fnNode, fn, false);
+        then
+          (fnNode, false);
+
+      case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
+        algorithm
+          // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
+          fnNode := Inst.instantiate(fnNode);
+          Inst.instExpressions(fnNode);
+          funcs := Record.instOperatorFunctions(fnNode, info);
+          for f in funcs loop
+            fnNode := InstNode.cacheAddFunc(fnNode, f, false);
+          end for;
+        then
+          (fnNode, false);
 
       case SCode.CLASS(classDef = cdef as SCode.OVERLOAD())
         algorithm
           for p in cdef.pathLst loop
             cr := Absyn.pathToCref(p);
-            (_,sub_fnNode) := instFunc(cr,fnNode /*This should be the scope right?*/,info);
+            (_,sub_fnNode,_) := instFunc(cr,fnNode,info);
             for f in getCachedFuncs(sub_fnNode) loop
-              fnNode := InstNode.cacheAddFunc(f, false, fnNode);
+              fnNode := InstNode.cacheAddFunc(fnNode, f, false);
             end for;
           end for;
         then
@@ -270,21 +291,20 @@ uniontype Function
           Inst.instExpressions(fnNode);
           fn := Function.new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
-          fnNode := InstNode.cacheAddFunc(fn, specialBuiltin, fnNode);
+          fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
         then
           (fnNode, specialBuiltin);
 
     end match;
   end instFunc2;
 
-  public
   function getCachedFuncs
     input InstNode inNode;
     output list<Function> outFuncs;
   protected
     CachedData cache;
   algorithm
-    cache := InstNode.cachedData(inNode);
+    cache := InstNode.getFuncCache(inNode);
     outFuncs := match cache
       case CachedData.FUNCTION() then cache.funcs;
       else fail();
@@ -373,7 +393,7 @@ uniontype Function
     "Constructs a string representing a call, for use in error messages."
     input Function fn;
     input list<Expression> posArgs;
-    input list<tuple<String, Expression>> namedArgs;
+    input list<NamedArg> namedArgs;
     output String str;
   algorithm
     str := stringDelimitList(list(Expression.toString(arg) for arg in posArgs), ", ");
@@ -408,7 +428,7 @@ uniontype Function
     input list<TypedArg> posArgs;
     input list<TypedNamedArg> namedArgs;
     input Function fn;
-    input Option<SourceInfo> info;
+    input SourceInfo info;
     output list<TypedArg> args = posArgs;
     output Boolean matching;
   protected
@@ -454,7 +474,7 @@ uniontype Function
     input list<TypedNamedArg> namedArgs;
     input list<Slot> slots;
     input Function fn;
-    input Option<SourceInfo> info;
+    input SourceInfo info;
     output list<TypedArg> args = {};
     output Boolean matching = true;
   protected
@@ -479,7 +499,7 @@ uniontype Function
     input TypedNamedArg inArg;
     input output array<Slot> slots;
     input Function fn "For error reporting";
-    input Option<SourceInfo> info;
+    input SourceInfo info;
           output Boolean matching = true;
   protected
     Slot s;
@@ -504,7 +524,7 @@ uniontype Function
         else
           // TODO: Improve the error message, should mention function name.
           Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-            {argName, ""}, Util.getOption(info));
+            {argName, ""}, info);
           matching := false;
         end if;
 
@@ -515,30 +535,27 @@ uniontype Function
     // No slot could be found.
     matching := false;
 
-    // Only print error if info is given.
-    if isSome(info) then
-      // A slot with the given name couldn't be found. This means it doesn't
-      // exist, or we removed it when handling positional argument. We need to
-      // search through all slots to be sure.
-      for s in fn.slots loop
-        if argName == s.name then
-          // We found a slot, so it must have already been filled.
-          Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-            {argName, ""}, Util.getOption(info));
-          return;
-        end if;
-      end for;
+    // A slot with the given name couldn't be found. This means it doesn't
+    // exist, or we removed it when handling positional argument. We need to
+    // search through all slots to be sure.
+    for s in fn.slots loop
+      if argName == s.name then
+        // We found a slot, so it must have already been filled.
+        Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
+          {argName, ""}, info);
+        return;
+      end if;
+    end for;
 
-      // No slot could be found, so it doesn't exist.
-      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
-        {InstNode.name(instance(fn)), argName}, Util.getOption(info));
-    end if;
+    // No slot could be found, so it doesn't exist.
+    Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+      {InstNode.name(instance(fn)), argName}, info);
   end fillNamedArg;
 
   function collectArgsNew
     "Collects the arguments from the given slots."
     input array<Slot> slots;
-    input Option<SourceInfo> info;
+    input SourceInfo info;
     output list<TypedArg> args = {};
     output Boolean matching = true;
   protected
@@ -557,10 +574,7 @@ uniontype Function
         case (SOME(e), _) then (e,Expression.typeOf(e),Variability.CONSTANT) ::args; // Otherwise, check that a default value exists.
         else // Give an error if no argument was given and there's no default value.
           algorithm
-            if isSome(info) then
-              Error.addSourceMessage(Error.UNFILLED_SLOT, {name}, Util.getOption(info));
-            end if;
-
+            Error.addSourceMessage(Error.UNFILLED_SLOT, {name}, info);
             matching := false;
           then
             args;
@@ -573,7 +587,7 @@ uniontype Function
   function matchArgs
     input Function func;
     input output list<TypedArg> args;
-    input Option<SourceInfo> info;
+    input SourceInfo info;
           output Boolean correct;
           output FunctionMatchKind funcMatchKind = EXACT_MATCH;
   protected
@@ -605,27 +619,21 @@ uniontype Function
 
       // Type mismatch, print an error.
       if not correct then
-        if isSome(info) then
-          Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
-            intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
-            Type.toString(ty), Type.toString(Component.getType(comp))
-          }, Util.getOption(info));
-        end if;
-
+        Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
+          intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
+          Type.toString(ty), Type.toString(Component.getType(comp))
+        }, info);
         return;
       end if;
 
       // Variability mismatch, print an error.
       if var > Component.variability(comp) then
         correct := false;
-
-        if isSome(info) then
-          Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
-            InstNode.name(inputnode), Expression.toString(argexp),
-            Prefixes.variabilityString(Component.variability(comp))
-          }, Util.getOption(info));
-          return;
-        end if;
+        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
+          InstNode.name(inputnode), Expression.toString(argexp),
+          Prefixes.variabilityString(Component.variability(comp))
+        }, info);
+        return;
       end if;
 
       checked_args := (margexp,mty,var) :: checked_args;
@@ -843,21 +851,6 @@ protected
       name := InstNode.name(component);
       hasDefault := isSome(default);
 
-      // function F
-      //   input Real a = 1;
-      //   input Real b;
-      // end F;
-      // F(b=2);  is a valid call
-      /*
-      // All parameters with default arguments should be declared last in a
-      // function, otherwise it's useless to have default arguments. Modelica
-      // does not seem to strictly forbid this, so we just give a warning.
-      if defaultRequired and not hasDefault then
-        Error.addSourceMessage(Error.MISSING_DEFAULT_ARG,
-          {name}, InstNode.info(component));
-      end if;
-      */
-
       // Remove $in_ for OM input output arguments.
       if stringGet(name, 1) == 36 /*$*/ then
         if stringLength(name) > 4 and substring(name, 1, 4) == "$in_" then
@@ -1014,6 +1007,7 @@ protected
       case Type.CLOCK() then true;
       case Type.ENUMERATION() then true;
       case Type.ENUMERATION_ANY() then true;
+      case Type.ANY_TYPE() then true;
       case Type.ARRAY() then isValidParamType(ty.elementType);
       case Type.COMPLEX() then isValidParamState(ty.cls);
     end match;

@@ -121,6 +121,26 @@ algorithm
   end if;
 end fixTypenameState;
 
+function lookupCallableName
+  input Absyn.ComponentRef cref;
+  input InstNode scope "The scope to look in.";
+  input SourceInfo info;
+  output ComponentRef foundCref;
+  output InstNode foundScope;
+protected
+  LookupState state;
+  InstNode node;
+algorithm
+  (foundCref, foundScope, state) := lookupCref(cref, scope, info);
+  node := ComponentRef.node(foundCref);
+
+  //try
+    LookupState.assertFunction(state, node, cref, info);
+  //else
+  //end try;
+
+end lookupCallableName;
+
 function lookupFunctionName
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
@@ -554,6 +574,7 @@ algorithm
     case "Integer" then NFBuiltin.INTEGER_NODE;
     case "Boolean" then NFBuiltin.BOOLEAN_NODE;
     case "String" then NFBuiltin.STRING_NODE;
+    case "polymorphic" then NFBuiltin.ANYTYPE_NODE;
   end match;
 end lookupSimpleBuiltinName;
 
@@ -706,7 +727,7 @@ protected
   Option<InstNode> inner_node_opt;
   InstNode inner_node;
 algorithm
-  cache := InstNode.cachedData(topScope);
+  cache := InstNode.getInnerOuterCache(topScope);
 
   () := match cache
     case CachedData.TOP_SCOPE()
@@ -722,7 +743,7 @@ algorithm
           innerNode := makeInnerNode(outerNode);
           innerNode := InstNode.setParent(cache.rootClass, innerNode);
           cache.addedInner := NodeTree.add(cache.addedInner, name, innerNode);
-          InstNode.setCachedData(cache, topScope);
+          InstNode.setInnerOuterCache(topScope, cache);
         end if;
       then
         ();

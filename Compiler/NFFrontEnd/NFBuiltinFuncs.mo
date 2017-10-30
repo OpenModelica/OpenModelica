@@ -101,7 +101,7 @@ constant Function INTEGER = Function.FUNCTION(Path.IDENT("Integer"),
 // String(r, significantDigits=d, minimumLength=0, leftJustified=true)
 constant InstNode STRING_NODE = NFInstNode.CLASS_NODE("String", DUMMY_ELEMENT,
   Pointer.createImmutable(Class.NOT_INSTANTIATED()),
-  Pointer.createImmutable(CachedData.NO_CACHE()),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant Function STRING_REAL = Function.FUNCTION(Path.IDENT("String"),

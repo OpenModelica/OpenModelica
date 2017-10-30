@@ -114,7 +114,7 @@ algorithm
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(), cls);
 
   // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setCachedData(CachedData.TOP_SCOPE(NodeTree.new(), cls), top);
+  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
   inst_cls := instantiate(cls);
@@ -678,7 +678,7 @@ protected
   CachedData cache;
   InstNode inst;
 algorithm
-  cache := InstNode.cachedData(node);
+  cache := InstNode.getPackageCache(node);
 
   node := match cache
     case CachedData.PACKAGE() then cache.instance;
@@ -687,11 +687,11 @@ algorithm
       algorithm
         // Cache the package node itself first, to avoid instantiation loops if
         // the package uses itself somehow.
-        InstNode.setCachedData(CachedData.PACKAGE(node), node);
+        InstNode.setPackageCache(node, CachedData.PACKAGE(node));
         // Instantiate the node.
         inst := instantiate(node);
         // Cache the instantiated node and instantiate expressions in it too.
-        InstNode.setCachedData(CachedData.PACKAGE(inst), node);
+        InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
         instExpressions(inst);
       then
         inst;
@@ -881,7 +881,7 @@ algorithm
 
       partialInstClass(node);
       node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
-      node := InstNode.resetCache(node);
+      node := InstNode.clearPackageCache(node);
       Mutable.update(node_ptr, node);
     end if;
   end for;
@@ -1909,7 +1909,7 @@ protected
   Class cls;
   ClassTree cls_tree;
 algorithm
-  CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.cachedData(topScope);
+  CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.getInnerOuterCache(topScope);
 
   // Empty tree => nothing more to do.
   if NodeTree.isEmpty(inner_tree) then

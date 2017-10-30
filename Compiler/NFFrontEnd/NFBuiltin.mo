@@ -92,6 +92,11 @@ encapsulated package Elements
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.noComment, Absyn.dummyInfo);
 
+  constant SCode.Element ANY = SCode.CLASS("polymorphic",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+    SCode.noComment, Absyn.dummyInfo);
+
   constant SCode.Element STATESELECT = SCode.CLASS("StateSelect",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.ENUMERATION({
@@ -108,16 +113,22 @@ end Elements;
 // InstNodes for the builtin types. These have empty class trees to prevent
 // access to the attributes via dot notation (which is not needed for
 // modifiers and illegal in other cases).
+constant InstNode ANYTYPE_NODE = InstNode.CLASS_NODE("polymorphic",
+  Elements.ANY,
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ANY_TYPE("unknown"), NFClassTree.EMPTY, Modifier.NOMOD())),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
 constant InstNode REAL_NODE = InstNode.CLASS_NODE("Real",
   Elements.REAL,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.REAL(), NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.INTEGER(), NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true, false)),
+  listArray({NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true, false), NFInstNode.CachedData.NO_CACHE(), NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant ComponentRef INTEGER_CREF =
@@ -126,7 +137,7 @@ constant ComponentRef INTEGER_CREF =
 constant InstNode BOOLEAN_NODE = InstNode.CLASS_NODE("Boolean",
   Elements.BOOLEAN,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.BOOLEAN(), NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant ComponentRef BOOLEAN_CREF =
@@ -135,10 +146,15 @@ constant ComponentRef BOOLEAN_CREF =
 constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   Elements.STRING,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.STRING(), NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.FUNCTION({
-    NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
-    NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
-    NFBuiltinFuncs.STRING_REAL_FORMAT}, true, false)),
+  listArray({ NFInstNode.CachedData.FUNCTION({
+	                                              NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
+	                                              NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
+	                                              NFBuiltinFuncs.STRING_REAL_FORMAT
+                                              },
+                                              true, false),
+              NFInstNode.CachedData.NO_CACHE(),
+              NFInstNode.CachedData.NO_CACHE()}
+            ),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant ComponentRef STRING_CREF =
@@ -147,7 +163,7 @@ constant ComponentRef STRING_CREF =
 constant InstNode ENUM_NODE = InstNode.CLASS_NODE("enumeration",
   Elements.ENUMERATION,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant Type STATESELECT_TYPE = Type.ENUMERATION(
@@ -156,7 +172,7 @@ constant Type STATESELECT_TYPE = Type.ENUMERATION(
 constant InstNode STATESELECT_NODE = InstNode.CLASS_NODE("StateSelect",
   Elements.STATESELECT,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(STATESELECT_TYPE, NFClassTree.EMPTY, Modifier.NOMOD())),
-  Pointer.createImmutable(NFInstNode.CachedData.NO_CACHE()),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant ComponentRef STATESELECT_CREF =

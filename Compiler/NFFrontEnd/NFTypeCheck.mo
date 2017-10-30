@@ -61,7 +61,6 @@ import DAEUtil;
 import Prefixes = NFPrefixes;
 
 public
-
 type MatchKind = enumeration(
   EXACT "Exact match",
   CAST  "Matched by casting, e.g. Integer to real",
@@ -1645,6 +1644,20 @@ algorithm
     case (_, Type.UNKNOWN())
       then (actualType,
         if allowUnknown then MatchKind.UNKNOWN_EXPECTED else MatchKind.NOT_COMPATIBLE);
+
+    case (_, Type.ANY_TYPE())
+      algorithm
+        expression := Expression.BOX(expression);
+        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
+      then
+        (Type.T_METABOXED(actualType), MatchKind.GENERIC);
+
+    case (Type.ANY_TYPE(), _)
+      algorithm
+        // expression := Expression.UNBOX(expression, Expression.typeOf(expression));
+        // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
+      then
+        (expectedType, MatchKind.GENERIC);
 
     // Anything else is not compatible.
     else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
