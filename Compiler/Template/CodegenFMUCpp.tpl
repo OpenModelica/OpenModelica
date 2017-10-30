@@ -177,16 +177,16 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual void initialize();
 
     // getters for given value references
-    virtual void getReal(const unsigned int vr[], int nvr, double value[]);
-    virtual void getInteger(const unsigned int vr[], int nvr, int value[]);
-    virtual void getBoolean(const unsigned int vr[], int nvr, int value[]);
-    virtual void getString(const unsigned int vr[], int nvr, string value[]);
+    virtual void getReal(const unsigned int vr[], size_t nvr, double value[]);
+    virtual void getInteger(const unsigned int vr[], size_t nvr, int value[]);
+    virtual void getBoolean(const unsigned int vr[], size_t nvr, int value[]);
+    virtual void getString(const unsigned int vr[], size_t nvr, string value[]);
 
     // setters for given value references
-    virtual void setReal(const unsigned int vr[], int nvr, const double value[]);
-    virtual void setInteger(const unsigned int vr[], int nvr, const int value[]);
-    virtual void setBoolean(const unsigned int vr[], int nvr, const int value[]);
-    virtual void setString(const unsigned int vr[], int nvr, const string value[]);
+    virtual void setReal(const unsigned int vr[], size_t nvr, const double value[]);
+    virtual void setInteger(const unsigned int vr[], size_t nvr, const int value[]);
+    virtual void setBoolean(const unsigned int vr[], size_t nvr, const int value[]);
+    virtual void setString(const unsigned int vr[], size_t nvr, const string value[]);
   };
 
   /// create instance of <%modelShortName%>FMU
@@ -499,7 +499,7 @@ case MODELINFO(vars=SIMVARS(__)) then
   <%accessVarsFunctionFMU1(simCode, direction, modelShortName, "Integer", "int", "_pointerToIntVars")%>
   <%accessVarsFunctionFMU1(simCode, direction, modelShortName, "Boolean", "int", "_pointerToBoolVars")%>
 
-  void <%modelShortName%>FMU::<%direction%>String(const unsigned int vr[], int nvr, <%qualifier%> string value[]) {
+  void <%modelShortName%>FMU::<%direction%>String(const unsigned int vr[], size_t nvr, <%qualifier%> string value[]) {
   }
   >>
 end accessFunctionsFMU1;
@@ -509,8 +509,8 @@ template accessVarsFunctionFMU1(SimCode simCode, String direction, String modelS
 ::=
   let qualifier = if stringEq(direction, "set") then "const"
   <<
-  void <%modelShortName%>FMU::<%direction%><%typeName%>(const unsigned int vr[], int nvr, <%qualifier%> <%typeImpl%> value[]) {
-    for (int i = 0; i < nvr; i++)
+  void <%modelShortName%>FMU::<%direction%><%typeName%>(const unsigned int vr[], size_t nvr, <%qualifier%> <%typeImpl%> value[]) {
+    for (size_t i = 0; i < nvr; i++)
     {
       <%if stringEq(direction, "get") then
         'value[i] = <%arrayName%>[vr[i]];'
@@ -539,8 +539,8 @@ template accessVarsFunctionFMU2(SimCode simCode, String direction, String modelS
 ::=
   let qualifier = if stringEq(direction, "set") then "const"
   <<
-  void <%modelShortName%>FMU::<%direction%><%typeName%>(const unsigned int vr[], int nvr, <%qualifier%> <%typeImpl%> value[]) {
-    for (int i = 0; i < nvr; i++, vr++, value++) {
+  void <%modelShortName%>FMU::<%direction%><%typeName%>(const unsigned int vr[], size_t nvr, <%qualifier%> <%typeImpl%> value[]) {
+    for (size_t i = 0; i < nvr; i++, vr++, value++) {
       // access variables and aliases in SimVars memory
       if (*vr < _dim<%typeName%>)
         <%if stringEq(direction, "get") then
