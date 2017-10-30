@@ -32,7 +32,7 @@
 #include "util/omc_error.h"
 #include "util/rtclock.h"
 #include "simulation/options.h"
-#include "simulation_result_mat.h"
+#include "simulation_result_mat4.h"
 
 #include <fstream>
 #include <iostream>

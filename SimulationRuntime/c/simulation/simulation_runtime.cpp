@@ -70,7 +70,6 @@
 #include "simulation_input_xml.h"
 #include "simulation/results/simulation_result_plt.h"
 #include "simulation/results/simulation_result_csv.h"
-#include "simulation/results/simulation_result_mat.h"
 #include "simulation/results/simulation_result_mat4.h"
 #include "simulation/results/simulation_result_wall.h"
 #include "simulation/results/simulation_result_ia.h"
@@ -549,12 +548,6 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
     sim_result.emit = omc_csv_emit;
     /* sim_result.writeParameterData = omc_csv_writeParameterData; */
     sim_result.free = omc_csv_free;
-  } else if(0 == strcmp("mat-old", simData->simulationInfo->outputFormat)) {
-    sim_result.init = mat4_init;
-    sim_result.emit = mat4_emit;
-    sim_result.writeParameterData = mat4_writeParameterData;
-    sim_result.free = mat4_free;
-    resultFormatHasCheapAliasesAndParameters = 1;
   } else if(0 == strcmp("mat", simData->simulationInfo->outputFormat)) {
     sim_result.init = mat4_init4;
     sim_result.emit = mat4_emit4;
