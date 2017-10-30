@@ -63,6 +63,7 @@ public:
     setNumberofIntervals(500);
     setStepSize(0.002);
     setOutputFormat("mat");
+    setSinglePrecision(false);
     setFileNamePrefix("");
     setResultFileName("");
     setVariableFilter("");
@@ -133,6 +134,8 @@ public:
   qreal getStepSize() {return mStepSize;}
   void setOutputFormat(QString outputFormat) {mOutputFormat = outputFormat;}
   QString getOutputFormat() {return mOutputFormat;}
+  void setSinglePrecision(bool singlePrecision) {mSinglePrecision = singlePrecision;}
+  bool getSinglePrecision() {return mSinglePrecision;}
   void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
   QString getFileNamePrefix() {return mFileNamePrefix;}
   QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
@@ -217,6 +220,7 @@ private:
   int mNumberofIntervals;
   qreal mStepSize;
   QString mOutputFormat;
+  bool mSinglePrecision;
   QString mFileNamePrefix;
   QString mResultFileName;
   QString mVariableFilter;

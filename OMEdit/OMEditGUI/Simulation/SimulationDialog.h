@@ -143,6 +143,7 @@ private:
   QWidget *mpOutputTab;
   Label *mpOutputFormatLabel;
   QComboBox *mpOutputFormatComboBox;
+  QCheckBox *mpSinglePrecisionCheckBox;
   Label *mpFileNameLabel;
   QLineEdit *mpFileNameTextBox;
   Label *mpResultFileNameLabel;

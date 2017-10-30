@@ -370,6 +370,8 @@ void SimulationDialog::setUpForm()
   mpOutputFormatLabel = new Label(tr("Output Format:"));
   mpOutputFormatComboBox = new QComboBox;
   mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
+  // single precision
+  mpSinglePrecisionCheckBox = new QCheckBox(tr("Single Precision"));
   // Output filename
   mpFileNameLabel = new Label(tr("File Name Prefix (Optional):"));
   mpFileNameTextBox = new QLineEdit;
@@ -398,17 +400,18 @@ void SimulationDialog::setUpForm()
   pOutputTabLayout->setAlignment(Qt::AlignTop);
   pOutputTabLayout->addWidget(mpOutputFormatLabel, 0, 0);
   pOutputTabLayout->addWidget(mpOutputFormatComboBox, 0, 1, 1, 2);
-  pOutputTabLayout->addWidget(mpFileNameLabel, 1, 0);
-  pOutputTabLayout->addWidget(mpFileNameTextBox, 1, 1, 1, 2);
-  pOutputTabLayout->addWidget(mpResultFileNameLabel, 2, 0);
-  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 2, 1);
-  pOutputTabLayout->addWidget(mpResultFileName, 2, 2);
-  pOutputTabLayout->addWidget(mpVariableFilterLabel, 3, 0);
-  pOutputTabLayout->addWidget(mpVariableFilterTextBox, 3, 1, 1, 2);
-  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 4, 0, 1, 3);
-  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 5, 0, 1, 3);
-  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 6, 0, 1, 3);
-  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 7, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpSinglePrecisionCheckBox, 1, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpFileNameLabel, 2, 0);
+  pOutputTabLayout->addWidget(mpFileNameTextBox, 2, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpResultFileNameLabel, 3, 0);
+  pOutputTabLayout->addWidget(mpResultFileNameTextBox, 3, 1);
+  pOutputTabLayout->addWidget(mpResultFileName, 3, 2);
+  pOutputTabLayout->addWidget(mpVariableFilterLabel, 4, 0);
+  pOutputTabLayout->addWidget(mpVariableFilterTextBox, 4, 1, 1, 2);
+  pOutputTabLayout->addWidget(mpProtectedVariablesCheckBox, 5, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpEquidistantTimeGridCheckBox, 6, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpStoreVariablesAtEventsCheckBox, 7, 0, 1, 3);
+  pOutputTabLayout->addWidget(mpShowGeneratedFilesCheckBox, 8, 0, 1, 3);
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
@@ -685,6 +688,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           mpRestartAfterEventCheckBox->setChecked(false);
         } else if (simulationFlag.compare("noRootFinding") == 0) {
           mpRootFindingCheckBox->setChecked(false);
+        } else if (simulationFlag.compare("single") == 0) {
+          mpSinglePrecisionCheckBox->setChecked(true);
         } else if (simulationFlag.compare("emit_protected") == 0) {
           mpProtectedVariablesCheckBox->setChecked(true);
         } else if (simulationFlag.compare("f") == 0) {
@@ -807,6 +812,16 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpNumberofIntervalsSpinBox->setValue(simulationOptions.getNumberofIntervals());
     // Interval
     mpIntervalTextBox->setText(QString::number(simulationOptions.getStepSize()));
+    // output format
+    bool state = mpOutputFormatComboBox->blockSignals(true);
+    currentIndex = mpOutputFormatComboBox->findText(simulationOptions.getOutputFormat(), Qt::MatchExactly);
+    if (currentIndex > -1) {
+      mpOutputFormatComboBox->setCurrentIndex(currentIndex);
+    }
+    mpOutputFormatComboBox->blockSignals(state);
+    // single precision
+    mpSinglePrecisionCheckBox->setChecked(simulationOptions.getSinglePrecision());
+    mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
     // Output filename
     mpFileNameTextBox->setDisabled(true);
     // Variable filter
@@ -966,6 +981,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     simulationOptions.setStepSize(mpIntervalTextBox->text().toDouble());
   }
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
+  simulationOptions.setSinglePrecision(mpSinglePrecisionCheckBox->isChecked());
   if (!mpFileNameTextBox->text().isEmpty()) {
     simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
   } else if (mClassName.contains('\'')) {
@@ -1045,6 +1061,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     if (mpMaxIntegrationOrderSpinBox->value() != 5) {
       simulationFlags.append(QString("-maxIntegrationOrder=").append(QString::number(mpMaxIntegrationOrderSpinBox->value())));
     }
+  }
+  // single precision
+  if ((simulationOptions.getOutputFormat().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+    simulationFlags.append("-single");
   }
   // emit protected variables
   if (mpProtectedVariablesCheckBox->isChecked()) {
@@ -1257,6 +1277,9 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   if (!mpRootFindingCheckBox->isChecked()) {
     simulationFlags.insert("noRootFinding", "()");
+  }
+  if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
+    simulationFlags.insert("single", "()");
   }
   if (mpProtectedVariablesCheckBox->isChecked()) {
     simulationFlags.insert("emit_protected", "()");
@@ -1950,7 +1973,10 @@ void SimulationDialog::resultFileNameChanged(QString text)
     } else {
       mpResultFileName->setText(QString("%1_res.%2").arg(text).arg(mpOutputFormatComboBox->currentText()));
     }
-  } else if (pComboBoxSender && !mpResultFileNameTextBox->text().isEmpty()) {
-    mpResultFileName->setText(QString("%1_res.%2").arg(mpResultFileNameTextBox->text()).arg(mpOutputFormatComboBox->currentText()));
+  } else if (pComboBoxSender) {
+    mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
+    if (!mpResultFileNameTextBox->text().isEmpty()) {
+      mpResultFileName->setText(QString("%1_res.%2").arg(mpResultFileNameTextBox->text()).arg(mpOutputFormatComboBox->currentText()));
+    }
   }
 }
