@@ -24,6 +24,10 @@ package Tpl
       Boolean lastHasNewLine "True when the last string in the list has new-line at the end.";
     end ST_STRING_LIST;
   end StringToken;
+
+  function debugSusan
+    output Boolean b;
+  end debugSusan;
 end Tpl;
 
 package TplAbsyn

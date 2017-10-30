@@ -520,7 +520,8 @@ constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(172, "ignoreCycles", false,
   Util.gettext("Ignores cycles between constant/parameter components."));
 constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(173, "aliasConflicts", false,
   Util.gettext("Dumps alias sets with different start or nominal values."));
-
+constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(174, "susanDebug", false,
+  Util.gettext("Makes Susan generate code using try/else to better debug which function broke the expected match semantics."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -700,7 +701,8 @@ constant list<DebugFlag> allDebugFlags = {
   MERGE_ALGORITHM_SECTIONS,
   WARN_NO_NOMINAL,
   IGNORE_CYCLES,
-  ALIAS_CONFLICTS
+  ALIAS_CONFLICTS,
+  SUSAN_MATCHCONTINUE_DEBUG
 };
 
 public

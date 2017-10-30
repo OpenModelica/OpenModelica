@@ -64,6 +64,8 @@ void mmc_init_stackoverflow(threadData_t *threadData);
 /* Does not work very well with many stack frames because we are close to the stack end when we need this data... */
 #define MMC_SEGV_TRACE_NFRAMES 1024
 
+void mmc_do_stackoverflow(threadData_t *threadData);
+
 static inline void mmc_check_stackoverflow(threadData_t *threadData)
 {
 #if __has_builtin(__builtin_frame_address) || defined(__GNUC__)
@@ -74,9 +76,7 @@ static inline void mmc_check_stackoverflow(threadData_t *threadData)
   if ((void*) &addr < threadData->stackBottom)
 #endif
   {
-    /* Do the jump */
-    mmc_setStacktraceMessages_threadData(threadData, 1, MMC_SEGV_TRACE_NFRAMES);
-    longjmp(*threadData->mmc_stack_overflow_jumper, 1);
+    mmc_do_stackoverflow(threadData);
   }
 }
 

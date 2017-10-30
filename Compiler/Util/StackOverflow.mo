@@ -78,6 +78,14 @@ end stripAddresses;
 
 public
 
+function triggerStackOverflow
+  external "C" mmc_do_stackoverflow(OpenModelica.threadData()) annotation(Documentation(info="<html>
+<p>Fakes a stack overflow (useful for debugging; forces earlier exit
+since most functions do not catch stack overflow, and gives you a
+stacktrace of the position you triggered this from).</p>
+</html>"));
+end triggerStackOverflow;
+
 function generateReadableMessage
   input Integer numFrames=1000;
   input Integer numSkip=4;

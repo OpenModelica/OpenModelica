@@ -232,3 +232,10 @@ void mmc_init_stackoverflow(threadData_t *threadData)
   threadData->stackBottom = 0x1; /* Dummy until Windows detects the stack bottom */
 }
 #endif
+
+void mmc_do_stackoverflow(threadData_t *threadData)
+{
+  /* Do the jump */
+  mmc_setStacktraceMessages_threadData(threadData, 1, MMC_SEGV_TRACE_NFRAMES);
+  longjmp(*threadData->mmc_stack_overflow_jumper, 1);
+}

@@ -57,8 +57,20 @@ template mmDeclaration(MMDeclaration it) ::=
        protected
          <%typedIdents(mf.locals)%>
        >>%>
-       algorithm
+       algorithm<%if debugSusan() then
+       <<
+
+       try
+       >>
+         %>
          <%sts |> it => '<%mmExp(it, ":=")%>;' ;separator="\n"%>
+       <%if debugSusan() then
+       <<
+       else
+         Tpl.fakeStackOverflow();
+       end try;
+       >>
+       %>
        >>
     %>
     end <%name%>;
@@ -70,7 +82,12 @@ template mmMatchFunBody(TypedIdents inArgs, TypedIdents outArgs, TypedIdents loc
   <%typedIdentsEx(inArgs, "input", "in_")%>
 
   <%typedIdentsEx(outArgs, "output", "out_")%>
-algorithm
+algorithm<% if debugSusan() then
+<<
+
+try
+>>
+%>
   <%match outArgs
    case {(nm,_)} then 'out_<%nm%>'
    case outArgs  then <<(<%outArgs |> (nm,_)=> 'out_<%nm%>' ;separator=", "%>)>>
@@ -91,7 +108,14 @@ algorithm
             case oas then '(<%oas |> (nm,_)=> nm ;separator=", "%>)'
            %>;
   >>;separator="\n"%>
-  end match;
+  end match;<% if debugSusan() then
+<<
+
+else
+  Tpl.fakeStackOverflow();
+end try;
+>>
+%>
 >>
 end mmMatchFunBody;
 

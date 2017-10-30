@@ -8,16 +8,18 @@ encapsulated package Tpl
   $Id$
 "
 
-protected import Config;
-protected import ClockIndexes;
-protected import Debug;
-protected import Error;
-protected import File;
-protected import Flags;
-protected import List;
-protected import Print;
-protected import StringUtil;
-protected import System;
+protected
+import Config;
+import ClockIndexes;
+import Debug;
+import Error;
+import File;
+import Flags;
+import List;
+import Print;
+import StackOverflow;
+import StringUtil;
+import System;
 
 // indentation will be implemented through spaces
 // where tabs will be converted where 1 tab = 4 spaces ??
@@ -1999,6 +2001,29 @@ algorithm
  end match;
 end failIfTrue;
 
+protected function tplCallHandleErrors
+  input Tpl_Fun inFun;
+  input output Text txt = emptyTxt;
+  input Integer nArg;
+
+  partial function Tpl_Fun
+    input Text in_txt;
+    output Text out_txt;
+  end Tpl_Fun;
+algorithm
+  try
+  try
+    txt := inFun(txt);
+  else
+    addTemplateErrorFunc(nArg, inFun);
+    fail();
+  end try;
+  else
+    addTemplateErrorFunc(nArg, inFun);
+    fail();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+end tplCallHandleErrors;
+
 public function tplCallWithFailErrorNoArg
   input Tpl_Fun inFun;
   input output Text txt = emptyTxt;
@@ -2008,18 +2033,13 @@ public function tplCallWithFailErrorNoArg
     output Text out_txt;
   end Tpl_Fun;
 algorithm
-  try
-    txt := inFun(txt);
-  else
-    addTemplateErrorFunc(0, inFun);
-    fail();
-  end try;
+  txt := tplCallHandleErrors(inFun, txt, 0);
 end tplCallWithFailErrorNoArg;
 
 public function tplCallWithFailError
   input Tpl_Fun inFun;
   input ArgType1 inArg;
-  output Text outTxt;
+  input output Text txt = emptyTxt;
 
   partial function Tpl_Fun
     input Text in_txt;
@@ -2028,25 +2048,15 @@ public function tplCallWithFailError
   end Tpl_Fun;
 protected
   ArgType1 arg;
-  Text txt;
 algorithm
-  outTxt := matchcontinue(inFun, inArg)
-    case(_, arg)
-      equation
-        txt = inFun(emptyTxt, arg);
-      then txt;
-    else
-      equation
-        addTemplateErrorFunc(1, inFun);
-      then fail();
-  end matchcontinue;
+  txt := tplCallHandleErrors(function inFun(inArgA=inArg), txt, 1);
 end tplCallWithFailError;
 
 public function tplCallWithFailError2
   input Tpl_Fun inFun;
   input ArgType1 inArgA;
   input ArgType2 inArgB;
-  output Text outTxt;
+  input output Text txt = emptyTxt;
 
   partial function Tpl_Fun
     input Text in_txt;
@@ -2057,20 +2067,8 @@ public function tplCallWithFailError2
 protected
   ArgType1 argA;
   ArgType2 argB;
-  Text txt;
 algorithm
- outTxt := matchcontinue(inFun, inArgA, inArgB)
-    local
-      String file,symbol;
-    case(_, argA, argB)
-      equation
-        txt = inFun(emptyTxt, argA, argB);
-      then txt;
-    else
-      equation
-        addTemplateErrorFunc(2, inFun);
-      then fail();
-  end matchcontinue;
+  txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB), txt, 2);
 end tplCallWithFailError2;
 
 function tplCallWithFailError3
@@ -2088,12 +2086,7 @@ function tplCallWithFailError3
     output Text out_txt;
   end Tpl_Fun;
 algorithm
-  try
-    txt := inFun(txt, inArgA, inArgB, inArgC);
-  else
-    addTemplateErrorFunc(3, inFun);
-    fail();
-  end try;
+  txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB, inArgC=inArgC), txt, 3);
 end tplCallWithFailError3;
 
 function tplCallWithFailError4
@@ -2113,12 +2106,7 @@ function tplCallWithFailError4
     output Text out_txt;
   end Tpl_Fun;
 algorithm
-  try
-    txt := func(txt, argA, argB, argC, argD);
-  else
-    addTemplateErrorFunc(4, func);
-    fail();
-  end try;
+  txt := tplCallHandleErrors(function func(inArgA=argA, inArgB=argB, inArgC=argC, inArgD=argD), txt, 4);
 end tplCallWithFailError4;
 
 public function tplString
@@ -2591,6 +2579,18 @@ algorithm
   then ();
   end match;
 end handleTok;
+
+public function debugSusan
+  output Boolean b;
+algorithm
+  b := Flags.isSet(Flags.SUSAN_MATCHCONTINUE_DEBUG);
+end debugSusan;
+
+public function fakeStackOverflow
+algorithm
+  Error.addInternalError("Stack overflow:\n" + StackOverflow.generateReadableMessage(), sourceInfo());
+  StackOverflow.triggerStackOverflow();
+end fakeStackOverflow;
 
 annotation(__OpenModelica_Interface="susan");
 end Tpl;
