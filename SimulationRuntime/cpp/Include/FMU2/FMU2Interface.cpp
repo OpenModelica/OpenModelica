@@ -406,8 +406,13 @@ extern "C"
                                           fmi2Real dvUnknown[])
   {
     FMU2Wrapper *w = reinterpret_cast<FMU2Wrapper*>(c);
-    LOG_CALL(w, "fmi2GetDirectionalDerivative not implemented");
-    return fmi2Error;
+    LOG_CALL(w, "fmi2GetDirectionalDerivative(nUnknown = %d, nKnown = %d)", nUnknown, nKnown);
+    try {
+      return w->getDirectionalDerivative(vUnknown_ref, nUnknown,
+                                         vKnown_ref, nKnown, dvKnown,
+                                         dvUnknown);
+    }
+    CATCH_EXCEPTION(w);
   }
 
   // ---------------------------------------------------------------------------

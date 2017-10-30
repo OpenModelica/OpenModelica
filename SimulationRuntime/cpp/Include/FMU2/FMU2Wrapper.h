@@ -162,6 +162,14 @@ class FMU2Wrapper
   virtual fmi2Status getContinuousStates(fmi2Real states[], size_t nx);
   virtual fmi2Status getNominalsOfContinuousStates(fmi2Real x_nominal[], size_t nx);
 
+  // Jacobian
+  fmi2Status getDirectionalDerivative(const fmi2ValueReference vrUnknown[],
+                                      size_t nUnknown,
+                                      const fmi2ValueReference vrKnown[],
+                                      size_t nKnown,
+                                      const fmi2Real dvKnown[],
+                                      fmi2Real dvUnknown[]);
+
  private:
   FMU2GlobalSettings _global_settings;
   Logger *_logger;

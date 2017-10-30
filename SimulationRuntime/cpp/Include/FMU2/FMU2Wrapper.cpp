@@ -477,4 +477,19 @@ fmi2Status FMU2Wrapper::getNominalsOfContinuousStates(fmi2Real x_nominal[], size
   return fmi2OK;
 }
 
+fmi2Status FMU2Wrapper::getDirectionalDerivative(const fmi2ValueReference vrUnknown[],
+                                                 size_t nUnknown,
+                                                 const fmi2ValueReference vrKnown[],
+                                                 size_t nKnown,
+                                                 const fmi2Real dvKnown[],
+                                                 fmi2Real dvUnknown[])
+{
+  if (_need_update)
+    updateModel();
+  _model->getDirectionalDerivative(vrUnknown, nUnknown,
+                                   vrKnown, nKnown, dvKnown,
+                                   dvUnknown);
+  return fmi2OK;
+}
+
 /** @} */ // end of fmu2
