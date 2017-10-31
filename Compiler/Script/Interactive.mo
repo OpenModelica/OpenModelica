@@ -957,7 +957,7 @@ end getApiFunctionNamedArgs;
 
 protected function evaluateGraphicalApi
 "Evaluating graphical api.
-  NOTE: the graphical API is always evaluated with checkModel ON and +d=nogen,noevalfunc ON"
+  NOTE: the graphical API is always evaluated with checkModel ON and -d=nogen,noevalfunc ON"
   input GlobalScript.Statements inStatements;
   input GlobalScript.SymbolTable inSymbolTable;
   input Boolean isPartialInst;

@@ -3827,7 +3827,7 @@ msgid ""
 "Sets the name of the corba session if -d=interactiveCorba or --"
 "interactive=corba is used."
 msgstr ""
-"Legt den Namen der CORBA-Sitzung fest, wenn +d=interactiveCorba verwendet "
+"Legt den Namen der CORBA-Sitzung fest, wenn -d=interactiveCorba verwendet "
 "wird."
 
 #: ../Util/Flags.mo:941
@@ -4012,7 +4012,7 @@ msgstr ""
 msgid ""
 "Sets the path for corba object reference file if -d=interactiveCorba is used."
 msgstr ""
-"Legt den Pfad für die CORBA Referenzdatei fest, wenn +d=interactiveCorba "
+"Legt den Pfad für die CORBA Referenzdatei fest, wenn -d=interactiveCorba "
 "verwendet wird."
 
 #: ../Util/Flags.mo:1066
@@ -4417,7 +4417,7 @@ msgstr ""
 #: ../Util/Flags.mo:1293
 msgid ""
 "Deactivates tearing for the specified components.\n"
-"Use '+d=tearingdump' to find out the relevant indexes."
+"Use '-d=tearingdump' to find out the relevant indexes."
 msgstr ""
 
 #: ../Util/Flags.mo:1296
@@ -4438,7 +4438,7 @@ msgstr "Legt die Methode zur Reduktion fest."
 #: ../Util/Flags.mo:1314
 msgid ""
 "Sets the tearing variables by its strong component indexes. Use "
-"'+d=tearingdump' to find out the relevant indexes.\n"
+"'-d=tearingdump' to find out the relevant indexes.\n"
 "Use following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = "
 "strong component index, n = number of tearing variables, t1,...tn = tearing "
 "variables.\n"
@@ -4449,7 +4449,7 @@ msgstr ""
 #: ../Util/Flags.mo:1317
 msgid ""
 "Sets the residual equations by its strong component indexes. Use "
-"'+d=tearingdump' to find out the relevant indexes for the collective "
+"'-d=tearingdump' to find out the relevant indexes for the collective "
 "equations.\n"
 "Use following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = "
 "strong component index, n = number of residual equations, r1,...rn = "
@@ -4477,7 +4477,7 @@ msgstr ""
 msgid ""
 "Activates total tearing (determination of all possible tearing sets) for the "
 "specified components.\n"
-"Use '+d=tearingdump' to find out the relevant indexes."
+"Use '-d=tearingdump' to find out the relevant indexes."
 msgstr ""
 
 #: ../Util/Flags.mo:1332
@@ -4570,7 +4570,7 @@ msgstr ""
 #, fuzzy
 msgid "Sets the file suffix for zeroMQ port file if --interactive=zmq is used."
 msgstr ""
-"Legt den Pfad für die CORBA Referenzdatei fest, wenn +d=interactiveCorba "
+"Legt den Pfad für die CORBA Referenzdatei fest, wenn -d=interactiveCorba "
 "verwendet wird."
 
 #: ../Util/Flags.mo:1383

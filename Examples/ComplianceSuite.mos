@@ -1,9 +1,9 @@
 // Runs the ModelicaCompliance suite
 // Output is the files "openmodelica.xml" and "openmodelica.html", which is a valid jUnit testcase and possible to generate html reports from (the generated file is one example, using the default xsl)
 
-setCommandLineOptions("+g=Modelica");
+setCommandLineOptions("-g=Modelica");
 loadModel(ModelicaCompliance);getErrorString();
-setCommandLineOptions("+g=MetaModelica");
+setCommandLineOptions("-g=MetaModelica");
 writeFile("version","omc "+getVersion()+" compliance suite "+getVersion(ModelicaCompliance));getErrorString();
 
 loadString("
@@ -23,7 +23,7 @@ system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
 allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
-commands:={"ulimit -t 120 && ("+getInstallationDirectoryPath()+"/bin/omc +d=nogen \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\"  > /dev/null 2>&1)" for cl in allClasses};
+commands:={"ulimit -t 120 && ("+getInstallationDirectoryPath()+"/bin/omc -d=nogen \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\"  > /dev/null 2>&1)" for cl in allClasses};
 echo(true);
 String(size(allClasses,1)) + " number of classes";
 

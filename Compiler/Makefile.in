@@ -75,7 +75,7 @@ else
 simcode: OpenModelicaBootstrappingHeader.h
 	$(MAKE) -C Template/
 OpenModelicaBootstrappingHeader.h: FrontEnd/Absyn.mo Script/GlobalScript.mo FrontEnd/Values.mo Util/Error.mo Util/Util.mo Util/FMI.mo GenerateOMCHeader.mos
-	@OMC@ +g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
+	@OMC@ -g=MetaModelica GenerateOMCHeader.mos > $@.log || (cat $@.log && false)
 	@mv $@.new $@
 endif
 $(SUSANMO): simcode

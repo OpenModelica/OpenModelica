@@ -159,7 +159,7 @@ CodegenJS.mo : CodegenJS.tpl SimCodeTV.mo
 
 TplCodegen.mo : ../susan_codegen/TplCodegen.tpl ../susan_codegen/TplCodegenTV.mo
 	@echo " ** TplCodegen generation ** "
-	(cd ../susan_codegen && $(OMC) +d=failtrace TplCodegen.tpl) > $@.log || (cat $@.log && false)
+	(cd ../susan_codegen && $(OMC) -d=failtrace TplCodegen.tpl) > $@.log || (cat $@.log && false)
 	cp -a ../susan_codegen/TplCodegen.mo $@
 
 TaskSystemDump.mo : TaskSystemDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl

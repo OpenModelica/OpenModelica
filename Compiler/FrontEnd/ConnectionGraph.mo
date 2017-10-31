@@ -1461,7 +1461,7 @@ algorithm
       IOStream.IOStream graphVizStream;
       list<String> infoNode;
 
-    // don't do anything if we don't have +d=cgraphGraphVizFile or +d=cgraphGraphVizShow
+    // don't do anything if we don't have -d=cgraphGraphVizFile or -d=cgraphGraphVizShow
     case(_, _, _, _, _, _, _, _)
       equation
         false = boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
@@ -1569,7 +1569,7 @@ algorithm
       String leftyCMD, fileNameTraceRemovedConnections, omhome, brokenConnects;
       Integer leftyExitStatus;
 
-    // do not start graphviz if we don't have +d=cgraphGraphVizShow
+    // do not start graphviz if we don't have -d=cgraphGraphVizShow
     case (_, _)
       equation
         false = Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);

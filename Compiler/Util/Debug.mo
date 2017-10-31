@@ -38,7 +38,7 @@ encapsulated package Debug
   Printing routines for debug output of strings. Also flag controlled
   printing. When flag controlled printing functions are called, printing is
   done only if the given flag is among the flags given in the runtime
-  arguments, to +d-flag, i.e. if +d=inst,lookup is given in the command line,
+  arguments, to +d-flag, i.e. if -d=inst,lookup is given in the command line,
   only calls containing these flags will actually print something, e.g.:
   fprint(\"inst\", \"Starting instantiation...\"). See runtime/rtopts.c for
   implementation of flag checking."

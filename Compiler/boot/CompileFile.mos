@@ -1,4 +1,4 @@
-setCommandLineOptions("+g=MetaModelica --debug=-buildExternalLibs");getErrorString(); // Do not set +d=rml yet, checkInterfaceOfPackages takes a Modelica matrix as input
+setCommandLineOptions("-g=MetaModelica --debug=-buildExternalLibs");getErrorString(); // Do not set -d=rml yet, checkInterfaceOfPackages takes a Modelica matrix as input
 if not loadFiles(files) /* TODO: Change to loadFiles */ then
   print("Failed to load files:\n" + getErrorString());
   exit(1);
@@ -15,7 +15,7 @@ if not checkInterfaceOfPackages(mainClass, {
   print(getErrorString());
   exit(1);
 end if;
-setCommandLineOptions("+d=rml");
+setCommandLineOptions("-d=rml");
 status:=OpenModelica.Scripting.generateSeparateCode(mainClass);
 (numMessages,numErrors,numWarnings) := countMessages();
 messageFile := "../" + typeNameString(mainClass) + ".log";

@@ -3033,7 +3033,7 @@ msgstr "Genererar kod med debugsymboler."
 #, fuzzy
 msgid "Enables dumping of selected states. Extends -d=backenddaeinfo."
 msgstr ""
-"Slår på dumpning av valda tillståndsvariabler. Utökar +d=backenddaeinfo."
+"Slår på dumpning av valda tillståndsvariabler. Utökar -d=backenddaeinfo."
 
 #: ../Util/Flags.mo:312
 msgid "Enables dumping of the equations in the order they are calculated."
@@ -3070,17 +3070,17 @@ msgstr "Utför grafbaserad instantiering."
 #: ../Util/Flags.mo:326
 #, fuzzy
 msgid "Run scode dependency analysis. Use with -d=graphInst"
-msgstr "Kör beroendeanalys på SCode. Används med +d=graphInst"
+msgstr "Kör beroendeanalys på SCode. Används med -d=graphInst"
 
 #: ../Util/Flags.mo:328
 #, fuzzy
 msgid "Dumps a graph of the program. Use with -d=graphInst"
-msgstr "Skriver ut en graf av programmet.. Används med +d=graphInst"
+msgstr "Skriver ut en graf av programmet.. Används med -d=graphInst"
 
 #: ../Util/Flags.mo:330
 #, fuzzy
 msgid "Display a graph of the program interactively. Use with -d=graphInst"
-msgstr "Visar en graf av programmet interaktivt. Används med +d=graphInst"
+msgstr "Visar en graf av programmet interaktivt. Används med -d=graphInst"
 
 #: ../Util/Flags.mo:332
 msgid "Dump the found replacements for constants."
@@ -3132,7 +3132,7 @@ msgstr "Stänger av genereringen av ekvationer för okopplade flow-variabler."
 #: ../Util/Flags.mo:354
 #, fuzzy
 msgid "Enables dumping of discrete variables. Extends -d=backenddaeinfo."
-msgstr "Slår på dumpning av diskreta variabler. Utökar +d=backenddaeinfo."
+msgstr "Slår på dumpning av diskreta variabler. Utökar -d=backenddaeinfo."
 
 #: ../Util/Flags.mo:356
 #, fuzzy
@@ -3814,7 +3814,7 @@ msgstr "Slår på tyst läge."
 #: ../Util/Flags.mo:863
 #, fuzzy
 msgid "Sets the name of the corba session if -d=interactiveCorba is used."
-msgstr "Anger namnet på corba-sessionen om +d=interactiveCorba används."
+msgstr "Anger namnet på corba-sessionen om -d=interactiveCorba används."
 
 #: ../Util/Flags.mo:867
 msgid "Sets the number of processors to use (0=default=auto)."
@@ -4012,7 +4012,7 @@ msgstr "Skaläriserar alltid bindningar om sann."
 msgid ""
 "Sets the path for corba object reference file if -d=interactiveCorba is used."
 msgstr ""
-"Anger namnet på objektreferens-filen för corba om +d=interactiveCorba "
+"Anger namnet på objektreferens-filen för corba om -d=interactiveCorba "
 "används."
 
 #: ../Util/Flags.mo:992
@@ -5044,22 +5044,22 @@ msgstr "Fel vid skrivning till fil %s."
 #~ msgid "Enables experimental SCode instantiation shortcut phase."
 #~ msgstr "Slår på experimentell SCode instansierings-fas."
 
-#~ msgid "Shows the SCode result of +d=scodeInstShortcut."
-#~ msgstr "Skriver ut SCode-resultatet av +d=scodeInstShortcut."
+#~ msgid "Shows the SCode result of -d=scodeInstShortcut."
+#~ msgstr "Skriver ut SCode-resultatet av -d=scodeInstShortcut."
 
 #~ msgid ""
 #~ "Prints the result of the redeclare analysis (only works with "
-#~ "+d=scodeInstShortcut)."
+#~ "-d=scodeInstShortcut)."
 #~ msgstr ""
 #~ "Skriver ut resultatet av omdeklarerings-analysen (fungerar endast med "
-#~ "+d=scodeInstShortcut)."
+#~ "-d=scodeInstShortcut)."
 
 #~ msgid ""
 #~ "Prints the replacements to be done on program to remove redeclares (only "
-#~ "works with +d=scodeInstShortcut)."
+#~ "works with -d=scodeInstShortcut)."
 #~ msgstr ""
 #~ "Skriver ut omdeklareringarna som behövs för att ta bort redeclares "
-#~ "(fungerar endast med +d=scodeInstShortcut)."
+#~ "(fungerar endast med -d=scodeInstShortcut)."
 
 #~ msgid ""
 #~ "Partitions the equation system into independent equation systems (which "

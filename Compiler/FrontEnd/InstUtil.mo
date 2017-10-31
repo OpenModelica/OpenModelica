@@ -568,7 +568,7 @@ algorithm
       list<SCode.AlgorithmSection> initialAlgorithmLst1,initialAlgorithmLst2;
       SCode.ClassDef cd1, cd2;
 
-    // when +g=MetaModelica, check class equality!
+    // when -g=MetaModelica, check class equality!
     case (_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();

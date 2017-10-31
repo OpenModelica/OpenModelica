@@ -289,7 +289,7 @@ public class OMCProxy
       return;
     }
 
-    String command[] = { omcBinary.getAbsolutePath(), "+c=" + corbaSessionName, "+d=interactiveCorba", "+g=" + grammarSyntax };
+    String command[] = { omcBinary.getAbsolutePath(), "+c=" + corbaSessionName, "-d=interactiveCorba", "-g=" + grammarSyntax };
     try
     {
       logOMCStatus("Running command " + command[0] + " " + command[1] + " " + command[2] + " " + command[3]);

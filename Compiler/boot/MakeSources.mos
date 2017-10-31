@@ -27,7 +27,7 @@ algorithm
 end delimit;");getErrorString();
 
 writeFile("LoadCompilerInterface.mos.tmp","if true then /* Suppress output */
-  setCommandLineOptions(\"+g=MetaModelica\");
+  setCommandLineOptions(\"-g=MetaModelica\");
   files:={"+Absyn.delimit("\"build/" + typeNameString(cl) + ".interface.mo\"" for cl in getClassNames())+"};
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then

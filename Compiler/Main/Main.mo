@@ -783,7 +783,7 @@ algorithm
           // print("Path set: " + newPath + "\n");
           System.setEnv("PATH",newPath,true);
         else
-          // do not display anything if +d=disableWindowsPathCheckWarning
+          // do not display anything if -d=disableWindowsPathCheckWarning
           if not Flags.isSet(Flags.DISABLE_WINDOWS_PATH_CHECK_WARNING) then
             print("We could not find some needed MINGW paths in $OPENMODELICAHOME or $OMDEV. Searched for paths:\n");
             print("\t" + binDir + (if hasBinDir then " [found] " else " [not found] ") + "\n");

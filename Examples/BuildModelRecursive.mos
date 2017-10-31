@@ -1,4 +1,4 @@
-// Note: Run with +g=MetaModelica
+// Note: Run with -g=MetaModelica
 // Some examples of CustomCommands.mos files are at the bottom of this file
 
 settings := checkSettings();

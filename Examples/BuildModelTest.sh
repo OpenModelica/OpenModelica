@@ -29,7 +29,7 @@ mkdir -p "$PUB/$SHORTNAME"
 sed "s/^libraryVersion:=\"default\";/libraryVersion:=\"$VERSION\";/" "$TRUNK/Examples/BuildModelRecursive.mos" | sed "s/library:=.*/library:=\$TypeName($NAME);/" > "$SHORTNAME.mos"
 
 rm -f *.err BuildModelRecursive.html
-if $OMC +g=MetaModelica "$SHORTNAME.mos" > log 2>&1; then
+if $OMC -g=MetaModelica "$SHORTNAME.mos" > log 2>&1; then
   rm -f "$PUB/$SHORTNAME/"*.err "$PUB/$SHORTNAME/"*.sim
   if ! cp BuildModelRecursive.html "$OLD/$SHORTNAME-`date +%Y-%m-%d`.html"; then
     echo "Failed to install $OLD/$SHORTNAME-`date +%Y-%m-%d`.html"

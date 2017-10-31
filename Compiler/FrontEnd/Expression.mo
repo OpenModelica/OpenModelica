@@ -3443,7 +3443,7 @@ end crefExp;
 public function makeASUB
 "@author: adrpo
   Creates an ASUB given an expression and a list of expression indexes.
-  If flag +d=checkASUB is ON we give a warning that the given exp is
+  If flag -d=checkASUB is ON we give a warning that the given exp is
   not a component reference."
   input DAE.Exp inExp;
   input list<DAE.Exp> inSubs;

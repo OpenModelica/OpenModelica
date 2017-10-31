@@ -2,7 +2,7 @@
 
 // "FrontEnd";
 if true then /* Suppress output */
-  setCommandLineOptions("+g=MetaModelica");
+  setCommandLineOptions("-g=MetaModelica");
   alwaysfiles := {
     // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc, maybe
     "../Util/File.mo",

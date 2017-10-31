@@ -90,9 +90,9 @@ end if;
 end if; */
 
 if genMetaModelica then
-  setCommandLineOptions("+g=MetaModelica");
+  setCommandLineOptions("-g=MetaModelica");
   loadString("package MetaModelica \"MetaModelica Language Extensions\"\n" + readFile(getInstallationDirectoryPath()+"/lib/omc/MetaModelicaBuiltin.mo") + "\nend MetaModelica;","MetaModelicaBuiltin.mo");
-  setCommandLineOptions("+g=Modelica");
+  setCommandLineOptions("-g=Modelica");
 end if;
 
 genTimeStamp := "2016";

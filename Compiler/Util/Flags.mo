@@ -894,7 +894,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("lateInlineFunction", Util.gettext("Perform function inlining for function with annotation LateInline=true.")),
     ("partlintornsystem",Util.notrans("partitions linear torn systems.")),
     ("recursiveTearing", Util.notrans("inline and repeat tearing")),
-    ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires +d=reduceDynOpt.")),
+    ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires -d=reduceDynOpt.")),
     ("relaxSystem", Util.notrans("relaxation from gausian elemination")),
     ("removeConstants", Util.gettext("Remove all constants in the system.")),
     ("removeEqualFunctionCalls", Util.notrans("Detects equal function calls of the form a=f(b) and c=f(b) and substitutes them to get speed up.")),
@@ -1236,7 +1236,7 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
     ("inlineHomotopy", Util.gettext("Experimental: Inlines the homotopy expression to allow symbolic simplifications.")),
     ("inputDerivativesUsed", Util.gettext("Checks if derivatives of inputs are need to calculate the model.")),
     ("recursiveTearing", Util.notrans("inline and repeat tearing")),
-    ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires +d=reduceDynOpt.")),
+    ("reduceDynamicOptimization", Util.notrans("Removes equations which are not needed for the calculations of cost and constraints. This module requires -d=reduceDynOpt.")),
     ("replaceHomotopyWithSimplified", Util.notrans("Replaces the homotopy expression homotopy(actual, simplified) with the simplified part.")),
     ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")),
     ("simplifyComplexFunction", Util.notrans("Some simplifications on complex functions (complex refers to the internal data structure)")),
@@ -1299,7 +1299,7 @@ constant ConfigFlag MAX_SIZE_NONLINEAR_TEARING = CONFIG_FLAG(92, "maxSizeNonline
   Util.gettext("Sets the maximum system size for tearing of nonlinear systems (default 10000)."));
 constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComponent",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
-  Util.gettext("Deactivates tearing for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
+  Util.gettext("Deactivates tearing for the specified components.\nUse '-d=tearingdump' to find out the relevant indexes."));
 constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental: Enable continuous-time state machine prototype"));
@@ -1320,10 +1320,10 @@ constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
                "append  : This method inlines by adding additional variables to the whole system. Might lead to much bigger system."));
 constant ConfigFlag SET_TEARING_VARS = CONFIG_FLAG(97, "setTearingVars",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets the tearing variables by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4."));
+  Util.gettext("Sets the tearing variables by its strong component indexes. Use '-d=tearingdump' to find out the relevant indexes.\nUse following format: '--setTearingVars=(sci,n,t1,...,tn)*', with sci = strong component index, n = number of tearing variables, t1,...tn = tearing variables.\nE.g.: '--setTearingVars=4,2,3,5' would select variables 3 and 5 in strong component 4."));
 constant ConfigFlag SET_RESIDUAL_EQNS = CONFIG_FLAG(98, "setResidualEqns",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
-  Util.gettext("Sets the residual equations by its strong component indexes. Use '+d=tearingdump' to find out the relevant indexes for the collective equations.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'."));
+  Util.gettext("Sets the residual equations by its strong component indexes. Use '-d=tearingdump' to find out the relevant indexes for the collective equations.\nUse following format: '--setResidualEqns=(sci,n,r1,...,rn)*', with sci = strong component index, n = number of residual equations, r1,...rn = residual equations.\nE.g.: '--setResidualEqns=4,2,3,5' would select equations 3 and 5 in strong component 4.\nOnly works in combination with 'setTearingVars'."));
 constant ConfigFlag IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION = CONFIG_FLAG(99, "ignoreCommandLineOptionsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Ignores the command line options specified as annotation in the class."));
@@ -1335,7 +1335,7 @@ constant ConfigFlag ALARM = CONFIG_FLAG(101, "alarm",
   Util.gettext("Sets the number seconds until omc timeouts and exits. Used by the testing framework to terminate infinite running processes."));
 constant ConfigFlag TOTAL_TEARING = CONFIG_FLAG(102, "totalTearing",
   NONE(), EXTERNAL(), INT_LIST_FLAG({}), NONE(),
-  Util.gettext("Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '+d=tearingdump' to find out the relevant indexes."));
+  Util.gettext("Activates total tearing (determination of all possible tearing sets) for the specified components.\nUse '-d=tearingdump' to find out the relevant indexes."));
 constant ConfigFlag IGNORE_SIMULATION_FLAGS_ANNOTATION = CONFIG_FLAG(103, "ignoreSimulationFlagsAnnotation",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Ignores the simulation flags specified as annotation in the class."));

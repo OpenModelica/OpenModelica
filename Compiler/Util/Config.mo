@@ -135,7 +135,7 @@ end helpRequest;
 public function acceptedGrammar
 "returns: the flag number representing the accepted grammer. Instead of using
  booleans. This way more extensions can be added easily.
- usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
+ usage: omc [-g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
   output Integer outGrammer;
 algorithm
   outGrammer := Flags.getConfigEnum(Flags.GRAMMAR);
@@ -143,7 +143,7 @@ end acceptedGrammar;
 
 public function acceptMetaModelicaGrammar
 "returns: true if MetaModelica grammar is accepted or false otherwise
- usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
+ usage: omc [-g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
   output Boolean outBoolean;
 algorithm
   outBoolean := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
@@ -151,7 +151,7 @@ end acceptMetaModelicaGrammar;
 
 public function acceptParModelicaGrammar
 "returns: true if ParModelica grammar is accepted or false otherwise
- usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
+ usage: omc [-g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
   output Boolean outBoolean;
 algorithm
   outBoolean := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
@@ -159,7 +159,7 @@ end acceptParModelicaGrammar;
 
 public function acceptOptimicaGrammar
 "returns: true if Optimica grammar is accepted or false otherwise
- usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
+ usage: omc [-g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
   output Boolean outBoolean;
 algorithm
   outBoolean := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
@@ -167,7 +167,7 @@ end acceptOptimicaGrammar;
 
 public function acceptPDEModelicaGrammar
 "returns: true if Optimica grammar is accepted or false otherwise
- usage: omc [+g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
+ usage: omc [-g=Modelica|MetaModelica|ParModelica|Optimica], default to 'Modelica'."
   output Boolean outBoolean;
 algorithm
   outBoolean := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA);

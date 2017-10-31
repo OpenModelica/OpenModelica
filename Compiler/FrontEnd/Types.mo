@@ -4134,7 +4134,7 @@ algorithm
 
     case(e, _, _, true)
       equation
-        // activate on +d=types flag
+        // activate on -d=types flag
         true = Flags.isSet(Flags.TYPES);
         Debug.traceln("- Types.matchProp failed on exp: " + ExpressionDump.printExpStr(e));
         Debug.traceln(printPropStr(inActualType) + " != ");

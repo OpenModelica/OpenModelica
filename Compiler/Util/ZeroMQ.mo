@@ -36,7 +36,7 @@ encapsulated package ZeroMQ
 
 
   This is the ZeroMQ connection module of the compiler
-  Used in interactive mode if omc is started with +d=interactiveZMQ
+  Used in interactive mode if omc is started with -d=interactiveZMQ
   Implemented in ./runtime/zeromqimpl.c"
 
 public function setFileSuffix

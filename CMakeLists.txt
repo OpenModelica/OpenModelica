@@ -1,5 +1,5 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2010-03-30
-# CMakefile for compilation of OMC 
+# CMakefile for compilation of OMC
 
 # CMAKE
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
@@ -9,7 +9,7 @@ PROJECT(OpenModelicaCompiler)
 # Defines for Visual Studio
 if(MSVC)
 	add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_COMPLEX_DEFINED)
-endif(MSVC)	
+endif(MSVC)
 
 # Global Variables
 SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR})
@@ -40,8 +40,8 @@ IF(RUN_TESTS)
 # add here your models to compile (add filename without ".mo")
 # Example:
 #    BUILDMODEL(model dir Flags CSRC)
-#BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mosfiles-dassl +d=bltdump "")
-#BUILDMODELFMU(Test ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test/FMU +d=bltdump "")
+#BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mosfiles-dassl -d=bltdump "")
+#BUILDMODELFMU(Test ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test/FMU -d=bltdump "")
 #BUILDMODELMOS(PolyEvaluate2 PolynomialEvaluatorB.mos ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/simulation/modelica/arrays  +simCodeTarget=C "")
-#BUILDMODELFMUMOS(WheelLoader D:/Temp/Modell/Radlader-CNH/WheelLoader.mos +d=bltdump "")
+#BUILDMODELFMUMOS(WheelLoader D:/Temp/Modell/Radlader-CNH/WheelLoader.mos -d=bltdump "")
 ENDIF(RUN_TESTS)

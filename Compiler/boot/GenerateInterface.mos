@@ -1,4 +1,4 @@
-setCommandLineOptions("+g=MetaModelica");
+setCommandLineOptions("-g=MetaModelica");
 setCommandLineOptions("-d=skipInputOutputSyntacticSugar");
 if not loadFile(inFile) then
   print("Failed to load file: " + inFile + "\n" + getErrorString());

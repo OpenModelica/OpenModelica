@@ -43,7 +43,7 @@ from OMPython import OMCSession
 OMPython = OMCSession()
 
 # OpenModelica setup commands
-OMC_SETUP_COMMANDS = ['setCommandLineOptions("+d=nogen,noevalfunc")']
+OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc")']
 
 def classToFileName(cl):
   """

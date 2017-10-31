@@ -1984,7 +1984,7 @@ algorithm
         resType := Types.fixPolymorphicRestype(resType, bindings, info);
         (exp,ty) := checkReductionType2(exp, inType,typeA,typeB,resType,Types.equivtypes(typeA,typeB) or isSome(defaultBinding),Types.equivtypes(typeB,resType),info);
         (outCache, Util.SUCCESS()) := instantiateDaeFunction(outCache, inEnv, path, false, NONE(), true);
-        Error.assertionOrAddSourceMessage(Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.EXPERIMENTAL_REDUCTIONS), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use +d=experimentalReductions to disable this message."}, info);
+        Error.assertionOrAddSourceMessage(Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.EXPERIMENTAL_REDUCTIONS), Error.COMPILER_NOTIFICATION, {"Custom reduction functions are an OpenModelica extension to the Modelica Specification. Do not use them if you need your model to compile using other tools or if you are concerned about using experimental features. Use -d=experimentalReductions to disable this message."}, info);
       then
         (exp, ty, typeB, defaultBinding, path);
   end match;
@@ -10434,7 +10434,7 @@ algorithm
 
     case (_, env, c, _, _)
       equation
-        // enabled with +d=failtrace
+        // enabled with -d=failtrace
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.elabCref failed: " +
           Dump.printComponentRefStr(c) + " in env: " +

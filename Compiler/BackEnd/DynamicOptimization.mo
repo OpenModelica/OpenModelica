@@ -104,7 +104,7 @@ algorithm
 
    if not(inOptimicaFlag or inDynOptimization)
    then
-      print("Something going wrong for postOptModul=createDynamicOptimization. Check your flags. You need +g=DynOpt or +g=Optimica!\n");
+      print("Something going wrong for postOptModul=createDynamicOptimization. Check your flags. You need -g=DynOpt or -g=Optimica!\n");
       fail();
    end if;
    Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);

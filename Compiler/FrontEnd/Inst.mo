@@ -5344,7 +5344,7 @@ algorithm
       Option<CachedInstItem> opt;
       list<Option<CachedInstItem>> lst;
 
-    // nothing is we have +d=noCache
+    // nothing is we have -d=noCache
     case (_, _, _)
       equation
         false = Flags.isSet(Flags.CACHE);

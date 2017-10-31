@@ -6,4 +6,4 @@ all : TplCodegen.mo
 
 test :
 	@echo " ** Susan Test ** "
-	$(OMC) +d=failtrace SusanTest.tpl
+	$(OMC) -d=failtrace SusanTest.tpl

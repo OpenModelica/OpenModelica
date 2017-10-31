@@ -40,7 +40,7 @@ sed "s,referenceFiles:=.*,referenceFiles:=\"$REF_FILES\";," | \
 sed "s,referenceFileExtension:=.*,referenceFileExtension:=\"$REF_EXT\";," | \
 sed "s,referenceFileNameDelimiter:=.*,referenceFileNameDelimiter:=\"$REF_NAME_DELIMITER\";," \
 > BuildModelRecursive.mos
-"$OMHOME/bin/omc" +g=MetaModelica BuildModelRecursive.mos
+"$OMHOME/bin/omc" -g=MetaModelica BuildModelRecursive.mos
 
 shopt -s nullglob
 cp BuildModelRecursive.tar.gz "$WWW/$LIB_DIR/"
