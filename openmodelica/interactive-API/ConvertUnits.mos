@@ -6,9 +6,12 @@ convertUnits("K","degF");getErrorString();
 convertUnits("degC","degF");getErrorString();
 convertUnits("degF","degC");getErrorString();
 convertUnits("K","Unknown");getErrorString();
+convertUnits("Pa","mmHg");getErrorString();
+convertUnits("m3/Pa","ml/mmHg");getErrorString();
 
 getDerivedUnits("K");getErrorString();
 getDerivedUnits("W");getErrorString();
+getDerivedUnits("Pa");getErrorString();
 getDerivedUnits("n");getErrorString();
 
 // Result:
@@ -25,9 +28,15 @@ getDerivedUnits("n");getErrorString();
 // (false,1.0,0.0)
 // "Error: error parsing unit Unknown
 // "
+// (true,133.322387415,0.0)
+// ""
+// (true,7.500615758456563e-09,0.0)
+// ""
 // {"degC","degF","degRk"}
 // ""
 // {"VA","var"}
+// ""
+// {"bar","inWG","mmHg","psi"}
 // ""
 // {}
 // "Error: error parsing unit n
