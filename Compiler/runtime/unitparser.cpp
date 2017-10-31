@@ -1143,6 +1143,8 @@ void UnitParser::initSIUnits() {
       Rational(0), Rational(5, 9), Rational(0), true);
 
   addDerived("pressure", "bar", "bar", "Pa", Rational(0), Rational(100000), Rational(0), true);
+  addDerived("pressure", "millimeter of mercury", "mmHg", "Pa", Rational(0),
+      Rational(133322387415, 1000000000), Rational(0), true);
 
   addDerived("time", "millisecond", "ms", "s", Rational(-3), Rational(1), Rational(0), true);
   addDerived("time", "minute", "min", "s", Rational(0), Rational(60), Rational(0), true);
@@ -1317,4 +1319,3 @@ void TestScanner() {
   }
   cout << "\n";
 }
-
