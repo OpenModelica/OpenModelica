@@ -13216,12 +13216,11 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     <<
 
     <%preExp%>
-    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 2 =>
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
       let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%re%> = <%rec%>.<%var.name%>;'
+      '<%re%> = <%rec%>.<%crefStr(makeUntypedCrefIdent(var.name))%>;'
     ; separator="\n"
     %>
-    Record = func;
     >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer "" /*BUFD*/
