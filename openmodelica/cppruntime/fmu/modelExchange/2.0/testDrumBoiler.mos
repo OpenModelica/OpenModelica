@@ -16,9 +16,8 @@ end DrumBoilerModel;
 ");
 getErrorString();
 
-// disable directional derivatives as long as it fails
-// for this model
-setCommandLineOptions("+d=disableDirectionalDerivatives"); getErrorString();
+// enable directional derivatives
+setCommandLineOptions("-d=-disableDirectionalDerivatives"); getErrorString();
 
 translateModelFMU(DrumBoilerModel, version="2.0"); getErrorString();
 
@@ -66,7 +65,8 @@ val(evaporator_qm_S, 100);
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"3\">
 //   <ModelExchange
-//     modelIdentifier=\"DrumBoilerModel\">
+//     modelIdentifier=\"DrumBoilerModel\"
+//     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <SimpleType name=\"Modelica.Blocks.Types.Init\">
