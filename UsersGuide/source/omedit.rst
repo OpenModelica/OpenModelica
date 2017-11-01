@@ -320,6 +320,8 @@ The OMEdit Simulation Dialog can be launched by,
 -  Right clicking the model from the Libraries Browser and choosing
    Simulation Setup.
 
+.. _omedit-general-tab :
+
 General Tab
 ~~~~~~~~~~~
 
@@ -332,6 +334,12 @@ General Tab
   -  *Number of Intervals* – the simulation number of intervals.
 
   -  *Interval* – the length of one interval (i.e., stepsize)
+
+-  :ref:`omedit-interactive`
+
+  -  Simulate with steps (makes the interactive simulation synchronous; plots nicer curves at the expense of performance)
+
+  -  Simulation server port
 
 -  Integration
 
@@ -596,6 +604,33 @@ Remove Texture            Removes the current texture of the shape.
 .. figure :: media/visual_features.png
   :name: Different visualization features.
 
+.. _omedit-interactive :
+
+Interactive Simulation
+----------------------
+
+.. warning ::
+  Interactive simulation is an experimental feature.
+
+Interactive simulation is enabled by selecting interactive
+simulation in the :ref:`General <omedit-general-tab>` tab of the simulation settings.
+
+There are two main modes of execution: asynchronous and synchronous
+(simulate with steps). The difference is that in synchronous (step mode),
+OMEdit sends a command to the simulation for each step that the simulation
+should take. The asynchronous mode simply tells the simulation to run and
+samples variables values in real-time; if the simulation runs very fast,
+fewer values will be sampled.
+
+When running in asynchronous mode, it is possible to simulate the model
+in real-time (with a scaling factor just like simulation flag
+:ref:`-rt <simflag-rt>`, but with the ability to change the scaling
+factor during the interactive simulation). In the synchronous mode, the
+speed of the simulation does not directly correspond to real-time.
+
+.. raw:: html
+
+   <video controls width="640" src="_static/interactive-simulation.mp4"></video>
 
 How to Create User Defined Shapes – Icons
 -----------------------------------------

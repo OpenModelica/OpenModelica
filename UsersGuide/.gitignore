@@ -2,6 +2,7 @@
 source/*.pyc
 source/logo.pdf
 /tmp
+source/LotkaVolterra*.*
 source/dcmotor.*
 source/ProfilingTest_prof*
 source/VanDerPol.pdf
@@ -33,6 +34,16 @@ source/switch.pdf
 source/switch.png
 source/switch.svg
 source/tracreleases.rst
+source/interface.inc
+source/tmp.rst
+source/tmp.wiki
 source/media/omedit-icons
 source/media/mathematica-notebooks.pdf
 source/media/omoptim-icons/
+source/omchelptext.rst
+source/releaselink.inc
+source/simoptions.inc
+source/testmodel.pdf
+source/testmodel.png
+source/testmodel.svg
+source/tracreleases.inc
