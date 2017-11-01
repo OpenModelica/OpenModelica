@@ -98,6 +98,7 @@ import Inline;
 import List;
 import Matching;
 import MetaModelica.Dangerous;
+import Mutable;
 import PriorityQueue;
 import SimCodeDump;
 import SimCodeFunctionUtil;
@@ -240,10 +241,11 @@ protected
   BackendDAE.InlineData inlineData;
   list<SimCodeVar.SimVar> inlineSimKnVars;
   BackendDAE.Variables emptyVars;
-  constant Boolean debug = false;
   Integer SymEuler_help = 0;
   SimCodeVar.SimVar dtSimVar;
   BackendDAE.Var dtVar;
+
+  constant Boolean debug = false;
 algorithm
   try
     execStat("Backend phase and start with SimCode phase");
@@ -401,6 +403,7 @@ algorithm
 
     // update index of zero-Crossings after equations are created
     zeroCrossings := updateZeroCrossEqnIndex(zeroCrossings, eqBackendSimCodeMapping, BackendDAEUtil.equationArraySizeBDAE(dlow));
+    if debug then execStat("simCode: update zero crossing index"); end if;
 
     // replace div operator with div operator with check of Division by zero
     allEquations := List.map(allEquations, addDivExpErrorMsgtoSimEqSystem);
@@ -416,6 +419,7 @@ algorithm
     initialEquations := List.map(initialEquations, addDivExpErrorMsgtoSimEqSystem);
     initialEquations_lambda0 := List.map(initialEquations_lambda0, addDivExpErrorMsgtoSimEqSystem);
     removedInitialEquations := List.map(removedInitialEquations, addDivExpErrorMsgtoSimEqSystem);
+    if debug then execStat("simCode: addDivExpErrorMsgtoSimEqSystem"); end if;
 
     // collect all LinearSystem and NonlinearSystem algebraic system in modelInfo and update
     // the corresponding index (indexNonLinear, indexLinear) in SES_NONLINEAR and SES_LINEAR
@@ -436,11 +440,13 @@ algorithm
 
     // collect symbolic jacobians from state selection
     (stateSets, modelInfo, SymbolicJacsStateSelect) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
+    if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
     // collect fmi partial derivative
     if FMI.isFMIVersion20(FMUVersion) then
       (SymbolicJacsFMI, modelStructure, modelInfo, SymbolicJacsTemp, uniqueEqIndex) := createFMIModelStructure(inFMIDer, modelInfo, uniqueEqIndex);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+      if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
     // collect symbolic jacobians in linear loops of the overall jacobians
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
@@ -449,6 +455,7 @@ algorithm
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
     // collect jacobian equation only for equantion info file
     jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
+    if debug then execStat("simCode: create Jacobian linear code"); end if;
 
     SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
@@ -6903,7 +6910,6 @@ algorithm
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
                              numStateSets, numOptimizeConstraints, numOptimizeFinalConstraints);
     if debug then execStat("simCode: createVarInfo"); end if;
-    if debug then execStat("simCode: getHighestDerivation"); end if;
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
@@ -7415,65 +7421,92 @@ protected
   BackendDAE.Variables aliasVars1, aliasVars2;
   BackendDAE.EqSystems systs1, systs2;
   BackendDAE.Shared shared;
-  array<HashSet.HashSet> hs = arrayCreate(1, HashSet.emptyHashSetSized(Util.nextPrime(BackendDAEUtil.daeSize(inSimDAE)+BackendDAEUtil.daeSize(inInitDAE))));
+  Mutable<HashSet.HashSet> hs;
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
+  Integer primeSize;
+
+  constant Boolean debug = false;
 algorithm
   BackendDAE.DAE(eqs=systs1, shared=shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars1, localKnownVars=localKnownVars1, externalObjects=extvars1, aliasVars=aliasVars1)) := inSimDAE;
   BackendDAE.DAE(eqs=systs2, shared=BackendDAE.SHARED(globalKnownVars=globalKnownVars2, localKnownVars=localKnownVars2, externalObjects=extvars2, aliasVars=aliasVars2)) := inInitDAE;
+
+  primeSize := Util.nextPrime(
+    integer(1.4*(
+    BackendVariable.varsSize(globalKnownVars1)+BackendVariable.varsSize(globalKnownVars2)+
+    BackendVariable.varsSize(localKnownVars1)+BackendVariable.varsSize(localKnownVars2)+
+    BackendVariable.varsSize(aliasVars1)+BackendVariable.varsSize(aliasVars2)+
+    BackendVariable.varsSize(extvars1)+BackendVariable.varsSize(extvars2)+
+    BackendDAEUtil.daeSize(inSimDAE)+BackendDAEUtil.daeSize(inInitDAE)
+  )));
+  hs := Mutable.create(HashSet.emptyHashSetSized(primeSize));
 
   if not Flags.isSet(Flags.NO_START_CALC) then
     (systs1) := List.map2(systs1, preCalculateStartValues, globalKnownVars1, shared);
     (globalKnownVars1, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(globalKnownVars1, evaluateStartValues, shared);
     //systs2 := List.map1(systs2, preCalculateStartValues, globalKnownVars2);
+    if debug then execStat("createVars: evaluateStartValues"); end if;
   end if;
 
   // ### simulation ###
   // Extract from variable list
   simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  if debug then execStat("createVars: variable list"); end if;
 
   // Extract from known variable list
   simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  if debug then execStat("createVars: known variable list"); end if;
 
   // Extract from localKnownVars variable list
   simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  if debug then execStat("createVars: local known variables list"); end if;
 
   // Extract from removed variable list
   simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  if debug then execStat("createVars: removed variables list"); end if;
 
   // Extract from external object list
   simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs), simVars);
+  if debug then execStat("createVars: external object list"); end if;
 
 
   // ### initialization ###
   // Extract from variable list
   simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  if debug then execStat("createVars: variable list (init)"); end if;
 
   // Extract from known variable list
   simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  if debug then execStat("createVars: known variable list (init)"); end if;
 
   // Extract from localKnownVars variable list
   simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  if debug then execStat("createVars: local known variables list (init)"); end if;
 
   // Extract from removed variable list
   simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
+  if debug then execStat("createVars: removed variables list (init)"); end if;
 
   // Extract from external object list
   simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs), simVars);
-
+  if debug then execStat("createVars: external object list (init)"); end if;
 
   addTempVars(simVars, tempvars);
+  if debug then execStat("createVars: addTempVars"); end if;
   //BaseHashSet.printHashSet(hs);
 
   // sort variables on index
   sortSimvars(simVars);
+  if debug then execStat("createVars: sortSimVars"); end if;
 
   if stringEqual(Config.simCodeTarget(), "Cpp") then
     extendIncompleteArray(simVars);
+    if debug then execStat("createVars: Cpp, extendIncompleteArray"); end if;
   end if;
 
   // Index of algebraic and parameters need to fix due to separation of integer variables
   fixIndex(simVars);
   setVariableIndex(simVars);
+  if debug then execStat("createVars: fix and set index"); end if;
 
   outVars := SimCodeVar.SIMVARS(
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.state)),
@@ -7511,9 +7544,9 @@ protected function extractVarsFromList
   input output BackendDAE.Var var;
   input output array<list<SimCodeVar.SimVar>> simVars;
   input BackendDAE.Variables aliasVars, vars;
-  input array<HashSet.HashSet> hs;
+  input Mutable<HashSet.HashSet> hs;
 algorithm
-  if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, arrayGet(hs,1)) then
+  if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
     if not BackendVariable.isAlgebraicOldState(var) then
       extractVarFromVar(var, aliasVars, vars, simVars, hs);
@@ -7531,7 +7564,7 @@ protected function extractVarFromVar
   input BackendDAE.Variables inAliasVars;
   input BackendDAE.Variables inVars;
   input array<list<SimCodeVar.SimVar>> simVars;
-  input array<HashSet.HashSet> hs "all processed crefs";
+  input Mutable<HashSet.HashSet> hs "all processed crefs";
 protected
   SimCodeVar.SimVar simVar;
   SimCodeVar.SimVar derivSimvar;
@@ -7545,10 +7578,10 @@ algorithm
 
 
   // update HashSet
-  arrayUpdate(hs, 1, BaseHashSet.add(simVar.name, arrayGet(hs,1)));
+  Mutable.update(hs, BaseHashSet.add(simVar.name, Mutable.access(hs)));
   if (not isalias) and (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)) then
     derivSimvar := derVarFromStateVar(simVar);
-    arrayUpdate(hs, 1, BaseHashSet.add(derivSimvar.name, arrayGet(hs,1)));
+    Mutable.update(hs, BaseHashSet.add(derivSimvar.name, Mutable.access(hs)));
   else
     derivSimvar := simVar; // Just in case
   end if;
