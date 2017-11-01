@@ -16,6 +16,7 @@ OpenModelica User's Guide
   omedit
   plotting
   debugger
+  graphs
   omnotebook
   omsimulator
   optimization
