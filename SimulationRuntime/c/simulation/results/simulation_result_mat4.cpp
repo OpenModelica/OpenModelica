@@ -184,9 +184,28 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   for (int i=0; i < mData->nAliasReal; i++)
     if (!mData->realAlias[i].filterOutput) {
+      const char *unitStr = NULL;
+      size_t unitLength = 0;
+
+      if (mData->realAlias[i].aliasType == 0)
+      { /* variable */
+        unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
+        unitLength = unitStr ? strlen(unitStr) + 3 : 0;
+      }
+      else if (mData->realAlias[i].aliasType == 1)
+      { /* parameter */
+        unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
+        unitLength = unitStr ? strlen(unitStr) + 3 : 0;
+      }
+      else if (mData->realAlias[i].aliasType == 2)
+      { /* time */
+        unitStr = "s";
+        unitLength = 4;
+      }
+
       len = strlen(mData->realAlias[i].info.name) + 1;
       if (len > maxLengthName) maxLengthName = len;
-      len = strlen(mData->realAlias[i].info.comment) + 1;
+      len = strlen(mData->realAlias[i].info.comment) + 1 + unitLength;
       if (len > maxLengthDesc) maxLengthDesc = len;
       matData->nSignals++;
     }
@@ -302,8 +321,35 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   for (int i=0; i < mData->nAliasReal; i++)
     if (!mData->realAlias[i].filterOutput) {
+      const char *unitStr = NULL;
+      size_t unitLength = 0;
+
+      if (mData->realAlias[i].aliasType == 0)
+      { /* variable */
+        unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
+        unitLength = unitStr ? strlen(unitStr) : 0;
+      }
+      else if (mData->realAlias[i].aliasType == 1)
+      { /* parameter */
+        unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
+        unitLength = unitStr ? strlen(unitStr) : 0;
+      }
+      else if (mData->realAlias[i].aliasType == 2)
+      { /* time */
+        unitStr = "s";
+        unitLength = 1;
+      }
+
       memcpy((uint8_t*)name + maxLengthName * cur, mData->realAlias[i].info.name, strlen(mData->realAlias[i].info.name));
       memcpy((uint8_t*)description + maxLengthDesc * cur, mData->realAlias[i].info.comment, strlen(mData->realAlias[i].info.comment));
+      // unit information
+      if (unitLength > 0)
+      {
+        memcpy((uint8_t*)description + maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2, unitStr, unitLength);
+        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 0] = ' ';
+        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 1] = '[';
+        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2 + unitLength] = ']';
+      }
       cur++;
     }
 
