@@ -1329,7 +1329,7 @@ protected function stripRecordDefaultBindingsFromElement
   output DAE.Element outVar;
   output list<DAE.Element> outEqs;
 algorithm
-  (outVar, outEqs) := match(inVar, inEqs)
+  (outVar, outEqs) := matchcontinue (inVar, inEqs)
     local
       DAE.ComponentRef var_cr, eq_cr;
       list<DAE.Element> rest_eqs;
@@ -1343,8 +1343,15 @@ algorithm
       then
         (DAEUtil.setElementVarBinding(inVar, NONE()), rest_eqs);
 
+    case (DAE.VAR(componentRef = var_cr),
+          DAE.COMPLEX_EQUATION(lhs = DAE.CREF(componentRef = eq_cr)) :: _)
+      algorithm
+        true := ComponentReference.crefPrefixOf(eq_cr, var_cr);
+      then
+        (DAEUtil.setElementVarBinding(inVar, NONE()), inEqs);
+
     else (inVar, inEqs);
-  end match;
+  end matchcontinue;
 end stripRecordDefaultBindingsFromElement;
 
 protected function checkDimensionGreaterThanZero
