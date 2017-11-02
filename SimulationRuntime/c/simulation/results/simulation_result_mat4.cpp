@@ -54,6 +54,7 @@ typedef struct mat_data {
   size_t nData2;
   size_t nSignals;
   size_t nEmits;
+  size_t sync;
   void* data_2;
   MatVer4Type_t type;
 } mat_data;
@@ -622,6 +623,10 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   matData->nData1 = index1;
   matData->nData2 = index2;
   matData->nEmits = 0;
+  matData->sync = 0;
+
+  if(omc_flag[FLAG_MAT_SYNC])
+    matData->sync = atoi(omc_flagValue[FLAG_MAT_SYNC]);
 
   //       Name: dataInfo
   //       Rank: 2
@@ -751,9 +756,14 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
         if (mData->booleanAlias[i].negate)
           WRITE_REAL_VALUE(matData->data_2, cur++, (1-data->localData[0]->booleanVars[mData->booleanAlias[i].nameID]));
 
-  //appendMatVer4Matrix_4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, 1, matData->data_2, matData->type);
   fwrite(matData->data_2, sizeofMatVer4Type(matData->type), matData->nData2, matData->pFile);
   matData->nEmits++;
+
+  if (matData->sync > 0 && matData->nEmits > matData->sync)
+  {
+    updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
+    matData->nEmits = 0;
+  }
 
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -769,7 +779,10 @@ void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
     return;
   }
 
-  updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
+  if (matData->nEmits > 0) {
+    updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
+    matData->nEmits = 0;
+  }
 
   if (matData->data_2) {
     free(matData->data_2);

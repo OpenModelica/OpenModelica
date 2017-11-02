@@ -43,6 +43,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_DELTA_X_SOLVER */               "deltaXSolver",
   /* FLAG_EMBEDDED_SERVER */              "embeddedServer",
   /* FLAG_EMBEDDED_SERVER_PORT */         "embeddedServerPort",
+  /* FLAG_MAT_SYNC */                     "mat_sync",
   /* FLAG_EMIT_PROTECTED */               "emit_protected",
   /* FLAG_F */                            "f",
   /* FLAG_HELP */                         "help",
@@ -91,7 +92,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_LSS_MAX_DENSITY */              "lssMaxDensity",
   /* FLAG_LSS_MIN_SIZE */                 "lssMinSize",
   /* FLAG_LV */                           "lv",
-  /* FLAG_MAX_BISECTION_ITERATIONS        */  "mbi",
+  /* FLAG_MAX_BISECTION_ITERATIONS */     "mbi",
   /* FLAG_MAX_EVENT_ITERATIONS */         "mei",
   /* FLAG_MAX_ORDER */                    "maxIntegrationOrder",
   /* FLAG_MAX_STEP_SIZE */                "maxStepSize",
@@ -147,6 +148,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DELTA_X_SOLVER */               "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
   /* FLAG_EMBEDDED_SERVER */              "enables an embedded server. Valid values: none, opc-da [broken], opc-ua [experimental], or the path to a shared object.",
   /* FLAG_EMBEDDED_SERVER_PORT */         "[int (default 4841)] value specifies the port number used by the embedded server",
+  /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header after emitting every N time-points (default disabled)",
   /* FLAG_EMIT_PROTECTED */               "emits protected variables to the result-file",
   /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                         "get detailed information that specifies the command-line flag",
@@ -267,6 +269,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * filename - path to a shared object implementing the embedded server interface (requires access to internal OMC data-structures if you want to read or write data)",
   /* FLAG_EMBEDDED_SERVER_PORT */
   "  Value specifies the port number used by the embedded server. The default value is 4841.",
+  /* FLAG_MAT_SYNC */
+  "  Syncs the mat file header after emitting every N time-points.",
   /* FLAG_EMIT_PROTECTED */
   "  Emits protected variables to the result-file.",
   /* FLAG_F */
@@ -515,6 +519,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DELTA_X_SOLVER */               FLAG_TYPE_OPTION,
   /* FLAG_EMBEDDED_SERVER */              FLAG_TYPE_OPTION,
   /* FLAG_EMBEDDED_SERVER_PORT */         FLAG_TYPE_OPTION,
+  /* FLAG_MAT_SYNC */                     FLAG_TYPE_OPTION,
   /* FLAG_EMIT_PROTECTED */               FLAG_TYPE_FLAG,
   /* FLAG_F */                            FLAG_TYPE_OPTION,
   /* FLAG_HELP */                         FLAG_TYPE_OPTION,
