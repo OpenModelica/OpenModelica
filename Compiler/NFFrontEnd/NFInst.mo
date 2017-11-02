@@ -137,9 +137,7 @@ algorithm
   (dae, daeFuncs) := ConvertDAE.convert(elems, funcs, name, InstNode.info(inst_cls));
 
   // Do unit checking
-  if Flags.isSet(Flags.NF_UNITCHECK) then
-    UnitCheck.unitChecking(dae,daeFuncs);
-  end if;
+  UnitCheck.checkUnits(dae,daeFuncs);
 end instClassInProgram;
 
 function instantiate

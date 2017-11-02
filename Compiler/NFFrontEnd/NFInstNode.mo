@@ -92,9 +92,6 @@ end NodeTree;
 
 
 constant Integer NUMBER_OF_CACHES = 3;
-constant Integer FUNCTION_CACHE = 1;
-constant Integer PACKAGE_CACHE = 2;
-constant Integer TOP_SCOPE_CACHE = 3;
 
 uniontype CachedData
 

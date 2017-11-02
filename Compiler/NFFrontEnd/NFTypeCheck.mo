@@ -1650,7 +1650,7 @@ algorithm
         expression := Expression.BOX(expression);
         // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
       then
-        (Type.T_METABOXED(actualType), MatchKind.GENERIC);
+        (Type.METABOXED(actualType), MatchKind.GENERIC);
 
     case (Type.ANY_TYPE(), _)
       algorithm

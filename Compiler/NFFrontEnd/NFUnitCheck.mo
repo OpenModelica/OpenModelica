@@ -39,7 +39,7 @@ public uniontype Functionargs
 end Functionargs;
 
 
-public function unitChecking
+public function checkUnits
   input DAE.DAElist inDAE;
   input DAE.FunctionTree func;
 protected
@@ -83,7 +83,7 @@ algorithm
   else
     Error.addInternalError(getInstanceName() + ": unit check module failed", sourceInfo());
   end try;
-end unitChecking;
+end checkUnits;
 
 
 
@@ -377,6 +377,26 @@ algorithm
       String s1,formalargs,formalvar,name;
       list<String> invars,outvars,inunitlist,outunitlist;
       list<DAE.Exp> explist,explist1,explist2;
+      list<DAE.Element> eqs;
+
+       // solved Equation
+    case (DAE.DEFINE(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S,args) equation
+      lhs = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
+        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
+    then (HtCr2U, HtS2U, HtU2S, expList);
+
+    case (DAE.INITIALDEFINE(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S,args) equation
+      lhs = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
+        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
+    then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (DAE.EQUATION(exp=DAE.Exp.TUPLE(PR=explist1), scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path))), HtCr2U, HtS2U, HtU2S,args)
       equation
@@ -389,7 +409,6 @@ algorithm
       then
         (HtCr2U, HtS2U, HtU2S,expList);
 
-
     case (DAE.EQUATION(exp=lhs, scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path))), HtCr2U, HtS2U, HtU2S,args)
       equation
         s1=Absyn.pathString(path);
@@ -400,8 +419,8 @@ algorithm
         formalvar =listGet(outvars,1);
         if (formalargs=="NONE") then
           ut1 =NFUnit.MASTER({});
-          else
-            ut1 =NFUnit.parseUnitString(formalargs);
+        else
+          ut1 =NFUnit.parseUnitString(formalargs);
         end if;
 
         (b, _ ,_) = UnitTypesEqual(ut, ut1, HtCr2U);
@@ -429,23 +448,30 @@ algorithm
         (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
       then (HtCr2U, HtS2U, HtU2S,expList);
 
+    case (DAE.INITIALEQUATION(exp1=lhs, exp2=rhs), HtCr2U, HtS2U, HtU2S,args) equation
+
+      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
+        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
+      then (HtCr2U, HtS2U, HtU2S,expList);
+
     case (DAE.ARRAY_EQUATION(exp=lhs, array=rhs), HtCr2U, HtS2U, HtU2S,args) equation
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
         (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-      then (HtCr2U, HtS2U, HtU2S, expList);
-        // solved Equation
-    case (DAE.DEFINE(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      lhs = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
+    then (HtCr2U, HtS2U, HtU2S, expList);
+
+    case (DAE.INITIAL_ARRAY_EQUATION(exp=lhs, array=rhs), HtCr2U, HtS2U, HtU2S,args) equation
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
       if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
         ExpressionDump.dumpExp(temp);
       end if;
         (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-      then (HtCr2U, HtS2U, HtU2S, expList);
-
+    then (HtCr2U, HtS2U, HtU2S, expList);
 
     case (DAE.COMPLEX_EQUATION(lhs=lhs, rhs=rhs), HtCr2U, HtS2U, HtU2S,args) equation
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
@@ -453,12 +479,58 @@ algorithm
         ExpressionDump.dumpExp(temp);
       end if;
         (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-      then (HtCr2U, HtS2U, HtU2S, expList);
+    then (HtCr2U, HtS2U, HtU2S, expList);
 
+    case (DAE.INITIAL_COMPLEX_EQUATION(lhs=lhs, rhs=rhs), HtCr2U, HtS2U, HtU2S,args) equation
+      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
+      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+        ExpressionDump.dumpExp(temp);
+      end if;
+        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
+    then (HtCr2U, HtS2U, HtU2S, expList);
 
-        else equation
-          Error.addInternalError("./Compiler/NFFrontEnd/NFUnitCheck.mo: function foldEquation failed", sourceInfo());
-        then fail();
+    case (DAE.WHEN_EQUATION(), HtCr2U, HtS2U, HtU2S, args) algorithm
+      // ((HtCr2U, _, HtS2U, HtU2S)) := List.fold1(inEq.equations, foldEquation ,args,(HtCr2U, true, HtS2U, HtU2S));
+      for eq in inEq.equations loop
+        (HtCr2U, HtS2U, HtU2S, expList) := foldEquation2(eq, HtCr2U, HtS2U, HtU2S,args);
+      end for;
+    then (HtCr2U, HtS2U, HtU2S, expList);
+
+    case (DAE.NORETCALL(), _, _, _, _) algorithm
+      (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.exp, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
+    then (inHtCr2U, inHtS2U, inHtU2S, expList);
+
+    case (DAE.INITIAL_NORETCALL(), _, _, _, _) algorithm
+      (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.exp, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
+    then (inHtCr2U, inHtS2U, inHtU2S, expList);
+
+    case (DAE.INITIAL_ASSERT(), _, _, _, _) algorithm
+      // (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.condition, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.ASSERT(), _, _, _, _) algorithm
+        // (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.condition, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.TERMINATE(), _, _, _, _) algorithm
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.INITIAL_TERMINATE(), _, _, _, _) algorithm
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.REINIT(), _, _, _, _) algorithm
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.ALGORITHM(), _, _, _, _) algorithm
+      //Error.addCompilerWarning("ALGORITHM, these types of equations are not yet supported\n");
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.INITIALALGORITHM(), _, _, _, _) algorithm
+    then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    else equation
+      Error.addInternalError("./Compiler/NFFrontEnd/NFUnitCheck.mo: function foldEquation failed on: " + DAEDump.dumpEquationStr(inEq), sourceInfo());
+    then fail();
   end match;
 end foldEquation2;
 

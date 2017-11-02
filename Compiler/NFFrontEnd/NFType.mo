@@ -91,9 +91,9 @@ public
     DAE.FunctionAttributes attributes;
   end FUNCTION;
 
-  record T_METABOXED "Used for MetaModelica generic types"
+  record METABOXED "Used for MetaModelica generic types"
     Type ty;
-  end T_METABOXED;
+  end METABOXED;
 
   // TODO: Fix constants in uniontypes and use these wherever applicable to
   // speed up comparisons using referenceEq.

@@ -330,7 +330,7 @@ algorithm
       equation
         (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
         if Flags.isSet(Flags.NF_UNITCHECK) then
-            NFUnitCheck.unitChecking(outDAElist,FCore.getFunctionTree(outCache));
+            NFUnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
         end if;
       then
         (outCache,outEnv,outIH,outDAElist);

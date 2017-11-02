@@ -496,7 +496,7 @@ algorithm
     case Type.BOOLEAN() then checkBoolAttributes(attributes);
     case Type.STRING() then checkStringAttributes(attributes);
     case Type.ENUMERATION() then checkEnumAttributes(attributes);
-    case Type.ANY_TYPE() then assert(true,"");
+    case Type.ANY_TYPE() then checkAnyTypeAttributes(attributes);
     else
       algorithm
         assert(false, getInstanceName() + " got unknown type");
@@ -580,6 +580,12 @@ algorithm
   // TODO: Check that the attributes are valid enumeration attributes and that their
   // bindings have the correct types.
 end checkEnumAttributes;
+
+function checkAnyTypeAttributes
+  input list<Modifier> attributes;
+algorithm
+  // TODO:
+end checkAnyTypeAttributes;
 
 function typeExp
   input output Expression exp;
