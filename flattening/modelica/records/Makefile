@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+ ComplexBinding1.mo \
  DefaultRecordParameters.mo \
  Derived1.mo \
  Derived2.mo \
