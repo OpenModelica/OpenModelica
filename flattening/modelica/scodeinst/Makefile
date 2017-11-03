@@ -49,11 +49,25 @@ ComponentAsTypeError.mo \
 ComponentAttributes1.mo \
 ComponentAttributes2.mo \
 cond4.mo \
+Connect1.mo \
+Connect2.mo \
+Connect4.mo \
+Connect5.mo \
 ConnectAlgorithm.mo \
+ConnectDiffOrder1.mo \
+ConnectDiffOrder2.mo \
 ConnectInitial.mo \
+ConnectInvalidForm1.mo \
+ConnectInvalidType1.mo \
 ConnectNonConnector1.mo \
 ConnectNonConnector2.mo \
+ConnectNonConnector3.mo \
+ConnectNonConnector4.mo \
 ConnectNonConnector5.mo \
+ConnectNonConnector6.mo \
+ConstantConnector1.mo \
+ConstantConnector2.mo \
+ConstantConnector3.mo \
 const1.mo \
 const10.mo \
 const11.mo \
@@ -245,6 +259,12 @@ InnerOuterMissing3.mo \
 InnerOuterMissing4.mo \
 InnerOuterMissing5.mo \
 InnerOuterNotInner1.mo \
+InStreamFlowThreshold.mo \
+InStreamInsideOutside.mo \
+InStreamPipeline.mo \
+InStreamTwoInside.mo \
+InStreamTwoOutside.mo \
+InStreamUnconnected.mo \
 inst2.mo \
 inst3.mo \
 inst4.mo \
@@ -275,6 +295,7 @@ ModClass4.mo \
 ModClass5.mo \
 ModClass6.mo \
 MultiInheritanceRedeclare2.mo \
+NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 PackageConstant1.mo \
@@ -355,16 +376,12 @@ WhenNested1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-Connect1.mo \
-Connect2.mo \
+ActualStream.mo \
+ActualStreamMinMax.mo \
+InStreamInvalidArgument1.mo \
+InStreamInvalidArgument2.mo \
+InStreamNominalThreshold.mo \
 Connect3.mo \
-Connect4.mo \
-Connect5.mo \
-ConnectInvalidForm1.mo \
-ConnectInvalidType1.mo \
-ConnectNonConnector3.mo \
-ConnectNonConnector4.mo \
-ConnectNonConnector6.mo \
 ProtectedMod1.mo \
 dim2.mo \
 DuplicateElements5.mo \
@@ -377,7 +394,6 @@ ceval4.mo \
 cond1.mo \
 cond2.mo \
 cond3.mo \
-conn10.mo \
 conn11.mo \
 conn12.mo \
 conn13.mo \
@@ -388,9 +404,6 @@ conn8.mo \
 conn9.mo \
 conngraph1.mo \
 conngraph2.mo \
-ConstantConnector1.mo \
-ConstantConnector2.mo \
-ConstantConnector3.mo \
 enum6.mo \
 eq5.mo \
 expconn1.mo \

@@ -24,9 +24,9 @@ end Connect3;
 //   Real c2.e;
 //   Real c2.f;
 // equation
-//   c2.f = 0.0;
-//   c1.f = 0.0;
 //   c1.e = c2.e;
 //   (-c1.f) + (-c2.f) = 0.0;
+//   c1.f = 0.0;
+//   c2.f = 0.0;
 // end Connect3;
 // endResult

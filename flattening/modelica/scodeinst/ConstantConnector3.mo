@@ -25,10 +25,10 @@ end ConstantConnector3;
 //   Real c2.e;
 //   Real c2.f;
 // equation
-//   assert(abs(c1.x - c2.x) <= 0.0, "automatically generated from connect");
+//   c1.e = c2.e;
+//   assert(abs(c1.x - c2.x) <= 0.0, "Connected constants/parameters must be equal");
+//   (-c1.f) + (-c2.f) = 0.0;
 //   c1.f = 0.0;
 //   c2.f = 0.0;
-//   c1.e = c2.e;
-//   (-c1.f) + (-c2.f) = 0.0;
 // end ConstantConnector3;
 // endResult
