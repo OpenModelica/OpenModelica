@@ -50,14 +50,18 @@ import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
 import NFPrefixes.Variability;
+import NFPrefixes.ConnectorType;
 import Prefixes = NFPrefixes;
 import ExpOrigin = NFExpOrigin;
+import Connector = NFConnector;
+import Connection = NFConnection;
 
 protected
 import Builtin = NFBuiltin;
 import Ceval = NFCeval;
 import ClassInf;
 import ComponentRef = NFComponentRef;
+import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
 import Inst = NFInst;
 import InstUtil = NFInstUtil;
@@ -73,6 +77,8 @@ import NFSections.Sections;
 import List;
 import DAEUtil;
 import MetaModelica.Dangerous;
+import ComplexType = NFComplexType;
+import Restriction = NFRestriction;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -98,11 +104,11 @@ function typeClass
   input String name;
 algorithm
   typeComponents(cls);
-  execStat("NFInst.typeComponents(" + name + ")");
+  execStat("NFTyping.typeComponents(" + name + ")");
   typeBindings(cls);
-  execStat("NFInst.typeBindings(" + name + ")");
+  execStat("NFTyping.typeBindings(" + name + ")");
   typeSections(cls);
-  execStat("NFInst.typeSections(" + name + ")");
+  execStat("NFTyping.typeSections(" + name + ")");
 end typeClass;
 
 function typeFunction
@@ -116,7 +122,7 @@ end typeFunction;
 function typeComponents
   input InstNode cls;
 protected
-  Class c = InstNode.getClass(cls);
+  Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
   list<Dimension> dims;
 algorithm
@@ -131,7 +137,14 @@ algorithm
 
     case Class.DERIVED_CLASS()
       algorithm
-        typeComponents(c.baseClass);
+        // At this stage most of the information in the derived class has been
+        // transferred to the component instance it belongs to, so we can
+        // collapse the extends hierarchy by replacing it with the base class.
+        c2 := InstNode.getClass(c.baseClass);
+        // But keep the restriction.
+        c2 := Class.setRestriction(c.restriction, c2);
+        InstNode.updateClass(c2, cls);
+        typeComponents(cls);
       then
         ();
 
@@ -146,6 +159,45 @@ algorithm
 
   end match;
 end typeComponents;
+
+function makeClassType
+  input InstNode clsNode;
+  output Type ty;
+protected
+  Class cls;
+  Restriction res;
+algorithm
+  cls := InstNode.getClass(clsNode);
+
+  ty := match cls
+    case Class.INSTANCED_CLASS(restriction = Restriction.CONNECTOR())
+      then Type.COMPLEX(clsNode, makeConnectorType(cls.elements));
+
+    else Class.getType(cls, clsNode);
+  end match;
+end makeClassType;
+
+function makeConnectorType
+  input ClassTree ctree;
+  output ComplexType connectorTy;
+protected
+  list<InstNode> pots = {}, flows = {}, streams = {};
+  ConnectorType cty;
+algorithm
+  for c in ClassTree.enumerateComponents(ctree) loop
+    cty := Component.connectorType(InstNode.component(c));
+
+    if cty == ConnectorType.FLOW then
+      flows := c :: flows;
+    elseif cty == ConnectorType.STREAM then
+      streams := c :: streams;
+    else
+      pots := c :: pots;
+    end if;
+  end for;
+
+  connectorTy := ComplexType.CONNECTOR(pots, flows, streams, false);
+end makeConnectorType;
 
 function typeComponent
   input InstNode component;
@@ -162,8 +214,11 @@ algorithm
         typeDimensions(c.dimensions, node, c.binding, c.info);
 
         // Construct the type of the component and update the node with it.
-        ty := Type.liftArrayLeftList(InstNode.getType(c.classInst), arrayList(c.dimensions));
+        ty := Type.liftArrayLeftList(makeClassType(c.classInst), arrayList(c.dimensions));
         InstNode.updateComponent(Component.setType(ty, c), node);
+
+        // Check that the component's attributes are valid.
+        checkComponentAttributes(c.attributes, component);
 
         // Type the component's children.
         typeComponents(c.classInst);
@@ -185,6 +240,49 @@ algorithm
 
   end match;
 end typeComponent;
+
+// TODO: Make this check part of the check that a class adheres to its
+//       restriction.
+function checkComponentAttributes
+  input Component.Attributes attributes;
+  input InstNode component;
+protected
+  Component.Attributes attr = attributes;
+  ConnectorType cty;
+algorithm
+  () := match attr
+    case Component.ATTRIBUTES(connectorType = cty)
+      algorithm
+        // The Modelica specification forbids using stream outside connector
+        // declarations, but has no such restriction for flow. To compromise we
+        // print a warning for both flow and stream.
+        if cty <> ConnectorType.POTENTIAL and not checkConnectorType(component) then
+          Error.addSourceMessage(Error.CONNECTOR_PREFIX_OUTSIDE_CONNECTOR,
+            {Prefixes.connectorTypeString(cty)}, InstNode.info(component));
+          // Remove the prefix from the component, to avoid issues like a flow
+          // equation being generated for it.
+          attr.connectorType := ConnectorType.POTENTIAL;
+          InstNode.componentApply(component, Component.setAttributes, attr);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end checkComponentAttributes;
+
+function checkConnectorType
+  input InstNode node;
+  output Boolean isConnector;
+algorithm
+  isConnector := match node
+    case InstNode.COMPONENT_NODE()
+      then Class.isConnectorClass(InstNode.getClass(node)) or
+           checkConnectorType(node.parent);
+
+    else false;
+  end match;
+end checkConnectorType;
 
 function typeIterator
   input InstNode iterator;
@@ -362,6 +460,7 @@ function typeBindings
 protected
   Class c;
   ClassTree cls_tree;
+  InstNode node;
 algorithm
   c := InstNode.getClass(cls);
 
@@ -371,12 +470,6 @@ algorithm
         for c in cls_tree.components loop
           typeComponentBinding(c);
         end for;
-      then
-        ();
-
-    case Class.DERIVED_CLASS()
-      algorithm
-        cls := typeBindings(c.baseClass);
       then
         ();
 
@@ -1294,11 +1387,7 @@ algorithm
         Equation.EQUALITY(e1, e2, ty, eq.info);
 
     case Equation.CONNECT()
-      algorithm
-        (e1, ty1) := typeExp(eq.lhs, eq.info);
-        (e2, ty2) := typeExp(eq.rhs, eq.info);
-      then
-        Equation.CONNECT(e1, ty1, e2, ty2, eq.info);
+      then typeConnect(eq.lhs, eq.rhs, eq.info);
 
     case Equation.FOR()
       algorithm
@@ -1362,6 +1451,104 @@ algorithm
     else eq;
   end match;
 end typeEquation;
+
+function typeConnect
+  input Expression lhsConn;
+  input Expression rhsConn;
+  input SourceInfo info;
+  output Equation connEq;
+protected
+  Expression lhs, rhs;
+  Type lhs_ty, rhs_ty;
+  Variability lhs_var, rhs_var;
+  MatchKind mk;
+algorithm
+  (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, info);
+  (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, info);
+
+  checkConnector(lhs, info);
+  checkConnector(rhs, info);
+
+  (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty);
+
+  if TypeCheck.isIncompatibleMatch(mk) then
+    // TODO: Better error message.
+    Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABLE,
+      {Expression.toString(lhsConn), Expression.toString(rhsConn)}, info);
+    fail();
+  end if;
+
+  // TODO: No point in doing this here since connectors aren't allowed to have
+  //       variability prefixes. We should check each individual connection once
+  //       the connections have been expanded during flattening instead.
+  // It's an error if either connector is constant/parameter while the other isn't.
+  //if (lhs_var <= Variability.PARAMETER) <> (rhs_var <= Varibility.PARAMETER then
+  //  if lhs_var > Variability.PARAMETER then
+  //    (lhs, rhs, lhs_var) := (rhs, lhs, rhs_var);
+  //  end if;
+
+  //  Error.addSourceMessage(Error.INCOMPATIBLE_CONNECTOR_VARIABILITY,
+  //    {Expression.toString(lhs), Prefixes.variabilityString(lhs_var),
+  //     Expression.toString(rhs)}, info);
+  //  fail();
+  //end if;
+
+  connEq := Equation.CONNECT(lhs, rhs, info);
+end typeConnect;
+
+function checkConnector
+  input Expression connExp;
+  input SourceInfo info;
+protected
+  ComponentRef cr, rest_cr;
+algorithm
+  () := match connExp
+    case Expression.CREF(cref = cr as ComponentRef.CREF(origin = Origin.CREF))
+      algorithm
+        if not InstNode.isConnector(cr.node) then
+          Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
+            {ComponentRef.toString(cr)}, info);
+          fail();
+        end if;
+
+        checkConnectorForm(cr, info);
+      then
+        ();
+
+    else
+      algorithm
+        Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
+          {Expression.toString(connExp)}, info);
+      then
+        fail();
+  end match;
+end checkConnector;
+
+function checkConnectorForm
+  "Helper function for checkConnector. Checks that a connector cref uses the
+   correct form, i.e. either c1.c2...cn or m.c."
+  input ComponentRef cref;
+  input SourceInfo info;
+  input Boolean foundConnector = true;
+algorithm
+  () := match cref
+    case ComponentRef.CREF(origin = Origin.CREF)
+      algorithm
+        // The only part of the connector reference allowed to not be a
+        // non-connector is the very last part.
+        if not foundConnector then
+          Error.addSourceMessage(Error.INVALID_CONNECTOR_FORM,
+            {ComponentRef.toString(cref)}, info);
+          fail();
+        end if;
+
+        checkConnectorForm(cref.restCref, info, InstNode.isConnector(cref.node));
+      then
+        ();
+
+    else ();
+  end match;
+end checkConnectorForm;
 
 function typeAlgorithm
   input output list<Statement> alg;
@@ -1561,20 +1748,6 @@ algorithm
     fail();
   end if;
 end typeReinit;
-
-//function typeReinit
-//  input output Expression crefExp;
-//  input output Expression exp;
-//  input SourceInfo info;
-//protected
-//  DAE.VarKind var;
-//  MatchKind mk;
-//  Type ty1, ty2;
-//algorithm
-//  (crefExp, ty1, var) := typeExp(crefExp, info);
-//
-//  if not DAEUtil.isParamV
-//  (_, _, mk) := TypeCheck.matchTypes(Type.arrayElementType(ty1), Type.REAL(), crefExp);
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTyping;

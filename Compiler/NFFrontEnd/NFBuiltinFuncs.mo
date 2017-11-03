@@ -143,5 +143,17 @@ constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
+constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+
+constant Function MAX_REAL = Function.FUNCTION(Path.IDENT("max"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+
+constant Function IN_STREAM = Function.FUNCTION(Path.IDENT("inStream"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

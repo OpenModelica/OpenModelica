@@ -467,6 +467,28 @@ uniontype Component
     output Boolean isOuter = innerOuter(component) == InnerOuter.OUTER;
   end isOnlyOuter;
 
+  function connectorType
+    input Component component;
+    output ConnectorType cty;
+  algorithm
+    cty := match component
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
+      else ConnectorType.POTENTIAL;
+    end match;
+  end connectorType;
+
+  function isFlow
+    input Component component;
+    output Boolean isFlow = connectorType(component) == ConnectorType.FLOW;
+  end isFlow;
+
+  function isConnector
+    input Component component;
+    output Boolean isConnector =
+      Class.isConnectorClass(InstNode.getClass(classInstance(component)));
+  end isConnector;
+
   function isIdentical
     input Component comp1;
     input Component comp2;

@@ -223,7 +223,7 @@ public constant Message INST_ARRAY_EQ_UNKNOWN_SIZE = MESSAGE(46, TRANSLATION(), 
 public constant Message TUPLE_ASSIGN_FUNCALL_ONLY = MESSAGE(47, TRANSLATION(), ERROR(),
   Util.gettext("Tuple assignment only allowed when rhs is function call (in %s)."));
 public constant Message INVALID_CONNECTOR_TYPE = MESSAGE(48, TRANSLATION(), ERROR(),
-  Util.gettext("Illegal connection: component %s is not a connector."));
+  Util.gettext("%s is not a valid connector."));
 public constant Message EXPANDABLE_NON_EXPANDABLE_CONNECTION = MESSAGE(49, TRANSLATION(), ERROR(),
   Util.gettext("Cannot connect expandable connector %s with non-expandable connector %s."));
 public constant Message UNDECLARED_CONNECTION = MESSAGE(50, TRANSLATION(), ERROR(),
@@ -249,7 +249,7 @@ public constant Message INHERITED_EXTENDS = MESSAGE(59, TRANSLATION(), ERROR(),
 public constant Message EXTEND_THROUGH_COMPONENT = MESSAGE(60, TRANSLATION(), ERROR(),
   Util.gettext("Part %s of base class name %s is not a class."));
 public constant Message PROTECTED_ACCESS = MESSAGE(61, TRANSLATION(), ERROR(),
-  Util.gettext("%s is protected and cannot be accessed outside it's scope."));
+  Util.gettext("Illegal access of protected element %s."));
 public constant Message ILLEGAL_MODIFICATION = MESSAGE(62, TRANSLATION(), ERROR(),
   Util.gettext("Illegal modification %s (of %s)."));
 public constant Message INTERNAL_ERROR = MESSAGE(63, TRANSLATION(), ERROR(),
@@ -749,6 +749,10 @@ public constant Message MISSING_INNER_ADDED = MESSAGE(309, TRANSLATION(), WARNIN
   Util.gettext("An inner declaration for outer %s %s could not be found and was automatically generated."));
 public constant Message MISSING_INNER_MESSAGE = MESSAGE(310, TRANSLATION(), NOTIFICATION(),
   Util.gettext("The diagnostics message for the missing inner is: %s"));
+public constant Message INVALID_CONNECTOR_FORM = MESSAGE(311, TRANSLATION(), ERROR(),
+  Util.gettext("%s is not a valid form for a connector, connectors must be either c1.c2...cn or m.c (where c is a connector and m is a non-connector)."));
+public constant Message CONNECTOR_PREFIX_OUTSIDE_CONNECTOR = MESSAGE(312, TRANSLATION(), WARNING(),
+  Util.gettext("Prefix '%s' used outside connector declaration."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

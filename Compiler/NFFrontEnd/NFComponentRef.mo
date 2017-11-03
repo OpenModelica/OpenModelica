@@ -41,6 +41,8 @@ protected
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFPrefixes.Variability;
+  import System;
+  import NFClass.Class;
 
   import ComponentRef = NFComponentRef;
 
@@ -99,6 +101,29 @@ public
     cref := CREF(node, sl, Type.UNKNOWN(), Origin.CREF, restCref);
   end fromAbsyn;
 
+  function fromAbsynCref
+    input Absyn.ComponentRef acref;
+    output ComponentRef cref;
+  algorithm
+    cref := match acref
+      case Absyn.ComponentRef.CREF_IDENT()
+        then CREF(InstNode.NAME_NODE(acref.name),
+          list(Subscript.RAW_SUBSCRIPT(s) for s in acref.subscripts),
+          Type.UNKNOWN(), Origin.CREF, EMPTY());
+
+      case Absyn.ComponentRef.CREF_QUAL()
+        then CREF(InstNode.NAME_NODE(acref.name),
+          list(Subscript.RAW_SUBSCRIPT(s) for s in acref.subscripts),
+          Type.UNKNOWN(), Origin.CREF, fromAbsynCref(acref.componentRef));
+
+      case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+        then fromAbsynCref(acref.componentRef);
+
+      case Absyn.ComponentRef.WILD() then WILD();
+      case Absyn.ComponentRef.ALLWILD() then WILD();
+    end match;
+  end fromAbsynCref;
+
   function fromBuiltin
     input InstNode node;
     input Type ty;
@@ -134,6 +159,19 @@ public
   algorithm
     CREF(restCref = restCref) := cref;
   end rest;
+
+  function firstNonScope
+    input ComponentRef cref;
+    output ComponentRef first;
+  protected
+    ComponentRef rest_cr = rest(cref);
+  algorithm
+    first := match rest_cr
+      case CREF(origin = Origin.SCOPE) then cref;
+      case EMPTY() then cref;
+      else firstNonScope(rest_cr);
+    end match;
+  end firstNonScope;
 
   function append
     input output ComponentRef cref;
@@ -310,6 +348,28 @@ public
     assert(false, getInstanceName() + ": IMPLEMENT ME");
   end compare;
 
+  function isEqual
+    input ComponentRef cref1;
+    input ComponentRef cref2;
+    output Boolean isEqual;
+  algorithm
+    if referenceEq(cref1, cref2) then
+      isEqual := true;
+      return;
+    end if;
+
+    isEqual := match (cref1, cref2)
+      case (CREF(), CREF())
+        then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
+             Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
+             isEqual(cref1.restCref, cref2.restCref);
+
+      case (EMPTY(), EMPTY()) then true;
+      case (WILD(), WILD()) then true;
+      else false;
+    end match;
+  end isEqual;
+
   function toDAE
     input ComponentRef cref;
     output DAE.ComponentRef dcref;
@@ -360,6 +420,12 @@ public
       else "EMPTY_CREF";
     end match;
   end toString;
+
+  function hash
+    input ComponentRef cref;
+    input Integer mod;
+    output Integer hash = System.stringHashDjb2Mod(toString(cref), mod);
+  end hash;
 
   function toPath
     input ComponentRef cref;

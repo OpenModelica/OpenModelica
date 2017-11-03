@@ -955,6 +955,34 @@ public
       arrayUpdate(getExtends(tree), 1, extNode);
     end setClassExtends;
 
+    function enumerateComponents
+      input ClassTree tree;
+      output list<InstNode> components;
+    protected
+      LookupTree.Tree ltree;
+      array<InstNode> comps;
+    algorithm
+      FLAT_TREE(tree = ltree, components = comps) := tree;
+      components := LookupTree.fold(ltree, function enumerateComponents2(comps = comps), {});
+    end enumerateComponents;
+
+    function enumerateComponents2
+      input String name;
+      input LookupTree.Entry entry;
+      input array<InstNode> comps;
+      input output list<InstNode> components;
+    algorithm
+      () := match entry
+        case LookupTree.Entry.COMPONENT()
+          algorithm
+            components := comps[entry.index] :: components;
+          then
+            ();
+
+        else ();
+      end match;
+    end enumerateComponents2;
+
   protected
 
     function instExtendsComps

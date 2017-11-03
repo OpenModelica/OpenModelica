@@ -59,6 +59,8 @@ import ClassTree = NFClassTree;
 import InstUtil = NFInstUtil;
 import DAEUtil;
 import Prefixes = NFPrefixes;
+import Restriction = NFRestriction;
+import ComplexType = NFComplexType;
 
 public
 type MatchKind = enumeration(
@@ -1439,6 +1441,7 @@ protected
   array<InstNode> comps1, comps2;
   Absyn.Path path;
   Type ty;
+  ComplexType cty1, cty2;
   Expression e;
   list<Expression> elements, matched_elements = {};
   MatchKind mk;
@@ -1477,6 +1480,19 @@ algorithm
       then
         ();
 
+    case (Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = cty1 as ComplexType.CONNECTOR())),
+          Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = cty2 as ComplexType.CONNECTOR())), _)
+      algorithm
+        matchKind := matchComponentList(cty1.potentials, cty2.potentials, allowUnknown);
+        if matchKind <> MatchKind.NOT_COMPATIBLE then
+          matchKind := matchComponentList(cty1.flows, cty2.flows, allowUnknown);
+          if matchKind <> MatchKind.NOT_COMPATIBLE then
+            matchKind := matchComponentList(cty1.streams, cty2.streams, allowUnknown);
+          end if;
+        end if;
+      then
+        ();
+
     case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
           Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _)
       algorithm
@@ -1503,6 +1519,31 @@ algorithm
 
   end match;
 end matchComplexTypes;
+
+function matchComponentList
+  input list<InstNode> comps1;
+  input list<InstNode> comps2;
+  input Boolean allowUnknown;
+  output MatchKind matchKind;
+protected
+  InstNode c2;
+  list<InstNode> rest_c2 = comps2;
+  Expression dummy = Expression.INTEGER(0);
+algorithm
+  if listLength(comps1) <> listLength(comps2) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+  else
+    for c1 in comps1 loop
+      c2 :: rest_c2 := comps2;
+      (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, allowUnknown);
+
+      if matchKind <> MatchKind.EXACT then
+        matchKind := MatchKind.NOT_COMPATIBLE;
+        return;
+      end if;
+    end for;
+  end if;
+end matchComponentList;
 
 function matchArrayTypes
   input Type arrayType1;

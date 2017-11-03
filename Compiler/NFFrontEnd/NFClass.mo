@@ -40,7 +40,13 @@ import NFComponent.Component;
 import Dimension = NFDimension;
 import NFClassTree.ClassTree;
 import NFSections.Sections;
+import Restriction = NFRestriction;
+import Expression = NFExpression;
 
+protected
+import Binding = NFBinding;
+
+public
 uniontype Class
   uniontype Prefixes
     record PREFIXES
@@ -72,6 +78,7 @@ uniontype Class
     ClassTree elements;
     Modifier modifier;
     Class.Prefixes prefixes;
+    Restriction restriction;
   end EXPANDED_CLASS;
 
   record DERIVED_CLASS
@@ -80,23 +87,28 @@ uniontype Class
     list<Dimension> dims;
     Class.Prefixes prefixes;
     Component.Attributes attributes;
+    Restriction restriction;
   end DERIVED_CLASS;
 
   record PARTIAL_BUILTIN
     Type ty;
     ClassTree elements;
     Modifier modifier;
+    Restriction restriction;
   end PARTIAL_BUILTIN;
 
   record INSTANCED_CLASS
     ClassTree elements;
     Sections sections;
+    Type ty;
+    Restriction restriction;
   end INSTANCED_CLASS;
 
   record INSTANCED_BUILTIN
     Type ty;
     ClassTree elements;
     list<Modifier> attributes;
+    Restriction restriction;
   end INSTANCED_BUILTIN;
 
   function fromSCode
@@ -120,7 +132,8 @@ uniontype Class
     ClassTree tree;
   algorithm
     tree := ClassTree.fromEnumeration(literals, enumType, enumClass);
-    cls := PARTIAL_BUILTIN(enumType, tree, Modifier.NOMOD());
+    cls := PARTIAL_BUILTIN(enumType, tree, Modifier.NOMOD(),
+      Restriction.ENUMERATION());
   end fromEnumeration;
 
   function initExpandedClass
@@ -128,7 +141,8 @@ uniontype Class
   algorithm
     cls := match cls
       case PARTIAL_CLASS()
-        then EXPANDED_CLASS(cls.elements, cls.modifier, Prefixes.DEFAULT());
+        then EXPANDED_CLASS(cls.elements, cls.modifier, Prefixes.DEFAULT(),
+          Restriction.UNKNOWN());
     end match;
   end initExpandedClass;
 
@@ -137,8 +151,8 @@ uniontype Class
     input output Class cls;
   algorithm
     cls := match cls
-      case EXPANDED_CLASS() then INSTANCED_CLASS(cls.elements, sections);
-      case INSTANCED_CLASS() then INSTANCED_CLASS(cls.elements, sections);
+      case INSTANCED_CLASS()
+        then INSTANCED_CLASS(cls.elements, sections, cls.ty, cls.restriction);
     end match;
   end setSections;
 
@@ -149,6 +163,38 @@ uniontype Class
   algorithm
     node := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
+
+  function lookupAttribute
+    input String name;
+    input Class cls;
+    output Modifier attribute = Modifier.NOMOD();
+  algorithm
+    () := match cls
+      case INSTANCED_BUILTIN()
+        algorithm
+          for attr in cls.attributes loop
+            if Modifier.name(attr) == name then
+              attribute := attr;
+              break;
+            end if;
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end lookupAttribute;
+
+  function lookupAttributeValue
+    input String name;
+    input Class cls;
+    output Option<Expression> value;
+  protected
+    Modifier attr;
+  algorithm
+    attr := lookupAttribute(name, cls);
+    value := Binding.typedExp(Modifier.binding(attr));
+  end lookupAttributeValue;
 
   function isBuiltin
     input Class cls;
@@ -298,6 +344,55 @@ uniontype Class
       else {};
     end match;
   end getTypeAttributes;
+
+  function getType
+    input Class cls;
+    input InstNode clsNode;
+    output Type ty;
+  algorithm
+    ty := match cls
+      case DERIVED_CLASS() then getType(InstNode.getClass(cls.baseClass), clsNode);
+      case INSTANCED_CLASS() then cls.ty;
+      case PARTIAL_BUILTIN() then cls.ty;
+      case INSTANCED_BUILTIN()
+        then match cls.ty
+          case Type.ANY_TYPE("unknown") then Type.ANY_TYPE(InstNode.name(clsNode));
+          else cls.ty;
+        end match;
+      else Type.UNKNOWN();
+    end match;
+  end getType;
+
+  function restriction
+    input Class cls;
+    output Restriction res;
+  algorithm
+    res := match cls
+      case INSTANCED_CLASS() then cls.restriction;
+      case INSTANCED_BUILTIN() then cls.restriction;
+      case EXPANDED_CLASS() then cls.restriction;
+      case PARTIAL_BUILTIN() then cls.restriction;
+      case DERIVED_CLASS() then cls.restriction;
+      else Restriction.UNKNOWN();
+    end match;
+  end restriction;
+
+  function setRestriction
+    input Restriction res;
+    input output Class cls;
+  algorithm
+    () := match cls
+      case INSTANCED_CLASS()   algorithm cls.restriction := res; then ();
+      case INSTANCED_BUILTIN() algorithm cls.restriction := res; then ();
+      case EXPANDED_CLASS()    algorithm cls.restriction := res; then ();
+      case DERIVED_CLASS()     algorithm cls.restriction := res; then ();
+    end match;
+  end setRestriction;
+
+  function isConnectorClass
+    input Class cls;
+    output Boolean isConnector = Restriction.isConnector(restriction(cls));
+  end isConnectorClass;
 
 end Class;
 

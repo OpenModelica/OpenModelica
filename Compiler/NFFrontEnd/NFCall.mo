@@ -753,6 +753,19 @@ protected
           fail();
     end match;
   end makeSizeCall;
+
+  function makeBuiltinCall
+    "Creates a call to a builtin function, given a Function and a list of
+     argument expressions."
+    input Function func;
+    input list<Expression> args;
+    output Call call;
+  algorithm
+    call := TYPED_CALL(func, args,
+      CallAttributes.CALL_ATTR(func.returnType, false, true, false, false,
+        DAE.NO_INLINE(), DAE.NO_TAIL()));
+  end makeBuiltinCall;
+
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");

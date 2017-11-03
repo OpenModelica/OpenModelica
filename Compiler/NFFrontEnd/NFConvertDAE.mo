@@ -438,7 +438,7 @@ algorithm
   elements := match eq
     local
       DAE.Exp e1, e2, e3;
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cr1, cr2;
       DAE.ElementSource src;
       list<DAE.Dimension> dims;
       list<DAE.Element> body;
@@ -450,6 +450,13 @@ algorithm
         src := ElementSource.createElementSource(eq.info);
       then
         DAE.Element.EQUATION(e1, e2, src) :: elements;
+
+    case Equation.CREF_EQUALITY()
+      algorithm
+        cr1 := ComponentRef.toDAE(eq.lhs);
+        cr2 := ComponentRef.toDAE(eq.rhs);
+      then
+        DAE.Element.EQUEQUATION(cr1, cr2, eq.source) :: elements;
 
     case Equation.ARRAY_EQUALITY()
       algorithm
@@ -490,11 +497,11 @@ algorithm
 
     case Equation.REINIT()
       algorithm
-        cref := ComponentRef.toDAE(Expression.toCref(eq.cref));
+        cr1 := ComponentRef.toDAE(Expression.toCref(eq.cref));
         e1 := Expression.toDAE(eq.reinitExp);
         src := ElementSource.createElementSource(eq.info);
       then
-        DAE.Element.REINIT(cref, e1, src) :: elements;
+        DAE.Element.REINIT(cr1, e1, src) :: elements;
 
     case Equation.NORETCALL()
       algorithm

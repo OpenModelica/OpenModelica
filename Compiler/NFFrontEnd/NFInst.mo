@@ -56,6 +56,8 @@ import Equation = NFEquation;
 import Statement = NFStatement;
 import Type = NFType;
 import Subscript = NFSubscript;
+import Connector = NFConnector;
+import Connection = NFConnection;
 
 protected
 import Array;
@@ -85,6 +87,8 @@ import NFFlatten.FunctionTree;
 import NFFlatten.Elements;
 import ConvertDAE = NFConvertDAE;
 import Scalarize = NFScalarize;
+import Restriction = NFRestriction;
+import ComplexType = NFComplexType;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -104,8 +108,6 @@ protected
   Elements elems;
   FunctionTree funcs;
 algorithm
-  execStatReset();
-
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);
   name := Absyn.pathString(classPath);
@@ -287,6 +289,7 @@ algorithm
       list<Dimension> dims;
       ClassTree tree;
       Component.Attributes attr;
+      Restriction res;
 
     case SCode.PARTS()
       algorithm
@@ -304,7 +307,8 @@ algorithm
           node := expandBuiltinExtends(builtin_ext, tree, node);
         else
           tree := ClassTree.expand(tree);
-          c := Class.EXPANDED_CLASS(tree, mod, prefs);
+          res := Restriction.fromSCode(SCode.getClassRestriction(def));
+          c := Class.EXPANDED_CLASS(tree, mod, prefs, res);
           node := InstNode.updateClass(c, node);
         end if;
       then
@@ -323,7 +327,8 @@ algorithm
         dims := list(Dimension.RAW_DIM(d) for d in Absyn.typeSpecDimensions(ty));
         mod := Class.getModifier(InstNode.getClass(node));
 
-        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, attr);
+        res := Restriction.fromSCode(SCode.getClassRestriction(def));
+        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, attr, res);
         node := InstNode.updateClass(c, node);
       then
         node;
@@ -345,13 +350,16 @@ algorithm
         prefs := instClassPrefixes(def);
 
         if isSome(builtin_ext) or Class.isBuiltin(InstNode.getClass(ext_node)) then
-          node := Util.getOptionOrDefault(builtin_ext, ext_node);
+          // A class extending from a base class may not have other base
+          // classes, and since this is a class extends it has at least one.
+        node := Util.getOptionOrDefault(builtin_ext, ext_node);
           Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
             {InstNode.name(node)}, InstNode.info(node));
           fail();
         else
           tree := ClassTree.expand(tree);
-          c := Class.EXPANDED_CLASS(tree, mod, prefs);
+          res := Restriction.fromSCode(SCode.getClassRestriction(def));
+          c := Class.EXPANDED_CLASS(tree, mod, prefs, res);
           node := InstNode.updateClass(c, node);
         end if;
       then
@@ -635,7 +643,7 @@ algorithm
         mod := Modifier.merge(cls_mod, mod);
 
         type_attr := Modifier.toList(mod);
-        inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, type_attr);
+        inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, type_attr, cls.restriction);
 
         node := InstNode.replaceClass(inst_cls, node);
         updateComponentClass(parent, node);
@@ -1136,6 +1144,7 @@ protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps;
   ClassTree cls_tree;
+  Restriction res;
 algorithm
   () := match cls
     case Class.EXPANDED_CLASS(elements = cls_tree)
@@ -1154,7 +1163,10 @@ algorithm
 
         // Instantiate local equation/algorithm sections.
         sections := instSections(node, scope, sections);
-        InstNode.classApply(node, Class.setSections, sections);
+
+        inst_cls := Class.INSTANCED_CLASS(cls.elements, sections,
+          Type.COMPLEX(node, ComplexType.CLASS()), cls.restriction);
+        InstNode.updateClass(inst_cls, node);
       then
         ();
 
@@ -1613,6 +1625,7 @@ algorithm
       SourceInfo info;
       Binding binding;
       InstNode for_scope, iter;
+      ComponentRef lhs_cr, rhs_cr;
 
     case SCode.EEquation.EQ_EQUALS(info = info)
       algorithm
@@ -1638,7 +1651,7 @@ algorithm
         exp1 := instCref(scodeEq.crefLeft, scope, info);
         exp2 := instCref(scodeEq.crefRight, scope, info);
       then
-        Equation.CONNECT(exp1, Type.UNKNOWN(), exp2, Type.UNKNOWN(), info);
+        Equation.CONNECT(exp1, exp2, info);
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm

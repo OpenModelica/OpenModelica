@@ -469,6 +469,18 @@ algorithm
   outEntries := valueArrayList(varr);
 end hashTableList;
 
+public function hashTableListReversed
+  "Returns the entries in the hashTable as a list of HashEntries, in reverse
+   order."
+  input HashTable hashTable;
+  output list<HashEntry> entries;
+protected
+  ValueArray varr;
+algorithm
+  (_, varr, _, _) := hashTable;
+  entries := valueArrayListReversed(varr);
+end hashTableListReversed;
+
 public function valueArrayList
   "Transforms a ValueArray to a HashEntry list."
   input ValueArray valueArray;
@@ -480,6 +492,18 @@ algorithm
   outEntries := Array.fold(arr, List.consOption, {});
   outEntries := listReverse(outEntries);
 end valueArrayList;
+
+public function valueArrayListReversed
+  "Transforms a ValueArray to a HashEntry list, in reverse order compared to
+   valueArrayList."
+  input ValueArray valueArray;
+  output list<HashEntry> entries;
+protected
+  array<Option<HashEntry>> arr;
+algorithm
+  (_, _, arr) := valueArray;
+  entries := Array.fold(arr, List.consOption, {});
+end valueArrayListReversed;
 
 public function hashTableCurrentSize
   "Returns the number of elements inserted into the table"

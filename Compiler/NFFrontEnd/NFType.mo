@@ -38,6 +38,7 @@ public
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
+  import ComplexType = NFComplexType;
 
   record ANY_TYPE
     String b;
@@ -84,6 +85,7 @@ public
 
   record COMPLEX
     InstNode cls;
+    ComplexType complexTy;
   end COMPLEX;
 
   record FUNCTION

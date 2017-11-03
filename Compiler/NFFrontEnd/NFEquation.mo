@@ -34,6 +34,8 @@ encapsulated uniontype NFEquation
   import Expression = NFExpression;
   import Type = NFType;
   import NFInstNode.InstNode;
+  import DAE.ElementSource;
+  import ComponentRef = NFComponentRef;
 
 protected
   import Equation = NFEquation;
@@ -46,6 +48,12 @@ public
     SourceInfo info;
   end EQUALITY;
 
+  record CREF_EQUALITY
+    ComponentRef lhs;
+    ComponentRef rhs;
+    ElementSource source;
+  end CREF_EQUALITY;
+
   record ARRAY_EQUALITY
     Expression lhs;
     Expression rhs;
@@ -54,13 +62,8 @@ public
   end ARRAY_EQUALITY;
 
   record CONNECT
-    Expression lhs "The left hand side component.";
-    //NFConnect2.Face lhsFace "The face of the lhs component, inside or outside.";
-    Type lhsType     "The type of the lhs component.";
-    Expression rhs "The right hand side component.";
-    //NFConnect2.Face rhsFace "The face of the rhs component, inside or outside.";
-    Type rhsType     "The type of the rhs component.";
-    //Prefix prefix;
+    Expression lhs;
+    Expression rhs;
     SourceInfo info;
   end CONNECT;
 

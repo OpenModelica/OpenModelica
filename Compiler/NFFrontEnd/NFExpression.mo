@@ -655,7 +655,7 @@ public
         then Absyn.pathString(t.typePath) + "." + exp.name;
 
       case CREF() then ComponentRef.toString(exp.cref);
-      case TYPENAME() then Type.toString(exp.ty);
+      case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
       case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
 
       case RANGE() then toString(exp.start) +
@@ -1634,12 +1634,32 @@ public
     end match;
   end arrayAllEqual2;
 
+  function fromCref
+    input ComponentRef cref;
+    output Expression exp;
+  algorithm
+    exp := Expression.CREF(ComponentRef.getType(cref), cref);
+  end fromCref;
+
   function toCref
     input Expression exp;
     output ComponentRef cref;
   algorithm
     Expression.CREF(cref = cref) := exp;
   end toCref;
+
+  function isZero
+    input Expression exp;
+    output Boolean isZero;
+  algorithm
+    isZero := match exp
+      case INTEGER() then exp.value == 0;
+      case REAL() then exp.value == 0.0;
+      case CAST() then isZero(exp.exp);
+      case UNARY() then isZero(exp.exp);
+      else false;
+    end match;
+  end isZero;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

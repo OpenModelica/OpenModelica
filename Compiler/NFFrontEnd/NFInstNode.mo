@@ -205,6 +205,10 @@ uniontype InstNode
     Integer index;
   end REF_NODE;
 
+  record NAME_NODE
+    String name;
+  end NAME_NODE;
+
   record IMPLICIT_SCOPE
     InstNode parentScope;
     list<InstNode> locals;
@@ -332,6 +336,16 @@ uniontype InstNode
     end match;
   end isImplicit;
 
+  function isConnector
+    input InstNode node;
+    output Boolean isConnector;
+  algorithm
+    isConnector := match node
+      case COMPONENT_NODE() then Component.isConnector(component(node));
+      else false;
+    end match;
+  end isConnector;
+
   function name
     input InstNode node;
     output String name;
@@ -342,6 +356,7 @@ uniontype InstNode
       case INNER_OUTER_NODE() then name(node.innerNode);
       // For bug catching, these names should never be used.
       case REF_NODE() then "$REF[" + String(node.index) + "]";
+      case NAME_NODE() then "$NAME[" + node.name + "]";
       case IMPLICIT_SCOPE() then "$IMPLICIT";
       case EMPTY_NODE() then "$EMPTY";
     end match;
@@ -357,6 +372,7 @@ uniontype InstNode
       case COMPONENT_NODE() then "component";
       case INNER_OUTER_NODE() then typeName(node.innerNode);
       case REF_NODE() then "ref node";
+      case NAME_NODE() then "name node";
       case IMPLICIT_SCOPE() then "implicit scope";
       case EMPTY_NODE() then "empty node";
     end match;
@@ -622,22 +638,7 @@ uniontype InstNode
     output Type ty;
   algorithm
     ty := match node
-      local
-        Class cls;
-
-      case CLASS_NODE()
-        algorithm
-          cls := Pointer.access(node.cls);
-        then
-          match cls
-            case Class.DERIVED_CLASS() then getType(cls.baseClass);
-            case Class.INSTANCED_CLASS() then Type.COMPLEX(node);
-            case Class.PARTIAL_BUILTIN() then cls.ty;
-            case Class.INSTANCED_BUILTIN(ty = ANY_TYPE("unknown")) then ANY_TYPE(InstNode.name(node));
-            case Class.INSTANCED_BUILTIN() then cls.ty;
-            else Type.UNKNOWN();
-          end match;
-
+      case CLASS_NODE() then Class.getType(Pointer.access(node.cls), node);
       case COMPONENT_NODE() then Component.getType(Pointer.access(node.component));
     end match;
   end getType;

@@ -587,10 +587,14 @@ function cat "Concatenate arrays along given dimension"
 end cat;
 
 function actualStream
+  input Real x;
+  output Real y;
   external "builtin";
 end actualStream;
 
 function inStream
+  input Real x;
+  output Real y;
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'inStream()'\">inStream()</a>

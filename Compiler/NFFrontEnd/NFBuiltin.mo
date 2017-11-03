@@ -57,6 +57,7 @@ import Pointer;
 import NFPrefixes.Variability;
 import ComponentRef = NFComponentRef;
 import NFComponentRef.Origin;
+import Restriction = NFRestriction;
 
 encapsulated package Elements
   import SCode;
@@ -115,19 +116,22 @@ end Elements;
 // modifiers and illegal in other cases).
 constant InstNode ANYTYPE_NODE = InstNode.CLASS_NODE("polymorphic",
   Elements.ANY,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ANY_TYPE("unknown"), NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ANY_TYPE("unknown"), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.TYPE())),
   arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode REAL_NODE = InstNode.CLASS_NODE("Real",
   Elements.REAL,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.REAL(), NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.REAL(), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.TYPE())),
   arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
 constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("Integer",
   Elements.INTEGER,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.INTEGER(), NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.INTEGER(), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.TYPE())),
   listArray({NFInstNode.CachedData.FUNCTION({NFBuiltinFuncs.INTEGER}, true, false), NFInstNode.CachedData.NO_CACHE(), NFInstNode.CachedData.NO_CACHE()}),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
@@ -136,7 +140,8 @@ constant ComponentRef INTEGER_CREF =
 
 constant InstNode BOOLEAN_NODE = InstNode.CLASS_NODE("Boolean",
   Elements.BOOLEAN,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.BOOLEAN(), NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.BOOLEAN(), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.TYPE())),
   arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
@@ -145,7 +150,8 @@ constant ComponentRef BOOLEAN_CREF =
 
 constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   Elements.STRING,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.STRING(), NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.STRING(), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.TYPE())),
   listArray({ NFInstNode.CachedData.FUNCTION({
 	                                              NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
 	                                              NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
@@ -162,7 +168,8 @@ constant ComponentRef STRING_CREF =
 
 constant InstNode ENUM_NODE = InstNode.CLASS_NODE("enumeration",
   Elements.ENUMERATION,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ENUMERATION_ANY(), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.ENUMERATION())),
   arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
@@ -171,7 +178,8 @@ constant Type STATESELECT_TYPE = Type.ENUMERATION(
 
 constant InstNode STATESELECT_NODE = InstNode.CLASS_NODE("StateSelect",
   Elements.STATESELECT,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(STATESELECT_TYPE, NFClassTree.EMPTY, Modifier.NOMOD())),
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(STATESELECT_TYPE, NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.ENUMERATION())),
   arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
 
@@ -285,6 +293,12 @@ constant ComponentRef STATESELECT_ALWAYS_CREF =
 
 constant Type ASSERTIONLEVEL_TYPE = Type.ENUMERATION(
   Absyn.IDENT("AssertionLevel"), {"error", "warning"});
+
+constant Expression ASSERTIONLEVEL_ERROR = Expression.ENUM_LITERAL(
+  ASSERTIONLEVEL_TYPE, "error", 1);
+
+constant Expression ASSERTIONLEVEL_WARNING = Expression.ENUM_LITERAL(
+  ASSERTIONLEVEL_TYPE, "error", 2);
 
 constant InstNode TIME =
   InstNode.COMPONENT_NODE("time",

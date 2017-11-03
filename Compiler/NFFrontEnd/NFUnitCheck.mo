@@ -27,6 +27,7 @@ import DAEUtil;
 import DAEDump;
 import SCode;
 import FCore;
+import ExecStat.execStat;
 
 public uniontype Functionargs
   record FUNCTIONUNITS
@@ -83,6 +84,8 @@ algorithm
   else
     Error.addInternalError(getInstanceName() + ": unit check module failed", sourceInfo());
   end try;
+
+  execStat(getInstanceName());
 end checkUnits;
 
 
@@ -448,6 +451,9 @@ algorithm
         (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
       then (HtCr2U, HtS2U, HtU2S,expList);
 
+    case (DAE.EQUEQUATION(), _, _, _, _)
+      then (inHtCr2U, inHtS2U, inHtU2S, {});
+
     case (DAE.INITIALEQUATION(exp1=lhs, exp2=rhs), HtCr2U, HtS2U, HtU2S,args) equation
 
       temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
@@ -529,6 +535,7 @@ algorithm
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     else equation
+      print(anyString(inEq));
       Error.addInternalError("./Compiler/NFFrontEnd/NFUnitCheck.mo: function foldEquation failed on: " + DAEDump.dumpEquationStr(inEq), sourceInfo());
     then fail();
   end match;

@@ -73,6 +73,54 @@ public
     output Subscript subscript = INDEX(exp);
   end makeIndex;
 
+  function isEqual
+    input Subscript subscript1;
+    input Subscript subscript2;
+    output Boolean isEqual;
+  algorithm
+    isEqual := match (subscript1, subscript2)
+      case (RAW_SUBSCRIPT(), RAW_SUBSCRIPT())
+        then Absyn.subscriptEqual(subscript1.subscript, subscript2.subscript);
+
+      case (UNTYPED(), UNTYPED())
+        then Expression.isEqual(subscript1.exp, subscript2.exp);
+
+      case (INDEX(), INDEX())
+        then Expression.isEqual(subscript1.index, subscript2.index);
+
+      case (SLICE(), SLICE())
+        then Expression.isEqual(subscript1.slice, subscript2.slice);
+
+      case (WHOLE(), WHOLE()) then true;
+      else false;
+    end match;
+  end isEqual;
+
+  function isEqualList
+    input list<Subscript> subscripts1;
+    input list<Subscript> subscripts2;
+    output Boolean isEqual;
+  protected
+    Subscript s2;
+    list<Subscript> rest = subscripts2;
+  algorithm
+    for s1 in subscripts1 loop
+      if listEmpty(rest) then
+        isEqual := false;
+        return;
+      end if;
+
+      s2 :: rest := rest;
+
+      if not isEqual(s1, s2) then
+        isEqual := false;
+        return;
+      end if;
+    end for;
+
+    isEqual := listEmpty(rest);
+  end isEqualList;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;

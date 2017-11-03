@@ -64,6 +64,13 @@ import Subscript = NFSubscript;
 import Type = NFType;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
+import ConnectionSets = NFConnectionSets.ConnectionSets;
+import Connections = NFConnectionSets.Connections;
+import Connection = NFConnection;
+import Connector = NFConnector;
+import ConnectEquations = NFConnectEquations;
+import Face = NFConnector.Face;
+import System;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -122,6 +129,10 @@ algorithm
     flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), {}, sections);
   comps := listReverseInPlace(comps);
 
+  //conns := Connections.new();
+  //(elems, funcs, conns) := flattenNode(classInst, ComponentRef.EMPTY(), {}, funcs, conns);
+  //elems := resolveConnections(conns, elems);
+
   elems := match sections
     case Sections.SECTIONS()
       algorithm
@@ -135,9 +146,9 @@ algorithm
     else ELEMENTS(comps, {}, {}, {}, {});
   end match;
 
-  funcs := flattenFunctions(elems);
-
   execStat(getInstanceName() + "(" + name + ")");
+  elems := resolveConnections(elems, name);
+  funcs := flattenFunctions(elems, name);
 end flatten;
 
 protected
@@ -160,9 +171,11 @@ algorithm
       then
         ();
 
+    case Class.INSTANCED_BUILTIN() then ();
+
     else
       algorithm
-        print("Got non-instantiated component " + ComponentRef.toString(prefix) + "\n");
+        assert(false, getInstanceName() + " got non-instantiated component " + ComponentRef.toString(prefix) + "\n");
       then
         ();
 
@@ -372,6 +385,13 @@ algorithm
       then
         eq;
 
+    case Equation.CONNECT()
+      algorithm
+        e1 := flattenExp(eq.lhs, prefix);
+        e2 := flattenExp(eq.rhs, prefix);
+      then
+        Equation.CONNECT(e1, e2, eq.info);
+
     case Equation.IF()
       algorithm
         eq.branches := list(flattenEqBranch(b, prefix) for b in eq.branches);
@@ -525,8 +545,185 @@ algorithm
   branch := (exp, stmtl);
 end flattenStmtBranch;
 
+function resolveConnections
+  input output Elements elems;
+  input String name;
+protected
+  Connections conns = Connections.new();
+  InstNode node;
+  Component comp;
+  list<Equation> eql = {}, conn_eql;
+  ConnectionSets.Sets csets;
+  array<list<Connector>> csets_array;
+  ComponentRef cr, lhs, rhs;
+  Connector c1, c2;
+  SourceInfo info;
+  Type ty1, ty2;
+algorithm
+  // Collect all flow variables.
+  for c in elems.components loop
+    () := match c
+      case (cr, _)
+        algorithm
+          comp := InstNode.component(ComponentRef.node(cr));
+
+          if Component.isFlow(comp) then
+            c1 := Connector.fromFacedCref(cr, Component.getType(comp), Face.INSIDE, Component.info(comp));
+            conns := Connections.addFlow(c1, conns);
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  // Collect all connects and remove them from the equation list.
+  for eq in elems.equations loop
+    eql := match eq
+      case Equation.CONNECT(lhs = Expression.CREF(cref = lhs, ty = ty1),
+                            rhs = Expression.CREF(cref = rhs, ty = ty2), info = info)
+        algorithm
+          c1 := Connector.fromCref(lhs, ty1, info);
+          c2 := Connector.fromCref(rhs, ty2, info);
+          conns := Connections.addConnection(Connection.CONNECTION(c1, c2), conns);
+        then
+          eql;
+
+      else eq :: eql;
+    end match;
+  end for;
+
+  // Generate the connect equations and add them to the equation list.
+  csets := ConnectionSets.fromConnections(conns);
+  csets_array := ConnectionSets.extractSets(csets);
+  conn_eql := ConnectEquations.generateEquations(csets_array);
+  elems.equations := listAppend(conn_eql, listReverseInPlace(eql));
+
+  // Evaluate any connection operators if they're used.
+  if System.getHasStreamConnectors() or System.getUsesCardinality() then
+    elems := evaluateConnectionOperators(elems, csets, csets_array);
+  end if;
+
+  execStat(getInstanceName() + "(" + name + ")");
+end resolveConnections;
+
+function evaluateConnectionOperators
+  input output Elements elems;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+algorithm
+  elems.components := list(evaluateBindingConnOp(c, sets, setsArray) for c in elems.components);
+  elems.equations := evaluateEquationsConnOp(elems.equations, sets, setsArray);
+  elems.initialEquations := evaluateEquationsConnOp(elems.initialEquations, sets, setsArray);
+  // TODO: Implement evaluation for algorithm sections.
+end evaluateConnectionOperators;
+
+function evaluateBindingConnOp
+  input output tuple<ComponentRef, Binding> component;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+protected
+  ComponentRef cr;
+  Binding binding;
+  Expression exp, eval_exp;
+algorithm
+  () := match component
+    case (cr, binding as Binding.TYPED_BINDING(bindingExp = exp))
+      algorithm
+        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray);
+
+        if not referenceEq(exp, eval_exp) then
+          binding.bindingExp := eval_exp;
+          component := (cr, binding);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end evaluateBindingConnOp;
+
+function evaluateEquationsConnOp
+  input output list<Equation> equations;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+algorithm
+  equations := list(evaluateEquationConnOp(eq, sets, setsArray) for eq in equations);
+end evaluateEquationsConnOp;
+
+function evaluateEquationConnOp
+  input output Equation eq;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+algorithm
+  eq := match eq
+    local
+      Expression e1, e2;
+
+    case Equation.EQUALITY()
+      algorithm
+        e1 := ConnectEquations.evaluateOperators(eq.lhs, sets, setsArray);
+        e2 := ConnectEquations.evaluateOperators(eq.rhs, sets, setsArray);
+      then
+        Equation.EQUALITY(e1, e2, eq.ty, eq.info);
+
+    case Equation.ARRAY_EQUALITY()
+      algorithm
+        eq.rhs := ConnectEquations.evaluateOperators(eq.rhs, sets, setsArray);
+      then
+        eq;
+
+    case Equation.FOR()
+      algorithm
+        eq.body := evaluateEquationsConnOp(eq.body, sets, setsArray);
+      then
+        eq;
+
+    case Equation.IF()
+      algorithm
+        eq.branches := list(evaluateEqBranchConnOp(b, sets, setsArray) for b in eq.branches);
+      then
+        eq;
+
+    case Equation.WHEN()
+      algorithm
+        eq.branches := list(evaluateEqBranchConnOp(b, sets, setsArray) for b in eq.branches);
+      then
+        eq;
+
+    case Equation.REINIT()
+      algorithm
+        eq.reinitExp := ConnectEquations.evaluateOperators(eq.reinitExp, sets, setsArray);
+      then
+        eq;
+
+    case Equation.NORETCALL()
+      algorithm
+        eq.exp := ConnectEquations.evaluateOperators(eq.exp, sets, setsArray);
+      then
+        eq;
+
+    else eq;
+  end match;
+end evaluateEquationConnOp;
+
+function evaluateEqBranchConnOp
+  input output tuple<Expression, list<Equation>> branch;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+protected
+  Expression exp;
+  list<Equation> eql;
+algorithm
+  (exp, eql) := branch;
+  eql := evaluateEquationsConnOp(eql, sets, setsArray);
+  branch := (exp, eql);
+end evaluateEqBranchConnOp;
+
 function flattenFunctions
   input Elements elems;
+  input String name;
   output FunctionTree funcs;
 algorithm
   funcs := FunctionTree.new();
@@ -535,6 +732,7 @@ algorithm
   funcs := List.fold(elems.initialEquations, collectEquationFuncs, funcs);
   funcs := List.fold(elems.algorithms, collectAlgorithmFuncs, funcs);
   funcs := List.fold(elems.initialAlgorithms, collectAlgorithmFuncs, funcs);
+  execStat(getInstanceName() + "(" + name + ")");
 end flattenFunctions;
 
 function collectComponentFuncs
