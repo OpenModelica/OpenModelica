@@ -1329,15 +1329,15 @@ protected function stripRecordDefaultBindingsFromElement
   output DAE.Element outVar;
   output list<DAE.Element> outEqs;
 algorithm
-  (outVar, outEqs) := matchcontinue (inVar, inEqs)
+  (outVar, outEqs) := match (inVar, inEqs)
     local
       DAE.ComponentRef var_cr, eq_cr;
       list<DAE.Element> rest_eqs;
 
     case (DAE.VAR(componentRef = var_cr),
           DAE.EQUATION(exp = DAE.CREF(componentRef = eq_cr)) :: rest_eqs)
-      equation
-        true = ComponentReference.crefEqual(var_cr, eq_cr);
+      guard
+        ComponentReference.crefEqual(var_cr, eq_cr)
         // The first equation assigns the variable. Remove the variable's
         // binding and discard the equation.
       then
@@ -1345,13 +1345,13 @@ algorithm
 
     case (DAE.VAR(componentRef = var_cr),
           DAE.COMPLEX_EQUATION(lhs = DAE.CREF(componentRef = eq_cr)) :: _)
-      algorithm
-        true := ComponentReference.crefPrefixOf(eq_cr, var_cr);
+      guard
+        ComponentReference.crefPrefixOf(eq_cr, var_cr)
       then
         (DAEUtil.setElementVarBinding(inVar, NONE()), inEqs);
 
     else (inVar, inEqs);
-  end matchcontinue;
+  end match;
 end stripRecordDefaultBindingsFromElement;
 
 protected function checkDimensionGreaterThanZero
