@@ -3450,8 +3450,21 @@ protected function makeSES_SIMPLE_ASSIGN
 protected
   DAE.Exp e;
   DAE.ComponentRef cr;
+  String msg;
 algorithm
-  (DAE.CREF(cr, _), e) := inTpl;
+  (cr, e) := match(inTpl)
+    case((DAE.CREF(cr, _), e))
+      then (cr,e);
+    case((DAE.UNARY(DAE.UMINUS(_), DAE.CREF(cr, _)), e))
+      algorithm
+        e := Expression.negate(e);
+      then (cr,Expression.negate(e));
+    else
+      algorithm
+        msg := "SimCodeUtil.makeSES_SIMPLE_ASSIGN failed";//SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for (" + ExpressionDump.printExpStr(Util.tuple21(inTpl))+", "+ExpressionDump.printExpStr(Util.tuple22(inTpl))+"\n");
+        Error.addInternalError(msg, sourceInfo());
+      then fail();
+  end match;
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSES_SIMPLE_ASSIGN;
