@@ -160,6 +160,8 @@ ExtendSelf3.mo \
 ExtendsVisibility1.mo \
 ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
+ExtendsVisibility4.mo \
+ExtendsVisibility5.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -370,6 +372,10 @@ usertype3.mo \
 usertype4.mo \
 usertype5.mo \
 usertype6.mo \
+Visibility1.mo \
+Visibility2.mo \
+Visibility3.mo \
+Visibility4.mo \
 when1.mo \
 WhenInitial1.mo \
 WhenNested1.mo \
