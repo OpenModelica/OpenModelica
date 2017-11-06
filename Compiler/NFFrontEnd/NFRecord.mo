@@ -102,19 +102,22 @@ algorithm
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components))
       algorithm
         for i in arrayLength(components):-1:1 loop
+          n := components[i];
           comp := InstNode.component(components[i]);
-          if Component.isPublic(comp) then
+
+          if InstNode.isProtected(n) then
+            locals := n :: locals;
+          else
+            comp := InstNode.component(n);
             if Component.isConst(comp) then
               if not Component.hasBinding(comp) then
-                inputs := components[i]::inputs;
+                inputs := n :: inputs;
               else
-                locals := components[i]::locals;
+                locals := n :: locals;
               end if;
             else
-              inputs := components[i]::inputs;
+              inputs := n :: inputs;
             end if;
-          else
-            locals := components[i]::locals;
           end if;
         end for;
       then

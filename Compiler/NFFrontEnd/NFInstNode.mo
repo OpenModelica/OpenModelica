@@ -40,6 +40,8 @@ import Type = NFType;
 import NFFunction.Function;
 import Pointer;
 import Error;
+import Prefixes = NFPrefixes;
+import Visibility = NFPrefixes.Visibility;
 
 protected
 import List;
@@ -183,6 +185,7 @@ uniontype InstNode
   record CLASS_NODE
     String name;
     SCode.Element definition;
+    Visibility visibility;
     Pointer<Class> cls;
     array<CachedData> caches;
     InstNode parentScope;
@@ -191,6 +194,7 @@ uniontype InstNode
 
   record COMPONENT_NODE
     String name;
+    Visibility visibility;
     Pointer<Component> component;
     InstNode parent;
   end COMPONENT_NODE;
@@ -234,10 +238,11 @@ uniontype InstNode
     output InstNode node;
   protected
     String name;
+    SCode.Visibility vis;
   algorithm
-    SCode.CLASS(name = name) := definition;
-    node := CLASS_NODE(name, definition, Pointer.create(Class.NOT_INSTANTIATED()),
-      CachedData.empty(), parent, nodeType);
+    SCode.CLASS(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
+    node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
+      Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent, nodeType);
   end newClass;
 
   function newComponent
@@ -246,9 +251,11 @@ uniontype InstNode
     output InstNode node;
   protected
     String name;
+    SCode.Visibility vis;
   algorithm
-    SCode.COMPONENT(name = name) := definition;
-    node := COMPONENT_NODE(name, Pointer.create(Component.new(definition)), parent);
+    SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
+    node := COMPONENT_NODE(name, Prefixes.visibilityFromSCode(vis),
+      Pointer.create(Component.new(definition)), parent);
   end newComponent;
 
   function newExtends
@@ -258,11 +265,13 @@ uniontype InstNode
   protected
     Absyn.Path base_path;
     String name;
+    SCode.Visibility vis;
   algorithm
-    SCode.Element.EXTENDS(baseClassPath = base_path) := definition;
+    SCode.Element.EXTENDS(baseClassPath = base_path, visibility = vis) := definition;
     name := Absyn.pathLastIdent(base_path);
-    node := CLASS_NODE(name, definition, Pointer.create(Class.NOT_INSTANTIATED()),
-      CachedData.empty(), parent, InstNodeType.BASE_CLASS(parent, definition));
+    node := CLASS_NODE(name, definition, Prefixes.visibilityFromSCode(vis),
+      Pointer.create(Class.NOT_INSTANTIATED()), CachedData.empty(), parent,
+      InstNodeType.BASE_CLASS(parent, definition));
   end newExtends;
 
   function fromComponent
@@ -271,7 +280,7 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, Pointer.create(component), parent);
+    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component), parent);
   end fromComponent;
 
   function isClass
@@ -1033,6 +1042,55 @@ uniontype InstNode
     end match;
   end isProtectedBaseClass;
 
+  function visibility
+    input InstNode node;
+    output Visibility vis;
+  algorithm
+    vis := match node
+      case CLASS_NODE() then node.visibility;
+      case COMPONENT_NODE() then node.visibility;
+      else Visibility.PUBLIC;
+    end match;
+  end visibility;
+
+  function isProtected
+    input InstNode node;
+    output Boolean isProtected;
+  algorithm
+    isProtected := match node
+      case CLASS_NODE(visibility = Visibility.PROTECTED) then true;
+      case COMPONENT_NODE(visibility = Visibility.PROTECTED) then true;
+      else false;
+    end match;
+  end isProtected;
+
+  function protectClass
+    input output InstNode cls;
+  algorithm
+    () := match cls
+      case CLASS_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          cls.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      else ();
+    end match;
+  end protectClass;
+
+  function protectComponent
+    input output InstNode comp;
+  algorithm
+    () := match comp
+      case COMPONENT_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          comp.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      else ();
+    end match;
+  end protectComponent;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

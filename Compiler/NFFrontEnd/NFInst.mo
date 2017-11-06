@@ -385,7 +385,6 @@ algorithm
         encapsulatedPrefix = SCode.Encapsulated.NOT_ENCAPSULATED(),
         partialPrefix = SCode.Partial.NOT_PARTIAL(),
         prefixes = SCode.Prefixes.PREFIXES(
-          visibility = SCode.Visibility.PUBLIC(),
           finalPrefix = SCode.Final.NOT_FINAL(),
           innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER(),
           replaceablePrefix = SCode.NOT_REPLACEABLE()))
@@ -395,7 +394,6 @@ algorithm
       then Class.Prefixes.PREFIXES(
         cls.encapsulatedPrefix,
         cls.partialPrefix,
-        prefs.visibility,
         prefs.finalPrefix,
         prefs.innerOuter,
         prefs.replaceablePrefix);
@@ -425,7 +423,7 @@ algorithm
         dir := Prefixes.directionFromSCode(scodeAttr.direction);
       then
         Component.Attributes.ATTRIBUTES(cty, Parallelism.NON_PARALLEL,
-          var, dir, InnerOuter.NOT_INNER_OUTER, Visibility.PUBLIC);
+          var, dir, InnerOuter.NOT_INNER_OUTER);
 
   end match;
 end instDerivedAttributes;
@@ -615,7 +613,9 @@ algorithm
         InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
 
         // Instantiate the extends nodes.
-        ClassTree.mapExtends(cls_tree, function instExtends(attributes = attributes, parent = par));
+        ClassTree.mapExtends(cls_tree,
+          function instExtends(attributes = attributes, parent = par,
+            visibility = ExtendsVisibility.PUBLIC));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
@@ -810,41 +810,55 @@ algorithm
   applyModifier(ext_mod, cls_tree, InstNode.name(extendsNode));
 end modifyExtends;
 
+type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
+
 function instExtends
   input output InstNode node;
   input Component.Attributes attributes;
   input InstNode parent;
+  input ExtendsVisibility visibility;
 protected
   Class cls;
   ClassTree cls_tree;
-  Component.Attributes attr = attributes;
+  ExtendsVisibility vis = visibility;
 algorithm
-  if InstNode.isProtectedBaseClass(node) then
-    attr := match attr
-      case Component.Attributes.ATTRIBUTES()
-        algorithm
-          attr.visibility := Visibility.PROTECTED;
-        then
-          attr;
-
-      else NFComponent.PROTECTED_ATTR;
-    end match;
-  end if;
-
   cls := InstNode.getClass(node);
+
   () := match cls
-    case Class.EXPANDED_CLASS(elements = cls_tree)
+    case Class.EXPANDED_CLASS(elements = cls_tree as ClassTree.INSTANTIATED_TREE())
       algorithm
-        ClassTree.mapExtends(cls_tree, function instExtends(attributes = attr, parent = parent));
+        if vis == ExtendsVisibility.PUBLIC and InstNode.isProtectedBaseClass(node) or
+           vis == ExtendsVisibility.DERIVED_PROTECTED then
+          vis := ExtendsVisibility.PROTECTED;
+        end if;
+
+        // Protect components and classes if the extends is protected, except
+        // if they've already been protected by an extends higher up.
+        if vis == ExtendsVisibility.PROTECTED and visibility <> ExtendsVisibility.PROTECTED then
+          for c in cls_tree.classes loop
+            Mutable.update(c, InstNode.protectClass(Mutable.access(c)));
+          end for;
+
+          for c in cls_tree.components loop
+            Mutable.update(c, InstNode.protectComponent(Mutable.access(c)));
+          end for;
+        end if;
+
+        ClassTree.mapExtends(cls_tree,
+        function instExtends(attributes = attributes, parent = parent, visibility = vis));
 
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attr, parent = node, scope = node));
+          function instComponent(attributes = attributes, parent = node, scope = node));
       then
         ();
 
     case Class.DERIVED_CLASS()
       algorithm
-        node := instExtends(cls.baseClass, attr, parent);
+        if vis == ExtendsVisibility.PUBLIC and InstNode.isProtectedBaseClass(node) then
+          vis := ExtendsVisibility.DERIVED_PROTECTED;
+        end if;
+
+        node := instExtends(cls.baseClass, attributes, parent, visibility = vis);
       then
         ();
 
@@ -995,7 +1009,6 @@ protected
   Variability var;
   Direction dir;
   InnerOuter io;
-  Visibility vis;
 algorithm
   attributes := match (compAttr, compPrefs)
     case (SCode.Attributes.ATTR(
@@ -1004,7 +1017,6 @@ algorithm
             variability = SCode.Variability.VAR(),
             direction = Absyn.Direction.BIDIR()),
           SCode.Prefixes.PREFIXES(
-            visibility = SCode.Visibility.PUBLIC(),
             innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER()))
       then Component.Attributes.DEFAULT();
 
@@ -1015,9 +1027,8 @@ algorithm
         var := Prefixes.variabilityFromSCode(compAttr.variability);
         dir := Prefixes.directionFromSCode(compAttr.direction);
         io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
-        vis := Prefixes.visibilityFromSCode(compPrefs.visibility);
       then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis);
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io);
   end match;
 
   attributes := mergeComponentAttributes(outerAttributes, attributes, node);
@@ -1036,19 +1047,20 @@ algorithm
       Variability var;
       Direction dir;
       InnerOuter io;
-      Visibility vis;
 
     case (Component.Attributes.DEFAULT(), _) then innerAttr;
-    case (_, Component.Attributes.DEFAULT()) then outerAttr;
+
+    case (Component.Attributes.ATTRIBUTES(cty, par, var, dir, _), Component.Attributes.DEFAULT())
+      then Component.Attributes.ATTRIBUTES(cty, par, var, dir, InnerOuter.NOT_INNER_OUTER);
+
     case (Component.Attributes.ATTRIBUTES(), Component.Attributes.ATTRIBUTES())
       algorithm
         cty := Prefixes.mergeConnectorType(outerAttr.connectorType, innerAttr.connectorType, node);
         par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
         var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
         dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
-        vis := Prefixes.mergeVisibility(outerAttr.visibility, innerAttr.visibility);
       then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, vis);
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter);
 
   end match;
 end mergeComponentAttributes;
@@ -1066,19 +1078,18 @@ algorithm
       Variability var;
       Direction dir;
       InnerOuter io;
-      Visibility vis;
 
     case (_, Component.Attributes.DEFAULT()) then outerAttr;
     case (Component.Attributes.DEFAULT(), _) then innerAttr;
 
-    case (Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis),
+    case (Component.Attributes.ATTRIBUTES(cty, par, var, dir, io),
           Component.Attributes.ATTRIBUTES())
       algorithm
         cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
         var := Prefixes.variabilityMin(var, innerAttr.variability);
         dir := Prefixes.mergeDirection(dir, innerAttr.direction, node);
       then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, vis);
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io);
 
   end match;
 end mergeDerivedAttributes;

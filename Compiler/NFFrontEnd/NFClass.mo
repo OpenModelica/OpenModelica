@@ -52,7 +52,6 @@ uniontype Class
     record PREFIXES
       SCode.Encapsulated encapsulatedPrefix;
       SCode.Partial partialPrefix;
-      SCode.Visibility visibility;
       SCode.Final finalPrefix;
       Absyn.InnerOuter innerOuter;
       SCode.Replaceable replaceablePrefix;
@@ -313,17 +312,6 @@ uniontype Class
       else {};
     end match;
   end getDimensions;
-
-  function isProtected
-    input Class cls;
-    output Boolean isProtected;
-  algorithm
-    isProtected := match cls
-      case EXPANDED_CLASS(prefixes = Prefixes.PREFIXES(visibility = SCode.Visibility.PROTECTED())) then true;
-      case DERIVED_CLASS(prefixes = Prefixes.PREFIXES(visibility = SCode.Visibility.PROTECTED())) then true;
-      else false;
-    end match;
-  end isProtected;
 
   function getAttributes
     input Class cls;

@@ -784,8 +784,8 @@ protected
     Component.Attributes.ATTRIBUTES(
       connectorType = cty,
       direction = direction,
-      innerOuter = io,
-      visibility = vis) := Component.getAttributes(InstNode.component(component));
+      innerOuter = io) := Component.getAttributes(InstNode.component(component));
+    vis := InstNode.visibility(component);
 
     // Function components may not be connectors.
     if cty <> ConnectorType.POTENTIAL then

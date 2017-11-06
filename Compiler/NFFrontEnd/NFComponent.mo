@@ -55,8 +55,7 @@ constant Component.Attributes INPUT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.INPUT,
-    InnerOuter.NOT_INNER_OUTER,
-    Visibility.PUBLIC
+    InnerOuter.NOT_INNER_OUTER
   );
 
 constant Component.Attributes OUTPUT_ATTR =
@@ -65,18 +64,7 @@ constant Component.Attributes OUTPUT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.OUTPUT,
-    InnerOuter.NOT_INNER_OUTER,
-    Visibility.PUBLIC
-  );
-
-constant Component.Attributes PROTECTED_ATTR =
-  Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
-    Parallelism.NON_PARALLEL,
-    Variability.CONTINUOUS,
-    Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER,
-    Visibility.PROTECTED
+    InnerOuter.NOT_INNER_OUTER
   );
 
 constant Component.Attributes CONSTANT_ATTR =
@@ -85,8 +73,7 @@ constant Component.Attributes CONSTANT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONSTANT,
     Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER,
-    Visibility.PUBLIC
+    InnerOuter.NOT_INNER_OUTER
   );
 
 uniontype Component
@@ -98,7 +85,6 @@ uniontype Component
       Variability variability;
       Direction direction;
       InnerOuter innerOuter;
-      Visibility visibility;
     end ATTRIBUTES;
 
     record DEFAULT end DEFAULT;
@@ -409,26 +395,6 @@ uniontype Component
     input Component component;
     output Boolean isVar = variability(component) == Variability.CONTINUOUS;
   end isVar;
-
-  function visibility
-    input Component component;
-    output Visibility visibility;
-  algorithm
-    visibility := match component
-      case COMPONENT_DEF() then
-        if SCode.isElementProtected(component.definition) then
-          Visibility.PROTECTED else Visibility.PUBLIC;
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(visibility = visibility)) then visibility;
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(visibility = visibility)) then visibility;
-      // Iterators and enumeration literals can't be accessed in a way where visibility matters.
-      else Visibility.PUBLIC;
-    end match;
-  end visibility;
-
-  function isPublic
-    input Component component;
-    output Boolean isInput = visibility(component) == Visibility.PUBLIC;
-  end isPublic;
 
   function isRedeclare
     input Component component;

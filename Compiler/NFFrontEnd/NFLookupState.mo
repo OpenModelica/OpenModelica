@@ -321,24 +321,14 @@ uniontype LookupState
     input LookupState currentState;
   algorithm
     () := match currentState
-      local
-        Boolean is_protected;
-
       // The first part of a name is allowed to be protected, it's only
       // accessing a protected element via dot-notation that's illegal.
       case BEGIN() then ();
 
       else
         algorithm
-          is_protected := match node
-            // TODO: Implement attributes for classes and return the actual
-            // visibility here.
-            case InstNode.CLASS_NODE() then false;
-            case InstNode.COMPONENT_NODE() then not Component.isPublic(InstNode.component(node));
-          end match;
-
           // A protected element generates an error.
-          if is_protected then
+          if InstNode.isProtected(node) then
             Error.addSourceMessage(Error.PROTECTED_ACCESS,
               {InstNode.name(node)}, InstNode.info(node));
             fail();

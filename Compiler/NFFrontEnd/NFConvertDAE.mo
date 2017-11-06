@@ -58,6 +58,7 @@ import MetaModelica.Dangerous.listReverseInPlace;
 import Sections = NFSections;
 import Function = NFFunction.Function;
 import ClassTree = NFClassTree;
+import NFPrefixes.Visibility;
 
 public
 function convert
@@ -118,7 +119,7 @@ algorithm
 
   binding_exp := convertBinding(binding);
   var_attr := convertVarAttributes(Class.getTypeAttributes(cls), ty);
-  daeVar := makeDAEVar(cref, ty, binding_exp, attr, var_attr, info);
+  daeVar := makeDAEVar(cref, ty, binding_exp, attr, InstNode.visibility(comp_node), var_attr, info);
 end convertComponent;
 
 function makeDAEVar
@@ -126,6 +127,7 @@ function makeDAEVar
   input Type ty;
   input Option<DAE.Exp> binding;
   input Component.Attributes attr;
+  input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
   input SourceInfo info;
   output DAE.Element var;
@@ -146,7 +148,7 @@ algorithm
           Prefixes.variabilityToDAE(attr.variability),
           Prefixes.directionToDAE(attr.direction),
           Prefixes.parallelismToDAE(attr.parallelism),
-          Prefixes.visibilityToDAE(attr.visibility),
+          Prefixes.visibilityToDAE(vis),
           dty,
           binding,
           {},
@@ -159,7 +161,7 @@ algorithm
 
     else
       DAE.VAR(dcref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
-        DAE.VarParallelism.NON_PARALLEL(), DAE.VarVisibility.PUBLIC(), dty,
+        DAE.VarParallelism.NON_PARALLEL(), Prefixes.visibilityToDAE(vis), dty,
         binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, NONE(),
         Absyn.NOT_INNER_OUTER());
 
@@ -397,7 +399,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " git untyped binding");
+        assert(false, getInstanceName() + " got untyped binding");
       then
         fail();
 
@@ -416,7 +418,7 @@ algorithm
     case "always" then DAE.StateSelect.ALWAYS();
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown StateSelect literal");
+        assert(false, getInstanceName() + " got unknown StateSelect literal " + name);
       then
         fail();
   end match;
@@ -972,7 +974,7 @@ algorithm
         var_attr := convertVarAttributes(Class.getTypeAttributes(cls), ty);
         attr := comp.attributes;
       then
-        makeDAEVar(cref, ty, binding, attr, var_attr, info);
+        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, info);
 
     else
       algorithm

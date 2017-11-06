@@ -107,12 +107,20 @@ public
 
   function isOutside
     input Connector conn;
-    output Boolean isOutside = conn.face == Face.OUTSIDE;
+    output Boolean isOutside;
+  protected
+    Face f = conn.face; // Needed due to #4502
+  algorithm
+    isOutside := f == Face.OUTSIDE;
   end isOutside;
 
   function isInside
     input Connector conn;
-    output Boolean isInside = conn.face == Face.INSIDE;
+    output Boolean isInside;
+  protected
+    Face f = conn.face; // Needed due to #4502
+  algorithm
+    isInside := f == Face.INSIDE;
   end isInside;
 
   function name
