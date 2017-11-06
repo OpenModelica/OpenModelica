@@ -47,27 +47,29 @@ public import ValuesUtil;
 public import HashTable;
 public import HashTable2;
 
-protected import Algorithm;
-protected import BaseHashTable;
-protected import Ceval;
-protected import DAE.AvlTreePathFunction;
-protected import ComponentReference;
-protected import Config;
-protected import ConnectUtil;
-protected import DAEDump;
-protected import Debug;
-protected import ElementSource;
-protected import Error;
-protected import Expression;
-protected import ExpressionDump;
-protected import ExpressionSimplify;
-protected import Flags;
-protected import List;
-protected import System;
-protected import Types;
-protected import Util;
-protected import StateMachineFlatten;
-protected import VarTransform;
+protected
+import Algorithm;
+import BaseHashTable;
+import Ceval;
+import DAE.AvlTreePathFunction;
+import ComponentReference;
+import Config;
+import ConnectUtil;
+import DAEDump;
+import Debug;
+import DoubleEndedList;
+import ElementSource;
+import Error;
+import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
+import Flags;
+import List;
+import System;
+import Types;
+import Util;
+import StateMachineFlatten;
+import VarTransform;
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging."
@@ -341,149 +343,158 @@ public function splitDAEIntoVarsAndEquations
  Note: the functions are copied to both dae's.
  "
   input DAE.DAElist inDae;
-  output DAE.DAElist outDaeNoEqAllVars;
-  output DAE.DAElist outDaeAllEqNoVars;
+  output DAE.DAElist allVars;
+  output DAE.DAElist allEqs;
+protected
+  list<DAE.Element> rest;
+  DoubleEndedList<DAE.Element> vars, eqs;
 algorithm
-  (outDaeNoEqAllVars,outDaeAllEqNoVars) := matchcontinue(inDae)
-    local
-      DAE.Element v,e;
-      list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
-      String  id;
-      DAE.ElementSource source "the origin of the element";
-      Option<SCode.Comment> cmt;
+  DAE.DAE(rest) := inDae;
+  vars := DoubleEndedList.fromList({});
+  eqs := DoubleEndedList.fromList({});
+  for elt in rest loop
+    _ := match elt
+      local
+        DAE.Element v,e;
+        list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
+        String  id;
+        DAE.ElementSource source "the origin of the element";
+        Option<SCode.Comment> cmt;
 
-    case(DAE.DAE({})) then  (DAE.DAE({}),DAE.DAE({}));
+      case DAE.VAR()
+        algorithm
+          DoubleEndedList.push_back(vars, elt);
+        then ();
 
-    case(DAE.DAE((v as DAE.VAR())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(v::elts2),DAE.DAE(elts3));
+      // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE!
+      case DAE.COMP(id,elts1,source,cmt)
+        algorithm
+          (DAE.DAE(elts11),DAE.DAE(elts3)) := splitDAEIntoVarsAndEquations(DAE.DAE(elts1));
+          DoubleEndedList.push_back(vars, DAE.COMP(id,elts11,source,cmt));
+          DoubleEndedList.push_list_back(eqs, elts3);
+        then ();
 
-    // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE!
-    case(DAE.DAE(DAE.COMP(id,elts1,source,cmt)::elts2))
-      equation
-        (DAE.DAE(elts11),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts1));
-        (DAE.DAE(elts22),DAE.DAE(elts33)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
-        elts33 = listAppend(elts3,elts33);
-      then (DAE.DAE(DAE.COMP(id,elts11,source,cmt)::elts22),DAE.DAE(elts33));
+      case DAE.EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.EQUATION())::elts2))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.EQUEQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.EQUEQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIALEQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIALEQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.ARRAY_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.ARRAY_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIAL_ARRAY_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.COMPLEX_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.COMPLEX_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIAL_COMPLEX_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIAL_COMPLEX_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIALDEFINE()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIALDEFINE())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.DEFINE()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.DEFINE())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.WHEN_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.WHEN_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.IF_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.IF_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIAL_IF_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIAL_IF_EQUATION())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.ALGORITHM()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.ALGORITHM())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIALALGORITHM()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIALALGORITHM())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
+      // PA: are these external object constructor CALLS? Do not think so. But they should anyway be in funcs..
+      case DAE.EXTOBJECTCLASS()
+        algorithm
+          DoubleEndedList.push_back(vars, elt);
+        then ();
 
-    // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
-    // PA: are these external object constructor CALLS? Do not think so. But they should anyway be in funcs..
-    case(DAE.DAE((e as DAE.EXTOBJECTCLASS())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(e::elts2),DAE.DAE(elts3));
+      case DAE.ASSERT()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.ASSERT())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIAL_ASSERT()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIAL_ASSERT())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.TERMINATE()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.TERMINATE())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.INITIAL_TERMINATE()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.INITIAL_TERMINATE())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      case DAE.REINIT()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    case(DAE.DAE((e as DAE.REINIT())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
+      // handle also NORETCALL! Connections.root(...)
+      case DAE.NORETCALL()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
 
-    // handle also NORETCALL! Connections.root(...)
-    case(DAE.DAE((e as DAE.NORETCALL())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
-    case(DAE.DAE((e as DAE.INITIAL_NORETCALL())::elts))
-      equation
-        (DAE.DAE(elts2),DAE.DAE(elts3)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts));
-      then (DAE.DAE(elts2),DAE.DAE(e::elts3));
-    case(DAE.DAE(_::_))
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- DAEUtil.splitDAEIntoVarsAndEquations failed on:\n");
-      then fail();
-  end matchcontinue;
+      case DAE.INITIAL_NORETCALL()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
+
+      else
+        algorithm
+          Error.addInternalError(getInstanceName() + " failed for " + DAEDump.dumpDAEElementsStr(DAE.DAE({elt})), sourceInfo());
+        then fail();
+    end match;
+  end for;
+  allVars := DAE.DAE(DoubleEndedList.toListAndClear(vars));
+  allEqs := DAE.DAE(DoubleEndedList.toListAndClear(eqs));
 end splitDAEIntoVarsAndEquations;
 
 public function removeVariables "Remove the variables in the list from the DAE"

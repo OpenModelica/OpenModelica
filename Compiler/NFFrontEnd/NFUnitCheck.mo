@@ -224,25 +224,15 @@ protected function notification "dumps the calculated units"
   input NFHashTableCrToUnit.HashTable inHtCr2U1;
   input NFHashTableCrToUnit.HashTable inHtCr2U2;
   input NFHashTableUnitToString.HashTable inHtU2S;
+protected
+  String str;
+  list<tuple<DAE.ComponentRef, NFUnit.Unit>> lt1;
 algorithm
-  _ := matchcontinue(inHtCr2U1, inHtCr2U2, inHtU2S)
-    local
-      String str;
-      list<tuple<DAE.ComponentRef, NFUnit.Unit>> lt1;
-
-    case (_,_,_)
-      equation
-        lt1 = BaseHashTable.hashTableList(inHtCr2U1);
-        str = notification2(lt1, inHtCr2U2, inHtU2S);
-        false = stringEqual(str, "");
-        //Error.addCompilerNotification(str);
-        if Flags.isSet(Flags.DUMP_UNIT) then
-          Error.addCompilerNotification(str);
-        end if;
-        then ();
-
-          else ();
-  end matchcontinue;
+  lt1 := BaseHashTable.hashTableList(inHtCr2U1);
+  str := notification2(lt1, inHtCr2U2, inHtU2S);
+  if Flags.isSet(Flags.DUMP_UNIT) and str<>"" then
+    Error.addCompilerNotification(str);
+  end if;
 end notification;
 
 
@@ -251,31 +241,25 @@ protected function notification2 "help-function"
   input NFHashTableCrToUnit.HashTable inHtCr2U2;
   input NFHashTableUnitToString.HashTable inHtU2S;
   output String outS;
-
+protected
+  DAE.ComponentRef cr1=DAE.emptyCref;
+  Real factor1=0;
+  Integer i1=0, i2=0, i3=0, i4=0, i5=0, i6=0, i7=0;
 algorithm
-  outS := matchcontinue(inLt1, inHtCr2U2, inHtU2S)
-    local
-      String s1, s2;
-      list<tuple<DAE.ComponentRef, NFUnit.Unit>> lt1;
-      tuple<DAE.ComponentRef, NFUnit.Unit> t1;
-      DAE.ComponentRef cr1;
-      Real factor1;
-      Integer i1, i2, i3, i4, i5, i6, i7;
-
-    case ({}, _, _)
-    then "";
-
-    case (t1::lt1, _, _) equation
-      (cr1, NFUnit.MASTER())=t1;
-      NFUnit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7)=BaseHashTable.get(cr1, inHtCr2U2);
-      s1="\"" + ComponentReference.crefStr(cr1) + "\" has the Unit \"" + NFUnit.unitString(NFUnit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"" + "\n";
-      s2=notification2(lt1, inHtCr2U2, inHtU2S);
-    then s1 + s2;
-
-    case (_::lt1, _, _) equation
-      s1 = notification2(lt1, inHtCr2U2, inHtU2S);
-    then s1;
-  end matchcontinue;
+  outS := stringAppendList(list(
+  // We already assigned the variables before
+  "\"" + ComponentReference.crefStr(cr1) + "\" has the Unit \"" + NFUnit.unitString(NFUnit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"\n"
+  // Do the filtering and unboxing stuff at the same time; then we only need one hashtable call
+  // And we only use a try-block for MASTER nodes
+  for t1 guard match t1 local Boolean b; case (cr1,NFUnit.MASTER()) algorithm
+    b := false;
+    try
+      NFUnit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) := BaseHashTable.get(cr1, inHtCr2U2);
+      b := true;
+    else
+    end try;
+  then b; else false; end match in inLt1
+  ));
 end notification2;
 
 
