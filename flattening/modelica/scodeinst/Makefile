@@ -343,6 +343,7 @@ SizeInvalidIndex4.mo \
 SizeInvalidType1.mo \
 SizeInvalidType2.mo \
 StatementInvalidType1.mo \
+StateSelectVariability1.mo \
 SubscriptEnum1.mo \
 SubscriptIterator1.mo \
 Subscript1.mo \
