@@ -79,6 +79,16 @@ constant Component.Attributes PROTECTED_ATTR =
     Visibility.PROTECTED
   );
 
+constant Component.Attributes CONSTANT_ATTR =
+  Component.Attributes.ATTRIBUTES(
+    ConnectorType.POTENTIAL,
+    Parallelism.NON_PARALLEL,
+    Variability.CONSTANT,
+    Direction.NONE,
+    InnerOuter.NOT_INNER_OUTER,
+    Visibility.PUBLIC
+  );
+
 uniontype Component
   uniontype Attributes
     record ATTRIBUTES
