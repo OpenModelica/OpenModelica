@@ -289,6 +289,8 @@ OpenModelica source distribution if the sources were used.
 [LGPL 2.1] Full text might be in the file '/usr/share/common-licenses/LGPL-2.1',
 or online http://opensource.org/licenses/LGPL-2.1.
 
+[MPL 2.0] https://www.mozilla.org/MPL/2.0/
+
 [PD] Public Domain
 
 [BSD] ANTLR3 Copyright (c) 2005-2008 Terence Parr
@@ -303,6 +305,7 @@ or online http://opensource.org/licenses/LGPL-2.1.
 [BSD-1] Copyright (c) 2005-2013, Troy D. Hanson http://troydhanson.github.com/uthash/
 [LGPL 2.1] lpsolve55
 [LGPL 2.1+] Copyright (C) 2008  Robert Gamble libcsv.c
+[MPL v2.0] Mozilla Public License v2.0
 [Public Domain] sqlite3
 [EPL] ipopt (c) 2003-2013 International Business Machines and others
 [PD] MUMPS
