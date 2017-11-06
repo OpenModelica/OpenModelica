@@ -2004,22 +2004,27 @@ end failIfTrue;
 protected function tplCallHandleErrors
   input Tpl_Fun inFun;
   input output Text txt = emptyTxt;
-  input Integer nArg;
 
   partial function Tpl_Fun
     input Text in_txt;
     output Text out_txt;
   end Tpl_Fun;
+protected
+  Integer nErr;
 algorithm
+  nErr := Error.getNumErrorMessages();
   try
   try
     txt := inFun(txt);
   else
-    addTemplateErrorFunc(nArg, inFun);
+    addTemplateErrorFunc(inFun);
     fail();
   end try;
   else
-    addTemplateErrorFunc(nArg, inFun);
+    if StackOverflow.hasStacktraceMessages() then
+       Error.addInternalError("Stack overflow when evaluating function:\n"+ stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    end if;
+    addTemplateErrorFunc(inFun);
     fail();
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end tplCallHandleErrors;
@@ -2033,7 +2038,7 @@ public function tplCallWithFailErrorNoArg
     output Text out_txt;
   end Tpl_Fun;
 algorithm
-  txt := tplCallHandleErrors(inFun, txt, 0);
+  txt := tplCallHandleErrors(inFun, txt);
 end tplCallWithFailErrorNoArg;
 
 public function tplCallWithFailError
@@ -2049,7 +2054,7 @@ public function tplCallWithFailError
 protected
   ArgType1 arg;
 algorithm
-  txt := tplCallHandleErrors(function inFun(inArgA=inArg), txt, 1);
+  txt := tplCallHandleErrors(function inFun(inArgA=inArg), txt);
 end tplCallWithFailError;
 
 public function tplCallWithFailError2
@@ -2068,7 +2073,7 @@ protected
   ArgType1 argA;
   ArgType2 argB;
 algorithm
-  txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB), txt, 2);
+  txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB), txt);
 end tplCallWithFailError2;
 
 function tplCallWithFailError3
@@ -2086,7 +2091,7 @@ function tplCallWithFailError3
     output Text out_txt;
   end Tpl_Fun;
 algorithm
-  txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB, inArgC=inArgC), txt, 3);
+  txt := tplCallHandleErrors(function inFun(inArgA=inArgA, inArgB=inArgB, inArgC=inArgC), txt);
 end tplCallWithFailError3;
 
 function tplCallWithFailError4
@@ -2106,7 +2111,7 @@ function tplCallWithFailError4
     output Text out_txt;
   end Tpl_Fun;
 algorithm
-  txt := tplCallHandleErrors(function func(inArgA=argA, inArgB=argB, inArgC=argC, inArgD=argD), txt, 4);
+  txt := tplCallHandleErrors(function func(inArgA=argA, inArgB=argB, inArgC=argC, inArgD=argD), txt);
 end tplCallWithFailError4;
 
 public function tplString
@@ -2432,10 +2437,9 @@ end addSourceTemplateError;
 //for completeness
 protected function addTemplateErrorFunc<T>
  "Wraps call to Error.addMessage() funtion with Error.TEMPLATE_ERROR and one MessageToken."
-  input Integer numArg;
   input T func;
 algorithm
-  Error.addMessage(Error.TEMPLATE_ERROR_FUNC, {String(numArg), System.dladdr(func)});
+  Error.addMessage(Error.TEMPLATE_ERROR_FUNC, {System.dladdr(func)});
 end addTemplateErrorFunc;
 
 public function addTemplateError
