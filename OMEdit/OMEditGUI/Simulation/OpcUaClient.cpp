@@ -20,7 +20,7 @@ static bool writeReal(UA_Client *client, UA_NodeId id, UA_Double value)
   wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
   wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
   wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_DOUBLE];
-  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
+  wReq.nodesToWrite[0].value.value.storageType = UA_VARIANT_DATA_NODELETE;
   wReq.nodesToWrite[0].value.value.data = &value;
 
   UA_WriteResponse wResp = UA_Client_Service_write(client, wReq);
@@ -48,7 +48,7 @@ static bool writeBool(UA_Client *client, UA_NodeId id, UA_Boolean value)
   wReq.nodesToWrite[0].attributeId = UA_ATTRIBUTEID_VALUE;
   wReq.nodesToWrite[0].value.hasValue = UA_TRUE;
   wReq.nodesToWrite[0].value.value.type = &UA_TYPES[UA_TYPES_BOOLEAN];
-  wReq.nodesToWrite[0].value.value.storageType = UA_Variant::UA_VARIANT_DATA_NODELETE;
+  wReq.nodesToWrite[0].value.value.storageType = UA_VARIANT_DATA_NODELETE;
   wReq.nodesToWrite[0].value.value.data = &value;
 
   UA_WriteResponse wResp = UA_Client_Service_write(client, wReq);
@@ -86,11 +86,12 @@ OpcUaClient::~OpcUaClient()
 bool OpcUaClient::connectToServer()
 {
   std::string endPoint = "opc.tcp://localhost:" + std::to_string(mSimulationOptions.getInteractiveSimulationPortNumber());
-  mpClient = UA_Client_new(UA_ClientConfig_standard, Logger_Stdout);
+  mpClient = UA_Client_new(UA_ClientConfig_standard);
   UA_StatusCode returnValue;
   do {
     Sleep::msleep(100);
-    returnValue = UA_Client_connect(mpClient, UA_ClientConnectionTCP, endPoint.c_str());
+    // QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    returnValue = UA_Client_connect(mpClient, endPoint.c_str());
   } while (returnValue != UA_STATUSCODE_GOOD);
   // qDebug() << "Connected to OPC-UA server " << endPoint;
   return true;
@@ -316,7 +317,7 @@ double OpcUaClient::getCurrentSimulationTime()
   It can be done by using subscriptions or contacting the remote directly each time step (simulate with steps).
   */
 OpcUaWorker::OpcUaWorker(OpcUaClient *pClient, bool simulateWithSteps)
- : mpParentClient(pClient), mSimulateWithSteps(simulateWithSteps), mSampleInterval(100), mSpeedValue(1.0)
+ : mpParentClient(pClient), mSimulateWithSteps(simulateWithSteps), mSampleInterval(10), mSpeedValue(1.0), mServerSampleInterval(5)
 {
   setInterval(mSampleInterval);
   if (!mSimulateWithSteps) {
@@ -346,14 +347,20 @@ void OpcUaWorker::startInteractiveSimulation()
   while(mIsRunning) {
     const double elapsed = mClock.elapsed();
     sample();
-    if (mInterval > 0.0) {
-      const double ms = mInterval - (mClock.elapsed() - elapsed);
-      if (ms > 0.0) {
-        QTime waitTime= QTime::currentTime().addMSecs(ms);
-        while (QTime::currentTime() < waitTime) {
-          QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
+    if (mSimulateWithSteps) {
+      if (mInterval > 0.0) {
+        const double ms = mInterval - (mClock.elapsed() - elapsed);
+        if (ms > 0.0) {
+          QTime waitTime= QTime::currentTime().addMSecs(ms);
+          while (QTime::currentTime() < waitTime) {
+            QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+          }
         }
       }
+    } else {
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+      QThread::msleep(mServerSampleInterval);
     }
   }
 }
@@ -437,10 +444,7 @@ void OpcUaWorker::appendVariableValues()
 void OpcUaWorker::stepSimulation()
 {
   // set the step variable to true
-  UA_Variant *newValue = UA_Variant_new();
-  UA_Boolean run = true;
-  UA_Variant_setScalarCopy(newValue, &run, &UA_TYPES[UA_TYPES_BOOLEAN]);
-  UA_Client_writeValueAttribute(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10000), newValue);
+  writeBool(mpParentClient->getClient(), UA_NODEID_NUMERIC(0, 10000), UA_TRUE);
 }
 
 /*!
@@ -463,7 +467,8 @@ void OpcUaWorker::checkMinMaxValues(const double& value)
 void OpcUaWorker::createSubscription()
 {
   UA_SubscriptionSettings subscriptionSettings = UA_SubscriptionSettings_standard;
-  subscriptionSettings.requestedPublishingInterval = 1;
+  subscriptionSettings.requestedPublishingInterval = mServerSampleInterval;
+  subscriptionSettings.maxNotificationsPerPublish = 4096;
   UA_Client_Subscriptions_new(mpParentClient->getClient(), subscriptionSettings, &mSubscriptionId);
   monitorTime();
 }
@@ -500,7 +505,9 @@ void OpcUaWorker::timeChanged(UA_UInt32 handle, UA_DataValue *pValue, void *pCli
     // catch the time value
     mCurrentTime.setLocalData(*(UA_Double*)pValue->value.data);
   }
-  writeBool((UA_Client*) pClient, UA_NODEID_NUMERIC(0, 10000), UA_TRUE);
+  /* if (mSimulateWithSteps) */ {
+    writeBool((UA_Client*) pClient, UA_NODEID_NUMERIC(0, 10000), UA_TRUE);
+  }
 }
 
 /*!

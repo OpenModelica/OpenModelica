@@ -78,7 +78,7 @@ private:
   OpcUaClient *mpParentClient;
   VariablesTreeItem *mpVariablesTreeItemRoot;
   QTime mClock;
-  double mInterval, mSpeedValue;
+  double mInterval, mSpeedValue, mServerSampleInterval;
   bool mIsRunning;
 
   void createSubscription();

@@ -1526,12 +1526,18 @@ void SimulationDialog::simulationPaused()
 
 void SimulationDialog::updateInteractiveSimulationCurves()
 {
-  MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->updateCurves();
+  OMPlot::PlotWindow* window = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+  if (window) {
+    window->updateCurves();
+  }
 }
 
 void SimulationDialog::updateYAxis(double min, double max)
 {
-  MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow()->updateYAxis(qMakePair(min, max));
+  OMPlot::PlotWindow* window = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+  if (window) {
+    window->updateYAxis(qMakePair(min, max));
+  }
 }
 
 void SimulationDialog::removeVariablesFromTree(QString className)
@@ -1583,8 +1589,8 @@ void SimulationDialog::terminateSimulationProcess(SimulationOutputWidget *pSimul
 void SimulationDialog::killSimulationProcess(int port)
 {
   std::string endPoint = "opc.tcp://localhost:" + std::to_string(port);
-  UA_Client *pClient = UA_Client_new(UA_ClientConfig_standard, Logger_Stdout);
-  UA_StatusCode returnValue = UA_Client_connect(pClient, UA_ClientConnectionTCP, endPoint.c_str());
+  UA_Client *pClient = UA_Client_new(UA_ClientConfig_standard);
+  UA_StatusCode returnValue = UA_Client_connect(pClient, endPoint.c_str());
 
   if (returnValue == UA_STATUSCODE_GOOD) {
     removeVariablesFromTree(mOpcUaClientsMap.value(port)->getSimulationOptions().getClassName());
