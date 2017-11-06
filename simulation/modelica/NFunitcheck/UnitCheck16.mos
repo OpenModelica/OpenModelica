@@ -10,7 +10,7 @@ equation
 end test;
 "); getErrorString();
 
-setCommandLineOptions("+d=frontEndUnitCheck +d=dumpUnits");
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
 getErrorString(); 
 instantiateModel(test);
 getErrorString();

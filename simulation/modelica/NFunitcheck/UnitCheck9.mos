@@ -18,7 +18,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("+d=frontEndUnitCheck +d=dumpUnits");
+setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
 getErrorString();
 instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 
