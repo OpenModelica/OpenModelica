@@ -52,13 +52,16 @@ protected
   NFHashTableStringToUnit.HashTable HtS2U;
   NFHashTableUnitToString.HashTable HtU2S;
 algorithm
+  if not Flags.isSet(Flags.NF_UNITCHECK) then
+    return;
+  end if;
   try
     (elts1, elts2) := DAEUtil.splitDAEIntoVarsAndEquations(inDAE);
     varlist := GetVarList(elts1);
     eqlist := GetElementList(elts2);
     functionlist := DAEUtil.getFunctionList(func);
 
-    HtCr2U1 := NFHashTableCrToUnit.emptyHashTableSized(2053);
+    HtCr2U1 := NFHashTableCrToUnit.emptyHashTableSized(Util.nextPrime(integer(10+1.4*listLength(varlist))));
     HtS2U := NFUnit.getKnownUnits();
     HtU2S := NFUnit.getKnownUnitsInverse();
 
@@ -68,7 +71,6 @@ algorithm
 
     // new instantiation
     //((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit, (HtCr2U1, HtS2U, HtU2S));
-
     // old instantiation
     ((HtCr2U1, HtS2U, HtU2S)) := List.fold(varlist, convertUnitString2unit_old, (HtCr2U1, HtS2U, HtU2S));
     HtCr2U2 := BaseHashTable.copy(HtCr2U1);
@@ -1368,18 +1370,18 @@ protected function parse "author: lochel"
   output NFHashTableStringToUnit.HashTable outHtS2U = inHtS2U;
   output NFHashTableUnitToString.HashTable outHtU2S = inHtU2S;
 algorithm
+  if inUnitString == "" then
+    outUnit := NFUnit.MASTER({inCref});
+    return;
+  end if;
   try
-  outUnit := BaseHashTable.get(inUnitString, inHtS2U);
+    outUnit := BaseHashTable.get(inUnitString, inHtS2U);
   else
-    outUnit := matchcontinue(inUnitString)
-      case ""
-      then NFUnit.MASTER({inCref});
-
-      case _
-      then NFUnit.parseUnitString(inUnitString, inHtS2U);
-
-    else NFUnit.UNKNOWN(inUnitString);
-    end matchcontinue;
+    try
+      outUnit := NFUnit.parseUnitString(inUnitString, inHtS2U);
+    else
+      outUnit := NFUnit.UNKNOWN(inUnitString);
+    end try;
     outHtS2U := addUnit2HtS2U((inUnitString, outUnit), outHtS2U);
     outHtU2S := addUnit2HtU2S((inUnitString, outUnit), outHtU2S);
   end try;
