@@ -465,6 +465,8 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
       simInfo->stopTime = simInfo->startTime;
       retValue = -1;
     }
+    if (!retValue)
+      infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully %s homotopy method.", data->simulationInfo->homotopyUsed ? "with" : "without");
 
     success = 1;
 #if !defined(OMC_EMCC)

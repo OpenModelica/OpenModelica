@@ -186,7 +186,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   long i;
   MODEL_DATA *mData = data->modelData;
   int solveWithGlobalHomotopy = data->callback->useHomotopy == 0 || (data->callback->useHomotopy != 2 && init_lambda_steps < 2) ? 0 : 1;
-  data->simulationInfo->homotopyUsed = 0;
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -308,9 +307,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
-
-  if (!retVal)
-    infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully %s homotopy method.", data->simulationInfo->homotopyUsed ? "with" : "without");
 
   TRACE_POP
   return retVal;
@@ -567,6 +563,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   int initMethod = IIM_SYMBOLIC; /* default method */
   int retVal = -1;
   int i;
+
+  data->simulationInfo->homotopyUsed = 0;
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");
 
