@@ -1,0 +1,46 @@
+// name:     RecordEquationSize
+// keywords: #4611 
+// status:   correct
+//
+// Checks that checkModel counts arrays of complex type correctly.
+//
+
+loadString("
+operator record Complex 
+  replaceable Real re;
+  replaceable Real im;
+
+  encapsulated operator 'constructor' 
+    function fromReal 
+      input Real re;
+      input Real im = 0;
+      output .Complex result(re = re, im = im);
+    algorithm
+      annotation(Inline = true); 
+    end fromReal;
+  end 'constructor';
+end Complex;
+
+function LineZb  
+  input Real[2] y;
+  output Complex[2, 2] Z;
+algorithm
+  Z := fill(Complex(1, 1), 2, 2);
+end LineZb;
+
+model RecordEquationSize  
+  parameter Real[:] y = {8, 10};
+  Complex[2, 2] Z;
+equation
+  Z = LineZb(y = y);
+end RecordEquationSize;
+");
+
+checkModel(RecordEquationSize);
+
+// Result:
+// true
+// "Check of RecordEquationSize completed successfully.
+// Class RecordEquationSize has 8 equation(s) and 8 variable(s).
+// 0 of these are trivial equation(s)."
+// endResult

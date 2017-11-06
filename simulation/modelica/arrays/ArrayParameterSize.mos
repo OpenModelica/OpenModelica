@@ -13,7 +13,7 @@ getErrorString();
 // Result:
 // true
 // "Check of ArrayParameterSize completed successfully.
-// Class ArrayParameterSize has 0 equation(s) and 1 variable(s).
+// Class ArrayParameterSize has 1 equation(s) and 1 variable(s).
 // 0 of these are trivial equation(s)."
 // ""
 // endResult

@@ -28,6 +28,7 @@ TESTFILES = \
  RecordDefaultArg.mo \
  RecordDefaultArgMod.mo \
  RecordEnumBinding.mo \
+ RecordEquationSize.mos \
  RecordFuncParam.mo \
  RecordFuncParam.mos \
  RecordModifications2.mo \
