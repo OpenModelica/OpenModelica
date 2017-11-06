@@ -191,7 +191,7 @@ algorithm
     case DAE.ARRAY_EQUATION(dimension=dims)
       equation
         (varSize, eqnSize, eqns, hs) = inArg;
-        size =  List.fold(Expression.dimensionsSizes(dims), intMul, 1);
+        size = Expression.sizeOf(Expression.typeof(inElt.exp));
       then (varSize, eqnSize+size, inElt::eqns, hs);
 
     // initial array equations

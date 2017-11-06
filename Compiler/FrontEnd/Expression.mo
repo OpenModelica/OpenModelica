@@ -2135,6 +2135,7 @@ algorithm
     case DAE.T_ARRAY(dims = ad)
       equation
         nr = dimensionSize(List.reduce(ad, dimensionsMult));
+        nr = nr * sizeOf(inType.ty);
       then
         nr;
 
