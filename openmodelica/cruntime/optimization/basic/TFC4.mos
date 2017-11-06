@@ -50,7 +50,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testFinalCon_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif ReferenceFiles/testFinalCon3_ref.mat -lv LOG_IPOPT_ERROR -ipopt_max_iter=-1 -ipopt_init FILE -iim none'",
-//     messages = "
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:x1(start = 1, nominal = 2, min = -Inf, max = +Inf, init = 1)
@@ -61,7 +62,7 @@ getErrorString();
 // ========================================================
 // stdout            | info    | Using values from file as initial guess.
 //
-// max_iter = -1stdout            | info    | The simulation finished successfully.
+// max_iter = -1LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

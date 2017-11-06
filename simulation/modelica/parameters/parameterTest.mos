@@ -411,9 +411,9 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 // record SimulationResult
 //     resultFile = "parameterTest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,p3,p4,p5,b1,b2'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=1,p2=2,p3=3,p4=-2,p5=5,b1=0,b2=1
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

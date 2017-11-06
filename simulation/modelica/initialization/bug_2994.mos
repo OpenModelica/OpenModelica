@@ -31,7 +31,6 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT -override=a=2"); g
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=1, fixed=true) = 1
@@ -39,7 +38,8 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT -override=a=2"); g
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y(start=1, nominal=1) = 1 (pre: 1)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
@@ -53,7 +53,6 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT -override=a=2"); g
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=2, fixed=true) = 2
@@ -61,7 +60,8 @@ simulate(initializationTests.bug_2994, simflags="-lv=LOG_INIT -override=a=2"); g
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y(start=1, nominal=1) = 2 (pre: 1)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[<interactive>:6:5-6:30:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.

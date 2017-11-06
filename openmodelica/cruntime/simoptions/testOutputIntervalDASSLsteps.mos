@@ -51,65 +51,65 @@ readSimulationResultSize("testModel_res.mat");
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 211
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEventEmit'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 186
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxStepSize=0.001'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 2134
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -maxIntegrationOrder=1'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 6691
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 26
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEquidistantOutputFrequency=5'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 8
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEquidistantOutputTime=0.1'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 7
 // record SimulationResult
 //     resultFile = "testModel_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.4, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-noEquidistantTimeGrid -noEquidistantOutputTime=0.1 -noEquidistantOutputFrequency=2'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // stdout            | warning | The flags are  \"noEquidistantOutputFrequency\" and \"noEquidistantOutputTime\" are in opposition to each other. The flag \"noEquidistantOutputFrequency\" superiors.
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 15

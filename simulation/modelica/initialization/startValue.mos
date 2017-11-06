@@ -31,8 +31,8 @@ res := readSimulationResult("initializationTests.startValue_res.mat", {time, y},
 // record SimulationResult
 //     resultFile = "initializationTests.startValue_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.startValue', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

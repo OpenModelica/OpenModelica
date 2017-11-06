@@ -28,8 +28,8 @@ runScript(modelTesting);getErrorString();
 // {"voltageSource.plug_p.reference.gamma","voltageSource.voltageSource[2].pin_p.reference.gamma","voltageSource.voltageSource[3].pin_p.reference.gamma"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta', options = '', outputFormat = 'mat', variableFilter = 'time|voltageSource.plug_p.reference.gamma|voltageSource.voltageSource.2..pin_p.reference.gamma|voltageSource.voltageSource.3..pin_p.reference.gamma', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

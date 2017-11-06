@@ -28,12 +28,12 @@ v;
 // ""
 // {"ModelTestBug3974","ModelTestBug3974_init.xml"}
 // ""
-// stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
 // ""
-// stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
 // ""
 // true

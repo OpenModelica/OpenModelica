@@ -205,8 +205,8 @@ val(h_i[5], 1.0); getErrorString();
 // record SimulationResult
 //     resultFile = "TestFalseIterationNLS_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestFalseIterationNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[<interactive>:20:3-20:42:writable] Warning: Unused input variable nc in function .pureComponentProperties_pTnc.
@@ -217,7 +217,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.878581457404488e-316
+// 7.673716940501573e-317
 // ""
 // 0.0
 // ""
@@ -233,7 +233,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.881065224219261e-316
+// 7.698554608649304e-317
 // ""
 // 0.0
 // ""

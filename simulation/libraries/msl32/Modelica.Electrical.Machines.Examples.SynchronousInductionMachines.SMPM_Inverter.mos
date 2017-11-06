@@ -32,8 +32,8 @@ runScript(modelTesting);getErrorString();
 // {"smpm.idq_sr[1]","smpm.idq_sr[2]","smpm.idq_rr[1]","smpm.idq_rr[2]","vfController.x","loadInertia.phi","loadInertia.w"}
 // Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|smpm.idq_sr.1.|smpm.idq_sr.2.|smpm.idq_rr.1.|smpm.idq_rr.2.|vfController.x|loadInertia.phi|loadInertia.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMPM_Inverter_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // "true

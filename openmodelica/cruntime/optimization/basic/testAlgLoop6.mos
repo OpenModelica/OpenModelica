@@ -44,7 +44,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testAlgLoop6_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 70, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop6', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -iif=ReferenceFiles/testAlgLoop6_ref.mat -iim=none'",
-//     messages = "
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:y1(start = 0, nominal = 1, min = -1, max = 1, init = 0)
@@ -413,7 +414,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 5.31349e-11 for the constraint $EqCon$x2(time = 3.14286)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.06026e-12 for the constraint $EqCon$x2(time = 1.71429)
 // LOG_IPOPT_ERROR   | info    | max violation is 2.22045e-16 for the constraint $EqCon$x2(time = 0.642857)
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Following iteration variables are selected by the user for strong component 1 (DAE kind: initialization):

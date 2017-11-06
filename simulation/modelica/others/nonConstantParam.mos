@@ -15,8 +15,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "Modelica_Electrical_Machines_Examples_DCEE_start_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Electrical_Machines_Examples_DCEE_start', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // {0.0,0.0,0.0,31.65870540877311,29.83760214337354,29.25749016337537,29.49761079310868,29.44575605316498,29.45282599035931,29.45259634358187,29.45237516797675}

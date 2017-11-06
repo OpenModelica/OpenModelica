@@ -59,8 +59,8 @@ val(res,1);
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-s euler'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
@@ -75,10 +75,10 @@ val(res,1);
 // LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
 // LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
 // LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
-// stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | debug   | division leads to inf or nan at time 1, (a=0) / (b=0), where divisor b is: __OMC__1$QR$R$3
 // stdout            | warning | Integrator attempt to handle a problem with a called assert.
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

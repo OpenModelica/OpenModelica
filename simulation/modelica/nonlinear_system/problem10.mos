@@ -49,7 +49,6 @@ getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
-// stdout            | info    | The initialization finished successfully without homotopy method.
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // stdout            | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
@@ -90,6 +89,7 @@ getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // stdout            | warning | While solving non-linear system an assertion failed at time 0.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
@@ -121,7 +121,7 @@ getErrorString();
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
 // assert            | debug   | division leads to inf or nan at time 0, (a=inf) / (b=0.001), where divisor b is: yn
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

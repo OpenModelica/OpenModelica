@@ -33,7 +33,6 @@ val(b, 0.0); getErrorString();
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real a(start=0, fixed=false) = 2
@@ -42,7 +41,8 @@ val(b, 0.0); getErrorString();
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real x(start=0, nominal=1) = 1 (pre: 1)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

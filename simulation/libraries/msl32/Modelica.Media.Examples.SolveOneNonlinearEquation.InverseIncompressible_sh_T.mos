@@ -31,8 +31,8 @@ runScript(modelTesting);getErrorString();
 // {"Ts","s2","s1","Th","h2","h1"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T', options = '', outputFormat = 'mat', variableFilter = 'time|Ts|s2|s1|Th|h2|h1', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Media.Examples.SolveOneNonlinearEquation.InverseIncompressible_sh_T_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // "true

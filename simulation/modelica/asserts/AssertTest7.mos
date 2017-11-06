@@ -17,7 +17,7 @@ getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 7, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Test7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: Test7
-// stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // Value of x(=0.51)
 // Value of x(=0.51)
 // Value of x(=0.509999)

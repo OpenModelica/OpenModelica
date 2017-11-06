@@ -34,7 +34,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testAlgLoop3_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testAlgLoop3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================
@@ -56,7 +56,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0251223 for the constraint $EqCon$y1(time = 1)
 // LOG_IPOPT_ERROR   | info    | max violation is 9.99863e-05 for the constraint $EqCon$y1(time = 1)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.53473e-09 for the constraint $EqCon$y1(time = 1)
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

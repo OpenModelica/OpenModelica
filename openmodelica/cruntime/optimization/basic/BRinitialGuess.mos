@@ -39,7 +39,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "nmpcBatchReactor_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactor', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ipopt_max_iter=12 -exInputFile ReferenceFiles/initInputForBR.csv -lv LOG_IPOPT_ERROR'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================
@@ -69,7 +69,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 5.38457e-07 for the approximation of the state y1(time = 0.95)
 // LOG_IPOPT_ERROR   | info    | max error is 8.0196e-08 for the approximation of the state y1(time = 0.95)
 // LOG_IPOPT_ERROR   | info    | max error is 3.63279e-09 for the approximation of the state y1(time = 0.95)
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

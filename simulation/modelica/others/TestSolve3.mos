@@ -41,8 +41,8 @@ val(v,0.5);
 // LOG_NLS           | info    | initialize non-linear system solvers
 // |                 | |       | | 0 non-linear systems
 // LOG_NLS           | info    | update static data of non-linear system solvers
-// stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_NLS           | info    | free mixed system solvers
 // LOG_NLS           | info    | free non-linear system solvers
 // "

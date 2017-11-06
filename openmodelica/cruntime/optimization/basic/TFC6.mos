@@ -57,7 +57,7 @@ getErrorString();
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 1 linear systems
 // LOG_LS            | info    | Start solving Linear System 9 (size 1) at time 0 with Lapack Solver
-// stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================
@@ -439,7 +439,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max error is 1.54034e-05 for the approximation of the state x1(time = 3.56449)
 // LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
 // LOG_IPOPT_ERROR   | info    | max violation is 9.99964e-08 for the final constraint $finalCon$final_con2(time = 5)
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

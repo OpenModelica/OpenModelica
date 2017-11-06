@@ -15,7 +15,7 @@ simulate(CheckSqrt,stopTime=2.0);getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CheckSqrt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: CheckSqrt
-// stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | warning | The following assertion has been violated at time 1.000297
 // assert            | debug   | Model error: Argument of sqrt(u) was -0.000297434 should be >= 0
 // assert            | warning | The following assertion has been violated at time 1.000605

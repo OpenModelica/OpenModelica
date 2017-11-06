@@ -250,7 +250,6 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
-// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real xn(start=100000, fixed=true) = 100000
@@ -320,6 +319,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)
 // LOG_NLS_V         | info    | EQUATION NUMBER: 18
@@ -340,7 +340,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_NLS           | info    | free mixed system solvers
 // LOG_NLS           | info    | free non-linear system solvers
 // "

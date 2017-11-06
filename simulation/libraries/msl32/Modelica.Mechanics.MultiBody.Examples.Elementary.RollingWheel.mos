@@ -33,8 +33,8 @@ runScript(modelTesting);getErrorString();
 // {"wheel1.x","wheel1.y","wheel1.angles[1]","wheel1.angles[2]","wheel1.angles[3]","wheel1.der_angles[1]","wheel1.der_angles[2]","wheel1.der_angles[3]"}
 // Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel', options = '', outputFormat = 'mat', variableFilter = 'time|wheel1.x|wheel1.y|wheel1.angles.1.|wheel1.angles.2.|wheel1.angles.3.|wheel1.der_angles.1.|wheel1.der_angles.2.|wheel1.der_angles.3.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // "true

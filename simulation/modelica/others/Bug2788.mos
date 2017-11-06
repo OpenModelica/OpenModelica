@@ -28,13 +28,13 @@ val(y1, 1.0); getErrorString();
 // LOG_INIT          | info    | updating nominal-values
 // LOG_INIT          | info    | updating primary start-values
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
-// stdout            | info    | The initialization finished successfully without homotopy method.
 // LOG_INIT          | info    | parameter values
 // LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
 // |                 | |       | | other real variables
 // |                 | |       | | | [1] Real y1(start=0, nominal=1) = 5 (pre: 0)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

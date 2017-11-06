@@ -36,8 +36,8 @@ runScript(modelTesting);getErrorString();
 // {"dcse.inertiaRotor.phi","dcse.inertiaRotor.w","dcse.la.i","der(dcse.inertiaRotor.w)","der(dcse.la.i)"}
 // Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCSE_Start', options = '', outputFormat = 'mat', variableFilter = 'time|dcse.inertiaRotor.phi|dcse.inertiaRotor.w|dcse.la.i|der[(]dcse.inertiaRotor.w[)]|der[(]dcse.la.i[)]', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCSE_Start_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // [Modelica 3.1/Electrical/Machines.mo:3115:9-3117:50:writable] Warning: Parameter dcse.Le has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0005) as default value.

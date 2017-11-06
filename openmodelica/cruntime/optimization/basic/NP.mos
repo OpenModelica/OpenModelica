@@ -38,7 +38,7 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "NishidaProblem_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'optimization', fileNamePrefix = 'NishidaProblem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 3'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================
@@ -57,7 +57,7 @@ getErrorString();
 //          For more information visit http://projects.coin-or.org/Ipopt
 // ******************************************************************************
 //
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

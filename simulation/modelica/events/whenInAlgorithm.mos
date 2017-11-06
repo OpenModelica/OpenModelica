@@ -15,10 +15,10 @@ simulate(whenInAlgorithm, tolerance=1e-6,startTime=0, stopTime=2,numberOfInterva
 // record SimulationResult
 //     resultFile = "whenInAlgorithm_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'whenInAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // stdout            | info    | 
 // |                 | |       | This is some debug output that needs testing.
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.

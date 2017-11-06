@@ -33,8 +33,8 @@ runScript(modelTesting);getErrorString();
 // {"forceSensor.f","accSensor1.a","speedSensor1.v","positionSensor1.s","positionSensor2.s","mass.s","mass.v","mass.a"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Sensors', options = '', outputFormat = 'mat', variableFilter = 'time|forceSensor.f|accSensor1.a|speedSensor1.v|positionSensor1.s|positionSensor2.s|mass.s|mass.v|mass.a', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.Sensors_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // "true

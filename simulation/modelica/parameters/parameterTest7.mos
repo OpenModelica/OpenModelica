@@ -511,17 +511,17 @@ system("./parameterTest7 -override p2=10,a[1]=10 -output=p1,p2,s,a[1],a[2],a[3]"
 // record SimulationResult
 //     resultFile = "parameterTest7_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'parameterTest7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-output=p1,p2,s,a[1],a[2],a[3]'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=3,p2=3,s=3,a[1]=1,a[2]=2,a[3]=3
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // stdout            | warning | It is not possible to override the following quantity: p2
 // |                 | |       | It seems to be structural, final, protected or evaluated or has a non-constant binding.
-// stdout            | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // time=1,p1=3,p2=3,s=3,a[1]=10,a[2]=2,a[3]=3
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
 // ""
 // endResult

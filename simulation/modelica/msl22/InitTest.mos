@@ -19,11 +19,11 @@ val(slidingMass1.s,3.9540);
 // record SimulationResult
 //     resultFile = "Inittest_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 50, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Inittest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | warning | The following assertion has been violated at time 0.200000
 // |                 | |       | springDamper1.s_rel >= 0.0
 // assert            | warning | Variable violating min constraint: 0.0 <= springDamper1.s_rel, has value: -0.000923562
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 0.0

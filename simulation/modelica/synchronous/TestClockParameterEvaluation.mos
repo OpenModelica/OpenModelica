@@ -20,16 +20,16 @@ simulate(Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreti
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.Systems.ControlledMixingUnit_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 300.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Systems.ControlledMixingUnit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscretizedContinuousController_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscretizedContinuousController', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: PI.y = 0.0 (PI.y_start = 0.0)

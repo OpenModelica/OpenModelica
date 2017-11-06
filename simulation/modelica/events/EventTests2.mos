@@ -22,8 +22,7 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // record SimulationResult
 //     resultFile = "testEvents2_res.mat",
 //     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | status of relations at time=-1
+//     messages = "LOG_EVENTS        | info    | status of relations at time=-1
 // |                 | |       | | [1] (pre:  true)  true = time < -0.2
 // |                 | |       | | [2] (pre:  true)  true = time <= -0.1
 // |                 | |       | | [3] (pre: false) false = time > 0.1
@@ -33,6 +32,7 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [2] (pre:  0)  1 = time <= -0.1
 // |                 | |       | | [3] (pre:  0) -1 = time > 0.1
 // |                 | |       | | [4] (pre:  0) -1 = time >= 0.2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=-0.19999999988
 // |                 | |       | | [1] time < -0.2
 // LOG_EVENTS        | info    | state event at time=-0.0999999998894
@@ -41,15 +41,14 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [3] time > 0.1
 // LOG_EVENTS        | info    | state event at time=0.20000000012
 // |                 | |       | | [4] time >= 0.2
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // record SimulationResult
 //     resultFile = "testEvents2_res.mat",
 //     simulationOptions = "startTime = -1.0, stopTime = 1.0, numberOfIntervals = 19, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testEvents2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_EVENTS'",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// LOG_EVENTS        | info    | status of relations at time=-1
+//     messages = "LOG_EVENTS        | info    | status of relations at time=-1
 // |                 | |       | | [1] (pre:  true)  true = time < -0.2
 // |                 | |       | | [2] (pre:  true)  true = time <= -0.1
 // |                 | |       | | [3] (pre: false) false = time > 0.1
@@ -59,6 +58,7 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [2] (pre:  0)  1 = time <= -0.1
 // |                 | |       | | [3] (pre:  0) -1 = time > 0.1
 // |                 | |       | | [4] (pre:  0) -1 = time >= 0.2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_EVENTS        | info    | state event at time=-0.19999999988
 // |                 | |       | | [1] time < -0.2
 // LOG_EVENTS        | info    | state event at time=-0.0999999998894
@@ -67,7 +67,7 @@ simulate(testEvents2, numberOfIntervals=19, simflags="-lv=LOG_EVENTS"); getError
 // |                 | |       | | [3] time > 0.1
 // LOG_EVENTS        | info    | state event at time=0.20000000012
 // |                 | |       | | [4] time >= 0.2
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

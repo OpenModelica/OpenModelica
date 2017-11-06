@@ -45,8 +45,8 @@ runScript(modelTesting);getErrorString();
 // {"pipe1.mediums[1].T","pipe1.mediums[2].T","pipe2.mediums[1].T","pipe2.mediums[2].T","pipe3.mediums[1].T","pipe3.mediums[2].T","pipe4.mediums[1].T","pipe4.mediums[2].T","pipe6.mediums[1].T","pipe6.mediums[2].T","pipe7.mediums[1].T","pipe7.mediums[2].T","pipe8.mediums[1].T","pipe8.mediums[2].T","pipe9.mediums[1].T","pipe9.mediums[2].T","pipe10.mediums[1].T","pipe10.mediums[2].T","pipe5.mediums[1].T","pipe5.mediums[2].T"}
 // Simulation options: startTime = 0.0, stopTime = 200.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.IncompressibleFluidNetwork', options = '', outputFormat = 'mat', variableFilter = 'time|pipe1.mediums.1..T|pipe1.mediums.2..T|pipe2.mediums.1..T|pipe2.mediums.2..T|pipe3.mediums.1..T|pipe3.mediums.2..T|pipe4.mediums.1..T|pipe4.mediums.2..T|pipe6.mediums.1..T|pipe6.mediums.2..T|pipe7.mediums.1..T|pipe7.mediums.2..T|pipe8.mediums.1..T|pipe8.mediums.2..T|pipe9.mediums.1..T|pipe9.mediums.2..T|pipe10.mediums.1..T|pipe10.mediums.2..T|pipe5.mediums.1..T|pipe5.mediums.2..T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.IncompressibleFluidNetwork_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

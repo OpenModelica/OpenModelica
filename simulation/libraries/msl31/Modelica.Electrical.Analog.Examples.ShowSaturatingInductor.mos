@@ -29,8 +29,8 @@ runScript(modelTesting);getErrorString();
 // {"SaturatingInductance1.Psi"}
 // Simulation options: startTime = 0.0, stopTime = 6.2832, numberOfIntervals = 628, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.ShowSaturatingInductor', options = '', outputFormat = 'mat', variableFilter = 'time|SaturatingInductance1.Psi', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.ShowSaturatingInductor_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

@@ -32,7 +32,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testAlgLoop7_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.5, numberOfIntervals = 100, tolerance = 1e-12, method = 'optimization', fileNamePrefix = 'testAlgLoop7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 1 -iif ReferenceFiles/testAlgLoop7_ref.mat -iim none -ipopt_init FILE'",
-//     messages = "
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
 // Optimizer Variables
 // ========================================================
 // State[0]:x1(start = 1, nominal = 2, min = -2, max = 2, init = 1)
@@ -59,7 +60,7 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 4.28799e-08 for the constraint $EqCon$x1(time = 0.435)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.87085e-11 for the constraint $EqCon$x1(time = 0.445)
 // LOG_IPOPT_ERROR   | info    | max violation is 4.44089e-16 for the constraint $EqCon$x1(time = 0.28)
-// stdout            | info    | The simulation finished successfully.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

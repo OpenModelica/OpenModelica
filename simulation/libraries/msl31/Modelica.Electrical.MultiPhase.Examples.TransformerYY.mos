@@ -30,8 +30,8 @@ runScript(modelTesting);getErrorString();
 // {"transformerL.inductor[1].i","transformerL.inductor[2].i","transformerL.inductor[3].i"}
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.MultiPhase.Examples.TransformerYY', options = '', outputFormat = 'mat', variableFilter = 'time|transformerL.inductor.1..i|transformerL.inductor.2..i|transformerL.inductor.3..i', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.MultiPhase.Examples.TransformerYY_res.mat
-// Messages: stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // [Modelica 3.1/Electrical/MultiPhase.mo:1427:7-1428:56:writable] Warning: Parameter idealTransformer.Lm1[3] has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.

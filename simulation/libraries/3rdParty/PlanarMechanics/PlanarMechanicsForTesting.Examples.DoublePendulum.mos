@@ -26,8 +26,8 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "PlanarMechanicsForTesting.Examples.DoublePendulum_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 9.5, numberOfIntervals = 500, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.DoublePendulum', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "stdout            | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | The simulation finished successfully.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
