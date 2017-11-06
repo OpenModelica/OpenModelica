@@ -7,6 +7,14 @@
 #include <QThread>
 #include <QDebug>
 
+class SleepThread : public QThread {
+public:
+   // Work-around for Qt4 having msleep as protected
+   static inline void msleep(unsigned long msecs) {
+       QThread::msleep(msecs);
+   }
+};
+
 /*!
   Write the value value to the real node with id id.
   */
@@ -89,7 +97,7 @@ bool OpcUaClient::connectToServer()
   mpClient = UA_Client_new(UA_ClientConfig_standard);
   UA_StatusCode returnValue;
   do {
-    Sleep::msleep(100);
+    SleepThread::msleep(100);
     // QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
     returnValue = UA_Client_connect(mpClient, endPoint.c_str());
   } while (returnValue != UA_STATUSCODE_GOOD);
@@ -360,7 +368,7 @@ void OpcUaWorker::startInteractiveSimulation()
       }
     } else {
       QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-      QThread::msleep(mServerSampleInterval);
+      SleepThread::msleep(mServerSampleInterval);
     }
   }
 }
