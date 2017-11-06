@@ -310,7 +310,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
 
   if (!retVal)
-    infoStreamPrint(LOG_STDOUT, 0, "The initialization finished successfully %s homotopy method.", data->simulationInfo->homotopyUsed ? "with" : "without");
+    infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully %s homotopy method.", data->simulationInfo->homotopyUsed ? "with" : "without");
 
   TRACE_POP
   return retVal;

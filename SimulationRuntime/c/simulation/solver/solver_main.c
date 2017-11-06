@@ -791,7 +791,7 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   }
 
   if (!retVal)
-    infoStreamPrint(LOG_STDOUT, 0, "The simulation finished successfully.");
+    infoStreamPrint(LOG_SUCCESS, 0, "The simulation finished successfully.");
 
   TRACE_POP
   return retVal;

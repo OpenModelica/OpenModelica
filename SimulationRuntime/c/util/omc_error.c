@@ -75,6 +75,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_SOTI",
   "LOG_STATS",
   "LOG_STATS_V",
+  "LOG_SUCCESS",
 #ifdef USE_DEBUG_TRACE
   "LOG_TRACE",
 #endif
@@ -121,6 +122,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "final solution of the initialization",                                       /* LOG_SOTI */
   "additional statistics about timer/events/solver",                            /* LOG_STATS */
   "additional statistics for LOG_STATS",                                        /* LOG_STATS_V */
+  "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* LOG_SUCCESS */
 #ifdef USE_DEBUG_TRACE
   "enables additional output to trace call stack",                              /* LOG_TRACE */
 #endif
@@ -161,6 +163,7 @@ void initDumpSystem()
 
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
+  useStream[LOG_SUCCESS] = 1;
 }
 
 void printInfo(FILE *stream, FILE_INFO info)
