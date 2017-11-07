@@ -58,8 +58,10 @@ import Types;
 import Typing = NFTyping;
 import NFInstUtil;
 import NFPrefixes.Variability;
+import NFPrefixes.Visibility;
 import NFFunction.Function;
 import ClassTree = NFClassTree.ClassTree;
+import ComplexType = NFComplexType;
 
 public
 
@@ -70,6 +72,7 @@ function newDefaultConstructor
 protected
   Class cls;
   list<InstNode> inputs, outputs, locals;
+  InstNode out_rec;
   DAE.FunctionAttributes attr;
   Pointer<Boolean> collected;
   Absyn.Path con_path;
@@ -78,8 +81,22 @@ algorithm
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   // attr := makeAttributes(node, inputs, outputs);
   collected := Pointer.create(false);
-  con_path := Absyn.suffixPath(path,"'$constructor'");
-  fn := Function.FUNCTION(con_path, node, inputs, {}, locals, {}, Type.UNKNOWN(), attr, collected);
+  con_path := Absyn.suffixPath(path,"'$ctor'");
+
+  // create a TYPED_COMPONENT here since this output "defualt constructed" record is not part
+  // the class node. So it will not be typed later by typeFunction. Insted of changing things
+  // there just handle it here.
+  out_rec := InstNode.COMPONENT_NODE("$out" + InstNode.name(node),
+    Visibility.PUBLIC,
+    Pointer.createImmutable(Component.TYPED_COMPONENT(
+      node,
+      Type.COMPLEX(node, ComplexType.CLASS()),
+      Binding.UNBOUND(),
+      NFComponent.OUTPUT_ATTR,
+      Absyn.dummyInfo)),
+    node);
+
+  fn := Function.FUNCTION(con_path, node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected);
 end newDefaultConstructor;
 
 

@@ -911,12 +911,28 @@ algorithm
   dfunc := match cls
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps), sections = sections)
       algorithm
+        elems := {};
+
+        for c in func.inputs loop
+          elems := convertFunctionParam(c) :: elems;
+        end for;
+
+        for c in func.outputs loop
+          elems := convertFunctionParam(c) :: elems;
+        end for;
+
+        for c in func.locals loop
+          elems := convertFunctionParam(c) :: elems;
+        end for;
+
+        // elems := list(convertFunctionParam(c) for c in func.locals) :: elems;
         elems := match sections
-          case Sections.SECTIONS() then convertAlgorithms(sections.algorithms, {});
-          else {};
+          case Sections.SECTIONS() then convertAlgorithms(sections.algorithms, elems);
+          else elems;
         end match;
 
-        elems := convertFunctionParams(comps, elems);
+        elems := listReverse(elems);
+
         def := DAE.FunctionDefinition.FUNCTION_DEF(elems);
       then
         Function.toDAE(func, {def});
@@ -929,26 +945,6 @@ algorithm
 
   end match;
 end convertFunction;
-
-function convertSections
-  input Sections sections;
-  output list<DAE.Element> elems;
-algorithm
-  elems := {};
-end convertSections;
-
-function convertFunctionParams
-  input array<InstNode> components;
-  input output list<DAE.Element> elems;
-protected
-  InstNode node;
-  Component comp;
-  Type ty;
-algorithm
-  for i in arrayLength(components):-1:1 loop
-    elems := convertFunctionParam(components[i]) :: elems;
-  end for;
-end convertFunctionParams;
 
 function convertFunctionParam
   input InstNode node;
