@@ -65,6 +65,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_IDA_MAXCONVFAILS */             "idaMaxConvFails",
   /* FLAG_IDA_NONLINCONVCOEF */           "idaNonLinConvCoef",
   /* FLAG_IDA_LS */                       "idaLS",
+  /* FLAG_IDA_SCALING */                  "idaScaling",
   /* FLAG_IDAS */                         "idaSensitivity",
   /* FLAG_IGNORE_HIDERESULT */            "ignoreHideResult",
   /* FLAG_IIF */                          "iif",
@@ -172,6 +173,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IDA_MAXCONVFAILS */             "value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
   /* FLAG_IDA_NONLINCONVCOEF */           "value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */                       "select the linear solver used by ida",
+  /* FLAG_IDA_SCALING */                  "enable scaling of the IDA solver",
   /* FLAG_IDAS */                         "flag to add sensitivity information to the result files",
   /* FLAG_IGNORE_HIDERESULT */            "ignore HideResult=true annotation",
   /* FLAG_IIF */                          "value specifies an external file for the initialization of the model",
@@ -324,6 +326,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * spgmr - sparse iterative linear solver based on generalized minimal residual method, convergance is not guaranteed, sundials method\n"
   "  * spbcg - sparse iterative linear solver based on biconjugate gradient method, convergance is not guaranteed, sundials method\n"
   "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method",
+  /* FLAG_IDA_SCALING */
+  "  enable scaling of the IDA solver",
   /* FLAG_IDAS */
   "  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.",
   /* FLAG_IGNORE_HIDERESULT */
@@ -549,6 +553,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_IDA_MAXCONVFAILS */             FLAG_TYPE_OPTION,
   /* FLAG_IDA_NONLINCONVCOEF */           FLAG_TYPE_OPTION,
   /* FLAG_IDA_LS */                       FLAG_TYPE_OPTION,
+  /* FLAG_IDA_SCALING */                  FLAG_TYPE_FLAG,
   /* FLAG_IDAS */                         FLAG_TYPE_FLAG,
   /* FLAG_IGNORE_HIDERESULT */            FLAG_TYPE_FLAG,
   /* FLAG_IIF */                          FLAG_TYPE_OPTION,
