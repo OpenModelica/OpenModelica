@@ -3461,8 +3461,8 @@ algorithm
       then (cr,Expression.negate(e));
     else
       algorithm
-        msg := "SimCodeUtil.makeSES_SIMPLE_ASSIGN failed";//SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for (" + ExpressionDump.printExpStr(Util.tuple21(inTpl))+", "+ExpressionDump.printExpStr(Util.tuple22(inTpl))+"\n");
-        Error.addInternalError(msg, sourceInfo());
+        msg := "SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: " + ExpressionDump.printExpStr(Util.tuple21(inTpl))+" = "+ExpressionDump.printExpStr(Util.tuple22(inTpl))+"\n";
+        Error.addCompilerWarning(msg);
       then fail();
   end match;
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
