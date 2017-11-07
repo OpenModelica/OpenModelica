@@ -1024,6 +1024,18 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   simulationOptions.setLogStreams(logStreams);
   simulationOptions.setAdditionalSimulationFlags(mpAdditionalSimulationFlagsTextBox->text());
+  // create a folder with model name to dump the files in it.
+  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
+  if (!QDir().exists(modelDirectoryPath)) {
+    QDir().mkpath(modelDirectoryPath);
+  }
+  // set the folder as working directory
+  QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
+  if (!modelDirectory.isEmpty()) {
+    simulationOptions.setWorkingDirectory(modelDirectoryPath);
+  } else {
+    simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  }
   // setup simulation flags
   QStringList simulationFlags;
   simulationFlags.append(QString("-override=%1=%2,%3=%4,%5=%6,%7=%8,%9=%10,%11=%12,%13=%14")
@@ -1034,7 +1046,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
                          .arg("solver").arg(simulationOptions.getMethod())
                          .arg("outputFormat").arg(simulationOptions.getOutputFormat())
                          .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
-  simulationFlags.append(QString("-r=").append(simulationOptions.getResultFileName()));
+  simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getResultFileName()));
   // jacobian
   if (!mpJacobianComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("-jacobian=").append(mpJacobianComboBox->currentText()));
@@ -1150,13 +1162,14 @@ SimulationOptions SimulationDialog::createSimulationOptions()
       }
     }
   }
+  simulationFlags.append(QString("-inputPath=%1").arg(simulationOptions.getWorkingDirectory()));
+  simulationFlags.append(QString("-outputPath=%1").arg(simulationOptions.getWorkingDirectory()));
   simulationOptions.setInteractiveSimulation(mpInteractiveSimulationGroupBox->isChecked());
   simulationOptions.setInteractiveSimulationWithSteps(mpInteractiveSimulationStepCheckBox->isChecked());
   simulationOptions.setSimulationFlags(simulationFlags);
   simulationOptions.setIsValid(true);
   simulationOptions.setReSimulate(mIsReSimulate);
 
-  simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   simulationOptions.setFileName(mFileName);
   simulationOptions.setTargetLanguage(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText());
   return simulationOptions;
@@ -1420,18 +1433,8 @@ void SimulationDialog::performSimulation()
   MainWindow::instance()->getStatusBar()->showMessage(tr("Translating %1.").arg(mClassName));
   MainWindow::instance()->getProgressBar()->setRange(0, 0);
   MainWindow::instance()->showProgressBar();
-  // create a folder with model name to dump the files in it.
-  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
-  if (!QDir().exists(modelDirectoryPath)) {
-    QDir().mkpath(modelDirectoryPath);
-  }
-  // set the folder as working directory.
-  QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
   bool isTranslationSuccessful = mIsReSimulate ? true : translateModel(simulationParameters);
-  if (!modelDirectory.isEmpty()) {
-    simulationOptions.setWorkingDirectory(modelDirectoryPath);
-    MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-  }
+  MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   // hide the progress bar
   MainWindow::instance()->hideProgressBar();
   MainWindow::instance()->getStatusBar()->clearMessage();

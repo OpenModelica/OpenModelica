@@ -118,7 +118,11 @@ void SimulationProcessThread::runSimulationExecutable()
 {
   mpSimulationProcess = new QProcess;
   SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
-  mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
+  /* Ticket:4583
+   * Use the OMEdit working directory so users can put their input files there.
+   */
+//  mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
+  mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()), Qt::DirectConnection);
