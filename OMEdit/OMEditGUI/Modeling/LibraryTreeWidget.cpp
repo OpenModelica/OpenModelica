@@ -463,6 +463,9 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
  * \return
  */
 bool LibraryTreeItem::isFilePathValid() {
+  if (mFileName.isEmpty()) {
+    return false;
+  }
   // Since now we set the fileName via loadString() & parseString() so might get filename as className/<interactive>.
   QFileInfo fileInfo(mFileName);
   /* Ticket #3723
@@ -2063,6 +2066,17 @@ void LibraryTreeModel::generateVerificationScenarios(LibraryTreeItem *pLibraryTr
     } else {
       updateLibraryTreeItemClassText(pLibraryTreeItem);
     }
+    /* generateVerificationScenarios deletes everything from the class and creates new scenario classes.
+     * Remove the LibraryTreeItems
+     * Load the newly created scenrario classes.
+     */
+    int i = 0;
+    while(i < pLibraryTreeItem->childrenSize()) {
+      unloadClassChildren(pLibraryTreeItem->child(i));
+      i = 0;  //Restart iteration
+    }
+    createLibraryTreeItems(pLibraryTreeItem);
+    updateLibraryTreeItem(pLibraryTreeItem);
   }
 }
 
