@@ -339,196 +339,211 @@ end foldEquation;
 
 
 protected function foldEquation2 "help-function"
-  input DAE.Element inEq;
-  input NFHashTableCrToUnit.HashTable inHtCr2U;
-  input NFHashTableStringToUnit.HashTable inHtS2U;
-  input NFHashTableUnitToString.HashTable inHtU2S;
-  input list<Functionargs> inargs;
-  output NFHashTableCrToUnit.HashTable outHtCr2U;
-  output NFHashTableStringToUnit.HashTable outHtS2U;
-  output NFHashTableUnitToString.HashTable outHtU2S;
-  output list<list<tuple<DAE.Exp, NFUnit.Unit>>> outexpListList;
-
+  input DAE.Element eq;
+  input output NFHashTableCrToUnit.HashTable htCr2U;
+  input output NFHashTableStringToUnit.HashTable htS2U;
+  input output NFHashTableUnitToString.HashTable htU2S;
+  input list<Functionargs> args;
+        output list<list<tuple<DAE.Exp, NFUnit.Unit>>> inconsistentUnits;
 algorithm
-  (outHtCr2U, outHtS2U, outHtU2S, outexpListList) := match(inEq, inHtCr2U, inHtS2U, inHtU2S,inargs)
+  inconsistentUnits := match eq
     local
-      DAE.Exp temp, rhs, lhs,call;
-      DAE.Element eq;
-      NFHashTableCrToUnit.HashTable HtCr2U;
-      NFHashTableStringToUnit.HashTable HtS2U;
-      NFHashTableUnitToString.HashTable HtU2S;
-      list<list<tuple<DAE.Exp, NFUnit.Unit>>> expList,expList2,expList3;
-      list<Functionargs> args;
-      DAE.ComponentRef cr;
-      Absyn.Path path,p;
+      DAE.Exp temp, lhs;
+      list<list<tuple<DAE.Exp, NFUnit.Unit>>> expList, expList2, expList3;
+      Absyn.Path path;
       Boolean b;
-      NFUnit.Unit ut,ut1,ut2;
-      String s1,formalargs,formalvar,name;
-      list<String> invars,outvars,inunitlist,outunitlist;
-      list<DAE.Exp> explist,explist1,explist2;
-      list<DAE.Element> eqs;
+      NFUnit.Unit ut1, ut2;
+      String s1, formalargs, formalvar;
+      list<String> outvars, outunitlist;
+      list<DAE.Exp> expl;
 
        // solved Equation
-    case (DAE.DEFINE(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      lhs = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-    then (HtCr2U, HtS2U, HtU2S, expList);
+    case DAE.DEFINE()
+      algorithm
+        lhs := DAE.CREF(eq.componentRef, DAE.T_REAL_DEFAULT);
+        temp := DAE.BINARY(eq.exp, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
 
-    case (DAE.INITIALDEFINE(componentRef=cr, exp=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      lhs = DAE.CREF(cr, DAE.T_REAL_DEFAULT);
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-    then (HtCr2U, HtS2U, HtU2S, expList);
-
-    case (DAE.EQUATION(exp=DAE.Exp.TUPLE(PR=explist1), scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path))), HtCr2U, HtS2U, HtU2S,args)
-      equation
-        s1=Absyn.pathString(path);
-        s1=System.trim(s1,".");
-        (_,outvars,_,outunitlist)=getNamedUnitlist(s1,args);
-        (HtCr2U, HtS2U, HtU2S, expList2) = foldCallArg1(explist1, HtCr2U, HtS2U, HtU2S,NFUnit.MASTER({}),outunitlist,outvars,s1);
-        (_, (HtCr2U, HtS2U, HtU2S), expList3) = insertUnitInEquation(call, (HtCr2U, HtS2U, HtU2S),NFUnit.MASTER({}),args);
-        expList=List.append_reverse(expList2, expList3);
-      then
-        (HtCr2U, HtS2U, HtU2S,expList);
-
-    case (DAE.EQUATION(exp=lhs, scalar=call as DAE.CALL(path=Absyn.FULLYQUALIFIED(path))), HtCr2U, HtS2U, HtU2S,args)
-      equation
-        s1=Absyn.pathString(path);
-        s1=System.trim(s1,".");
-        (_,outvars,_,outunitlist)=getNamedUnitlist(s1,args);
-        (ut, (HtCr2U, HtS2U, HtU2S), _) = insertUnitInEquation(lhs, (HtCr2U, HtS2U, HtU2S),NFUnit.MASTER({}),args);
-        formalargs =listGet(outunitlist,1);
-        formalvar =listGet(outvars,1);
-        if (formalargs=="NONE") then
-          ut1 =NFUnit.MASTER({});
-        else
-          ut1 =NFUnit.parseUnitString(formalargs);
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
         end if;
 
-        (b, _ ,_) = UnitTypesEqual(ut, ut1, HtCr2U);
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-        if(b==true) then
-            expList2 ={};
+    case DAE.INITIALDEFINE()
+      algorithm
+        lhs := DAE.CREF(eq.componentRef, DAE.T_REAL_DEFAULT);
+        temp := DAE.BINARY(eq.exp, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
+
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
+
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
+
+    case DAE.EQUATION(exp = DAE.Exp.TUPLE(PR = expl),
+                      scalar = DAE.CALL(path = Absyn.FULLYQUALIFIED(path)))
+      algorithm
+        s1 := Absyn.pathString(path);
+        s1 := System.trim(s1,".");
+        (_, outvars, _, outunitlist) := getNamedUnitlist(s1, args);
+        (htCr2U, htS2U, htU2S, expList2) :=
+          foldCallArg1(expl, htCr2U, htS2U, htU2S, NFUnit.MASTER({}), outunitlist, outvars, s1);
+        (_, (htCr2U, htS2U, htU2S), expList3) :=
+          insertUnitInEquation(eq.scalar, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        List.append_reverse(expList2, expList3);
+
+    case DAE.EQUATION(exp = lhs,
+                      scalar = DAE.CALL(path = Absyn.FULLYQUALIFIED(path)))
+      algorithm
+        s1 := Absyn.pathString(path);
+        s1 := System.trim(s1,".");
+        (_, outvars, _, outunitlist) := getNamedUnitlist(s1,args);
+        (ut1, (htCr2U, htS2U, htU2S), _) :=
+          insertUnitInEquation(lhs, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+        formalargs := listHead(outunitlist);
+        formalvar := listHead(outvars);
+
+        ut2 := if formalargs == "NONE" then NFUnit.MASTER({}) else NFUnit.parseUnitString(formalargs);
+
+        b := UnitTypesEqual(ut1, ut2, htCr2U);
+        if b then
+          expList2 := {};
         else
-            temp=makenewcref(lhs,formalvar,s1);
-            expList2 = {(lhs, ut),(temp, ut1)}::{};
+          temp := makenewcref(lhs, formalvar, s1);
+          expList2 := {(lhs, ut1), (temp, ut2)} :: {};
         end if;
         // rhs
-        (_, (HtCr2U, HtS2U, HtU2S), expList3) = insertUnitInEquation(call, (HtCr2U, HtS2U, HtU2S),NFUnit.MASTER({}),args);
-        expList=List.append_reverse(expList2, expList3);
-        then
+        (_, (htCr2U, htS2U, htU2S), expList3) :=
+          insertUnitInEquation(eq.scalar, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        List.append_reverse(expList2, expList3);
 
-          (HtCr2U, HtS2U, HtU2S,expList);
+    case DAE.EQUATION()
+      algorithm
+        temp := DAE.BINARY(eq.scalar, DAE.SUB(DAE.T_REAL_DEFAULT), eq.exp);
 
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
 
-    case (DAE.EQUATION(exp=lhs, scalar=rhs), HtCr2U, HtS2U, HtU2S,args) equation
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-      then (HtCr2U, HtS2U, HtU2S,expList);
+    case DAE.EQUEQUATION() then {};
 
-    case (DAE.EQUEQUATION(), _, _, _, _)
-      then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.INITIALEQUATION()
+      algorithm
+        temp := DAE.BINARY(eq.exp2, DAE.SUB(DAE.T_REAL_DEFAULT), eq.exp1);
 
-    case (DAE.INITIALEQUATION(exp1=lhs, exp2=rhs), HtCr2U, HtS2U, HtU2S,args) equation
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
 
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-      then (HtCr2U, HtS2U, HtU2S,expList);
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    case (DAE.ARRAY_EQUATION(exp=lhs, array=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-    then (HtCr2U, HtS2U, HtU2S, expList);
+    case DAE.ARRAY_EQUATION()
+      algorithm
+        temp := DAE.BINARY(eq.array, DAE.SUB(DAE.T_REAL_DEFAULT), eq.exp);
 
-    case (DAE.INITIAL_ARRAY_EQUATION(exp=lhs, array=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-    then (HtCr2U, HtS2U, HtU2S, expList);
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
 
-    case (DAE.COMPLEX_EQUATION(lhs=lhs, rhs=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-    then (HtCr2U, HtS2U, HtU2S, expList);
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    case (DAE.INITIAL_COMPLEX_EQUATION(lhs=lhs, rhs=rhs), HtCr2U, HtS2U, HtU2S,args) equation
-      temp = DAE.BINARY(rhs, DAE.SUB(DAE.T_REAL_DEFAULT), lhs);
-      if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
-        ExpressionDump.dumpExp(temp);
-      end if;
-        (_, (HtCr2U, HtS2U, HtU2S), expList)=insertUnitInEquation(temp, (HtCr2U, HtS2U, HtU2S), NFUnit.MASTER({}),args);
-    then (HtCr2U, HtS2U, HtU2S, expList);
+    case DAE.INITIAL_ARRAY_EQUATION()
+      algorithm
+        temp := DAE.BINARY(eq.array, DAE.SUB(DAE.T_REAL_DEFAULT), eq.exp);
 
-    case (DAE.WHEN_EQUATION(), HtCr2U, HtS2U, HtU2S, args) algorithm
-      // ((HtCr2U, _, HtS2U, HtU2S)) := List.fold1(inEq.equations, foldEquation ,args,(HtCr2U, true, HtS2U, HtU2S));
-      for eq in inEq.equations loop
-        (HtCr2U, HtS2U, HtU2S, expList) := foldEquation2(eq, HtCr2U, HtS2U, HtU2S,args);
-      end for;
-    then (HtCr2U, HtS2U, HtU2S, expList);
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
 
-    case (DAE.IF_EQUATION(), _, _, _, _)
-      then (inHtCr2U, inHtS2U, inHtU2S, {});
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    case (DAE.INITIAL_IF_EQUATION(), _, _, _, _)
-      then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.COMPLEX_EQUATION()
+      algorithm
+        temp := DAE.BINARY(eq.rhs, DAE.SUB(DAE.T_REAL_DEFAULT), eq.lhs);
 
-    case (DAE.NORETCALL(), _, _, _, _) algorithm
-      (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.exp, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
-    then (inHtCr2U, inHtS2U, inHtU2S, expList);
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
 
-    case (DAE.INITIAL_NORETCALL(), _, _, _, _) algorithm
-      (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.exp, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
-    then (inHtCr2U, inHtS2U, inHtU2S, expList);
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    case (DAE.INITIAL_ASSERT(), _, _, _, _) algorithm
-      // (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.condition, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.INITIAL_COMPLEX_EQUATION()
+      algorithm
+        temp := DAE.BINARY(eq.rhs, DAE.SUB(DAE.T_REAL_DEFAULT), eq.lhs);
 
-    case (DAE.ASSERT(), _, _, _, _) algorithm
-        // (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.condition, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+        if Flags.isSet(Flags.DUMP_EQ_UNIT_STRUCT) then
+          ExpressionDump.dumpExp(temp);
+        end if;
 
-    case (DAE.TERMINATE(), _, _, _, _) algorithm
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(temp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    case (DAE.INITIAL_TERMINATE(), _, _, _, _) algorithm
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.WHEN_EQUATION()
+      algorithm
+        for e in eq.equations loop
+          (htCr2U, htS2U, htU2S, inconsistentUnits) := foldEquation2(e, htCr2U, htS2U, htU2S, args);
+        end for;
+      then
+        inconsistentUnits;
 
-    case (DAE.REINIT(), _, _, _, _) algorithm
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.IF_EQUATION() then {};
+    case DAE.INITIAL_IF_EQUATION() then {};
 
-    case (DAE.ALGORITHM(), _, _, _, _) algorithm
-      //Error.addCompilerWarning("ALGORITHM, these types of equations are not yet supported\n");
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.NORETCALL()
+      algorithm
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(eq.exp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    case (DAE.INITIALALGORITHM(), _, _, _, _) algorithm
-    then (inHtCr2U, inHtS2U, inHtU2S, {});
+    case DAE.INITIAL_NORETCALL()
+      algorithm
+        (_, (htCr2U, htS2U, htU2S), inconsistentUnits) :=
+          insertUnitInEquation(eq.exp, (htCr2U, htS2U, htU2S), NFUnit.MASTER({}), args);
+      then
+        inconsistentUnits;
 
-    else equation
-      Error.addInternalError(getInstanceName() + " failed on: " + DAEDump.dumpEquationStr(inEq), sourceInfo());
-    then fail();
+    case DAE.INITIAL_ASSERT() then {};
+    case DAE.ASSERT() then {};
+    case DAE.TERMINATE() then {};
+    case DAE.INITIAL_TERMINATE() then {};
+    case DAE.REINIT() then {};
+    case DAE.ALGORITHM() then {};
+    case DAE.INITIALALGORITHM() then {};
+
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed on: " +
+          DAEDump.dumpEquationStr(eq), sourceInfo());
+      then
+        fail();
   end match;
 end foldEquation2;
 
