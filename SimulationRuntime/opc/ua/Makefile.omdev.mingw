@@ -1,5 +1,5 @@
 CC=gcc
-override CFLAGS +=-O0 -g -std=c99
+override CFLAGS +=-O0 -g -std=c99 -DUA_DYNAMIC_LINKING -DUA_DYNAMIC_LINKING_EXPORT
 CPPFLAGS=-I../../c -I$(OMBUILDDIR)/include/omc/c
 LDFLAGS=-lpthread -lwsock32 -lws2_32
 DLLEXT=.dll
