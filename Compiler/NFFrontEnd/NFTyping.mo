@@ -456,7 +456,7 @@ algorithm
 end typeDimension;
 
 function typeBindings
-  input output InstNode cls;
+  input InstNode cls;
 protected
   Class c;
   ClassTree cls_tree;
@@ -524,12 +524,10 @@ algorithm
           c.binding := binding;
         end if;
 
-        cls := typeBindings(c.classInst);
+        typeBindings(c.classInst);
 
-        // The component's type can change, e.g. if it was a derived class that
-        // was resolved to its base class.
-        if not referenceEq(cls, c.classInst) then
-          c.classInst := cls;
+        if Binding.isBound(c.condition) then
+          c.condition := typeComponentCondition(c.condition);
           dirty := true;
         end if;
 
@@ -576,6 +574,42 @@ algorithm
 
   end match;
 end typeBinding;
+
+function typeComponentCondition
+  input output Binding condition;
+algorithm
+  condition := match condition
+    local
+      Expression exp;
+      Type ty;
+      Variability var;
+      SourceInfo info;
+      MatchKind mk;
+
+    case Binding.UNTYPED_BINDING(bindingExp = exp, info = info)
+      algorithm
+        (exp, ty, var) := typeExp(exp, info, ExpOrigin.CONDITION());
+        (exp, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), exp);
+
+        if TypeCheck.isIncompatibleMatch(mk) then
+          Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,
+            {Expression.toString(exp), Type.toString(ty)}, info);
+          fail();
+        end if;
+
+        if var > Variability.PARAMETER then
+          Error.addSourceMessage(Error.COMPONENT_CONDITION_VARIABILITY,
+            {Expression.toString(exp)}, info);
+          fail();
+        end if;
+
+        exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
+        exp := SimplifyExp.simplifyExp(exp);
+      then
+        Binding.FLAT_BINDING(exp);
+
+  end match;
+end typeComponentCondition;
 
 function typeTypeAttributes
   input output list<Modifier> attributes;

@@ -60,6 +60,10 @@ uniontype EvalTarget
     SourceInfo info;
   end RANGE;
 
+  record CONDITION
+    SourceInfo info;
+  end CONDITION;
+
   record IGNORE_ERRORS end IGNORE_ERRORS;
 
   function isRange
@@ -236,6 +240,13 @@ algorithm
       algorithm
         Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
           {Expression.toString(exp), InstNode.name(target.component)}, target.info);
+      then
+        fail();
+
+    case EvalTarget.CONDITION()
+      algorithm
+        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
+          {Expression.toString(exp)}, target.info);
       then
         fail();
 

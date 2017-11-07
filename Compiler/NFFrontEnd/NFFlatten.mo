@@ -192,7 +192,7 @@ protected
   Component c;
   Type ty;
   ComponentRef new_pre;
-  Binding binding;
+  Binding binding, condition;
   list<Dimension> dims;
   Class cls;
 algorithm
@@ -205,8 +205,13 @@ algorithm
   c := InstNode.component(comp_node);
 
   () := match c
-    case Component.TYPED_COMPONENT(ty = ty)
+    case Component.TYPED_COMPONENT(ty = ty, condition = condition)
       algorithm
+        // Don't add the component if it has a condition that's false.
+        if Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition)) then
+          return;
+        end if;
+
         new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
         cls := InstNode.getClass(c.classInst);
 

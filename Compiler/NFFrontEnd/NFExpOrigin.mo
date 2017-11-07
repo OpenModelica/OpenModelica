@@ -18,6 +18,7 @@ public
   record RHS "rhs of equation/assignment" end RHS;
   record ITERATION_RANGE end ITERATION_RANGE;
   record BINDING end BINDING;
+  record CONDITION end CONDITION;
   record NO_ORIGIN end NO_ORIGIN;
 
   function next

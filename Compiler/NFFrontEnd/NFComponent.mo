@@ -109,6 +109,7 @@ uniontype Component
     InstNode classInst;
     array<Dimension> dimensions;
     Binding binding;
+    Binding condition;
     Component.Attributes attributes;
     SourceInfo info;
   end UNTYPED_COMPONENT;
@@ -117,6 +118,7 @@ uniontype Component
     InstNode classInst;
     Type ty;
     Binding binding;
+    Binding condition;
     Component.Attributes attributes;
     SourceInfo info;
   end TYPED_COMPONENT;
@@ -250,7 +252,8 @@ uniontype Component
   algorithm
     component := match component
       case UNTYPED_COMPONENT()
-        then TYPED_COMPONENT(component.classInst, ty, component.binding, component.attributes, component.info);
+        then TYPED_COMPONENT(component.classInst, ty, component.binding,
+          component.condition, component.attributes, component.info);
 
       case TYPED_COMPONENT()
         algorithm

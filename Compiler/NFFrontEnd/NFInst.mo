@@ -925,10 +925,11 @@ protected
   SCode.Element def;
   InstNode scp, cls, comp_node;
   Modifier mod, comp_mod;
-  Binding binding;
+  Binding binding, condition;
   DAE.Type ty;
   Component.Attributes attr, cls_attr;
   list<Dimension> dims;
+  SourceInfo info;
 algorithm
   comp_node := InstNode.resolveOuter(node);
   comp := InstNode.component(comp_node);
@@ -955,7 +956,7 @@ algorithm
       then
         ();
 
-    case (_, Component.COMPONENT_DEF(definition = def as SCode.COMPONENT()))
+    case (_, Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(info = info)))
       algorithm
         comp_mod := Modifier.fromElement(def, parent);
         comp_mod := Modifier.merge(comp.modifier, comp_mod);
@@ -965,11 +966,12 @@ algorithm
         Modifier.checkEach(comp_mod, listEmpty(dims), InstNode.name(comp_node));
         binding := Modifier.binding(comp_mod);
         comp_mod := Modifier.propagate(comp_mod);
+        condition := Binding.fromAbsyn(def.condition, SCode.Each.NOT_EACH(), parent, info);
 
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes, attributes, comp_node);
         inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
-          binding, attr, def.info);
+          binding, condition, attr, def.info);
         InstNode.updateComponent(inst_comp, comp_node);
 
         // Instantiate the type of the component.
@@ -1239,6 +1241,7 @@ algorithm
     case Component.UNTYPED_COMPONENT(dimensions = dims)
       algorithm
         c.binding := instBinding(c.binding);
+        c.condition := instBinding(c.condition);
         instExpressions(c.classInst, node);
 
         cls_dims := Class.getDimensions(InstNode.getClass(c.classInst));

@@ -92,6 +92,7 @@ algorithm
       node,
       Type.COMPLEX(node, ComplexType.CLASS()),
       Binding.UNBOUND(),
+      Binding.UNBOUND(),
       NFComponent.OUTPUT_ATTR,
       Absyn.dummyInfo)),
     node);

@@ -104,6 +104,16 @@ public
     end match;
   end isBound;
 
+  function isUnbound
+    input Binding binding;
+    output Boolean isUnbound;
+  algorithm
+    isUnbound := match binding
+      case UNBOUND() then true;
+      else false;
+    end match;
+  end isUnbound;
+
   function untypedExp
     input Binding binding;
     output Option<Expression> exp;
@@ -120,6 +130,7 @@ public
   algorithm
     exp := match binding
       case TYPED_BINDING() then SOME(binding.bindingExp);
+      case FLAT_BINDING() then SOME(binding.bindingExp);
       else NONE();
     end match;
   end typedExp;
@@ -128,7 +139,10 @@ public
     input Binding binding;
     output Expression exp;
   algorithm
-    TYPED_BINDING(bindingExp = exp) := binding;
+    exp := match binding
+      case TYPED_BINDING() then binding.bindingExp;
+      case FLAT_BINDING() then binding.bindingExp;
+    end match;
   end getTypedExp;
 
   function setTypedExp
