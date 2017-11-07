@@ -49,6 +49,10 @@ ComponentAsTypeError.mo \
 ComponentAttributes1.mo \
 ComponentAttributes2.mo \
 cond4.mo \
+Condition1.mo \
+Condition2.mo \
+ConditionInvalid1.mo \
+ConditionInvalidType1.mo \
 Connect1.mo \
 Connect2.mo \
 Connect4.mo \
