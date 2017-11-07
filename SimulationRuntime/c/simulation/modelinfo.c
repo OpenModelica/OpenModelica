@@ -65,12 +65,15 @@ static void indent(FILE *fout, int n) {
   while(n--) fputc(' ', fout);
 }
 
-static void convertProfileData(const char *prefix, int numFnsAndBlocks)
+static void convertProfileData(const char *outputPath, const char *prefix, int numFnsAndBlocks)
 {
-  size_t len = strlen(prefix);
+  const char* fullFileName;
+  if (0 > GC_asprintf((char**)&fullFileName, "%s%s", outputPath, prefix)) {
+    throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
+  }
+  size_t len = strlen(fullFileName);
   char *inBinaryInt = (char*)malloc(sizeof(char)*(len + 14));
   char *inBinaryReal = (char*)malloc(sizeof(char)*(len + 15));
-  char *outCsv = (char*)malloc(sizeof(char)*(len + 10));
   FILE *finInt, *finReal, *fout;
   int fail = 0;
   size_t intRowSize = sizeof(uint32_t)*(1+numFnsAndBlocks);
@@ -81,8 +84,8 @@ static void convertProfileData(const char *prefix, int numFnsAndBlocks)
    * But it is not worse than in-memory and may be paged out on low memory. */
   omc_mmap_write intMap,realMap;
 
-  memcpy(inBinaryInt,prefix,len);
-  memcpy(inBinaryReal,prefix,len);
+  memcpy(inBinaryInt,fullFileName,len);
+  memcpy(inBinaryReal,fullFileName,len);
   strcpy(inBinaryInt + len, "_prof.intdata");
   strcpy(inBinaryReal + len, "_prof.realdata");
 
@@ -100,12 +103,11 @@ static void convertProfileData(const char *prefix, int numFnsAndBlocks)
 
   free(inBinaryInt);
   free(inBinaryReal);
-  free(outCsv);
 }
 
-static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
-  const char *format = "plot \"%s_prof.realdata\" binary format=\"%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw %d\n";
-  const char *formatCount = "plot \"%s_prof.intdata\" binary format=\"%%%duint32\" using %d w l lw %d\n";
+static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *outputPath, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
+  const char *format = "plot \"%s%s_prof.realdata\" binary format=\"%%%ddouble\" using 1:($%d>1e-9 ? $%d : 1e-30) w l lw %d\n";
+  const char *formatCount = "plot \"%s%s_prof.intdata\" binary format=\"%%%duint32\" using %d w l lw %d\n";
   unsigned long nmin = 0, nmax = 0;
   double ymin = 0.0, ymax = 0.0;
   double ygraphmin = 1e-30, ygraphmax = 0.0;
@@ -127,7 +129,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "unset xtics\n");
   fprintf(plt, "unset ytics\n");
   fprintf(plt, "unset border\n");
-  fprintf(plt, "set output \"%s_prof.%s%d.thumb.svg\"\n", prefix, idPrefix, id);
+  fprintf(plt, "set output \"%s%s_prof.%s%d.thumb.svg\"\n", outputPath, prefix, idPrefix, id);
   fprintf(plt, "set title\n");
   fprintf(plt, "set xlabel\n");
   fprintf(plt, "set ylabel\n");
@@ -142,7 +144,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     fprintf(plt, "set yrange [*:*]\n");
   }
   /* time */
-  fprintf(plt, format, prefix, 2+numFnsAndBlocks, 3+i, 3+i, 4);
+  fprintf(plt, format, outputPath, prefix, 2+numFnsAndBlocks, 3+i, 3+i, 4);
   fprintf(plt, "set nolog xy\n");
   /* count */
   if(i >= 0) {
@@ -155,8 +157,8 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     {
       fprintf(plt, "set yrange [*:*]\n");
     }
-    fprintf(plt, "set output \"%s_prof.%s%d_count.thumb.svg\"\n", prefix, idPrefix, id);
-    fprintf(plt, formatCount, prefix, 1+numFnsAndBlocks, 2+i, 4);
+    fprintf(plt, "set output \"%s%s_prof.%s%d_count.thumb.svg\"\n", outputPath, prefix, idPrefix, id);
+    fprintf(plt, formatCount, outputPath, prefix, 1+numFnsAndBlocks, 2+i, 4);
     fprintf(plt, "set ytics\n");
   }
 
@@ -168,7 +170,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set title \"%s\"\n", title);
   fprintf(plt, "set xlabel \"Global step at time\"\n");
   fprintf(plt, "set ylabel \"Execution time [s]\"\n");
-  fprintf(plt, "set output \"%s_prof.%s%d.%s\"\n", prefix, idPrefix, id, plotFormat);
+  fprintf(plt, "set output \"%s%s_prof.%s%d.%s\"\n", outputPath, prefix, idPrefix, id, plotFormat);
   fprintf(plt, "set log y\n");
   if(i>=0)
   {
@@ -178,7 +180,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   {
     fprintf(plt, "set yrange [*:*]\n");
   }
-  fprintf(plt, format, prefix, 2+numFnsAndBlocks, 3+i, 3+i, 2);
+  fprintf(plt, format, outputPath, prefix, 2+numFnsAndBlocks, 3+i, 3+i, 2);
   /* count */
   fprintf(plt, "set nolog xy\n");
   if(i >= 0)
@@ -194,7 +196,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
     fprintf(plt, "set output \"%s_prof.%s%d_count.%s\"\n", prefix, idPrefix, id, plotFormat);
-    fprintf(plt, formatCount, prefix, 1+numFnsAndBlocks, 2+i, 2);
+    fprintf(plt, formatCount, outputPath, prefix, 1+numFnsAndBlocks, 2+i, 2);
   }
 }
 
@@ -234,11 +236,11 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
 }
 
 
-static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data) {
+static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *outputPath, const char *modelFilePrefix, DATA *data) {
   int i;
   for(i=0; i<data->modelData->modelDataXml.nFunctions; i++) {
     const struct FUNCTION_INFO func = modelInfoGetFunction(&data->modelData->modelDataXml, i);
-    printPlotCommand(plt, plotFormat, func.name, modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks, i, func.id, "fun");
+    printPlotCommand(plt, plotFormat, func.name, outputPath, modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks, i, func.id, "fun");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
     fprintf(fout, "<function id=\"fun%d\">\n", func.id);
@@ -252,11 +254,11 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
   }
 }
 
-static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
+static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, const char *outputPath, DATA *data) {
   int i;
   for(i = data->modelData->modelDataXml.nFunctions; i < data->modelData->modelDataXml.nFunctions + data->modelData->modelDataXml.nProfileBlocks; i++) {
     const struct EQUATION_INFO eq = modelInfoGetEquationIndexByProfileBlock(&data->modelData->modelDataXml, i-data->modelData->modelDataXml.nFunctions);
-    printPlotCommand(plt, plotFormat, "equation", data->modelData->modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks, i, eq.id, "eq");
+    printPlotCommand(plt, plotFormat, "equation", outputPath, data->modelData->modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks, i, eq.id, "eq");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);fprintf(fout, "<profileblock>\n");
     indent(fout,4);fprintf(fout, "<ref refid=\"eq%d\"/>\n", (int) eq.id);
@@ -314,15 +316,23 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 2); fprintf(fout, "</format>\n");
 }
 
-int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename)
+int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath, const char *filename, const char *plotfile, const char *plotFormat, const char *method, const char *outputFormat, const char *outputFilename)
 {
   static char buf[256];
-  FILE *fout = fopen(filename, "w");
+  const char* fullFileName;
+  if (0 > GC_asprintf((char**)&fullFileName, "%s%s", outputPath, filename)) {
+    throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
+  }
+  FILE *fout = fopen(fullFileName, "w");
   FILE *plotCommands;
   time_t t;
   int i;
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
-  plotCommands = fopen(plotfile, "w");
+  const char* fullPlotFile;
+  if (0 > GC_asprintf((char**)&fullPlotFile, "%s%s", outputPath, plotfile)) {
+    throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
+  }
+  plotCommands = fopen(fullPlotFile, "w");
 #else
   plotCommands = popen("gnuplot", "w");
 #endif
@@ -330,14 +340,14 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
     warningStreamPrint(LOG_UTIL, 0, "Plots of profiling data were disabled: %s\n", strerror(errno));
   }
 
-  assertStreamPrint(threadData, 0 != fout, "Failed to open %s: %s\n", filename, strerror(errno));
+  assertStreamPrint(threadData, 0 != fout, "Failed to open %s%s: %s\n", outputPath, filename, strerror(errno));
 
   if(plotCommands) {
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     fputs("set format y \"%g\"\n", plotCommands);
     /* The column containing the time spent to calculate each step */
-    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", data->modelData->modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks, -1, 999, "");
+    printPlotCommand(plotCommands, plotFormat, "Execution time of global steps", outputPath, data->modelData->modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks, -1, 999, "");
   }
   /* The doctype is needed for id() lookup to work properly */
   fprintf(fout, "<!DOCTYPE doc [\
@@ -425,7 +435,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
   fprintf(fout, "</variables>\n");
 
   fprintf(fout, "<functions>\n");
-  printFunctions(fout, plotCommands, plotFormat, data->modelData->modelFilePrefix, data);
+  printFunctions(fout, plotCommands, plotFormat, outputPath, data->modelData->modelFilePrefix, data);
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
@@ -433,7 +443,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
   fprintf(fout, "</equations>\n");
 
   fprintf(fout, "<profileblocks>\n");
-  printProfileBlocks(fout, plotCommands, plotFormat, data);
+  printProfileBlocks(fout, plotCommands, plotFormat, outputPath, data);
   fprintf(fout, "</profileblocks>\n");
 
   fprintf(fout, "</simulation>\n");
@@ -448,7 +458,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
     if(omhome) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
-      sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
+      sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s%s", omhome, outputPath, plotfile);
 #else
       sprintf(buf, "gnuplot %s", plotfile);
 #endif
@@ -471,7 +481,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
 #else
       const char *xsltproc = "xsltproc";
 #endif
-      sprintf(buf, "%s -o %s_prof.html %s/share/omc/scripts/default_profiling.xsl %s_prof.xml", xsltproc, data->modelData->modelFilePrefix, omhome, data->modelData->modelFilePrefix);
+      sprintf(buf, "%s -o %s%s_prof.html %s/share/omc/scripts/default_profiling.xsl %s%s_prof.xml", xsltproc, outputPath, data->modelData->modelFilePrefix, omhome, outputPath, data->modelData->modelFilePrefix);
 #if defined(__MINGW32__) || defined(_MSC_VER)
       free(xsltproc);
 #endif
@@ -487,9 +497,9 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *filename, c
       warningStreamPrint(LOG_STDOUT, 0, "Failed to generate html version of profiling results: %s\n", buf);
     }
     if (measure_time_flag & 4) {
-      infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.html (human-readable) and %s_prof.xml (for XSL transforms or more details)", data->modelData->modelFilePrefix, data->modelData->modelFilePrefix);
+      infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s%s_prof.html (human-readable) and %s%s_prof.xml (for XSL transforms or more details)", outputPath, data->modelData->modelFilePrefix, outputPath, data->modelData->modelFilePrefix);
     } else {
-      infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s_prof.json", data->modelData->modelFilePrefix);
+      infoStreamPrint(LOG_STDOUT, 0, "Time measurements are stored in %s%s_prof.json", outputPath, data->modelData->modelFilePrefix);
     }
     free(buf);
   }
@@ -549,17 +559,21 @@ static void printJSONProfileBlocks(FILE *fout, DATA *data) {
   }
 }
 
-int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *filename, const char *outputFilename)
+int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *outputPath, const char *filename, const char *outputFilename)
 {
   char buf[256];
-  FILE *fout = fopen(filename, "wb");
+  const char* fullFileName;
+  if (0 > GC_asprintf((char**)&fullFileName, "%s%s", outputPath, filename)) {
+    throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
+  }
+  FILE *fout = fopen(fullFileName, "wb");
   time_t t;
   long i;
   double totalTimeEqs = 0;
   if (!fout) {
-    throwStreamPrint(NULL, "Failed to open file %s for writing", filename);
+    throwStreamPrint(NULL, "Failed to open file %s%s for writing", outputPath, filename);
   }
-  convertProfileData(data->modelData->modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks);
+  convertProfileData(outputPath, data->modelData->modelFilePrefix, data->modelData->modelDataXml.nFunctions+data->modelData->modelDataXml.nProfileBlocks);
   if(time(&t) < 0)
   {
     fclose(fout);

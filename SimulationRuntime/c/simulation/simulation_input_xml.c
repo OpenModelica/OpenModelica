@@ -441,8 +441,12 @@ void read_input_xml(MODEL_DATA* modelData,
   if(NULL == modelData->initXMLData)
   {
     /* read the filename from the command line (if any) */
-    if(omc_flag[FLAG_F]) {
+    if (omc_flag[FLAG_F]) {
       filename = omc_flagValue[FLAG_F];
+    } else if (omc_flag[FLAG_INPUT_PATH]) { /* read the input path from the command line (if any) */
+      if (0 > GC_asprintf((char**)&filename, "%s/%s_init.xml", omc_flagValue[FLAG_INPUT_PATH], modelData->modelFilePrefix)) {
+        throwStreamPrint(NULL, "simulation_input_xml.c: Error: can not allocate memory.");
+      }
     } else {
       /* no file given on the command line? use the default
        * model_name defined in generated code for model.*/

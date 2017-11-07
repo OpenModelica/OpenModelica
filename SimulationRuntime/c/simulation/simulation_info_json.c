@@ -30,6 +30,7 @@
 
 #include "simulation_info_json.h"
 #include "simulation_runtime.h"
+#include "options.h"
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
@@ -377,7 +378,15 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   rt_tick(0);
 #if !defined(OMC_NO_FILESYSTEM)
   if (!xml->infoXMLData) {
-    mmap_reader = omc_mmap_open_read(xml->fileName);
+    const char *filename;
+    if (omc_flag[FLAG_INPUT_PATH]) { /* read the input path from the command line (if any) */
+      if (0 > GC_asprintf((char**)&filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName)) {
+        throwStreamPrint(NULL, "simulation_info_json.c: Error: can not allocate memory.");
+      }
+      mmap_reader = omc_mmap_open_read(filename);
+    } else {
+      mmap_reader = omc_mmap_open_read(xml->fileName);
+    }
     xml->infoXMLData = mmap_reader.data;
     xml->modelInfoXmlLength = mmap_reader.size;
     // fprintf(stderr, "Loaded the JSON (%ld kB)...\n", (long) (s.st_size+1023)/1024);

@@ -457,11 +457,16 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   // Create a result file
   const char *result_file = omc_flagValue[FLAG_R];
   string result_file_cstr;
-  if(!result_file) {
+  if (result_file) {
+    data->modelData->resultFileName = GC_strdup(result_file);
+  } else if (omc_flag[FLAG_OUTPUT_PATH]) { /* read the output path from the command line (if any) */
+    if (0 > GC_asprintf((char**)&result_file, "%s/%s_res.%s", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, data->simulationInfo->outputFormat)) {
+      throwStreamPrint(NULL, "simulation_runtime.c: Error: can not allocate memory.");
+    }
+    data->modelData->resultFileName = GC_strdup(result_file);
+  } else {
     result_file_cstr = string(data->modelData->modelFilePrefix) + string("_res.") + data->simulationInfo->outputFormat;
     data->modelData->resultFileName = GC_strdup(result_file_cstr.c_str());
-  } else {
-    data->modelData->resultFileName = GC_strdup(result_file);
   }
 
   string init_initMethod = "";
@@ -516,16 +521,19 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
    * So before doing the profiling reset the measure_time_flag to measure_time_flag_previous state.
    */
   measure_time_flag = measure_time_flag_previous;
-
-  if(0 == retVal && measure_time_flag) {
+  string output_path = "";
+  if (0 == retVal && measure_time_flag) {
+    if (omc_flag[FLAG_OUTPUT_PATH]) { /* read the output path from the command line (if any) */
+      output_path = string(omc_flagValue[FLAG_INPUT_PATH]) + string("/");
+    }
     const string jsonInfo = string(data->modelData->modelFilePrefix) + "_prof.json";
     const string modelInfo = string(data->modelData->modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData->modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     const char* plotFormat = omc_flagValue[FLAG_MEASURETIMEPLOTFORMAT];
-    retVal = printModelInfo(data, threadData, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
+    retVal = printModelInfo(data, threadData, output_path.c_str(), modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat : "svg",
         data->simulationInfo->solverMethod, data->simulationInfo->outputFormat, data->modelData->resultFileName) && retVal;
-    retVal = printModelInfoJSON(data, threadData, jsonInfo.c_str(), data->modelData->resultFileName) && retVal;
+    retVal = printModelInfoJSON(data, threadData, output_path.c_str(), jsonInfo.c_str(), data->modelData->resultFileName) && retVal;
   }
 
   TRACE_POP

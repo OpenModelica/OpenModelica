@@ -174,9 +174,17 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
   mt->fmtInt = NULL;
   if(measure_time_flag)
   {
-    size_t len = strlen(data->modelData->modelFilePrefix);
+    const char* fullFileName;
+    if (omc_flag[FLAG_OUTPUT_PATH]) { /* read the output path from the command line (if any) */
+      if (0 > GC_asprintf((char**)&fullFileName, "%s/%s", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix)) {
+        throwStreamPrint(NULL, "perform_simulation.c: Error: can not allocate memory.");
+      }
+    } else {
+      fullFileName = data->modelData->modelFilePrefix;
+    }
+    size_t len = strlen(fullFileName);
     char* filename = (char*) malloc((len+15) * sizeof(char));
-    strncpy(filename,data->modelData->modelFilePrefix,len);
+    strncpy(filename,fullFileName,len);
     strncpy(&filename[len],"_prof.realdata",15);
     mt->fmtReal = fopen(filename, "wb");
     if(!mt->fmtReal)
