@@ -3052,7 +3052,7 @@ algorithm
       // get all nonzero values
       zerofreevalues = List.fold(values, getZeroFreeValues, {});
       warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
-    then selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values having the same priority\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
+    then selectFreeValue1(zerofreevalues, {}, "Fixed Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, v, globalKnownVars);
 
     // fixed false only one start value -> nothing changed
     case (_, false, (_, {(start, _)}), _)
@@ -3428,7 +3428,7 @@ algorithm
     case (_, _)
       equation
         warnAliasConflicts = not Flags.isSet(Flags.ALIAS_CONFLICTS);
-      then selectFreeValue1(iZeroFreeValues, {}, "Alias set with conflicting start values having the same priority\n", "start", BackendVariable.setVarStartValue, inVar, globalKnownVars);
+      then selectFreeValue1(iZeroFreeValues, {}, "Alias set with conflicting start values\n", "start", BackendVariable.setVarStartValue, inVar, globalKnownVars);
   end match;
 end selectFreeValue;
 
@@ -3482,7 +3482,7 @@ algorithm
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> favorit;
       list<tuple<DAE.Exp, DAE.ComponentRef, Integer>> rest;
       String s="", s2;
-      Boolean b;
+      Boolean b, hardcoded;
 
     case ({}, {}, _, _, _, _) then inVar;
 
@@ -3502,42 +3502,49 @@ algorithm
 
     // none, push it in
     case ((e, cr)::zerofreevalues, {}, _, _, _, _) equation
+      (_, (i, hardcoded)) = Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
+      if hardcoded then
+        i = i + 5;
+      end if;
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ")\n";
+        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
       end if;
-      i = selectMinDepth(ComponentReference.crefDepth(cr), e);
     then selectFreeValue1(zerofreevalues, {(e, cr, i)}, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
     // equal, put it in
     case ((e, cr)::zerofreevalues, (es, crs, is)::rest, _, _, _, _) equation
+      (_, (i, hardcoded)) = Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
+      if hardcoded then
+        i = i + 5;
+      end if;
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ")\n";
+        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
       end if;
-      i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       true = intEq(i, is);
       crVar = BackendVariable.varCref(inVar);
-      favorit = if ComponentReference.crefEqual(crVar, cr) then {(e, cr, i),(es, crs, is)} else {(es, crs, is),(e, cr, i)};
+      favorit = if ComponentReference.crefEqual(crVar, crs) then {(es, crs, is), (e, cr, i)} else {(e, cr, i), (es, crs, is)};
       favorit = listAppend(favorit,rest);
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
     // less than, remove all from list, return just this one
     case ((e, cr)::zerofreevalues, (es, crs, is)::_, _, _, _, _) equation
+      (_, (i, hardcoded)) = Expression.traverseExpTopDown(e, selectMinDepth, (ComponentReference.crefDepth(cr), true));
+      if hardcoded then
+        i = i + 5;
+      end if;
       if Flags.isSet(Flags.ALIAS_CONFLICTS) then
         (e1, (_, b, _)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindExp, (globalKnownVars, false, HashSet.emptyHashSet()));
         (e1, _) = ExpressionSimplify.condsimplify(b, e1);
         s2 = if b then " = " + ExpressionDump.printExpStr(e1) else "";
-        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ")\n";
+        s = iStr + " * Candidate: " + ComponentReference.printComponentRefStr(cr) + "(" + iAttributeName + " = " + ExpressionDump.printExpStr(e) + s2 + ", confidence number = " + intString(i) + ")\n";
       end if;
-      i = selectMinDepth(ComponentReference.crefDepth(cr), e);
       favorit = if intLt(i, is) then {(e, cr, i)} else iFavorit;
-      crVar = BackendVariable.varCref(inVar);
-      favorit = if ComponentReference.crefEqual(crVar, crs) then {(es, crs, is),(e, cr, i)} else favorit;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
   end matchcontinue;
 end selectFreeValue1;
@@ -3547,21 +3554,23 @@ protected function selectMinDepth "author: adrpo
   with less depth than the one given
   return the minimum depth between the
   two. Maybe we should o min of all the
-  cref in the expression!"
-  input Integer d;
+  cref in the expression! - ptaeuber: Now we do."
   input DAE.Exp e;
-  output Integer m;
+  input tuple<Integer, Boolean> inMin;
+  output DAE.Exp eOut=e;
+  output Boolean cont=true;
+  output tuple<Integer, Boolean> outMin;
 algorithm
-  m := match(d, e)
+  outMin := match(e, inMin)
     local
-      Integer i;
+      Integer i,d;
       DAE.ComponentRef cr;
 
-    case (_, DAE.CREF(cr, _)) equation
+    case (DAE.CREF(cr, _), (d, _)) equation
       i = ComponentReference.crefDepth(cr);
-    then intMin(i, d);
+    then (intMin(i, d), false);
 
-    else d;
+    else inMin;
   end match;
 end selectMinDepth;
 
