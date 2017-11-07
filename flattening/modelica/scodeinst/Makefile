@@ -317,6 +317,7 @@ RedeclareElementClass1.mo \
 RedeclareElementComp1.mo \
 RedeclareElementMissing1.mo \
 RedeclareElementMissing2.mo \
+RedeclareMod1.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
