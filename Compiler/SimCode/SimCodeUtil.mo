@@ -4722,6 +4722,7 @@ algorithm
         systvars = BackendVariable.listVar1(allVars);
         ((otherColumnVars, _)) =  BackendVariable.traverseBackendDAEVars(systvars, traversingdlowvarToSimvar, ({}, emptyVars));
         otherColumnVars = List.map1(otherColumnVars, setSimVarKind, BackendDAE.JAC_DIFF_VAR());
+        otherColumnVars = List.map1(otherColumnVars, setSimVarMatrixName, SOME(name));
         otherColumnVars = rewriteIndex(otherColumnVars, 0);
 
         //sort variable for index
@@ -12749,7 +12750,7 @@ protected
    Option<BackendDAE.SymbolicJacobian> optcontPartDer;
    BackendDAE.SparsePattern spPattern;
    BackendDAE.SparseColoring spColors;
-   BackendDAE.Jacobian contPartDer;
+   BackendDAE.SymbolicJacobians contPartDer;
    SimCode.JacobianMatrix contSimJac;
    Option<SimCode.JacobianMatrix> contPartSimDer;
    list<SimCodeVar.SimVar> tempvars;
@@ -12782,8 +12783,8 @@ algorithm
     (derivatives, outputs) := List.split(derivatives, inModelInfo.varInfo.numStateVars);
 
     if not checkForEmptyBDAE(optcontPartDer) then
-      contPartDer := BackendDAE.GENERIC_JACOBIAN(optcontPartDer,spPattern,spColors);
-      (SOME(contSimJac), uniqueEqIndex, _) := createSymbolicSimulationJacobian(contPartDer, uniqueEqIndex, {});
+      contPartDer := {(optcontPartDer,spPattern,spColors)};
+      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
