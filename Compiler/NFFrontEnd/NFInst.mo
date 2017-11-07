@@ -944,7 +944,9 @@ algorithm
         end if;
 
         checkOuterComponentMod(mod, comp, comp_node);
+        // Create a modifier from the original declaration.
         comp_mod := Modifier.fromElement(def, parent);
+        // Merge it with any modifier from the redeclare.
         comp_mod := Modifier.merge(comp_mod, mod.mod);
         inst_comp := InstNode.component(mod.element);
         inst_comp := Component.setModifier(comp_mod, inst_comp);

@@ -488,6 +488,12 @@ algorithm
       end for;
     then (HtCr2U, HtS2U, HtU2S, expList);
 
+    case (DAE.IF_EQUATION(), _, _, _, _)
+      then (inHtCr2U, inHtS2U, inHtU2S, {});
+
+    case (DAE.INITIAL_IF_EQUATION(), _, _, _, _)
+      then (inHtCr2U, inHtS2U, inHtU2S, {});
+
     case (DAE.NORETCALL(), _, _, _, _) algorithm
       (_, (HtCr2U, HtS2U, HtU2S), expList) := insertUnitInEquation(inEq.exp, (inHtCr2U, inHtS2U, inHtU2S), NFUnit.MASTER({}), inargs);
     then (inHtCr2U, inHtS2U, inHtU2S, expList);
@@ -521,8 +527,7 @@ algorithm
     then (inHtCr2U, inHtS2U, inHtU2S, {});
 
     else equation
-      print(anyString(inEq));
-      Error.addInternalError("./Compiler/NFFrontEnd/NFUnitCheck.mo: function foldEquation failed on: " + DAEDump.dumpEquationStr(inEq), sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed on: " + DAEDump.dumpEquationStr(inEq), sourceInfo());
     then fail();
   end match;
 end foldEquation2;

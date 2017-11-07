@@ -149,6 +149,8 @@ public
         list<tuple<String, Modifier>> submod_lst;
         ModTable.Tree submod_table;
         Binding binding;
+        SCode.Element elem;
+        SCode.Mod smod;
 
       case SCode.NOMOD() then NOMOD();
 
@@ -161,11 +163,43 @@ public
         then
           MODIFIER(name, mod.finalPrefix, mod.eachPrefix, binding, submod_table, mod.info);
 
-      case SCode.REDECL()
-        then REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(mod.element, scope), NOMOD());
+      case SCode.REDECL(element = elem)
+        algorithm
+          (elem, smod) := stripSCodeMod(elem);
+        then
+          REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(elem, scope),
+            create(smod, name, modScope, scope));
 
     end match;
   end create;
+
+  function stripSCodeMod
+    input output SCode.Element elem;
+          output SCode.Mod mod;
+  algorithm
+    mod := match elem
+      local
+        SCode.ClassDef cdef;
+
+    case SCode.Element.CLASS(classDef = cdef as SCode.ClassDef.DERIVED(modifications = mod))
+      algorithm
+        if not SCode.isEmptyMod(mod) then
+          cdef.modifications := SCode.Mod.NOMOD();
+          elem.classDef := cdef;
+        end if;
+      then
+        mod;
+
+    case SCode.Element.COMPONENT(modifications = mod)
+      algorithm
+        if not SCode.isEmptyMod(mod) then
+          elem.modifications := SCode.Mod.NOMOD();
+        end if;
+      then
+        mod;
+
+    end match;
+  end stripSCodeMod;
 
   function fromElement
     input SCode.Element element;
