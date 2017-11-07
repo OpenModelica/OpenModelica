@@ -221,10 +221,17 @@ uniontype Call
     list<InstNode> iters;
     ComponentRef arr_fn_ref;
     Call call, arr_call;
+    Absyn.ComponentRef aby_fn_ref;
   algorithm
-    (fn_ref, fn_node, _) := Function.instFunc(functionName,scope,info);
+    aby_fn_ref := match functionName
+      case Absyn.CREF_IDENT("$array",{}) then Absyn.CREF_IDENT("array",{});
+      else functionName;
+    end match;
+
+    (fn_ref, fn_node, _) := Function.instFunc(aby_fn_ref,scope,info);
     (exp, iters) := instIteratorCallArgs(functionArgs, scope, info);
-    call := match functionName
+
+    call := match aby_fn_ref
 
       case Absyn.CREF_IDENT("min",_) algorithm
         (arr_fn_ref, _) := Function.instFunc(Absyn.CREF_IDENT("array", {}),scope,info);
