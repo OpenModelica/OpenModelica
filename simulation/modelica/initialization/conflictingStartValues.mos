@@ -40,17 +40,17 @@ simulate(conflictingStartValues, stopTime=0.0, simflags="-output=x,a"); getError
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Alias set with conflicting start values having the same priority
-//  * Candidate: c(start = 10.0)
-//  * Candidate: b(start = p = 100.0)
-// => Select value from c(start = 10.0) for variable: a
+// "Warning: Alias set with conflicting start values
+//  * Candidate: c(start = 10.0, confidence number = 6)
+//  * Candidate: b(start = p = 100.0, confidence number = 1)
+// => Select value from b(start = p = 100.0) for variable: a
 // Warning: Alias set with conflicting nominal values
-//  * Candidate: b(nominal = 1000.0)
-//  * Candidate: a(nominal = 100.0)
+//  * Candidate: b(nominal = 1000.0, confidence number = 6)
+//  * Candidate: a(nominal = 100.0, confidence number = 6)
 // => Select value from a(nominal = 100.0) for variable: a
-// Warning: Alias set with conflicting start values having the same priority
-//  * Candidate: z(start = 4.0)
-//  * Candidate: y(start = 3.0)
-// => Select value from z(start = 4.0) for variable: x
+// Warning: Alias set with conflicting start values
+//  * Candidate: z(start = 4.0, confidence number = 6)
+//  * Candidate: y(start = 3.0, confidence number = 6)
+// => Select value from y(start = 3.0) for variable: x
 // "
 // endResult
