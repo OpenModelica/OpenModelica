@@ -224,9 +224,8 @@ algorithm
     end if;
 
     // simplify system
-    if not stringEq(Config.simCodeTarget(), "Cpp") then
-      initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, outGlobalKnownVars);
-    end if;
+    initdae := BackendDAEUtil.setDAEGlobalKnownVars(initdae, outGlobalKnownVars);
+
 
     if useHomotopy then
       disabledModules := {};
@@ -261,9 +260,9 @@ algorithm
     end if;
 
     // Remove the globalKnownVars for the initialization set again
-    if not stringEq(Config.simCodeTarget(), "Cpp") then
-      initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
-    end if;
+
+    initdae.shared := BackendDAEUtil.setSharedGlobalKnownVars(initdae.shared, BackendVariable.emptyVars());
+
 
     // warn about selected default initial conditions
     b1 := not listEmpty(dumpVars);
