@@ -75,10 +75,12 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // 2: $cse2 - sin(time) - {}
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: {y.r1[1], y.r1[2], y.r1[3]} = $TMP_CSE_R1.r1
+// Warning: SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: {y.r1[1], y.r1[2], y.r1[3]} = $TMP_CSE_R7.r1
+// "
 // endResult
