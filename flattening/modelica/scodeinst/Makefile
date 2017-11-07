@@ -224,6 +224,8 @@ FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
 FunctionNoOutput1.mo \
 FunctionStreamPrefix.mo \
+IfEquation1.mo \
+IfEquation2.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
