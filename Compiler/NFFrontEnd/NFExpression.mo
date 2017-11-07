@@ -181,6 +181,16 @@ public
     end match;
   end isTrue;
 
+  function isFalse
+    input Expression exp;
+    output Boolean isTrue;
+  algorithm
+    isTrue := match exp
+      case BOOLEAN(false) then true;
+      else false;
+    end match;
+  end isFalse;
+
   function isEqual
     "Returns true if the two expressions are equal, otherwise false."
     input Expression exp1;

@@ -76,7 +76,7 @@ import Types;
 import NFSections.Sections;
 import List;
 import DAEUtil;
-import MetaModelica.Dangerous;
+import MetaModelica.Dangerous.listReverseInPlace;
 import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
 
@@ -1370,6 +1370,7 @@ algorithm
       list<tuple<Expression, list<Equation>>> tybrs;
       InstNode iterator;
       MatchKind mk;
+      Variability var, bvar;
 
     case Equation.EQUALITY()
       algorithm
@@ -1396,18 +1397,7 @@ algorithm
       then
         Equation.FOR(eq.iterator, body, eq.info);
 
-    case Equation.IF()
-      algorithm
-        tybrs := list(
-          match br case(cond, body)
-            algorithm
-              e1 := typeCondition(cond, eq.info, Error.IF_CONDITION_TYPE_ERROR);
-              eqs1 := list(typeEquation(beq) for beq in body);
-            then (e1, eqs1);
-          end match
-        for br in eq.branches);
-      then
-        Equation.IF(tybrs, eq.info);
+    case Equation.IF() then typeIfEquation(eq.branches, eq.info);
 
     case Equation.WHEN()
       algorithm
@@ -1678,6 +1668,35 @@ algorithm
     fail();
   end if;
 end typeCondition;
+
+function typeIfEquation
+  input list<tuple<Expression, list<Equation>>> branches;
+  input SourceInfo info;
+  output Equation ifEq;
+protected
+  Expression cond;
+  list<Equation> eql;
+  Variability accum_var = Variability.CONSTANT, var;
+  list<tuple<Expression, list<Equation>>> bl = {};
+algorithm
+  for b in branches loop
+    (cond, eql) := b;
+    (cond, var) := typeCondition(cond, info, Error.IF_CONDITION_TYPE_ERROR);
+    accum_var := Prefixes.variabilityMax(accum_var, var);
+
+    if var <= Variability.PARAMETER then
+      cond := Ceval.evalExp(cond, Ceval.EvalTarget.IGNORE_ERRORS());
+      cond := SimplifyExp.simplifyExp(cond);
+    end if;
+
+    eql := list(typeEquation(e) for e in eql);
+    bl := (cond, eql) :: bl;
+  end for;
+
+  // TODO: If accum_var <= PARAMETER, then each branch must have the same number
+  //       of equations.
+  ifEq := Equation.IF(listReverseInPlace(bl), info);
+end typeIfEquation;
 
 function typeOperatorArg
   input output Expression arg;

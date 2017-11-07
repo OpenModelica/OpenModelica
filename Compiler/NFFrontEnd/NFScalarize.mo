@@ -112,6 +112,17 @@ algorithm
   end if;
 end scalarizeComponent;
 
+function scalarizeEquations
+  input list<Equation> eql;
+  output list<Equation> equations = {};
+algorithm
+  for eq in eql loop
+    equations := scalarizeEquation(eq, equations);
+  end for;
+
+  equations := listReverseInPlace(equations);
+end scalarizeEquations;
+
 function scalarizeEquation
   input Equation eq;
   input output list<Equation> equations;
@@ -145,7 +156,7 @@ algorithm
         Equation.ARRAY_EQUALITY(eq.lhs, rhs, eq.ty, eq.info) :: equations;
 
     case Equation.IF()
-      then Equation.IF(list(scalarizeBranch(b) for b in eq.branches), eq.info) :: equations;
+      then scalarizeIfEquation(eq.branches, eq.info, equations);
 
     case Equation.WHEN()
       then Equation.WHEN(list(scalarizeBranch(b) for b in eq.branches), eq.info) :: equations;
@@ -154,19 +165,43 @@ algorithm
   end match;
 end scalarizeEquation;
 
+function scalarizeIfEquation
+  input list<tuple<Expression, list<Equation>>> branches;
+  input SourceInfo info;
+  input output list<Equation> equations;
+protected
+  list<tuple<Expression, list<Equation>>> bl = {};
+  Expression cond;
+  list<Equation> eql;
+algorithm
+  for b in branches loop
+    (cond, eql) := b;
+    eql := scalarizeEquations(eql);
+
+    if Expression.isTrue(cond) and listEmpty(bl) then
+      // If the condition is literal true and we haven't collected any other
+      // branches yet, replace the if equation with this branch.
+      equations := listAppend(eql, equations);
+      return;
+    elseif not Expression.isFalse(cond) then
+      // Only add the branch to the list of branches if the condition is not
+      // literal false, otherwise just drop it since it will never trigger.
+      bl := (cond, eql) :: bl;
+    end if;
+  end for;
+
+  // Add the scalarized if equation to the list of equations if we got this far.
+  equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
+end scalarizeIfEquation;
+
 function scalarizeBranch
   input output tuple<Expression, list<Equation>> branch;
 protected
   Expression exp;
-  list<Equation> eql, scalar_eql = {};
+  list<Equation> eql;
 algorithm
   (exp, eql) := branch;
-
-  for eq in eql loop
-    scalar_eql := scalarizeEquation(eq, scalar_eql);
-  end for;
-
-  branch := (exp, listReverseInPlace(scalar_eql));
+  branch := (exp, scalarizeEquations(eql));
 end scalarizeBranch;
 
 annotation(__OpenModelica_Interface="frontend");
