@@ -59,6 +59,7 @@ import Sections = NFSections;
 import Function = NFFunction.Function;
 import ClassTree = NFClassTree;
 import NFPrefixes.Visibility;
+import NFPrefixes.Direction;
 
 public
 function convert
@@ -90,14 +91,17 @@ protected
 function convertComponents
   input list<tuple<ComponentRef, Binding>> components;
   input output list<DAE.Element> elements;
+protected
+  Boolean localDir = Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION);
 algorithm
   for comp in listReverse(components) loop
-    elements := convertComponent(comp) :: elements;
+    elements := convertComponent(comp, localDir) :: elements;
   end for;
 end convertComponents;
 
 function convertComponent
   input tuple<ComponentRef, Binding> component;
+  input Boolean useLocalDir;
   output DAE.Element daeVar;
 protected
   ComponentRef cref;
@@ -119,7 +123,7 @@ algorithm
 
   binding_exp := convertBinding(binding);
   var_attr := convertVarAttributes(Class.getTypeAttributes(cls), ty);
-  daeVar := makeDAEVar(cref, ty, binding_exp, attr, InstNode.visibility(comp_node), var_attr, info);
+  daeVar := makeDAEVar(cref, ty, binding_exp, attr, InstNode.visibility(comp_node), var_attr, useLocalDir, info);
 end convertComponent;
 
 function makeDAEVar
@@ -129,12 +133,14 @@ function makeDAEVar
   input Component.Attributes attr;
   input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
+  input Boolean useLocalDir;
   input SourceInfo info;
   output DAE.Element var;
 protected
   DAE.ComponentRef dcref;
   DAE.Type dty;
   DAE.ElementSource source;
+  Direction dir;
 algorithm
   dcref := ComponentRef.toDAE(cref);
   dty := Type.toDAE(ty);
@@ -142,11 +148,19 @@ algorithm
 
   var := match attr
     case Component.Attributes.ATTRIBUTES()
+      algorithm
+        // Strip input/output from non top-level components unless
+        // --useLocalDirection=true has been set.
+        if attr.direction == Direction.NONE or useLocalDir then
+          dir := attr.direction;
+        else
+          dir := getComponentDirection(attr.direction, cref);
+        end if;
       then
         DAE.VAR(
           dcref,
           Prefixes.variabilityToDAE(attr.variability),
-          Prefixes.directionToDAE(attr.direction),
+          Prefixes.directionToDAE(dir),
           Prefixes.parallelismToDAE(attr.parallelism),
           Prefixes.visibilityToDAE(vis),
           dty,
@@ -167,6 +181,22 @@ algorithm
 
   end match;
 end makeDAEVar;
+
+function getComponentDirection
+  "Returns the given direction if the cref refers to a top-level component or to
+   a component in a top-level connector, otherwise returns Direction.NONE."
+  input output Direction dir;
+  input ComponentRef cref;
+protected
+  ComponentRef rest_cref = ComponentRef.rest(cref);
+algorithm
+  dir := match rest_cref
+    case ComponentRef.EMPTY() then dir;
+    case ComponentRef.CREF()
+      then if InstNode.isConnector(rest_cref.node) then
+        getComponentDirection(dir, rest_cref) else Direction.NONE;
+  end match;
+end getComponentDirection;
 
 function convertBinding
   input Binding binding;
@@ -970,7 +1000,7 @@ algorithm
         var_attr := convertVarAttributes(Class.getTypeAttributes(cls), ty);
         attr := comp.attributes;
       then
-        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, info);
+        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, true, info);
 
     else
       algorithm
