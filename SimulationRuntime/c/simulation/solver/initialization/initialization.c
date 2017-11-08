@@ -234,14 +234,15 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     char buffer[4096];
 
 #if !defined(OMC_NO_FILESYSTEM)
+    const char sep[] = ",";
     if(ACTIVE_STREAM(LOG_INIT))
     {
       sprintf(buffer, "%s_global_homotopy.csv", mData->modelFilePrefix);
       infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = fopen(buffer, "wt");
-      fprintf(pFile, "\"sep=,\"\n%s", "lambda");
+      fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(i=0; i<mData->nVariablesReal; ++i)
-        fprintf(pFile, ",%s", mData->realVarsData[i].info.name);
+        fprintf(pFile, "%s\"%s\"", sep, mData->realVarsData[i].info.name);
       fprintf(pFile, "\n");
     }
 #endif
@@ -268,7 +269,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       {
         fprintf(pFile, "%.16g", data->simulationInfo->lambda);
         for(i=0; i<mData->nVariablesReal; ++i)
-          fprintf(pFile, ",%.16g", data->localData[0]->realVars[i]);
+          fprintf(pFile, "%s%.16g", sep, data->localData[0]->realVars[i]);
         fprintf(pFile, "\n");
       }
 #endif

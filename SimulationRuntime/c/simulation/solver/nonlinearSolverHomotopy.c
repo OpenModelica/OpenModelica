@@ -1610,19 +1610,19 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   char buffer[4096];
 
 #if !defined(OMC_NO_FILESYSTEM)
+    const char sep[] = ",";
     if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT))
     {
       sprintf(buffer, "%s_syst%d_new_global_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->startDirection > 0 ? "pos" : "neg");
       infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = fopen(buffer, "wt");
-      fprintf(pFile, "\"sep=,\"\n");
-      fprintf(pFile, "%s", modelInfoGetEquation(&solverData->data->modelData->modelDataXml,solverData->eqSystemNumber).vars[n]);
+      fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
       for(i=0; i<n; ++i)
-        fprintf(pFile, ",%s", modelInfoGetEquation(&solverData->data->modelData->modelDataXml,solverData->eqSystemNumber).vars[i]);
+        fprintf(pFile, "%s\"%s\"", sep, modelInfoGetEquation(&solverData->data->modelData->modelDataXml,solverData->eqSystemNumber).vars[i]);
       fprintf(pFile, "\n");
       fprintf(pFile, "0.0");
       for(i=0; i<n; ++i)
-        fprintf(pFile, ",%.16g", x[i]);
+        fprintf(pFile, "%s%.16g", sep, x[i]);
       fprintf(pFile, "\n");
     }
 #endif
@@ -1919,12 +1919,14 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       {
         fprintf(pFile, "%.16g", solverData->y0[n]);
         for(i=0; i<n; ++i)
-          fprintf(pFile, ",%.16g", solverData->y0[i]);
+          fprintf(pFile, "%s%.16g", sep, solverData->y0[i]);
         fprintf(pFile, "\n");
       }
 #endif
     }
   }
+  if (solverData->initHomotopy)
+      infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
   /* copy solution back to vector x */
   vecCopy(solverData->n, solverData->y1, x);
 
