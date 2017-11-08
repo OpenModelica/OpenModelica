@@ -127,6 +127,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFSections.mo",
     "../NFFrontEnd/NFStatement.mo",
     "../NFFrontEnd/NFSubscript.mo",
+    "../NFFrontEnd/NFPackage.mo",
     "../NFFrontEnd/NFType.mo",
     "../NFFrontEnd/NFTypeCheck.mo",
     "../NFFrontEnd/NFTyping.mo",

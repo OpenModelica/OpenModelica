@@ -433,25 +433,21 @@ public
     input list<Expression> expl2;
     output Integer comp;
   protected
-    Integer len1, len2;
     Expression e2;
     list<Expression> rest_expl2 = expl2;
-    Integer len1, len2;
   algorithm
     // Check that the lists have the same length, otherwise they can't be equal.
-    len1 := listLength(expl1);
-    len2 := listLength(expl2);
-    comp := Util.intCompare(len1, len2);
+    comp := Util.intCompare(listLength(expl1), listLength(expl2));
     if comp <> 0 then
       return;
     end if;
 
     for e1 in expl1 loop
       e2 :: rest_expl2 := rest_expl2;
-
-      // Return false if the expressions are not equal.
       comp := compare(e1, e2);
-      if 0 <> comp then
+
+      // Return if the expressions are not equal.
+      if comp <> 0 then
         return;
       end if;
     end for;

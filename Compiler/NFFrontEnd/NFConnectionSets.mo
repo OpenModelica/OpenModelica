@@ -30,20 +30,13 @@
  */
 
 encapsulated package NFConnectionSets
-import BaseHashTable;
-import Connect;
-import DAE;
 import DisjointSets;
-
 import Connector = NFConnector;
 import Connection = NFConnection;
 
 protected
-import Array;
 import Flags;
 import List;
-import System;
-import Util;
 
 public
 uniontype Connections

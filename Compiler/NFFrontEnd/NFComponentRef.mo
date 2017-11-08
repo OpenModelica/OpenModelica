@@ -37,6 +37,7 @@ protected
   import Subscript = NFSubscript;
   import Type = NFType;
   import NFInstNode.InstNode;
+  import NFInstNode.InstNodeType;
   import RangeIterator = NFRangeIterator;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -343,9 +344,29 @@ public
   function compare
     input ComponentRef cref1;
     input ComponentRef cref2;
-    output Integer comp = 0;
+    output Integer comp;
   algorithm
-    assert(false, getInstanceName() + ": IMPLEMENT ME");
+    comp := match (cref1, cref2)
+      case (CREF(), CREF())
+        algorithm
+          comp := stringCompare(InstNode.name(cref1.node), InstNode.name(cref2.node));
+
+          if comp <> 0 then
+            return;
+          end if;
+
+          comp := Subscript.compareList(cref1.subscripts, cref2.subscripts);
+
+          if comp <> 0 then
+            return;
+          end if;
+        then
+          compare(cref1.restCref, cref2.restCref);
+
+      case (EMPTY(), EMPTY()) then 0;
+      case (_, EMPTY()) then 1;
+      case (EMPTY(), _) then -1;
+    end match;
   end compare;
 
   function isEqual
@@ -498,6 +519,28 @@ public
       else {cref};
     end match;
   end scalarize;
+
+  function isPackageConstant
+    input ComponentRef cref;
+    output Boolean isPkgConst;
+  algorithm
+    isPkgConst := match cref
+      case CREF(node = InstNode.CLASS_NODE(nodeType = InstNodeType.NORMAL_CLASS())) then true;
+      case CREF(origin = Origin.CREF) then isPackageConstant(cref.restCref);
+      else false;
+    end match;
+  end isPackageConstant;
+
+  function stripSubscriptsAll
+    input ComponentRef cref;
+    output ComponentRef strippedCref;
+  algorithm
+    strippedCref := match cref
+      case CREF()
+        then CREF(cref.node, {}, cref.ty, cref.origin, stripSubscriptsAll(cref.restCref));
+      else cref;
+    end match;
+  end stripSubscriptsAll;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

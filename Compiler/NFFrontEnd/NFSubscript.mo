@@ -68,6 +68,17 @@ public
     end match;
   end fromExp;
 
+  function toExp
+    input Subscript subscript;
+    output Expression exp;
+  algorithm
+    exp := match subscript
+      case UNTYPED() then subscript.exp;
+      case INDEX() then subscript.index;
+      case SLICE() then subscript.slice;
+    end match;
+  end toExp;
+
   function makeIndex
     input Expression exp;
     output Subscript subscript = INDEX(exp);
@@ -120,6 +131,73 @@ public
 
     isEqual := listEmpty(rest);
   end isEqualList;
+
+  function compare
+    input Subscript subscript1;
+    input Subscript subscript2;
+    output Integer comp;
+  algorithm
+    if referenceEq(subscript1, subscript2) then
+      comp := 0;
+      return;
+    end if;
+
+    comp := Util.intCompare(valueConstructor(subscript1), valueConstructor(subscript2));
+    if comp <> 0 then
+      return;
+    end if;
+
+    comp := match subscript1
+      local
+        Expression e;
+
+      case UNTYPED()
+        algorithm
+          UNTYPED(exp = e) := subscript2;
+        then
+          Expression.compare(subscript1.exp, e);
+
+      case INDEX()
+        algorithm
+          INDEX(index = e) := subscript2;
+        then
+          Expression.compare(subscript1.index, e);
+
+      case SLICE()
+        algorithm
+          SLICE(slice = e) := subscript2;
+        then
+          Expression.compare(subscript1.slice, e);
+
+      case WHOLE() then 0;
+    end match;
+  end compare;
+
+  function compareList
+    input list<Subscript> subscripts1;
+    input list<Subscript> subscripts2;
+    output Integer comp;
+  protected
+    Subscript s2;
+    list<Subscript> rest_s2 = subscripts2;
+  algorithm
+    comp := Util.intCompare(listLength(subscripts1), listLength(subscripts2));
+
+    if comp <> 0 then
+      return;
+    end if;
+
+    for s1 in subscripts1 loop
+      s2 :: rest_s2 := rest_s2;
+      comp := compare(s1, s2);
+
+      if comp <> 0 then
+        return;
+      end if;
+    end for;
+
+    comp := 0;
+  end compareList;
 
   function toDAE
     input Subscript subscript;

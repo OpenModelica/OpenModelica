@@ -58,6 +58,10 @@ uniontype InstNodeType
     SCode.Element definition;
   end BASE_CLASS;
 
+  record BUILTIN_CLASS
+    "A builtin class."
+  end BUILTIN_CLASS;
+
   record TOP_SCOPE
     "The unnamed class containing all the top-level classes."
   end TOP_SCOPE;
@@ -706,6 +710,8 @@ uniontype InstNode
               then scopeList(node.parentScope, node :: accumScopes);
             case InstNodeType.BASE_CLASS()
               then scopeList(it.parent, accumScopes);
+            case InstNodeType.BUILTIN_CLASS()
+              then node :: accumScopes;
             else accumScopes;
           end match;
 
@@ -754,6 +760,8 @@ uniontype InstNode
               then scopePath2(node.parentScope, Absyn.QUALIFIED(node.name, accumPath));
             case InstNodeType.BASE_CLASS()
               then scopePath2(it.parent, accumPath);
+            case InstNodeType.BUILTIN_CLASS()
+              then Absyn.QUALIFIED(node.name, accumPath);
             else accumPath;
           end match;
 

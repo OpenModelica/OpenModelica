@@ -89,6 +89,7 @@ import ConvertDAE = NFConvertDAE;
 import Scalarize = NFScalarize;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
+import Package = NFPackage;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -135,6 +136,8 @@ algorithm
 
   // Flatten and convert the class into a DAE.
   (elems, funcs) := Flatten.flatten(inst_cls, name);
+  elems := Package.collectConstants(elems);
+
   elems := Scalarize.scalarize(elems, name);
   (dae, daeFuncs) := ConvertDAE.convert(elems, funcs, name, InstNode.info(inst_cls));
 

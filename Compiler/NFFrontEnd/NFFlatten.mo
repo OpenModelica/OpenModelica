@@ -129,10 +129,6 @@ algorithm
     flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), {}, sections);
   comps := listReverseInPlace(comps);
 
-  //conns := Connections.new();
-  //(elems, funcs, conns) := flattenNode(classInst, ComponentRef.EMPTY(), {}, funcs, conns);
-  //elems := resolveConnections(conns, elems);
-
   elems := match sections
     case Sections.SECTIONS()
       algorithm
