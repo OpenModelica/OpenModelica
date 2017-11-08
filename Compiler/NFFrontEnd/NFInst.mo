@@ -785,7 +785,12 @@ algorithm
   cls_tree := Class.classTree(InstNode.getClass(extendsNode));
   ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
 
+  // Replace the node in the node type with the given scope, so that crefs found
+  // in this extends are prefixed correctly.
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
+  extendsNode := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, elem), extendsNode);
+
+  // Create a modifier from the extends.
   ext_mod := Modifier.fromElement(elem, scope);
 
   () := match elem
@@ -848,7 +853,7 @@ algorithm
         end if;
 
         ClassTree.mapExtends(cls_tree,
-        function instExtends(attributes = attributes, parent = parent, visibility = vis));
+          function instExtends(attributes = attributes, parent = parent, visibility = vis));
 
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, parent = node, scope = node));
