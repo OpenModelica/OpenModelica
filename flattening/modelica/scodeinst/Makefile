@@ -301,6 +301,7 @@ ModClass3.mo \
 ModClass4.mo \
 ModClass5.mo \
 ModClass6.mo \
+ModScope1.mo \
 MultiInheritanceRedeclare2.mo \
 NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
