@@ -19,6 +19,7 @@ end C;
 
 // Result:
 // class C
+//   constant Integer A.i = 3;
 //   constant Integer b.j = A.i;
 //   Real b.x = /*Real*/(b.j);
 // end C;

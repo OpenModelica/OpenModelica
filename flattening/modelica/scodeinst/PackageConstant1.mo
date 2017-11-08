@@ -14,6 +14,7 @@ end PackageConstant1;
 
 // Result:
 // class PackageConstant1
+//   constant Real P.x = 1.0;
 //   Real y = P.x;
 // end PackageConstant1;
 // endResult

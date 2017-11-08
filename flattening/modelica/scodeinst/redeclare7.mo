@@ -26,6 +26,7 @@ end D;
 
 // Result:
 // class D
+//   constant Real b.P.x = 2;
 //   Real b.z = b.P.x;
 // end D;
 // endResult

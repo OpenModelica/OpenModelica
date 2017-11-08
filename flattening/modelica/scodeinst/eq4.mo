@@ -25,6 +25,7 @@ end B;
 
 // Result:
 // class B
+//   constant Integer P.n = 3;
 //   Real a1[1].x;
 //   parameter Real a1[1].y = 1.0;
 //   Real a1[2].x;

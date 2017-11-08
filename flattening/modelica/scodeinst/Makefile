@@ -141,7 +141,6 @@ eq1.mo \
 eq2.mo \
 eq3.mo \
 eq4.mo \
-eq6.mo \
 eq7.mo \
 eq8.mo \
 eq10.mo \
@@ -420,6 +419,7 @@ conngraph1.mo \
 conngraph2.mo \
 enum6.mo \
 eq5.mo \
+eq6.mo \
 expconn1.mo \
 expconn2.mo \
 expconn3.mo \

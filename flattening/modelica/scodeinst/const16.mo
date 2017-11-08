@@ -24,6 +24,8 @@ end M;
 
 // Result:
 // class M
+//   constant Integer P.P.j = 2;
+//   constant Integer P.P.P.i = P.P.j;
 //   Real x = /*Real*/(P.P.P.i);
 // end M;
 // endResult

@@ -35,6 +35,9 @@ end M;
 
 // Result:
 // class M
+//   constant Integer P.A.j = 2;
+//   constant Integer P.A.B.i = P.A.j;
+//   constant Integer B.i = P.A.j;
 //   Integer x = P.A.B.i;
 //   constant Integer a.j = 3;
 //   Integer y = a.j;
