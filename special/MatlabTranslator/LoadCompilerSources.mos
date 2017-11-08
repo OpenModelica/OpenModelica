@@ -268,6 +268,7 @@ if true then /* Suppress output */
     prefixPath + "Util/Settings.mo",
     prefixPath + "Util/StringUtil.mo",
     prefixPath + "Util/SimulationResults.mo",
+    prefixPath + "Util/StackOverflow.mo",
     prefixPath + "Util/TaskGraphResults.mo",
     prefixPath + "Util/Socket.mo",
     prefixPath + "Util/System.mo",
