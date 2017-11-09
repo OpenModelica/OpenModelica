@@ -247,6 +247,8 @@ algorithm
       case "quantity"    algorithm quantity := convertVarAttribute(m); then ();
       case "start"       algorithm start := convertVarAttribute(m); then ();
       case "stateSelect" algorithm state_select := convertStateSelectAttribute(m); then ();
+      // TODO: VAR_ATTR_REAL has no field for unbounded.
+      case "unbounded"   then ();
       case "unit"        algorithm unit := convertVarAttribute(m); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
@@ -333,6 +335,8 @@ algorithm
     () := match Modifier.name(m)
       case "quantity" algorithm quantity := convertVarAttribute(m); then ();
       case "start"    algorithm start := convertVarAttribute(m); then ();
+      // TODO: VAR_ATTR_STRING has no field for fixed.
+      case "fixed"    then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.

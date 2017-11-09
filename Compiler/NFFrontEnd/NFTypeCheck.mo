@@ -2406,6 +2406,7 @@ end checkIfExpression;
 function matchBinding
   input output Binding binding;
   input Type componentType;
+  input String name;
   input InstNode component;
 algorithm
   () := match binding
@@ -2434,7 +2435,7 @@ algorithm
 
         if not isCompatibleMatch(ty_match) then
           Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-            {InstNode.name(component), Binding.toString(binding), Type.toString(comp_ty),
+            {name, Binding.toString(binding), Type.toString(comp_ty),
              Type.toString(binding.bindingType)}, binding.info);
           fail();
         elseif isCastMatch(ty_match) then

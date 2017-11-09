@@ -557,7 +557,7 @@ public constant Message INSERT_CLASS = MESSAGE(213, SCRIPTING(), ERROR(),
 public constant Message MISSING_MODIFIED_ELEMENT = MESSAGE(214, TRANSLATION(), ERROR(),
   Util.gettext("Modified element %s not found in class %s."));
 public constant Message INVALID_REDECLARE_IN_BASIC_TYPE = MESSAGE(215, TRANSLATION(), ERROR(),
-  Util.gettext("Invalid redeclaration, attributes of basic types can not be redeclared."));
+  Util.gettext("Invalid redeclaration of %s, attributes of basic types may not be redeclared."));
 public constant Message INVALID_STREAM_CONNECTOR = MESSAGE(216, TRANSLATION(), ERROR(),
   Util.gettext("Invalid stream connector %s: %s"));
 public constant Message CONDITION_TYPE_ERROR = MESSAGE(217, TRANSLATION(), ERROR(),

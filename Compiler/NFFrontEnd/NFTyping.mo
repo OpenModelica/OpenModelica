@@ -79,6 +79,7 @@ import DAEUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
 import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
+import NFMod.ModTable;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -105,7 +106,7 @@ function typeClass
 algorithm
   typeComponents(cls);
   execStat("NFTyping.typeComponents(" + name + ")");
-  typeBindings(cls);
+  typeBindings(cls, cls);
   execStat("NFTyping.typeBindings(" + name + ")");
   typeSections(cls);
   execStat("NFTyping.typeSections(" + name + ")");
@@ -115,7 +116,7 @@ function typeFunction
   input InstNode cls;
 algorithm
   typeComponents(cls);
-  typeBindings(cls);
+  typeBindings(cls, cls);
   typeSections(cls);
 end typeFunction;
 
@@ -457,6 +458,7 @@ end typeDimension;
 
 function typeBindings
   input InstNode cls;
+  input InstNode component;
 protected
   Class c;
   ClassTree cls_tree;
@@ -475,7 +477,7 @@ algorithm
 
     case Class.INSTANCED_BUILTIN()
       algorithm
-        c.attributes := typeTypeAttributes(c.attributes, c.ty);
+        c.attributes := typeTypeAttributes(c.attributes, c.ty, component);
         InstNode.updateClass(c, cls);
       then
         ();
@@ -502,20 +504,22 @@ algorithm
       InstNode cls;
       MatchKind matchKind;
       Boolean dirty;
+      String name;
 
     case Component.TYPED_COMPONENT()
       algorithm
+        name := InstNode.name(component);
         binding := typeBinding(c.binding);
         dirty := not referenceEq(binding, c.binding);
 
         // If the binding changed during typing it means it was an untyped
         // binding which is now typed, and it needs to be type checked.
         if dirty then
-          binding := TypeCheck.matchBinding(binding, c.ty, node);
+          binding := TypeCheck.matchBinding(binding, c.ty, name, node);
 
           if Binding.variability(binding) > Component.variability(c) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-              {InstNode.name(node), Prefixes.variabilityString(Component.variability(c)),
+              {name, Prefixes.variabilityString(Component.variability(c)),
                "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
               Binding.getInfo(binding));
             fail();
@@ -524,7 +528,7 @@ algorithm
           c.binding := binding;
         end if;
 
-        typeBindings(c.classInst);
+        typeBindings(c.classInst, component);
 
         if Binding.isBound(c.condition) then
           c.condition := typeComponentCondition(c.condition);
@@ -614,41 +618,88 @@ end typeComponentCondition;
 function typeTypeAttributes
   input output list<Modifier> attributes;
   input Type ty;
-algorithm
-  attributes := list(typeTypeAttribute(a) for a in attributes);
+  input InstNode component;
+protected
+  partial function attrTypeFn
+    input String name;
+    input Type ty;
+    input SourceInfo info;
+    output Type attrTy;
+  end attrTypeFn;
 
-  _ := match ty
-    case Type.REAL() then checkRealAttributes(attributes);
-    case Type.INTEGER() then checkIntAttributes(attributes);
-    case Type.BOOLEAN() then checkBoolAttributes(attributes);
-    case Type.STRING() then checkStringAttributes(attributes);
-    case Type.ENUMERATION() then checkEnumAttributes(attributes);
-    case Type.ANY_TYPE() then checkAnyTypeAttributes(attributes);
-    else
-      algorithm
-        assert(false, getInstanceName() + " got unknown type");
-      then
-        fail();
+  attrTypeFn ty_fn;
+algorithm
+  ty_fn := match ty
+    case Type.REAL() then getRealAttributeType;
+    case Type.INTEGER() then getIntAttributeType;
+    case Type.BOOLEAN() then getBoolAttributeType;
+    case Type.STRING() then getStringAttributeType;
+    case Type.ENUMERATION() then getEnumAttributeType;
+    else getAnyAttributeType;
   end match;
+
+  attributes := list(typeTypeAttribute(a, ty_fn, ty, component) for a in attributes);
 end typeTypeAttributes;
 
 function typeTypeAttribute
   input output Modifier attribute;
+  input attrTypeFn attrTyFn;
+  input Type ty;
+  input InstNode component;
+
+  partial function attrTypeFn
+    input String name;
+    input Type ty;
+    input SourceInfo info;
+    output Type attrTy;
+  end attrTypeFn;
 protected
   String name;
   Binding binding;
+  Type expected_ty;
 algorithm
-  name := Modifier.name(attribute);
-  binding := Modifier.binding(attribute);
+  () := match attribute
+    // Normal modifier with no submodifiers.
+    case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
+      algorithm
+        // Use the given function to get the expected type of the attribute.
+        expected_ty := attrTyFn(name, ty, Modifier.info(attribute));
 
-  binding := typeBinding(binding);
+        // Type and type check the attribute.
+        binding := typeBinding(binding);
+        binding := TypeCheck.matchBinding(binding, expected_ty, name, component);
 
-  binding := match name
-    case "fixed" then evalBinding(binding);
-    else binding;
+        // Check the variability. All builtin attributes have parameter variability.
+        if Binding.variability(binding) > Variability.PARAMETER then
+          Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
+            {name, Prefixes.variabilityString(Variability.PARAMETER),
+            "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+            Binding.getInfo(binding));
+          fail();
+        end if;
+
+        binding := match name
+          case "fixed" then evalBinding(binding);
+          else binding;
+        end match;
+
+        attribute.binding := binding;
+      then
+        ();
+
+    // Modifier with submodifier, e.g. Real x(start(y = 1)), is an error.
+    case Modifier.MODIFIER()
+      algorithm
+        // Print an error for the first submodifier. The builtin attributes
+        // don't have types as such, so for the error message to make sense we
+        // join the attribute name and submodifier name together (e.g. start.y).
+        name := attribute.name + "." + Util.tuple21(listHead(ModTable.toList(attribute.subModifiers)));
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, Type.toString(ty)}, attribute.info);
+      then
+        fail();
+
   end match;
-
-  attribute := Modifier.setBinding(binding, attribute);
 end typeTypeAttribute;
 
 function evalBinding
@@ -673,46 +724,143 @@ algorithm
   end match;
 end evalBinding;
 
-function checkRealAttributes
-  input list<Modifier> attributes;
+function getAttributeNameBinding
+  input Modifier attr;
+  input String typeName;
+  output String name;
+  output Binding binding;
 algorithm
-  // TODO: Check that the attributes are valid Real attributes and that their
-  // bindings have the correct types.
-end checkRealAttributes;
+  (name, binding) := match attr
+    case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
+      then (name, binding);
 
-function checkIntAttributes
-  input list<Modifier> attributes;
-algorithm
-  // TODO: Check that the attributes are valid Integer attributes and that their
-  // bindings have the correct types.
-end checkIntAttributes;
+    case Modifier.MODIFIER()
+      algorithm
+        name := attr.name + "." + Util.tuple21(listHead(ModTable.toList(attr.subModifiers)));
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, typeName}, attr.info);
+      then
+        fail();
 
-function checkBoolAttributes
-  input list<Modifier> attributes;
-algorithm
-  // TODO: Check that the attributes are valid Bool attributes and that their
-  // bindings have the correct types.
-end checkBoolAttributes;
+  end match;
+end getAttributeNameBinding;
 
-function checkStringAttributes
-  input list<Modifier> attributes;
+function getRealAttributeType
+  input String name;
+  input Type ty;
+  input SourceInfo info;
+  output Type attrTy;
 algorithm
-  // TODO: Check that the attributes are valid String attributes and that their
-  // bindings have the correct types.
-end checkStringAttributes;
+  attrTy := match name
+    case "quantity" then Type.STRING();
+    case "unit" then Type.STRING();
+    case "displayUnit" then Type.STRING();
+    case "min" then ty;
+    case "max" then ty;
+    case "start" then ty;
+    case "fixed" then Type.BOOLEAN();
+    case "nominal" then ty;
+    case "unbounded" then Type.BOOLEAN();
+    case "stateSelect" then NFBuiltin.STATESELECT_TYPE;
+    else
+      algorithm
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, Type.toString(ty)}, info);
+      then
+        fail();
+  end match;
+end getRealAttributeType;
 
-function checkEnumAttributes
-  input list<Modifier> attributes;
+function getIntAttributeType
+  input String name;
+  input Type ty;
+  input SourceInfo info;
+  output Type attrTy;
 algorithm
-  // TODO: Check that the attributes are valid enumeration attributes and that their
-  // bindings have the correct types.
-end checkEnumAttributes;
+  attrTy := match name
+    case "quantity" then Type.STRING();
+    case "min" then ty;
+    case "max" then ty;
+    case "start" then ty;
+    case "fixed" then Type.BOOLEAN();
+    else
+      algorithm
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, Type.toString(ty)}, info);
+      then
+        fail();
+  end match;
+end getIntAttributeType;
 
-function checkAnyTypeAttributes
-  input list<Modifier> attributes;
+function getBoolAttributeType
+  input String name;
+  input Type ty;
+  input SourceInfo info;
+  output Type attrTy;
 algorithm
-  // TODO:
-end checkAnyTypeAttributes;
+  attrTy := match name
+    case "quantity" then Type.STRING();
+    case "start" then ty;
+    case "fixed" then Type.BOOLEAN();
+    else
+      algorithm
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, Type.toString(ty)}, info);
+      then
+        fail();
+  end match;
+end getBoolAttributeType;
+
+function getStringAttributeType
+  input String name;
+  input Type ty;
+  input SourceInfo info;
+  output Type attrTy;
+algorithm
+  attrTy := match name
+    case "quantity" then Type.STRING();
+    case "start" then ty;
+    case "fixed" then Type.BOOLEAN();
+    else
+      algorithm
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, Type.toString(ty)}, info);
+      then
+        fail();
+  end match;
+end getStringAttributeType;
+
+function getEnumAttributeType
+  input String name;
+  input Type ty;
+  input SourceInfo info;
+  output Type attrTy;
+algorithm
+  attrTy := match name
+    case "quantity" then Type.STRING();
+    case "min" then ty;
+    case "max" then ty;
+    case "start" then ty;
+    case "fixed" then Type.BOOLEAN();
+    else
+      algorithm
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, Type.toString(ty)}, info);
+      then
+        fail();
+  end match;
+end getEnumAttributeType;
+
+function getAnyAttributeType
+  input String name;
+  input Type ty;
+  input SourceInfo info;
+  output Type attrTy;
+algorithm
+  Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+    {name, Type.toString(ty)}, info);
+  fail();
+end getAnyAttributeType;
 
 function typeExp
   input output Expression exp;

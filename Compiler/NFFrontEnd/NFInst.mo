@@ -1232,6 +1232,15 @@ algorithm
         attribute.binding := instBinding(attribute.binding);
       then
         ();
+
+    // Redeclaration of builtin attributes is not allowed.
+    case Modifier.REDECLARE()
+      algorithm
+        Error.addSourceMessage(Error.INVALID_REDECLARE_IN_BASIC_TYPE,
+          {Modifier.name(attribute)}, Modifier.info(attribute));
+      then
+        fail();
+
   end match;
 end instBuiltinAttribute;
 
