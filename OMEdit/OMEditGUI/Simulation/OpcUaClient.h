@@ -78,6 +78,8 @@ private:
   OpcUaClient *mpParentClient;
   VariablesTreeItem *mpVariablesTreeItemRoot;
   QTime mClock;
+  bool mSimulateWithSteps;
+  const double mSampleInterval;
   double mInterval, mSpeedValue, mServerSampleInterval;
   bool mIsRunning;
 
@@ -92,8 +94,6 @@ private:
   static QThreadStorage<double> mCurrentTime;
   static QThreadStorage<int> mInt;
   UA_UInt32 mSubscriptionId;
-  bool mSimulateWithSteps;
-  const double mSampleInterval;
 signals:
   void sendUpdateCurves();
   void sendUpdateYAxis(double, double);
