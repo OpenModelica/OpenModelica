@@ -632,8 +632,9 @@ protected
     output DAE.Exp daeCall;
   algorithm
     daeCall := match call
+
       case TYPED_CALL()
-        then DAE.CALL(Function.name(call.fn),
+        then DAE.CALL(Function.nameConsiderBuiltin(call.fn),
           list(Expression.toDAE(e) for e in call.arguments),
           CallAttributes.toDAE(call.attributes));
 

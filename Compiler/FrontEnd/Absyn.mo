@@ -2947,6 +2947,19 @@ algorithm
   end match;
 end pathLastIdent;
 
+public function pathLast
+  "Returns the last ident (after last dot) in a path"
+  input output Path path;
+algorithm
+  path := match path
+    local
+      Path p;
+    case QUALIFIED(path = p) then pathLast(p);
+    case IDENT() then path;
+    case FULLYQUALIFIED(path = p) then pathLast(p);
+  end match;
+end pathLast;
+
 public function pathFirstIdent "Returns the first ident (before first dot) in a path"
   input Path inPath;
   output Ident outIdent;

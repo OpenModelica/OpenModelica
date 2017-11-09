@@ -339,6 +339,19 @@ uniontype Function
     output Absyn.Path path = fn.path;
   end name;
 
+  function nameConsiderBuiltin "Handles the DAE.mo structure where builtin calls are replaced by their simpler name"
+    input Function fn;
+    output Absyn.Path path;
+  algorithm
+    path := match fn.attributes.isBuiltin
+      local
+        String name;
+      case DAE.FUNCTION_BUILTIN(name=SOME(name)) then Absyn.IDENT(name);
+      case DAE.FUNCTION_BUILTIN() then Absyn.pathLast(fn.path);
+      else fn.path;
+    end match;
+  end nameConsiderBuiltin;
+
   function signatureString
     "Constructs a signature string for a function, e.g. Real func(Real x, Real y)"
     input Function fn;
