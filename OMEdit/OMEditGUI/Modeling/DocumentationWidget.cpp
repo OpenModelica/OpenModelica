@@ -118,6 +118,13 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pDocumentationToolBar->addAction(mpCancelAction);
   // create the documentation viewer
   mpDocumentationViewer = new DocumentationViewer(this, false);
+  mpDocumentationViewerFrame = new QFrame;
+  mpDocumentationViewerFrame->setContentsMargins(0, 0, 0, 0);
+  mpDocumentationViewerFrame->setFrameStyle(QFrame::StyledPanel);
+  QHBoxLayout *pDocumentationViewerLayout = new QHBoxLayout;
+  pDocumentationViewerLayout->setContentsMargins(0, 0, 0, 0);
+  pDocumentationViewerLayout->addWidget(mpDocumentationViewer);
+  mpDocumentationViewerFrame->setLayout(pDocumentationViewerLayout);
   // create the editors tab widget
   mpEditorsWidget = new QWidget;
   mpEditorsWidget->hide();
@@ -134,6 +141,13 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
   // create the html editor viewer
   mpHTMLEditor = new DocumentationViewer(this, true);
+  mpHTMLEditorFrame = new QFrame;
+  mpHTMLEditorFrame->setContentsMargins(0, 0, 0, 0);
+  mpHTMLEditorFrame->setFrameStyle(QFrame::StyledPanel);
+  QHBoxLayout *pHTMLEditorLayout = new QHBoxLayout;
+  pHTMLEditorLayout->setContentsMargins(0, 0, 0, 0);
+  pHTMLEditorLayout->addWidget(mpHTMLEditor);
+  mpHTMLEditorFrame->setLayout(pHTMLEditorLayout);
   // editor actions
   // style combobox
   mpStyleComboBox = new QComboBox;
@@ -345,7 +359,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pHTMLWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pHTMLWidgetLayout->setSpacing(0);
   pHTMLWidgetLayout->addWidget(mpEditorToolBar);
-  pHTMLWidgetLayout->addWidget(mpHTMLEditor, 1);
+  pHTMLWidgetLayout->addWidget(mpHTMLEditorFrame, 1);
   mpHTMLEditorWidget->setLayout(pHTMLWidgetLayout);
   // create the HTMLEditor
   mpHTMLSourceEditor = new HTMLEditor(this);
@@ -369,7 +383,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // Documentation viewer layout
   QGridLayout *pGridLayout = new QGridLayout;
   pGridLayout->setContentsMargins(0, 0, 0, 0);
-  pGridLayout->addWidget(mpDocumentationViewer);
+  pGridLayout->addWidget(mpDocumentationViewerFrame);
   pGridLayout->addWidget(mpEditorsWidget);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -423,7 +437,7 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   mpEditInfoHeaderAction->setDisabled(pLibraryTreeItem->isSystemLibrary());
   mpSaveAction->setDisabled(true);
   mpCancelAction->setDisabled(true);
-  mpDocumentationViewer->show();
+  mpDocumentationViewerFrame->show();
   mpEditorsWidget->hide();
 }
 
@@ -613,7 +627,7 @@ void DocumentationWidget::editInfoDocumentation()
       mpEditInfoHeaderAction->setDisabled(true);
       mpSaveAction->setDisabled(false);
       mpCancelAction->setDisabled(false);
-      mpDocumentationViewer->hide();
+      mpDocumentationViewerFrame->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
       mpHTMLEditor->setFocusInternal();
@@ -648,7 +662,7 @@ void DocumentationWidget::editRevisionsDocumentation()
       mpEditInfoHeaderAction->setDisabled(true);
       mpSaveAction->setDisabled(false);
       mpCancelAction->setDisabled(false);
-      mpDocumentationViewer->hide();
+      mpDocumentationViewerFrame->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
       mpHTMLEditor->setFocusInternal();
@@ -683,7 +697,7 @@ void DocumentationWidget::editInfoHeaderDocumentation()
       mpEditInfoHeaderAction->setDisabled(true);
       mpSaveAction->setDisabled(false);
       mpCancelAction->setDisabled(false);
-      mpDocumentationViewer->hide();
+      mpDocumentationViewerFrame->hide();
       mpEditorsWidget->show();
       mpTabBar->setCurrentIndex(0);
       mpHTMLEditor->setFocusInternal();
@@ -782,7 +796,7 @@ void DocumentationWidget::cancelDocumentation()
   mpEditInfoHeaderAction->setDisabled(false);
   mpSaveAction->setDisabled(true);
   mpCancelAction->setDisabled(true);
-  mpDocumentationViewer->show();
+  mpDocumentationViewerFrame->show();
   mpEditorsWidget->hide();
   mEditType = EditType::None;
 }
@@ -1069,7 +1083,7 @@ void DocumentationWidget::updateDocumentationHistory()
         mpSaveAction->setDisabled(true);
         mpCancelAction->setDisabled(true);
         mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
-        mpDocumentationViewer->show();
+        mpDocumentationViewerFrame->show();
         mpEditorsWidget->hide();
         mEditType = EditType::None;
       }
@@ -1229,17 +1243,6 @@ void DocumentationViewer::showContextMenu(QPoint point)
   menu.addAction(page()->action(QWebPage::SelectAll));
   menu.addAction(page()->action(QWebPage::Copy));
   menu.exec(mapToGlobal(point));
-}
-
-void DocumentationViewer::paintEvent(QPaintEvent *event)
-{
-  QWebView::paintEvent(event);
-  QPainter painter(this);
-  painter.setPen(Qt::gray);
-  QRect rectangle = rect();
-  rectangle.setWidth(rect().width() - 1);
-  rectangle.setHeight(height() - 1);
-  painter.drawRect(rectangle);
 }
 
 /*!

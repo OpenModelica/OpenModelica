@@ -90,11 +90,13 @@ private:
   QAction *mpSaveAction;
   QAction *mpCancelAction;
   DocumentationViewer *mpDocumentationViewer;
+  QFrame *mpDocumentationViewerFrame;
   QWidget *mpEditorsWidget;
   QTabBar *mpTabBar;
   QWidget *mpHTMLEditorWidget;
   QToolBar *mpEditorToolBar;
   DocumentationViewer *mpHTMLEditor;
+  QFrame *mpHTMLEditorFrame;
   QComboBox *mpStyleComboBox;
   QFontComboBox *mpFontComboBox;
   QSpinBox *mpFontSizeSpinBox;
@@ -175,7 +177,6 @@ public slots:
   void processLinkHover(QString link, QString title, QString textContent);
   void showContextMenu(QPoint point);
 protected:
-  virtual void paintEvent(QPaintEvent *event);
   virtual QWebView* createWindow(QWebPage::WebWindowType type);
   virtual void keyPressEvent(QKeyEvent *event);
   virtual void wheelEvent(QWheelEvent *event);
