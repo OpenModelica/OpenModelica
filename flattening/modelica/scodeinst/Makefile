@@ -16,16 +16,22 @@ BindingArray1.mo \
 BindingArray2.mo \
 BindingArray3.mo \
 BindingArray4.mo \
-BindingArray5.mo \
 BindingArray6.mo \
 bindings1.mo \
 bindings4.mo \
 bindings5.mo \
 bindings7.mo \
 BooleanDim.mo \
+BuiltinAttribute1.mo \
+BuiltinAttribute2.mo \
+BuiltinAttribute3.mo \
+BuiltinAttribute4.mo \
+BuiltinAttribute5.mo \
+BuiltinAttribute6.mo \
+BuiltinAttribute7.mo \
+BuiltinAttribute8.mo \
+BuiltinAttribute9.mo \
 BuiltinLookup1.mo \
-builtinmod.mo \
-builtinmod2.mo \
 BuiltinTime.mo \
 ceval1.mo \
 ceval2.mo \
@@ -390,6 +396,7 @@ WhenNested1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+BindingArray5.mo \
 ActualStream.mo \
 ActualStreamMinMax.mo \
 InStreamInvalidArgument1.mo \

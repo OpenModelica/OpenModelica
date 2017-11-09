@@ -1,11 +1,8 @@
-// name: builtinmod.mo
+// name: BuiltinAttribute2
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
-// FAILREASON: Enumeration instance m is missing it's start value.
-//
-
 
 type MyReal
   extends Real;
@@ -27,23 +24,22 @@ type MyStateSelect
   extends StateSelect;
 end MyStateSelect;
 
-model A
+model BuiltinAttribute2
   MyReal r(quantity = "m", unit = "kg", displayUnit = "kg",
     min = -100, max = 100, start = 10, fixed = true, nominal = 1.0,
-    stateSelect = StateSelect.never);
+    unbounded = true, stateSelect = StateSelect.never);
 
   MyInteger i(quantity = "m", min = -100, max = 100, start = 10, fixed = true);
   MyBoolean b(quantity = "m", start = false, fixed = true);
-  MyString s(quantity = "m", start = "hello");
-  MyStateSelect m(start = MyStateSelect.avoid);
-end A;
+  MyString s(quantity = "m", start = "hello", fixed = true);
+end BuiltinAttribute2;
+
 
 // Result:
-// class A
+// class BuiltinAttribute2
 //   Real r(quantity = "m", unit = "kg", displayUnit = "kg", min = -100, max = 100, start = 10, fixed = true, nominal = 1.0, stateSelect = StateSelect.never);
 //   Integer i(quantity = "m", min = -100, max = 100, start = 10, fixed = true);
 //   Boolean b(quantity = "m", start = false, fixed = true);
 //   String s(quantity = "m", start = "hello");
-//   enumeration(never, avoid, default, prefer, always) m(start = StateSelect.avoid);
-// end A;
+// end BuiltinAttribute2;
 // endResult
