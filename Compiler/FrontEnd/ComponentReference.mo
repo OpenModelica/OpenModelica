@@ -86,7 +86,7 @@ public function hashComponentRef "new hashing that properly deals with subscript
   input DAE.ComponentRef cr;
   output Integer hash;
 algorithm
-hash := matchcontinue(cr)
+hash := match(cr)
   local
     DAE.Ident id;
     DAE.Type tp;
@@ -103,7 +103,7 @@ hash := matchcontinue(cr)
   case(DAE.CREF_ITER(id,_,tp,subs))
   then stringHashDjb2(id)+ hashSubscripts(tp,subs);
   else 0;
-end matchcontinue;
+end match;
 end hashComponentRef;
 
 protected protected function hashSubscripts "help function, hashing subscripts making sure [1,2] and [2,1] doesn't match to the same number"

@@ -229,7 +229,7 @@ Helper function for reEvaluateInitialIfEqns, makes the contenst of an initial if
   input list<DAE.Element> inElems;
   output list<DAE.Element> outElems;
 algorithm
-  outElems := matchcontinue(inElems)
+  outElems := match(inElems)
     local
       DAE.Element elem;
       DAE.ComponentRef cr;
@@ -285,7 +285,7 @@ algorithm
         outElems = makeDAEElementInitial(elems);
       then
         elem::outElems;
-  end matchcontinue;
+  end match;
 end makeDAEElementInitial;
 
 public function lookupTopLevelClass
@@ -927,7 +927,7 @@ What ever is left in modifier is printed as a warning. That means that we have m
   input DAE.Mod inmod;
   input String callingScope;
 algorithm
-  _ := matchcontinue(inElems, inmod, callingScope)
+  _ := match(inElems, inmod, callingScope)
     local
       SCode.Element elem;
       String cn,s1,s2;
@@ -973,7 +973,7 @@ algorithm
       equation
         matchModificationToComponents(elems,inmod,callingScope);
       then ();
-  end matchcontinue;
+  end match;
 end matchModificationToComponents;
 
 protected function elementNameMember
@@ -1294,7 +1294,7 @@ protected function removeBindings
   input list<SCode.Element> elements;
   output list<SCode.Element> outElements;
 algorithm
-  outElements := matchcontinue (elements)
+  outElements := match (elements)
     local
       SCode.Element el;
       list<SCode.Element> els,els1;
@@ -1318,7 +1318,7 @@ algorithm
       equation
         els1 = removeBindings(els);
       then el::els1;
-  end matchcontinue;
+  end match;
 end removeBindings;
 
 protected function removeExtBindings
@@ -1326,7 +1326,7 @@ protected function removeExtBindings
   input list<tuple<SCode.Element, DAE.Mod>> elements;
   output list<tuple<SCode.Element, DAE.Mod>> outElements;
 algorithm
-  outElements := matchcontinue (elements)
+  outElements := match (elements)
     local
       tuple<SCode.Element, DAE.Mod> el;
       list<tuple<SCode.Element, DAE.Mod>> els,els1;
@@ -1350,7 +1350,7 @@ algorithm
       equation
         els1 = removeExtBindings(els);
       then el::els1;
-  end matchcontinue;
+  end match;
 end removeExtBindings;
 
 public function getModsForDep "
@@ -1413,37 +1413,25 @@ end addNomod;
 public function sortElementList
   "Sorts constants and parameters by dependencies, so that they are instantiated
   before they are used."
-  input list<Element> inElements;
+  input output list<Element> inElements;
   input FCore.Graph inEnv;
   input Boolean isFunctionScope;
-  output list<Element> outElements;
   type Element = tuple<SCode.Element, DAE.Mod>;
+protected
+  list<Element> outE,cycleElts;
+  list<tuple<Element, list<Element>>> cycles;
+  list<tuple<Element, list<Element>>> g;
 algorithm
-  outElements := matchcontinue(inElements, inEnv, isFunctionScope)
-    local
-      list<Element> outE,cycleElts;
-      list<tuple<Element, list<Element>>> cycles;
-      list<tuple<Element, list<Element>>> g;
-
-    // no sorting for meta-modelica!
-    case (_, _, _)
-      equation
-        true = Config.acceptMetaModelicaGrammar();
-      then
-        inElements;
-
+  // no sorting for meta-modelica!
+  if not Config.acceptMetaModelicaGrammar() then
     // sort the elements according to the dependencies
-    else
-      equation
-        g = Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope));
-        (outE, cycles) = Graph.topologicalSort(g, isElementEqual);
-        // printGraph(inEnv, g, outE, cycles);
-        // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
-        outE = listAppend(outE, List.map(cycles, Util.tuple21));
-        checkCyclicalComponents(cycles, inEnv);
-      then
-        outE;
-  end matchcontinue;
+    g := Graph.buildGraph(inElements, getElementDependencies, (inElements,isFunctionScope));
+    (outE, cycles) := Graph.topologicalSort(g, isElementEqual);
+    // printGraph(inEnv, g, outE, cycles);
+    // append the elements in the cycles as they might not actually be cycles, but they depend on elements not in the list (i.e. package constants, etc)!
+    inElements := listAppend(outE, List.map(cycles, Util.tuple21));
+    checkCyclicalComponents(cycles, inEnv);
+  end if;
 end sortElementList;
 
 protected function printGraph
@@ -2112,7 +2100,7 @@ public function classdefAndImpElts
   output list<SCode.Element> cdefElts;
   output list<SCode.Element> restElts;
 algorithm
-  (cdefElts,restElts) := matchcontinue (elts)
+  (cdefElts,restElts) := match (elts)
     local
       list<SCode.Element> res,xs;
       SCode.Element cdef,imp,e;
@@ -2136,7 +2124,7 @@ algorithm
         (cdefElts,restElts) = classdefAndImpElts(xs);
       then
         (cdefElts,e::restElts);
-  end matchcontinue;
+  end match;
 end classdefAndImpElts;
 
 /*
@@ -2146,7 +2134,7 @@ protected function extendsElts
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.Element> outSCodeElementLst;
 algorithm
-  outSCodeElementLst := matchcontinue (inSCodeElementLst)
+  outSCodeElementLst := match (inSCodeElementLst)
     local
       list<SCode.Element> res,xs;
       SCode.Element cdef;
@@ -2161,7 +2149,7 @@ algorithm
         res = extendsElts(xs);
       then
         res;
-  end matchcontinue;
+  end match;
 end extendsElts;
 */
 
@@ -2171,7 +2159,7 @@ public function componentElts
   input list<SCode.Element> inSCodeElementLst;
   output list<SCode.Element> outSCodeElementLst;
 algorithm
-  outSCodeElementLst := matchcontinue (inSCodeElementLst)
+  outSCodeElementLst := match (inSCodeElementLst)
     local
       list<SCode.Element> res,xs;
       SCode.Element cdef;
@@ -2186,7 +2174,7 @@ algorithm
         res = componentElts(xs);
       then
         res;
-  end matchcontinue;
+  end match;
 end componentElts;
 
 public function addClassdefsToEnv
@@ -2871,25 +2859,21 @@ public function removeCrefFromCrefs
   input Absyn.ComponentRef inComponentRef;
   output list<Absyn.ComponentRef> outAbsynComponentRefLst;
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inAbsynComponentRefLst,inComponentRef)
+  outAbsynComponentRefLst := match (inAbsynComponentRefLst,inComponentRef)
     local
       String n1,n2;
       list<Absyn.ComponentRef> rest_1,rest;
       Absyn.ComponentRef cr1,cr2;
     case ({},_) then {};
-    case ((cr1 :: rest),cr2)
+    case ((Absyn.CREF_IDENT(name = n1,subscripts = {}) :: rest),cr2 as Absyn.CREF_IDENT(name = n2,subscripts = {}))
+      guard stringEq(n1, n2)
       equation
-        Absyn.CREF_IDENT(name = n1,subscripts = {}) = cr1;
-        Absyn.CREF_IDENT(name = n2,subscripts = {}) = cr2;
-        true = stringEq(n1, n2);
         rest_1 = removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
-    case ((cr1 :: rest),cr2) // If modifier like on comp like: T t(x=t.y) => t.y must be removed
+    case ((Absyn.CREF_QUAL(name = n1) :: rest),cr2 as Absyn.CREF_IDENT(name = n2)) // If modifier like on comp like: T t(x=t.y) => t.y must be removed
+      guard stringEq(n1, n2)
       equation
-        Absyn.CREF_QUAL(name = n1) = cr1;
-        Absyn.CREF_IDENT(name = n2) = cr2;
-        true = stringEq(n1, n2);
         rest_1 = removeCrefFromCrefs(rest, cr2);
       then
         rest_1;
@@ -2898,7 +2882,7 @@ algorithm
         rest_1 = removeCrefFromCrefs(rest, cr2);
       then
         (cr1 :: rest_1);
-  end matchcontinue;
+  end match;
 end removeCrefFromCrefs;
 
 public function keepConstrainingTypeModifersOnly
@@ -2908,7 +2892,7 @@ public function keepConstrainingTypeModifersOnly
   input list<SCode.Element> elems;
   output DAE.Mod filteredMod;
 algorithm
-  filteredMod := matchcontinue(inMod,elems)
+  filteredMod := match(inMod,elems)
     local
       SCode.Final f;
       SCode.Each e;
@@ -2926,7 +2910,7 @@ algorithm
         subs = keepConstrainingTypeModifersOnly2(subs,compNames);
       then
         DAE.MOD(f,e,subs,oe,info);
-  end matchcontinue;
+  end match;
 end keepConstrainingTypeModifersOnly;
 
 protected function keepConstrainingTypeModifersOnly2 "
@@ -2936,7 +2920,7 @@ Helper function for keepConstrainingTypeModifersOnly"
   input list<String> elems;
   output list<DAE.SubMod> osubs;
 algorithm
-  osubs := matchcontinue(isubs,elems)
+  osubs := match(isubs,elems)
     local
       DAE.SubMod sub;
       DAE.Mod mod;
@@ -2947,16 +2931,13 @@ algorithm
     case({},_) then {};
     case(subs,{}) then subs;
     case((sub as DAE.NAMEMOD(ident=n))::subs,_)
-      equation
-        osubs = keepConstrainingTypeModifersOnly2(subs,elems);
-        b = List.isMemberOnTrue(n,elems,stringEq);
-        osubs2 = if b then {sub} else {};
-        osubs = listAppend(osubs2,osubs);
+      guard
+        List.isMemberOnTrue(n,elems,stringEq)
       then
-        osubs;
+        sub::keepConstrainingTypeModifersOnly2(subs,elems);
     case(_::subs,_) then keepConstrainingTypeModifersOnly2(subs,elems);
 
-  end matchcontinue;
+  end match;
 end keepConstrainingTypeModifersOnly2;
 
 public function extractConstrainingComps
@@ -3915,10 +3896,10 @@ protected function attrIsParam
   input SCode.Attributes inAttributes;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inAttributes)
+  outBoolean := match (inAttributes)
     case SCode.ATTR(variability = SCode.PARAM()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end attrIsParam;
 
 public function elabComponentArraydimFromEnv
@@ -4322,7 +4303,7 @@ public function addNameToDerivativeMapping
   input Absyn.Path path;
   output list<DAE.Function> outElts;
 algorithm
-  outElts := matchcontinue(inElts,path)
+  outElts := match(inElts,path)
   local
     DAE.Function elt;
     list<DAE.FunctionDefinition> funcs;
@@ -4347,7 +4328,7 @@ algorithm
       equation
         elts = addNameToDerivativeMapping(elts,path);
       then elt::elts;
-  end matchcontinue;
+  end match;
 end addNameToDerivativeMapping;
 
 protected function addNameToDerivativeMappingFunctionDefs " help function to addNameToDerivativeMappingElts"
@@ -4355,7 +4336,7 @@ protected function addNameToDerivativeMappingFunctionDefs " help function to add
   input Absyn.Path path;
   output list<DAE.FunctionDefinition> outFuncs;
 algorithm
-  outFuncs := matchcontinue(inFuncs,path)
+  outFuncs := match(inFuncs,path)
     local
       DAE.FunctionDefinition func;
       Absyn.Path p1,p2;
@@ -4377,7 +4358,7 @@ algorithm
         funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
       then func::funcs;
 
-  end matchcontinue;
+  end match;
 end addNameToDerivativeMappingFunctionDefs;
 
 public function getDeriveAnnotation "
@@ -4590,21 +4571,18 @@ helper function for getDeriveAnnotation"
   output String inputVar;
   output DAE.derivativeCond cond;
 algorithm
-  (inputVar,cond) := matchcontinue(m)
+  (inputVar,cond) := match(m)
   local
-    DAE.EqMod eq;
     DAE.Exp e;
   case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = SOME(DAE.TYPED(modifierAsExp=e)))))
-    equation
-      then (inputVar,DAE.NO_DERIVATIVE(e));
+    then (inputVar,DAE.NO_DERIVATIVE(e));
   case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = NONE())))
-    equation
     then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
   case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(binding = NONE()))) // zeroderivative
-  then (inputVar,DAE.ZERO_DERIVATIVE());
+    then (inputVar,DAE.ZERO_DERIVATIVE());
 
   else ("",DAE.ZERO_DERIVATIVE());
-  end matchcontinue;
+  end match;
 end extractNameAndExp;
 
 protected function getDerivativeSubModsOptDefault "
@@ -4638,16 +4616,16 @@ helper function for getDeriveAnnotation
 Get current derive order"
   input list<SCode.SubMod> inSubs;
   output Integer order;
-algorithm order := matchcontinue(inSubs)
+algorithm order := match(inSubs)
   local
     Absyn.Exp ae;
     SCode.Mod m;
     list<SCode.SubMod> subs;
   case({}) then 1;
   case(SCode.NAMEMOD("order",(SCode.MOD(binding= SOME((Absyn.INTEGER(order))))))::_)
-  then order;
+    then order;
   case(_::subs) then getDerivativeOrder(subs);
-  end matchcontinue;
+  end match;
 end getDerivativeOrder;
 
 public function setFullyQualifiedTypename
@@ -5681,11 +5659,11 @@ protected function getOptPath
   input Absyn.Path inPath;
   output Option<Absyn.Path> outAbsynPathOption;
 algorithm
-  outAbsynPathOption := matchcontinue (inPath)
+  outAbsynPathOption := match (inPath)
     local Absyn.Path p;
     case Absyn.IDENT(name = "") then NONE();
     case p then SOME(p);
-  end matchcontinue;
+  end match;
 end getOptPath;
 
 protected function checkProt
@@ -5696,7 +5674,7 @@ protected function checkProt
   input DAE.ComponentRef inComponentRef;
   input SourceInfo info;
 algorithm
-  _ := matchcontinue (inVisibility,inMod,inComponentRef,info)
+  _ := match (inVisibility,inMod,inComponentRef,info)
     local
       DAE.ComponentRef cref;
       String str1, str2;
@@ -5710,7 +5688,7 @@ algorithm
         Error.addSourceMessage(Error.MODIFY_PROTECTED, {str1, str2}, info);
       then
         ();
-  end matchcontinue;
+  end match;
 end checkProt;
 
 public function getStateSelectFromExpOption
@@ -5720,15 +5698,14 @@ public function getStateSelectFromExpOption
   output Option<DAE.StateSelect> outDAEStateSelectOption;
 algorithm
   outDAEStateSelectOption:=
-  matchcontinue (inExpExpOption)
+  match (inExpExpOption)
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("never"))))) then SOME(DAE.NEVER());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("avoid"))))) then SOME(DAE.AVOID());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("default"))))) then SOME(DAE.DEFAULT());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("prefer"))))) then SOME(DAE.PREFER());
     case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("always"))))) then SOME(DAE.ALWAYS());
-    case (NONE()) then NONE();
     else NONE();
-  end matchcontinue;
+  end match;
 end getStateSelectFromExpOption;
 
 public function isSubModNamed
@@ -5738,7 +5715,7 @@ public function isSubModNamed
   input DAE.SubMod inSubMod;
   output Boolean isNamed;
 algorithm
-  isNamed := matchcontinue(inName, inSubMod)
+  isNamed := match(inName, inSubMod)
     local
       String submod_name;
 
@@ -5746,7 +5723,7 @@ algorithm
       then stringEqual(inName, submod_name);
 
     else false;
-  end matchcontinue;
+  end match;
 end isSubModNamed;
 
 public function liftRecordBinding
@@ -6124,7 +6101,7 @@ This function splits the Element list into these categories:
   output list<SCode.Element> classextendsElts;
   output list<SCode.Element> filtered;
 algorithm
-  (impElts,defElts,classextendsElts,filtered) := matchcontinue (elts)
+  (impElts,defElts,classextendsElts,filtered) := match (elts)
     local
       list<SCode.Element> xs;
       SCode.Element elt;
@@ -6167,7 +6144,7 @@ algorithm
       then
         (impElts,defElts,classextendsElts,elt::filtered);
 
-  end matchcontinue;
+  end match;
 end splitEltsNoComponents;
 
 public function splitEltsInnerAndOther "
@@ -6185,7 +6162,7 @@ public function splitEltsInnerAndOther "
   output list<SCode.Element> innerCompElts;
   output list<SCode.Element> otherCompElts;
 algorithm
-  (cdefImpElts,classextendsElts,extElts,innerCompElts,otherCompElts) := matchcontinue (elts)
+  (cdefImpElts,classextendsElts,extElts,innerCompElts,otherCompElts) := match (elts)
     local
       list<SCode.Element> res,xs,innerComps,otherComps;
       SCode.Element cdef,imp,ext,comp;
@@ -6243,7 +6220,7 @@ algorithm
         (cdefImpElts,classextendsElts,extElts,innerComps,otherComps) = splitEltsInnerAndOther(xs);
       then
         (cdefImpElts,classextendsElts,extElts,innerComps,comp::otherComps);
-  end matchcontinue;
+  end match;
 end splitEltsInnerAndOther;
 
 protected function orderComponents
@@ -6254,7 +6231,7 @@ protected function orderComponents
   input list<SCode.Element> inCompElts;
   output list<SCode.Element> outCompElts;
 algorithm
-  outCompElts := matchcontinue(inComp, inCompElts)
+  outCompElts := match(inComp, inCompElts)
     local
       list<SCode.Element> compElts;
 
@@ -6279,7 +6256,7 @@ algorithm
       equation
         compElts = listAppend(inCompElts, {inComp});
       then compElts;
-  end matchcontinue;
+  end match;
 end orderComponents;
 
 protected function splitClassExtendsElts
@@ -6290,7 +6267,7 @@ protected function splitClassExtendsElts
   output list<SCode.Element> classextendsElts;
   output list<SCode.Element> outElts;
 algorithm
-  (classextendsElts,outElts) := matchcontinue (elts)
+  (classextendsElts,outElts) := match (elts)
     local
       list<SCode.Element> res,xs;
       SCode.Element cdef;
@@ -6308,7 +6285,7 @@ algorithm
       then
         (classextendsElts, cdef :: res);
 
-  end matchcontinue;
+  end match;
 end splitClassExtendsElts;
 
 protected function addClassdefsToEnv3
@@ -6836,7 +6813,7 @@ public function propagateClassPrefix
   input Prefix.Prefix pre;
   output SCode.Attributes outAttr;
 algorithm
-  outAttr := matchcontinue(attr,pre)
+  outAttr := match(attr,pre)
     local
       Absyn.ArrayDim ad;
       SCode.ConnectorType ct;
@@ -6854,7 +6831,7 @@ algorithm
       then SCode.ATTR(ad,ct,prl,vt,dir,isf);
     // anything else
     else attr;
-  end matchcontinue;
+  end match;
 end propagateClassPrefix;
 
 public function checkUseConstValue
@@ -7140,10 +7117,10 @@ public function isPartial
   input DAE.Mod mods;
   output SCode.Partial outPartial;
 algorithm
-  outPartial := matchcontinue (partialPrefix,mods)
+  outPartial := match (partialPrefix,mods)
     case (SCode.PARTIAL(),DAE.NOMOD()) then SCode.PARTIAL();
     else SCode.NOT_PARTIAL();
-  end matchcontinue;
+  end match;
 end isPartial;
 
 public function isFunctionInput
@@ -7151,10 +7128,10 @@ public function isFunctionInput
   input Absyn.Direction direction;
   output Boolean functionInput;
 algorithm
-  functionInput := matchcontinue(classState, direction)
+  functionInput := match(classState, direction)
     case (ClassInf.FUNCTION(), Absyn.INPUT()) then true;
     else false;
-  end matchcontinue;
+  end match;
 end isFunctionInput;
 
 public function extractClassDefComment
@@ -7349,7 +7326,7 @@ protected function splitClassDefsAndComponents
   output list<tuple<SCode.Element, DAE.Mod>> outClassDefs;
   output list<tuple<SCode.Element, DAE.Mod>> outComponentDefs;
 algorithm
-  (outClassDefs, outComponentDefs) := matchcontinue(inLstElAndMod)
+  (outClassDefs, outComponentDefs) := match(inLstElAndMod)
     local
       SCode.Element e;
       DAE.Mod m;
@@ -7372,7 +7349,7 @@ algorithm
       then
         ((e,m)::clsdefs, compdefs);
 
-  end matchcontinue;
+  end match;
 end splitClassDefsAndComponents;
 
 public function selectModifiers
@@ -8434,12 +8411,10 @@ protected function findDomainSubMod
   input DAE.SubMod subMod;
   output Boolean isDomain;
 algorithm
-   isDomain := matchcontinue subMod
-   local
-       DAE.Mod mod;
+   isDomain := match subMod
      case DAE.NAMEMOD(ident="domain") then true;
      else false;
-   end matchcontinue;
+   end match;
 end findDomainSubMod;
 
 protected function getQualDcr
@@ -8734,15 +8709,15 @@ protected function absynDAECrefEqualName
   protected String name1, name2;
   algorithm
     //TODO: implement
-  equal := matchcontinue (domainCr1, domainCr2)
+  equal := match (domainCr1, domainCr2)
     case (Absyn.CREF_IDENT(name = name1), DAE.CREF_IDENT(ident = name2))
-      equation
-        true = stringEqual(name1,name2);
+      guard
+        stringEqual(name1,name2)
     then
       true;
     else
       false;
-  end matchcontinue;
+  end match;
 end absynDAECrefEqualName;
 
 
@@ -8976,14 +8951,14 @@ protected function findDomF<T>
   input String name;
   output Boolean found;
 algorithm
-  found := matchcontinue inTup
+  found := match inTup
     local String nameLoc;
     case (nameLoc,_)
-      equation
-        true = stringEqual(nameLoc,name);
+      guard
+        stringEqual(nameLoc,name)
     then true;
     else false;
-  end matchcontinue;
+  end match;
 end findDomF;
 /*
 public function findDomains
