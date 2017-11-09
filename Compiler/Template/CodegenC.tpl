@@ -4631,7 +4631,7 @@ match sparsepattern
       let tmpvarsSize = (jacobianColumn |> JAC_COLUMN(columnVars=vars) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
       <<
-
+      OMC_DISABLE_OPT
       int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(void* inData, threadData_t *threadData)
       {
         TRACE_PUSH
