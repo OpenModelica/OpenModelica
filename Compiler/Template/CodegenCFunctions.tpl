@@ -4346,7 +4346,6 @@ end getTempDeclMatchOutputName;
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, &auxFunction)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, &auxFunction)
   case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e)
-  case e as SUM(__)             then daeExpSum(e, context, &preExp, &varDecls, &auxFunction)
   case e as CLKCONST(__)        then '#error "<%ExpressionDumpTpl.dumpExp(e,"\"")%>"'
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
@@ -5391,31 +5390,6 @@ case IFEXP(__) then
       >>
       resVar)
 end daeExpIf;
-
-template daeExpSum(Exp exp, Context context, Text &preExp,
-                  Text &varDecls, Text &auxFunction)
- "Generates code for an if expression."
-::=
-match exp
-case SUM(__) then
-  let start = ExpressionDumpTpl.dumpExp(startIt,"\"")
-  let &anotherPre = buffer ""
-  let stop = ExpressionDumpTpl.dumpExp(endIt,"\"")
-  let bodyStr = daeExpIteratedCref(body)
-  let summationVar = <<sum>>
-  let iterVar = ExpressionDumpTpl.dumpExp(iterator,"\"")
-  let &preExp +=<<
-
-  modelica_integer  $P<%iterVar%> = 0; // the iterator
-  modelica_real <%summationVar%> = 0.0; //the sum
-  for($P<%iterVar%> = <%start%>; $P<%iterVar%> < <%stop%>; $P<%iterVar%>++)
-  {
-    <%summationVar%> += <%bodyStr%>($P<%iterVar%>);
-  }
-
-  >>
-  summationVar
-end daeExpSum;
 
 template daeExpIteratedCref(Exp exp)
 ::=

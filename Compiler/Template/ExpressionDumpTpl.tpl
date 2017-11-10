@@ -152,12 +152,6 @@ match exp
   case SHARED_LITERAL(__) then
     if typeinfo() then '/* Shared literal <%index%> */ <%dumpExp(exp, stringDelimiter)%>' else dumpExp(exp, stringDelimiter)
   case PATTERN(__) then (if typeinfo() then '/*pattern*/') + dumpPattern(pattern)
-  case SUM(__) then
-    let bodyStr = dumpExp(body,stringDelimiter)
-    let iterStr = dumpExp(iterator,stringDelimiter)
-    let startStr = dumpExp(startIt,stringDelimiter)
-    let endStr = dumpExp(endIt,stringDelimiter)
-    'SIGMA[<%iterStr%>:<%startStr%>to<%endStr%>](<%bodyStr%>)'
 
   else errorMsg("ExpressionDumpTpl.dumpExp: Unknown expression.")
 end dumpExp;

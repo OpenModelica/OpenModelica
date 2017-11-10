@@ -212,6 +212,15 @@ protected function buildAccumExpInEquations2"sums up the terms and build accumul
   input list<tuple<DAE.Exp,Integer,Integer>> minmaxTerm;
   input list<DAE.Exp> foldIn;
   output list<DAE.Exp> foldOut;
+protected
+  constant DAE.ReductionInfo sumReductionInfo = DAE.REDUCTIONINFO(
+        Absyn.IDENT("sum"),Absyn.COMBINE(),DAE.T_REAL_DEFAULT,SOME(Values.REAL(0.0)),
+        "$sumFold","$sumRes",SOME(DAE.BINARY(
+          DAE.CREF(DAE.CREF_IDENT("$sumFold",DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT),
+          DAE.ADD(DAE.T_REAL_DEFAULT),
+          DAE.CREF(DAE.CREF_IDENT("$sumRes",DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT))
+      ));
+  constant DAE.Exp sumExp = DAE.CREF(DAE.CREF_IDENT("$sumIter",DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT);
 algorithm
   foldOut := matchcontinue(minmaxTerm,foldIn)
     local
@@ -226,20 +235,44 @@ algorithm
     equation
     // build a sigma operator exp and start with the first term
     true = intNe(min,max);
+    DAE.T_REAL() = Expression.typeof(exp1);
     (_,rest) = List.split1OnTrue(rest,minmaxTermEqual,exp1);  // remove other instances of the term
     iter = DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
     (exp1,_) = Expression.traverseExpBottomUp(exp1,replaceSubscriptInCrefExp,{DAE.INDEX(iter)});
-    exp1 = DAE.SUM(Expression.typeof(exp1),iter,DAE.ICONST(min),DAE.ICONST(max),exp1);
+    exp1 = DAE.REDUCTION(
+      sumReductionInfo,
+      sumExp,
+      {
+      DAE.REDUCTIONITER("$sumIter",
+        DAE.RANGE(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(max-min)}),
+                  DAE.ICONST(min),
+                  NONE(),
+                  DAE.ICONST(max)),
+        NONE(),
+        DAE.T_INTEGER_DEFAULT)
+      });
     resExp = buildAccumExpInEquations2(rest,{exp1});
     then resExp;
   case((exp1,min,max)::rest,{exp0})
     equation
     // build a sigma operator exp and add to folding expression
     true = intNe(min,max);
+    DAE.T_REAL() = Expression.typeof(exp1);
     (_,rest) = List.split1OnTrue(rest,minmaxTermEqual,exp1);  // remove other instances of the term
     iter = DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
     (exp1,_) = Expression.traverseExpBottomUp(exp1,replaceSubscriptInCrefExp,{DAE.INDEX(iter)});
-    exp1 = DAE.SUM(Expression.typeof(exp1),iter,DAE.ICONST(min),DAE.ICONST(max),exp1);
+    exp1 = DAE.REDUCTION(
+      sumReductionInfo,
+      sumExp,
+      {
+      DAE.REDUCTIONITER("$sumIter",
+        DAE.RANGE(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(max-min)}),
+                  DAE.ICONST(min),
+                  NONE(),
+                  DAE.ICONST(max)),
+        NONE(),
+        DAE.T_INTEGER_DEFAULT)
+      });
     resExp = buildAccumExpInEquations2(rest,{DAE.BINARY(exp0,DAE.ADD(Expression.typeof(exp0)),exp1)});
     then resExp;
   case((exp1,_,_)::rest,{})

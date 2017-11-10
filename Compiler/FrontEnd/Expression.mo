@@ -2330,7 +2330,6 @@ algorithm
     case (DAE.SHARED_LITERAL(exp = e)) then typeof(e);
     // A little crazy, but sometimes we call typeof on things that will not be used in the end...
     case (DAE.EMPTY(ty = tp)) then tp;
-    case (DAE.SUM(ty = tp)) then tp;
 
     case e
       equation
@@ -5306,16 +5305,6 @@ algorithm
       (e, ext_arg) = inFunc(inExp, inExtArg);
     then (e, ext_arg);
 
-    // SUM expressions
-    case DAE.SUM(ty=tp, iterator=e1, startIt=e2, endIt=e3, body=e4) equation
-      (e1_1, ext_arg) = traverseExpBottomUp(e1, inFunc, inExtArg);
-      (e2_1, ext_arg) = traverseExpBottomUp(e2, inFunc, ext_arg);
-      (e3_1, ext_arg) = traverseExpBottomUp(e3, inFunc, ext_arg);
-      (e4_1, ext_arg) = traverseExpBottomUp(e4, inFunc, ext_arg);
-      e = if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) and referenceEq(e4, e4_1)then inExp else DAE.SUM(tp,e1_1, e2_1, e3_1,e4_1);
-      (e, ext_arg) = inFunc(e, ext_arg);
-    then (e, ext_arg);
-
     // Why don't we call inFunc() for these expressions?
     case DAE.CODE() then (inExp, inExtArg);
 
@@ -5868,15 +5857,6 @@ algorithm
 
     case (_,DAE.SHARED_LITERAL(),_,ext_arg)
       then (inExp,ext_arg);
-
-    // SUM
-    case (_,(DAE.SUM(ty=tp, iterator = e1,startIt = e2,endIt = e3,body=e4)),rel,ext_arg)
-      equation
-        (e1_1,ext_arg_1) = traverseExpTopDown(e1, rel, ext_arg);
-        (e2_1,ext_arg_2) = traverseExpTopDown(e2, rel, ext_arg_1);
-        (e3_1,ext_arg_3) = traverseExpTopDown(e3, rel, ext_arg_2);
-        (e4_1,_) = traverseExpTopDown(e4, rel, ext_arg_3);
-      then (DAE.SUM(tp,e1_1,e2_1,e3_1,e4_1),ext_arg_3);
 
     else
       equation

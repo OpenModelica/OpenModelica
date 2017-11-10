@@ -1509,15 +1509,6 @@ algorithm
       then
         res_str;
 
-     case (DAE.SUM(startIt=start, endIt=stop, body=e),level)
-      equation
-        gen_str = genStringNTime("   |", level);
-        new_level1 = level + 1;
-        res_str = "("+dumpExpStr(start,new_level1)+" to "+dumpExpStr(stop,new_level1)+")["+dumpExpStr(e,new_level1)+"]";
-        res_str = stringAppendList({gen_str,"SIGMA ","\n",res_str,""});
-      then
-        res_str;
-
     case (_,level)
       equation
         gen_str = genStringNTime("   |", level);

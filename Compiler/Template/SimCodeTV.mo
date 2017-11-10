@@ -1715,13 +1715,6 @@ package DAE
     record PATTERN
       Pattern pattern;
     end PATTERN;
-    record SUM
-      Type ty;
-      DAE.Exp iterator;
-      DAE.Exp startIt;
-      DAE.Exp endIt;
-      DAE.Exp body;
-    end SUM;
   end Exp;
 
   uniontype CallAttributes

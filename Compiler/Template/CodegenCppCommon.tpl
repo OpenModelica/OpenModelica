@@ -998,7 +998,6 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as ARRAY(__)           then     '/*t4*/<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
   case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
-  case e as SUM(__)             then     daeExpSum(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as PARTEVALFUNCTION(__)then daeExpPartEvalFunction(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -2946,38 +2945,6 @@ template daeExpSharedLiteral(Exp exp, Context context, Text &preExp /*BUFP*/, Te
     let lit = '_OMC_LIT<%exp.index%>'
     '<%contextFunName(lit, context)%>'
 end daeExpSharedLiteral;
-
-
-template daeExpSum(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
-                   Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates code for a match expression."
-::=
-  match exp case exp as SUM(__) then
-    let bodyExp = daeExp(body, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let iterExp = daeExp(iterator, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let startItExp = daeExp(startIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let endItExp = daeExp(endIt, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let &preExp += 'double sum = 0.0;<%\n%>for(size_t <%iterExp%> = <%startItExp%>; <%iterExp%> != <%endItExp%>+1; <%iterExp%>++)<%\n%>  sum += <%bodyExp%>[<%iterExp%>]<%\n%>'
-    <<
-    sum
-    >>
-
-  //C-Codegen:
-  //let start = ExpressionDumpTpl.dumpExp(startIt,"\"")
-  //let &anotherPre = buffer ""
-  //let stop = ExpressionDumpTpl.dumpExp(endIt,"\"")
-  //let bodyStr = daeExpIteratedCref(body)
-  //let summationVar = <<sum>>
-  //let iterVar = ExpressionDumpTpl.dumpExp(iterator,"\"")
-  //let &preExp +=<<
-
-  //modelica_integer  $P<%iterVar%> = 0; // the iterator
-  //modelica_real <%summationVar%> = 0.0; //the sum
-  //for($P<%iterVar%> = <%start%>; $P<%iterVar%> < <%stop%>; $P<%iterVar%>++)
-  //{
-  //  <%summationVar%> += <%bodyStr%>($P<%iterVar%>);
-  //}
-end daeExpSum;
 
 template daeExpPartEvalFunction(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for a function reference and a closure."
