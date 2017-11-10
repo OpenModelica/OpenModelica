@@ -1508,8 +1508,9 @@ public function skipPreOperator "The variable/exp in the pre operator should not
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp)
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
-    case (DAE.CALL(path = Absyn.IDENT(name = "previous"))) then false;
+    local String idn;
+    case (DAE.CALL(path = Absyn.IDENT(name = idn)))
+      guard idn=="pre" or idn=="previous" then false;
     else true;
   end match;
 end skipPreOperator;
@@ -1522,14 +1523,11 @@ algorithm
   outBoolean := match (inExp)
     local
       DAE.ComponentRef cr;
-    case DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
-    case DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
-    case DAE.CALL(path = Absyn.IDENT(name = "change"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
-    case DAE.CALL(path = Absyn.IDENT(name = "edge"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
-    case DAE.CALL(path = Absyn.IDENT(name = "pre")) then false;
-    case DAE.CALL(path = Absyn.IDENT(name = "previous")) then false;
-    case DAE.CALL(path = Absyn.IDENT(name = "change")) then false;
-    case DAE.CALL(path = Absyn.IDENT(name = "edge")) then false;
+      String idn;
+    case DAE.CALL(path = Absyn.IDENT(name = idn),expLst = {DAE.CREF(componentRef=cr)})
+      guard idn=="pre" or idn=="previous" or idn=="change" or idn=="edge" then selfGeneratedVar(cr);
+    case DAE.CALL(path = Absyn.IDENT(name = idn))
+      guard idn=="pre" or idn=="previous" or idn=="change" or idn=="edge" then false;
     else true;
   end match;
 end skipPreChangeEdgeOperator;
@@ -1539,9 +1537,8 @@ protected function selfGeneratedVar
   output Boolean b;
 algorithm
   b := match(inCref)
-    case DAE.CREF_QUAL(ident = "$ZERO") then true;
-    case DAE.CREF_QUAL(ident = "$_DER") then true;
-    case DAE.CREF_QUAL(ident = "$pDER") then true;
+    local String idn;
+    case DAE.CREF_QUAL(ident = idn) guard idn=="$ZERO" or idn=="$_DER" or idn=="$pDER" then true;
     // keep same a while untill we know which are needed
     //case DAE.CREF_QUAL(ident = "$DER") then true;
     else false;

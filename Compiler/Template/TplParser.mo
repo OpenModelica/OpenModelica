@@ -4184,12 +4184,10 @@ algorithm
   (outChars, outSign) := match (inChars)
     local
       list<String> chars;
+      String char;
 
-    case ("+" :: chars)
-      then (chars, "+");
-
-    case ("-" :: chars)
-      then (chars, "-");
+    case (char :: chars) guard char=="+" or char=="-"
+      then (chars, char);
 
     else
       then (inChars, "");
@@ -4381,22 +4379,17 @@ algorithm
     local
       list<String> chars;
       LineInfo linfo;
+      String char;
 
    case (chars, linfo)
      equation
        (chars, linfo) = newLine(chars, linfo);
      then (chars, linfo);
 
-   case (" " :: chars, linfo)
+   case (char :: chars, linfo) guard char==" " or char =="\t"
       equation
        (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
       then (chars, linfo);
-
-   case ("\t" :: chars, linfo)
-      equation
-       (chars, linfo) = takeSpaceAndNewLine(chars, linfo);
-      then (chars, linfo);
-
   end matchcontinue;
 end takeSpaceAndNewLine;
 

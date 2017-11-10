@@ -1511,7 +1511,7 @@ algorithm
   // skip is when equations
   skip := List.mapBoolAnd(eqnlst, BackendEquation.isWhenEquation);
   // skip is discrete
-  skip := List.mapBoolAnd(varlst, BackendVariable.isVarDiscrete) or skip;
+  skip := skip or List.mapBoolAnd(varlst, BackendVariable.isVarDiscrete);
 
   outFold := match comp
     local
@@ -1534,8 +1534,8 @@ algorithm
         if not listEmpty(equations1) then
           firstSES = listHead(equations1);  // check if the all equations occur with this index in the c file
           firstEqIndex = if isSimEqSys(firstSES) then uniqueEqIndex1-1 else uniqueEqIndex;
-          eqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
-          eqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), appendSccIdx, index, eqBackendSimCodeMapping);
+          eqSccMapping = appendSccIdxRange(firstEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
+          eqBackendSimCodeMapping = appendSccIdxRange(firstEqIndex, uniqueEqIndex1 - 1, index, eqBackendSimCodeMapping);
           backendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), {index}, backendMapping);
         end if;
         if BackendEquation.isWhenEquation(BackendEquation.get(syst.orderedEqs, index)) then
@@ -1556,8 +1556,8 @@ algorithm
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1,_, uniqueEqIndex1, tempvars) = createSingleArrayEqnCode(true, eqnlst, varlst, uniqueEqIndex, tempvars, shared.info);
 
-        eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
-        eqBackendSimCodeMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, e, eqBackendSimCodeMapping);
+        eqSccMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
+        eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, e, eqBackendSimCodeMapping);
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
@@ -1573,8 +1573,8 @@ algorithm
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex1) = createSingleAlgorithmCode(eqnlst, varlst, false, uniqueEqIndex);
 
-        eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
-        eqBackendSimCodeMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, e, eqBackendSimCodeMapping);
+        eqSccMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
+        eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, e, eqBackendSimCodeMapping);
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
@@ -1592,7 +1592,7 @@ algorithm
         (equations1, uniqueEqIndex1, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, uniqueEqIndex, tempvars, shared.info, true);
 
         eqSccMapping = appendSccIdx(uniqueEqIndex1-1, sccIndex, eqSccMapping);
-        eqBackendSimCodeMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, e, eqBackendSimCodeMapping);
+        eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, e, eqBackendSimCodeMapping);
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
@@ -1609,8 +1609,8 @@ algorithm
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex1, tempvars) = createSingleWhenEqnCode(listHead(eqnlst), varlst, shared, uniqueEqIndex, tempvars);
 
-        eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
-        eqBackendSimCodeMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, index, eqBackendSimCodeMapping);
+        eqSccMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
+        eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, index, eqBackendSimCodeMapping);
 
         allEquations = equations1::allEquations;
       then
@@ -1626,8 +1626,8 @@ algorithm
         varlst = List.map(varlst, BackendVariable.transformXToXd);
         (equations1, uniqueEqIndex1, tempvars) = createSingleIfEqnCode(listHead(eqnlst), varlst, shared, true, uniqueEqIndex, tempvars);
 
-        eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
-        eqBackendSimCodeMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, index, eqBackendSimCodeMapping);
+        eqSccMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
+        eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, index, eqBackendSimCodeMapping);
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
@@ -1643,8 +1643,8 @@ algorithm
         if not listEmpty(equations1) then
           firstSES = listHead(equations1);  // check if the all equations occur with this index in the c file
           firstEqIndex = if isSimEqSys(firstSES) then uniqueEqIndex1-1 else uniqueEqIndex;
-          eqSccMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
-          eqBackendSimCodeMapping = List.fold1(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1), appendSccIdx, index, eqBackendSimCodeMapping);
+          eqSccMapping = appendSccIdxRange(firstEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
+          eqBackendSimCodeMapping = appendSccIdxRange(firstEqIndex, uniqueEqIndex1 - 1, index, eqBackendSimCodeMapping);
           backendMapping = setEqMapping(List.intRange2(firstEqIndex, uniqueEqIndex1 - 1),{index}, backendMapping);
         end if;
         if BackendEquation.isWhenEquation(BackendEquation.get(syst.orderedEqs, index)) then
@@ -1666,7 +1666,7 @@ algorithm
 
         (_, noDiscEquations1, uniqueEqIndex1, tempvars, eqSccMapping, backendMapping) =
           createOdeSystem(true and createAlgebraicEquations, false, syst, shared, comp, uniqueEqIndex, tempvars, sccIndex, eqSccMapping, backendMapping);
-        //eqSccMapping = List.fold1(List.intRange2(uniqueEqIndex, uniqueEqIndex1 - 1), appendSccIdx, sccIndex, eqSccMapping);
+        //eqSccMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(noDiscEquations1, stateeqnsmark, zceqnsmark, eqnslst, odeEquations,
@@ -1692,6 +1692,18 @@ protected function appendSccIdx
 algorithm
   oSccIdc := ((iCurrentIdx,iSccIdx))::iSccIdc;
 end appendSccIdx;
+
+protected function appendSccIdxRange
+  input Integer iCurrentIdxStart;
+  input Integer iCurrentIdxStop;
+  input Integer iSccIdx;
+  input list<tuple<Integer,Integer>> iSccIdc;
+  output list<tuple<Integer,Integer>> oSccIdc;
+algorithm
+    for i in iCurrentIdxStop:-1:iCurrentIdxStart loop
+      oSccIdc := ((i,iSccIdx))::iSccIdc;
+    end for;
+end appendSccIdxRange;
 
 protected function createEquations
   input Boolean includeWhen;
@@ -3564,8 +3576,8 @@ algorithm
         eqns_1 = BackendEquation.listEquation(eqn_lst);
         (equations_, uniqueEqIndex, tempvars) = createOdeSystem2(false, vars_1, globalKnownVars, eqns_1, jacobian, jac_tp, funcs, vars, iuniqueEqIndex, ei, mixedSystem, itempvars);
         uniqueEqIndexMapping = uniqueEqIndex-1; //a system with this index is created that contains all the equations with the indeces from iuniqueEqIndex to uniqueEqIndex-2
-        //tmpEqSccMapping = List.fold1(List.intRange2(iuniqueEqIndex, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
-        tmpEqSccMapping = List.fold1(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1), appendSccIdx, isccIndex, ieqSccMapping);
+        //tmpEqSccMapping = appendSccIdxRange(iuniqueEqIndex, uniqueEqIndex - 1, isccIndex, ieqSccMapping);
+        tmpEqSccMapping = appendSccIdxRange(uniqueEqIndexMapping, uniqueEqIndex - 1, isccIndex, ieqSccMapping);
         tmpBackendMapping = setEqMapping(List.intRange2(uniqueEqIndexMapping, uniqueEqIndex - 1),eqIdcs,iBackendMapping);
       then (equations_, equations_, uniqueEqIndex, tempvars, tmpEqSccMapping, tmpBackendMapping);
 

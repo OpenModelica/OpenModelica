@@ -174,6 +174,7 @@ algorithm
       BackendDAE.Var var;
       DAE.CallAttributes attr;
       Boolean negate;
+      String idn;
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
       (var, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
@@ -181,80 +182,44 @@ algorithm
       (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
     then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous" equation
       (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
     then(e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) equation
-      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
-    then(e, (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
     then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
     then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (globalKnownVars, aliasvars, _))
-    then (e, (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={e as DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time")))}), (globalKnownVars, aliasvars, _))
-    then (e, (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous" equation
       (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
-      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("pre"), {e}, attr));
+      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT(idn), {e}, attr));
       (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
     then (e, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
-      (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
-      (cr, negate) = BackendVariable.getAlias(var);
-      e = DAE.CREF(cr, tp);
-      e = if negate then Expression.negate(e) else e;
-      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("previous"), {e}, attr));
-      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
-    then (e, (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) guard idn=="change" or idn=="edge" equation
       (_::_, _) = BackendVariable.getVar(cr, globalKnownVars);
       zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
     then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) guard idn=="change" or idn=="edge" equation
       (_::_, _) = BackendVariable.getVar(cr, aliasvars);
       zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
     then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _)) guard idn=="change" or idn=="edge"
     then (DAE.BCONST(false), (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name="change"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) guard idn=="change" or idn=="edge" equation
       (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
       (cr, negate) = BackendVariable.getAlias(var);
       e = DAE.CREF(cr, tp);
       e = if negate then Expression.negate(e) else e;
-      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("change"), {e}, attr));
-      (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
-    then (e, (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}), (globalKnownVars, aliasvars, _)) equation
-      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
-      zero = Expression.arrayFill(Expression.arrayDimension(tp), DAE.BCONST(false));
-    then (zero, (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _))
-    then (DAE.BCONST(false), (globalKnownVars, aliasvars, true));
-
-    case (DAE.CALL(path=Absyn.IDENT(name="edge"), expLst={DAE.CREF(componentRef=cr, ty=tp)}, attr=attr), (globalKnownVars, aliasvars, _)) equation
-      (var, _) = BackendVariable.getVarSingle(cr, aliasvars);
-      (cr, negate) = BackendVariable.getAlias(var);
-      e = DAE.CREF(cr, tp);
-      e = if negate then Expression.negate(e) else e;
-      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT("edge"), {e}, attr));
+      (e, _) = ExpressionSimplify.simplify(DAE.CALL(Absyn.IDENT(idn), {e}, attr));
       (e, _) = Expression.traverseExpBottomUp(e, traverserExpsimplifyTimeIndepFuncCalls, (globalKnownVars, aliasvars, false));
     then (e, (globalKnownVars, aliasvars, true));
 

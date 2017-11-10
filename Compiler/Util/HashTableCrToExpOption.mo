@@ -109,7 +109,7 @@ algorithm
     local
       DAE.Exp exp;
     case SOME(exp) then "SOME("+ExpressionDump.printExpStr(exp)+")";
-    case NONE() then "NONE()";
+    else "NONE()";
   end match;
 end printExpOtionStr;
 

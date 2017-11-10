@@ -406,10 +406,11 @@ public function checkEquationsVarsExpTopDown
   input output AvlSetInt.Tree tree;
   input BackendDAE.Variables vars;
 algorithm
-  (cont,tree) := matchcontinue exp
+  (cont,tree) := match exp
     local
       DAE.ComponentRef cr;
       list<Integer> ilst;
+      String idn;
 
     // special case for time, it is never part of the equation system
     case DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))
@@ -419,23 +420,22 @@ algorithm
     case DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC())
     then (true, tree);
 
-    // case for pre vars
-    case DAE.CALL(path = Absyn.IDENT(name = "pre"))
-    then (false, tree);
-
-    // case for previous vars
-    case DAE.CALL(path = Absyn.IDENT(name = "previous"))
+    // case for pre and previous vars
+    case DAE.CALL(path = Absyn.IDENT(name = idn)) guard idn=="pre" or idn=="previous"
     then (false, tree);
 
     // add it
     case DAE.CREF(componentRef = cr)
       algorithm
+        try
         (_, ilst) := BackendVariable.getVar(cr, vars);
         tree := AvlSetInt.addList(tree, ilst);
+        else
+        end try;
       then (true, tree);
 
     else (true, tree);
-  end matchcontinue;
+  end match;
 end checkEquationsVarsExpTopDown;
 
 public function assertWithCondTrue "author: Frenkel TUD 2012-12"

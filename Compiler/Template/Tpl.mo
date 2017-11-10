@@ -131,7 +131,7 @@ public function writeStr
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inStr)
+  outText := match (inText, inStr)
     local
       Tokens toks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -149,21 +149,22 @@ algorithm
             tokens = toks,
             blocksStack = blstack
             ), str)
-      equation
-        -1 = System.stringFind(str, "\n");
+      guard
+        -1 == System.stringFind(str, "\n")
       then
         MEM_TEXT(ST_STRING(str) :: toks, blstack);
 
     case (FILE_TEXT(), str)
+      guard
+        -1 == System.stringFind(str, "\n")
       equation
-        -1 = System.stringFind(str, "\n");
         stringFile(inText, str, line=false);
       then inText;
 
     // a new-line is inside
     else
       writeChars(inText, System.strtokIncludingDelimiters(inStr, "\n"));
-  end matchcontinue;
+  end match;
 end writeStr;
 
 public function writeTok
@@ -172,7 +173,7 @@ public function writeTok
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inToken)
+  outText := match (inText, inToken)
     local
       Text txt;
       Tokens toks;
@@ -202,7 +203,7 @@ algorithm
         tokFileText(inText, tok);
       then inText;
 
-  end matchcontinue;
+  end match;
 end writeTok;
 
 public function writeText
@@ -211,7 +212,7 @@ public function writeText
 
   output Text outText;
 algorithm
-  outText := matchcontinue (inText, inTextToWrite)
+  outText := match (inText, inTextToWrite)
     local
       Tokens toks, txttoks;
       list<tuple<Tokens,BlockType>> blstack;
@@ -251,7 +252,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.writeText failed - incomplete text was passed to be written\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end writeText;
 
 protected function writeChars
@@ -376,7 +377,7 @@ public function softNewLine
   input Text inText;
   output Text outText;
 algorithm
-  outText := matchcontinue (inText)
+  outText := match (inText)
     local
       Text txt;
       Tokens toks;
@@ -384,8 +385,7 @@ algorithm
       StringToken tok;
 
     //empty - nothing
-    case (txt as MEM_TEXT(
-                   tokens = {} ))
+    case (txt as MEM_TEXT(tokens = {} ))
       then
         txt;
 
@@ -414,7 +414,7 @@ algorithm
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end softNewLine;
 
 protected function isAtStartOfLine
@@ -1498,7 +1498,7 @@ protected function iterAlignWrapString
   output Boolean outAtStartOfLine;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine)
-   := matchcontinue (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks;
       StringToken tok,  asep, wsep;
@@ -1511,8 +1511,9 @@ algorithm
 
     //align and try wrap
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
+      guard
+        (idx > 0) and (intMod(idx,anum) == 0)
       equation
-        true = (idx > 0) and (intMod(idx,anum) == 0);
         (pos, isstart, aind) = tokString(asep, pos, isstart, aind);
         (pos, isstart, aind) = tryWrapString(wwidth, wsep, pos, isstart, aind);
         (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
@@ -1523,9 +1524,10 @@ algorithm
         (pos, isstart);
     //wrap
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      equation
+      guard
         //false = (idx > 0) and (intMod(idx,anum) == 0);
-        true = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
+        (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
+      equation
         (pos, isstart, aind) = tokString(wsep, pos, isstart, aind);
         (pos, isstart, aind) = tokString(tok, pos, isstart, aind);
         (pos, isstart)
@@ -1552,7 +1554,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end iterAlignWrapString;
 
 
@@ -1568,7 +1570,7 @@ protected function tryWrapString
   output Integer outAfterNewLineIndent;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
-   := matchcontinue (inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Integer pos, aind, wwidth;
       Boolean isstart;
@@ -1576,14 +1578,13 @@ algorithm
 
     //wrap
     case (wwidth, wsep, pos, isstart, aind)
-      equation
-        true = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
-        (pos, isstart, aind) = tokString(wsep, pos, isstart, aind);
+      guard
+        (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
       then
-        (pos, isstart, aind);
+        tokString(wsep, pos, isstart, aind);
 
     else (inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent);
-  end matchcontinue;
+  end match;
 end tryWrapString;
 
 
@@ -1849,7 +1850,7 @@ protected function iterAlignWrapFile
   output Boolean outAtStartOfLine;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine)
-   := matchcontinue (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inTokens, inActualIndex, inAlignNum, inAlignSeparator, inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks;
       StringToken tok,  asep, wsep;
@@ -1862,8 +1863,9 @@ algorithm
 
     //align and try wrap
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
+      guard
+        (idx > 0) and (intMod(idx,anum) == 0)
       equation
-        true = (idx > 0) and (intMod(idx,anum) == 0);
         (pos, isstart, aind) = tokFile(file, asep, pos, isstart, aind);
         (pos, isstart, aind) = tryWrapFile(file, wwidth, wsep, pos, isstart, aind);
         (pos, isstart, aind) = tokFile(file, tok, pos, isstart, aind);
@@ -1874,9 +1876,10 @@ algorithm
         (pos, isstart);
     //wrap
     case (tok :: toks, idx, anum, asep, wwidth, wsep, pos, isstart, aind)
-      equation
+      guard
         //false = (idx > 0) and (intMod(idx,anum) == 0);
-        true = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
+        (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
+      equation
         (pos, isstart, aind) = tokFile(file, wsep, pos, isstart, aind);
         (pos, isstart, aind) = tokFile(file, tok, pos, isstart, aind);
         (pos, isstart)
@@ -1903,7 +1906,7 @@ algorithm
         true = Flags.isSet(Flags.FAILTRACE); Debug.trace("-!!!Tpl.iterAlignWrapString failed.\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end iterAlignWrapFile;
 
 
@@ -1920,7 +1923,7 @@ protected function tryWrapFile
   output Integer outAfterNewLineIndent;
 algorithm
   (outActualPositionOnLine, outAtStartOfLine, outAfterNewLineIndent)
-   := matchcontinue (inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+   := match (inWrapWidth, inWrapSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Integer pos, aind, wwidth;
       Boolean isstart;
@@ -1928,14 +1931,13 @@ algorithm
 
     //wrap
     case (wwidth, wsep, pos, isstart, aind)
-      equation
-        true = (wwidth > 0) and (pos >= wwidth); //check wwidth for the invariant that should be always true here
-        (pos, isstart, aind) = tokFile(file, wsep, pos, isstart, aind);
+      guard
+        (wwidth > 0) and (pos >= wwidth) //check wwidth for the invariant that should be always true here
       then
-        (pos, isstart, aind);
+        tokFile(file, wsep, pos, isstart, aind);
 
     else (inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent);
-  end matchcontinue;
+  end match;
 end tryWrapFile;
 
 
@@ -1995,10 +1997,9 @@ end strTokString;
 public function failIfTrue
   input Boolean istrue;
 algorithm
-  _ := match istrue
-    case ( false ) then ();
-    case ( _ ) then fail();
- end match;
+  if istrue then
+    fail();
+  end if;
 end failIfTrue;
 
 protected function tplCallHandleErrors

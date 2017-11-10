@@ -2688,6 +2688,7 @@ algorithm
       Integer diffindx;
       list<DAE.Subscript> subs;
       AvlSetPath.Tree visitedPaths;
+      String idn;
 
     case (DAE.LBINARY(), tpl)
     then (inExp, false, tpl);
@@ -2753,11 +2754,8 @@ algorithm
     then (inExp, false,(vars, pa, visitedPaths, ofunctionTree));
 
     /* pre(v) is considered a known variable */
-    case (DAE.CALL(path=Absyn.IDENT(name="pre")), tpl)
-    then (inExp, false, tpl);
-
     /* previous(v) is considered a known variable */
-    case (DAE.CALL(path=Absyn.IDENT(name="previous")), tpl)
+    case (DAE.CALL(path=Absyn.IDENT(name=idn)), tpl) guard idn=="pre" or idn=="previous"
     then (inExp, false, tpl);
 
     /* delay(...) can be used to break algebraic loops given some solver options */

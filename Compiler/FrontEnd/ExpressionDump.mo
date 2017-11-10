@@ -429,8 +429,8 @@ Returns a string if SOME otherwise ''"
 algorithm
   str := match(oexp)
     local DAE.Exp e;
-    case(NONE()) then "";
     case(SOME(e)) then printExpStr(e);
+    else "";
   end match;
 end printOptExpStr;
 

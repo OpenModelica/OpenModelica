@@ -622,6 +622,7 @@ public function prefixEqualUnlessBasicType
 algorithm
   _ := matchcontinue (pre1, pre2, cls)
     local
+      String idn;
     // adrpo: TODO! FIXME!, I think here we should have pre1 = Prefix.CLASSPRE(variability1) == pre2 = Prefix.CLASSPRE(variability2)
 
     // don't care about prefix for:
@@ -639,10 +640,7 @@ algorithm
     case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_CLOCK())) then ();
     // don't care about prefix for:
     // - Real, String, Integer, Boolean
-    case (_, _, SCode.CLASS(name = "Real")) then ();
-    case (_, _, SCode.CLASS(name = "Integer")) then ();
-    case (_, _, SCode.CLASS(name = "String")) then ();
-    case (_, _, SCode.CLASS(name = "Boolean")) then ();
+    case (_, _, SCode.CLASS(name = idn)) guard idn=="Real" or idn== "Integer" or idn=="String" or idn=="Boolean" then ();
     // BTH
     case (_, _, SCode.CLASS(name = "Clock"))
       equation
@@ -3303,10 +3301,7 @@ algorithm
       list<SCode.Element> els;
       SCode.Path path;
 
-    case (cache, _, _, _, cl as SCode.CLASS(name = "Real"), _, _) then (cache,{},cl,DAE.NOMOD());
-    case (cache, _, _, _, cl as SCode.CLASS(name = "Integer"), _, _) then (cache,{},cl,DAE.NOMOD());
-    case (cache, _, _, _, cl as SCode.CLASS(name = "String"), _, _) then (cache,{},cl,DAE.NOMOD());
-    case (cache, _, _, _, cl as SCode.CLASS(name = "Boolean"), _, _) then (cache,{},cl,DAE.NOMOD());
+    case (cache, _, _, _, cl as SCode.CLASS(name = id), _, _) guard id=="Real" or id=="Integer" or id=="String" or id=="Boolean" then (cache,{},cl,DAE.NOMOD());
     // BTH
     case (cache, _, _, _, cl as SCode.CLASS(name = "Clock"), _, _)
       equation
@@ -8344,8 +8339,8 @@ function isSubModDomainOrStart
   output Boolean isNotDomain;
 algorithm
   isNotDomain := match subMod
-    case SCode.NAMEMOD(ident="domain") then true;
-    case SCode.NAMEMOD(ident="start") then true;
+    local String idn;
+    case SCode.NAMEMOD(ident=idn) guard idn=="domain" or idn=="start" then true;
     else false;
   end match;
 end isSubModDomainOrStart;
