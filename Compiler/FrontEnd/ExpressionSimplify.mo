@@ -2864,15 +2864,17 @@ protected function simplifyAddJoinTerms
   output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
 protected
   list<tuple<DAE.Exp, Real>> tplExpRealLst = inTplExpRealLst;
+  tuple<DAE.Exp, Real> t;
   DAE.Exp e;
   Real coeff, coeff2;
 algorithm
 
   while not listEmpty(tplExpRealLst) loop
-    (e, coeff) :: tplExpRealLst := tplExpRealLst;
+    t :: tplExpRealLst := tplExpRealLst;
+    (e, coeff) := t;
     (coeff2, tplExpRealLst) := simplifyAddJoinTermsFind(e, tplExpRealLst);
     coeff := coeff + coeff2;
-    outTplExpRealLst := (e, coeff) :: outTplExpRealLst;
+    outTplExpRealLst := (if coeff2==0 then t else (e, coeff)) :: outTplExpRealLst;
   end while;
 //outTplExpRealLst := listReverse(outTplExpRealLst);
 end simplifyAddJoinTerms;
@@ -2882,31 +2884,21 @@ protected function simplifyAddJoinTermsFind
   Helper function to simplifyAddJoinTerms, finds all occurences of Expression."
   input DAE.Exp inExp;
   input list<tuple<DAE.Exp, Real>> inTplExpRealLst;
-  output Real outReal;
-  output list<tuple<DAE.Exp, Real>> outTplExpRealLst;
+  output Real outReal = 0.0;
+  output list<tuple<DAE.Exp, Real>> outTplExpRealLst = {};
+protected
+  DAE.Exp e;
+  Real coeff;
 algorithm
-  (outReal,outTplExpRealLst) := matchcontinue (inExp,inTplExpRealLst)
-    local
-      Real coeff2,coeff3,coeff;
-      list<tuple<DAE.Exp, Real>> res,rest;
-      DAE.Exp e,e2;
-
-    case (_,{}) then (0.0,{});
-
-    case (e,((e2,coeff) :: rest))
-      equation
-        true = Expression.expEqual(e, e2);
-        (coeff2,res) = simplifyAddJoinTermsFind(e, rest);
-        coeff3 = coeff + coeff2;
-      then
-        (coeff3,res);
-
-    case (e,((e2,coeff) :: rest)) /* not Expression.expEqual */
-      equation
-        (coeff2,res) = simplifyAddJoinTermsFind(e, rest);
-      then
-        (coeff2,((e2,coeff) :: res));
-  end matchcontinue;
+  for t in inTplExpRealLst loop
+    (e,coeff) := t;
+    if Expression.expEqual(inExp, e) then
+      outReal := outReal + coeff;
+    else
+      outTplExpRealLst := t::outTplExpRealLst;
+    end if;
+  end for;
+  outTplExpRealLst := Dangerous.listReverseInPlace(outTplExpRealLst);
 end simplifyAddJoinTermsFind;
 
 protected function simplifyAddMakeMul
@@ -2919,7 +2911,6 @@ protected
   tuple<DAE.Exp, Real> tplExpReal;
 algorithm
   for tplExpReal in inTplExpRealLst loop
-
     outExpLst := matchcontinue (tplExpReal)
     local
       DAE.Exp e;
@@ -2951,14 +2942,14 @@ protected function simplifyBinaryAddCoeff2
   input DAE.Exp inExp;
   output tuple<DAE.Exp, Real> outRes;
 algorithm
-  outRes := matchcontinue (inExp)
+  outRes := match (inExp)
     local
       DAE.Exp exp,e1,e2,e;
       Real coeff,coeff_1;
       Integer icoeff;
       Type tp;
 
-    case ((exp as DAE.CREF())) then ((exp,1.0));
+    case (DAE.CREF()) then ((inExp,1.0));
 
     case (DAE.UNARY(operator = DAE.UMINUS(ty = DAE.T_REAL()), exp = exp))
       equation
@@ -2985,14 +2976,14 @@ algorithm
         ((e1,coeff_1));
 
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(),exp2 = e2))
-      equation
-        true = Expression.expEqual(e1, e2);
+      guard
+        Expression.expEqual(e1, e2)
       then
         ((e1,2.0));
 
     else ((inExp,1.0));
 
-  end matchcontinue;
+  end match;
 end simplifyBinaryAddCoeff2;
 
 protected function simplifyBinaryMulCoeff2

@@ -1451,7 +1451,7 @@ protected function getSparsePattern2
 protected
   list<Integer> localList;
 algorithm
-  localList := getSparsePatternHelp(inInputVars, invarSparse, inMark, inUsed, inmarkValue, {});
+  localList := getSparsePatternHelp(inInputVars, invarSparse, inMark, inUsed, inmarkValue);
   List.map2_0(inSolvedVars, Array.updateIndexFirst, localList, invarSparse);
   List.map2_0(inEqns, Array.updateIndexFirst, localList, ineqnSparse);
 end getSparsePattern2;
@@ -1462,46 +1462,31 @@ protected function getSparsePatternHelp
   input array<Integer> inMark;
   input array<Integer> inUsed;
   input Integer inmarkValue;
-  input list<Integer> inLocalList;
-  output list<Integer> outLocalList;
+  output list<Integer> outLocalList = {};
+protected
+  Integer arrayElement;
+  list<Integer> varSparse;
 algorithm
-  outLocalList := match (inInputVars, invarSparse, inMark, inUsed, inmarkValue, inLocalList)
-  local
-    list<Integer> localList, varSparse, rest;
-    Integer arrayElement, var;
-    case ({},_,_,_,_,_) then inLocalList;
-    case (var::rest,_,_,_,_,_)
-      equation
-        arrayElement = arrayGet(inUsed, var);
-        localList = if intEq(1, arrayElement) then getSparsePatternHelp2(var, inMark, inmarkValue, inLocalList) else inLocalList;
+  for var in inInputVars loop
+    arrayElement := arrayGet(inUsed, var);
+    if intEq(1, arrayElement) then
+      arrayElement := arrayGet(inMark, var);
+      if not intEq(inmarkValue, arrayElement) then
+        arrayUpdate(inMark, var, inmarkValue);
+        outLocalList := var::outLocalList;
+      end if;
+    end if;
 
-        varSparse = arrayGet(invarSparse, var);
-        localList = List.fold2(varSparse, getSparsePatternHelp2, inMark, inmarkValue, localList);
-        localList =  getSparsePatternHelp(rest, invarSparse, inMark, inUsed, inmarkValue, localList);
-      then localList;
-  end match;
+    varSparse := arrayGet(invarSparse, var);
+    for v in varSparse loop
+      arrayElement := arrayGet(inMark, v);
+      if not intEq(inmarkValue, arrayElement) then
+        arrayUpdate(inMark, v, inmarkValue);
+        outLocalList := v::outLocalList;
+      end if;
+    end for;
+  end for;
 end getSparsePatternHelp;
-
-protected function getSparsePatternHelp2
-  input Integer inInputVar;
-  input array<Integer> inMark;
-  input Integer inmarkValue;
-  input list<Integer> inLocalList;
-  output list<Integer> outLocalList;
-algorithm
-  outLocalList := matchcontinue(inInputVar, inMark, inmarkValue, inLocalList)
-    local
-      Integer arrayElement;
-    case (_,_,_,_)
-      equation
-        arrayElement = arrayGet(inMark, inInputVar);
-        false  = intEq(inmarkValue, arrayElement);
-        arrayUpdate(inMark, inInputVar, inmarkValue);
-      then inInputVar::inLocalList;
-   else
-      then inLocalList;
-  end matchcontinue;
-end getSparsePatternHelp2;
 
 public function transposeSparsePattern
   input list<list<Integer>> inSparsePattern;
