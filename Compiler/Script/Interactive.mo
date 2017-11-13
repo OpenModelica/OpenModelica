@@ -2474,12 +2474,12 @@ protected function renameComponentInExp
 "author: x02lucpo
   helper function to renameComponentVisitor"
   input Absyn.Exp inExp1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
+  input Absyn.ComponentRef oldPrefix;
+  input Absyn.ComponentRef newPrefix;
   output Absyn.Exp outExp;
 algorithm
   outExp:=
-  matchcontinue (inExp1,inComponentRef2,inComponentRef3)
+  matchcontinue (inExp1, oldPrefix, newPrefix)
     local
       Integer i;
       Real r;
@@ -2538,10 +2538,10 @@ algorithm
         exp_tuple_list_1 = renameComponentInExpTupleList(exp_tuple_list, old_comp, new_comp);
       then
         Absyn.IFEXP(exp1_1,exp2_1,exp3_1,exp_tuple_list_1);
-    case (Absyn.CALL(function_ = cref,functionArgs = func_args),_,_)
+    case (Absyn.CALL(function_ = cref,functionArgs = func_args), old_comp, new_comp)
       equation
-        print(
-          "-rename_component_in_exp for Absyn.CALL not implemented yet\n");
+        cref = replaceStartInComponentRef(cref, old_comp, new_comp);
+        func_args = renameComponentInFunctionArgs(func_args, old_comp, new_comp);
       then
         Absyn.CALL(cref,func_args);
     case (Absyn.ARRAY(arrayExp = exp_list),old_comp,new_comp)
