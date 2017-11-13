@@ -19,7 +19,6 @@ BindingArray4.mo \
 BindingArray6.mo \
 bindings1.mo \
 bindings4.mo \
-bindings5.mo \
 bindings7.mo \
 BooleanDim.mo \
 BuiltinAttribute1.mo \
@@ -131,6 +130,8 @@ DuplicateMod2.mo \
 DuplicateMod3.mo \
 DuplicateMod4.mo \
 DuplicateMod5.mo \
+Each1.mo \
+Each2.mo \
 EncapsulatingInst1.mo \
 End1.mo \
 EndInvalid1.mo \
