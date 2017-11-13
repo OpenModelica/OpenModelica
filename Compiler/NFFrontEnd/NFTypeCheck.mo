@@ -375,6 +375,7 @@ algorithm
     s2 := "' " + ty1_str + op_str + ty2_str + " '";
 
     Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1, s2, msg_str}, Absyn.dummyInfo);
+    fail();
   end try;
 end checkLogicalBinaryOperation;
 
@@ -411,6 +412,7 @@ algorithm
     s1 := "' " + e1_str + op_str  + " '";
 
     Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1, msg_str}, Absyn.dummyInfo);
+    fail();
   end try;
 end checkLogicalUnaryOperation;
 
@@ -461,6 +463,7 @@ algorithm
     s2 := "' " + ty1_str + op_str + ty2_str + " '";
 
     Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1, s2, msg_str}, Absyn.dummyInfo);
+    fail();
   end try;
 end checkRelationOperation;
 
@@ -2170,6 +2173,7 @@ algorithm
   s1 := "' " + e1Str + Operator.symbol(inOp) + e2Str + " '";
   s2 := "' " + t1Str + Operator.symbol(inOp) + t2Str + " '";
   Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s1,s2,suggestion}, Absyn.dummyInfo);
+  fail();
 end binaryArrayOpError;
 
 //public function getCrefType
