@@ -664,7 +664,7 @@ function arrayEmpty<A> "O(1)"
   input array<A> arr;
   output Boolean isEmpty;
 algorithm
-  isEmpty := arrayLength(str) == 0;
+  isEmpty := arrayLength(arr) == 0;
   annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
 end arrayEmpty;
 

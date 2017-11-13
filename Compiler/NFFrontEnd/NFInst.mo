@@ -971,7 +971,6 @@ algorithm
         checkOuterComponentMod(comp_mod, comp, comp_node);
 
         dims := list(Dimension.RAW_DIM(d) for d in def.attributes.arrayDims);
-        Modifier.checkEach(comp_mod, listEmpty(dims), InstNode.name(comp_node));
         binding := Modifier.binding(comp_mod);
         comp_mod := Modifier.propagate(comp_mod);
         condition := Binding.fromAbsyn(def.condition, SCode.Each.NOT_EACH(), parent, info);
@@ -984,6 +983,9 @@ algorithm
 
         // Instantiate the type of the component.
         (cls, cls_attr) := instTypeSpec(def.typeSpec, comp_mod, attr, scope, comp_node, def.info);
+
+        Modifier.checkEach(comp_mod, listEmpty(dims) and
+          not Class.hasDimensions(InstNode.getClass(cls)), InstNode.name(comp_node));
 
         if not referenceEq(attr, cls_attr) then
           comp_node := InstNode.componentApply(comp_node, Component.setAttributes, cls_attr);

@@ -313,6 +313,17 @@ uniontype Class
     end match;
   end getDimensions;
 
+  function hasDimensions
+    input Class cls;
+    output Boolean hasDims;
+  algorithm
+    hasDims := match cls
+      case DERIVED_CLASS()
+        then not listEmpty(cls.dims) or hasDimensions(InstNode.getClass(cls.baseClass));
+      else false;
+    end match;
+  end hasDimensions;
+
   function getAttributes
     input Class cls;
     output Component.Attributes attr;

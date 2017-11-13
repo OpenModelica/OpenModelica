@@ -435,7 +435,7 @@ public
           Error.addSourceMessage(Error.EACH_ON_NON_ARRAY,
             {elementName}, mod.info);
         then
-          fail();
+          ();
 
       else ();
     end match;
