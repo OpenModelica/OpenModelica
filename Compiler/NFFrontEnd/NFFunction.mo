@@ -794,10 +794,18 @@ protected
     InnerOuter io;
     Visibility vis;
   algorithm
-    Component.Attributes.ATTRIBUTES(
+    _ := match Component.getAttributes(InstNode.component(component))
+      case Component.Attributes.DEFAULT()
+        algorithm
+          direction := Direction.NONE;
+          cty := ConnectorType.POTENTIAL;
+          io := InnerOuter.NOT_INNER_OUTER;
+        then ();
+      case Component.Attributes.ATTRIBUTES(
       connectorType = cty,
       direction = direction,
-      innerOuter = io) := Component.getAttributes(InstNode.component(component));
+      innerOuter = io) then ();
+    end match;
     vis := InstNode.visibility(component);
 
     // Function components may not be connectors.
