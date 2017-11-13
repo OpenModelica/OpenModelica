@@ -329,9 +329,7 @@ algorithm
     case (cache,ih,cdecls as _::_,path)
       equation
         (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
-        if Flags.isSet(Flags.OLD_FE_UNITCHECK) then
-            NFUnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
-        end if;
+        NFUnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
       then
         (outCache,outEnv,outIH,outDAElist);
 

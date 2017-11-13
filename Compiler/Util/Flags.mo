@@ -508,7 +508,7 @@ constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(166, "partitionInitiali
   Util.gettext("This flag controls if partitioning is applied to the initialization system."));
 constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(167, "evalParameterDump", false,
   Util.gettext("Dumps information for evaluating parameters."));
-constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(168, "frontEndUnitCheck", true,
+constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(168, "frontEndUnitCheck", false,
   Util.gettext("Checks the consistency of units in equation."));
 constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(169, "disableColoring", false,
   Util.gettext("Disables coloring algorithm while spasity detection."));

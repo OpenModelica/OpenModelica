@@ -52,7 +52,7 @@ protected
   NFHashTableStringToUnit.HashTable HtS2U;
   NFHashTableUnitToString.HashTable HtU2S;
 algorithm
-  if not Flags.isSet(Flags.NF_UNITCHECK) then
+  if not (Flags.isSet(Flags.NF_UNITCHECK) or Flags.isSet(Flags.OLD_FE_UNITCHECK)) then
     return;
   end if;
   try
