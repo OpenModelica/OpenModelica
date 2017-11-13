@@ -313,6 +313,8 @@ uniontype Call
   algorithm
 
     (call, ty, variability) := match callExp
+      case Expression.CALL(UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="pre"))))
+        then typePreCall(callExp.call, info);
       case Expression.CALL(UNTYPED_CALL()) then typeNormalCall(callExp.call, info);
       case Expression.CALL(UNTYPED_MAP_CALL()) then typeMapIteratorCall(callExp.call, info);
     end match;
@@ -408,7 +410,7 @@ uniontype Call
 
           // Type the arguments.
           argtycall := typeArgs(call,info);
-          // Match the arguments with the expeted ones.
+          // Match the arguments with the expected ones.
           (fn,tyArgs) := matchFunctions(argtycall,info);
 
           args := list(Util.tuple31(a) for a in tyArgs);
@@ -439,6 +441,80 @@ uniontype Call
           fail();
     end match;
   end typeNormalCall;
+
+  function typePreCall
+    input output Call call;
+    input SourceInfo info;
+          output Type ty;
+          output Variability variability;
+  protected
+    Call argtycall;
+    InstNode fn_node;
+    list<Function> fnl;
+    Boolean fn_typed, special;
+    Function fn;
+    Expression e;
+    list<Type> arg_ty;
+    list<Variability> arg_var;
+    CallAttributes ca;
+    list<TypedArg> tyArgs;
+    list<TypedNamedArg> nargs;
+  algorithm
+    (call , ty, variability) := match call
+      case UNTYPED_CALL(ref = ComponentRef.CREF(node = fn_node))
+        algorithm
+          // Fetch the cached function(s).
+          CachedData.FUNCTION({fn}, fn_typed, special) := InstNode.getFuncCache(fn_node);
+
+          // Type the function(s) if not already done.
+          if not fn_typed then
+            fn := Function.typeFunction(fn);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION({fn}, true, special));
+          end if;
+
+          // Type the arguments.
+          ARG_TYPED_CALL(arguments=tyArgs, named_args=nargs) := typeArgs(call,info);
+          if not listEmpty(nargs) or listLength(tyArgs) <> 1 then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "pre(<T>) => <T>"}, info);
+          end if;
+
+          {(e,ty,variability)} := tyArgs;
+
+          _ := match e
+            case Expression.CREF() then ();
+            else
+              algorithm
+                Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "pre(variable) => <T>"}, info);
+              then fail();
+          end match;
+
+          // TODO: Allow record components? Arrays?
+          if not Type.isBasic(ty) then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "pre(basicType)"}, info);
+            fail();
+          end if;
+
+          // TODO: Check if we are in function context?
+
+          ca := CallAttributes.CALL_ATTR(
+            ty,
+            Type.isTuple(ty),
+            Function.isBuiltin(fn),
+            Function.isImpure(fn),
+            Function.isFunctionPointer(fn),
+            Function.inlineBuiltin(fn),
+            DAE.NO_TAIL());
+
+        then
+          (TYPED_CALL(fn, {e}, ca), ty, variability);
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got invalid function call expression");
+        then
+          fail();
+    end match;
+  end typePreCall;
 
   function typeArgs
     input output Call call;

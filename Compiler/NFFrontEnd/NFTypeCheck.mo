@@ -772,7 +772,7 @@ algorithm
           {N2,M} := Type.arrayDims(inType2);
           if (not isValidMatrixMultiplyDims(N1,N2)) then
             binaryArrayOpError(inExp1,inType1,inExp2,inType2,inOp,
-            "\n: Dimensions error in Vecto Matrix multiplication.");
+            "\n: Dimensions error in Vector Matrix multiplication.");
             fail();
           else
             ty1 := Type.elementType(inType1);

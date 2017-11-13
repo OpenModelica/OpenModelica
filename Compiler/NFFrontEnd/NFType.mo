@@ -259,6 +259,22 @@ public
     end match;
   end isScalarArray;
 
+  function isBasic
+    input Type ty;
+    output Boolean isNumeric;
+  algorithm
+    isNumeric := match ty
+      case REAL() then true;
+      case INTEGER() then true;
+      case BOOLEAN() then true;
+      case STRING() then true;
+      case ENUMERATION() then true;
+      case CLOCK() then true;
+      case FUNCTION() then isBasic(ty.resultType);
+      else false;
+    end match;
+  end isBasic;
+
   function isBasicNumeric
     input Type ty;
     output Boolean isNumeric;

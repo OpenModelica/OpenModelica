@@ -704,6 +704,7 @@ uniontype Function
     else
       special := match fn.path
         case Absyn.IDENT(name = "size") then true;
+        case Absyn.IDENT(name = "pre") then true;
         else false;
       end match;
     end if;
