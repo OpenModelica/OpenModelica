@@ -735,8 +735,6 @@ public constant Message RAGGED_DIMENSION = MESSAGE(302, TRANSLATION(), ERROR(),
   Util.gettext("Ragged dimensions are not yet supported (from dimension '%s')"));
 public constant Message INVALID_TYPENAME_USE = MESSAGE(303, TRANSLATION(), ERROR(),
   Util.gettext("Type name '%s' is not allowed in this context."));
-public constant Message FOUND_NON_INNER = MESSAGE(304, TRANSLATION(), WARNING(),
-  Util.gettext("Ignoring non-inner %s when looking for inner."));
 public constant Message FOUND_WRONG_INNER_ELEMENT = MESSAGE(305, TRANSLATION(), ERROR(),
   Util.gettext("Found inner %s %s instead of expected %s."));
 public constant Message FOUND_OTHER_BASECLASS = MESSAGE(306, TRANSLATION(), ERROR(),

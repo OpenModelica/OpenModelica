@@ -779,6 +779,12 @@ protected
         then
           ();
 
+      case Class.DERIVED_CLASS()
+        algorithm
+          (inputs, outputs, locals) := collectParams(cls.baseClass);
+        then
+          ();
+
       else
         algorithm
           assert(false, getInstanceName() + " got non-instantiated function");

@@ -248,16 +248,8 @@ algorithm
     try
       // Check if we have an element with the same name as the outer node in this scope.
       innerNode := InstNode.resolveOuter(Class.lookupElement(name, InstNode.getClass(cur_scope)));
-
-      if InstNode.isInner(innerNode) then
-        // Found an inner node, return it.
-        return;
-      else
-        // Found a node that's not inner, give a warning and continue looking.
-        Error.addMultiSourceMessage(Error.FOUND_NON_INNER,
-          {name}, {InstNode.info(outerNode), InstNode.info(innerNode)});
-        fail();
-      end if;
+      true := InstNode.isInner(innerNode);
+      return;
     else
       // Continue looking in the instance parent's scope.
       prev_scope := cur_scope;
