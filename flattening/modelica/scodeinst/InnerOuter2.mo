@@ -61,21 +61,4 @@ end I;
 //   Real a.b.TI;
 //   Real a.b.c.TI;
 // end I;
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:16:7-16:14:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:20:5-20:12:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:24:3-24:16:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:24:3-24:16:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:35:7-35:14:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:16:7-16:14:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:20:5-20:12:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:24:3-24:16:writable] Warning: Ignoring non-inner TI when looking for inner.
-// [flattening/modelica/scodeinst/InnerOuter2.mo:13:9-13:22:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuter2.mo:35:7-35:14:writable] Warning: Ignoring non-inner TI when looking for inner.
-//
 // endResult
