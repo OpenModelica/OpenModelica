@@ -738,7 +738,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   #      OMCompiler/SimulationRuntime/cpp/Makefile
   #  - rebuild omc to add the new platform
   #  - invoke the omc commands
-  #      setCommandLineOptions("+simCodeTarget=Cpp");
+  #      setCommandLineOptions("--simCodeTarget=Cpp");
   #      buildModelFMU(MyModel, platforms={"i686-w64-mingw32"});
   #  - alternatively call this Makefile with
   #      make TARGET_TRIPLET=i686-w64-mingw32 -f <%fileNamePrefix%>_FMU.makefile

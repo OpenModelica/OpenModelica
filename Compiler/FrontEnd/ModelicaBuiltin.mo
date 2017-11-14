@@ -1510,7 +1510,7 @@ function setPreOptModules "example input: removeFinalParameters,removeSimpleEqua
   input String modules;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+preOptModules=" + modules);
+  success := setCommandLineOptions("--preOptModules=" + modules);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPreOptModules;
 
@@ -1518,7 +1518,7 @@ function setCheapMatchingAlgorithm "example input: 3"
   input Integer matchingAlgorithm;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+cheapmatchingAlgorithm=" + String(matchingAlgorithm));
+  success := setCommandLineOptions("--cheapmatchingAlgorithm=" + String(matchingAlgorithm));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setCheapMatchingAlgorithm;
 
@@ -1537,7 +1537,7 @@ function setMatchingAlgorithm "example input: omc"
   input String matchingAlgorithm;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+matchingAlgorithm=" + matchingAlgorithm);
+  success := setCommandLineOptions("--matchingAlgorithm=" + matchingAlgorithm);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setMatchingAlgorithm;
 
@@ -1556,7 +1556,7 @@ function setIndexReductionMethod "example input: dynamicStateSelection"
   input String method;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+indexReductionMethod=" + method);
+  success := setCommandLineOptions("--indexReductionMethod=" + method);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setIndexReductionMethod;
 
@@ -1564,7 +1564,7 @@ function setPostOptModules "example input: lateInline,inlineArrayEqn,removeSimpl
   input String modules;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+postOptModules=" + modules);
+  success := setCommandLineOptions("--postOptModules=" + modules);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPostOptModules;
 
@@ -1583,7 +1583,7 @@ function setTearingMethod "example input: omcTearing"
   input String tearingMethod;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+tearingMethod=" + tearingMethod);
+  success := setCommandLineOptions("--tearingMethod=" + tearingMethod);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setTearingMethod;
 
@@ -1866,7 +1866,7 @@ function setAnnotationVersion "Sets the annotation version."
   input String annotationVersion;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+annotationVersion=" + annotationVersion);
+  success := setCommandLineOptions("--annotationVersion=" + annotationVersion);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setAnnotationVersion;
 
@@ -1893,7 +1893,7 @@ function setVectorizationLimit
   input Integer vectorizationLimit;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+v=" + String(vectorizationLimit));
+  success := setCommandLineOptions("-v=" + String(vectorizationLimit));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setVectorizationLimit;
 
@@ -1909,7 +1909,7 @@ public function setDefaultOpenCLDevice
   input Integer defdevid;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+o=" + String(defdevid));
+  success := setCommandLineOptions("-o=" + String(defdevid));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDefaultOpenCLDevice;
 
@@ -1930,7 +1930,7 @@ function setOrderConnections "Sets the orderConnection flag."
   input Boolean orderConnections;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+orderConnections=" + String(orderConnections));
+  success := setCommandLineOptions("--orderConnections=" + String(orderConnections));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setOrderConnections;
 
@@ -1944,7 +1944,7 @@ function setLanguageStandard "Sets the Modelica Language Standard."
   input String inVersion;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+std=" + inVersion);
+  success := setCommandLineOptions("--std=" + inVersion);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setLanguageStandard;
 

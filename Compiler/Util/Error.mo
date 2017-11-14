@@ -911,6 +911,8 @@ public constant Message VAR_NO_REMAINING_EQN = MESSAGE(582, SYMBOLIC(), WARNING(
   Util.gettext("Variable %s does not have any remaining equation to be solved in.\n  The original equations were:%s"));
 public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE(582, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
+public constant Message MIXED_DETERMINED = MESSAGE(583, SYMBOLIC(), ERROR(),
+  Util.gettext("The given system is mixed-determined.   [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\"."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

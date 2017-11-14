@@ -1391,7 +1391,7 @@ algorithm
     end if;
     //print("index-" + intString(index) + " ende\n");
   end for;
-  Error.addCompilerError("The given system is mixed-determined.   [index > " + intString(maxMixedDeterminedIndex) + "]\nPlease checkout the option \"+maxMixedDeterminedIndex\".");
+  Error.addMessage(Error.MIXED_DETERMINED, {intString(maxMixedDeterminedIndex)});
   fail();
 end fixInitialSystem;
 
