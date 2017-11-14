@@ -677,7 +677,7 @@ algorithm
         unrollForLoop(eq.iterator, body, elements);
 
     case Equation.IF()
-      then convertIfEquation(eq.branches, eq.info, isInitial = false) :: elements;
+      then convertIfEquation(eq.branches, eq.info, isInitial = true) :: elements;
 
     case Equation.ASSERT()
       algorithm

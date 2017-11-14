@@ -241,6 +241,17 @@ algorithm
         case Operator.GREATEREQ() then Expression.BOOLEAN(r1 >= r2);
       end match;
 
+    case Expression.RELATION(exp1 = Expression.ENUM_LITERAL(index = i1),
+                             exp2 = Expression.ENUM_LITERAL(index = i2))
+      then Expression.BOOLEAN(match exp.operator
+        case Operator.LESS()      then i1 < i2;
+        case Operator.LESSEQ()    then i1 <= i2;
+        case Operator.GREATER()   then i1 > i2;
+        case Operator.GREATEREQ() then i1 >= i2;
+        case Operator.EQUAL()     then i1 == i2;
+        case Operator.NEQUAL()    then i1 <> i2;
+      end match);
+
     case Expression.IF(condition=Expression.BOOLEAN(value=b1))
       then if b1 then exp.trueBranch else exp.falseBranch;
 

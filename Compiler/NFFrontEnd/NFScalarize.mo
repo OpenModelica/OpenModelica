@@ -190,8 +190,11 @@ algorithm
     end if;
   end for;
 
-  // Add the scalarized if equation to the list of equations if we got this far.
-  equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
+  // Add the scalarized if equation to the list of equations if we got this far,
+  // and there are any branches still remaining.
+  if not listEmpty(bl) then
+    equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
+  end if;
 end scalarizeIfEquation;
 
 function scalarizeBranch
