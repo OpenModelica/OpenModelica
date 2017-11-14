@@ -1653,7 +1653,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if (iter>=maxTries)
     {
       if (solverData->initHomotopy)
-        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lamda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.", iter);
+        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.", iter);
       else
         debugInt(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: iter = ", iter);
       debugString(LOG_NLS_HOMOTOPY, "======================================================");
@@ -1787,7 +1787,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
     solverData->tau = tau;
     printHomotopyPredictorStep(LOG_NLS_HOMOTOPY, solverData);
+
     /* Corrector step: Newton iteration! */
+    debugString(LOG_NLS_HOMOTOPY, "Newton iteration for corrector step begins!");
     for(j=0;j<maxiter;j++)
     {
       if (vec2Norm(solverData->n, solverData->hvec)<hEps || vec2Norm(solverData->n, solverData->hvecScaled)<hEps)
@@ -1864,6 +1866,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       debugDouble(LOG_NLS_HOMOTOPY, "hEps           =", hEps);
 
     }
+    debugString(LOG_NLS_HOMOTOPY, "Newton iteration for corrector step finished!");
 
     if (!assert)
     {
@@ -1985,7 +1988,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   int numberOfFunctionEvaluationsOld = solverData->numberOfFunctionEvaluations;
   solverData->casualTearingSet = systemData->strictTearingFunctionCall != NULL;
   int constraintViolated;
-  solverData->initHomotopy = data->callback->useHomotopy == 2 && systemData->homotopySupport;
+  solverData->initHomotopy = (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3) && systemData->homotopySupport;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));

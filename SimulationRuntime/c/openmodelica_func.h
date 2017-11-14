@@ -145,9 +145,10 @@ int (*functionInitialEquations)(DATA *data, threadData_t*);
 
 /*! \var useHomotopy
  *
- * 0: local homotopy approach
- * 1: global homotopy approach
- * 2: new global homotopy approach
+ * 0: local homotopy approach (equidistant lambda steps)
+ * 1: global homotopy approach (equidistant lambda steps)
+ * 2: new global homotopy approach (adaptive lambda steps)
+ * 3: new local homotopy approach (adaptive lambda steps)
  */
 const int useHomotopy;
 

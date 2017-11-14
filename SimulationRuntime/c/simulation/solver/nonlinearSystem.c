@@ -426,7 +426,7 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 #endif
 
     /* allocate solver data */
-    if(data->callback->useHomotopy == 2 && nonlinsys[i].homotopySupport)
+    if((data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3) && nonlinsys[i].homotopySupport)
       allocateHomotopyData(size-1, &nonlinsys[i].solverData);
     else{
       switch(data->simulationInfo->nlsMethod)
@@ -530,7 +530,7 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
     }
 #endif
     /* free solver data */
-    if(data->callback->useHomotopy == 2 && nonlinsys[i].homotopySupport)
+    if((data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3) && nonlinsys[i].homotopySupport)
       freeHomotopyData(&nonlinsys[i].solverData);
     else{
       switch(data->simulationInfo->nlsMethod)
@@ -793,7 +793,8 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   int casualTearingSet = nonlinsys->strictTearingFunctionCall != NULL;
   int step;
-  int lambda_steps = 1;
+  int equidistantHomotopy = 0;
+  int solveWithHomotopySolver = 0;
   int j;
   char buffer[4096];
   FILE *pFile = NULL;
@@ -834,32 +835,42 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_NONLINEARSOLVER;
 
-  if(data->simulationInfo->initial && nonlinsys->homotopySupport && (data->callback->useHomotopy == 0) && init_lambda_steps > 1)
-    lambda_steps = init_lambda_steps;
+  equidistantHomotopy = data->simulationInfo->initial
+                        && nonlinsys->homotopySupport
+                        && (data->callback->useHomotopy == 0 && init_lambda_steps > 1);
+
+  solveWithHomotopySolver = data->simulationInfo->initial
+                            && nonlinsys->homotopySupport
+                            && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3);
 
   nonlinsys->solved = 0;
-  if (lambda_steps == 1 || !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
-
-    if(data->callback->useHomotopy == 0)
-      data->simulationInfo->lambda = 1.0;
-
-    if (lambda_steps > 1)
-      infoStreamPrint(LOG_INIT, 0, "Try to solve initial system %d without homotopy first.", sysNumber);
-
-    /* SOLVE!
-     If the new global homotopy approach is activated and the component contains the homotopy operator
+  /* If the adaptive local/global homotopy approach is activated and the component contains the homotopy operator
      use the HOMOTOPY SOLVER, otherwise use the selected solver */
-    if(data->callback->useHomotopy == 2 && nonlinsys->homotopySupport) {
-      nonlinsys->solved = solveHomotopy(data, threadData, sysNumber);
-    } else {
+  if (solveWithHomotopySolver) {
+    if (data->callback->useHomotopy == 3)
+      infoStreamPrint(LOG_INIT, 0, "Local homotopy with adaptive step size started for system %d.", sysNumber);
+    data->simulationInfo->lambda = 0.0;
+    /* SOLVE! */
+    nonlinsys->solved = solveHomotopy(data, threadData, sysNumber);
+  }
+  else {
+    if (!(equidistantHomotopy && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])) {
+      if (equidistantHomotopy)
+        infoStreamPrint(LOG_INIT, 0, "Try to solve initial system %d without homotopy first.", sysNumber);
+
+      data->simulationInfo->lambda = 1.0;
+      /* SOLVE! */
       nonlinsys->solved = solveNLS(data, threadData, sysNumber);
     }
   }
 
-  if (lambda_steps > 1 && !nonlinsys->solved) {
-    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
-      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve initial system %d without homotopy method. The homotopy method is used now.", sysNumber);
-    }
+  /* If equidistant local homotopy is activated and trying without homotopy failed or is not wanted,
+     use EQUIDISTANT LOCAL HOMOTOPY */
+  if (!nonlinsys->solved && equidistantHomotopy) {
+    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
+    else
+      infoStreamPrint(LOG_INIT, 0, "Local homotopy with equidistant step size started for system %d.", sysNumber);
 #if !defined(OMC_NO_FILESYSTEM)
     const char sep[] = ",";
     if(ACTIVE_STREAM(LOG_INIT))
@@ -874,15 +885,16 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     }
 #endif
 
-    for(step=0; step<lambda_steps; ++step)
+    for(step=0; step<init_lambda_steps; ++step)
     {
-      data->simulationInfo->lambda = ((double)step)/(lambda_steps-1);
+      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
 
       if (data->simulationInfo->lambda > 1.0) {
         data->simulationInfo->lambda = 1.0;
       }
 
       infoStreamPrint(LOG_INIT, 0, "[system %d] homotopy parameter lambda = %g", sysNumber, data->simulationInfo->lambda);
+      /* SOLVE! */
       nonlinsys->solved = solveNLS(data, threadData, sysNumber);
       if (!nonlinsys->solved) break;
 
@@ -899,7 +911,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     }
 
 #if !defined(OMC_NO_FILESYSTEM)
-    if(lambda_steps > 1 && ACTIVE_STREAM(LOG_INIT))
+    if(ACTIVE_STREAM(LOG_INIT))
     {
       fclose(pFile);
     }

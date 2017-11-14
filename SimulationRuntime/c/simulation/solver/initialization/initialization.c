@@ -185,7 +185,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   FILE *pFile = NULL;
   long i;
   MODEL_DATA *mData = data->modelData;
-  int solveWithGlobalHomotopy = data->callback->useHomotopy == 0 || (data->callback->useHomotopy != 2 && init_lambda_steps < 2) ? 0 : 1;
+  int solveWithGlobalHomotopy = (data->callback->useHomotopy == 1 && init_lambda_steps > 1) || data->callback->useHomotopy == 2;
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -197,8 +197,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
   /* If there is no homotopy in the model or local homotopy is activated
      or homotopy is disabled by runtime flag '-ils=<lambda_steps>',
-     solve WITHOUT HOMOTOPY. */
+     solve WITHOUT HOMOTOPY or LOCAL HOMOTOPY. */
   if (!solveWithGlobalHomotopy){
+    if (data->callback->useHomotopy == 3 && !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive local approach yet.");
     data->simulationInfo->lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
 
@@ -247,6 +249,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
 #endif
 
+    infoStreamPrint(LOG_INIT, 0, "Global homotopy with equidistant step size started.");
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
     for(step=0; step<init_lambda_steps; ++step)
     {
@@ -288,6 +291,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
      use NEW GLOBAL HOMOTOPY APPROACH. */
   if (data->callback->useHomotopy == 2 && solveWithGlobalHomotopy)
   {
+    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach yet.");
+
+    infoStreamPrint(LOG_INIT, 0, "Global homotopy with adaptive step size started.");
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
 
     // Solve lambda0-DAE
