@@ -237,6 +237,8 @@ FunctionNoOutput1.mo \
 FunctionStreamPrefix.mo \
 IfEquation1.mo \
 IfEquation2.mo \
+IfEquation3.mo \
+IfEquation4.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
