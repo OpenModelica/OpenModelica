@@ -59,6 +59,7 @@ import NFComponent.Component;
 import NFMod.Modifier;
 import Sections = NFSections;
 import Prefixes = NFPrefixes;
+import NFPrefixes.Visibility;
 import RangeIterator = NFRangeIterator;
 import Subscript = NFSubscript;
 import Type = NFType;
@@ -126,7 +127,7 @@ algorithm
   sections := Sections.EMPTY();
 
   (comps, sections) :=
-    flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), {}, sections);
+    flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), Visibility.PUBLIC, {}, sections);
   comps := listReverseInPlace(comps);
 
   elems := match sections
@@ -151,6 +152,7 @@ protected
 function flattenClass
   input Class cls;
   input ComponentRef prefix;
+  input Visibility visibility;
   input output list<tuple<ComponentRef, Binding>> comps;
   input output Sections sections;
 protected
@@ -160,7 +162,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          (comps, sections) := flattenComponent(c, prefix, comps, sections);
+          (comps, sections) := flattenComponent(c, prefix, visibility, comps, sections);
         end for;
 
         sections := flattenSections(cls.sections, prefix, sections);
@@ -181,6 +183,7 @@ end flattenClass;
 function flattenComponent
   input InstNode component;
   input ComponentRef prefix;
+  input Visibility visibility;
   input output list<tuple<ComponentRef, Binding>> comps;
   input output Sections sections;
 protected
@@ -191,6 +194,7 @@ protected
   Binding binding, condition;
   list<Dimension> dims;
   Class cls;
+  Visibility vis;
 algorithm
   // Remove components that are only outer.
   if InstNode.isOnlyOuter(component) then
@@ -208,7 +212,6 @@ algorithm
           return;
         end if;
 
-        new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
         cls := InstNode.getClass(c.classInst);
 
         () := match cls
@@ -216,6 +219,11 @@ algorithm
           // along with its binding.
           case Class.INSTANCED_BUILTIN()
             algorithm
+              if visibility == Visibility.PROTECTED then
+                comp_node := InstNode.protectComponent(comp_node);
+              end if;
+
+              new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
               binding := flattenBinding(c.binding, prefix);
 
               if Type.isArray(ty) and Binding.isBound(binding) and Component.isVar(c) then
@@ -233,12 +241,14 @@ algorithm
           // directly if it's a scalar or vectorize it if it's an array.
           else
             algorithm
+              vis := if InstNode.isProtected(comp_node) then Visibility.PROTECTED else visibility;
               dims := Type.arrayDims(ty);
+              new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
 
               if listEmpty(dims) then
-                (comps, sections) := flattenClass(cls, new_pre, comps, sections);
+                (comps, sections) := flattenClass(cls, new_pre, vis, comps, sections);
               else
-                (comps, sections) := flattenArray(cls, dims, new_pre, comps, sections);
+                (comps, sections) := flattenArray(cls, dims, new_pre, vis, comps, sections);
               end if;
             then
               ();
@@ -259,6 +269,7 @@ function flattenArray
   input Class cls;
   input list<Dimension> dimensions;
   input ComponentRef prefix;
+  input Visibility visibility;
   input output list<tuple<ComponentRef, Binding>> comps;
   input output Sections sections;
   input list<Subscript> subscripts = {};
@@ -271,14 +282,14 @@ protected
 algorithm
   if listEmpty(dimensions) then
     sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
-    (comps, sections) := flattenClass(cls, sub_pre, comps, sections);
+    (comps, sections) := flattenClass(cls, sub_pre, visibility, comps, sections);
   else
     dim :: rest_dims := dimensions;
     range_iter := RangeIterator.fromDim(dim);
 
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
-      (comps, sections) := flattenArray(cls, rest_dims, prefix, comps, sections,
+      (comps, sections) := flattenArray(cls, rest_dims, prefix, visibility, comps, sections,
         Subscript.INDEX(sub_exp) :: subscripts);
     end while;
   end if;
