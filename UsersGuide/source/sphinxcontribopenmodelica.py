@@ -20,9 +20,9 @@ from docutils.parsers.rst import directives as rstdirectives
 import docutils.parsers.rst.directives.images
 from docutils.statemachine import ViewList
 
-from OMPython import OMCSession
+from OMPython import OMCSessionZMQ
 
-omc = OMCSession()
+omc = OMCSessionZMQ()
 omhome = omc.sendExpression("getInstallationDirectoryPath()")
 omc.sendExpression("setModelicaPath(\""+omhome+"/lib/omlibrary\")")
 omc.sendExpression('mkdir("tmp/source")')
@@ -89,7 +89,7 @@ class ExecMosDirective(directives.CodeBlock):
     erroratend = 'erroratend' in self.options or (not 'noerror' in self.options and len(self.content)==1) or 'hidden' in self.options
     try:
       if 'clear' in self.options:
-        assert(omc.ask('clear()'))
+        assert(omc.sendExpression('clear()'))
       res = []
       if 'combine-lines' in self.options:
         old = 0
@@ -106,13 +106,13 @@ class ExecMosDirective(directives.CodeBlock):
         else:
           res.append(">>> %s" % s)
         if s.strip().endswith(";"):
-          assert("" == omc.ask(str(s), parsed=False).strip())
+          assert("" == omc.sendExpression(str(s), parsed=False).strip())
         elif 'parsed' in self.options:
           res.append(fixPaths(omc.sendExpression(str(s))))
         else:
-          res.append(fixPaths(omc.ask(str(s), parsed=False)))
+          res.append(fixPaths(omc.sendExpression(str(s), parsed=False)))
         if not ('noerror' in self.options or erroratend):
-          errs = fixPaths(omc.ask('getErrorString()', parsed=False))
+          errs = fixPaths(omc.sendExpression('getErrorString()', parsed=False))
           if errs!='""':
             res.append(errs)
       # res += sys.stdout.readlines()
@@ -243,7 +243,7 @@ class OMCResetDirective(Directive):
   def run(self):
     global omc
     del(omc)
-    omc = OMCSession()
+    omc = OMCSessionZMQ()
     omc.sendExpression("setModelicaPath(\""+omhome+"/lib/omlibrary\")")
     omc.sendExpression('cd("tmp")')
     return []
