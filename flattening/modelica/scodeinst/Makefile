@@ -16,6 +16,7 @@ BindingArray1.mo \
 BindingArray2.mo \
 BindingArray3.mo \
 BindingArray4.mo \
+BindingArray5.mo \
 BindingArray6.mo \
 bindings1.mo \
 bindings4.mo \
@@ -397,7 +398,6 @@ WhenNested1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-BindingArray5.mo \
 ActualStream.mo \
 ActualStreamMinMax.mo \
 InStreamInvalidArgument1.mo \

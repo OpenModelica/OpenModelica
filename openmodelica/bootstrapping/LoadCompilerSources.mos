@@ -105,7 +105,7 @@ if true then /* Suppress output */
     prefixPath + "NFFrontEnd/NFInstUtil.mo",
     prefixPath + "NFFrontEnd/NFLookup.mo",
     prefixPath + "NFFrontEnd/NFLookupState.mo",
-    prefixPath + "NFFrontEnd/NFMod.mo",
+    prefixPath + "NFFrontEnd/NFModifier.mo",
     prefixPath + "NFFrontEnd/NFRecord.mo",
     prefixPath + "NFFrontEnd/NFStatement.mo",
     prefixPath + "NFFrontEnd/NFTypeCheck.mo",
