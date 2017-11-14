@@ -104,7 +104,7 @@ if os.path.exists('../../../.git'):
     thisreleasestr = "v%d.%d.%d" % thisrelease
     docheadcommit = r.commit('HEAD').tree['doc'].hexsha
     thissha = r.commit('HEAD').hexsha
-    semver = subprocess.check_output(["sh", "-c", "cd ../../../ && common/semver.sh"]).strip()
+    semver = subprocess.check_output(["sh", "-c", "cd ../../../ && common/semver.sh"]).decode("utf-8").strip()
     link = "`%s <https://github.com/OpenModelica/OpenModelica/commit/%s>`__ (`diff <https://github.com/OpenModelica/OpenModelica/compare/%s...%s>`__, `doc <https://github.com/OpenModelica/OpenModelica-doc/compare/%s...%s>`__)" % (semver,thissha,prevrelease,thissha,prevrelease,docheadcommit)
   releaselink = """.. only :: html or epub
 

@@ -229,7 +229,7 @@ source/openmodelica.bib: resolve-crossref.py ../bibliography/openmodelica.bib
 	python resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
 source/interface.inc: interface.mos
 	@mkdir -p tmp
-	$(OPENMODELICA_ROOT)/build/bin/omc +g=MetaModelica +d=nogen interface.mos
+	$(OPENMODELICA_ROOT)/build/bin/omc -g=MetaModelica -d=nogen interface.mos
 	mv interface.inc $@
 
 OMEDIT_ICONS_BASE=connect-mode.svg transition-mode.svg parametric-plot-window.svg plot-window.svg re-simulate.svg tlm-simulate.svg interface-data.svg simulation-parameters.svg

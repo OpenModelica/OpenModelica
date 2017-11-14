@@ -6,7 +6,10 @@ import os
 import shutil
 import traceback
 from os.path import basename
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import subprocess
 
 from sphinx.util.compat import Directive
@@ -32,15 +35,15 @@ class ExecDirective(Directive):
   def run(self):
     oldStdout, sys.stdout = sys.stdout, StringIO()
     try:
-      exec '\n'.join(self.content)
+      exec('\n'.join(self.content))
       return [nodes.paragraph(text = sys.stdout.getvalue())]
-    except Exception, e:
+    except Exception as e:
       return [nodes.error(None, nodes.paragraph(text = "Unable to execute python code at %s:%d:" % (basename(self.src), self.srcline)), nodes.paragraph(text = str(e)))]
     finally:
       sys.stdout = oldStdout
 
 def fixPaths(s):
-  return str(s).decode("utf8").replace(omhome, u"«OPENMODELICAHOME»").replace(dochome, u"«DOCHOME»").strip()
+  return str(s).replace(omhome, u"«OPENMODELICAHOME»").replace(dochome, u"«DOCHOME»").strip()
 
 def onlyNotifications():
   (nm,ne,nw) = omc.sendExpression("countMessages()")
@@ -110,7 +113,7 @@ class ExecMosDirective(directives.CodeBlock):
           res.append(fixPaths(omc.ask(str(s), parsed=False)))
         if not ('noerror' in self.options or erroratend):
           errs = fixPaths(omc.ask('getErrorString()', parsed=False))
-          if errs<>'""':
+          if errs!='""':
             res.append(errs)
       # res += sys.stdout.readlines()
       self.content = res
@@ -119,9 +122,9 @@ class ExecMosDirective(directives.CodeBlock):
       else:
         self.arguments.append('modelica')
       return ([] if 'hidden' in self.options else super(ExecMosDirective, self).run()) + (getErrorString(self.state) if erroratend else [])
-    except Exception, e:
-      s = str(e).decode("utf8") + "\n" + traceback.format_exc().decode("utf8")
-      print s
+    except Exception as e:
+      s = str(e) + "\n" + traceback.format_exc()
+      print(s)
       return [nodes.error(None, nodes.paragraph(text = "Unable to execute Modelica code"), nodes.paragraph(text = s))]
     finally:
       pass # sys.stdout = oldStdout
@@ -222,14 +225,14 @@ class OMCGnuplotDirective(Directive):
         node = docutils.nodes.paragraph()
         self.state.nested_parse(vl, 0, node)
         fig = node.children
-      except Exception, e:
-        s = str(e).decode("utf8") + "\n" + traceback.format_exc().decode("utf8")
-        print s
+      except Exception as e:
+        s = str(e) + "\n" + traceback.format_exc()
+        print(s)
         fig = [nodes.error(None, nodes.paragraph(text = "Unable to execute gnuplot-figure directive"), nodes.paragraph(text = s))]
       return cb + fig
-    except Exception, e:
-      s = str(e).decode("utf8") + "\n" + traceback.format_exc().decode("utf8")
-      print s
+    except Exception as e:
+      s = str(e) + "\n" + traceback.format_exc()
+      print(s)
       return [nodes.error(None, nodes.paragraph(text = "Unable to execute gnuplot directive"), nodes.paragraph(text = s))]
 
 class OMCResetDirective(Directive):
