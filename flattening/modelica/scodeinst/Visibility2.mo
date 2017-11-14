@@ -17,6 +17,6 @@ end Visibility2;
 // Result:
 // class Visibility2
 //   Real x = a.x;
-//   Real a.x;
+//   protected Real a.x;
 // end Visibility2;
 // endResult

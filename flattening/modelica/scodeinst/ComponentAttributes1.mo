@@ -16,7 +16,7 @@ end ComponentAttributes1;
 
 // Result:
 // class ComponentAttributes1
-//   Real a.x;
+//   protected Real a.x;
 //   protected Real a.y;
 // end ComponentAttributes1;
 // endResult
