@@ -36,7 +36,7 @@ import Binding = NFBinding;
 import NFClass.Class;
 import Dimension = NFDimension;
 import NFInstNode.InstNode;
-import NFMod.Modifier;
+import NFModifier.Modifier;
 import SCode.Element;
 import SCode;
 import Type = NFType;

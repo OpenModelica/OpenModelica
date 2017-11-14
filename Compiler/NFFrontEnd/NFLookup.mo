@@ -45,7 +45,6 @@ import NFClass.Class;
 import NFInstNode.InstNode;
 import NFLookupState.LookupState;
 import Type = NFType;
-import NFMod.Modifier;
 import ComponentRef = NFComponentRef;
 
 protected

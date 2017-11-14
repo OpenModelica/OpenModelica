@@ -49,8 +49,8 @@ import Expression = NFExpression;
 import NFClass.Class;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
-import NFMod.Modifier;
-import NFMod.ModifierScope;
+import NFModifier.Modifier;
+import NFModifier.ModifierScope;
 import Operator = NFOperator;
 import Equation = NFEquation;
 import Statement = NFStatement;
@@ -601,7 +601,7 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition.
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
+        mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
         // Merge with any outer modifications.
         mod := Modifier.merge(cls_mod, mod);
 
@@ -617,8 +617,7 @@ algorithm
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, parent = par,
-            visibility = ExtendsVisibility.PUBLIC));
+          function instExtends(attributes = attributes, parent = par, visibility = ExtendsVisibility.PUBLIC));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
@@ -628,7 +627,7 @@ algorithm
 
     case (Class.DERIVED_CLASS(), _)
       algorithm
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
+        mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
 
         attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
@@ -642,7 +641,7 @@ algorithm
 
     case (Class.PARTIAL_BUILTIN(), _)
       algorithm
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
+        mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
         mod := Modifier.merge(cls_mod, mod);
 
         type_attr := Modifier.toList(mod);
@@ -791,7 +790,7 @@ algorithm
   extendsNode := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, elem), extendsNode);
 
   // Create a modifier from the extends.
-  ext_mod := Modifier.fromElement(elem, scope);
+  ext_mod := Modifier.fromElement(elem, InstNode.level(scope) + 1, scope);
 
   () := match elem
     case SCode.EXTENDS()
@@ -866,7 +865,7 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        node := instExtends(cls.baseClass, attributes, parent, visibility = vis);
+        node := instExtends(cls.baseClass, attributes, parent, vis);
       then
         ();
 
@@ -926,7 +925,7 @@ end applyModifier;
 function instComponent
   input InstNode node   "The component node to instantiate";
   input Component.Attributes attributes "Attributes to be propagated to the component.";
-  input InstNode parent "The parent of the component, usually another component";
+  input InstNode parent "The parent node of the component";
   input InstNode scope  "The class scope containing the component";
 protected
   Component comp, inst_comp;
@@ -954,7 +953,7 @@ algorithm
 
         checkOuterComponentMod(mod, comp, comp_node);
         // Create a modifier from the original declaration.
-        comp_mod := Modifier.fromElement(def, parent);
+        comp_mod := Modifier.fromElement(def, InstNode.level(node), parent);
         // Merge it with any modifier from the redeclare.
         comp_mod := Modifier.merge(comp_mod, mod.mod);
         inst_comp := InstNode.component(mod.element);
@@ -966,14 +965,13 @@ algorithm
 
     case (_, Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(info = info)))
       algorithm
-        comp_mod := Modifier.fromElement(def, parent);
+        comp_mod := Modifier.fromElement(def, InstNode.level(node), parent);
         comp_mod := Modifier.merge(comp.modifier, comp_mod);
         checkOuterComponentMod(comp_mod, comp, comp_node);
 
         dims := list(Dimension.RAW_DIM(d) for d in def.attributes.arrayDims);
         binding := Modifier.binding(comp_mod);
-        comp_mod := Modifier.propagate(comp_mod);
-        condition := Binding.fromAbsyn(def.condition, SCode.Each.NOT_EACH(), parent, info);
+        condition := Binding.fromAbsyn(def.condition, SCode.Each.NOT_EACH(), InstNode.level(node), parent, info);
 
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes, attributes, comp_node);
@@ -1316,7 +1314,7 @@ algorithm
       algorithm
         bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.propagatedLevels, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.originLevel, binding.info);
 
     else binding;
   end match;
@@ -1690,7 +1688,7 @@ algorithm
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
-        binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), scope, info);
+        binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), 0, scope, info);
         binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
@@ -1829,7 +1827,7 @@ algorithm
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
-        binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), scope, info);
+        binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), 0, scope, info);
         binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);

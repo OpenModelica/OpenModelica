@@ -293,7 +293,7 @@ uniontype Call
     outIters := {};
     iter_scope := scope;
     for Absiter in inIters loop
-      binding := Binding.fromAbsyn(Absiter.range, SCode.NOT_EACH(), iter_scope, info);
+      binding := Binding.fromAbsyn(Absiter.range, SCode.NOT_EACH(), 0, iter_scope, info);
       binding := Inst.instBinding(binding);
       (iter_scope, iter) := Inst.addIteratorToScope(Absiter.name, binding, info, iter_scope);
       outIters := iter::outIters;
@@ -646,6 +646,7 @@ uniontype Call
   algorithm
     ty := match call
       case TYPED_CALL(attributes = CallAttributes.CALL_ATTR(ty = ty)) then ty;
+      case TYPED_MAP_CALL() then call.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;

@@ -2425,10 +2425,10 @@ algorithm
       algorithm
         comp_ty := componentType;
 
-        if binding.propagatedLevels > 0 then
+        if binding.originLevel >= 0 then
           parent := component;
 
-          for i in 1:binding.propagatedLevels loop
+          for i in 1:InstNode.level(component) - binding.originLevel loop
             parent := InstNode.parent(component);
             dims := Type.arrayDims(InstNode.getType(parent));
             comp_ty := Type.liftArrayLeftList(comp_ty, dims);
@@ -2443,7 +2443,7 @@ algorithm
              Type.toString(binding.bindingType)}, binding.info);
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.propagatedLevels, binding.info);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.originLevel, binding.info);
         end if;
       then
         ();

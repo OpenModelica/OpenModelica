@@ -82,7 +82,6 @@ public
 
     for c in Constants.listKeys(constants) loop
       binding := Component.getBinding(InstNode.component(ComponentRef.node(c)));
-      //binding := Typing.typeBinding(binding);
       comps := (c, binding) :: comps;
     end for;
 

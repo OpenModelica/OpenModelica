@@ -116,7 +116,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFInstUtil.mo",
     "../NFFrontEnd/NFLookup.mo",
     "../NFFrontEnd/NFLookupState.mo",
-    "../NFFrontEnd/NFMod.mo",
+    "../NFFrontEnd/NFModifier.mo",
     "../NFFrontEnd/NFOperator.mo",
     "../NFFrontEnd/NFPrefixes.mo",
     "../NFFrontEnd/NFRangeIterator.mo",

@@ -45,7 +45,7 @@ import Equation = NFEquation;
 import NFClass.Class;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
-import NFMod.Modifier;
+import NFModifier.Modifier;
 import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
@@ -79,7 +79,7 @@ import DAEUtil;
 import MetaModelica.Dangerous.listReverseInPlace;
 import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
-import NFMod.ModTable;
+import NFModifier.ModTable;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -431,7 +431,8 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              prop_dims := InstNode.countDimensions(InstNode.parent(component), binding.propagatedLevels);
+              prop_dims := InstNode.countDimensions(InstNode.parent(component),
+                InstNode.level(component) - binding.originLevel);
               dim := typeExpDim(binding.bindingExp, index + prop_dims, ExpOrigin.DIMENSION(), info);
             then
               dim;
@@ -439,7 +440,8 @@ algorithm
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
             algorithm
-              prop_dims := InstNode.countDimensions(InstNode.parent(component), binding.propagatedLevels);
+              prop_dims := InstNode.countDimensions(InstNode.parent(component),
+                InstNode.level(component) - binding.originLevel);
               dim := nthDimensionBoundsChecked(binding.bindingType, index + prop_dims);
             then
               dim;
@@ -565,7 +567,7 @@ algorithm
       algorithm
         (exp, ty, var) := typeExp(exp, binding.info, origin);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.propagatedLevels, binding.info);
+        Binding.TYPED_BINDING(exp, ty, var, binding.originLevel, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -714,7 +716,7 @@ algorithm
         exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding.bindingExp, binding.info));
         exp := SimplifyExp.simplifyExp(exp);
       then
-        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.propagatedLevels, binding.info);
+        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.originLevel, binding.info);
 
     else
       algorithm

@@ -32,7 +32,7 @@
 encapsulated package NFClass
 
 import NFInstNode.InstNode;
-import NFMod.Modifier;
+import NFModifier.Modifier;
 import NFStatement.Statement;
 import SCode.Element;
 import Type = NFType;

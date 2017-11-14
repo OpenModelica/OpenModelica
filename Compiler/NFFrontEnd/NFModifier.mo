@@ -30,9 +30,9 @@
  */
 
 
-encapsulated package NFMod
-" file:        NFMod.mo
-  package:     NFMod
+encapsulated package NFModifier
+" file:        NFModifier.mo
+  package:     NFModifier
   description: Modification handling for NFInst.
 
 
@@ -57,7 +57,7 @@ constant Modifier EMPTY_MOD = NOMOD();
 public
 encapsulated package ModTable
   import BaseAvlTree;
-  import NFMod.Modifier;
+  import NFModifier.Modifier;
   extends BaseAvlTree(redeclare type Key = String,
                       redeclare type Value = Modifier);
 
@@ -141,6 +141,7 @@ public
     input SCode.Mod mod;
     input String name;
     input ModifierScope modScope;
+    input Integer level;
     input InstNode scope;
     output Modifier newMod;
   algorithm
@@ -151,13 +152,15 @@ public
         Binding binding;
         SCode.Element elem;
         SCode.Mod smod;
+        Integer lvl;
 
       case SCode.NOMOD() then NOMOD();
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
+          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, level, scope, mod.info);
+          lvl := if SCode.eachBool(mod.eachPrefix) then level + 1 else level;
+          submod_lst := list((m.ident, createSubMod(m, modScope, lvl, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -168,7 +171,7 @@ public
           (elem, smod) := stripSCodeMod(elem);
         then
           REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(elem, scope),
-            create(smod, name, modScope, scope));
+            create(smod, name, modScope, level, scope));
 
     end match;
   end create;
@@ -203,6 +206,7 @@ public
 
   function fromElement
     input SCode.Element element;
+    input Integer level;
     input InstNode scope;
     output Modifier mod;
   algorithm
@@ -211,16 +215,16 @@ public
         SCode.ClassDef def;
 
       case SCode.EXTENDS()
-        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope);
+        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), level, scope);
 
       case SCode.COMPONENT()
-        then create(element.modifications, element.name, ModifierScope.COMPONENT(element.name), scope);
+        then create(element.modifications, element.name, ModifierScope.COMPONENT(element.name), level, scope);
 
       case SCode.CLASS(classDef = def as SCode.DERIVED())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), level, scope);
 
       case SCode.CLASS(classDef = def as SCode.CLASS_EXTENDS())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), level, scope);
 
       else NOMOD();
     end match;
@@ -352,51 +356,6 @@ public
     end match;
   end toList;
 
-  function propagate
-    "Saves information about how a modifier has been propagated. Since arrays are
-     not expanded during the instantiation we need to know where a binding comes
-     from, e.g:
-
-       model A
-         Real x;
-       end A;
-
-       model B
-         A a[3](x = {1, 2, 3});
-       end B;
-
-       model C
-         B b[2];
-       end C;
-
-     This results in a component b[2].a[3].x = {1, 2, 3}. Since x is a scalar we
-     need to add dimensions to it (or remove from the binding) when doing type
-     checking, so that it matches the binding. To do this we need to now how many
-     dimensions the binding has been propagated through. In this case it's been
-     propagated from B.a to A.x, and since B.a has one dimension we should add
-     that dimension to A.x to make it match the binding. The number of levels a
-     binding is propagated through is therefore saved in each binding. A binding
-     can also have the 'each' prefix, meaning that the binding should be applied
-     as it is. In that case we set the level counter to -1 and don't increment
-     it when the binding is propagated.
-
-     This function simply goes through a modifier recursively and increments the
-     level counter by 1 for all bindings in the modifier, but will not traverse
-     into submodifiers that have the 'each' prefix."
-    input output Modifier modifier;
-  algorithm
-    _ := match modifier
-      case MODIFIER()
-        algorithm
-          modifier.binding := propagateBinding(modifier.binding);
-          modifier.subModifiers := ModTable.map(modifier.subModifiers, propagateSubMod);
-        then
-          ();
-
-      else ();
-    end match;
-  end propagate;
-
   function isEach
     input Modifier mod;
     output Boolean isEach;
@@ -477,8 +436,9 @@ protected
   function createSubMod
     input SCode.SubMod subMod;
     input ModifierScope modScope;
+    input Integer level;
     input InstNode scope;
-    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope);
+    output Modifier mod = create(subMod.mod, subMod.ident, modScope, level, scope);
   end createSubMod;
 
   function checkFinalOverride
@@ -545,30 +505,7 @@ protected
 
     end match;
   end mergeLocal;
-
-  function propagateSubMod
-    input String name;
-    input output Modifier modifier;
-  algorithm
-    if not isEach(modifier) then
-      modifier := propagate(modifier);
-    end if;
-  end propagateSubMod;
-
-  function propagateBinding
-    input output Binding binding;
-  algorithm
-    _ := match binding
-      case Binding.RAW_BINDING()
-        algorithm
-          binding.propagatedLevels := binding.propagatedLevels + 1;
-        then
-          ();
-
-      else ();
-    end match;
-  end propagateBinding;
 end Modifier;
 
 annotation(__OpenModelica_Interface="frontend");
-end NFMod;
+end NFModifier;

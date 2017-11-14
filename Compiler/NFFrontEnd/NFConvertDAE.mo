@@ -44,7 +44,7 @@ import ExecStat.execStat;
 import ElementSource;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
-import NFMod.Modifier;
+import NFModifier.Modifier;
 import Expression = NFExpression;
 import NFComponent.Component;
 import Prefixes = NFPrefixes;

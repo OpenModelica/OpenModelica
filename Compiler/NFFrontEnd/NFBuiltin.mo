@@ -50,7 +50,7 @@ import NFComponent.Component;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
-import NFMod.Modifier;
+import NFModifier.Modifier;
 import Type = NFType;
 import BuiltinFuncs = NFBuiltinFuncs;
 import Pointer;
@@ -237,6 +237,7 @@ constant InstNode STATESELECT_NEVER =
       STATESELECT_NEVER_BINDING,
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
+    0,
     STATESELECT_NODE);
 
 constant ComponentRef STATESELECT_NEVER_CREF =
@@ -252,6 +253,7 @@ constant InstNode STATESELECT_AVOID =
       STATESELECT_AVOID_BINDING,
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
+    0,
     STATESELECT_NODE);
 
 constant ComponentRef STATESELECT_AVOID_CREF =
@@ -267,6 +269,7 @@ constant InstNode STATESELECT_DEFAULT =
       STATESELECT_DEFAULT_BINDING,
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
+    0,
     STATESELECT_NODE);
 
 constant ComponentRef STATESELECT_DEFAULT_CREF =
@@ -282,6 +285,7 @@ constant InstNode STATESELECT_PREFER =
       STATESELECT_PREFER_BINDING,
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
+    0,
     STATESELECT_NODE);
 
 constant ComponentRef STATESELECT_PREFER_CREF =
@@ -297,6 +301,7 @@ constant InstNode STATESELECT_ALWAYS =
       STATESELECT_ALWAYS_BINDING,
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
+    0,
     STATESELECT_NODE);
 
 constant ComponentRef STATESELECT_ALWAYS_CREF =
@@ -321,6 +326,7 @@ constant InstNode TIME =
       Binding.UNBOUND(),
       NFComponent.INPUT_ATTR,
       Absyn.dummyInfo)),
+    0,
     InstNode.EMPTY_NODE());
 
 constant ComponentRef TIME_CREF = ComponentRef.CREF(TIME, {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY());

@@ -45,7 +45,6 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFExpression.CallAttributes;
 import NFInstNode.InstNode;
-import NFMod.Modifier;
 import Type = NFType;
 import Subscript = NFSubscript;
 
@@ -83,9 +82,9 @@ algorithm
   collected := Pointer.create(false);
   con_path := Absyn.suffixPath(path,"'$ctor'");
 
-  // create a TYPED_COMPONENT here since this output "defualt constructed" record is not part
-  // the class node. So it will not be typed later by typeFunction. Insted of changing things
-  // there just handle it here.
+  // create a TYPED_COMPONENT here since this output "default constructed" record is not part
+  // of the class node. So it will not be typed later by typeFunction. Instead of changing
+  // things there just handle it here.
   out_rec := InstNode.COMPONENT_NODE("$out" + InstNode.name(node),
     Visibility.PUBLIC,
     Pointer.createImmutable(Component.TYPED_COMPONENT(
@@ -95,6 +94,7 @@ algorithm
       Binding.UNBOUND(),
       NFComponent.OUTPUT_ATTR,
       Absyn.dummyInfo)),
+    0,
     node);
 
   fn := Function.FUNCTION(con_path, node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected);

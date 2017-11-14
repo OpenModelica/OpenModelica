@@ -56,7 +56,7 @@ import NFCall.Call;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import NFComponent.Component;
-import NFMod.Modifier;
+import NFModifier.Modifier;
 import Sections = NFSections;
 import Prefixes = NFPrefixes;
 import NFPrefixes.Visibility;
@@ -224,7 +224,7 @@ algorithm
               end if;
 
               new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
-              binding := flattenBinding(c.binding, prefix);
+              binding := flattenBinding(c.binding, prefix, comp_node);
 
               if Type.isArray(ty) and Binding.isBound(binding) and Component.isVar(c) then
                 comps := (new_pre, Binding.UNBOUND()) :: comps;
@@ -298,6 +298,7 @@ end flattenArray;
 function flattenBinding
   input output Binding binding;
   input ComponentRef prefix;
+  input InstNode component;
 algorithm
   () := match binding
     local
@@ -307,8 +308,8 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
-        if binding.propagatedLevels > 0 then
-          subs := List.flatten(ComponentRef.subscriptsN(prefix, binding.propagatedLevels));
+        if binding.originLevel > 0 then
+          subs := List.flatten(ComponentRef.subscriptsN(prefix, InstNode.level(component) - binding.originLevel));
           binding.bindingExp := Expression.subscript(binding.bindingExp, subs);
         end if;
       then

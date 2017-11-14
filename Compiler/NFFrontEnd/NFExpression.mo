@@ -161,6 +161,12 @@ public
     Type ty;
   end UNBOX;
 
+  record SUBSCRIPTED_EXP
+    Expression exp;
+    list<Expression> subscripts;
+    Type ty;
+  end SUBSCRIPTED_EXP;
+
   record TUPLE_ELEMENT
     Expression tupleExp;
     Integer index;
@@ -393,6 +399,17 @@ public
         then
           compare(exp1.exp, e1);
 
+      case SUBSCRIPTED_EXP()
+        algorithm
+          SUBSCRIPTED_EXP(exp = e1, subscripts = expl) := exp2;
+          comp := compare(exp1.exp, e1);
+
+          if comp == 0 then
+            comp := compareList(exp1.subscripts, expl);
+          end if;
+        then
+          comp;
+
       case TUPLE_ELEMENT()
         algorithm
           TUPLE_ELEMENT(tupleExp = e1, index = i) := exp2;
@@ -482,6 +499,7 @@ public
       case IF() then typeOf(exp.trueBranch);
       case CAST() then exp.ty;
       case UNBOX() then exp.ty;
+      case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT() then exp.ty;
       else Type.UNKNOWN();
     end match;
@@ -564,6 +582,10 @@ public
         then
           CREF(Type.unliftArray(array.ty), cref);
 
+      case SUBSCRIPTED_EXP()
+        then SUBSCRIPTED_EXP(array.exp, listAppend(array.subscripts, {INTEGER(index)}), Type.unliftArray(array.ty));
+
+      else SUBSCRIPTED_EXP(array, {INTEGER(index)}, Type.unliftArray(typeOf(array)));
     end match;
   end arrayElement;
 
@@ -689,6 +711,7 @@ public
 
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
+      case SUBSCRIPTED_EXP() then toString(exp.exp) + "[" + stringDelimitList(list(toString(e) for e in exp.subscripts), ", ") + "]";
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
 
       else anyString(exp);
@@ -769,6 +792,9 @@ public
       case UNBOX()
         then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
+      case SUBSCRIPTED_EXP()
+        then DAE.ASUB(toDAE(exp.exp), list(toDAE(s) for s in exp.subscripts));
+
       case TUPLE_ELEMENT()
         then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
 
@@ -792,6 +818,7 @@ public
       case RANGE() then Type.dimensionCount(exp.ty);
       case SIZE(dimIndex = NONE()) then dimensionCount(exp.exp);
       case CAST() then dimensionCount(exp.exp);
+      case SUBSCRIPTED_EXP() then Type.dimensionCount(exp.ty);
       case TUPLE_ELEMENT() then Type.dimensionCount(exp.ty);
       // TODO: Add more expressions.
       else 0;
@@ -908,6 +935,9 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
 
+      case SUBSCRIPTED_EXP()
+        then SUBSCRIPTED_EXP(map(exp.exp, func), list(map(e, func) for e in exp.subscripts), exp.ty);
+
       case TUPLE_ELEMENT()
         algorithm
           e1 := map(exp.tupleExp, func);
@@ -994,6 +1024,18 @@ public
           args := list(map(arg, func) for arg in call.arguments);
         then
           Call.TYPED_CALL(call.fn, args, call.attributes);
+
+      case Call.UNTYPED_MAP_CALL()
+        algorithm
+          e := map(call.exp, func);
+        then
+          Call.UNTYPED_MAP_CALL(call.ref, e, call.iters);
+
+      case Call.TYPED_MAP_CALL()
+        algorithm
+          e := map(call.exp, func);
+        then
+          Call.TYPED_MAP_CALL(call.fn, call.ty, e, call.iters);
 
     end match;
   end mapCall;
@@ -1114,6 +1156,13 @@ public
 
       case CAST() then fold(exp.exp, func, arg);
       case UNBOX() then fold(exp.exp, func, arg);
+
+      case SUBSCRIPTED_EXP()
+        algorithm
+          result := fold(exp.exp, func, arg);
+        then
+          List.fold(exp.subscripts, func, result);
+
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
 
       else arg;
@@ -1164,6 +1213,18 @@ public
       case Call.TYPED_CALL()
         algorithm
           arg := List.fold(call.arguments, func, arg);
+        then
+          ();
+
+      case Call.UNTYPED_MAP_CALL()
+        algorithm
+          arg := fold(call.exp, func, arg);
+        then
+          ();
+
+      case Call.TYPED_MAP_CALL()
+        algorithm
+          arg := fold(call.exp, func, arg);
         then
           ();
 
@@ -1345,6 +1406,13 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
 
+      case SUBSCRIPTED_EXP()
+        algorithm
+          (e1, arg) := mapFold(exp.exp, func, arg);
+          (expl, arg) := List.map1Fold(exp.subscripts, mapFold, func, arg);
+        then
+          SUBSCRIPTED_EXP(e1, expl, exp.ty);
+
       case TUPLE_ELEMENT()
         algorithm
           (e1, arg) := mapFold(exp.tupleExp, func, arg);
@@ -1436,6 +1504,18 @@ public
           (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
         then
           Call.TYPED_CALL(call.fn, args, call.attributes);
+
+      case Call.UNTYPED_MAP_CALL()
+        algorithm
+          (e, foldArg) := mapFold(call.exp, func, foldArg);
+        then
+          Call.UNTYPED_MAP_CALL(call.ref, e, call.iters);
+
+      case Call.TYPED_MAP_CALL()
+        algorithm
+          (e, foldArg) := mapFold(call.exp, func, foldArg);
+        then
+          Call.TYPED_MAP_CALL(call.fn, call.ty, e, call.iters);
 
     end match;
   end mapFoldCall;

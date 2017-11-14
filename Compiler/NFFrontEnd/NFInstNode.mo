@@ -33,7 +33,6 @@ encapsulated package NFInstNode
 
 import NFComponent.Component;
 import NFClass.Class;
-import NFMod.Modifier;
 import SCode;
 import Absyn;
 import Type = NFType;
@@ -200,6 +199,7 @@ uniontype InstNode
     String name;
     Visibility visibility;
     Pointer<Component> component;
+    Integer level;
     InstNode parent;
   end COMPONENT_NODE;
 
@@ -259,7 +259,7 @@ uniontype InstNode
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := COMPONENT_NODE(name, Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Component.new(definition)), parent);
+      Pointer.create(Component.new(definition)), 0, parent);
   end newComponent;
 
   function newExtends
@@ -284,7 +284,7 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component), parent);
+    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component), 0, parent);
   end fromComponent;
 
   function isClass
@@ -481,6 +481,7 @@ uniontype InstNode
       case COMPONENT_NODE()
         algorithm
           node.parent := parent;
+          node.level := level(parent) + 1;
         then
           ();
 
@@ -1099,6 +1100,17 @@ uniontype InstNode
       else ();
     end match;
   end protectComponent;
+
+  function level
+    input InstNode node;
+    output Integer level;
+  algorithm
+    level := match node
+      case COMPONENT_NODE() then node.level;
+      else 0;
+    end match;
+  end level;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
