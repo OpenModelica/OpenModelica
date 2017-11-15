@@ -43,11 +43,13 @@ import Binding = NFBinding;
 import NFComponent.Component;
 import NFInstNode.CachedData;
 import ComponentRef = NFComponentRef;
+import Dimension = NFDimension;
 import NFFunction.Function;
 import Inst = NFInst;
 import NFInstNode.InstNodeType;
 import Lookup = NFLookup;
 import Typing = NFTyping;
+import TypeCheck = NFTypeCheck;
 import ExpOrigin = NFTyping.ExpOrigin;
 import Types;
 import List;
@@ -315,6 +317,12 @@ uniontype Call
     (call, ty, variability) := match callExp
       case Expression.CALL(UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="pre"))))
         then typePreCall(callExp.call, info);
+      case Expression.CALL(UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="min"))))
+        then typeMinMaxCall(callExp.call, info, "min");
+      case Expression.CALL(UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="max"))))
+        then typeMinMaxCall(callExp.call, info, "max");
+      case Expression.CALL(UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="smooth"))))
+        then typeSmoothCall(callExp.call, info);
       case Expression.CALL(UNTYPED_CALL()) then typeNormalCall(callExp.call, info);
       case Expression.CALL(UNTYPED_MAP_CALL()) then typeMapIteratorCall(callExp.call, info);
     end match;
@@ -515,6 +523,170 @@ uniontype Call
           fail();
     end match;
   end typePreCall;
+
+  function typeMinMaxCall
+    input output Call call;
+    input SourceInfo info;
+    input String name;
+          output Type ty;
+          output Variability variability;
+  protected
+    Call argtycall;
+    InstNode fn_node;
+    list<Function> fnl;
+    Boolean fn_typed, special;
+    Function fn;
+    Expression e, e1, e2;
+    Type ty1, ty2;
+    list<Expression> es;
+    list<Type> arg_ty;
+    list<Variability> arg_var;
+    CallAttributes ca;
+    list<TypedArg> tyArgs;
+    list<TypedNamedArg> nargs;
+    Integer nArgs;
+    Variability variability1, variability2;
+    TypeCheck.MatchKind ty_match;
+  algorithm
+    (call , ty, variability) := match call
+      case UNTYPED_CALL(ref = ComponentRef.CREF(node = fn_node))
+        algorithm
+          // Fetch the cached function(s).
+          CachedData.FUNCTION({fn}, fn_typed, special) := InstNode.getFuncCache(fn_node);
+
+          // Type the function(s) if not already done.
+          if not fn_typed then
+            fn := Function.typeFunction(fn);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION({fn}, true, special));
+          end if;
+
+          // Type the arguments.
+          ARG_TYPED_CALL(arguments=tyArgs, named_args=nargs) := typeArgs(call,info);
+          nArgs := listLength(tyArgs);
+          if not listEmpty(nargs) or not (nArgs == 1 or nArgs == 2) then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", name + "(<T>) => <T>, " + name + "(<T>,<T>) => <T>"}, info);
+          end if;
+
+          if nArgs == 1 then
+            {(e,ty,variability)} := tyArgs;
+            es := {e};
+          else
+            {(e1,ty1,variability1),(e2,ty2,variability2)} := tyArgs;
+            es := {e1,e2};
+            variability := Prefixes.variabilityMax(variability1, variability2);
+            (e1,e2,ty,ty_match) := TypeCheck.matchExpressions(e1,ty1,e2,ty2);
+            if not TypeCheck.isCompatibleMatch(ty_match) then
+              Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "Incompatible types"}, info);
+            end if;
+          end if;
+
+          // TODO: Check that '<' or '>' operator is defined for the expression...
+
+          ca := CallAttributes.CALL_ATTR(
+            ty,
+            Type.isTuple(ty),
+            Function.isBuiltin(fn),
+            Function.isImpure(fn),
+            Function.isFunctionPointer(fn),
+            Function.inlineBuiltin(fn),
+            DAE.NO_TAIL());
+
+        then
+          (TYPED_CALL(fn, es, ca), ty, variability);
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got invalid function call expression");
+        then
+          fail();
+    end match;
+  end typeMinMaxCall;
+
+  function typeSmoothCall
+    input output Call call;
+    input SourceInfo info;
+          output Type ty;
+          output Variability variability;
+  protected
+    Call argtycall;
+    InstNode fn_node;
+    list<Function> fnl;
+    Boolean fn_typed, special;
+    Function fn;
+    Expression e, e1, e2;
+    Type ty1, ty2;
+    list<Type> arg_ty;
+    list<Variability> arg_var;
+    CallAttributes ca;
+    list<TypedArg> tyArgs;
+    list<TypedNamedArg> nargs;
+    Integer nArgs;
+    Variability variability1, variability2;
+    TypeCheck.MatchKind ty_match;
+  algorithm
+    (call , ty, variability) := match call
+      case UNTYPED_CALL(ref = ComponentRef.CREF(node = fn_node))
+        algorithm
+          // Fetch the cached function(s).
+          CachedData.FUNCTION({fn}, fn_typed, special) := InstNode.getFuncCache(fn_node);
+
+          // Type the function(s) if not already done.
+          if not fn_typed then
+            fn := Function.typeFunction(fn);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION({fn}, true, special));
+          end if;
+
+          // Type the arguments.
+          ARG_TYPED_CALL(arguments=tyArgs, named_args=nargs) := typeArgs(call,info);
+          nArgs := listLength(tyArgs);
+          if not listEmpty(nargs) or nArgs <> 2 then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "smooth(i, <T>) => <T>"}, info);
+          end if;
+
+          {(e1,ty1,variability1),(e2,ty2,variability2)} := tyArgs;
+
+          if variability1 > Variability.PARAMETER then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "First argument of smooth must be a parameter or constant expression"}, info);
+          end if;
+
+          (e1, ty1, ty_match) := TypeCheck.matchTypes(ty1, Type.INTEGER(), e1);
+
+          if not TypeCheck.isCompatibleMatch(ty_match) then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "First argument of smooth must be an Integer expression"}, info);
+          end if;
+
+          variability := Prefixes.variabilityMax(variability1, variability2);
+
+          (e2, ty2, ty_match) := TypeCheck.matchTypes(ty2, Type.REAL(), e2);
+          if not TypeCheck.isCompatibleMatch(ty_match) then
+            (e2, ty2, ty_match) := TypeCheck.matchTypes(ty2, Type.ARRAY(Type.REAL(),{Dimension.UNKNOWN()}), e2);
+          end if;
+          // TODO: Allow ty2 is record with only allowed types...
+          // TODO: Allow ty2 is multi-dim array
+
+          if not TypeCheck.isCompatibleMatch(ty_match) then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {toString(call), "<REMOVE ME>", "Second argument of smooth must be a Real scalar or record with only Real components, or array expression of these (TODO: Not fully checked)"}, info);
+          end if;
+
+          ca := CallAttributes.CALL_ATTR(
+            ty2,
+            Type.isTuple(ty2),
+            Function.isBuiltin(fn),
+            Function.isImpure(fn),
+            Function.isFunctionPointer(fn),
+            Function.inlineBuiltin(fn),
+            DAE.NO_TAIL());
+
+        then
+          (TYPED_CALL(fn, {e1,e2}, ca), ty2, variability);
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got invalid function call expression");
+        then
+          fail();
+    end match;
+  end typeSmoothCall;
 
   function typeArgs
     input output Call call;
