@@ -556,6 +556,7 @@ protected
     res := (false,{});
     try
       SimCodeUtil.resetFunctionIndex();
+      SimCodeFunctionUtil.codegenResetTryThrowIndex();
       if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
         Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
       else
@@ -576,6 +577,7 @@ protected
     res := (false,{});
     try
       SimCodeUtil.resetFunctionIndex();
+      SimCodeFunctionUtil.codegenResetTryThrowIndex();
       Tpl.tplCallWithFailErrorNoArg(func);
       res := (true,SimCodeUtil.getFunctionIndex());
     else
@@ -593,6 +595,7 @@ protected
     res := (false,{});
     try
       SimCodeUtil.resetFunctionIndex();
+      SimCodeFunctionUtil.codegenResetTryThrowIndex();
       func();
       res := (true,SimCodeUtil.getFunctionIndex());
     else

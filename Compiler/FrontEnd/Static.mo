@@ -10988,6 +10988,7 @@ algorithm
         b1 = (ds < Config.vectorizationLimit());
         b2 = (ds2 < Config.vectorizationLimit());
         true = boolAnd(b1, b2) or Config.vectorizationLimit() == 0;
+        true = listEmpty(ComponentReference.crefLastSubs(cr));
         e = createCrefArray2d(cr, 1, ds, ds2, exptp, t,crefIdType);
       then
         e;
