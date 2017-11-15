@@ -173,6 +173,7 @@ ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
 ExtendsVisibility4.mo \
 ExtendsVisibility5.mo \
+ForConnect1.mo \
 ForEquation1.mo \
 ForEquation2.mo \
 ForEquation3.mo \
@@ -235,6 +236,9 @@ FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
 FunctionNoOutput1.mo \
 FunctionStreamPrefix.mo \
+IfConnect1.mo \
+IfConnect2.mo \
+IfConnect3.mo \
 IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \
