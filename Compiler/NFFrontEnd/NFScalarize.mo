@@ -41,14 +41,9 @@ import Type = NFType;
 import Expression = NFExpression;
 import Binding = NFBinding;
 import Equation = NFEquation;
-//import NFInstNode.InstNode;
-//import NFComponent.Component;
-//import Prefixes = NFPrefixes;
-//import NFClass.Class;
 import ExpressionIterator = NFExpressionIterator;
 import Dimension = NFDimension;
 import MetaModelica.Dangerous.listReverseInPlace;
-//import List;
 
 public
 function scalarize
@@ -155,6 +150,8 @@ algorithm
       then
         Equation.ARRAY_EQUALITY(eq.lhs, rhs, eq.ty, eq.info) :: equations;
 
+    case Equation.CONNECT() then equations;
+
     case Equation.IF()
       then scalarizeIfEquation(eq.branches, eq.info, equations);
 
@@ -178,20 +175,14 @@ algorithm
     (cond, eql) := b;
     eql := scalarizeEquations(eql);
 
-    if Expression.isTrue(cond) and listEmpty(bl) then
-      // If the condition is literal true and we haven't collected any other
-      // branches yet, replace the if equation with this branch.
-      equations := listAppend(eql, equations);
-      return;
-    elseif not Expression.isFalse(cond) then
-      // Only add the branch to the list of branches if the condition is not
-      // literal false, otherwise just drop it since it will never trigger.
+    // Remove branches with no equations after scalarization.
+    if not listEmpty(eql) then
       bl := (cond, eql) :: bl;
     end if;
   end for;
 
-  // Add the scalarized if equation to the list of equations if we got this far,
-  // and there are any branches still remaining.
+  // Add the scalarized if equation to the list of equations unless we don't
+  // have any branches left.
   if not listEmpty(bl) then
     equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
   end if;

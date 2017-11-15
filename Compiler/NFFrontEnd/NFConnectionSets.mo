@@ -33,37 +33,13 @@ encapsulated package NFConnectionSets
 import DisjointSets;
 import Connector = NFConnector;
 import Connection = NFConnection;
+import Connections = NFConnections;
 
 protected
 import Flags;
 import List;
 
 public
-uniontype Connections
-  record CONNECTIONS
-    list<Connection> connections;
-    list<Connector> flows;
-  end CONNECTIONS;
-
-  function new
-    output Connections conns = CONNECTIONS({}, {});
-  end new;
-
-  function addConnection
-    input Connection conn;
-    input output Connections conns;
-  algorithm
-    conns.connections := conn :: conns.connections;
-  end addConnection;
-
-  function addFlow
-    input Connector conn;
-    input output Connections conns;
-  algorithm
-    conns.flows := conn :: conns.flows;
-  end addFlow;
-end Connections;
-
 package ConnectionSets
   extends DisjointSets(redeclare type Entry = Connector);
 

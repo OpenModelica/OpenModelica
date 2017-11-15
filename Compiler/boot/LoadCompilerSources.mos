@@ -99,6 +99,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFConvertDAE.mo",
     "../NFFrontEnd/NFConnectEquations.mo",
     "../NFFrontEnd/NFConnection.mo",
+    "../NFFrontEnd/NFConnections.mo",
     "../NFFrontEnd/NFConnectionSets.mo",
     "../NFFrontEnd/NFConnector.mo",
     "../NFFrontEnd/NFDimension.mo",

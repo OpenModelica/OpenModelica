@@ -77,7 +77,7 @@ public
   protected
     InstNode node = ComponentRef.node(cref);
   algorithm
-    conn := CONNECTOR(cref, ty, face,
+    conn := CONNECTOR(ComponentRef.simplifySubscripts(cref), ty, face,
       Component.connectorType(InstNode.component(node)), NONE(),
       ElementSource.createElementSource(InstNode.info(node)));
   end fromFacedCref;

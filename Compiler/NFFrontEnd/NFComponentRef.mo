@@ -542,5 +542,28 @@ public
     end match;
   end stripSubscriptsAll;
 
+  function simplifySubscripts
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        list<Subscript> subs;
+
+      case CREF(subscripts = {})
+        algorithm
+          cref.restCref := simplifySubscripts(cref.restCref);
+        then
+          cref;
+
+      case CREF()
+        algorithm
+          subs := list(Subscript.simplify(s) for s in cref.subscripts);
+        then
+          CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref));
+
+      else cref;
+    end match;
+  end simplifySubscripts;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

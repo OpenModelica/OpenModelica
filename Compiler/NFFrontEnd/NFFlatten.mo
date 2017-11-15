@@ -66,10 +66,10 @@ import Type = NFType;
 import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
 import ConnectionSets = NFConnectionSets.ConnectionSets;
-import Connections = NFConnectionSets.Connections;
 import Connection = NFConnection;
 import Connector = NFConnector;
 import ConnectEquations = NFConnectEquations;
+import Connections = NFConnections;
 import Face = NFConnector.Face;
 import System;
 
@@ -371,17 +371,21 @@ algorithm
 end flattenSections;
 
 function flattenEquations
-  input output list<Equation> equations;
+  input list<Equation> eql;
   input ComponentRef prefix;
+  output list<Equation> equations = {};
 algorithm
-  equations := listReverse(flattenEquation(eq, prefix) for eq in equations);
+  for eq in eql loop
+    equations := flattenEquation(eq, prefix, equations);
+  end for;
 end flattenEquations;
 
 function flattenEquation
-  input output Equation eq;
+  input Equation eq;
   input ComponentRef prefix;
+  input output list<Equation> equations;
 algorithm
-  eq := match eq
+  equations := match eq
     local
       Expression e1, e2, e3;
 
@@ -390,32 +394,29 @@ algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
       then
-        Equation.EQUALITY(e1, e2, eq.ty, eq.info);
+        Equation.EQUALITY(e1, e2, eq.ty, eq.info) :: equations;
 
     case Equation.FOR()
       algorithm
         eq.body := flattenEquations(eq.body, prefix);
       then
-        eq;
+        unrollForLoop(eq, equations);
 
     case Equation.CONNECT()
       algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
       then
-        Equation.CONNECT(e1, e2, eq.info);
+        Equation.CONNECT(e1, e2, eq.info) :: equations;
 
     case Equation.IF()
-      algorithm
-        eq.branches := list(flattenEqBranch(b, prefix) for b in eq.branches);
-      then
-        eq;
+      then flattenIfEquation(eq.branches, prefix, eq.info, equations);
 
     case Equation.WHEN()
       algorithm
         eq.branches := list(flattenEqBranch(b, prefix) for b in eq.branches);
       then
-        eq;
+        eq :: equations;
 
     case Equation.ASSERT()
       algorithm
@@ -423,30 +424,63 @@ algorithm
         e2 := flattenExp(eq.message, prefix);
         e3 := flattenExp(eq.level, prefix);
       then
-        Equation.ASSERT(e1, e2, e3, eq.info);
+        Equation.ASSERT(e1, e2, e3, eq.info) :: equations;
 
     case Equation.TERMINATE()
       algorithm
         e1 := flattenExp(eq.message, prefix);
       then
-        Equation.TERMINATE(e1, eq.info);
+        Equation.TERMINATE(e1, eq.info) :: equations;
 
     case Equation.REINIT()
       algorithm
         e1 := flattenExp(eq.cref, prefix);
         e2 := flattenExp(eq.reinitExp, prefix);
       then
-        Equation.REINIT(e1, e2, eq.info);
+        Equation.REINIT(e1, e2, eq.info) :: equations;
 
     case Equation.NORETCALL()
       algorithm
         e1 := flattenExp(eq.exp, prefix);
       then
-        Equation.NORETCALL(e1, eq.info);
+        Equation.NORETCALL(e1, eq.info) :: equations;
 
-    else eq;
+    else eq :: equations;
   end match;
 end flattenEquation;
+
+function flattenIfEquation
+  input list<tuple<Expression, list<Equation>>> branches;
+  input ComponentRef prefix;
+  input SourceInfo info;
+  input output list<Equation> equations;
+protected
+  list<tuple<Expression, list<Equation>>> bl = {};
+  Expression cond;
+  list<Equation> eql;
+algorithm
+  for b in branches loop
+    (cond, eql) := b;
+    eql := flattenEquations(eql, prefix);
+
+    if Expression.isTrue(cond) and listEmpty(bl) then
+      // If the condition is literal true and we haven't collected any other
+      // branches yet, replace the if equation with this branch.
+      equations := listAppend(eql, equations);
+      return;
+    elseif not Expression.isFalse(cond) then
+      // Only add the branch to the list of branches if the condition is not
+      // literal false, otherwise just drop it since it will never trigger.
+      bl := (cond, eql) :: bl;
+    end if;
+  end for;
+
+  // Add the flattened if equation to the list of equations if we got this far,
+  // and there are any branches still remaining.
+  if not listEmpty(bl) then
+    equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
+  end if;
+end flattenIfEquation;
 
 function flattenEqBranch
   input output tuple<Expression, list<Equation>> branch;
@@ -460,6 +494,63 @@ algorithm
   eql := flattenEquations(eql, prefix);
   branch := (exp, eql);
 end flattenEqBranch;
+
+function unrollForLoop
+  input Equation forLoop;
+  input output list<Equation> equations;
+protected
+  InstNode iter;
+  String iter_name;
+  list<Equation> body, unrolled_body;
+  Binding binding;
+  Expression range;
+  RangeIterator range_iter;
+  Expression val;
+algorithm
+  Equation.FOR(iterator = iter, body = body) := forLoop;
+
+  // Get the range to iterate over.
+  Component.ITERATOR(binding = binding) := InstNode.component(iter);
+  iter_name := InstNode.name(iter);
+  SOME(range) := Binding.typedExp(binding);
+  range_iter := RangeIterator.fromExp(range);
+
+  // Unroll the loop by replacing the iterator with each of its values in the for loop body.
+  while RangeIterator.hasNext(range_iter) loop
+    (range_iter, val) := RangeIterator.next(range_iter);
+    unrolled_body := list(Equation.mapExp(eq,
+      function replaceForIterator(iteratorName = iter_name, iteratorValue = val)) for eq in body);
+    equations := listAppend(unrolled_body, equations);
+  end while;
+end unrollForLoop;
+
+function replaceForIterator
+  input output Expression exp;
+  input String iteratorName;
+  input Expression iteratorValue;
+algorithm
+  exp := Expression.map(exp,
+    function replaceForIterator2(iteratorName = iteratorName, iteratorValue = iteratorValue));
+end replaceForIterator;
+
+function replaceForIterator2
+  input output Expression exp;
+  input String iteratorName;
+  input Expression iteratorValue;
+
+  import Origin = NFComponentRef.Origin;
+algorithm
+  exp := match exp
+    local
+      String name;
+
+    case Expression.CREF(cref = ComponentRef.CREF(
+        node = InstNode.COMPONENT_NODE(name = name), origin = Origin.ITERATOR))
+      then if name == iteratorName then iteratorValue else exp;
+
+    else exp;
+  end match;
+end replaceForIterator2;
 
 function flattenAlgorithms
   input output list<list<Statement>> algorithms;
@@ -562,56 +653,17 @@ function resolveConnections
   input output Elements elems;
   input String name;
 protected
-  Connections conns = Connections.new();
-  InstNode node;
-  Component comp;
-  list<Equation> eql = {}, conn_eql;
+  Connections conns;
+  list<Equation> conn_eql;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
-  ComponentRef cr, lhs, rhs;
-  Connector c1, c2;
-  SourceInfo info;
-  Type ty1, ty2;
 algorithm
-  // Collect all flow variables.
-  for c in elems.components loop
-    () := match c
-      case (cr, _)
-        algorithm
-          comp := InstNode.component(ComponentRef.node(cr));
-
-          if Component.isFlow(comp) then
-            c1 := Connector.fromFacedCref(cr, Component.getType(comp), Face.INSIDE, Component.info(comp));
-            conns := Connections.addFlow(c1, conns);
-          end if;
-        then
-          ();
-
-      else ();
-    end match;
-  end for;
-
-  // Collect all connects and remove them from the equation list.
-  for eq in elems.equations loop
-    eql := match eq
-      case Equation.CONNECT(lhs = Expression.CREF(cref = lhs, ty = ty1),
-                            rhs = Expression.CREF(cref = rhs, ty = ty2), info = info)
-        algorithm
-          c1 := Connector.fromCref(lhs, ty1, info);
-          c2 := Connector.fromCref(rhs, ty2, info);
-          conns := Connections.addConnection(Connection.CONNECTION(c1, c2), conns);
-        then
-          eql;
-
-      else eq :: eql;
-    end match;
-  end for;
-
   // Generate the connect equations and add them to the equation list.
+  (elems, conns) := Connections.collect(elems);
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   conn_eql := ConnectEquations.generateEquations(csets_array);
-  elems.equations := listAppend(conn_eql, listReverseInPlace(eql));
+  elems.equations := listAppend(conn_eql, elems.equations);
 
   // Evaluate any connection operators if they're used.
   if System.getHasStreamConnectors() or System.getUsesCardinality() then

@@ -202,5 +202,15 @@ public
     end match;
   end map1;
 
+  function isEmpty
+    input Sections sections;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match sections
+      case EMPTY() then true;
+      else false;
+    end match;
+  end isEmpty;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFSections;

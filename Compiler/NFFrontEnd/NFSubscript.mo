@@ -35,6 +35,7 @@ protected
 
   import DAE;
   import List;
+  import SimplifyExp = NFSimplifyExp;
 
 public
   import Expression = NFExpression;
@@ -243,6 +244,26 @@ public
       else false;
     end match;
   end isIndex;
+
+  function simplify
+    input output Subscript subscript;
+  algorithm
+    () := match subscript
+      case INDEX()
+        algorithm
+          subscript.index := SimplifyExp.simplifyExp(subscript.index);
+        then
+          ();
+
+      case SLICE()
+        algorithm
+          subscript.slice := SimplifyExp.simplifyExp(subscript.slice);
+        then
+          ();
+
+      else ();
+    end match;
+  end simplify;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

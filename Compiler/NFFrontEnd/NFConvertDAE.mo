@@ -503,11 +503,12 @@ algorithm
       then
         DAE.Element.ARRAY_EQUATION(dims, e1, e2, src) :: elements;
 
+    // For equations should have been unrolled here.
     case Equation.FOR()
       algorithm
-        body := convertEquations(eq.body);
+        assert(false, getInstanceName() + " got a for equation");
       then
-        unrollForLoop(eq.iterator, body, elements);
+        fail();
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.info, isInitial = false) :: elements;
@@ -549,35 +550,6 @@ algorithm
     else elements;
   end match;
 end convertEquation;
-
-function unrollForLoop
-  input InstNode iterator;
-  input list<DAE.Element> forBody;
-  input output list<DAE.Element> elements;
-protected
-  Binding binding;
-  Expression range;
-  list<DAE.Element> body;
-  RangeIterator range_iter;
-  list<DAE.Exp> values;
-  DAE.ComponentRef iter_cr;
-algorithm
-  // Get the range to iterate over.
-  Component.ITERATOR(binding = binding) := InstNode.component(iterator);
-  SOME(range) := Binding.typedExp(binding);
-  range_iter := RangeIterator.fromExp(range);
-  values := list(Expression.toDAE(e) for e in RangeIterator.toListReverse(range_iter));
-
-  // Create a DAE.ComponentRef for the replace function. The type doesn't matter
-  // here, only the name is used when replacing.
-  iter_cr := DAE.CREF_IDENT(InstNode.name(iterator), DAE.Type.T_UNKNOWN(), {});
-
-  // Unroll the loop by iterating over the body and replacing the iterator with its value.
-  for v in values loop
-    body := DAEUtil.replaceCrefInDAEElements(forBody, iter_cr, v);
-    elements := listAppend(body, elements);
-  end for;
-end unrollForLoop;
 
 function convertIfEquation
   input list<tuple<Expression, list<Equation>>> ifBranches;
@@ -670,11 +642,12 @@ algorithm
       then
         DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, src) :: elements;
 
+    // For equations should have been unrolled here.
     case Equation.FOR()
       algorithm
-        body := convertInitialEquations(eq.body);
+        assert(false, getInstanceName() + " got a for equation");
       then
-        unrollForLoop(eq.iterator, body, elements);
+        fail();
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.info, isInitial = true) :: elements;

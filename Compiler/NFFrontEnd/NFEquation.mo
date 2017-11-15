@@ -108,5 +108,108 @@ public
     SourceInfo info;
   end NORETCALL;
 
+  function mapExp
+    input output Equation eq;
+    input MapFn func;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+  algorithm
+    eq := match eq
+      local
+        Expression e1, e2, e3;
+
+      case EQUALITY()
+        algorithm
+          e1 := func(eq.lhs);
+          e2 := func(eq.rhs);
+        then
+          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
+            then eq else EQUALITY(e1, e2, eq.ty, eq.info);
+
+      case ARRAY_EQUALITY()
+        algorithm
+          e1 := func(eq.lhs);
+          e2 := func(eq.rhs);
+        then
+          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
+            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.info);
+
+      case CONNECT()
+        algorithm
+          e1 := func(eq.lhs);
+          e2 := func(eq.rhs);
+        then
+          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
+            then eq else CONNECT(e1, e2, eq.info);
+
+      case FOR()
+        algorithm
+          eq.body := list(mapExp(e, func) for e in eq.body);
+        then
+          eq;
+
+      case IF()
+        algorithm
+          eq.branches := list(mapExpBranch(b, func) for b in eq.branches);
+        then
+          eq;
+
+      case WHEN()
+        algorithm
+          eq.branches := list(mapExpBranch(b, func) for b in eq.branches);
+        then
+          eq;
+
+      case ASSERT()
+        algorithm
+          e1 := func(eq.condition);
+          e2 := func(eq.message);
+          e3 := func(eq.level);
+        then
+          if referenceEq(e1, eq.condition) and referenceEq(e2, eq.message) and
+            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.info);
+
+      case TERMINATE()
+        algorithm
+          e1 := func(eq.message);
+        then
+          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.info);
+
+      case REINIT()
+        algorithm
+          e1 := func(eq.cref);
+          e2 := func(eq.reinitExp);
+        then
+          if referenceEq(e1, eq.cref) and referenceEq(e2, eq.reinitExp) then
+            eq else REINIT(e1, e2, eq.info);
+
+      case NORETCALL()
+        algorithm
+          e1 := func(eq.exp);
+        then
+          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.info);
+
+    end match;
+  end mapExp;
+
+  function mapExpBranch
+    input output tuple<Expression, list<Equation>> branch;
+    input MapFn func;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+  protected
+    Expression cond;
+    list<Equation> eql;
+  algorithm
+    (cond, eql) := branch;
+    cond := func(cond);
+    eql := list(mapExp(e, func) for e in eql);
+    branch := (cond, eql);
+  end mapExpBranch;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;
