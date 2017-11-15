@@ -1390,10 +1390,12 @@ constant ConfigFlag ZEROMQ_FILE_SUFFIX = CONFIG_FLAG(115, "zeroMQFileSuffix",
   SOME("z"), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Sets the file suffix for zeroMQ port file if --interactive=zmq is used."));
 constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(116, "homotopyApproach",
-  NONE(), EXTERNAL(), STRING_FLAG("global"),
+  NONE(), EXTERNAL(), STRING_FLAG("equidistantGlobal"),
   SOME(STRING_DESC_OPTION({
-    ("local", Util.gettext("Local homotopy approach. The homotopy parameter only effects the local strongly connected component.")),
-    ("global", Util.gettext("Default, global homotopy approach. The homotopy parameter effects the entire initialization system."))
+    ("equidistantLocal", Util.gettext("Local homotopy approach with equidistant lambda steps. The homotopy parameter only effects the local strongly connected component.")),
+    ("adaptiveLocal", Util.gettext("Local homotopy approach with adaptive lambda steps. The homotopy parameter only effects the local strongly connected component.")),
+    ("equidistantGlobal", Util.gettext("Default, global homotopy approach with equidistant lambda steps. The homotopy parameter effects the entire initialization system.")),
+    ("adaptiveGlobal", Util.gettext("Global homotopy approach with adaptive lambda steps. The homotopy parameter effects the entire initialization system."))
     })),
     Util.gettext("Sets the homotopy approach."));
 

@@ -613,5 +613,27 @@ algorithm
   outBoolean := Flags.getConfigBool(Flags.IGNORE_COMMAND_LINE_OPTIONS_ANNOTATION);
 end ignoreCommandLineOptionsAnnotation;
 
+public function globalHomotopy
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(Flags.getConfigString(Flags.HOMOTOPY_APPROACH))
+    case("equidistantLocal") then false;
+    case("adaptiveLocal") then false;
+    case("equidistantGlobal") then true;
+    case("adaptiveGlobal") then true;
+  end match;
+end globalHomotopy;
+
+public function adaptiveHomotopy
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match(Flags.getConfigString(Flags.HOMOTOPY_APPROACH))
+    case("equidistantLocal") then false;
+    case("adaptiveLocal") then true;
+    case("equidistantGlobal") then false;
+    case("adaptiveGlobal") then true;
+  end match;
+end adaptiveHomotopy;
+
 annotation(__OpenModelica_Interface="util");
 end Config;

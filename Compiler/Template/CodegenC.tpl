@@ -1080,7 +1080,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
-       <%if listEmpty(initialEquations_lambda0) then (if not BackendDAEUtil.isInitOptModuleActivated("generateHomotopyComponents") then '0' else '3') else if not BackendDAEUtil.isInitOptModuleActivated("generateHomotopyComponents") then '1' else '2'%>, /* useHomotopy - 0: no homotopy or local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach, 3: new local homotopy approach */
+       <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
        <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,

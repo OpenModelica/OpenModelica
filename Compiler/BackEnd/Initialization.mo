@@ -95,7 +95,7 @@ protected
   BackendDAE.Variables vars, fixvars;
   Boolean b, b1, b2, useHomotopy;
   String msg;
-  list<String> disabledModules;
+  list<String> enabledModules, disabledModules;
   HashSet.HashSet hs "contains all pre variables";
   list<BackendDAE.Equation> removedEqns;
   list<BackendDAE.Var> dumpVars, dumpVars2, outAllPrimaryParameters;
@@ -228,15 +228,14 @@ algorithm
 
 
     if useHomotopy then
+      enabledModules := if Config.adaptiveHomotopy() then {"inlineHomotopy", "generateHomotopyComponents"} else {};
       disabledModules := {};
     else
+      enabledModules := {};
       disabledModules := {"inlineHomotopy", "generateHomotopyComponents"};
     end if;
 
-    initOptModules := BackendDAEUtil.getInitOptModules(NONE(), {}, disabledModules);
-    if BackendDAEUtil.isInitOptModuleActivated("generateHomotopyComponents", initOptModules) and not BackendDAEUtil.isInitOptModuleActivated("inlineHomotopy", initOptModules) then
-      initOptModules := (BackendDAEOptimize.inlineHomotopy, "inlineHomotopy")::initOptModules;
-    end if;
+    initOptModules := BackendDAEUtil.getInitOptModules(NONE(), enabledModules, disabledModules);
     matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
     daeHandler := BackendDAEUtil.getIndexReductionMethod(SOME("none"));
     initdae := BackendDAEUtil.postOptimizeDAE(initdae, initOptModules, matchingAlgorithm, daeHandler);
@@ -249,7 +248,7 @@ algorithm
     end if;
 
     // compute system for lambda=0
-    if useHomotopy and stringEq(Flags.getConfigString(Flags.HOMOTOPY_APPROACH), "global") then
+    if useHomotopy and Config.globalHomotopy() then
       initOptModulesLambda0 := BackendDAEUtil.getInitOptModules(NONE(),{"replaceHomotopyWithSimplified"},{"inlineHomotopy", "generateHomotopyComponents"});
       initdae0 := BackendDAEUtil.setFunctionTree(initdae0, BackendDAEUtil.getFunctions(initdae.shared));
       initdae0 := BackendDAEUtil.postOptimizeDAE(initdae0, initOptModulesLambda0, matchingAlgorithm, daeHandler);

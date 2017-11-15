@@ -185,7 +185,18 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   FILE *pFile = NULL;
   long i;
   MODEL_DATA *mData = data->modelData;
-  int solveWithGlobalHomotopy = (data->callback->useHomotopy == 1 && init_lambda_steps > 1) || data->callback->useHomotopy == 2;
+  int homotopySupport = 0;
+  int solveWithGlobalHomotopy;
+
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+  for(i=0; i<mData->nNonLinearSystems; i++) {
+    if (data->simulationInfo->nonlinearSystemData[i].homotopySupport) {
+      homotopySupport = 1;
+      break;
+    }
+  }
+#endif
+  solveWithGlobalHomotopy = homotopySupport && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || data->callback->useHomotopy == 2);
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */

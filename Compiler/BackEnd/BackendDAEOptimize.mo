@@ -5706,19 +5706,22 @@ protected
   BackendDAE.StrongComponents comps;
   BackendDAE.EqSystems newEqSystems={};
   array<Integer> ass1, ass2;
-  Boolean globalHomotopy = stringEq(Flags.getConfigString(Flags.HOMOTOPY_APPROACH), "global");
 algorithm
-  for syst in outDAE.eqs loop
-    BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps) := syst.matching;
-    if globalHomotopy then
-      (comps, syst) := traverseStrongComponentsForHomotopyLoop(comps, syst);
-    else
-      (comps, syst) := traverseStrongComponentsAddLambda(comps, syst);
-    end if;
-    syst.matching := BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps);
-    newEqSystems := syst::newEqSystems;
-  end for;
-  outDAE.eqs := listReverse(newEqSystems);
+  if Config.adaptiveHomotopy() then
+    for syst in outDAE.eqs loop
+      BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps) := syst.matching;
+      if Config.globalHomotopy() then
+        (comps, syst) := traverseStrongComponentsForHomotopyLoop(comps, syst);
+      else
+        (comps, syst) := traverseStrongComponentsAddLambda(comps, syst);
+      end if;
+      syst.matching := BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps);
+      newEqSystems := syst::newEqSystems;
+    end for;
+    outDAE.eqs := listReverse(newEqSystems);
+  else
+    Error.addCompilerWarning("InitOptModule generateHomotopyComponents is activated for an equidistant homotopy method and will therefore be ignored.");
+  end if;
 end generateHomotopyComponents;
 
 protected function traverseStrongComponentsForHomotopyLoop " traverses all the strong components and finds the smallest homotopy loop

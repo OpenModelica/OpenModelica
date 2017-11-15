@@ -3424,6 +3424,14 @@ package Config
   function typeinfo
     output Boolean flag;
   end typeinfo;
+
+  function globalHomotopy
+    output Boolean outBoolean;
+  end globalHomotopy;
+
+  function adaptiveHomotopy
+    output Boolean outBoolean;
+  end adaptiveHomotopy;
 end Config;
 
 package Flags
@@ -3566,13 +3574,6 @@ package DAEUtil
   end statementsContainTryBlock;
 
 end DAEUtil;
-
-package BackendDAEUtil
-  function isInitOptModuleActivated
-    input String initOptModule;
-    output Boolean isActivated;
-  end isInitOptModuleActivated;
-end BackendDAEUtil;
 
 package Types
   function getDimensionSizes
