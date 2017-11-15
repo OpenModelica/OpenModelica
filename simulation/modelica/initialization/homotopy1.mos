@@ -21,11 +21,11 @@ package initializationTests
 end initializationTests;
 "); getErrorString();
 
-setCommandLineOptions("--homotopyApproach=local"); getErrorString();
+setCommandLineOptions("--homotopyApproach=equidistantLocal"); getErrorString();
 simulate(initializationTests.homotopy1, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
 res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy1_res.mat", {time, x, y}, 2); getErrorString();
 
-setCommandLineOptions("--homotopyApproach=global"); getErrorString();
+setCommandLineOptions("--homotopyApproach=equidistantGlobal"); getErrorString();
 simulate(initializationTests.homotopy1, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
 res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy1_res.mat", {time, x, y}, 2); getErrorString();
 
