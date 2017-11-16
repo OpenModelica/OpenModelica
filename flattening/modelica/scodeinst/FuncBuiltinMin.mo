@@ -27,13 +27,18 @@ model FuncBuiltinMin
 end FuncBuiltinMin;
 
 // Result:
-// Error processing file: FuncBuiltinMin.mo
-// [flattening/modelica/scodeinst/FuncBuiltinMin.mo:12:3-12:26:writable] Error: No matching function found for min(4, 2) in component <REMOVE ME>
-// candidates are :
-//   min()
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinMin
+//   Real r1 = min(4.0, 2.0);
+//   Real r2 = min({3.0, 1.0, 2.0});
+//   Real r3 = min(r1, r2);
+//   Integer i1 = min(5, 6);
+//   Integer i2 = min({4, 2, 1});
+//   Integer i3 = min(i2, i1);
+//   Boolean b1 = min(true, false);
+//   Boolean b2 = min({false, true});
+//   Boolean b3 = min(b1, b2);
+//   enumeration(one, two, three) e1 = min(E.one, E.three);
+//   enumeration(one, two, three) e2 = min({E.one, E.two, E.three});
+//   enumeration(one, two, three) e3 = min(e1, e2);
+// end FuncBuiltinMin;
 // endResult

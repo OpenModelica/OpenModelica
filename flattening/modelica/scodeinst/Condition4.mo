@@ -1,9 +1,8 @@
-// name: cond2.mo
+// name: Condition4
 // keywords:
 // status: correct
 // cflags:   -d=newInst
 //
-// FAILREASON: Seems like conditional components are a bit broken.
 //
 
 
@@ -12,13 +11,13 @@ model A
   Real y if false;
 end A;
 
-model B
+model Condition4
   A a1 if true;
   A a2 if false;
-end B;
+end Condition4;
 
 // Result:
-// class B
+// class Condition4
 //   Real a1.x;
-// end B;
+// end Condition4;
 // endResult

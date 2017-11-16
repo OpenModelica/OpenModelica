@@ -1,9 +1,8 @@
-// name: cond1.mo
+// name: Condition3
 // keywords:
 // status: correct
-// cflags:   -d=newInst
+// cflags: -d=newInst
 //
-// FAILREASON: Seems like conditional components are a bit broken.
 //
 
 
@@ -15,14 +14,14 @@ model M
   Real y if b2;
 end M;
 
-model M2
+model Condition3
   extends M(x = 2, y = 3);
-end M2;
+end Condition3;
 
 // Result:
-// class M2
+// class Condition3
 //   parameter Boolean b1 = true;
 //   parameter Boolean b2 = false;
 //   Real x = 2.0;
-// end M2;
+// end Condition3;
 // endResult

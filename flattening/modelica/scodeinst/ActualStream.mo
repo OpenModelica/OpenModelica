@@ -1,6 +1,7 @@
 // name: ActualStream
 // keywords: stream actualStream connector
 // status: correct
+// cflags: -d=newInst
 //
 // Checks that actualStream is evaluated correctly.
 //

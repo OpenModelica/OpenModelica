@@ -11,11 +11,13 @@ model FuncBuiltinLinspace
 end FuncBuiltinLinspace;
 
 // Result:
-// Error processing file: FuncBuiltinLinspace.mo
-// [lib/omc/ModelicaBuiltin.mo:302:3-302:47:writable] Error: Variable $array not found in scope linspace.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinLinspace
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+//   Real x[4];
+//   Real x[5];
+// equation
+//   x = linspace(2.0, 4.0, 5);
+// end FuncBuiltinLinspace;
 // endResult
