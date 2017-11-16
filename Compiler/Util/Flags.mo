@@ -779,7 +779,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   SOME(STRING_DESC_OPTION({
     ("clockPartitioning", Util.gettext("Does the clock partitioning.")),
     ("collapseArrayExpressions", collapseArrayExpressionsText),
-    ("comSubExp", Util.gettext("replaces common sub expressions")),
+    ("comSubExp", Util.gettext("Introduces alias assignments for variables which are assigned to simple terms i.e. a = b/c; d = b/c; --> a=d")),
     ("dumpDAE", Util.gettext("dumps the DAE representation of the current transformation state")),
     ("dumpDAEXML", Util.gettext("dumps the DAE as xml representation of the current transformation state")),
     ("encapsulateWhenConditions", Util.gettext("This module replaces each when condition with a boolean variable.")),
