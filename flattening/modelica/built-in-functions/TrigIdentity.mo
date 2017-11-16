@@ -10,7 +10,7 @@ end TrigIdentity;
 // Result:
 // class TrigIdentity
 //   Real x = 1.0;
-//   Real y = time;
+//   Real y = sin(asin(time));
 //   Real z = sin(2.0 * time);
 // end TrigIdentity;
 // endResult

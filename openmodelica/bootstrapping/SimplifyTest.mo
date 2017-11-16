@@ -169,13 +169,13 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
     Exp Exp36_2 = BINARY(cosrx,mulr,sinrx) "sin(2*x) = 2*sin(x)*cos(x)";
 
     Exp Exp37_1 = BINARY(BINARY(sinrx,powr,RCONST(2.0)),addr,BINARY(cosrx,powr,RCONST(2.0))) "sin^2 + cos^2 = 1";
-    Exp Exp37_2 = BINARY(BINARY(cosrx,powr,RCONST(2.0)),addr,BINARY(sinrx,powr,RCONST(2.0))) "sin^2 + cos^2 = 1";
+    Exp Exp37_2 = BINARY(BINARY(cosrx,powr,RCONST(2.0)),addr,BINARY(sinrx,powr,RCONST(2.0))) "cos^2 + sin^2 = 1";
 
     Exp Exp38_1 = BINARY(cosrx, mulr, tanrx) "sin(x)*tan(x)";
     Exp Exp38_2 = BINARY(tanrx, mulr, cosrx) "sin(x)*tan(x)";
 
-    Exp Exp39_1 = BINARY(BINARY(sinhrx,powr,RCONST(2.0)),addr,BINARY(coshrx,powr,RCONST(2.0))) "sinh^2 + cosh^2 = 1";
-    Exp Exp39_2 = BINARY(BINARY(coshrx,powr,RCONST(2.0)),addr,BINARY(sinhrx,powr,RCONST(2.0))) "sinh^2 + cosh^2 = 1";
+    Exp Exp39_1 = BINARY(BINARY(coshrx,powr,RCONST(2.0)),addr,UNARY(usubr,BINARY(sinhrx,powr,RCONST(2.0)))) "cosh^2(x) + (-sinh^2(x)) = 1";
+    Exp Exp39_2 = BINARY(UNARY(usubr,BINARY(sinhrx,powr,RCONST(2.0))),addr,BINARY(coshrx,powr,RCONST(2.0))) "(-sinh^2(x)) + cosh^2(x) = 1";
 
     Exp Exp40_1 = BINARY(cosrx, mulr, tanrx) "tanh(x)*cosh(x) = sinh(x)";
     Exp Exp40_2 = BINARY(tanrx, mulr, cosrx) "tanh(x)*cosh(x) = sinh(x)";

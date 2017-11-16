@@ -121,8 +121,8 @@ getErrorString();
 // simplify(cos(x) ^ 2.0 + sin(x) ^ 2.0) = 1.0
 // simplify(cos(x) * tan(x)) = sin(x)
 // simplify(tan(x) * cos(x)) = sin(x)
-// simplify(sinh(x) ^ 2.0 + cosh(x) ^ 2.0) = 1.0
-// simplify(cosh(x) ^ 2.0 + sinh(x) ^ 2.0) = 1.0
+// simplify(cosh(x) ^ 2.0 + (-sinh(x) ^ 2.0)) = 1.0
+// simplify((-sinh(x) ^ 2.0) + cosh(x) ^ 2.0) = 1.0
 // simplify(cos(x) * tan(x)) = sin(x)
 // simplify(tan(x) * cos(x)) = sin(x)
 // simplify(x + (-y)) = x - y
