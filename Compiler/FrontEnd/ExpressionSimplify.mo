@@ -5111,45 +5111,11 @@ handles MATRIX expressions"
   input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
   output list<list<DAE.Exp>> outExp;
 algorithm
-  outExp := match(imexpl,op,s1,arrayScalar)
-    local
-      list<DAE.Exp> row;
-      list<list<DAE.Exp>> mexpl;
-    case ({},_,_,_) then {};
-    case (row::mexpl,_,_,_)
-      equation
-        row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
-        mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,arrayScalar);
-      then row::mexpl;
-  end match;
+  outExp := (if arrayScalar then
+      list(list(DAE.BINARY(e,op,s1) for e in row) for row in imexpl)
+    else
+      list(list(DAE.BINARY(s1,op,e) for e in row) for row in imexpl));
 end simplifyVectorScalarMatrix;
-
-protected function simplifyVectorScalarMatrixRow "Help function to simplifyVectorScalarMatrix,
-handles MATRIX row"
-  input list<DAE.Exp> irow;
-  input Operator op;
-  input DAE.Exp s1;
-  input Boolean arrayScalar "if true, array op scalar, otherwise scalar op array";
-  output list<DAE.Exp> outExp;
-algorithm
-  outExp := match(irow,op,s1,arrayScalar)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> row;
-    case({},_,_,_) then {};
-      /* array op scalar */
-    case(e::row,_,_,true)
-      equation
-        row = simplifyVectorScalarMatrixRow(row,op,s1,true);
-      then (DAE.BINARY(e,op,s1)::row);
-
-    /* scalar op array */
-    case(e::row,_,_,false)
-      equation
-        row = simplifyVectorScalarMatrixRow(row,op,s1,false);
-      then (DAE.BINARY(s1,op,e)::row);
-  end match;
-end simplifyVectorScalarMatrixRow;
 
 protected function simplifyBinarySortConstantsMul
 "Helper relation to simplifyBinarySortConstants"
@@ -5247,12 +5213,11 @@ public function simplifyRangeBool
   input Boolean inStop;
   output list<Boolean> outRange;
 algorithm
-  outRange := match(inStart, inStop)
-    case (false, true)  then {false, true};
-    case (false, false) then {false};
-    case (true,  true)  then {true};
-    case (true,  false) then {};
-  end match;
+  outRange := (if inStart then
+      (if inStop then {true} else {})
+    else
+      (if inStop then {false, true} else {false})
+    );
 end simplifyRangeBool;
 
 public function simplifyRange
@@ -5457,23 +5422,18 @@ algorithm
       Integer i;
     case (_,(_,_,false)) then (inExp,inTpl);
     case (DAE.CREF(DAE.CREF_IDENT(id,_,{}),_),tpl as (name,iterExp,_))
-      equation
-        true = stringEq(name,id);
+      guard
+        stringEq(name,id)
       then (iterExp,tpl);
     case (exp as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id)),(name,iterExp,_))
-      equation
-        true = stringEq(name,id);
+      guard stringEq(name,id)
       then (exp,(name,iterExp,false));
     case (DAE.CREF(DAE.CREF_QUAL(id,ty1,ss,cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst={})),_))
-      equation
-        true = stringEq(name,id);
-        exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
-      then (exp,tpl);
+      guard stringEq(name,id)
+      then (DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty), tpl);
     case (DAE.CREF(DAE.CREF_QUAL(id,ty1,{},cr),ty),tpl as (name,DAE.CREF(componentRef=DAE.CREF_IDENT(ident=replName,subscriptLst=ss)),_))
-      equation
-        true = stringEq(name,id);
-        exp = DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty);
-      then (exp,tpl);
+      guard stringEq(name,id)
+      then (DAE.CREF(DAE.CREF_QUAL(replName,ty1,ss,cr),ty), tpl);
     case (DAE.CREF(componentRef=DAE.CREF_QUAL(id,_,{},DAE.CREF_IDENT(id2,_,{}))),tpl as (name,DAE.CALL(expLst=exps,path=callPath,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(recordPath)))),_))
       equation
         true = stringEq(name,id);
@@ -5483,8 +5443,7 @@ algorithm
         exp = listGet(exps,i);
       then (exp,tpl);
     case (exp as DAE.CREF(componentRef=DAE.CREF_QUAL(ident=id)),(name,iterExp,_))
-      equation
-        true = stringEq(name,id);
+      guard stringEq(name,id)
       then (exp,(name,iterExp,false));
     else (inExp,inTpl);
   end matchcontinue;
@@ -5762,7 +5721,7 @@ algorithm
     case (DAE.BCONST(_),NONE()) then SOME(e1);
     case (DAE.RCONST(r1),SOME(DAE.RCONST(r2))) equation r1=realMax(r1,r2); then SOME(DAE.RCONST(r1));
     case (DAE.ICONST(i1),SOME(DAE.ICONST(i2))) equation i1=intMax(i1,i2); then SOME(DAE.ICONST(i1));
-    case (DAE.BCONST(b1),SOME(DAE.BCONST(b2))) equation b1= b1 or b2; then SOME(DAE.BCONST(b1));
+    case (DAE.BCONST(b1),SOME(DAE.BCONST(b2))) then (if b2 or b1==b2 then e2 else SOME(DAE.BCONST(b1)));
     else e2;
   end match;
 end maxElement;
@@ -5782,7 +5741,7 @@ algorithm
     case (DAE.BCONST(_),NONE()) then SOME(e1);
     case (DAE.RCONST(r1),SOME(DAE.RCONST(r2))) equation r1=realMin(r1,r2); then SOME(DAE.RCONST(r1));
     case (DAE.ICONST(i1),SOME(DAE.ICONST(i2))) equation i1=intMin(i1,i2); then SOME(DAE.ICONST(i1));
-    case (DAE.BCONST(b1),SOME(DAE.BCONST(b2))) equation b1= b1 and b2; then SOME(DAE.BCONST(b1));
+    case (DAE.BCONST(b1),SOME(DAE.BCONST(b2))) then (if not b2 or b1==b2 then e2 else SOME(DAE.BCONST(b1)));
     else e2;
   end match;
 end minElement;
