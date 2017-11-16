@@ -4081,6 +4081,21 @@ algorithm
         checkZeroLengthArrayOp(oper);
       then e1;
 
+    // Look for empty arrays
+    case (_,DAE.ADD(),DAE.RCONST(r),DAE.BINARY(DAE.RCONST(r1),DAE.SUB(ty=ty),DAE.CREF(componentRef=cr1, ty=ty2)),_,_)
+      equation
+              //print(" case55555 ");
+              //print("\n"+ExpressionDump.dumpExpStr(origExp,1)+"\n");
+              e1 = DAE.BINARY(DAE.RCONST(realAdd(r,r1)),DAE.SUB(ty),DAE.CREF(cr1, ty2));
+              //print("\nMAKE   "+ExpressionDump.dumpExpStr(e1,1)+"\n");
+      then e1;
+
+    // a*(b^(-e)) => a/(b^e)
+    case (_,DAE.ADD(),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS())),_,_)
+      equation
+        res = DAE.BINARY(e1,DAE.DIV(ty2),DAE.BINARY(e2,DAE.POW(ty2),e3));
+      then res;
+
     // a*(b^(-e)) => a/(b^e)
     case (_,DAE.MUL(),e1,DAE.BINARY(exp1 = e2,operator = DAE.POW(ty = ty2),exp2 = DAE.UNARY(exp=e3,operator=DAE.UMINUS())),_,_)
       equation
