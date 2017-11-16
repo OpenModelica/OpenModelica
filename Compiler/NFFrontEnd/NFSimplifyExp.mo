@@ -99,11 +99,6 @@ algorithm
       then
         Expression.CALL(call);
 
-    case Expression.SIZE()
-      algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
-      then fail();
-
     case Expression.BINARY()
       algorithm
         exp1 := simplifyExp(exp.exp1);
@@ -177,11 +172,6 @@ algorithm
       then fail();
 
     case Expression.CALL()
-      algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
-      then fail();
-
-    case Expression.SIZE()
       algorithm
         assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
       then fail();

@@ -100,13 +100,14 @@ uniontype TypingError
 end TypingError;
 
 type EquationScope = enumeration(NORMAL, INITIAL, IF, IF_PARAMETER);
+type ClassScope = enumeration(CLASS, FUNCTION);
 
 public
 function typeClass
   input InstNode cls;
   input String name;
 algorithm
-  typeComponents(cls);
+  typeComponents(cls, ClassScope.CLASS);
   execStat("NFTyping.typeComponents(" + name + ")");
   typeBindings(cls, cls);
   execStat("NFTyping.typeBindings(" + name + ")");
@@ -117,13 +118,14 @@ end typeClass;
 function typeFunction
   input InstNode cls;
 algorithm
-  typeComponents(cls);
+  typeComponents(cls, ClassScope.FUNCTION);
   typeBindings(cls, cls);
   typeSections(cls);
 end typeFunction;
 
 function typeComponents
   input InstNode cls;
+  input ClassScope clsScope;
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
@@ -133,7 +135,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          typeComponent(c);
+          typeComponent(c, clsScope);
         end for;
       then
         ();
@@ -147,7 +149,7 @@ algorithm
         // But keep the restriction.
         c2 := Class.setRestriction(c.restriction, c2);
         InstNode.updateClass(c2, cls);
-        typeComponents(cls);
+        typeComponents(cls, clsScope);
       then
         ();
 
@@ -204,6 +206,7 @@ end makeConnectorType;
 
 function typeComponent
   input InstNode component;
+  input ClassScope clsScope;
   output Type ty;
 protected
   InstNode node = InstNode.resolveOuter(component);
@@ -214,7 +217,7 @@ algorithm
     case Component.UNTYPED_COMPONENT()
       algorithm
         // Type the component's dimensions.
-        typeDimensions(c.dimensions, node, c.binding, c.info);
+        typeDimensions(c.dimensions, node, c.binding, clsScope, c.info);
 
         // Construct the type of the component and update the node with it.
         ty := Type.liftArrayLeftList(makeClassType(c.classInst), arrayList(c.dimensions));
@@ -224,7 +227,7 @@ algorithm
         checkComponentAttributes(c.attributes, component);
 
         // Type the component's children.
-        typeComponents(c.classInst);
+        typeComponents(c.classInst, clsScope);
       then
         ty;
 
@@ -349,10 +352,11 @@ function typeDimensions
   input output array<Dimension> dimensions;
   input InstNode component;
   input Binding binding;
+  input ClassScope clsScope;
   input SourceInfo info;
 algorithm
   for i in 1:arrayLength(dimensions) loop
-    typeDimension(dimensions[i], component, binding, i, dimensions, info);
+    typeDimension(dimensions[i], component, binding, i, clsScope, dimensions, info);
   end for;
 end typeDimensions;
 
@@ -361,6 +365,7 @@ function typeDimension
   input InstNode component;
   input Binding binding;
   input Integer index;
+  input ClassScope clsScope;
   input array<Dimension> dimensions;
   input SourceInfo info;
 algorithm
@@ -396,10 +401,20 @@ algorithm
         arrayUpdate(dimensions, index, Dimension.UNTYPED(dimension.dimension, true));
 
         (exp, ty, var) := typeExp(dimension.dimension, info, ExpOrigin.DIMENSION());
-        TypeCheck.checkDimension(exp, ty, var, info);
+        TypeCheck.checkDimensionType(exp, ty, info);
 
-        exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
-        exp := SimplifyExp.simplifyExp(exp);
+        if var <= Variability.PARAMETER then
+          // Evaluate the dimension if it's a parameter expression.
+          exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+          exp := SimplifyExp.simplifyExp(exp);
+        else
+          // Dimensions must be parameter expressions, unless we're in a function.
+          if clsScope <> ClassScope.FUNCTION then
+            Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
+              {Expression.toString(exp)}, info);
+            fail();
+          end if;
+        end if;
 
         // It's possible to get an array expression here, for example if the
         // dimension expression is a parameter whose binding comes from a
@@ -417,7 +432,11 @@ algorithm
       then
         dim;
 
-    // If the dimension is unknown, try to infer it from the components binding.
+    // If the dimension is unknown in a function, keep it unknown.
+    case Dimension.UNKNOWN() guard clsScope == ClassScope.FUNCTION
+      then dimension;
+
+    // If the dimension is unknown in a class, try to infer it from the components binding.
     case Dimension.UNKNOWN()
       algorithm
         dim := match binding
@@ -1123,7 +1142,7 @@ algorithm
         else
           error := TypingError.NO_ERROR();
           d := arrayGet(c.dimensions, dimIndex);
-          d := typeDimension(d, node, c.binding, dimIndex, c.dimensions, c.info);
+          d := typeDimension(d, node, c.binding, dimIndex, ClassScope.CLASS, c.dimensions, c.info);
         end if;
       then
         (d, error);
@@ -1172,7 +1191,7 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
-        node_ty := typeComponent(cref.node);
+        node_ty := typeComponent(cref.node, ClassScope.CLASS);
         variability := ComponentRef.getVariability(cref);
         subs := typeSubscripts(cref.subscripts, node_ty, cref.node, info);
         cref_ty := Type.subscript(node_ty, subs);
@@ -1422,38 +1441,63 @@ algorithm
           fail();
         end if;
 
-        // TODO: Only evaluate the index if it's a constant (parameter?),
-        //       otherwise just return a size expression.
-        index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
-        index := SimplifyExp.simplifyExp(index);
+        if variability <= Variability.PARAMETER then
+          // Evaluate the index if it's a constant.
+          index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
+          index := SimplifyExp.simplifyExp(index);
 
-        // TODO: Print an error if the index couldn't be evaluated to an int.
-        Expression.INTEGER(iindex) := index;
+          // TODO: Print an error if the index couldn't be evaluated to an int.
+          Expression.INTEGER(iindex) := index;
 
-        (dim, ty_err) := typeExpDim(sizeExp.exp, iindex, ExpOrigin.NO_ORIGIN(), info);
+          // Get the iindex'd dimension of the expression.
+          (dim, ty_err) := typeExpDim(sizeExp.exp, iindex, ExpOrigin.NO_ORIGIN(), info);
 
-        () := match ty_err
-          case NO_ERROR() then ();
+          () := match ty_err
+            case NO_ERROR() then ();
 
-          // The first argument wasn't an array.
-          case OUT_OF_BOUNDS(0)
-            algorithm
-              Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
-            then
-              fail();
+            // The first argument wasn't an array.
+            case OUT_OF_BOUNDS(0)
+              algorithm
+                Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
+              then
+                fail();
 
-          // The index referred to an invalid dimension.
-          case OUT_OF_BOUNDS()
-            algorithm
-              Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
-                {String(iindex), Expression.toString(sizeExp.exp), String(ty_err.upperBound)}, info);
-            then
-              fail();
-        end match;
+            // The index referred to an invalid dimension.
+            case OUT_OF_BOUNDS()
+              algorithm
+                Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
+                  {String(iindex), Expression.toString(sizeExp.exp), String(ty_err.upperBound)}, info);
+              then
+                fail();
+          end match;
 
-        dim_size := Dimension.size(dim);
+          if Dimension.isKnown(dim) then
+            // The dimension size is known, return its size.
+            exp := Expression.INTEGER(Dimension.size(dim));
+          else
+            // The dimension size is unknown, return a size expression. This can
+            // happen in functions where unknown dimensions are allowed.
+            exp := typeExp(sizeExp.exp, info);
+            exp := Expression.SIZE(exp, SOME(index));
+          end if;
+
+          variability := Variability.PARAMETER;
+        else
+          // If the index is not a constant, type the whole expression.
+          (exp, exp_ty) := typeExp(sizeExp.exp, info);
+
+          // Check that it's an array.
+          if not Type.isArray(exp_ty) then
+            Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
+            fail();
+          end if;
+
+          // Since we don't know which dimension to take the size of, return a size expression.
+          exp := Expression.SIZE(exp, SOME(index));
+          variability := Variability.CONTINUOUS;
+        end if;
       then
-        (Expression.INTEGER(dim_size), Type.INTEGER(), Variability.CONSTANT);
+        (exp, Type.INTEGER(), variability);
 
     case Expression.SIZE()
       algorithm

@@ -570,6 +570,7 @@ uniontype Call
           if nArgs == 1 then
             {(e,ty,variability)} := tyArgs;
             es := {e};
+            ty := Type.arrayElementType(ty);
           else
             {(e1,ty1,variability1),(e2,ty2,variability2)} := tyArgs;
             es := {e1,e2};

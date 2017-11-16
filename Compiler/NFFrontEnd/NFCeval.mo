@@ -138,7 +138,7 @@ algorithm
       algorithm
         dim := listGet(Type.arrayDims(Expression.typeOf(exp.exp)), Expression.toInteger(evalExp(exp1, target)));
       then
-        Expression.INTEGER(Dimension.size(dim));
+        if Dimension.isKnown(dim) then Expression.INTEGER(Dimension.size(dim)) else exp;
 
     case Expression.SIZE()
       algorithm

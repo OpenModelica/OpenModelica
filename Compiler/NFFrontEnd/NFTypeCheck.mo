@@ -2435,7 +2435,7 @@ algorithm
           end for;
         end if;
 
-        (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp);
+        (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
 
         if not isCompatibleMatch(ty_match) then
           Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
@@ -2458,12 +2458,11 @@ algorithm
   end match;
 end matchBinding;
 
-function checkDimension
-  "Checks that an expression used as a dimension is a parameter expression and
-   has a valid type for a dimension, otherwise prints an error and fails."
+function checkDimensionType
+  "Checks that an expression used as a dimension has a valid type for a
+   dimension, otherwise prints an error and fails."
   input Expression exp;
   input Type ty;
-  input Variability var;
   input SourceInfo info;
 algorithm
   if not Type.isInteger(ty) then
@@ -2478,13 +2477,7 @@ algorithm
           fail();
     end match;
   end if;
-
-  if var > Variability.PARAMETER then
-    Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
-      {Expression.toString(exp)}, info);
-    fail();
-  end if;
-end checkDimension;
+end checkDimensionType;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;
