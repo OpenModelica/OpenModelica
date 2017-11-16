@@ -22,6 +22,6 @@ end FuncBuiltinIdentity;
 //   Real x[3,2];
 //   Real x[3,3];
 // equation
-//   x = /*Real*/(identity(3));
+//   x = /*Real[arraySize, arraySize]*/(identity(3));
 // end FuncBuiltinIdentity;
 // endResult
