@@ -529,7 +529,13 @@ public
       case (UNARY(), _)
         then UNARY(exp.operator, typeCastElements(exp.exp, ty));
 
-      else CAST(ty, exp);
+      else
+        algorithm
+          t := typeOf(exp);
+          t := Type.setArrayElementType(t, ty);
+        then
+          CAST(t, exp);
+
     end match;
   end typeCastElements;
 

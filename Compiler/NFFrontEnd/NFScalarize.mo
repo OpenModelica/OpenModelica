@@ -137,6 +137,11 @@ algorithm
         ty := Type.arrayElementType(ty);
 
         while ExpressionIterator.hasNext(lhs_iter) loop
+          if not ExpressionIterator.hasNext(rhs_iter) then
+            Error.addInternalError(getInstanceName() + " could not expand rhs " +
+              Expression.toString(eq.rhs), eq.info);
+          end if;
+
           (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
           (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
           equations := Equation.EQUALITY(lhs, rhs, ty, info) :: equations;
