@@ -140,7 +140,7 @@ algorithm
   end if;
   // handle alias equations
   (vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns) := handleAliasEquations(aliaseqns, vars, globalKnownVars, extVars, aliasVars, eqns, reqns, ieqns);
-  (eqns,extAliasVars,extVars) := getExternalObjectAlias(eqns, extVars);
+  (ieqns, eqns, extAliasVars, extVars) := getExternalObjectAlias(ieqns, eqns, extVars);
   aliasVars := BackendVariable.addVariables(extAliasVars,aliasVars);
 
   vars_1 := detectImplicitDiscrete(vars, globalKnownVars, eqns);
@@ -189,8 +189,10 @@ end lower;
 protected function getExternalObjectAlias "Checks equations if there is an alias equation for external objects.
 If yes, assign alias var, replace equations, remove alias equation.
 author: waurich TUD 2016-10"
+  input list<BackendDAE.Equation> inInitEqs;
   input list<BackendDAE.Equation> inEqs;
   input BackendDAE.Variables extVars;
+  output list<BackendDAE.Equation> oInitEqs;
   output list<BackendDAE.Equation> oEqs;
   output BackendDAE.Variables extAliasVars;
   output BackendDAE.Variables extVarsOut;
@@ -205,6 +207,7 @@ algorithm
 
   // get alias equations for external objects
   (oEqs,aliasEqs) := List.fold1(inEqs,getExternalObjectAlias2,extCrefs,({},{}));
+  (oInitEqs,aliasEqs) := List.fold1(inInitEqs,getExternalObjectAlias2,extCrefs,({},aliasEqs));
 
   if (not listEmpty(aliasEqs)) then
     Error.addCompilerWarning("Alias equations of external objects are not Modelica compliant as in:\n    "+stringDelimitList(List.map(aliasEqs,BackendDump.equationString),"\n    ")+"\n");
@@ -220,7 +223,9 @@ algorithm
 
   //replace in equations
   (oEqs,_) := BackendVarTransform.replaceEquations(oEqs,repl,NONE());
+  (oInitEqs,_) := BackendVarTransform.replaceEquations(oInitEqs,repl,NONE());
   oEqs := listReverse(oEqs);
+  oInitEqs := listReverse(oInitEqs);
 end getExternalObjectAlias;
 
 protected function getExternalObjectAlias3 "Gets the alias var and sim var for the given alias equation and adds a replacement rule
@@ -265,6 +270,14 @@ algorithm
   elseif BackendVariable.varHasBindExp(var2) and not BackendVariable.varHasBindExp(var1)then
     simVar := var2;
     aliasVar := BackendVariable.setBindExp(var1, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
+  elseif BackendVariable.varHasBindExp(var2) and BackendVariable.varHasBindExp(var1) then
+    if Expression.isCall(BackendVariable.varBindExp(var1)) then
+      simVar := var1;
+      aliasVar := BackendVariable.setBindExp(var2, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
+    else
+      simVar := var2;
+      aliasVar := BackendVariable.setBindExp(var1, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
+    end if;
   else
     simVar := var1;
     aliasVar := BackendVariable.setBindExp(var2, SOME(Expression.crefExp(BackendVariable.varCref(simVar))));
