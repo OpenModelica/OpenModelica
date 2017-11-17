@@ -313,8 +313,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     virtual ~<%lastIdentOfPath(modelInfo.name)%>StateSelection();
     int getDimStateSets() const;
     int getDimStates(unsigned int index) const;
-    int getDimCanditates(unsigned int index) const ;
-    int getDimDummyStates(unsigned int index) const ;
+    int getDimCanditates(unsigned int index) const;
+    int getDimDummyStates(unsigned int index) const;
     void getStates(unsigned int index,double* z);
     void setStates(unsigned int index,const double* z);
     void getStateCanditates(unsigned int index,double* z);
