@@ -283,7 +283,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     >>
     %>
 
-    <%variableDefinitionsJacobians(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
+    <%variableDefinitionsJacobians_skip(jacobianMatrixes, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)%>
 
     /*testmaessig aus der Cruntime*/
     void initializeColoredJacobianA();
@@ -13033,13 +13033,18 @@ case _ then
 end generateJacobianMatrix;
 
 
+template variableDefinitionsJacobians_skip(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
+ "Skips generation of defines for jacobian vars."
+::=
+ ''
+end variableDefinitionsJacobians_skip;
+
 
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text &jacobianVarsInit, Boolean createDebugCode)
  "Generates defines for jacobian vars."
 ::=
   let analyticVars = (JacobianMatrixes |> JAC_MATRIX(columns=jacColumn, seedVars=vars, matrixName=name, jacobianIndex=jacIndex)  =>
-    //let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
-    let varsDef = ""
+    let varsDef = variableDefinitionsJacobians2(jacIndex, jacColumn, seedVars, name, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, &jacobianVarsInit, createDebugCode)
     <<
     <%varsDef%>
     >>
