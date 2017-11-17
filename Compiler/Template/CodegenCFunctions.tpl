@@ -6863,11 +6863,11 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
     <%patternMatching%>
     <%assignments%>
     <%&preGuardCheck%>
-    <%guardCheck%>
     <% match c.jump
        case 0 then "/* Pattern matching succeeded */"
        else '<%ix%> += <%c.jump%>; /* Pattern matching succeeded; we may skip some cases if we fail */'
     %>
+    <%guardCheck%>
     <%stmts%>
     <%modelicaLine(c.resultInfo)%>
     <% if c.result then '<%preRes%><%caseRes%>' else '<%generateThrow()%>;<%\n%>' %>
