@@ -4777,6 +4777,11 @@ algorithm
       Real r;
       Option<DAE.Exp> oexp;
 
+    // fix for PNLib where "{} and not {}" is evaluated
+    case (_,_,DAE.ARRAY(array={}),_)
+      then origExp;
+    case (_,_,_,DAE.ARRAY(array={}))
+      then origExp;
     // a AND not a -> false
     case (_,DAE.AND(_),e1,DAE.LUNARY(DAE.NOT(_),e2))
       guard Expression.expEqual(e1, e2)
