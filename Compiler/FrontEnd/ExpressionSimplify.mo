@@ -4768,14 +4768,8 @@ protected function simplifyLBinary
 algorithm
   outExp := match (origExp,inOperator2,inExp3,inExp4)
     local
-      DAE.Exp e1_1,e3,e,e1,e2,e4,e5,e6,res,one;
-      Operator oper, op1 ,op2, op3;
-      Type ty,ty2,tp,tp2,ty1;
-      list<DAE.Exp> exp_lst,exp_lst_1;
-      DAE.ComponentRef cr1,cr2;
-      Boolean b,b1,b2;
-      Real r;
-      Option<DAE.Exp> oexp;
+      DAE.Exp e1,e2;
+      Boolean b;
 
     // fix for PNLib where "{} and not {}" is evaluated
     case (_,_,DAE.ARRAY(array={}),_)
@@ -4783,18 +4777,18 @@ algorithm
     case (_,_,_,DAE.ARRAY(array={}))
       then origExp;
     // a AND not a -> false
-    case (_,DAE.AND(_),e1,DAE.LUNARY(DAE.NOT(_),e2))
+    case (_,DAE.AND(DAE.T_BOOL()),e1,DAE.LUNARY(DAE.NOT(_),e2))
       guard Expression.expEqual(e1, e2)
       then DAE.BCONST(false);
-    case (_,DAE.AND(_),DAE.LUNARY(DAE.NOT(_),e1),e2)
+    case (_,DAE.AND(DAE.T_BOOL()),DAE.LUNARY(DAE.NOT(_),e1),e2)
       guard Expression.expEqual(e1, e2)
       then DAE.BCONST(false);
 
     // a OR not a -> true
-    case (_,DAE.OR(_),e1,DAE.LUNARY(DAE.NOT(_),e2))
+    case (_,DAE.OR(DAE.T_BOOL()),e1,DAE.LUNARY(DAE.NOT(_),e2))
       guard Expression.expEqual(e1, e2)
       then DAE.BCONST(true);
-    case (_,DAE.OR(_),DAE.LUNARY(DAE.NOT(_),e1),e2)
+    case (_,DAE.OR(DAE.T_BOOL()),DAE.LUNARY(DAE.NOT(_),e1),e2)
       guard Expression.expEqual(e1, e2)
       then DAE.BCONST(true);
 
