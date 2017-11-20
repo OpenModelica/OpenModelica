@@ -358,6 +358,8 @@ uniontype Call
           if not fn_typed then
             fnl := list(Function.typeFunction(f) for f in fnl);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
+            fnl := list(Function.typeFunctionBody(f) for f in fnl);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
           end if;
 
 
@@ -413,6 +415,8 @@ uniontype Call
           // Type the function(s) if not already done.
           if not fn_typed then
             fnl := list(Function.typeFunction(f) for f in fnl);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
+            fnl := list(Function.typeFunctionBody(f) for f in fnl);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
           end if;
 
@@ -477,6 +481,7 @@ uniontype Call
           // Type the function(s) if not already done.
           if not fn_typed then
             fn := Function.typeFunction(fn);
+            fn := Function.typeFunctionBody(fn);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION({fn}, true, special));
           end if;
 
@@ -557,6 +562,7 @@ uniontype Call
           // Type the function(s) if not already done.
           if not fn_typed then
             fn := Function.typeFunction(fn);
+            fn := Function.typeFunctionBody(fn);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION({fn}, true, special));
           end if;
 
@@ -634,6 +640,7 @@ uniontype Call
           // Type the function(s) if not already done.
           if not fn_typed then
             fn := Function.typeFunction(fn);
+            fn := Function.typeFunctionBody(fn);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION({fn}, true, special));
           end if;
 

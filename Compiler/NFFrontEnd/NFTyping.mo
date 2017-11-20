@@ -99,6 +99,7 @@ uniontype TypingError
   end isError;
 end TypingError;
 
+public
 type EquationScope = enumeration(NORMAL, INITIAL, IF, IF_PARAMETER);
 type ClassScope = enumeration(CLASS, FUNCTION);
 
@@ -114,14 +115,6 @@ algorithm
   typeSections(cls);
   execStat("NFTyping.typeSections(" + name + ")");
 end typeClass;
-
-function typeFunction
-  input InstNode cls;
-algorithm
-  typeComponents(cls, ClassScope.FUNCTION);
-  typeBindings(cls, cls);
-  typeSections(cls);
-end typeFunction;
 
 function typeComponents
   input InstNode cls;
@@ -1407,7 +1400,6 @@ algorithm
   variability := if listEmpty(valr) then Variability.CONSTANT else listHead(valr);
 end typeTuple;
 
-protected
 function printRangeTypeError
   input Expression exp1;
   input Type ty1;

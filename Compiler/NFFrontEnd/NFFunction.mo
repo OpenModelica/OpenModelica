@@ -59,6 +59,7 @@ import ClassTree = NFClassTree.ClassTree;
 import Prefixes = NFPrefixes;
 import NFLookupState.LookupState;
 import Record = NFRecord;
+import NFTyping.ClassScope;
 
 import MatchKind = NFTypeCheck.MatchKind;
 
@@ -288,10 +289,10 @@ uniontype Function
         algorithm
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);
-          Inst.instExpressions(fnNode);
           fn := Function.new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
+          Inst.instExpressions(fnNode);
         then
           (fnNode, specialBuiltin);
 
@@ -668,17 +669,48 @@ uniontype Function
   end isTyped;
 
   function typeFunction
+    "Types a function's parameters, local components and default arguments."
     input output Function fn;
   protected
     DAE.FunctionAttributes attr;
+    InstNode node = fn.node;
   algorithm
     if not isTyped(fn) then
-      Typing.typeFunction(fn.node);
+      // Type all the components in the function.
+      Typing.typeComponents(node, ClassScope.FUNCTION);
+
+      // Type the binding of the inputs only. This is done because they are
+      // needed when type checking a function call. The outputs are not needed
+      // for that and can contain recursive calls to the function, so we leave
+      // them for later.
+      for c in fn.inputs loop
+        Typing.typeComponentBinding(c);
+      end for;
+
+      // Make the slots and return type for the function.
+      fn.slots := list(makeSlot(i) for i in fn.inputs);
       checkParamTypes(fn);
-      fn.slots := makeSlots(fn.inputs);
       fn.returnType := makeReturnType(fn);
     end if;
   end typeFunction;
+
+  function typeFunctionBody
+    "Types the body of a function, along with any bindings of local variables
+     and outputs."
+    input output Function fn;
+  algorithm
+    // Type the bindings of the outputs and local variables.
+    for c in fn.outputs loop
+      Typing.typeComponentBinding(c);
+    end for;
+
+    for c in fn.locals loop
+      Typing.typeComponentBinding(c);
+    end for;
+
+    // Type the algorithm section of the function, if it has one.
+    Typing.typeSections(fn.node);
+  end typeFunctionBody;
 
   function isBuiltin
     input Function fn;
@@ -757,17 +789,17 @@ protected
     input output list<InstNode> locals = {};
   protected
     Class cls;
-    array<InstNode> comps;
+    array<Mutable<InstNode>> comps;
     InstNode n;
   algorithm
     assert(InstNode.isClass(node), getInstanceName() + " got non-class node");
     cls := InstNode.getClass(node);
 
     () := match cls
-      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
+      case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE(components = comps))
         algorithm
           for i in arrayLength(comps):-1:1 loop
-            n := comps[i];
+            n := Mutable.access(comps[i]);
 
             // Sort the components based on their direction.
             () := match paramDirection(n)
@@ -847,27 +879,9 @@ protected
     end if;
   end paramDirection;
 
-  function makeSlots
-    input list<InstNode> inputs;
-    output list<Slot> slots = {};
-  protected
-    Boolean has_default, default_required = false;
-    Slot s;
-  algorithm
-    for i in inputs loop
-      (s, has_default) := makeSlot(i, default_required);
-      slots := s :: slots;
-      default_required := default_required or has_default;
-    end for;
-
-    slots := listReverse(slots);
-  end makeSlots;
-
   function makeSlot
     input InstNode component;
-    input Boolean defaultRequired;
     output Slot slot;
-    output Boolean hasDefault;
   protected
     Component comp;
     Option<Expression> default;
@@ -877,7 +891,6 @@ protected
       comp := InstNode.component(component);
       default := Binding.typedExp(Component.getBinding(comp));
       name := InstNode.name(component);
-      hasDefault := isSome(default);
 
       // Remove $in_ for OM input output arguments.
       if stringGet(name, 1) == 36 /*$*/ then
