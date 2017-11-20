@@ -1613,7 +1613,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     const char sep[] = ",";
     if(solverData->initHomotopy && ACTIVE_STREAM(LOG_INIT))
     {
-      sprintf(buffer, "%s_syst%d_new_global_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->startDirection > 0 ? "pos" : "neg");
+      sprintf(buffer, "%s_nonlinsys%d_adaptive_%s_homotopy_%s.csv", solverData->data->modelData->modelFilePrefix, solverData->sysNumber, solverData->data->callback->useHomotopy == 2 ? "global" : "local", solverData->startDirection > 0 ? "pos" : "neg");
       infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
@@ -1792,6 +1792,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     debugString(LOG_NLS_HOMOTOPY, "Newton iteration for corrector step begins!");
     for(j=0;j<maxiter;j++)
     {
+      debugInt(LOG_NLS_HOMOTOPY, "Iteration: ", j+1);
       if (vec2Norm(solverData->n, solverData->hvec)<hEps || vec2Norm(solverData->n, solverData->hvecScaled)<hEps)
       {
         debugString(LOG_NLS_HOMOTOPY, "step accepted!");
@@ -2244,24 +2245,31 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     runHomotopy++;
     /* debug output */
     debugString(LOG_NLS_HOMOTOPY, "======================================================");
-    debugInt(LOG_NLS_HOMOTOPY, "RUN HOMOTOPY",runHomotopy);
 
     if (solverData->initHomotopy) {
       if (runHomotopy == 1) {
         solverData->h_function = wrapper_fvec;
         solverData->hJac_dh = wrapper_fvec_der;
         solverData->startDirection = 1.0;
-        debugDouble(LOG_INIT,"STARTING HOMOTOPY METHOD; startDirection = ", solverData->startDirection);
+        debugInt(LOG_INIT, "Homotopy run: ", runHomotopy);
+        debugDouble(LOG_INIT,"startDirection = ", solverData->startDirection);
       }
 
       if (runHomotopy == 2) {
         solverData->h_function = wrapper_fvec;
         solverData->hJac_dh = wrapper_fvec_der;
         solverData->startDirection = -1.0;
-        debugDouble(LOG_INIT,"STARTING HOMOTOPY METHOD; startDirection = ", solverData->startDirection);
+        debugInt(LOG_INIT, "Homotopy run: ", runHomotopy);
+        debugDouble(LOG_INIT,"Try again with startDirection = ", solverData->startDirection);
+      }
+
+      if (runHomotopy == 3) {
+        success = 0;
+        break;
       }
     }
     else {
+      debugInt(LOG_NLS_HOMOTOPY, "Homotopy run: ", runHomotopy);
       if (runHomotopy == 1)
       {
         /* store x0 and calculate f(x0) -> newton homotopy, fJac(x0) -> taylor, affin homotopy */

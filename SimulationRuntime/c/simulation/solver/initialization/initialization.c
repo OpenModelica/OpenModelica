@@ -218,7 +218,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   /* If there is homotopy in the model and global homotopy is activated
      and homotopy on first try is deactivated,
      TRY TO SOLVE WITHOUT HOMOTOPY FIRST.
-     To-Do: Activate trying without homotopy first also for the new global homotopy approach */
+     To-Do: Activate trying without homotopy first also for the adaptive global homotopy approach */
   } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] && data->callback->useHomotopy != 2) {
     /* try */
 #ifndef OMC_EMCC
@@ -240,7 +240,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
   /* If there is homotopy in the model and global homotopy is activated
      and solving without homotopy failed or is not wanted,
-     use GLOBAL HOMOTOPY METHOD. */
+     use EQUIDISTANT GLOBAL HOMOTOPY METHOD. */
   if (data->callback->useHomotopy == 1 && solveWithGlobalHomotopy)
   {
     long step;
@@ -250,7 +250,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     const char sep[] = ",";
     if(ACTIVE_STREAM(LOG_INIT))
     {
-      sprintf(buffer, "%s_global_homotopy.csv", mData->modelFilePrefix);
+      sprintf(buffer, "%s_equidistant_global_homotopy.csv", mData->modelFilePrefix);
       infoStreamPrint(LOG_INIT, 0, "The homotopy path will be exported to %s.", buffer);
       pFile = fopen(buffer, "wt");
       fprintf(pFile, "\"sep=%s\"\n%s", sep, "\"lambda\"");
@@ -297,9 +297,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #endif
   }
 
-  /* If there is homotopy in the model and the new global homotopy approach is activated
+  /* If there is homotopy in the model and the adaptive global homotopy approach is activated
      and solving without homotopy failed or is not wanted,
-     use NEW GLOBAL HOMOTOPY APPROACH. */
+     use ADAPTIVE GLOBAL HOMOTOPY APPROACH. */
   if (data->callback->useHomotopy == 2 && solveWithGlobalHomotopy)
   {
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
@@ -318,7 +318,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(LOG_INIT, 0, "run along the homotopy path and solve the actual system");
     data->callback->functionInitialEquations(data, threadData);
 
-    data->simulationInfo->homotopyUsed = 1;
     messageClose(LOG_INIT);
   }
 
