@@ -135,7 +135,9 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          typeComponent(c, clsScope);
+          if not InstNode.isEmpty(c) then
+            typeComponent(c, clsScope);
+          end if;
         end for;
       then
         ();
@@ -519,8 +521,14 @@ function typeComponentBinding
   input InstNode component;
 protected
   InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  Component c;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  c := InstNode.component(node);
+
   () := match c
     local
       Binding binding;
@@ -1573,8 +1581,8 @@ algorithm
           function typeEquation(scope = EquationScope.NORMAL), typeAlgorithm);
         typed_cls := Class.setSections(sections, cls);
 
-        for i in 1:arrayLength(components) loop
-          typeSections(InstNode.classScope(InstNode.resolveOuter(components[i])));
+        for c in components loop
+          typeComponentSections(InstNode.resolveOuter(c));
         end for;
 
         InstNode.updateClass(typed_cls, classNode);
@@ -1591,6 +1599,34 @@ algorithm
         fail();
   end match;
 end typeSections;
+
+function typeComponentSections
+  input InstNode component;
+protected
+  Component comp;
+algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  comp := InstNode.component(component);
+
+  () := match comp
+    case Component.TYPED_COMPONENT()
+      algorithm
+        typeSections(comp.classInst);
+      then
+        ();
+
+    else
+      algorithm
+        assert(false, getInstanceName() + " got uninstantiated component " +
+          InstNode.name(component));
+      then
+        fail();
+
+  end match;
+end typeComponentSections;
 
 function typeEquation
   input output Equation eq;

@@ -640,8 +640,8 @@ public
           algorithm
             (dup_cls, dup_comp) := enumerateDuplicates(tree.duplicates);
 
-            clsc := arrayLength(tree.classes) - listLength(dup_cls);
-            compc := arrayLength(tree.components) - listLength(dup_comp);
+            clsc := arrayLength(tree.classes);
+            compc := arrayLength(tree.components);
             clss := arrayCreateNoInit(clsc, InstNode.EMPTY_NODE());
             comps := arrayCreateNoInit(compc, InstNode.EMPTY_NODE());
 
@@ -655,48 +655,18 @@ public
     end flatten;
 
     function flatten2
-      input array<Mutable<InstNode>> elements "The array to take elements from";
-      input array<InstNode> flatElements "The array to add elements to";
-      input list<Integer> duplicates "Sorted list of duplicate element indices";
-    protected
-      list<Integer> dups;
-      Integer pos = 1, begin, dup;
+      input array<Mutable<InstNode>> elements;
+      input array<InstNode> flatElements;
+      input list<Integer> duplicates;
     algorithm
-      // If we have any duplicates, filter them out while adding them to the flat array.
-      if not listEmpty(duplicates) then
-        dup :: dups := duplicates;
+      for i in 1:arrayLength(elements) loop
+        arrayUpdateNoBoundsChecking(flatElements, i,
+          Mutable.access(arrayGetNoBoundsChecking(elements, i)));
+      end for;
 
-        // Loop through the elements using 'i', while 'pos' keeps track of where
-        // in the flat array we are.
-        for i in 1:arrayLength(elements) loop
-          if i == dup then
-            if listEmpty(dups) then
-              // When we run out of duplicates, switch to the faster mode.
-              begin := i + 1;
-              break;
-            else
-              dup :: dups := dups;
-            end if;
-          else
-            arrayUpdateNoBoundsChecking(flatElements, pos,
-              Mutable.access(arrayGetNoBoundsChecking(elements, i)));
-            pos := pos + 1;
-          end if;
-        end for;
-
-        // Add the remaining elements.
-        for i in begin:arrayLength(elements) loop
-          arrayUpdateNoBoundsChecking(flatElements, pos,
-            Mutable.access(arrayGetNoBoundsChecking(elements, i)));
-          pos := pos + 1;
-        end for;
-      else
-        // If we don't have any duplicates we can just copy from one array to the other.
-        for i in pos:arrayLength(elements) loop
-          arrayUpdateNoBoundsChecking(flatElements, i,
-            Mutable.access(arrayGetNoBoundsChecking(elements, i)));
-        end for;
-      end if;
+      for i in duplicates loop
+        arrayUpdateNoBoundsChecking(flatElements, i, InstNode.EMPTY_NODE());
+      end for;
     end flatten2;
 
     function lookupElement
@@ -1518,8 +1488,8 @@ public
         components := {};
       else
         (classes, components) := DuplicateTree.fold_2(duplicates, enumerateDuplicates2, {}, {});
-        classes := List.sort(classes, intGt);
-        components := List.sort(components, intGt);
+        //classes := List.sort(classes, intGt);
+        //components := List.sort(components, intGt);
       end if;
     end enumerateDuplicates;
 

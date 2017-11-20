@@ -197,7 +197,7 @@ protected
   Visibility vis;
 algorithm
   // Remove components that are only outer.
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isOnlyOuter(component) or InstNode.isEmpty(component) then
     return;
   end if;
 
