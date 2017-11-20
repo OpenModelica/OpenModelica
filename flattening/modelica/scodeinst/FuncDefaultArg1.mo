@@ -1,24 +1,23 @@
-// name: FuncMissingDefault2
+// name: FuncDefaultArg1
 // keywords:
 // status: correct
 // cflags: -d=newInst
 //
-// This is actaully valid (no warning needed). e.g. a call like this should work f(1.0, z=2.0)
-// // Checks that a warning is given when a parameter that doesn't have a default
-// // argument is after a parameter that does.
+// Checks that it's possible to use a function where only a 'middle' function
+// parameter has a default argument.
 // 
 
 function f
   input Real x;
   input Real y = 1.0;
-  input Real z; // No warning needed
+  input Real z;
   output Real w = x + y + z;
 end f;
 
-model M
+model FuncDefaultArg1
   Real x = f(1.0, 2.0, 3.0);
-  Real y = f(1.0, z=2.0);
-end M;
+  Real y = f(1.0, z = 2.0);
+end FuncDefaultArg1;
 
 // Result:
 // function f
@@ -28,8 +27,8 @@ end M;
 //   output Real w = x + y + z;
 // end f;
 //
-// class M
+// class FuncDefaultArg1
 //   Real x = f(1.0, 2.0, 3.0);
 //   Real y = f(1.0, 1.0, 2.0);
-// end M;
+// end FuncDefaultArg1;
 // endResult
