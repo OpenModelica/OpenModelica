@@ -128,6 +128,7 @@ DuplicateElements1.mo \
 DuplicateElements2.mo \
 DuplicateElements3.mo \
 DuplicateElements4.mo \
+DuplicateElements9.mo \
 DuplicateElementsValid1.mo \
 DuplicateMod1.mo \
 DuplicateMod2.mo \

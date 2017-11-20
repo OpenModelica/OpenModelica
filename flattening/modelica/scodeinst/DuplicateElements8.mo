@@ -13,9 +13,9 @@ model A2
   Real x = 2.0;
 end A2;
 
-model DuplicateElements7
+model DuplicateElements8
   extends A1;
   extends A2(x = 1.0);
-end DuplicateElements7;
+end DuplicateElements8;
 
 // Result:
