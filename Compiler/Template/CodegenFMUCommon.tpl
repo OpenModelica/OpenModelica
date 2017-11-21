@@ -648,7 +648,8 @@ match simvar
 case SIMVAR(unit = unit, displayUnit = displayUnit) then
   let unitString = if unit then ' unit="<%unit%>"'
   let displayUnitString = if displayUnit then ' displayUnit="<%displayUnit%>"'
-  '<%unitString%><%displayUnitString%>'
+  //'<%unitString%><%displayUnitString%>' skip displayUnit because FMI2XML fails for e.g. bar
+  '<%unitString%>'
 end UnitString2;
 
 template statesnumwithDummy(list<SimVar> vars)
