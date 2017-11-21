@@ -60,7 +60,7 @@ readFile("modelDescription.tmp.xml");
 //     variability=\"continuous\"
 //     causality=\"output\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
@@ -69,7 +69,7 @@ readFile("modelDescription.tmp.xml");
 //     variability=\"continuous\"
 //     causality=\"output\"
 //     initial=\"exact\">
-//     <Real start=\"5000000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real start=\"5000000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
@@ -78,7 +78,7 @@ readFile("modelDescription.tmp.xml");
 //     variability=\"continuous\"
 //     causality=\"output\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"10000000.0\"/>
+//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"10000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>

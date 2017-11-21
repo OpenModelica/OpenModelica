@@ -126,7 +126,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     <Real start=\"0.0\" unit=\"m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
@@ -136,7 +136,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real start=\"0.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
@@ -156,7 +156,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real derivative=\"2\"/>
+//     <Real derivative=\"2\" unit=\"m3.s-1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
@@ -166,7 +166,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real derivative=\"3\"/>
+//     <Real derivative=\"3\" unit=\"km-1.s-3.g\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
@@ -1146,7 +1146,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\"/>
+//     <Real min=\"0.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"115\" -->
 //   <ScalarVariable
@@ -1166,7 +1166,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"m3/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"117\" -->
 //   <ScalarVariable
@@ -1176,7 +1176,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     <Real start=\"0.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"118\" -->
 //   <ScalarVariable
@@ -1186,7 +1186,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"119\" -->
 //   <ScalarVariable
@@ -1196,7 +1196,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"120\" -->
 //   <ScalarVariable
@@ -1206,7 +1206,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"121\" -->
 //   <ScalarVariable
@@ -1216,7 +1216,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"122\" -->
 //   <ScalarVariable
@@ -1226,7 +1226,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"123\" -->
 //   <ScalarVariable
@@ -1236,7 +1236,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"124\" -->
 //   <ScalarVariable
@@ -1296,7 +1296,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"130\" -->
 //   <ScalarVariable
@@ -1306,7 +1306,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"J\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"131\" -->
 //   <ScalarVariable
@@ -1316,7 +1316,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"132\" -->
 //   <ScalarVariable
@@ -1326,7 +1326,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"133\" -->
 //   <ScalarVariable
@@ -1336,7 +1336,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"134\" -->
 //   <ScalarVariable
@@ -1346,7 +1346,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"135\" -->
 //   <ScalarVariable
@@ -1356,7 +1356,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\"/>
+//     <Real min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"136\" -->
 //   <ScalarVariable
@@ -1366,7 +1366,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"W\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"137\" -->
 //   <ScalarVariable
@@ -1376,7 +1376,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"138\" -->
 //   <ScalarVariable
@@ -1386,7 +1386,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"139\" -->
 //   <ScalarVariable
@@ -1416,7 +1416,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"142\" -->
 //   <ScalarVariable
@@ -1426,7 +1426,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" max=\"100000.0\"/>
+//     <Real min=\"0.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"143\" -->
 //   <ScalarVariable
@@ -1456,7 +1456,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"0.001\" max=\"0.25\" nominal=\"0.032\"/>
+//     <Real min=\"0.001\" max=\"0.25\" nominal=\"0.032\" unit=\"kg/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"146\" -->
 //   <ScalarVariable
@@ -1466,7 +1466,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"1000.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\"/>
+//     <Real start=\"1000.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"147\" -->
 //   <ScalarVariable
@@ -1476,7 +1476,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"148\" -->
 //   <ScalarVariable
@@ -1486,7 +1486,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"226.85\"/>
+//     <Real start=\"226.85\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"149\" -->
 //   <ScalarVariable
@@ -1496,7 +1496,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\"/>
+//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"150\" -->
 //   <ScalarVariable
@@ -1506,7 +1506,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"151\" -->
 //   <ScalarVariable
@@ -1516,7 +1516,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"152\" -->
 //   <ScalarVariable
@@ -1526,7 +1526,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"153\" -->
 //   <ScalarVariable
@@ -1536,7 +1536,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000000.0\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"-100000000.0\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"154\" -->
 //   <ScalarVariable
@@ -1546,7 +1546,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"input\"
 //     >
-//     <Real start=\"0.0\"/>
+//     <Real start=\"0.0\" unit=\"MW\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"155\" -->
 //   <ScalarVariable
@@ -1565,7 +1565,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"output\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"N/mm2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"157\" -->
 //   <ScalarVariable
@@ -1575,7 +1575,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"0.001\" max=\"0.25\" nominal=\"0.032\"/>
+//     <Real min=\"0.001\" max=\"0.25\" nominal=\"0.032\" unit=\"kg/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"158\" -->
 //   <ScalarVariable
@@ -1585,7 +1585,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"1000.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\"/>
+//     <Real start=\"1000.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"159\" -->
 //   <ScalarVariable
@@ -1595,7 +1595,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"160\" -->
 //   <ScalarVariable
@@ -1605,7 +1605,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\"/>
+//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"161\" -->
 //   <ScalarVariable
@@ -1615,7 +1615,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"162\" -->
 //   <ScalarVariable
@@ -1625,7 +1625,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"bar\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"163\" -->
 //   <ScalarVariable
@@ -1635,7 +1635,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"164\" -->
 //   <ScalarVariable
@@ -1645,7 +1645,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000000.0\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"-100000000.0\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"165\" -->
 //   <ScalarVariable
@@ -1655,7 +1655,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real start=\"150.0\" min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"166\" -->
 //   <ScalarVariable
@@ -1665,7 +1665,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"167\" -->
 //   <ScalarVariable
@@ -1675,7 +1675,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"168\" -->
 //   <ScalarVariable
@@ -1685,7 +1685,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" max=\"100000.0\"/>
+//     <Real min=\"0.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"169\" -->
 //   <ScalarVariable
@@ -1695,7 +1695,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"1000000.0\"/>
+//     <Real start=\"1000000.0\" unit=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"170\" -->
 //   <ScalarVariable
@@ -1705,7 +1705,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"1e-05\"/>
+//     <Real start=\"1e-05\" unit=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"171\" -->
 //   <ScalarVariable
@@ -1715,7 +1715,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"9000000.0\" min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real start=\"9000000.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"172\" -->
 //   <ScalarVariable
@@ -1725,7 +1725,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"-9.999999999999999e+59\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"-9.999999999999999e+59\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"173\" -->
 //   <ScalarVariable
@@ -1735,7 +1735,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"kg/(s.Pa)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"174\" -->
 //   <ScalarVariable
@@ -1745,7 +1745,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"180.0\" min=\"-100000.0\" max=\"100000.0\"/>
+//     <Real start=\"180.0\" min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"175\" -->
 //   <ScalarVariable
@@ -1755,7 +1755,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\" max=\"100000.0\"/>
+//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"176\" -->
 //   <ScalarVariable
@@ -1765,7 +1765,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\" max=\"100000.0\"/>
+//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"177\" -->
 //   <ScalarVariable
@@ -1775,7 +1775,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"120.0\" min=\"1e-60\"/>
+//     <Real start=\"120.0\" min=\"1e-60\" unit=\"s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"178\" -->
 //   <ScalarVariable
@@ -1785,7 +1785,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"10.0\"/>
+//     <Real start=\"10.0\" unit=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"179\" -->
 //   <ScalarVariable
@@ -1815,7 +1815,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"67.0\"/>
+//     <Real start=\"67.0\" unit=\"m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"182\" -->
 //   <ScalarVariable
@@ -1825,7 +1825,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"100.0\"/>
+//     <Real start=\"100.0\" unit=\"m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"183\" -->
 //   <ScalarVariable
@@ -1835,7 +1835,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\"/>
+//     <Real start=\"500.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"184\" -->
 //   <ScalarVariable
@@ -1845,7 +1845,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"300000.0\" min=\"0.0\"/>
+//     <Real start=\"300000.0\" min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"185\" -->
 //   <ScalarVariable
@@ -1855,7 +1855,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real start=\"100000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"186\" -->
 //   <ScalarVariable
@@ -1865,7 +1865,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"293.15\" min=\"0.0\" nominal=\"300.0\"/>
+//     <Real start=\"293.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"187\" -->
 //   <ScalarVariable
@@ -1875,7 +1875,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     <Real start=\"0.0\" unit=\"1/K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"188\" -->
 //   <ScalarVariable
@@ -1915,7 +1915,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\" max=\"100000.0\"/>
+//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"192\" -->
 //   <ScalarVariable
@@ -1925,7 +1925,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" max=\"100000.0\"/>
+//     <Real min=\"0.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"193\" -->
 //   <ScalarVariable
@@ -1935,7 +1935,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" max=\"1.0\" nominal=\"0.1\"/>
+//     <Real min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"194\" -->
 //   <ScalarVariable
@@ -1945,7 +1945,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"195\" -->
 //   <ScalarVariable
@@ -1955,7 +1955,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\" max=\"100000.0\"/>
+//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"196\" -->
 //   <ScalarVariable
@@ -1965,7 +1965,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real start=\"500.0\" min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"197\" -->
 //   <ScalarVariable
@@ -1975,7 +1975,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\"/>
+//     <Real start=\"1.0\" min=\"0.0\" max=\"1.0\" nominal=\"0.1\" unit=\"kg/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"198\" -->
 //   <ScalarVariable
@@ -1985,7 +1985,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"199\" -->
 //   <ScalarVariable
@@ -1995,7 +1995,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"84013.05815259689\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real start=\"84013.05815259689\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"200\" -->
 //   <ScalarVariable
@@ -2005,7 +2005,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"50000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real start=\"50000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"201\" -->
 //   <ScalarVariable
@@ -2015,7 +2015,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"293.15\" min=\"0.0\" nominal=\"300.0\"/>
+//     <Real start=\"293.15\" min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"202\" -->
 //   <ScalarVariable
@@ -2025,7 +2025,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" nominal=\"300.0\"/>
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"203\" -->
 //   <ScalarVariable
@@ -2035,7 +2035,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"1.0\" min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real start=\"1.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"204\" -->
 //   <ScalarVariable
@@ -2055,7 +2055,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"9.806649999999999\"/>
+//     <Real start=\"9.806649999999999\" unit=\"m/s2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"206\" -->
 //   <ScalarVariable
@@ -2065,7 +2065,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"207\" -->
 //   <ScalarVariable
@@ -2075,7 +2075,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"0.01\" min=\"0.0\"/>
+//     <Real start=\"0.01\" min=\"0.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"208\" -->
 //   <ScalarVariable
@@ -2085,7 +2085,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     <Real start=\"0.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"209\" -->
 //   <ScalarVariable
@@ -2095,7 +2095,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     initial=\"exact\">
-//     <Real start=\"101325.0\" min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real start=\"101325.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"210\" -->
 //   <ScalarVariable
@@ -2105,7 +2105,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     initial=\"calculated\">
-//     <Real min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"211\" -->
 //   <ScalarVariable
@@ -2114,7 +2114,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"212\" -->
 //   <ScalarVariable
@@ -2154,7 +2154,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real max=\"100000.0\"/>
+//     <Real max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"216\" -->
 //   <ScalarVariable
@@ -2174,7 +2174,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"218\" -->
 //   <ScalarVariable
@@ -2184,7 +2184,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real max=\"100000.0\"/>
+//     <Real max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"219\" -->
 //   <ScalarVariable
@@ -2194,7 +2194,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"220\" -->
 //   <ScalarVariable
@@ -2204,7 +2204,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"221\" -->
 //   <ScalarVariable
@@ -2214,7 +2214,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\"/>
+//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"222\" -->
 //   <ScalarVariable
@@ -2224,7 +2224,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"223\" -->
 //   <ScalarVariable
@@ -2234,7 +2234,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"224\" -->
 //   <ScalarVariable
@@ -2244,7 +2244,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"225\" -->
 //   <ScalarVariable
@@ -2254,7 +2254,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"226\" -->
 //   <ScalarVariable
@@ -2264,7 +2264,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"227\" -->
 //   <ScalarVariable
@@ -2274,7 +2274,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"228\" -->
 //   <ScalarVariable
@@ -2294,7 +2294,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"230\" -->
 //   <ScalarVariable
@@ -2304,7 +2304,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"W\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"231\" -->
 //   <ScalarVariable
@@ -2314,7 +2314,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\" nominal=\"300.0\"/>
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"232\" -->
 //   <ScalarVariable
@@ -2324,7 +2324,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"233\" -->
 //   <ScalarVariable
@@ -2334,7 +2334,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real max=\"100000.0\"/>
+//     <Real max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"234\" -->
 //   <ScalarVariable
@@ -2344,7 +2344,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"235\" -->
 //   <ScalarVariable
@@ -2354,7 +2354,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"236\" -->
 //   <ScalarVariable
@@ -2364,7 +2364,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\"/>
+//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"237\" -->
 //   <ScalarVariable
@@ -2374,7 +2374,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"238\" -->
 //   <ScalarVariable
@@ -2384,7 +2384,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\"/>
+//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"239\" -->
 //   <ScalarVariable
@@ -2394,7 +2394,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"240\" -->
 //   <ScalarVariable
@@ -2404,7 +2404,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"241\" -->
 //   <ScalarVariable
@@ -2414,7 +2414,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"242\" -->
 //   <ScalarVariable
@@ -2450,7 +2450,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"W\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"246\" -->
 //   <ScalarVariable
@@ -2460,7 +2460,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"W\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"247\" -->
 //   <ScalarVariable
@@ -2470,7 +2470,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\" nominal=\"300.0\"/>
+//     <Real min=\"0.0\" nominal=\"300.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"248\" -->
 //   <ScalarVariable
@@ -2500,7 +2500,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"251\" -->
 //   <ScalarVariable
@@ -2510,7 +2510,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"252\" -->
 //   <ScalarVariable
@@ -2520,7 +2520,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real max=\"100000.0\"/>
+//     <Real max=\"100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"253\" -->
 //   <ScalarVariable
@@ -2530,7 +2530,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"254\" -->
 //   <ScalarVariable
@@ -2540,7 +2540,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"255\" -->
 //   <ScalarVariable
@@ -2550,7 +2550,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real min=\"-100000.0\"/>
+//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"256\" -->
 //   <ScalarVariable
@@ -2560,7 +2560,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"257\" -->
 //   <ScalarVariable
@@ -2570,7 +2570,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\"/>
+//     <Real min=\"0.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"258\" -->
 //   <ScalarVariable
@@ -2580,7 +2580,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"259\" -->
 //   <ScalarVariable
@@ -2610,7 +2610,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"262\" -->
 //   <ScalarVariable
@@ -2620,7 +2620,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"263\" -->
 //   <ScalarVariable
@@ -2630,7 +2630,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"264\" -->
 //   <ScalarVariable
@@ -2640,7 +2640,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"265\" -->
 //   <ScalarVariable
@@ -2650,7 +2650,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"266\" -->
 //   <ScalarVariable
@@ -2660,7 +2660,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"267\" -->
 //   <ScalarVariable
@@ -2670,7 +2670,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"268\" -->
 //   <ScalarVariable
@@ -2680,7 +2680,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"269\" -->
 //   <ScalarVariable
@@ -2690,7 +2690,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"calculated\">
-//     <Real/>
+//     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"270\" -->
 //   <ScalarVariable
@@ -2700,7 +2700,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"271\" -->
 //   <ScalarVariable
@@ -2710,7 +2710,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"272\" -->
 //   <ScalarVariable
@@ -2720,7 +2720,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"273\" -->
 //   <ScalarVariable
@@ -2730,7 +2730,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\" nominal=\"100000.0\"/>
+//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"274\" -->
 //   <ScalarVariable
@@ -2740,7 +2740,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"275\" -->
 //   <ScalarVariable
@@ -2750,7 +2750,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"276\" -->
 //   <ScalarVariable
@@ -2760,7 +2760,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\"/>
+//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"277\" -->
 //   <ScalarVariable
@@ -2770,7 +2770,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"278\" -->
 //   <ScalarVariable
@@ -2780,7 +2780,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"279\" -->
 //   <ScalarVariable
@@ -2790,7 +2790,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\"/>
+//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"280\" -->
 //   <ScalarVariable
@@ -2800,7 +2800,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real/>
+//     <Real unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"281\" -->
 //   <ScalarVariable
@@ -2810,7 +2810,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"282\" -->
 //   <ScalarVariable
@@ -2820,7 +2820,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\"/>
+//     <Real min=\"273.15\" max=\"2273.15\" nominal=\"500.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"283\" -->
 //   <ScalarVariable
@@ -2830,7 +2830,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"284\" -->
 //   <ScalarVariable
@@ -2840,7 +2840,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"0.0\"/>
+//     <Real min=\"0.0\" unit=\"K\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"285\" -->
 //   <ScalarVariable
@@ -2850,7 +2850,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\"/>
+//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"286\" -->
 //   <ScalarVariable
