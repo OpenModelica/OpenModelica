@@ -233,8 +233,8 @@ constant InstNode STATESELECT_NEVER =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
-      Binding.UNBOUND(),
       STATESELECT_NEVER_BINDING,
+      Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
     0,
@@ -249,8 +249,8 @@ constant InstNode STATESELECT_AVOID =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
-      Binding.UNBOUND(),
       STATESELECT_AVOID_BINDING,
+      Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
     0,
@@ -265,8 +265,8 @@ constant InstNode STATESELECT_DEFAULT =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
-      Binding.UNBOUND(),
       STATESELECT_DEFAULT_BINDING,
+      Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
     0,
@@ -281,8 +281,8 @@ constant InstNode STATESELECT_PREFER =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
-      Binding.UNBOUND(),
       STATESELECT_PREFER_BINDING,
+      Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
     0,
@@ -297,8 +297,8 @@ constant InstNode STATESELECT_ALWAYS =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       InstNode.EMPTY_NODE(),
       STATESELECT_TYPE,
-      Binding.UNBOUND(),
       STATESELECT_ALWAYS_BINDING,
+      Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
       Absyn.dummyInfo)),
     0,

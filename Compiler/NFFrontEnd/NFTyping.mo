@@ -530,6 +530,9 @@ algorithm
       Boolean dirty;
       String name;
 
+    // A component that's already been typed.
+    case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
+
     case Component.TYPED_COMPONENT()
       algorithm
         name := InstNode.name(component);
@@ -704,6 +707,7 @@ algorithm
 
         binding := match name
           case "fixed" then evalBinding(binding);
+          case "stateSelect" then evalBinding(binding);
           else binding;
         end match;
 
