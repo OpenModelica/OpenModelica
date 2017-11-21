@@ -417,6 +417,7 @@ Visibility4.mo \
 when1.mo \
 WhenInitial1.mo \
 WhenNested1.mo \
+Wild1.mo \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
