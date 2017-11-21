@@ -384,6 +384,8 @@ SizeInvalidType1.mo \
 SizeInvalidType2.mo \
 StatementInvalidType1.mo \
 StateSelectVariability1.mo \
+StateSelect1.mo \
+StateSelect2.mo \
 SubscriptEnum1.mo \
 SubscriptIterator1.mo \
 Subscript1.mo \
