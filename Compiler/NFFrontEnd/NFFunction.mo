@@ -771,13 +771,14 @@ uniontype Function
     SCode.Visibility vis;
     Boolean par, impr;
     DAE.InlineType ity;
+    DAE.Type ty;
   algorithm
     vis := SCode.PUBLIC(); // TODO: Use the actual visibility.
     par := false; // TODO: Use the actual partial prefix.
     impr := fn.attributes.isImpure;
     ity := fn.attributes.inline;
-    daeFn := DAE.FUNCTION(fn.path, defs, Type.toDAE(fn.returnType), vis,
-      par, impr, ity, DAE.emptyElementSource, NONE());
+    ty := DAE.T_FUNCTION({}, Type.toDAE(fn.returnType), fn.attributes, fn.path);
+    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, DAE.emptyElementSource, NONE());
   end toDAE;
 
 protected

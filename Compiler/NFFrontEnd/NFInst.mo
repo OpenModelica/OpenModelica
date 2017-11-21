@@ -606,7 +606,7 @@ algorithm
         mod := Modifier.merge(cls_mod, mod);
 
         // Apply the modifiers of extends nodes.
-        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
+        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par, parent = par));
 
         // Apply modifier in this scope.
         applyModifier(mod, cls_tree, InstNode.name(node));
@@ -772,6 +772,7 @@ end instImport;
 function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
+  input InstNode parent;
 protected
   SCode.Element elem;
   Absyn.Path basepath;
@@ -782,12 +783,12 @@ protected
   ClassTree cls_tree;
 algorithm
   cls_tree := Class.classTree(InstNode.getClass(extendsNode));
-  ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
+  ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode, parent = parent));
 
   // Replace the node in the node type with the given scope, so that crefs found
   // in this extends are prefixed correctly.
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  extendsNode := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, elem), extendsNode);
+  extendsNode := InstNode.setNodeType(InstNodeType.BASE_CLASS(parent, elem), extendsNode);
 
   // Create a modifier from the extends.
   ext_mod := Modifier.fromElement(elem, InstNode.level(scope) + 1, scope);
