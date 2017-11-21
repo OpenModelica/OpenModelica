@@ -1208,7 +1208,7 @@ algorithm
       then (cref, Type.UNKNOWN(), Variability.CONTINUOUS);
 
     case ComponentRef.WILD()
-      then (cref, Type.UNKNOWN(), Variability.CONTINUOUS);
+      then (cref, Type.ANY(), Variability.CONTINUOUS);
 
     else
       algorithm

@@ -1173,8 +1173,9 @@ algorithm
     case Class.EXPANDED_CLASS(elements = cls_tree)
       algorithm
         // Instantiate expressions in the extends nodes.
-        sections := ClassTree.foldExtends(cls_tree,
-          function instExpressions(scope = scope), sections);
+        for ext in ClassTree.getExtends(cls_tree) loop
+          sections := instExpressions(ext, ext, sections);
+        end for;
 
         // Instantiate expressions in the local components.
         ClassTree.applyLocalComponents(cls_tree,
@@ -1463,7 +1464,12 @@ protected
   Type ty;
   Component comp;
 algorithm
-  (cref, found_scope) := Lookup.lookupComponent(absynCref, scope, info);
+  (cref, found_scope) := match absynCref
+    case Absyn.ComponentRef.WILD() then (ComponentRef.WILD(), scope);
+    case Absyn.ComponentRef.ALLWILD() then (ComponentRef.WILD(), scope);
+    else Lookup.lookupComponent(absynCref, scope, info);
+  end match;
+
   cref := instCrefSubscripts(cref, scope, info);
 
   crefExp := match cref

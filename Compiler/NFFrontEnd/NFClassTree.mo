@@ -953,6 +953,17 @@ public
       end match;
     end enumerateComponents2;
 
+    function getExtends
+      input ClassTree tree;
+      output array<InstNode> exts;
+    algorithm
+      exts := match tree
+        case PARTIAL_TREE() then tree.exts;
+        case EXPANDED_TREE() then tree.exts;
+        case INSTANTIATED_TREE() then tree.exts;
+      end match;
+    end getExtends;
+
   protected
 
     function instExtendsComps
@@ -971,17 +982,6 @@ public
         index := index + comp_count;
       end if;
     end instExtendsComps;
-
-    function getExtends
-      input ClassTree tree;
-      output array<InstNode> exts;
-    algorithm
-      exts := match tree
-        case PARTIAL_TREE() then tree.exts;
-        case EXPANDED_TREE() then tree.exts;
-        case INSTANTIATED_TREE() then tree.exts;
-      end match;
-    end getExtends;
 
     function getDuplicates
       input ClassTree tree;

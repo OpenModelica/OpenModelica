@@ -40,10 +40,6 @@ public
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
 
-  record ANY_TYPE
-    String b;
-  end ANY_TYPE;
-
   record INTEGER
   end INTEGER;
 
@@ -96,6 +92,13 @@ public
   record METABOXED "Used for MetaModelica generic types"
     Type ty;
   end METABOXED;
+
+  record POLYMORPHIC
+    String name;
+  end POLYMORPHIC;
+
+  record ANY
+  end ANY;
 
   // TODO: Fix constants in uniontypes and use these wherever applicable to
   // speed up comparisons using referenceEq.
@@ -406,13 +409,14 @@ public
         "(" + stringDelimitList(ty.literals, ", ") + ")";
       case Type.ENUMERATION_ANY() then "enumeration(:)";
       case Type.CLOCK() then "Clock";
-      case Type.ANY_TYPE() then "Any";
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
       case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then InstNode.name(ty.cls);
+      case Type.POLYMORPHIC() then "<" + ty.name + ">";
+      case Type.ANY() then "$ANY$";
       else
         algorithm
           assert(false, getInstanceName() + " got unknown type: " + anyString(ty));
@@ -454,7 +458,8 @@ public
       case Type.COMPLEX()
         // TODO: Use proper ClassInf.State here.
         then DAE.Type.T_COMPLEX(ClassInf.MODEL(Absyn.IDENT(InstNode.name(ty.cls))), {}, NONE());
-      case Type.ANY_TYPE() then DAE.T_METAPOLYMORPHIC(ty.b);
+      case Type.POLYMORPHIC() then DAE.T_METAPOLYMORPHIC(ty.name);
+      case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else
         algorithm
           assert(false, getInstanceName() + " got unknown type: " + anyString(ty));

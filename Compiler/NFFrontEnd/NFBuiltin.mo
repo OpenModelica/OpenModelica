@@ -117,7 +117,7 @@ end Elements;
 // modifiers and illegal in other cases).
 constant InstNode ANYTYPE_NODE = InstNode.CLASS_NODE("polymorphic",
   Elements.ANY, Visibility.PUBLIC,
-  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.ANY_TYPE("unknown"), NFClassTree.EMPTY,
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.POLYMORPHIC(""), NFClassTree.EMPTY,
     Modifier.NOMOD(), Restriction.TYPE())),
   arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
   InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());

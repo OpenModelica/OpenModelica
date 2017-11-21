@@ -355,7 +355,7 @@ uniontype Class
       case PARTIAL_BUILTIN() then cls.ty;
       case INSTANCED_BUILTIN()
         then match cls.ty
-          case Type.ANY_TYPE("unknown") then Type.ANY_TYPE(InstNode.name(clsNode));
+          case Type.POLYMORPHIC("") then Type.POLYMORPHIC(InstNode.name(clsNode));
           else cls.ty;
         end match;
       else Type.UNKNOWN();

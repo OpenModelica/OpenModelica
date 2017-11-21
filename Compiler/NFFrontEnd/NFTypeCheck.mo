@@ -1689,19 +1689,22 @@ algorithm
       then (actualType,
         if allowUnknown then MatchKind.UNKNOWN_EXPECTED else MatchKind.NOT_COMPATIBLE);
 
-    case (_, Type.ANY_TYPE())
+    case (_, Type.POLYMORPHIC())
       algorithm
         expression := Expression.BOX(expression);
         // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
       then
         (Type.METABOXED(actualType), MatchKind.GENERIC);
 
-    case (Type.ANY_TYPE(), _)
+    case (Type.POLYMORPHIC(), _)
       algorithm
         // expression := Expression.UNBOX(expression, Expression.typeOf(expression));
         // matchKind := MatchKind.GENERIC(expectedType.b,actualType);
       then
         (expectedType, MatchKind.GENERIC);
+
+    // Expected type is any, any actual type matches.
+    case (_, Type.ANY()) then (expectedType, MatchKind.EXACT);
 
     // Anything else is not compatible.
     else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
