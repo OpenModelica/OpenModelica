@@ -562,9 +562,7 @@ match variability
 end getInitialType2;
 
 template ScalarVariableType2(SimVar simvar, list<SimVar> stateVars)
- "Generates code for ScalarVariable Type file for FMU 2.0 target.
-  - Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also.
- "
+ "Generates code for ScalarVariable Type file for FMU 2.0 target."
 ::=
 match simvar
 case SIMVAR(__) then
@@ -582,10 +580,11 @@ template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVar
 ::=
 match simvar
 case SIMVAR(varKind = varKind, isValueChangeable = isValueChangeable, index = index) then
-  match varKind
-  case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
-  case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>' else '<%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
-  else '<%StartString2(simvar)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%>'
+  let extraAttributes = match varKind
+    case STATE_DER(__) then ' derivative="<%getStateSimVarIndexFromIndex(stateVars, index)%>"'
+    case PARAM(__) then if isValueChangeable then '<%StartString2(simvar)%>' else ''
+    else '<%StartString2(simvar)%>'
+  '<%extraAttributes%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%>'
 end ScalarVariableTypeCommonAttribute2;
 
 template StartString2(SimVar simvar)
@@ -642,6 +641,15 @@ case SIMVAR(nominalValue = nominalValue) then
     case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e)%>"'
     else ''
 end NominalString2;
+
+template UnitString2(SimVar simvar)
+::=
+match simvar
+case SIMVAR(unit = unit, displayUnit = displayUnit) then
+  let unitString = if unit then ' unit="<%unit%>"'
+  let displayUnitString = if displayUnit then ' displayUnit="<%displayUnit%>"'
+  '<%unitString%><%displayUnitString%>'
+end UnitString2;
 
 template statesnumwithDummy(list<SimVar> vars)
 " return number of states without dummy vars"
