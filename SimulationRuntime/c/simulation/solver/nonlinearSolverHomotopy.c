@@ -42,6 +42,7 @@
 #include <stdlib.h>
 #include <string.h> /* memcpy */
 
+#include "simulation/options.h"
 #include "simulation/simulation_info_json.h"
 #include "util/omc_error.h"
 #include "util/varinfo.h"
@@ -2250,7 +2251,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (runHomotopy == 1) {
         solverData->h_function = wrapper_fvec;
         solverData->hJac_dh = wrapper_fvec_der;
-        solverData->startDirection = 1.0;
+        solverData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? -1.0 : 1.0;
         debugInt(LOG_INIT, "Homotopy run: ", runHomotopy);
         debugDouble(LOG_INIT,"startDirection = ", solverData->startDirection);
       }
@@ -2258,7 +2259,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (runHomotopy == 2) {
         solverData->h_function = wrapper_fvec;
         solverData->hJac_dh = wrapper_fvec_der;
-        solverData->startDirection = -1.0;
+        solverData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? 1.0 : -1.0;
         debugInt(LOG_INIT, "Homotopy run: ", runHomotopy);
         debugDouble(LOG_INIT,"Try again with startDirection = ", solverData->startDirection);
       }

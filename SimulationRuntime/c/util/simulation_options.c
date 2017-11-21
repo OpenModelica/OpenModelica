@@ -52,6 +52,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */    "homMaxLambdaSteps",
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */    "homMaxNewtonSteps",
   /* FLAG_HOMOTOPY_MAX_TRIES */           "homMaxTries",
+  /* FLAG_HOMOTOPY_NEG_START_DIR */       "homNegStartDir",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */        "homotopyOnFirstTry",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */      "homTauDecFac",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */ "homTauDecFacPredictor",
@@ -160,6 +161,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */    "[int (default size dependent)] maximum lambda steps allowed to run the homotopy path",
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */    "[int (default 20)] maximum newton steps in the homotopy corrector step",
   /* FLAG_HOMOTOPY_MAX_TRIES */           "[int (default 10)] maximum number of tries for one homotopy lambda step",
+  /* FLAG_HOMOTOPY_NEG_START_DIR */       "start to run along the homotopy path in the negative direction",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */        "directly use the homotopy method to solve the initialization problem",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */      "[double (default 10.0)] decrease homotopy step size tau by this factor if tau is too big in the homotopy corrector step",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */ "[double (default 2.0)] decrease homotopy step size tau by this factor if tau is too big in the homotopy predictor step",
@@ -294,6 +296,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  maximum newton steps in the homotopy corrector step",
   /* FLAG_HOMOTOPY_MAX_TRIES */
   "  maximum number of tries for one homotopy lambda step",
+  /* FLAG_HOMOTOPY_NEG_START_DIR */
+  "  start to run along the homotopy path in the negative direction",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */
   "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
   "  Without this flag, the solver first tries to solve the initialization problem without homotopy and only uses homotopy as fallback option.",
@@ -540,6 +544,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */    FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */    FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_MAX_TRIES */           FLAG_TYPE_OPTION,
+  /* FLAG_HOMOTOPY_NEG_START_DIR */       FLAG_TYPE_FLAG,
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */        FLAG_TYPE_FLAG,
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */      FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */ FLAG_TYPE_OPTION,
