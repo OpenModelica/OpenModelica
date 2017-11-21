@@ -283,11 +283,13 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
     return new <%modelShortName%>FMU(globalSettings, simObjects);
   }
 
-  // static model properties
+  // value references of real inputs and outputs
   unsigned int <%modelShortName%>FMU::_inputRefs[] = {<%inputVars |> var =>
-    match var case SIMVAR(name=name) then intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
+    match var case SIMVAR(name=name, type_=T_REAL()) then
+      intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
   unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%outputVars |> var =>
-    match var case SIMVAR(name=name) then intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
+    match var case SIMVAR(name=name, type_=T_REAL()) then
+      intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
 
   // constructor
   <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
@@ -602,7 +604,7 @@ template directionalDerivativeFunction(SimCode simCode)
  "Generates getDirectionalDerivative."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(varInfo=VARINFO(numInVars=numInVars, numOutVars=numOutVars))) then
+case SIMCODE(modelInfo=MODELINFO()) then
   let modelShortName = lastIdentOfPath(modelInfo.name)
   <<
   void <%modelShortName%>FMU::getDirectionalDerivative(
@@ -622,7 +624,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=VARINFO(numInVars=numInVars, numOutVars
         // find input reference
         if (ref_p == NULL || idx < ref_1)
           ref_p = _inputRefs; // reset ref_p if vrKnown decreases
-        ref_p = std::find(ref_p, _inputRefs + <%numInVars%>, vrKnown[j]);
+        ref_p = std::find(ref_p, _inputRefs + sizeof(_inputRefs)/sizeof(unsigned int), vrKnown[j]);
         ref_1 = idx;
         idx = _dimContinuousStates + (ref_p - _inputRefs);
       }
@@ -638,7 +640,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=VARINFO(numInVars=numInVars, numOutVars
         // find output reference
         if (ref_p == NULL || idx < ref_1)
           ref_p = _outputRefs; // reset ref_p if vrUnknown decreases
-        ref_p = std::find(ref_p, _outputRefs + <%numOutVars%>, vrUnknown[i]);
+        ref_p = std::find(ref_p, _outputRefs + sizeof(_outputRefs)/sizeof(unsigned int), vrUnknown[i]);
         ref_1 = idx;
         idx = _dimContinuousStates + (ref_p - _outputRefs);
       }
