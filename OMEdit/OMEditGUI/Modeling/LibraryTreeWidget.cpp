@@ -4109,7 +4109,7 @@ bool LibraryWidget::saveModelicaLibraryTreeItemOneFile(LibraryTreeItem *pLibrary
   }
   // save the class
   QString contents;
-  if (pLibraryTreeItem->getModelWidget()->getEditor()) {
+  if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
     contents = pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
   } else {
     contents = pLibraryTreeItem->getClassText(mpLibraryTreeModel);
