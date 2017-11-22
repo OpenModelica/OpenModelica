@@ -688,18 +688,19 @@ void LibraryTreeItem::removeChild(LibraryTreeItem *pLibraryTreeItem)
  */
 QVariant LibraryTreeItem::data(int column, int role) const
 {
-  QFileInfo fileInfo(getFileName());
   switch (column) {
     case 0:
       switch (role) {
         case Qt::DisplayRole:
           return mName;
-        case Qt::DecorationRole:
+        case Qt::DecorationRole: {
           if (mLibraryType == LibraryTreeItem::Text) {
+            QFileInfo fileInfo(getFileName());
             return Utilities::FileIconProvider::icon(fileInfo);
           } else {
             return mPixmap.isNull() ? getLibraryTreeItemIcon() : mPixmap;
           }
+        }
         case Qt::ToolTipRole:
           return getTooltip();
         case Qt::ForegroundRole:
