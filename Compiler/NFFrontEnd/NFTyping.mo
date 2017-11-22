@@ -80,6 +80,7 @@ import MetaModelica.Dangerous.listReverseInPlace;
 import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
 import NFModifier.ModTable;
+import Package = NFPackage;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -708,7 +709,7 @@ algorithm
         binding := match name
           case "fixed" then evalBinding(binding);
           case "stateSelect" then evalBinding(binding);
-          else binding;
+          else Package.replaceBindingConstants(binding);
         end match;
 
         attribute.binding := binding;

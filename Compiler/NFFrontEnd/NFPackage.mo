@@ -43,6 +43,7 @@ protected
   import NFComponent.Component;
   import NFInstNode.InstNode;
   import Typing = NFTyping;
+  import Ceval = NFCeval;
 
 public
   type Constants = ConstantsSetImpl.Tree;
@@ -74,11 +75,17 @@ public
     Constants constants;
   algorithm
     constants := Constants.new();
-    constants := List.fold(elements.components, collectBindingConstants, constants);
-    constants := List.fold(elements.equations, collectEquationConstants, constants);
-    constants := List.fold(elements.initialEquations, collectEquationConstants, constants);
-    constants := List.fold(elements.algorithms, collectAlgorithmConstants, constants);
-    constants := List.fold(elements.initialAlgorithms, collectAlgorithmConstants, constants);
+    constants := List.fold(elements.components, collectComponentConstants, constants);
+    constants := Equation.foldExpList(elements.equations, collectExpConstants, constants);
+    constants := Equation.foldExpList(elements.initialEquations, collectExpConstants, constants);
+
+    for alg in elements.algorithms loop
+      constants := Statement.foldExpList(alg, collectExpConstants, constants);
+    end for;
+
+    for alg in elements.initialAlgorithms loop
+      constants := Statement.foldExpList(alg, collectExpConstants, constants);
+    end for;
 
     for c in Constants.listKeys(constants) loop
       binding := Component.getBinding(InstNode.component(ComponentRef.node(c)));
@@ -90,8 +97,18 @@ public
     execStat(getInstanceName());
   end collectConstants;
 
-protected
-  function collectBindingConstants
+  function replaceConstants
+    input output Elements elements;
+  algorithm
+    elements.components := list(replaceComponentConstants(c) for c in elements.components);
+    elements.equations := list(Equation.mapExp(eq, replaceExpConstants) for eq in elements.equations);
+    elements.initialEquations := list(Equation.mapExp(eq, replaceExpConstants) for eq in elements.initialEquations);
+    elements.algorithms := list(Statement.mapExpList(s, replaceExpConstants) for s in elements.algorithms);
+    elements.initialAlgorithms := list(Statement.mapExpList(s, replaceExpConstants) for s in elements.initialAlgorithms);
+    execStat(getInstanceName());
+  end replaceConstants;
+
+  function collectComponentConstants
     input tuple<ComponentRef, Binding> component;
     input output Constants constants;
   protected
@@ -99,6 +116,18 @@ protected
   algorithm
     (_, binding) := component;
 
+    if Binding.isBound(binding) then
+      constants := collectExpConstants(Binding.getTypedExp(binding), constants);
+    end if;
+
+    // TODO: The component's attributes (i.e. start, etc) might also contain
+    //       package constants.
+  end collectComponentConstants;
+
+  function collectBindingConstants
+    input Binding binding;
+    input output Constants constants;
+  algorithm
     if Binding.isBound(binding) then
       constants := collectExpConstants(Binding.getTypedExp(binding), constants);
     end if;
@@ -126,7 +155,7 @@ protected
             constants := Constants.add(constants, ComponentRef.stripSubscriptsAll(cref));
             // Collect constants from the constant's binding.
             constants := collectBindingConstants(
-              (cref, Component.getBinding(InstNode.component(ComponentRef.node(cref)))),
+              Component.getBinding(InstNode.component(ComponentRef.node(cref))),
               constants);
           end if;
         then
@@ -136,171 +165,49 @@ protected
     end match;
   end collectExpConstants_traverser;
 
-  function collectEquationConstants
-    input Equation eq;
-    input output Constants constants;
+  function replaceComponentConstants
+    input output tuple<ComponentRef, Binding> component;
+  protected
+    ComponentRef cref;
+    Binding binding;
   algorithm
-    () := match eq
-      case Equation.EQUALITY()
-        algorithm
-          constants := collectExpConstants(eq.lhs, constants);
-          constants := collectExpConstants(eq.rhs, constants);
-        then
-          ();
+    (cref, binding) := component;
+    component := (cref, replaceBindingConstants(binding));
+  end replaceComponentConstants;
 
-      case Equation.CREF_EQUALITY()
-        algorithm
-          // TODO: The crefs can have subscripts with constants.
-        then
-          ();
-
-      case Equation.ARRAY_EQUALITY()
-        algorithm
-          constants := collectExpConstants(eq.lhs, constants);
-          constants := collectExpConstants(eq.rhs, constants);
-        then
-          ();
-
-      case Equation.CONNECT()
-        algorithm
-          constants := collectExpConstants(eq.lhs, constants);
-          constants := collectExpConstants(eq.rhs, constants);
-        then
-          ();
-
-      case Equation.FOR()
-        algorithm
-          constants := List.fold(eq.body, collectEquationConstants, constants);
-        then
-          ();
-
-      case Equation.IF()
-        algorithm
-          for b in eq.branches loop
-            constants := collectExpConstants(Util.tuple21(b), constants);
-            constants := List.fold(Util.tuple22(b), collectEquationConstants, constants);
-          end for;
-        then
-          ();
-
-      case Equation.WHEN()
-        algorithm
-          for b in eq.branches loop
-            constants := collectExpConstants(Util.tuple21(b), constants);
-            constants := List.fold(Util.tuple22(b), collectEquationConstants, constants);
-          end for;
-        then
-          ();
-
-      case Equation.ASSERT()
-        algorithm
-          constants := collectExpConstants(eq.condition, constants);
-          constants := collectExpConstants(eq.message, constants);
-          constants := collectExpConstants(eq.level, constants);
-        then
-          ();
-
-      case Equation.TERMINATE()
-        algorithm
-          constants := collectExpConstants(eq.message, constants);
-        then
-          ();
-
-      case Equation.REINIT()
-        algorithm
-          constants := collectExpConstants(eq.cref, constants);
-          constants := collectExpConstants(eq.reinitExp, constants);
-        then
-          ();
-
-      case Equation.NORETCALL()
-        algorithm
-          constants := collectExpConstants(eq.exp, constants);
-        then
-          ();
-
-      else
-        algorithm
-          assert(false, getInstanceName() + " failed on unknown equation");
-        then
-          ();
-
-    end match;
-  end collectEquationConstants;
-
-  function collectAlgorithmConstants
-    input list<Statement> alg;
-    input output Constants constants;
+  function replaceBindingConstants
+    input output Binding binding;
   algorithm
-    constants := List.fold(alg, collectStatementConstants, constants);
-  end collectAlgorithmConstants;
-
-  function collectStatementConstants
-    input Statement stmt;
-    input output Constants constants;
-  algorithm
-    () := match stmt
-      case Statement.ASSIGNMENT()
+    () := match binding
+      case Binding.TYPED_BINDING()
         algorithm
-          constants := collectExpConstants(stmt.lhs, constants);
-          constants := collectExpConstants(stmt.rhs, constants);
-        then
-          ();
-
-      case Statement.FOR()
-        algorithm
-          constants := collectAlgorithmConstants(stmt.body, constants);
-        then
-          ();
-
-      case Statement.IF()
-        algorithm
-          for b in stmt.branches loop
-            constants := collectExpConstants(Util.tuple21(b), constants);
-            constants := collectAlgorithmConstants(Util.tuple22(b), constants);
-          end for;
-        then
-          ();
-
-      case Statement.WHEN()
-        algorithm
-          for b in stmt.branches loop
-            constants := collectExpConstants(Util.tuple21(b), constants);
-            constants := collectAlgorithmConstants(Util.tuple22(b), constants);
-          end for;
-        then
-          ();
-
-      case Statement.ASSERT()
-        algorithm
-          constants := collectExpConstants(stmt.condition, constants);
-          constants := collectExpConstants(stmt.message, constants);
-          constants := collectExpConstants(stmt.level, constants);
-        then
-          ();
-
-      case Statement.TERMINATE()
-        algorithm
-          constants := collectExpConstants(stmt.message, constants);
-        then
-          ();
-
-      case Statement.NORETCALL()
-        algorithm
-          constants := collectExpConstants(stmt.exp, constants);
-        then
-          ();
-
-      case Statement.WHILE()
-        algorithm
-          constants := collectExpConstants(stmt.condition, constants);
-          constants := collectAlgorithmConstants(stmt.body, constants);
+          binding.bindingExp := replaceExpConstants(binding.bindingExp);
         then
           ();
 
       else ();
     end match;
-  end collectStatementConstants;
+  end replaceBindingConstants;
+
+  function replaceExpConstants
+    input output Expression exp;
+  algorithm
+    exp := Expression.map(exp, replaceExpConstants_traverser);
+  end replaceExpConstants;
+
+  function replaceExpConstants_traverser
+    input output Expression exp;
+  protected
+    ComponentRef cref;
+  algorithm
+    exp := match exp
+      case Expression.CREF(cref = cref as ComponentRef.CREF())
+        then if ComponentRef.isPackageConstant(cref) then
+          Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS()) else exp;
+
+      else exp;
+    end match;
+  end replaceExpConstants_traverser;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFPackage;

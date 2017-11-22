@@ -191,6 +191,7 @@ public
         then
           if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.info);
 
+      else eq;
     end match;
   end mapExp;
 
@@ -210,6 +211,108 @@ public
     eql := list(mapExp(e, func) for e in eql);
     branch := (cond, eql);
   end mapExpBranch;
+
+  function foldExpList<ArgT>
+    input list<Equation> eq;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    for e in eq loop
+      arg := foldExp(e, func, arg);
+    end for;
+  end foldExpList;
+
+  function foldExp<ArgT>
+    input Equation eq;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    () := match eq
+      case Equation.EQUALITY()
+        algorithm
+          arg := func(eq.lhs, arg);
+          arg := func(eq.rhs, arg);
+        then
+          ();
+
+      case Equation.ARRAY_EQUALITY()
+        algorithm
+          arg := func(eq.lhs, arg);
+          arg := func(eq.rhs, arg);
+        then
+          ();
+
+      case Equation.CONNECT()
+        algorithm
+          arg := func(eq.lhs, arg);
+          arg := func(eq.rhs, arg);
+        then
+          ();
+
+      case Equation.FOR()
+        algorithm
+          arg := foldExpList(eq.body, func, arg);
+        then
+          ();
+
+      case Equation.IF()
+        algorithm
+          for b in eq.branches loop
+            arg := func(Util.tuple21(b), arg);
+            arg := foldExpList(Util.tuple22(b), func, arg);
+          end for;
+        then
+          ();
+
+      case Equation.WHEN()
+        algorithm
+          for b in eq.branches loop
+            arg := func(Util.tuple21(b), arg);
+            arg := foldExpList(Util.tuple22(b), func, arg);
+          end for;
+        then
+          ();
+
+      case Equation.ASSERT()
+        algorithm
+          arg := func(eq.condition, arg);
+          arg := func(eq.message, arg);
+          arg := func(eq.level, arg);
+        then
+          ();
+
+      case Equation.TERMINATE()
+        algorithm
+          arg := func(eq.message, arg);
+        then
+          ();
+
+      case Equation.REINIT()
+        algorithm
+          arg := func(eq.cref, arg);
+          arg := func(eq.reinitExp, arg);
+        then
+          ();
+
+      case Equation.NORETCALL()
+        algorithm
+          arg := func(eq.exp, arg);
+        then
+          ();
+
+      else ();
+    end match;
+  end foldExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;

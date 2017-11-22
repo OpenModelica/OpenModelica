@@ -524,6 +524,8 @@ constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(174, "susanDebug", fal
   Util.gettext("Makes Susan generate code using try/else to better debug which function broke the expected match semantics."));
 constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(175, "oldFrontEndUnitCheck", false,
   Util.gettext("Checks the consistency of units in equation (for the old front-end)."));
+constant DebugFlag REPLACE_PACKAGE_CONSTS = DEBUG_FLAG(176, "replacePackageConstants", true,
+  Util.gettext("Replaces package constants with their evaluated values if set."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -705,7 +707,8 @@ constant list<DebugFlag> allDebugFlags = {
   IGNORE_CYCLES,
   ALIAS_CONFLICTS,
   SUSAN_MATCHCONTINUE_DEBUG,
-  OLD_FE_UNITCHECK
+  OLD_FE_UNITCHECK,
+  REPLACE_PACKAGE_CONSTS
 };
 
 public

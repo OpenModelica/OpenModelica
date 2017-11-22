@@ -136,7 +136,14 @@ algorithm
 
   // Flatten and convert the class into a DAE.
   (elems, funcs) := Flatten.flatten(inst_cls, name);
-  elems := Package.collectConstants(elems);
+
+  // Replace or collect package constants depending on the
+  // replacePackageConstants debug flag.
+  if Flags.isSet(Flags.REPLACE_PACKAGE_CONSTS) then
+    elems := Package.replaceConstants(elems);
+  else
+    elems := Package.collectConstants(elems);
+  end if;
 
   elems := Scalarize.scalarize(elems, name);
   (dae, daeFuncs) := ConvertDAE.convert(elems, funcs, name, InstNode.info(inst_cls));
