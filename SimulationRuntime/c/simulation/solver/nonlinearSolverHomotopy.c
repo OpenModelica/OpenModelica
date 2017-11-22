@@ -811,25 +811,45 @@ static int getNumericalJacobianHomotopy(DATA_HOMOTOPY* solverData, double *x, do
   double xsave;
   int i,j,l;
 
-  /* solverData->f1 must be set outside this function based on x */
-  for(i = 0; i < solverData->n; i++) {
-    xsave = x[i];
-    delta_hh = delta_h * (fabs(xsave) + 1.0);
-    if ((xsave + delta_hh >=  solverData->maxValue[i]))
-      delta_hh *= -1;
-    x[i] += delta_hh;
-    /* Calculate scaled difference quotient */
-    delta_hh = 1. / delta_hh * solverData->xScaling[i];
-    if (solverData->casualTearingSet)
-      solverData->f_con(solverData, x, solverData->f2);
-    else
-      solverData->f(solverData, x, solverData->f2);
+  if (solverData->initHomotopy) {
+    /* Use the homotopy function values hvec and also calculate the lambda column */
+    for(i = 0; i < solverData->n+1; i++) {
+      xsave = x[i];
+      delta_hh = delta_h * (fabs(xsave) + 1.0);
+      if ((xsave + delta_hh >=  solverData->maxValue[i]))
+        delta_hh *= -1;
+      x[i] += delta_hh;
+      /* Calculate scaled difference quotient */
+      delta_hh = 1. / delta_hh * solverData->xScaling[i];
+      solverData->h_function(solverData, x, solverData->f2);
 
-    for(j = 0; j < solverData->n; j++) {
-      l = i * solverData->n + j;
-      fJac[l] = (solverData->f2[j] - solverData->f1[j]) * delta_hh;
+      for(j = 0; j < solverData->n; j++) {
+        l = i * solverData->n + j;
+        fJac[l] = (solverData->f2[j] - solverData->hvec[j]) * delta_hh; /* solverData->hvec must be set outside this function based on x */
+      }
+      x[i] = xsave;
     }
-    x[i] = xsave;
+  } else {
+    /* Use the normal function values f2 and calculate jacobian without the lambda column */
+    for(i = 0; i < solverData->n; i++) {
+      xsave = x[i];
+      delta_hh = delta_h * (fabs(xsave) + 1.0);
+      if ((xsave + delta_hh >=  solverData->maxValue[i]))
+        delta_hh *= -1;
+      x[i] += delta_hh;
+      /* Calculate scaled difference quotient */
+      delta_hh = 1. / delta_hh * solverData->xScaling[i];
+      if (solverData->casualTearingSet)
+        solverData->f_con(solverData, x, solverData->f2);
+      else
+        solverData->f(solverData, x, solverData->f2);
+
+      for(j = 0; j < solverData->n; j++) {
+        l = i * solverData->n + j;
+        fJac[l] = (solverData->f2[j] - solverData->f1[j]) * delta_hh; /* solverData->f1 must be set outside this function based on x */
+      }
+      x[i] = xsave;
+    }
   }
   return 0;
 }
@@ -1650,6 +1670,8 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   {
     if (solverData->initHomotopy)
       infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
+    else
+      infoStreamPrint(LOG_NLS_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
     /* Break loop, iff algorithm gets stuck or lambda accelerates to the wrong direction */
     if (iter>=maxTries)
     {
@@ -1806,6 +1828,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #endif
       /* calculate homotopy function and corresponding jacobian */
       solverData->hJac_dh(solverData, solverData->y1, solverData->hJac);
+      debugMatrixDouble(LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
       assert = 0;
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1932,6 +1955,8 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   }
   if (solverData->initHomotopy)
       infoStreamPrint(LOG_INIT, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
+  else
+      infoStreamPrint(LOG_NLS_HOMOTOPY, 0, "homotopy parameter lambda = %g", solverData->y0[solverData->n]);
   /* copy solution back to vector x */
   vecCopy(solverData->n, solverData->y1, x);
 
@@ -2317,7 +2342,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       assert = 1;
 #ifndef OMC_EMCC
       MMC_TRY_INTERNAL(simulationJumpBuffer)
- #endif
+#endif
       if (solverData->casualTearingSet){
         constraintViolated = solverData->f_con(solverData, solverData->x, solverData->f1);
         if (constraintViolated){

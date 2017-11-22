@@ -879,7 +879,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   else {
     if (!(equidistantHomotopy && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])) {
       if (equidistantHomotopy)
-        infoStreamPrint(LOG_INIT, 0, "Try to solve initial system %d without homotopy first.", sysNumber);
+        infoStreamPrint(LOG_INIT, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
 
       data->simulationInfo->lambda = 1.0;
       /* SOLVE! */
