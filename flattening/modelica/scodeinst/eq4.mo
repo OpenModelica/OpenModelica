@@ -25,7 +25,6 @@ end B;
 
 // Result:
 // class B
-//   constant Integer P.n = 3;
 //   Real a1[1].x;
 //   parameter Real a1[1].y = 1.0;
 //   Real a1[2].x;
@@ -39,17 +38,17 @@ end B;
 //   Real a2[3].x;
 //   parameter Real a2[3].y = 4.0;
 // equation
-//   a1[1].x = a1[1].y * /*Real*/(P.n);
+//   a1[1].x = a1[1].y * /*Real*/(3);
 //   a1[1].y = a1[1].x;
-//   a1[2].x = a1[2].y * /*Real*/(P.n);
+//   a1[2].x = a1[2].y * /*Real*/(3);
 //   a1[2].y = a1[2].x;
-//   a1[3].x = a1[3].y * /*Real*/(P.n);
+//   a1[3].x = a1[3].y * /*Real*/(3);
 //   a1[3].y = a1[3].x;
-//   a2[1].x = a2[1].y * /*Real*/(P.n);
+//   a2[1].x = a2[1].y * /*Real*/(3);
 //   a2[1].y = a2[1].x;
-//   a2[2].x = a2[2].y * /*Real*/(P.n);
+//   a2[2].x = a2[2].y * /*Real*/(3);
 //   a2[2].y = a2[2].x;
-//   a2[3].x = a2[3].y * /*Real*/(P.n);
+//   a2[3].x = a2[3].y * /*Real*/(3);
 //   a2[3].y = a2[3].x;
 // end B;
 // endResult

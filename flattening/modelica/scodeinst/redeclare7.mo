@@ -3,7 +3,6 @@
 // status: correct
 // cflags:   -d=newInst
 //
-// FAILREASON: ??
 //
 
 
@@ -26,7 +25,6 @@ end D;
 
 // Result:
 // class D
-//   constant Real b.P.x = 2;
-//   Real b.z = b.P.x;
+//   Real b.z = 2.0;
 // end D;
 // endResult

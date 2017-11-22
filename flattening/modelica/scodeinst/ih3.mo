@@ -25,9 +25,7 @@ end A;
 
 // Result:
 // class A
-//   constant Integer P.P2.i = 3;
-//   constant Integer P.P1.i = 2;
-//   Integer i1 = P.P1.i;
-//   Integer i2 = P.P2.i;
+//   Integer i1 = 2;
+//   Integer i2 = 3;
 // end A;
 // endResult

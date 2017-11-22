@@ -28,8 +28,6 @@ end M;
 
 // Result:
 // class M
-//   constant Integer B.A.B.j = 2;
-//   constant Integer A.B.A.B.i = B.A.B.j;
-//   Integer x = A.B.A.B.i;
+//   Integer x = 2;
 // end M;
 // endResult

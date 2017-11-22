@@ -1,4 +1,4 @@
-// name: PackageConstant.mo
+// name: PackageConstant1
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -14,7 +14,6 @@ end PackageConstant1;
 
 // Result:
 // class PackageConstant1
-//   constant Real P.x = 1.0;
-//   Real y = P.x;
+//   Real y = 1.0;
 // end PackageConstant1;
 // endResult

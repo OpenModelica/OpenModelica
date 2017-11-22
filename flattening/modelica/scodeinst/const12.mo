@@ -20,8 +20,7 @@ end B;
 
 // Result:
 // class B
-//   constant Integer A.m.i = {1, 2, 3};
-//   constant Integer j = A.m[1].i[2];
+//   constant Integer j = 2;
 //   Real x = /*Real*/(j);
 // end B;
 // endResult

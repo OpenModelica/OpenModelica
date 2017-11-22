@@ -338,6 +338,7 @@ NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 PackageConstant1.mo \
+PackageConstant2.mo \
 ParameterBug.mos \
 PropagateExtends.mo \
 RangeInvalidStep1.mo \
