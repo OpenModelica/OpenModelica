@@ -5002,6 +5002,7 @@ protected
   DAE.ComponentRef cref;
   Integer size, i, j;
   list<Integer> intLst;
+  array<Integer> intArr;
   list<DAE.ComponentRef> crefs;
 algorithm
   //create HT
@@ -5028,7 +5029,9 @@ algorithm
          j := BaseHashTable.get(cr, ht);
          intLst := j :: intLst;
        end for;
-       intLst := List.sort(intLst, intGt);
+       intArr := listArray(intLst);
+       Array.heapSort(intArr);
+       intLst := arrayList(intArr);
        outSparse := (i, intLst) :: outSparse;
     end for;
     outSparse := List.sort(outSparse, Util.compareTupleIntGt);
@@ -5045,6 +5048,7 @@ protected
   DAE.ComponentRef cref;
   Integer size, i, j;
   list<Integer> intLst;
+  array<Integer> intArr;
   list<DAE.ComponentRef> crefs;
 algorithm
   //create HT
@@ -5071,7 +5075,9 @@ algorithm
          j := BaseHashTable.get(cr, ht);
          intLst := j :: intLst;
        end for;
-       intLst := List.sort(intLst, intGt);
+       intArr := listArray(intLst);
+       Array.heapSort(intArr);
+       intLst := arrayList(intArr);
        outSparse := (i, intLst) :: outSparse;
        i := i + 1;
     end for;
