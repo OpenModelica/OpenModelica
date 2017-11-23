@@ -82,6 +82,50 @@ algorithm
   end for;
 end mapNoCopy_1;
 
+protected function downheap
+  input output array<Integer> inArray;
+  input Integer vIn;
+protected
+  Integer v = vIn;
+  Integer w = 2*v+1;
+  Integer n = arrayLength(inArray);
+  Integer tmp;
+algorithm
+  while w<n loop
+    if w+1 < n then
+      if inArray[w+2]>inArray[w+1] then
+        w := w + 1;
+      end if;
+    end if;
+    if inArray[v+1]>=inArray[w+1] then
+      return;
+    end if;
+    tmp := inArray[v+1];
+    inArray[v+1] := inArray[w+1];
+    inArray[w+1] := tmp;
+    v := w;
+    w := 2*v + 1;
+  end while;
+end downheap;
+
+public function heapSort
+  input output array<Integer> inArray;
+protected
+  Integer n = arrayLength(inArray);
+  Integer tmp;
+algorithm
+  for v in (intDiv(arrayLength(inArray),2)-1):-1:0 loop
+    downheap(inArray, v);
+  end for;
+  while n>1 loop
+    n := n - 1;
+    tmp := inArray[1];
+    inArray[1] := inArray[n+1];
+    inArray[n+1] := tmp;
+    downheap(inArray, 0);
+  end while;
+end heapSort;
+
 function findFirstOnTrue<T>
   input array<T> inArray;
   input FuncType inPredicate;
