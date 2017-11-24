@@ -494,10 +494,10 @@ algorithm
         //print("there are both varCrossNodes and eqNodes\n");
         //at least get paths of length 2 between eqCrossNodes
         for i in 1:arrayLength(mIn) loop
-          arrayUpdate(mIn, i, List.sort(mIn[i], intGt));
+          arrayUpdate(mIn, i, List.heapSortIntList(mIn[i]));
         end for;
         for i in 1:arrayLength(mTIn) loop
-          arrayUpdate(mTIn, i, List.sort(mTIn[i], intGt));
+          arrayUpdate(mTIn, i, List.heapSortIntList(mTIn[i]));
         end for;
         eqCrossSet := AvlSetInt.addList(AvlSetInt.EMPTY(), eqCrossLstIn);
         paths := getShortPathsBetweenEqCrossNodes(AvlSetInt.listKeysReverse(eqCrossSet), eqCrossSet, mIn, mTIn, {}, findExactlyOneLoop);

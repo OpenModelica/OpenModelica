@@ -1531,7 +1531,7 @@ algorithm
   for i in 1:listLength(inSparsePattern) loop
     tmpTuple := arrayGet(outSparsePattern,i);
     (value, tmplist) := tmpTuple;
-    tmplist := List.sort(tmplist, intGt);
+    tmplist := List.heapSortIntList(tmplist);
     tmpTuple := (value, tmplist);
     MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(outSparsePattern, i, tmpTuple);
   end for;

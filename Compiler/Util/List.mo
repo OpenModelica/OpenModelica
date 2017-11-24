@@ -96,6 +96,7 @@ encapsulated package List
 "
 
 protected
+import Array;
 import MetaModelica.Dangerous.{listReverseInPlace, arrayGetNoBoundsChecking, arrayUpdateNoBoundsChecking, arrayCreateNoInit};
 import MetaModelica.Dangerous;
 import DoubleEndedList;
@@ -735,6 +736,16 @@ algorithm
     _ :: outList := outList;
   end for;
 end stripN;
+
+public function heapSortIntList
+  input output list<Integer> lst;
+algorithm
+  lst := match lst
+      case {} then lst;
+      case {_} then lst;
+    else arrayList(Array.heapSort(listArray(lst)));
+    end match;
+end heapSortIntList;
 
 public function sort<T>
   "Sorts a list given an ordering function with the mergesort algorithm.
