@@ -84,11 +84,11 @@ end mapNoCopy_1;
 
 protected function downheap
   input output array<Integer> inArray;
+  input Integer n;
   input Integer vIn;
 protected
   Integer v = vIn;
   Integer w = 2*v+1;
-  Integer n = arrayLength(inArray);
   Integer tmp;
 algorithm
   while w<n loop
@@ -114,16 +114,15 @@ protected
   Integer n = arrayLength(inArray);
   Integer tmp;
 algorithm
-  for v in (intDiv(arrayLength(inArray),2)-1):-1:0 loop
-    downheap(inArray, v);
+  for v in (intDiv(n,2)-1):-1:0 loop
+    inArray := downheap(inArray, n, v);
   end for;
-  while n>1 loop
-    n := n - 1;
+  for v in n:-1:2 loop
     tmp := inArray[1];
-    inArray[1] := inArray[n+1];
-    inArray[n+1] := tmp;
-    downheap(inArray, 0);
-  end while;
+    inArray[1] := inArray[v];
+    inArray[v] := tmp;
+    inArray := downheap(inArray, v-1, 0);
+  end for;
 end heapSort;
 
 function findFirstOnTrue<T>
