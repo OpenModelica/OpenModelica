@@ -3870,7 +3870,6 @@ algorithm
       guard Expression.expEqual(e1,e3)
       then DAE.BINARY(e2,op1,DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0)));
 
-
     // r1 * (r2 * e) => (r1*r2)*e
     case (DAE.MUL(),DAE.RCONST(real = r1),DAE.BINARY(DAE.RCONST(real = r2),DAE.MUL(DAE.T_REAL()),e2))
       then DAE.BINARY(DAE.RCONST(r1 * r2),DAE.MUL(DAE.T_REAL_DEFAULT),e2);
@@ -3878,6 +3877,14 @@ algorithm
     // r1 * (e * r2) => (r1*r2)*e
     case (DAE.MUL(),DAE.RCONST(real = r1),DAE.BINARY(e2,DAE.MUL(DAE.T_REAL()),DAE.RCONST(real = r2)))
       then DAE.BINARY(DAE.RCONST(r1 * r2),DAE.MUL(DAE.T_REAL_DEFAULT),e2);
+
+    // (r1 + (r2 - e)) => (r3 - e)
+    case (DAE.ADD(),DAE.RCONST(r1),DAE.BINARY(DAE.RCONST(r2),DAE.SUB(ty=ty),e1 as DAE.CREF(_)))
+      then DAE.BINARY(DAE.RCONST(realAdd(r1,r2)),DAE.SUB(ty),e1);
+
+    // ((r2 - e) + r1) => (r3 - e)
+    case (DAE.ADD(),DAE.BINARY(DAE.RCONST(r2),DAE.SUB(ty=ty),e1 as DAE.CREF(_)),DAE.RCONST(r1))
+      then DAE.BINARY(DAE.RCONST(realAdd(r1,r2)),DAE.SUB(ty),e1);
 
     // |e1| /e1 = e1/|e1| => sign(e1)
     case(DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),e2)
@@ -3995,15 +4002,6 @@ algorithm
       equation
         true = Expression.isConstZeroLength(e1) or Expression.isConstZeroLength(e2);
         checkZeroLengthArrayOp(oper);
-      then e1;
-
-    // Look for empty arrays
-    case (_,DAE.ADD(),DAE.RCONST(r),DAE.BINARY(DAE.RCONST(r1),DAE.SUB(ty=ty),DAE.CREF(componentRef=cr1, ty=ty2)),_,_)
-      equation
-              //print(" case55555 ");
-              //print("\n"+ExpressionDump.dumpExpStr(origExp,1)+"\n");
-              e1 = DAE.BINARY(DAE.RCONST(realAdd(r,r1)),DAE.SUB(ty),DAE.CREF(cr1, ty2));
-              //print("\nMAKE   "+ExpressionDump.dumpExpStr(e1,1)+"\n");
       then e1;
 
     // a*(b^(-e)) => a/(b^e)
