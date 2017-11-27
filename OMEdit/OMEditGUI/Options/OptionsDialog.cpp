@@ -82,9 +82,17 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpModelicaEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpModelicaEditorPage, SIGNAL(updatePreview()));
   mpMetaModelicaEditorPage = new MetaModelicaEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpMetaModelicaEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpMetaModelicaEditorPage, SIGNAL(updatePreview()));
   mpCompositeModelEditorPage = new CompositeModelEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCompositeModelEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCompositeModelEditorPage, SIGNAL(updatePreview()));
   mpCEditorPage = new CEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCEditorPage, SIGNAL(updatePreview()));
   mpHTMLEditorPage = new HTMLEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpHTMLEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpHTMLEditorPage, SIGNAL(updatePreview()));
   mpGraphicalViewsPage = new GraphicalViewsPage(this);
   mpSimulationPage = new SimulationPage(this);
   mpMessagesPage = new MessagesPage(this);
