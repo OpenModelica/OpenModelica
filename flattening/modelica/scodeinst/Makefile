@@ -178,6 +178,7 @@ ExtendsVisibility3.mo \
 ExtendsVisibility4.mo \
 ExtendsVisibility5.mo \
 ExternalFunctionExplicit1.mo \
+ExternalFunctionExplicit2.mo \
 ExternalFunctionImplicit1.mo \
 ExternalFunctionImplicit2.mo \
 ExternalFunctionImplicit3.mo \
