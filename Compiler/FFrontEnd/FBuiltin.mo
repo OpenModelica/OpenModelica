@@ -353,7 +353,8 @@ public function getInitialFunctions
 protected
   String fileModelica,fileMetaModelica,fileParModelica,filePDEModelica;
 algorithm
-  fileModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
+  fileModelica := if Flags.isSet(Flags.SCODE_INST) then  Settings.getInstallationDirectoryPath() + "/lib/omc/NFModelicaBuiltin.mo"
+                                                   else Settings.getInstallationDirectoryPath() + "/lib/omc/ModelicaBuiltin.mo";
   fileMetaModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/MetaModelicaBuiltin.mo";
   fileParModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/ParModelicaBuiltin.mo";
   filePDEModelica := Settings.getInstallationDirectoryPath() + "/lib/omc/PDEModelicaBuiltin.mo";

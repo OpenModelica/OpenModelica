@@ -177,6 +177,16 @@ public
     Expression exp;
   end BOX;
 
+  function isCref
+    input Expression exp;
+    output Boolean isTrue;
+  algorithm
+    isTrue := match exp
+      case CREF() then true;
+      else false;
+    end match;
+  end isCref;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -1029,7 +1039,7 @@ public
         algorithm
           args := list(map(arg, func) for arg in call.arguments);
         then
-          Call.TYPED_CALL(call.fn, args, call.attributes);
+          Call.TYPED_CALL(call.fn, call.ty, args, call.attributes);
 
       case Call.UNTYPED_MAP_CALL()
         algorithm
@@ -1509,7 +1519,7 @@ public
         algorithm
           (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
         then
-          Call.TYPED_CALL(call.fn, args, call.attributes);
+          Call.TYPED_CALL(call.fn, call.ty, args, call.attributes);
 
       case Call.UNTYPED_MAP_CALL()
         algorithm

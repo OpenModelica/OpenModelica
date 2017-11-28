@@ -87,6 +87,11 @@ function isCastMatch
   output Boolean isCast = kind == MatchKind.CAST;
 end isCastMatch;
 
+function isGenericMatch
+  input MatchKind kind;
+  output Boolean isCast = kind == MatchKind.GENERIC;
+end isGenericMatch;
+
 //
 //
 //public function checkClassComponents
