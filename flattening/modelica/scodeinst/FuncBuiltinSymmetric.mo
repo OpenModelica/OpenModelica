@@ -11,13 +11,17 @@ model FuncBuiltinSymmetric
 end FuncBuiltinSymmetric;
 
 // Result:
-// Error processing file: FuncBuiltinSymmetric.mo
-// [flattening/modelica/scodeinst/FuncBuiltinSymmetric.mo:10:3-10:61:writable] Error: No matching function found for symmetric({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}) in component <REMOVE ME>
-// candidates are :
-//   symmetric()
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinSymmetric
+//   Real x[1,1];
+//   Real x[1,2];
+//   Real x[1,3];
+//   Real x[2,1];
+//   Real x[2,2];
+//   Real x[2,3];
+//   Real x[3,1];
+//   Real x[3,2];
+//   Real x[3,3];
+// equation
+//   x = /*Real[3, 3]*/(symmetric({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}));
+// end FuncBuiltinSymmetric;
 // endResult

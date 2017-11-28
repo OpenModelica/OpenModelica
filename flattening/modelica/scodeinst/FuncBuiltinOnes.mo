@@ -12,13 +12,20 @@ model FuncBuiltinOnes
 end FuncBuiltinOnes;
 
 // Result:
-// Error processing file: FuncBuiltinZeros.mo
-// [flattening/modelica/scodeinst/FuncBuiltinZeros.mo:11:3-11:29:writable] Error: No matching function found for zeros(4, 2) in component <REMOVE ME>
-// candidates are :
-//   zeros(n)
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinOnes
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+//   Real y[1,1];
+//   Real y[1,2];
+//   Real y[2,1];
+//   Real y[2,2];
+//   Real y[3,1];
+//   Real y[3,2];
+//   Real y[4,1];
+//   Real y[4,2];
+// equation
+//   x = /*Real[3]*/(ones({3}));
+//   y = /*Real[4, 2]*/(ones({4, 2}));
+// end FuncBuiltinOnes;
 // endResult

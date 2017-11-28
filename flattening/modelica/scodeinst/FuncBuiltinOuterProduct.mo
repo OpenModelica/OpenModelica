@@ -12,9 +12,7 @@ end FuncBuiltinOuterProduct;
 
 // Result:
 // Error processing file: FuncBuiltinOuterProduct.mo
-// [lib/omc/ModelicaBuiltin.mo:335:3-335:39:writable] Error: No matching function found for size(v1, 1) in component <REMOVE ME>
-// candidates are :
-//   size()
+// Error: Cannot resolve type of expression ' matrix(v1) .* transpose(matrix(v2)) '. The operands have types ' Real[:, 1] .* Real[1, :] ' in component Real[:, 1].
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

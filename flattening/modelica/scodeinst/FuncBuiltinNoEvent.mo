@@ -12,13 +12,8 @@ model FuncBuiltinNoEvent
 end FuncBuiltinNoEvent;
 
 // Result:
-// Error processing file: FuncBuiltinNoEvent.mo
-// [flattening/modelica/scodeinst/FuncBuiltinNoEvent.mo:11:3-11:22:writable] Error: No matching function found for noEvent(x) in component <REMOVE ME>
-// candidates are :
-//   noEvent()
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinNoEvent
+//   Real x = time;
+//   Real y = noEvent(x);
+// end FuncBuiltinNoEvent;
 // endResult

@@ -40,10 +40,9 @@ model FuncBuiltinReduction
 end FuncBuiltinReduction;
 
 // Result:
-// Error processing file: FuncBuiltinMax.mo
-// [flattening/modelica/scodeinst/FuncBuiltinMax.mo:12:3-12:26:writable] Error: No matching function found for max(4, 2) in component <REMOVE ME>
-// candidates are :
-//   max()
+// [D:/OpenModelica/OMCompiler/Compiler/NFFrontEnd/NFExpression.mo:819:11-819:95:writable]Modelica Assert: NFExpression.toDAE got unknown expression 'E'!
+// Error processing file: FuncBuiltinReduction.mo
+// Error: Internal error Instantiation of FuncBuiltinReduction failed with no error message.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

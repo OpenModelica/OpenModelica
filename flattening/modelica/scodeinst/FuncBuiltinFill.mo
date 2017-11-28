@@ -12,13 +12,21 @@ model FuncBuiltinFill
 end FuncBuiltinFill;
 
 // Result:
-// Error processing file: FuncBuiltinFill.mo
-// [flattening/modelica/scodeinst/FuncBuiltinFill.mo:11:3-11:40:writable] Error: No matching function found for fill(3.14, 2, 4, 1) in component <REMOVE ME>
-// candidates are :
-//   fill(s, n)
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinFill
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+//   Real x[4];
+//   Real y[1,1,1];
+//   Real y[1,2,1];
+//   Real y[1,3,1];
+//   Real y[1,4,1];
+//   Real y[2,1,1];
+//   Real y[2,2,1];
+//   Real y[2,3,1];
+//   Real y[2,4,1];
+// equation
+//   x = /*Real[4]*/(fill(1, {4}));
+//   y = fill(3.14, {2, 4, 1});
+// end FuncBuiltinFill;
 // endResult

@@ -14,13 +14,10 @@ model FuncBuiltinMax
 end FuncBuiltinMax;
 
 // Result:
-// Error processing file: FuncBuiltinSum.mo
-// [flattening/modelica/scodeinst/FuncBuiltinSum.mo:10:3-10:27:writable] Error: No matching function found for sum({1, 2, 3}) in component <REMOVE ME>
-// candidates are :
-//   sum()
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinMax
+//   Real r1 = /*Real*/(sum({1, 2, 3}));
+//   Real r2 = /*Real*/(sum({{1}, {2}, {3}}));
+//   Real r3 = /*Real*/(sum({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}));
+//   Real r4 = /*Real*/(sum(1:0));
+// end FuncBuiltinMax;
 // endResult
