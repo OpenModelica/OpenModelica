@@ -39,7 +39,7 @@ end ClassExtends4;
 
 // Result:
 // function SingleGasNasa.specificEnthalpy
-//   input ThermodynamicState state;
+//   input SingleGasNasa.ThermodynamicState state;
 //   output Real h;
 // algorithm
 //   h := state.T;
