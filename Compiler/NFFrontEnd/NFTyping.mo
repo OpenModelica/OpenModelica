@@ -1645,33 +1645,36 @@ algorithm
 end typeSections;
 
 function typeExternalArg
-  input output Expression arg;
+  input Expression arg;
   input SourceInfo info;
   input InstNode node;
+  output Expression outArg;
 protected
   Type ty;
   Variability var;
 algorithm
-  (arg, ty, var) := typeExp(arg, info);
+  (outArg, ty, var) := typeExp(arg, info);
 
   // Check that the external function argument is valid. The valid types of
   // expressions are crefs, scalar constants and size expressions with constant
-  // index. Size expressions with constant index are evaluated when they are
-  // typed, so we need only care about the first two types of expressions here.
-  arg := match arg
-    case Expression.CREF() then arg;
+  // index. The reason why we match on the untyped expression here is because
+  // size expressions might be evaluated during typing, but the variability
+  // would still be parameter in that case.
+  outArg := match arg
+    case Expression.CREF() then outArg;
+    case Expression.SIZE() guard var <= Variability.PARAMETER then outArg;
     else
       algorithm
         if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
-          arg := Ceval.evalExp(arg, Ceval.EvalTarget.IGNORE_ERRORS());
-          arg := SimplifyExp.simplifyExp(arg);
+          outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.IGNORE_ERRORS());
+          outArg := SimplifyExp.simplifyExp(arg);
         else
           Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
-            {Expression.toString(arg)}, info);
+            {Expression.toString(outArg)}, info);
           fail();
         end if;
       then
-        arg;
+        outArg;
 
   end match;
 end typeExternalArg;
