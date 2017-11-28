@@ -32,6 +32,9 @@
 encapsulated uniontype NFSections
   import Equation = NFEquation;
   import Statement = NFStatement;
+  import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
+  import SCode.Annotation;
 
 protected
   import Sections = NFSections;
@@ -43,6 +46,15 @@ public
     list<list<Statement>> algorithms;
     list<list<Statement>> initialAlgorithms;
   end SECTIONS;
+
+  record EXTERNAL
+    String name;
+    list<Expression> args;
+    ComponentRef outputRef;
+    String language;
+    Option<SCode.Annotation> ann;
+    Boolean explicit;
+  end EXTERNAL;
 
   record EMPTY end EMPTY;
 

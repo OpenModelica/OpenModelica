@@ -60,8 +60,8 @@ import Prefixes = NFPrefixes;
 import NFLookupState.LookupState;
 import Record = NFRecord;
 import NFTyping.ClassScope;
-
 import MatchKind = NFTypeCheck.MatchKind;
+import Restriction = NFRestriction;
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -210,7 +210,6 @@ uniontype Function
 
   end lookupFunction;
 
-  public
   function instFunc
     input Absyn.ComponentRef functionName;
     input InstNode scope;
@@ -232,6 +231,24 @@ uniontype Function
       else instFunc2(ComponentRef.toPath(fn_ref),fn_node, info);
     end match;
   end instFunc;
+
+  function instFuncNode
+    "Instantiates the given InstNode as a function."
+    input InstNode node;
+  protected
+    CachedData cache;
+  algorithm
+    cache := InstNode.getFuncCache(node);
+
+    () := match cache
+      case CachedData.FUNCTION() then ();
+      else
+        algorithm
+          instFunc2(InstNode.scopePath(node), node, InstNode.info(node));
+        then
+          ();
+    end match;
+  end instFuncNode;
 
   function instFunc2
     input Absyn.Path fnPath;
@@ -1120,23 +1137,20 @@ protected
       case Type.POLYMORPHIC() then true;
       case Type.ARRAY() then isValidParamType(ty.elementType);
       case Type.COMPLEX() then isValidParamState(ty.cls);
+      else false;
     end match;
   end isValidParamType;
 
   function isValidParamState
     input InstNode cls;
     output Boolean isValid;
-  protected
-    SCode.Restriction res;
   algorithm
-    // TODO: Use derived restriction instead, since classes can inherit restrictions.
-    res := SCode.getClassRestriction(InstNode.definition(cls));
-
-    isValid := match res
-      case SCode.Restriction.R_RECORD() then true;
-      case SCode.Restriction.R_TYPE() then true;
-      case SCode.Restriction.R_OPERATOR() then true;
-      case SCode.Restriction.R_FUNCTION() then true;
+    isValid := match Class.restriction(InstNode.getClass(cls))
+      case Restriction.RECORD() then true;
+      case Restriction.TYPE() then true;
+      case Restriction.OPERATOR() then true;
+      case Restriction.FUNCTION() then true;
+      case Restriction.EXTERNAL_OBJECT() then true;
       else false;
     end match;
   end isValidParamState;

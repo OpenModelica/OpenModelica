@@ -1763,5 +1763,19 @@ public
     end match;
   end isZero;
 
+  function isScalarConst
+    input Expression exp;
+    output Boolean isScalar;
+  algorithm
+    isScalar := match exp
+      case INTEGER() then true;
+      case REAL() then true;
+      case STRING() then true;
+      case BOOLEAN() then true;
+      case ENUM_LITERAL() then true;
+      else false;
+    end match;
+  end isScalarConst;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

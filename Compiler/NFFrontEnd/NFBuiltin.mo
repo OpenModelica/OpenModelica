@@ -110,12 +110,16 @@ encapsulated package Elements
     }),
     SCode.noComment, Absyn.dummyInfo);
 
+  constant SCode.Element EXTERNALOBJECT = SCode.CLASS("ExternalObject",
+    SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
+    SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()), SCode.noComment, Absyn.dummyInfo);
+
 end Elements;
 
 // InstNodes for the builtin types. These have empty class trees to prevent
 // access to the attributes via dot notation (which is not needed for
 // modifiers and illegal in other cases).
-constant InstNode ANYTYPE_NODE = InstNode.CLASS_NODE("polymorphic",
+constant InstNode POLYMORPHIC_NODE = InstNode.CLASS_NODE("polymorphic",
   Elements.ANY, Visibility.PUBLIC,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.POLYMORPHIC(""), NFClassTree.EMPTY,
     Modifier.NOMOD(), Restriction.TYPE())),
@@ -306,6 +310,13 @@ constant InstNode STATESELECT_ALWAYS =
 
 constant ComponentRef STATESELECT_ALWAYS_CREF =
   ComponentRef.CREF(STATESELECT_ALWAYS, {}, STATESELECT_TYPE, Origin.CREF, STATESELECT_CREF);
+
+constant InstNode EXTERNALOBJECT_NODE = InstNode.CLASS_NODE("ExternalObject",
+  Elements.EXTERNALOBJECT, Visibility.PUBLIC,
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.UNKNOWN(), NFClassTree.EMPTY,
+    Modifier.NOMOD(), Restriction.CLASS())),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
+  InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
 
 constant Type ASSERTIONLEVEL_TYPE = Type.ENUMERATION(
   Absyn.IDENT("AssertionLevel"), {"error", "warning"});

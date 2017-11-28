@@ -908,7 +908,6 @@ function convertFunction
   output DAE.Function dfunc;
 protected
   Class cls;
-  array<InstNode> comps;
   list<DAE.Element> elems;
   DAE.FunctionDefinition def;
   Sections sections;
@@ -916,31 +915,27 @@ algorithm
   cls := InstNode.getClass(Function.instance(func));
 
   dfunc := match cls
-    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps), sections = sections)
+    case Class.INSTANCED_CLASS(sections = sections)
       algorithm
-        elems := {};
+        elems := convertFunctionParams(func.inputs, {});
+        elems := convertFunctionParams(func.outputs, elems);
+        elems := convertFunctionParams(func.locals, elems);
 
-        for c in func.inputs loop
-          elems := convertFunctionParam(c) :: elems;
-        end for;
+        def := match sections
+          // A function with an algorithm section.
+          case Sections.SECTIONS()
+            algorithm
+              elems := convertAlgorithms(sections.algorithms, elems);
+            then
+              DAE.FunctionDefinition.FUNCTION_DEF(listReverse(elems));
 
-        for c in func.outputs loop
-          elems := convertFunctionParam(c) :: elems;
-        end for;
+          // An external function.
+          case Sections.EXTERNAL()
+            then convertExternalDecl(sections, listReverse(elems));
 
-        for c in func.locals loop
-          elems := convertFunctionParam(c) :: elems;
-        end for;
-
-        // elems := list(convertFunctionParam(c) for c in func.locals) :: elems;
-        elems := match sections
-          case Sections.SECTIONS() then convertAlgorithms(sections.algorithms, elems);
-          else elems;
+          // A function without either algorithm or external section.
+          else DAE.FunctionDefinition.FUNCTION_DEF(listReverse(elems));
         end match;
-
-        elems := listReverse(elems);
-
-        def := DAE.FunctionDefinition.FUNCTION_DEF(elems);
       then
         Function.toDAE(func, {def});
 
@@ -952,6 +947,15 @@ algorithm
 
   end match;
 end convertFunction;
+
+function convertFunctionParams
+  input list<InstNode> params;
+  input output list<DAE.Element> elements;
+algorithm
+  for p in params loop
+    elements := convertFunctionParam(p) :: elements;
+  end for;
+end convertFunctionParams;
 
 function convertFunctionParam
   input InstNode node;
@@ -988,6 +992,67 @@ algorithm
   end match;
 end convertFunctionParam;
 
+function convertExternalDecl
+  input Sections extDecl;
+  input list<DAE.Element> parameters;
+  output DAE.FunctionDefinition funcDef;
+protected
+  DAE.ExternalDecl decl;
+  list<DAE.ExtArg> args;
+  DAE.ExtArg ret_arg;
+algorithm
+  funcDef := match extDecl
+    case Sections.EXTERNAL()
+      algorithm
+        args := list(convertExternalDeclArg(e) for e in extDecl.args);
+        ret_arg := convertExternalDeclOutput(extDecl.outputRef);
+        decl := DAE.ExternalDecl.EXTERNALDECL(extDecl.name, args, ret_arg, extDecl.language, extDecl.ann);
+      then
+        DAE.FunctionDefinition.FUNCTION_EXT(parameters, decl);
+  end match;
+end convertExternalDecl;
+
+function convertExternalDeclArg
+  input Expression exp;
+  output DAE.ExtArg arg;
+algorithm
+  arg := match exp
+    local
+      Absyn.Direction dir;
+      ComponentRef cref;
+      Expression e;
+
+    case Expression.CREF(cref = cref as ComponentRef.CREF())
+      algorithm
+        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(cref.node)));
+      then
+        DAE.ExtArg.EXTARG(ComponentRef.toDAE(cref), dir, Type.toDAE(exp.ty));
+
+    case Expression.SIZE(exp = Expression.CREF(cref = cref as ComponentRef.CREF()), dimIndex = SOME(e))
+      then DAE.ExtArg.EXTARGSIZE(ComponentRef.toDAE(cref), Type.toDAE(cref.ty), Expression.toDAE(e));
+
+    else DAE.ExtArg.EXTARGEXP(Expression.toDAE(exp), Type.toDAE(Expression.typeOf(exp)));
+
+  end match;
+end convertExternalDeclArg;
+
+function convertExternalDeclOutput
+  input ComponentRef cref;
+  output DAE.ExtArg arg;
+algorithm
+  arg := match cref
+    local
+      Absyn.Direction dir;
+
+    case ComponentRef.CREF()
+      algorithm
+        dir := Prefixes.directionToAbsyn(Component.direction(InstNode.component(cref.node)));
+      then
+        DAE.ExtArg.EXTARG(ComponentRef.toDAE(cref), dir, Type.toDAE(cref.ty));
+
+    else DAE.ExtArg.NOEXTARG();
+  end match;
+end convertExternalDeclOutput;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFConvertDAE;

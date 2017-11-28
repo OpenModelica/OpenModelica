@@ -418,6 +418,7 @@ uniontype InstNode
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then node.parent;
       case IMPLICIT_SCOPE() then node.parentScope;
+      else EMPTY_NODE();
     end match;
   end parent;
 

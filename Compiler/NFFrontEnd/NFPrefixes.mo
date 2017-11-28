@@ -224,7 +224,7 @@ algorithm
   dir := match scodeDir
     case Absyn.Direction.INPUT() then Direction.INPUT;
     case Absyn.Direction.OUTPUT() then Direction.OUTPUT;
-    case Absyn.Direction.BIDIR() then Direction.NONE;
+    else Direction.NONE;
   end match;
 end directionFromSCode;
 
@@ -235,9 +235,20 @@ algorithm
   ddir := match dir
     case Direction.INPUT then DAE.VarDirection.INPUT();
     case Direction.OUTPUT then DAE.VarDirection.OUTPUT();
-    case Direction.NONE then DAE.VarDirection.BIDIR();
+    else DAE.VarDirection.BIDIR();
   end match;
 end directionToDAE;
+
+function directionToAbsyn
+  input Direction dir;
+  output Absyn.Direction adir;
+algorithm
+  adir := match dir
+    case Direction.INPUT then Absyn.INPUT();
+    case Direction.OUTPUT then Absyn.OUTPUT();
+    else Absyn.BIDIR();
+  end match;
+end directionToAbsyn;
 
 function directionString
   input Direction dir;

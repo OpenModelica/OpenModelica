@@ -692,6 +692,23 @@ public
       element := resolveEntryPtr(entry, tree);
     end lookupElementPtr;
 
+    function foldClasses<ArgT>
+      input ClassTree tree;
+      input FuncT func;
+      input output ArgT arg;
+
+      partial function FuncT
+        input InstNode clsNode;
+        input output ArgT arg;
+      end FuncT;
+    protected
+      array<InstNode> clss = getClasses(tree);
+    algorithm
+      for cls in clss loop
+        arg := func(cls, arg);
+      end for;
+    end foldClasses;
+
     function applyExtends
       input ClassTree tree;
       input FuncT func;
@@ -797,6 +814,18 @@ public
       end match;
     end applyLocalComponents;
 
+    function classCount
+      input ClassTree tree;
+      output Integer count;
+    algorithm
+      count := match tree
+        case PARTIAL_TREE() then arrayLength(tree.classes);
+        case EXPANDED_TREE() then arrayLength(tree.classes);
+        case INSTANTIATED_TREE() then arrayLength(tree.classes);
+        case FLAT_TREE() then arrayLength(tree.classes);
+      end match;
+    end classCount;
+
     function componentCount
       input ClassTree tree;
       output Integer count;
@@ -804,7 +833,7 @@ public
       count := match tree
         case PARTIAL_TREE() then arrayLength(tree.components) - arrayLength(tree.exts);
         case EXPANDED_TREE() then arrayLength(tree.components) - arrayLength(tree.exts);
-        case INSTANTIATED_TREE() then arrayLength(tree.components) - arrayLength(tree.exts);
+        case INSTANTIATED_TREE() then arrayLength(tree.components);
         case FLAT_TREE() then arrayLength(tree.components);
       end match;
     end componentCount;
@@ -953,6 +982,17 @@ public
       end match;
     end enumerateComponents2;
 
+    function getClasses
+      input ClassTree tree;
+      output array<InstNode> clss;
+    algorithm
+      clss := match tree
+        case PARTIAL_TREE() then tree.classes;
+        case EXPANDED_TREE() then tree.classes;
+        case FLAT_TREE() then tree.classes;
+      end match;
+    end getClasses;
+
     function getExtends
       input ClassTree tree;
       output array<InstNode> exts;
@@ -963,6 +1003,17 @@ public
         case INSTANTIATED_TREE() then tree.exts;
       end match;
     end getExtends;
+
+    function getComponents
+      input ClassTree tree;
+      output array<InstNode> comps;
+    algorithm
+      comps := match tree
+        case PARTIAL_TREE() then tree.components;
+        case EXPANDED_TREE() then tree.components;
+        case FLAT_TREE() then tree.components;
+      end match;
+    end getComponents;
 
   protected
 

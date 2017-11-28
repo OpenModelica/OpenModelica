@@ -314,6 +314,7 @@ public
       case ENUMERATION() then true;
       case ENUMERATION_ANY() then true;
       case FUNCTION() then isScalarBuiltin(ty.resultType);
+      else false;
     end match;
   end isScalarBuiltin;
 
@@ -457,7 +458,7 @@ public
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX()
         // TODO: Use proper ClassInf.State here.
-        then DAE.Type.T_COMPLEX(ClassInf.MODEL(Absyn.IDENT(InstNode.name(ty.cls))), {}, NONE());
+        then DAE.Type.T_COMPLEX(ClassInf.MODEL(InstNode.scopePath(ty.cls)), {}, NONE());
       case Type.POLYMORPHIC() then DAE.T_METAPOLYMORPHIC(ty.name);
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else

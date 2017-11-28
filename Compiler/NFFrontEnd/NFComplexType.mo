@@ -45,5 +45,10 @@ public
     Boolean isExpandable;
   end CONNECTOR;
 
+  record EXTERNAL_OBJECT
+    InstNode constructor;
+    InstNode destructor;
+  end EXTERNAL_OBJECT;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComplexType;

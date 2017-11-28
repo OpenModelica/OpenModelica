@@ -393,6 +393,16 @@ uniontype Class
     output Boolean isConnector = Restriction.isConnector(restriction(cls));
   end isConnectorClass;
 
+  function isExternalObject
+    input Class cls;
+    output Boolean isExternalObject = Restriction.isExternalObject(restriction(cls));
+  end isExternalObject;
+
+  function isFunction
+    input Class cls;
+    output Boolean isFunction = Restriction.isFunction(restriction(cls));
+  end isFunction;
+
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

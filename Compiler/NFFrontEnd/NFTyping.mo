@@ -81,6 +81,9 @@ import ComplexType = NFComplexType;
 import Restriction = NFRestriction;
 import NFModifier.ModTable;
 import Package = NFPackage;
+import NFFunction.Function;
+import NFInstNode.CachedData;
+import Direction = NFPrefixes.Direction;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -149,6 +152,12 @@ algorithm
       then
         ();
 
+    case Class.INSTANCED_BUILTIN(restriction = Restriction.EXTERNAL_OBJECT())
+      algorithm
+        typeExternalObjectStructors(c.ty);
+      then
+        ();
+
     case Class.INSTANCED_BUILTIN() then ();
 
     else
@@ -160,6 +169,27 @@ algorithm
 
   end match;
 end typeComponents;
+
+function typeExternalObjectStructors
+  input Type ty;
+protected
+  InstNode constructor, destructor;
+  Function fn;
+  Boolean typed, special;
+algorithm
+  Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
+  CachedData.FUNCTION({fn}, typed, special) := InstNode.getFuncCache(constructor);
+  if not typed then
+    fn := Function.typeFunction(fn);
+    InstNode.setFuncCache(constructor, CachedData.FUNCTION({fn}, true, special));
+  end if;
+
+  CachedData.FUNCTION({fn}, typed, special) := InstNode.getFuncCache(destructor);
+  if not typed then
+    fn := Function.typeFunction(fn);
+    InstNode.setFuncCache(destructor, CachedData.FUNCTION({fn}, true, special));
+  end if;
+end typeExternalObjectStructors;
 
 function makeClassType
   input InstNode clsNode;
@@ -1565,6 +1595,7 @@ protected
   Class cls, typed_cls;
   array<InstNode> components;
   Sections sections;
+  SourceInfo info;
 algorithm
   cls := InstNode.getClass(classNode);
 
@@ -1572,10 +1603,26 @@ algorithm
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components),
         sections = sections)
       algorithm
-        // TODO: Setting scope here shouldn't be necessary, but bootstrapping fails
-        //       without it.
-        sections := Sections.map(sections,
-          function typeEquation(scope = EquationScope.NORMAL), typeAlgorithm);
+        sections := match sections
+          case Sections.SECTIONS()
+            // TODO: Setting scope here shouldn't be necessary, but bootstrapping fails
+            //       without it.
+            then Sections.map(sections, function typeEquation(scope = EquationScope.NORMAL), typeAlgorithm);
+
+          case Sections.EXTERNAL(explicit = true)
+            algorithm
+              info := InstNode.info(classNode);
+              sections.args := list(typeExternalArg(arg, info, classNode) for arg in sections.args);
+              sections.outputRef := typeCref(sections.outputRef, info);
+            then
+              sections;
+
+          case Sections.EXTERNAL()
+            then makeDefaultExternalCall(sections, classNode);
+
+          else sections;
+        end match;
+
         typed_cls := Class.setSections(sections, cls);
 
         for c in components loop
@@ -1596,6 +1643,117 @@ algorithm
         fail();
   end match;
 end typeSections;
+
+function typeExternalArg
+  input output Expression arg;
+  input SourceInfo info;
+  input InstNode node;
+protected
+  Type ty;
+  Variability var;
+algorithm
+  (arg, ty, var) := typeExp(arg, info);
+
+  // Check that the external function argument is valid. The valid types of
+  // expressions are crefs, scalar constants and size expressions with constant
+  // index. Size expressions with constant index are evaluated when they are
+  // typed, so we need only care about the first two types of expressions here.
+  arg := match arg
+    case Expression.CREF() then arg;
+    else
+      algorithm
+        if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
+          arg := Ceval.evalExp(arg, Ceval.EvalTarget.IGNORE_ERRORS());
+          arg := SimplifyExp.simplifyExp(arg);
+        else
+          Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
+            {Expression.toString(arg)}, info);
+          fail();
+        end if;
+      then
+        arg;
+
+  end match;
+end typeExternalArg;
+
+function makeDefaultExternalCall
+  "Constructs a default external call for an external function. If only one
+   output exists a call 'output = func(input1, input2, ...)' is generated,
+   otherwise a call 'func(param1, param2, ...)' is generated from the function's
+   formal parameters and local variables."
+  input output Sections extDecl;
+  input InstNode fnNode;
+algorithm
+  extDecl := match extDecl
+    local
+      list<Expression> args;
+      ComponentRef output_ref;
+      Function fn;
+      Boolean single_output;
+      array<InstNode> comps;
+      Component comp;
+      Type ty;
+      InstNode node;
+      Expression exp;
+
+    case Sections.EXTERNAL()
+      algorithm
+        // An explicit function call isn't needed for builtin calls.
+        if extDecl.language == "builtin" then
+          return;
+        end if;
+
+        // Fetch the cached function.
+        CachedData.FUNCTION(funcs = {fn}) := InstNode.getFuncCache(fnNode);
+        // Check whether we have a single output or not.
+        single_output := listLength(fn.outputs) == 1;
+
+        // When there's a single array output we can't generate a call on the
+        // 'output = func(inputs)' form, so print a warning and treat is as
+        // though it's not a single output.
+        if single_output and Type.isArray(Function.returnType(fn)) then
+          single_output := false;
+          Error.addSourceMessage(Error.EXT_FN_SINGLE_RETURN_ARRAY,
+            {extDecl.language}, InstNode.info(fnNode));
+        end if;
+
+        // If we have a single output, set the external declaration's output to
+        // be a reference to the function's output. Otherwise leave it as empty.
+        if single_output then
+          {node} := fn.outputs;
+          ty := InstNode.getType(node);
+          extDecl.outputRef := ComponentRef.fromNode(node, ty);
+        end if;
+
+        // Generate function arguments from the function's components.
+        comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(fn.node)));
+        if arrayLength(comps) > 0 then
+          args := {};
+          for c in comps loop
+            comp := InstNode.component(c);
+
+            // Skip outputs if there's only a single output.
+            if not single_output or Component.direction(comp) <> Direction.OUTPUT then
+              // Generate a cref for the component and add it to the list of arguments.
+              ty := Component.getType(comp);
+              exp := Expression.CREF(ty, ComponentRef.fromNode(c, ty));
+              args := exp :: args;
+
+              // If the component is an array, generate a size expression for
+              // each dimension too.
+              for i in 1:Type.dimensionCount(ty) loop
+                args := Expression.SIZE(exp, SOME(Expression.INTEGER(i))) :: args;
+              end for;
+            end if;
+          end for;
+
+          extDecl.args := listReverse(args);
+        end if;
+      then
+        extDecl;
+
+  end match;
+end makeDefaultExternalCall;
 
 function typeComponentSections
   input InstNode component;

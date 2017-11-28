@@ -90,6 +90,7 @@ import Scalarize = NFScalarize;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
 import Package = NFPackage;
+import NFFunction.Function;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -314,7 +315,7 @@ algorithm
         prefs := instClassPrefixes(def);
 
         if isSome(builtin_ext) then
-          node := expandBuiltinExtends(builtin_ext, tree, node);
+          node := expandBuiltinExtends(builtin_ext, tree, prefs, node);
         else
           tree := ClassTree.expand(tree);
           res := Restriction.fromSCode(SCode.getClassRestriction(def));
@@ -362,7 +363,7 @@ algorithm
         if isSome(builtin_ext) or Class.isBuiltin(InstNode.getClass(ext_node)) then
           // A class extending from a base class may not have other base
           // classes, and since this is a class extends it has at least one.
-        node := Util.getOptionOrDefault(builtin_ext, ext_node);
+          node := Util.getOptionOrDefault(builtin_ext, ext_node);
           Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
             {InstNode.name(node)}, InstNode.info(node));
           fail();
@@ -545,30 +546,139 @@ function expandBuiltinExtends
    like Real or some type derived from Real."
   input Option<InstNode> builtinExtends;
   input ClassTree scope;
+  input Class.Prefixes prefixes;
   input output InstNode node;
 protected
   InstNode builtin_ext;
   Class c;
   ClassTree tree;
+  ComplexType eo_ty;
 algorithm
   // Fetch the class of the builtin type.
   SOME(builtin_ext) := builtinExtends;
-  c := InstNode.getClass(builtin_ext);
 
-  tree := Class.classTree(InstNode.getClass(node));
+  node := match InstNode.name(builtin_ext)
+    case "ExternalObject"
+      algorithm
+        (tree, eo_ty) := makeExternalObjectType(scope, node);
+        tree := ClassTree.expand(tree);
+        c := Class.PARTIAL_BUILTIN(Type.COMPLEX(node, eo_ty), tree, Modifier.NOMOD(),
+          Restriction.EXTERNAL_OBJECT());
+        node := InstNode.updateClass(c, node);
+      then
+        node;
 
-  // A class extending from a builtin type may not have other components or baseclasses.
-  if ClassTree.componentCount(tree) > 0 or ClassTree.extendsCount(tree) > 1 then
-    // ***TODO***: Find the invalid element and use its info to make the error
-    //             message more accurate.
-    Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
-      {InstNode.name(builtin_ext)}, InstNode.info(node));
-    fail();
-  end if;
+    else
+      algorithm
+        c := InstNode.getClass(builtin_ext);
 
-  // Replace the class we're expanding with the builtin type.
-  node := InstNode.updateClass(c, node);
+        // A class extending from a builtin type may not have other components or baseclasses.
+        if ClassTree.componentCount(scope) > 0 or ClassTree.extendsCount(scope) > 1 then
+          // ***TODO***: Find the invalid element and use its info to make the error
+          //             message more accurate.
+          Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
+            {InstNode.name(builtin_ext)}, InstNode.info(node));
+          fail();
+        end if;
+
+        // Replace the class we're expanding with the builtin type.
+        node := InstNode.updateClass(c, node);
+      then
+        node;
+
+  end match;
 end expandBuiltinExtends;
+
+function makeExternalObjectType
+  "Constructs a ComplexType for an external object, and also checks that the
+   external object declaration is valid."
+  input output ClassTree tree;
+  input InstNode node;
+        output ComplexType ty;
+protected
+  Absyn.Path base_path;
+  InstNode constructor = InstNode.EMPTY_NODE(), destructor = InstNode.EMPTY_NODE();
+algorithm
+  (tree, ty) := match tree
+    case ClassTree.PARTIAL_TREE()
+      algorithm
+        // An external object may not contain components.
+        for comp in tree.components loop
+          if InstNode.isComponent(comp) then
+            Error.addSourceMessage(Error.EXTERNAL_OBJECT_INVALID_ELEMENT,
+              {InstNode.name(node), InstNode.name(comp)}, InstNode.info(comp));
+            fail();
+          end if;
+        end for;
+
+        // An external object may not contain extends other than the ExternalObject one.
+        if arrayLength(tree.exts) > 1 then
+          for ext in tree.exts loop
+            if InstNode.name(ext) <> "ExternalObject" then
+              InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
+                SCode.EXTENDS(baseClassPath = base_path))) := ext;
+              Error.addSourceMessage(Error.EXTERNAL_OBJECT_INVALID_ELEMENT,
+                {InstNode.name(node), "extends " + Absyn.pathString(base_path)}, InstNode.info(ext));
+              fail();
+            end if;
+          end for;
+        end if;
+
+        // An external object must have exactly two functions called constructor and
+        // destructor.
+        for cls in tree.classes loop
+          () := match InstNode.name(cls)
+            case "constructor" guard SCode.isFunction(InstNode.definition(cls))
+              algorithm
+                constructor := cls;
+              then
+                ();
+
+            case "destructor" guard SCode.isFunction(InstNode.definition(cls))
+              algorithm
+                destructor := cls;
+              then
+                ();
+
+            else
+              algorithm
+                // Found some other element => error.
+                Error.addSourceMessage(Error.EXTERNAL_OBJECT_INVALID_ELEMENT,
+                  {InstNode.name(node), InstNode.name(cls)}, InstNode.info(cls));
+              then
+                fail();
+
+          end match;
+        end for;
+
+        if InstNode.isEmpty(constructor) then
+          // The constructor is missing.
+          Error.addSourceMessage(Error.EXTERNAL_OBJECT_MISSING_STRUCTOR,
+            {InstNode.name(node), "constructor"}, InstNode.info(node));
+          fail();
+        end if;
+
+        if InstNode.isEmpty(destructor) then
+          // The destructor is missing.
+          Error.addSourceMessage(Error.EXTERNAL_OBJECT_MISSING_STRUCTOR,
+            {InstNode.name(node), "destructor"}, InstNode.info(node));
+          fail();
+        end if;
+
+        // We don't need the ExternalObject extends anymore, get rid of it so we
+        // don't have to handle it later.
+        tree.exts := arrayCreate(0, InstNode.EMPTY_NODE());
+        // The component array will only contain a reference node to the
+        // ExternalObject extends, so get rid of it too.
+        tree.components := arrayCreate(0, InstNode.EMPTY_NODE());
+
+        // Construct the ComplexType for the external object.
+        ty := ComplexType.EXTERNAL_OBJECT(constructor, destructor);
+      then
+        (tree, ty);
+
+  end match;
+end makeExternalObjectType;
 
 function instClass
   input output InstNode node;
@@ -646,6 +756,15 @@ algorithm
       then
         ();
 
+    case (Class.PARTIAL_BUILTIN(restriction = Restriction.EXTERNAL_OBJECT()), _)
+      algorithm
+        inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, {}, cls.restriction);
+        node := InstNode.replaceClass(inst_cls, node);
+        updateComponentClass(parent, node);
+        instExternalObjectStructors(cls.ty, parent);
+      then
+        ();
+
     case (Class.PARTIAL_BUILTIN(), _)
       algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
@@ -667,6 +786,7 @@ algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := expand(node);
         node := instClass(node, modifier, attributes, parent);
+        updateComponentClass(parent, node);
       then
         ();
 
@@ -688,6 +808,26 @@ algorithm
     component := InstNode.componentApply(component, Component.setClassInstance, cls);
   end if;
 end updateComponentClass;
+
+function instExternalObjectStructors
+  "Instantiates the constructor and destructor for an ExternalObject class."
+  input Type ty;
+  input InstNode parent;
+protected
+  InstNode constructor, destructor, par;
+algorithm
+  // The constructor and destructor have function parameters that are instances
+  // of the external object class, and we instantiate the structors when we
+  // instantiate such instances. To break that loop we check that we're not
+  // inside the external object class before instantiating the structors.
+  par := InstNode.parent(InstNode.parent(parent));
+
+  if not (InstNode.isClass(par) and Class.isExternalObject(InstNode.getClass(par))) then
+    Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
+    Function.instFuncNode(constructor);
+    Function.instFuncNode(destructor);
+  end if;
+end instExternalObjectStructors;
 
 function instPackage
   "This function instantiates a package given a package node. If the package has
@@ -1609,12 +1749,23 @@ function instSections2
   input InstNode scope;
   input output Sections sections;
 algorithm
-  sections := match parts
+  sections := match (parts, sections)
     local
       list<Equation> eq, ieq;
       list<list<Statement>> alg, ialg;
+      SCode.ExternalDecl ext_decl;
 
-    case SCode.PARTS()
+    case (_, Sections.EXTERNAL())
+      algorithm
+        Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+          {InstNode.name(scope)}, InstNode.info(scope));
+      then
+        fail();
+
+    case (SCode.PARTS(externalDecl = SOME(ext_decl)), _)
+      then instExternalDecl(ext_decl, scope);
+
+    case (SCode.PARTS(), _)
       algorithm
         eq := instEquations(parts.normalEquationLst, scope, EquationScope.NORMAL);
         ieq := instEquations(parts.initialEquationLst, scope, EquationScope.INITIAL);
@@ -1625,6 +1776,58 @@ algorithm
 
   end match;
 end instSections2;
+
+function instExternalDecl
+  input SCode.ExternalDecl extDecl;
+  input InstNode scope;
+  output Sections sections;
+algorithm
+  sections := match extDecl
+    local
+      String name;
+      String lang;
+      list<Expression> args;
+      ComponentRef ret_cref;
+      SourceInfo info;
+
+    case SCode.EXTERNALDECL()
+      algorithm
+        info := InstNode.info(scope);
+        name := Util.getOptionOrDefault(extDecl.funcName, InstNode.name(scope));
+        lang := Util.getOptionOrDefault(extDecl.lang, "C");
+        checkExternalDeclLanguage(lang, info);
+        args := list(instExp(arg, scope, info) for arg in extDecl.args);
+
+        if isSome(extDecl.output_) then
+          ret_cref := Lookup.lookupLocalComponent(Util.getOption(extDecl.output_), scope, info);
+        else
+          ret_cref := ComponentRef.EMPTY();
+        end if;
+      then
+        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName));
+
+  end match;
+end instExternalDecl;
+
+function checkExternalDeclLanguage
+  "Checks that the language declared for an external function is valid."
+  input String language;
+  input SourceInfo info;
+algorithm
+  () := match language
+    // The specification also allows for C89, C99, and C11, but our code
+    // generation only seems to support C.
+    case "C" then ();
+    case "FORTRAN 77" then ();
+    case "builtin" then ();
+    else
+      algorithm
+        Error.addSourceMessage(Error.INVALID_EXTERNAL_LANGUAGE,
+          {language}, info);
+      then
+        fail();
+  end match;
+end checkExternalDeclLanguage;
 
 function instEquations
   input list<SCode.Equation> scodeEql;

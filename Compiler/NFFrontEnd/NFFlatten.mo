@@ -72,6 +72,8 @@ import ConnectEquations = NFConnectEquations;
 import Connections = NFConnections;
 import Face = NFConnector.Face;
 import System;
+import ComplexType = NFComplexType;
+import NFInstNode.CachedData;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -716,13 +718,43 @@ function collectComponentFuncs
   input output FunctionTree funcs;
 protected
   Binding binding;
+  ComponentRef cref;
+  InstNode node;
+  Type ty;
 algorithm
-  (_, binding) := component;
+  (cref, binding) := component;
+  ComponentRef.CREF(node = node, ty = ty) := cref;
+
+  // TODO: Collect functions from the component's type attributes.
+
+  () := match ty
+    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+      algorithm
+        funcs := collectExternalObjectStructors(ty.complexTy, funcs);
+      then
+        ();
+
+    else ();
+  end match;
 
   if Binding.isBound(binding) then
     funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
   end if;
 end collectComponentFuncs;
+
+function collectExternalObjectStructors
+  input ComplexType ty;
+  input output FunctionTree funcs;
+protected
+  InstNode constructor, destructor;
+  Function fn;
+algorithm
+  ComplexType.EXTERNAL_OBJECT(constructor, destructor) := ty;
+  CachedData.FUNCTION(funcs = {fn}) := InstNode.getFuncCache(constructor);
+  funcs := flattenFunction(fn, funcs);
+  CachedData.FUNCTION(funcs = {fn}) := InstNode.getFuncCache(destructor);
+  funcs := flattenFunction(fn, funcs);
+end collectExternalObjectStructors;
 
 function collectEquationFuncs
   input Equation eq;

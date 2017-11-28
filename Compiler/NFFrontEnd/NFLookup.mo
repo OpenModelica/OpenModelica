@@ -120,6 +120,23 @@ algorithm
   end if;
 end fixTypenameState;
 
+function lookupLocalComponent
+  "Looks up a component in the local scope, without searching in any enclosing
+   scopes. The found scope is returned since it can be different from the given
+   scope in the case where the cref refers to an outer component."
+  input Absyn.ComponentRef cref;
+  input InstNode scope "The scope to look in.";
+  input SourceInfo info;
+  output ComponentRef foundCref;
+  output InstNode foundScope "The scope the cref was found in.";
+protected
+  LookupState state;
+  InstNode node;
+algorithm
+  (foundCref, foundScope, state) := lookupLocalCref(cref, scope, info);
+  LookupState.assertComponent(state, ComponentRef.node(foundCref), cref, info);
+end lookupLocalComponent;
+
 function lookupCallableName
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
@@ -165,11 +182,9 @@ algorithm
 end lookupImport;
 
 function lookupCref
-  "This function will look up a component reference in the given scope, and
-   return a list of nodes that correspond to the parts of the cref in reverse
-   order. I.e. when looking up the cref a.b.c, the list of nodes {c, b, a} will
-   be returned. The scope where the first part of the cref was found will also
-   be returned."
+  "This function will look up an Absyn.ComponentRef in the given scope, and
+   construct a ComponentRef from the found nodes. The scope where the first part
+   of the cref was found will also be returned."
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
   input SourceInfo info;
@@ -232,6 +247,48 @@ algorithm
     fail();
   end if;
 end lookupCref;
+
+function lookupLocalCref
+  "Looks up a cref in the local scope without going into any enclosing scopes."
+  input Absyn.ComponentRef cref;
+  input InstNode scope "The scope to look in.";
+  input SourceInfo info;
+  output ComponentRef foundCref;
+  output InstNode foundScope "The scope where the first part of the cref was found.";
+  output LookupState state;
+protected
+  MatchType match_ty;
+  InstNode node;
+algorithm
+  (foundCref, foundScope, state) := matchcontinue cref
+    local
+      InstNode found_scope;
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        (node, foundScope) := lookupLocalSimpleCref(cref.name, scope);
+        state := LookupState.nodeState(node);
+      then
+        (ComponentRef.fromAbsyn(node, cref.subscripts), foundScope, state);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        (node, foundScope) := lookupLocalSimpleCref(cref.name, scope);
+        state := LookupState.nodeState(node);
+        foundCref := ComponentRef.fromAbsyn(node, cref.subscripts);
+        (foundCref, foundScope, state) :=
+          lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
+      then
+        (foundCref, foundScope, state);
+
+    else
+      algorithm
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+          {Dump.printComponentRefStr(cref), InstNode.name(scope)}, info);
+      then
+        fail();
+  end matchcontinue;
+end lookupLocalCref;
 
 function lookupInner
   "Looks up the corresponding inner node given an outer node."
@@ -565,7 +622,8 @@ algorithm
     case "Integer" then NFBuiltin.INTEGER_NODE;
     case "Boolean" then NFBuiltin.BOOLEAN_NODE;
     case "String" then NFBuiltin.STRING_NODE;
-    case "polymorphic" then NFBuiltin.ANYTYPE_NODE;
+    case "polymorphic" then NFBuiltin.POLYMORPHIC_NODE;
+    case "ExternalObject" then NFBuiltin.EXTERNALOBJECT_NODE;
   end match;
 end lookupSimpleBuiltinName;
 
@@ -575,8 +633,6 @@ function lookupSimpleCref
   input InstNode scope;
   output InstNode node;
   output InstNode foundScope = scope;
-protected
-  Class cls;
 algorithm
   // Look for the name in the given scope, and if not found there continue
   // through the enclosing scopes of that scope until we either run out of
@@ -604,9 +660,6 @@ algorithm
       return;
     else
       // Look in the next enclosing scope.
-      // TODO: The enclosing scope here will be a package, so the lookup should
-      //       be restricted to constants only.
-      //foundScope := Inst.instPackage(InstNode.parentScope(foundScope));
       foundScope := InstNode.parentScope(foundScope);
     end try;
   end for;
@@ -615,6 +668,32 @@ algorithm
     {String(Global.recursionDepthLimit), InstNode.name(foundScope)});
   fail();
 end lookupSimpleCref;
+
+function lookupLocalSimpleCref
+  "This function look up a simple name as a cref in a given component, without
+   searching in any enclosing scope."
+  input String name;
+  input InstNode scope;
+  output InstNode node;
+  output InstNode foundScope = scope;
+algorithm
+  node := match foundScope
+    case InstNode.IMPLICIT_SCOPE()
+      then lookupIterator(name, foundScope.locals);
+    case InstNode.CLASS_NODE()
+      then Class.lookupElement(name, InstNode.getClass(foundScope));
+    case InstNode.COMPONENT_NODE()
+      then Class.lookupElement(name, InstNode.getClass(foundScope));
+    case InstNode.INNER_OUTER_NODE()
+      then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
+  end match;
+
+  // If the node is an outer node, return the inner instead.
+  if InstNode.isInnerOuterNode(node) then
+    node := InstNode.resolveInner(node);
+    foundScope := InstNode.parent(node);
+  end if;
+end lookupLocalSimpleCref;
 
 function lookupIterator
   input String name;

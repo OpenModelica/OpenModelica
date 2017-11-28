@@ -751,6 +751,14 @@ public constant Message INVALID_CONNECTOR_FORM = MESSAGE(311, TRANSLATION(), ERR
   Util.gettext("%s is not a valid form for a connector, connectors must be either c1.c2...cn or m.c (where c is a connector and m is a non-connector)."));
 public constant Message CONNECTOR_PREFIX_OUTSIDE_CONNECTOR = MESSAGE(312, TRANSLATION(), WARNING(),
   Util.gettext("Prefix '%s' used outside connector declaration."));
+public constant Message EXTERNAL_OBJECT_INVALID_ELEMENT = MESSAGE(313, TRANSLATION(), ERROR(),
+  Util.gettext("External object %s contains invalid element '%s'."));
+public constant Message EXTERNAL_OBJECT_MISSING_STRUCTOR = MESSAGE(314, TRANSLATION(), ERROR(),
+  Util.gettext("External object %s is missing a %s."));
+public constant Message MULTIPLE_SECTIONS_IN_FUNCTION = MESSAGE(315, TRANSLATION(), ERROR(),
+  Util.gettext("Function %s has more than one algorithm section or external declaration."));
+public constant Message INVALID_EXTERNAL_LANGUAGE = MESSAGE(316, TRANSLATION(), ERROR(),
+  Util.gettext("'%s' is not a valid language for an external function."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

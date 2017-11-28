@@ -36,14 +36,19 @@ protected
   import Restriction = NFRestriction;
 
 public
-  record MODEL end MODEL;
+  record CLASS end CLASS;
 
   record CONNECTOR
     Boolean isExpandable;
   end CONNECTOR;
 
-  record TYPE end TYPE;
   record ENUMERATION end ENUMERATION;
+  record EXTERNAL_OBJECT end EXTERNAL_OBJECT;
+  record FUNCTION end FUNCTION;
+  record MODEL end MODEL;
+  record OPERATOR end OPERATOR;
+  record RECORD end RECORD;
+  record TYPE end TYPE;
   record UNKNOWN end UNKNOWN;
 
   function fromSCode
@@ -51,9 +56,14 @@ public
     output Restriction res;
   algorithm
     res := match sres
-      case SCode.Restriction.R_CONNECTOR()
-        then CONNECTOR(sres.isExpandable);
-
+      case SCode.Restriction.R_CLASS() then CLASS();
+      case SCode.Restriction.R_CONNECTOR() then CONNECTOR(sres.isExpandable);
+      case SCode.Restriction.R_ENUMERATION() then ENUMERATION();
+      case SCode.Restriction.R_FUNCTION() then FUNCTION();
+      case SCode.Restriction.R_MODEL() then MODEL();
+      case SCode.Restriction.R_OPERATOR() then OPERATOR();
+      case SCode.Restriction.R_RECORD() then RECORD();
+      case SCode.Restriction.R_TYPE() then TYPE();
       else MODEL();
     end match;
   end fromSCode;
@@ -67,6 +77,26 @@ public
       else false;
     end match;
   end isConnector;
+
+  function isExternalObject
+    input Restriction res;
+    output Boolean isExternalObject;
+  algorithm
+    isExternalObject := match res
+      case EXTERNAL_OBJECT() then true;
+      else false;
+    end match;
+  end isExternalObject;
+
+  function isFunction
+    input Restriction res;
+    output Boolean isFunction;
+  algorithm
+    isFunction := match res
+      case FUNCTION() then true;
+      else false;
+    end match;
+  end isFunction;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRestriction;
