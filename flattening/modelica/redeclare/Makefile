@@ -22,6 +22,7 @@ DuplicateRedeclares2.mo \
 ExtendsDerived.mo \
 FinalRedeclareModifier.mo \
 FinalRedeclareModifier2.mo \
+IgnoreReplaceable.mo \
 ModifiersPriority.mo \
 NonexistentElementRedeclare1.mo \
 NonexistentElementRedeclare2.mo \
