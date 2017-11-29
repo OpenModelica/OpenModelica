@@ -5595,6 +5595,7 @@ algorithm
         BackendDAEEXT.getAssignment(ass1,ass2);
         unmatched1 = getUnassigned(ne, ass1, {});
           //BackendDump.dumpEqSystem(isyst, "EQSYS");
+        if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))); end if;
         if Flags.isSet(Flags.BLT_DUMP) then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
 
         // remove some edges which do not have to be traversed when finding the MSSS

@@ -3932,21 +3932,20 @@ protected
   BackendDAE.AdjacencyMatrixEnhanced me,meT;
   BackendDAE.IncidenceMatrix m;
   Option<BackendDAE.IncidenceMatrix> mO;
-  list<BackendDAE.Equation> eqLst;
   list<BackendDAE.Var> varLst;
   list<tuple<Boolean,String>> varAtts,eqAtts;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqs, m=mO) := syst;
   varLst := BackendVariable.varList(vars);
-  eqLst := BackendEquation.equationList(eqs);
   varAtts := List.threadMap(List.fill(false,listLength(varLst)),List.fill("",listLength(varLst)),Util.makeTuple);
-  eqAtts := List.threadMap(List.fill(false,listLength(eqLst)),List.fill("",listLength(eqLst)),Util.makeTuple);
+  eqAtts := List.threadMap(List.fill(false,BackendEquation.equationArraySize(eqs)),List.fill("",BackendEquation.equationArraySize(eqs)),Util.makeTuple);
+
   if Util.isSome(mO) then
       dumpBipartiteGraphStrongComponent2(vars,eqs,Util.getOption(mO),varAtts,eqAtts,"BipartiteGraph_"+fileName);
   else
     // build the incidence matrix
     (_,m,_,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(BackendDAEUtil.getFunctions(shared)));
-    dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph_"+fileName);
+    dumpBipartiteGraphStrongComponent2(vars,eqs,m,varAtts,eqAtts,"BipartiteGraph2_"+fileName);
   end if;
 end dumpBipartiteGraphEqSystem;
 
@@ -4056,7 +4055,7 @@ protected
   GraphML.GraphInfo graphInfo;
   Integer graphIdx;
 algorithm
-  numEqs := BackendEquation.getNumberOfEquations(eqsIn);
+  numEqs := BackendEquation.equationArraySize(eqsIn);
   numVars := BackendVariable.varsSize(varsIn);
   varRange := List.intRange(numVars);
   eqRange := List.intRange(numEqs);
@@ -4065,11 +4064,62 @@ algorithm
   (graphInfo,(_,typeAttIdx)) := GraphML.addAttribute("", "type", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   (graphInfo,(_,nameAttIdx)) := GraphML.addAttribute("", "name", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
   (graphInfo,(_,idxAttIdx)) := GraphML.addAttribute("", "systIdx", GraphML.TYPE_STRING(), GraphML.TARGET_NODE(), graphInfo);
-  ((graphInfo,graphIdx)) := List.fold3(eqRange,addEqNodeToGraph,eqsIn,eqAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
+  (graphInfo,graphIdx) := addEqNodesToGraph(eqsIn,eqAtts,{nameAttIdx,typeAttIdx,idxAttIdx},(graphInfo,graphIdx));
   ((graphInfo,graphIdx)) := List.fold3(varRange,addVarNodeToGraph,varsIn,varAtts,{nameAttIdx,typeAttIdx,idxAttIdx}, (graphInfo,graphIdx));
   graphInfo := List.fold1(eqRange,addEdgeToGraph,mIn,graphInfo);
   GraphML.dumpGraph(graphInfo,name+".graphml");
 end dumpBipartiteGraphStrongComponent2;
+
+protected function addEqNodesToGraph
+  input BackendDAE.EquationArray eqs;
+  input list<tuple<Boolean,String>> attsIn; // <isResEq,"daeIdx">
+  input list<Integer> attributeIdcs;//<name,type>
+  input tuple<GraphML.GraphInfo,Integer> graphInfoIn;
+  output tuple<GraphML.GraphInfo,Integer> graphInfoOut;
+protected
+  BackendDAE.Equation eq;
+  Boolean isResEq;
+  Integer nameAttrIdx,typeAttrIdx,idxAttrIdx,  graphIdx, size, numEqs, e, eAbs,  nextE;
+  String eqString, eqNodeId, idxString, typeStr, daeIdxStr;
+  list<String> eqChars;
+  GraphML.GraphInfo graphInfo;
+  GraphML.NodeLabel nodeLabel;
+algorithm
+  nameAttrIdx := listGet(attributeIdcs,1);
+  typeAttrIdx := listGet(attributeIdcs,2); // if its a residual or not
+  idxAttrIdx := listGet(attributeIdcs,3);
+  (graphInfo,graphIdx) := graphInfoIn;
+  numEqs := BackendEquation.getNumberOfEquations(eqs);
+  e := 1;
+  eAbs := 1;
+  size := 1;
+  while e<=numEqs loop
+    //print("check e "+intString(e)+"\n");
+    eq := BackendEquation.get(eqs,e);
+    size := BackendEquation.equationSize(eq);
+    //print("size e "+intString(size)+"\n");
+    nextE := eAbs+size;
+    while nextE>eAbs loop
+      //print("add e "+intString(nextE-size)+"\n");
+      nameAttrIdx := listGet(attributeIdcs,1);
+      typeAttrIdx := listGet(attributeIdcs,2); // if its a residual or not
+      idxAttrIdx := listGet(attributeIdcs,3);
+      isResEq := Util.tuple21(listGet(attsIn,e));
+      daeIdxStr := Util.tuple22(listGet(attsIn,e));
+      typeStr := if isResEq then "residualEq" else "otherEq";
+      {eq} := BackendEquation.getList({e}, eqs);
+      eqString := BackendDump.equationString(eq);
+      eqNodeId := getEqNodeIdx(eAbs);
+      idxString := intString(eAbs);
+      nodeLabel := GraphML.NODELABEL_INTERNAL(idxString,NONE(),GraphML.FONTPLAIN());
+      (graphInfo,(_,_)) := GraphML.addNode(eqNodeId,GraphML.COLOR_GREEN2,GraphML.BORDERWIDTH_STANDARD,{nodeLabel},GraphML.RECTANGLE(),SOME(eqString),{(nameAttrIdx,eqString),(typeAttrIdx,typeStr),(idxAttrIdx,daeIdxStr)},graphIdx,graphInfo);
+      eAbs := eAbs+1;
+      size := size-1;
+    end while;
+    e := e+1;
+  end while;
+  graphInfoOut := (graphInfo,graphIdx);
+end addEqNodesToGraph;
 
 public function dumpDAGStrongComponent"dumps a directed acyclic graph for the matched strongly connected component"
   input HpcOmTaskGraph.TaskGraph graphIn;
