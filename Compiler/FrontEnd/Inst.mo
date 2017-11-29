@@ -3820,6 +3820,7 @@ protected
   DAE.Mod redecl_mod, m, old_m;
   String redecl_name, name;
   Boolean found;
+  SCode.Replaceable repl;
   Option<SCode.ConstrainClass> cc;
   list<SCode.Element> cc_comps;
   list<Absyn.ComponentRef> crefs;
@@ -3834,8 +3835,7 @@ algorithm
 
   (outElement, outMod) := matchcontinue (redecl_el, inElement)
     // Redeclaration of component.
-    case (SCode.COMPONENT(),
-          SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = cc))))
+    case (SCode.COMPONENT(), SCode.COMPONENT(prefixes = SCode.PREFIXES(replaceablePrefix = repl)))
       algorithm
         true := redecl_name == inElement.name;
 
@@ -3848,23 +3848,31 @@ algorithm
         (outCache, old_m) := Mod.elabMod(outCache, outEnv, outIH, inPrefix,
           inElement.modifications, inImpl, Mod.COMPONENT(inElement.name), inElement.info);
 
-        if isSome(cc) then
-          // Constraining type on the component:
-          // Extract components belonging to constraining class.
-          cc_comps := InstUtil.extractConstrainingComps(cc, inEnv, inPrefix);
-          // Keep previous constraining class mods.
-          redecl_mod := InstUtil.keepConstrainingTypeModifersOnly(redecl_mod, cc_comps);
-          old_m := InstUtil.keepConstrainingTypeModifersOnly(old_m, cc_comps);
+        m := match repl
+          case SCode.REPLACEABLE(cc = cc as SOME(_))
+            algorithm
+              // Constraining type on the component:
+              // Extract components belonging to constraining class.
+              cc_comps := InstUtil.extractConstrainingComps(cc, inEnv, inPrefix);
+              // Keep previous constraining class mods.
+              redecl_mod := InstUtil.keepConstrainingTypeModifersOnly(redecl_mod, cc_comps);
+              old_m := InstUtil.keepConstrainingTypeModifersOnly(old_m, cc_comps);
 
-          m := Mod.merge(m, redecl_mod, redecl_name);
-          m := Mod.merge(m, old_m, redecl_name);
-          m := Mod.merge(m, inCmod, redecl_name);
-        else
-          // No constraining type on comp, throw away modifiers prior to redeclaration:
-          m := Mod.merge(redecl_mod, m, redecl_name);
-          m := Mod.merge(m, old_m, redecl_name);
-          m := Mod.merge(inCmod, m, redecl_name);
-        end if;
+              m := Mod.merge(m, redecl_mod, redecl_name);
+              m := Mod.merge(m, old_m, redecl_name);
+              m := Mod.merge(m, inCmod, redecl_name);
+            then
+              m;
+
+          else
+            algorithm
+              // No constraining type on comp, throw away modifiers prior to redeclaration:
+              m := Mod.merge(redecl_mod, m, redecl_name);
+              m := Mod.merge(m, old_m, redecl_name);
+              m := Mod.merge(inCmod, m, redecl_name);
+            then
+              m;
+        end match;
 
         (outCache, outElement) :=
           propagateRedeclCompAttr(outCache, outEnv, inElement, redecl_el);

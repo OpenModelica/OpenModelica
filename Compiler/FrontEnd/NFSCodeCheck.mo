@@ -204,7 +204,7 @@ public function checkRedeclaredElementPrefix
   input SCode.Element inReplacement;
   input SourceInfo inInfo;
 algorithm
-  _ := match(inItem, inReplacement, inInfo)
+  _ := match(inItem, inReplacement)
     local
       SCode.Replaceable repl;
       SCode.Final fin;
@@ -214,22 +214,21 @@ algorithm
       SCode.Restriction res;
       SCode.Visibility vis1, vis2;
       String ty;
-      Integer err_count;
       Absyn.TypeSpec ty1, ty2;
+      Boolean ok;
 
     case (NFSCodeEnv.VAR(var =
         SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(
             finalPrefix = fin, replaceablePrefix = repl),
           attributes = SCode.ATTR(variability = var), typeSpec = ty1, info = info)),
-        SCode.COMPONENT(prefixes = SCode.PREFIXES(), typeSpec = ty2), _)
-      equation
-        err_count = Error.getNumErrorMessages();
-        ty = "component";
-        checkCompRedeclarationReplaceable(name, repl, ty1, ty2, inInfo, info);
-        checkRedeclarationFinal(name, ty, fin, inInfo, info);
-        checkRedeclarationVariability(name, ty, var, inInfo, info);
+        SCode.COMPONENT(prefixes = SCode.PREFIXES(), typeSpec = ty2))
+      algorithm
+        ty := "component";
+        ok := checkCompRedeclarationReplaceable(name, repl, ty1, ty2, inInfo, info);
+        ok := checkRedeclarationFinal(name, ty, fin, inInfo, info) and ok;
+        ok := checkRedeclarationVariability(name, ty, var, inInfo, info) and ok;
         //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
-        true = intEq(err_count, Error.getNumErrorMessages());
+        true := ok;
       then
         ();
 
@@ -237,35 +236,32 @@ algorithm
         SCode.CLASS(name = name, prefixes = SCode.PREFIXES(
           finalPrefix = fin, replaceablePrefix = repl),
           restriction = res, info = info)),
-        SCode.CLASS(prefixes = SCode.PREFIXES()), _)
-      equation
-        err_count = Error.getNumErrorMessages();
-        ty = SCodeDump.restrictionStringPP(res);
-        checkClassRedeclarationReplaceable(name, ty, repl, inInfo, info);
-        checkRedeclarationFinal(name, ty, fin, inInfo, info);
+        SCode.CLASS(prefixes = SCode.PREFIXES()))
+      algorithm
+        ty := SCodeDump.restrictionStringPP(res);
+        ok := checkClassRedeclarationReplaceable(name, ty, repl, inInfo, info);
+        ok := checkRedeclarationFinal(name, ty, fin, inInfo, info) and ok;
         //checkRedeclarationVisibility(name, ty, vis1, vis2, inInfo, info);
-        true = intEq(err_count, Error.getNumErrorMessages());
+        true := ok;
       then
         ();
 
     case (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = name, info = info)),
-          SCode.CLASS(restriction = res), _)
-      equation
-        ty = SCodeDump.restrictionStringPP(res);
-        ty = "a " + ty;
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-          {"component", name, ty}, info);
+          SCode.CLASS(restriction = res))
+      algorithm
+        ty := SCodeDump.restrictionStringPP(res);
+        ty := "a " + ty;
+        Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"component", name, ty}, {inInfo, info});
       then
         fail();
 
     case (NFSCodeEnv.CLASS(cls = SCode.CLASS(restriction = res, info = info)),
-          SCode.COMPONENT(name = name), _)
-      equation
-        ty = SCodeDump.restrictionStringPP(res);
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-          {ty, name, "a component"}, info);
+          SCode.COMPONENT(name = name))
+      algorithm
+        ty := SCodeDump.restrictionStringPP(res);
+        Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+          {ty, name, "a component"}, {inInfo, info});
       then
         fail();
 
@@ -279,17 +275,18 @@ protected function checkClassRedeclarationReplaceable
   input SCode.Replaceable inReplaceable;
   input SourceInfo inOriginInfo;
   input SourceInfo inInfo;
+  output Boolean isValid;
 algorithm
-  _ := match(inName, inType, inReplaceable, inOriginInfo, inInfo)
-    case (_, _, SCode.REPLACEABLE(), _, _) then ();
-
-    case (_, _, SCode.NOT_REPLACEABLE(), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
-          {inType, inName}, inInfo);
+  isValid := match inReplaceable
+    case SCode.NOT_REPLACEABLE() guard not Flags.getConfigBool(Flags.IGNORE_REPLACEABLE)
+      algorithm
+        Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
+          {inType, inName}, {inOriginInfo, inInfo});
       then
-        ();
+        false;
+
+    else true;
+
   end match;
 end checkClassRedeclarationReplaceable;
 
@@ -300,27 +297,24 @@ protected function checkCompRedeclarationReplaceable
   input Absyn.TypeSpec inType2;
   input SourceInfo inOriginInfo;
   input SourceInfo inInfo;
+  output Boolean isValid;
 algorithm
-  _ := match(inName, inReplaceable, inType1, inType2, inOriginInfo, inInfo)
-    local
-      SCode.Element var;
-      Absyn.TypeSpec ty1, ty2;
-
-    case (_, SCode.REPLACEABLE(), _, _, _, _) then ();
-
-    case (_, SCode.NOT_REPLACEABLE(), _, _, _, _)
+  isValid := match inReplaceable
+    case SCode.NOT_REPLACEABLE()
       guard Absyn.pathEqual(Absyn.typeSpecPath(inType1),
                             Absyn.typeSpecPath(inType2))
       then
-        ();
+        true;
 
-    case (_, SCode.NOT_REPLACEABLE(), _, _, _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
-          {"component", inName}, inInfo);
+    case SCode.NOT_REPLACEABLE() guard not Flags.getConfigBool(Flags.IGNORE_REPLACEABLE)
+      algorithm
+        Error.addMultiSourceMessage(Error.REDECLARE_NON_REPLACEABLE,
+          {"component", inName}, {inOriginInfo, inInfo});
       then
-        ();
+        fail();
+
+    else true;
+
   end match;
 end checkCompRedeclarationReplaceable;
 
@@ -330,17 +324,18 @@ protected function checkRedeclarationFinal
   input SCode.Final inFinal;
   input SourceInfo inOriginInfo;
   input SourceInfo inInfo;
+  output Boolean isValid;
 algorithm
-  _ := match(inName, inType, inFinal, inOriginInfo, inInfo)
-    case (_, _, SCode.NOT_FINAL(), _, _) then ();
+  isValid := match inFinal
+    case SCode.NOT_FINAL() then true;
 
-    case (_, _, SCode.FINAL(), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE,
-          {"final", inType, inName}, inInfo);
+    case SCode.FINAL()
+      algorithm
+        Error.addMultiSourceMessage(Error.INVALID_REDECLARE,
+          {"final", inType, inName}, {inOriginInfo, inInfo});
       then
-        ();
+        false;
+
   end match;
 end checkRedeclarationFinal;
 
@@ -350,17 +345,17 @@ protected function checkRedeclarationVariability
   input SCode.Variability inVariability;
   input SourceInfo inOriginInfo;
   input SourceInfo inInfo;
+  output Boolean isValid;
 algorithm
-  _ := match(inName, inType, inVariability, inOriginInfo, inInfo)
-    case (_, _, SCode.CONST(), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inOriginInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE,
-          {"constant", inType, inName}, inInfo);
+  isValid := match inVariability
+    case SCode.CONST()
+      algorithm
+        Error.addMultiSourceMessage(Error.INVALID_REDECLARE,
+          {"constant", inType, inName}, {inOriginInfo, inInfo});
       then
-        ();
+        false;
 
-    else ();
+    else true;
   end match;
 end checkRedeclarationVariability;
 
@@ -371,26 +366,24 @@ protected function checkRedeclarationVisibility
   input SCode.Visibility inNewVisibility;
   input SourceInfo inOriginInfo;
   input SourceInfo inNewInfo;
+  output Boolean isValid;
 algorithm
-  _ := match(inName, inType, inOriginalVisibility, inNewVisibility,
-      inOriginInfo, inNewInfo)
-    case (_, _, SCode.PUBLIC(), SCode.PROTECTED(), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-          {"public element", inName, "protected"}, inOriginInfo);
+  isValid := match (inOriginalVisibility, inNewVisibility)
+    case (SCode.PUBLIC(), SCode.PROTECTED())
+      algorithm
+        Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"public element", inName, "protected"}, {inNewInfo, inOriginInfo});
       then
-        fail();
+        false;
 
-    case (_, _, SCode.PROTECTED(), SCode.PUBLIC(), _, _)
-      equation
-        Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inNewInfo);
-        Error.addSourceMessage(Error.INVALID_REDECLARE_AS,
-          {"protected element", inName, "public"}, inOriginInfo);
+    case (SCode.PROTECTED(), SCode.PUBLIC())
+      algorithm
+        Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+          {"protected element", inName, "public"}, {inNewInfo, inOriginInfo});
       then
-        fail();
+        false;
 
-    else ();
+    else true;
   end match;
 end checkRedeclarationVisibility;
 

@@ -1401,6 +1401,9 @@ constant ConfigFlag HOMOTOPY_APPROACH = CONFIG_FLAG(116, "homotopyApproach",
     ("adaptiveGlobal", Util.gettext("Global homotopy approach with adaptive lambda steps. The homotopy parameter effects the entire initialization system."))
     })),
     Util.gettext("Sets the homotopy approach."));
+constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Sets whether to ignore replaceability or not when redeclaring."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1522,7 +1525,8 @@ constant list<ConfigFlag> allConfigFlags = {
   TEARING_STRICTNESS,
   INTERACTIVE,
   ZEROMQ_FILE_SUFFIX,
-  HOMOTOPY_APPROACH
+  HOMOTOPY_APPROACH,
+  IGNORE_REPLACEABLE
 };
 
 public function new
