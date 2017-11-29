@@ -108,6 +108,17 @@ public
     SourceInfo info;
   end NORETCALL;
 
+  function mapExpList
+    input output list<Equation> eql;
+    input MapFn func;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+  algorithm
+    eql := list(mapExp(eq, func) for eq in eql);
+  end mapExpList;
+
   function mapExp
     input output Equation eq;
     input MapFn func;

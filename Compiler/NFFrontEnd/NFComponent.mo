@@ -346,6 +346,31 @@ uniontype Component
     end match;
   end getBinding;
 
+  function setBinding
+    input Binding binding;
+    input output Component component;
+  algorithm
+    () := match component
+      case UNTYPED_COMPONENT()
+        algorithm
+          component.binding := binding;
+        then
+          ();
+
+      case TYPED_COMPONENT()
+        algorithm
+          component.binding := binding;
+        then
+          ();
+
+      case ITERATOR()
+        algorithm
+          component.binding := binding;
+        then
+          ();
+    end match;
+  end setBinding;
+
   function hasBinding
     input Component component;
     output Boolean b;

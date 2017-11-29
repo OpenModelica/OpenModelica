@@ -936,8 +936,49 @@ algorithm
   if not Function.isCollected(fn) then
     Function.collect(fn);
     funcs := FunctionTree.add(funcs, Function.name(fn), fn);
+    funcs := collectClassFunctions(fn.node, funcs);
   end if;
 end flattenFunction;
+
+function collectClassFunctions
+  input InstNode clsNode;
+  input output FunctionTree funcs;
+protected
+  Class cls;
+  ClassTree cls_tree;
+  Sections sections;
+  Component comp;
+  Binding binding;
+algorithm
+  cls := InstNode.getClass(clsNode);
+
+  () := match cls
+    case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE(), sections = sections)
+      algorithm
+        for c in cls_tree.components loop
+          comp := InstNode.component(c);
+          binding := Component.getBinding(comp);
+
+          if Binding.isBound(binding) then
+            funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
+          end if;
+        end for;
+
+        () := match sections
+          case Sections.SECTIONS()
+            algorithm
+              funcs := List.fold(sections.algorithms, collectAlgorithmFuncs, funcs);
+            then
+              ();
+
+          else ();
+        end match;
+      then
+        ();
+
+    else ();
+  end match;
+end collectClassFunctions;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;

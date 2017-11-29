@@ -196,6 +196,7 @@ uniontype Function
     InstNode found_scope;
     LookupState state;
     Absyn.Path functionPath;
+    ComponentRef prefix;
   algorithm
     try
       // Make sure the name is a path.
@@ -206,8 +207,8 @@ uniontype Function
     end try;
 
     (functionRef, found_scope) := Lookup.lookupCallableName(functionName, scope, info);
-    // (functionRef, found_scope, state) := Lookup.lookupCref(functionName, scope, info);
-
+    prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
+    functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunction;
 
   function instFunc

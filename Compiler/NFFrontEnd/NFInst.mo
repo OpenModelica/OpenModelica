@@ -141,9 +141,9 @@ algorithm
   // Replace or collect package constants depending on the
   // replacePackageConstants debug flag.
   if Flags.isSet(Flags.REPLACE_PACKAGE_CONSTS) then
-    elems := Package.replaceConstants(elems);
+    (elems, funcs) := Package.replaceConstants(elems, funcs);
   else
-    elems := Package.collectConstants(elems);
+    elems := Package.collectConstants(elems, funcs);
   end if;
 
   elems := Scalarize.scalarize(elems, name);

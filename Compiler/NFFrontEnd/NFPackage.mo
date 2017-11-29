@@ -31,6 +31,7 @@
 
 encapsulated package NFPackage
   import NFFlatten.Elements;
+  import NFFlatten.FunctionTree;
 
 protected
   import ExecStat.execStat;
@@ -44,6 +45,10 @@ protected
   import NFInstNode.InstNode;
   import Typing = NFTyping;
   import Ceval = NFCeval;
+  import NFFunction.Function;
+  import NFClass.Class;
+  import Sections = NFSections;
+  import ClassTree = NFClassTree;
 
 public
   type Constants = ConstantsSetImpl.Tree;
@@ -69,6 +74,7 @@ public
 public
   function collectConstants
     input output Elements elements;
+    input FunctionTree functions;
   protected
     list<tuple<ComponentRef, Binding>> comps = {};
     Binding binding;
@@ -78,14 +84,9 @@ public
     constants := List.fold(elements.components, collectComponentConstants, constants);
     constants := Equation.foldExpList(elements.equations, collectExpConstants, constants);
     constants := Equation.foldExpList(elements.initialEquations, collectExpConstants, constants);
-
-    for alg in elements.algorithms loop
-      constants := Statement.foldExpList(alg, collectExpConstants, constants);
-    end for;
-
-    for alg in elements.initialAlgorithms loop
-      constants := Statement.foldExpList(alg, collectExpConstants, constants);
-    end for;
+    constants := Statement.foldExpListList(elements.algorithms, collectExpConstants, constants);
+    constants := Statement.foldExpListList(elements.initialAlgorithms, collectExpConstants, constants);
+    constants := FunctionTree.fold(functions, collectFuncConstants, constants);
 
     for c in Constants.listKeys(constants) loop
       binding := Component.getBinding(InstNode.component(ComponentRef.node(c)));
@@ -99,12 +100,14 @@ public
 
   function replaceConstants
     input output Elements elements;
+    input output FunctionTree functions;
   algorithm
     elements.components := list(replaceComponentConstants(c) for c in elements.components);
-    elements.equations := list(Equation.mapExp(eq, replaceExpConstants) for eq in elements.equations);
-    elements.initialEquations := list(Equation.mapExp(eq, replaceExpConstants) for eq in elements.initialEquations);
-    elements.algorithms := list(Statement.mapExpList(s, replaceExpConstants) for s in elements.algorithms);
-    elements.initialAlgorithms := list(Statement.mapExpList(s, replaceExpConstants) for s in elements.initialAlgorithms);
+    elements.equations := Equation.mapExpList(elements.equations, replaceExpConstants);
+    elements.initialEquations := Equation.mapExpList(elements.initialEquations, replaceExpConstants);
+    elements.algorithms := Statement.mapExpListList(elements.algorithms, replaceExpConstants);
+    elements.initialAlgorithms := Statement.mapExpListList(elements.initialAlgorithms, replaceExpConstants);
+    functions := FunctionTree.map(functions, replaceFuncConstants);
     execStat(getInstanceName());
   end replaceConstants;
 
@@ -165,6 +168,50 @@ public
     end match;
   end collectExpConstants_traverser;
 
+  function collectFuncConstants
+    input Absyn.Path name;
+    input Function func;
+    input output Constants constants;
+  protected
+    Class cls;
+    array<InstNode> comps;
+    Sections sections;
+  algorithm
+    cls := InstNode.getClass(func.node);
+
+    () := match cls
+      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps),
+                                 sections = sections)
+        algorithm
+          for c in comps loop
+            constants := collectBindingConstants(
+              Component.getBinding(InstNode.component(c)), constants);
+          end for;
+
+          () := match sections
+            case Sections.SECTIONS()
+              algorithm
+                constants := Statement.foldExpListList(sections.algorithms, collectExpConstants, constants);
+              then
+                ();
+
+            case Sections.EXTERNAL()
+              algorithm
+                for arg in sections.args loop
+                  constants := collectExpConstants(arg, constants);
+                end for;
+              then
+                ();
+
+            else ();
+          end match;
+        then
+          ();
+
+      else ();
+    end match;
+  end collectFuncConstants;
+
   function replaceComponentConstants
     input output tuple<ComponentRef, Binding> component;
   protected
@@ -208,6 +255,50 @@ public
       else exp;
     end match;
   end replaceExpConstants_traverser;
+
+  function replaceFuncConstants
+    input Absyn.Path name;
+    input output Function func;
+  protected
+    Class cls;
+    array<InstNode> comps;
+    Sections sections;
+    Component comp;
+    Binding binding, eval_binding;
+  algorithm
+    cls := InstNode.getClass(func.node);
+
+    () := match cls
+      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps),
+                                 sections = sections)
+        algorithm
+          for c in comps loop
+            comp := InstNode.component(c);
+            binding := Component.getBinding(comp);
+            eval_binding := replaceBindingConstants(binding);
+
+            if not referenceEq(binding, eval_binding) then
+              comp := Component.setBinding(eval_binding, comp);
+              InstNode.updateComponent(comp, c);
+            end if;
+          end for;
+
+          () := match sections
+            case Sections.SECTIONS()
+              algorithm
+                sections.algorithms := Statement.mapExpListList(sections.algorithms, replaceExpConstants);
+                cls.sections := sections;
+                InstNode.updateClass(cls, func.node);
+              then
+                ();
+
+            else ();
+          end match;
+        then
+          ();
+
+    end match;
+  end replaceFuncConstants;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFPackage;

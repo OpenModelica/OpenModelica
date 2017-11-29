@@ -125,6 +125,17 @@ public
     end match;
   end info;
 
+  function mapExpListList
+    input output list<list<Statement>> stmtl;
+    input MapFunc func;
+
+    partial function MapFunc
+      input output Expression exp;
+    end MapFunc;
+  algorithm
+    stmtl := list(mapExpList(s, func) for s in stmtl);
+  end mapExpListList;
+
   function mapExpList
     input output list<Statement> stmtl;
     input MapFunc func;
@@ -203,6 +214,21 @@ public
       else stmt;
     end match;
   end mapExp;
+
+  function foldExpListList<ArgT>
+    input list<list<Statement>> stmt;
+    input FoldFunc func;
+    input output ArgT arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    for s in stmt loop
+      arg := foldExpList(s, func, arg);
+    end for;
+  end foldExpListList;
 
   function foldExpList<ArgT>
     input list<Statement> stmt;
