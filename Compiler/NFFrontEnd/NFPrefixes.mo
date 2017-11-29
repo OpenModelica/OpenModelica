@@ -205,6 +205,18 @@ algorithm
   end match;
 end variabilityString;
 
+function unparseVariability
+  input Variability var;
+  output String str;
+algorithm
+  str := match var
+    case Variability.CONSTANT then "constant ";
+    case Variability.PARAMETER then "parameter ";
+    case Variability.DISCRETE then "discrete ";
+    else "";
+  end match;
+end unparseVariability;
+
 function variabilityMax
   input Variability var1;
   input Variability var2;

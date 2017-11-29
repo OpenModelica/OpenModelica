@@ -948,6 +948,7 @@ protected
     argtycall := typeNormalCall(call, info);
     (call , ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
+    variability := Variability.PARAMETER;
   end typeNdimsCall;
 
   function typeSampleCall
@@ -991,7 +992,7 @@ protected
     end if;
 
     call := unboxArgs(call);
-
+    variability := Variability.DISCRETE;
   end typePreCall;
 
   function typeChangeCall
@@ -1020,6 +1021,7 @@ protected
       fail();
     end if;
 
+    variability := Variability.DISCRETE;
   end typeChangeCall;
 
   function typeReinitCall

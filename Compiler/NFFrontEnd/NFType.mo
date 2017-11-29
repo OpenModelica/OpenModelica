@@ -519,5 +519,20 @@ public
     end match;
   end isEqual;
 
+  function isDiscrete
+    input Type ty;
+    output Boolean isDiscrete;
+  algorithm
+    isDiscrete := match ty
+      case INTEGER() then true;
+      case STRING() then true;
+      case BOOLEAN() then true;
+      case ENUMERATION() then true;
+      case ARRAY() then isDiscrete(ty.elementType);
+      case FUNCTION() then isDiscrete(ty.resultType);
+      else false;
+    end match;
+  end isDiscrete;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

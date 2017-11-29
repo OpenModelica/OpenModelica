@@ -1008,8 +1008,10 @@ algorithm
         (e1, ty1, var1) := typeExp(exp.exp1, info, next_origin);
         (e2, ty2, var2) := typeExp(exp.exp2, info, next_origin);
         (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, exp.operator, e2, ty2);
+        // TODO: Implement this properly according to 3.8.3 in the spec.
+        variability := Prefixes.variabilityMin(Prefixes.variabilityMax(var1, var2), Variability.DISCRETE);
       then
-        (exp, ty, Prefixes.variabilityMax(var1, var2));
+        (exp, ty, variability);
 
     case Expression.IF()
       algorithm

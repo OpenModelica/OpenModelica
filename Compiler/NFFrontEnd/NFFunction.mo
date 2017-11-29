@@ -410,7 +410,7 @@ uniontype Function
 
       // Add the type if the parameter has been typed.
       if printTypes and Component.isTyped(c) then
-        var_s := if Component.variability(c) < Variability.CONTINUOUS then Prefixes.variabilityString(Component.variability(c)) + " " else "";
+        var_s := Prefixes.unparseVariability(Component.variabilityExplicit(c));
         input_str := var_s + Type.toString(Component.getType(c)) + " " + input_str;
       end if;
 

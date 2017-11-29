@@ -74,6 +74,7 @@ import Face = NFConnector.Face;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
+import NFPrefixes.Variability;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -228,7 +229,8 @@ algorithm
               new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
               binding := flattenBinding(c.binding, prefix, comp_node);
 
-              if Type.isArray(ty) and Binding.isBound(binding) and Component.isVar(c) then
+              if Type.isArray(ty) and Binding.isBound(binding) and
+                 Component.variability(c) >= Variability.DISCRETE then
                 comps := (new_pre, Binding.UNBOUND()) :: comps;
                 sections := Sections.prependEquation(
                   Equation.ARRAY_EQUALITY(Expression.CREF(ty, new_pre), Binding.getTypedExp(binding), ty, c.info),
