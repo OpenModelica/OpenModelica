@@ -81,6 +81,17 @@ public:
     Text,        /* Used to represent text based files. */
     CompositeModel    /* Used to represent CompositeModel files. */
   };
+  enum Access {
+    none,   /* OMEdit specific when there is no Access annotation */
+    hide,
+    icon,
+    documentation,
+    diagram,
+    nonPackageText,
+    nonPackageDuplicate,
+    packageText,
+    packageDuplicate
+  };
   enum SaveContentsType {
     SaveInOneFile,
     SaveFolderStructure
@@ -117,6 +128,7 @@ public:
   bool isConnector() {return (getRestriction() == StringHandler::ExpandableConnector || getRestriction() == StringHandler::Connector);}
   bool isPartial() {return mClassInformation.partialPrefix;}
   bool isState() {return mClassInformation.state;}
+  Access getAccess();
   void setSaveContentsType(LibraryTreeItem::SaveContentsType saveContentsType) {mSaveContentsType = saveContentsType;}
   SaveContentsType getSaveContentsType() {return mSaveContentsType;}
   void setPixmap(QPixmap pixmap) {mPixmap = pixmap;}

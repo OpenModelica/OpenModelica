@@ -491,6 +491,34 @@ bool LibraryTreeItem::isDocumentationClass()
 }
 
 /*!
+ * \brief LibraryTreeItem::getAccess
+ * Returns the Access annotation.
+ * \return
+ */
+LibraryTreeItem::Access LibraryTreeItem::getAccess()
+{
+  if (mClassInformation.access.compare("Access.hide") == 0) {
+    return LibraryTreeItem::hide;
+  } else if (mClassInformation.access.compare("Access.icon") == 0) {
+    return LibraryTreeItem::icon;
+  } else if (mClassInformation.access.compare("Access.documentation") == 0) {
+    return LibraryTreeItem::documentation;
+  } else if (mClassInformation.access.compare("Access.diagram") == 0) {
+    return LibraryTreeItem::diagram;
+  } else if (mClassInformation.access.compare("Access.nonPackageText") == 0) {
+    return LibraryTreeItem::nonPackageText;
+  } else if (mClassInformation.access.compare("Access.nonPackageDuplicate") == 0) {
+    return LibraryTreeItem::nonPackageDuplicate;
+  } else if (mClassInformation.access.compare("Access.packageText") == 0) {
+    return LibraryTreeItem::packageText;
+  } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
+    return LibraryTreeItem::packageDuplicate;
+  } else {
+    return LibraryTreeItem::none;
+  }
+}
+
+/*!
  * \brief LibraryTreeItem::getClassText
  * Returns the class text. If the class text is empty then first read it.
  * \param pLibraryTreeModel
@@ -965,7 +993,8 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     }
     // check current index itself
     if (pLibraryTreeItem) {
-      if (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses()) {
+      if ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide)
+          || (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses())) {
         return false;
       } else {
         return pLibraryTreeItem->getNameStructure().contains(filterRegExp());
