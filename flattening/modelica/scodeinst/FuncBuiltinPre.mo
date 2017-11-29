@@ -9,11 +9,15 @@
 model FuncBuiltinPre
   discrete Real x;
   Real y = pre(x);
+  Integer i;
+  Real z = pre(i);
 end FuncBuiltinPre;
 
 // Result:
 // class FuncBuiltinPre
 //   discrete Real x;
 //   Real y = pre(x);
+//   Integer i;
+//   Real z = pre(i);
 // end FuncBuiltinPre;
 // endResult

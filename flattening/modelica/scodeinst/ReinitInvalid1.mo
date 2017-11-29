@@ -5,16 +5,16 @@
 //
 
 class ReinitInvalid1
-  Boolean b(start = false);
+  discrete Real x = 1.0;
 equation
-  when b then
-    reinit(b, true);
+  when time > 1.0 then
+    reinit(x, 2.0);
   end when;
 end ReinitInvalid1;
 
 // Result:
 // Error processing file: ReinitInvalid1.mo
-// [flattening/modelica/scodeinst/ReinitInvalid1.mo:11:5-11:20:writable] Error: The first argument to reinit must be a subtype of Real, but b has type Boolean.
+// [flattening/modelica/scodeinst/ReinitInvalid1.mo:11:5-11:19:writable] Error: The first argument to reinit must be a continuous time variable, but x is discrete.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
