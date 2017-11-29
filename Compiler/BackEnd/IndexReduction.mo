@@ -1820,7 +1820,7 @@ algorithm
         (eqnslst1,_) = BackendEquation.traverseExpsOfEquationList(eqnslst1, Expression.traverseSubexpressionsHelper, (replaceDummyDerivativesExp, ht));
         // remove stateSelect=StateSelect.always vars
         varlst = list(var for var guard notVarStateSelectAlways(var, level) in hov);
-        neqns = BackendEquation.equationLstSize(eqnslst);
+        neqns = BackendEquation.equationLstSizeKeepAlgorithmAsOne(eqnslst); //vwaurich: algorithms are handled as single equations, like a function call
         nfreeStates = listLength(varlst);
         // do state selection of that level
         (dummyVars,stateSets) = selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,inSystem,inShared,so,iMapEqnIncRow,iMapIncRowEqn,hov,{},{});

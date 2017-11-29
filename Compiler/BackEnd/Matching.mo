@@ -5595,13 +5595,14 @@ algorithm
         BackendDAEEXT.getAssignment(ass1,ass2);
         unmatched1 = getUnassigned(ne, ass1, {});
           //BackendDump.dumpEqSystem(isyst, "EQSYS");
-        if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))); end if;
+        if Flags.isSet(Flags.BLT_DUMP) and Flags.isSet(Flags.GRAPHML) then BackendDump.dumpBipartiteGraphEqSystem(isyst, ishared, "BeforMatching_"+intString(arrayLength(m))+"_unmatched "+intString(listLength(unmatched1))); end if;
         if Flags.isSet(Flags.BLT_DUMP) then print("unmatched equations: "+stringDelimitList(List.map(unmatched1,intString),", ")+"\n\n"); end if;
 
         // remove some edges which do not have to be traversed when finding the MSSS
         m1 = arrayCopy(m);
         m1t = arrayCopy(mt);
         (m1,m1t) = removeEdgesForNoDerivativeFunctionInputs(m1,m1t,isyst,ishared);
+        (m1,m1t) = removeEdgesToDiscreteEquations(m1,m1t,isyst,ishared);
         meqns1 = getEqnsforIndexReduction(unmatched1,ne,m1,m1t,ass1,ass2,inArg);
         if Flags.isSet(Flags.BLT_DUMP) then print("MSS subsets: "+stringDelimitList(List.map(meqns1,Util.intLstString),"\n ")+"\n"); end if;
 
@@ -5633,6 +5634,64 @@ algorithm
 
   end match;
 end matchingExternal;
+
+protected function removeEdgesToDiscreteEquations""
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input BackendDAE.EqSystem sys;
+  input BackendDAE.Shared shared;
+  output BackendDAE.IncidenceMatrix mOut;
+  output BackendDAE.IncidenceMatrixT mtOut;
+protected
+  Boolean isDiscrete;
+  Integer idx, idx2, size, varIdx;
+  list<Integer> varIdxs, row, eqIdxs;
+  BackendDAE.EquationArray eqs;
+  BackendDAE.Variables vars;
+  list<BackendDAE.Var> varLst;
+  array<list<Integer>> eqIdxArray;
+algorithm
+  vars := sys.orderedVars;
+  eqs := sys.orderedEqs;
+  idx := 1;
+  idx2 := 0;
+  eqIdxArray := arrayCreate(BackendEquation.getNumberOfEquations(eqs), {});
+  //algorithms with size>n occur as n single nodes in the incidence matrix, delete the rows for each of them
+  for eq in BackendEquation.equationList(eqs) loop
+    size := BackendEquation.equationSize(BackendEquation.get(eqs, idx));
+    eqIdxs := List.map1(List.intRange(size),intAdd,idx2);
+    arrayUpdate(eqIdxArray, idx, eqIdxs);
+    idx := idx+1;
+    idx2 := size+idx2;
+  end for;
+  idx := 1;
+  for eq in BackendEquation.equationList(eqs) loop
+    //print("Check equation "+BackendDump.equationString(eq)+"\n");
+    isDiscrete := BackendEquation.isWhenEquationOrDiscreteAlgorithm(eq,vars);
+    if isDiscrete then
+      varLst := BackendEquation.equationVars(eq,vars);
+
+      varIdxs := BackendVariable.getVarIndexFromVars(varLst,vars);
+      eqIdxs := eqIdxArray[idx];
+      //print("remove edges between eqs: "+stringDelimitList(List.map(eqIdxs,intString),", ")+" and vars "+stringDelimitList(List.map(varIdxs,intString),", ")+"\n");
+      //update m
+      for e in eqIdxs loop
+        row := m[e];
+        (_,row,_) := List.intersection1OnTrue(row,varIdxs,intEq);
+        arrayUpdate(m,e,row);
+        //update mt
+        for varIdx in varIdxs loop
+          row := arrayGet(mt,varIdx);
+          row := List.deleteMember(row,e);
+          arrayUpdate(mt,varIdx,row);
+        end for;
+      end for;
+    end if;
+    idx := idx+1;
+  end for;
+  mOut := m;
+  mtOut := mt;
+end removeEdgesToDiscreteEquations;
 
 protected function removeEdgesForNoDerivativeFunctionInputs"when gathering the minimal structurally singular subsets from the unmatches equations,
 some edges dont have to be considered e.g. edges between a function call and an input variable if the input variable will not be derived when deriving the function
@@ -5968,7 +6027,7 @@ algorithm
       equation
         // traverse all adiacent rows
         rows = List.select(m[e], Util.intPositive);
-        //  print("search in Rows " + stringDelimitList(List.map(rows,intString),", ") + " from " + intString(e) + "\n");
+          //print("search in Vars " + stringDelimitList(List.map(rows,intString),", ") + " from equation " + intString(e) + "\n");
         eqns = getEqnsforIndexReductiontraverseRows(rows,{},m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
       then
         getEqnsforIndexReductionphase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
@@ -6009,6 +6068,7 @@ algorithm
         // row is matched
         // print("check Row " + intString(r) + "\n");
         rc = ass2[r];
+        rc = if List.exist1(mT[r],intEq,rc) then rc else -1;
         // print("check Colum " + intString(rc) + "\n");
         true = intGt(rc,0);
         mrc = colummarks[rc];
