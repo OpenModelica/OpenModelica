@@ -461,7 +461,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <stateSelect>
 // Prefer
 // </stateSelect>
-// <nominal string=\"if damper.phi_nominal &gt;= 1e-15 then damper.phi_nominal else 1.0\">
+// <nominal string=\"if damper.phi_nominal &gt;= 1e-015 then damper.phi_nominal else 1.0\">
 // </nominal>
 // <initialValue string=\"0.0\">
 // </initialValue>
@@ -11300,7 +11300,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"484\" name=\"world.g\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Constant gravity acceleration\">
-// <bindExpression string=\"9.81\">
+// <bindExpression string=\"9.810000000000001\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -12748,7 +12748,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-9.999999999999999e+59\">
+// <minValue string=\"-1e+060\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12768,7 +12768,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-9.999999999999999e+59\">
+// <minValue string=\"-1e+060\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -12788,7 +12788,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;kg.m2&quot;\">
 // </unit>
-// <minValue string=\"-9.999999999999999e+59\">
+// <minValue string=\"-1e+060\">
 // </minValue>
 // </attributesValues>
 // </variable>
@@ -13739,7 +13739,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"627\" name=\"body.g_0[2]\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Gravity acceleration resolved in world frame\">
-// <bindExpression string=\"-9.81\">
+// <bindExpression string=\"-9.810000000000001\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -21223,11 +21223,11 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </equation>
 // <equation id=\"3\">-rev.frame_b.t[1] = body.I[1,1] * body.z_a[1] + body.I[1,2] * body.z_a[2] + body.I[1,3] * body.z_a[3] + body.w_a[2] * (body.I[3,1] * body.w_a[1] + body.I[3,2] * body.w_a[2] + body.I[3,3] * body.w_a[3]) + body.r_CM[3] * rev.frame_b.f[2] + (-body.r_CM[2]) * rev.frame_b.f[3] - body.w_a[3] * (body.I[2,1] * body.w_a[1] + body.I[2,2] * body.w_a[2] + body.I[2,3] * body.w_a[3])
 // </equation>
-// <equation id=\"4\">-rev.frame_b.f[3] = (9.81 * body.frame_a.R.T[3,2] + body.z_a[1] * body.r_CM[2] + body.w_a[1] * (body.w_a[3] * body.r_CM[1] - body.w_a[1] * body.r_CM[3]) + body.w_a[2] * (body.w_a[3] * body.r_CM[2] - body.w_a[2] * body.r_CM[3]) - body.z_a[2] * body.r_CM[1]) * body.m
+// <equation id=\"4\">-rev.frame_b.f[3] = (9.810000000000001 * body.frame_a.R.T[3,2] + body.z_a[1] * body.r_CM[2] + body.w_a[1] * (body.w_a[3] * body.r_CM[1] - body.w_a[1] * body.r_CM[3]) + body.w_a[2] * (body.w_a[3] * body.r_CM[2] - body.w_a[2] * body.r_CM[3]) - body.z_a[2] * body.r_CM[1]) * body.m
 // </equation>
-// <equation id=\"5\">-rev.frame_b.f[2] = (9.81 * body.frame_a.R.T[2,2] + body.z_a[3] * body.r_CM[1] + body.w_a[3] * (body.w_a[2] * body.r_CM[3] - body.w_a[3] * body.r_CM[2]) + body.w_a[1] * (body.w_a[2] * body.r_CM[1] - body.w_a[1] * body.r_CM[2]) - body.z_a[1] * body.r_CM[3]) * body.m
+// <equation id=\"5\">-rev.frame_b.f[2] = (9.810000000000001 * body.frame_a.R.T[2,2] + body.z_a[3] * body.r_CM[1] + body.w_a[3] * (body.w_a[2] * body.r_CM[3] - body.w_a[3] * body.r_CM[2]) + body.w_a[1] * (body.w_a[2] * body.r_CM[1] - body.w_a[1] * body.r_CM[2]) - body.z_a[1] * body.r_CM[3]) * body.m
 // </equation>
-// <equation id=\"6\">-rev.frame_b.f[1] = (9.81 * body.frame_a.R.T[1,2] + body.z_a[2] * body.r_CM[3] + body.w_a[2] * (body.w_a[1] * body.r_CM[2] - body.w_a[2] * body.r_CM[1]) + body.w_a[3] * (body.w_a[1] * body.r_CM[3] - body.w_a[3] * body.r_CM[1]) - body.z_a[3] * body.r_CM[2]) * body.m
+// <equation id=\"6\">-rev.frame_b.f[1] = (9.810000000000001 * body.frame_a.R.T[1,2] + body.z_a[2] * body.r_CM[3] + body.w_a[2] * (body.w_a[1] * body.r_CM[2] - body.w_a[2] * body.r_CM[1]) + body.w_a[3] * (body.w_a[1] * body.r_CM[3] - body.w_a[3] * body.r_CM[1]) - body.z_a[3] * body.r_CM[2]) * body.m
 // </equation>
 // <equation id=\"7\">body.z_a[3] = $DER.body.w_a[3]
 // </equation>
@@ -21380,20 +21380,20 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   result := sqrt(v * v);
 // end Modelica.Math.Vectors.length;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Math.Vectors.normalize\">
 // <ModelicaImplementation>function(v :: array(Real)[:] * eps :: Real) =&gt; array(Real)[size(v, 1)].Modelica.Math.Vectors.normalizefunction Modelica.Math.Vectors.normalize &quot;Inline before index reduction&quot; &quot;Return normalized vector such that length = 1 and prevent zero-division for zero vector&quot;
 //   input Real[:] v &quot;Vector&quot;;
-//   input Real eps(min = 0.0) = 1e-13 &quot;if |v| &lt; eps then result = v/eps&quot;;
+//   input Real eps(min = 0.0) = 1e-013 &quot;if |v| &lt; eps then result = v/eps&quot;;
 //   output Real[size(v, 1)] result &quot;Input vector v normalized to length=1&quot;;
 // algorithm
 //   result := smooth(0, if noEvent(Modelica.Math.Vectors.length(v) &gt;= eps) then v / Modelica.Math.Vectors.length(v) else v / eps);
 // end Modelica.Math.Vectors.normalize;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Math.Vectors.normalizeWithAssert\">
@@ -21405,8 +21405,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // Provide a non-zero vector!&quot;);
 //   result := v / Modelica.Math.Vectors.length(v);
 // end Modelica.Math.Vectors.normalizeWithAssert;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Orientation\">
@@ -21415,8 +21415,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[3] w(quantity = &quot;AngularVelocity&quot;, unit = &quot;rad/s&quot;);
 //   output Orientation res;
 // end Modelica.Mechanics.MultiBody.Frames.Orientation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.absoluteRotation\">
@@ -21427,8 +21427,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   R2 := Modelica.Mechanics.MultiBody.Frames.Orientation({{R_rel.T[1,1] * R1.T[1,1] + R_rel.T[1,2] * R1.T[2,1] + R_rel.T[1,3] * R1.T[3,1], R_rel.T[1,1] * R1.T[1,2] + R_rel.T[1,2] * R1.T[2,2] + R_rel.T[1,3] * R1.T[3,2], R_rel.T[1,1] * R1.T[1,3] + R_rel.T[1,2] * R1.T[2,3] + R_rel.T[1,3] * R1.T[3,3]}, {R_rel.T[2,1] * R1.T[1,1] + R_rel.T[2,2] * R1.T[2,1] + R_rel.T[2,3] * R1.T[3,1], R_rel.T[2,1] * R1.T[1,2] + R_rel.T[2,2] * R1.T[2,2] + R_rel.T[2,3] * R1.T[3,2], R_rel.T[2,1] * R1.T[1,3] + R_rel.T[2,2] * R1.T[2,3] + R_rel.T[2,3] * R1.T[3,3]}, {R_rel.T[3,1] * R1.T[1,1] + R_rel.T[3,2] * R1.T[2,1] + R_rel.T[3,3] * R1.T[3,1], R_rel.T[3,1] * R1.T[1,2] + R_rel.T[3,2] * R1.T[2,2] + R_rel.T[3,3] * R1.T[3,2], R_rel.T[3,1] * R1.T[1,3] + R_rel.T[3,2] * R1.T[2,3] + R_rel.T[3,3] * R1.T[3,3]}}, Modelica.Mechanics.MultiBody.Frames.resolve2(R_rel, {R1.w[1], R1.w[2], R1.w[3]}) + {R_rel.w[1], R_rel.w[2], R_rel.w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.absoluteRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.angularVelocity2\">
@@ -21438,8 +21438,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   w := {R.w[1], R.w[2], R.w[3]};
 // end Modelica.Mechanics.MultiBody.Frames.angularVelocity2;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.axesRotations\">
@@ -21451,8 +21451,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation(Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation(sequence[3], angles[3]) * Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation(sequence[2], angles[2]) * Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation(sequence[1], angles[1]), Modelica.Mechanics.MultiBody.Frames.axis(sequence[3]) * der_angles[3] + Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2(Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation(sequence[3], angles[3]), Modelica.Mechanics.MultiBody.Frames.axis(sequence[2]) * der_angles[2]) + Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2(Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation(sequence[3], angles[3]) * Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation(sequence[2], angles[2]), Modelica.Mechanics.MultiBody.Frames.axis(sequence[1]) * der_angles[1]));
 // end Modelica.Mechanics.MultiBody.Frames.axesRotations;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.axesRotationsAngles\">
@@ -21478,7 +21478,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   e3_2 := if sequence[3] == 1 then {1.0, 0.0, 0.0} else if sequence[3] == 2 then {0.0, 1.0, 0.0} else {0.0, 0.0, 1.0};
 //   A := e2_1a[1] * e3_1[1] + e2_1a[2] * e3_1[2] + e2_1a[3] * e3_1[3];
 //   B := (e1_1[2] * e2_1a[3] - e1_1[3] * e2_1a[2]) * e3_1[1] + (e1_1[3] * e2_1a[1] - e1_1[1] * e2_1a[3]) * e3_1[2] + (e1_1[1] * e2_1a[2] - e1_1[2] * e2_1a[1]) * e3_1[3];
-//   if abs(A) &lt;= 1e-12 and abs(B) &lt;= 1e-12 then
+//   if abs(A) &lt;= 1e-012 and abs(B) &lt;= 1e-012 then
 //     angles[1] := guessAngle1;
 //   else
 //     angle_1a := atan2(A, -B);
@@ -21489,8 +21489,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   angles[2] := Modelica.Mechanics.MultiBody.Frames.planarRotationAngle({e2_1a[1], e2_1a[2], e2_1a[3]}, Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2({{T_1a[1,1], T_1a[1,2], T_1a[1,3]}, {T_1a[2,1], T_1a[2,2], T_1a[2,3]}, {T_1a[3,1], T_1a[3,2], T_1a[3,3]}}, {e3_1[1], e3_1[2], e3_1[3]}), {e3_2[1], e3_2[2], e3_2[3]});
 //   angles[3] := Modelica.Mechanics.MultiBody.Frames.planarRotationAngle({e3_2[1], e3_2[2], e3_2[3]}, {e2_1a[1], e2_1a[2], e2_1a[3]}, Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1({{T_1a[1,1], T_1a[1,2], T_1a[1,3]}, {T_1a[2,1], T_1a[2,2], T_1a[2,3]}, {T_1a[3,1], T_1a[3,2], T_1a[3,3]}}, {e2_1a[1], e2_1a[2], e2_1a[3]})));
 // end Modelica.Mechanics.MultiBody.Frames.axesRotationsAngles;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.axis\">
@@ -21500,8 +21500,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   e := if axis == 1 then {1.0, 0.0, 0.0} else if axis == 2 then {0.0, 1.0, 0.0} else {0.0, 0.0, 1.0};
 // end Modelica.Mechanics.MultiBody.Frames.axis;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.from_Q\">
@@ -21512,8 +21512,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{-1.0 + 2.0 * (Q[1] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[1] * Q[2] + Q[3] * Q[4]), 2.0 * (Q[1] * Q[3] - Q[2] * Q[4])}, {2.0 * (Q[2] * Q[1] - Q[3] * Q[4]), -1.0 + 2.0 * (Q[2] ^ 2.0 + Q[4] ^ 2.0), 2.0 * (Q[2] * Q[3] + Q[1] * Q[4])}, {2.0 * (Q[3] * Q[1] + Q[2] * Q[4]), 2.0 * (Q[3] * Q[2] - Q[1] * Q[4]), -1.0 + 2.0 * (Q[3] ^ 2.0 + Q[4] ^ 2.0)}}, {w[1], w[2], w[3]});
 // end Modelica.Mechanics.MultiBody.Frames.from_Q;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.nullRotation\">
@@ -21522,8 +21522,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}}, {0.0, 0.0, 0.0});
 // end Modelica.Mechanics.MultiBody.Frames.nullRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotation\">
@@ -21535,8 +21535,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   R := Modelica.Mechanics.MultiBody.Frames.Orientation({{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}}, {e[1] * der_angle, e[2] * der_angle, e[3] * der_angle});
 // end Modelica.Mechanics.MultiBody.Frames.planarRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.planarRotationAngle\">
@@ -21548,8 +21548,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   angle := atan2((e[1] * v1[3] - e[3] * v1[1]) * v2[2] - (e[1] * v1[2] - e[2] * v1[1]) * v2[3] - (e[2] * v1[3] - e[3] * v1[2]) * v2[1], v1[1] * v2[1] + v1[2] * v2[2] + v1[3] * v2[3] + ((-e[2]) * v1[2] - e[3] * v1[3] - e[1] * v1[1]) * (e[1] * v2[1] + e[2] * v2[2] + e[3] * v2[3]));
 // end Modelica.Mechanics.MultiBody.Frames.planarRotationAngle;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve1\">
@@ -21560,8 +21560,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   v1 := {R.T[1,1] * v2[1] + R.T[2,1] * v2[2] + R.T[3,1] * v2[3], R.T[1,2] * v2[1] + R.T[2,2] * v2[2] + R.T[3,2] * v2[3], R.T[1,3] * v2[1] + R.T[2,3] * v2[2] + R.T[3,3] * v2[3]};
 // end Modelica.Mechanics.MultiBody.Frames.resolve1;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.resolve2\">
@@ -21572,8 +21572,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   v2 := {R.T[1,1] * v1[1] + R.T[1,2] * v1[2] + R.T[1,3] * v1[3], R.T[2,1] * v1[1] + R.T[2,2] * v1[2] + R.T[2,3] * v1[3], R.T[3,1] * v1[1] + R.T[3,2] * v1[2] + R.T[3,3] * v1[3]};
 // end Modelica.Mechanics.MultiBody.Frames.resolve2;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.to_Q\">
@@ -21584,8 +21584,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   Q := Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, {Q_guess[1], Q_guess[2], Q_guess[3], Q_guess[4]});
 // end Modelica.Mechanics.MultiBody.Frames.to_Q;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der\">
@@ -21597,8 +21597,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   v1_der := Modelica.Mechanics.MultiBody.Frames.resolve1(R, {v2_der[1] + R.w[2] * v2[3] - R.w[3] * v2[2], v2_der[2] + R.w[3] * v2[1] - R.w[1] * v2[3], v2_der[3] + R.w[1] * v2[2] - R.w[2] * v2[1]});
 // end Modelica.Mechanics.MultiBody.Frames.Internal.resolve1_der;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der\">
@@ -21610,8 +21610,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   v2_der := Modelica.Mechanics.MultiBody.Frames.resolve2(R, {v1_der[1], v1_der[2], v1_der[3]}) - cross({R.w[1], R.w[2], R.w[3]}, Modelica.Mechanics.MultiBody.Frames.resolve2(R, {v1[1], v1[2], v1[3]}));
 // end Modelica.Mechanics.MultiBody.Frames.Internal.resolve2_der;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint\">
@@ -21622,8 +21622,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   residue := {atan2((R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[2,1] + (R1.T[1,3] * R1.T[2,1] - R1.T[1,1] * R1.T[2,3]) * R2.T[2,2] + (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[2,3], R1.T[1,1] * R2.T[1,1] + R1.T[1,2] * R2.T[1,2] + R1.T[1,3] * R2.T[1,3]), atan2((R1.T[1,1] * R1.T[2,3] - R1.T[1,3] * R1.T[2,1]) * R2.T[1,2] - (R1.T[1,1] * R1.T[2,2] - R1.T[1,2] * R1.T[2,1]) * R2.T[1,3] - (R1.T[1,2] * R1.T[2,3] - R1.T[1,3] * R1.T[2,2]) * R2.T[1,1], R1.T[2,1] * R2.T[2,1] + R1.T[2,2] * R2.T[2,2] + R1.T[2,3] * R2.T[2,3]), atan2(R1.T[2,1] * R2.T[1,1] + R1.T[2,2] * R2.T[1,2] + R1.T[2,3] * R2.T[1,3], R1.T[3,1] * R2.T[3,1] + R1.T[3,2] * R2.T[3,2] + R1.T[3,3] * R2.T[3,3])};
 // end Modelica.Mechanics.MultiBody.Frames.Orientation.equalityConstraint;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2\">
@@ -21634,8 +21634,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   w := {(Q[4] * der_Q[1] + Q[3] * der_Q[2] - Q[2] * der_Q[3] - Q[1] * der_Q[4]) * 2.0, (Q[4] * der_Q[2] - Q[3] * der_Q[1] + Q[1] * der_Q[3] - Q[2] * der_Q[4]) * 2.0, (Q[2] * der_Q[1] - Q[1] * der_Q[2] + Q[4] * der_Q[3] - Q[3] * der_Q[4]) * 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.angularVelocity2;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T\">
@@ -21677,8 +21677,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //     Q := {-Q[1], -Q[2], -Q[3], -Q[4]};
 //   end if;
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation\">
@@ -21687,8 +21687,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   Q := {0.0, 0.0, 0.0, 1.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.nullRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint\">
@@ -21698,8 +21698,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   residue := {-1.0 + Q[1] ^ 2.0 + Q[2] ^ 2.0 + Q[3] ^ 2.0 + Q[4] ^ 2.0};
 // end Modelica.Mechanics.MultiBody.Frames.Quaternions.orientationConstraint;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation\">
@@ -21710,8 +21710,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   T2 := {{T_rel[1,1] * T1[1,1] + T_rel[1,2] * T1[2,1] + T_rel[1,3] * T1[3,1], T_rel[1,1] * T1[1,2] + T_rel[1,2] * T1[2,2] + T_rel[1,3] * T1[3,2], T_rel[1,1] * T1[1,3] + T_rel[1,2] * T1[2,3] + T_rel[1,3] * T1[3,3]}, {T_rel[2,1] * T1[1,1] + T_rel[2,2] * T1[2,1] + T_rel[2,3] * T1[3,1], T_rel[2,1] * T1[1,2] + T_rel[2,2] * T1[2,2] + T_rel[2,3] * T1[3,2], T_rel[2,1] * T1[1,3] + T_rel[2,2] * T1[2,3] + T_rel[2,3] * T1[3,3]}, {T_rel[3,1] * T1[1,1] + T_rel[3,2] * T1[2,1] + T_rel[3,3] * T1[3,1], T_rel[3,1] * T1[1,2] + T_rel[3,2] * T1[2,2] + T_rel[3,3] * T1[3,2], T_rel[3,1] * T1[1,3] + T_rel[3,2] * T1[2,3] + T_rel[3,3] * T1[3,3]}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.absoluteRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation\">
@@ -21722,8 +21722,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   T := if axis == 1 then {{1.0, 0.0, 0.0}, {0.0, cos(angle), sin(angle)}, {0.0, -sin(angle), cos(angle)}} else if axis == 2 then {{cos(angle), 0.0, -sin(angle)}, {0.0, 1.0, 0.0}, {sin(angle), 0.0, cos(angle)}} else {{cos(angle), sin(angle), 0.0}, {-sin(angle), cos(angle), 0.0}, {0.0, 0.0, 1.0}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.axisRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy\">
@@ -21732,16 +21732,16 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 //   input Real[3] n_y(unit = &quot;1&quot;) &quot;Vector in direction of y-axis of frame 2, resolved in frame 1&quot;;
 //   output Real[3, 3] T &quot;Orientation object to rotate frame 1 into frame 2&quot;;
 //   protected Real abs_n_x = sqrt(n_x[1] ^ 2.0 + n_x[2] ^ 2.0 + n_x[3] ^ 2.0);
-//   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-10 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
+//   protected Real[3] e_x(unit = &quot;1&quot;) = if abs_n_x &lt; 1e-010 then {1.0, 0.0, 0.0} else {n_x[1] / abs_n_x, n_x[2] / abs_n_x, n_x[3] / abs_n_x};
 //   protected Real[3] n_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y[3] - e_x[3] * n_y[2], e_x[3] * n_y[1] - e_x[1] * n_y[3], e_x[1] * n_y[2] - e_x[2] * n_y[1]};
-//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] ^ 2.0 + n_z_aux[2] ^ 2.0 + n_z_aux[3] ^ 2.0 &gt; 1e-06 then {n_y[1], n_y[2], n_y[3]} else if abs(e_x[1]) &gt; 1e-06 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
+//   protected Real[3] n_y_aux(unit = &quot;1&quot;) = if n_z_aux[1] ^ 2.0 + n_z_aux[2] ^ 2.0 + n_z_aux[3] ^ 2.0 &gt; 1e-006 then {n_y[1], n_y[2], n_y[3]} else if abs(e_x[1]) &gt; 1e-006 then {0.0, 1.0, 0.0} else {1.0, 0.0, 0.0};
 //   protected Real[3] e_z_aux(unit = &quot;1&quot;) = {e_x[2] * n_y_aux[3] - e_x[3] * n_y_aux[2], e_x[3] * n_y_aux[1] - e_x[1] * n_y_aux[3], e_x[1] * n_y_aux[2] - e_x[2] * n_y_aux[1]};
 //   protected Real[3] e_z(unit = &quot;1&quot;) = {e_z_aux[1] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[2] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0), e_z_aux[3] / sqrt(e_z_aux[1] ^ 2.0 + e_z_aux[2] ^ 2.0 + e_z_aux[3] ^ 2.0)};
 // algorithm
 //   T := {{e_x[1], e_x[2], e_x[3]}, {e_z[2] * e_x[3] - e_z[3] * e_x[2], e_z[3] * e_x[1] - e_z[1] * e_x[3], e_z[1] * e_x[2] - e_z[2] * e_x[1]}, {e_z[1], e_z[2], e_z[3]}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.from_nxy;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation\">
@@ -21752,8 +21752,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   T := {{e[1] ^ 2.0 + (1.0 - e[1] ^ 2.0) * cos(angle), (e[1] - e[1] * cos(angle)) * e[2] + e[3] * sin(angle), (e[1] - e[1] * cos(angle)) * e[3] - e[2] * sin(angle)}, {(e[2] - e[2] * cos(angle)) * e[1] - e[3] * sin(angle), e[2] ^ 2.0 + (1.0 - e[2] ^ 2.0) * cos(angle), (e[2] - e[2] * cos(angle)) * e[3] + e[1] * sin(angle)}, {(e[3] - e[3] * cos(angle)) * e[1] + e[2] * sin(angle), (e[3] - e[3] * cos(angle)) * e[2] - e[1] * sin(angle), e[3] ^ 2.0 + (1.0 - e[3] ^ 2.0) * cos(angle)}};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.planarRotation;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1\">
@@ -21764,8 +21764,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   v1 := {T[1,1] * v2[1] + T[2,1] * v2[2] + T[3,1] * v2[3], T[1,2] * v2[1] + T[2,2] * v2[2] + T[3,2] * v2[3], T[1,3] * v2[1] + T[2,3] * v2[2] + T[3,3] * v2[3]};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve1;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2\">
@@ -21776,8 +21776,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   v2 := {T[1,1] * v1[1] + T[1,2] * v1[2] + T[1,3] * v1[3], T[2,1] * v1[1] + T[2,2] * v1[2] + T[2,3] * v1[3], T[3,1] * v1[1] + T[3,2] * v1[2] + T[3,3] * v1[3]};
 // end Modelica.Mechanics.MultiBody.Frames.TransformationMatrices.resolve2;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.Mechanics.MultiBody.World$world.gravityAcceleration\">
@@ -21790,8 +21790,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   gravity := if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.UniformGravity then {g[1], g[2], g[3]} else if gravityType == Modelica.Mechanics.MultiBody.Types.GravityTypes.PointGravity then {(-mue) * r[1] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[2] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0)), (-mue) * r[3] / (Modelica.Math.Vectors.length({r[1], r[2], r[3]}) * (r[1] ^ 2.0 + r[2] ^ 2.0 + r[3] ^ 2.0))} else {0.0, 0.0, 0.0};
 // end Modelica.Mechanics.MultiBody.World$world.gravityAcceleration;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // <function name=\"Modelica.SIunits.Conversions.to_unit1\">
@@ -21801,8 +21801,8 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // algorithm
 //   result := r;
 // end Modelica.SIunits.Conversions.to_unit1;
-//
-//
+// 
+// 
 // </ModelicaImplementation>
 // </function>
 // </functions>
@@ -22491,9 +22491,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </originalIncidenceMatrix>
 // <solvingInfo>
 // <matchingAlgorithm>
-// <solvedIn variableId=\"1\" equationId=\"5\" />
+// <solvedIn variableId=\"1\" equationId=\"22\" />
 // <solvedIn variableId=\"2\" equationId=\"23\" />
-// <solvedIn variableId=\"3\" equationId=\"24\" />
+// <solvedIn variableId=\"3\" equationId=\"5\" />
 // <solvedIn variableId=\"4\" equationId=\"45\" />
 // <solvedIn variableId=\"5\" equationId=\"44\" />
 // <solvedIn variableId=\"6\" equationId=\"43\" />
@@ -22514,7 +22514,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <solvedIn variableId=\"21\" equationId=\"40\" />
 // <solvedIn variableId=\"22\" equationId=\"39\" />
 // <solvedIn variableId=\"23\" equationId=\"14\" />
-// <solvedIn variableId=\"24\" equationId=\"34\" />
+// <solvedIn variableId=\"24\" equationId=\"36\" />
 // <solvedIn variableId=\"25\" equationId=\"37\" />
 // <solvedIn variableId=\"26\" equationId=\"38\" />
 // <solvedIn variableId=\"27\" equationId=\"15\" />
@@ -22533,9 +22533,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <solvedIn variableId=\"40\" equationId=\"8\" />
 // <solvedIn variableId=\"41\" equationId=\"7\" />
 // <solvedIn variableId=\"42\" equationId=\"29\" />
-// <solvedIn variableId=\"43\" equationId=\"36\" />
+// <solvedIn variableId=\"43\" equationId=\"24\" />
 // <solvedIn variableId=\"44\" equationId=\"35\" />
-// <solvedIn variableId=\"45\" equationId=\"22\" />
+// <solvedIn variableId=\"45\" equationId=\"34\" />
 // <solvedIn variableId=\"46\" equationId=\"10\" />
 // <solvedIn variableId=\"47\" equationId=\"11\" />
 // <solvedIn variableId=\"48\" equationId=\"57\" />
@@ -22664,20 +22664,20 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <bltBlock id=\"23\">
 // <involvedEquation equationId=\"1\" />
 // <involvedEquation equationId=\"5\" />
-// <involvedEquation equationId=\"22\" />
-// <involvedEquation equationId=\"34\" />
-// <involvedEquation equationId=\"36\" />
 // <involvedEquation equationId=\"24\" />
-// <involvedEquation equationId=\"4\" />
-// <involvedEquation equationId=\"3\" />
-// <involvedEquation equationId=\"15\" />
-// <involvedEquation equationId=\"2\" />
+// <involvedEquation equationId=\"36\" />
 // <involvedEquation equationId=\"35\" />
 // <involvedEquation equationId=\"23\" />
 // <involvedEquation equationId=\"6\" />
+// <involvedEquation equationId=\"2\" />
+// <involvedEquation equationId=\"15\" />
+// <involvedEquation equationId=\"4\" />
+// <involvedEquation equationId=\"3\" />
+// <involvedEquation equationId=\"34\" />
+// <involvedEquation equationId=\"22\" />
 // </bltBlock>
 // <bltBlock id=\"24\">
-// <involvedEquation equationId=\"7\" />
+// <involvedEquation equationId=\"9\" />
 // </bltBlock>
 // <bltBlock id=\"25\">
 // <involvedEquation equationId=\"12\" />
@@ -22686,7 +22686,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <involvedEquation equationId=\"10\" />
 // </bltBlock>
 // <bltBlock id=\"27\">
-// <involvedEquation equationId=\"8\" />
+// <involvedEquation equationId=\"7\" />
 // </bltBlock>
 // <bltBlock id=\"28\">
 // <involvedEquation equationId=\"16\" />
@@ -22698,7 +22698,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <involvedEquation equationId=\"18\" />
 // </bltBlock>
 // <bltBlock id=\"31\">
-// <involvedEquation equationId=\"9\" />
+// <involvedEquation equationId=\"8\" />
 // </bltBlock>
 // <bltBlock id=\"32\">
 // <involvedEquation equationId=\"37\" />
