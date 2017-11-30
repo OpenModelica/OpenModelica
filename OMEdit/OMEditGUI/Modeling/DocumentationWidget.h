@@ -131,6 +131,7 @@ private:
   void updatePreviousNextButtons();
   void writeDocumentationFile(QString documentation);
   bool isLinkSelected();
+  void updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void previousDocumentation();
   void nextDocumentation();

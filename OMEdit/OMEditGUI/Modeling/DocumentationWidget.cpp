@@ -409,6 +409,12 @@ DocumentationWidget::~DocumentationWidget()
  */
 void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
+  // if documentation is proctected then do not show it.
+  if (pLibraryTreeItem->getAccess() < LibraryTreeItem::documentation) {
+    // Remove the class documentation if it is showed previously.
+    updateDocumentationHistory(pLibraryTreeItem);
+    return;
+  }
   if (mEditType != EditType::None) {
     saveDocumentation(pLibraryTreeItem);
     return;
@@ -572,6 +578,45 @@ bool DocumentationWidget::isLinkSelected()
                                "isLinkSelected()");
   QVariant result = pWebFrame->evaluateJavaScript(javaScript);
   return result.toString().simplified().toLower() == "true";
+}
+
+/*!
+ * \brief DocumentationWidget::updateDocumentationHistory
+ * \param pLibraryTreeItem
+ * Removes the corresponding LibraryTreeItem from the DocumentationHistory.
+ */
+void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem) {
+    int index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
+    if (index > -1) {
+      mpDocumentationHistoryList->removeOne(DocumentationHistory(pLibraryTreeItem));
+      if (index == mDocumentationHistoryPos) {
+        if (!(index == 0 && !mpDocumentationHistoryList->isEmpty())) {
+          mDocumentationHistoryPos--;
+        }
+      } else if (index < mDocumentationHistoryPos) {
+        mDocumentationHistoryPos--;
+      } else if (index > mDocumentationHistoryPos) {
+        // do nothing
+      }
+      updatePreviousNextButtons();
+      if (mDocumentationHistoryPos > -1) {
+        cancelDocumentation();
+        showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+      } else {
+        mpEditInfoAction->setDisabled(true);
+        mpEditRevisionsAction->setDisabled(true);
+        mpEditInfoHeaderAction->setDisabled(true);
+        mpSaveAction->setDisabled(true);
+        mpCancelAction->setDisabled(true);
+        mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
+        mpDocumentationViewerFrame->show();
+        mpEditorsWidget->hide();
+        mEditType = EditType::None;
+      }
+    }
+  }
 }
 
 /*!
@@ -1053,42 +1098,11 @@ void DocumentationWidget::updateHTMLSourceEditor()
 
 /*!
  * \brief DocumentationWidget::updateDocumentationHistory
- * Slot activated when LibraryTreeItem unloaded SIGNAL is raised.\n
- * Removes the corresponding LibraryTreeItem from the DocumentationHistory.
+ * Slot activated when LibraryTreeItem unloaded SIGNAL is raised.
  */
 void DocumentationWidget::updateDocumentationHistory()
 {
-  LibraryTreeItem *pLibraryTreeItem = qobject_cast<LibraryTreeItem*>(sender());
-  if (pLibraryTreeItem) {
-    int index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
-    if (index > -1) {
-      mpDocumentationHistoryList->removeOne(DocumentationHistory(pLibraryTreeItem));
-      if (index == mDocumentationHistoryPos) {
-        if (!(index == 0 && !mpDocumentationHistoryList->isEmpty())) {
-          mDocumentationHistoryPos--;
-        }
-      } else if (index < mDocumentationHistoryPos) {
-        mDocumentationHistoryPos--;
-      } else if (index > mDocumentationHistoryPos) {
-        // do nothing
-      }
-      updatePreviousNextButtons();
-      if (mDocumentationHistoryPos > -1) {
-        cancelDocumentation();
-        showDocumentation(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
-      } else {
-        mpEditInfoAction->setDisabled(true);
-        mpEditRevisionsAction->setDisabled(true);
-        mpEditInfoHeaderAction->setDisabled(true);
-        mpSaveAction->setDisabled(true);
-        mpCancelAction->setDisabled(true);
-        mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
-        mpDocumentationViewerFrame->show();
-        mpEditorsWidget->hide();
-        mEditType = EditType::None;
-      }
-    }
-  }
+  updateDocumentationHistory(qobject_cast<LibraryTreeItem*>(sender()));
 }
 
 /*!
