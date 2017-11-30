@@ -82,7 +82,6 @@ public:
     CompositeModel    /* Used to represent CompositeModel files. */
   };
   enum Access {
-    none,   /* OMEdit specific when there is no Access annotation */
     hide,
     icon,
     documentation,
@@ -90,7 +89,8 @@ public:
     nonPackageText,
     nonPackageDuplicate,
     packageText,
-    packageDuplicate
+    packageDuplicate,
+    all,   /* OMEdit specific when there is no Access annotation. Everything is allowed. */
   };
   enum SaveContentsType {
     SaveInOneFile,

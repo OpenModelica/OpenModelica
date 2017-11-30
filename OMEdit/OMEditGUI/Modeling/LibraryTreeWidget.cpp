@@ -522,7 +522,7 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
   } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
     return LibraryTreeItem::packageDuplicate;
   } else {
-    return LibraryTreeItem::none;
+    return LibraryTreeItem::all;
   }
 }
 
@@ -855,6 +855,10 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
     }
     mpModelWidget->reDrawModelWidgetInheritedClasses();
+    if (mpModelWidget->getDiagramGraphicsView()) {
+      mpModelWidget->getDiagramGraphicsView()->removeConnectionsFromView();
+    }
+    mpModelWidget->getModelConnections();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
     // update the icon in the libraries browser view.
@@ -871,6 +875,9 @@ void LibraryTreeItem::handleUnloaded()
 {
   if (mpModelWidget) {
     mpModelWidget->reDrawModelWidgetInheritedClasses();
+    if (mpModelWidget->getDiagramGraphicsView()) {
+      mpModelWidget->getDiagramGraphicsView()->removeConnectionsFromView();
+    }
     MainWindow *pMainWindow = MainWindow::instance();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);

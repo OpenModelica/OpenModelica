@@ -205,6 +205,7 @@ public:
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
+  void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
@@ -393,6 +394,7 @@ public:
   void loadComponents();
   void loadDiagramView();
   void loadConnections();
+  void getModelConnections();
   void createModelWidgetComponents();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
@@ -456,7 +458,6 @@ private:
   void drawModelDiagramComponents();
   void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
   void removeInheritedClassConnections();
-  void getModelConnections();
   void getModelTransitions();
   void getModelInitialStates();
   void getMetaModelSubModels();

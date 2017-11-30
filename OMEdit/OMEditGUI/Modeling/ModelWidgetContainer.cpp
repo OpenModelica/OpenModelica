@@ -636,6 +636,18 @@ void GraphicsView::updateConnectionInClass(LineAnnotation *pConnectionLineAnnota
 }
 
 /*!
+ * \brief GraphicsView::removeConnectionsFromView
+ * Removes the connections from the view.
+ */
+void GraphicsView::removeConnectionsFromView()
+{
+  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    deleteConnectionFromList(pConnectionLineAnnotation);
+    removeItem(pConnectionLineAnnotation);
+  }
+}
+
+/*!
  * \brief GraphicsView::addTransitionToClass
  * Adds the transition to class.
  * \param pTransitionLineAnnotation - the transition to add.
@@ -2875,7 +2887,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
      * We don't get the components here i.e items are shown without connectors in the Libraries Browser.
      * Fetch the components when we really need to draw them.
      */
-    /*! @todo Unable the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
+    /*! @todo Uncomment the following code once we have new faster frontend and remove the flag mComponentsLoaded. */
     //    drawModelInheritedClassComponents(this, StringHandler::Icon);
     //    getModelComponents();
     //    drawModelIconComponents();
@@ -3137,7 +3149,9 @@ void ModelWidget::loadDiagramView()
     drawModelInheritedClassShapes(this, StringHandler::Diagram);
     getModelIconDiagramShapes(StringHandler::Diagram);
     drawModelInheritedClassComponents(this, StringHandler::Diagram);
-    drawModelDiagramComponents();
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+      drawModelDiagramComponents();
+    }
     mDiagramViewLoaded = true;
     /*! @note The following is not needed if we load the connectors alongwith the icon/diagram annotation.
      * We have disabled loading the connectors so user gets fast browsing of libraries.
@@ -3158,6 +3172,127 @@ void ModelWidget::loadConnections()
     getModelTransitions();
     getModelInitialStates();
     mConnectionsLoaded = true;
+  }
+}
+
+/*!
+ * \brief ModelWidget::getModelConnections
+ * Gets the connections of the model and place them in the diagram GraphicsView.
+ */
+void ModelWidget::getModelConnections()
+{
+  // detect multiple declarations of a component instance
+  detectMultipleDeclarations();
+  // get the connections
+  MainWindow *pMainWindow = MainWindow::instance();
+  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
+  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
+  for (int i = 1 ; i <= connectionCount ; i++) {
+    // get the connection from OMC
+    QStringList connectionList = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
+    QString connectionString = QString("{%1}").arg(connectionList.join(","));
+    // if the connectionString only contains two items then continue the loop,
+    // because connection is not valid then
+    if (connectionList.size() < 3) {
+      continue;
+    }
+    // get start and end components
+    QStringList startComponentList = StringHandler::makeVariableParts(connectionList.at(0));
+    QStringList endComponentList = StringHandler::makeVariableParts(connectionList.at(1));
+    // get start component
+    Component *pStartComponent = 0;
+    if (startComponentList.size() > 0) {
+      QString startComponentName = startComponentList.at(0);
+      if (startComponentName.contains("[")) {
+        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+      }
+      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
+    }
+    // get start connector
+    Component *pStartConnectorComponent = 0;
+    Component *pEndConnectorComponent = 0;
+    if (pStartComponent) {
+      // if a component type is connector then we only get one item in startComponentList
+      // check the startcomponentlist
+      if (startComponentList.size() < 2
+          || (pStartComponent->getLibraryTreeItem()
+              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+        pStartConnectorComponent = pStartComponent;
+      } else if (pStartComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
+        /* if class doesn't exist then connect with the red cross box */
+        pStartConnectorComponent = pStartComponent;
+      } else {
+        // look for port from the parent component
+        QString startComponentName = startComponentList.at(1);
+        if (startComponentName.contains("[")) {
+          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
+        }
+        pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
+      }
+    }
+    // show error message if start component is not found.
+    if (!pStartConnectorComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                            .arg(connectionList.at(0)).arg(connectionString),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get end component
+    Component *pEndComponent = 0;
+    if (endComponentList.size() > 0) {
+      QString endComponentName = endComponentList.at(0);
+      if (endComponentName.contains("[")) {
+        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+      }
+      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
+    }
+    // get the end connector
+    if (pEndComponent) {
+      // if a component type is connector then we only get one item in endComponentList
+      // check the endcomponentlist
+      if (endComponentList.size() < 2
+          || (pEndComponent->getLibraryTreeItem()
+              && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
+        pEndConnectorComponent = pEndComponent;
+      } else if (pEndComponent->getLibraryTreeItem()
+                 && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
+        /* if class doesn't exist then connect with the red cross box */
+        pEndConnectorComponent = pEndComponent;
+      } else {
+        QString endComponentName = endComponentList.at(1);
+        if (endComponentName.contains("[")) {
+          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
+        }
+        pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
+      }
+    }
+    // show error message if end component is not found.
+    if (!pEndConnectorComponent) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                            .arg(connectionList.at(1)).arg(connectionString),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      continue;
+    }
+    // get the connector annotations from OMC
+    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
+    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+    // Now parse the shapes available in list
+    QString lineShape = "";
+    foreach (QString shape, shapesList) {
+      if (shape.startsWith("Line")) {
+        lineShape = shape.mid(QString("Line").length());
+        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        break;  // break the loop once we have got the line annotation.
+      }
+    }
+    LineAnnotation *pConnectionLineAnnotation;
+    pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
+    pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
+    pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
+    mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
 }
 
@@ -4510,7 +4645,9 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
     annotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
   } else {
     pGraphicsView = mpDiagramGraphicsView;
-    annotationString = pOMCProxy->getDiagramAnnotation(mpLibraryTreeItem->getNameStructure());
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+      annotationString = pOMCProxy->getDiagramAnnotation(mpLibraryTreeItem->getNameStructure());
+    }
   }
   annotationString = StringHandler::removeFirstLastCurlBrackets(annotationString);
   if (annotationString.isEmpty()) {
@@ -4803,127 +4940,6 @@ void ModelWidget::removeInheritedClassConnections()
     mpDiagramGraphicsView->deleteInheritedConnectionFromList(pConnectionLineAnnotation);
     mpDiagramGraphicsView->removeItem(pConnectionLineAnnotation);
     delete pConnectionLineAnnotation;
-  }
-}
-
-/*!
- * \brief ModelWidget::getModelConnections
- * Gets the connections of the model and place them in the diagram GraphicsView.
- */
-void ModelWidget::getModelConnections()
-{
-  // detect multiple declarations of a component instance
-  detectMultipleDeclarations();
-  // get the connections
-  MainWindow *pMainWindow = MainWindow::instance();
-  LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
-  int connectionCount = pMainWindow->getOMCProxy()->getConnectionCount(mpLibraryTreeItem->getNameStructure());
-  for (int i = 1 ; i <= connectionCount ; i++) {
-    // get the connection from OMC
-    QStringList connectionList = pMainWindow->getOMCProxy()->getNthConnection(mpLibraryTreeItem->getNameStructure(), i);
-    QString connectionString = QString("{%1}").arg(connectionList.join(","));
-    // if the connectionString only contains two items then continue the loop,
-    // because connection is not valid then
-    if (connectionList.size() < 3) {
-      continue;
-    }
-    // get start and end components
-    QStringList startComponentList = StringHandler::makeVariableParts(connectionList.at(0));
-    QStringList endComponentList = StringHandler::makeVariableParts(connectionList.at(1));
-    // get start component
-    Component *pStartComponent = 0;
-    if (startComponentList.size() > 0) {
-      QString startComponentName = startComponentList.at(0);
-      if (startComponentName.contains("[")) {
-        startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-      }
-      pStartComponent = mpDiagramGraphicsView->getComponentObject(startComponentName);
-    }
-    // get start connector
-    Component *pStartConnectorComponent = 0;
-    Component *pEndConnectorComponent = 0;
-    if (pStartComponent) {
-      // if a component type is connector then we only get one item in startComponentList
-      // check the startcomponentlist
-      if (startComponentList.size() < 2
-          || (pStartComponent->getLibraryTreeItem()
-              && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-        pStartConnectorComponent = pStartComponent;
-      } else if (pStartComponent->getLibraryTreeItem()
-                 && !pLibraryTreeModel->findLibraryTreeItem(pStartComponent->getLibraryTreeItem()->getNameStructure())) {
-        /* if class doesn't exist then connect with the red cross box */
-        pStartConnectorComponent = pStartComponent;
-      } else {
-        // look for port from the parent component
-        QString startComponentName = startComponentList.at(1);
-        if (startComponentName.contains("[")) {
-          startComponentName = startComponentName.mid(0, startComponentName.indexOf("["));
-        }
-        pStartConnectorComponent = getConnectorComponent(pStartComponent, startComponentName);
-      }
-    }
-    // show error message if start component is not found.
-    if (!pStartConnectorComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                            .arg(connectionList.at(0)).arg(connectionString),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get end component
-    Component *pEndComponent = 0;
-    if (endComponentList.size() > 0) {
-      QString endComponentName = endComponentList.at(0);
-      if (endComponentName.contains("[")) {
-        endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-      }
-      pEndComponent = mpDiagramGraphicsView->getComponentObject(endComponentName);
-    }
-    // get the end connector
-    if (pEndComponent) {
-      // if a component type is connector then we only get one item in endComponentList
-      // check the endcomponentlist
-      if (endComponentList.size() < 2
-          || (pEndComponent->getLibraryTreeItem()
-              && pEndComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector)) {
-        pEndConnectorComponent = pEndComponent;
-      } else if (pEndComponent->getLibraryTreeItem()
-                 && !pLibraryTreeModel->findLibraryTreeItem(pEndComponent->getLibraryTreeItem()->getNameStructure())) {
-        /* if class doesn't exist then connect with the red cross box */
-        pEndConnectorComponent = pEndComponent;
-      } else {
-        QString endComponentName = endComponentList.at(1);
-        if (endComponentName.contains("[")) {
-          endComponentName = endComponentName.mid(0, endComponentName.indexOf("["));
-        }
-        pEndConnectorComponent = getConnectorComponent(pEndComponent, endComponentName);
-      }
-    }
-    // show error message if end component is not found.
-    if (!pEndConnectorComponent) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                            GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                            .arg(connectionList.at(1)).arg(connectionString),
-                                                            Helper::scriptingKind, Helper::errorLevel));
-      continue;
-    }
-    // get the connector annotations from OMC
-    QString connectionAnnotationString = pMainWindow->getOMCProxy()->getNthConnectionAnnotation(mpLibraryTreeItem->getNameStructure(), i);
-    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
-    // Now parse the shapes available in list
-    QString lineShape = "";
-    foreach (QString shape, shapesList) {
-      if (shape.startsWith("Line")) {
-        lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
-        break;  // break the loop once we have got the line annotation.
-      }
-    }
-    LineAnnotation *pConnectionLineAnnotation;
-    pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent, mpDiagramGraphicsView);
-    pConnectionLineAnnotation->setStartComponentName(connectionList.at(0));
-    pConnectionLineAnnotation->setEndComponentName(connectionList.at(1));
-    mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
   }
 }
 
