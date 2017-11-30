@@ -3882,10 +3882,6 @@ algorithm
     case (DAE.ADD(),DAE.RCONST(r1),DAE.BINARY(DAE.RCONST(r2),DAE.SUB(ty=ty),e1 as DAE.CREF(_)))
       then DAE.BINARY(DAE.RCONST(realAdd(r1,r2)),DAE.SUB(ty),e1);
 
-    // ((r2 - e) + r1) => (r3 - e)
-    case (DAE.ADD(),DAE.BINARY(DAE.RCONST(r2),DAE.SUB(ty=ty),e1 as DAE.CREF(_)),DAE.RCONST(r1))
-      then DAE.BINARY(DAE.RCONST(realAdd(r1,r2)),DAE.SUB(ty),e1);
-
     // |e1| /e1 = e1/|e1| => sign(e1)
     case(DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("abs"),expLst={e1}),e2)
      guard Expression.expEqual(e1,e2)
