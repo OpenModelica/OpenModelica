@@ -454,6 +454,14 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
       setFileName(classInformation.fileName);
     }
     setReadOnly(classInformation.fileReadOnly);
+    // handle the Access annotation
+    LibraryTreeItem::Access access = getAccess();
+    if (access == LibraryTreeItem::hide && mpModelWidget) {
+      QMdiSubWindow *pSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(mpModelWidget);
+      if (pSubWindow) {
+        pSubWindow->close();
+      }
+    }
   }
 }
 
