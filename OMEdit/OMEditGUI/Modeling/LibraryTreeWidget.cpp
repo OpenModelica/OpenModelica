@@ -456,11 +456,20 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
     setReadOnly(classInformation.fileReadOnly);
     // handle the Access annotation
     LibraryTreeItem::Access access = getAccess();
-    if (access == LibraryTreeItem::hide && mpModelWidget) {
-      QMdiSubWindow *pSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(mpModelWidget);
-      if (pSubWindow) {
-        pSubWindow->close();
-      }
+    switch (access) {
+      case LibraryTreeItem::hide:
+        if (mpModelWidget) {
+          QMdiSubWindow *pSubWindow = MainWindow::instance()->getModelWidgetContainer()->getMdiSubWindow(mpModelWidget);
+          if (pSubWindow) {
+            pSubWindow->close();
+          }
+        }
+        break;
+      default:
+        break;
+    }
+    if (mpModelWidget) {
+      mpModelWidget->updateViewButtonsBasedOnAccess();
     }
   }
 }
@@ -521,6 +530,8 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
     return LibraryTreeItem::packageText;
   } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
     return LibraryTreeItem::packageDuplicate;
+  } else if (mpParentLibraryTreeItem) {   // if there is not override for Access annotation then look in the parent class.
+    return mpParentLibraryTreeItem->getAccess();
   } else {
     return LibraryTreeItem::all;
   }

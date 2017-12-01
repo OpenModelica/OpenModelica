@@ -3613,6 +3613,7 @@ void ModelWidget::reDrawModelWidget()
 //    if (mpEditor) {
 //      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
 //    }
+    updateViewButtonsBasedOnAccess();
     // announce the change.
     mpLibraryTreeItem->emitLoaded();
   }
@@ -4537,6 +4538,29 @@ void ModelWidget::endMacro()
     QTextCursor textCursor = mpEditor->getPlainTextEdit()->textCursor();
     textCursor.endEditBlock();
     mpEditor->setForceSetPlainText(false);
+  }
+}
+
+/*!
+ * \brief ModelWidget::updateViewButtonsBasedOnAccess
+ * Update the view buttons i.e., icon, diagram and text based on the Access annotation.
+ */
+void ModelWidget::updateViewButtonsBasedOnAccess()
+{
+  if (mCreateModelWidgetComponents) {
+    LibraryTreeItem::Access access = mpLibraryTreeItem->getAccess();
+    switch (access) {
+      case LibraryTreeItem::icon:
+      case LibraryTreeItem::documentation:
+        mpIconViewToolButton->setChecked(true);
+        mpDiagramViewToolButton->setEnabled(false);
+        mpTextViewToolButton->setEnabled(false);
+        break;
+      default:
+        mpDiagramViewToolButton->setEnabled(true);
+        mpTextViewToolButton->setEnabled(true);
+        break;
+    }
   }
 }
 
@@ -5549,6 +5573,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
   }
+  pModelWidget->updateViewButtonsBasedOnAccess();
   if (!checkPreferedView || pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::Modelica) {
     return;
   }
@@ -5581,6 +5606,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       }
     }
   }
+  pModelWidget->updateViewButtonsBasedOnAccess();
 }
 
 /*!

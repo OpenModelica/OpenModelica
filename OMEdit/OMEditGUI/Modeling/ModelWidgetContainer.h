@@ -413,6 +413,7 @@ public:
   bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
   void beginMacro(const QString &text);
   void endMacro();
+  void updateViewButtonsBasedOnAccess();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
