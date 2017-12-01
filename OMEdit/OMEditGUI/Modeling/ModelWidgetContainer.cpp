@@ -4562,6 +4562,17 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
         }
         mpTextViewToolButton->setEnabled(false);
         break;
+      case LibraryTreeItem::nonPackageText:
+        if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
+          if (mpTextViewToolButton->isChecked()) {
+            mpDiagramViewToolButton->setChecked(true);
+          }
+          mpTextViewToolButton->setEnabled(false);
+        } else {
+          mpDiagramViewToolButton->setEnabled(true);
+          mpTextViewToolButton->setEnabled(true);
+        }
+        break;
       default:
         mpDiagramViewToolButton->setEnabled(true);
         mpTextViewToolButton->setEnabled(true);

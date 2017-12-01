@@ -530,7 +530,7 @@ LibraryTreeItem::Access LibraryTreeItem::getAccess()
     return LibraryTreeItem::packageText;
   } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
     return LibraryTreeItem::packageDuplicate;
-  } else if (mpParentLibraryTreeItem) {   // if there is not override for Access annotation then look in the parent class.
+  } else if (mpParentLibraryTreeItem) {   // if there is no override for Access annotation then look in the parent class.
     return mpParentLibraryTreeItem->getAccess();
   } else {
     return LibraryTreeItem::all;

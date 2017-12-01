@@ -1628,6 +1628,18 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     // ctrl+k is pressed.
     mpBaseEditor->toggleCommentSelection();
     return;
+  } else if (pEvent->matches(QKeySequence::Cut)) {
+    // ctrl+x is pressed.
+    if (mpBaseEditor->getModelWidget()->getLibraryTreeItem() &&
+        mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText) {
+      return;
+    }
+  } else if (pEvent->matches(QKeySequence::Copy)) {
+    // ctrl+c is pressed.
+    if (mpBaseEditor->getModelWidget()->getLibraryTreeItem() &&
+        mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText) {
+      return;
+    }
   } else if (pEvent->matches(QKeySequence::Undo)) {
     // ctrl+z is pressed.
     MainWindow::instance()->undo();
@@ -2051,35 +2063,46 @@ QMenu* BaseEditor::createStandardContextMenu()
    * so we need to create cut, copy, paste and select all here
    */
   const bool showTextSelectionActions = mpPlainTextEdit->textInteractionFlags() & (Qt::TextEditable | Qt::TextSelectableByKeyboard | Qt::TextSelectableByMouse);
+  QAction *pCutAction = 0;
+  QAction *pCopyAction = 0;
+  QAction *pPasteAction = 0;
+  QAction *pSelectAllAction = 0;
   if (showTextSelectionActions) {
-    QAction *pAction;
 #ifndef QT_NO_CLIPBOARD
     // cut
     if (mpPlainTextEdit->textInteractionFlags() & Qt::TextEditable) {
-      pAction = pMenu->addAction(tr("Cu&t"), mpPlainTextEdit, SLOT(cut()));
-      pAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
-      pAction->setObjectName(QStringLiteral("edit-cut"));
-      setActionIcon(pAction, QStringLiteral("edit-cut"));
+      pCutAction = pMenu->addAction(tr("Cu&t"), mpPlainTextEdit, SLOT(cut()));
+      pCutAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
+      pCutAction->setObjectName(QStringLiteral("edit-cut"));
+      setActionIcon(pCutAction, QStringLiteral("edit-cut"));
+      pCutAction->setShortcut(QKeySequence::Cut);
     }
     // copy
-    pAction = pMenu->addAction(tr("&Copy"), mpPlainTextEdit, SLOT(copy()));
-    pAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
-    pAction->setObjectName(QStringLiteral("edit-copy"));
-    setActionIcon(pAction, QStringLiteral("edit-copy"));
-    // paster
+    pCopyAction = pMenu->addAction(tr("&Copy"), mpPlainTextEdit, SLOT(copy()));
+    pCopyAction->setEnabled(mpPlainTextEdit->textCursor().hasSelection());
+    pCopyAction->setObjectName(QStringLiteral("edit-copy"));
+    setActionIcon(pCopyAction, QStringLiteral("edit-copy"));
+    pCopyAction->setShortcut(QKeySequence::Copy);
+    // paste
     if (mpPlainTextEdit->textInteractionFlags() & Qt::TextEditable) {
-      pAction = pMenu->addAction(tr("&Paste"), mpPlainTextEdit, SLOT(paste()));
-      pAction->setEnabled(mpPlainTextEdit->canPaste());
-      pAction->setObjectName(QStringLiteral("edit-paste"));
-      setActionIcon(pAction, QStringLiteral("edit-paste"));
+      pPasteAction = pMenu->addAction(tr("&Paste"), mpPlainTextEdit, SLOT(paste()));
+      pPasteAction->setEnabled(mpPlainTextEdit->canPaste());
+      pPasteAction->setObjectName(QStringLiteral("edit-paste"));
+      setActionIcon(pPasteAction, QStringLiteral("edit-paste"));
+      pPasteAction->setShortcut(QKeySequence::Paste);
     }
 #endif // QT_NO_CLIPBOARD
     pMenu->addSeparator();
     // select all
-    pAction = pMenu->addAction(tr("Select All"), mpPlainTextEdit, SLOT(selectAll()));
-    pAction->setEnabled(!mpPlainTextEdit->document()->isEmpty());
-    pAction->setObjectName(QStringLiteral("select-all"));
+    pSelectAllAction = pMenu->addAction(tr("Select All"), mpPlainTextEdit, SLOT(selectAll()));
+    pSelectAllAction->setEnabled(!mpPlainTextEdit->document()->isEmpty());
+    pSelectAllAction->setObjectName(QStringLiteral("select-all"));
+    pSelectAllAction->setShortcut(QKeySequence::SelectAll);
     pMenu->addSeparator();
+  }
+  if (mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText) {
+    pCutAction->setEnabled(false);
+    pCopyAction->setEnabled(false);
   }
   pMenu->addAction(mpFindReplaceAction);
   pMenu->addAction(mpClearFindReplaceTextsAction);
