@@ -4556,6 +4556,12 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
         mpDiagramViewToolButton->setEnabled(false);
         mpTextViewToolButton->setEnabled(false);
         break;
+      case LibraryTreeItem::diagram:
+        if (mpTextViewToolButton->isChecked()) {
+          mpDiagramViewToolButton->setChecked(true);
+        }
+        mpTextViewToolButton->setEnabled(false);
+        break;
       default:
         mpDiagramViewToolButton->setEnabled(true);
         mpTextViewToolButton->setEnabled(true);
