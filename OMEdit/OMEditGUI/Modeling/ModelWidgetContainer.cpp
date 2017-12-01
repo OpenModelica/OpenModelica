@@ -4563,6 +4563,7 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
         mpTextViewToolButton->setEnabled(false);
         break;
       case LibraryTreeItem::nonPackageText:
+      case LibraryTreeItem::nonPackageDuplicate:
         if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
           if (mpTextViewToolButton->isChecked()) {
             mpDiagramViewToolButton->setChecked(true);

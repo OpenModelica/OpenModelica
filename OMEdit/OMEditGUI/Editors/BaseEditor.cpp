@@ -1628,16 +1628,11 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     // ctrl+k is pressed.
     mpBaseEditor->toggleCommentSelection();
     return;
-  } else if (pEvent->matches(QKeySequence::Cut)) {
-    // ctrl+x is pressed.
-    if (mpBaseEditor->getModelWidget()->getLibraryTreeItem() &&
-        mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText) {
-      return;
-    }
-  } else if (pEvent->matches(QKeySequence::Copy)) {
-    // ctrl+c is pressed.
-    if (mpBaseEditor->getModelWidget()->getLibraryTreeItem() &&
-        mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText) {
+  } else if (pEvent->matches(QKeySequence::Cut) || pEvent->matches(QKeySequence::Copy)) {
+    // ctrl+x/ctrl+c is pressed.
+    if (mpBaseEditor->getModelWidget()->getLibraryTreeItem()
+        && ((mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText)
+            || (mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() == LibraryTreeItem::packageText))) {
       return;
     }
   } else if (pEvent->matches(QKeySequence::Undo)) {
@@ -2100,7 +2095,10 @@ QMenu* BaseEditor::createStandardContextMenu()
     pSelectAllAction->setShortcut(QKeySequence::SelectAll);
     pMenu->addSeparator();
   }
-  if (mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText) {
+  // disable the cut & copy buttons based on Access annotation.
+  if (mpModelWidget->getLibraryTreeItem()
+      && ((mpModelWidget->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText)
+          || (mpModelWidget->getLibraryTreeItem()->getAccess() == LibraryTreeItem::packageText))) {
     pCutAction->setEnabled(false);
     pCopyAction->setEnabled(false);
   }
