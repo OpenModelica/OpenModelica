@@ -409,7 +409,12 @@ uniontype Component
     output Variability variability;
   algorithm
     variability := match component
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
+      // adrpo: select discrete if the type is discrete and explicit component variability > discrete
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability))
+        then
+          if Type.isDiscrete(component.ty) and variability > Variability.DISCRETE
+          then Variability.DISCRETE
+          else variability;
       case TYPED_COMPONENT() guard Type.isDiscrete(component.ty) then Variability.DISCRETE;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
       case ITERATOR() then Variability.CONSTANT;

@@ -497,7 +497,31 @@ uniontype Call
   algorithm
     argtycall := typeNormalCall(call, info);
     (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    variability := match call
+      case TYPED_CALL()
+        then getBuiltinVariability(
+               variability,
+               Absyn.pathLastIdent(Function.nameConsiderBuiltin(call.fn)));
+      else variability;
+    end match;
   end typeMatchNormalCall;
+
+  function getBuiltinVariability
+  "@author: adrpo
+   some builtin function have specific variability,
+   handle that here, TODO FIXME: see if we need more"
+    input output Variability variability;
+    input String name;
+  algorithm
+    variability := match name
+      case "pre" then Variability.DISCRETE;
+      case "edge" then Variability.DISCRETE;
+      case "change" then Variability.DISCRETE;
+      case "String" then Variability.DISCRETE;
+      case "Integer" then Variability.DISCRETE;
+      else variability;
+    end match;
+  end getBuiltinVariability;
 
   function typeNormalCall
     input output Call call;
@@ -546,7 +570,7 @@ uniontype Call
     CallAttributes ca;
     list<TypedArg> tyArgs;
   algorithm
-    (argtycall , ty, variability) := match argtycall
+    (argtycall, ty, variability) := match argtycall
       case ARG_TYPED_CALL() algorithm
 
         // Match the arguments with the expected ones.
