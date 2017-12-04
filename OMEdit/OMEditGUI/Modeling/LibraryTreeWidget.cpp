@@ -2921,6 +2921,13 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
             menu.addAction(mpDuplicateClassAction);
+            if ((pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageDuplicate)
+                || (pLibraryTreeItem->getRestriction() != StringHandler::Package
+                    && pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageDuplicate)) {
+              mpDuplicateClassAction->setEnabled(true);
+            } else {
+              mpDuplicateClassAction->setEnabled(false);
+            }
           }
           if (pLibraryTreeItem->isTopLevel()) {
             mpUnloadClassAction->setText(Helper::unloadClass);
