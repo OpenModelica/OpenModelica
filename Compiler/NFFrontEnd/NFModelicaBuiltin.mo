@@ -454,30 +454,21 @@ function array "Constructs an array"
 </html>"));
 end array;
 
-// Imagine zeros(a,b,c,d ...) as zeros({a,b,c,d...})
-// we convert it to the array format internaly and match it with this
-function zeros<T,A> "Returns a zero array"
-  input Integer dims[:];
-  output A o;
+function zeros "Returns a zero array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'zeros()'\">zeros()</a>
 </html>"));
 end zeros;
 
-function ones<T,A> "Returns a one array"
-  input Integer dims[:];
-  output A o;
+function ones "Returns a one array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ones()'\">ones()</a>
 </html>"));
 end ones;
 
-function fill<T,A> "Returns an array with all elements equal"
-  input T s;
-  input Integer dims[:];
-  output A o;
+function fill "Returns an array with all elements equal"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'fill()'\">fill()</a>

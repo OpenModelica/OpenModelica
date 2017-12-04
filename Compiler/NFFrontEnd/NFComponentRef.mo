@@ -154,6 +154,13 @@ public
     CREF(node = node) := cref;
   end node;
 
+  function firstName
+    input ComponentRef cref;
+    output String name;
+  algorithm
+    name := InstNode.name(node(cref));
+  end firstName;
+
   function rest
     input ComponentRef cref;
     output ComponentRef restCref;

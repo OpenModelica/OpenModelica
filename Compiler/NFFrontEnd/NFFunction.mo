@@ -759,72 +759,65 @@ uniontype Function
   function isSpecialBuiltin
     input Function fn;
     output Boolean special;
+  protected
+    Absyn.Path path;
   algorithm
     if not isBuiltin(fn) then
       special := false;
     else
-      special := match Function.nameConsiderBuiltin(fn)
-        case Absyn.IDENT(name = "size") then true;
+      path := Function.nameConsiderBuiltin(fn);
 
-        case Absyn.IDENT(name = "ndims") then true;
-
-        // Function should not be used in function context.
-        // argument should be a cref?
-        case Absyn.IDENT(name = "pre") then true;
-
-        // Function should not be used in function context.
-        // argument should be a cref?
-        case Absyn.IDENT(name = "change") then true;
-
-        // Function should only be used in a 'when' clause.
-        // Arguments should be real or arrays or real (matching).
-        // first argument should be a cref ?.
-        case Absyn.IDENT(name = "reinit") then true;
-
-        // Needs to check that arguments are basic types or enums
-        // We need to check array inputs as well
-        case Absyn.IDENT(name = "min") then true;
-
-        // Needs to check that arguments are basic types or enums
-        // We need to check array inputs as well
-        case Absyn.IDENT(name = "max") then true;
-
-        // needs unboxing and return type fix.
-        case Absyn.IDENT(name = "sum") then true;
-        // needs unboxing and return type fix.
-        case Absyn.IDENT(name = "product") then true;
-
-        // Needs to check that second argument is real or array of real or record of reals.
-        case Absyn.IDENT(name = "smooth") then true;
-
-        // case Absyn.IDENT(name = "sample") then true;
-
-        // can have variable number of arguments
-        case Absyn.IDENT(name = "fill") then true;
-        // can have variable number of arguments
-        case Absyn.IDENT(name = "zeros") then true;
-        // can have variable number of arguments
-        case Absyn.IDENT(name = "ones") then true;
-
-        // Arguments can be scalar, vector, matrix, 3d array .... basically anything
-        // We need to make sure size(Arg,i) = 1 for 2 < i <= ndims(Arg).
-        // return type should always be Matrix.
-        case Absyn.IDENT(name = "matrix") then true;
-        // We need to make sure size(Arg,i) = 1 for 0 <= i <= ndims(Arg).
-        // return type should always be scalar.
-        case Absyn.IDENT(name = "scalar") then true;
-        // We need to construct output diminsion size from the size of elements in the array
-        // return type should always be vector.
-        case Absyn.IDENT(name = "vector") then true;
-
-        // unbox args and set return type.
-        case Absyn.IDENT(name = "symmetric") then true;
-
-        // unbox args and set return type (swap the first two dims).
-        case Absyn.IDENT(name = "transpose") then true;
-
-        else false;
-      end match;
+      if not Absyn.pathIsIdent(path) then
+        special := false;
+      else
+        special := match Absyn.pathFirstIdent(path)
+          case "size" then true;
+          case "ndims" then true;
+          // Function should not be used in function context.
+          // argument should be a cref?
+          case "pre" then true;
+          // Function should not be used in function context.
+          // argument should be a cref?
+          case "change" then true;
+          // Function should only be used in a 'when' clause.
+          // Arguments should be real or arrays or real (matching).
+          // first argument should be a cref ?.
+          case "reinit" then true;
+          // Needs to check that arguments are basic types or enums
+          // We need to check array inputs as well
+          case "min" then true;
+          // Needs to check that arguments are basic types or enums
+          // We need to check array inputs as well
+          case "max" then true;
+          // needs unboxing and return type fix.
+          case "sum" then true;
+          // needs unboxing and return type fix.
+          case "product" then true;
+          // Needs to check that second argument is real or array of real or record of reals.
+          case "smooth" then true;
+          // can have variable number of arguments
+          case "fill" then true;
+          // can have variable number of arguments
+          case "zeros" then true;
+          // can have variable number of arguments
+          case "ones" then true;
+          // Arguments can be scalar, vector, matrix, 3d array .... basically anything
+          // We need to make sure size(Arg,i) = 1 for 2 < i <= ndims(Arg).
+          // return type should always be Matrix.
+          case "matrix" then true;
+          // We need to make sure size(Arg,i) = 1 for 0 <= i <= ndims(Arg).
+          // return type should always be scalar.
+          case "scalar" then true;
+          // We need to construct output diminsion size from the size of elements in the array
+          // return type should always be vector.
+          case "vector" then true;
+          // unbox args and set return type.
+          case "symmetric" then true;
+          // unbox args and set return type (swap the first two dims).
+          case "transpose" then true;
+          else false;
+        end match;
+      end if;
     end if;
   end isSpecialBuiltin;
 

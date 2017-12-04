@@ -57,6 +57,7 @@ import NFClass.Class;
 import ErrorExt;
 import Util;
 import Prefixes = NFPrefixes;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 protected
 import NFFunction.NamedArg;
@@ -218,47 +219,39 @@ uniontype Call
     input SourceInfo info;
     output Expression callExp;
   protected
-    InstNode fn_node;
     ComponentRef fn_ref;
     Expression exp;
     list<InstNode> iters;
-    ComponentRef arr_fn_ref;
-    Call call, arr_call;
-    Absyn.ComponentRef aby_fn_ref;
+    Call call;
+    Boolean is_builtin, is_array;
   algorithm
-    aby_fn_ref := match functionName
-      case Absyn.CREF_IDENT("$array",{}) then Absyn.CREF_IDENT("array",{});
-      else functionName;
+    (is_builtin, is_array) := match Absyn.crefFirstIdent(functionName)
+      case "$array" then (true, true);
+      case "min" then (true, false);
+      case "max" then (true, false);
+      case "sum" then (true, false);
+      case "product" then (true, false);
+      else (false, false);
     end match;
 
-    (fn_ref, _, _) := Function.instFunc(aby_fn_ref,scope,info);
     (exp, iters) := instIteratorCallArgs(functionArgs, scope, info);
 
-    call := match aby_fn_ref
+    if is_builtin then
+      // If the call is one of the builtin ones, start by making an array map call.
+      fn_ref := Function.instFunc(Absyn.CREF_IDENT("array", {}), scope, info);
+      call := UNTYPED_MAP_CALL(fn_ref, exp, iters);
 
-      case Absyn.CREF_IDENT("min",_) algorithm
-        (arr_fn_ref, _) := Function.instFunc(Absyn.CREF_IDENT("array", {}),scope,info);
-        arr_call := UNTYPED_MAP_CALL(arr_fn_ref, exp, iters);
-      then UNTYPED_CALL(fn_ref, {}, {Expression.CALL(arr_call)}, {});
-
-      case Absyn.CREF_IDENT("max",_) algorithm
-        (arr_fn_ref, _) := Function.instFunc(Absyn.CREF_IDENT("array", {}),scope,info);
-        arr_call := UNTYPED_MAP_CALL(arr_fn_ref, exp, iters);
-      then UNTYPED_CALL(fn_ref, {}, {Expression.CALL(arr_call)}, {});
-
-      case Absyn.CREF_IDENT("sum",_) algorithm
-        (arr_fn_ref, _) := Function.instFunc(Absyn.CREF_IDENT("array", {}),scope,info);
-        arr_call := UNTYPED_MAP_CALL(arr_fn_ref, exp, iters);
-      then UNTYPED_CALL(fn_ref, {}, {Expression.CALL(arr_call)}, {});
-
-      case Absyn.CREF_IDENT("product",_) algorithm
-        (arr_fn_ref, _) := Function.instFunc(Absyn.CREF_IDENT("array", {}),scope,info);
-        arr_call := UNTYPED_MAP_CALL(arr_fn_ref, exp, iters);
-      then UNTYPED_CALL(fn_ref, {}, {Expression.CALL(arr_call)}, {});
-
-      else algorithm
-        then UNTYPED_MAP_CALL(fn_ref, exp, iters);
-    end match;
+      // If the call is not array itself, wrap the array call in the given
+      // function (e.g. sum(array(i for i in ...))).
+      if not is_array then
+        fn_ref := Function.instFunc(functionName, scope, info);
+        call := UNTYPED_CALL(fn_ref, {}, {Expression.CALL(call)}, {});
+      end if;
+    else
+      // Otherwise, make a map call from the given function.
+      fn_ref := Function.instFunc(functionName, scope, info);
+      call := UNTYPED_MAP_CALL(fn_ref, exp, iters);
+    end if;
 
     callExp := Expression.CALL(call);
   end instIteratorCall;
@@ -328,75 +321,39 @@ uniontype Call
     input SourceInfo info;
           output Type ty;
           output Variability variability;
-
+  protected
+    ComponentRef cref;
+    InstNode fn_node;
+    Expression first;
+    list<Expression> rest;
+    String name;
   algorithm
-    (call, ty, variability) := match call
-      local
-        InstNode fn_node;
-        Expression first;
-        list<Expression> rest;
+    UNTYPED_CALL(ref = cref) := call;
 
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="ndims")))
-        then typeNdimsCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="pre")))
-        then typePreCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="change")))
-        then typeChangeCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="reinit")))
-        then typeReinitCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="min")))
-        then typeMinMaxCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="max")))
-        then typeMinMaxCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="sum")))
-        then typeSumProductCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="product")))
-        then typeSumProductCall(call, info);
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="smooth")))
-        then typeSmoothCall(call, info);
-
-      // This is a temporary solution in the meantime. We take all the arguments after
-      // the first one and make an array of them. This is treated as the second argument to fill.
-      // fill is defined internally as fill(s, {...}). This will mathc it.
-      // This will give slightly confusing error messages if the dimension paramters are not integers.
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="fill"))) algorithm
-          first::rest := call.arguments;
-          call.arguments := {first,Expression.ARRAY(Type.UNKNOWN(), rest)};
-        then typeFillCall(call, info);
-
-      // Similar to fill
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="zeros"))) algorithm
-          call.arguments := {Expression.ARRAY(Type.UNKNOWN(), call.arguments)};
-        then typeZeroesOnesCall(call, info);
-
-      // Similar to fill
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="ones"))) algorithm
-          call.arguments := {Expression.ARRAY(Type.UNKNOWN(), call.arguments)};
-        then typeZeroesOnesCall(call, info);
-
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="scalar"))) algorithm
-        then typeScalarCall(call, info);
-
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="vector"))) algorithm
-        then typeVectorCall(call, info);
-
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="matrix"))) algorithm
-        then typeMatrixCall(call, info);
-
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="symmetric")))
-        then typeSymmetricCall(call, info);
-
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="transpose")))
-        then typeTransposeCall(call, info);
-
-      // remove me. nothing special here.
-      case UNTYPED_CALL(ref=ComponentRef.CREF(node=InstNode.CLASS_NODE(name="sample")))
-        then typeSampleCall(call, info);
-
-      else algorithm
-        assert(false, getInstanceName() + " got unhandled builtin function\n");
-      then fail();
-
+    (call, ty, variability) := match ComponentRef.firstName(cref)
+      case "change" then typeChangeCall(call, info);
+      case "fill" then typeFillCall(call, info);
+      case "matrix" then typeMatrixCall(call, info);
+      case "max" then typeMinMaxCall(call, info);
+      case "min" then typeMinMaxCall(call, info);
+      case "ndims" then typeNdimsCall(call, info);
+      case "ones" then typeZerosOnesCall(call, info);
+      case "pre" then typePreCall(call, info);
+      case "product" then typeSumProductCall(call, info);
+      case "reinit" then typeReinitCall(call, info);
+      case "sample" then typeSampleCall(call, info); // remove me. nothing special here.
+      case "scalar" then typeScalarCall(call, info);
+      case "smooth" then typeSmoothCall(call, info);
+      case "sum" then typeSumProductCall(call, info);
+      case "symmetric" then typeSymmetricCall(call, info);
+      case "transpose" then typeTransposeCall(call, info);
+      case "vector" then typeVectorCall(call, info);
+      case "zeros" then typeZerosOnesCall(call, info);
+      else
+        algorithm
+          assert(false, getInstanceName() + " got unhandled builtin function");
+        then
+          fail();
     end match;
   end typeSpecialBuiltinFunction;
 
@@ -409,7 +366,6 @@ uniontype Call
   protected
     Call call;
   algorithm
-
     () := match callExp
       case Expression.CALL(UNTYPED_CALL()) algorithm
         if(builtinSpecialHandling(callExp.call)) then
@@ -429,7 +385,6 @@ uniontype Call
     end match;
 
     callExp := Expression.CALL(call);
-
   end typeCall;
 
   function typeMapIteratorCall
@@ -440,28 +395,18 @@ uniontype Call
   protected
     InstNode fn_node;
     list<Function> fnl;
-    Boolean fn_typed, special;
     Function fn;
     Expression arg;
     Type arg_ty;
     Binding binding;
     Variability arg_var;
   algorithm
-    (call , ty, variability) := match call
+    (call, ty, variability) := match call
       case UNTYPED_MAP_CALL(ref = ComponentRef.CREF(node = fn_node))  algorithm
         // Fetch the cached function(s).
-        CachedData.FUNCTION(fnl, fn_typed, special) := InstNode.getFuncCache(fn_node);
+        fnl := typeCachedFunctions(call.ref);
         assert(listLength(fnl) == 1, getInstanceName() + " overloaded functions in mapping functions not handled yet.");
-        fn::_ := fnl;
-
-        // Type the function(s) if not already done.
-        if not fn_typed then
-          fnl := list(Function.typeFunction(f) for f in fnl);
-          InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
-          fnl := list(Function.typeFunctionBody(f) for f in fnl);
-          InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
-        end if;
-
+        fn := listHead(fnl);
 
         for iter in call.iters loop
           Typing.typeIterator(iter, info, false);
@@ -475,10 +420,8 @@ uniontype Call
           ty := Type.liftArrayLeftList(ty,Type.arrayDims(Binding.getType(binding)));
           variability := Variability.variabilityMax(variability,Binding.variability(binding));
         end for;
-
       then
         (TYPED_MAP_CALL(fn, ty, arg, call.iters), ty, variability);
-        // (TYPED_CALL(fn, args, ca), ty, variability);
 
       else algorithm
         assert(false, getInstanceName() + " got invalid function call expression");
@@ -526,29 +469,12 @@ uniontype Call
   function typeNormalCall
     input output Call call;
     input SourceInfo info;
-  protected
-    Call argtycall;
-    InstNode fn_node;
-    list<Function> fnl;
-    Boolean fn_typed, special;
   algorithm
     call := match call
-      case UNTYPED_CALL(ref = ComponentRef.CREF(node = fn_node)) algorithm
-        // Type the arguments.
-        argtycall := typeArgs(call, info);
-
-        // Fetch the cached function(s).
-        CachedData.FUNCTION(fnl, fn_typed, special) := InstNode.getFuncCache(fn_node);
-
-        // Type the function(s) if not already done.
-        if not fn_typed then
-          fnl := list(Function.typeFunction(f) for f in fnl);
-          InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
-          fnl := list(Function.typeFunctionBody(f) for f in fnl);
-          InstNode.setFuncCache(fn_node, CachedData.FUNCTION(fnl, true, special));
-        end if;
+      case UNTYPED_CALL() algorithm
+        typeCachedFunctions(call.ref);
       then
-        argtycall;
+        typeArgs(call, info);
 
       else algorithm
         assert(false, getInstanceName() + " got invalid function call expression");
@@ -556,6 +482,38 @@ uniontype Call
         fail();
     end match;
   end typeNormalCall;
+
+  function typeCachedFunctions
+    "Returns the function(s) referenced by the given cref, and types them if
+     they are not already typed."
+    input ComponentRef functionRef;
+    output list<Function> functions;
+  protected
+    InstNode fn_node;
+    Boolean typed, special;
+  algorithm
+    functions := match functionRef
+      case ComponentRef.CREF(node = fn_node)
+        algorithm
+          CachedData.FUNCTION(functions, typed, special) := InstNode.getFuncCache(fn_node);
+
+          // Type the function(s) if not already done.
+          if not typed then
+            functions := list(Function.typeFunction(f) for f in functions);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
+            functions := list(Function.typeFunctionBody(f) for f in functions);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
+          end if;
+        then
+          functions;
+
+      else
+        algorithm
+          assert(false, getInstanceName() + " got invalid function call reference");
+        then
+          fail();
+    end match;
+  end typeCachedFunctions;
 
   function matchTypedNormalCall
     input output Call argtycall;
@@ -570,7 +528,7 @@ uniontype Call
     CallAttributes ca;
     list<TypedArg> tyArgs;
   algorithm
-    (argtycall, ty, variability) := match argtycall
+    (argtycall , ty, variability) := match argtycall
       case ARG_TYPED_CALL() algorithm
 
         // Match the arguments with the expected ones.
@@ -1138,71 +1096,115 @@ protected
     call := unboxArgs(call);
   end typeSmoothCall;
 
-    function typeFillCall
+  function typeFillCall
     input output Call call;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
   protected
-    Call argtycall;
-    list<Dimension> dims;
-    Expression arg1,arg2;
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression fill_arg;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
-    call := unboxArgs(call);
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
-    ty := match call
-      case TYPED_CALL() algorithm
-        {arg1,arg2} := call.arguments;
-        () := match arg2
-          case Expression.ARRAY() algorithm
-            dims := {};
-            for x in listReverse(arg2.elements) loop
-              // We don't have the variability in experssions :(. Assuming the worst. is continous even valid?.
-              dims := Dimension.fromExp(x, Variability.CONTINUOUS)::dims;
-            end for;
-          then ();
-        end match;
+    // fill doesn't have any named parameters.
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {Util.tuple21(listHead(named_args))}, info);
+    end if;
 
-      then Type.ARRAY(Expression.typeOf(arg1), dims);
-    end match;
+    // fill can take any number of arguments, but needs at least two.
+    if listLength(args) < 2 then
+      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
+        {"fill" + List.toString(args, Expression.toString, "", "(", ", ", ")", true), "<REMOVE ME>",
+         ":\n  fill(Expression, Integer, ...) => Expression[:, ...]"}, info);
+    end if;
 
-    call := setType(call,ty);
+    fill_arg :: args := args;
+
+    // Type the first argument, which is the fill value.
+    (fill_arg, ty, _) := Typing.typeExp(fill_arg, info);
+    (call, ty, variability) := typeFillCall2(fn_ref, ty, {fill_arg}, args, info);
   end typeFillCall;
 
-  function typeZeroesOnesCall
+  function typeFillCall2
+    input ComponentRef fnRef;
+    input Type fillType;
+    input list<Expression> fillArgs;
+    input list<Expression> dimensionArgs;
+    input SourceInfo info;
+    output Call call;
+    output Type ty;
+    output Variability variability = Variability.CONSTANT;
+  protected
+    Expression fill_arg;
+    list<Expression> ty_args;
+    Variability arg_var;
+    Type arg_ty;
+    Function fn;
+    list<Dimension> dims;
+    CallAttributes attr;
+  algorithm
+    ty_args := fillArgs;
+    dims := {};
+
+    // Type the dimension arguments.
+    for arg in dimensionArgs loop
+      (arg, arg_ty, arg_var) := Typing.typeExp(arg, info);
+
+      // Each dimension argument must be an Integer expression.
+      if not Type.isInteger(arg_ty) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+          {intString(listLength(ty_args) + 1), ComponentRef.toString(fnRef), "",
+          Expression.toString(arg), Type.toString(arg_ty), "Integer"}, info);
+      end if;
+
+      variability := Prefixes.variabilityMax(variability, arg_var);
+      ty_args := arg :: ty_args;
+      dims := Dimension.fromExp(arg, arg_var) :: dims;
+    end for;
+
+    ty_args := listReverseInPlace(ty_args);
+    dims := listReverseInPlace(dims);
+
+    {fn} := typeCachedFunctions(fnRef);
+    ty := Type.ARRAY(fillType, dims);
+    attr := CALL_ATTR(ty, false, true, false, false, DAE.InlineType.NO_INLINE(), DAE.TailCall.NO_TAIL());
+    call := TYPED_CALL(fn, ty, ty_args, attr);
+  end typeFillCall2;
+
+  function typeZerosOnesCall
     input output Call call;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
   protected
-    Call argtycall;
-    list<Dimension> dims;
-    Expression arg;
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression fill_arg;
+    String name;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
-    call := unboxArgs(call);
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
-    ty := match call
-      case TYPED_CALL() algorithm
-        {arg} := call.arguments;
-        () := match arg
-          case Expression.ARRAY() algorithm
-            dims := {};
-            for x in listReverse(arg.elements) loop
-              // We don't have the variability in experssions :(. Assuming the worst. is continous even valid?.
-              dims := Dimension.fromExp(x, Variability.CONTINUOUS)::dims;
-            end for;
-          then ();
-        end match;
+    // zeros/ones doesn't have any named parameters.
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {Util.tuple21(listHead(named_args))}, info);
+    end if;
 
-      then Type.ARRAY(Type.INTEGER(), dims);
-    end match;
+    // zeros/ones can take any number of arguments, but needs at least one.
+    if listEmpty(args) then
+      name := ComponentRef.toString(fn_ref);
+      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
+        {name + List.toString(args, Expression.toString, "", "(", ", ", ")", true), "<REMOVE ME>",
+         ":\n  " + name + "(Integer, ...) => Integer[:, ...]"}, info);
+    end if;
 
-    call := setType(call,ty);
-  end typeZeroesOnesCall;
+    (call, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), {}, args, info);
+  end typeZerosOnesCall;
 
   function typeScalarCall
     input output Call call;
