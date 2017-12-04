@@ -26,7 +26,7 @@ end FuncBuiltinFill;
 //   Real y[2,3,1];
 //   Real y[2,4,1];
 // equation
-//   x = /*Real[4]*/(fill(1, {4}));
-//   y = fill(3.14, {2, 4, 1});
+//   x = /*Real[4]*/(fill(1, 4));
+//   y = fill(3.14, 2, 4, 1);
 // end FuncBuiltinFill;
 // endResult

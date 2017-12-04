@@ -25,7 +25,7 @@ end FuncBuiltinOnes;
 //   Real y[4,1];
 //   Real y[4,2];
 // equation
-//   x = /*Real[3]*/(ones({3}));
-//   y = /*Real[4, 2]*/(ones({4, 2}));
+//   x = /*Real[3]*/(ones(3));
+//   y = /*Real[4, 2]*/(ones(4, 2));
 // end FuncBuiltinOnes;
 // endResult
