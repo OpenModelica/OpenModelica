@@ -1636,11 +1636,10 @@ algorithm
   if Dimension.isEqualKnown(dim1, dim2) then
     compatibleDim := dim1;
   elseif allowUnknown then
-    if Dimension.isKnown(dim1) then
-      compatibleDim := dim1;
-    else
-      compatibleDim := dim2;
-    end if;
+    compatibleDim := if Dimension.isKnown(dim1) then dim1 else dim2;
+  else
+    compatibleDim := dim1;
+    compatible := false;
   end if;
 end matchDimensions;
 

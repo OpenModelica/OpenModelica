@@ -652,7 +652,7 @@ uniontype Function
       inputnode :: inputs := inputs;
       comp := InstNode.component(inputnode);
 
-      (margexp, mty, matchKind) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp);
+      (margexp, mty, matchKind) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp, allowUnknown = true);
       correct := TypeCheck.isCompatibleMatch(matchKind);
       if TypeCheck.isCastMatch(matchKind) then
         funcMatchKind := CAST_MATCH;

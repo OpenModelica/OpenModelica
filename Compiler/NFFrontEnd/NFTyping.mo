@@ -2000,7 +2000,8 @@ algorithm
         (e1, ty1) := typeExp(st.lhs, st.info, ExpOrigin.LHS());
         (e2, ty2) := typeExp(st.rhs, st.info, ExpOrigin.RHS());
 
-        (e2,_, mk) := TypeCheck.matchTypes(ty2, ty1, e2);
+        // TODO: Should probably only be allowUnknown = true if in a function.
+        (e2,_, mk) := TypeCheck.matchTypes(ty2, ty1, e2, allowUnknown = true);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
