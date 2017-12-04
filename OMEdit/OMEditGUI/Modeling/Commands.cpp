@@ -188,12 +188,12 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
     // first create the component for Icon View
     mpIconComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpIconGraphicsView);
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
     }
   } else {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramComponent = new Component(name, pLibraryTreeItem, annotation, position, pComponentInfo, mpDiagramGraphicsView);
     }
   }
@@ -207,7 +207,7 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
       mpIconComponent->setSelected(true);
     } else {
       if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-          pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+          (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
         mpDiagramComponent->setSelected(true);
       }
     }
@@ -233,7 +233,7 @@ void AddComponentCommand::redo()
     mpIconComponent->setVisible(!mpComponentInfo->getProtected());
     // now add the component to Diagram View
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramGraphicsView->addItem(mpDiagramComponent);
       mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
@@ -241,7 +241,7 @@ void AddComponentCommand::redo()
     }
   } else {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramGraphicsView->addItem(mpDiagramComponent);
       mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
@@ -250,7 +250,7 @@ void AddComponentCommand::redo()
   }
   if (mAddObject) {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramGraphicsView->addComponentToClass(mpDiagramComponent);
     } else {
       mpIconGraphicsView->addComponentToClass(mpIconComponent);
@@ -275,7 +275,7 @@ void AddComponentCommand::undo()
     mpIconComponent->emitDeleted();
     // now remove the component from Diagram View
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramGraphicsView->removeItem(mpDiagramComponent);
       mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
@@ -283,7 +283,7 @@ void AddComponentCommand::undo()
     }
   } else {
     if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-        mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+        (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
       mpDiagramGraphicsView->removeItem(mpDiagramComponent);
       mpDiagramGraphicsView->removeItem(mpDiagramComponent->getOriginItem());
       mpDiagramGraphicsView->deleteComponentFromList(mpDiagramComponent);
@@ -291,7 +291,7 @@ void AddComponentCommand::undo()
     }
   }
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram &&
-      mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+      (!mpLibraryTreeItem || (mpLibraryTreeItem && mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram))) {
     mpDiagramGraphicsView->deleteComponentFromClass(mpDiagramComponent);
   } else {
     mpIconGraphicsView->deleteComponentFromClass(mpIconComponent);
