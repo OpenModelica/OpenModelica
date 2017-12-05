@@ -936,7 +936,7 @@ algorithm
     case (_,_,"setCommandLineOptions",{Values.STRING(str)},st,_)
       equation
         args = System.strtok(str, " ");
-        _ = Flags.readArgs(args);
+        {} = Flags.readArgs(args);
       then
         (FCore.emptyCache(),Values.BOOL(true),st);
 
