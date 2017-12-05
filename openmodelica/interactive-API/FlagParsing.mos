@@ -56,8 +56,12 @@ setCommandLineOptions("++d"); getErrorString();
 setCommandLineOptions("+-d"); getErrorString();
 setCommandLineOptions("-+d"); getErrorString();
 
-// Should work, flag parsing stops after --.
-setCommandLineOptions("-- -d=fish"); getErrorString();
+// Shouldn't work, fish is not a flag at all.
+setCommandLineOptions("fish"); getErrorString();
+
+// Shouldn't work, flag parsing stops at -- and setCommandLineOptions should
+// only take flags.
+setCommandLineOptions("-- -d=failtrace"); getErrorString();
 
 // Result:
 // true
@@ -134,6 +138,8 @@ setCommandLineOptions("-- -d=fish"); getErrorString();
 // false
 // "Error: Unknown option -+d.
 // "
-// true
+// false
+// ""
+// false
 // ""
 // endResult
