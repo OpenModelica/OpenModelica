@@ -837,6 +837,7 @@ protected
   GC.ProfStats stats;
   Integer seconds;
 algorithm
+  execStatReset();
   try
   try
     args_1 := init(args);

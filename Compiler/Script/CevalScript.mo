@@ -601,6 +601,8 @@ algorithm
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
       list<list<Values.Value>> valsLst;
+      Boolean new_inst;
+
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
@@ -935,8 +937,15 @@ algorithm
 
     case (_,_,"setCommandLineOptions",{Values.STRING(str)},st,_)
       equation
+        new_inst = Flags.isSet(Flags.SCODE_INST);
         args = System.strtok(str, " ");
         {} = Flags.readArgs(args);
+
+        // Invalidate the builtin cache if the newInst flag was toggled,
+        // so we don't reuse the wrong builtin program.
+        if new_inst <> Flags.isSet(Flags.SCODE_INST) then
+          setGlobalRoot(Global.builtinIndex, {});
+        end if;
       then
         (FCore.emptyCache(),Values.BOOL(true),st);
 
