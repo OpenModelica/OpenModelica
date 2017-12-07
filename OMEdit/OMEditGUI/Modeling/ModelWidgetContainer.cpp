@@ -4620,7 +4620,8 @@ void ModelWidget::getModelInheritedClasses()
 void ModelWidget::drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType)
 {
   foreach (LibraryTreeItem *pLibraryTreeItem, pModelWidget->getInheritedClassesList()) {
-    if (!pLibraryTreeItem->isNonExisting()) {
+    if (!pLibraryTreeItem->isNonExisting() && !pLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
       drawModelInheritedClassShapes(pLibraryTreeItem->getModelWidget(), viewType);
     }
     GraphicsView *pInheritedGraphicsView, *pGraphicsView;
