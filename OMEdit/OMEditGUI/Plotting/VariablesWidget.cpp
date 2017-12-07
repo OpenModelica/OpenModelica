@@ -1751,32 +1751,30 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
 void VariablesWidget::simulationTimeChanged(int timePercent)
 {
   PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
-  //PLOT, PLOTALL, PLOTPARAMETRIC, PLOTARRAY, PLOTARRAYPARAMETRIC}
-  PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
-  if (
-       plotType == PlotWindow::PLOT ||
-       plotType == PlotWindow::PLOTALL ||
-       plotType == PlotWindow::PLOTPARAMETRIC
-     )
-       return;
-  QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
-  if (plotType == PlotWindow::PLOTARRAY){
-    foreach(PlotCurve* curve, curves){
-      QString varName = curve->getYVariable();
-      pPlotWindow->setVariablesList(QStringList(varName));
-      pPlotWindow->plotArray(timePercent, curve);
+  if (pPlotWindow) {
+    //PLOT, PLOTALL, PLOTPARAMETRIC, PLOTARRAY, PLOTARRAYPARAMETRIC}
+    PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
+    if (plotType == PlotWindow::PLOT ||
+        plotType == PlotWindow::PLOTALL ||
+        plotType == PlotWindow::PLOTPARAMETRIC) {
+      return;
+    }
+    QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
+    if (plotType == PlotWindow::PLOTARRAY) {
+      foreach (PlotCurve* curve, curves) {
+        QString varName = curve->getYVariable();
+        pPlotWindow->setVariablesList(QStringList(varName));
+        pPlotWindow->plotArray(timePercent, curve);
+      }
+    } else if (plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
+      foreach (PlotCurve* curve, curves) {
+        QString xVarName = curve->getXVariable();
+        QString yVarName = curve->getYVariable();
+        pPlotWindow->setVariablesList({xVarName,yVarName});
+        pPlotWindow->plotArrayParametric(timePercent, curve);
+      }
     }
   }
-  else if(plotType == PlotWindow::PLOTARRAYPARAMETRIC)
-  {
-    foreach(PlotCurve* curve, curves){
-      QString xVarName = curve->getXVariable();
-      QString yVarName = curve->getYVariable();
-      pPlotWindow->setVariablesList({xVarName,yVarName});
-      pPlotWindow->plotArrayParametric(timePercent, curve);
-    }
-  }
-  return;
 }
 /*!
  * \brief VariablesWidget::valueEntered
