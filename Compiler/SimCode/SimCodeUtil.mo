@@ -6147,7 +6147,7 @@ algorithm
   (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquations, inVars, iuniqueEqIndex, itempvars, iextra)
     local
       list<Integer> ds;
-      DAE.Exp e1, e2, e1_1, e2_1, lhse;
+      DAE.Exp e1, e2, e1_1, e2_1, lhse, rhse;
       list<DAE.Exp> ea1, ea2, expLst, expLstTmp;
       list<BackendDAE.Equation> re;
       list<BackendDAE.Var> vars;
@@ -6210,13 +6210,29 @@ algorithm
 
     // An array equation
     // cref = rhsexp
-    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source))::_, BackendDAE.VAR()::_, _, _, _) equation
+    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
+    guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
+    equation
       e1 = Expression.replaceDerOpInExp(lhse);
       e2 = Expression.replaceDerOpInExp(e2);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
       equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e1, e2, source);
+      uniqueEqIndex = iuniqueEqIndex + 1;
+    then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
+
+    // An array equation
+    // lhsexp = cref
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=rhse as DAE.CREF(cr_1, _), source=source))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
+    guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
+    equation
+      e1 = Expression.replaceDerOpInExp(e1);
+      e2 = Expression.replaceDerOpInExp(rhse);
+      (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
+      (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
+      (e2, e1) = solveTrivialArrayEquation(cr_1, e2, e1);
+      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e2, e1, source);
       uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
