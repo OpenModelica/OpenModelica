@@ -2085,6 +2085,7 @@ algorithm
       list<tuple<Expression, list<Statement>>> tybrs;
       InstNode iterator;
       MatchKind mk;
+      Integer next_origin;
 
     case Statement.ASSIGNMENT()
       algorithm
@@ -2125,11 +2126,13 @@ algorithm
 
     case Statement.WHEN()
       algorithm
+        next_origin := intBitOr(origin, ExpOrigin.WHEN);
+
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, origin, st.info, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
-              sts1 := list(typeStatement(bst, origin) for bst in body);
+              e1 := typeCondition(cond, next_origin, st.info, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
+              sts1 := list(typeStatement(bst, next_origin) for bst in body);
             then (e1, sts1);
           end match
         for br in st.branches);

@@ -958,7 +958,7 @@ protected
     end if;
 
     argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
-    (call, ty) := matchTypedNormalCall(argtycall, info);
+    (call, _) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     {arg} := args;
@@ -967,6 +967,8 @@ protected
             {"First", "pre", "<REMOVE ME>"}, info);
       fail();
     end if;
+
+    ty := Util.tuple32(arg);
   end typePreCall;
 
   function typeChangeCall
@@ -1046,6 +1048,7 @@ protected
     argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
     (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
+    ty := Type.arrayElementType(Util.tuple32(listHead(args)));
     // TODO: check basic type in two argument overload.
     // check arrays of simple types in one argument overload.
     // fix return type.
