@@ -702,12 +702,13 @@ public
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
       case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
 
-      case RANGE() then toString(exp.start) +
+      case RANGE() then operandString(exp.start, exp, false) +
                         (
                         if isSome(exp.step)
-                        then ":" + toString(Util.getOption(exp.step))
+                        then ":" + operandString(Util.getOption(exp.step), exp, false)
                         else ""
-                        ) + ":" + toString(exp.stop);
+                        ) + ":" + operandString(exp.stop, exp, false);
+
       case TUPLE() then "(" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + ")";
       case CALL() then Call.toString(exp.call);
       case SIZE() then "size(" + toString(exp.exp) +
@@ -717,12 +718,25 @@ public
                         else ""
                         ) + ")";
       case END() then "end";
-      case BINARY() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
-      case UNARY() then "(" + Operator.symbol(exp.operator) + " " + toString(exp.exp) + ")";
-      case LBINARY() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
-      case LUNARY() then "(" + Operator.symbol(exp.operator) + " " + toString(exp.exp) + ")";
 
-      case RELATION() then "(" + toString(exp.exp1) + Operator.symbol(exp.operator) + toString(exp.exp2) + ")";
+      case BINARY() then operandString(exp.exp1, exp, true) +
+                         Operator.symbol(exp.operator) +
+                         operandString(exp.exp2, exp, false);
+
+      case UNARY() then Operator.symbol(exp.operator) +
+                        operandString(exp.exp, exp, false);
+
+      case LBINARY() then operandString(exp.exp1, exp, true) +
+                          Operator.symbol(exp.operator) +
+                          operandString(exp.exp2, exp, false);
+
+      case LUNARY() then Operator.symbol(exp.operator) + " " +
+                         operandString(exp.exp, exp, false);
+
+      case RELATION() then operandString(exp.exp1, exp, true) +
+                           Operator.symbol(exp.operator) +
+                           operandString(exp.exp2, exp, false);
+
       case IF() then "if" + toString(exp.condition) + " then " + toString(exp.trueBranch) + " else " + toString(exp.falseBranch);
 
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
@@ -733,6 +747,56 @@ public
       else anyString(exp);
     end match;
   end toString;
+
+  function operandString
+    "Helper function to toString, prints an operator and adds parentheses as needed."
+    input Expression operand;
+    input Expression operator;
+    input Boolean lhs;
+    output String str;
+  protected
+    Integer operand_prio, operator_prio;
+  algorithm
+    str := toString(operand);
+
+    operand_prio := priority(operand, lhs);
+    if operand_prio <> 4 then
+      operator_prio := priority(operator, lhs);
+
+      if operand_prio > operator_prio or
+         not lhs and operand_prio == operator_prio and not isAssociativeExp(operand) then
+        str := "(" + str + ")";
+      end if;
+    end if;
+  end operandString;
+
+  function priority
+    input Expression exp;
+    input Boolean lhs;
+    output Integer priority;
+  algorithm
+    priority := match exp
+      case BINARY() then Operator.priority(exp.operator, lhs);
+      case UNARY() then 4;
+      case LBINARY() then Operator.priority(exp.operator, lhs);
+      case LUNARY() then 7;
+      case RELATION() then 6;
+      case RANGE() then 10;
+      case IF() then 11;
+      else 0;
+    end match;
+  end priority;
+
+  function isAssociativeExp
+    input Expression exp;
+    output Boolean isAssociative;
+  algorithm
+    isAssociative := match exp
+      case BINARY() then Operator.isAssociative(exp.operator);
+      case LBINARY() then true;
+      else false;
+    end match;
+  end isAssociativeExp;
 
   function toDAE
     input Expression exp;
@@ -1097,6 +1161,314 @@ public
       else subscript;
     end match;
   end mapSubscript;
+
+  function mapShallow
+    input output Expression exp;
+    input MapFunc func;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    () := match exp
+      local
+        Expression e1, e2, e3, e4;
+
+      case CREF()
+        algorithm
+          exp.cref := mapCrefShallow(exp.cref, func);
+        then
+          ();
+
+      case ARRAY()
+        algorithm
+          exp.elements := list(func(e) for e in exp.elements);
+        then
+          ();
+
+      case RANGE(step = SOME(e2))
+        algorithm
+          e1 := func(exp.start);
+          e4 := func(e2);
+          e3 := func(exp.stop);
+
+          if referenceEq(exp.start, e1) and referenceEq(e2, e4) and referenceEq(exp.stop, e3) then
+            exp := RANGE(exp.ty, e1, SOME(e4), e3);
+          end if;
+        then
+          ();
+
+      case RANGE()
+        algorithm
+          e1 := func(exp.start);
+          e3 := func(exp.stop);
+
+          if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3) then
+            exp := RANGE(exp.ty, e1, NONE(), e3);
+          end if;
+        then
+          ();
+
+      case TUPLE()
+        algorithm
+          exp.elements := list(func(e) for e in exp.elements);
+        then
+          ();
+
+      case RECORD()
+        algorithm
+          exp.elements := list(func(e) for e in exp.elements);
+        then
+          ();
+
+      case CALL()
+        algorithm
+          exp.call := mapCallShallow(exp.call, func);
+        then
+          ();
+
+      case SIZE(dimIndex = SOME(e2))
+        algorithm
+          e1 := func(exp.exp);
+          e3 := func(e2);
+
+          if referenceEq(exp.exp, e1) and referenceEq(e2, e3) then
+            exp := SIZE(e1, SOME(e3));
+          end if;
+        then
+          ();
+
+      case SIZE()
+        algorithm
+          e1 := func(exp.exp);
+
+          if referenceEq(exp.exp, e1) then
+            exp := SIZE(e1, NONE());
+          end if;
+        then
+          ();
+
+      case BINARY()
+        algorithm
+          e1 := func(exp.exp1);
+          e2 := func(exp.exp2);
+
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2) then
+            exp := BINARY(e1, exp.operator, e2);
+          end if;
+        then
+          ();
+
+      case UNARY()
+        algorithm
+          e1 := func(exp.exp);
+
+          if referenceEq(exp.exp, e1) then
+            exp := UNARY(exp.operator, e1);
+          end if;
+        then
+          ();
+
+      case LBINARY()
+        algorithm
+          e1 := func(exp.exp1);
+          e2 := func(exp.exp2);
+
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2) then
+            exp := LBINARY(e1, exp.operator, e2);
+          end if;
+        then
+          ();
+
+      case LUNARY()
+        algorithm
+          e1 := func(exp.exp);
+
+          if referenceEq(exp.exp, e1) then
+            exp := LUNARY(exp.operator, e1);
+          end if;
+        then
+          ();
+
+      case RELATION()
+        algorithm
+          e1 := func(exp.exp1);
+          e2 := func(exp.exp2);
+
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2) then
+            exp := RELATION(e1, exp.operator, e2);
+          end if;
+        then
+          ();
+
+      case IF()
+        algorithm
+          e1 := func(exp.condition);
+          e2 := func(exp.trueBranch);
+          e3 := func(exp.falseBranch);
+
+          if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
+             referenceEq(exp.falseBranch, e3) then
+            exp := IF(e1, e2, e3);
+          end if;
+        then
+          ();
+
+      case CAST()
+        algorithm
+          e1 := func(exp.exp);
+
+          if referenceEq(exp.exp, e1) then
+            exp := CAST(exp.ty, e1);
+          end if;
+        then
+          ();
+
+      case UNBOX()
+        algorithm
+          e1 := func(exp.exp);
+
+          if referenceEq(exp.exp, e1) then
+            exp := UNBOX(e1, exp.ty);
+          end if;
+        then
+          ();
+
+      case SUBSCRIPTED_EXP()
+        algorithm
+          exp.exp := func(exp.exp);
+          exp.subscripts := list(func(e) for e in exp.subscripts);
+        then
+          ();
+
+      case TUPLE_ELEMENT()
+        algorithm
+          e1 := func(exp.tupleExp);
+
+          if referenceEq(exp.tupleExp, e1) then
+            exp := TUPLE_ELEMENT(e1, exp.index, exp.ty);
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end mapShallow;
+
+  function mapCrefShallow
+    input ComponentRef cref;
+    input MapFunc func;
+    output ComponentRef outCref;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        list<Subscript> subs;
+        ComponentRef rest;
+
+      case ComponentRef.CREF()
+        algorithm
+          subs := list(mapSubscriptShallow(s, func) for s in cref.subscripts);
+          rest := mapCref(cref.restCref, func);
+        then
+          ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapCrefShallow;
+
+  function mapSubscriptShallow
+    input Subscript subscript;
+    input MapFunc func;
+    output Subscript outSubscript;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outSubscript := match subscript
+      case Subscript.UNTYPED() then Subscript.UNTYPED(func(subscript.exp));
+      case Subscript.INDEX() then Subscript.INDEX(func(subscript.index));
+      case Subscript.SLICE() then Subscript.SLICE(func(subscript.slice));
+      else subscript;
+    end match;
+  end mapSubscriptShallow;
+
+  function mapCallShallow
+    input Call call;
+    input MapFunc func;
+    output Call outCall;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outCall := match call
+      local
+        list<Expression> args;
+        list<Function.NamedArg> nargs;
+        list<Function.TypedArg> targs;
+        list<Function.TypedNamedArg> tnargs;
+        String s;
+        Expression e;
+        Type t;
+        Variability v;
+
+      case Call.UNTYPED_CALL()
+        algorithm
+          args := list(func(arg) for arg in call.arguments);
+          nargs := {};
+
+          for arg in call.named_args loop
+            (s, e) := arg;
+            e := func(e);
+            nargs := (s, e) :: nargs;
+          end for;
+        then
+          Call.UNTYPED_CALL(call.ref, call.matchingFuncs, args, listReverse(nargs));
+
+      case Call.ARG_TYPED_CALL()
+        algorithm
+          targs := {};
+          tnargs := {};
+
+          for arg in call.arguments loop
+            (e, t, v) := arg;
+            e := func(e);
+            targs := (e, t, v) :: targs;
+          end for;
+
+          for arg in call.named_args loop
+            (s, e, t, v) := arg;
+            e := func(e);
+            tnargs := (s, e, t, v) :: tnargs;
+          end for;
+        then
+          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
+
+      case Call.TYPED_CALL()
+        algorithm
+          args := list(func(arg) for arg in call.arguments);
+        then
+          Call.TYPED_CALL(call.fn, call.ty, args, call.attributes);
+
+      case Call.UNTYPED_MAP_CALL()
+        algorithm
+          e := func(call.exp);
+        then
+          Call.UNTYPED_MAP_CALL(call.ref, e, call.iters);
+
+      case Call.TYPED_MAP_CALL()
+        algorithm
+          e := func(call.exp);
+        then
+          Call.TYPED_MAP_CALL(call.fn, call.ty, e, call.iters);
+
+    end match;
+  end mapCallShallow;
 
   function fold<ArgT>
     input Expression exp;

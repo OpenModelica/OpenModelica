@@ -49,6 +49,7 @@ protected
   import NFClass.Class;
   import Sections = NFSections;
   import ClassTree = NFClassTree;
+  import NFTyping.ExpOrigin;
 
 public
   type Constants = ConstantsSetImpl.Tree;
@@ -153,7 +154,7 @@ public
       case Expression.CREF(cref = cref as ComponentRef.CREF())
         algorithm
           if ComponentRef.isPackageConstant(cref) then
-            Typing.typeComponentBinding(cref.node);
+            Typing.typeComponentBinding(cref.node, ExpOrigin.CLASS);
             // Add the constant to the set.
             constants := Constants.add(constants, ComponentRef.stripSubscriptsAll(cref));
             // Collect constants from the constant's binding.

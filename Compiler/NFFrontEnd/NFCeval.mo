@@ -42,6 +42,7 @@ import Typing = NFTyping;
 import NFCall.Call;
 import Dimension = NFDimension;
 import Type = NFType;
+import NFTyping.ExpOrigin;
 
 uniontype EvalTarget
   record DIMENSION
@@ -95,7 +96,7 @@ algorithm
 
     case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
       algorithm
-        Typing.typeComponentBinding(c);
+        Typing.typeComponentBinding(c, ExpOrigin.CLASS);
         binding := Component.getBinding(InstNode.component(c));
         exp1 := evalBinding(binding, exp, target);
       then

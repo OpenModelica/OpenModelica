@@ -417,5 +417,51 @@ public
     symbol(op);
   end toString;
 
+  function priority
+    input Operator op;
+    input Boolean lhs;
+    output Integer priority;
+  algorithm
+    priority := match op
+      case ADD() then if lhs then 5 else 6;
+      case SUB() then 5;
+      case MUL() then 2;
+      case DIV() then 2;
+      case POW() then 1;
+      case ADD_ARR() then if lhs then 5 else 6;
+      case SUB_ARR() then 5;
+      case MUL_ARR() then if lhs then 2 else 3;
+      case DIV_ARR() then 2;
+      case MUL_ARRAY_SCALAR() then if lhs then 2 else 3;
+      case ADD_ARRAY_SCALAR() then if lhs then 5 else 6;
+      case SUB_SCALAR_ARRAY() then 5;
+      case MUL_SCALAR_PRODUCT() then if lhs then 2 else 3;
+      case MUL_MATRIX_PRODUCT() then if lhs then 2 else 3;
+      case DIV_ARRAY_SCALAR() then 2;
+      case DIV_SCALAR_ARRAY() then 2;
+      case POW_ARRAY_SCALAR() then 1;
+      case POW_SCALAR_ARRAY() then 1;
+      case POW_ARR() then 1;
+      case POW_ARR2() then 1;
+      case AND() then 8;
+      case OR() then 9;
+      else 0;
+    end match;
+  end priority;
+
+  function isAssociative
+    input Operator op;
+    output Boolean isAssociative;
+  algorithm
+    isAssociative := match op
+      case ADD() then true;
+      case ADD_ARR() then true;
+      case ADD_ARRAY_SCALAR() then true;
+      case MUL_ARR() then true;
+      case MUL_ARRAY_SCALAR() then true;
+      else false;
+    end match;
+  end isAssociative;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

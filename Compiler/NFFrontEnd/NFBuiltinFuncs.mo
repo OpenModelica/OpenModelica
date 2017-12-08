@@ -60,7 +60,7 @@ constant SCode.Element DUMMY_ELEMENT = SCode.COMPONENT("dummy",
 
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.INTEGER(), Binding.UNBOUND(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
+  Type.INTEGER(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, Absyn.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   Visibility.PUBLIC,
@@ -68,7 +68,7 @@ constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
 
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.REAL(), Binding.UNBOUND(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
+  Type.REAL(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, Absyn.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   Visibility.PUBLIC,
@@ -76,7 +76,7 @@ constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
 
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.BOOLEAN(), Binding.UNBOUND(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
+  Type.BOOLEAN(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, Absyn.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   Visibility.PUBLIC,
@@ -84,7 +84,7 @@ constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
 
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.STRING(), Binding.UNBOUND(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
+  Type.STRING(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, Absyn.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   Visibility.PUBLIC,
@@ -92,7 +92,7 @@ constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), Binding.UNBOUND(), Binding.UNBOUND(), Component.Attributes.DEFAULT(), Absyn.dummyInfo);
+  Type.ENUMERATION_ANY(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, Absyn.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   Visibility.PUBLIC,

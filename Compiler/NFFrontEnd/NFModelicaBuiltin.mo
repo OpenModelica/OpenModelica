@@ -47,7 +47,7 @@ annotation(Documentation(info="<html>
 end der;
 
 impure function initial "True if in initialization phase"
-  output Boolean isInitial;
+  discrete output Boolean isInitial;
 external "builtin";
 annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
@@ -55,7 +55,7 @@ annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 end initial;
 
 impure function terminal "True after successful analysis"
-  output Boolean isTerminal;
+  discrete output Boolean isTerminal;
 external "builtin";
 annotation(__OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
@@ -440,7 +440,7 @@ end diagonal;
 
 function cardinality "Number of connectors in connection"
   input Real c;
-  output Integer numOccurances;
+  parameter output Integer numOccurances;
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cardinality()'\">cardinality()</a>
@@ -476,8 +476,6 @@ function fill "Returns an array with all elements equal"
 end fill;
 
 function noEvent "Turn off event triggering"
-  input Real x;
-  output Real y;
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'noEvent()'\">noEvent()</a>
@@ -558,7 +556,7 @@ end activeState;
 
 function ndims<T> "Number of array dimensions"
   input T a;
-  constant output Integer d;
+  parameter output Integer d;
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ndims()'\">ndims()</a>

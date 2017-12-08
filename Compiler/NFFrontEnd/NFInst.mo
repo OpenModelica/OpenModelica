@@ -159,7 +159,7 @@ function instantiate
 algorithm
   node := partialInstClass(node);
   node := expandClass(node);
-  node := instClass(node, Modifier.NOMOD(), Component.Attributes.DEFAULT(), parent);
+  node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, parent);
 end instantiate;
 
 function expand
@@ -399,7 +399,7 @@ algorithm
           finalPrefix = SCode.Final.NOT_FINAL(),
           innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER(),
           replaceablePrefix = SCode.NOT_REPLACEABLE()))
-      then Class.Prefixes.DEFAULT();
+      then NFClass.DEFAULT_PREFIXES;
 
     case SCode.CLASS(prefixes = prefs)
       then Class.Prefixes.PREFIXES(
@@ -425,7 +425,7 @@ algorithm
            connectorType = SCode.ConnectorType.POTENTIAL(),
            variability = SCode.Variability.VAR(),
            direction = Absyn.Direction.BIDIR())
-      then Component.Attributes.DEFAULT();
+      then NFComponent.DEFAULT_ATTR;
 
     else
       algorithm
@@ -683,7 +683,7 @@ end makeExternalObjectType;
 function instClass
   input output InstNode node;
   input Modifier modifier;
-  input output Component.Attributes attributes = Component.Attributes.DEFAULT();
+  input output Component.Attributes attributes = NFComponent.DEFAULT_ATTR;
   input InstNode parent = InstNode.EMPTY_NODE();
 protected
   InstNode par, redecl_node, base_node;
@@ -1078,7 +1078,8 @@ function instComponent
 protected
   Component comp, inst_comp;
   SCode.Element def;
-  InstNode scp, cls, comp_node;
+  InstNode scp, cls_node, comp_node;
+  Class cls;
   Modifier mod, comp_mod;
   Binding binding, condition;
   DAE.Type ty;
@@ -1128,11 +1129,12 @@ algorithm
         InstNode.updateComponent(inst_comp, comp_node);
 
         // Instantiate the type of the component.
-        (cls, cls_attr) := instTypeSpec(def.typeSpec, comp_mod, attr, scope, comp_node, def.info);
+        (cls_node, cls_attr) := instTypeSpec(def.typeSpec, comp_mod, attr, scope, comp_node, def.info);
+        cls := InstNode.getClass(cls_node);
 
-        Modifier.checkEach(comp_mod, listEmpty(dims) and
-          not Class.hasDimensions(InstNode.getClass(cls)), InstNode.name(comp_node));
+        Modifier.checkEach(comp_mod, listEmpty(dims) and not Class.hasDimensions(cls), InstNode.name(comp_node));
 
+        cls_attr := updateComponentVariability(cls_attr, cls, cls_node);
         if not referenceEq(attr, cls_attr) then
           comp_node := InstNode.componentApply(comp_node, Component.setAttributes, cls_attr);
         end if;
@@ -1178,7 +1180,7 @@ algorithm
             direction = Absyn.Direction.BIDIR()),
           SCode.Prefixes.PREFIXES(
             innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER()))
-      then Component.Attributes.DEFAULT();
+      then NFComponent.DEFAULT_ATTR;
 
     else
       algorithm
@@ -1199,30 +1201,25 @@ function mergeComponentAttributes
   input Component.Attributes innerAttr;
   input InstNode node;
   output Component.Attributes attr;
+protected
+  ConnectorType cty;
+  Parallelism par;
+  Variability var;
+  Direction dir;
+  InnerOuter io;
 algorithm
-  attr := match (outerAttr, innerAttr)
-    local
-      ConnectorType cty;
-      Parallelism par;
-      Variability var;
-      Direction dir;
-      InnerOuter io;
-
-    case (Component.Attributes.DEFAULT(), _) then innerAttr;
-
-    case (Component.Attributes.ATTRIBUTES(cty, par, var, dir, _), Component.Attributes.DEFAULT())
-      then Component.Attributes.ATTRIBUTES(cty, par, var, dir, InnerOuter.NOT_INNER_OUTER);
-
-    case (Component.Attributes.ATTRIBUTES(), Component.Attributes.ATTRIBUTES())
-      algorithm
-        cty := Prefixes.mergeConnectorType(outerAttr.connectorType, innerAttr.connectorType, node);
-        par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
-        var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
-        dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
-      then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter);
-
-  end match;
+  if referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) then
+    attr := innerAttr;
+  elseif referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) then
+    attr := outerAttr;
+    attr.innerOuter := InnerOuter.NOT_INNER_OUTER;
+  else
+    cty := Prefixes.mergeConnectorType(outerAttr.connectorType, innerAttr.connectorType, node);
+    par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
+    var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
+    dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
+    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter);
+  end if;
 end mergeComponentAttributes;
 
 function mergeDerivedAttributes
@@ -1230,29 +1227,39 @@ function mergeDerivedAttributes
   input Component.Attributes innerAttr;
   input InstNode node;
   output Component.Attributes attr;
+protected
+  ConnectorType cty;
+  Parallelism par;
+  Variability var;
+  Direction dir;
+  InnerOuter io;
 algorithm
-  attr := match (outerAttr, innerAttr)
-    local
-      ConnectorType cty;
-      Parallelism par;
-      Variability var;
-      Direction dir;
-      InnerOuter io;
-
-    case (_, Component.Attributes.DEFAULT()) then outerAttr;
-    case (Component.Attributes.DEFAULT(), _) then innerAttr;
-
-    case (Component.Attributes.ATTRIBUTES(cty, par, var, dir, io),
-          Component.Attributes.ATTRIBUTES())
-      algorithm
-        cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
-        var := Prefixes.variabilityMin(var, innerAttr.variability);
-        dir := Prefixes.mergeDirection(dir, innerAttr.direction, node);
-      then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io);
-
-  end match;
+  if referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) then
+    attr := outerAttr;
+  elseif referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) then
+    attr := innerAttr;
+  else
+    Component.Attributes.ATTRIBUTES(cty, par, var, dir, io) := outerAttr;
+    cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
+    var := Prefixes.variabilityMin(var, innerAttr.variability);
+    dir := Prefixes.mergeDirection(dir, innerAttr.direction, node);
+    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io);
+  end if;
 end mergeDerivedAttributes;
+
+function updateComponentVariability
+  input output Component.Attributes attr;
+  input Class cls;
+  input InstNode clsNode;
+algorithm
+  if referenceEq(attr, NFComponent.DEFAULT_ATTR) and
+     Type.isDiscrete(Class.getType(cls, clsNode)) then
+    attr := NFComponent.DISCRETE_ATTR;
+  elseif attr.variability == Variability.CONTINUOUS and
+     Type.isDiscrete(Class.getType(cls, clsNode)) then
+    attr.variability := Variability.DISCRETE;
+  end if;
+end updateComponentVariability;
 
 function instTypeSpec
   input Absyn.TypeSpec typeSpec;
@@ -1642,7 +1649,8 @@ algorithm
             else
               algorithm
                 prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-                prefixed_cref := ComponentRef.append(cref, prefixed_cref);
+                prefixed_cref := if ComponentRef.isEmpty(prefixed_cref) then
+                  cref else ComponentRef.append(cref, prefixed_cref);
               then
                 Expression.CREF(Type.UNKNOWN(), prefixed_cref);
 
@@ -1690,13 +1698,19 @@ function instCrefSubscripts
   input SourceInfo info;
 algorithm
   () := match cref
+    local
+      ComponentRef rest_cr;
+
     case ComponentRef.CREF()
       algorithm
         if not listEmpty(cref.subscripts) then
           cref.subscripts := list(instSubscript(s, scope, info) for s in cref.subscripts);
         end if;
 
-        cref.restCref := instCrefSubscripts(cref.restCref, scope, info);
+        rest_cr := instCrefSubscripts(cref.restCref, scope, info);
+        if not referenceEq(rest_cr, cref.restCref) then
+          cref.restCref := rest_cr;
+        end if;
       then
         ();
 
@@ -2197,7 +2211,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, Component.Attributes.DEFAULT(), node, node);
+      instComponent(n, NFComponent.DEFAULT_ATTR, node, node);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.

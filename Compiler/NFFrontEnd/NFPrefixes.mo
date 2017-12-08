@@ -33,6 +33,7 @@ encapsulated package NFPrefixes
 
 import DAE;
 import NFInstNode.InstNode;
+import Type = NFType;
 
 type ConnectorType = enumeration(
   POTENTIAL,
@@ -183,12 +184,17 @@ end variabilityFromSCode;
 
 function variabilityToDAE
   input Variability var;
+  input Type ty;
   output DAE.VarKind varKind;
 algorithm
   varKind := match var
     case Variability.CONSTANT then DAE.VarKind.CONST();
     case Variability.PARAMETER then DAE.VarKind.PARAM();
-    case Variability.DISCRETE then DAE.VarKind.DISCRETE();
+    // Hide discrete for implictly discrete types like Integer. This is done
+    // to mimic the old instantiation which doesn't treat such variables as
+    // discrete, and might not be strictly neccessary (but makes it easier to
+    // compare flat models against the old instantiation).
+    case Variability.DISCRETE then if Type.isDiscrete(ty) then DAE.VarKind.VARIABLE() else DAE.VarKind.DISCRETE();
     case Variability.CONTINUOUS then DAE.VarKind.VARIABLE();
   end match;
 end variabilityToDAE;
@@ -207,12 +213,13 @@ end variabilityString;
 
 function unparseVariability
   input Variability var;
+  input Type ty;
   output String str;
 algorithm
   str := match var
     case Variability.CONSTANT then "constant ";
     case Variability.PARAMETER then "parameter ";
-    case Variability.DISCRETE then "discrete ";
+    case Variability.DISCRETE then if Type.isDiscrete(ty) then "" else "discrete ";
     else "";
   end match;
 end unparseVariability;

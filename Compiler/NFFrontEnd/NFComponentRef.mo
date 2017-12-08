@@ -158,7 +158,10 @@ public
     input ComponentRef cref;
     output String name;
   algorithm
-    name := InstNode.name(node(cref));
+    name := match cref
+      case CREF() then InstNode.name(cref.node);
+      else "";
+    end match;
   end firstName;
 
   function rest
@@ -538,7 +541,20 @@ public
     end match;
   end isPackageConstant;
 
+  function stripSubscripts
+    "Strips the subscripts from the last name in a cref, e.g. a[2].b[3] => a[2].b"
+    input ComponentRef cref;
+    output ComponentRef strippedCref;
+  algorithm
+    strippedCref := match cref
+      case CREF()
+        then CREF(cref.node, {}, cref.ty, cref.origin, cref.restCref);
+      else cref;
+    end match;
+  end stripSubscripts;
+
   function stripSubscriptsAll
+    "Strips all subscripts from a cref."
     input ComponentRef cref;
     output ComponentRef strippedCref;
   algorithm

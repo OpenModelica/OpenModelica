@@ -159,7 +159,7 @@ algorithm
       then
         DAE.VAR(
           dcref,
-          Prefixes.variabilityToDAE(attr.variability),
+          Prefixes.variabilityToDAE(attr.variability, ty),
           Prefixes.directionToDAE(dir),
           Prefixes.parallelismToDAE(attr.parallelism),
           Prefixes.visibilityToDAE(vis),
@@ -566,8 +566,8 @@ protected
 algorithm
   (conds, branches) := List.unzipReverse(ifBranches);
   dbranches := if isInitial then
-    listReverse(convertInitialEquations(b) for b in branches) else
-    listReverse(convertEquations(b) for b in branches);
+    list(convertInitialEquations(b) for b in branches) else
+    list(convertEquations(b) for b in branches);
 
   // Transform the last branch to an else-branch if its condition is true.
   if Expression.isTrue(listHead(conds)) then

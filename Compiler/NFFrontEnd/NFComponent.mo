@@ -49,6 +49,14 @@ import List;
 import Prefixes = NFPrefixes;
 
 public
+constant Component.Attributes DEFAULT_ATTR =
+  Component.Attributes.ATTRIBUTES(
+    ConnectorType.POTENTIAL,
+    Parallelism.NON_PARALLEL,
+    Variability.CONTINUOUS,
+    Direction.NONE,
+    InnerOuter.NOT_INNER_OUTER
+  );
 constant Component.Attributes INPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
     ConnectorType.POTENTIAL,
@@ -76,6 +84,15 @@ constant Component.Attributes CONSTANT_ATTR =
     InnerOuter.NOT_INNER_OUTER
   );
 
+constant Component.Attributes DISCRETE_ATTR =
+  Component.Attributes.ATTRIBUTES(
+    ConnectorType.POTENTIAL,
+    Parallelism.NON_PARALLEL,
+    Variability.DISCRETE,
+    Direction.NONE,
+    InnerOuter.NOT_INNER_OUTER
+  );
+
 uniontype Component
   uniontype Attributes
     record ATTRIBUTES
@@ -86,18 +103,6 @@ uniontype Component
       Direction direction;
       InnerOuter innerOuter;
     end ATTRIBUTES;
-
-    record DEFAULT end DEFAULT;
-
-    function isDefault
-      input Attributes attr;
-      output Boolean isDefault;
-    algorithm
-      isDefault := match attr
-        case DEFAULT() then true;
-        else false;
-      end match;
-    end isDefault;
   end Attributes;
 
   record COMPONENT_DEF
@@ -403,28 +408,6 @@ uniontype Component
   end isOutput;
 
   function variability
-    "Returns a component's variability, using the component's type to infer the
-     variability if no variability has been given explicitly."
-    input Component component;
-    output Variability variability;
-  algorithm
-    variability := match component
-      // adrpo: select discrete if the type is discrete and explicit component variability > discrete
-      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability))
-        then
-          if Type.isDiscrete(component.ty) and variability > Variability.DISCRETE
-          then Variability.DISCRETE
-          else variability;
-      case TYPED_COMPONENT() guard Type.isDiscrete(component.ty) then Variability.DISCRETE;
-      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case ITERATOR() then Variability.CONSTANT;
-      case ENUM_LITERAL() then Variability.CONSTANT;
-      else Variability.CONTINUOUS;
-    end match;
-  end variability;
-
-  function variabilityExplicit
-    "Returns a component's explicitly given variability, or CONTINUOUS."
     input Component component;
     output Variability variability;
   algorithm
@@ -435,7 +418,7 @@ uniontype Component
       case ENUM_LITERAL() then Variability.CONSTANT;
       else Variability.CONTINUOUS;
     end match;
-  end variabilityExplicit;
+  end variability;
 
   function isConst
     input Component component;

@@ -50,7 +50,6 @@ import NFInstNode.InstNodeType;
 import Lookup = NFLookup;
 import Typing = NFTyping;
 import TypeCheck = NFTypeCheck;
-import ExpOrigin = NFTyping.ExpOrigin;
 import Types;
 import List;
 import NFClass.Class;
@@ -58,8 +57,7 @@ import ErrorExt;
 import Util;
 import Prefixes = NFPrefixes;
 import MetaModelica.Dangerous.listReverseInPlace;
-
-protected
+import NFTyping.ExpOrigin;
 import NFFunction.NamedArg;
 import NFFunction.TypedArg;
 import NFFunction.TypedNamedArg;
@@ -169,8 +167,11 @@ uniontype Call
     (fn_ref, _, specialBuiltin) := Function.instFunc(functionName,scope,info);
     (args, named_args) := instArgs(functionArgs, scope, info);
 
-    if specialBuiltin and Absyn.crefFirstIdent(functionName) == "size" then
-      callExp := makeSizeCall(args, named_args, info);
+    if specialBuiltin then
+      callExp := match Absyn.crefFirstIdent(functionName)
+        case "size" then makeSizeCall(args, named_args, info);
+        else Expression.CALL(UNTYPED_CALL(fn_ref, {}, args, named_args));
+      end match;
     else
       callExp := Expression.CALL(UNTYPED_CALL(fn_ref, {}, args, named_args));
     end if;
@@ -318,6 +319,7 @@ uniontype Call
 
   function typeSpecialBuiltinFunction
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -331,24 +333,27 @@ uniontype Call
     UNTYPED_CALL(ref = cref) := call;
 
     (call, ty, variability) := match ComponentRef.firstName(cref)
-      case "change" then typeChangeCall(call, info);
-      case "fill" then typeFillCall(call, info);
-      case "matrix" then typeMatrixCall(call, info);
-      case "max" then typeMinMaxCall(call, info);
-      case "min" then typeMinMaxCall(call, info);
-      case "ndims" then typeNdimsCall(call, info);
-      case "ones" then typeZerosOnesCall(call, info);
-      case "pre" then typePreCall(call, info);
-      case "product" then typeSumProductCall(call, info);
-      case "reinit" then typeReinitCall(call, info);
-      case "sample" then typeSampleCall(call, info); // remove me. nothing special here.
-      case "scalar" then typeScalarCall(call, info);
-      case "smooth" then typeSmoothCall(call, info);
-      case "sum" then typeSumProductCall(call, info);
-      case "symmetric" then typeSymmetricCall(call, info);
-      case "transpose" then typeTransposeCall(call, info);
-      case "vector" then typeVectorCall(call, info);
-      case "zeros" then typeZerosOnesCall(call, info);
+      case "cardinality" then typeCardinalityCall(call, origin, info);
+      case "change" then typeChangeCall(call, origin, info);
+      case "edge" then typeEdgeCall(call, origin, info);
+      case "fill" then typeFillCall(call, origin, info);
+      case "initial" then typeDiscreteCall(call, origin, info);
+      case "matrix" then typeMatrixCall(call, origin, info);
+      case "max" then typeMinMaxCall(call, origin, info);
+      case "min" then typeMinMaxCall(call, origin, info);
+      case "ndims" then typeNdimsCall(call, origin, info);
+      case "noEvent" then typeNoEventCall(call, origin, info);
+      case "ones" then typeZerosOnesCall(call, origin, info);
+      case "pre" then typePreCall(call, origin, info);
+      case "product" then typeSumProductCall(call, origin, info);
+      case "scalar" then typeScalarCall(call, origin, info);
+      case "smooth" then typeSmoothCall(call, origin, info);
+      case "sum" then typeSumProductCall(call, origin, info);
+      case "symmetric" then typeSymmetricCall(call, origin, info);
+      case "terminal" then typeDiscreteCall(call, origin, info);
+      case "transpose" then typeTransposeCall(call, origin, info);
+      case "vector" then typeVectorCall(call, origin, info);
+      case "zeros" then typeZerosOnesCall(call, origin, info);
       else
         algorithm
           assert(false, getInstanceName() + " got unhandled builtin function");
@@ -360,6 +365,7 @@ uniontype Call
   public
   function typeCall
     input output Expression callExp;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -369,17 +375,17 @@ uniontype Call
     () := match callExp
       case Expression.CALL(UNTYPED_CALL()) algorithm
         if(builtinSpecialHandling(callExp.call)) then
-          (call, ty, variability) := typeSpecialBuiltinFunction(callExp.call, info);
+          (call, ty, variability) := typeSpecialBuiltinFunction(callExp.call, origin, info);
         else
-          (call, ty, variability) := typeMatchNormalCall(callExp.call, info);
+          (call, ty, variability) := typeMatchNormalCall(callExp.call, origin, info);
         end if;
       then ();
 
       case Expression.CALL(UNTYPED_MAP_CALL()) algorithm
         if(builtinSpecialHandling(callExp.call)) then
-          (call, ty, variability) := typeSpecialBuiltinFunction(callExp.call, info);
+          (call, ty, variability) := typeSpecialBuiltinFunction(callExp.call, origin, info);
         else
-          (call, ty, variability) := typeMapIteratorCall(callExp.call, info);
+          (call, ty, variability) := typeMapIteratorCall(callExp.call, origin, info);
         end if;
       then ();
     end match;
@@ -389,6 +395,7 @@ uniontype Call
 
   function typeMapIteratorCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -409,9 +416,9 @@ uniontype Call
         fn := listHead(fnl);
 
         for iter in call.iters loop
-          Typing.typeIterator(iter, info, false);
+          Typing.typeIterator(iter, info, ExpOrigin.FUNCTION, structural = false);
         end for;
-        (arg, arg_ty, arg_var) := Typing.typeExp(call.exp,info);
+        (arg, arg_ty, arg_var) := Typing.typeExp(call.exp, origin, info);
 
         ty := arg_ty;
         variability := Variability.CONSTANT;
@@ -432,49 +439,27 @@ uniontype Call
 
   function typeMatchNormalCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
   protected
     Call argtycall;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
-    variability := match call
-      case TYPED_CALL()
-        then getBuiltinVariability(
-               variability,
-               Absyn.pathLastIdent(Function.nameConsiderBuiltin(call.fn)));
-      else variability;
-    end match;
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
   end typeMatchNormalCall;
-
-  function getBuiltinVariability
-  "@author: adrpo
-   some builtin function have specific variability,
-   handle that here, TODO FIXME: see if we need more"
-    input output Variability variability;
-    input String name;
-  algorithm
-    variability := match name
-      case "pre" then Variability.DISCRETE;
-      case "edge" then Variability.DISCRETE;
-      case "change" then Variability.DISCRETE;
-      case "String" then Variability.DISCRETE;
-      case "Integer" then Variability.DISCRETE;
-      else variability;
-    end match;
-  end getBuiltinVariability;
 
   function typeNormalCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
   algorithm
     call := match call
       case UNTYPED_CALL() algorithm
         typeCachedFunctions(call.ref);
       then
-        typeArgs(call, info);
+        typeArgs(call, origin, info);
 
       else algorithm
         assert(false, getInstanceName() + " got invalid function call expression");
@@ -560,9 +545,9 @@ uniontype Call
 
   function typeArgs
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
   algorithm
-
     call := match call
       local
         Expression arg;
@@ -572,25 +557,26 @@ uniontype Call
         list<TypedNamedArg> typedNamedArgs;
         String name;
 
-      case UNTYPED_CALL() algorithm
-        typedArgs := {};
-        for arg in call.arguments loop
-          (arg, arg_ty, arg_var) := Typing.typeExp(arg, info);
-          typedArgs := (arg, arg_ty, arg_var)::typedArgs;
-        end for;
+      case UNTYPED_CALL()
+        algorithm
+          typedArgs := {};
+          for arg in call.arguments loop
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+            typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
+          end for;
 
-        typedArgs := listReverse(typedArgs);
+          typedArgs := listReverse(typedArgs);
 
-        typedNamedArgs := {};
-        for narg in call.named_args loop
-          (name,arg) := narg;
-          (arg, arg_ty, arg_var) := Typing.typeExp(arg, info);
-          typedNamedArgs := (name, arg, arg_ty, arg_var)::typedNamedArgs;
-        end for;
-        listReverse(typedNamedArgs);
+          typedNamedArgs := {};
+          for narg in call.named_args loop
+            (name,arg) := narg;
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+            typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
+          end for;
 
-      then
-        ARG_TYPED_CALL(call.ref, typedArgs, typedNamedArgs);
+          typedNamedArgs := listReverse(typedNamedArgs);
+        then
+          ARG_TYPED_CALL(call.ref, typedArgs, typedNamedArgs);
     end match;
   end typeArgs;
 
@@ -915,11 +901,31 @@ protected
         DAE.NO_INLINE(), DAE.NO_TAIL()));
   end makeBuiltinCall2;
 
-    function typeNdimsCall
+  function typeDiscreteCall
+    "Types a function call that can be typed normally, but which always has
+     discrete variability regardless of the variability of the arguments."
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
-          output Variability variability;
+          output Variability variability = Variability.DISCRETE;
+  protected
+    Call argtycall;
+    Function fn;
+    list<TypedArg> args;
+    TypedArg start,interval;
+  algorithm
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty) := matchTypedNormalCall(argtycall, info);
+    call := unboxArgs(call);
+  end typeDiscreteCall;
+
+  function typeNdimsCall
+    input output Call call;
+    input Integer origin;
+    input SourceInfo info;
+          output Type ty;
+          output Variability variability = Variability.PARAMETER;
   protected
     Call argtycall;
     Expression arg;
@@ -927,31 +933,17 @@ protected
     list<Dimension> dims;
     Dimension dim1,dim2;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
-    variability := Variability.PARAMETER;
   end typeNdimsCall;
-
-  function typeSampleCall
-    input output Call call;
-    input SourceInfo info;
-          output Type ty;
-          output Variability variability;
-  protected
-    Call argtycall;
-    Function fn;
-    TypedArg start,interval;
-  algorithm
-    argtycall as ARG_TYPED_CALL(_, {start, interval}, _) := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
-  end typeSampleCall;
 
   function typePreCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
-          output Variability variability;
+          output Variability variability = Variability.DISCRETE;
   protected
     Call argtycall;
     Function fn;
@@ -960,28 +952,29 @@ protected
     InstNode fn_node;
     CallAttributes ca;
   algorithm
-    argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, info);
-    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
+    // pre may not be used in a function context.
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"pre"}, info);
+    end if;
+
+    argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
+    (call, ty) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     {arg} := args;
     if not Expression.isCref(Util.tuple31(arg)) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
             {"First", "pre", "<REMOVE ME>"}, info);
-      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-        {toString(call), "<REMOVE ME>", ":\n  " + candidateFuncListString(Function.getCachedFuncs(fn_node),NONE())}, info);
       fail();
     end if;
-
-    call := unboxArgs(call);
-    variability := Variability.DISCRETE;
   end typePreCall;
 
   function typeChangeCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
-          output Variability variability;
+          output Variability variability = Variability.DISCRETE;
   protected
     Call argtycall;
     Function fn;
@@ -990,53 +983,57 @@ protected
     InstNode fn_node;
     CallAttributes ca;
   algorithm
-    argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, info);
-    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
+    // change may not be used in a function context.
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"change"}, info);
+    end if;
+
+    argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
+    (call, ty) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     {arg} := args;
     if not Expression.isCref(Util.tuple31(arg)) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
             {"First", "change", "<REMOVE ME>"}, info);
-      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-        {toString(call), "<REMOVE ME>", ":\n  " + candidateFuncListString(Function.getCachedFuncs(fn_node),NONE())}, info);
       fail();
     end if;
-
-    variability := Variability.DISCRETE;
   end typeChangeCall;
 
-  function typeReinitCall
+  function typeEdgeCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
-          output Variability variability;
+          output Variability variability = Variability.DISCRETE;
   protected
     Call argtycall;
     Function fn;
     list<TypedArg> args;
-    TypedArg arg1, arg2;
+    TypedArg arg;
     InstNode fn_node;
     CallAttributes ca;
   algorithm
-    argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, info);
-    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
-    call := unboxArgs(call);
-
-    {arg1,arg2} := args;
-    if not Expression.isCref(Util.tuple31(arg1)) then
-      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
-            {"First", "reinit", "<REMOVE ME>"}, info);
-      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
-        {toString(call), "<REMOVE ME>", ":\n  " + candidateFuncListString(Function.getCachedFuncs(fn_node),NONE())}, info);
-      fail();
-      fail();
+    // edge may not be used in a function context.
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"edge"}, info);
     end if;
 
-  end typeReinitCall;
+    argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
+    (call, ty) := matchTypedNormalCall(argtycall, info);
+    call := unboxArgs(call);
+
+    {arg} := args;
+    if not Expression.isCref(Util.tuple31(arg)) then
+      Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
+            {"First", "edge", "<REMOVE ME>"}, info);
+      fail();
+    end if;
+  end typeEdgeCall;
 
   function typeMinMaxCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1046,8 +1043,8 @@ protected
     list<TypedArg> args;
     TypedArg start,interval;
   algorithm
-    argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
     // TODO: check basic type in two argument overload.
     // check arrays of simple types in one argument overload.
@@ -1056,6 +1053,7 @@ protected
 
   function typeSumProductCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1064,8 +1062,8 @@ protected
     Function fn;
     Expression arg;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     // TODO: check arrays of simple types.
@@ -1080,6 +1078,7 @@ protected
 
   function typeSmoothCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1089,8 +1088,8 @@ protected
     list<TypedArg> args;
     TypedArg start,interval;
   algorithm
-    argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
 
     // TODO: check if second argument is real or array of real or record of reals.
     call := unboxArgs(call);
@@ -1098,6 +1097,7 @@ protected
 
   function typeFillCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1125,8 +1125,8 @@ protected
     fill_arg :: args := args;
 
     // Type the first argument, which is the fill value.
-    (fill_arg, ty, _) := Typing.typeExp(fill_arg, info);
-    (call, ty, variability) := typeFillCall2(fn_ref, ty, {fill_arg}, args, info);
+    (fill_arg, ty, _) := Typing.typeExp(fill_arg, origin, info);
+    (call, ty, variability) := typeFillCall2(fn_ref, ty, {fill_arg}, args, origin, info);
   end typeFillCall;
 
   function typeFillCall2
@@ -1134,6 +1134,7 @@ protected
     input Type fillType;
     input list<Expression> fillArgs;
     input list<Expression> dimensionArgs;
+    input Integer origin;
     input SourceInfo info;
     output Call call;
     output Type ty;
@@ -1145,14 +1146,13 @@ protected
     Type arg_ty;
     Function fn;
     list<Dimension> dims;
-    CallAttributes attr;
   algorithm
     ty_args := fillArgs;
     dims := {};
 
     // Type the dimension arguments.
     for arg in dimensionArgs loop
-      (arg, arg_ty, arg_var) := Typing.typeExp(arg, info);
+      (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
       // Each dimension argument must be an Integer expression.
       if not Type.isInteger(arg_ty) then
@@ -1171,12 +1171,12 @@ protected
 
     {fn} := typeCachedFunctions(fnRef);
     ty := Type.ARRAY(fillType, dims);
-    attr := CALL_ATTR(ty, false, true, false, false, DAE.InlineType.NO_INLINE(), DAE.TailCall.NO_TAIL());
-    call := TYPED_CALL(fn, ty, ty_args, attr);
+    call := makeBuiltinCall2(fn, ty_args, ty);
   end typeFillCall2;
 
   function typeZerosOnesCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1203,11 +1203,12 @@ protected
          ":\n  " + name + "(Integer, ...) => Integer[:, ...]"}, info);
     end if;
 
-    (call, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), {}, args, info);
+    (call, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), {}, args, origin, info);
   end typeZerosOnesCall;
 
   function typeScalarCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1218,8 +1219,8 @@ protected
     list<Dimension> dims;
     Dimension dim1,dim2;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     // check extra dimensions (>0) are 1.
@@ -1246,6 +1247,7 @@ protected
 
   function typeVectorCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1256,8 +1258,8 @@ protected
     list<Dimension> dims;
     Integer size;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     ty := match call
@@ -1288,6 +1290,7 @@ protected
 
   function typeMatrixCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1298,8 +1301,8 @@ protected
     list<Dimension> dims;
     Dimension dim1,dim2;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     // check extra dimensions (>2) are 1.
@@ -1336,6 +1339,7 @@ protected
 
   function typeSymmetricCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1343,8 +1347,8 @@ protected
     Call argtycall;
     Expression arg;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     ty := match call
@@ -1359,6 +1363,7 @@ protected
 
   function typeTransposeCall
     input output Call call;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1369,8 +1374,8 @@ protected
     list<Dimension> dims;
     Dimension dim1,dim2;
   algorithm
-    argtycall := typeNormalCall(call, info);
-    (call , ty, variability) := matchTypedNormalCall(argtycall, info);
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
     call := unboxArgs(call);
 
     ty := match call
@@ -1393,6 +1398,60 @@ protected
 
     call := setType(call,ty);
   end typeTransposeCall;
+
+  function typeCardinalityCall
+    input output Call call;
+    input Integer origin;
+    input SourceInfo info;
+          output Type ty;
+          output Variability variability = Variability.PARAMETER;
+  protected
+    Call argtycall;
+    Expression arg;
+    Type argty;
+    list<Dimension> dims;
+    Dimension dim1,dim2;
+  algorithm
+    argtycall := typeNormalCall(call, origin, info);
+    (call, ty, _) := matchTypedNormalCall(argtycall, info);
+    call := unboxArgs(call);
+    // TODO: Check cardinality restrictions, 3.7.2.3.
+  end typeCardinalityCall;
+
+  function typeNoEventCall
+    input output Call call;
+    input Integer origin;
+    input SourceInfo info;
+          output Type ty;
+          output Variability variability;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    // noEvent doesn't have any named parameters.
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    // noEvent takes exactly one argument.
+    if listLength(args) <> 1 then
+      Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND,
+        {"noEvent" + List.toString(args, Expression.toString, "", "(", ", ", ")", true), "<REMOVE ME>",
+         ":\n  noEvent(Expression) => Expression"}, info);
+    end if;
+
+    {arg} := args;
+    (arg, ty, variability) := Typing.typeExp(arg, intBitOr(origin, ExpOrigin.NOEVENT), info);
+
+    {fn} := typeCachedFunctions(fn_ref);
+    call := makeBuiltinCall2(fn, {arg}, ty);
+  end typeNoEventCall;
 
   function unboxArgs
     input output Call call;

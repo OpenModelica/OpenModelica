@@ -759,6 +759,10 @@ public constant Message MULTIPLE_SECTIONS_IN_FUNCTION = MESSAGE(315, TRANSLATION
   Util.gettext("Function %s has more than one algorithm section or external declaration."));
 public constant Message INVALID_EXTERNAL_LANGUAGE = MESSAGE(316, TRANSLATION(), ERROR(),
   Util.gettext("'%s' is not a valid language for an external function."));
+public constant Message SUBSCRIPT_TYPE_MISMATCH = MESSAGE(317, TRANSLATION(), ERROR(),
+  Util.gettext("Subscript '%s' has type %s, expected type %s."));
+public constant Message EXP_INVALID_IN_FUNCTION = MESSAGE(318, TRANSLATION(), ERROR(),
+  Util.gettext("%s is not allowed in a function."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

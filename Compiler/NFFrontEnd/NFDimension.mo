@@ -225,5 +225,27 @@ public
     end match;
   end toString;
 
+  function sizeExp
+    "Returns the size of a dimension as an expression."
+    input Dimension dim;
+    input ComponentRef cref;
+    input Integer index;
+    output Expression sizeExp;
+  algorithm
+    sizeExp := match dim
+      local
+        Type ty;
+
+      case INTEGER() then Expression.INTEGER(dim.size);
+      case BOOLEAN() then Expression.BOOLEAN(true);
+      case ENUM(enumType = ty as Type.ENUMERATION())
+        then Expression.makeEnumLiteral(ty, listLength(ty.literals));
+      case EXP() then dim.exp;
+      case UNKNOWN()
+        then Expression.SIZE(Expression.CREF(Type.INTEGER(), ComponentRef.stripSubscripts(cref)),
+                             SOME(Expression.INTEGER(index)));
+    end match;
+  end sizeExp;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;

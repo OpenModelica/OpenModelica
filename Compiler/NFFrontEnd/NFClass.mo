@@ -47,6 +47,15 @@ protected
 import Binding = NFBinding;
 
 public
+
+constant Class.Prefixes DEFAULT_PREFIXES = Class.Prefixes.PREFIXES(
+  SCode.Encapsulated.NOT_ENCAPSULATED(),
+  SCode.Partial.NOT_PARTIAL(),
+  SCode.Final.NOT_FINAL(),
+  Absyn.InnerOuter.NOT_INNER_OUTER(),
+  SCode.Replaceable.NOT_REPLACEABLE()
+);
+
 uniontype Class
   uniontype Prefixes
     record PREFIXES
@@ -56,8 +65,6 @@ uniontype Class
       Absyn.InnerOuter innerOuter;
       SCode.Replaceable replaceablePrefix;
     end PREFIXES;
-
-    record DEFAULT end DEFAULT;
 
     function isEqual
       input Prefixes prefs1;
@@ -140,7 +147,7 @@ uniontype Class
   algorithm
     cls := match cls
       case PARTIAL_CLASS()
-        then EXPANDED_CLASS(cls.elements, cls.modifier, Prefixes.DEFAULT(),
+        then EXPANDED_CLASS(cls.elements, cls.modifier, DEFAULT_PREFIXES,
           Restriction.UNKNOWN());
     end match;
   end initExpandedClass;
@@ -330,7 +337,7 @@ uniontype Class
   algorithm
     attr := match cls
       case DERIVED_CLASS() then cls.attributes;
-      else Component.Attributes.DEFAULT();
+      else NFComponent.DEFAULT_ATTR;
     end match;
   end getAttributes;
 

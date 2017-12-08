@@ -62,6 +62,7 @@ import Record = NFRecord;
 import NFTyping.ClassScope;
 import MatchKind = NFTypeCheck.MatchKind;
 import Restriction = NFRestriction;
+import NFTyping.ExpOrigin;
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -385,6 +386,7 @@ uniontype Function
     list<InstNode> inputs = fn.inputs;
     Component c;
     Expression def_exp;
+    Type ty;
   algorithm
     for s in fn.slots loop
       input_str := "";
@@ -410,8 +412,9 @@ uniontype Function
 
       // Add the type if the parameter has been typed.
       if printTypes and Component.isTyped(c) then
-        var_s := Prefixes.unparseVariability(Component.variabilityExplicit(c));
-        input_str := var_s + Type.toString(Component.getType(c)) + " " + input_str;
+        ty := Component.getType(c);
+        var_s := Prefixes.unparseVariability(Component.variability(c), ty);
+        input_str := var_s + Type.toString(ty) + " " + input_str;
       end if;
 
       inputs_strl := input_str :: inputs_strl;
@@ -706,14 +709,14 @@ uniontype Function
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
-      Typing.typeComponents(node, ClassScope.FUNCTION);
+      Typing.typeComponents(node, ExpOrigin.FUNCTION);
 
       // Type the binding of the inputs only. This is done because they are
       // needed when type checking a function call. The outputs are not needed
       // for that and can contain recursive calls to the function, so we leave
       // them for later.
       for c in fn.inputs loop
-        Typing.typeComponentBinding(c);
+        Typing.typeComponentBinding(c, ExpOrigin.FUNCTION);
       end for;
 
       // Make the slots and return type for the function.
@@ -730,15 +733,15 @@ uniontype Function
   algorithm
     // Type the bindings of the outputs and local variables.
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c);
+      Typing.typeComponentBinding(c, ExpOrigin.FUNCTION);
     end for;
 
     for c in fn.locals loop
-      Typing.typeComponentBinding(c);
+      Typing.typeComponentBinding(c, ExpOrigin.FUNCTION);
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeSections(fn.node);
+    Typing.typeSections(fn.node, ExpOrigin.FUNCTION);
   end typeFunctionBody;
 
   function isBuiltin
@@ -771,50 +774,57 @@ uniontype Function
         special := false;
       else
         special := match Absyn.pathFirstIdent(path)
-          case "size" then true;
-          case "ndims" then true;
-          // Function should not be used in function context.
-          // argument should be a cref?
-          case "pre" then true;
+          case "cardinality" then true;
           // Function should not be used in function context.
           // argument should be a cref?
           case "change" then true;
-          // Function should only be used in a 'when' clause.
-          // Arguments should be real or arrays or real (matching).
-          // first argument should be a cref ?.
-          case "reinit" then true;
-          // Needs to check that arguments are basic types or enums
-          // We need to check array inputs as well
-          case "min" then true;
-          // Needs to check that arguments are basic types or enums
-          // We need to check array inputs as well
-          case "max" then true;
-          // needs unboxing and return type fix.
-          case "sum" then true;
-          // needs unboxing and return type fix.
-          case "product" then true;
-          // Needs to check that second argument is real or array of real or record of reals.
-          case "smooth" then true;
+          // Function should not be used in function context.
+          case "edge" then true;
           // can have variable number of arguments
           case "fill" then true;
-          // can have variable number of arguments
-          case "zeros" then true;
-          // can have variable number of arguments
-          case "ones" then true;
+          // Always discrete.
+          case "initial" then true;
           // Arguments can be scalar, vector, matrix, 3d array .... basically anything
           // We need to make sure size(Arg,i) = 1 for 2 < i <= ndims(Arg).
           // return type should always be Matrix.
           case "matrix" then true;
+          // Needs to check that arguments are basic types or enums
+          // We need to check array inputs as well
+          case "max" then true;
+          // Needs to check that arguments are basic types or enums
+          // We need to check array inputs as well
+          case "min" then true;
+          // Argument can have any number of dimensions.
+          case "ndims" then true;
+          // Can take any expression as argument.
+          case "noEvent" then true;
+          // can have variable number of arguments
+          case "ones" then true;
+          // Function should not be used in function context.
+          // argument should be a cref?
+          case "pre" then true;
+          // needs unboxing and return type fix.
+          case "product" then true;
           // We need to make sure size(Arg,i) = 1 for 0 <= i <= ndims(Arg).
           // return type should always be scalar.
           case "scalar" then true;
+          // First argument can have any number of dimensions.
+          case "size" then true;
+          // Needs to check that second argument is real or array of real or record of reals.
+          case "smooth" then true;
+          // needs unboxing and return type fix.
+          case "sum" then true;
+          // unbox args and set return type.
+          case "symmetric" then true;
+          // Always discrete.
+          case "terminal" then true;
+          // unbox args and set return type (swap the first two dims).
+          case "transpose" then true;
           // We need to construct output diminsion size from the size of elements in the array
           // return type should always be vector.
           case "vector" then true;
-          // unbox args and set return type.
-          case "symmetric" then true;
-          // unbox args and set return type (swap the first two dims).
-          case "transpose" then true;
+          // can have variable number of arguments
+          case "zeros" then true;
           else false;
         end match;
       end if;
@@ -913,18 +923,11 @@ protected
     InnerOuter io;
     Visibility vis;
   algorithm
-    _ := match Component.getAttributes(InstNode.component(component))
-      case Component.Attributes.DEFAULT()
-        algorithm
-          direction := Direction.NONE;
-          cty := ConnectorType.POTENTIAL;
-          io := InnerOuter.NOT_INNER_OUTER;
-        then ();
-      case Component.Attributes.ATTRIBUTES(
+    Component.Attributes.ATTRIBUTES(
       connectorType = cty,
       direction = direction,
-      innerOuter = io) then ();
-    end match;
+      innerOuter = io) := Component.getAttributes(InstNode.component(component));
+
     vis := InstNode.visibility(component);
 
     // Function components may not be connectors.
