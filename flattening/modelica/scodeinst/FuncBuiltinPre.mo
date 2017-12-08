@@ -18,6 +18,6 @@ end FuncBuiltinPre;
 //   discrete Real x;
 //   Real y = pre(x);
 //   Integer i;
-//   Real z = pre(i);
+//   Real z = /*Real*/(pre(i));
 // end FuncBuiltinPre;
 // endResult
