@@ -10,7 +10,7 @@ end SubscriptWrongType1;
 
 // Result:
 // Error processing file: SubscriptWrongType1.mo
-// [flattening/modelica/scodeinst/SubscriptWrongType1.mo:8:3-8:18:writable] Error: Expression '"1"' has type String, expected type Integer.
+// [flattening/modelica/scodeinst/SubscriptWrongType1.mo:8:3-8:18:writable] Error: Subscript '"1"' has type String, expected type Integer.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

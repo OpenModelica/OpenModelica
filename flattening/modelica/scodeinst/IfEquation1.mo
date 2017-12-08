@@ -19,9 +19,9 @@ end IfEquation1;
 //   Real x;
 // equation
 //   if time > 1.0 then
-//     x = 2.0;
-//   else
 //     x = 1.0;
+//   else
+//     x = 2.0;
 //   end if;
 // end IfEquation1;
 // endResult
