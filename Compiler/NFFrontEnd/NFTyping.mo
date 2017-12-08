@@ -125,7 +125,7 @@ package ExpOrigin
   // Combined flags:
   constant Integer EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
   constant Integer VALID_TYPENAME_SCOPE = intBitOr(ITERATION_RANGE, DIMENSION);
-  constant Integer DISCRETE_SCOPE = intBitOr(WHEN, INITIAL);
+  constant Integer DISCRETE_SCOPE = intBitOr(WHEN, intBitOr(INITIAL, FUNCTION));
 end ExpOrigin;
 
 public
@@ -1071,7 +1071,7 @@ algorithm
   end match;
 
   // Expressions inside when-clauses and initial sections are discrete.
-  if intBitAnd(origin, ExpOrigin.DISCRETE_SCOPE) > 1 and variability == Variability.CONTINUOUS then
+  if intBitAnd(origin, ExpOrigin.DISCRETE_SCOPE) > 0 and variability == Variability.CONTINUOUS then
     variability := Variability.DISCRETE;
   end if;
 end typeExp;
