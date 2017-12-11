@@ -504,22 +504,26 @@ uniontype Component
     input Component comp2;
     output Boolean identical = false;
   algorithm
-    identical := match (comp1, comp2)
-      case (UNTYPED_COMPONENT(), UNTYPED_COMPONENT())
-        algorithm
-          if not Class.isIdentical(InstNode.getClass(comp1.classInst),
-                                   InstNode.getClass(comp2.classInst)) then
-            return;
-          end if;
+    if referenceEq(comp1, comp2) then
+      identical := true;
+    else
+      identical := match (comp1, comp2)
+        case (UNTYPED_COMPONENT(), UNTYPED_COMPONENT())
+          algorithm
+            if not Class.isIdentical(InstNode.getClass(comp1.classInst),
+                                     InstNode.getClass(comp2.classInst)) then
+              return;
+            end if;
 
-          if not Binding.isEqual(comp1.binding, comp2.binding) then
-            return;
-          end if;
-        then
-          true;
+            if not Binding.isEqual(comp1.binding, comp2.binding) then
+              return;
+            end if;
+          then
+            true;
 
-      else true;
-    end match;
+        else true;
+      end match;
+    end if;
   end isIdentical;
 
   function toString

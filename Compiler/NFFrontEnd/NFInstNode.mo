@@ -981,17 +981,24 @@ uniontype InstNode
   function checkIdentical
     input InstNode node1;
     input InstNode node2;
+  protected
+    InstNode n1 = resolveOuter(node1);
+    InstNode n2 = resolveOuter(node2);
   algorithm
-    () := matchcontinue (node1, node2)
+    if referenceEq(n1, n2) then
+      return;
+    end if;
+
+    () := matchcontinue (n1, n2)
       case (CLASS_NODE(), CLASS_NODE())
-        guard Class.isIdentical(getClass(node1), getClass(node2)) then ();
+        guard Class.isIdentical(getClass(n1), getClass(n2)) then ();
       case (COMPONENT_NODE(), COMPONENT_NODE())
-        guard Component.isIdentical(component(node1), component(node2)) then ();
+        guard Component.isIdentical(component(n1), component(n2)) then ();
       else
         algorithm
           Error.addMultiSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL,
-            {toString(node1), toString(node2)},
-            {InstNode.info(node1), InstNode.info(node2)});
+            {toString(n1), toString(n2)},
+            {InstNode.info(n1), InstNode.info(n2)});
         then
           fail();
     end matchcontinue;

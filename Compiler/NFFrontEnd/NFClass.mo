@@ -292,21 +292,25 @@ uniontype Class
     input Class cls2;
     output Boolean identical = false;
   algorithm
-    identical := match (cls1, cls2)
-      case (EXPANDED_CLASS(), EXPANDED_CLASS())
-        then Prefixes.isEqual(cls1.prefixes, cls2.prefixes) and
-             ClassTree.isIdentical(cls1.elements, cls2.elements);
+    if referenceEq(cls1, cls2) then
+      identical := true;
+    else
+      identical := match (cls1, cls2)
+        case (EXPANDED_CLASS(), EXPANDED_CLASS())
+          then Prefixes.isEqual(cls1.prefixes, cls2.prefixes) and
+               ClassTree.isIdentical(cls1.elements, cls2.elements);
 
-      case (INSTANCED_BUILTIN(), INSTANCED_BUILTIN())
-        algorithm
-          if not Type.isEqual(cls1.ty, cls2.ty) then
-            return;
-          end if;
-        then
-          true;
+        case (INSTANCED_BUILTIN(), INSTANCED_BUILTIN())
+          algorithm
+            if not Type.isEqual(cls1.ty, cls2.ty) then
+              return;
+            end if;
+          then
+            true;
 
-      else true;
-    end match;
+        else true;
+      end match;
+    end if;
   end isIdentical;
 
   function getDimensions
