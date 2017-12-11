@@ -1251,11 +1251,13 @@ function updateComponentVariability
   input output Component.Attributes attr;
   input Class cls;
   input InstNode clsNode;
+protected
+  Variability var = attr.variability;
 algorithm
   if referenceEq(attr, NFComponent.DEFAULT_ATTR) and
      Type.isDiscrete(Class.getType(cls, clsNode)) then
     attr := NFComponent.DISCRETE_ATTR;
-  elseif attr.variability == Variability.CONTINUOUS and
+  elseif var == Variability.CONTINUOUS and
      Type.isDiscrete(Class.getType(cls, clsNode)) then
     attr.variability := Variability.DISCRETE;
   end if;
