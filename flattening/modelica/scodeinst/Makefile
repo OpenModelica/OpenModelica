@@ -314,6 +314,7 @@ InnerOuter6.mo \
 InnerOuter7.mo \
 InnerOuter8.mo \
 InnerOuterClass1.mo \
+InnerOuterDuplicate1.mo \
 InnerOuterInvalidMod1.mo \
 InnerOuterInvalidMod2.mo \
 InnerOuterInvalidMod3.mo \
