@@ -1300,6 +1300,10 @@ algorithm
         e = Expression.makeImpureBuiltinCall("delay",{e,e3,e4},tp);
       then DAE.UNARY(op,e);
 
+    // The sum of an empty array is simply the sum of its elements
+    case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.ARRAY(array={})}, attr=DAE.CALL_ATTR(ty=tp1))
+      then Expression.makeConstZero(tp1);
+
     // To calculate sums, first try matrix concatenation
     case DAE.CALL(path=Absyn.IDENT("sum"),expLst={DAE.MATRIX(ty=tp1,matrix=mexpl)},attr=DAE.CALL_ATTR(ty=tp2))
       equation

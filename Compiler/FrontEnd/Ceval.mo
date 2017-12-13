@@ -885,79 +885,63 @@ public function cevalIfConstant
    or if the expression is a call of parameter constness whose return type
    contains unknown dimensions (in which case we need to determine the size of
    those dimensions)."
-  input FCore.Cache inCache;
+  input output FCore.Cache cache;
   input FCore.Graph inEnv;
-  input DAE.Exp inExp;
-  input DAE.Properties inProp;
+  input output DAE.Exp exp;
+  input output DAE.Properties prop;
   input Boolean impl;
   input SourceInfo inInfo;
-  output FCore.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProp;
 algorithm
-  (outCache, outExp, outProp) :=
-  matchcontinue(inCache, inEnv, inExp, inProp, impl, inInfo)
+  if Expression.isEvaluatedConst(exp) then
+    // Don't mess up the dimensions, etc by using the Values module
+    return;
+  end if;
+  (cache, exp, prop) := matchcontinue prop
     local
-        DAE.Exp e;
-        Values.Value v;
-        FCore.Cache cache;
-        DAE.Properties prop;
+      Values.Value v;
       DAE.Type tp;
 
-    /* adrpo: this is not needed! we do dimension propagation on function call!
-    case (_, _, e as DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_ARRAY(dims = _))),
-        DAE.PROP(constFlag = DAE.C_PARAM()), _, _)
-      equation
-        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv, inInfo, 0);
-      then
-        (inCache, e, prop);*/
+    case DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp)
+      // BoschRexroth specifics
+      guard not Flags.getConfigBool(Flags.CEVAL_EQUATION)
+      then (cache, exp, DAE.PROP(tp, DAE.C_VAR()));
 
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _, _) // BoschRexroth specifics
-      equation
-        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
-      then
-        (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
+    case DAE.PROP(constFlag = DAE.C_CONST(), type_ = tp)
+      algorithm
+        (cache, v, _) := ceval(cache, inEnv, exp, impl, NONE(), Absyn.NO_MSG(), 0);
+        exp := ValuesUtil.valueExp(v);
+        exp := ValuesUtil.fixZeroSizeArray(exp, tp);
+      then (cache, exp, prop);
 
-    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _, _)
-      equation
-        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
-        e = ValuesUtil.valueExp(v);
-      then
-        (cache, e, inProp);
+    case DAE.PROP_TUPLE()
+      algorithm
+        DAE.C_CONST() := Types.propAllConst(prop);
+        (cache, v, _) := ceval(cache, inEnv, exp, false, NONE(), Absyn.NO_MSG(), 0);
+        exp := ValuesUtil.valueExp(v);
+      then (cache, exp, prop);
 
-    case (_, _, e, DAE.PROP_TUPLE(), _, _)
-      equation
-        DAE.C_CONST() = Types.propAllConst(inProp);
-        (cache, v, _) = ceval(inCache, inEnv, e, false, NONE(), Absyn.NO_MSG(), 0);
-        e = ValuesUtil.valueExp(v);
-      then
-        (cache, e, inProp);
-
-    case (_, _, _, DAE.PROP_TUPLE(), _, _) // BoschRexroth specifics
-      equation
-        false = Flags.getConfigBool(Flags.CEVAL_EQUATION);
-        DAE.C_PARAM() = Types.propAllConst(inProp);
+    case DAE.PROP_TUPLE()
+      // BoschRexroth specifics
+      guard not Flags.getConfigBool(Flags.CEVAL_EQUATION)
+      algorithm
+        DAE.C_PARAM() := Types.propAllConst(prop);
         print(" tuple non constant evaluation not implemented yet\n");
-      then
-        fail();
+      then fail();
 
-    case (_, _, e, _, _, _)
-      equation
-        true = Expression.isConst(e); // Structural parameters and the like... we can ceval them if we want to
-        false = Config.acceptMetaModelicaGrammar();
-        // false = Expression.isConstValue(e);
-        // print("Try ceval: " + ExpressionDump.printExpStr(e) + "; expect " + Types.unparseType(Types.getPropType(inProp)) + "\n");
-        (_, v, _) = ceval(inCache, inEnv, e, impl, NONE(), Absyn.NO_MSG(), 0);
-        // print("Ceval'ed constant: " + ExpressionDump.printExpStr(inExp) + " => " + ValuesUtil.valString(v) + "\n");
-        e = ValuesUtil.valueExp(v);
-        // print("Ceval'ed constant: " + ExpressionDump.printExpStr(inExp) + "\n");
-      then (inCache, e, inProp);
+    case _
+      // Structural parameters and the like... we can ceval them if we want to
+      guard Expression.isConst(exp) and not Config.acceptMetaModelicaGrammar()
+      algorithm
+        (_, v, _) := ceval(cache, inEnv, exp, impl, NONE(), Absyn.NO_MSG(), 0);
+        exp := ValuesUtil.valueExp(v);
+        exp := ValuesUtil.fixZeroSizeArray(exp, Types.getPropType(prop));
+      then (cache, exp, prop);
 
     else
-      equation
+      algorithm
         // If we fail to evaluate, at least we should simplify the expression
-        (e,_) = ExpressionSimplify.simplify1(inExp);
-      then (inCache, e, inProp);
+        (exp,_) := ExpressionSimplify.simplify1(exp);
+      then (cache, exp, prop);
 
   end matchcontinue;
 end cevalIfConstant;

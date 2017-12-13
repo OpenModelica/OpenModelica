@@ -8462,10 +8462,8 @@ algorithm
     // checkModel this should succeed anyway, since we might be checking a function
     // that takes a vector of unknown size. So pretend that the dimension is 1.
     case (e, (DAE.DIM_UNKNOWN() :: ad), prop)
-      algorithm
-        true := Flags.getConfigBool(Flags.CHECK_MODEL);
-      then
-        vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, inSlots, prop, info);
+      guard Flags.getConfigBool(Flags.CHECK_MODEL)
+      then vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, inSlots, prop, info);
 
     /* Scalar expression, i.e function call */
     case (e as DAE.CALL(),(dim :: ad),DAE.PROP(tp,c))
@@ -8474,8 +8472,7 @@ algorithm
         exp_type := Types.simplifyType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
         vect_exp := vectorizeCallScalar(e, exp_type, int_dim, inSlots);
         tp := Types.liftArray(tp, dim);
-      then
-        vectorizeCall(vect_exp, ad, inSlots, DAE.PROP(tp,c),info);
+      then vectorizeCall(vect_exp, ad, inSlots, DAE.PROP(tp,c),info);
 
     /* array expression of function calls */
     case (DAE.ARRAY(),(dim :: ad),DAE.PROP(tp,c))
@@ -8484,8 +8481,7 @@ algorithm
         // _ = Types.simplifyType(Types.liftArray(tp, dim));
         vect_exp := vectorizeCallArray(inExp, int_dim, inSlots);
         tp := Types.liftArrayRight(tp, dim);
-      then
-        vectorizeCall(vect_exp, ad, inSlots, DAE.PROP(tp,c),info);
+      then vectorizeCall(vect_exp, ad, inSlots, DAE.PROP(tp,c),info);
 
     /* Multiple dimensions are possible to change to a reduction, like:
      * f(arr1,arr2) => array(f(x,y) thread for x in arr1, y in arr2)

@@ -2346,5 +2346,16 @@ algorithm
   end match;
 end typeConvertRecord;
 
+public function fixZeroSizeArray "Work-around for Values.ARRAY({}) becoming T_UNKNOWN in ValuesUtil.valueExp"
+  input output DAE.Exp e;
+  input DAE.Type ty;
+algorithm
+  e := match e
+    case DAE.ARRAY(ty=DAE.T_ARRAY(ty=DAE.T_UNKNOWN()), scalar=false, array={})
+      then DAE.ARRAY(ty, not Types.isArray(Types.unliftArray(ty)), {});
+    else e;
+  end match;
+end fixZeroSizeArray;
+
 annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;
