@@ -1,0 +1,24 @@
+// Name:     linearStateAlias_cse
+// keywords: index reduction cse
+// status:   correct
+// 
+
+loadModel(Modelica,{"3.2.1"});
+loadFile("gearDrive.mo");
+
+simulate(gearDrive.drive);getErrorString();
+// Result:
+// true
+// true
+// record SimulationResult
+//     resultFile = "gearDrive.drive_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 1000, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'gearDrive.drive', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
+// endResult
