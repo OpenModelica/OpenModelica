@@ -362,6 +362,7 @@ public:
   static QString synchronize;
   static QString priority;
   static QString secs;
+  static QString saveContentsInOneFile;
 };
 
 class GUIMessages : public QObject

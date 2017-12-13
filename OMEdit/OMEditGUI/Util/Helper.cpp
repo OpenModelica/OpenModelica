@@ -360,6 +360,7 @@ QString Helper::immediate;
 QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
+QString Helper::saveContentsInOneFile;
 
 void Helper::initHelperVariables()
 {
@@ -613,6 +614,7 @@ void Helper::initHelperVariables()
   Helper::synchronize = tr("Synchronize");
   Helper::priority = tr("Priority:");
   Helper::secs = tr("secs");
+  Helper::saveContentsInOneFile = tr("Save contents in one file");
 }
 
 QString GUIMessages::getMessage(int type)

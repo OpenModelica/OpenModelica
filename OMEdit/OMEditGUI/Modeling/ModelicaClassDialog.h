@@ -165,6 +165,7 @@ private:
   Label *mpPathLabel;
   QLineEdit *mpPathTextBox;
   QPushButton *mpPathBrowseButton;
+  QCheckBox *mpSaveContentsInOneFileCheckBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

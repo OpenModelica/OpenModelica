@@ -203,7 +203,7 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   // create state checkbox
   mpStateCheckBox = new QCheckBox(tr("State"));
   // create save contents of package in one file checkbox
-  mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
+  mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
   mpSaveContentsInOneFileCheckBox->setChecked(true);
   mpSaveContentsInOneFileCheckBox->setVisible(false);
   // Create the buttons
@@ -599,7 +599,7 @@ SaveAsClassDialog::SaveAsClassDialog(ModelWidget *pModelWidget, QWidget *pParent
     mpParentClassComboBox->setCurrentIndex(currentIndex);
   connect(mpParentClassComboBox, SIGNAL(editTextChanged(QString)), SLOT(showHideSaveContentsInOneFileCheckBox(QString)));
   // create save contents of package in one file checkbox
-  mpSaveContentsInOneFileCheckBox = new QCheckBox(tr("Save contents in one file"));
+  mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
   mpSaveContentsInOneFileCheckBox->setChecked(true);
   if (pModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package && mpParentClassComboBox->currentText().isEmpty())
     mpSaveContentsInOneFileCheckBox->setVisible(true);
@@ -746,6 +746,18 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   mpPathBrowseButton = new QPushButton(Helper::browse);
   mpPathBrowseButton->setAutoDefault(false);
   connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
+  // save contents in one file
+  mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
+    mpSaveContentsInOneFileCheckBox->setVisible(true);
+    if (mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+      mpSaveContentsInOneFileCheckBox->setChecked(true);
+    } else {
+      mpSaveContentsInOneFileCheckBox->setChecked(false);
+    }
+  } else {
+    mpSaveContentsInOneFileCheckBox->setVisible(false);
+  }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -765,7 +777,8 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   pMainLayout->addWidget(mpPathLabel, 1, 0);
   pMainLayout->addWidget(mpPathTextBox, 1, 1);
   pMainLayout->addWidget(mpPathBrowseButton, 1, 2);
-  pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpSaveContentsInOneFileCheckBox, 2, 0, 1, 3, Qt::AlignLeft);
+  pMainLayout->addWidget(mpButtonBox, 3, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -830,7 +843,26 @@ void DuplicateClassDialog::duplicateClass()
     // create the new LibraryTreeItem
     LibraryTreeItem *pLibraryTreeItem;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);
-    pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
+    /* Ticket #4350, #4557 and #4594
+     * Set a proper filename for new class
+     */
+    if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+      pLibraryTreeItem->setFileName(pLibraryTreeItem->getNameStructure());
+      pLibraryTreeItem->mClassInformation.fileName = pLibraryTreeItem->getNameStructure();
+      MainWindow::instance()->getOMCProxy()->setSourceFile(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getNameStructure());
+    }
+    // set the save contents type
+    if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
+      if (pParentLibraryTreeItem != pLibraryTreeModel->getRootLibraryTreeItem() && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+      } else if (mpSaveContentsInOneFileCheckBox->isChecked()) {
+        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
+      } else {
+        pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+      }
+    } else {
+      pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());
+    }
     pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
     if (mSaveAs) {
