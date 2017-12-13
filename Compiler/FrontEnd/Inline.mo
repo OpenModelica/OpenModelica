@@ -1016,7 +1016,7 @@ algorithm
     local
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, cr1, cr2;
       DAE.ElementSource source;
       DAE.Exp exp, exp1, exp2;
       DAE.Statement stmt;
@@ -1053,6 +1053,31 @@ algorithm
         (repl,assertStmts) = mergeFunctionBody(stmts,iRepl,stmt::assertStmtsIn);
       then
         (repl,assertStmts);
+    // if a then x := b; else x := c; end if; => x := if a then b else c;
+    case (DAE.STMT_IF(exp = exp,
+           statementLst = {DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr1), exp = exp1)},
+           else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
+      guard ComponentReference.crefEqual(cr1, cr2)
+      equation
+        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+        (exp1,_) = VarTransform.replaceExp(exp1,iRepl,NONE());
+        (exp2,_) = VarTransform.replaceExp(exp2,iRepl,NONE());
+        repl = VarTransform.addReplacementNoTransitive(iRepl,cr1,DAE.IFEXP(exp,exp1,exp2));
+        (repl,assertStmts) = mergeFunctionBody(stmts,repl,assertStmtsIn);
+      then (repl,assertStmts);
+
+    case (DAE.STMT_IF(exp = exp,
+           statementLst = {DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr1), exp = exp1)},
+           else_=DAE.ELSE(statementLst={DAE.STMT_ASSIGN_ARR(lhs = DAE.CREF(componentRef = cr2), exp = exp2)}))::stmts,_,_)
+      guard ComponentReference.crefEqual(cr1, cr2)
+      equation
+        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+        (exp1,_) = VarTransform.replaceExp(exp1,iRepl,NONE());
+        (exp2,_) = VarTransform.replaceExp(exp2,iRepl,NONE());
+        repl = VarTransform.addReplacementNoTransitive(iRepl,cr1,DAE.IFEXP(exp,exp1,exp2));
+        (repl,assertStmts) = mergeFunctionBody(stmts,repl,assertStmtsIn);
+      then (repl,assertStmts);
+
   end match;
 end mergeFunctionBody;
 

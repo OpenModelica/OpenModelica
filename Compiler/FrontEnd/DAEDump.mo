@@ -1790,7 +1790,7 @@ public function ppStmtListStr "
   Helper function to pp_stmt_str
 "
   input list<DAE.Statement> inAlgorithmStatementLst;
-  input Integer inInteger;
+  input Integer inInteger=0;
   output String outString;
 algorithm
   outString:=
