@@ -2059,49 +2059,52 @@ protected
   list<Integer> partition, varIdcs, adjEqs, pathVarIdcs;
   list<CommonSubExp> cses;
 algorithm
-  // getall vars with only 2 adjacent equations
-  numVars := BackendVariable.varsSize(allVars);
-  (_, pathVarIdcs) := List.filter1OnTrueSync(List.map(arrayList(mTIn), listLength), intEq, 2, List.intRange(numVars));
-  pathVars := BackendVariable.listVar1(List.map1(pathVarIdcs, BackendVariable.getVarAtIndexFirst, allVars));
-  pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
-  cses := cseIn;
-  eqLst_all := BackendEquation.equationList(allEqs);
+  try
+    // getall vars with only 2 adjacent equations
+    numVars := BackendVariable.varsSize(allVars);
+    (_, pathVarIdcs) := List.filter1OnTrueSync(List.map(arrayList(mTIn), listLength), intEq, 2, List.intRange(numVars));
+    pathVars := BackendVariable.listVar1(List.map1(pathVarIdcs, BackendVariable.getVarAtIndexFirst, allVars));
+    pathVarIdxMap := listArray(List.map1(pathVarIdcs,Array.getIndexFirst,varMap));
+    cses := cseIn;
+    eqLst_all := BackendEquation.equationList(allEqs);
+    if BackendVariable.varsSize(pathVars) > 0 then
+      for partition in allPartitions loop
+        //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
+        //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
 
-  if BackendVariable.varsSize(pathVars) > 0 then
-    for partition in allPartitions loop
-      //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
-      //print("pathVarIdxMap "+stringDelimitList(List.map(List.map1(pathVarIdcs,Array.getIndexFirst,varMap), intString), ", ")+"\n");
+        //get only the partition equations
+        eqLst := List.map1(partition,List.getIndexFirst,eqLst_all);
+        eqs := BackendEquation.listEquation(eqLst);
 
-      //get only the partition equations
-      eqLst := List.map1(partition,List.getIndexFirst,eqLst_all);
-      eqs := BackendEquation.listEquation(eqLst);
+        eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
+        (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.SOLVABLE(), NONE());
 
-      eqSys := BackendDAEUtil.createEqSystem(pathVars, eqs);
-      (_, m, mT) := BackendDAEUtil.getIncidenceMatrix(eqSys, BackendDAE.SOLVABLE(), NONE());
+          //BackendDump.dumpIncidenceMatrix(m);
+          //BackendDump.dumpIncidenceMatrixT(mT);
+          //varAtts := List.threadMap(List.fill(false, arrayLength(mT)), List.fill("", arrayLength(mT)), Util.makeTuple);
+          //eqAtts := List.threadMap(List.fill(false, arrayLength(m)), List.fill("", arrayLength(m)), Util.makeTuple);
+          //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
 
-        //BackendDump.dumpIncidenceMatrix(m);
-        //BackendDump.dumpIncidenceMatrixT(mT);
-        //varAtts := List.threadMap(List.fill(false, arrayLength(mT)), List.fill("", arrayLength(mT)), Util.makeTuple);
-        //eqAtts := List.threadMap(List.fill(false, arrayLength(m)), List.fill("", arrayLength(m)), Util.makeTuple);
-        //BackendDump.dumpBipartiteGraphStrongComponent2(pathVars, eqs, m, varAtts, eqAtts, "shortenPaths"+stringDelimitList(List.map(partition,intString),"_"));
+       for idx in 1:arrayLength(mT) loop
+         adjEqs := arrayGet(mT,idx);
 
-     for idx in 1:arrayLength(mT) loop
-       adjEqs := arrayGet(mT,idx);
-
-       if listLength(adjEqs)==2 then
+         if listLength(adjEqs)==2 then
          //print("varIdx1 "+intString(varIdx)+"\n");
          //print("adjEqs "+stringDelimitList(List.map(adjEqs,intString),",")+"\n");
-         adjEqs := list(arrayGet(eqMap,listGet(partition,eq)) for eq in adjEqs);
-         varIdx := arrayGet(pathVarIdxMap,idx);
-         cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
-       end if;
-     end for; //end the variables
-     GC.free(m);
-     GC.free(mT);
-   end for;  //end all partitions
-    //print("the SHORTPATH cses : \n"+stringDelimitList(List.map(cses, printCSE), "\n")+"\n");
-  end if;
-  cseOut := cses;
+           adjEqs := list(arrayGet(eqMap,listGet(partition,eq)) for eq in adjEqs);
+           varIdx := arrayGet(pathVarIdxMap,idx);
+           cses := SHORTCUT_CSE(adjEqs,varIdx)::cses;
+         end if;
+       end for; //end the variables
+       GC.free(m);
+       GC.free(mT);
+     end for;  //end all partitions
+      //print("the SHORTPATH cses : \n"+stringDelimitList(List.map(cses, printCSE), "\n")+"\n");
+    end if;
+    cseOut := cses;
+  else
+    cseOut := cseIn;
+  end try;
 end shortenPaths;
 
 protected function getCSE2"traverses the partitions and checks for CSE2 i.e a=b+const. ; c = b+const. --> a=c
@@ -2177,50 +2180,57 @@ algorithm
     Integer sharedVarIdx, eqIdx1, eqIdx2, varIdx1, varIdx2;
     list<Integer> varIdcs1, varIdcs2, sharedVarIdcs, eqIdcs;
     list<Integer> loop1;
+    list<list<Integer>> loops;
     BackendDAE.Equation eq1, eq2;
     BackendDAE.Var var1, var2;
     DAE.Exp varExp1, varExp2, lhs, rhs1, rhs2;
     array<Integer> varMapArr, eqMapArr;
+    list<CommonSubExp> cseLst;
   case(_, _, _, _, _, _, _, _)
-    equation
-          //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
+    algorithm
+      //print("partition "+stringDelimitList(List.map(partition, intString), ", ")+"\n");
       // partition has only one loop
-      ({loop1}, _, _) = ResolveLoops.resolveLoops_findLoops({partition}, m, mT, findExactlyOneLoop=true);
+      (loops, _, _) := ResolveLoops.resolveLoops_findLoops({partition}, m, mT, findExactlyOneLoop=false);
+      cseLst := cseIn;
+      for loop1 in loops loop
           //print("loop1 "+stringDelimitList(List.map(loop1, intString), ", ")+"\n");
-      {eqIdx1, eqIdx2} = loop1;
-      varIdcs1 = arrayGet(m, eqIdx1);
-      varIdcs2 = arrayGet(m, eqIdx2);
-      (sharedVarIdcs, varIdcs1, varIdcs2) = List.intersection1OnTrue(varIdcs1, varIdcs2, intEq);
-        //print("sharedVarIdcs "+stringDelimitList(List.map(sharedVarIdcs, intString), ", ")+"\n");
-        //print("varIdcs1 "+stringDelimitList(List.map(varIdcs1, intString), ", ")+"\n");
-        //print("varIdcs2 "+stringDelimitList(List.map(varIdcs2, intString), ", ")+"\n");
-      {varIdx1} = varIdcs1;
-      {varIdx2} = varIdcs2;
-      {eq1, eq2} = BackendEquation.getList(loop1, eqs);
-      var1 = BackendVariable.getVarAt(vars, varIdx1);
-      var2 = BackendVariable.getVarAt(vars, varIdx2);
+          {eqIdx1, eqIdx2} := loop1;
+          varIdcs1 := arrayGet(m, eqIdx1);
+          varIdcs2 := arrayGet(m, eqIdx2);
+          (sharedVarIdcs, varIdcs1, varIdcs2) := List.intersection1OnTrue(varIdcs1, varIdcs2, intEq);
+            //print("sharedVarIdcs "+stringDelimitList(List.map(sharedVarIdcs, intString), ", ")+"\n");
+            //print("varIdcs1 "+stringDelimitList(List.map(varIdcs1, intString), ", ")+"\n");
+            //print("varIdcs2 "+stringDelimitList(List.map(varIdcs2, intString), ", ")+"\n");
+          {varIdx1} := varIdcs1;
+          {varIdx2} := varIdcs2;
+          {eq1, eq2} := BackendEquation.getList(loop1, eqs);
+          var1 := BackendVariable.getVarAt(vars, varIdx1);
+          var2 := BackendVariable.getVarAt(vars, varIdx2);
 
-      // compare the actual equations
-      varExp1 = BackendVariable.varExp(var1);
-      varExp2 = BackendVariable.varExp(var2);
-      BackendDAE.EQUATION(exp=lhs, scalar=rhs1) = eq1;
-      (rhs1, _) = ExpressionSolve.solve(lhs, rhs1, varExp1);
-      BackendDAE.EQUATION(exp=lhs, scalar=rhs2) = eq2;
-      (rhs2, _) = ExpressionSolve.solve(lhs, rhs2, varExp2);
-      true = Expression.expEqual(rhs1, rhs2);
-         //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
-         //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
-         //print("is equal\n");
-      // build CSE
-      eqMapArr = listArray(eqMap);
-      varMapArr = listArray(varMap);
-      sharedVarIdcs = list(arrayGet(varMapArr, i) for i in sharedVarIdcs);
-      varIdcs1 = listAppend(varIdcs1, varIdcs2);
-      varIdcs1 = list(arrayGet(varMapArr, i) for i in varIdcs1);
-      eqIdcs = list(arrayGet(eqMapArr,i) for i in loop1);
-      GC.free(eqMapArr);
-      GC.free(varMapArr);
-    then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs1)::cseIn;
+          // compare the actual equations
+          varExp1 := BackendVariable.varExp(var1);
+          varExp2 := BackendVariable.varExp(var2);
+          BackendDAE.EQUATION(exp=lhs, scalar=rhs1) := eq1;
+          (rhs1, _) := ExpressionSolve.solve(lhs, rhs1, varExp1);
+          BackendDAE.EQUATION(exp=lhs, scalar=rhs2) := eq2;
+          (rhs2, _) := ExpressionSolve.solve(lhs, rhs2, varExp2);
+          if Expression.expEqual(rhs1, rhs2) then
+               //print("rhs1 " +ExpressionDump.printExpStr(rhs1)+"\n");
+               //print("rhs2 " +ExpressionDump.printExpStr(rhs2)+"\n");
+               //print("is equal\n");
+            // build CSE
+            eqMapArr := listArray(eqMap);
+            varMapArr := listArray(varMap);
+            sharedVarIdcs := list(arrayGet(varMapArr, i) for i in sharedVarIdcs);
+            varIdcs1 := listAppend(varIdcs1, varIdcs2);
+            varIdcs1 := list(arrayGet(varMapArr, i) for i in varIdcs1);
+            eqIdcs := list(arrayGet(eqMapArr,i) for i in loop1);
+            GC.free(eqMapArr);
+            GC.free(varMapArr);
+            cseLst := ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs1)::cseLst;
+          end if;
+      end for;
+    then cseLst;
   else cseIn;
   end matchcontinue;
 end getCSE3;
