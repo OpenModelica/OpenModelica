@@ -23,7 +23,7 @@ void SimulationMonitor::initialize()
    #ifdef USE_CHRONO
        _t_s = high_resolution_clock::now();
       _interrupt = false;
-  #elif
+  #else
        throw ModelicaSimulationError(SOLVER,"simulation time out is only supported for c++11");
   #endif
 }
@@ -32,7 +32,7 @@ void SimulationMonitor::setTimeOut(unsigned int time_out)
 {
     #ifdef USE_CHRONO
       _time_out = seconds(time_out);
-    #elif
+    #else
        throw ModelicaSimulationError(SOLVER,"simulation time out is only supported for c++11");
     #endif
 }
@@ -49,7 +49,7 @@ void SimulationMonitor::checkTimeout()
   {
     _interrupt =true;
   }
-  #elif
+  #else
        throw ModelicaSimulationError(SOLVER,"simulation time out is only supported for c++11");
   #endif
 
