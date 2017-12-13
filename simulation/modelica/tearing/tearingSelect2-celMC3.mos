@@ -6,7 +6,7 @@ loadFile("tearingSelect2.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules-=comSubExp"); getErrorString();
 simulate(tearingSelect2); getErrorString();
 
 // Result:
@@ -20,7 +20,7 @@ simulate(tearingSelect2); getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "tearingSelect2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'tearingSelect2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'tearingSelect2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
