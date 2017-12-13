@@ -560,10 +560,14 @@ algorithm
   node := match InstNode.name(builtin_ext)
     case "ExternalObject"
       algorithm
-        (tree, eo_ty) := makeExternalObjectType(scope, node);
-        tree := ClassTree.expand(tree);
-        c := Class.PARTIAL_BUILTIN(Type.COMPLEX(node, eo_ty), tree, Modifier.NOMOD(),
-          Restriction.EXTERNAL_OBJECT());
+        // Construct the ComplexType for the external object.
+        eo_ty := makeExternalObjectType(scope, node);
+        // Construct the Class for the external object. We use an empty class
+        // tree here, since the constructor and destructor is embedded in the
+        // ComplexType instead. Using an empty class tree makes sure it's not
+        // possible to call the constructor or destructor explicitly.
+        c := Class.PARTIAL_BUILTIN(Type.COMPLEX(node, eo_ty), NFClassTree.EMPTY_FLAT,
+          Modifier.NOMOD(), Restriction.EXTERNAL_OBJECT());
         node := InstNode.updateClass(c, node);
       then
         node;
@@ -592,14 +596,14 @@ end expandBuiltinExtends;
 function makeExternalObjectType
   "Constructs a ComplexType for an external object, and also checks that the
    external object declaration is valid."
-  input output ClassTree tree;
+  input ClassTree tree;
   input InstNode node;
-        output ComplexType ty;
+  output ComplexType ty;
 protected
   Absyn.Path base_path;
   InstNode constructor = InstNode.EMPTY_NODE(), destructor = InstNode.EMPTY_NODE();
 algorithm
-  (tree, ty) := match tree
+  ty := match tree
     case ClassTree.PARTIAL_TREE()
       algorithm
         // An external object may not contain components.
@@ -664,18 +668,8 @@ algorithm
             {InstNode.name(node), "destructor"}, InstNode.info(node));
           fail();
         end if;
-
-        // We don't need the ExternalObject extends anymore, get rid of it so we
-        // don't have to handle it later.
-        tree.exts := arrayCreate(0, InstNode.EMPTY_NODE());
-        // The component array will only contain a reference node to the
-        // ExternalObject extends, so get rid of it too.
-        tree.components := arrayCreate(0, InstNode.EMPTY_NODE());
-
-        // Construct the ComplexType for the external object.
-        ty := ComplexType.EXTERNAL_OBJECT(constructor, destructor);
       then
-        (tree, ty);
+        ComplexType.EXTERNAL_OBJECT(constructor, destructor);
 
   end match;
 end makeExternalObjectType;

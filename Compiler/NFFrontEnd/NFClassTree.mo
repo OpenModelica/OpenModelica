@@ -153,6 +153,8 @@ public
 
   constant ClassTree EMPTY = ClassTree.PARTIAL_TREE(LookupTree.EMPTY(),
       listArray({}), listArray({}), listArray({}), listArray({}), DuplicateTree.EMPTY());
+  constant ClassTree EMPTY_FLAT = ClassTree.FLAT_TREE(LookupTree.EMPTY(),
+      listArray({}), listArray({}), listArray({}), DuplicateTree.EMPTY());
 
   uniontype ClassTree
     record PARTIAL_TREE

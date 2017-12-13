@@ -132,13 +132,24 @@ uniontype LookupState
 
   function isCallable
     input InstNode node;
-    output Boolean b = false;
+    output Boolean callable;
   protected
-    SCode.Element def;
+    SCode.Element def = InstNode.definition(node);
   algorithm
-    def := InstNode.definition(node);
-    b := SCode.isRecord(def) or SCode.isOperator(def);
+    callable := SCode.isRecord(def) or SCode.isOperator(def);
   end isCallable;
+
+  function isClass
+    input LookupState state;
+    output Boolean isClass;
+  algorithm
+    isClass := match state
+      case COMP_CLASS() then true;
+      case CLASS() then true;
+      case PREDEF_CLASS() then true;
+      else false;
+    end match;
+  end isClass;
 
   function assertState
     input LookupState endState;

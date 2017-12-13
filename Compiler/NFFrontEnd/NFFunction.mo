@@ -207,7 +207,7 @@ uniontype Function
         {Dump.printComponentRefStr(functionName)}, info);
     end try;
 
-    (functionRef, found_scope) := Lookup.lookupCallableName(functionName, scope, info);
+    (functionRef, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
     prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
     functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunction;
@@ -258,11 +258,8 @@ uniontype Function
     input SourceInfo info;
           output Boolean specialBuiltin;
   protected
-    SCode.Element def;
+    SCode.Element def = InstNode.definition(fnNode);
   algorithm
-
-    def := InstNode.definition(fnNode);
-
     (fnNode, specialBuiltin) := match def
       local
         SCode.ClassDef cdef;

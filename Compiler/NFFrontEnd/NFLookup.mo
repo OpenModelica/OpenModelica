@@ -52,6 +52,7 @@ import NFInstNode.NodeTree;
 import NFInstNode.CachedData;
 import NFComponent.Component;
 import Subscript = NFSubscript;
+import ComplexType = NFComplexType;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -97,7 +98,8 @@ protected
   LookupState state;
   InstNode node;
 algorithm
-  (foundCref, foundScope, state) := lookupCref(cref, scope, info);
+  (foundCref, foundScope, state) := lookupCref(cref, scope, info,
+    Error.LOOKUP_VARIABLE_ERROR);
   node := ComponentRef.node(foundCref);
   state := fixTypenameState(node, state);
   LookupState.assertComponent(state, node, cref, info);
@@ -137,26 +139,6 @@ algorithm
   LookupState.assertComponent(state, ComponentRef.node(foundCref), cref, info);
 end lookupLocalComponent;
 
-function lookupCallableName
-  input Absyn.ComponentRef cref;
-  input InstNode scope "The scope to look in.";
-  input SourceInfo info;
-  output ComponentRef foundCref;
-  output InstNode foundScope;
-protected
-  LookupState state;
-  InstNode node;
-algorithm
-  (foundCref, foundScope, state) := lookupCref(cref, scope, info);
-  node := ComponentRef.node(foundCref);
-
-  //try
-    LookupState.assertFunction(state, node, cref, info);
-  //else
-  //end try;
-
-end lookupCallableName;
-
 function lookupFunctionName
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
@@ -167,10 +149,51 @@ protected
   LookupState state;
   InstNode node;
 algorithm
-  (foundCref, foundScope, state) := lookupCref(cref, scope, info);
+  (foundCref, foundScope, state) := lookupCref(cref, scope, info,
+    Error.LOOKUP_FUNCTION_ERROR);
   node := ComponentRef.node(foundCref);
+  (foundCref, state) := fixExternalObjectCall(node, foundCref, state);
   LookupState.assertFunction(state, node, cref, info);
 end lookupFunctionName;
+
+function fixExternalObjectCall
+  "Changes calls to external objects so that the constructor is called instead,
+   i.e. a call such as
+     'ExtObj eo = ExtObj(...)'
+   is changed to
+     'ExtObj eo = ExtObj.constructor(...)'"
+  input InstNode node;
+  input output ComponentRef cref;
+  input output LookupState state;
+protected
+  Class cls;
+  InstNode constructor;
+algorithm
+  // If it's not a class it can't be an external object.
+  if not LookupState.isClass(state) then
+    return;
+  end if;
+
+  // External objects are identified by extending from ExternalObject, so the
+  // node needs to be expanded before we know whether it's an external object or
+  // not. Components are instantiated before their bindings, so in proper models
+  // we shouldn't get any non-expanded external objects here. But to avoid
+  // getting weird errors in erroneous models we make sure it's expanded anyway.
+  Inst.expand(node);
+  cls := InstNode.getClass(node);
+
+  () := match cls
+    case Class.PARTIAL_BUILTIN(ty = Type.COMPLEX(complexTy =
+        ComplexType.EXTERNAL_OBJECT(constructor = constructor)))
+      algorithm
+        cref := ComponentRef.prefixCref(constructor, Type.UNKNOWN(), {}, cref);
+        state := LookupState.FUNC();
+      then
+        ();
+
+    else ();
+  end match;
+end fixExternalObjectCall;
 
 function lookupImport
   input Absyn.Path name;
@@ -188,6 +211,7 @@ function lookupCref
   input Absyn.ComponentRef cref;
   input InstNode scope "The scope to look in.";
   input SourceInfo info;
+  input Error.Message errMsg;
   output ComponentRef foundCref;
   output InstNode foundScope "The scope where the first part of the cref was found.";
   output LookupState state;
@@ -224,7 +248,7 @@ algorithm
           (foundCref, foundScope, state);
 
       case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
-        then lookupCref(cref.componentRef, InstNode.topScope(scope), info);
+        then lookupCref(cref.componentRef, InstNode.topScope(scope), info, errMsg);
 
       case Absyn.ComponentRef.WILD() then (ComponentRef.WILD(), scope, LookupState.PREDEF_COMP());
       case Absyn.ComponentRef.ALLWILD() then (ComponentRef.WILD(), scope, LookupState.PREDEF_COMP());
@@ -242,7 +266,7 @@ algorithm
   end if;
 
   if match_ty <> MatchType.FOUND then
-    Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+    Error.addSourceMessage(errMsg,
       {Dump.printComponentRefStr(cref), InstNode.name(scope)}, info);
     fail();
   end if;

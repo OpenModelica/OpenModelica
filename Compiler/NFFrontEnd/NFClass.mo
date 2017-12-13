@@ -395,6 +395,7 @@ uniontype Class
       case INSTANCED_CLASS()   algorithm cls.restriction := res; then ();
       case INSTANCED_BUILTIN() algorithm cls.restriction := res; then ();
       case EXPANDED_CLASS()    algorithm cls.restriction := res; then ();
+      // PARTIAL_BUILTIN is only used for predefined builtin types and not needed here.
       case DERIVED_CLASS()     algorithm cls.restriction := res; then ();
     end match;
   end setRestriction;
