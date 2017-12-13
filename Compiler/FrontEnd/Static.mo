@@ -3241,7 +3241,7 @@ algorithm
       FCore.Cache cache;
       Prefix.Prefix pre;
       DAE.Type ety;
-      DAE.Dimensions dims;
+      DAE.Dimensions dims, dims1, dims2;
 
     case (cache, env, {arraycr, dim}, impl, pre)
       equation
@@ -3250,11 +3250,12 @@ algorithm
         (cache, arraycrefe, prop, _) =
           elabExpInExpression(cache, env, arraycr, impl, NONE(), false, pre, info);
         ety = Expression.typeof(arraycrefe);
-        dims = Expression.arrayDimension(ety);
+        dims1 = Expression.arrayDimension(ety);
+        (,dims2) = Types.flattenArrayType(Types.getPropType(prop));
+        dims = if listLength(dims1) >= listLength(dims2) then dims1 else dims2 "In case there is a zero-size array somewhere...";
         // sent in the props of the arraycrefe as if the array is constant then the size(x, 1) is constant!
         // see Modelica.Media.Incompressible.Examples.Glycol47 and Modelica.Media.Incompressible.TableBased (hasDensity)
-        (SOME(exp), SOME(prop)) =
-          elabBuiltinSizeIndex(arraycrefe, prop, ety, dimp, dims, env, info);
+        (SOME(exp), SOME(prop)) = elabBuiltinSizeIndex(arraycrefe, prop, ety, dimp, dims, env, info);
       then
         (cache, exp, prop);
 
