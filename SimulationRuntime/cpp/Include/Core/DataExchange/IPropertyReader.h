@@ -18,5 +18,6 @@ class IPropertyReader
 	virtual const output_int_vars_t& getIntOutVars()  = 0;
 	virtual const output_real_vars_t& getRealOutVars()= 0;
 	virtual const output_bool_vars_t& getBoolOutVars()= 0;
-
+    virtual const output_der_vars_t& getDerOutVars()= 0;
+    virtual const output_res_vars_t& getResOutVars()= 0;
 };

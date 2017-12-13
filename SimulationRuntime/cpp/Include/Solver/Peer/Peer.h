@@ -67,6 +67,7 @@ public:
   virtual int reportErrorMessage(std::ostream& messageStream);
   virtual bool stateSelection();
   virtual void setTimeOut(unsigned int time_out);
+
     virtual void stop();
 private:
 
@@ -174,7 +175,10 @@ public:
 	virtual SOLVERSTATUS getSolverStatus()
 	{ return UNDEF_STATUS; }
 
-	virtual void setTimeOut(unsigned int time_out)
+	/* virtual void setTimeOut(unsigned int time_out)
+	{}
+ */
+ virtual void setTimeOut(double time_out)
 	{}
 
 	virtual void stop()

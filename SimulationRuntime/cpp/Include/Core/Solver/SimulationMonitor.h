@@ -18,13 +18,16 @@ public:
   SimulationMonitor();
   ~SimulationMonitor();
   void initialize();
+  ///sets time out in seconds
   void setTimeOut(unsigned int time_out);
   void stop();
   void checkTimeout();
 
 protected:
-  /*nanosecond_type _time_out;*/
-  bool _interrupt;
-  /*cpu_timer _timer;*/
+  #ifdef USE_CHRONO
+   seconds _time_out;
+   bool _interrupt;
+   high_resolution_clock::time_point _t_s;
+  #endif
 };
  /** @} */ // end of coreSolver

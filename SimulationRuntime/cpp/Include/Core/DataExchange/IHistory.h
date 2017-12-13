@@ -80,7 +80,10 @@ typedef SimulationOutput<int> output_int_vars_t;
 typedef SimulationOutput<bool> output_bool_vars_t;
 /** typedef for all real outputs */
 typedef SimulationOutput<double> output_real_vars_t;
-
+/** typedef for all derivatives output */
+typedef SimulationOutput<double> output_der_vars_t;
+/** typedef for all residues output */
+typedef SimulationOutput<double> output_res_vars_t;
 
 /** typedef for the integer output values list*/
 typedef  output_int_vars_t::values_t   int_vars_t;
@@ -88,18 +91,22 @@ typedef  output_int_vars_t::values_t   int_vars_t;
 typedef  output_bool_vars_t::values_t  bool_vars_t;
 /** typedef for the real output values list*/
 typedef  output_real_vars_t::values_t  real_vars_t;
+/** typedef for the derivatives output values list*/
+typedef  output_der_vars_t::values_t  der_vars_t;
+/** typedef for the residues output values list*/
+typedef  output_res_vars_t::values_t  res_vars_t;
 /**typedef for all output variables   at one time step, all real vars, integer vars, boolean vars, simulation time*/
-typedef  tuple<real_vars_t,int_vars_t,bool_vars_t,double> all_vars_time_t;
+typedef  tuple<real_vars_t,int_vars_t,bool_vars_t,double,der_vars_t,res_vars_t> all_vars_time_t;
 /**typedef for all output variables  at one time step except simulation time*/
-typedef  tuple<real_vars_t,int_vars_t,bool_vars_t> all_vars_t;
+typedef  tuple<real_vars_t,int_vars_t,bool_vars_t,der_vars_t,res_vars_t> all_vars_t;
 /**typedef for all output variables kinds at one time step*/
-typedef  tuple<negate_values_t,negate_values_t,negate_values_t> neg_all_vars_t;
+typedef  tuple<negate_values_t,negate_values_t,negate_values_t,negate_values_t,negate_values_t> neg_all_vars_t;
 /**typedef for all output data at one time step*/
 typedef  tuple<all_vars_time_t,neg_all_vars_t> write_data_t;
 /**typedef for all variable names*/
-typedef  tuple<var_names_t,var_names_t,var_names_t> all_names_t;
+typedef  tuple<var_names_t,var_names_t,var_names_t,var_names_t,var_names_t> all_names_t;
 /**typedef for all variable description*/
-typedef  tuple<var_names_t,var_names_t,var_names_t> all_description_t;
+typedef  tuple<var_names_t,var_names_t,var_names_t,var_names_t,var_names_t> all_description_t;
 
 
 
@@ -145,7 +152,7 @@ public:
   /**
   Returns number of residues
   */
-  virtual unsigned long getDimRe()=0;
+  virtual int getDimRe()=0;
   /**
   Clears simulation buffer
   */

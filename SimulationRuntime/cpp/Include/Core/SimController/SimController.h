@@ -18,11 +18,11 @@ public:
       /// Stops the simulation
     virtual void Stop();
     virtual void Start(SimSettings simsettings, string modelKey);
-    virtual void StartVxWorks(SimSettings simsettings, string modelKey);
     virtual shared_ptr<IMixedSystem> getSystem(string modelname);
-    virtual  shared_ptr<ISimObjects> getSimObjects();
-    virtual void calcOneStep();
-
+    virtual shared_ptr<ISimObjects> getSimObjects();
+    virtual void StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey,bool loadMSL, bool loadPackage);
+    virtual void initialize(SimSettings simsettings, string modelKey, double timeout);
+     virtual void runReducedSimulation();
 private:
     void initialize(PATH library_path, PATH modelicasystem_path);
     bool _initialized;

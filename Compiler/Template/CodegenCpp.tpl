@@ -2359,8 +2359,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
               <%generateMeasureTimeEndCode("measuredSetupStartValues", "measuredSetupEndValues", "(*measureTimeArraySimulation)[1]", "setup", "")%>
               >>
             %>
-            simulation.first->Start(simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
-
+            <%if (Flags.getConfigBool(Flags.LABELED_REDUCTION)) then
+              <<
+              simulation.first->StartReduceDAE(simulation.second,"<%identOfPathDot(modelInfo.name)%>", "<%lastIdentOfPath(modelInfo.name)%>", <%Flags.getConfigBool(Flags.LOAD_MSL_MODEL)%>,<%Flags.getConfigBool(Flags.Load_PACKAGE_FILE)%>);
+              >>
+            else
+              <<
+              simulation.first->Start(simulation.second, "<%lastIdentOfPath(modelInfo.name)%>");
+              >>
+             %>
             <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
               <<
               <%generateMeasureTimeEndCode("measuredSimStartValues", "measuredSimEndValues", "(*measureTimeArraySimulation)[0]", "all", "")%>
@@ -3696,11 +3703,8 @@ match simCode
       //Number of residues
        _event_handling= shared_ptr<EventHandling>(new EventHandling());
        initializeAlgloopSolverVariables(); //if we do not initialize it here, we get a segfault in the destructor if initialization of Solver or OMFactory has failed
-      <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
-      <<
-      _dimResidues = <%numResidues(allEquations)%>;
-      >>
-      %>
+
+
       <%if boolNot(stringEq(getConfigString(PROFILING_LEVEL),"none")) then
             let numOfEqs = SimCodeUtil.getMaxSimEqSystemIndex(simCode)
             <<
@@ -3747,6 +3751,7 @@ match simCode
 
 end generateSimulationCppConstructorContent;
 
+
 template algloopCppFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq, Context context, Integer clockIndex, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for main cpp file for algloop system ."
 ::=
@@ -3763,7 +3768,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    match eq
    case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
    <<
-   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
+
 
    <%modelname%>Algloop<%ls.index%>::<%modelname%>Algloop<%ls.index%>(<%systemname%>* system, double* z, double* zDot, bool* conditions, shared_ptr<DiscreteEvents> discrete_events)
        : LinearAlgLoopDefaultImplementation()
@@ -3823,7 +3828,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    }
 
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
-   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   /*<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq) else algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>*/
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
    <%updateAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
@@ -3838,7 +3843,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
    <<
 
-   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then '#include "Math/ArrayOperations.h"'%>
+
 
    <%modelname%>Algloop<%nls.index%>::<%modelname%>Algloop<%nls.index%>(<%systemname%>* system, double* z, double* zDot, bool* conditions, shared_ptr<DiscreteEvents> discrete_events)
        : NonLinearAlgLoopDefaultImplementation()
@@ -3870,7 +3875,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      NonLinearAlgLoopDefaultImplementation::setUseSparseFormat(value);
    }
    <%algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
-   <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>
+   /*<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq) else algloopRHSCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq)%>*/
    <%initAlgloop(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, eq, context, clockIndex, stateDerVectorName, useFlatArrayNotation)%>
 
    <%queryDensity(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,eq,context, useFlatArrayNotation)%>
@@ -5781,7 +5786,16 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
         #if defined(__vxworks)
         _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "/SYSTEM/bundles/com.boschrexroth.<%modelname%>/<%fileNamePrefix%>_init.xml"));
         #else
-        _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
+         <%if (Flags.getConfigBool(Flags.LABELED_REDUCTION)) then
+            <<
+            _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml",_dimRHS));
+            >>
+            else
+            <<
+            _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
+            >>
+            %>
+
         #endif
         _reader->readInitialValues(*this, getSimVars());
       #endif
@@ -6203,31 +6217,19 @@ match eq
    <<
     void <%modelname%>Algloop<%ls.index%>::getb(double* vars) const
     {
-        ublas::matrix<double> A=toMatrix(_dimAEq,_dimAEq,__A->data());
-        double* doubleUnknowns = new double[_dimAEq];
-        getReal(doubleUnknowns);
-        ublas::vector<double> x=toVector(_dimAEq,doubleUnknowns);
-        ublas::vector<double> b=toVector(_dimAEq,__b.data());
-        b=ublas::prod(ublas::trans(A),x)-b;
-        if(vars) std::copy(b.data().begin(), b.data().end(), vars);
+      LinearAlgLoopDefaultImplementation::getb(vars);
     }
    >>
  case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
     <<
-    int <%modelname%>Algloop<%nls.index%>::giveDimRHS()
-    {
-      return _dimAEq;
-    }
 
     void <%modelname%>Algloop<%nls.index%>::getRHS(double* vars) const
     {
-      NonLinearAlgLoopDefaultImplementation:::getRHS(vars)
+      NonLinearAlgLoopDefaultImplementation::getRHS(vars);
     }
     >>
  case SES_MIXED(__) then algloopResiduals(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,cont)
 end algloopResiduals;
-
-
 
 template isLinearTearingCode(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,SimEqSystem eq)
 ::=
@@ -6571,33 +6573,33 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
      const output_int_vars_t& outputIntVars = _reader->getIntOutVars();
      const output_real_vars_t&  outputRealVars= _reader->getRealOutVars();
      const output_bool_vars_t& outputBoolVars = _reader->getBoolOutVars();
+     const output_der_vars_t& outputDerVars = _reader->getDerOutVars();
+     const output_res_vars_t& outputResVars= _reader->getResOutVars();;
+
     //Write head line
     if (command & IWriteOutput::HEAD_LINE)
     {
-
-      const all_names_t outputVarNames = make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames);
-      const all_names_t outputVarDescription = make_tuple(outputRealVars.ourputVarDescription,outputIntVars.ourputVarDescription,outputBoolVars.ourputVarDescription);
+      const all_names_t outputVarNames = make_tuple(outputRealVars.ourputVarNames,outputIntVars.ourputVarNames,outputBoolVars.ourputVarNames,outputDerVars.ourputVarNames,outputResVars.ourputVarNames);
+      const all_description_t outputVarDescription = make_tuple(outputRealVars.ourputVarDescription,outputIntVars.ourputVarDescription,outputBoolVars.ourputVarDescription,outputDerVars.ourputVarDescription,outputResVars.ourputVarDescription);
       <%
       match   settings.outputFormat
         case "mat" then
         <<
-         const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames);
-         const all_names_t parameterVarDescription =  make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription);
+         const all_names_t parameterVarNames =  make_tuple(outputRealVars.parameterNames,outputIntVars.parameterNames,outputBoolVars.parameterNames,outputDerVars.ourputVarNames,outputResVars.ourputVarNames);
+         const all_description_t parameterVarDescription =  make_tuple(outputRealVars.parameterDescription,outputIntVars.parameterDescription,outputBoolVars.parameterDescription,outputDerVars.ourputVarDescription,outputResVars.ourputVarDescription);
         >>
        else
        <<
        const all_names_t parameterVarNames;
-       const all_names_t parameterVarDescription;
+       const all_description_t parameterVarDescription;
        >>
       %>
       _writeOutput->write(outputVarNames,outputVarDescription,parameterVarNames,parameterVarDescription);
-
       <%
       match   settings.outputFormat
         case "mat" then
         <<
-        const all_vars_t params = make_tuple(outputRealVars.outputParams,outputIntVars.outputParams,outputBoolVars.outputParams);
-
+        const all_vars_t params = make_tuple(outputRealVars.outputParams,outputIntVars.outputParams,outputBoolVars.outputParams,outputDerVars.outputParams,outputResVars.outputParams);
         >>
         else
         <<
@@ -6607,37 +6609,76 @@ case SIMCODE(modelInfo = MODELINFO(__),simulationSettingsOpt = SOME(settings as 
       _writeOutput->write(params,_global_settings->getStartTime(),_global_settings->getEndTime());
     }
     //Write the current values
-    else
+     else
     {
       <%generateMeasureTimeStartCode("measuredFunctionStartValues", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
-
       <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
-      HistoryImplType::value_type_r v3;
+
       <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace));separator="\n")%>
       double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
-      for(int i=0;i<<%numResidues(allEquations)%>;i++) v3(i) = residues[i];
+      output_res_vars_t _resVars;
+      for(int i=0;i<<%numResidues(allEquations,modelInfo)%>;i++)
+      {
+        double* realVarPtr = &residues[i];
+        string str;
+       _resVars.addOutputVar(str, str,realVarPtr, false);
+
+      }
 
       <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+      write_data_t& container = _writeOutput->getFreeContainer();
+        all_vars_time_t all_vars = make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime,outputDerVars.outputVars,_resVars.outputVars);
+        neg_all_vars_t neg_all_vars =      make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars,outputDerVars.negateOutputVars,_resVars.negateOutputVars);
+       _writeOutput->addContainerToWriteQueue(make_tuple(all_vars,neg_all_vars));
 
-      _writeOutput->write(v,v2,v3,_simTime);
       >>
     else
       <<
-      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]",  "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+       <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]",  "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
         write_data_t& container = _writeOutput->getFreeContainer();
-        all_vars_time_t all_vars = make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime);
-        neg_all_vars_t neg_all_vars =      make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars);
+        all_vars_time_t all_vars = make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime,outputDerVars.outputVars,outputResVars.outputVars);
+        neg_all_vars_t neg_all_vars =      make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars,outputDerVars.negateOutputVars,outputResVars.negateOutputVars);
        _writeOutput->addContainerToWriteQueue(make_tuple(all_vars,neg_all_vars));
       >>
     %>
     }
    }
-
   >>
   //<%writeAlgloopvars(odeEquations,algebraicEquations, parameterEquations,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 end writeoutput;
+/*
+  <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+      <<
 
+      <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace));separator="\n")%>
+      double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
+      output_res_vars_t _resVars;
+      for(int i=0;i<<%numResidues(allEquations)%>;i++)
+      {
+        double* realVarPtr = &residues[i];
+        string str;
+       _resVars.addOutputVar(str, str,realVarPtr, false);
+
+      }
+
+      <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]", "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+      write_data_t& container = _writeOutput->getFreeContainer();
+        all_vars_time_t all_vars = make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime,outputDerVars.outputVars,_resVars.outputVars);
+        neg_all_vars_t neg_all_vars =      make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars,outputDerVars.negateOutputVars,_resVars.negateOutputVars);
+       _writeOutput->addContainerToWriteQueue(make_tuple(all_vars,neg_all_vars));
+
+      >>
+    else
+      <<
+       <%generateMeasureTimeEndCode("measuredFunctionStartValues", "measuredFunctionEndValues", "(*measureTimeFunctionsArray)[2]",  "writeOutput", "MEASURETIME_MODELFUNCTIONS")%>
+        write_data_t& container = _writeOutput->getFreeContainer();
+        all_vars_time_t all_vars = make_tuple(outputRealVars.outputVars,outputIntVars.outputVars,outputBoolVars.outputVars,_simTime,outputDerVars.outputVars,outputResVars.outputVars);
+        neg_all_vars_t neg_all_vars =      make_tuple(outputRealVars.negateOutputVars,outputIntVars.negateOutputVars,outputBoolVars.negateOutputVars,outputDerVars.negateOutputVars,outputResVars.negateOutputVars);
+       _writeOutput->addContainerToWriteQueue(make_tuple(all_vars,neg_all_vars));
+      >>
+    %>
+*/
 template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match eq
@@ -6647,9 +6688,8 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
       match simCode
         case SIMCODE(modelInfo = MODELINFO(__)) then
         <<
-        double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
-        _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
-
+         double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
+        _algLoop<%num%>->getb(doubleResiduals<%num%>);
         >>
       end match
   case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__))
@@ -6660,7 +6700,6 @@ template writeoutputAlgloopsolvers(SimEqSystem eq, SimCode simCode ,Text& extraF
         <<
         double* doubleResiduals<%num%> = new double[_algLoop<%num%>->getDimReal()];
         _algLoop<%num%>->getRHS(doubleResiduals<%num%>);
-
         >>
       end match
   case SES_MIXED(__)
@@ -7161,6 +7200,11 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
       int <%lastIdentOfPath(modelInfo.name)%>::getDimRHS() const
       {
+       if(_callType & IContinuous::RANKING)
+        {
+        return <%numResidues(allEquations,modelInfo)%>;
+        }
+        else
         return(SystemDefaultImplementation::getDimRHS());
       }
 
@@ -7242,17 +7286,17 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
        {
          return (int)_stateActivator[state];
        }
-
-      // Provide the right hand side (according to the index)
+      // Provide the right hand side
       void <%lastIdentOfPath(modelInfo.name)%>::getRHS(double* f)
       {
-      <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+        <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
       <<
-      if(index == IContinuous::ALL_RESIDUES)
+      if(_callType & IContinuous::RANKING)
       {
+
         <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace));separator="\n")%>
         double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
-        for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
+        for(int i=0;i<<%numResidues(allEquations,modelInfo)%>;i++) *(f+i) = residues[i];
       }
       else SystemDefaultImplementation::getRHS(f);
       >>
@@ -7266,33 +7310,26 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       {
         SystemDefaultImplementation::setStateDerivatives(f);
       }
-
       bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
       {
        throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"isStepEvent is not yet implemented");
-
       }
-
       void <%lastIdentOfPath(modelInfo.name)%>::setTerminal(bool terminal)
       {
         _terminal=terminal;
       }
-
       bool <%lastIdentOfPath(modelInfo.name)%>::terminal()
       {
         return _terminal;
       }
-
       bool <%lastIdentOfPath(modelInfo.name)%>::isAlgebraic()
       {
         return false; // Indexreduction is enabled
       }
-
       bool <%lastIdentOfPath(modelInfo.name)%>::provideSymbolicJacobian()
       {
         throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"provideSymbolicJacobian is not yet implemented");
       }
-
       void <%lastIdentOfPath(modelInfo.name)%>::handleEvent(const bool* events)
       {
         <%handleEvent(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
@@ -7300,8 +7337,22 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       >>
   end match
 end DefaultImplementationCode;
-
-
+/*
+<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+      <<
+      if(index == IContinuous::ALL_RESIDUES)
+      {
+        <%(allEquations |> eqs => (eqs |> eq => writeoutputAlgloopsolvers(eq,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace));separator="\n")%>
+        double residues [] = {<%(allEquations |> eqn => writeoutput3(eqn, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation));separator=","%>};
+        for(int i=0;i<<%numResidues(allEquations)%>;i++) *(f+i) = residues[i];
+      }
+      else SystemDefaultImplementation::getRHS(f);
+      >>
+      else
+      <<
+        SystemDefaultImplementation::getRHS(f);
+      >>%>
+*/
 template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let nominalVars = stateVars |> SIMVAR(__) hasindex i0 =>
@@ -7503,7 +7554,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual int getDimReal() const;
     /// Provide number (dimension) of string variables
     virtual int getDimString() const;
-    /// Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
+    // Provide number (dimension) of right hand sides (equations and/or residuals)
     virtual int getDimRHS()const;
     virtual double& getRealStartValue(double& var);
     virtual bool& getBoolStartValue(bool& var);
@@ -7660,20 +7711,19 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
     /// Evaluate equations for given variables
     virtual void evaluate();
-    <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
+    virtual bool isLinearTearing();
+    virtual bool isConsistent();
+    >>
+end generateAlgloopMethodDeclarationCode;
+/* after  virtual void evaluate();
+ <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then
     <<
     /// Provide dimensions of residuals for linear equation systems
     virtual int giveDimResiduals(int index);
     /// Provide the residuals for linear equation systems
     virtual void giveResiduals(double* vars);
     >>%>
-    virtual bool isLinearTearing();
-    virtual bool isConsistent();
-
-    >>
-//void writeOutput(HistoryImplType::value_type_v& v ,vector<string>& head ,const IMixedSystem::OUTPUT command  = IMixedSystem::UNDEF_OUTPUT);
-end generateAlgloopMethodDeclarationCode;
-
+*/
 template memberVariableDefine(ModelInfo modelInfo, HashTableCrIListArray.HashTable varToArrayIndexMapping, Text indexForUndefinedReferencesReal, Text indexForUndefinedReferencesInt,
                         Text indexForUndefinedReferencesBool, Text indexForUndefinedReferencesString, Boolean createDebugCode, Boolean useFlatArrayNotation)
  /*Define membervariable in simulation file.*/
@@ -8682,9 +8732,12 @@ case modelInfo as MODELINFO(vars=SIMVARS(__)) then
   >>
 end writeoutput1;
 
-template numResidues(list<SimEqSystem> allEquations)
+template numResidues(list<SimCode.SimEqSystem> allEquations,ModelInfo modelInfo)
 ::=
-(allEquations |> eqn => numResidues2(eqn);separator="+")
+match modelInfo
+case MODELINFO(varInfo=VARINFO(numStateVars=nStates)) then
+let n = getNumContinuousEquations(allEquations,nStates)
+'<%n%>'
 end numResidues;
 
 template numResidues2(SimEqSystem eqn)
@@ -12646,7 +12699,7 @@ then
 label_list_type <%lastIdentOfPath(modelInfo.name)%>::getLabels()
 {
    label_list_type labels = TUPLE_LIST_OF
-   <%(labels |> label hasindex index0 => '<%index0%>,&_<%label%>_1,&_<%label%>_2') ;separator=" TUPLE_LIST_SEP "%> TUPLE_LIST_END;
+   <%(labels |> label hasindex index0 => '<%index0%>,&_<%label%>_1_,&_<%label%>_2_') ;separator=" TUPLE_LIST_SEP "%> TUPLE_LIST_END;
    return labels;
 }
 >>
@@ -12671,28 +12724,20 @@ match modelInfo
 case MODELINFO(vars = vars as SIMVARS(__))
 then
 <<
- <%{(vars.algVars |> SIMVAR(__) hasindex myindex =>
-       '<%cref(name,useFlatArrayNotation)%>=variables(<%myindex%>);'
-       ;separator="\n"),
-    (vars.discreteAlgVars |> SIMVAR(__) hasindex myindex =>
-       '<%cref(name,useFlatArrayNotation)%>=variables(<%numAlgvar(modelInfo)%>+<%myindex%>);'
-       ;separator="\n"),
-    (vars.intAlgVars |> SIMVAR(__) hasindex myindex =>
-       '<%cref(name,useFlatArrayNotation)%>=variables(<%numAlgvar(modelInfo)%>+<%numDiscreteAlgVar(modelInfo)%>+<%myindex%>);'
-       ;separator="\n"),
-    (vars.boolAlgVars |> SIMVAR(__) hasindex myindex =>
-       '<%cref(name,useFlatArrayNotation)%>=variables(<%numAlgvar(modelInfo)%>+<%numDiscreteAlgVar(modelInfo)%>+<%numIntAlgvar(modelInfo)%>+<%myindex%>);'
-       ;separator="\n"),
+ <%{
+
     (vars.stateVars |> SIMVAR(__) hasindex myindex =>
-       '__z[<%index%>]=variables(<%numAlgvars(modelInfo)%>+<%myindex%>);'
+       '__z[<%index%>]=variables(<%myindex%>);'
        ;separator="\n"),
+    (vars.algVars |> SIMVAR(__) hasindex myindex =>
+       '<%if stringEq(crefStrForSetVariables(name,useFlatArrayNotation), "") then '' else '<%crefStrForSetVariables(name,useFlatArrayNotation)%>=variables(<%numStatevars(modelInfo)%>+<%myindex%>); '%>'
+         ;separator="\n"),
     (vars.derivativeVars |> SIMVAR(__) hasindex myindex =>
       '__zDot[<%index%>]=variables2(<%myindex%>);'
       ;separator="\n")}
    ;separator="\n"%>
 >>
 end setVariables;
-
 
 
 template functionAnalyticJacobians2(list<JacobianMatrix> JacobianMatrixes,String modelNamePrefix,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) "template functionAnalyticJacobians

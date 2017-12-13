@@ -339,6 +339,7 @@ if true then /* Suppress output */
     "../SimCode/SimCode.mo",
     "../SimCode/SimCodeMain.mo",
     "../SimCode/SimCodeUtil.mo",
+    "../SimCode/ReduceDAE.mo",
 
     "../Template/CodegenAdevs.mo",
     "../Template/CodegenC.mo",

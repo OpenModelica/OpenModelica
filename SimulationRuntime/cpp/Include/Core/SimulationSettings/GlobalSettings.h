@@ -54,6 +54,7 @@ public:
   virtual void setAlarmTime(unsigned int);
   virtual unsigned int getAlarmTime();
 
+
   virtual void setNonLinearSolverContinueOnError(bool);
   virtual bool getNonLinearSolverContinueOnError();
 
@@ -81,6 +82,7 @@ private:
   OutputPointType _outputPointType;
   LogSettings _log_settings;
   unsigned int _alarm_time;
+
   int _solverThreads;
   OutputFormat _outputFormat;
 };

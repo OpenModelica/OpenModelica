@@ -98,6 +98,14 @@ template crefStrForWriteOutput(ComponentRef cr)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrForWriteOutput;
 
+template crefStrForSetVariables(ComponentRef cr, Boolean useFlatArrayNotation)
+ "template for Set Variables for labeling reduction"
+::=
+  match cr
+  case CREF_QUAL(ident = "$DER") then ""
+  else cref(cr,useFlatArrayNotation)
+end crefStrForSetVariables;
+
 template subscriptsStrForWriteOutput(list<Subscript> subscripts)
  "Generares subscript part of the name."
 ::=

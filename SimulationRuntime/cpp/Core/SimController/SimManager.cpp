@@ -29,6 +29,7 @@ SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
   , _lastCycleTime     (0)
   , _continueSimulation(false)
   , _writeFinalState   (false)
+  ,_checkTimeout(false)
 {
     _solver = _config->createSelectedSolver(system.get());
     _initialization = shared_ptr<Initialization>(new Initialization(dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
@@ -157,7 +158,11 @@ void SimManager::initialize()
     // Set flag for endless simulation (if solver returns)
     _continueSimulation = _tEnd > _tStart;
 
-    // _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
+        if(_checkTimeout)
+        {
+        //being uncomment for labeling reduction
+        _solver->setTimeOut(_config->getGlobalSettings()->getAlarmTime());
+        }
     _dimZeroFunc = _event_system->getDimZeroFunc();
     _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
     if (_dimZeroFunc == _event_system->getDimZeroFunc())
@@ -302,6 +307,11 @@ void SimManager::stopSimulation()
 {
     if (_solver)
         _solver->stop();
+}
+
+void SimManager::SetCheckTimeout(bool checkTimeout)
+{
+    _checkTimeout=checkTimeout;
 }
 
 void SimManager::writeProperties()

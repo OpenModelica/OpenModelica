@@ -655,6 +655,7 @@ void Cvode::CVodeCore()
 		}
 	}
 }
+
 void Cvode::setTimeOut(unsigned int time_out)
 {
 	SimulationMonitor::setTimeOut(time_out);
@@ -663,6 +664,7 @@ void Cvode::stop()
 {
 	SimulationMonitor::stop();
 }
+
 void Cvode::writeCVodeOutput(const double &time, const double &h, const int &stp)
 {
 #ifdef RUNTIME_PROFILING

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="5">
+<ReduceDAESettings class_id="0" tracking_level="0" version="0">
+	<NFail>3</NFail>
+	<RakingMethod>0</RakingMethod>
+	<ReductionMethod>0</ReductionMethod>
+	<MaximumError class_id="1" tracking_level="0" version="0">
+		<data class_id="2" tracking_level="0" version="0">
+			<size>2</size>
+			<item>0.001</item>
+			<item>0.0001</item>
+		</data>
+	</MaximumError>
+</ReduceDAESettings>

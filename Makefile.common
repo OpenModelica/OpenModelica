@@ -178,19 +178,24 @@ breakprocess:
 all-runtimeCPPinstall:
 	$(MAKE) mkbuilddirs
 	$(MAKE) CMinpack
+	$(MAKE) sundials
 	$(MAKE) all runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
 omc-and-runtimeCPPinstall: mkbuilddirs
 	$(MAKE) CMinpack
+	$(MAKE) sundials
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: CMinpack $(MINGW_EXTRA_LIBS)
+runtimeCPP: CMinpack sundials $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 
 
-runtimeCPPinstall: CMinpack $(MINGW_EXTRA_LIBS) copycppheader omc
+omcCAPIinstall:
+	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)"  $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
+
+runtimeCPPinstall:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib

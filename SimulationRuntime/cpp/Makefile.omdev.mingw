@@ -146,13 +146,32 @@ endif
 
 CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_STATIC_LINKING_COMMAND) $(BOOST_REALPATHS_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(USE_SCOREP_COMMAND) $(SCOREP_HOME_COMMAND) $(FMU_SUNDIALS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(USE_LOGGER_COMMAND) $(USE_TRILINOS_COMMAND) $(USE_KLU_COMMAND)
 
-runtimeCpp:
+
+
+
+runtimeCpp: omcCAPIinstall
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM); echo "change to Build_$(PLATFORM)"; \
 	   cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) $(IS_MINGW32) $(IS_MINGW64) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" MAKE_CXX_COMPILER=g++ ../; \
 	   $(MAKE));)
+omcCAPImsvc: getMSVCversion
+	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
+	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
+	#rm -rf Build_MSVC
+	mkdir -p Build_CAPI_MSVC
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_CAPI_MSVC/build.bat
 
+	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_CAPI_MSVC/build.bat
+	echo echo using omc libraries from "$(OMBUILDDIR)" >> Build_CAPI_MSVC/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)/build"  -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../omcCAPI/ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_CAPI_MSVC/build.bat
+
+	# for some reason, the environment variable 'MAKEFLAGS' was set to 'w' on my and Niklas' machine?!
+	echo set MAKEFLAGS="" >> Build_CAPI_MSVC/build.bat
+	echo echo Running NMake JOM >> Build_CAPI_MSVC/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> Build_CAPI_MSVC/build.bat
+	cd ./Build_CAPI_MSVC; echo "change to Build_CAPI_MSVC";\
+	cmd /c build.bat
 runtimeCPPmsvc: getMSVCversion
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
@@ -211,6 +230,13 @@ endif
 	# move folder to build dir
 	cp -R Build_MSVC/tmp/* $(builddir_build)
 
+omcCAPIinstall:
+	mkdir -p Build_CAPI;
+	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
+	  cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./lib" MAKE_CXX_COMPILER=g++ ../omcCAPI/; \
+	  $(MAKE) install;)
+	(cp -puf Build_CAPI/lib/* $(OMBUILDDIR)/lib/omc/)
+	(cp -puf Build_CAPI/lib/*.dll $(OMBUILDDIR)/bin/)
 
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \

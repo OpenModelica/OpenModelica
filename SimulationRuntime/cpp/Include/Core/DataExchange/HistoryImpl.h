@@ -76,7 +76,7 @@ public:
     return ResultsPolicy::size();
   }
 
-  unsigned long getDimRe()
+ int getDimRe()
   {
     throw ModelicaSimulationError(DATASTORAGE,"getDimRe not implemented yet");
   }

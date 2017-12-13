@@ -16,7 +16,14 @@ XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::strin
   ,_isInitialized(false)
 {
 }
-
+XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::string propertyFile,int dimRHS)
+  : IPropertyReader()
+  ,_globalSettings(globalSettings)
+  ,_propertyFile(propertyFile)
+  ,_isInitialized(false)
+  ,_dimRHS(dimRHS)
+{
+}
 XmlPropertyReader::~XmlPropertyReader()
 {
 }
@@ -32,6 +39,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
     int *intVars = sim_vars->getIntVarsVector();
     bool *boolVars = sim_vars->getBoolVarsVector();
     string *stringVars = sim_vars->getStringVarsVector();
+    double *derVars= sim_vars-> getDerStateVector();
     int refIdx = -1;
     boost::optional<int> refIdxOpt;
     try
@@ -82,7 +90,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
 
           FOREACH(ptree::value_type const& var, vars.second.get_child(""))
           {
-            if (var.first == "Real")
+             if ((var.first == "Real") /* Todo: this is needed for reduce dae method but breaks tests*/ /*&& (name.substr(0, 3) != "der")*/)
             {
                //If a start value is given for the alias and the referred variable, skip the alias declaration
               if (!(isAlias || isNegatedAlias))
@@ -164,6 +172,15 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
           }
         }
       }
+
+    int derSize=_dimRHS;
+    for(int i=0; i<derSize;i++)
+    {
+      string name="der";
+      string descripton="der";
+      _derVars.addOutputVar(name, descripton, derVars+i, false);
+    }
+
       LOGGER_WRITE_END(LC_INIT, LL_DEBUG);
     }
     catch(exception &ex)
@@ -200,6 +217,22 @@ const output_bool_vars_t& XmlPropertyReader::getBoolOutVars()
     return _boolVars;
   else
     throw ModelicaSimulationError(UTILITY, "init xml file has not been read");
+}
+
+const output_der_vars_t& XmlPropertyReader::getDerOutVars()
+{
+  if (_isInitialized)
+    return _derVars;
+  else
+    throw ModelicaSimulationError(UTILITY, "Derivatives xml file has not been read");
+}
+
+const output_res_vars_t& XmlPropertyReader::getResOutVars()
+{
+  if (_isInitialized)
+    return _resVars;
+  else
+    throw ModelicaSimulationError(UTILITY, "Residues xml file has not been read");
 }
 
 std::string XmlPropertyReader::getPropertyFile()

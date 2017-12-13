@@ -1416,6 +1416,28 @@ algorithm
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
+        case (cache,env,"buildLabel",vals,st,_)
+      equation
+	  Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
+	  //Flags.set(Flags.WRITE_TO_BUFFER,true);
+	  List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+	  (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
+      then
+        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
+
+     case (cache,env,"reduceTerms",vals,st,_)
+      equation
+      Flags.setConfigBool(Flags.REDUCE_TERMS, true);
+     // Flags.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
+	  Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
+	  _=Flags.disableDebug(Flags.WRITE_TO_BUFFER);
+	  List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+
+	  (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildLabeledModel(cache,env, vals, st, msg);
+      then
+        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
     case(cache,env,"buildOpenTURNSInterface",vals,st,_)
       equation
         (cache,scriptFile,st) = buildOpenTURNSInterface(cache,env,vals,st,msg);
@@ -3139,6 +3161,72 @@ algorithm
   end match;
 end translateModel;
 
+protected function translateLabeledModel " author: Fatima
+ translates a labeled model into cpp code and writes also a makefile"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input list<Absyn.NamedArg> inLabelstoCancel;
+  output FCore.Cache outCache;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt,inLabelstoCancel)
+    local
+      FCore.Cache cache;
+      FCore.Graph env;
+      BackendDAE.BackendDAE indexed_dlow;
+      GlobalScript.SymbolTable st;
+      list<String> libs;
+      String file_dir, fileNamePrefix;
+      Absyn.Program p;
+      Flags.Flags flags;
+      String commandLineOptions;
+      list<String> args;
+      Boolean haveAnnotation;
+      list<Absyn.NamedArg> labelstoCancel;
+
+    case (cache,env,_,st as GlobalScript.SYMBOLTABLE(),fileNamePrefix,_,_,labelstoCancel)
+      algorithm
+
+        if Config.ignoreCommandLineOptionsAnnotation() then
+          (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+            SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
+        else
+          // read the __OpenModelica_commandLineOptions
+          Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+          haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+          // backup the flags.
+          flags := if haveAnnotation then Flags.backupFlags() else Flags.loadFlags();
+          try
+            // apply if there are any new flags
+            if haveAnnotation then
+              args := System.strtok(commandLineOptions, " ");
+              _ := Flags.readArgs(args);
+            end if;
+
+            (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+              SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
+            // reset to the original flags
+            Flags.saveFlags(flags);
+          else
+            Flags.saveFlags(flags);
+            fail();
+          end try;
+        end if;
+      then
+        (cache,st,indexed_dlow,libs,file_dir,resultValues);
+
+  end match;
+end translateLabeledModel;
 /*protected function translateModelCPP " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
   input FCore.Cache inCache;
@@ -4821,6 +4909,116 @@ algorithm
   end matchcontinue;
 end buildModel;
 
+protected function buildLabeledModel "translates and builds the labeled model by running compiler script on the generated makefile"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input list<Values.Value> inValues;
+  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input Absyn.Msg inMsg;
+  output FCore.Cache outCache;
+  output GlobalScript.SymbolTable outInteractiveSymbolTable3;
+  output String compileDir;
+  output String outString1 "className";
+  output String outString2 "method";
+  output String outputFormat_str;
+  output String outInitFileName "initFileName";
+  output String outSimFlags;
+  output list<tuple<String,Values.Value>> resultValues;
+  protected
+   Values.Value labelstoCancel;
+   list<Absyn.NamedArg> named_args1={},named_args2={};
+   list<Values.Value> valuesList;
+   String labelstoCancelStr;
+   //Absyn.NamedArg named_arg;
+algorithm
+        if listLength(inValues)==13 then
+        labelstoCancel:=listGet(inValues,13);
+        valuesList:=listDelete(inValues,13);
+        end if;
+        labelstoCancelStr:=System.stringReplace(ValuesUtil.valString(labelstoCancel), "\"", "");
+
+        named_args2:=Absyn.NAMEDARG("labelstoCancel", Absyn.STRING(labelstoCancelStr))::named_args1;
+
+  (outCache,outInteractiveSymbolTable3,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues):=
+  matchcontinue (inCache,inEnv,valuesList,inInteractiveSymbolTable,inMsg)
+    local
+      GlobalScript.SymbolTable st,st_1,st2;
+      BackendDAE.BackendDAE indexed_dlow_1;
+      list<String> libs;
+      String file_dir,init_filename,method_str,filenameprefix,exeFile,s3,simflags,optionStr,filterStr,cflagsStr;
+      Absyn.Path classname;
+      Absyn.Program p;
+      Absyn.Class cdef;
+      Real edit,build,globalEdit,globalBuild,timeCompile;
+      FCore.Graph env;
+      SimCode.SimulationSettings simSettings;
+      Values.Value starttime,stoptime,interval,tolerance,method,options,outputFormat,variableFilter;
+      list<Values.Value> vals, values;
+      Absyn.Msg msg;
+      FCore.Cache cache;
+      Boolean existFile;
+
+    // compile the model
+    case (cache,env,vals,st,msg)
+      equation
+
+        // buildModel expects these arguments:
+        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
+        // options, outputFormat, variableFilter, cflags, simflags
+        values = vals;
+
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
+        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
+
+        Error.clearMessages() "Clear messages";
+        compileDir = System.pwd() + System.pathDelimiter();
+        (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
+
+        SimCode.SIMULATION_SETTINGS(method = method_str,options=optionStr, outputFormat = outputFormat_str,variableFilter=filterStr,cflags=cflagsStr)
+           = simSettings;
+
+        (cache,st as GlobalScript.SYMBOLTABLE(),_,libs,file_dir,resultValues) = translateLabeledModel(cache,env, classname, st, filenameprefix,true, SOME(simSettings),named_args2);
+
+        //cname_str = Absyn.pathString(classname);
+        //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
+        //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
+
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+        init_filename = filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
+        //win1 = getWithinStatement(classname);
+
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
+        end if;
+        CevalScript.compileModel(filenameprefix, libs);
+         print("after compilemodel in buildLabeledModel \n");
+        if Flags.isSet(Flags.DYN_LOAD) then
+          Debug.trace("buildModel: Compiling done.\n");
+        end if;
+        // p = setBuildTime(p,classname);
+        st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
+        timeCompile = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+        resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
+      then
+        (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
+
+    // failure
+    else
+      equation
+        Error.assertion(listLength(valuesList) == 12, "buildModel failure, length = " + intString(listLength(valuesList)), Absyn.dummyInfo);
+      then fail();
+  end matchcontinue;
+end buildLabeledModel;
 protected function createSimulationResultFromcallModelExecutable
 "This function calls the compiled simulation executable."
   input Integer callRet;

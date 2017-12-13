@@ -109,7 +109,7 @@ import Util;
 import ValuesUtil;
 import VisualXML;
 import ZeroCrossings;
-
+import ReduceDAE;
 protected constant String UNDERLINE = "========================================";
 
 protected function compareEqSystems
@@ -398,6 +398,30 @@ algorithm
     modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
+    //build labels
+     if(boolAnd(ifcpp,Flags.getConfigBool(Flags.LABELED_REDUCTION))) then
+     Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
+    end if;
+
+	if(ifcpp) then
+	if Flags.getConfigBool(Flags.GENERATE_LABELED_SIMCODE) then
+        (allEquations,modelInfo) := ReduceDAE.buildLabels(allEquations,modelInfo,{},args);
+        //Flags.set(Flags.REDUCE_DAE,true);
+		if debug then execStat("ReduceDAE: buildLabels"); end if;
+		end if;
+	end if;
+
+    tmpSimVars := modelInfo.vars;
+
+    //reduce terms
+	if(ifcpp) then
+	if Flags.getConfigBool(Flags.REDUCE_TERMS) then
+        (allEquations,modelInfo) := ReduceDAE.reduceTerms(allEquations,modelInfo,args);
+        Flags.setConfigBool(Flags.REDUCE_TERMS, false);
+        _:=Flags.disableDebug(Flags.REDUCE_DAE);
+		if debug then execStat("ReduceDAE: reduceTerms"); end if;
+		end if;
+	end if;
     // external objects
     extObjInfo := createExtObjInfo(shared);
 
@@ -13549,6 +13573,32 @@ algorithm
     (if k1==k2 then v1.index > v2.index else k1>k2)
     else t1>t2;
 end simvarGraterThan;
+
+public function getNumContinuousEquations
+    input list<SimCode.SimEqSystem> eqns;
+    input Integer numStates;
+    output Integer n;
+    protected
+    Integer numEqns =0;
+    algorithm
+    for eqn in eqns loop
+
+    numEqns := match(eqn)
+      local
+       SimCode.LinearSystem ls;
+       SimCode.NonlinearSystem nls;
+      case  SimCode.SES_LINEAR(lSystem = ls as SimCode.LINEARSYSTEM(__)) equation
+        numEqns = numEqns + listLength(ls.vars);
+        then numEqns;
+      case  SimCode.SES_NONLINEAR(nlSystem = nls as SimCode.NONLINEARSYSTEM(__)) equation
+       numEqns = numEqns + listLength(nls.crefs);
+       then numEqns;
+      else numEqns;
+      end match;
+    end for;
+    n:=numEqns+numStates;
+  end getNumContinuousEquations;
+
 
 public function sortCrefBasedOnSimCodeIndex
   input output list<DAE.ComponentRef> crs;

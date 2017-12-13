@@ -59,6 +59,7 @@ public:
   virtual bool stateSelection();
   virtual void setTimeOut(unsigned int time_out);
 
+
   virtual void stop();
 
 private:

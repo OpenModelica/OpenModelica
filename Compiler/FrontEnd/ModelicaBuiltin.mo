@@ -2581,6 +2581,43 @@ external "builtin";
 annotation(preferredView="text");
 end buildModel;
 
+function buildLabel "builds Lable."
+input TypeName className "the class that should be built";
+ input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
+  input String options = "" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "" "cflags. <default> = \"\"";
+  input String simflags = "" "simflags. <default> = \"\"";
+output String[2] buildModelResults;
+external "builtin";
+annotation(preferredView="text");
+end buildLabel;
+
+function reduceTerms "reduce terms."
+input TypeName className "the class that should be built";
+ input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
+  input String options = "" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "" "cflags. <default> = \"\"";
+  input String simflags = "" "simflags. <default> = \"\"";
+  input String labelstoCancel="";
+output String[2] buildModelResults;
+external "builtin";
+annotation(preferredView="text");
+end reduceTerms;
+
 function moveClass
  "Moves a class up or down depending on the given offset, where a positive
   offset moves the class down and a negative offset up. The offset is truncated

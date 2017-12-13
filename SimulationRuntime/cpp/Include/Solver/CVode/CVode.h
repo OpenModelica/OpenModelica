@@ -78,6 +78,7 @@ public:
   //// Ausgabe von statistischen Informationen (wird vom SimManager nach Abschluß der Simulation aufgerufen)
   virtual void writeSimulationInfo();
    virtual void setTimeOut(unsigned int time_out);
+
     virtual void stop();
 
   virtual int reportErrorMessage(std::ostream& messageStream);

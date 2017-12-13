@@ -391,11 +391,11 @@ sundials_msvc: getMSVCversion 3rdParty/sundials/CMakeLists.txt
 	cd ./3rdParty/sundials/build_msvc; echo "change to 3rdParty/sundials/build_msvc";\
 	cmd /c build.bat
 
-   	# copy dll to lib and bin folder
+	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
 	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
-	(cp -puf 3rdParty/sundials/build_msvc/lib/*.dll $(OMBUILDDIR)/bin)
+	(cp -puf 3rdParty/sundials/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/)
 
 # build trilinos nox
 nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
@@ -426,7 +426,10 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 
 
 
-runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc Umfpack_msvc sundials_msvc copycppmsvcheader
+omcCAPImsvcinstall:
+	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
+
+runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc Umfpack_msvc fmil_msvc sundials_msvc copycppmsvcheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc

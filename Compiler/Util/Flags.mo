@@ -516,15 +516,17 @@ constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(170, "mergeAlgSections"
   Util.gettext("Disables coloring algorithm while sparsity detection."));
 constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(171, "warnNoNominal", false,
   Util.gettext("Prints the iteration variables in the initialization and simulation DAE, which do not have a nominal value."));
-constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(172, "ignoreCycles", false,
+constant DebugFlag REDUCE_DAE = DEBUG_FLAG(172, "backendReduceDAE", false,
+  Util.gettext("Prints all Reduce DAE debug information."));
+constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(173, "ignoreCycles", false,
   Util.gettext("Ignores cycles between constant/parameter components."));
-constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(173, "aliasConflicts", false,
+constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(174, "aliasConflicts", false,
   Util.gettext("Dumps alias sets with different start or nominal values."));
-constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(174, "susanDebug", false,
+constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(175, "susanDebug", false,
   Util.gettext("Makes Susan generate code using try/else to better debug which function broke the expected match semantics."));
-constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(175, "oldFrontEndUnitCheck", false,
+constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(176, "oldFrontEndUnitCheck", false,
   Util.gettext("Checks the consistency of units in equation (for the old front-end)."));
-constant DebugFlag REPLACE_PACKAGE_CONSTS = DEBUG_FLAG(176, "replacePackageConstants", true,
+constant DebugFlag REPLACE_PACKAGE_CONSTS = DEBUG_FLAG(177, "replacePackageConstants", true,
   Util.gettext("Replaces package constants with their evaluated values if set."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -704,6 +706,7 @@ constant list<DebugFlag> allDebugFlags = {
   DISABLE_COLORING,
   MERGE_ALGORITHM_SECTIONS,
   WARN_NO_NOMINAL,
+  REDUCE_DAE,
   IGNORE_CYCLES,
   ALIAS_CONFLICTS,
   SUSAN_MATCHCONTINUE_DEBUG,
@@ -1405,6 +1408,21 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Sets whether to ignore replaceability or not when redeclaring."));
 
+  constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(118,
+  "labeledReduction", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Turns on labeling and reduce terms to do whole process of reduction."));
+
+  constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(119,
+  "disableExtraLabeling", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Disable adding extra label into the whole experssion with more than one term and +,- operations."));
+
+    constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(120,
+  "loadMSLModel", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction)."));
+
+   constant ConfigFlag Load_PACKAGE_FILE = CONFIG_FLAG(121,
+  "loadPackageFile", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1526,7 +1544,11 @@ constant list<ConfigFlag> allConfigFlags = {
   INTERACTIVE,
   ZEROMQ_FILE_SUFFIX,
   HOMOTOPY_APPROACH,
-  IGNORE_REPLACEABLE
+  IGNORE_REPLACEABLE,
+  LABELED_REDUCTION,
+  DISABLE_EXTRA_LABELING,
+  LOAD_MSL_MODEL,
+  Load_PACKAGE_FILE
 };
 
 public function new

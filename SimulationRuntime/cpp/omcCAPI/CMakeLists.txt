@@ -1,0 +1,80 @@
+cmake_minimum_required(VERSION 2.8.9)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0.0)
+PROJECT(OMCDLL)
+
+#name of omc c api wrapper dll
+SET(OMCName OMCDLL)
+
+OPTION(ENABLE_CAPI_TESTS "enable tests for c api calls" OFF)
+
+#check if path to OpenModelica was set
+IF(NOT OMC_PATH)
+ MESSAGE(FATAL_ERROR "OpenModelica path is not set")
+ENDIF(NOT OMC_PATH)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+#path to OpenModelica libs
+IF(WIN32) # Check if we are on Windows
+  IF(MSVC)
+   SET(OMC_LIB_PATH "${OMC_PATH}/lib/omc/msvc")
+  ELSE(MSVC)
+   SET(OMC_LIB_PATH "${OMC_PATH}/lib/omc")
+  ENDIF(MSVC)
+ELSEIF(UNIX)
+  SET(OMC_LIB_PATH "${OMC_PATH}/lib/x86_64-linux-gnu/omc")
+ELSE(WIN32)
+  MESSAGE(SEND_ERROR "You are on an unsupported platform! (Not Win32 or Unix)")
+ENDIF(WIN32)
+
+MESSAGE(STATUS "using omc paths")
+MESSAGE(STATUS ${OMC_PATH})
+MESSAGE(STATUS ${OMC_LIB_PATH})
+
+#set OpenModelica include directories
+INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/c)
+INCLUDE_DIRECTORIES(${OMC_PATH}/include/omc/)
+
+
+INCLUDE_DIRECTORIES(./include)
+#search for ModelicaExtrenal C library
+FIND_LIBRARY(MODELICAEX_LIB "ModelicaExternalC" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMC_LIB_PATH})
+IF(NOT MODELICAEX_LIB)
+  MESSAGE(FATAL_ERROR "Could not find ModelicaExternalC library!")
+ENDIF(NOT MODELICAEX_LIB)
+
+#search for OpenModelica C Runtime library
+FIND_LIBRARY(OMCRUNTIME_LIB "OpenModelicaRuntimeC" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMC_LIB_PATH})
+IF(NOT OMCRUNTIME_LIB)
+  MESSAGE(FATAL_ERROR "Could not find OpenModelicaRuntimeC library!")
+ENDIF(NOT OMCRUNTIME_LIB)
+
+#search for OpenModelica Compiler dll
+FIND_LIBRARY(OMC_LIB "OpenModelicaCompiler" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMC_LIB_PATH})
+IF(NOT OMC_LIB)
+  MESSAGE(FATAL_ERROR "Could not find OpenModelicaCompiler library!")
+ENDIF(NOT OMC_LIB)
+
+#search for FMILib
+FIND_LIBRARY(FMI_LIB "fmilib" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMC_LIB_PATH})
+IF(NOT FMI_LIB)
+  MESSAGE(FATAL_ERROR "Could not find fmilib library!")
+ENDIF(NOT FMI_LIB)
+
+FIND_LIBRARY(OMCGC_LIB "omcgc" NO_DEFAULT_PATH NO_SYSTEM_ENVIRONMENT_PATH PATHS ${OMC_LIB_PATH})
+IF(NOT OMCGC_LIB)
+  MESSAGE(FATAL_ERROR "Could not find omcgc library!")
+ENDIF(NOT OMCGC_LIB)
+
+#add necessary definitions
+ADD_DEFINITIONS(-DIMPORT_INTO=1)
+ADD_DEFINITIONS(-DBUILDING_OMC_DLL)
+
+ADD_LIBRARY(${OMCName} SHARED src/OMC.cpp)
+TARGET_LINK_LIBRARIES(${OMCName} ${MODELICAEX_LIB} ${OMCRUNTIME_LIB} ${OMC_LIB} ${FMI_LIB} ${OMCGC_LIB})
+IF(ENABLE_CAPI_TESTS)
+    ADD_EXECUTABLE(OMCExe src/OMCTest.cpp)
+    TARGET_LINK_LIBRARIES(OMCExe ${OMCName}  ${Boost_LIBRARIES} )
+    INSTALL(TARGETS OMCExe DESTINATION ./)
+ENDIF(ENABLE_CAPI_TESTS)
+INSTALL(TARGETS ${OMCName} DESTINATION ./)
+
