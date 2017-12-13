@@ -190,9 +190,12 @@ ExternalFunctionInvalidLang1.mo \
 ExternalFunctionInvalidSection1.mo \
 ExternalObject1.mo \
 ExternalObject2.mo \
+ExternalObject3.mo \
 ExternalObjectInvalidElement1.mo \
 ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
+ExternalObjectStructorCall1.mo \
+ExternalObjectStructorCall2.mo \
 ForConnect1.mo \
 ForEquation1.mo \
 ForEquation2.mo \
