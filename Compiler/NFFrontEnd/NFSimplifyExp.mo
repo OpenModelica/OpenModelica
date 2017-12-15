@@ -90,7 +90,7 @@ algorithm
 
     case Expression.RECORD()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
       then fail();
 
     case Expression.CALL(call = call as Call.TYPED_CALL())
@@ -168,12 +168,12 @@ algorithm
 
     case Expression.RECORD()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
       then fail();
 
     case Expression.CALL()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
       then fail();
 
     case Expression.BINARY(exp1=Expression.INTEGER(value=i1), exp2=Expression.INTEGER(value=i2))
@@ -247,12 +247,12 @@ algorithm
 
     case Expression.CAST()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
       then fail();
 
     case Expression.UNBOX()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
       then fail();
 
     else exp;

@@ -113,7 +113,7 @@ protected
   Component comp;
 algorithm
 
-  assert(InstNode.isClass(recNode), getInstanceName() + " got non-class node");
+  Error.assertion(InstNode.isClass(recNode), getInstanceName() + " got non-class node", sourceInfo());
   cls := InstNode.getClass(recNode);
 
   () := match cls
@@ -143,7 +143,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got non-instantiated function");
+        Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
       then
         fail();
   end match;

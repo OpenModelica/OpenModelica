@@ -345,7 +345,7 @@ public
 
       else
         algorithm
-          assert(false, getInstanceName() + " failed");
+          Error.assertion(false, getInstanceName() + " failed", sourceInfo());
         then
           fail();
     end match;

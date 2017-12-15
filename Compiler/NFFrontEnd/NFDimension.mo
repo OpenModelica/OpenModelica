@@ -91,7 +91,7 @@ public
             case Type.ENUMERATION() then ENUM(ty);
             else
               algorithm
-                assert(false, getInstanceName() + " got invalid typename");
+                Error.assertion(false, getInstanceName() + " got invalid typename", sourceInfo());
               then
                 fail();
           end match;

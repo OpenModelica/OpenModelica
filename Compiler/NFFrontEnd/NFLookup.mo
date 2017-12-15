@@ -582,7 +582,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " was called with an invalid path.");
+        Error.assertion(false, getInstanceName() + " was called with an invalid path.", sourceInfo());
       then
         fail();
   end match;
@@ -631,7 +631,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " was called with an invalid path.");
+        Error.assertion(false, getInstanceName() + " was called with an invalid path.", sourceInfo());
       then
         fail();
   end match;
@@ -844,7 +844,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got top node with missing cache");
+        Error.assertion(false, getInstanceName() + " got top node with missing cache", sourceInfo());
       then
         fail();
 
@@ -885,7 +885,7 @@ algorithm
 
             else
               algorithm
-                assert(false, getInstanceName() + " got unknown component");
+                Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
               then
                 fail();
           end match;
@@ -894,7 +894,7 @@ algorithm
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown node");
+          Error.assertion(false, getInstanceName() + " got unknown node", sourceInfo());
         then
           fail();
   end match;

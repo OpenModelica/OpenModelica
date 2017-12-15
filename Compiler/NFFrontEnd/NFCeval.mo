@@ -126,7 +126,7 @@ algorithm
 
     case Expression.RECORD()
       algorithm
-        assert(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName());
+        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
       then fail();
 
     case Expression.CALL(call = call as Call.TYPED_CALL())
@@ -226,7 +226,7 @@ algorithm
         originExp;
     else
       algorithm
-        assert(false, getInstanceName() + " failed on untyped binding");
+        Error.assertion(false, getInstanceName() + " failed on untyped binding", sourceInfo());
       then
         fail();
   end match;
@@ -280,7 +280,7 @@ algorithm
 
       else
         algorithm
-          assert(false, getInstanceName() + " got invalid typename");
+          Error.assertion(false, getInstanceName() + " got invalid typename", sourceInfo());
         then
           fail();
 

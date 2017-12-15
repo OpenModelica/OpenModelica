@@ -113,7 +113,7 @@ public
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown range");
+          Error.assertion(false, getInstanceName() + " got unknown range", sourceInfo());
         then
           fail();
 
@@ -141,7 +141,7 @@ public
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown dim");
+          Error.assertion(false, getInstanceName() + " got unknown dim", sourceInfo());
         then
           fail();
 

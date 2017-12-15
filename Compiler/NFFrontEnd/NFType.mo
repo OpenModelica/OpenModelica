@@ -420,7 +420,7 @@ public
       case Type.ANY() then "$ANY$";
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type: " + anyString(ty));
+          Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
         then
           fail();
     end match;
@@ -463,7 +463,7 @@ public
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type: " + anyString(ty));
+          Error.assertion(false, getInstanceName() + " got unknown type: " + anyString(ty), sourceInfo());
         then
           fail();
     end match;

@@ -281,7 +281,7 @@ uniontype Class
           ();
       else
         algorithm
-          assert(false, getInstanceName() + " got non-modifiable class");
+          Error.assertion(false, getInstanceName() + " got non-modifiable class", sourceInfo());
         then
           fail();
     end match;

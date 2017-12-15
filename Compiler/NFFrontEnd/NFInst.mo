@@ -220,7 +220,7 @@ protected
   SCode.ClassDef cdef, ce_cdef;
   Type ty;
 algorithm
-  assert(SCode.elementIsClass(definition), getInstanceName() + " got non-class element");
+  Error.assertion(SCode.elementIsClass(definition), getInstanceName() + " got non-class element", sourceInfo());
   SCode.CLASS(classDef = cdef) := definition;
 
   cls := match cdef
@@ -378,7 +378,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown class");
+        Error.assertion(false, getInstanceName() + " got unknown class", sourceInfo());
       then
         fail();
 
@@ -786,7 +786,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown class.");
+        Error.assertion(false, getInstanceName() + " got unknown class.", sourceInfo());
       then
         ();
 
@@ -853,7 +853,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid instance cache");
+        Error.assertion(false, getInstanceName() + " got invalid instance cache", sourceInfo());
       then
         fail();
 
@@ -900,7 +900,7 @@ algorithm
 
           else
             algorithm
-              assert(false, getInstanceName() + " got invalid class tree");
+              Error.assertion(false, getInstanceName() + " got invalid class tree", sourceInfo());
             then
               ();
         end match;
@@ -1368,7 +1368,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid class");
+        Error.assertion(false, getInstanceName() + " got invalid class", sourceInfo());
       then
         fail();
 
@@ -1448,7 +1448,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid component");
+        Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
       then
         fail();
 
@@ -1597,7 +1597,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown expression");
+        Error.assertion(false, getInstanceName() + " got unknown expression", sourceInfo());
       then
         fail();
 
@@ -1661,7 +1661,7 @@ algorithm
               algorithm
                 // This should be caught by lookupComponent, only type name classes
                 // are allowed to be used where a component is expected.
-                assert(false, getInstanceName() + " got unknown class node");
+                Error.assertion(false, getInstanceName() + " got unknown class node", sourceInfo());
               then
                 fail();
           end match;
@@ -1999,7 +1999,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown equation");
+        Error.assertion(false, getInstanceName() + " got unknown equation", sourceInfo());
       then
         fail();
 
@@ -2131,7 +2131,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown statement");
+        Error.assertion(false, getInstanceName() + " got unknown statement", sourceInfo());
       then
         fail();
 

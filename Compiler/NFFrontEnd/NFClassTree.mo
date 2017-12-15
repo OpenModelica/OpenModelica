@@ -400,7 +400,7 @@ public
 
           else
             algorithm
-              assert(false, getInstanceName() + " got invalid component");
+              Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
             then
               fail();
         end match;
@@ -556,8 +556,8 @@ public
             end for;
 
             // Sanity check.
-            assert(comp_idx == compCount + 1, getInstanceName() + " miscounted components in " + InstNode.name(clsNode));
-            assert(cls_idx == classCount + 1, getInstanceName() + " miscounted classes in " + InstNode.name(clsNode));
+            Error.assertion(comp_idx == compCount + 1, getInstanceName() + " miscounted components in " + InstNode.name(clsNode), sourceInfo());
+            Error.assertion(cls_idx == classCount + 1, getInstanceName() + " miscounted classes in " + InstNode.name(clsNode), sourceInfo());
 
             // Create a new class tree and update the class in the node.
             cls.elements := INSTANTIATED_TREE(ltree, clss, comps, local_comps, exts, imps, dups);
@@ -573,7 +573,7 @@ public
 
         else
           algorithm
-            assert(false, getInstanceName() + " got invalid class");
+            Error.assertion(false, getInstanceName() + " got invalid class", sourceInfo());
           then
             fail();
 
@@ -945,7 +945,7 @@ public
           node := resolveEntry(entry.entry, tree);
         end if;
       else
-        assert(false, getInstanceName() + " failed on " + name);
+        Error.assertion(false, getInstanceName() + " failed on " + name, sourceInfo());
       end try;
     end getRedeclaredNode;
 
@@ -1137,13 +1137,13 @@ public
             end for;
 
             // Make extra sure that we actually found the component.
-            assert(i == entry.index, getInstanceName() + " got invalid entry index");
+            Error.assertion(i == entry.index, getInstanceName() + " got invalid entry index", sourceInfo());
           then
             node;
 
         else
           algorithm
-            assert(false, getInstanceName() + " got invalid entry");
+            Error.assertion(false, getInstanceName() + " got invalid entry", sourceInfo());
           then
             fail();
 

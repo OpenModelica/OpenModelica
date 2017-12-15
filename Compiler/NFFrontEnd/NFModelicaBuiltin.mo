@@ -298,7 +298,7 @@ function linspace "Real vector with equally spaced elements"
   input Integer n "number";
   output Real v[n];
 algorithm
-  // assert(n >= 2, "linspace requires n>=2 but got " + String(n));
+  // Error.assertion(n >= 2, "linspace requires n>=2 but got " + String(n), sourceInfo());
   v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
   annotation(__OpenModelica_builtin=true,__OpenModelica_EarlyInline=true,Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'linspace()'\">linspace()</a>

@@ -372,7 +372,7 @@ uniontype LookupState
       case SCode.CLASS() then CLASS();
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown element.");
+          Error.assertion(false, getInstanceName() + " got unknown element.", sourceInfo());
         then
           fail();
     end match;
@@ -457,8 +457,7 @@ uniontype LookupState
 
       else
         algorithm
-          assert(false, getInstanceName() + " failed on unknown transition for element "
-            + InstNode.name(node));
+          Error.assertion(false, getInstanceName() + " failed on unknown transition for element " + InstNode.name(node), sourceInfo());
         then
           fail();
 

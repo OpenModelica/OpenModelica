@@ -826,8 +826,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + ": got a binary operation that is not
-            handled yet");
+        Error.assertion(false, getInstanceName() + ": got a binary operation that is not handled yet", sourceInfo());
       then
         fail();
   end match;
@@ -1429,7 +1428,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown type.");
+        Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
       then
         fail();
 
@@ -2083,7 +2082,7 @@ end matchTypes_cast;
 //          ixty := Expression.typeof(sub.exp);
 //          slicedims := getTypeDims(ixty);
 //          if listLength(slicedims) > 0 then
-//            assert(listLength(slicedims) == 1,
+//            Error.assertion(listLength(slicedims, sourceInfo()) == 1,
 //              getInstanceName() + " failed. Got a slice with more than one dim?");
 //            _::dims1 := dims1;
 //            {dim} := slicedims;
@@ -2459,7 +2458,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got untyped binding " + Binding.toString(binding));
+        Error.assertion(false, getInstanceName() + " got untyped binding " + Binding.toString(binding), sourceInfo());
       then
         fail();
   end match;

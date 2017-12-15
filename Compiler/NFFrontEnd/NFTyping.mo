@@ -183,8 +183,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got uninstantiated class " +
-          InstNode.name(cls));
+        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
       then
         fail();
 
@@ -286,8 +285,7 @@ algorithm
     // Any other type of component shouldn't show up here.
     else
       algorithm
-        assert(false, getInstanceName() + " got uninstantiated component " +
-          InstNode.name(component));
+        Error.assertion(false, getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 
@@ -383,13 +381,13 @@ algorithm
 
     case Component.ITERATOR(binding = Binding.UNBOUND())
       algorithm
-        assert(false, getInstanceName() + ": Implicit iteration ranges not yet implement");
+        Error.assertion(false, getInstanceName() + ": Implicit iteration ranges not yet implement", sourceInfo());
       then
         fail();
 
     else
       algorithm
-        assert(false, getInstanceName() + " got non-iterator " + InstNode.name(iterator));
+        Error.assertion(false, getInstanceName() + " got non-iterator " + InstNode.name(iterator), sourceInfo());
       then
         fail();
 
@@ -557,8 +555,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got uninstantiated class " +
-          InstNode.name(cls));
+        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(cls), sourceInfo());
       then
         fail();
 
@@ -627,7 +624,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid node " + InstNode.name(node));
+        Error.assertion(false, getInstanceName() + " got invalid node " + InstNode.name(node), sourceInfo());
       then
         fail();
 
@@ -655,7 +652,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got uninstantiated binding");
+        Error.assertion(false, getInstanceName() + " got uninstantiated binding", sourceInfo());
       then
         fail();
 
@@ -805,7 +802,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " failed for " + Binding.toString(binding));
+        Error.assertion(false, getInstanceName() + " failed for " + Binding.toString(binding), sourceInfo());
       then
         fail();
   end match;
@@ -1064,7 +1061,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown expression");
+        Error.assertion(false, getInstanceName() + " got unknown expression", sourceInfo());
       then
         fail();
 
@@ -1193,7 +1190,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got invalid cref.");
+        Error.assertion(false, getInstanceName() + " got invalid cref.", sourceInfo());
       then
         fail();
 
@@ -1317,7 +1314,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown cref");
+        Error.assertion(false, getInstanceName() + " got unknown cref", sourceInfo());
       then
         fail();
 
@@ -1393,7 +1390,7 @@ algorithm
     case Subscript.WHOLE() then Type.UNKNOWN();
     else
       algorithm
-        assert(false, getInstanceName() + " got untyped subscript");
+        Error.assertion(false, getInstanceName() + " got untyped subscript", sourceInfo());
       then
         fail();
   end match;
@@ -1719,8 +1716,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got uninstantiated class " +
-          InstNode.name(classNode));
+        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
       then
         fail();
   end match;
@@ -1861,8 +1857,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got uninstantiated component " +
-          InstNode.name(component));
+        Error.assertion(false, getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 

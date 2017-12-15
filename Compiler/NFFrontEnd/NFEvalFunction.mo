@@ -39,7 +39,7 @@ encapsulated package NFEvalFunction
   TODO:
     * Implement evaluation of MetaModelica statements.
     * Enable NORETCALL (see comment in evaluateStatement).
-    * Implement terminate and assert(false, ...).
+    * Implement terminate and Error.assertion(false, ..., sourceInfo()).
     * Arrays of records probably doesn't work yet.
 "
 

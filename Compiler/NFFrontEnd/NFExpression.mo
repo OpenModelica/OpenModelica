@@ -433,7 +433,7 @@ public
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown expression.");
+          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
         then
           fail();
 
@@ -573,7 +573,7 @@ public
 
         else
           algorithm
-            assert(false, getInstanceName() + " got unknown subscript " + anyString(sub));
+            Error.assertion(false, getInstanceName() + " got unknown subscript " + anyString(sub), sourceInfo());
           then
             fail();
 
@@ -627,14 +627,14 @@ public
     list<list<Expression>> partexps;
     Integer dimsize;
   algorithm
-    assert(not listEmpty(inDims), "Empty dimension list given in arrayFromList.");
+    Error.assertion(not listEmpty(inDims), "Empty dimension list given in arrayFromList.", sourceInfo());
 
     ldim::restdims := inDims;
     dimsize := Dimension.size(ldim);
     ty := Type.liftArrayLeft(elemTy, ldim);
 
     if List.hasOneElement(inDims) then
-      assert(dimsize == listLength(inExps), "Length mismatch in arrayFromList.");
+      Error.assertion(dimsize == listLength(inExps), "Length mismatch in arrayFromList.", sourceInfo());
       outExp := ARRAY(ty,inExps);
       return;
     end if;
@@ -880,7 +880,7 @@ public
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'");
+          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
         then
           fail();
 

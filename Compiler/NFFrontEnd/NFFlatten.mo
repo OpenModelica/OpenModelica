@@ -176,7 +176,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got non-instantiated component " + ComponentRef.toString(prefix) + "\n");
+        Error.assertion(false, getInstanceName() + " got non-instantiated component " + ComponentRef.toString(prefix) + "\n", sourceInfo());
       then
         ();
 
@@ -262,7 +262,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown component");
+        Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
       then
         fail();
 
@@ -321,7 +321,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got untyped binding.");
+        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
       then
         fail();
 

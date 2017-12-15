@@ -252,7 +252,7 @@ public
       case USERDEFINED() then DAE.USERDEFINED(op.fqName);
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type.");
+          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;
@@ -297,7 +297,7 @@ public
       case USERDEFINED() then Type.UNKNOWN();
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type.");
+          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;
@@ -343,7 +343,7 @@ public
       case USERDEFINED() then op;
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type.");
+          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;
@@ -403,7 +403,7 @@ public
       case USERDEFINED()        then "Userdefined:" + Absyn.pathString(op.fqName);
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type.");
+          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
         then
           fail();
     end match;

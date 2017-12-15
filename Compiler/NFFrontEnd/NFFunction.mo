@@ -879,7 +879,7 @@ protected
     array<Mutable<InstNode>> comps;
     InstNode n;
   algorithm
-    assert(InstNode.isClass(node), getInstanceName() + " got non-class node");
+    Error.assertion(InstNode.isClass(node), getInstanceName() + " got non-class node", sourceInfo());
     cls := InstNode.getClass(node);
 
     () := match cls
@@ -906,7 +906,7 @@ protected
 
       else
         algorithm
-          assert(false, getInstanceName() + " got non-instantiated function");
+          Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
         then
           fail();
     end match;
@@ -981,7 +981,7 @@ protected
 
       slot := SLOT(InstNode.name(component), SlotType.GENERIC, default, NONE());
     else
-      assert(false, getInstanceName() + " got invalid component");
+      Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
     end try;
   end makeSlot;
 
@@ -1024,8 +1024,7 @@ protected
     def := InstNode.definition(node);
     res := SCode.getClassRestriction(def);
 
-    assert(SCode.isFunctionRestriction(res),
-      getInstanceName() + " got non-function restriction");
+    Error.assertion(SCode.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
 
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
 

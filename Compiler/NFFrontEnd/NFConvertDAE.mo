@@ -255,8 +255,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type attribute " +
-            Modifier.name(m));
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
         then
           fail();
     end match;
@@ -286,8 +285,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type attribute " +
-            Modifier.name(m));
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
         then
           fail();
     end match;
@@ -314,8 +312,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type attribute " +
-            Modifier.name(m));
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
         then
           fail();
     end match;
@@ -342,8 +339,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type attribute " +
-            Modifier.name(m));
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
         then
           fail();
     end match;
@@ -372,8 +368,7 @@ algorithm
       // unknown attributes here.
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown type attribute " +
-            Modifier.name(m));
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
         then
           fail();
     end match;
@@ -396,7 +391,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got untyped binding");
+        Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
       then
         fail();
 
@@ -427,13 +422,13 @@ algorithm
 
     case Modifier.MODIFIER(binding = Binding.TYPED_BINDING())
       algorithm
-        assert(false, getInstanceName() + " got non StateSelect value");
+        Error.assertion(false, getInstanceName() + " got non StateSelect value", sourceInfo());
       then
         fail();
 
     else
       algorithm
-        assert(false, getInstanceName() + " got untyped binding");
+        Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
       then
         fail();
 
@@ -452,7 +447,7 @@ algorithm
     case "always" then DAE.StateSelect.ALWAYS();
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown StateSelect literal " + name);
+        Error.assertion(false, getInstanceName() + " got unknown StateSelect literal " + name, sourceInfo());
       then
         fail();
   end match;
@@ -506,7 +501,7 @@ algorithm
     // For equations should have been unrolled here.
     case Equation.FOR()
       algorithm
-        assert(false, getInstanceName() + " got a for equation");
+        Error.assertion(false, getInstanceName() + " got a for equation", sourceInfo());
       then
         fail();
 
@@ -645,7 +640,7 @@ algorithm
     // For equations should have been unrolled here.
     case Equation.FOR()
       algorithm
-        assert(false, getInstanceName() + " got a for equation");
+        Error.assertion(false, getInstanceName() + " got a for equation", sourceInfo());
       then
         fail();
 
@@ -941,7 +936,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got unknown function");
+        Error.assertion(false, getInstanceName() + " got unknown function", sourceInfo());
       then
         fail();
 
@@ -985,7 +980,7 @@ algorithm
 
     else
       algorithm
-        assert(false, getInstanceName() + " got untyped component.");
+        Error.assertion(false, getInstanceName() + " got untyped component.", sourceInfo());
       then
         fail();
 

@@ -210,7 +210,7 @@ public
       case WHOLE() then DAE.WHOLEDIM();
       else
         algorithm
-          assert(false, getInstanceName() + " failed on unknown subscript");
+          Error.assertion(false, getInstanceName() + " failed on unknown subscript", sourceInfo());
         then
           fail();
     end match;

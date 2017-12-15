@@ -142,7 +142,7 @@ uniontype Call
       case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, info);
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown call type");
+          Error.assertion(false, getInstanceName() + " got unknown call type", sourceInfo());
         then
           fail();
     end match;
@@ -194,7 +194,7 @@ uniontype Call
 
       else
         algorithm
-          assert(false, getInstanceName() + " got unknown function args");
+          Error.assertion(false, getInstanceName() + " got unknown function args", sourceInfo());
         then
           fail();
     end match;
@@ -356,7 +356,7 @@ uniontype Call
       case "zeros" then typeZerosOnesCall(call, origin, info);
       else
         algorithm
-          assert(false, getInstanceName() + " got unhandled builtin function");
+          Error.assertion(false, getInstanceName() + " got unhandled builtin function", sourceInfo());
         then
           fail();
     end match;
@@ -412,7 +412,7 @@ uniontype Call
       case UNTYPED_MAP_CALL(ref = ComponentRef.CREF(node = fn_node))  algorithm
         // Fetch the cached function(s).
         fnl := typeCachedFunctions(call.ref);
-        assert(listLength(fnl) == 1, getInstanceName() + " overloaded functions in mapping functions not handled yet.");
+        Error.assertion(listLength(fnl) == 1, getInstanceName() + " overloaded functions in mapping functions not handled yet.", sourceInfo());
         fn := listHead(fnl);
 
         for iter in call.iters loop
@@ -431,7 +431,7 @@ uniontype Call
         (TYPED_MAP_CALL(fn, ty, arg, call.iters), ty, variability);
 
       else algorithm
-        assert(false, getInstanceName() + " got invalid function call expression");
+        Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
       then
         fail();
     end match;
@@ -462,7 +462,7 @@ uniontype Call
         typeArgs(call, origin, info);
 
       else algorithm
-        assert(false, getInstanceName() + " got invalid function call expression");
+        Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
       then
         fail();
     end match;
@@ -494,7 +494,7 @@ uniontype Call
 
       else
         algorithm
-          assert(false, getInstanceName() + " got invalid function call reference");
+          Error.assertion(false, getInstanceName() + " got invalid function call reference", sourceInfo());
         then
           fail();
     end match;
@@ -537,7 +537,7 @@ uniontype Call
         (TYPED_CALL(fn, ty, args, ca), ty, variability);
 
       else algorithm
-        assert(false, getInstanceName() + " got invalid function call expression");
+        Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
       then
         fail();
     end match;
@@ -758,7 +758,7 @@ protected
 
       else
         algorithm
-          assert(false, getInstanceName() + " got untyped call");
+          Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
         then
           fail();
     end match;
@@ -839,7 +839,7 @@ protected
       case TYPED_MAP_CALL() then call.fn;
       else
         algorithm
-          assert(false, getInstanceName() + " got untyped function");
+          Error.assertion(false, getInstanceName() + " got untyped function", sourceInfo());
         then
           fail();
     end match;

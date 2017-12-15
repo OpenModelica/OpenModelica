@@ -136,7 +136,7 @@ uniontype CachedData
                                     func_cache.specialBuiltin or specialBuiltin);
       else
         algorithm
-          assert(false, getInstanceName() + ": Invalid cache for function");
+          Error.assertion(false, getInstanceName() + ": Invalid cache for function", sourceInfo());
         then
           fail();
     end match;
@@ -870,7 +870,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.addFunc(fn, specialBuiltin, node.caches); then ();
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end cacheAddFunc;
 
@@ -880,7 +880,7 @@ uniontype InstNode
   algorithm
     func_cache := match inNode
       case CLASS_NODE() then CachedData.getFuncCache(inNode.caches);
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end getFuncCache;
 
@@ -890,7 +890,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.setFuncCache(node.caches, in_func_cache); then ();
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setFuncCache;
 
@@ -900,7 +900,7 @@ uniontype InstNode
   algorithm
     pack_cache := match inNode
       case CLASS_NODE() then CachedData.getPackageCache(inNode.caches);
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end getPackageCache;
 
@@ -910,7 +910,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, in_pack_cache); then ();
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setPackageCache;
 
@@ -919,7 +919,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.clearPackageCache(node.caches); then ();
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end clearPackageCache;
 
@@ -929,7 +929,7 @@ uniontype InstNode
   algorithm
     pack_cache := match inNode
       case CLASS_NODE() then CachedData.getInnerOuterCache(inNode.caches);
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end getInnerOuterCache;
 
@@ -939,7 +939,7 @@ uniontype InstNode
   algorithm
     () := match node
       case CLASS_NODE() algorithm CachedData.setInnerOuterCache(node.caches, in_out_cache); then ();
-      else algorithm assert(false, getInstanceName() + " got node without cache"); then fail();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setInnerOuterCache;
 
