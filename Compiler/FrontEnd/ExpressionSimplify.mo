@@ -282,6 +282,8 @@ algorithm
 
     case (DAE.CALL(),_) then (simplifyCall(inExp),options);
 
+    case (DAE.RSUB(),_) then (simplifyRSub(inExp),options);
+
     case (DAE.MATCHEXPRESSION(),_) then (simplifyMatch(inExp),options);
     case (DAE.UNBOX(),_) then (simplifyUnbox(inExp),options);
     case (DAE.BOX(),_) then (simplifyUnbox(inExp),options);
@@ -301,6 +303,18 @@ algorithm
     else (inExp,options);
   end match;
 end simplifyWork;
+
+protected function simplifyRSub
+  input output DAE.Exp e;
+algorithm
+  e := match e
+    local
+      DAE.ComponentRef cr;
+    case (DAE.RSUB(exp=DAE.CREF(componentRef=cr), ix=-1))
+      then DAE.CREF(ComponentReference.joinCrefs(cr, ComponentReference.makeCrefIdent(e.fieldName, e.ty, {})), e.ty);
+    else e;
+  end match;
+end simplifyRSub;
 
 protected function simplifyAsubExp
   input DAE.Exp origExp;

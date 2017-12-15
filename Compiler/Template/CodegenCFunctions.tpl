@@ -3699,6 +3699,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as CONS(__)
   case e as LIST(__)
   case e as SIZE(__)     then expTypeFlag(typeof(e), flag)
+  case c as RSUB(ix=-1)       then expTypeFlag(c.ty, flag)
 
   case META_TUPLE(__)
   case META_OPTION(__)
@@ -6246,6 +6247,9 @@ template daeExpRsub(Exp inExp, Context context, Text &preExp,
  "Generates code for an tsub expression."
 ::=
   match inExp
+  case RSUB(ix=-1) then
+    let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+    '<%res%>._<%fieldName%>'
   case RSUB(__) then
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     let offset = intAdd(ix,1) // 1-based
