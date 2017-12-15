@@ -223,13 +223,19 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
   for(i=0; i < data->modelData->nStates; ++i)
   {
-    tmp[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-     infoStreamPrint(LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
+    tmp[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    infoStreamPrint(LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
   }
+
   /* daeMode: set nominal values for algebraic variables */
   if (idaData->daeMode)
   {
     data->simulationInfo->daeModeData->getAlgebraicDAEVarNominals(data, threadData, tmp + data->modelData->nStates);
+  }
+  /* multiply by tolerance to obtain a relative tolerace */
+  for(i=0; i < idaData->N; ++i)
+  {
+    tmp[i] *= data->simulationInfo->tolerance;
   }
   messageClose(LOG_SOLVER);
   flag = IDASVtolerances(idaData->ida_mem,
@@ -251,13 +257,16 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     for(i=0; i < data->modelData->nStates; ++i)
     {
       idaData->yScale[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
-      idaData->ypScale[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
+      idaData->ypScale[i] = 1.0;
     }
     /* daeMode: set nominal values for algebraic variables */
     if (idaData->daeMode)
     {
      data->simulationInfo->daeModeData->getAlgebraicDAEVarNominals(data, threadData, idaData->yScale + data->modelData->nStates);
-     data->simulationInfo->daeModeData->getAlgebraicDAEVarNominals(data, threadData, idaData->ypScale + data->modelData->nStates);
+     for(i=data->modelData->nStates; i < idaData->N; ++i)
+     {
+       idaData->ypScale[i] = 1.0;
+     }
     }
     infoStreamPrint(LOG_SOLVER_V, 1, "The scale factors for all ida states: ");
     for(i=0; i < idaData->N; ++i)
@@ -1109,7 +1118,6 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     infoStreamPrint(LOG_SOLVER_V, 1, "scale residuals");
     idaScaleVector(res, idaData->resScale, idaData->N);
     messageClose(LOG_SOLVER_V);
-
     idaScaleData(idaData);
   }
 
@@ -1482,6 +1490,7 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
 
   long int i,j,ii;
   int nth = 0;
+  int disBackup = idaData->disableScaling;
 
   double currentStep;
 
@@ -1507,13 +1516,15 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
 
   setContext(data, &tt, CONTEXT_JACOBIAN);
 
-  /* rescale idaData->y and idaData->yp */
+  /* rescale idaData->y and idaData->yp
+   * the evaluation of the  residual function
+   * needs to be performed on unscaled values
+   */
   if ((omc_flag[FLAG_IDA_SCALING] && !idaData->disableScaling))
   {
     idaReScaleVector(rr, idaData->resScale, idaData->N);
     idaReScaleData(idaData);
   }
-
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
@@ -1536,8 +1547,9 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
         delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
-
+    idaData->disableScaling = 1;
     (*idaData->residualFunction)(tt, yy, yp, idaData->newdelta, userData);
+    idaData->disableScaling = disBackup;
 
     increaseJacContext(data);
 
@@ -1554,7 +1566,7 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
           if (idaData->disableScaling == 1 || !omc_flag[FLAG_IDA_SCALING]){
             setJacElementKluSparse(j, ii, (newdelta[j] - delta[j]) * delta_hh[ii], nth, Jac);
           }else{
-            setJacElementKluSparse(j, ii, ((newdelta[j] - delta[j]) * delta_hh[ii]) * idaData->resScale[j] / idaData->yScale[ii], nth, Jac);
+            setJacElementKluSparse(j, ii, ((newdelta[j] - delta[j]) * delta_hh[ii]) / idaData->resScale[j] * idaData->yScale[ii], nth, Jac);
           }
           nth++;
         };
@@ -1674,7 +1686,7 @@ int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SlsMat inScaleMatrix)
                       denseMatrix, idaData, tmp1, tmp2, tmp3);
       scaleMatrix = SlsConvertDls(denseMatrix);
     }
-    /* disable scaled jacobian */
+    /* enable scaled jacobian again */
     idaData->disableScaling = 0;
   }
   else

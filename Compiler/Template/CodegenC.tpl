@@ -4020,7 +4020,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
     (match var
     case SIMVAR(__) then
       <<
-      algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal * data->simulationInfo->tolerance;
+      algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal;
       infoStreamPrint(LOG_SOLVER, 0, "%ld. %s -> %g", ++i, <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
       >>
     end match)

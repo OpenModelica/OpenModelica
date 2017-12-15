@@ -71,7 +71,7 @@ typedef struct IDA_SOLVER
   double *yScale;
   double *ypScale;
   double *resScale;
-  int disableScaling;            /* = 1 disables scaling temporary for particular calculations */
+  int disableScaling;           /* = 1 disables scaling temporary for particular calculations */
 
   /* ### work array used in jacobian calculation */
   double sqrteps;
