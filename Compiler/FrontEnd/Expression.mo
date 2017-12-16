@@ -1525,17 +1525,18 @@ public function realExpIntLit "returns the int value if expression is constant R
   input DAE.Exp exp;
   output Option<Integer> oi;
 algorithm
-  oi := matchcontinue exp
+  oi := match exp
     local
       Real r;
       Integer i;
+      Option<Integer> op;
     case (DAE.RCONST(real = r))
       equation
         i = realInt(r);
-        true = realEq(r,intReal(i));
-      then SOME(i);
+        op = if realEq(r,intReal(i)) then SOME(i) else NONE();
+      then op;
     else NONE();
-  end matchcontinue;
+  end match;
 end realExpIntLit;
 
 public function expInt "returns the int value if expression is constant Integer"
@@ -5415,32 +5416,28 @@ protected function traverseExpMatrix
   input list<list<DAE.Exp>> inMatrix;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<DAE.Exp>> outMatrix;
-  output Type_a outTypeA;
+  output list<list<DAE.Exp>> outMatrix = {};
+  output Type_a outTypeA = inTypeA;
   partial function FuncExpType
     input DAE.Exp inExp;
     input Type_a inTypeA;
     output DAE.Exp outExp;
     output Type_a outA;
   end FuncExpType;
+protected
+  list<DAE.Exp> row_1;
+  Boolean same = true;
 algorithm
-  (outMatrix,outTypeA) := match (inMatrix,func,inTypeA)
-    local
-      FuncExpType rel;
-      Type_a e_arg,e_arg_1,e_arg_2;
-      list<DAE.Exp> row_1,row;
-      list<list<DAE.Exp>> rows_1,rows;
-
-    case ({},_,e_arg) then ({},e_arg);
-
-    case ((row :: rows),rel,e_arg)
-      equation
-        (row_1,e_arg_1) = traverseExpList(row, rel, e_arg);
-        (rows_1,e_arg_2) = traverseExpMatrix(rows, rel, e_arg_1);
-        rows_1 = if referenceEq(row,row_1) and referenceEq(rows,rows_1) then inMatrix else (row_1::rows_1);
-      then
-        (rows_1,e_arg_2);
-  end match;
+  for row in inMatrix loop
+    (row_1,outTypeA) := traverseExpList(row, func, outTypeA);
+    same := if referenceEq(row,row_1) then same else false;
+    outMatrix := row_1::outMatrix;
+  end for;
+  if same then
+    outMatrix := inMatrix;
+  else
+    outMatrix := MetaModelica.Dangerous.listReverseInPlace(outMatrix);
+  end if;
 end traverseExpMatrix;
 
 public function traverseExpList<ArgT> "Calls traverseExpBottomUp for each element of list."
@@ -5874,8 +5871,8 @@ protected function traverseExpMatrixTopDown
   input list<list<DAE.Exp>> inMatrix;
   input FuncExpType func;
   input Type_a inTypeA;
-  output list<list<DAE.Exp>> outMatrix;
-  output Type_a outTypeA;
+  output list<list<DAE.Exp>> outMatrix = {};
+  output Type_a outTypeA = inTypeA;
   partial function FuncExpType
     input DAE.Exp exp;
     input Type_a arg;
@@ -5883,22 +5880,20 @@ protected function traverseExpMatrixTopDown
     output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
+protected
+  list<DAE.Exp> row_1;
+  Boolean same = true;
 algorithm
-  (outMatrix,outTypeA) := match (inMatrix,func,inTypeA)
-    local
-      FuncExpType rel;
-      Type_a e_arg,e_arg_1,e_arg_2;
-      list<DAE.Exp> row_1,row;
-      list<list<DAE.Exp>> rows_1,rows;
-
-    case ({},_,e_arg) then ({},e_arg);
-
-    case ((row :: rows),rel,e_arg)
-      equation
-        (row_1,e_arg_1) = traverseExpListTopDown(row, rel, e_arg);
-        (rows_1,e_arg_2) = traverseExpMatrixTopDown(rows, rel, e_arg_1);
-      then (row_1 :: rows_1,e_arg_2);
-  end match;
+  for row in inMatrix loop
+    (row_1,outTypeA) := traverseExpListTopDown(row, func, outTypeA);
+    same := if referenceEq(row,row_1) then same else false;
+    outMatrix := row_1::outMatrix;
+  end for;
+  if same then
+    outMatrix := inMatrix;
+  else
+    outMatrix := MetaModelica.Dangerous.listReverseInPlace(outMatrix);
+  end if;
 end traverseExpMatrixTopDown;
 
 public function traverseExpListTopDown
@@ -5908,8 +5903,8 @@ public function traverseExpListTopDown
   input list<DAE.Exp> inExpl;
   input FuncExpType rel;
   input Type_a inExt_arg;
-  output list<DAE.Exp> outExpl;
-  output Type_a outA;
+  output list<DAE.Exp> outExpl = {};
+  output Type_a outA = inExt_arg;
   partial function FuncExpType
     input DAE.Exp exp;
     input Type_a arg;
@@ -5917,16 +5912,20 @@ public function traverseExpListTopDown
     output Boolean cont;
     output Type_a outArg;
   end FuncExpType;
+protected
+  DAE.Exp e_1;
+  Boolean same = true;
 algorithm
-  (outExpl,outA) := match(inExpl,rel,inExt_arg)
-    local DAE.Exp e,e1; list<DAE.Exp> expl1, expl; Type_a ext_arg;
-    case ({},_,ext_arg) then ({},ext_arg);
-    case (e::expl,_,ext_arg)
-      equation
-        (e1,ext_arg) = traverseExpTopDown(e, rel, ext_arg);
-        (expl1,ext_arg) = traverseExpListTopDown(expl,rel,ext_arg);
-      then (e1::expl1,ext_arg);
-  end match;
+  for e in inExpl loop
+    (e_1,outA) := traverseExpTopDown(e, rel, outA);
+    same := if referenceEq(e,e_1) then same else false;
+    outExpl := e_1::outExpl;
+  end for;
+  if same then
+    outExpl := inExpl;
+  else
+    outExpl := MetaModelica.Dangerous.listReverseInPlace(outExpl);
+  end if;
 end traverseExpListTopDown;
 
 public function traverseExpOpt "Calls traverseExpBottomUp for SOME(exp) and does nothing for NONE"
@@ -5972,12 +5971,12 @@ public function traverseExpOptTopDown "Calls traverseExpTopDown for SOME(exp) an
   replaceable type Type_a subtypeof Any;
 algorithm
   (outExp,outA) := match (inExp,func,inTypeA)
-    local DAE.Exp e; Type_a a;
+    local DAE.Exp e,e1; Type_a a;
     case(NONE(),_,a) then (NONE(),a);
     case(SOME(e),_,a)
       equation
-        (e,a) = traverseExpTopDown(e,func,a);
-      then (SOME(e),a);
+        (e1,a) = traverseExpTopDown(e,func,a);
+      then (if referenceEq(e,e1) then inExp else SOME(e1),a);
   end match;
 end traverseExpOptTopDown;
 
@@ -6951,14 +6950,14 @@ public function traverseExpOptBidir<ArgT>
 algorithm
   (outExp, outArg) := match(inExp)
     local
-      DAE.Exp e;
+      DAE.Exp e,e1;
       ArgT arg;
 
     case SOME(e)
       equation
-        (e, arg) = traverseExpBidir(e, inEnterFunc, inExitFunc, inArg);
+        (e1, arg) = traverseExpBidir(e, inEnterFunc, inExitFunc, inArg);
       then
-        (SOME(e), arg);
+        (if referenceEq(e,e1) then inExp else SOME(e1), arg);
 
     else (inExp, inArg);
   end match;

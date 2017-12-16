@@ -2035,6 +2035,30 @@ algorithm
   end match;
 end simplify2;
 
+protected function simplifyBinaryArrayOp
+  input Operator inOperator;
+  output Boolean found;
+algorithm
+  found := match (inOperator)
+      case DAE.MUL_MATRIX_PRODUCT() then true;
+      case DAE.ADD_ARR() then true;
+      case DAE.SUB_ARR() then true;
+      case DAE.MUL_ARR() then true;
+      case DAE.DIV_ARR() then true;
+      case DAE.POW_ARR() then true;
+      case DAE.POW_ARR2() then true;
+      case DAE.MUL_ARRAY_SCALAR() then true;
+      case DAE.ADD_ARRAY_SCALAR() then true;
+      case DAE.DIV_ARRAY_SCALAR() then true;
+      case DAE.POW_ARRAY_SCALAR() then true;
+      case DAE.SUB_SCALAR_ARRAY() then true;
+      case DAE.DIV_SCALAR_ARRAY() then true;
+      case DAE.POW_SCALAR_ARRAY() then true;
+      case DAE.MUL_SCALAR_PRODUCT() then true;
+      else false;
+    end match;
+end simplifyBinaryArrayOp;
+
 protected function simplifyBinaryArray "Simplifies binary array expressions,
   e.g. matrix multiplication, etc."
   input DAE.Exp inExp1;
@@ -3967,7 +3991,7 @@ algorithm
 
 
     // binary operations on arrays
-    case (_,op,e1,e2,_,_)
+    case (_,op,e1,e2,_,_) guard simplifyBinaryArrayOp(op)
       then simplifyBinaryArray(e1, op, e2);
 
     // binary scalar simplifications
