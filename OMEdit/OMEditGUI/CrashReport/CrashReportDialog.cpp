@@ -299,10 +299,10 @@ void CrashReportDialog::sendReport()
   QUrl url("https://dev.openmodelica.org/omeditcrashreports/cgi-bin/server.py");
   QNetworkRequest networkRequest(url);
   QNetworkAccessManager *pNetworkAccessManager = new QNetworkAccessManager;
+  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(reportSent(QNetworkReply*)));
   QNetworkReply *pNetworkReply = pNetworkAccessManager->post(networkRequest, pHttpMultiPart);
   pNetworkReply->ignoreSslErrors();
   pHttpMultiPart->setParent(pNetworkReply); // delete the pHttpMultiPart with the pNetworkReply
-  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(reportSent(QNetworkReply*)));
 }
 
 /*!
