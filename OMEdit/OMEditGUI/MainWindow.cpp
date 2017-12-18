@@ -814,6 +814,15 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
+  // create a folder with model name to dump the files in it.
+  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(),
+                                                    pLibraryTreeItem->getNameStructure());
+  if (!QDir().exists(modelDirectoryPath)) {
+    QDir().mkpath(modelDirectoryPath);
+  }
+  // set the folder as working directory
+  MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
+  // buildModelFMU parameters
   double version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
   QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
   QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
@@ -832,8 +841,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   //trace export FMU
   if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
     //Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
+    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(),
+                                                                              pLibraryTreeItem->getNameStructure(), fmuFileName);
   }
+  MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
