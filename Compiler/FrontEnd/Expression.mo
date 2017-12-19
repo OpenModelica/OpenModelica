@@ -2936,123 +2936,35 @@ public function factors
 algorithm
   // TODO: Remove this listReverse as it is pointless.
   // It transforms a*b to b*a, but the testsuite expects this :(
-  outExpLst := listReverse(factorsWork(inExp,{},false,false));
+  outExpLst := listReverse(factorsWork(inExp,{},false));
 end factors;
 
 protected function factorsWork
 "Returns the factors of the expression if any as a list of expressions"
   input DAE.Exp inExp;
-  input list<DAE.Exp> inAcc;
-  input Boolean noFactors "Decides if the default is the empty list or not";
+  input output list<DAE.Exp> acc;
   input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
-  output list<DAE.Exp> outExpLst;
 algorithm
-  outExpLst := match (inExp,inAcc,noFactors,doInverseFactors)
+  acc := match inExp
     local
       DAE.Exp e1,e2,e;
-      ComponentRef cr;
-      Real r;
-      Boolean b;
-      list<DAE.Exp> acc;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2),acc,_,_)
-      equation
-        acc = factorsWork(e1,acc,true,doInverseFactors);
-        acc = factorsWork(e2,acc,true,doInverseFactors);
+    case DAE.BINARY(exp1 = e1,operator = DAE.MUL(),exp2 = e2)
+      algorithm
+        acc := factorsWork(e1,acc,doInverseFactors);
+        acc := factorsWork(e2,acc,doInverseFactors);
       then acc;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = DAE.T_REAL()),exp2 = e2),acc,_,_)
-      equation
-        acc = factorsWork(e1,acc,true,doInverseFactors);
-        acc = factorsWork(e2,acc,true,not doInverseFactors);
+    case DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = DAE.T_REAL()),exp2 = e2)
+      algorithm
+        acc := factorsWork(e1,acc,doInverseFactors);
+        acc := factorsWork(e2,acc,not doInverseFactors);
       then acc;
-    case (DAE.CREF(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.BINARY(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.ICONST(integer = 1),acc,_,_)
+    case DAE.ICONST(integer = 1)
       then acc;
-    case (DAE.ICONST(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.RCONST(real = r),acc,_,_)
-      equation
-        b = not realEq(r,1.0);
-        e = if b and doInverseFactors then inverseFactors(inExp) else inExp;
-        acc = List.consOnTrue(b, e, acc);
+    case DAE.RCONST(real = 1.0)
       then acc;
-    case (DAE.SCONST(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.UNARY(),acc,_,_) // factor(-(x*y)) is -(x*y) ??
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.LUNARY(),acc,_,_)
-      then inExp::acc;
-    case (DAE.IFEXP(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.CALL(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.RECORD(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.RECORD(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.PARTEVALFUNCTION(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.ARRAY(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.MATRIX(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.RANGE(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.CAST(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.ASUB(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.TSUB(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.SIZE(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (DAE.REDUCTION(),acc,_,_)
-      equation
-        e = if doInverseFactors then inverseFactors(inExp) else inExp;
-      then e::acc;
-    case (e,acc,true,_)
-      equation
-        e = if doInverseFactors then inverseFactors(e) else e;
-      then e::acc;
-    case (_,acc,false,_)
-      then acc;
+    // case DAE.UNARY() // factor(-(x*y)) is -(x*y) ??
+    else (if doInverseFactors then inverseFactors(inExp) else inExp) :: acc;
   end match;
 end factorsWork;
 
@@ -3107,53 +3019,51 @@ algorithm
   // TODO: Remove this listReverse as it is pointless.
   // It transforms a*b to b*a, but the testsuite expects this :(
   // issue with expEqual(a*b,b*a) return false
-  outExpLst := listReverse(expandFactorsWork(inExp,{},false,false));
+  outExpLst := listReverse(expandFactorsWork(inExp,{},false));
 end expandFactors;
 
 protected function expandFactorsWork
 "Returns the factors of the expression if any as a list of expressions"
   input DAE.Exp inExp;
-  input list<DAE.Exp> inAcc;
-  input Boolean noFactors "Decides if the default is the empty list or not";
+  input output list<DAE.Exp> acc;
   input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
-  output list<DAE.Exp> outExpLst;
 algorithm
 
-  outExpLst := match (inExp,inAcc,noFactors,doInverseFactors)
+  acc := match inExp
     local
       DAE.Exp e1,e2,e3,e;
       Type tp;
-      list<DAE.Exp> acc, pow_acc, pow_acc2;
+      list<DAE.Exp> pow_acc, pow_acc2;
 
     // (x*y)^n = x^n*y^n
-    case (DAE.BINARY(DAE.BINARY(e1,DAE.MUL(),e2), DAE.POW(), e3),acc,_,_)
+    case DAE.BINARY(DAE.BINARY(e1,DAE.MUL(),e2), DAE.POW(), e3)
       equation
-        pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
+        pow_acc = expandFactorsWork(e1,{},doInverseFactors);
         pow_acc = expPowLst(pow_acc, e3);
 
-        pow_acc2 = expandFactorsWork(e2,{},noFactors,doInverseFactors);
+        pow_acc2 = expandFactorsWork(e2,{},doInverseFactors);
         pow_acc2 = expPowLst(pow_acc2, e3);
 
         acc = listAppend(pow_acc, acc);
         acc = listAppend(pow_acc2, acc);
       then acc;
     // (x/y)^n = x^n*y^(-n)
-    case (DAE.BINARY(DAE.BINARY(e1,DAE.DIV(),e2), DAE.POW(), e3),acc,_,_)
+    case DAE.BINARY(DAE.BINARY(e1,DAE.DIV(),e2), DAE.POW(), e3)
       equation
-        pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
+        pow_acc = expandFactorsWork(e1,{},doInverseFactors);
         pow_acc = expPowLst(pow_acc, e3);
 
-        pow_acc2 = expandFactorsWork(e2,{},noFactors,doInverseFactors);
+        pow_acc2 = expandFactorsWork(e2,{},doInverseFactors);
         pow_acc2 = expPowLst(pow_acc2, negate(e3));
 
         acc = listAppend(pow_acc, acc);
         acc = listAppend(pow_acc2, acc);
       then acc;
     // (x^n)^m = x^(n*m)
-    case (DAE.BINARY(DAE.BINARY(e1,DAE.POW(),e2), DAE.POW(), e3),acc,_,_)
+    case DAE.BINARY(DAE.BINARY(e1,DAE.POW(),e2), DAE.POW(), e3)
       equation
         e = expMul(e2,e3);
-        pow_acc = expandFactorsWork(e1,{},noFactors,doInverseFactors);
+        pow_acc = expandFactorsWork(e1,{},doInverseFactors);
         pow_acc = expPowLst(pow_acc, e);
 
         acc = listAppend(pow_acc, acc);
@@ -3165,23 +3075,23 @@ algorithm
     // abs(x/y) = abs(x)/abs(y);
 
     // -(x) = -1*x
-    case(DAE.UNARY(DAE.UMINUS(tp),e1),acc,_,_)
+    case DAE.UNARY(DAE.UMINUS(tp),e1)
       equation
         e = makeConstOne(tp);
-        acc = expandFactorsWork(e1,acc,true,doInverseFactors);
+        acc = expandFactorsWork(e1,acc,doInverseFactors);
         e = negate(e);
       then e::acc;
-    case(DAE.UNARY(DAE.UMINUS_ARR(tp),e1),acc,_,_)
+    case DAE.UNARY(DAE.UMINUS_ARR(tp),e1)
       equation
         e = makeConstOne(tp);
-        acc = expandFactorsWork(e1,acc,true,doInverseFactors);
+        acc = expandFactorsWork(e1,acc,doInverseFactors);
         e = negate(e);
       then e::acc;
 
    else
      equation
-       acc = factorsWork(inExp,inAcc,noFactors,doInverseFactors);
-     then expandFactorsWork2(acc, noFactors, doInverseFactors);
+       acc = factorsWork(inExp,acc,doInverseFactors);
+     then expandFactorsWork2(acc,doInverseFactors);
 
    end match;
 
@@ -3189,7 +3099,6 @@ end expandFactorsWork;
 
 protected function expandFactorsWork2
   input list<DAE.Exp> inAcc;
-  input Boolean noFactors "Decides if the default is the empty list or not";
   input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
   output list<DAE.Exp> outExpLst = {};
 protected
@@ -3198,11 +3107,11 @@ algorithm
 
 for elem in inAcc loop
   tmpExpLst := match(elem)
-                 case(DAE.BINARY(DAE.BINARY(_,DAE.DIV(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},noFactors,doInverseFactors);
-                 case(DAE.BINARY(DAE.BINARY(_,DAE.MUL(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},noFactors,doInverseFactors);
-                 case(DAE.BINARY(DAE.BINARY(_,DAE.POW(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},noFactors,doInverseFactors);
-                 case(DAE.UNARY(DAE.UMINUS(),_))  then expandFactorsWork(elem,{},noFactors,doInverseFactors);
-                 case(DAE.UNARY(DAE.UMINUS_ARR(),_))  then expandFactorsWork(elem,{},noFactors,doInverseFactors);
+                 case(DAE.BINARY(DAE.BINARY(_,DAE.DIV(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},doInverseFactors);
+                 case(DAE.BINARY(DAE.BINARY(_,DAE.MUL(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},doInverseFactors);
+                 case(DAE.BINARY(DAE.BINARY(_,DAE.POW(),_), DAE.POW(), _)) then expandFactorsWork(elem,{},doInverseFactors);
+                 case(DAE.UNARY(DAE.UMINUS(),_))  then expandFactorsWork(elem,{},doInverseFactors);
+                 case(DAE.UNARY(DAE.UMINUS_ARR(),_))  then expandFactorsWork(elem,{},doInverseFactors);
                  else {elem};
                end match;
   outExpLst := listAppend(tmpExpLst, outExpLst);
@@ -7111,6 +7020,13 @@ algorithm
         (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, arg);
       then
         (DAE.ASUB(e1, expl), arg);
+
+    case e1 as DAE.RSUB()
+      equation
+        (e2, arg) = traverseExpBidir(e1.exp, inEnterFunc, inExitFunc, inArg);
+        e1.exp = e2;
+      then
+        (e1, arg);
 
     case DAE.TSUB(e1, i, ty)
       equation

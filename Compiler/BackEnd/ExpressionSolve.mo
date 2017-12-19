@@ -129,7 +129,6 @@ algorithm
       varexp := Expression.expDer(varexp);
       cr := ComponentReference.crefPrefixDer(cr);
     end if;
-
   if (Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e1)) and Types.isIntegerOrRealOrSubTypeOfEither(Expression.typeof(e2))) then
     (e1, e2) := preprocessingSolve(e1, e2, varexp, SOME(shared.functionTree), NONE(), 0,  false);
   end if;
@@ -915,7 +914,6 @@ algorithm
   (factorWithX1, factorWithoutX1) := List.split1OnTrue(f1, expHasCref, inExp3);
   pWithX1 := makeProductLstSort(factorWithX1);
   pWithoutX1 := makeProductLstSort(factorWithoutX1);
-
   f2 := Expression.expandFactors(inExp2);
   (factorWithX2, factorWithoutX2) := List.split1OnTrue(f2, expHasCref, inExp3);
   (pWithX2,_) := ExpressionSimplify.simplify1(makeProductLstSort(factorWithX2));
@@ -989,7 +987,7 @@ algorithm
     if expand then
       (cr, b) := Expression.expOrDerCref(inExp3);
       if b then
-        (lhs, rhs) := Expression.allTermsForCref(inExp1, cr, Expression.Expression.expHasDerCref);
+        (lhs, rhs) := Expression.allTermsForCref(inExp1, cr, Expression.expHasDerCref);
       else
         (lhs, rhs) := Expression.allTermsForCref(inExp1, cr, Expression.expHasCrefNoPreOrStart);
       end if;
@@ -1748,7 +1746,7 @@ algorithm
         false = hasOnlyFactors(inExp1,inExp2);
         e = Expression.makeDiff(inExp1,inExp2);
         (e,_) = ExpressionSimplify.simplify1(e);
-        //print("\n\ne: ");print(ExpressionDump.printExpStr(e));
+        //print("\ne: ");print(ExpressionDump.printExpStr(e));
         dere = Differentiate.differentiateExpSolve(e, cr, functions);
         //print("\nder(e): ");print(ExpressionDump.printExpStr(dere));
         (dere,_) = ExpressionSimplify.simplify(dere);
