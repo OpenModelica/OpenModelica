@@ -1042,29 +1042,16 @@ public function prefixExpList "This function prefixes a list of expressions usin
   input InnerOuter.InstHierarchy inIH;
   input list<DAE.Exp> inExpExpLst;
   input Prefix.Prefix inPrefix;
-  output FCore.Cache outCache;
-  output list<DAE.Exp> outExpExpLst;
+  output FCore.Cache outCache = inCache;
+  output list<DAE.Exp> outExpExpLst = {};
+protected
+  DAE.Exp e_1;
 algorithm
-  (outCache,outExpExpLst) := match (inCache,inEnv,inIH,inExpExpLst,inPrefix)
-    local
-      DAE.Exp e_1,e;
-      list<DAE.Exp> es_1,es;
-      FCore.Graph env;
-      Prefix.Prefix p;
-      FCore.Cache cache;
-      InstanceHierarchy ih;
-
-    // handle empty case
-    case (cache,_,_,{},_) then (cache,{});
-
-    // yuppie! we have a list of expressions
-    case (cache,env,ih,(e :: es),p)
-      equation
-        (cache,e_1) = prefixExp(cache, env, ih, e, p);
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
-      then
-        (cache,e_1 :: es_1);
-  end match;
+  for e in inExpExpLst loop
+    (outCache,e_1) := prefixExp(outCache, inEnv, inIH, e, inPrefix);
+    outExpExpLst := e_1::outExpExpLst;
+  end for;
+  outExpExpLst := Dangerous.listReverseInPlace(outExpExpLst);
 end prefixExpList;
 
 //--------------------------------------------

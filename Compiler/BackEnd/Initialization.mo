@@ -439,7 +439,7 @@ protected
 algorithm
   outEqns := match(inWEqn)
     case BackendDAE.WHEN_STMTS(condition=condition,whenStmtLst=whenStmtLst) algorithm
-      active := Expression.containsInitialCall(condition, false);
+      active := Expression.containsInitialCall(condition);
       for stmt in whenStmtLst loop
         _ := match stmt
           case BackendDAE.ASSIGN(left = DAE.CREF(componentRef = cr), right = e) equation
@@ -531,7 +531,7 @@ algorithm
 
     // active when equation during initialization
     case DAE.STMT_WHEN(exp=condition, statementLst=stmts) guard
-      Expression.containsInitialCall(condition, false)
+      Expression.containsInitialCall(condition)
     equation
       stmts = List.foldr(stmts, List.consr, inAcc);
     then (stmts, inLeftCrs);

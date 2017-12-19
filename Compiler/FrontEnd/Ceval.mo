@@ -1419,29 +1419,18 @@ protected function cevalMatrixElt "Evaluates the expression of a matrix construc
   input Boolean inBoolean "impl";
   input Absyn.Msg inMsg;
   input Integer numIter;
-  output FCore.Cache outCache;
-  output list<Values.Value> outValues;
+  output FCore.Cache outCache = inCache;
+  output list<Values.Value> outValues = {};
+protected
+  Values.Value v;
+  list<Values.Value> vl;
 algorithm
-  (outCache, outValues) :=
-  match (inCache, inEnv, inMatrix, inBoolean, inMsg)
-    local
-      Values.Value v;
-      list<Values.Value> vl;
-      FCore.Graph env;
-      list<DAE.Exp> expl;
-      list<list<DAE.Exp>> expll;
-      Boolean impl;
-      Absyn.Msg msg;
-      FCore.Cache cache;
-    case (cache,env,(expl :: expll),impl,msg)
-      equation
-        (cache,vl,_) = cevalList(cache,env,expl,impl,NONE(),msg,numIter);
-        v = ValuesUtil.makeArray(vl);
-        (cache,vl)= cevalMatrixElt(cache,env, expll, impl,msg,numIter);
-      then
-        (cache,v :: vl);
-    case (cache,_,{},_,_) then (cache,{});
-  end match;
+  for expl in inMatrix loop
+    (outCache,vl,_) := cevalList(outCache,inEnv,expl,inBoolean,NONE(),inMsg,numIter);
+    v := ValuesUtil.makeArray(vl);
+    outValues := v::outValues;
+  end for;
+  outValues := listReverseInPlace(outValues);
 end cevalMatrixElt;
 
 protected function cevalBuiltinSize "Evaluates the size operator."
@@ -4490,16 +4479,14 @@ public function cevalList "This function does constant
   output Option<GlobalScript.SymbolTable> outInteractiveInteractiveSymbolTableOption;
 protected
   list<DAE.Exp> expLstNew = inExpExpLst;
-  DAE.Exp exp;
   Values.Value v;
   Option<GlobalScript.SymbolTable> st = inST;
 
 algorithm
-  while not listEmpty(expLstNew) loop
-    exp::expLstNew := expLstNew;
+  for exp in expLstNew loop
     (outCache, v, st) := ceval(outCache, inEnv, exp, inBoolean, st, inMsg, numIter+1);
     outValuesValueLst := v :: outValuesValueLst;
-  end while;
+  end for;
   outValuesValueLst := listReverseInPlace(outValuesValueLst);
   outInteractiveInteractiveSymbolTableOption := st;
 end cevalList;

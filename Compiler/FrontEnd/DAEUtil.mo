@@ -3091,7 +3091,7 @@ protected function verifyBoolWhenEquationBranch
   input list<DAE.Element> inEqs;
   output list<DAE.ComponentRef> crefs;
 protected
-  Boolean initCond = Expression.containsInitialCall(inCond, false);
+  Boolean initCond = Expression.containsInitialCall(inCond);
 algorithm
   crefs := verifyBoolWhenEquation1(inEqs, initCond);
 end verifyBoolWhenEquationBranch;

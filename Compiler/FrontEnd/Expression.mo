@@ -4983,23 +4983,17 @@ public function containsInitialCall "public function containsInitialCall
   only in one of the two forms when initial() then or when {…,initial(),…}
   then. [...]"
   input DAE.Exp condition;    // expression of a when-clause
-  input Boolean inB;          // use false for primary calls - it us for internal use only
   output Boolean res;
 algorithm
-  res := match(condition, inB)
+  res := match(condition)
     local
-      Boolean b;
       list<Exp> array;
 
-    case (_, true) equation
+    case (DAE.CALL(path = Absyn.IDENT(name = "initial")))
     then true;
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "initial")), _) equation
-    then true;
-
-    case (DAE.ARRAY(array=array), _) equation
-      b = List.fold(array, containsInitialCall, inB);
-    then b;
+    case (DAE.ARRAY(array=array))
+    then List.mapBoolOr(array, containsInitialCall);
 
     else false;
   end match;
