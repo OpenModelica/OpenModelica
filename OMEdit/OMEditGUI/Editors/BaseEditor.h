@@ -241,6 +241,8 @@ public:
   void lineNumberAreaMouseEvent(QMouseEvent *event);
   void goToLineNumber(int lineNumber);
   QCompleter *completer();
+  bool isUndoAvailable() {return mIsUndoAvailable;}
+  bool isRedoAvailable() {return mIsRedoAvailable;}
 private:
   BaseEditor *mpBaseEditor;
   LineNumberArea *mpLineNumberArea;
@@ -251,6 +253,8 @@ private:
   Label *mpCompleterToolTipLabel;
   QStandardItemModel* mpStandardItemModel;
   QCompleter *mpCompleter;
+  bool mIsUndoAvailable;
+  bool mIsRedoAvailable;
 
   void highlightCurrentLine();
   void highlightParentheses();
@@ -274,6 +278,8 @@ public slots:
   void updateHighlights();
   void updateCursorPosition();
   void textSettingsChanged();
+  void setUndoAvailable(bool available) {mIsUndoAvailable = available;}
+  void setRedoAvailable(bool available) {mIsRedoAvailable = available;}
   void showTabsAndSpaces(bool On);
   void toggleBreakpoint();
   void foldAll();

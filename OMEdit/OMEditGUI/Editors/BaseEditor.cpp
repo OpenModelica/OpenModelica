@@ -712,6 +712,10 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   connect(pOptionsDialog, SIGNAL(textSettingsChanged()), this, SLOT(textSettingsChanged()));
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), mpBaseEditor, SLOT(showContextMenu(QPoint)));
+  setUndoAvailable(false);
+  setRedoAvailable(false);
+  connect(this, SIGNAL(undoAvailable(bool)), SLOT(setUndoAvailable(bool)));
+  connect(this, SIGNAL(redoAvailable(bool)), SLOT(setRedoAvailable(bool)));
 }
 
 /*!
@@ -1630,18 +1634,26 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     return;
   } else if (pEvent->matches(QKeySequence::Cut) || pEvent->matches(QKeySequence::Copy)) {
     // ctrl+x/ctrl+c is pressed.
-    if (mpBaseEditor->getModelWidget()->getLibraryTreeItem()
+    if (mpBaseEditor->getModelWidget() && mpBaseEditor->getModelWidget()->getLibraryTreeItem()
         && ((mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText)
             || (mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getAccess() == LibraryTreeItem::packageText))) {
       return;
     }
   } else if (pEvent->matches(QKeySequence::Undo)) {
     // ctrl+z is pressed.
-    MainWindow::instance()->undo();
+    if (mpBaseEditor->getModelWidget()) {
+      MainWindow::instance()->undo();
+    } else {
+      undo();
+    }
     return;
   } else if (pEvent->matches(QKeySequence::Redo)) {
     // ctrl+y is pressed.
-    MainWindow::instance()->redo();
+    if (mpBaseEditor->getModelWidget()) {
+      MainWindow::instance()->redo();
+    } else {
+      redo();
+    }
     return;
   } else if (shiftModifier && pEvent->key() == Qt::Key_Home) {
     handleHomeKey(true);
@@ -1692,8 +1704,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   }
   //pop up the completer according to editor instance
   TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
-  if (pTextEditorPage->getAutoCompleteCheckBox()->isChecked())
-  {
+  if (pTextEditorPage->getAutoCompleteCheckBox()->isChecked()) {
     mpBaseEditor->popUpCompleter();
   }
 }
@@ -2050,8 +2061,19 @@ QMenu* BaseEditor::createStandardContextMenu()
    */
   //  QMenu *pMenu = mpPlainTextEdit->createStandardContextMenu();
   QMenu *pMenu = new QMenu;
-  pMenu->addAction(MainWindow::instance()->getUndoAction());
-  pMenu->addAction(MainWindow::instance()->getRedoAction());
+  if (mpModelWidget) {
+    pMenu->addAction(MainWindow::instance()->getUndoAction());
+    pMenu->addAction(MainWindow::instance()->getRedoAction());
+  } else {
+    QAction *pUndoAction = pMenu->addAction(tr("Undo"), mpPlainTextEdit, SLOT(undo()));
+    pUndoAction->setIcon(QIcon(":/Resources/icons/undo.svg"));
+    pUndoAction->setShortcut(QKeySequence::Undo);
+    pUndoAction->setEnabled(mpPlainTextEdit->isUndoAvailable());
+    QAction *pRedoAction = pMenu->addAction(tr("Redo"), mpPlainTextEdit, SLOT(undo()));
+    pRedoAction->setIcon(QIcon(":/Resources/icons/redo.svg"));
+    pRedoAction->setShortcut(QKeySequence::Redo);
+    pRedoAction->setEnabled(mpPlainTextEdit->isRedoAvailable());
+  }
   pMenu->addSeparator();
   /* ticket:4585
    * Since we are not using QPlainTextEdit->createStandardContextMenu()
@@ -2096,7 +2118,7 @@ QMenu* BaseEditor::createStandardContextMenu()
     pMenu->addSeparator();
   }
   // disable the cut & copy buttons based on Access annotation.
-  if (mpModelWidget->getLibraryTreeItem()
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()
       && ((mpModelWidget->getLibraryTreeItem()->getAccess() <= LibraryTreeItem::nonPackageText)
           || (mpModelWidget->getLibraryTreeItem()->getAccess() == LibraryTreeItem::packageText))) {
     pCutAction->setEnabled(false);
