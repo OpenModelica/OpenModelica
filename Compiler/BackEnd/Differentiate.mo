@@ -685,21 +685,30 @@ algorithm
     then (res, functionTree);
 
      // differentiate tsub
-    case DAE.TSUB(exp=e1, ix=i, ty=tp) equation
-      //se1 = ExpressionDump.printExpStr(inExp);
-      //print("\nExp-TSUB\nDifferentiate exp: " + se1);
+    case DAE.TSUB(exp=e1, ix=i, ty=tp)
+      algorithm
+        (res1, functionTree) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
 
-      (res1, functionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+        if not referenceEq(e1, res1) then
+          res := DAE.TSUB(res1, i, tp);
+          (res,_) := ExpressionSimplify.simplify1(res);
+        else
+          res := inExp;
+        end if;
+      then (res, functionTree);
 
-      res =  DAE.TSUB(res1, i, tp);
-      (res,_) = ExpressionSimplify.simplify1(res);
-      //(res,_) = ExpressionSimplify.simplify(res);
 
-      //se1 = ExpressionDump.printExpStr(res);
-      //print("\nresults to exp: " + se1);
-    then (res, functionTree);
+     // differentiate tsub
+    case e1 as DAE.RSUB()
+      algorithm
+        (res1, functionTree) := differentiateExp(e1.exp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+        if not referenceEq(e1.exp, res1) then
+          e1.exp := res1;
+          (e1,_) := ExpressionSimplify.simplify1(e1);
+        end if;
+      then (e1, functionTree);
 
-    // differentiate tuple
+        // differentiate tuple
     case DAE.TUPLE(PR=expl) equation
       //se1 = ExpressionDump.printExpStr(inExp);
       //print("\nExp-TUPLE\nDifferentiate exp: " + se1);
