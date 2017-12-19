@@ -2336,6 +2336,18 @@ void GraphicsView::focusOutEvent(QFocusEvent *event)
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
+  // save annotations of all connections
+  foreach (LineAnnotation *pConnectionLineAnnotation, mConnectionsList) {
+    pConnectionLineAnnotation->setOldAnnotation(pConnectionLineAnnotation->getOMCShapeAnnotation());
+  }
+  // save annotations of all transitions
+  foreach (LineAnnotation *pTransitionLineAnnotation, mTransitionsList) {
+    pTransitionLineAnnotation->setOldAnnotation(pTransitionLineAnnotation->getOMCShapeAnnotation());
+  }
+  // save annotations of all initial states
+  foreach (LineAnnotation *pInitialStateLineAnnotation, mInitialStatesList) {
+    pInitialStateLineAnnotation->setOldAnnotation(pInitialStateLineAnnotation->getOMCShapeAnnotation());
+  }
   bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
   if (event->key() == Qt::Key_Delete && isAnyItemSelectedAndEditable(event->key())) {
