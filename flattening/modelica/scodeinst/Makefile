@@ -280,6 +280,7 @@ FuncBuiltinMin.mo \
 FuncBuiltinMod.mo \
 FuncBuiltinNdims.mo \
 FuncBuiltinOnes.mo \
+FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
 FuncBuiltinProduct.mo \
 FuncBuiltinRem.mo \
@@ -549,7 +550,6 @@ expconn7.mo \
 func1.mo \
 FuncBuiltinCardinality.mo \
 FuncBuiltinEnumTypeName.mo \
-FuncBuiltinOuterProduct.mo \
 FuncBuiltinReduction.mo \
 function1.mo \
 FunctionRecordArg1.mo \

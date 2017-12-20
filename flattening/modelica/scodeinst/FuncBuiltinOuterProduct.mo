@@ -11,11 +11,17 @@ model FuncBuiltinOuterProduct
 end FuncBuiltinOuterProduct;
 
 // Result:
-// Error processing file: FuncBuiltinOuterProduct.mo
-// Error: Cannot resolve type of expression ' matrix(v1) .* transpose(matrix(v2)) '. The operands have types ' Real[:, 1] .* Real[1, :] ' in component Real[:, 1].
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class FuncBuiltinOuterProduct
+//   Real x[1,1];
+//   Real x[1,2];
+//   Real x[1,3];
+//   Real x[2,1];
+//   Real x[2,2];
+//   Real x[2,3];
+//   Real x[3,1];
+//   Real x[3,2];
+//   Real x[3,3];
+// equation
+//   x = outerProduct({1.0, 2.0, 3.0}, {4.0, 5.0, 6.0});
+// end FuncBuiltinOuterProduct;
 // endResult
