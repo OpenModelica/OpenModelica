@@ -3797,18 +3797,16 @@ protected function createTornSystem
 algorithm
    (equations_, ouniqueEqIndex, otempvars) := match(linear, isyst, ishared)
      local
-       list<BackendDAE.Var> tvars, ovarsLst;
-       list<BackendDAE.Equation> reqns, otherEqnsLst;
-       BackendDAE.Variables vars, globalKnownVars, diffVars, ovars;
-       BackendDAE.EquationArray eqns, oeqns;
+       list<BackendDAE.Var> tvars;
+       list<BackendDAE.Equation> reqns;
+       BackendDAE.Variables vars, globalKnownVars;
+       BackendDAE.EquationArray eqns;
        list<SimCodeVar.SimVar> tempvars, tempvars2, simVars;
        list<SimCode.SimEqSystem> simequations, resEqs;
        Integer uniqueEqIndex, nInnerVars;
        list<DAE.ComponentRef> tcrs;
-       DAE.FunctionTree functree;
        Option<SimCode.JacobianMatrix> jacobianMatrix;
-       list<Integer> otherEqnsInts, otherVarsInts, tearingVars, residualEqns;
-       list<list<Integer>> otherVarsIntsLst;
+       list<Integer> tearingVars, residualEqns;
        Boolean homotopySupport;
        BackendDAE.InnerEquations innerEquations;
        BackendDAE.Jacobian inJacobian;
@@ -3817,58 +3815,6 @@ algorithm
        Option<SimCode.LinearSystem> alternativeTearingL;
        Option<SimCode.NonlinearSystem> alternativeTearingNl;
 
-
-/*
-       BackendDAE.EquationArray eqns1;
-       BackendDAE.Variables v;
-       BackendDAE.EqSystem syst;
-       list<DAE.Exp> beqs;
-       list<DAE.ElementSource> sources;
-       BackendVarTransform.VariableReplacements repl;
-
-       BackendDAE.IncidenceMatrix m;
-       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
-
-
-       // for the linear case we could try just to evaluate all equation
-     case(true, _, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(globalKnownVars=globalKnownVars, functionTree=functree), _, _)
-       equation
-         true = intLt(listLength(otherEqns), 12);
-         //get tearing vars
-         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
-         ((simVars, _)) = List.fold(tvars, traversingdlowvarToSimvarFold, ({}, globalKnownVars));
-         simVars = listReverse(simVars);
-         // get residual eqns
-         reqns = BackendEquation.getList(residualEqns, eqns);
-         // solve other equations
-         repl = BackendVarTransform.emptyReplacements();
-         repl = solveInnerEquations(otherEqns, eqns, vars, ishared, repl);
-         // replace other equations in residual equations
-         (reqns, _) = BackendVarTransform.replaceEquations(reqns, repl, SOME(BackendVarTransform.skipPreOperator));
-         // States are solved for der(x) not x.
-         reqns = BackendEquation.replaceDerOpInEquationList(reqns);
-         tvars = List.map(tvars, BackendVariable.transformXToXd);
-         // generatate jacobian
-         v = BackendVariable.listVar1(tvars);
-         eqns1 = BackendEquation.listEquation(reqns);
-         syst = BackendDAE.EQSYSTEM(v, eqns1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-         //  BackendDump.dumpEqSystem(syst);
-         (m, _) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(), NONE());
-         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-         (SOME(jac),_) = BackendDAEUtil.calculateJacobian(v, eqns1, m, true, ishared);
-         //  print(BackendDump.dumpJacobianStr(SOME(jac)) + "\n");
-         // generate linear System
-         (beqs, sources) = BackendDAEUtil.getEqnSysRhs(eqns1, v, SOME(functree));
-         //repl = BackendVarTransform.emptyReplacements();
-         //((_, beqs, _, _, _)) = BackendEquation.traverseEquationArray(eqns1, BackendDAEUtil.equationToExp, (v, {}, {}, SOME(functree), repl));
-         beqs = listReverse(beqs);
-         simJac = List.map1(jac, jacToSimjac, v);
-         // generate other equations
-         (simequations, uniqueEqIndex, tempvars) = createTornSystemInnerEqns(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex+1, itempvars, {SimCode.SES_LINEAR(iuniqueEqIndex, false, simVars, beqs, sources, simJac, 0)});
-       then
-         (simequations, uniqueEqIndex, tempvars);
-*/
      // CASE: linear
      case(true, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(globalKnownVars=globalKnownVars)) equation
        BackendDAE.TEARINGSET(tearingvars=tearingVars, residualequations=residualEqns, innerEquations=innerEquations, jac=inJacobian) = strictTearingSet;
@@ -3888,7 +3834,7 @@ algorithm
        reqns = BackendEquation.getList(residualEqns, eqns);
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
-       (simequations, uniqueEqIndex, tempvars, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       (simequations, uniqueEqIndex, tempvars, nInnerVars, _) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
        simequations = listAppend(simequations, resEqs);
 
@@ -3909,7 +3855,7 @@ algorithm
          reqns = BackendEquation.getList(residualEqns, eqns);
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars2, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (simequations, uniqueEqIndex, tempvars2, nInnerVars, _) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2);
          simequations = listAppend(simequations, resEqs);
 
@@ -3934,12 +3880,14 @@ algorithm
        // generate residual replacements
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
-       (simequations, uniqueEqIndex, tempvars, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
+       (simequations, uniqueEqIndex, tempvars, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
-       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
+       if not homotopySupport then
+         (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
+       end if;
 
        nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true);
        tempvars2 = tempvars;
@@ -3957,12 +3905,14 @@ algorithm
          // generate residual replacements
          tcrs = List.map(tvars, BackendVariable.varCref);
          // generate other equations
-         (simequations, uniqueEqIndex, tempvars2, nInnerVars) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
+         (simequations, uniqueEqIndex, tempvars2, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2);
          simequations = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
-         (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
+         if not homotopySupport then
+           (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
+         end if;
 
          alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true));
        else
@@ -4091,65 +4041,6 @@ algorithm
   end match;
 end solveInnerEquations1;
 
-//protected function createTornSystemOtherEqns
-//  input list<tuple<Integer, list<Integer>>> otherEqns;
-//  input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
-//  input BackendDAE.EqSystem isyst;
-//  input BackendDAE.Shared ishared;
-//  input Integer iuniqueEqIndex;
-//  input list<SimCodeVar.SimVar> itempvars;
-//  input list<SimCode.SimEqSystem> isimequations;
-//  output list<SimCode.SimEqSystem> equations_;
-//  output Integer ouniqueEqIndex;
-//  output list<SimCodeVar.SimVar> otempvars;
-//algorithm
-//  (equations_, ouniqueEqIndex, otempvars) :=
-//  createTornSystemOtherEqns_2(otherEqns, skipDiscInAlgorithm, isyst, ishared,
-//  iuniqueEqIndex, itempvars, isimequations);
-//  print(anyString(equations_) + "\n");
-//end createTornSystemOtherEqns;
-//
-//protected function createTornSystemOtherEqns_2
-//  input list<tuple<Integer, list<Integer>>> otherEqns;
-//  input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
-//  input BackendDAE.EqSystem isyst;
-//  input BackendDAE.Shared ishared;
-//  input Integer iuniqueEqIndex;
-//  input list<SimCodeVar.SimVar> itempvars;
-//  input list<SimCode.SimEqSystem> isimequations;
-//  output list<SimCode.SimEqSystem> equations_;
-//  output Integer ouniqueEqIndex;
-//  output list<SimCodeVar.SimVar> otempvars;
-//algorithm
-//   (equations_, ouniqueEqIndex, otempvars) :=
-//   match(otherEqns, skipDiscInAlgorithm, isyst, ishared, iuniqueEqIndex, itempvars, isimequations)
-//     local
-//       BackendDAE.EquationArray eqns;
-//       list<SimCodeVar.SimVar> tempvars;
-//       list<SimCode.SimEqSystem> simequations;
-//       Integer uniqueEqIndex, eqnindx;
-//       BackendDAE.Equation eqn;
-//       list<Integer> vars;
-//       list<tuple<Integer, list<Integer>>> rest;
-//       BackendDAE.StrongComponent comp;
-//
-//     case({}, _, _, _, _, _, _)
-//     then (isimequations, iuniqueEqIndex, itempvars);
-//
-//     case((eqnindx, vars)::rest, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, _, _, _) equation
-//       // get Eqn
-//       eqn = BackendEquation.get(eqns, eqnindx);
-//       // generate comp
-//       comp = createTornSystemOtherEqns1(eqn, eqnindx, vars);
-//       (simequations, _, uniqueEqIndex, tempvars) = createEquations(true, false, true, skipDiscInAlgorithm, isyst, ishared, {comp}, iuniqueEqIndex, itempvars);
-//       simequations = listAppend(isimequations, simequations);
-//       // generade other equations
-//       (simequations, uniqueEqIndex, tempvars) = createTornSystemOtherEqns_2(rest, skipDiscInAlgorithm, isyst, ishared, uniqueEqIndex, tempvars, simequations);
-//     then (simequations, uniqueEqIndex, tempvars);
-//   end match;
-//end createTornSystemOtherEqns_2;
-
-
 protected function createTornSystemInnerEqns
   input BackendDAE.InnerEquations innerEquations;
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
@@ -4163,6 +4054,7 @@ protected function createTornSystemInnerEqns
   output Integer ouniqueEqIndex = iuniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars = itempvars;
   output Integer nVars = 0;
+  output Boolean homotopySupport = false;
 protected
   BackendDAE.EquationArray eqns;
   Integer eqnindx;
@@ -4186,6 +4078,9 @@ algorithm
     (eqnindx, vars, cons) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
     nVars := nVars + listLength(vars);
     eqn := BackendEquation.get(eqns, eqnindx);
+    if not homotopySupport then
+      (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
+    end if;
     // generate comp
     comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
     (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(genDiscrete, false, genDiscrete, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
@@ -4194,7 +4089,6 @@ algorithm
 
   equations_ := DoubleEndedList.toListAndClear(equations);
 end createTornSystemInnerEqns;
-
 
 protected function createTornSystemInnerEqns1
   input BackendDAE.Equation eqn;
