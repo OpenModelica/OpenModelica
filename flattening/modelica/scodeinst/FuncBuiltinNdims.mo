@@ -21,8 +21,8 @@ end FuncBuiltinNdims;
 //   Real x[1,2,1];
 //   Real x[1,2,2];
 //   Real x[1,2,3];
-//   Integer i = ndims(x);
-//   Integer j = ndims({{1}, {2}});
-//   Real k = /*Real*/(ndims(2));
+//   Integer i = 3;
+//   Integer j = 2;
+//   Real k = 0.0;
 // end FuncBuiltinNdims;
 // endResult

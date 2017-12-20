@@ -13,8 +13,8 @@ end A;
 
 // Result:
 // class A
-//   constant Real x = 2.0 * y;
-//   constant Real z = 5;
-//   constant Real y = 3.0 + z;
+//   constant Real x = 16.0;
+//   constant Real z = 5.0;
+//   constant Real y = 8.0;
 // end A;
 // endResult

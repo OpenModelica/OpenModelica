@@ -19,9 +19,6 @@ end M;
 // Result:
 // Error processing file: FuncMissingDefault1.mo
 // [flattening/modelica/scodeinst/FuncMissingDefault1.mo:16:3-16:18:writable] Error: Function parameter y was not given by the function call, and does not have a default value.
-// [flattening/modelica/scodeinst/FuncMissingDefault1.mo:16:3-16:18:writable] Error: No matching function found for f(1) in component <REMOVE ME>
-// candidates are :
-//   f(Real x, Real y) => Real
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

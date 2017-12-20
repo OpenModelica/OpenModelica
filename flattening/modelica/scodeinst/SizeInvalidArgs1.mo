@@ -13,10 +13,11 @@ end SizeInvalidArgs1;
 
 // Result:
 // Error processing file: SizeInvalidArgs1.mo
-// [flattening/modelica/scodeinst/SizeInvalidArgs1.mo:11:3-11:28:writable] Error: No matching function found for size in component 
-// candidates are :
-//   size(array) => Integer[:]
-//   size(array, Integer) => Integer
+// [flattening/modelica/scodeinst/SizeInvalidArgs1.mo:11:3-11:28:writable] Error: No matching function found for size(/*unknown()*/ x, /*Integer*/ 1, /*Integer*/ 2).
+// Candidates are:
+//   :
+//   size(Expression) => Integer[:]
+//   size(Expression, Integer) => Integer
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
