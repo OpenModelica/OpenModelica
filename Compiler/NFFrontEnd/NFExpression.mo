@@ -683,6 +683,13 @@ public
     end match;
   end toInteger;
 
+  function toStringTyped
+    input Expression exp;
+    output String str;
+  algorithm
+    str := "/*" + Type.toString(typeOf(exp)) + "*/ " + toString(exp);
+  end toStringTyped;
+
   function toString
     input Expression exp;
     output String str;
@@ -1470,6 +1477,22 @@ public
     end match;
   end mapCallShallow;
 
+  function foldList<ArgT>
+    input list<Expression> expl;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT result = arg;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    for e in expl loop
+      result := fold(e, func, result);
+    end for;
+  end foldList;
+
   function fold<ArgT>
     input Expression exp;
     input FoldFunc func;
@@ -1486,7 +1509,7 @@ public
         Expression e;
 
       case CREF() then foldCref(exp.cref, func, arg);
-      case ARRAY() then List.fold(exp.elements, func, arg);
+      case ARRAY() then foldList(exp.elements, func, arg);
 
       case RANGE(step = SOME(e))
         algorithm
@@ -1501,8 +1524,8 @@ public
         then
           fold(exp.stop, func, result);
 
-      case TUPLE() then List.fold(exp.elements, func, arg);
-      case RECORD() then List.fold(exp.elements, func, arg);
+      case TUPLE() then foldList(exp.elements, func, arg);
+      case RECORD() then foldList(exp.elements, func, arg);
       case CALL() then foldCall(exp.call, func, arg);
 
       case SIZE(dimIndex = SOME(e))
@@ -1549,7 +1572,7 @@ public
         algorithm
           result := fold(exp.exp, func, arg);
         then
-          List.fold(exp.subscripts, func, result);
+          foldList(exp.subscripts, func, result);
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
 
@@ -1575,7 +1598,7 @@ public
 
       case Call.UNTYPED_CALL()
         algorithm
-          arg := List.fold(call.arguments, func, arg);
+          arg := foldList(call.arguments, func, arg);
 
           for arg in call.named_args loop
             (_, e) := arg;
@@ -1600,7 +1623,7 @@ public
 
       case Call.TYPED_CALL()
         algorithm
-          arg := List.fold(call.arguments, func, arg);
+          arg := foldList(call.arguments, func, arg);
         then
           ();
 
@@ -2148,6 +2171,64 @@ public
       else false;
     end match;
   end isScalarConst;
+
+  function fillType
+    input Type ty;
+    input Expression fillExp;
+    output Expression exp = fillExp;
+  protected
+    list<Dimension> dims = Type.arrayDims(ty);
+    list<Expression> expl;
+    Type arr_ty = Type.arrayElementType(ty);
+  algorithm
+    for dim in listReverse(dims) loop
+      expl := {};
+      for i in 1:Dimension.size(dim) loop
+        expl := exp :: expl;
+      end for;
+
+      arr_ty := Type.liftArrayLeft(arr_ty, dim);
+      exp := Expression.ARRAY(arr_ty, expl);
+    end for;
+  end fillType;
+
+  function makeZero
+    input Type ty;
+    output Expression zeroExp;
+  algorithm
+    zeroExp := match ty
+      case Type.REAL() then REAL(0.0);
+      case Type.INTEGER() then INTEGER(0);
+    end match;
+  end makeZero;
+
+  function unbox
+    input Expression boxedExp;
+    output Expression exp;
+  algorithm
+    exp := match boxedExp
+      case Expression.BOX() then boxedExp.exp;
+      else boxedExp;
+    end match;
+  end unbox;
+
+  function negate
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case INTEGER() then INTEGER(-exp.value);
+      case REAL() then REAL(-exp.value);
+      case CAST() then CAST(exp.ty, negate(exp.exp));
+      else UNARY(Operator.UMINUS(typeOf(exp)), exp);
+    end match;
+  end negate;
+
+  function arrayElements
+    input Expression array;
+    output list<Expression> elements;
+  algorithm
+    Expression.ARRAY(elements = elements) := array;
+  end arrayElements;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

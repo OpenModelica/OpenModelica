@@ -582,6 +582,7 @@ algorithm
       MatchKind matchKind;
       Boolean dirty;
       String name;
+      Variability comp_var;
 
     // A component that's already been typed.
     case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
@@ -596,13 +597,19 @@ algorithm
         // binding which is now typed, and it needs to be type checked.
         if dirty then
           binding := TypeCheck.matchBinding(binding, c.ty, name, node);
+          comp_var := Component.variability(c);
 
-          if Binding.variability(binding) > Component.variability(c) then
+          if Binding.variability(binding) > comp_var then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
               {name, Prefixes.variabilityString(Component.variability(c)),
-               "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+               "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
               Binding.getInfo(binding));
             fail();
+          end if;
+
+          // Evaluate the binding if the component is a constant.
+          if comp_var == Variability.CONSTANT then
+            binding := evalBinding(binding);
           end if;
 
           c.binding := binding;

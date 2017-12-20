@@ -771,6 +771,8 @@ uniontype Function
         special := false;
       else
         special := match Absyn.pathFirstIdent(path)
+          // Can have variable number of arguments.
+          case "array" then true;
           case "cardinality" then true;
           // Function should not be used in function context.
           // argument should be a cref?
@@ -1005,8 +1007,7 @@ protected
 
   function getBuiltin
     input SCode.Element def;
-    output DAE.FunctionBuiltin builtin =
-     if SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_BuiltinPtr") then
+    output DAE.FunctionBuiltin builtin = if SCode.isBuiltinElement(def) then
        DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
   end getBuiltin;
 

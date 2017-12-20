@@ -763,6 +763,10 @@ public constant Message SUBSCRIPT_TYPE_MISMATCH = MESSAGE(317, TRANSLATION(), ER
   Util.gettext("Subscript '%s' has type %s, expected type %s."));
 public constant Message EXP_INVALID_IN_FUNCTION = MESSAGE(318, TRANSLATION(), ERROR(),
   Util.gettext("%s is not allowed in a function."));
+public constant Message NO_MATCHING_FUNCTION_FOUND_NFINST = MESSAGE(319, TRANSLATION(), ERROR(),
+  Util.gettext("No matching function found for %s.\nCandidates are:\n  %s"));
+public constant Message ARGUMENT_OUT_OF_RANGE = MESSAGE(320, TRANSLATION(), ERROR(),
+  Util.gettext("Argument %s of %s is out of range (%s)"));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

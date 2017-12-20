@@ -1024,7 +1024,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Integer z;
   algorithm
     z := x - (div(x, y) * y);
-    annotation(preferredView="text", __OpenModelica_EarlyInline=true);
+    annotation(preferredView="text", __OpenModelica_EarlyInline=true, __OpenModelica_builtin=true);
   end intRem;
 
   function realRem
@@ -1033,7 +1033,7 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Real z;
   algorithm
     z := x - (div(x, y) * y);
-    annotation(preferredView="text", __OpenModelica_EarlyInline=true);
+    annotation(preferredView="text", __OpenModelica_EarlyInline=true, __OpenModelica_builtin=true);
   end realRem;
 
   /*
