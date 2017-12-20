@@ -782,6 +782,22 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief DuplicateClassDialog::setSaveContentsTypeAsFolderStructure
+ * Set LibraryTreeItem::SaveFolderStructure for all nested packages.
+ * \param pLibraryTreeItem
+ */
+void DuplicateClassDialog::setSaveContentsTypeAsFolderStructure(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem->getRestriction() == StringHandler::Package) {
+      pChildLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+    }
+    setSaveContentsTypeAsFolderStructure(pChildLibraryTreeItem);
+  }
+}
+
 void DuplicateClassDialog::browsePath()
 {
   LibraryBrowseDialog *pLibraryBrowseDialog = new LibraryBrowseDialog(tr("Select Path"), mpPathTextBox, MainWindow::instance()->getLibraryWidget());
@@ -830,19 +846,36 @@ void DuplicateClassDialog::duplicateClass()
   }
   // if everything is fine then duplicate the class.
   if (MainWindow::instance()->getOMCProxy()->copyClass(mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text(), mpPathTextBox->text())) {
-    /* Ticket #3793
-     * We need to call loadString with the new text of the class before creating the LibraryTreeItem
-     * So that the getClassInformation returns the correct line number information.
-     * Otherwise we have the problems like the one reported in Ticket #3793.
-     */
-    if (pParentLibraryTreeItem->isRootItem()) {
-      QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
-      QString classText = MainWindow::instance()->getOMCProxy()->listFile(fileName);
-      MainWindow::instance()->getOMCProxy()->loadString(classText, fileName, Helper::utf8, false, false);
-    }
     // create the new LibraryTreeItem
     LibraryTreeItem *pLibraryTreeItem;
     pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text().trimmed(), pParentLibraryTreeItem, false, false, true);
+    if (mpLibraryTreeItem->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
+      QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
+      if (!pParentLibraryTreeItem->isRootItem() && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+        fileName = pParentLibraryTreeItem->getFileName();
+      }
+      QString classText = MainWindow::instance()->getOMCProxy()->listFile(fileName);
+      QString beforeClassText;
+      if (mpLibraryTreeItem->getModelWidget() && mpLibraryTreeItem->getModelWidget()->getEditor()) {
+        beforeClassText = mpLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->toPlainText();
+      } else {
+        beforeClassText = mpLibraryTreeItem->getClassText(pLibraryTreeModel);
+      }
+      /* Ticket #3912
+       * In order to preserve the formatting we use OMCProxy::diffModelicaFileListings()
+       */
+      classText = MainWindow::instance()->getOMCProxy()->diffModelicaFileListings(beforeClassText, classText);
+      /* Ticket #3793
+       * We need to call loadString with the new text of the class so that the getClassInformation returns the correct line number information.
+       * Otherwise we have the problems like the one reported in Ticket #3793.
+       */
+      MainWindow::instance()->getOMCProxy()->loadString(classText, fileName, Helper::utf8, false, false);
+      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+        pLibraryTreeItem->getModelWidget()->getEditor()->getPlainTextEdit()->setPlainText(classText);
+      } else {
+        pLibraryTreeItem->setClassText(classText);
+      }
+    }
     /* Ticket #4350, #4557 and #4594
      * Set a proper filename for new class
      */
@@ -859,6 +892,7 @@ void DuplicateClassDialog::duplicateClass()
         pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       } else {
         pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
+        setSaveContentsTypeAsFolderStructure(pLibraryTreeItem);
       }
     } else {
       pLibraryTreeItem->setSaveContentsType(mpLibraryTreeItem->getSaveContentsType());

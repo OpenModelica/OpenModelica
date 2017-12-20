@@ -169,6 +169,8 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void setSaveContentsTypeAsFolderStructure(LibraryTreeItem *pLibraryTreeItem);
 public slots:
   void browsePath();
   void duplicateClass();
