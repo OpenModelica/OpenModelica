@@ -1662,11 +1662,12 @@ LibraryTreeItem* LibraryTreeModel::getLibraryTreeItemFromFile(QString fileName, 
 void LibraryTreeModel::showModelWidget(LibraryTreeItem *pLibraryTreeItem, bool show, StringHandler::ViewType viewType)
 {
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  if (show && ((viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
-               (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
-                pLibraryTreeItem->isDocumentationClass()) ||
-               (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
-                OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView().compare(Helper::documentationView) == 0))) {
+  if (show && pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+      && ((viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.compare("info") == 0) ||
+          (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
+           pLibraryTreeItem->isDocumentationClass()) ||
+          (viewType == StringHandler::NoView && pLibraryTreeItem->mClassInformation.preferredView.isEmpty() &&
+           OptionsDialog::instance()->getGeneralSettingsPage()->getDefaultView().compare(Helper::documentationView) == 0))) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(pLibraryTreeItem);
     bool state = MainWindow::instance()->getDocumentationDockWidget()->blockSignals(true);
     MainWindow::instance()->getDocumentationDockWidget()->show();
