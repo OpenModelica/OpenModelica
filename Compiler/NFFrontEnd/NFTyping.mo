@@ -609,7 +609,13 @@ algorithm
 
           // Evaluate the binding if the component is a constant.
           if comp_var == Variability.CONSTANT then
-            binding := evalBinding(binding);
+            // TODO: Allow this to fail for now. Once constant evaluation has
+            // been improved we should print an error when a constant binding
+            // couldn't be evaluated instead.
+            try
+              binding := evalBinding(binding);
+            else
+            end try;
           end if;
 
           c.binding := binding;

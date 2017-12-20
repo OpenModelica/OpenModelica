@@ -356,7 +356,7 @@ function evalBuiltinCall
   input EvalTarget target;
   output Expression result;
 protected
-  Absyn.Path fn_path = Function.name(fn);
+  Absyn.Path fn_path = Function.nameConsiderBuiltin(fn);
 algorithm
   result := match Absyn.pathFirstIdent(fn_path)
     case "abs" then evalBuiltinAbs(listHead(args));
@@ -450,7 +450,7 @@ algorithm
   result := match arg
     case Expression.REAL(value = x)
       algorithm
-        if x <= -1.0 or x >= 1.0 then
+        if x < -1.0 or x > 1.0 then
           if EvalTarget.hasInfo(target) then
             Error.addSourceMessage(Error.ARGUMENT_OUT_OF_RANGE,
               {String(x), "acos", "-1 <= x <= 1"}, EvalTarget.getInfo(target));
@@ -486,7 +486,7 @@ algorithm
   result := match arg
     case Expression.REAL(value = x)
       algorithm
-        if x <= -1.0 or x >= 1.0 then
+        if x < -1.0 or x > 1.0 then
           if EvalTarget.hasInfo(target) then
             Error.addSourceMessage(Error.ARGUMENT_OUT_OF_RANGE,
               {String(x), "asin", "-1 <= x <= 1"}, EvalTarget.getInfo(target));
