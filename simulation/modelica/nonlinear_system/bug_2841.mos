@@ -56,6 +56,12 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |           100000            1e-05                1 
 // LOG_NLS_V         | info    | x0 [2-dim]
 // |                 | |       | |            50000            5e-06 
+// LOG_NLS_V         | info    | indRow: [2-dim]
+// |                 | |       | | 0 1 
+// LOG_NLS_V         | info    | indCol: [3-dim]
+// |                 | |       | | 1 0 2 
+// LOG_NLS_V         | info    | vector x (solution): [3-dim]
+// |                 | |       | |       -2.5510381      -0.51701271                1 
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  7
@@ -274,6 +280,12 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | |           100000            1e-05                1 
 // LOG_NLS_V         | info    | x0 [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
+// LOG_NLS_V         | info    | indRow: [2-dim]
+// |                 | |       | | 0 1 
+// LOG_NLS_V         | info    | indCol: [3-dim]
+// |                 | |       | | 1 0 2 
+// LOG_NLS_V         | info    | vector x (solution): [3-dim]
+// |                 | |       | |    2.9880129e-17    6.2675771e-17                1 
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  18

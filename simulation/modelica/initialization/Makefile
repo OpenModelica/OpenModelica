@@ -33,6 +33,9 @@ fullRobot.mos \
 gaspropreties.mos \
 homotopy1.mos \
 homotopy2.mos \
+homotopy3.mos \
+homotopy4.mos \
+homotopy5.mos \
 initial_equation.mos \
 parameters.mos \
 parameterWithoutBinding.mos \
