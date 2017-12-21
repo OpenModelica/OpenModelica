@@ -63,7 +63,8 @@ int print_csvLineIterStats(void* csvData, int size, int num,
 extern void debugMatrixPermutedDouble(int logName, char* matrixName, double* matrix, int n, int m, int* indRow, int* indCol);
 extern void debugMatrixDouble(int logName, char* matrixName, double* matrix, int n, int m);
 extern void debugVectorDouble(int logName, char* vectorName, double* vector, int n);
-extern void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int n);
+extern void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, int n);
+extern void debugVectorInt(int logName, char* vectorName, int* vector, int n);
 
 static inline void debugString(int logName, char* message)
 {

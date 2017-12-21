@@ -874,7 +874,6 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
         nonlinsys->solverData = mixedSolverData;
       }
     }
-    data->simulationInfo->homotopyUsed = 1;
   }
   else {
     if (!(equidistantHomotopy && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])) {
@@ -939,7 +938,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       fclose(pFile);
     }
 #endif
-    data->simulationInfo->homotopyUsed = 1;
+    data->simulationInfo->homotopySteps += init_lambda_steps;
   }
 
   /* handle asserts */

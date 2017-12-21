@@ -121,7 +121,6 @@ typedef struct DATA_HOMOTOPY
   double* debug_dx;
 
   /* homotopy parameters */
-  int homotopyMethod;
   int initHomotopy; /* homotopy method used for the initialization with lambda from the homotopy()-operator */
   double startDirection;
   double  tau;
@@ -134,6 +133,7 @@ typedef struct DATA_HOMOTOPY
   double* dy2;
   double* hvec;
   double* hJac;
+  double* hJac2;
   double* hJacInit;
   double* ones;
 
@@ -212,16 +212,17 @@ int allocateHomotopyData(int size, void** voiddata)
   data->y2 = (double*) calloc((size+1),sizeof(double));
   data->yt = (double*) calloc((size+1),sizeof(double));
   data->dy0 = (double*) calloc((size+1),sizeof(double));
-  data->dy1 = (double*) calloc((size+1),sizeof(double));
+  data->dy1 = (double*) calloc((size+homBacktraceStrategy),sizeof(double));
   data->dy2 = (double*) calloc((size+1),sizeof(double));
   data->hvec = (double*) calloc(size,sizeof(double));
   data->hJac  = (double*) calloc(size*(size+1),sizeof(double));
+  data->hJac2  = (double*) calloc((size+1)*(size+2),sizeof(double));
   data->hJacInit  = (double*) calloc(size*(size+1),sizeof(double));
   data->ones  = (double*) calloc(size+1,sizeof(double));
 
   /* linear system */
-  data->indRow =(int*) calloc(size,sizeof(int));
-  data->indCol =(int*) calloc(size+1,sizeof(int));
+  data->indRow =(int*) calloc(size+homBacktraceStrategy-1,sizeof(int));
+  data->indCol =(int*) calloc(size+homBacktraceStrategy,sizeof(int));
 
   allocateHybrdData(size, &data->dataHybrid);
 
@@ -261,6 +262,7 @@ int freeHomotopyData(void **voiddata)
   free(data->fx0);
   free(data->hvec);
   free(data->hJac);
+  free(data->hJac2);
   free(data->hJacInit);
   free(data->y0);
   free(data->y1);
@@ -493,7 +495,7 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
   }
 }
 
-void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int n)
+void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, int n)
 {
    if(ACTIVE_STREAM(logName))
   {
@@ -510,6 +512,30 @@ void debugVectorInt(int logName, char* vectorName, modelica_boolean* vector, int
         sprintf(buffer, "%s +INF ", buffer);
       else
         sprintf(buffer, "%s   %d", buffer, vector[i]);
+    }
+    infoStreamPrint(logName, 0, "%s", buffer);
+    messageClose(logName);
+    free(buffer);
+  }
+}
+
+void debugVectorInt(int logName, char* vectorName, int* vector, int n)
+{
+  if(ACTIVE_STREAM(logName))
+  {
+    int i;
+    char *buffer = (char*)malloc(sizeof(char)*n*20);
+
+    infoStreamPrint(logName, 1, "%s [%d-dim]", vectorName, n);
+    buffer[0] = 0;
+    for(i=0; i<n;i++)
+    {
+      if (vector[i]<-1e+300)
+        sprintf(buffer, "%s -INF ", buffer);
+      else if (vector[i]>1e+300)
+        sprintf(buffer, "%s +INF ", buffer);
+      else
+        sprintf(buffer, "%s%d ", buffer, vector[i]);
     }
     infoStreamPrint(logName, 0, "%s", buffer);
     messageClose(logName);
@@ -734,6 +760,25 @@ void scaleMatrixRows(int n, int m, double *A)
         A[i+j*(m-1)] /= rowMax;
     }
   }
+}
+
+/* Build the newton matrix for the corrector step with orthogonal backtrace strategy */
+void orthogonalBacktraceMatrix(DATA_HOMOTOPY* solverData, double* hJac, double* hvec, double* v, double* hJac2, int n, int m)
+{
+  int i, j;
+  for (i=0; i<n; i++)
+  {
+    for (j=0; j<m; j++)
+    {
+      hJac2[i + j*m] = hJac[i + j*(m-1)];
+    }
+    hJac2[i + m*m] = hvec[i];
+  }
+  for (j=0; j<m; j++)
+  {
+    hJac2[n + j*m] = v[j];
+  }
+  hJac2[n + m*m] = 0;
 }
 
 void swapPointer(double* *p1, double* *p2)
@@ -1047,13 +1092,11 @@ static int wrapper_fvec_homotopy_fixpoint_der(DATA_HOMOTOPY* solverData, double*
  */
 int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, int* indCol, int *pos, int *rank, int casualTearingSet)
 {
-   int i, k, j, l, m=n+1, nrsh=1, singular=0, nPivot=n;
+   int i, k, j, m=n+1, nPivot=n;
    int pCol, pRow;
    double hValue;
    double hInt;
    double absMax, detJac;
-   int r,s;
-   double *res;
    int returnValue = 0;
 
    debugMatrixDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res]:",A, n, m);
@@ -1140,10 +1183,14 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     }
   }
   x[indCol[n]]=1.0;
+  debugVectorInt(LOG_NLS_V,"indRow:", indRow, n);
+  debugVectorInt(LOG_NLS_V,"indCol:", indCol, n+1);
+  debugVectorDouble(LOG_NLS_V,"vector x (solution):", x, n+1);
 
   /* Return position of largest value (1.0) */
   if (*pos<0) {
     *pos=indCol[n];
+    debugInt(LOG_NLS_V,"position of largest value = ", *pos);
   }
 
   return returnValue;
@@ -1596,30 +1643,21 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 {
   int i, j;
-  double xerror = -1, xerror_scaled = -1;
   double error_h, error_h_scaled, delta_x;
-  int success = 0;
-  int nfunc_evals = 0;
-  int continuous = 1;
-  double local_tol = solverData->ftol_sqrd;
   double vecScalarProduct;
 
-  int giveUp = 0;
-  int retries = 0;
-  int retries2 = 0;
-  int iflag = 1;
   int pos, rank;
   int iter = 0;
   int maxiter = homMaxNewtonSteps;
   int maxTries = homMaxTries;
   int numSteps = 0;
   int stepAccept = 0;
-  int runHomotopy = 0;
+  int correctorStrategy = homBacktraceStrategy; /* 1: go back to the path by fixing one coordinate, 2: go back to the path in an orthogonal direction to the tangent vector */
   double bend = 0;
-  double sProd, detJac;
   double tau = homTauStart, tauMax = homTauMax, tauMin = homTauMin, hEps = homHEps, adaptBend = homAdaptBend;
   double tauDecreasingFactor = homTauDecreasingFactor, tauDecreasingFactorPredictor = homTauDecreasingFactorPredictor;
   double tauIncreasingFactor = homTauIncreasingFactor, tauIncreasingThreshold = homTauIncreasingThreshold;
+  double preTau;
   int m = solverData->m;
   int n = solverData->n;
   int initialStep = 1;
@@ -1675,8 +1713,12 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     /* Break loop, iff algorithm gets stuck or lambda accelerates to the wrong direction */
     if (iter>=maxTries)
     {
-      if (solverData->initHomotopy)
-        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.", iter);
+      if (solverData->initHomotopy) {
+        if (preTau == tau)
+          warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nNo solution for current step size tau found and tau cannot be decreased any further.\nYou can set the minimum step size tau with:\n\t-homTauMin=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.");
+        else
+          warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of tries for one lambda is reached (%d).\nYou can change the number of tries with:\n\t-homMaxTries=<value>\nYou can also try to allow more newton steps in the corrector step with:\n\t-homMaxNewtonSteps=<value>\nor change the tolerance for the solution with:\n\t-homHEps=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.", iter);
+      }
       else
         debugInt(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: iter = ", iter);
       debugString(LOG_NLS_HOMOTOPY, "======================================================");
@@ -1694,7 +1736,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     if (numSteps >= maxLambdaSteps)
     {
       if (solverData->initHomotopy)
-        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of lambda steps is reached (%d).\nYou can change the maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also try to influence the step size tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nor you can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.", maxLambdaSteps);
+        warningStreamPrint(LOG_ASSERT, 0, "Homotopy algorithm did not converge.\nThe maximum number of lambda steps is reached (%d).\nYou can change the maximum number of lambda steps with:\n\t-homMaxLambdaSteps=<value>\nYou can also try to influence the step size tau with the following flags:\n\t-homTauDecFac=<value>\n\t-homTauDecFacPredictor=<value>\n\t-homTauIncFac=<value>\n\t-homTauIncThreshold=<value>\n\t-homTauMax=<value>\n\t-homTauMin=<value>\n\t-homTauStart=<value>\nor you can also set the threshold for accepting the current bending with:\n\t-homAdaptBend=<value>\nYou can also try to use another backtrace stategy in the corrector step with:\n\t-homBacktraceStrategy=<fix|orthogonal>\nYou can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.", maxLambdaSteps);
       else
         debugInt(LOG_NLS_HOMOTOPY, "Homotopy algorithm did not converge: numSteps = ", numSteps);
       debugString(LOG_NLS_HOMOTOPY, "======================================================");
@@ -1703,6 +1745,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
     stepAccept = 0;
 
+    /****************************************************************************
+     * Predictor step: Calculation of tangent vector!                           *
+     ****************************************************************************/
     /* If a step succeeded, calculate the homotopy function and corresponding jacobian */
     if (iter==0)
     {
@@ -1745,7 +1790,13 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
         /* update statistics */
         return -1;
       }
+      /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy0, solverData->xScaling, solverData->dy0);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "tangent vector with original scaling: ", solverData->dy0, solverData->m);
+      debugDouble(LOG_NLS_HOMOTOPY,"length of tangent vector with original scaling: ", vec2Norm(solverData->m, solverData->dy0));
+      // vecNormalize(solverData->m, solverData->dy0, solverData->dy0);
+      // debugVectorDouble(LOG_NLS_HOMOTOPY, "normalized tangent vector: ", solverData->dy0, solverData->m);
+      // debugDouble(LOG_NLS_HOMOTOPY,"length of normalized tangent vector: ", vec2Norm(solverData->m, solverData->dy0));
 
       /* Correct search direction, depending on the last direction (angle < 90 degree) */
       vecScalarProduct = vecScalarProd(solverData->m,solverData->dy0,solverData->dy2);
@@ -1776,6 +1827,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #endif
       debugVectorDouble(LOG_NLS_HOMOTOPY,"y1 (predictor step):",solverData->y1, m);
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
+      debugVectorDouble(LOG_NLS_HOMOTOPY,"hvec (predictor step):",solverData->hvec, n);
       assert = 0;
 #ifndef OMC_EMCC
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1811,8 +1863,27 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
     solverData->tau = tau;
     printHomotopyPredictorStep(LOG_NLS_HOMOTOPY, solverData);
 
-    /* Corrector step: Newton iteration! */
+    /****************************************************************************
+     * Corrector step: Newton iteration!                                        *
+     ****************************************************************************/
     debugString(LOG_NLS_HOMOTOPY, "Newton iteration for corrector step begins!");
+
+    /* If this is the last step, use backtrace strategy with one fixed coordinate and fix lambda */
+    if (solverData->yt[solverData->n] == 1)
+    {
+      debugString(LOG_NLS_HOMOTOPY, "Force '-homBacktraceStrategy=fix' and fix lambda, because this is the last step!");
+      debugDouble(LOG_NLS_HOMOTOPY, "Set tolerance homHEps to newtonFTol =", newtonFTol);
+      correctorStrategy = 1;
+      pos = solverData->n;
+      hEps = newtonFTol;
+    }
+
+    if (correctorStrategy==1)
+      debugString(LOG_NLS_HOMOTOPY, "Using backtrace strategy with one fixed coordinate! To change this use: '-homBacktraceStrategy=orthogonal'");
+    else
+      debugString(LOG_NLS_HOMOTOPY, "Using backtrace strategy orthogonal to the tangent vector! To change this use: '-homBacktraceStrategy=fix'");
+
+
     for(j=0;j<maxiter;j++)
     {
       debugInt(LOG_NLS_HOMOTOPY, "Iteration: ", j+1);
@@ -1826,9 +1897,17 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-      /* calculate homotopy function and corresponding jacobian */
+      /* calculate homotopy jacobian */
       solverData->hJac_dh(solverData, solverData->y1, solverData->hJac);
       debugMatrixDouble(LOG_NLS_JAC,"Jacobian hJac:",solverData->hJac, solverData->n, solverData->n+1);
+
+      if (correctorStrategy==2)
+      {
+        /* calculate the newton matrix hJac2 for the orthogonal backtrace strategy */
+        orthogonalBacktraceMatrix(solverData, solverData->hJac, solverData->hvec, solverData->dy0, solverData->hJac2, solverData->n, solverData->m);
+        debugMatrixDouble(LOG_NLS_JAC,"Enhanced Jacobian hJac2 (orthogonal backtrace strategy):",solverData->hJac2, solverData->n+1, solverData->m+1);
+      }
+
       assert = 0;
 #ifndef OMC_EMCC
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1842,25 +1921,44 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       matVecMultAbs(solverData->n, solverData->m, solverData->hJac, solverData->ones, solverData->resScaling);
       debugVectorDouble(LOG_NLS_HOMOTOPY, "residuum scaling of function h:", solverData->resScaling, solverData->n);
 
-      /* copy vector h to column "pos" of the jacobian */
-      vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
-      scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
-      if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
+      if (correctorStrategy==1) // fix one coordinate
       {
-        debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
-        stepAccept = 0;
-        break;
+        /* copy vector h to column "pos" of the jacobian */
+        debugVectorDouble(LOG_NLS_HOMOTOPY, "copy vector hvec to column 'pos' of the jacobian: ", solverData->hvec, solverData->n);
+        vecCopy(solverData->n, solverData->hvec, solverData->hJac + pos*solverData->n);
+        scaleMatrixRows(solverData->n, solverData->m, solverData->hJac);
+        if (solveSystemWithTotalPivotSearch(solverData->n, solverData->dy1, solverData->hJac, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
+        {
+          debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
+          stepAccept = 0;
+          break;
+        }
+        solverData->dy1[pos] = 0.0;
       }
+      else // go back in orthogonal direction to tangent vector
+      {
+        scaleMatrixRows(solverData->n+1, solverData->m+1, solverData->hJac2);
+        pos = solverData->n+1;
+        if (solveSystemWithTotalPivotSearch(solverData->n+1, solverData->dy1, solverData->hJac2, solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet) == -1)
+        {
+          debugString(LOG_NLS_HOMOTOPY, "step NOT accepted, because solveSystemWithTotalPivotSearch failed!");
+          stepAccept = 0;
+          break;
+        }
+      }
+
       /* Scaling back to original variables */
       vecMultScaling(solverData->m, solverData->dy1, solverData->xScaling, solverData->dy1);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "solution (original scaling): ", solverData->dy1, solverData->m);
 
-      solverData->dy1[pos] = 0.0;
       vecAdd(solverData->m, solverData->y1, solverData->dy1, solverData->y2);
       vecCopy(solverData->m, solverData->y2, solverData->y1);
+      debugVectorDouble(LOG_NLS_HOMOTOPY, "new y in newton: ", solverData->y1, solverData->m);
       assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
+      /* calculate homotopy function */
       solverData->h_function(solverData, solverData->y1, solverData->hvec);
       assert = 0;
 #ifndef OMC_EMCC
@@ -1905,7 +2003,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       debugDouble(LOG_NLS_HOMOTOPY, "bend  =", bend);
       debugDouble(LOG_NLS_HOMOTOPY, "adaptBend  =", adaptBend);
     }
-    if ((bend > adaptBend) ||   !stepAccept)
+    if ((bend > adaptBend) || !stepAccept)
     {
       if (bend<DBL_EPSILON)
       {
@@ -1921,10 +2019,14 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
       debugString(LOG_NLS_HOMOTOPY, "The relation between the vector length of corrector step and predictor step is too big:");
       debugDouble(LOG_NLS_HOMOTOPY, "bend/adaptBend  =", bend/adaptBend);
       debugString(LOG_NLS_HOMOTOPY, "--- decreasing step size tau in corrector step!");
-      debugDouble(LOG_NLS_HOMOTOPY, "old tau =", tau);
+      preTau = tau;
+      debugDouble(LOG_NLS_HOMOTOPY, "old tau =", preTau);
       tau = fmax(tauMin,tau/tauDecreasingFactor);
       debugDouble(LOG_NLS_HOMOTOPY, "new tau =", tau);
-      iter++;
+      if (tau==preTau)
+        iter = maxTries;
+      else
+        iter++;
     } else
     {
       initialStep = 0;
@@ -1960,7 +2062,9 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   /* copy solution back to vector x */
   vecCopy(solverData->n, solverData->y1, x);
 
+  solverData->data->simulationInfo->homotopySteps += numSteps+1;
   debugString(LOG_NLS_HOMOTOPY, "HOMOTOPY ALGORITHM SUCCEEDED");
+  debugInt(LOG_INIT, "Total number of lambda steps for this homotopy loop:", numSteps+1);
   debugString(LOG_NLS_HOMOTOPY, "======================================================");
   solverData->info = 1;
 
@@ -1994,20 +2098,13 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 
   int i, j;
   int success = 0;
-  int nfunc_evals = 0;
-  int continuous = 1;
-  double local_tol = solverData->ftol_sqrd;
-  double lambda;
   double error_f_sqrd, error_f1_sqrd;
 
   int assert = 1;
   int giveUp = 0;
   int alreadyTested = 0;
-  int iflag = 1;
   int pos;
   int rank;
-  int iter;
-  int maxiter = 10;
   int tries = 0;
   /* Modelica homotopy operator could be used!! */
   int runHomotopy = 0;
@@ -2177,7 +2274,6 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   {
     giveUp = 1;
 
-    /*if (!skipNewton) newtonAlgorithm(solverData, solverData->x); */
     if (!skipNewton && !solverData->initHomotopy){
 
       /* set x vector */
@@ -2214,8 +2310,8 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       /* This case may be switched off, because of event chattering!!!*/
       if(mixedSystem && data->simulationInfo->discreteCall && (alreadyTested<1))
       {
-        debugVectorInt(LOG_NLS_V,"Relations Pre vector ", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
-        debugVectorInt(LOG_NLS_V,"Relations Backup vector ", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(LOG_NLS_V,"Relations Pre vector ", ((DATA*)data)->simulationInfo->relationsPre, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(LOG_NLS_V,"Relations Backup vector ", relationsPreBackup, ((DATA*)data)->modelData->nRelations);
         ((DATA*)data)->simulationInfo->solveContinuous = 0;
 
         if (solverData->casualTearingSet){
@@ -2228,7 +2324,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
         else
           solverData->f(solverData, solverData->x, solverData->f1);
 
-        debugVectorInt(LOG_NLS_V,"Relations vector ", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
+        debugVectorBool(LOG_NLS_V,"Relations vector ", ((DATA*)data)->simulationInfo->relations, ((DATA*)data)->modelData->nRelations);
         if (isNotEqualVectorInt(((DATA*)data)->modelData->nRelations, ((DATA*)data)->simulationInfo->relations, relationsPreBackup)>0)
         {
           /* re-run the solution process, since relations in the system have changed */
@@ -2285,6 +2381,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
         solverData->h_function = wrapper_fvec;
         solverData->hJac_dh = wrapper_fvec_der;
         solverData->startDirection = omc_flag[FLAG_HOMOTOPY_NEG_START_DIR] ? 1.0 : -1.0;
+        infoStreamPrint(LOG_ASSERT, 0, "The homotopy algorithm is started again with opposing start direction.");
         debugInt(LOG_INIT, "Homotopy run: ", runHomotopy);
         debugDouble(LOG_INIT,"Try again with startDirection = ", solverData->startDirection);
       }
@@ -2299,7 +2396,6 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (runHomotopy == 1)
       {
         /* store x0 and calculate f(x0) -> newton homotopy, fJac(x0) -> taylor, affin homotopy */
-        solverData->homotopyMethod = 1;
         solverData->h_function = wrapper_fvec_homotopy_newton;
         solverData->hJac_dh = wrapper_fvec_homotopy_newton_der;
         solverData->startDirection = 1.0;
@@ -2308,7 +2404,6 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       if (runHomotopy == 2)
       {
         /* store x0 and calculate f(x0) -> newton homotopy, fJac(x0) -> taylor, affin homotopy */
-        solverData->homotopyMethod = 1;
         solverData->h_function = wrapper_fvec_homotopy_newton;
         solverData->hJac_dh = wrapper_fvec_homotopy_newton_der;
         solverData->startDirection = -1.0;
@@ -2316,7 +2411,6 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
       }
       if (runHomotopy == 3)
       {
-        solverData->homotopyMethod = 2;
         solverData->h_function = wrapper_fvec_homotopy_fixpoint;
         solverData->hJac_dh = wrapper_fvec_homotopy_fixpoint_der;
         solverData->startDirection = 1.0;

@@ -288,7 +288,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       }
 #endif
     }
-    data->simulationInfo->homotopyUsed = 1;
+    data->simulationInfo->homotopySteps += init_lambda_steps;
     messageClose(LOG_INIT);
 
 #if !defined(OMC_NO_FILESYSTEM)
@@ -582,7 +582,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   int retVal = -1;
   int i;
 
-  data->simulationInfo->homotopyUsed = 0;
+  data->simulationInfo->homotopySteps = 0;
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");
 

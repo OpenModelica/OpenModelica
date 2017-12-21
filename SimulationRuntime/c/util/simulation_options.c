@@ -48,6 +48,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_F */                            "f",
   /* FLAG_HELP */                         "help",
   /* FLAG_HOMOTOPY_ADAPT_BEND */          "homAdaptBend",
+  /* FLAG_HOMOTOPY_BACKTRACE_STRATEGY */  "homBacktraceStrategy",
   /* FLAG_HOMOTOPY_H_EPS */               "homHEps",
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */    "homMaxLambdaSteps",
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */    "homMaxNewtonSteps",
@@ -157,6 +158,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                         "get detailed information that specifies the command-line flag",
   /* FLAG_HOMOTOPY_ADAPT_BEND */          "[double (default 0.5)] maximum trajectory bending to accept the homotopy step",
+  /* FLAG_HOMOTOPY_BACKTRACE_STRATEGY */  "value specifies the backtrace strategy in the homotopy corrector step (fix (default), orthogonal)",
   /* FLAG_HOMOTOPY_H_EPS */               "[double (default 1e-5)] tolerance respecting residuals for the homotopy H-function",
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */    "[int (default size dependent)] maximum lambda steps allowed to run the homotopy path",
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */    "[int (default 20)] maximum newton steps in the homotopy corrector step",
@@ -260,15 +262,15 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * CYC (cpu cycles measured with RDTSC)\n"
   "  * CPU (process-based CPU-time)",
   /* FLAG_CPU */
-  "  Dumps the cpu-time into the result file using the variable named $cpuTime",
+  "  Dumps the cpu-time into the result file using the variable named $cpuTime.",
   /* FLAG_CSV_OSTEP */
-  "  Value specifies csv-files for debug values for optimizer step",
+  "  Value specifies csv-files for debug values for optimizer step.",
   /* FLAG_DAE_MODE */
   "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and ida method is used.",
   /* FLAG_DELTA_X_LINEARIZE */
-  "value specifies the delta x value for numerical differentiation used by linearization. The default value is sqrt(DBL_EPSILON*2e1).",
+  "  Value specifies the delta x value for numerical differentiation used by linearization. The default value is sqrt(DBL_EPSILON*2e1).",
   /* FLAG_DELTA_X_SOLVER */
-  "value specifies the delta x value for numerical differentiation used by integration method. The default values is sqrt(DBL_EPSILON).",
+  "  Value specifies the delta x value for numerical differentiation used by integration method. The default values is sqrt(DBL_EPSILON).",
   /* FLAG_EMBEDDED_SERVER */
   "  Enables an embedded server. Valid values:\n\n"
   "  * none - default, run without embedded server\n"
@@ -287,42 +289,49 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Get detailed information that specifies the command-line flag\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
   /* FLAG_HOMOTOPY_ADAPT_BEND */
-  "  maximum trajectory bending to accept the homotopy step",
+  "  Maximum trajectory bending to accept the homotopy step.\n"
+  "  Default: 0.5, which means the corrector vector has to be smaller than half of the predictor vector.",
+  /* FLAG_HOMOTOPY_BACKTRACE_STRATEGY */
+  "  Value specifies the backtrace strategy in the homotopy corrector step. Valid values:\n"
+  "  * fix - default, go back to the path by fixing one coordinate\n"
+  "  * orthogonal - go back to the path in an orthogonal direction to the tangent vector",
   /* FLAG_HOMOTOPY_H_EPS */
-  "  tolerance respecting residuals for the homotopy H-function",
+  "  Tolerance respecting residuals for the homotopy H-function (default: 1e-5).\n"
+  "  In the last step (lambda=1) newtonFTol is used as tolerance.",
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */
-  "  maximum lambda steps allowed to run the homotopy path",
+  "  Maximum lambda steps allowed to run the homotopy path (default: system size * 100).",
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */
-  "  maximum newton steps in the homotopy corrector step",
+  "  Maximum newton steps in the homotopy corrector step (default: 20).",
   /* FLAG_HOMOTOPY_MAX_TRIES */
-  "  maximum number of tries for one homotopy lambda step",
+  "  Maximum number of tries for one homotopy lambda step (default: 10).",
   /* FLAG_HOMOTOPY_NEG_START_DIR */
-  "  start to run along the homotopy path in the negative direction",
+  "  Start to run along the homotopy path in the negative direction.\n"
+  "  If one direction fails, the other direction is always used as fallback option.",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */
   "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
   "  Without this flag, the solver first tries to solve the initialization problem without homotopy and only uses homotopy as fallback option.",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR */
-  "  decrease homotopy step size tau by this factor if tau is too big in the homotopy corrector step",
+  "  Decrease homotopy step size tau by this factor if tau is too big in the homotopy corrector step (default: 10.0).",
   /* FLAG_HOMOTOPY_TAU_DEC_FACTOR_PRED */
-  "  decrease homotopy step size tau by this factor if tau is too big in the homotopy predictor step",
+  "  Decrease homotopy step size tau by this factor if tau is too big in the homotopy predictor step (default: 2.0).",
   /* FLAG_HOMOTOPY_TAU_INC_FACTOR */
-  "  increase homotopy step size tau by this factor if tau is too small in the homotopy corrector step",
+  "  Increase homotopy step size tau by this factor if tau can be increased after the homotopy corrector step (default: 2.0).",
   /* FLAG_HOMOTOPY_TAU_INC_THRESHOLD */
-  "  increase the homotopy step size tau if bend < homAdaptBend/homTauIncThreshold",
+  "  Increase the homotopy step size tau if homAdaptBend/bend > homTauIncThreshold (default: 10).",
   /* FLAG_HOMOTOPY_TAU_MAX */
-  "  maximum homotopy step size tau for the homotopy process",
+  "  Maximum homotopy step size tau for the homotopy process (default: 10).",
   /* FLAG_HOMOTOPY_TAU_MIN */
-  "  minimum homotopy step size tau for the homotopy process",
+  "  Minimum homotopy step size tau for the homotopy process (default: 1e-4).",
   /* FLAG_HOMOTOPY_TAU_START */
-  "  homotopy step size tau at the beginning of the homotopy process",
+  "  Homotopy step size tau at the beginning of the homotopy process (default: 0.2).",
   /* FLAG_IDA_MAXERRORTESTFAIL */
-  "  value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
+  "  Value specifies the maximum number of error test failures in attempting one step. The default value is 7.",
   /* FLAG_IDA_MAXNONLINITERS */
-  "  value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
+  "  Value specifies the maximum number of nonlinear solver iterations at one step. The default value is 3.",
   /* FLAG_IDA_MAXCONVFAILS */
-  "  value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
+  "  Value specifies the maximum number of nonlinear solver convergence failures at one step. The default value is 10.",
   /* FLAG_IDA_NONLINCONVCOEF */
-  "  value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
+  "  Value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */
   "  Value specifies the linear solver of the ida integration method. Valid values:\n"
   "  * klu - default, fast sparse linear solver\n"
@@ -331,7 +340,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * spbcg - sparse iterative linear solver based on biconjugate gradient method, convergance is not guaranteed, sundials method\n"
   "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method",
   /* FLAG_IDA_SCALING */
-  "  enable scaling of the IDA solver",
+  "  Enable scaling of the IDA solver.",
   /* FLAG_IDAS */
   "  Enables sensitivity analysis with respect to parameters if the model is compiled with omc flag --calculateSensitivities.",
   /* FLAG_IGNORE_HIDERESULT */
@@ -353,7 +362,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * dense - dense linear solver, sundials default method",
   /* FLAG_INITIAL_STEP_SIZE */
   "  Value specifies an initial step size, used by the methods: dassl, ida",
-   /* FLAG_INPUT_CSV */
+  /* FLAG_INPUT_CSV */
   "  Value specifies an csv-file with inputs for the simulation/optimization of the model",
   /* FLAG_INPUT_FILE */
   "  Value specifies an external file with inputs for the simulation/optimization of the model.",
@@ -405,7 +414,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value (a comma-separated String list) specifies which logging levels to\n"
   "  enable. Multiple options can be enabled at the same time.",
   /* FLAG_MAX_BISECTION_ITERATIONS */
-  "  value specifies the maximum number of bisection iterations for state event\n"
+  "  Value specifies the maximum number of bisection iterations for state event\n"
   "  detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */
   "  Value specifies the maximum number of event iterations.\n"
@@ -415,22 +424,22 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_STEP_SIZE */
   "  Value specifies maximum absolute step size, used by the methods: dassl, ida.",
   /* FLAG_MEASURETIMEPLOTFORMAT */
-  "  Value specifies the output format of the measure time functionality\n\n"
+  "  Value specifies the output format of the measure time functionality:\n\n"
   "  * svg\n"
   "  * jpg\n"
   "  * ps\n"
   "  * gif\n"
   "  * ...",
   /* FLAG_NEWTON_FTOL */
-  "  Tolerance respecting residuals for updating solution vector in Newton solver."
-  "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol."
+  "  Tolerance respecting residuals for updating solution vector in Newton solver.\n"
+  "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol.\n"
   "  The value is a Double with default value 1e-12.",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */
-  "  Maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). "
+  "  Maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling)."
   "  Used currently only by kinsol.",
   /* FLAG_NEWTON_XTOL */
-  "  Tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver."
-  "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol."
+  "  Tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver.\n"
+  "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol.\n"
   "  The value is a Double with default value 1e-12.",
   /* FLAG_NEWTON_STRATEGY */
   "  Value specifies the damping strategy for the newton solver.",
@@ -470,7 +479,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NO_SCALING */
   "  Disables scaling for the variables and the residuals in the algebraic nonlinear solver kinsol.",
   /* FLAG_NO_SUPPRESS_ALG */
-  "  flag to not suppress algebraic variables in the local error test of the ida solver in daeMode.\n"
+  "  Flag to not suppress algebraic variables in the local error test of the ida solver in daeMode.\n"
   "  In general, the use of this option is discouraged when solving DAE systems of index 1,\n"
   "  whereas it is generally encouraged for systems of index 2 or more.",
   /* FLAG_OPTDEBUGEJAC */
@@ -509,7 +518,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_SINGLE */
   "  Output results in single precision (mat-format only).",
   /* FLAG_SOLVER_STEPS */
-  "  dumps the number of integration steps into the result file",
+  "  Dumps the number of integration steps into the result file.",
   /* FLAG_STEADY_STATE */
   "  Aborts the simulation if steady state is reached.",
   /* FLAG_STEADY_STATE_TOL */
@@ -540,6 +549,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_F */                            FLAG_TYPE_OPTION,
   /* FLAG_HELP */                         FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_ADAPT_BEND */          FLAG_TYPE_OPTION,
+  /* FLAG_HOMOTOPY_BACKTRACE_STRATEGY */  FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_H_EPS */               FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */    FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_MAX_NEWTON_STEPS */    FLAG_TYPE_OPTION,
@@ -860,4 +870,18 @@ const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX] = {
 
   "use sparse iterative solvers",
   "use direct dense method"
+};
+
+const char *HOM_BACK_STRAT_NAME[HOM_BACK_STRAT_MAX] = {
+  "HOM_BACK_STRAT_UNKNOWN",
+
+  /* HOM_BACK_STRAT_FIX */         "fix",
+  /* HOM_BACK_STRAT_ORTHOGONAL */  "orthogonal"
+};
+
+const char *HOM_BACK_STRAT_DESC[HOM_BACK_STRAT_MAX] = {
+  "unknown",
+
+  /* HOM_BACK_STRAT_FIX */          "go back to the path by fixing one coordinate",
+  /* HOM_BACK_STRAT_ORTHOGONAL */   "go back to the path in an orthogonal direction to the tangent vector"
 };

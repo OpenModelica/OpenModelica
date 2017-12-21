@@ -77,6 +77,7 @@ double homTauIncreasingThreshold = 10.0;
 double homTauMax = 10.0;
 double homTauMin = 1e-4;
 double homTauStart = 0.2;
+int homBacktraceStrategy = 1;
 
 static double tolZC;
 

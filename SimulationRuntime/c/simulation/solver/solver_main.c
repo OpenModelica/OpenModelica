@@ -466,7 +466,12 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
       retValue = -1;
     }
     if (!retValue)
-      infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully %s homotopy method.", data->simulationInfo->homotopyUsed ? "with" : "without");
+    {
+      if (data->simulationInfo->homotopySteps == 0)
+        infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
+      else
+        infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully with %d homotopy steps.", data->simulationInfo->homotopySteps);
+    }
 
     success = 1;
 #if !defined(OMC_EMCC)

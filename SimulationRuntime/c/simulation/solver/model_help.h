@@ -100,6 +100,7 @@ extern double homTauIncreasingThreshold;
 extern double homTauMax;
 extern double homTauMin;
 extern double homTauStart;
+extern int homBacktraceStrategy;
 
 void initializeDataStruc(DATA *data, threadData_t *threadData);
 
