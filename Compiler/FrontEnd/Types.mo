@@ -3434,13 +3434,6 @@ algorithm
       DAE.Dimension dim;
 
     // Array type
-    case DAE.T_ARRAY(dims = {dim})
-      equation
-        (ty, dims) = flattenArrayType(inType.ty);
-      then
-        (ty, dim :: dims);
-
-    // Array type
     case DAE.T_ARRAY()
       equation
         (ty, dims) = flattenArrayType(inType.ty);

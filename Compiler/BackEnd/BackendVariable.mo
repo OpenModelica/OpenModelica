@@ -2995,11 +2995,11 @@ algorithm
         (_,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
       then (DAE.WHOLEDIM()::rest, b);
 
-    case (DAE.SLICE(exp = sub_exp)::rest, _)
+    case ((sub as DAE.SLICE(exp = sub_exp))::rest, _)
       equation
         (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
         const = Expression.isConst(sub_exp);
-        res = if const then DAE.SLICE(sub_exp)::rest else (DAE.WHOLEDIM()::rest);
+        res = if const then sub::rest else (DAE.WHOLEDIM()::rest);
       then
         (res, b or not const);
 
