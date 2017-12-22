@@ -60,7 +60,7 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
         logCategoriesNames[categoryIndex], message, ##__VA_ARGS__);
 
 // array of value references of states
-#if NUMBER_OF_REALS>0
+#if NUMBER_OF_STATES>0
 fmi2ValueReference vrStates[NUMBER_OF_STATES] = STATES;
 fmi2ValueReference vrStatesDerivatives[NUMBER_OF_STATES] = STATESDERIVATIVES;
 #endif
@@ -1019,7 +1019,7 @@ fmi2Status fmi2SetContinuousStates(fmi2Component c, const fmi2Real x[], size_t n
     return fmi2Error;
   if (nullPointer(comp, "fmi2SetContinuousStates", "x[]", x))
     return fmi2Error;
-#if NUMBER_OF_REALS>0
+#if NUMBER_OF_STATES>0
   for (i = 0; i < nx; i++) {
     fmi2ValueReference vr = vrStates[i];
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2SetContinuousStates: #r%d# = %.16g", vr, x[i])
@@ -1117,7 +1117,7 @@ fmi2Status fmi2GetContinuousStates(fmi2Component c, fmi2Real x[], size_t nx)
     return fmi2Error;
   if (nullPointer(comp, "fmi2GetContinuousStates", "states[]", x))
     return fmi2Error;
-#if NUMBER_OF_REALS>0
+#if NUMBER_OF_STATES>0
   for (i = 0; i < nx; i++) {
     fmi2ValueReference vr = vrStates[i];
     x[i] = getReal(comp, vr); // to be implemented by the includer of this file
