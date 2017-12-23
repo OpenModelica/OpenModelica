@@ -121,15 +121,15 @@ MainWindow *MainWindow::instance(bool debug)
  */
 void MainWindow::setUpMainWindow()
 {
-  // Create the OMCProxy object.
-  mpOMCProxy = new OMCProxy(this);
-  if (getExitApplicationStatus()) {
-    return;
-  }
-  SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
-  // Create an object of OptionsDialog
-  OptionsDialog::create();
-  SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
+  // Reopen the standard output stream.
+  QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
+  freopen(outputFileName.toStdString().c_str(), "w", stdout);
+  setbuf(stdout, NULL); // used non-buffered stdout
+  // Reopen the standard error stream.
+  QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
+  freopen(errorFileName.toStdString().c_str(), "w", stderr);
+  setbuf(stderr, NULL); // used non-buffered stderr
+  SplashScreen::instance()->showMessage(tr("Initializing"), Qt::AlignRight, Qt::white);
   // Create an object of MessagesWidget.
   MessagesWidget::create();
   // Create MessagesDockWidget dock
@@ -140,22 +140,17 @@ void MainWindow::setUpMainWindow()
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
   connect(MessagesWidget::instance(), SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
-  // Reopen the standard output stream.
-  QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
-  freopen(outputFileName.toStdString().c_str(), "w", stdout);
-  setbuf(stdout, NULL); // used non-buffered stdout
-  mpOutputFileDataNotifier = 0;
-  mpOutputFileDataNotifier = new FileDataNotifier(outputFileName);
-  connect(mpOutputFileDataNotifier, SIGNAL(sendData(QString)), SLOT(writeOutputFileData(QString)));
-  mpOutputFileDataNotifier->start();
-  // Reopen the standard error stream.
-  QString errorFileName = Utilities::tempDirectory() + "/omediterror.txt";
-  freopen(errorFileName.toStdString().c_str(), "w", stderr);
-  setbuf(stderr, NULL); // used non-buffered stderr
-  mpErrorFileDataNotifier = 0;
-  mpErrorFileDataNotifier = new FileDataNotifier(errorFileName);
-  connect(mpErrorFileDataNotifier, SIGNAL(sendData(QString)), SLOT(writeErrorFileData(QString)));
-  mpErrorFileDataNotifier->start();
+  // Create the OMCProxy object.
+  mpOMCProxy = new OMCProxy(this);
+  if (getExitApplicationStatus()) {
+    return;
+  }
+  SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
+  // Create an object of OptionsDialog
+  OptionsDialog::create();
+  SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
+  // apply MessagesWidget settings
+  MessagesWidget::instance()->applyMessagesSettings();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setMaximumWidth(300);
@@ -514,16 +509,6 @@ int MainWindow::askForExit()
 void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
-  if (mpOutputFileDataNotifier) {
-    mpOutputFileDataNotifier->exit();
-    mpOutputFileDataNotifier->wait();
-    delete mpOutputFileDataNotifier;
-  }
-  if (mpErrorFileDataNotifier) {
-    mpErrorFileDataNotifier->exit();
-    mpErrorFileDataNotifier->wait();
-    delete mpErrorFileDataNotifier;
-  }
   delete mpOMCProxy;
   delete mpModelWidgetContainer;
   if (mpSimulationDialog) {

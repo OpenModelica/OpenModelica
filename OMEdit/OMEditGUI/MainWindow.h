@@ -219,8 +219,6 @@ private:
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   QDockWidget *mpMessagesDockWidget;
-  FileDataNotifier *mpOutputFileDataNotifier;
-  FileDataNotifier *mpErrorFileDataNotifier;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
   GDBAdapter *mpGDBAdapter;

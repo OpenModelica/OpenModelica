@@ -458,13 +458,44 @@ QString OMCProxy::getErrorString(bool warningsAsErrors)
 }
 
 /*!
-  Gets the errors by using the getMessagesStringInternal API.
-  Reads all the errors and add them to the Messages Window.
-  \see MessagesWidget::addGUIMessage
-  \return true if there are any errors otherwise false.'
-  */
+ * \brief OMCProxy::printMessagesStringInternal
+ * Gets the errors by using the getMessagesStringInternal API.
+ * Reads all the errors and add them to the Messages Browser.
+ * Reads the omeditoutput.txt and omediterror.txt files and add the data to Messages Browser if there is any.
+ * \see MessagesWidget::addGUIMessage
+ * \return true if there are any errors otherwise false.
+ */
 bool OMCProxy::printMessagesStringInternal()
 {
+  // read stdout file
+  QFile outputFile(Utilities::tempDirectory() + "/omeditoutput.txt");
+  if (outputFile.open(QIODevice::ReadOnly)) {
+    static qint64 outputFilePosition = 0;
+    if (outputFile.seek(outputFilePosition)) {
+      QString outputFileData = outputFile.readAll();
+      if (!outputFileData.isEmpty()) {
+        outputFilePosition = outputFile.pos();
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, outputFileData,
+                                                              Helper::scriptingKind, Helper::notificationLevel));
+      }
+    }
+    outputFile.close();
+  }
+  // read stderr file
+  QFile errorFile(Utilities::tempDirectory() + "/omediterror.txt");
+  if (errorFile.open(QIODevice::ReadOnly)) {
+    static qint64 errorFilePosition = 0;
+    if (errorFile.seek(errorFilePosition)) {
+      QString errorFileData = errorFile.readAll();
+      if (!errorFileData.isEmpty()) {
+        errorFilePosition = errorFile.pos();
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorFileData,
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+    }
+    errorFile.close();
+  }
+  // read errors
   int errorsSize = getMessagesStringInternal();
   bool returnValue = errorsSize > 0 ? true : false;
 

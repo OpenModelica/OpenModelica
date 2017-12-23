@@ -127,7 +127,6 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mpMessagesTextBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(mpMessagesTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openErrorMessageClass(QUrl)));
   connect(mpMessagesTextBrowser, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  applyMessagesSettings();
   // create actions
   mpSelectAllAction = new QAction(tr("Select All"), this);
   mpSelectAllAction->setShortcut(QKeySequence("Ctrl+a"));
