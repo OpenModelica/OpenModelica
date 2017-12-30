@@ -528,6 +528,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mIsInitialState = false;
   drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
+  setChoicesAnnotation(QStringList());
   mpOriginItem = 0;
   mpBottomLeftResizerItem = 0;
   mpTopLeftResizerItem = 0;
