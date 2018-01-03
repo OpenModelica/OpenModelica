@@ -9638,7 +9638,7 @@ end System2;
 //             Temperature T is not in the allowed range
 //             200.0 K <= (T =" + String(vol.dynBal.medium.T, 0, true, 6) + " K) <= 423.15 K
 //             required from medium model \"" + "MoistAirPTDecoupledUnsaturated" + "\".");
-//   vol.dynBal.medium.MM = 1.0;
+//   vol.dynBal.medium.MM = 1.0 / (vol.dynBal.medium.Xi[1] / <EMPTY(scope: Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.BaseProperties$vol$dynBal$medium, name: steam.MM, ty: Real(String quantity PARAM DAE.EQBOUND("MolarMass", SOME("MolarMass"), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND("kg/mol", SOME("kg/mol"), C_PARAM, [DEFAULT VALUE]), Real min PARAM DAE.EQBOUND(0.0, SOME(0.0), C_PARAM, [DEFAULT VALUE])))> + (1.0 - vol.dynBal.medium.Xi[1]) / <EMPTY(scope: Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.BaseProperties$vol$dynBal$medium, name: dryair.MM, ty: Real(String quantity PARAM DAE.EQBOUND("MolarMass", SOME("MolarMass"), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND("kg/mol", SOME("kg/mol"), C_PARAM, [DEFAULT VALUE]), Real min PARAM DAE.EQBOUND(0.0, SOME(0.0), C_PARAM, [DEFAULT VALUE])))>);
 //   vol.dynBal.medium.p_steam_sat = min(Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressure(vol.dynBal.medium.T), 0.999 * vol.dynBal.medium.p);
 //   vol.dynBal.medium.X_sat = min(vol.dynBal.medium.p_steam_sat * steam.MM * (1.0 - vol.dynBal.medium.Xi[1]) / (dryair.MM * max(1e-13, vol.dynBal.medium.p - vol.dynBal.medium.p_steam_sat)), 1.0);
 //   vol.dynBal.medium.X_steam = vol.dynBal.medium.Xi[1];

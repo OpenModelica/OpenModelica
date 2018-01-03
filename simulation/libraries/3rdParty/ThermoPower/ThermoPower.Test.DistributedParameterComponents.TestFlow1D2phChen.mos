@@ -10,13 +10,21 @@ simulate(ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen); get
 // true
 // ""
 // record SimulationResult
-//     resultFile = "ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen_res.mat",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+//     messages = "Simulation execution failed for model: ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE                                    
+//       In above,  R1 =   1.1643990255923E+02   R2 =   2.7968940501209E-14
+// DASKR--  NONLINEAR SOLVER FAILED TO CONVERGE                                    
+// DASKR--  REPEATEDLY OR WITH ABS(H)=HMIN                                         
+// stdout            | warning | The corrector could not converge.
+// stdout            | warning | can't continue. time = 116.439903
+// stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 116.44
 // "
 // end SimulationResult;
 // "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// [Modelica 3.2.2/Media/package.mo:7156:7-7156:50:writable] Warning: SimCodeUtil.cref2simvar got an alias variable hex.sat.psat to $cse4.psat, but before code generation these should have been removed
 // "
 // endResult
