@@ -735,7 +735,7 @@ algorithm
       GlobalScript.SimulationOptions defaulSimOpt;
       SimCode.SimulationSettings simSettings;
       Boolean dumpExtractionSteps, requireExactVersion;
-      list<tuple<Absyn.Path,list<String>>> uses;
+      list<tuple<Absyn.Path,list<String>,Boolean>> uses;
       Config.LanguageStandard oldLanguageStd;
       SCode.Element cl;
       list<SCode.Element> cls, elts;
@@ -1418,11 +1418,11 @@ algorithm
 
         case (cache,env,"buildLabel",vals,st,_)
       equation
-	  Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
-	  //Flags.set(Flags.WRITE_TO_BUFFER,true);
-	  List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+    Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
+    //Flags.set(Flags.WRITE_TO_BUFFER,true);
+    List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-	  (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
+    (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
@@ -1430,12 +1430,12 @@ algorithm
       equation
       Flags.setConfigBool(Flags.REDUCE_TERMS, true);
      // Flags.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
-	  Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
-	  _=Flags.disableDebug(Flags.WRITE_TO_BUFFER);
-	  List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+    Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
+    _=Flags.disableDebug(Flags.WRITE_TO_BUFFER);
+    List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-	  (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildLabeledModel(cache,env, vals, st, msg);
+    (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildLabeledModel(cache,env, vals, st, msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
     case(cache,env,"buildOpenTURNSInterface",vals,st,_)
@@ -2960,7 +2960,7 @@ algorithm
     case (_, GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf))
       equation
         str = Absyn.pathFirstIdent(className);
-        (p,b) = CevalScript.loadModel({(Absyn.IDENT(str),{"default"})},Settings.getModelicaPath(Config.getRunningTestsuite()),p,true,true,true,false);
+        (p,b) = CevalScript.loadModel({(Absyn.IDENT(str),{"default"},false)},Settings.getModelicaPath(Config.getRunningTestsuite()),p,true,true,true,false);
         Error.assertionOrAddSourceMessage(not b,Error.NOTIFY_NOT_LOADED,{str,"default"},Absyn.dummyInfo);
         // print(stringDelimitList(list(Absyn.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
       then GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf);
@@ -7082,14 +7082,14 @@ algorithm
 end searchClassNames;
 
 protected function makeUsesArray
-  input tuple<Absyn.Path,list<String>> inTpl;
+  input tuple<Absyn.Path,list<String>,Boolean> inTpl;
   output Values.Value v;
 algorithm
   v := match inTpl
     local
       Absyn.Path p;
       String pstr,ver;
-    case ((p,{ver}))
+    case ((p,{ver},_))
       equation
         pstr = Absyn.pathString(p);
       then ValuesUtil.makeArray({Values.STRING(pstr),Values.STRING(ver)});

@@ -323,7 +323,7 @@ algorithm
         // see https://trac.openmodelica.org/OpenModelica/ticket/2422
         // prio = if_(stringEq(prio,""), "default", prio);
         mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
-        (p1,true) = loadModel((Absyn.IDENT(cname),{prio})::{}, mp, p, true, true, checkUses, true);
+        (p1,true) = loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true);
       then p1;
 
     case (_, _, _, _)
@@ -351,7 +351,7 @@ protected type LoadModelFoldArg =
   tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/>;
 
 public function loadModel
-  input list<tuple<Absyn.Path,list<String>>> imodelsToLoad;
+  input list<tuple<Absyn.Path,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
@@ -367,28 +367,34 @@ algorithm
 end loadModel;
 
 protected function loadModel1
-  input tuple<Absyn.Path,list<String>> modelToLoad;
+  input tuple<Absyn.Path,list<String>,Boolean> modelToLoad;
   input LoadModelFoldArg inArg;
   input tuple<Absyn.Program, Boolean> inTpl;
   output tuple<Absyn.Program, Boolean> outTpl;
 protected
-  list<tuple<Absyn.Path,list<String>>> modelsToLoad;
-  Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion;
+  list<tuple<Absyn.Path,list<String>,Boolean>> modelsToLoad;
+  Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion, onlyCheckFirstModelicaPath;
   Absyn.Path path;
   list<String> versionsLst;
-  String pathStr, versions, className, version, modelicaPath;
+  String pathStr, versions, className, version, modelicaPath, thisModelicaPath;
   Absyn.Program p, pnew;
   Error.MessageTokens msgTokens;
 algorithm
-  (path, versionsLst) := modelToLoad;
+  (path, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion) := inArg;
+  if onlyCheckFirstModelicaPath then
+    /* Using loadFile() */
+    thisModelicaPath::_ := System.strtok(modelicaPath, System.groupDelimiter());
+  else
+    thisModelicaPath := modelicaPath;
+  end if;
   try
     (p, success) := inTpl;
     if checkModelLoaded(modelToLoad, p, forceLoad, NONE()) then
       pnew := Absyn.PROGRAM({}, Absyn.TOP());
       version := "";
     else
-      pnew := ClassLoader.loadClass(path, versionsLst, modelicaPath, NONE(), requireExactVersion);
+      pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion);
       version := getPackageVersion(path, pnew);
       b := not notifyLoad or forceLoad;
       msgTokens := {Absyn.pathString(path), version};
@@ -406,7 +412,7 @@ algorithm
     (p, _) := inTpl;
     pathStr := Absyn.pathString(path);
     versions := stringDelimitList(versionsLst, ",");
-    msgTokens := {pathStr, versions, modelicaPath};
+    msgTokens := {pathStr, versions, thisModelicaPath};
     if forceLoad then
       Error.addMessage(Error.LOAD_MODEL, msgTokens);
       outTpl := (p, false);
@@ -418,7 +424,7 @@ algorithm
 end loadModel1;
 
 protected function checkModelLoaded
-  input tuple<Absyn.Path,list<String>> tpl;
+  input tuple<Absyn.Path,list<String>,Boolean> tpl;
   input Absyn.Program p;
   input Boolean forceLoad;
   input Option<String> failNonLoad;
@@ -432,14 +438,14 @@ algorithm
       Absyn.Path path;
 
     case (_,_,true,_) then false;
-    case ((path,str1::_),_,false,_)
+    case ((path,str1::_,_),_,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
         ostr2 = Absyn.getNamedAnnotationInClass(cdef,Absyn.IDENT("version"),Interactive.getAnnotationStringValueOrFail);
         checkValidVersion(path,str1,ostr2);
       then true;
     case (_,_,_,NONE()) then false;
-    case ((path,_),_,_,SOME(str2))
+    case ((path,_,_),_,_,SOME(str2))
       equation
         str1 = Absyn.pathString(path);
         Error.addMessage(Error.INST_NON_LOADED, {str1,str2});
@@ -1353,7 +1359,7 @@ algorithm
         if b1 then
           Config.setLanguageStandard(Config.versionStringToStd(str));
         end if;
-        (p,b) = loadModel({(path,strings)},mp,p,true,b,true,requireExactVersion);
+        (p,b) = loadModel({(path,strings,false)},mp,p,true,b,true,requireExactVersion);
         if b1 then
           Config.setLanguageStandard(oldLanguageStd);
         end if;

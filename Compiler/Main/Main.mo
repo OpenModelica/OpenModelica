@@ -441,7 +441,7 @@ algorithm
         path = Absyn.stringPath(inLib);
         mp = Settings.getModelicaPath(Config.getRunningTestsuite());
         p = GlobalScriptUtil.getSymbolTableAST(inSymTab);
-        (pnew, true) = CevalScript.loadModel({(path, {"default"})}, mp, p, true, true, true, false);
+        (pnew, true) = CevalScript.loadModel({(path, {"default"}, false)}, mp, p, true, true, true, false);
         newst = GlobalScriptUtil.setSymbolTableAST(inSymTab, pnew);
       then
         newst;
