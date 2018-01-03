@@ -2673,10 +2673,19 @@ match system
       DATA *data = (DATA*) ((void**)dataIn[0]);
       threadData_t *threadData = (threadData_t*) ((void**)dataIn[1]);
       const int equationIndexes[2] = {1,<%nls.index%>};
+      int i;
       <%varDecls%>
       <% if profileAll() then 'SIM_PROF_TICK_EQ(<%nls.index%>);' %>
       <% if profileSome() then 'SIM_PROF_ADD_NCALL_EQ(modelInfoGetEquation(&data->modelData->modelDataXml,<%nls.index%>).profileBlockIndex,1);' %>
       /* iteration variables */
+      for (i=0; i<<%listLength(nls.crefs)%>; i++) {
+        if (isinf(xloc[i]) || isnan(xloc[i])) {
+          for (i=0; i<<%listLength(nls.crefs)%>; i++) {
+            res[i] = NAN;
+          }
+          <%if intEq(whichSet, 0) then "return;" else "return 1;"%>
+        }
+      }
       <%xlocs%>
       /* backup outputs */
       <%backupOutputs%>
