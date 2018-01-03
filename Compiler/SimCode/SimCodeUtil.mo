@@ -399,29 +399,29 @@ algorithm
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
-     if(boolAnd(ifcpp,Flags.getConfigBool(Flags.LABELED_REDUCTION))) then
-     Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
+    if(boolAnd(ifcpp,Flags.getConfigBool(Flags.LABELED_REDUCTION))) then
+      Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,true);
     end if;
 
-	if(ifcpp) then
-	if Flags.getConfigBool(Flags.GENERATE_LABELED_SIMCODE) then
+    if(ifcpp) then
+      if Flags.getConfigBool(Flags.GENERATE_LABELED_SIMCODE) then
         (allEquations,modelInfo) := ReduceDAE.buildLabels(allEquations,modelInfo,{},args);
         //Flags.set(Flags.REDUCE_DAE,true);
-		if debug then execStat("ReduceDAE: buildLabels"); end if;
-		end if;
-	end if;
+        if debug then execStat("ReduceDAE: buildLabels"); end if;
+      end if;
+    end if;
 
     tmpSimVars := modelInfo.vars;
 
     //reduce terms
-	if(ifcpp) then
-	if Flags.getConfigBool(Flags.REDUCE_TERMS) then
+    if(ifcpp) then
+      if Flags.getConfigBool(Flags.REDUCE_TERMS) then
         (allEquations,modelInfo) := ReduceDAE.reduceTerms(allEquations,modelInfo,args);
         Flags.setConfigBool(Flags.REDUCE_TERMS, false);
-        _:=Flags.disableDebug(Flags.REDUCE_DAE);
-		if debug then execStat("ReduceDAE: reduceTerms"); end if;
-		end if;
-	end if;
+        Flags.disableDebug(Flags.REDUCE_DAE);
+        if debug then execStat("ReduceDAE: reduceTerms"); end if;
+      end if;
+    end if;
     // external objects
     extObjInfo := createExtObjInfo(shared);
 
@@ -13319,6 +13319,19 @@ algorithm
     case (cref, SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) )
       equation
         sv = BaseHashTable.get(cref, crefToSimVarHT);
+        sv = match sv.aliasvar
+          case SimCodeVar.NOALIAS() then sv;
+          /* The C++ runtime generates a different set of variables... */
+          case _ guard Config.simCodeTarget() == "Cpp" then sv;
+          case SimCodeVar.ALIAS(varName=cref)
+            algorithm
+              Error.addSourceMessage(Error.COMPILER_WARNING, {getInstanceName() + " got an alias variable " + ComponentReference.printComponentRefStr(inCref) + " to " + ComponentReference.printComponentRefStr(cref) + ", but before code generation these should have been removed"}, sv.source.info);
+           then cref2simvar(cref, simCode);
+          case SimCodeVar.NEGATEDALIAS(varName=cref)
+            algorithm
+              Error.addSourceMessage(Error.INTERNAL_ERROR, {getInstanceName() + " got a negated alias variable " + ComponentReference.printComponentRefStr(inCref) + " to " + ComponentReference.printComponentRefStr(cref) + ", but before code generation these should have been removed"}, sv.source.info);
+            then fail();
+        end match;
       then sv;
 
     case (_, _)

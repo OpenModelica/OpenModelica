@@ -566,7 +566,6 @@ protected
       end if;
       res := (true,SimCodeUtil.getFunctionIndex());
     else
-      ErrorExt.moveMessagesToParentThread();
     end try;
   end runTplWriteFile;
 
@@ -581,7 +580,6 @@ protected
       Tpl.tplCallWithFailErrorNoArg(func);
       res := (true,SimCodeUtil.getFunctionIndex());
     else
-      ErrorExt.moveMessagesToParentThread();
     end try;
   end runTpl;
 
@@ -599,7 +597,6 @@ protected
       func();
       res := (true,SimCodeUtil.getFunctionIndex());
     else
-      ErrorExt.moveMessagesToParentThread();
     end try;
   end runToStr;
 
@@ -611,7 +608,10 @@ protected
   algorithm
     (res as (b,_)) := func();
     if not b then
-      print(System.dladdr(func) + " failed\n");
+      Error.addInternalError(System.dladdr(func) + " failed\n", sourceInfo());
+    end if;
+    if ErrorExt.getNumMessages() > 0 then
+      ErrorExt.moveMessagesToParentThread();
     end if;
   end runCodegenFunc;
 
