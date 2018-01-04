@@ -78,8 +78,8 @@ end SimplifyBinary;
 //   x7 = x * (x1 + x4 * x6);
 //   x8 = x * (x1 * x3 - x4 * x6);
 //   x9 = (1.0 / x2 - x4) * x;
-//   x10 = (x2 + -1.0 / x4) * x;
-//   x11 = -1.0 / x4;
+//   x10 = (x2 + (-1.0) / x4) * x;
+//   x11 = (-1.0) / x4;
 //   x12 = (x4 * x1 + x5 * x1 ^ 2.0) * x ^ 2.0;
 // end SimplifyBinary;
 // endResult

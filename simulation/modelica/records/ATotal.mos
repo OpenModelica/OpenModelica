@@ -14,7 +14,7 @@ simulate(A); getErrorString();
 //   input Real temp(quantity = \"ThermodynamicTemperature\", unit = \"K\", displayUnit = \"degC\", min = 0.0, start = 288.15, nominal = 300.0) \"Temperature\";
 //   output Real ret(quantity = \"ElectricPotential\", unit = \"V\") \"Output voltage\";
 // algorithm
-//   ret := 1.16 + -0.000702 * temp ^ 2.0 / (1108.0 + temp);
+//   ret := 1.16 + (-0.000702) * temp ^ 2.0 / (1108.0 + temp);
 // end Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp;
 //
 // function Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp_old \"Temperature dependency of energy gap\"
@@ -140,12 +140,12 @@ simulate(A); getErrorString();
 //   phibtnom := Modelica.Electrical.Spice3.Internal.Functions.energyGapDepTemp(tnom);
 //   vt := 8.61726105451295e-05 * temp;
 //   vtnom := 8.61726105451295e-05 * tnom;
-//   arg := 1.345417051337526e+20 + -3.621481323477592e+22 * phibtemp / temp;
+//   arg := 1.345417051337526e+20 + (-3.621481323477592e+22) * phibtemp / temp;
 //   fact2 := 0.003331667499583542 * temp;
-//   pbfact := -2.0 * vt * (1.5 * log(fact2) + 1.6021918e-19 * arg);
-//   arg1 := 1.345417051337526e+20 + -3.621481323477592e+22 * phibtnom / tnom;
+//   pbfact := (-2.0) * vt * (1.5 * log(fact2) + 1.6021918e-19 * arg);
+//   arg1 := 1.345417051337526e+20 + (-3.621481323477592e+22) * phibtnom / tnom;
 //   fact1 := 0.003331667499583542 * tnom;
-//   pbfact1 := -2.0 * vtnom * (1.5 * log(fact1) + 1.6021918e-19 * arg1);
+//   pbfact1 := (-2.0) * vtnom * (1.5 * log(fact1) + 1.6021918e-19 * arg1);
 //   pbo := (phi0 - pbfact1) / fact1;
 //   junctionpot := pbfact + fact2 * pbo;
 //   gmaold := (phi0 - pbo) / pbo;
@@ -459,12 +459,12 @@ simulate(A); getErrorString();
 //     out_qm.qm_capgb := 0.5 * in_c.m_capOx;
 //     out_qm.qm_capgs := 0.0;
 //     out_qm.qm_capgd := 0.0;
-//   elseif vgst <= -0.5 * in_c.m_tPhi then
-//     out_qm.qm_capgb := -0.5 * vgst * in_c.m_capOx / in_c.m_tPhi;
+//   elseif vgst <= (-0.5) * in_c.m_tPhi then
+//     out_qm.qm_capgb := (-0.5) * vgst * in_c.m_capOx / in_c.m_tPhi;
 //     out_qm.qm_capgs := 0.0;
 //     out_qm.qm_capgd := 0.0;
 //   elseif vgst <= 0.0 then
-//     out_qm.qm_capgb := -0.5 * vgst * in_c.m_capOx / in_c.m_tPhi;
+//     out_qm.qm_capgb := (-0.5) * vgst * in_c.m_capOx / in_c.m_tPhi;
 //     out_qm.qm_capgs := 0.6666666666666666 * vgst * in_c.m_capOx / in_c.m_tPhi + 0.3333333333333333 * in_c.m_capOx;
 //     out_qm.qm_capgd := 0.0;
 //   else
@@ -499,7 +499,7 @@ simulate(A); getErrorString();
 // algorithm
 //   out_c.m_drainResistance := if in_p.m_drainResistanceIsGiven > 0.5 then in_p.m_drainResistance else in_p.m_sheetResistance * in_m.m_drainSquares;
 //   out_c.m_sourceResistance := if in_p.m_sourceResistanceIsGiven > 0.5 then in_p.m_sourceResistance else in_p.m_sheetResistance * in_m.m_sourceSquares;
-//   out_c.m_lEff := in_m.m_len + -2.0 * in_p.m_latDiff;
+//   out_c.m_lEff := in_m.m_len + (-2.0) * in_p.m_latDiff;
 //   if abs(out_c.m_lEff) < 1e-18 then
 //     out_c.m_lEff := 1e-06;
 //   end if;
@@ -774,7 +774,7 @@ simulate(A); getErrorString();
 //     sarg := sqrt(out_c.m_tPhi - vb);
 //   else
 //     sarg := sqrt(out_c.m_tPhi);
-//     sarg := sarg + -0.5 * vb / sarg;
+//     sarg := sarg + (-0.5) * vb / sarg;
 //     sarg := max(0.0, sarg);
 //   end if;
 //   out_c.m_von := out_c.m_tVbi * /*Real*/(in_m_type) + in_vp.m_gamma * sarg;
@@ -794,9 +794,9 @@ simulate(A); getErrorString();
 //       out_c.m_gds := 0.5 * in_p.m_lambda * out_c.m_Beta * vgst ^ 2.0;
 //       out_c.m_gmbs := out_c.m_gm * arg;
 //     else
-//       out_c.m_cdrain := betap * vds * (vgst + -0.5 * vds);
+//       out_c.m_cdrain := betap * vds * (vgst + (-0.5) * vds);
 //       out_c.m_gm := betap * vds;
-//       out_c.m_gds := betap * (vgst - vds) + in_p.m_lambda * out_c.m_Beta * vds * (vgst + -0.5 * vds);
+//       out_c.m_gds := betap * (vgst - vds) + in_p.m_lambda * out_c.m_Beta * vds * (vgst + (-0.5) * vds);
 //       out_c.m_gmbs := out_c.m_gm * arg;
 //     end if;
 //   end if;
@@ -821,7 +821,7 @@ simulate(A); getErrorString();
 //   out_v.m_gamma := in_p.m_gamma;
 //   out_v.m_vt0 := in_p.m_vt0;
 //   vtnom := 8.61726105451295e-05 * in_p.m_tnom;
-//   egfet1 := 1.16 + -0.000702 * in_p.m_tnom ^ 2.0 / (1108.0 + in_p.m_tnom);
+//   egfet1 := 1.16 + (-0.000702) * in_p.m_tnom ^ 2.0 / (1108.0 + in_p.m_tnom);
 //   if not in_p.m_oxideThicknessIsGiven > 0.5 or in_p.m_oxideThickness == 0.0 then
 //     if in_p.m_oxideThickness == 0.0 then
 //       out_v.m_oxideCapFactor := 0.0;
@@ -844,12 +844,12 @@ simulate(A); getErrorString();
 //             fermig := 0.5 * /*Real*/(in_m_type) * in_p.m_gateType * egfet1;
 //             wkfng := 3.25 + 0.5 * egfet1 - fermig;
 //           end if;
-//           wkfngs := -3.25 + wkfng + -0.5 * egfet1 - fermis;
+//           wkfngs := -3.25 + wkfng + (-0.5) * egfet1 - fermis;
 //           if not in_p.m_gammaIsGiven > 0.5 then
 //             out_v.m_gamma := 5.761561600860045e-12 * sqrt(in_p.m_substrateDoping / out_v.m_oxideCapFactor);
 //           end if;
 //           if not in_p.m_vtOIsGiven > 0.5 then
-//             vfb := wkfngs + -1.6021918e-15 * in_p.m_surfaceStateDensity / out_v.m_oxideCapFactor;
+//             vfb := wkfngs + (-1.6021918e-15) * in_p.m_surfaceStateDensity / out_v.m_oxideCapFactor;
 //             out_v.m_vt0 := vfb + /*Real*/(in_m_type) * (out_v.m_gamma * sqrt(out_v.m_phi) + out_v.m_phi);
 //           end if;
 //         end if;

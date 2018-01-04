@@ -54,7 +54,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: 1
 // 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * xSeedNLSJac1 [Real ]
 // 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - xSeedNLSJac1 [Real ]
-// 	13: $res1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + -2.0 * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
+// 	13: $res1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
 // 	
 // columnVars(3)
 // ----------------------
@@ -82,7 +82,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: -1
 // 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * xSeedNLSJac1 [Real ]
 // 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - xSeedNLSJac1 [Real ]
-// 	13: $res1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + -2.0 * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
+// 	13: $res1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
 // 	
 // columnVars(3)
 // ----------------------
@@ -169,7 +169,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: 1
 // 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * xSeedNLSJac1 [Real ]
 // 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - xSeedNLSJac1 [Real ]
-// 	13: $res1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + -2.0 * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
+// 	13: $res1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real ]
 // 	
 // columnVars(3)
 // ----------------------
@@ -226,7 +226,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: 2
 // 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * xSeedNLSJac4 [Real ]
 // 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - xSeedNLSJac4 [Real ]
-// 	19: $res1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + -2.0 * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real ]
+// 	19: $res1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real ]
 // 	
 // columnVars(3)
 // ----------------------
@@ -254,7 +254,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: -1
 // 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * xSeedNLSJac4 [Real ]
 // 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - xSeedNLSJac4 [Real ]
-// 	19: $res1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + -2.0 * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real ]
+// 	19: $res1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real ]
 // 	
 // columnVars(3)
 // ----------------------
@@ -369,7 +369,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: 2
 // 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * xSeedNLSJac4 [Real ]
 // 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - xSeedNLSJac4 [Real ]
-// 	19: $res1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + -2.0 * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real ]
+// 	19: $res1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real ]
 // 	
 // columnVars(3)
 // ----------------------

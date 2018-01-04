@@ -6712,7 +6712,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 // algorithm
-//   psat := 611.657 * exp(17.2799 + -4102.99 / (-35.719 + Tsat));
+//   psat := 611.657 * exp(17.2799 + (-4102.99) / (-35.719 + Tsat));
 // end Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressureLiquid;
 //
 // function Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.setState_pTX
@@ -6846,7 +6846,7 @@ end System2;
 //   protected Real p_steam_sat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 //   protected Real x_sat(quantity = "MassFraction", unit = "1", min = 0.0, max = 1.0);
 // algorithm
-//   T := 273.15 + (h + -2501014.5 * X[1]) / (dryair.cp * (1.0 - X[1]) + steam.cp * X[1]);
+//   T := 273.15 + (h + (-2501014.5) * X[1]) / (dryair.cp * (1.0 - X[1]) + steam.cp * X[1]);
 //   p_steam_sat := Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.saturationPressure(T);
 //   x_sat := steam.MM * p_steam_sat / ((p - p_steam_sat) * dryair.MM);
 // end Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.T_phX;
@@ -6876,7 +6876,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 // algorithm
-//   psat := 611.657 * exp(17.2799 + -4102.99 / (-35.719 + Tsat));
+//   psat := 611.657 * exp(17.2799 + (-4102.99) / (-35.719 + Tsat));
 // end Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.saturationPressureLiquid;
 //
 // function Buildings.Fluid.MixingVolumes.MixingVolume$vol.Medium.setState_pTX
@@ -7303,7 +7303,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 // algorithm
-//   psat := 611.657 * exp(17.2799 + -4102.99 / (-35.719 + Tsat));
+//   psat := 611.657 * exp(17.2799 + (-4102.99) / (-35.719 + Tsat));
 // end Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.saturationPressureLiquid;
 //
 // function Buildings.Media.GasesPTDecoupled.MoistAirUnsaturated.setState_pTX
@@ -7439,7 +7439,7 @@ end System2;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 // algorithm
-//   psat := 611.657 * exp(17.2799 + -4102.99 / (-35.719 + Tsat));
+//   psat := 611.657 * exp(17.2799 + (-4102.99) / (-35.719 + Tsat));
 // end Buildings.Media.PerfectGases.MoistAir.saturationPressureLiquid;
 //
 // function Buildings.Media.PerfectGases.MoistAir.setState_pTX
@@ -7575,8 +7575,8 @@ end System2;
 //     y_d := delta ^ n;
 //     yP_d := n * delta ^ (-1.0 + n);
 //     yPP_d := n * (-1.0 + n) * delta ^ (-2.0 + n);
-//     a1 := -0.125 * (yP_d / delta - yPP_d) / delta2;
-//     a3 := 0.5 * yPP_d + -6.0 * a1 * delta2;
+//     a1 := (-0.125) * (yP_d / delta - yPP_d) / delta2;
+//     a3 := 0.5 * yPP_d + (-6.0) * a1 * delta2;
 //     a5 := y_d - delta2 * (a3 + delta2 * a1);
 //     y := a5 + x2 * (a3 + x2 * a1);
 //     assert(a5 > 0.0, "Delta is too small for this exponent.");
@@ -7740,7 +7740,7 @@ end System2;
 //     r[i] := -cr[i];
 //   end for;
 //   for i in 1:size(c0_in, 1) loop
-//     a[i] := -0.5 * c1[i];
+//     a[i] := (-0.5) * c1[i];
 //     b[i] := sqrt(c0[i] - a[i] ^ 2.0);
 //     ku[i] := c0[i] / b[i];
 //   end for;
@@ -8062,9 +8062,9 @@ end System2;
 //     t := (x - x1) / h;
 //     aux3 := t ^ 3.0;
 //     aux2 := t ^ 2.0;
-//     h00 := 1.0 + 2.0 * aux3 + -3.0 * aux2;
-//     h10 := aux3 + -2.0 * aux2 + t;
-//     h01 := 3.0 * aux2 + -2.0 * aux3;
+//     h00 := 1.0 + 2.0 * aux3 + (-3.0) * aux2;
+//     h10 := aux3 + (-2.0) * aux2 + t;
+//     h01 := 3.0 * aux2 + (-2.0) * aux3;
 //     h11 := aux3 - aux2;
 //     y := y1 * h00 + h * y1d * h10 + y2 * h01 + h * y2d * h11;
 //   else
@@ -10016,7 +10016,7 @@ end System2;
 //   pumRad.WFlo = pumRad.dpMachine * pumRad.VMachine_flow;
 //   pumRad.etaHyd * pumRad.WHyd = pumRad.WFlo;
 //   pumRad.QThe_flow + pumRad.WFlo = if pumRad.motorCooledByFluid then pumRad.P else pumRad.WHyd;
-//   pumRad.Q_flow = homotopy(Buildings.Utilities.Math.Functions.spliceFunction(pumRad.QThe_flow, 0.0, abs(pumRad.VMachine_flow) + -2.0 * pumRad.delta_V_flow, pumRad.delta_V_flow), 0.0);
+//   pumRad.Q_flow = homotopy(Buildings.Utilities.Math.Functions.spliceFunction(pumRad.QThe_flow, 0.0, abs(pumRad.VMachine_flow) + (-2.0) * pumRad.delta_V_flow, pumRad.delta_V_flow), 0.0);
 //   assert(sou.medium.T >= 272.15 and sou.medium.T <= 403.15, "
 //             Temperature T (= " + String(sou.medium.T, 0, true, 6) + " K) is not
 //             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)

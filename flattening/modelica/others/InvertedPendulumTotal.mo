@@ -5765,7 +5765,7 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   protected Real pendulum.toMidCart.tb[1](quantity = "Torque", unit = "N.m");
 //   protected Real pendulum.toMidCart.tb[2](quantity = "Torque", unit = "N.m");
 //   protected Real pendulum.toMidCart.tb[3](quantity = "Torque", unit = "N.m");
-//   parameter Real pendulum.toMidCart.r[1](quantity = "Length", unit = "m") = -0.5 * pendulum.cart.r[1] "Vector from frame_a to frame_b resolved in frame_a";
+//   parameter Real pendulum.toMidCart.r[1](quantity = "Length", unit = "m") = (-0.5) * pendulum.cart.r[1] "Vector from frame_a to frame_b resolved in frame_a";
 //   parameter Real pendulum.toMidCart.r[2](quantity = "Length", unit = "m") = 0.5 * pendulum.cart.Height "Vector from frame_a to frame_b resolved in frame_a";
 //   parameter Real pendulum.toMidCart.r[3](quantity = "Length", unit = "m") = 0.0 "Vector from frame_a to frame_b resolved in frame_a";
 //   protected Real pendulum.toMidCart.vaux[1](quantity = "Velocity", unit = "m/s");
@@ -6031,7 +6031,7 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   assert(controller.limiter.uMax >= controller.limiter.uMin, "Limiter: Limits must be consistent. However, uMax (=" + String(controller.limiter.uMax, 0, true, 6) + ") < uMin (=" + String(controller.limiter.uMin, 0, true, 6) + ")");
 //   if initial() and not controller.limiter.limitsAtInit then
 //     controller.limiter.y = controller.limiter.u;
-//     assert(controller.limiter.u >= controller.limiter.uMin + -0.01 * abs(controller.limiter.uMin) and controller.limiter.u <= controller.limiter.uMax + 0.01 * abs(controller.limiter.uMax), "Limiter: During initialization the limits have been ignored.
+//     assert(controller.limiter.u >= controller.limiter.uMin + (-0.01) * abs(controller.limiter.uMin) and controller.limiter.u <= controller.limiter.uMax + 0.01 * abs(controller.limiter.uMax), "Limiter: During initialization the limits have been ignored.
 //     However, the result is that the input u is not within the required limits:
 //       u = " + String(controller.limiter.u, 0, true, 6) + ", uMin = " + String(controller.limiter.uMin, 0, true, 6) + ", uMax = " + String(controller.limiter.uMax, 0, true, 6));
 //   else
@@ -6414,7 +6414,7 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   pendulum.pendulumJoint.nn[1] = pendulum.pendulumJoint.n[1] / sqrt(pendulum.pendulumJoint.n[1] ^ 2.0 + pendulum.pendulumJoint.n[2] ^ 2.0 + pendulum.pendulumJoint.n[3] ^ 2.0) "rotation matrix";
 //   pendulum.pendulumJoint.nn[2] = pendulum.pendulumJoint.n[2] / sqrt(pendulum.pendulumJoint.n[1] ^ 2.0 + pendulum.pendulumJoint.n[2] ^ 2.0 + pendulum.pendulumJoint.n[3] ^ 2.0) "rotation matrix";
 //   pendulum.pendulumJoint.nn[3] = pendulum.pendulumJoint.n[3] / sqrt(pendulum.pendulumJoint.n[1] ^ 2.0 + pendulum.pendulumJoint.n[2] ^ 2.0 + pendulum.pendulumJoint.n[3] ^ 2.0) "rotation matrix";
-//   pendulum.pendulumJoint.qq = pendulum.pendulumJoint.q + -0.0174532925199433 * pendulum.pendulumJoint.q0;
+//   pendulum.pendulumJoint.qq = pendulum.pendulumJoint.q + (-0.0174532925199433) * pendulum.pendulumJoint.q0;
 //   pendulum.pendulumJoint.sinq = sin(pendulum.pendulumJoint.qq);
 //   pendulum.pendulumJoint.cosq = cos(pendulum.pendulumJoint.qq);
 //   pendulum.pendulumJoint.S_rel[1,1] = pendulum.pendulumJoint.nn[1] ^ 2.0 + (1.0 - pendulum.pendulumJoint.nn[1] ^ 2.0) * pendulum.pendulumJoint.cosq;

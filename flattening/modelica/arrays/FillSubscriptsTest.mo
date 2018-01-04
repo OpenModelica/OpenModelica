@@ -3858,7 +3858,7 @@ end Manifold;
 //   output Real dp(quantity = "Pressure", unit = "Pa", displayUnit = "Pa");
 //   protected Real kSquInv(unit = "1/(kg.m)");
 // algorithm
-//   kSquInv := k ^ -2.0;
+//   kSquInv := k ^ (-2.0);
 //   dp := Modelica.Fluid.Utilities.regSquare2(m_flow, m_flow_turbulent, kSquInv, kSquInv, false, 1.0);
 // end Buildings.Fluid.BaseClasses.FlowModels.basicFlowFunction_m_flow;
 //
@@ -4117,7 +4117,7 @@ end Manifold;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 // algorithm
-//   psat := 611.657 * exp(17.2799 + -4102.99 / (-35.719 + Tsat));
+//   psat := 611.657 * exp(17.2799 + (-4102.99) / (-35.719 + Tsat));
 // end Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressureLiquid;
 //
 // function Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.setState_pTX
@@ -4244,7 +4244,7 @@ end Manifold;
 //   input Real Tsat(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
 //   output Real psat(quantity = "Pressure", unit = "Pa", displayUnit = "bar", min = 0.0, nominal = 100000.0);
 // algorithm
-//   psat := 611.657 * exp(17.2799 + -4102.99 / (-35.719 + Tsat));
+//   psat := 611.657 * exp(17.2799 + (-4102.99) / (-35.719 + Tsat));
 // end Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressureLiquid;
 //
 // function Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.setState_pTX
@@ -5026,7 +5026,7 @@ end Manifold;
 //   protected Real xx;
 // algorithm
 //   a1 := x1 * y0d;
-//   a2 := 3.0 * y1 + -2.0 * a1 - x1 * y1d;
+//   a2 := 3.0 * y1 + (-2.0) * a1 - x1 * y1d;
 //   a3 := y1 + (-a2) - a1;
 //   xx := x / x1;
 //   y := xx * (a1 + xx * (a2 + xx * a3));
@@ -5070,12 +5070,12 @@ end Manifold;
 //     y1 := k1 * x1 ^ 2.0;
 //     y2 := (-k2) * x2 ^ 2.0;
 //     y1d := 2.0 * k1 * x1;
-//     y2d := -2.0 * k2 * x2;
+//     y2d := (-2.0) * k2 * x2;
 //     if use_yd0 then
 //       y0d := yd0;
 //     else
 //       w := x2 / x1;
-//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / ((1.0 - w) * x1);
+//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + (-3.0) * y1) * w) / ((1.0 - w) * x1);
 //     end if;
 //     w1 := 2.23606797749979 * k1 * x1;
 //     w2 := 2.23606797749979 * k2 * abs(x2);

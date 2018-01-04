@@ -5334,7 +5334,7 @@ end InnerOuterSamePrefix;// Result:
 //   pendulum.revolute.internalAxis.flange.tau = pendulum.revolute.internalAxis.tau;
 //   pendulum.revolute.internalAxis.flange.phi = pendulum.revolute.internalAxis.phi;
 //   pendulum.revolute.cylinder.r = {pendulum.revolute.frame_a.r_0[1], pendulum.revolute.frame_a.r_0[2], pendulum.revolute.frame_a.r_0[3]};
-//   pendulum.revolute.cylinder.r_shape = {-0.5 * pendulum.revolute.e[1] * pendulum.revolute.cylinderLength, -0.5 * pendulum.revolute.e[2] * pendulum.revolute.cylinderLength, -0.5 * pendulum.revolute.e[3] * pendulum.revolute.cylinderLength};
+//   pendulum.revolute.cylinder.r_shape = {(-0.5) * pendulum.revolute.e[1] * pendulum.revolute.cylinderLength, (-0.5) * pendulum.revolute.e[2] * pendulum.revolute.cylinderLength, (-0.5) * pendulum.revolute.e[3] * pendulum.revolute.cylinderLength};
 //   pendulum.revolute.cylinder.lengthDirection = {pendulum.revolute.e[1], pendulum.revolute.e[2], pendulum.revolute.e[3]};
 //   pendulum.revolute.cylinder.widthDirection = {0.0, 1.0, 0.0};
 //   pendulum.revolute.cylinder.color = {/*Real*/(pendulum.revolute.cylinderColor[1]), /*Real*/(pendulum.revolute.cylinderColor[2]), /*Real*/(pendulum.revolute.cylinderColor[3])};

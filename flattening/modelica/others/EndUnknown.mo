@@ -44,6 +44,6 @@ end EndUnknown;
 //   constant Real a = 0.2416666666666666;
 //   Real x(start = 1.0);
 // equation
-//   der(x) = -0.2416666666666666 * x;
+//   der(x) = (-0.2416666666666666) * x;
 // end EndUnknown;
 // endResult

@@ -1028,7 +1028,7 @@ end BC9;
 // equation
 //   secondOrder1.u = {secondOrder1.inPort.signal[1]};
 //   der(secondOrder1.y[1]) = secondOrder1.yd[1];
-//   der(secondOrder1.yd[1]) = secondOrder1.p_w[1] * (secondOrder1.p_w[1] * (secondOrder1.p_k[1] * secondOrder1.u[1] - secondOrder1.y[1]) + -2.0 * secondOrder1.p_D[1] * secondOrder1.yd[1]);
+//   der(secondOrder1.yd[1]) = secondOrder1.p_w[1] * (secondOrder1.p_w[1] * (secondOrder1.p_k[1] * secondOrder1.u[1] - secondOrder1.y[1]) + (-2.0) * secondOrder1.p_D[1] * secondOrder1.yd[1]);
 //   secondOrder1.y[1] = secondOrder1.outPort.signal[1];
 //   constant1.outPort.signal[1] = constant1.k[1];
 //   constant1.y[1] = constant1.outPort.signal[1];

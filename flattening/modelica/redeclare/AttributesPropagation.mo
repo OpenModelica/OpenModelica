@@ -2562,7 +2562,7 @@ end BoreholeSegment;
 //   output Real dp(quantity = "Pressure", unit = "Pa", displayUnit = "Pa");
 //   protected Real kSquInv(unit = "1/(kg.m)");
 // algorithm
-//   kSquInv := k ^ -2.0;
+//   kSquInv := k ^ (-2.0);
 //   dp := Modelica.Fluid.Utilities.regSquare2(m_flow, m_flow_turbulent, kSquInv, kSquInv, false, 1.0);
 // end Buildings.Fluid.BaseClasses.FlowModels.basicFlowFunction_m_flow;
 //
@@ -2986,7 +2986,7 @@ end BoreholeSegment;
 //   input Integer N;
 //   output Real W;
 // algorithm
-//   W := -0.5772 + sum(-1.0 ^ /*Real*/(1 + j) * u ^ /*Real*/(j) / /*Real*/(j * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.factorial(j)) for j in 1:N) - log(u);
+//   W := -0.5772 + sum((-1.0) ^ /*Real*/(1 + j) * u ^ /*Real*/(j) / /*Real*/(j * Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.factorial(j)) for j in 1:N) - log(u);
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.powerSeries;
 //
 // function Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.singleUTubeResistances
@@ -3018,17 +3018,17 @@ end BoreholeSegment;
 //   RCondPipe := 0.1591549430918953 * log((rTub + eTub) / rTub) / (kTub * hSeg);
 //   sigma := (kFil - kSoi) / (kFil + kSoi);
 //   R_1delta_LS := 0.1591549430918953 * (log(rBor / (rTub + eTub)) + log(0.5 * rBor / xC) + sigma * log(rBor ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0))) / kFil;
-//   R_1delta_MP := R_1delta_LS + -0.03978873577297384 * ((rTub + eTub) * (1.0 + -4.0 * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 / (kFil * ((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)));
+//   R_1delta_MP := R_1delta_LS + (-0.03978873577297384) * ((rTub + eTub) * (1.0 + (-4.0) * sigma * xC ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0)) / xC) ^ 2.0 / (kFil * ((1.0 + beta) / (1.0 - beta) + 0.25 * ((rTub + eTub) / xC) ^ 2.0 * (1.0 + 16.0 * sigma * (xC * rBor) ^ 4.0 / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0)));
 //   Ra_LS := 0.3183098861837907 * (log(2.0 * xC / rTub) + sigma * log((rBor ^ 2.0 + xC ^ 2.0) / (rBor ^ 2.0 - xC ^ 2.0))) / kFil;
 //   beta := 6.283185307179586 * kFil * RCondPipe;
 //   Rb := 0.5 * R_1delta_MP;
-//   Ra := Ra_LS + -0.07957747154594767 * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (((1.0 + beta) / (1.0 - beta) + -0.25 * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0) * kFil);
+//   Ra := Ra_LS + (-0.07957747154594767) * (rTub / xC) ^ 2.0 * (1.0 + 4.0 * sigma * rBor ^ 4.0 * xC ^ 2.0 / (rBor ^ 4.0 - xC ^ 4.0)) / (((1.0 + beta) / (1.0 - beta) + (-0.25) * (rTub / xC) ^ 2.0 + 2.0 * sigma * (rTub * rBor) ^ 2.0 * (rBor ^ 4.0 + xC ^ 4.0) / (rBor ^ 4.0 - xC ^ 4.0) ^ 2.0) * kFil);
 //   Rg := 2.0 * Rb / hSeg;
 //   Rar := Ra / hSeg;
 //   while test == false and i <= 15 loop
 //     x := 0.06666666666666667 * log(0.5 * sqrt(rBor ^ 2.0 + 2.0 * (rTub + eTub) ^ 2.0) / (rTub + eTub)) * /*Real*/(16 - i) / log(0.7071067811865475 * rBor / (rTub + eTub));
 //     Rgb := (1.0 - x) * Rg;
-//     Rgg := 2.0 * Rgb * (Rar + -2.0 * x * Rg) / (2.0 * Rgb + 2.0 * x * Rg - Rar);
+//     Rgg := 2.0 * Rgb * (Rar + (-2.0) * x * Rg) / (2.0 * Rgb + 2.0 * x * Rg - Rar);
 //     test := 1.0 / Rgg + 0.5 / Rgb > 0.0;
 //     i := 1 + i;
 //   end while;
@@ -3375,8 +3375,8 @@ end BoreholeSegment;
 //     y_d := delta ^ n;
 //     yP_d := n * delta ^ (-1.0 + n);
 //     yPP_d := n * (-1.0 + n) * delta ^ (-2.0 + n);
-//     a1 := -0.125 * (yP_d / delta - yPP_d) / delta2;
-//     a3 := 0.5 * yPP_d + -6.0 * a1 * delta2;
+//     a1 := (-0.125) * (yP_d / delta - yPP_d) / delta2;
+//     a3 := 0.5 * yPP_d + (-6.0) * a1 * delta2;
 //     a5 := y_d - delta2 * (a3 + delta2 * a1);
 //     y := a5 + x2 * (a3 + x2 * a1);
 //     assert(a5 > 0.0, "Delta is too small for this exponent.");
@@ -3683,7 +3683,7 @@ end BoreholeSegment;
 //   protected Real xx;
 // algorithm
 //   a1 := x1 * y0d;
-//   a2 := 3.0 * y1 + -2.0 * a1 - x1 * y1d;
+//   a2 := 3.0 * y1 + (-2.0) * a1 - x1 * y1d;
 //   a3 := y1 + (-a2) - a1;
 //   xx := x / x1;
 //   y := xx * (a1 + xx * (a2 + xx * a3));
@@ -3727,12 +3727,12 @@ end BoreholeSegment;
 //     y1 := k1 * x1 ^ 2.0;
 //     y2 := (-k2) * x2 ^ 2.0;
 //     y1d := 2.0 * k1 * x1;
-//     y2d := -2.0 * k2 * x2;
+//     y2d := (-2.0) * k2 * x2;
 //     if use_yd0 then
 //       y0d := yd0;
 //     else
 //       w := x2 / x1;
-//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + -3.0 * y1) * w) / ((1.0 - w) * x1);
+//       y0d := 0.5 * ((3.0 * y2 - x2 * y2d) / w + (x1 * y1d + (-3.0) * y1) * w) / ((1.0 - w) * x1);
 //     end if;
 //     w1 := 2.23606797749979 * k1 * x1;
 //     w2 := 2.23606797749979 * k2 * abs(x2);
@@ -4304,7 +4304,7 @@ end BoreholeSegment;
 //   protected final parameter Real seg.pipFil.cpFil(quantity = "SpecificHeatCapacity", unit = "J/(kg.K)") = seg.pipFil.matFil.c;
 //   protected final parameter Real seg.pipFil.kFil(quantity = "ThermalConductivity", unit = "W/(m.K)") = seg.pipFil.matFil.k;
 //   protected final parameter Real seg.pipFil.dFil(quantity = "Density", unit = "kg/m3", displayUnit = "g/cm3", min = 0.0) = seg.pipFil.matFil.d;
-//   protected parameter Real seg.pipFil.Co_fil(quantity = "HeatCapacity", unit = "J/K") = 3.141592653589793 * seg.pipFil.dFil * seg.pipFil.cpFil * seg.pipFil.hSeg * (seg.pipFil.rBor ^ 2.0 + -2.0 * (seg.pipFil.rTub + seg.pipFil.eTub) ^ 2.0);
+//   protected parameter Real seg.pipFil.Co_fil(quantity = "HeatCapacity", unit = "J/K") = 3.141592653589793 * seg.pipFil.dFil * seg.pipFil.cpFil * seg.pipFil.hSeg * (seg.pipFil.rBor ^ 2.0 + (-2.0) * (seg.pipFil.rTub + seg.pipFil.eTub) ^ 2.0);
 //   protected parameter Real seg.pipFil.cpMed(quantity = "SpecificHeatCapacity", unit = "J/(kg.K)") = 4184.0;
 //   protected parameter Real seg.pipFil.kMed(quantity = "ThermalConductivity", unit = "W/(m.K)") = 0.598;
 //   protected parameter Real seg.pipFil.mueMed(quantity = "DynamicViscosity", unit = "Pa.s", min = 0.0) = 0.001;

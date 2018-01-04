@@ -57,7 +57,7 @@ simulate(Tearing15); getErrorString();
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
 // 1/1 (1): $res2.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1SeedNLSJac0 + v1SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.$pDERNLSJac0.dummyVarNLSJac0 - v3SeedNLSJac0   [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1SeedNLSJac0 + v1SeedNLSJac0 * $cse2) + -7.0 * v2.$pDERNLSJac0.dummyVarNLSJac0 + -2.0 * v3SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1SeedNLSJac0 + v1SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
 // 3/3 (1): v1 * $cse1 * v1SeedNLSJac0 + v1SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 + (-v3SeedNLSJac0) * source - v7.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic]
 // 4/4 (1): v1 * $cse1 * v1SeedNLSJac0 + v1SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic]
 // 5/5 (1): $cse2 = sin(v1)   [unknown]
@@ -140,9 +140,9 @@ simulate(Tearing15); getErrorString();
 // ========================================
 // 1/1 (1): -4.0 + v1 * $cse5 + v2 + source = 0.0   [dynamic]
 // 2/2 (1): 2.0 * v1 * $cse5 + v2 + v7 + (-source) - v3 = 0.0   [dynamic]
-// 3/3 (1): 3.0 * v1 * $cse5 + -7.0 * v2 + -2.0 * v3 + 3.0 * source * v7 = 0.0   [dynamic]
+// 3/3 (1): 3.0 * v1 * $cse5 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * source * v7 = 0.0   [dynamic]
 // 4/4 (1): v1 * $cse5 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic]
-// 5/5 (1): 2.0 + 3.0 * v2 + -0.5 * source * v7 + (-v5) - v4 = 0.0   [dynamic]
+// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * source * v7 + (-v5) - v4 = 0.0   [dynamic]
 // 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic]
 // 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic]
 // 8/8 (1): $cse6 = sin(v6)   [unknown]
@@ -180,9 +180,9 @@ simulate(Tearing15); getErrorString();
 // ========================================
 // 1/1 (1): -4.0 + $cseb3 + v2 + source = 0.0   [dynamic]
 // 2/2 (1): 2.0 * $cseb3 + v2 + v7 + (-source) - v3 = 0.0   [dynamic]
-// 3/3 (1): 3.0 * $cseb3 + -7.0 * v2 + -2.0 * v3 + 3.0 * $cseb17 = 0.0   [dynamic]
+// 3/3 (1): 3.0 * $cseb3 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * $cseb17 = 0.0   [dynamic]
 // 4/4 (1): $cseb3 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic]
-// 5/5 (1): 2.0 + 3.0 * v2 + -0.5 * $cseb17 + (-v5) - v4 = 0.0   [dynamic]
+// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * $cseb17 + (-v5) - v4 = 0.0   [dynamic]
 // 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic]
 // 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic]
 // 8/8 (1): $cse6 = sin(v6)   [unknown]

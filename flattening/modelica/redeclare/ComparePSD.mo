@@ -923,7 +923,7 @@ end ComparePSD;
 //   input Real x;
 //   output Real y;
 // algorithm
-//   y := if abs(x) > 5e-05 then sin(x) / x else 1.0 + -0.1666666666666667 * x ^ 2.0 + 0.008333333333333333 * x ^ 4.0;
+//   y := if abs(x) > 5e-05 then sin(x) / x else 1.0 + (-0.1666666666666667) * x ^ 2.0 + 0.008333333333333333 * x ^ 4.0;
 // end Noise.Utilities.Math.sinc;
 //
 // class ComparePSD

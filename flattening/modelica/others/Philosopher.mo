@@ -298,9 +298,9 @@ end Philosopher_DiningTable;
 //   output Real x "uniform random variate between 0 and 1";
 //   output Real[3] so "output random seed";
 // algorithm
-//   so[1] := abs(171.0 * si[1] + -30269.0 * div(171.0 * si[1], 30269.0));
-//   so[2] := abs(172.0 * si[2] + -30307.0 * div(172.0 * si[2], 30307.0));
-//   so[3] := abs(170.0 * si[3] + -30323.0 * div(170.0 * si[3], 30323.0));
+//   so[1] := abs(171.0 * si[1] + (-30269.0) * div(171.0 * si[1], 30269.0));
+//   so[2] := abs(172.0 * si[2] + (-30307.0) * div(172.0 * si[2], 30307.0));
+//   so[3] := abs(170.0 * si[3] + (-30323.0) * div(170.0 * si[3], 30323.0));
 //   if so[1] <= 0.0 and so[1] >= 0.0 then
 //     so[1] := 1.0;
 //   end if;

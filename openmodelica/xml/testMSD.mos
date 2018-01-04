@@ -470,7 +470,7 @@ readFile("stateSpace-MSD.xml");
 // </equation>
 // <equation id=\"2\">der(mass1.s) = mass1.v
 // </equation>
-// <equation id=\"3\">force1.s = mass1.s + -0.5 * mass1.L
+// <equation id=\"3\">force1.s = mass1.s + (-0.5) * mass1.L
 // </equation>
 // <equation id=\"4\">damper1.flange_a.s = fixed1.s0 - damper1.s_rel
 // </equation>

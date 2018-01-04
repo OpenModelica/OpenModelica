@@ -113,6 +113,6 @@ end OperatorsTuples;
 //   parameter Real m_flows[2] = 2.0;
 //   Real x;
 // equation
-//   x = -0.5 * Modelica.Math.Vectors.interpolate({0.0, 1.0}, {pressure_drop[1,2] * /*Real*/(sign(m_flows[1])), pressure_drop[2,2] * /*Real*/(sign(m_flows[1]))}, abs(m_flows[2]), 1)[1];
+//   x = (-0.5) * Modelica.Math.Vectors.interpolate({0.0, 1.0}, {pressure_drop[1,2] * /*Real*/(sign(m_flows[1])), pressure_drop[2,2] * /*Real*/(sign(m_flows[1]))}, abs(m_flows[2]), 1)[1];
 // end OperatorsTuples;
 // endResult
