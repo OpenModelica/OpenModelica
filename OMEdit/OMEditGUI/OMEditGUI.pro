@@ -28,7 +28,7 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
+QT += network core gui webkit xml xmlpatterns svg opengl concurrent
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport widgets webkitwidgets opengl
 }
@@ -126,6 +126,7 @@ SOURCES += main.cpp \
   Modeling/CoOrdinateSystem.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
+  Search/SearchWidget.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
   Editors/ModelicaEditor.cpp \
@@ -200,6 +201,7 @@ HEADERS  += Util/Helper.h \
   Modeling/CoOrdinateSystem.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
+  Search/SearchWidget.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
   Editors/ModelicaEditor.h \

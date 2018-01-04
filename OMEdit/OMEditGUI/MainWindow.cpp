@@ -45,6 +45,7 @@
 #include "Debugger/Locals/LocalsWidget.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
+#include "Search/SearchWidget.h"
 #if !defined(WITHOUT_OSG)
 #include "Animation/ThreeDViewer.h"
 #include "Animation/ViewerWidget.h"
@@ -205,6 +206,15 @@ void MainWindow::setUpMainWindow()
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
+
+  // Create an object of SearchWidget
+  mpSearchWidget= new SearchWidget(this);
+  mpSearchDockWidget = new QDockWidget(tr("Search Browser"),this);
+  mpSearchDockWidget->setObjectName("Search");
+  mpSearchDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
+  mpSearchDockWidget->setWidget(mpSearchWidget);
+  addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
+
   // create the GDB adapter instance
   GDBAdapter::create();
   // create stack frames widget
@@ -2444,6 +2454,15 @@ void MainWindow::enableReSimulationToolbar(bool visible)
 }
 
 /*!
+ * \brief MainWindow::openSearchBrowser
+ * Open the Search browser Dock Widget using shortcut keys ctrl+h.
+*/
+void MainWindow::openSearchBrowser()
+{
+  mpSearchDockWidget->show();
+}
+
+/*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
  * \param tabIndex
@@ -3138,6 +3157,12 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // Search action
+  mpSearchDockWidgetAction = new QAction(this);
+  mpSearchDockWidgetAction->setShortcut(QKeySequence("Ctrl+h"));
+  mpSearchDockWidgetAction->setStatusTip(tr("Open the Search Browser"));
+  connect(mpSearchDockWidgetAction, SIGNAL(triggered()), SLOT(openSearchBrowser()));
+
 }
 
 //! Creates the menus
@@ -3238,11 +3263,13 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpThreeDViewerDockWidget->toggleViewAction());
 #endif
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpLocalsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpTargetOutputDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpGDBLoggerDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpSearchDockWidgetAction);
   pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCloseWindowAction);
   pViewWindowsMenu->addAction(mpCloseAllWindowsAction);

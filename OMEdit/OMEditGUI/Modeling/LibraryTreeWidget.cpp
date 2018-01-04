@@ -1010,6 +1010,9 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (mShowOnlyModelica && pLibraryTreeItem && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
       return false;
     }
+    if (pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
+         return false;
+    }
     // if any of children matches the filter, then current index matches the filter as well
     int rows = sourceModel()->rowCount(index);
     for (int i = 0 ; i < rows ; ++i) {
@@ -3607,6 +3610,8 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
   connect(mpLibraryTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   connect(mpLibraryTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
+  // create a dummy librarytreeItem
+  mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "ALL", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

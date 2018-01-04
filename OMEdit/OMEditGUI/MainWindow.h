@@ -81,7 +81,7 @@ class GitCommands;
 class CommitChangesDialog;
 class TraceabilityInformationURI;
 class TraceabilityGraphViewWidget;
-
+class SearchWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -110,6 +110,7 @@ public:
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+  SearchWidget* getSearchWidget() {return mpSearchWidget;}
 
 #if !defined(WITHOUT_OSG)
   bool isThreeDViewerInitialized();
@@ -218,6 +219,8 @@ private:
   bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
+  SearchWidget *mpSearchWidget;
+  QDockWidget *mpSearchDockWidget;
   QDockWidget *mpMessagesDockWidget;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
@@ -377,6 +380,8 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
+  // Search Actions
+  QAction * mpSearchDockWidgetAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -463,6 +468,7 @@ public slots:
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
+  void openSearchBrowser();
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
