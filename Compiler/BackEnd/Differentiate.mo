@@ -2119,7 +2119,7 @@ algorithm
     case (e as DAE.CALL(path=path, expLst=expl, attr=attr), _, _, _, _) guard( Expression.isRecordCall(e, inFunctionTree))
       equation
         (dexpl, functions) = List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-    then (DAE.CALL(path, dexpl, attr), functions);
+      then (DAE.CALL(path, dexpl, attr), functions);
 
     //differentiate function partial
     case (e, _, _, _, _)
@@ -2155,8 +2155,7 @@ algorithm
          when differentiating.";
         tp = Expression.typeof(inExp);
         zero = Expression.createZeroExpression(tp);
-      then
-        (zero, inFunctionTree);
+      then (zero, inFunctionTree);
 
       else
       equation

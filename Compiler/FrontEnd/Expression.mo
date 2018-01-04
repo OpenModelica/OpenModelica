@@ -4494,10 +4494,10 @@ algorithm
     // record type
     case DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)) equation
       cr = DAE.CREF_IDENT("$TMP", inType, {});
-      crefs = ComponentReference.expandCref(cr, true);
-      typeLst = List.mapMap(crefs, crefExp, typeof);
+      typeLst = list(v.ty for v in varLst);
       expLst = List.map(typeLst, createZeroExpression);
       varNames = List.map(varLst, varName);
+      true = listLength(varNames) == listLength(expLst);
       e = DAE.RECORD(path, expLst, varNames, inType);
     then e;
 

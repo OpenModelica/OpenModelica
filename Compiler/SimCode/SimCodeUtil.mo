@@ -13330,7 +13330,7 @@ algorithm
           case SimCodeVar.NEGATEDALIAS(varName=cref)
             algorithm
               Error.addSourceMessage(Error.INTERNAL_ERROR, {getInstanceName() + " got a negated alias variable " + ComponentReference.printComponentRefStr(inCref) + " to " + ComponentReference.printComponentRefStr(cref) + ", but before code generation these should have been removed"}, sv.source.info);
-            then fail();
+            then sv;
         end match;
       then sv;
 

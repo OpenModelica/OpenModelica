@@ -310,8 +310,19 @@ algorithm
   e := match e
     local
       DAE.ComponentRef cr;
+      Integer i;
+      list<DAE.Exp> exps;
+      list<String> comp;
+      Absyn.Path p1,p2;
+      DAE.Type ty;
+      list<DAE.Var> vars;
     case (DAE.RSUB(exp=DAE.CREF(componentRef=cr), ix=-1))
       then DAE.CREF(ComponentReference.joinCrefs(cr, ComponentReference.makeCrefIdent(e.fieldName, e.ty, {})), e.ty);
+    case (DAE.RSUB(exp=DAE.CALL(path=p1, expLst=exps, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=vars))), ix=-1))
+      guard Absyn.pathEqual(p1,p2)
+      then listGet(exps, List.position1OnTrue(list(v.name for v in vars), stringEq, e.fieldName));
+    case (DAE.RSUB(exp=DAE.RECORD(exps=exps,comp=comp), ix=-1))
+      then listGet(exps, List.position1OnTrue(comp, stringEq, e.fieldName));
     else e;
   end match;
 end simplifyRSub;
