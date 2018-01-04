@@ -10514,6 +10514,7 @@ algorithm
 
     case (DAE.BINARY(operator = op), false) then priorityBinopRhs(op);
     case (DAE.BINARY(operator = op), true) then priorityBinopLhs(op);
+    case (DAE.RCONST(), _) guard inExp.real < 0.0 then 4; // Same as unary minus of a real literal
     case (DAE.UNARY(), _) then 4;
     case (DAE.LBINARY(operator = op), _) then priorityLBinop(op);
     case (DAE.LUNARY(), _) then 7;
