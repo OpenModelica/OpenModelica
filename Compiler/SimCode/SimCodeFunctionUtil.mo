@@ -1785,8 +1785,11 @@ protected function lookForExtFunctionLibrary
   input Option<String> resources;
   input Absyn.Path path;
   input SourceInfo info;
+protected
+  list<String> dirs2;
 algorithm
-  if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
+  dirs2 := "/usr/lib/"+System.getTriple()::"/lib/"+System.getTriple()::"/usr/lib/"::"/lib/"::dirs; // We could also try to look in ldconfig, etc for system libraries
+  if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
     _ := match resources
       local
         String resourcesStr, tmpdir, cmd, pwd, contents, found;
@@ -1813,10 +1816,10 @@ algorithm
                   Error.addSourceMessage(Error.COMPILER_WARNING, {"Failed to run "+cmd+": " + contents}, info);
                 else
                   Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Succeeded with compilation and installation of the library using:\ncommand: "+cmd+"\n" + contents}, info);
-                  if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
+                  if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
                     Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND_DESPITE_COMPILATION_SUCCESS, {cmd, System.pwd()}, info);
                   else
-                    found := listHead(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs, n in names))));
+                    found := listHead(list(x for x guard System.regularFileExists(x) in List.flatten(list(d+"/"+n for d in dirs2, n in names))));
                     Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {"Compiled "+found+" by running build project " + resourcesStr + "/BuildProjects/" + dir}, info);
                     didFind := true;
                   end if;
@@ -1835,10 +1838,10 @@ algorithm
         then ();
       else ();
     end match;
-    if not max(System.regularFileExists(d+"/"+n) for d in dirs, n in names) then
+    if not max(System.regularFileExists(d+"/"+n) for d in dirs2, n in names) then
       // suppress this warning if we're running the testsuite
       if not Config.getRunningTestsuite() then
-        Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d + "/" + n for d in dirs, n in names)}, info);
+        Error.addSourceMessage(Error.EXT_LIBRARY_NOT_FOUND, {name, sum("\n  " + d + "/" + n for d in dirs2, n in names)}, info);
       end if;
     end if;
   end if;
