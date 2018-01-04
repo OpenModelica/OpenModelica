@@ -777,6 +777,10 @@ namespace IAEX {
   void GraphCell::createGraphCell()
   {
     input_ = new MyTextEdit2a( mainWidget() );
+    Stylesheet *sheet = Stylesheet::instance( "stylesheet.xml" );
+    CellStyle style = sheet->getStyle( "Input" );
+    input_->setFont(style.textCharFormat()->font());
+
     mpModelicaTextHighlighter = new ModelicaTextHighlighter(input_->document());
     variableButton = new QPushButton("D",input_);
     variableButton->setToolTip(tr("New simulation data available"));
@@ -1404,7 +1408,7 @@ namespace IAEX {
   {
     int lineCount = input_->document()->lineCount() + 1;
     QFontMetrics fm(input_->font());
-    int lineSpacing = fm.lineSpacing();
+    int lineSpacing = fm.lineSpacing()+1;
     int height = lineCount * lineSpacing;
 
     input_->setMinimumHeight(height);
