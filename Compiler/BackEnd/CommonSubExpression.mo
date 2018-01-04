@@ -852,7 +852,12 @@ algorithm
       DAE.ComponentRef cr;
 
     case DAE.IFEXP()
-    then false;
+      algorithm
+        (_, outTuple) := Expression.traverseExpTopDown(inExp.expCond, wrapFunctionCalls_analysis3, inTuple);
+        // TODO: We should also have analyzed all of the branches; if a call is present in all branches we can perform CSE. But the data structure is a hashtable and we would need to use immutable types...
+        cont := false;
+        return;
+      then fail();
 
     // TODO: split up skip cases
     case _
