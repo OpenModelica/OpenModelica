@@ -4100,9 +4100,13 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
   case SIMVAR(varKind=ALG_STATE_OLD(), index=index)
   then
     'data->simulationInfo->inlineData->algOldVars[<%index%>]'
+  case SIMVAR(aliasvar=ALIAS(varName=varName)) then crefToCStr(varName, ix, isPre, isStart)
+  case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart)%>)'
+  case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart)%>)'
   case SIMVAR(varKind=JAC_VAR())
   case SIMVAR(varKind=JAC_DIFF_VAR())
   case SIMVAR(varKind=SEED_VAR())
+  case SIMVAR(varKind=DAE_RESIDUAL_VAR())
   case SIMVAR(varKind=DAE_RESIDUAL_VAR())
   case SIMVAR(index=-2)
   then
@@ -6982,9 +6986,9 @@ template crefAttributes(ComponentRef cr)
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
-  case var as SIMVAR(index=-1) then error(sourceInfo(), 'varAttributes got index=-1 for <%crefStr(name)%>')
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%escapeCComments(crefStrNoUnderscore(name))%> */'
+    if intLt(index,0) then error(sourceInfo(), 'varAttributes got negative index=<%index%> for <%crefStr(name)%>') else
+    'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%escapeCComments(crefStrNoUnderscore(name))%> */'
 end crefAttributes;
 
 annotation(__OpenModelica_Interface="backend");

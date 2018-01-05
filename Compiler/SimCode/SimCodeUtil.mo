@@ -13321,16 +13321,8 @@ algorithm
         sv = BaseHashTable.get(cref, crefToSimVarHT);
         sv = match sv.aliasvar
           case SimCodeVar.NOALIAS() then sv;
-          /* The C++ runtime generates a different set of variables... */
-          case _ guard Config.simCodeTarget() == "Cpp" then sv;
-          case SimCodeVar.ALIAS(varName=cref)
-            algorithm
-              Error.addSourceMessage(Error.COMPILER_WARNING, {getInstanceName() + " got an alias variable " + ComponentReference.printComponentRefStr(inCref) + " to " + ComponentReference.printComponentRefStr(cref) + ", but before code generation these should have been removed"}, sv.source.info);
-           then cref2simvar(cref, simCode);
-          case SimCodeVar.NEGATEDALIAS(varName=cref)
-            algorithm
-              Error.addSourceMessage(Error.INTERNAL_ERROR, {getInstanceName() + " got a negated alias variable " + ComponentReference.printComponentRefStr(inCref) + " to " + ComponentReference.printComponentRefStr(cref) + ", but before code generation these should have been removed"}, sv.source.info);
-            then sv;
+          case SimCodeVar.ALIAS(varName=cref) then cref2simvar(cref, simCode); /* Possibly not needed; can't really hurt that much though */
+          case SimCodeVar.NEGATEDALIAS() then sv;
         end match;
       then sv;
 

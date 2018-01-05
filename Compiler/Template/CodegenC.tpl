@@ -1618,8 +1618,9 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
-        case SIMVAR(__) then
+        case SIMVAR(aliasvar=NOALIAS()) then
         'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -1633,8 +1634,9 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
 
       <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
-        case SIMVAR(__) then
+        case SIMVAR(aliasvar=NOALIAS()) then
         'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -1647,8 +1649,9 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
 
       <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
-        case SIMVAR(__) then
+        case SIMVAR(aliasvar=NOALIAS()) then
         'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
         ;separator="\n"
       %>
 
@@ -2944,10 +2947,11 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
       <<
       <%cref(cref)%> = <%daeExpSimpleLiteral(exp)%>;
       <%match cref2simvar(cref, simCode)
-        case SIMVAR(varKind=PARAM()) then
+        case SIMVAR(aliasvar=NOALIAS(), varKind=PARAM()) then
           'data->modelData-><%expTypeShort(type_)%>ParameterData[<%index%>].time_unvarying = 1;'
-        case SIMVAR(__) then
-          'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].time_unvarying = 1;'%>
+        case SIMVAR(aliasvar=NOALIAS()) then
+          'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].time_unvarying = 1;'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
     <%fncalls%>
     TRACE_POP
@@ -4458,12 +4462,6 @@ template crefShortType(ComponentRef cr) "template crefType
   else "crefType:ERROR"
   end match
 end crefShortType;
-
-template crefIndexInArray(ComponentRef cr, SimCode simCode)
-::=
-  match cref2simvar(cr, simCode)
-  case SIMVAR(__) then index
-end crefIndexInArray;
 
 template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, String modelNamePrefix) "template functionAssertsforCheck
   Generates function in simulation file.
