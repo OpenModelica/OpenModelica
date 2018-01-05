@@ -106,5 +106,5 @@ signals:
 public slots:
   void updateCancelSearch();
 private:
-  bool mpStop;
+  bool mStop;
 };

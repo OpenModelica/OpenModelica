@@ -116,6 +116,7 @@ SearchWidget::SearchWidget(QWidget *pParent)
   connect(mpSearchButton, SIGNAL(clicked()), SLOT(searchInFiles()));
   connect(pSearchBack, SIGNAL(clicked()), SLOT(switchSearchPage()));
   connect(mpCancelButton,SIGNAL(clicked()), SLOT(cancelSearch()));
+  connect(this,SIGNAL(setCancelSearch()),mpSearch,SLOT(updateCancelSearch()));
 
   QVBoxLayout *pSearchSetStackLayout = new QVBoxLayout;
   pSearchSetStackLayout->addWidget(mpSearchStackedWidget);
@@ -125,6 +126,7 @@ SearchWidget::SearchWidget(QWidget *pParent)
 
 SearchWidget::~SearchWidget()
 {
+  // when the mainwindow closes check whether any ongoing search operation is running emit the stop signal and stop the thread
   emit setCancelSearch();
 }
 
@@ -176,7 +178,6 @@ void SearchWidget::searchInFiles()
  */
 void SearchWidget::cancelSearch()
 {
-  connect(this,SIGNAL(setCancelSearch()),mpSearch,SLOT(updateCancelSearch()));
   emit setCancelSearch();
 }
 
@@ -187,6 +188,9 @@ void SearchWidget::cancelSearch()
  */
 void SearchWidget::switchSearchPage()
 {
+  /* emit the signal to make sure the thread is stopped if search is not completed fully
+   and user press the back button */
+  emit setCancelSearch();
   /* switch the search page and clear all the items */
   mpSearchStackedWidget->setCurrentIndex(0);
   mpProgressBar->setValue(0);
@@ -289,7 +293,7 @@ SearchFileDetails::SearchFileDetails(QString filename, QMap<int,QString> Linenum
 Search::Search(QObject *parent):
   QObject(parent)
 {
-  mpStop = false;
+  mStop = false;
 }
 
 /*!
@@ -299,7 +303,7 @@ Search::Search(QObject *parent):
  */
 void Search::run()
 {
-  mpStop = false;
+  mStop = false;
   SearchWidget *mSearchWidget=MainWindow::instance()->getSearchWidget();
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   QStringList filelist;
@@ -326,7 +330,7 @@ void Search::run()
     for (int i = 0; i < filelist.size(); ++i)
     {
       // check for cancel operation
-      if(mpStop)
+      if(mStop)
       {
         return;
       }
@@ -393,7 +397,7 @@ void Search::getFiles(QString path, QStringList pattern, QStringList &filelist)
  */
 void Search::updateCancelSearch()
 {
-  mpStop = true;
+  mStop = true;
 }
 
 

@@ -1010,6 +1010,7 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     if (mShowOnlyModelica && pLibraryTreeItem && pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
       return false;
     }
+    // filter the dummy tree item "All" created for search functionality to be at the top
     if (pLibraryTreeItem->getNameStructure().compare("OMEdit.Search.Feature") == 0) {
          return false;
     }
@@ -3611,7 +3612,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpLibraryTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   connect(mpLibraryTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   // create a dummy librarytreeItem
-  mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "ALL", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
+  mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "All", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);

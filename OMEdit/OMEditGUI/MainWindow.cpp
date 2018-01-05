@@ -579,6 +579,8 @@ void MainWindow::beforeClosingMainWindow()
   GDBAdapter::destroy();
   // delete the GitCommands object
   GitCommands::destroy();
+  // delete the searchwidget object to call the destructor, to cancel the search operation running on seperate thread
+  delete mpSearchWidget;
 }
 
 /*!
@@ -2454,15 +2456,6 @@ void MainWindow::enableReSimulationToolbar(bool visible)
 }
 
 /*!
- * \brief MainWindow::openSearchBrowser
- * Open the Search browser Dock Widget using shortcut keys ctrl+h.
-*/
-void MainWindow::openSearchBrowser()
-{
-  mpSearchDockWidget->show();
-}
-
-/*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
  * \param tabIndex
@@ -3157,12 +3150,6 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // Search action
-  mpSearchDockWidgetAction = new QAction(this);
-  mpSearchDockWidgetAction->setShortcut(QKeySequence("Ctrl+h"));
-  mpSearchDockWidgetAction->setStatusTip(tr("Open the Search Browser"));
-  connect(mpSearchDockWidgetAction, SIGNAL(triggered()), SLOT(openSearchBrowser()));
-
 }
 
 //! Creates the menus
@@ -3264,12 +3251,12 @@ void MainWindow::createMenus()
 #endif
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
+  mpSearchDockWidget->toggleViewAction()->setShortcut(QKeySequence("Ctrl+h"));
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpLocalsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpTargetOutputDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpGDBLoggerDockWidget->toggleViewAction());
-  pViewWindowsMenu->addAction(mpSearchDockWidgetAction);
   pViewWindowsMenu->addSeparator();
   pViewWindowsMenu->addAction(mpCloseWindowAction);
   pViewWindowsMenu->addAction(mpCloseAllWindowsAction);
