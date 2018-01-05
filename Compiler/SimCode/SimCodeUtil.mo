@@ -8565,14 +8565,9 @@ algorithm
     outHT := List.fold(vars.intConstVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.boolConstVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.stringConstVars, addSimVarToHashTable, outHT);
-    if Config.simCodeTarget()=="Cpp" then
-      // Not needed in the hashtable (actually breaks code generation
-      // due to bad indexes, no information that they are seed variables
-      // and so on...
-      outHT := List.fold(vars.sensitivityVars, addSimVarToHashTable, outHT);
-      outHT := List.fold(vars.jacobianVars, addSimVarToHashTable, outHT);
-      outHT := List.fold(vars.seedVars, addSimVarToHashTable, outHT);
-    end if;
+    outHT := List.fold(vars.sensitivityVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.jacobianVars, addSimVarToHashTable, outHT);
+    outHT := List.fold(vars.seedVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeConstraintsVars, addSimVarToHashTable, outHT);
     outHT := List.fold(vars.realOptimizeFinalConstraintsVars, addSimVarToHashTable, outHT);
   else
@@ -13330,11 +13325,7 @@ algorithm
       equation
         //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
         badcref = ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        /* Todo: This also generates an error for example itearation variables, so i commented  out
-        "Template did not find the simulation variable for "+ ComponentReference.printComponentRefStr(cref) + ". ";
-        Error.addInternalError(errstr, sourceInfo());*/
-      then
-         SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE(), NONE());
+       then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SimCodeVar.INTERNAL(), NONE(), {}, false, true, false, NONE(), NONE());
   end matchcontinue;
 end cref2simvar;
 
