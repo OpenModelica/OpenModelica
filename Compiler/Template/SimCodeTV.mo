@@ -3244,6 +3244,10 @@ package ComponentReference
     output DAE.ComponentRef outCR;
   end popCref;
 
+  function crefRemovePrePrefix
+    input DAE.ComponentRef inCR;
+    output DAE.ComponentRef outCR;
+  end crefRemovePrePrefix;
 end ComponentReference;
 
 package Expression

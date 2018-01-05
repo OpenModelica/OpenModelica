@@ -6984,7 +6984,7 @@ end varAttributes;
 
 template crefAttributes(ComponentRef cr)
 ::=
-  match cref2simvar(cr, getSimCode())
+  match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
   case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'varAttributes got negative index=<%index%> for <%crefStr(name)%>') else
