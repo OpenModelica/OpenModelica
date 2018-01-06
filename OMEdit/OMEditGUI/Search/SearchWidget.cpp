@@ -169,7 +169,7 @@ void SearchWidget::searchInFiles()
   updateComboBoxSearchStrings(mpSearchStringComboBox);
   updateComboBoxSearchStrings(mpSearchFilePatternComboBox);
   /* start the search in seperate thread using QtConcurrent */
-  QtConcurrent::run(this->mpSearch,mpSearch->run);
+  QtConcurrent::run(mpSearch, &Search::run);
 }
 
 /*!
