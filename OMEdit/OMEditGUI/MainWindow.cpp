@@ -206,15 +206,15 @@ void MainWindow::setUpMainWindow()
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
-
   // Create an object of SearchWidget
-  mpSearchWidget= new SearchWidget(this);
+  mpSearchWidget = new SearchWidget(this);
   mpSearchDockWidget = new QDockWidget(tr("Search Browser"),this);
   mpSearchDockWidget->setObjectName("Search");
   mpSearchDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
   mpSearchDockWidget->setWidget(mpSearchWidget);
+  mpSearchDockWidget->toggleViewAction()->setShortcut(QKeySequence("Ctrl+h"));
   addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
-
+  mpSearchDockWidget->hide();
   // create the GDB adapter instance
   GDBAdapter::create();
   // create stack frames widget
@@ -355,8 +355,7 @@ void MainWindow::setUpMainWindow()
   }
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations())
-  {
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getMessagesTextBrowser()->toPlainText().isEmpty();
     restoreState(pSettings->value("application/windowState").toByteArray());
@@ -3251,7 +3250,6 @@ void MainWindow::createMenus()
 #endif
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
-  mpSearchDockWidget->toggleViewAction()->setShortcut(QKeySequence("Ctrl+h"));
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpLocalsDockWidget->toggleViewAction());
