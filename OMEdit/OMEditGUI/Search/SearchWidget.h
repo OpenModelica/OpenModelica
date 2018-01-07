@@ -61,7 +61,7 @@ public slots:
   void cancelSearch();
   void switchSearchPage();
   void findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column);
-  void updateTreeWidgetItems(SearchFileDetails);
+  void updateTreeWidgetItems(SearchFileDetails fileDetails);
   void updateProgressBarRange(int);
   void updateProgressBarValue(int,int);
   void updateFoundFilesLabel(int);
@@ -84,8 +84,8 @@ class SearchFileDetails
 {
 public:
   SearchFileDetails () {}
-  SearchFileDetails(QString filename, QMap<int,QString> Linenumbers);
-  QString mfilename;
+  SearchFileDetails(QString fileName, QMap<int,QString> Linenumbers);
+  QString mFileName;
   QMap<int,QString> mSearchLines;
 };
 

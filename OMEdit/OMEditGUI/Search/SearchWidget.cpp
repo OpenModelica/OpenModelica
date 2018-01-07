@@ -205,16 +205,17 @@ void SearchWidget::switchSearchPage()
 /*!
  * \brief SearchWidget::findAndOpenTreeWidgetItems
  * SLOT function to open the search results from the
- * tree items in the editor,and to the corresponding line number
+ * tree items in the editor and to the corresponding line number
  */
 void SearchWidget::findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column)
 {
-  QVariant value = item->data(column,Qt::UserRole);
-  if (!value.isNull())
-  {
+  QVariant value = item->data(column, Qt::UserRole);
+  if (!value.isNull()) {
     SearchFileDetails filedetails = qvariant_cast<SearchFileDetails>(value);
-    QString line = QString::number(filedetails.mSearchLines.firstKey());
-    MainWindow::instance()->findFileAndGoToLine(filedetails.mfilename,line);
+    if (!filedetails.mSearchLines.isEmpty()) {
+      QString line = QString::number(filedetails.mSearchLines.begin().key());
+      MainWindow::instance()->findFileAndGoToLine(filedetails.mFileName, line);
+    }
   }
 }
 
@@ -225,24 +226,23 @@ void SearchWidget::findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column)
  * each tree item with filename and subchild with line numbers and
  * found lines
  */
-void SearchWidget::updateTreeWidgetItems(SearchFileDetails filedetails)
+void SearchWidget::updateTreeWidgetItems(SearchFileDetails fileDetails)
 {
-  QTreeWidgetItem *mtreeWidgetItem = new QTreeWidgetItem();
-  mtreeWidgetItem->setText(0,filedetails.mfilename);
-  mpSearchTreeWidget->insertTopLevelItem(0,mtreeWidgetItem);
+  QTreeWidgetItem *pTreeWidgetItem = new QTreeWidgetItem();
+  pTreeWidgetItem->setText(0, fileDetails.mFileName);
+  mpSearchTreeWidget->insertTopLevelItem(0, pTreeWidgetItem);
   mpSearchTreeWidget->resizeColumnToContents(0);
 
-  QMap<int, QString> map =filedetails.mSearchLines;
+  QMap<int, QString> map = fileDetails.mSearchLines;
   QMap<int, QString>::iterator m;
-  for (m = map.begin(); m != map.end(); ++m)
-  {
+  for (m = map.begin(); m != map.end(); ++m) {
     // addTreeChild(mtreeWidgetItem,filedata[var].file,i.key(),i.value());
-    QTreeWidgetItem *mtreeItemchild = new QTreeWidgetItem();
-    mtreeItemchild->setText(0,tr("%1 %2").arg(QString::number(m.key())).arg(m.value()));
-    QMap<int, QString> mapdata;
-    mapdata[m.key()]=m.value();
-    mtreeItemchild->setData(0,Qt::UserRole,QVariant::fromValue(SearchFileDetails(filedetails.mfilename,mapdata)));
-    mtreeWidgetItem->addChild(mtreeItemchild);
+    QTreeWidgetItem *pTreeItemchild = new QTreeWidgetItem();
+    pTreeItemchild->setText(0, QString("%1 %2").arg(QString::number(m.key())).arg(m.value()));
+    QMap<int, QString> mapData;
+    mapData[m.key()] = m.value();
+    pTreeItemchild->setData(0, Qt::UserRole, QVariant::fromValue(SearchFileDetails(fileDetails.mFileName, mapData)));
+    pTreeWidgetItem->addChild(pTreeItemchild);
   }
 }
 
@@ -281,10 +281,10 @@ void SearchWidget::updateFoundFilesLabel(int value)
  * class to store the results of Search. with
  * filename and Qmap as parameters
  */
-SearchFileDetails::SearchFileDetails(QString filename, QMap<int,QString> Linenumbers)
+SearchFileDetails::SearchFileDetails(QString fileName, QMap<int,QString> Linenumbers)
 {
-  mfilename=filename;
-  mSearchLines=Linenumbers;
+  mFileName = fileName;
+  mSearchLines = Linenumbers;
 }
 
 /*!
@@ -312,29 +312,22 @@ void Search::run()
   QStringList filelist;
   QString searchString = mSearchWidget->getSearchStringComboBox()->currentText();
   QStringList pattern= mSearchWidget->getSearchFilePatternComboBox()->currentText().split(',');
-  if(!searchString.isEmpty())
-  {
-    if(mSearchWidget->getSearchScopeComboBox()->currentIndex()!=0)
-    {
-      LibraryTreeItem *pLibraryTreeItem=pLibraryTreeModel->getRootLibraryTreeItem()->child(mSearchWidget->getSearchScopeComboBox()->currentIndex());
-      getFiles(pLibraryTreeItem->getFileName(),pattern, filelist);
-    }
-    else
-    {
+  if (!searchString.isEmpty()) {
+    if (mSearchWidget->getSearchScopeComboBox()->currentIndex() != 0) {
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem()->child(mSearchWidget->getSearchScopeComboBox()->currentIndex());
+      getFiles(pLibraryTreeItem->getFileName(), pattern, filelist);
+    } else {
       // start the index from 1 as 0 is dummy root item
-      for (int i = 1; i < pLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i)
-      {
+      for (int i = 1; i < pLibraryTreeModel->getRootLibraryTreeItem()->childrenSize(); ++i) {
         LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem()->child(i);
-        getFiles(pLibraryTreeItem->getFileName(),pattern, filelist);
+        getFiles(pLibraryTreeItem->getFileName(), pattern, filelist);
       }
     }
     emit setProgressBarRange(filelist.size());
     int count=1;
-    for (int i = 0; i < filelist.size(); ++i)
-    {
+    for (int i = 0; i < filelist.size(); ++i) {
       // check for cancel operation
-      if(mStop)
-      {
+      if (mStop) {
         return;
       }
       emit setProgressBarValue(i,filelist.size());
@@ -343,31 +336,30 @@ void Search::run()
       if (file.open(QIODevice::ReadOnly)) {
         QString line;
         QStringList foundLines;
-        QMap<int,QString> linecounts;
+        QMap<int,QString> lineCounts;
         QTextStream in(&file);
         int linenumber = 0;
         bool value=false;
         while (!in.atEnd()) {
           line = in.readLine();
           linenumber+=1;
-          if (line.contains(searchString, Qt::CaseInsensitive))
-          {
+          if (line.contains(searchString, Qt::CaseInsensitive)) {
             foundLines << line;
-            linecounts[linenumber].append(line);
+            lineCounts[linenumber].append(line);
             //break;
             value=true;
           }
         }
-        if(value==true)
-        {
-          emit setTreeWidgetItems(SearchFileDetails(fileName,linecounts));
+        if (value==true) {
+          emit setTreeWidgetItems(SearchFileDetails(fileName, lineCounts));
           emit setFoundFilesLabel(count);
           count+=1;
         }
       }
     }
-    if (count==1)
+    if (count==1) {
       emit setFoundFilesLabel(0);
+    }
   }
 }
 
