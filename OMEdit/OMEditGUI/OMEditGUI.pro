@@ -28,9 +28,9 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl concurrent
+QT += network core gui webkit xml xmlpatterns svg opengl
 greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets opengl
+  QT += printsupport widgets webkitwidgets concurrent
 }
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
