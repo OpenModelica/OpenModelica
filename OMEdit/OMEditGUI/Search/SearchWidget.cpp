@@ -53,10 +53,11 @@ SearchWidget::SearchWidget(QWidget *pParent)
 {
   qRegisterMetaType<SearchFileDetails>();
   mpSearch = new Search(this);
-  connect(mpSearch,SIGNAL(setTreeWidgetItems(SearchFileDetails)),this,SLOT(updateTreeWidgetItems(SearchFileDetails)));
-  connect(mpSearch,SIGNAL(setProgressBarRange(int)),this,SLOT(updateProgressBarRange(int)));
-  connect(mpSearch,SIGNAL(setProgressBarValue(int,int)),this,SLOT(updateProgressBarValue(int,int)));
-  connect(mpSearch,SIGNAL(setFoundFilesLabel(int)),this,SLOT(updateFoundFilesLabel(int)));
+  connect(mpSearch, SIGNAL(setTreeWidgetItems(SearchFileDetails)), this, SLOT(updateTreeWidgetItems(SearchFileDetails)));
+  connect(mpSearch, SIGNAL(setProgressBarRange(int)), this, SLOT(updateProgressBarRange(int)));
+  connect(mpSearch, SIGNAL(setProgressBarValue(int,int)), this, SLOT(updateProgressBarValue(int,int)));
+  connect(mpSearch, SIGNAL(setFoundFilesLabel(int)), this, SLOT(updateFoundFilesLabel(int)));
+  connect(this, SIGNAL(setCancelSearch()), mpSearch, SLOT(updateCancelSearch()));
   // Labels
   Label *pSearchScopeLabel = new Label(tr("Scope:"));
   Label *pSearchForStringLabel = new Label(tr("Search for:"));
@@ -68,12 +69,15 @@ SearchWidget::SearchWidget(QWidget *pParent)
   mpSearchStringComboBox = new QComboBox;
   mpSearchStringComboBox->setEditable(true);
   mpSearchStringComboBox->setFixedWidth(400);
+  connect(mpSearchStringComboBox->lineEdit(), SIGNAL(returnPressed()), SLOT(searchInFiles()));
   // search file combobox
   mpSearchFilePatternComboBox = new QComboBox;
   mpSearchFilePatternComboBox->setEditable(true);
   mpSearchFilePatternComboBox->addItem("*");
+  connect(mpSearchFilePatternComboBox->lineEdit(), SIGNAL(returnPressed()), SLOT(searchInFiles()));
   // search button
   mpSearchButton = new QPushButton("Search");
+  connect(mpSearchButton, SIGNAL(clicked()), SLOT(searchInFiles()));
   // Tree Widget
   mpSearchTreeWidget = new QTreeWidget();
   mpSearchTreeWidget->setColumnCount(1);
@@ -105,7 +109,9 @@ SearchWidget::SearchWidget(QWidget *pParent)
   mpProgressLabelFoundFiles = new Label;
   mpProgressLabelFoundFiles->setTextFormat(Qt::RichText);
   mpCancelButton = new QPushButton(Helper::cancel);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelSearch()));
   QPushButton *pSearchBack = new QPushButton(tr("Back"));
+  connect(pSearchBack, SIGNAL(clicked()), SLOT(switchSearchPage()));
   QGridLayout *pSearchResultsLayout = new QGridLayout;
   pSearchResultsLayout->setContentsMargins(0, 0, 0, 0);
   pSearchResultsLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -117,11 +123,6 @@ SearchWidget::SearchWidget(QWidget *pParent)
   pSearchResultsLayout->addWidget(mpSearchTreeWidget, 2, 0, 1, 3);
   pSearchSecondPageWidget->setLayout(pSearchResultsLayout);
   mpSearchStackedWidget->addWidget(pSearchSecondPageWidget);
-
-  connect(mpSearchButton, SIGNAL(clicked()), SLOT(searchInFiles()));
-  connect(pSearchBack, SIGNAL(clicked()), SLOT(switchSearchPage()));
-  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelSearch()));
-  connect(this, SIGNAL(setCancelSearch()), mpSearch, SLOT(updateCancelSearch()));
   // search stack widget layout
   QVBoxLayout *pSearchSetStackLayout = new QVBoxLayout;
   pSearchSetStackLayout->setContentsMargins(5, 5, 5, 5);
