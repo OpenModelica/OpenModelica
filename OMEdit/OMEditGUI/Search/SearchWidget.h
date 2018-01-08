@@ -48,12 +48,11 @@ class SearchWidget : public QWidget
 public:
   SearchWidget(QWidget *pParent = 0);
   ~SearchWidget();
-  QComboBox *createEditableComboBox(const QString &text);
   QProgressBar *getProgressBar() {return mpProgressBar;}
   QComboBox *getSearchScopeComboBox() {return mpSearchScopeComboBox;}
   QComboBox *getSearchStringComboBox() {return mpSearchStringComboBox;}
   QComboBox *getSearchFilePatternComboBox() {return mpSearchFilePatternComboBox;}
-  void updateComboBoxSearchStrings(QComboBox *ComboBox);
+  void updateComboBoxSearchStrings(QComboBox *pComboBox);
 signals:
   void setCancelSearch();
 public slots:

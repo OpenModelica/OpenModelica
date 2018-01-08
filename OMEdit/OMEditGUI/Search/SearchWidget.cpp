@@ -58,73 +58,84 @@ SearchWidget::SearchWidget(QWidget *pParent)
   connect(mpSearch,SIGNAL(setProgressBarValue(int,int)),this,SLOT(updateProgressBarValue(int,int)));
   connect(mpSearch,SIGNAL(setFoundFilesLabel(int)),this,SLOT(updateFoundFilesLabel(int)));
   // Labels
-  Label * pSearchScopeLabel = new Label(tr("Scope:"));
-  Label * pSearchForStringLabel = new Label(tr("Search for:"));
-  Label * pSearchFilePatternLabel = new Label(tr("File Pattern:"));
-
-  // combo box
+  Label *pSearchScopeLabel = new Label(tr("Scope:"));
+  Label *pSearchForStringLabel = new Label(tr("Search for:"));
+  Label *pSearchFilePatternLabel = new Label(tr("File Pattern:"));
+  // scope combobox
   mpSearchScopeComboBox = new QComboBox;
   mpSearchScopeComboBox->setModel(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel());
-
-  mpSearchStringComboBox= createEditableComboBox("");
-  mpSearchFilePatternComboBox = createEditableComboBox(tr("*"));
+  // search string combobox
+  mpSearchStringComboBox = new QComboBox;
+  mpSearchStringComboBox->setEditable(true);
+  mpSearchStringComboBox->setFixedWidth(400);
+  // search file combobox
+  mpSearchFilePatternComboBox = new QComboBox;
+  mpSearchFilePatternComboBox->setEditable(true);
+  mpSearchFilePatternComboBox->addItem("*");
+  // search button
   mpSearchButton = new QPushButton("Search");
-  mpSearchButton->setFixedWidth(50);
-
   // Tree Widget
   mpSearchTreeWidget = new QTreeWidget();
   mpSearchTreeWidget->setColumnCount(1);
   mpSearchTreeWidget->header()->close();
   connect(mpSearchTreeWidget, SIGNAL(itemClicked(QTreeWidgetItem*, int)),this, SLOT(findAndOpenTreeWidgetItems(QTreeWidgetItem*,int)));
-
   // Progress Bar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
-
-  QWidget *pSearchFirstPageWidget = new QWidget;
-  QWidget *pSearchSecondPageWidget = new QWidget;
+  // stack widget
   mpSearchStackedWidget = new QStackedWidget;
-
   // first page
-  QGridLayout * pSearchLayout = new QGridLayout;
+  QWidget *pSearchFirstPageWidget = new QWidget;
+  QGridLayout *pSearchLayout = new QGridLayout;
+  pSearchLayout->setContentsMargins(0, 0, 0, 0);
   pSearchLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pSearchLayout->addWidget(pSearchScopeLabel,0,0);
-  pSearchLayout->addWidget(mpSearchScopeComboBox,0,1);
-  pSearchLayout->addWidget(pSearchForStringLabel,1,0);
-  pSearchLayout->addWidget(mpSearchStringComboBox,1,1);
-  pSearchLayout->addWidget(pSearchFilePatternLabel,2,0);
-  pSearchLayout->addWidget(mpSearchFilePatternComboBox,2,1);
-  pSearchLayout->addWidget(mpSearchButton,3,1);
+  pSearchLayout->addWidget(pSearchScopeLabel, 0, 0);
+  pSearchLayout->addWidget(mpSearchScopeComboBox, 0, 1);
+  pSearchLayout->addWidget(pSearchForStringLabel, 1, 0);
+  pSearchLayout->addWidget(mpSearchStringComboBox, 1, 1);
+  pSearchLayout->addWidget(pSearchFilePatternLabel, 2, 0);
+  pSearchLayout->addWidget(mpSearchFilePatternComboBox, 2, 1);
+  pSearchLayout->addWidget(mpSearchButton, 3, 1, Qt::AlignRight);
   pSearchFirstPageWidget->setLayout(pSearchLayout);
   mpSearchStackedWidget->addWidget(pSearchFirstPageWidget);
-
   // second page
-  QGridLayout * pSearchResultsLayout = new QGridLayout;
-  pSearchResultsLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  QWidget *pSearchSecondPageWidget = new QWidget;
   mpProgressLabel = new Label;
   mpProgressLabel->setTextFormat(Qt::RichText);
   mpProgressLabelFoundFiles = new Label;
   mpProgressLabelFoundFiles->setTextFormat(Qt::RichText);
-  mpCancelButton = new QPushButton("Cancel");
-  QPushButton * pSearchBack = new QPushButton("Back");
-  pSearchResultsLayout->addWidget(mpProgressLabel,0,0,1,2);
-  pSearchResultsLayout->addWidget(mpProgressLabelFoundFiles,0,2);
-  pSearchResultsLayout->addWidget(pSearchBack,1,0);
-  pSearchResultsLayout->addWidget(mpProgressBar,1,1);
-  pSearchResultsLayout->addWidget(mpCancelButton,1,2);
-  pSearchResultsLayout->addWidget(mpSearchTreeWidget,2,0,1,3);
+  mpCancelButton = new QPushButton(Helper::cancel);
+  QPushButton *pSearchBack = new QPushButton(tr("Back"));
+  QGridLayout *pSearchResultsLayout = new QGridLayout;
+  pSearchResultsLayout->setContentsMargins(0, 0, 0, 0);
+  pSearchResultsLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pSearchResultsLayout->addWidget(mpProgressLabel, 0, 0, 1, 2);
+  pSearchResultsLayout->addWidget(mpProgressLabelFoundFiles, 0, 2);
+  pSearchResultsLayout->addWidget(pSearchBack, 1, 0);
+  pSearchResultsLayout->addWidget(mpProgressBar, 1, 1);
+  pSearchResultsLayout->addWidget(mpCancelButton, 1, 2);
+  pSearchResultsLayout->addWidget(mpSearchTreeWidget, 2, 0, 1, 3);
   pSearchSecondPageWidget->setLayout(pSearchResultsLayout);
   mpSearchStackedWidget->addWidget(pSearchSecondPageWidget);
 
   connect(mpSearchButton, SIGNAL(clicked()), SLOT(searchInFiles()));
   connect(pSearchBack, SIGNAL(clicked()), SLOT(switchSearchPage()));
-  connect(mpCancelButton,SIGNAL(clicked()), SLOT(cancelSearch()));
-  connect(this,SIGNAL(setCancelSearch()),mpSearch,SLOT(updateCancelSearch()));
-
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelSearch()));
+  connect(this, SIGNAL(setCancelSearch()), mpSearch, SLOT(updateCancelSearch()));
+  // search stack widget layout
   QVBoxLayout *pSearchSetStackLayout = new QVBoxLayout;
+  pSearchSetStackLayout->setContentsMargins(5, 5, 5, 5);
+  pSearchSetStackLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pSearchSetStackLayout->addWidget(mpSearchStackedWidget);
-  setLayout(pSearchSetStackLayout);
-
+  // put everything in a frame so we get a nice border
+  QFrame *pMainFrame = new QFrame;
+  pMainFrame->setContentsMargins(0, 0, 0, 0);
+  pMainFrame->setFrameStyle(QFrame::StyledPanel);
+  pMainFrame->setLayout(pSearchSetStackLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(pMainFrame);
+  setLayout(pMainLayout);
 }
 
 SearchWidget::~SearchWidget()
@@ -134,27 +145,14 @@ SearchWidget::~SearchWidget()
 }
 
 /*!
- * \brief SearchWidget::createEditableComboBox
- * \creates a editable Combobox
- */
-QComboBox *SearchWidget::createEditableComboBox(const QString &text)
-{
-  QComboBox *mEditableComboBox = new QComboBox;
-  mEditableComboBox->setEditable(true);
-  mEditableComboBox->addItem(text);
-  mEditableComboBox->setFixedWidth(400);
-  mEditableComboBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-  return mEditableComboBox;
-}
-
-/*!
  * \brief SearchWidget::updateComboBoxSearchStrings
  * \update the editable Combobox when user searches for searchingstring and filepatter for the session
  */
-void SearchWidget::updateComboBoxSearchStrings(QComboBox *ComboBox)
+void SearchWidget::updateComboBoxSearchStrings(QComboBox *pComboBox)
 {
-  if (ComboBox->findText(ComboBox->currentText()) == -1)
-    ComboBox->addItem(ComboBox->currentText());
+  if (pComboBox->findText(pComboBox->currentText()) == -1) {
+    pComboBox->addItem(pComboBox->currentText());
+  }
 }
 
 /*!
@@ -164,8 +162,7 @@ void SearchWidget::updateComboBoxSearchStrings(QComboBox *ComboBox)
 void SearchWidget::searchInFiles()
 {
   /*do search only if searchstring is available and files opened in library tree browser */
-  if(mpSearchStringComboBox->currentText().isEmpty() | (mpSearchScopeComboBox->count()==1))
-  {
+  if(mpSearchStringComboBox->currentText().isEmpty() | (mpSearchScopeComboBox->count() == 1)) {
     return;
   }
   mpSearchStackedWidget->setCurrentIndex(1);
