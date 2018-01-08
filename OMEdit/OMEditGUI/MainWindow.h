@@ -51,7 +51,7 @@
 #include <QToolButton>
 #include <QMdiSubWindow>
 #include <QMdiArea>
-
+#include <QShortcut>
 
 class OMCProxy;
 class TransformationsWidget;
@@ -258,6 +258,7 @@ private:
   QTabBar *mpPerspectiveTabbar;
   QStatusBar *mpStatusBar;
   QTimer *mpAutoSaveTimer;
+  QShortcut *mpSearchBrowserShortcut;
   // File Menu
   // Modelica File Actions
   QAction *mpNewModelicaClassAction;
@@ -397,6 +398,7 @@ private:
   QToolBar *mpTLMSimulationToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
+  void showSearchBrowser();
   void createNewModelicaClass();
   void openModelicaFile();
   void showOpenModelicaFileDialog();

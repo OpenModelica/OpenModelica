@@ -65,17 +65,17 @@ public slots:
   void updateProgressBarValue(int,int);
   void updateFoundFilesLabel(int);
 private:
-  Label * mpSearchForLabel;
-  Label * mpProgressLabel;
-  Label * mpProgressLabelFoundFiles;
-  QPushButton * mpCancelButton;
-  QPushButton * mpSearchButton;
-  QComboBox * mpSearchScopeComboBox;
-  QComboBox * mpSearchStringComboBox;
-  QComboBox * mpSearchFilePatternComboBox;
-  QTreeWidget* mpSearchTreeWidget;
-  QStackedWidget * mpSearchStackedWidget;
-  QProgressBar * mpProgressBar;
+  Label *mpSearchForLabel;
+  Label *mpProgressLabel;
+  Label *mpProgressLabelFoundFiles;
+  QPushButton *mpCancelButton;
+  QPushButton *mpSearchButton;
+  QComboBox *mpSearchScopeComboBox;
+  QComboBox *mpSearchStringComboBox;
+  QComboBox *mpSearchFilePatternComboBox;
+  QTreeWidget *mpSearchTreeWidget;
+  QStackedWidget *mpSearchStackedWidget;
+  QProgressBar *mpProgressBar;
   Search *mpSearch;
 };
 

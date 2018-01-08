@@ -212,7 +212,6 @@ void MainWindow::setUpMainWindow()
   mpSearchDockWidget->setObjectName("Search");
   mpSearchDockWidget->setAllowedAreas(Qt::BottomDockWidgetArea | Qt::TopDockWidgetArea);
   mpSearchDockWidget->setWidget(mpSearchWidget);
-  mpSearchDockWidget->toggleViewAction()->setShortcut(QKeySequence("Ctrl+h"));
   addDockWidget(Qt::BottomDockWidgetArea, mpSearchDockWidget);
   mpSearchDockWidget->hide();
   // create the GDB adapter instance
@@ -1213,6 +1212,17 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     }
     pVariablesTreeModel->blockSignals(state);
   }
+}
+
+/*!
+ * \brief MainWindow::showSearchBrowser
+ * Shows the Search Browser, selects the search text if any and sets the focus on it.
+ */
+void MainWindow::showSearchBrowser()
+{
+  mpSearchDockWidget->show();
+  mpSearchWidget->getSearchStringComboBox()->lineEdit()->selectAll();
+  mpSearchWidget->getSearchStringComboBox()->lineEdit()->setFocus(Qt::ActiveWindowFocusReason);
 }
 
 //! Opens the new model widget.
@@ -2680,6 +2690,8 @@ void MainWindow::cleanWorkingDirectory()
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
 {
+  mpSearchBrowserShortcut = new QShortcut(QKeySequence("Ctrl+h"), this);
+  connect(mpSearchBrowserShortcut, SIGNAL(activated()), SLOT(showSearchBrowser()));
   /* Menu Actions */
   // File Menu
   // create new Modelica class action

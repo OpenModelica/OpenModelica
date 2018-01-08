@@ -305,14 +305,14 @@ Search::Search(QObject *parent):
 void Search::run()
 {
   mStop = false;
-  SearchWidget *mSearchWidget=MainWindow::instance()->getSearchWidget();
+  SearchWidget *pSearchWidget = MainWindow::instance()->getSearchWidget();
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   QStringList filelist;
-  QString searchString = mSearchWidget->getSearchStringComboBox()->currentText();
-  QStringList pattern= mSearchWidget->getSearchFilePatternComboBox()->currentText().split(',');
+  QString searchString = pSearchWidget->getSearchStringComboBox()->currentText();
+  QStringList pattern= pSearchWidget->getSearchFilePatternComboBox()->currentText().split(',');
   if (!searchString.isEmpty()) {
-    if (mSearchWidget->getSearchScopeComboBox()->currentIndex() != 0) {
-      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem()->child(mSearchWidget->getSearchScopeComboBox()->currentIndex());
+    if (pSearchWidget->getSearchScopeComboBox()->currentIndex() != 0) {
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->getRootLibraryTreeItem()->child(pSearchWidget->getSearchScopeComboBox()->currentIndex());
       getFiles(pLibraryTreeItem->getFileName(), pattern, filelist);
     } else {
       // start the index from 1 as 0 is dummy root item
