@@ -2367,7 +2367,7 @@ algorithm
               lst2 := {};
               for l2 in lst loop
                 try
-                  lst2 := List.getMemberOnTrue(l1, deleted, compare)::lst2;
+                  lst2 := List.getMemberOnTrue(l2, deleted, compare)::lst2;
                 else
                   lst2 := l2::lst2;
                 end try;
