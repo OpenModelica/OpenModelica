@@ -2127,9 +2127,7 @@ algorithm
           acc := {};
           for t in lst loop
             // Assuming adjacent to the delete node
-            if found then
-              res := (Diff.Add, {t})::res;
-            elseif compare(nodeLabel(t), labelOfDiffedNodes) then
+            if (not found) and compare(nodeLabel(t), labelOfDiffedNodes) then
               if not listEmpty(acc) then
                 res := (Diff.Add, listReverse(acc))::res;
                 acc := {};
@@ -2138,6 +2136,8 @@ algorithm
               filtered := listReverse(i for i guard match i case (Diff.Delete,_) then false; else true; end match in diffedNodes);
               res := listAppend(filtered, res);
               found := true;
+            else
+              res := (Diff.Add, {t})::res;
             end if;
           end for;
           if not listEmpty(acc) then
