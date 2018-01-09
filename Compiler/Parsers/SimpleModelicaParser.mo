@@ -35,6 +35,7 @@ import LexerModelicaDiff.{Token,TokenId,tokenContent,printToken,modelicaDiffToke
 
 protected
 
+import AvlSetString;
 import DiffAlgorithm;
 import DiffAlgorithm.{diff,Diff};
 import Error;
@@ -99,6 +100,7 @@ algorithm
   end match;
   t2_updated := moveComments(t1, t2_updated);
   res := treeDiffWork1(t1, t2_updated, nTokens);
+  res := moveCommentsAfterDiff(res);
 end treeDiff;
 
 partial function CmpParseTreeFunc
@@ -1542,6 +1544,193 @@ algorithm
     end try;
   end for;
 end moveComments;
+
+function moveCommentsAfterDiff
+  input output list<tuple<Diff,list<ParseTree>>> res;
+protected
+  list<tuple<Token, list<ParseTree>, String>> c1, c2, remaining;
+  Token tok;
+  String foundComment;
+  ParseTree tree, foundTree;
+  list<ParseTree> trees, before, after, acc2;
+  AvlSetString.Tree comments;
+  list<tuple<Diff,list<ParseTree>>> acc, lst;
+  tuple<Diff,list<ParseTree>> diff;
+  Boolean found;
+algorithm
+  // O(N*D); scales with number of diffs since we restart whenever we move a comment
+  comments := findAddedComments(res);
+  acc := {};
+  lst := res;
+  if AvlSetString.isEmpty(comments) then
+    return;
+  end if;
+  while not listEmpty(lst) loop
+    diff::lst := lst;
+    _ := match diff
+      case (Diff.Delete, trees)
+        algorithm
+          acc2 := {};
+          while not listEmpty(trees) loop
+            tree::trees := trees;
+            (found,before,foundTree,after,foundComment) := fixDeletedComments(tree, comments);
+            if found then
+              acc := (Diff.Add, listAppend(listReverse(acc2),before))::acc;
+              res := listAppend(listReverse(acc),(Diff.Equal,{foundTree})::(Diff.Add, listAppend(after, trees))::lst);
+              res := removeAddedCommentFromDiff(res, foundComment);
+              // Continue until we can't fix more comments
+              res := moveCommentsAfterDiff(res);
+              return;
+            end if;
+            acc2 := tree::acc2;
+          end while;
+        then ();
+      else ();
+    end match;
+    acc := diff::acc;
+  end while;
+end moveCommentsAfterDiff;
+
+function findAddedComments
+  input list<tuple<Diff,list<ParseTree>>> tree;
+  output AvlSetString.Tree comments = AvlSetString.EMPTY();
+protected
+  list<ParseTree> addedTrees;
+algorithm
+  (addedTrees,) := extractAdditionsDeletions(tree);
+  for t in addedTrees loop
+    comments := findAddedComments2(t, comments);
+  end for;
+end findAddedComments;
+
+function findAddedComments2
+  input ParseTree tree;
+  input output AvlSetString.Tree comments;
+protected
+  list<ParseTree> nodes;
+  Token tok;
+algorithm
+  comments := match tree
+    case LEAF() guard parseTreeIsComment(tree) then AvlSetString.add(comments, tokenContent(tree.token));
+    case NODE(nodes=nodes)
+      algorithm
+        for n in nodes loop
+          comments := findAddedComments2(n, comments);
+        end for;
+      then comments;
+    else comments;
+  end match;
+end findAddedComments2;
+
+function removeAddedCommentFromDiff
+  input output list<tuple<Diff,list<ParseTree>>> tree;
+  input String comment;
+protected
+  list<tuple<Diff,list<ParseTree>>> acc, lst;
+  tuple<Diff,list<ParseTree>> diff;
+  list<ParseTree> lst2;
+  Boolean b;
+algorithm
+  lst := tree;
+  acc := {};
+  while not listEmpty(lst) loop
+    diff::lst := lst;
+    _ := match diff
+      case (Diff.Add,lst2)
+        algorithm
+          (b,lst2) := removeAddedCommentFromDiff2(lst2, comment);
+          if b then
+            tree := listAppend(listReverse(acc),(Diff.Add,lst2)::lst);
+            return;
+          end if;
+        then ();
+      else ();
+    end match;
+    acc := diff::acc;
+  end while;
+  Error.addInternalError("Failed to remove comment `"+comment+"` from diff; but we know it is in there somewhere", sourceInfo());
+end removeAddedCommentFromDiff;
+
+function removeAddedCommentFromDiff2
+  output Boolean removed=false;
+  input output list<ParseTree> trees;
+  input String comment;
+protected
+  list<ParseTree> acc, lst, nodes;
+  ParseTree tree;
+  String content;
+algorithm
+  acc := {};
+  lst := trees;
+  while not listEmpty(lst) loop
+    tree::lst := lst;
+    (removed, tree) := match tree
+      case LEAF() guard parseTreeIsComment(tree)
+        algorithm
+          content := tokenContent(tree.token);
+        then (content==comment, if content==comment then EMPTY() else tree);
+      case NODE(nodes=nodes)
+        algorithm
+          (removed, nodes) := removeAddedCommentFromDiff2(nodes, comment);
+          if removed then
+            tree.nodes := nodes;
+          end if;
+        then (removed, tree);
+      else (false, tree);
+    end match;
+    if removed then
+      lst := if isEmpty(tree) then lst else (tree::lst);
+      lst := listAppend(listReverse(acc), lst);
+      trees := lst;
+      return;
+    end if;
+    acc := tree::acc;
+  end while;
+end removeAddedCommentFromDiff2;
+
+function fixDeletedComments
+  input ParseTree tree;
+  input AvlSetString.Tree addedComments;
+  output Boolean found = false;
+  output list<ParseTree> before = {};
+  output ParseTree foundTree = tree;
+  output list<ParseTree> after = {};
+  output String foundComment = "";
+protected
+  list<ParseTree> nodes, before2, after2;
+  Boolean b;
+  ParseTree t;
+  String content;
+algorithm
+  found := match tree
+    case LEAF() guard parseTreeIsComment(tree)
+      algorithm
+        content := tokenContent(tree.token);
+        b := AvlSetString.hasKey(addedComments, content);
+        if b then
+          foundComment := content;
+        end if;
+      then b;
+    case NODE(nodes=nodes)
+      algorithm
+        while not listEmpty(nodes) loop
+          t::nodes := nodes;
+          (found, before2, foundTree, after2, foundComment) := fixDeletedComments(t, addedComments);
+          if found then
+            before := listAppend(listReverse(before), before2);
+            after := listAppend(after2, nodes);
+            return;
+          end if;
+          before := t::before;
+        end while;
+        before := {};
+        foundTree := tree;
+        after := {};
+        foundComment := "";
+      then false;
+    else false;
+  end match;
+end fixDeletedComments;
 
 function addCommentAtLabelPath
   input output list<ParseTree> tree;
