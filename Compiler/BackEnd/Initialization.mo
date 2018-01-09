@@ -1305,6 +1305,7 @@ protected
   array<Integer> mapIncRowEqn;
   Boolean perfectMatching;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
+  constant Boolean debug = false;
 algorithm
   for index in 0:maxMixedDeterminedIndex loop
     //print("index-" + intString(index) + " start\n");
@@ -1315,22 +1316,24 @@ algorithm
     syst := BackendDAEUtil.createEqSystem(inEqSystem.orderedVars, inEqSystem.orderedEqs);
     funcs := BackendDAEUtil.getFunctions(inShared);
     (m_, _, _, mapIncRowEqn) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
-    //BackendDump.dumpEqSystem(syst, "fixInitialSystem");
-    //BackendDump.dumpVariables(initVars, "selected initialization variables");
-    //BackendDump.dumpVariables(inEqSystem.orderedVars, "vars in the system");
-    //BackendDump.dumpIncidenceMatrix(m_);
+    if debug then
+      BackendDump.dumpEqSystem(syst, "fixInitialSystem");
+      BackendDump.dumpVariables(initVars, "selected initialization variables");
+      BackendDump.dumpVariables(inEqSystem.orderedVars, "vars in the system");
+      BackendDump.dumpIncidenceMatrix(m_);
+    end if;
 
     // get state-index list
     stateIndices := BackendVariable.getVarIndexFromVariablesIndexInFirstSet(inEqSystem.orderedVars, initVars);
 
     // modify incidence matrix for under-determined systems
     nAddEqs := intMax(nVars-nEqns + index, index);
-    //print("nAddEqs: " + intString(nAddEqs) + "\n");
+    if debug then print("nAddEqs: " + intString(nAddEqs) + "\n"); end if;
     m := fixUnderDeterminedSystem(m_, stateIndices, nEqns, nAddEqs);
 
     // modify incidence matrix for over-determined systems
     nAddVars := intMax(nEqns-nVars + index, index);
-    //print("nAddVars: " + intString(nAddVars) + "\n");
+    if debug then print("nAddVars: " + intString(nAddVars) + "\n"); end if;
     m := fixOverDeterminedSystem(m, inEqSystem.orderedEqs, nVars, nAddVars);
 
     // match the system (nVars+nAddVars == nEqns+nAddEqs)
@@ -1341,8 +1344,10 @@ algorithm
     //BackendDAEEXT.getAssignment(ass2, ass1);
     //perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
     (ass1, ass2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
-    //BackendDump.dumpMatchingVars(ass1);
-    //BackendDump.dumpMatchingEqns(ass2);
+    if debug then
+      BackendDump.dumpMatchingVars(ass1);
+      BackendDump.dumpMatchingEqns(ass2);
+    end if;
 
     // check whether or not a complete matching was found
     if perfectMatching then
@@ -1388,7 +1393,9 @@ algorithm
       //execStat("fixInitialSystem (initialization) [nEqns: " + intString(nEqns) + ", nAddEqs: " + intString(nAddEqs) + ", nAddVars: " + intString(nAddVars) + "]");
       return;
     end if;
-    //print("index-" + intString(index) + " ende\n");
+    if debug then
+      print("index-" + intString(index) + " ende\n");
+    end if;
   end for;
   Error.addMessage(Error.MIXED_DETERMINED, {intString(maxMixedDeterminedIndex)});
   fail();
