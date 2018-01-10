@@ -1,6 +1,7 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+fixedString.mos \
 parameterTest.mos \
 parameterTest2.mos \
 parameterTest3.mos \
