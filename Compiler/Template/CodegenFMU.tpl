@@ -2740,7 +2740,8 @@ case "1.0" then
   match variabilityCausality
   case "parameter" then
     if boolAnd(hasStartValue,isFixed) then " = \""+startValue+"\""
-    else if boolAnd(hasStartValue,boolNot(isFixed)) then "(start=\""+startValue+"\",fixed=false)"
+    /* If we set fixed=false, we generate bad code; let make OM handle the bad values */
+    else if boolAnd(hasStartValue,boolNot(isFixed)) then "(start=\""+startValue+"\")"
     else if boolAnd(boolNot(hasStartValue),isFixed) then "(fixed=true)"
     else if boolAnd(boolNot(hasStartValue),boolNot(isFixed)) then "(fixed=false)"
   case "" then
