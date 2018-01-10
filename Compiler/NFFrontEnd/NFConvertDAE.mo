@@ -326,14 +326,13 @@ function convertStringVarAttributes
   input list<Modifier> mods;
   output Option<DAE.VariableAttributes> attributes;
 protected
-  Option<DAE.Exp> quantity = NONE(), start = NONE();
+  Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
 algorithm
   for m in mods loop
     () := match Modifier.name(m)
       case "quantity" algorithm quantity := convertVarAttribute(m); then ();
       case "start"    algorithm start := convertVarAttribute(m); then ();
-      // TODO: VAR_ATTR_STRING has no field for fixed.
-      case "fixed"    then ();
+      case "fixed"    algorithm fixed := convertVarAttribute(m); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
@@ -346,7 +345,7 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_STRING(
-    quantity, start, NONE(), NONE(), NONE(), NONE()));
+    quantity, start, fixed, NONE(), NONE(), NONE(), NONE()));
 end convertStringVarAttributes;
 
 function convertEnumVarAttributes

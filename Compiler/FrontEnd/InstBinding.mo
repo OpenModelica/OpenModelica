@@ -384,9 +384,10 @@ algorithm
       equation
         (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
+        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
         startOrigin = instStartOrigin(mod, varLst, "start");
       then
-        (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE(),NONE(),NONE(),startOrigin)));
+        (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
 
     // Enumeration
     case (cache,_,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst),index_list)

@@ -503,6 +503,7 @@ uniontype VariableAttributes
   record VAR_ATTR_STRING
     Option<Exp> quantity "quantity";
     Option<Exp> start "start value";
+    Option<Exp> fixed "new in Modelica 3.4; fixed - true: default for parameter/constant, false - default for other variables";
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;

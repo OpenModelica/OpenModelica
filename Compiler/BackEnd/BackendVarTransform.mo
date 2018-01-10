@@ -2664,13 +2664,14 @@ algorithm
     startOrigin = replaceOptionExp(startOrigin,repl);
   then DAE.VAR_ATTR_BOOL(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
-  case(DAE.VAR_ATTR_STRING(quantity,start,equationBound,isProtected,finalPrefix,startOrigin),_)
+  case(DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin),_)
     equation
     quantity = replaceOptionExp(quantity,repl);
     start = replaceOptionExp(start,repl);
+    fixed = replaceOptionExp(fixed,repl);
     equationBound = replaceOptionExp(equationBound,repl);
     startOrigin = replaceOptionExp(startOrigin,repl);
-  then DAE.VAR_ATTR_STRING(quantity,start,equationBound,isProtected,finalPrefix,startOrigin);
+  then DAE.VAR_ATTR_STRING(quantity,start,fixed,equationBound,isProtected,finalPrefix,startOrigin);
 
   case(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,equationBound,isProtected,finalPrefix,startOrigin),_)
     equation

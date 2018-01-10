@@ -353,15 +353,16 @@ algorithm
           (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
         then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin));
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin)),_,_)
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,fixed,eb,ip,fn,startOrigin)),_,_)
         equation
           (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
           (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-        then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin));
+          (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
+        then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,fixed,eb,ip,fn,startOrigin));
 
       case (NONE(),_,_) then NONE();
   end match;
-end  applyReplacementsVarAttr;
+end applyReplacementsVarAttr;
 
 public function applyReplacements "This function takes a VariableReplacements and two component references.
   It applies the replacements to each component reference.

@@ -108,11 +108,11 @@ algorithm
       equation
         (r,source,true,_) = inlineExp(r,fns,isource);
       then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
-    case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,start = SOME(r),
+    case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,start = SOME(r),fixed=fixed,
           equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true,_) = inlineExp(r,fns,isource);
-      then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),equationBound,isProtected,finalPrefix,so)),source,true);
+      then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,max=max,start = SOME(r),
           fixed=fixed,equationBound=equationBound,
           isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)

@@ -303,8 +303,8 @@ algorithm
     case (_,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn,so)))
     then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn,so));
 
-    case (_,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn,so)))
-    then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn,so));
+    case (_,SOME(DAE.VAR_ATTR_STRING(e1,e2,e3,_,ip,fn,so)))
+    then SOME(DAE.VAR_ATTR_STRING(e1,e2,e3,SOME(bindExp),ip,fn,so));
 
     case (_,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,_,ip,fn,so)))
       then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,max,e2,e3,SOME(bindExp),ip,fn,so));
@@ -1197,8 +1197,8 @@ algorithm
       then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn,so)),_)
     then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,_,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,_,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,SOME(isProtected),fn,so));
     case (SOME(DAE.VAR_ATTR_CLOCK(fn,_)), _)
@@ -1246,8 +1246,8 @@ algorithm
       then SOME(DAE.VAR_ATTR_INT(q,min,max,ini,fixed,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn,so)),_)
     then SOME(DAE.VAR_ATTR_BOOL(q,ini,fixed,eb,ip,fn,so));
-    case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_STRING(q,ini,_,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_STRING(q,ini,fixed,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,_,eb,ip,fn,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,fixed,eb,ip,fn,so));
   end match;
@@ -1277,8 +1277,8 @@ algorithm
     // BTH
     case (SOME(DAE.VAR_ATTR_CLOCK(ip,_)),_)
       then SOME(DAE.VAR_ATTR_CLOCK(ip,SOME(finalPrefix)));
-    case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix),so));
+    case (SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,ip,_,so)),_)
+    then SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,ip,SOME(finalPrefix),so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,_,so)),_)
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,ip,SOME(finalPrefix),so));
     case (NONE(),_)
@@ -4933,11 +4933,12 @@ algorithm
       case(SOME(DAE.VAR_ATTR_CLOCK(_,_)),_,extraArg)
         then (attr,extraArg);
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,start,eb,ip,fn,so)),_,extraArg)
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,start,fixed,eb,ip,fn,so)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
           (start,extraArg) = traverseDAEOptExp(start,func,extraArg);
-        then (SOME(DAE.VAR_ATTR_STRING(quantity,start,eb,ip,fn,so)),extraArg);
+          (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
+        then (SOME(DAE.VAR_ATTR_STRING(quantity,start,fixed,eb,ip,fn,so)),extraArg);
 
       case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,max,start,fixed,eb,ip,fn,so)),_,extraArg)
         equation

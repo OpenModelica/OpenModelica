@@ -6495,14 +6495,15 @@ algorithm
      end if;
    then (a,outExtraArg);
 
-   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin,startOrigin)),_,_) equation
+   case(SOME(DAE.VAR_ATTR_STRING(q,i,f,eqbound,p,fin,startOrigin)),_,_) equation
      (q_,outExtraArg) = Expression.traverseExpOpt(q,func,extraArg);
      (i_,outExtraArg) = Expression.traverseExpOpt(i,func,outExtraArg);
+     (f_,outExtraArg) = Expression.traverseExpOpt(f,func,outExtraArg);
      (eqbound_,outExtraArg) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-     if referenceEq(q,q_) and referenceEq(i,i_) and referenceEq(eqbound,eqbound_) then
+     if referenceEq(q,q_) and referenceEq(i,i_) and referenceEq(f,f_) and referenceEq(eqbound,eqbound_) then
         a = attr;
       else
-        a = SOME(DAE.VAR_ATTR_STRING(q_,i_,eqbound_,p,fin,startOrigin));
+        a = SOME(DAE.VAR_ATTR_STRING(q_,i_,f_,eqbound_,p,fin,startOrigin));
      end if;
    then (a,outExtraArg);
 

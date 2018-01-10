@@ -624,14 +624,15 @@ algorithm
       then
         res;
 
-    case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,_,_,_,startOrigin)))
+    case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,fixed,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
+        fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
 
         startOriginStr = getStartOrigin(startOrigin);
 
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,startOriginStr}, ", ");
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,fixed_str,startOriginStr}, ", ");
         res = if stringEmpty(res_1) then "" else stringAppendList({"(",res_1,")"});
       then
         res;
