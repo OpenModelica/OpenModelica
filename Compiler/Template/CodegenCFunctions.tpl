@@ -3008,15 +3008,15 @@ case RANGE(__) then
                     case FUNCTION_CONTEXT(__)
                     case PARALLEL_FUNCTION_CONTEXT(__) then ''
                     else '_withEquationIndexes'
+  let stepCheck = match stepValue
+                    case "1"
+                    case "((modelica_integer) 1)"
+                    case "((modelica_integer) -1)" then ''
+                    else 'if(!<%stepVar%>) {<%\n%>  FILE_INFO info = omc_dummyFileInfo;  omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;
-  if(!<%stepVar%>)
-  {
-    FILE_INFO info = omc_dummyFileInfo;
-    omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");
-  }
-  else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
+  <%stepCheck%>if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
   {
     <%type%> <%iterName%>;
     for(<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>)
