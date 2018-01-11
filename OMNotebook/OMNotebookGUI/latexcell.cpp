@@ -955,6 +955,7 @@ void LatexCell::eval(bool silent)
         /* Check for latex is installed */
         if (Latexversion.isEmpty())
         {
+          setState(Error_l);
           if (!silent)
             QMessageBox::warning( 0, tr("Error"), tr("Latex is not installed in your System. This cell cannot be evaluated."), "OK" );
         }
@@ -984,11 +985,13 @@ void LatexCell::eval(bool silent)
                 input_->clear();
                 input_->textCursor().insertText(texoutput);
                 setClosed(false);
+                setState(Error_l);
             }
             else
             {
                 setdvi=true;
                 setClosed(true);
+                setState(Finished_l);
             }
 
         }
@@ -1007,6 +1010,7 @@ void LatexCell::eval(bool silent)
                     input_->clear();
                     input_->textCursor().insertText("Error:Problem in finding dvipng executable");
                     setClosed(false);
+                    setState(Error_l);
                 }
                 else
                 {
@@ -1021,7 +1025,6 @@ void LatexCell::eval(bool silent)
             }
             else
             {
-
                 QMessageBox::warning( 0, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."), "OK" );
             }
         }
@@ -1032,6 +1035,7 @@ void LatexCell::eval(bool silent)
         input_->clear();
         input_->textCursor().insertText(tr("Message: Empty Latex Cells cannot be evaluated."));
         setClosed(false);
+        setState(Error_l);
     }
     input_->blockSignals(false);
     output_->blockSignals(false);

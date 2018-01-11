@@ -605,7 +605,7 @@ namespace IAEX
       ui.replaceButton_->show();
       ui.replaceAllButton_->show();
 
-      setWindowTitle( "Replace Form" );
+      setWindowTitle( tr("Replace Form") );
     }
     else
     {
@@ -617,7 +617,7 @@ namespace IAEX
       ui.replaceButton_->hide();
       ui.replaceAllButton_->hide();
 
-      setWindowTitle( "Search Form" );
+      setWindowTitle( tr("Search Form") );
     }
   }
 }

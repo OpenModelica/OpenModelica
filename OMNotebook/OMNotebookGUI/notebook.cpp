@@ -313,6 +313,9 @@ NotebookWindow::~NotebookWindow()
   delete deleteCellAction;
   delete nextCellAction;
   delete previousCellAction;
+  delete evalCellAction;
+  delete evalAllCellsAction;
+  delete evalAllLatexCellsAction;
 
   delete groupAction;
   delete inputAction;
@@ -712,42 +715,35 @@ void NotebookWindow::createCellMenu()
   addCellAction->setStatusTip( tr("Add a new textcell with the previuos cells style") );
   connect(addCellAction, SIGNAL(triggered()), this, SLOT(createNewCell()));
 
-  inputAction = new QAction( tr("Add &Inputcell"), this);
+  inputAction = new QAction( tr("Add &Input Cell"), this);
   inputAction->setShortcut( QKeySequence("Ctrl+Shift+I") );
   inputAction->setStatusTip( tr("Add an input cell") );
   connect(inputAction, SIGNAL(triggered()), this, SLOT(inputCellsAction()));
 
-  latexAction = new QAction( tr("Add &Latexcell"), this);
+  latexAction = new QAction( tr("Add &LaTeX Cell"), this);
   latexAction->setShortcut( QKeySequence("Ctrl+Shift+E") );
   latexAction->setStatusTip( tr("Add Latex cell") );
   connect(latexAction, SIGNAL(triggered()), this, SLOT(latexCellsAction()));
 
-  /// fjass
-  textAction = new QAction( tr("Add &Textcell"), this);
+  textAction = new QAction( tr("Add &Text Cell"), this);
   textAction->setShortcut( QKeySequence("Ctrl+Shift+T") );
   textAction->setStatusTip( tr("Add a text cell") );
   connect(textAction, SIGNAL(triggered()), this, SLOT(textCellsAction()));
-  // \fjass
 
-  groupAction = new QAction( tr("&Groupcell"), this);
+  groupAction = new QAction( tr("&Group Cell"), this);
   groupAction->setShortcut( QKeySequence("Ctrl+Shift+G") );
-  groupAction->setStatusTip( tr("Groupcell") );
-  connect( groupAction, SIGNAL( triggered() ),
-           this, SLOT( groupCellsAction() ));
+  groupAction->setStatusTip( tr("Add a group cell") );
+  connect(groupAction, SIGNAL(triggered()), this, SLOT(groupCellsAction()));
 
-  // 2006-04-26 AF, UNGROUP
   ungroupCellAction = new QAction( tr("&Ungroup groupcell"), this);
   ungroupCellAction->setShortcut( QKeySequence("Ctrl+Shift+U") );
   ungroupCellAction->setStatusTip( tr("Ungroup the selected groupcell in the tree view") );
-  connect( ungroupCellAction, SIGNAL( triggered() ),
-           this, SLOT( ungroupCell() ));
+  connect(ungroupCellAction, SIGNAL(triggered()), this, SLOT(ungroupCell()));
 
-  // 2006-04-26 AF, SPLIT CELL
   splitCellAction = new QAction( tr("&Split cell"), this);
   splitCellAction->setShortcut( QKeySequence("Ctrl+Shift+P") );
   splitCellAction->setStatusTip( tr("Split selected cell") );
-  connect( splitCellAction, SIGNAL( triggered() ),
-           this, SLOT( splitCell() ));
+  connect(splitCellAction, SIGNAL(triggered()), this, SLOT(splitCell()));
 
   deleteCellAction = new QAction( tr("&Delete Cell"), this);
   deleteCellAction->setShortcut( QKeySequence("Ctrl+Shift+D") );
@@ -763,6 +759,21 @@ void NotebookWindow::createCellMenu()
   previousCellAction->setShortcut( QKeySequence("Alt+Up") );
   previousCellAction->setStatusTip( tr("Move to previous cell") );
   connect(previousCellAction, SIGNAL(triggered()), this, SLOT(moveCursorUp()));
+
+  evalCellAction = new QAction(tr("&Evaluate Cell"), this);
+  evalCellAction->setShortcut( QKeySequence("Shift+Enter") );
+  evalCellAction->setStatusTip(tr("Evaluate the selected cell"));
+  connect(evalCellAction, SIGNAL(triggered()), this, SLOT(eval()));
+
+  evalAllCellsAction = new QAction(tr("Evaluate all Input&cells"), this);
+  evalAllCellsAction->setStatusTip(tr("Evaluate all Input cells in the document"));
+  evalAllCellsAction->setShortcut( QKeySequence("Ctrl+R") );
+  connect(evalAllCellsAction, SIGNAL(triggered()), this, SLOT(evalall()));
+
+  evalAllLatexCellsAction = new QAction(tr("Evaluate all Late&xcells"), this);
+  evalAllLatexCellsAction->setStatusTip(tr("Evaluate all Latex cells in the document"));
+  evalAllLatexCellsAction->setShortcut( QKeySequence("Ctrl+Shift+R") );
+  connect(evalAllLatexCellsAction, SIGNAL(triggered()), this, SLOT(evalallLatex()));
 
   // 2006-04-27 AF, remove cut,copy,paste cell from menu
   cellMenu = menuBar()->addMenu( tr("&Cell") );
@@ -782,6 +793,10 @@ void NotebookWindow::createCellMenu()
   cellMenu->addSeparator();
   cellMenu->addAction( nextCellAction );
   cellMenu->addAction( previousCellAction );
+  cellMenu->addSeparator();
+  cellMenu->addAction( evalCellAction );
+  cellMenu->addAction( evalAllCellsAction );
+  cellMenu->addAction( evalAllLatexCellsAction );
 
   QObject::connect(cellMenu, SIGNAL(aboutToShow()),
                    this, SLOT(updateCellMenu()));
@@ -1488,7 +1503,7 @@ void NotebookWindow::createInsertMenu()
   evalallAction = new QAction(tr("Evaluate all cells"), this);
   evalallAction->setStatusTip(tr("Evaluate all cells in the document"));
   evalallAction->setIcon(QIcon(":/Resources/toolbarIcons/evalall.png"));
-  evalallAction->setShortcut( QKeySequence("Ctrl+R") );
+//  evalallAction->setShortcut( QKeySequence("Ctrl+R") );
   connect(evalallAction, SIGNAL(triggered()), this, SLOT(evalall()));
   toolBar->addAction(evalallAction);
 
@@ -4180,23 +4195,42 @@ void NotebookWindow::evalall()
     if (value==false)
     {
         Cell* current=subject_->getMainCell()->child();
-        QVector<Cell*> cellcount;
-        cellcount=SearchCells(current);
-        //qDebug()<<"Inside eval function_1:"<< cellcount <<cellcount.size();
+        QVector<Cell*> cellcount=SearchCells(current);
 
         for (int i =0;i<cellcount.size();i++)
         {
             if(GraphCell *g = dynamic_cast<GraphCell*>(cellcount[i]))
             {
                 g->eval();
-            }
-            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
-            {
-                g->eval(true);
+                cout << "eva graph cell"<<endl;
             }
             if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
             {
+              cout << "eva input cell"<<endl;
                 g->eval();
+            }
+        }
+    }
+    else
+    {
+        qDebug()<<"The Document is Empty";
+    }
+}
+
+void NotebookWindow::evalallLatex()
+{
+    bool value =subject_->isEmpty();
+    if (value==false)
+    {
+        Cell* current=subject_->getMainCell()->child();
+        QVector<Cell*> cellcount=SearchCells(current);
+
+        for (int i =0;i<cellcount.size();i++)
+        {
+            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
+            {
+              cout << "eva latex cell"<<endl;
+                g->eval(true);
             }
         }
     }
