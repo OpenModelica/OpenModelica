@@ -104,4 +104,9 @@ size_t calc_base_index_dims_subs(int ndims,...);
 
 int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a);
 
+/* Helper function for index_alloc_TYPE_array; allocates the ndims and dim_size */
+void index_alloc_base_array_size(const base_array_t * source, const index_spec_t* source_spec, base_array_t* dest);
+/* Helper function for indexed_assign_TYPE_array; allocates the ndims and dim_size */
+void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array_t *dest, const index_spec_t *dest_spec, _index_t** _idx_vec1, _index_t** _idx_size);
+
 #endif /* BASE_ARRAY_H_ */

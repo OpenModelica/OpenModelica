@@ -88,7 +88,7 @@ extern void print_string_array(const string_array_t * source);
  a[1:3] := b;
 
 */
-extern void indexed_assign_string_array(const string_array_t * source,
+extern void indexed_assign_string_array(const string_array_t source,
                                         string_array_t* dest,
                                         const index_spec_t* dest_spec);
 extern void simple_indexed_assign_string_array1(const string_array_t * source,
