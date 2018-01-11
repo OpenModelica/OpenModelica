@@ -31,6 +31,8 @@ BuiltinAttribute6.mo \
 BuiltinAttribute7.mo \
 BuiltinAttribute8.mo \
 BuiltinAttribute9.mo \
+BuiltinAttribute10.mo \
+BuiltinAttribute11.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 ceval1.mo \
