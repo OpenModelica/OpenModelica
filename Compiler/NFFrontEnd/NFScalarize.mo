@@ -31,7 +31,7 @@
 
 encapsulated package NFScalarize
 
-import NFFlatten.Elements;
+import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 
 protected
@@ -44,68 +44,118 @@ import Equation = NFEquation;
 import ExpressionIterator = NFExpressionIterator;
 import Dimension = NFDimension;
 import MetaModelica.Dangerous.listReverseInPlace;
+import MetaModelica.Dangerous.arrayCreateNoInit;
+import Variable = NFVariable;
+import NFComponent.Component;
+import NFPrefixes.Visibility;
+import List;
 
 public
 function scalarize
-  input output Elements elements;
+  input output FlatModel flatModel;
   input String name;
 protected
-  list<tuple<ComponentRef, Binding>> comps = {};
+  list<Variable> vars = {};
   list<Equation> eql = {}, ieql = {};
 algorithm
-  for c in elements.components loop
-    comps := scalarizeComponent(c, comps);
+  for c in flatModel.variables loop
+    vars := scalarizeVariable(c, vars);
   end for;
 
-  for eq in elements.equations loop
-    eql := scalarizeEquation(eq, eql);
-  end for;
+  for eq in flatModel.equations loop
+    eql := scalarizeEquation(eq, eql); end for;
 
-  for eq in elements.initialEquations loop
+  for eq in flatModel.initialEquations loop
     ieql := scalarizeEquation(eq, ieql);
   end for;
 
-  elements.components := listReverseInPlace(comps);
-  elements.equations := listReverseInPlace(eql);
-  elements.initialEquations := listReverseInPlace(ieql);
+  flatModel.variables := listReverseInPlace(vars);
+  flatModel.equations := listReverseInPlace(eql);
+  flatModel.initialEquations := listReverseInPlace(ieql);
 
   execStat(getInstanceName() + "(" + name + ")");
 end scalarize;
 
 protected
-function scalarizeComponent
-  input tuple<ComponentRef, Binding> component;
-  input output list<tuple<ComponentRef, Binding>> components;
+function scalarizeVariable
+  input Variable var;
+  input output list<Variable> vars;
 protected
-  ComponentRef cref;
+  ComponentRef name;
   Binding binding;
   Type ty;
+  Visibility vis;
+  Component.Attributes attr;
+  list<tuple<String, Binding>> ty_attr;
+  SourceInfo info;
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
   Expression exp;
+  Variable v;
+  list<String> ty_attr_names;
+  array<ExpressionIterator> ty_attr_iters;
 algorithm
-  (cref, binding) := component;
-  ty := ComponentRef.getType(cref);
-
-  if Type.isArray(ty) then
-    crefs := ComponentRef.scalarize(cref);
+  if Type.isArray(var.ty) then
+    Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, info) := var;
+    crefs := ComponentRef.scalarize(name);
+    ty := Type.arrayElementType(ty);
+    (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
 
     if Binding.isBound(binding) and not Binding.isEach(binding) then
-      binding_iter := ExpressionIterator.fromExpOpt(Binding.typedExp(binding));
+      binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
 
       for cr in crefs loop
         (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-        components := (cr, Binding.FLAT_BINDING(exp)) :: components;
+        binding := Binding.FLAT_BINDING(exp);
+        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, info) :: vars;
       end for;
     else
       for cr in crefs loop
-        components := (cr, binding) :: components;
+        ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, info) :: vars;
       end for;
     end if;
   else
-    components := component :: components;
+    vars := var :: vars;
   end if;
-end scalarizeComponent;
+end scalarizeVariable;
+
+function scalarizeTypeAttributes
+  input list<tuple<String, Binding>> attrs;
+  output list<String> names = {};
+  output array<ExpressionIterator> iters;
+protected
+  Integer i = 1;
+  String name;
+  Binding binding;
+algorithm
+  iters := arrayCreateNoInit(listLength(attrs), ExpressionIterator.NONE_ITERATOR());
+
+  for attr in attrs loop
+    (name, binding) := attr;
+    names := name :: names;
+    arrayUpdate(iters, i, ExpressionIterator.fromBinding(binding));
+    i := i + 1;
+  end for;
+end scalarizeTypeAttributes;
+
+function nextTypeAttributes
+  input list<String> names;
+  input array<ExpressionIterator> iters;
+  output list<tuple<String, Binding>> attrs = {};
+protected
+  Integer i = 1;
+  ExpressionIterator iter;
+  Expression exp;
+algorithm
+  for name in names loop
+    (iter, exp) := ExpressionIterator.next(iters[i]);
+    arrayUpdate(iters, i, iter);
+    i := i + 1;
+    attrs := (name, Binding.FLAT_BINDING(exp)) :: attrs;
+  end for;
+end nextTypeAttributes;
 
 function scalarizeEquations
   input list<Equation> eql;

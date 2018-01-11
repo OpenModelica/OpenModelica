@@ -108,6 +108,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFExpression.mo",
     "../NFFrontEnd/NFExpressionIterator.mo",
     "../NFFrontEnd/NFExpOrigin.mo",
+    "../NFFrontEnd/NFFlatModel.mo",
     "../NFFrontEnd/NFFlatten.mo",
     "../NFFrontEnd/NFFunction.mo",
     "../NFFrontEnd/NFInst.mo",
@@ -137,6 +138,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFHashTableUnitToString.mo",
     "../NFFrontEnd/NFHashTableCrToUnit.mo",
     "../NFFrontEnd/NFUnit.mo",
+    "../NFFrontEnd/NFVariable.mo",
 
   // "BackEnd";
     "../BackEnd/BackendDAE.mo",

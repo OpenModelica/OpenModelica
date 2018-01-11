@@ -838,6 +838,8 @@ algorithm
     case (Expression.ARRAY(), Expression.ARRAY())
       then evalBuiltinMax2(evalBuiltinMax2(e for e in exp1.elements),
                            evalBuiltinMax2(e for e in exp2.elements));
+    case (Expression.ARRAY(), _)
+      then evalBuiltinMax2(evalBuiltinMax2(e for e in exp1.elements), exp2);
     else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
 end evalBuiltinMax2;
@@ -873,6 +875,9 @@ algorithm
     case (Expression.ARRAY(), Expression.ARRAY())
       then evalBuiltinMin2(evalBuiltinMin2(e for e in exp1.elements),
                            evalBuiltinMin2(e for e in exp2.elements));
+    case (Expression.ARRAY(), _)
+      then evalBuiltinMin2(evalBuiltinMin2(e for e in exp1.elements), exp2);
+    else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
 end evalBuiltinMin2;
 

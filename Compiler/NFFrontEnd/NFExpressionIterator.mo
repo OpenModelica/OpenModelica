@@ -97,6 +97,20 @@ public
     end match;
   end fromExpOpt;
 
+  function fromBinding
+    input Binding binding;
+    output ExpressionIterator iterator;
+  algorithm
+    iterator := match binding
+      case Binding.TYPED_BINDING()
+        then if binding.originLevel > 0 then
+          fromExp(binding.bindingExp) else EACH_ITERATOR(binding.bindingExp);
+
+      case Binding.FLAT_BINDING()
+        then SCALAR_ITERATOR(binding.bindingExp);
+    end match;
+  end fromBinding;
+
   function hasNext
     input ExpressionIterator iterator;
     output Boolean hasNext;

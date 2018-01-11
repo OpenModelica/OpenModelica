@@ -115,6 +115,16 @@ uniontype ModifierScope
       case EXTENDS() then "extends " + Absyn.pathString(scope.path);
     end match;
   end toString;
+
+  function isClass
+    input ModifierScope scope;
+    output Boolean isClass;
+  algorithm
+    isClass := match scope
+      case CLASS() then true;
+      else false;
+    end match;
+  end isClass;
 end ModifierScope;
 
 uniontype Modifier
@@ -153,13 +163,15 @@ public
         SCode.Element elem;
         SCode.Mod smod;
         Integer lvl;
+        Boolean is_each;
 
       case SCode.NOMOD() then NOMOD();
 
       case SCode.MOD()
         algorithm
-          binding := Binding.fromAbsyn(mod.binding, mod.eachPrefix, level, scope, mod.info);
-          lvl := if SCode.eachBool(mod.eachPrefix) then level + 1 else level;
+          is_each := SCode.eachBool(mod.eachPrefix) or ModifierScope.isClass(modScope);
+          binding := Binding.fromAbsyn(mod.binding, is_each, level, scope, mod.info);
+          lvl := if is_each then level + 1 else level;
           submod_lst := list((m.ident, createSubMod(m, modScope, lvl, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));

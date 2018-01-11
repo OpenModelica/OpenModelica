@@ -34,7 +34,7 @@ encapsulated package NFConvertDAE
 import Binding = NFBinding;
 import DAE;
 import Equation = NFEquation;
-import NFFlatten.Elements;
+import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
@@ -60,10 +60,11 @@ import Function = NFFunction.Function;
 import ClassTree = NFClassTree;
 import NFPrefixes.Visibility;
 import NFPrefixes.Direction;
+import Variable = NFVariable;
 
 public
 function convert
-  input Elements elements;
+  input FlatModel flatModel;
   input FunctionTree functions;
   input String name;
   input SourceInfo info;
@@ -73,11 +74,11 @@ protected
   list<DAE.Element> elems;
   DAE.Element class_elem;
 algorithm
-  elems := convertComponents(elements.components, {});
-  elems := convertEquations(elements.equations, elems);
-  elems := convertInitialEquations(elements.initialEquations, elems);
-  elems := convertAlgorithms(elements.algorithms, elems);
-  elems := convertInitialAlgorithms(elements.initialAlgorithms, elems);
+  elems := convertVariables(flatModel.variables, {});
+  elems := convertEquations(flatModel.equations, elems);
+  elems := convertInitialEquations(flatModel.initialEquations, elems);
+  elems := convertAlgorithms(flatModel.algorithms, elems);
+  elems := convertInitialAlgorithms(flatModel.initialAlgorithms, elems);
 
   class_elem := DAE.COMP(name, elems, ElementSource.createElementSource(info), NONE());
   dae := DAE.DAE({class_elem});
@@ -88,19 +89,19 @@ algorithm
 end convert;
 
 protected
-function convertComponents
-  input list<tuple<ComponentRef, Binding>> components;
+function convertVariables
+  input list<Variable> variables;
   input output list<DAE.Element> elements;
 protected
   Boolean localDir = Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION);
 algorithm
-  for comp in listReverse(components) loop
-    elements := convertComponent(comp, localDir) :: elements;
+  for var in listReverse(variables) loop
+    elements := convertVariable(var, localDir) :: elements;
   end for;
-end convertComponents;
+end convertVariables;
 
-function convertComponent
-  input tuple<ComponentRef, Binding> component;
+function convertVariable
+  input Variable var;
   input Boolean useLocalDir;
   output DAE.Element daeVar;
 protected
@@ -115,16 +116,11 @@ protected
   Option<DAE.VariableAttributes> var_attr;
   Option<DAE.Exp> binding_exp;
 algorithm
-  (cref, binding) := component;
-  ComponentRef.CREF(node = comp_node, ty = ty) := cref;
-  comp := InstNode.component(comp_node);
-  Component.TYPED_COMPONENT(classInst = cls_node, attributes = attr, info = info) := comp;
-  cls := InstNode.getClass(cls_node);
-
-  binding_exp := convertBinding(binding);
-  var_attr := convertVarAttributes(Class.getTypeAttributes(cls), ty);
-  daeVar := makeDAEVar(cref, ty, binding_exp, attr, InstNode.visibility(comp_node), var_attr, useLocalDir, info);
-end convertComponent;
+  binding_exp := convertBinding(var.binding);
+  var_attr := convertVarAttributes(var.typeAttributes, var.ty);
+  daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
+    var.visibility, var_attr, useLocalDir, var.info);
+end convertVariable;
 
 function makeDAEVar
   input ComponentRef cref;
@@ -210,52 +206,56 @@ algorithm
 end convertBinding;
 
 function convertVarAttributes
-  input list<Modifier> mods;
+  input list<tuple<String, Binding>> attrs;
   input Type ty;
   output Option<DAE.VariableAttributes> attributes;
 algorithm
-  if listEmpty(mods) then
+  if listEmpty(attrs) then
     attributes := NONE();
     return;
   end if;
 
   attributes := match ty
-    case Type.REAL() then convertRealVarAttributes(mods);
-    case Type.INTEGER() then convertIntVarAttributes(mods);
-    case Type.BOOLEAN() then convertBoolVarAttributes(mods);
-    case Type.STRING() then convertStringVarAttributes(mods);
-    case Type.ENUMERATION() then convertEnumVarAttributes(mods);
+    case Type.REAL() then convertRealVarAttributes(attrs);
+    case Type.INTEGER() then convertIntVarAttributes(attrs);
+    case Type.BOOLEAN() then convertBoolVarAttributes(attrs);
+    case Type.STRING() then convertStringVarAttributes(attrs);
+    case Type.ENUMERATION() then convertEnumVarAttributes(attrs);
     else NONE();
   end match;
 end convertVarAttributes;
 
 function convertRealVarAttributes
-  input list<Modifier> mods;
+  input list<tuple<String, Binding>> attrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
+  String name;
+  Binding b;
   Option<DAE.Exp> quantity = NONE(), unit = NONE(), displayUnit = NONE();
   Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
   Option<DAE.StateSelect> state_select = NONE();
 algorithm
-  for m in mods loop
-    () := match Modifier.name(m)
-      case "displayUnit" algorithm displayUnit := convertVarAttribute(m); then ();
-      case "fixed"       algorithm fixed := convertVarAttribute(m); then ();
-      case "max"         algorithm max := convertVarAttribute(m); then ();
-      case "min"         algorithm min := convertVarAttribute(m); then ();
-      case "nominal"     algorithm nominal := convertVarAttribute(m); then ();
-      case "quantity"    algorithm quantity := convertVarAttribute(m); then ();
-      case "start"       algorithm start := convertVarAttribute(m); then ();
-      case "stateSelect" algorithm state_select := convertStateSelectAttribute(m); then ();
+  for attr in attrs loop
+    (name, b) := attr;
+
+    () := match name
+      case "displayUnit" algorithm displayUnit := convertVarAttribute(b); then ();
+      case "fixed"       algorithm fixed := convertVarAttribute(b); then ();
+      case "max"         algorithm max := convertVarAttribute(b); then ();
+      case "min"         algorithm min := convertVarAttribute(b); then ();
+      case "nominal"     algorithm nominal := convertVarAttribute(b); then ();
+      case "quantity"    algorithm quantity := convertVarAttribute(b); then ();
+      case "start"       algorithm start := convertVarAttribute(b); then ();
+      case "stateSelect" algorithm state_select := convertStateSelectAttribute(b); then ();
       // TODO: VAR_ATTR_REAL has no field for unbounded.
       case "unbounded"   then ();
-      case "unit"        algorithm unit := convertVarAttribute(m); then ();
+      case "unit"        algorithm unit := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -267,25 +267,29 @@ algorithm
 end convertRealVarAttributes;
 
 function convertIntVarAttributes
-  input list<Modifier> mods;
+  input list<tuple<String, Binding>> attrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
+  String name;
+  Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
   Option<DAE.Exp> start = NONE(), fixed = NONE();
 algorithm
-  for m in mods loop
-    () := match Modifier.name(m)
-      case "quantity" algorithm quantity := convertVarAttribute(m); then ();
-      case "min"      algorithm min := convertVarAttribute(m); then ();
-      case "max"      algorithm max := convertVarAttribute(m); then ();
-      case "start"    algorithm start := convertVarAttribute(m); then ();
-      case "fixed"    algorithm fixed := convertVarAttribute(m); then ();
+  for attr in attrs loop
+    (name, b) := attr;
+
+    () := match name
+      case "quantity" algorithm quantity := convertVarAttribute(b); then ();
+      case "min"      algorithm min := convertVarAttribute(b); then ();
+      case "max"      algorithm max := convertVarAttribute(b); then ();
+      case "start"    algorithm start := convertVarAttribute(b); then ();
+      case "fixed"    algorithm fixed := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -297,22 +301,26 @@ algorithm
 end convertIntVarAttributes;
 
 function convertBoolVarAttributes
-  input list<Modifier> mods;
+  input list<tuple<String, Binding>> attrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
+  String name;
+  Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
 algorithm
-  for m in mods loop
-    () := match Modifier.name(m)
-      case "quantity" algorithm quantity := convertVarAttribute(m); then ();
-      case "start"    algorithm start := convertVarAttribute(m); then ();
-      case "fixed"    algorithm fixed := convertVarAttribute(m); then ();
+  for attr in attrs loop
+    (name, b) := attr;
+
+    () := match name
+      case "quantity" algorithm quantity := convertVarAttribute(b); then ();
+      case "start"    algorithm start := convertVarAttribute(b); then ();
+      case "fixed"    algorithm fixed := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -323,22 +331,26 @@ algorithm
 end convertBoolVarAttributes;
 
 function convertStringVarAttributes
-  input list<Modifier> mods;
+  input list<tuple<String, Binding>> attrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
+  String name;
+  Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
 algorithm
-  for m in mods loop
-    () := match Modifier.name(m)
-      case "quantity" algorithm quantity := convertVarAttribute(m); then ();
-      case "start"    algorithm start := convertVarAttribute(m); then ();
-      case "fixed"    algorithm fixed := convertVarAttribute(m); then ();
+  for attr in attrs loop
+    (name, b) := attr;
+
+    () := match name
+      case "quantity" algorithm quantity := convertVarAttribute(b); then ();
+      case "start"    algorithm start := convertVarAttribute(b); then ();
+      case "fixed"    algorithm fixed := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -349,25 +361,29 @@ algorithm
 end convertStringVarAttributes;
 
 function convertEnumVarAttributes
-  input list<Modifier> mods;
+  input list<tuple<String, Binding>> attrs;
   output Option<DAE.VariableAttributes> attributes;
 protected
+  String name;
+  Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
   Option<DAE.Exp> start = NONE(), fixed = NONE();
 algorithm
-  for m in mods loop
-    () := match Modifier.name(m)
-      case "fixed"       algorithm fixed := convertVarAttribute(m); then ();
-      case "max"         algorithm max := convertVarAttribute(m); then ();
-      case "min"         algorithm min := convertVarAttribute(m); then ();
-      case "quantity"    algorithm quantity := convertVarAttribute(m); then ();
-      case "start"       algorithm start := convertVarAttribute(m); then ();
+  for attr in attrs loop
+    (name, b) := attr;
+
+    () := match name
+      case "fixed"       algorithm fixed := convertVarAttribute(b); then ();
+      case "max"         algorithm max := convertVarAttribute(b); then ();
+      case "min"         algorithm min := convertVarAttribute(b); then ();
+      case "quantity"    algorithm quantity := convertVarAttribute(b); then ();
+      case "start"       algorithm start := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type attribute " + Modifier.name(m), sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unknown type attribute " + name, sourceInfo());
         then
           fail();
     end match;
@@ -378,60 +394,30 @@ algorithm
 end convertEnumVarAttributes;
 
 function convertVarAttribute
-  input Modifier mod;
-  output Option<DAE.Exp> attribute;
-algorithm
-  attribute := match mod
-    local
-      Expression exp;
-
-    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(bindingExp = exp))
-      then SOME(Expression.toDAE(exp));
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
-      then
-        fail();
-
-  end match;
+  input Binding binding;
+  output Option<DAE.Exp> attribute = SOME(Expression.toDAE(Binding.getTypedExp(binding)));
 end convertVarAttribute;
 
 function convertStateSelectAttribute
-  input Modifier mod;
+  input Binding binding;
   output Option<DAE.StateSelect> stateSelect;
+protected
+  InstNode node;
+  String name;
+  Expression exp = Binding.getTypedExp(binding);
 algorithm
-  stateSelect := match mod
-    local
-      Expression exp;
-      InstNode node;
-
-    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(
-        bindingExp = exp as Expression.ENUM_LITERAL(
-          ty = Type.ENUMERATION(typePath = Absyn.IDENT("StateSelect")))))
-      then
-        SOME(lookupStateSelectMember(exp.name));
-
-    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING(
-        bindingExp = Expression.CREF(cref = ComponentRef.CREF(
-          ty = Type.ENUMERATION(typePath = Absyn.IDENT("StateSelect")),
-          node = node))))
-      then
-        SOME(lookupStateSelectMember(InstNode.name(node)));
-
-    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING())
-      algorithm
-        Error.assertion(false, getInstanceName() + " got non StateSelect value", sourceInfo());
-      then
-        fail();
-
+  name := match exp
+    case Expression.ENUM_LITERAL() then exp.name;
+    case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
+        Error.assertion(false, getInstanceName() +
+          " got invalid StateSelect expression " + Expression.toString(exp), sourceInfo());
       then
         fail();
-
   end match;
+
+  stateSelect := SOME(lookupStateSelectMember(name));
 end convertStateSelectAttribute;
 
 function lookupStateSelectMember
@@ -963,6 +949,7 @@ protected
   Component.Attributes attr;
   Type ty;
   Option<DAE.Exp> binding;
+  list<tuple<String, Binding>> ty_attr;
 algorithm
   comp := InstNode.component(node);
 
@@ -972,7 +959,8 @@ algorithm
         cref := ComponentRef.fromNode(node, ty);
         binding := convertBinding(comp.binding);
         cls := InstNode.getClass(comp.classInst);
-        var_attr := convertVarAttributes(Class.getTypeAttributes(cls), ty);
+        ty_attr := list((Modifier.name(m), Modifier.binding(m)) for m in Class.getTypeAttributes(cls));
+        var_attr := convertVarAttributes(ty_attr, ty);
         attr := comp.attributes;
       then
         makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, true, info);

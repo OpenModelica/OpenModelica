@@ -30,7 +30,7 @@
  */
 
 encapsulated package NFPackage
-  import NFFlatten.Elements;
+  import FlatModel = NFFlatModel;
   import NFFlatten.FunctionTree;
 
 protected
@@ -50,6 +50,7 @@ protected
   import Sections = NFSections;
   import ClassTree = NFClassTree;
   import NFTyping.ExpOrigin;
+  import Variable = NFVariable;
 
 public
   type Constants = ConstantsSetImpl.Tree;
@@ -74,59 +75,51 @@ public
 
 public
   function collectConstants
-    input output Elements elements;
+    input output FlatModel flatModel;
     input FunctionTree functions;
   protected
-    list<tuple<ComponentRef, Binding>> comps = {};
+    list<Variable> vars = {};
     Binding binding;
     Constants constants;
   algorithm
     constants := Constants.new();
-    constants := List.fold(elements.components, collectComponentConstants, constants);
-    constants := Equation.foldExpList(elements.equations, collectExpConstants, constants);
-    constants := Equation.foldExpList(elements.initialEquations, collectExpConstants, constants);
-    constants := Statement.foldExpListList(elements.algorithms, collectExpConstants, constants);
-    constants := Statement.foldExpListList(elements.initialAlgorithms, collectExpConstants, constants);
+    constants := List.fold(flatModel.variables, collectVariableConstants, constants);
+    constants := Equation.foldExpList(flatModel.equations, collectExpConstants, constants);
+    constants := Equation.foldExpList(flatModel.initialEquations, collectExpConstants, constants);
+    constants := Statement.foldExpListList(flatModel.algorithms, collectExpConstants, constants);
+    constants := Statement.foldExpListList(flatModel.initialAlgorithms, collectExpConstants, constants);
     constants := FunctionTree.fold(functions, collectFuncConstants, constants);
 
-    for c in Constants.listKeys(constants) loop
-      binding := Component.getBinding(InstNode.component(ComponentRef.node(c)));
-      comps := (c, binding) :: comps;
-    end for;
-
-    elements.components := listAppend(comps, elements.components);
+    vars := listReverse(Variable.fromCref(c) for c in Constants.listKeys(constants));
+    flatModel.variables := listAppend(vars, flatModel.variables);
 
     execStat(getInstanceName());
   end collectConstants;
 
   function replaceConstants
-    input output Elements elements;
+    input output FlatModel flatModel;
     input output FunctionTree functions;
   algorithm
-    elements.components := list(replaceComponentConstants(c) for c in elements.components);
-    elements.equations := Equation.mapExpList(elements.equations, replaceExpConstants);
-    elements.initialEquations := Equation.mapExpList(elements.initialEquations, replaceExpConstants);
-    elements.algorithms := Statement.mapExpListList(elements.algorithms, replaceExpConstants);
-    elements.initialAlgorithms := Statement.mapExpListList(elements.initialAlgorithms, replaceExpConstants);
+    flatModel.variables := list(replaceVariableConstants(c) for c in flatModel.variables);
+    flatModel.equations := Equation.mapExpList(flatModel.equations, replaceExpConstants);
+    flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, replaceExpConstants);
+    flatModel.algorithms := Statement.mapExpListList(flatModel.algorithms, replaceExpConstants);
+    flatModel.initialAlgorithms := Statement.mapExpListList(flatModel.initialAlgorithms, replaceExpConstants);
     functions := FunctionTree.map(functions, replaceFuncConstants);
     execStat(getInstanceName());
   end replaceConstants;
 
-  function collectComponentConstants
-    input tuple<ComponentRef, Binding> component;
+  function collectVariableConstants
+    input Variable var;
     input output Constants constants;
-  protected
-    Binding binding;
   algorithm
-    (_, binding) := component;
-
-    if Binding.isBound(binding) then
-      constants := collectExpConstants(Binding.getTypedExp(binding), constants);
+    if Binding.isBound(var.binding) then
+      constants := collectExpConstants(Binding.getTypedExp(var.binding), constants);
     end if;
 
     // TODO: The component's attributes (i.e. start, etc) might also contain
     //       package constants.
-  end collectComponentConstants;
+  end collectVariableConstants;
 
   function collectBindingConstants
     input Binding binding;
@@ -213,15 +206,18 @@ public
     end match;
   end collectFuncConstants;
 
-  function replaceComponentConstants
-    input output tuple<ComponentRef, Binding> component;
+  function replaceVariableConstants
+    input output Variable var;
   protected
     ComponentRef cref;
     Binding binding;
   algorithm
-    (cref, binding) := component;
-    component := (cref, replaceBindingConstants(binding));
-  end replaceComponentConstants;
+    binding := replaceBindingConstants(var.binding);
+
+    if not referenceEq(binding, var.binding) then
+      var.binding := binding;
+    end if;
+  end replaceVariableConstants;
 
   function replaceBindingConstants
     input output Binding binding;

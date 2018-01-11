@@ -32,7 +32,7 @@
 encapsulated uniontype NFConnections
   import Connection = NFConnection;
   import Connector = NFConnector;
-  import NFFlatten.Elements;
+  import FlatModel = NFFlatModel;
 
 protected
   import Equation = NFEquation;
@@ -69,7 +69,7 @@ public
   end addFlow;
 
   function collect
-    input output Elements elements;
+    input output FlatModel flatModel;
           output Connections conns = new();
   protected
     Component comp;
@@ -80,26 +80,18 @@ public
     list<Equation> eql = {};
   algorithm
     // Collect all flow variables.
-    for c in elements.components loop
-      () := match c
-        case (cr, _)
-          algorithm
-            comp := InstNode.component(ComponentRef.node(cr));
+    for var in flatModel.variables loop
+      comp := InstNode.component(ComponentRef.node(var.name));
 
-            if Component.isFlow(comp) then
-              c1 := Connector.fromFacedCref(cr, Component.getType(comp),
-                NFConnector.Face.INSIDE, Component.info(comp));
-              conns := addFlow(c1, conns);
-            end if;
-          then
-            ();
-
-        else ();
-      end match;
+      if Component.isFlow(comp) then
+        c1 := Connector.fromFacedCref(var.name, var.ty,
+          NFConnector.Face.INSIDE, Component.info(comp));
+        conns := addFlow(c1, conns);
+      end if;
     end for;
 
     // Collect all connects.
-    for eq in elements.equations loop
+    for eq in flatModel.equations loop
       eql := match eq
         case Equation.CONNECT(lhs = Expression.CREF(cref = lhs, ty = ty1),
                               rhs = Expression.CREF(cref = rhs, ty = ty2), info = info)
@@ -115,7 +107,7 @@ public
     end for;
 
     if not listEmpty(conns.connections) then
-      elements.equations := listReverseInPlace(eql);
+      flatModel.equations := listReverseInPlace(eql);
     end if;
   end collect;
 

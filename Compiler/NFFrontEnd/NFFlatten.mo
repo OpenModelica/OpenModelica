@@ -43,6 +43,7 @@ import Equation = NFEquation;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
+import FlatModel = NFFlatModel;
 
 protected
 import ComponentRef = NFComponentRef;
@@ -75,6 +76,7 @@ import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
 import NFPrefixes.Variability;
+import Variable = NFVariable;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -106,34 +108,24 @@ encapsulated package FunctionTreeImpl
   redeclare function addConflictDefault = addConflictKeep;
 end FunctionTreeImpl;
 
-uniontype Elements
-  record ELEMENTS
-    list<tuple<ComponentRef, Binding>> components;
-    list<Equation> equations;
-    list<Equation> initialEquations;
-    list<list<Statement>> algorithms;
-    list<list<Statement>> initialAlgorithms;
-  end ELEMENTS;
-end Elements;
-
 function flatten
   input InstNode classInst;
   input String name;
-  output Elements elems;
+  output FlatModel flatModel;
   output FunctionTree funcs;
 protected
-  list<tuple<ComponentRef, Binding>> comps;
   Sections sections;
+  list<Variable> vars;
   list<Equation> eql, ieql;
   list<list<Statement>> alg, ialg;
 algorithm
   sections := Sections.EMPTY();
 
-  (comps, sections) :=
+  (vars, sections) :=
     flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), Visibility.PUBLIC, {}, sections);
-  comps := listReverseInPlace(comps);
+  vars := listReverseInPlace(vars);
 
-  elems := match sections
+  flatModel := match sections
     case Sections.SECTIONS()
       algorithm
         eql := listReverseInPlace(sections.equations);
@@ -141,14 +133,14 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        ELEMENTS(comps, eql, ieql, alg, ialg);
+        FlatModel.FLAT_MODEL(vars, eql, ieql, alg, ialg);
 
-    else ELEMENTS(comps, {}, {}, {}, {});
+    else FlatModel.FLAT_MODEL(vars, {}, {}, {}, {});
   end match;
 
   execStat(getInstanceName() + "(" + name + ")");
-  elems := resolveConnections(elems, name);
-  funcs := flattenFunctions(elems, name);
+  flatModel := resolveConnections(flatModel, name);
+  funcs := flattenFunctions(flatModel, name);
 end flatten;
 
 protected
@@ -156,7 +148,7 @@ function flattenClass
   input Class cls;
   input ComponentRef prefix;
   input Visibility visibility;
-  input output list<tuple<ComponentRef, Binding>> comps;
+  input output list<Variable> vars;
   input output Sections sections;
 protected
   ClassTree cls_tree;
@@ -165,7 +157,7 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          (comps, sections) := flattenComponent(c, prefix, visibility, comps, sections);
+          (vars, sections) := flattenComponent(c, prefix, visibility, vars, sections);
         end for;
 
         sections := flattenSections(cls.sections, prefix, sections);
@@ -187,15 +179,13 @@ function flattenComponent
   input InstNode component;
   input ComponentRef prefix;
   input Visibility visibility;
-  input output list<tuple<ComponentRef, Binding>> comps;
+  input output list<Variable> vars;
   input output Sections sections;
 protected
   InstNode comp_node;
   Component c;
   Type ty;
-  ComponentRef new_pre;
-  Binding binding, condition;
-  list<Dimension> dims;
+  Binding condition;
   Class cls;
   Visibility vis;
 algorithm
@@ -208,7 +198,7 @@ algorithm
   c := InstNode.component(comp_node);
 
   () := match c
-    case Component.TYPED_COMPONENT(ty = ty, condition = condition)
+    case Component.TYPED_COMPONENT(condition = condition, ty = ty)
       algorithm
         // Don't add the component if it has a condition that's false.
         if Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition)) then
@@ -216,46 +206,12 @@ algorithm
         end if;
 
         cls := InstNode.getClass(c.classInst);
+        vis := if InstNode.isProtected(component) then Visibility.PROTECTED else visibility;
 
-        () := match cls
-          // If the component is of a builtin type, add it to the component list
-          // along with its binding.
+        (vars, sections) := match cls
           case Class.INSTANCED_BUILTIN()
-            algorithm
-              if visibility == Visibility.PROTECTED then
-                comp_node := InstNode.protectComponent(comp_node);
-              end if;
-
-              new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
-              binding := flattenBinding(c.binding, prefix, comp_node);
-
-              if Type.isArray(ty) and Binding.isBound(binding) and
-                 Component.variability(c) >= Variability.DISCRETE then
-                comps := (new_pre, Binding.UNBOUND()) :: comps;
-                sections := Sections.prependEquation(
-                  Equation.ARRAY_EQUALITY(Expression.CREF(ty, new_pre), Binding.getTypedExp(binding), ty, c.info),
-                  sections);
-              else
-                comps := (new_pre, binding) :: comps;
-              end if;
-            then
-              ();
-
-          // If the component is of a complex type, either flatten its class
-          // directly if it's a scalar or vectorize it if it's an array.
-          else
-            algorithm
-              vis := if InstNode.isProtected(comp_node) then Visibility.PROTECTED else visibility;
-              dims := Type.arrayDims(ty);
-              new_pre := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
-
-              if listEmpty(dims) then
-                (comps, sections) := flattenClass(cls, new_pre, vis, comps, sections);
-              else
-                (comps, sections) := flattenArray(cls, dims, new_pre, vis, comps, sections);
-              end if;
-            then
-              ();
+            then flattenSimpleComponent(comp_node, c, vis, cls.attributes, prefix, vars, sections);
+          else flattenComplexComponent(comp_node, cls, ty, vis, prefix, vars, sections);
         end match;
       then
         ();
@@ -269,12 +225,84 @@ algorithm
   end match;
 end flattenComponent;
 
+function flattenSimpleComponent
+  input InstNode node;
+  input Component comp;
+  input Visibility visibility;
+  input list<Modifier> typeAttrs;
+  input ComponentRef prefix;
+  input output list<Variable> vars;
+  input output Sections sections;
+protected
+  InstNode comp_node = node;
+  ComponentRef name;
+  Binding binding;
+  Type ty;
+  SourceInfo info;
+  Component.Attributes comp_attr;
+  Visibility vis;
+  Equation eq;
+  list<tuple<String, Binding>> ty_attrs;
+algorithm
+  Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr, info = info) := comp;
+
+  binding := flattenBinding(binding, prefix, comp_node);
+  name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
+
+  // If the component is an array component with a binding and at least discrete variability,
+  // move the binding into an equation. This avoids having to scalarize the binding.
+  if Type.isArray(ty) and Binding.isBound(binding) and
+     Component.variability(comp) >= Variability.DISCRETE then
+    eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty, info);
+    sections := Sections.prependEquation(eq, sections);
+    binding := Binding.UNBOUND();
+  end if;
+
+  ty_attrs := list(flattenTypeAttribute(m, prefix, node) for m in typeAttrs);
+  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, info) :: vars;
+end flattenSimpleComponent;
+
+function flattenTypeAttribute
+  input Modifier attr;
+  input ComponentRef prefix;
+  input InstNode component;
+  output tuple<String, Binding> outAttr;
+protected
+  Binding binding;
+algorithm
+  binding := flattenBinding(Modifier.binding(attr), prefix, component);
+  outAttr := (Modifier.name(attr), binding);
+end flattenTypeAttribute;
+
+function flattenComplexComponent
+  input InstNode node;
+  input Class cls;
+  input Type ty;
+  input Visibility visibility;
+  input ComponentRef prefix;
+  input output list<Variable> vars;
+  input output Sections sections;
+protected
+  list<Dimension> dims;
+  ComponentRef name;
+algorithm
+  dims := Type.arrayDims(ty);
+  name := ComponentRef.prefixCref(node, ty, {}, prefix);
+
+  // Flatten the class directly if the component is a scalar, otherwise scalarize it.
+  if listEmpty(dims) then
+    (vars, sections) := flattenClass(cls, name, visibility, vars, sections);
+  else
+    (vars, sections) := flattenArray(cls, dims, name, visibility, vars, sections);
+  end if;
+end flattenComplexComponent;
+
 function flattenArray
   input Class cls;
   input list<Dimension> dimensions;
   input ComponentRef prefix;
   input Visibility visibility;
-  input output list<tuple<ComponentRef, Binding>> comps;
+  input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
 protected
@@ -286,14 +314,14 @@ protected
 algorithm
   if listEmpty(dimensions) then
     sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
-    (comps, sections) := flattenClass(cls, sub_pre, visibility, comps, sections);
+    (vars, sections) := flattenClass(cls, sub_pre, visibility, vars, sections);
   else
     dim :: rest_dims := dimensions;
     range_iter := RangeIterator.fromDim(dim);
 
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
-      (comps, sections) := flattenArray(cls, rest_dims, prefix, visibility, comps, sections,
+      (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility, vars, sections,
         Subscript.INDEX(sub_exp) :: subscripts);
     end while;
   end if;
@@ -565,7 +593,7 @@ algorithm
 end flattenAlgorithms;
 
 function resolveConnections
-  input output Elements elems;
+  input output FlatModel flatModel;
   input String name;
 protected
   Connections conns;
@@ -574,48 +602,47 @@ protected
   array<list<Connector>> csets_array;
 algorithm
   // Generate the connect equations and add them to the equation list.
-  (elems, conns) := Connections.collect(elems);
+  (flatModel, conns) := Connections.collect(flatModel);
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   conn_eql := ConnectEquations.generateEquations(csets_array);
-  elems.equations := listAppend(conn_eql, elems.equations);
+  flatModel.equations := listAppend(conn_eql, flatModel.equations);
 
   // Evaluate any connection operators if they're used.
   if System.getHasStreamConnectors() or System.getUsesCardinality() then
-    elems := evaluateConnectionOperators(elems, csets, csets_array);
+    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array);
   end if;
 
   execStat(getInstanceName() + "(" + name + ")");
 end resolveConnections;
 
 function evaluateConnectionOperators
-  input output Elements elems;
+  input output FlatModel flatModel;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
 algorithm
-  elems.components := list(evaluateBindingConnOp(c, sets, setsArray) for c in elems.components);
-  elems.equations := evaluateEquationsConnOp(elems.equations, sets, setsArray);
-  elems.initialEquations := evaluateEquationsConnOp(elems.initialEquations, sets, setsArray);
+  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray) for c in flatModel.variables);
+  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray);
+  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray);
   // TODO: Implement evaluation for algorithm sections.
 end evaluateConnectionOperators;
 
 function evaluateBindingConnOp
-  input output tuple<ComponentRef, Binding> component;
+  input output Variable var;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
 protected
-  ComponentRef cr;
   Binding binding;
   Expression exp, eval_exp;
 algorithm
-  () := match component
-    case (cr, binding as Binding.TYPED_BINDING(bindingExp = exp))
+  () := match var
+    case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING(bindingExp = exp))
       algorithm
         eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray);
 
         if not referenceEq(exp, eval_exp) then
           binding.bindingExp := eval_exp;
-          component := (cr, binding);
+          var.binding := binding;
         end if;
       then
         ();
@@ -702,21 +729,21 @@ algorithm
 end evaluateEqBranchConnOp;
 
 function flattenFunctions
-  input Elements elems;
+  input FlatModel flatModel;
   input String name;
   output FunctionTree funcs;
 algorithm
   funcs := FunctionTree.new();
-  funcs := List.fold(elems.components, collectComponentFuncs, funcs);
-  funcs := List.fold(elems.equations, collectEquationFuncs, funcs);
-  funcs := List.fold(elems.initialEquations, collectEquationFuncs, funcs);
-  funcs := List.fold(elems.algorithms, collectAlgorithmFuncs, funcs);
-  funcs := List.fold(elems.initialAlgorithms, collectAlgorithmFuncs, funcs);
+  funcs := List.fold(flatModel.variables, collectComponentFuncs, funcs);
+  funcs := List.fold(flatModel.equations, collectEquationFuncs, funcs);
+  funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
+  funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
+  funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
   execStat(getInstanceName() + "(" + name + ")");
 end flattenFunctions;
 
 function collectComponentFuncs
-  input tuple<ComponentRef, Binding> component;
+  input Variable var;
   input output FunctionTree funcs;
 protected
   Binding binding;
@@ -724,24 +751,30 @@ protected
   InstNode node;
   Type ty;
 algorithm
-  (cref, binding) := component;
-  ComponentRef.CREF(node = node, ty = ty) := cref;
-
-  // TODO: Collect functions from the component's type attributes.
-
-  () := match ty
-    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+  () := match var
+    case Variable.VARIABLE(ty = ty, binding = binding)
       algorithm
-        funcs := collectExternalObjectStructors(ty.complexTy, funcs);
+        // TODO: Collect functions from the component's type attributes.
+
+        // Collect external object structors.
+        () := match ty
+          case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+            algorithm
+              funcs := collectExternalObjectStructors(ty.complexTy, funcs);
+            then
+              ();
+
+          else ();
+        end match;
+
+        // Collect functions used in the component's binding, if it has one.
+        if Binding.isBound(binding) then
+          funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
+        end if;
       then
         ();
 
-    else ();
   end match;
-
-  if Binding.isBound(binding) then
-    funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
-  end if;
 end collectComponentFuncs;
 
 function collectExternalObjectStructors

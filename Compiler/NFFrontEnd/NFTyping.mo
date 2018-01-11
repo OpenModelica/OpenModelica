@@ -752,7 +752,8 @@ function typeTypeAttribute
 protected
   String name;
   Binding binding;
-  Type expected_ty;
+  Type expected_ty, comp_ty;
+  list<Dimension> dims;
 algorithm
   () := match attribute
     // Normal modifier with no submodifiers.
@@ -760,6 +761,15 @@ algorithm
       algorithm
         // Use the given function to get the expected type of the attribute.
         expected_ty := attrTyFn(name, ty, Modifier.info(attribute));
+
+        // Add the component's dimensions to the expected type, unless the
+        // binding is declared 'each'.
+        if not Binding.isEach(binding) then
+          comp_ty := InstNode.getType(component);
+          if Type.isArray(comp_ty) then
+            expected_ty := Type.ARRAY(expected_ty, Type.arrayDims(comp_ty));
+          end if;
+        end if;
 
         // Type and type check the attribute.
         binding := typeBinding(binding, origin);

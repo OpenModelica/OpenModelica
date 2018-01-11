@@ -39,6 +39,7 @@ encapsulated package NFInst
 
 import Absyn;
 import SCode;
+import DAE;
 
 import Builtin = NFBuiltin;
 import Binding = NFBinding;
@@ -84,13 +85,13 @@ import UnitCheck = NFUnitCheck;
 import NFPrefixes.*;
 import Prefixes = NFPrefixes;
 import NFFlatten.FunctionTree;
-import NFFlatten.Elements;
 import ConvertDAE = NFConvertDAE;
 import Scalarize = NFScalarize;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
 import Package = NFPackage;
 import NFFunction.Function;
+import FlatModel = NFFlatModel;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -107,7 +108,7 @@ protected
   Component top_comp;
   InstNode top_comp_node;
   String name;
-  Elements elems;
+  FlatModel flat_model;
   FunctionTree funcs;
 algorithm
   // Create a root node from the given top-level classes.
@@ -136,21 +137,21 @@ algorithm
   Typing.typeClass(inst_cls, name);
 
   // Flatten and convert the class into a DAE.
-  (elems, funcs) := Flatten.flatten(inst_cls, name);
+  (flat_model, funcs) := Flatten.flatten(inst_cls, name);
 
   // Replace or collect package constants depending on the
   // replacePackageConstants debug flag.
   if Flags.isSet(Flags.REPLACE_PACKAGE_CONSTS) then
-    (elems, funcs) := Package.replaceConstants(elems, funcs);
+    (flat_model, funcs) := Package.replaceConstants(flat_model, funcs);
   else
-    elems := Package.collectConstants(elems, funcs);
+    flat_model := Package.collectConstants(flat_model, funcs);
   end if;
 
-  elems := Scalarize.scalarize(elems, name);
-  (dae, daeFuncs) := ConvertDAE.convert(elems, funcs, name, InstNode.info(inst_cls));
+  flat_model := Scalarize.scalarize(flat_model, name);
+  (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
 
   // Do unit checking
-  UnitCheck.checkUnits(dae,daeFuncs);
+  UnitCheck.checkUnits(dae, daeFuncs);
 end instClassInProgram;
 
 function instantiate
@@ -1076,7 +1077,6 @@ protected
   Class cls;
   Modifier mod, comp_mod;
   Binding binding, condition;
-  DAE.Type ty;
   Component.Attributes attr, cls_attr;
   list<Dimension> dims;
   SourceInfo info;
@@ -1114,7 +1114,7 @@ algorithm
 
         dims := list(Dimension.RAW_DIM(d) for d in def.attributes.arrayDims);
         binding := Modifier.binding(comp_mod);
-        condition := Binding.fromAbsyn(def.condition, SCode.Each.NOT_EACH(), InstNode.level(node), parent, info);
+        condition := Binding.fromAbsyn(def.condition, false, InstNode.level(node), parent, info);
 
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes, attributes, comp_node);
@@ -1915,7 +1915,7 @@ algorithm
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
-        binding := Binding.fromAbsyn(scodeEq.range, SCode.NOT_EACH(), 0, scope, info);
+        binding := Binding.fromAbsyn(scodeEq.range, false, 0, scope, info);
         binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
@@ -2054,7 +2054,7 @@ algorithm
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
-        binding := Binding.fromAbsyn(scodeStmt.range, SCode.NOT_EACH(), 0, scope, info);
+        binding := Binding.fromAbsyn(scodeStmt.range, false, 0, scope, info);
         binding := instBinding(binding);
 
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);

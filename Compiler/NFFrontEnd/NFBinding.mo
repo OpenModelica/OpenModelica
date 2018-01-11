@@ -74,7 +74,7 @@ public
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
-    input SCode.Each eachPrefix;
+    input Boolean eachPrefix;
     input Integer level;
     input InstNode scope;
     input SourceInfo info;
@@ -83,13 +83,9 @@ public
     binding := match bindingExp
       local
         Absyn.Exp exp;
-        Integer lvl;
 
       case SOME(exp)
-        algorithm
-          lvl := if SCode.eachBool(eachPrefix) then -level else level;
-        then
-          RAW_BINDING(exp, scope, lvl, info);
+        then RAW_BINDING(exp, scope, if eachPrefix then -level else level, info);
 
       else UNBOUND();
     end match;
