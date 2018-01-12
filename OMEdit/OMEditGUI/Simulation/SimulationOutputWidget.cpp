@@ -439,6 +439,23 @@ void SimulationOutputWidget::embeddedServerInitialized()
 }
 
 /*!
+ * \brief SimulationOutputWidget::deleteIntermediateCompilationFiles
+ * Deletes the intermediate compilation files
+ */
+void SimulationOutputWidget::deleteIntermediateCompilationFiles()
+{
+  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
+    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
+    QString outputFile = mSimulationOptions.getOutputFileName();
+    foreach (QString fileName, mGeneratedFilesList) {
+      if (QFile::exists(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)))) {
+        QFile::remove(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
+      }
+    }
+  }
+}
+
+/*!
  * \brief SimulationOutputWidget::createSimulationProgressSocket
  * Slot activated when QTcpServer newConnection SIGNAL is raised.\n
  * Accepts the incoming connection and connects to readyRead SIGNAL of QTcpSocket.
@@ -539,14 +556,8 @@ void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::
   }
   mpArchivedSimulationItem->setStatus(Helper::finished);
   // remove the generated files
-  if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
-    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-    QString outputFile = mSimulationOptions.getOutputFileName();
-    foreach (QString fileName, mGeneratedFilesList) {
-      if (QFile::exists(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)))) {
-        QFile::remove(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
-      }
-    }
+  if (mSimulationOptions.getBuildOnly()) {
+    deleteIntermediateCompilationFiles();
   }
 }
 
@@ -644,6 +655,10 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   mpCancelButton->setEnabled(false);
   MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
+  // remove the generated files
+  if (!mSimulationOptions.getBuildOnly()) {
+    deleteIntermediateCompilationFiles();
+  }
 }
 
 /*!

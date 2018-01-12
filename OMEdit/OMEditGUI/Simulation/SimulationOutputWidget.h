@@ -110,6 +110,8 @@ private:
   bool mSocketDisconnected;
   SimulationProcessThread *mpSimulationProcessThread;
   QDateTime mResultFileLastModifiedDateTime;
+
+  void deleteIntermediateCompilationFiles();
 public slots:
   void createSimulationProgressSocket();
   void readSimulationProgress();
