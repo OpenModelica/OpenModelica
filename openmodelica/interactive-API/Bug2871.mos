@@ -1,7 +1,7 @@
 // name:     Bug2871.mos [BUG #2871]
 // keywords: check that the initial environment is cloned when is returned
 // status:   correct
-// 
+//
 // Checks that the intial environment is cloned when returned (as the env now has destructive updates)
 //
 

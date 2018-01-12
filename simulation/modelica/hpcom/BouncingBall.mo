@@ -15,6 +15,6 @@ equation
       flying = v_new > 0;
       reinit(v,v_new);
     end when;
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="3.2.2")));
 end BouncingBall;
 
