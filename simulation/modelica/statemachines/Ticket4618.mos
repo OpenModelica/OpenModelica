@@ -1,0 +1,19 @@
+// name:     Ticket4618
+// keywords: state machines
+// status: correct
+//
+
+loadFile("Ticket4618.mo");
+echo(false);
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+simulate(Ticket4618, startTime=0, stopTime=1.0, numberOfIntervals=0); getErrorString();
+echo(true);
+val(s1.x1,1.0);
+val(s2.x2,1.0);
+
+// Result:
+// true
+// true
+// 0.7
+// 0.4
+// endResult

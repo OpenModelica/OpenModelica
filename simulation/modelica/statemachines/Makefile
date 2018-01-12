@@ -12,6 +12,7 @@ ticket4271.mos \
 EnteringByReset.mos \
 ConferenceTut1DeadEnd.mos \
 SMGraphicalTestCases_DeepHierarchy.mos \
+Ticket4618.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
