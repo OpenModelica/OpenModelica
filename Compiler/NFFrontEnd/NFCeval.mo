@@ -59,8 +59,7 @@ uniontype EvalTarget
   end DIMENSION;
 
   record ATTRIBUTE
-    Expression exp;
-    SourceInfo info;
+    Binding binding;
   end ATTRIBUTE;
 
   record RANGE
@@ -102,7 +101,7 @@ uniontype EvalTarget
   algorithm
     info := match target
       case DIMENSION() then target.info;
-      case ATTRIBUTE() then target.info;
+      case ATTRIBUTE() then Binding.getInfo(target.binding);
       case RANGE() then target.info;
       case CONDITION() then target.info;
     end match;

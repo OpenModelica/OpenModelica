@@ -116,15 +116,17 @@ uniontype ModifierScope
     end match;
   end toString;
 
-  function isClass
+  function toElementType
     input ModifierScope scope;
-    output Boolean isClass;
+    output ElementType origin;
+    import NFBindingOrigin.ElementType;
   algorithm
-    isClass := match scope
-      case CLASS() then true;
-      else false;
+    origin := match scope
+      case COMPONENT() then ElementType.COMPONENT;
+      case CLASS() then ElementType.CLASS;
+      case EXTENDS() then ElementType.EXTENDS;
     end match;
-  end isClass;
+  end toElementType;
 end ModifierScope;
 
 uniontype Modifier
@@ -169,8 +171,9 @@ public
 
       case SCode.MOD()
         algorithm
-          is_each := SCode.eachBool(mod.eachPrefix) or ModifierScope.isClass(modScope);
-          binding := Binding.fromAbsyn(mod.binding, is_each, level, scope, mod.info);
+          is_each := SCode.eachBool(mod.eachPrefix);
+          binding := Binding.fromAbsyn(mod.binding, is_each, level,
+             scope, mod.info, ModifierScope.toElementType(modScope));
           lvl := if is_each then level + 1 else level;
           submod_lst := list((m.ident, createSubMod(m, modScope, lvl, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,

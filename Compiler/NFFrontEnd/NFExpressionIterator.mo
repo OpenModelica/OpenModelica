@@ -33,6 +33,7 @@ encapsulated uniontype NFExpressionIterator
 protected
   import ExpressionIterator = NFExpressionIterator;
   import ComponentRef = NFComponentRef;
+  import BindingOrigin = NFBindingOrigin;
 
 public
   import Expression = NFExpression;
@@ -103,8 +104,8 @@ public
   algorithm
     iterator := match binding
       case Binding.TYPED_BINDING()
-        then if binding.originLevel > 0 then
-          fromExp(binding.bindingExp) else EACH_ITERATOR(binding.bindingExp);
+        then if BindingOrigin.isEach(binding.origin) or BindingOrigin.isFromClass(binding.origin) then
+          EACH_ITERATOR(binding.bindingExp) else fromExp(binding.bindingExp);
 
       case Binding.FLAT_BINDING()
         then SCALAR_ITERATOR(binding.bindingExp);

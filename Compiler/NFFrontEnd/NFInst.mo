@@ -92,6 +92,7 @@ import ComplexType = NFComplexType;
 import Package = NFPackage;
 import NFFunction.Function;
 import FlatModel = NFFlatModel;
+import BindingOrigin = NFBindingOrigin;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -1464,9 +1465,9 @@ algorithm
 
     case Binding.RAW_BINDING()
       algorithm
-        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
+        bind_exp := instExp(binding.bindingExp, binding.scope, BindingOrigin.info(binding.origin));
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.originLevel, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.origin);
 
     else binding;
   end match;

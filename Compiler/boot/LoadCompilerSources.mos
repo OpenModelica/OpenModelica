@@ -89,6 +89,7 @@ if true then /* Suppress output */
 
   // "NFFrontEnd";
     "../NFFrontEnd/NFBinding.mo",
+    "../NFFrontEnd/NFBindingOrigin.mo",
     "../NFFrontEnd/NFBuiltin.mo",
     "../NFFrontEnd/NFBuiltinFuncs.mo",
     "../NFFrontEnd/NFCall.mo",

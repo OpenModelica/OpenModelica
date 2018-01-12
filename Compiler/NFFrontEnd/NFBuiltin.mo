@@ -44,6 +44,7 @@ public
 import Absyn;
 import SCode;
 import Binding = NFBinding;
+import BindingOrigin = NFBindingOrigin;
 import NFClass.Class;
 import NFClassTree;
 import NFComponent.Component;
@@ -196,40 +197,35 @@ constant Binding STATESELECT_NEVER_BINDING =
     Expression.ENUM_LITERAL(STATESELECT_TYPE, "never", 1),
     STATESELECT_TYPE,
     Variability.CONSTANT,
-    -1,
-    Absyn.dummyInfo);
+    BindingOrigin.ORIGIN(-1, NFBindingOrigin.ElementType.CLASS, Absyn.dummyInfo));
 
 constant Binding STATESELECT_AVOID_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE, "avoid", 2),
     STATESELECT_TYPE,
     Variability.CONSTANT,
-    -1,
-    Absyn.dummyInfo);
+    BindingOrigin.ORIGIN(-1, NFBindingOrigin.ElementType.CLASS, Absyn.dummyInfo));
 
 constant Binding STATESELECT_DEFAULT_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE, "default", 3),
     STATESELECT_TYPE,
     Variability,
-    -1,
-    Absyn.dummyInfo);
+    BindingOrigin.ORIGIN(-1, NFBindingOrigin.ElementType.CLASS, Absyn.dummyInfo));
 
 constant Binding STATESELECT_PREFER_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE, "prefer", 4),
     STATESELECT_TYPE,
     Variability.CONSTANT,
-    -1,
-    Absyn.dummyInfo);
+    BindingOrigin.ORIGIN(-1, NFBindingOrigin.ElementType.CLASS, Absyn.dummyInfo));
 
 constant Binding STATESELECT_ALWAYS_BINDING =
   Binding.TYPED_BINDING(
     Expression.ENUM_LITERAL(STATESELECT_TYPE, "always", 5),
     STATESELECT_TYPE,
     Variability.CONSTANT,
-    -1,
-    Absyn.dummyInfo);
+    BindingOrigin.ORIGIN(-1, NFBindingOrigin.ElementType.CLASS, Absyn.dummyInfo));
 
 constant InstNode STATESELECT_NEVER =
   InstNode.COMPONENT_NODE("never",

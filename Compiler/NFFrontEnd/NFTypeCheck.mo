@@ -61,6 +61,7 @@ import DAEUtil;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
+import BindingOrigin = NFBindingOrigin;
 
 public
 type MatchKind = enumeration(
@@ -2426,15 +2427,17 @@ algorithm
       Type ty, comp_ty;
       InstNode parent;
       list<Dimension> dims;
+      Integer binding_level;
 
     case Binding.TYPED_BINDING()
       algorithm
         comp_ty := componentType;
+        binding_level := BindingOrigin.level(binding.origin);
 
-        if binding.originLevel >= 0 then
+        if binding_level >= 0 then
           parent := component;
 
-          for i in 1:InstNode.level(component) - binding.originLevel loop
+          for i in 1:InstNode.level(component) - binding_level loop
             parent := InstNode.parent(component);
             dims := Type.arrayDims(InstNode.getType(parent));
             comp_ty := Type.liftArrayLeftList(comp_ty, dims);
@@ -2446,10 +2449,10 @@ algorithm
         if not isCompatibleMatch(ty_match) then
           Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
             {name, Binding.toString(binding), Type.toString(comp_ty),
-             Type.toString(binding.bindingType)}, binding.info);
+             Type.toString(binding.bindingType)}, Binding.getInfo(binding));
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.originLevel, binding.info);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.origin);
         end if;
       then
         ();

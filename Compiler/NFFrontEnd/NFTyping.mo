@@ -83,6 +83,7 @@ import Package = NFPackage;
 import NFFunction.Function;
 import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
+import BindingOrigin = NFBindingOrigin;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -499,7 +500,7 @@ algorithm
           case Binding.UNTYPED_BINDING()
             algorithm
               prop_dims := InstNode.countDimensions(InstNode.parent(component),
-                InstNode.level(component) - binding.originLevel);
+                InstNode.level(component) - BindingOrigin.level(binding.origin));
               dim := typeExpDim(binding.bindingExp, index + prop_dims,
                 intBitOr(origin, ExpOrigin.DIMENSION), info);
             then
@@ -509,7 +510,7 @@ algorithm
           case Binding.TYPED_BINDING()
             algorithm
               prop_dims := InstNode.countDimensions(InstNode.parent(component),
-                InstNode.level(component) - binding.originLevel);
+                InstNode.level(component) - BindingOrigin.level(binding.origin));
               dim := nthDimensionBoundsChecked(binding.bindingType, index + prop_dims);
             then
               dim;
@@ -653,12 +654,14 @@ algorithm
       Expression exp;
       Type ty;
       Variability var;
+      SourceInfo info;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
-        (exp, ty, var) := typeExp(exp, origin, binding.info);
+        info := Binding.getInfo(binding);
+        (exp, ty, var) := typeExp(exp, origin, info);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.originLevel, binding.info);
+        Binding.TYPED_BINDING(exp, ty, var, binding.origin);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -684,8 +687,9 @@ algorithm
       SourceInfo info;
       MatchKind mk;
 
-    case Binding.UNTYPED_BINDING(bindingExp = exp, info = info)
+    case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
+        info := Binding.getInfo(condition);
         (exp, ty, var) := typeExp(exp, intBitOr(origin, ExpOrigin.CONDITION), info);
         (exp, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), exp);
 
@@ -752,8 +756,8 @@ function typeTypeAttribute
 protected
   String name;
   Binding binding;
+  BindingOrigin binding_origin;
   Type expected_ty, comp_ty;
-  list<Dimension> dims;
 algorithm
   () := match attribute
     // Normal modifier with no submodifiers.
@@ -761,11 +765,13 @@ algorithm
       algorithm
         // Use the given function to get the expected type of the attribute.
         expected_ty := attrTyFn(name, ty, Modifier.info(attribute));
+        binding_origin := Binding.getOrigin(binding);
 
         // Add the component's dimensions to the expected type, unless the
         // binding is declared 'each'.
-        if not Binding.isEach(binding) then
+        if not (BindingOrigin.isEach(binding_origin) or BindingOrigin.isFromClass(binding_origin)) then
           comp_ty := InstNode.getType(component);
+
           if Type.isArray(comp_ty) then
             expected_ty := Type.ARRAY(expected_ty, Type.arrayDims(comp_ty));
           end if;
@@ -780,7 +786,7 @@ algorithm
           Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
             {name, Prefixes.variabilityString(Variability.PARAMETER),
             "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
-            Binding.getInfo(binding));
+            BindingOrigin.info(binding_origin));
           fail();
         end if;
 
@@ -818,10 +824,10 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
-        exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding.bindingExp, binding.info));
+        exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
         exp := SimplifyExp.simplifyExp(exp);
       then
-        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.originLevel, binding.info);
+        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.origin);
 
     else
       algorithm

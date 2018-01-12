@@ -36,35 +36,35 @@ public
   import SCode;
   import Type = NFType;
   import NFPrefixes.Variability;
+  import BindingOrigin = NFBindingOrigin;
 
 protected
   import Dump;
   import Binding = NFBinding;
 
 public
+  type Origin = enumeration(COMPONENT, EXTENDS, CLASS);
+
   record UNBOUND end UNBOUND;
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
     InstNode scope;
-    Integer originLevel;
-    SourceInfo info;
+    BindingOrigin origin;
   end RAW_BINDING;
 
   record UNTYPED_BINDING
     Expression bindingExp;
     Boolean isProcessing;
     InstNode scope;
-    Integer originLevel;
-    SourceInfo info;
+    BindingOrigin origin;
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
     Expression bindingExp;
     Type bindingType;
     Variability variability;
-    Integer originLevel;
-    SourceInfo info;
+    BindingOrigin origin;
   end TYPED_BINDING;
 
   record FLAT_BINDING
@@ -78,6 +78,7 @@ public
     input Integer level;
     input InstNode scope;
     input SourceInfo info;
+    input BindingOrigin.ElementType ty = NFBindingOrigin.ElementType.COMPONENT;
     output Binding binding;
   algorithm
     binding := match bindingExp
@@ -85,7 +86,7 @@ public
         Absyn.Exp exp;
 
       case SOME(exp)
-        then RAW_BINDING(exp, scope, if eachPrefix then -level else level, info);
+        then RAW_BINDING(exp, scope, BindingOrigin.create(eachPrefix, level, ty, info));
 
       else UNBOUND();
     end match;
@@ -168,11 +169,22 @@ public
   algorithm
     info := match binding
       case UNBOUND() then Absyn.dummyInfo;
-      case RAW_BINDING() then binding.info;
-      case UNTYPED_BINDING() then binding.info;
-      case TYPED_BINDING() then binding.info;
+      case RAW_BINDING() then binding.origin.info;
+      case UNTYPED_BINDING() then binding.origin.info;
+      case TYPED_BINDING() then binding.origin.info;
     end match;
   end getInfo;
+
+  function getOrigin
+    input Binding binding;
+    output BindingOrigin origin;
+  algorithm
+    origin := match binding
+      case RAW_BINDING() then binding.origin;
+      case UNTYPED_BINDING() then binding.origin;
+      case TYPED_BINDING() then binding.origin;
+    end match;
+  end getOrigin;
 
   function getType
     input Binding binding;
@@ -186,9 +198,9 @@ public
     output Boolean isEach;
   algorithm
     isEach := match binding
-      case RAW_BINDING() then binding.originLevel < 0;
-      case UNTYPED_BINDING() then binding.originLevel < 0;
-      case TYPED_BINDING() then binding.originLevel < 0;
+      case RAW_BINDING() then BindingOrigin.isEach(binding.origin);
+      case UNTYPED_BINDING() then BindingOrigin.isEach(binding.origin);
+      case TYPED_BINDING() then BindingOrigin.isEach(binding.origin);
       else false;
     end match;
   end isEach;

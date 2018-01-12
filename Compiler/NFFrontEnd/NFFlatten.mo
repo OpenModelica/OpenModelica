@@ -77,6 +77,7 @@ import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
 import NFPrefixes.Variability;
 import Variable = NFVariable;
+import BindingOrigin = NFBindingOrigin;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -335,13 +336,16 @@ algorithm
   () := match binding
     local
       list<Subscript> subs;
+      Integer binding_level;
 
     case Binding.UNBOUND() then ();
 
     case Binding.TYPED_BINDING()
       algorithm
-        if binding.originLevel > 0 then
-          subs := List.flatten(ComponentRef.subscriptsN(prefix, InstNode.level(component) - binding.originLevel));
+        binding_level := BindingOrigin.level(binding.origin);
+
+        if binding_level > 0 then
+          subs := List.flatten(ComponentRef.subscriptsN(prefix, InstNode.level(component) - binding_level));
           binding.bindingExp := Expression.subscript(binding.bindingExp, subs);
         end if;
       then
