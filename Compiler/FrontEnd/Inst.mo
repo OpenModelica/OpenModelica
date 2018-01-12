@@ -327,9 +327,9 @@ algorithm
 
     // instantiate a class
     case (cache,ih,cdecls as _::_,path)
-      equation
-        (outCache,outEnv,outIH,outDAElist) = instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
-        NFUnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
+      algorithm
+        (outCache,outEnv,outIH,outDAElist) := instantiateClass_dispatch(cache,ih,cdecls,path,doSCodeDep);
+        outDAElist := NFUnitCheck.checkUnits(outDAElist,FCore.getFunctionTree(outCache));
       then
         (outCache,outEnv,outIH,outDAElist);
 

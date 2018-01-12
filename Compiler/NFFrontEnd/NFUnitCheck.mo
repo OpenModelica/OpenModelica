@@ -43,8 +43,9 @@ end Functionargs;
 public function checkUnits
   input DAE.DAElist inDAE;
   input DAE.FunctionTree func;
+  output DAE.DAElist outDAE = inDAE;
 protected
-  DAE.DAElist elts1, elts2, elts3;
+  DAE.DAElist elts1, elts2;
   list<DAE.Element> eqlist, varlist, newdaelist;
   list<DAE.Function> functionlist;
   list<Functionargs> args;
@@ -76,13 +77,13 @@ algorithm
     HtCr2U2 := BaseHashTable.copy(HtCr2U1);
     ((HtCr2U2, HtS2U, HtU2S)) := algo(varlist, eqlist, args, HtCr2U2, HtS2U, HtU2S);
     varlist := List.map2(varlist, returnVar, HtCr2U2, HtU2S);
-    newdaelist := List.append_reverse(varlist, eqlist);
+    newdaelist := listAppend(varlist, eqlist);
     if Flags.isSet(Flags.DUMP_UNIT) then
       BaseHashTable.dumpHashTable(HtCr2U2);
       print("######## UnitCheck COMPLETED ########\n");
     end if;
     notification(HtCr2U1, HtCr2U2, HtU2S);
-    elts3 := updateDAElist(inDAE, listReverse(newdaelist));
+    outDAE := updateDAElist(inDAE, newdaelist);
   else
     Error.addInternalError(getInstanceName() + ": unit check module failed", sourceInfo());
   end try;
