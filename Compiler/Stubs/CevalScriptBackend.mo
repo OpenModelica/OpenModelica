@@ -14,7 +14,7 @@ function runFrontEnd
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   output FCore.Cache cache;
   output FCore.Graph env;
-  output DAE.DAElist dae;
+  output Option<DAE.DAElist> dae;
   output GlobalScript.SymbolTable st;
 algorithm
   assert(false, getInstanceName());

@@ -901,6 +901,8 @@ uniontype FunctionArgs "The FunctionArgs uniontype consists of a list of positio
 
 end FunctionArgs;
 
+constant FunctionArgs emptyFunctionArgs = FUNCTIONARGS({},{});
+
 uniontype ReductionIterType
   record COMBINE "Reductions are by default calculated as all combinations of the iterators"
   end COMBINE;

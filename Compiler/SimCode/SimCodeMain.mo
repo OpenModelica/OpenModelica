@@ -95,6 +95,20 @@ import SymbolicJacobian;
 import System;
 import Util;
 
+public
+
+uniontype TranslateModelKind
+  record NORMAL
+  end NORMAL;
+  record XML
+  end XML;
+  record FMU
+    String version;
+    String kind;
+    String targetName;
+  end FMU;
+end TranslateModelKind;
+
 public function createSimulationSettings
   input Real startTime;
   input Real stopTime;
@@ -132,7 +146,7 @@ protected function generateModelCodeFMU "
   input String FMUType;
   input String filenamePrefix;
   input String fmuTargetName;
-  input SimCode.SimulationSettings simSettings;
+  input Option<SimCode.SimulationSettings> simSettings;
   output list<String> libs;
   output String fileDir;
   output Real timeSimCode;
@@ -155,7 +169,7 @@ algorithm
     SimCodeUtil.createFunctions(p, inBackendDAE);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
     inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions,
-    includes, includeDirs, libs, libPaths, p, SOME(simSettings), recordDecls,
+    includes, includeDirs, libs, libPaths, p, simSettings, recordDecls,
     literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion,
     fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
 
@@ -209,189 +223,6 @@ algorithm
   callTargetTemplatesXML(simCode, Config.simCodeTarget());
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeXML;
-
-
-public function translateModelFMU
-"Entry point to translate a Modelica model for FMU export.
-
- Called from other places in the compiler."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input String inFMUVersion;
-  input String inFMUType;
-  input String inFileNamePrefix;
-  input String fmuTargetName;
-  input Boolean addDummy "if true, add a dummy state";
-  input SimCode.SimulationSettings inSimSettings;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFMUVersion,inFMUType,inFileNamePrefix)
-    local
-      String FMUVersion,FMUType,filenameprefix,file_dir,resstr;
-      DAE.DAElist dae;
-      FCore.Graph graph;
-      BackendDAE.BackendDAE dlow,dlow_1;
-      list<String> libs;
-      GlobalScript.SymbolTable st;
-      Absyn.Program p;
-      //DAE.Exp fileprefix;
-      FCore.Cache cache;
-      DAE.FunctionTree funcs;
-      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      String description;
-
-      BackendDAE.BackendDAE initDAE;
-      Option<BackendDAE.BackendDAE> initDAE_lambda0;
-      list<BackendDAE.Equation> removedInitialEquationLst;
-      BackendDAE.SymbolicJacobians fmiDer;
-      list<String> strPostOptModules;
-      Option<list<String>> strOptPostOptModules;
-
-    case (cache,graph,_,st as GlobalScript.SYMBOLTABLE(ast=p),FMUVersion,FMUType,filenameprefix)
-      equation
-        /* calculate stuff that we need to create SimCode data structure */
-        System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
-        (cache,graph,dae,st) = CevalScriptBackend.runFrontEnd(cache,graph,className,st,false);
-        timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
-        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-
-        _ = FCore.getFunctionTree(cache);
-        dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
-        description = DAEUtil.daeDescription(dae);
-        dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-
-        //enable postOptModule to create alias variables for output states
-        if FMI.isFMIVersion20(FMUVersion) then
-          strPostOptModules = BackendDAEUtil.getPostOptModulesString();
-          strPostOptModules = "createAliasVarsForOutputStates"::strPostOptModules;
-          strOptPostOptModules = SOME(strPostOptModules);
-        else
-          strOptPostOptModules = NONE();
-        end if;
-        (dlow_1, initDAE, initDAE_lambda0, _, removedInitialEquationLst) = BackendDAEUtil.getSolvedSystem(dlow, inFileNamePrefix, strPostOptModules=strOptPostOptModules);
-        // generate derivatives
-        if FMI.isFMIVersion20(FMUVersion) then
-          // activate symolic jacobains for fmi 2.0
-          // to provide dependence information and partial derivatives
-          (fmiDer, funcs) = SymbolicJacobian.createFMIModelDerivatives(dlow_1);
-          dlow_1 = BackendDAEUtil.setFunctionTree(dlow_1, funcs);
-        else
-          fmiDer = {};
-        end if;
-        timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
-
-        (libs,file_dir,timeSimCode,timeTemplates) =
-          generateModelCodeFMU(dlow_1, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, p, className, FMUVersion, FMUType, filenameprefix, fmuTargetName, inSimSettings);
-
-        resultValues =
-        {("timeTemplates",Values.REAL(timeTemplates)),
-          ("timeSimCode",  Values.REAL(timeSimCode)),
-          ("timeBackend",  Values.REAL(timeBackend)),
-          ("timeFrontend", Values.REAL(timeFrontend))
-          };
-
-        resstr = fmuTargetName + ".fmu";
-        if not Config.getRunningTestsuite() then
-          resstr = System.pwd() + System.pathDelimiter() + resstr;
-        end if;
-        ExecStat.execStat("translateModelFMU complete");
-      then
-        (cache, Values.STRING(resstr), st, dlow_1, libs, file_dir, resultValues);
-    else
-      equation
-        resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
-        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-      then
-        fail();
-  end matchcontinue;
-end translateModelFMU;
-
-
-public function translateModelXML
-"Entry point to translate a Modelica model for XML export.
-
- Called from other places in the compiler."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path className "path for the model";
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input String inFileNamePrefix;
-  input Boolean addDummy "if true, add a dummy state";
-  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
-  matchcontinue (inCache, inEnv, inInteractiveSymbolTable, inFileNamePrefix)
-    local
-      String filenameprefix, file_dir, resstr, description;
-      DAE.DAElist dae;
-      FCore.Graph graph;
-      BackendDAE.BackendDAE dlow, dlow_1;
-      list<String> libs;
-      GlobalScript.SymbolTable st;
-      Absyn.Program p;
-      //DAE.Exp fileprefix;
-      FCore.Cache cache;
-      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
-      BackendDAE.BackendDAE initDAE;
-      Option<BackendDAE.BackendDAE> initDAE_lambda0;
-      list<BackendDAE.Equation> removedInitialEquationLst;
-
-    case (cache, graph, st as GlobalScript.SYMBOLTABLE(ast=p), filenameprefix) equation
-      /* calculate stuff that we need to create SimCode data structure */
-      System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
-      //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,graph, fileprefix, true, SOME(st),NONE(), msg);
-      (cache,graph,dae,st) = CevalScriptBackend.runFrontEnd(cache,graph,className,st,false);
-      timeFrontend = System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
-      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-      _ = FCore.getFunctionTree(cache);
-      dae = DAEUtil.transformationsBeforeBackend(cache,graph,dae);
-      description = DAEUtil.daeDescription(dae);
-      dlow = BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
-      (dlow_1, initDAE, initDAE_lambda0, _, removedInitialEquationLst) = BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
-      timeBackend = System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
-
-      (libs,file_dir,timeSimCode,timeTemplates) =
-        generateModelCodeXML(dlow_1, initDAE, initDAE_lambda0, removedInitialEquationLst, p, className, filenameprefix, inSimSettingsOpt);
-      resultValues =
-      {("timeTemplates",Values.REAL(timeTemplates)),
-        ("timeSimCode",  Values.REAL(timeSimCode)),
-        ("timeBackend",  Values.REAL(timeBackend)),
-        ("timeFrontend", Values.REAL(timeFrontend))
-        };
-
-      resstr = filenameprefix + ".xml";
-      if not Config.getRunningTestsuite() then
-        resstr = System.pwd() + System.pathDelimiter() + resstr;
-      end if;
-    then (cache, Values.STRING(resstr), st, dlow_1, libs, file_dir, resultValues);
-
-    else equation
-      resstr = Absyn.pathStringNoQual(className);
-      resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
-      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-    then fail();
-  end matchcontinue;
-end translateModelXML;
-
-
 
 public function generateModelCode "
   Generates code for a model by creating a SimCode structure and calling the
@@ -873,50 +704,56 @@ algorithm
 end callTargetTemplatesXML;
 
 public function translateModel "
-  Entry point to translate a Modelica model for simulation.
+  Entry point to translate a Modelica model for simulation / FMU / XML.
   Called from other places in the compiler."
-  input FCore.Cache inCache;
+  output Boolean success;
+  input TranslateModelKind kind;
+  input output FCore.Cache cache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  input output GlobalScript.SymbolTable st;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  input Absyn.FunctionArgs args "labels for remove terms";
-  output FCore.Cache outCache;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  input Absyn.FunctionArgs args=Absyn.emptyFunctionArgs "labels for remove terms";
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
 protected
   Boolean generateFunctions = false;
+  Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0, timeFrontend=0.0;
+  type State = enumeration(frontend, backend, templates, simcode);
+  State state = State.frontend;
 algorithm
-  (outCache, outInteractiveSymbolTable, outBackendDAE, outStringLst, outFileDir, resultValues) :=
-  matchcontinue (inCache, inEnv, className, inInteractiveSymbolTable, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
+  (success, outBackendDAE, outStringLst, outFileDir) :=
+  matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
       String filenameprefix, file_dir, resstr, description;
       DAE.DAElist dae;
       FCore.Graph graph;
       BackendDAE.BackendDAE dlow, dlow_1;
+      BackendDAE.Shared shared;
       list<String> libs;
-      GlobalScript.SymbolTable st;
-      Absyn.Program p;
-      //DAE.Exp fileprefix;
-      FCore.Cache cache;
-      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
       BackendDAE.BackendDAE initDAE;
       Option<BackendDAE.BackendDAE> initDAE_lambda0;
       Option<BackendDAE.InlineData> inlineData;
       list<BackendDAE.Equation> removedInitialEquationLst;
       Real fsize;
+      Option<DAE.DAElist> odae;
+      Option<list<String>> strOptPostOptModules;
+      Boolean isFMI2;
+      String fmiVersion;
+      BackendDAE.SymbolicJacobians fmiDer;
+      DAE.FunctionTree funcs;
 
-    case (cache, graph, _, (st as GlobalScript.SYMBOLTABLE(ast=p)), filenameprefix, _, _, _) algorithm
+    case (graph, _, filenameprefix, _, _, _) algorithm
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
-      (cache, graph, dae, st) := CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
+      (cache, graph, odae, st) := CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
       ExecStat.execStat("FrontEnd");
+      SOME(dae) := odae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dae, filenameprefix, "dae");
@@ -929,6 +766,7 @@ algorithm
       timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
+      state := State.backend;
       dae := DAEUtil.transformationsBeforeBackend(cache, graph, dae);
       ExecStat.execStat("Transformations before backend");
 
@@ -954,9 +792,28 @@ algorithm
         ExecStat.execStat("Serialize dlow");
       end if;
 
+      isFMI2 := match kind
+        case TranslateModelKind.FMU(version=fmiVersion) then FMI.isFMIVersion20(kind.version);
+        else false;
+      end match;
+      // FMI 2.0: enable postOptModule to create alias variables for output states
+      strOptPostOptModules := if isFMI2 then SOME("createAliasVarsForOutputStates"::BackendDAEUtil.getPostOptModulesString()) else NONE();
+
       //BackendDump.printBackendDAE(dlow);
-      (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix);
+      (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPostOptModules=strOptPostOptModules);
+
+      // generate derivatives
+      if isFMI2 then
+        // activate symolic jacobains for fmi 2.0
+        // to provide dependence information and partial derivatives
+        (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow);
+        dlow := BackendDAEUtil.setFunctionTree(dlow, funcs);
+      else
+        fmiDer := {};
+      end if;
+
       timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+      state := State.simcode;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, filenameprefix, "simDAE");
@@ -965,27 +822,61 @@ algorithm
         ExecStat.execStat("Serialize solved system");
       end if;
 
-      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, p, className, filenameprefix, inSimSettingsOpt, args);
+      (libs, file_dir, timeSimCode, timeTemplates) := match kind
+        case TranslateModelKind.NORMAL()
+          algorithm
+            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, st.ast, className, filenameprefix, inSimSettingsOpt, args);
+          then (libs, file_dir, timeSimCode, timeTemplates);
+        case TranslateModelKind.FMU()
+          algorithm
+            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, st.ast, className, kind.version, kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
+          then (libs, file_dir, timeSimCode, timeTemplates);
+        case TranslateModelKind.XML()
+          algorithm
+            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeXML(dlow, initDAE, initDAE_lambda0, removedInitialEquationLst, st.ast, className, filenameprefix, inSimSettingsOpt);
+          then (libs, file_dir, timeSimCode, timeTemplates);
+        else
+          algorithm
+            Error.addInternalError("Unknown translateModel kind: " + anyString(kind), sourceInfo());
+          then fail();
+      end match;
+    then (true, dlow, libs, file_dir);
 
-      resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
-                      ("timeSimCode", Values.REAL(timeSimCode)),
-                      ("timeBackend", Values.REAL(timeBackend)),
-                      ("timeFrontend", Values.REAL(timeFrontend))};
-    then (cache, st, dlow, libs, file_dir, resultValues);
-
-    case (_, _, _, _, _, _, _, _) equation
-      if generateFunctions then
-        Flags.set(Flags.GEN, true);
-      end if;
-      true = Flags.isSet(Flags.FAILTRACE);
-      resstr = Absyn.pathStringNoQual(className);
-      resstr = stringAppendList({"SimCode: The model ", resstr, " could not be translated"});
-      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-    then fail();
+    else
+      algorithm
+        _ := match kind
+          case TranslateModelKind.NORMAL()
+            algorithm
+              if Flags.isSet(Flags.FAILTRACE) then
+                resstr := Absyn.pathStringNoQual(className);
+                resstr := stringAppendList({"SimCode: The model ", resstr, " could not be translated"});
+                Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+              end if;
+            then ();
+          case TranslateModelKind.XML()
+            algorithm
+              Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + ": The model ",Absyn.pathStringNoQual(className)," could not be translated to XML"});
+            then ();
+        end match;
+        if state==State.frontend then
+          timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+        elseif state==State.backend then
+          timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+        elseif state==State.backend then
+          timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+        else
+          timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+        end if;
+        shared := BackendDAEUtil.createEmptyShared(BackendDAE.BackendDAEType.SIMULATION(), BackendDAE.EXTRA_INFO("",""), cache, inEnv);
+      then (false, BackendDAE.DAE({}, shared), {}, "");
   end matchcontinue;
   if generateFunctions then
     Flags.set(Flags.GEN, true);
   end if;
+  resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
+                  ("timeSimCode", Values.REAL(timeSimCode)),
+                  ("timeBackend", Values.REAL(timeBackend)),
+                  ("timeFrontend", Values.REAL(timeFrontend))};
 end translateModel;
 
 protected function serializeNotify<T>

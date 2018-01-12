@@ -38,26 +38,8 @@ algorithm
   assert(false, getInstanceName());
 end generateModelCode;
 
-function translateModelXML<A,B,C,D,E>
-  input A inCache;
-  input B inEnv;
-  input C className;
-  input D inInteractiveSymbolTable;
-  input String inFileNamePrefix;
-  input Boolean addDummy;
-  input Option<E> inSimSettingsOpt;
-  output A outCache;
-  output Values.Value outValue;
-  output D outInteractiveSymbolTable;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  assert(false, getInstanceName());
-end translateModelXML;
-
-function translateModel<A,B,C,D,E,F>
+function translateModel<A,B,C,D,E,F,G>
+  input G x;
   input A inCache;
   input B inEnv;
   input C className;
@@ -75,27 +57,6 @@ function translateModel<A,B,C,D,E,F>
 algorithm
   assert(false, getInstanceName());
 end translateModel;
-
-function translateModelFMU<A,B,C,D,E>
-  input A inCache;
-  input B inEnv;
-  input C className;
-  input D inInteractiveSymbolTable;
-  input String inFMUVersion;
-  input String inFMUType;
-  input String inFileNamePrefix;
-  input Boolean addDummy;
-  input Option<E> inSimSettingsOpt;
-  output A outCache;
-  output Values.Value outValue;
-  output D outInteractiveSymbolTable;
-  output BackendDAE.BackendDAE outBackendDAE;
-  output list<String> outStringLst;
-  output String outFileDir;
-  output list<tuple<String,Values.Value>> resultValues;
-algorithm
-  assert(false, getInstanceName());
-end translateModelFMU;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeMain;

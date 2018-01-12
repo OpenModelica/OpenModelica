@@ -697,6 +697,7 @@ algorithm
       Absyn.ClassDef cdef;
       Absyn.Exp aexp;
       DAE.DAElist dae;
+      Option<DAE.DAElist> odae;
       BackendDAE.BackendDAE daelow,optdae;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqnarr;
@@ -1290,9 +1291,9 @@ algorithm
     case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_},st,_)
       equation
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
-        (cache,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, SOME(simSettings));
+        (b,cache,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, SOME(simSettings));
       then
-        (cache,Values.BOOL(true),st_1);
+        (cache,Values.BOOL(b),st_1);
 
     case (cache,_,"translateModel",_,st,_)
       then (cache,Values.BOOL(false),st);
@@ -1411,33 +1412,43 @@ algorithm
       equation
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
+        (b,cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
         executable = if not Config.getRunningTestsuite() then compileDir + executable else executable;
       then
-        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
+        (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}),st);
 
-        case (cache,env,"buildLabel",vals,st,_)
+    case (cache,_,"buildModel",_,st,_) /* failing build_model */
+      then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
+
+    case (cache,env,"buildLabel",vals,st,_)
       equation
-    Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
-    //Flags.set(Flags.WRITE_TO_BUFFER,true);
-    List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+        Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, true);
+        //Flags.set(Flags.WRITE_TO_BUFFER,true);
+        List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-    (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
+        (b,cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
       then
-        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
+        (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}),st);
 
      case (cache,env,"reduceTerms",vals,st,_)
       equation
-      Flags.setConfigBool(Flags.REDUCE_TERMS, true);
-     // Flags.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
-    Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
-    _=Flags.disableDebug(Flags.WRITE_TO_BUFFER);
-    List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
+        Flags.setConfigBool(Flags.REDUCE_TERMS, true);
+        // Flags.setConfigBool(Flags.DISABLE_EXTRA_LABELING, true);
+        Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE, false);
+        _=Flags.disableDebug(Flags.WRITE_TO_BUFFER);
+        List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-    (cache,st,compileDir,executable,_,_,initfilename,_,_) = buildLabeledModel(cache,env, vals, st, msg);
+        if listLength(vals)<>13 then
+          Error.addInternalError("reduceTerms expected 13 arguments", sourceInfo());
+        end if;
+        v=listGet(vals,13);
+        vals=listDelete(vals,13);
+        /* labelstoCancel; doesn't do anything */
+
+        (b,cache,st,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, st, msg);
       then
-        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
+        (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}),st);
     case(cache,env,"buildOpenTURNSInterface",vals,st,_)
       equation
         (cache,scriptFile,st) = buildOpenTURNSInterface(cache,env,vals,st,msg);
@@ -1460,16 +1471,6 @@ algorithm
       then
         fail();
 
-    case (cache,_,"buildModel",_,st,_) /* failing build_model */
-      then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
-
-    case (cache,env,"buildModelBeast",vals,st,_)
-      equation
-        (cache,st,compileDir,executable,_,initfilename) = buildModelBeast(cache,env,vals,st,msg);
-        executable = if not Config.getRunningTestsuite() then compileDir + executable else executable;
-      then
-        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
-
     // adrpo: see if the model exists before simulation!
     case (cache,_,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as GlobalScript.SYMBOLTABLE(ast = p),_)
       equation
@@ -1481,30 +1482,36 @@ algorithm
         (cache,simValue,st);
 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
-      equation
+      algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        (b,cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) := buildModel(cache,env,vals,st_1,msg);
 
-        exeDir=compileDir;
-         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
-        SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str)
-           = simSettings;
-        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
-        logFile = stringAppend(executable,".log");
-        // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
-        // we should really have different log files for simulation/compilation!
-        // as the buildModel log file will be deleted here and that gives less information to the user!
-        if System.regularFileExists(logFile) then
-          0 = System.removeFile(logFile);
+        if b then
+          exeDir := compileDir;
+          (cache,simSettings) := calculateSimulationSettings(cache,env,vals,st_1,msg);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
+          result_file := stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
+          logFile := stringAppend(executable,".log");
+          // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
+          // we should really have different log files for simulation/compilation!
+          // as the buildModel log file will be deleted here and that gives less information to the user!
+          if System.regularFileExists(logFile) then
+            0 := System.removeFile(logFile);
+          end if;
+          sim_call := stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+          resI := System.systemCall(sim_call,logFile);
+          timeSimulation := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        else
+          result_file := "";
+          resI := 1;
+          timeSimulation := 0.0;
         end if;
-        sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        resI = System.systemCall(sim_call,logFile);
-        timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-        timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
+
+        timeTotal := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        (cache,simValue,newst) := createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
 
@@ -1580,41 +1587,53 @@ algorithm
 
     case (_, _, "copyClass", _, _, _) then (inCache, Values.BOOL(false), inSt);
 
-    case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(_))::_),st_1,_)
+    case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
-        Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
-        executableSuffixedExe = stringAppend(executable, System.getExeExt());
-        logFile = stringAppend(executable,".log");
-        if System.regularFileExists(logFile) then
-          0 = System.removeFile(logFile);
-        end if;
-        strlinearizeTime = realString(linearizeTime);
-        sim_call = stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+        (b,cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        if b then
+          Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
+          executableSuffixedExe = stringAppend(executable, System.getExeExt());
+          logFile = stringAppend(executable,".log");
+          if System.regularFileExists(logFile) then
+            0 = System.removeFile(logFile);
+          end if;
+          strlinearizeTime = realString(linearizeTime);
+          sim_call = stringAppendList({"\"",compileDir,executableSuffixedExe,"\""," ","-l=",strlinearizeTime," ",simflags});
+          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
 
-        if 0 == System.systemCall(sim_call,logFile) then
-          result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          if 0 == System.systemCall(sim_call,logFile) then
+            result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+            timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+            timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+            simValue = createSimulationResult(
+               result_file,
+               simOptionsAsString(vals),
+               System.readFile(logFile),
+               ("timeTotal", Values.REAL(timeTotal)) ::
+               ("timeSimulation", Values.REAL(timeSimulation)) ::
+              resultValues);
+            newst = GlobalScriptUtil.addVarToSymboltable(
+              DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
+              Values.STRING(result_file), FGraph.empty(), st);
+          else
+            res = "Succeeding building the linearized executable, but failed to run the linearize command: " + sim_call + "\n" + System.readFile(logFile);
+            simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
+            newst = st;
+          end if;
+        else
+          timeSimulation = 0.0;
           timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
           simValue = createSimulationResult(
-             result_file,
-             simOptionsAsString(vals),
-             System.readFile(logFile),
-             ("timeTotal", Values.REAL(timeTotal)) ::
-             ("timeSimulation", Values.REAL(timeSimulation)) ::
-            resultValues);
-          newst = GlobalScriptUtil.addVarToSymboltable(
-            DAE.CREF_IDENT("currentSimulationResult", DAE.T_STRING_DEFAULT, {}),
-            Values.STRING(result_file), FGraph.empty(), st);
-        else
-          res = "Succeeding building the linearized executable, but failed to run the linearize command: " + sim_call + "\n" + System.readFile(logFile);
-          simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
-          newst = st;
+               "",
+               simOptionsAsString(vals),
+               "Failed to run the linearize command: " + Absyn.pathString(className),
+               ("timeTotal", Values.REAL(timeTotal)) ::
+               ("timeSimulation", Values.REAL(timeSimulation)) ::
+              resultValues);
         end if;
       then
         (cache,simValue,newst);
@@ -1635,26 +1654,32 @@ algorithm
         Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
-        exeDir=compileDir;
-        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
-        SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
-        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
-        executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
-        logFile = stringAppend(executable,".log");
-        // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
-        // we should really have different log files for simulation/compilation!
-        // as the buildModel log file will be deleted here and that gives less information to the user!
-        if System.regularFileExists(logFile) then
-          0 = System.removeFile(logFile);
+        (b,cache,st,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        if b then
+          exeDir=compileDir;
+          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st_1,msg);
+          SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
+          result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+          executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
+          logFile = stringAppend(executable,".log");
+          // adrpo: log file is deleted by buildModel! do NOT DELTE IT AGAIN!
+          // we should really have different log files for simulation/compilation!
+          // as the buildModel log file will be deleted here and that gives less information to the user!
+          if System.regularFileExists(logFile) then
+            0 = System.removeFile(logFile);
+          end if;
+          sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
+          System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+          SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+          resI = System.systemCall(sim_call,logFile);
+          timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
+        else
+          result_file = "";
+          timeSimulation = 0.0;
+          resI = 1;
         end if;
-        sim_call = stringAppendList({"\"",exeDir,executableSuffixedExe,"\""," ",simflags});
-        System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
-        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        resI = System.systemCall(sim_call,logFile);
-        timeSimulation = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
+        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(b,resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file,logFile);
       then
         (cache,simValue,newst);
 
@@ -1667,9 +1692,9 @@ algorithm
 
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
-        (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
+        (cache,env,odae,st) = runFrontEnd(cache,env,className,st,true);
         ExecStat.execStatReset();
-        str = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
+        str = if isNone(odae) then "" else DAEDump.dumpStr(Util.getOption(odae),FCore.getFunctionTree(cache));
         ExecStat.execStat("DAEDump.dumpStr(" + Absyn.pathString(className) + ")");
       then
         (cache,Values.STRING(str),st);
@@ -2909,50 +2934,56 @@ algorithm
 end getIncidenceMatrix;
 
 public function runFrontEnd
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  input output FCore.Cache cache;
+  input output FCore.Graph env;
   input Absyn.Path className;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
+  output Option<DAE.DAElist> odae = NONE();
+  input output GlobalScript.SymbolTable st;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
-  output FCore.Cache cache;
-  output FCore.Graph env;
-  output DAE.DAElist dae;
-  output GlobalScript.SymbolTable st;
+protected
+  DAE.DAElist dae;
+  Boolean b;
 algorithm
   // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
-  st := runFrontEndLoadProgram(className, inInteractiveSymbolTable);
-  cache := FCore.setProgramInCache(inCache, GlobalScriptUtil.getSymbolTableAST(st));
-  if Flags.isSet(Flags.GC_PROF) then
-    print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
-  end if;
-  ExecStat.execStat("FrontEnd - loaded program");
-  (cache,env,dae,st) := runFrontEndWork(cache,inEnv,className,st,relaxedFrontEnd,Error.getNumErrorMessages());
-  if Flags.isSet(Flags.GC_PROF) then
-    print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
-  end if;
-
+  try
+    (b,st) := runFrontEndLoadProgram(className, st);
+    true := b;
+    cache := FCore.setProgramInCache(cache, GlobalScriptUtil.getSymbolTableAST(st));
+    if Flags.isSet(Flags.GC_PROF) then
+      print(GC.profStatsStr(GC.getProfStats(), head="GC stats before front-end:") + "\n");
+    end if;
+    ExecStat.execStat("FrontEnd - loaded program");
+    (cache,env,dae,st) := runFrontEndWork(cache,env,className,st,relaxedFrontEnd,Error.getNumErrorMessages());
+    if Flags.isSet(Flags.GC_PROF) then
+      print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
+    end if;
+    odae := SOME(dae);
+  else
+    // Return odae=NONE(); needed to update cache and symbol table if we fail
+  end try;
 end runFrontEnd;
 
 protected function runFrontEndLoadProgram
   input Absyn.Path className;
   input GlobalScript.SymbolTable inSt;
+  output Boolean success;
   output GlobalScript.SymbolTable st;
+protected
+  Absyn.Restriction restriction;
+  Absyn.Class absynClass;
+  String str,re;
+  Option<SCode.Program> fp;
+  SCode.Program scodeP, scodePNew, scode_builtin;
+  list<GlobalScript.InstantiatedClass> ic,ic_1;
+  Absyn.Program p,ptot,p_builtin;
+  list<GlobalScript.Variable> iv;
+  list<GlobalScript.CompiledCFunction> cf;
+  list<GlobalScript.LoadedFile> lf;
+  DAE.FunctionTree funcs;
+  Boolean b;
 algorithm
   st := matchcontinue (className, inSt)
-    local
-      Absyn.Restriction restriction;
-      Absyn.Class absynClass;
-      String str,re;
-      Option<SCode.Program> fp;
-      SCode.Program scodeP, scodePNew, scode_builtin;
-      list<GlobalScript.InstantiatedClass> ic,ic_1;
-      Absyn.Program p,ptot,p_builtin;
-      list<GlobalScript.Variable> iv;
-      list<GlobalScript.CompiledCFunction> cf;
-      list<GlobalScript.LoadedFile> lf;
-      DAE.FunctionTree funcs;
-      Boolean b;
     case (_, GlobalScript.SYMBOLTABLE(ast=p))
       equation
         Interactive.getPathedClassInProgram(className, p, true);
@@ -2965,6 +2996,18 @@ algorithm
         // print(stringDelimitList(list(Absyn.pathString(path) for path in Interactive.getTopClassnames(p)), ",") + "\n");
       then GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf);
   end matchcontinue;
+  try
+    absynClass := Interactive.getPathedClassInProgram(className, st.ast);
+  else
+    success := true; /* Let derived classes possibly be handled by runFrontEndWork */
+    return;
+  end try;
+  (p,success) := CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP()), false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
+  if not referenceEq(st.ast, p) then
+    st.ast := p;
+  end if;
+  // Always update the SCode structure; otherwise the cache plays tricks on us
+  st.explodedAst := SOME(SCodeUtil.translateAbsyn2SCode(st.ast));
 end runFrontEndLoadProgram;
 
 protected function runFrontEndWork
@@ -2979,7 +3022,7 @@ protected function runFrontEndWork
   output DAE.DAElist dae;
   output GlobalScript.SymbolTable st;
 algorithm
-  (cache,env,dae,st) := matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,relaxedFrontEnd,numError)
+  (cache,env,dae,st) := matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable)
     local
       Absyn.Restriction restriction;
       Absyn.Class absynClass;
@@ -2993,7 +3036,7 @@ algorithm
       list<GlobalScript.LoadedFile> lf;
       DAE.FunctionTree funcs;
 
-   case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
+   case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp as SOME(scodeP),ic,iv,cf,lf))
       equation
         true = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
@@ -3004,23 +3047,18 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = CevalScript.loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP()), false),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true,true,false);
-        print("Load deps:      " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) + "\n");
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        scodeP = SCodeUtil.translateAbsyn2SCode(p);
-        print("Absyn->SCode:   " + realString(System.realtimeTock(ClockIndexes.RT_CLOCK_FINST)) + "\n");
 
         dae = FInst.instPath(className, scodeP);
         ic_1 = ic;
       then
         (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
-    case (_, _, _, GlobalScript.SYMBOLTABLE(p, _, _, _, _, _), _, _)
+    case (_, _, _, GlobalScript.SYMBOLTABLE(p, SOME(scodeP), _, _, _, _))
       algorithm
         false := Flags.isSet(Flags.GRAPH_INST);
         true := Flags.isSet(Flags.SCODE_INST);
-        scodeP := SCodeUtil.translateAbsyn2SCode(p);
 
         (_,scode_builtin) := FBuiltin.getInitialFunctions();
         scodeP := listAppend(scode_builtin, scodeP);
@@ -3032,13 +3070,9 @@ algorithm
         env := FGraph.empty();
         st := inInteractiveSymbolTable;
 
-       // ic_1 = Interactive.addInstantiatedClass(ic,
-       //   GlobalScript.INSTCLASS(className, dae, env));
-       // st = GlobalScript.SYMBOLTABLE(p, fp, ic_1, iv, cf, lf);
-      then
-        (cache, env, dae, st);
+      then (cache, env, dae, st);
 
-    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp,ic,iv,cf,lf),_,_)
+    case (cache,env,_,GlobalScript.SYMBOLTABLE(p,fp as SOME(scodeP),ic,iv,cf,lf))
       equation
         false = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
@@ -3055,10 +3089,7 @@ algorithm
         //System.startTimer();
         //print("\nAbsyn->SCode");
 
-        scodeP = SCodeUtil.translateAbsyn2SCode(p);
         ExecStat.execStat("FrontEnd - Absyn->SCode");
-
-        // TODO: Why not simply get the whole thing from the cached SCode? It's faster, just need to stop doing the silly Dependency stuff.
 
         //System.stopTimer();
         //print("\nAbsyn->SCode: " + realString(System.getTimerIntervalTime()));
@@ -3077,14 +3108,13 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         ic_1 = ic;
         // ic_1 = Interactive.addInstantiatedClass(ic, GlobalScript.INSTCLASS(className,dae,env));
-        _ = DAEUtil.getFunctionList(FCore.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
+        DAEUtil.getFunctionList(FCore.getFunctionTree(cache)); // Make sure that the functions are valid before returning success
       then (cache,env,dae,GlobalScript.SYMBOLTABLE(p,fp,ic_1,iv,cf,lf));
 
-    case (_,_,_,GlobalScript.SYMBOLTABLE(ast=p),_,_)
+    case (_,_,_,st)
       equation
-        str = Absyn.pathString(className);
-        failure(_ = Interactive.getPathedClassInProgram(className, p));
-        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
+        failure(Interactive.getPathedClassInProgram(className, st.ast));
+        Error.addMessage(Error.LOOKUP_ERROR, {Absyn.pathString(className),"<TOP>"});
       then fail();
 
     else
@@ -3106,6 +3136,7 @@ protected function translateModel " author: x02lucpo
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Boolean success;
   output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -3131,8 +3162,8 @@ algorithm
     case (cache,env,_,st as GlobalScript.SYMBOLTABLE(),fileNamePrefix,_,_)
       algorithm
         if Config.ignoreCommandLineOptionsAnnotation() then
-          (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
-            SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+          (success, cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+            SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
         else
           // read the __OpenModelica_commandLineOptions
           Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
@@ -3146,8 +3177,8 @@ algorithm
               _ := Flags.readArgs(args);
             end if;
 
-            (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
-              SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+            (success, cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+              SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
             // reset to the original flags
             Flags.saveFlags(flags);
           else
@@ -3198,8 +3229,8 @@ algorithm
       algorithm
 
         if Config.ignoreCommandLineOptionsAnnotation() then
-          (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
-            SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
+          (true, cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+            SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
         else
           // read the __OpenModelica_commandLineOptions
           Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, st.ast, Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
@@ -3213,8 +3244,8 @@ algorithm
               _ := Flags.readArgs(args);
             end if;
 
-            (cache, st, indexed_dlow, libs, file_dir, resultValues) :=
-              SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
+            (true, cache, st, indexed_dlow, libs, file_dir, resultValues) :=
+              SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
             // reset to the original flags
             Flags.saveFlags(flags);
           else
@@ -3227,6 +3258,7 @@ algorithm
 
   end match;
 end translateLabeledModel;
+
 /*protected function translateModelCPP " author: x02lucpo
  translates a model into cpp code and writes also a makefile"
   input FCore.Cache inCache;
@@ -3356,7 +3388,7 @@ protected function buildModelFMU " author: Frenkel TUD
   output Values.Value outValue;
   output GlobalScript.SymbolTable st;
 protected
-  Boolean staticSourceCodeFMU;
+  Boolean staticSourceCodeFMU, success;
   String filenameprefix, fmutmp, logfile, dir;
   String fmuTargetName;
   GlobalScript.SimulationOptions defaulSimOpt;
@@ -3392,7 +3424,9 @@ algorithm
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(st, className, filenameprefix, SOME(defaultSimulationOptions));
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
   try
-    (cache, outValue, st,_, libs,_, _) := SimCodeMain.translateModelFMU(cache, inEnv, className, st, FMUVersion, FMUType, filenameprefix, fmuTargetName, addDummy, simSettings);
+    (success, cache, st,_, libs,_, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, st, filenameprefix, addDummy, SOME(simSettings));
+    true := success;
+    outValue := Values.STRING((if not Config.getRunningTestsuite() then System.pwd() + System.pathDelimiter() else "") + fmuTargetName + ".fmu");
   else
     outValue := Values.STRING("");
     return;
@@ -3443,39 +3477,19 @@ end buildModelFMU;
 
 protected function translateModelXML " author: Alachew
  translates a model into XML code "
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
   input Absyn.Path className "path for the model";
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input String inFileNamePrefix;
+  output Values.Value outValue;
+  input output GlobalScript.SymbolTable st;
+  input String fileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
-  output FCore.Cache outCache;
-  output Values.Value outValue;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+protected
+  Boolean success;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
-  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
-    local
-      FCore.Cache cache;
-      FCore.Graph env;
-      BackendDAE.BackendDAE indexed_dlow;
-      GlobalScript.SymbolTable st;
-      list<String> libs;
-      Values.Value outValMsg;
-      String file_dir, fileNamePrefix, str;
-    case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
-      equation
-        (cache, outValMsg, st,_,_,_, _) =
-          SimCodeMain.translateModelXML(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
-      then
-        (cache,outValMsg,st);
-    else /* mo file directory */
-      equation
-         str = Error.printMessagesStr(false);
-      then
-        (inCache,ValuesUtil.makeArray({Values.STRING("translateModelXML error."),Values.STRING(str)}),inInteractiveSymbolTable);
-  end match;
+  (success,cache,st) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.XML(),cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+  outValue := Values.STRING(if success then ((if not Config.getRunningTestsuite() then System.pwd() + System.pathDelimiter() else "") + fileNamePrefix+".xml") else "");
 end translateModelXML;
 
 
@@ -4823,6 +4837,7 @@ protected function buildModel "translates and builds the model by running compil
   input list<Values.Value> inValues;
   input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Absyn.Msg inMsg;
+  output Boolean success=false;
   output FCore.Cache outCache;
   output GlobalScript.SymbolTable outInteractiveSymbolTable3;
   output String compileDir;
@@ -4854,50 +4869,57 @@ algorithm
 
     // compile the model
     case (cache,env,vals,st,msg)
-      equation
+      algorithm
         // buildModel expects these arguments:
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
         // options, outputFormat, variableFilter, cflags, simflags
-        values = vals;
-        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
-        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
+        values := vals;
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.STRING(filenameprefix),vals) := getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
-        compileDir = System.pwd() + System.pathDelimiter();
-        (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
+        compileDir := System.pwd() + System.pathDelimiter();
+        (cache,simSettings) := calculateSimulationSettings(cache, env, values, st, msg);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
-           = simSettings;
+           := simSettings;
 
-        (cache,st as GlobalScript.SYMBOLTABLE(),_,libs,file_dir,resultValues) = translateModel(cache,env, classname, st, filenameprefix,true, SOME(simSettings));
+        (success,cache,st as GlobalScript.SYMBOLTABLE(),_,libs,file_dir,resultValues) := translateModel(cache,env, classname, st, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-        init_filename = filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
+        init_filename := filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
         //win1 = getWithinStatement(classname);
 
         if Flags.isSet(Flags.DYN_LOAD) then
           Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
         end if;
-        CevalScript.compileModel(filenameprefix, libs);
+        if success then
+          try
+            CevalScript.compileModel(filenameprefix, libs);
+          else
+            success := false;
+          end try;
+          timeCompile := System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
+        else
+          timeCompile := 0.0;
+        end if;
         if Flags.isSet(Flags.DYN_LOAD) then
           Debug.trace("buildModel: Compiling done.\n");
         end if;
-        // p = setBuildTime(p,classname);
-        st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
-        timeCompile = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-        resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
+        st2 := st;// Interactive.replaceSymbolTableProgram(st,p);
+        resultValues := ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
         (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
 
@@ -4909,118 +4931,9 @@ algorithm
   end matchcontinue;
 end buildModel;
 
-protected function buildLabeledModel "translates and builds the labeled model by running compiler script on the generated makefile"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Values.Value> inValues;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable3;
-  output String compileDir;
-  output String outString1 "className";
-  output String outString2 "method";
-  output String outputFormat_str;
-  output String outInitFileName "initFileName";
-  output String outSimFlags;
-  output list<tuple<String,Values.Value>> resultValues;
-  protected
-   Values.Value labelstoCancel;
-   list<Absyn.NamedArg> named_args1={},named_args2={};
-   list<Values.Value> valuesList;
-   String labelstoCancelStr;
-   //Absyn.NamedArg named_arg;
-algorithm
-        if listLength(inValues)==13 then
-        labelstoCancel:=listGet(inValues,13);
-        valuesList:=listDelete(inValues,13);
-        end if;
-        labelstoCancelStr:=System.stringReplace(ValuesUtil.valString(labelstoCancel), "\"", "");
-
-        named_args2:=Absyn.NAMEDARG("labelstoCancel", Absyn.STRING(labelstoCancelStr))::named_args1;
-
-  (outCache,outInteractiveSymbolTable3,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues):=
-  matchcontinue (inCache,inEnv,valuesList,inInteractiveSymbolTable,inMsg)
-    local
-      GlobalScript.SymbolTable st,st_1,st2;
-      BackendDAE.BackendDAE indexed_dlow_1;
-      list<String> libs;
-      String file_dir,init_filename,method_str,filenameprefix,exeFile,s3,simflags,optionStr,filterStr,cflagsStr;
-      Absyn.Path classname;
-      Absyn.Program p;
-      Absyn.Class cdef;
-      Real edit,build,globalEdit,globalBuild,timeCompile;
-      FCore.Graph env;
-      SimCode.SimulationSettings simSettings;
-      Values.Value starttime,stoptime,interval,tolerance,method,options,outputFormat,variableFilter;
-      list<Values.Value> vals, values;
-      Absyn.Msg msg;
-      FCore.Cache cache;
-      Boolean existFile;
-
-    // compile the model
-    case (cache,env,vals,st,msg)
-      equation
-
-        // buildModel expects these arguments:
-        // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
-        // options, outputFormat, variableFilter, cflags, simflags
-        values = vals;
-
-        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) = getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
-        (Values.STRING(filenameprefix),vals) = getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
-        (_,vals) = getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) = getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
-
-        Error.clearMessages() "Clear messages";
-        compileDir = System.pwd() + System.pathDelimiter();
-        (cache,simSettings) = calculateSimulationSettings(cache, env, values, st, msg);
-
-        SimCode.SIMULATION_SETTINGS(method = method_str,options=optionStr, outputFormat = outputFormat_str,variableFilter=filterStr,cflags=cflagsStr)
-           = simSettings;
-
-        (cache,st as GlobalScript.SYMBOLTABLE(),_,libs,file_dir,resultValues) = translateLabeledModel(cache,env, classname, st, filenameprefix,true, SOME(simSettings),named_args2);
-
-        //cname_str = Absyn.pathString(classname);
-        //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
-        //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
-
-        System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-        init_filename = filenameprefix + "_init.xml"; //a hack ? should be at one place somewhere
-        //win1 = getWithinStatement(classname);
-
-        if Flags.isSet(Flags.DYN_LOAD) then
-          Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
-        end if;
-        CevalScript.compileModel(filenameprefix, libs);
-         print("after compilemodel in buildLabeledModel \n");
-        if Flags.isSet(Flags.DYN_LOAD) then
-          Debug.trace("buildModel: Compiling done.\n");
-        end if;
-        // p = setBuildTime(p,classname);
-        st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
-        timeCompile = System.realtimeTock(ClockIndexes.RT_CLOCK_BUILD_MODEL);
-        resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
-      then
-        (cache,st2,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
-
-    // failure
-    else
-      equation
-        Error.assertion(listLength(valuesList) == 12, "buildModel failure, length = " + intString(listLength(valuesList)), Absyn.dummyInfo);
-      then fail();
-  end matchcontinue;
-end buildLabeledModel;
 protected function createSimulationResultFromcallModelExecutable
 "This function calls the compiled simulation executable."
+  input Boolean buildSuccess;
   input Integer callRet;
   input Real timeTotal;
   input Real timeSimulation;
@@ -5035,13 +4948,24 @@ protected function createSimulationResultFromcallModelExecutable
   output Values.Value outValue;
   output GlobalScript.SymbolTable outInteractiveSymbolTable;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (callRet,timeTotal,timeSimulation,resultValues,inCache,className,inVals,inSt,result_file,logFile)
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (buildSuccess,callRet)
     local
       GlobalScript.SymbolTable newst;
       String res,str;
       Values.Value simValue;
 
-    case (0,_,_,_,_,_,_,_,_,_)
+    case (false,_)
+      equation
+        simValue = createSimulationResult(
+           result_file,
+           simOptionsAsString(inVals),
+           "Failed to build model: " + Absyn.pathString(className),
+           ("timeTotal", Values.REAL(timeTotal)) ::
+           ("timeSimulation", Values.REAL(timeSimulation)) ::
+          resultValues);
+      then (inCache,simValue,inSt);
+
+    case (_,0)
       equation
         simValue = createSimulationResult(
            result_file,
@@ -5093,7 +5017,7 @@ algorithm
 
     case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},GlobalScript.SYMBOLTABLE(ast=p),_)
       equation
-        (cache,env,dae,_) = runFrontEnd(cache,inEnv,className,inSt,false);
+        (cache,env,SOME(dae),_) = runFrontEnd(cache,inEnv,className,inSt,false);
         //print("instantiated class\n");
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = FCore.getFunctionTree(cache);
@@ -5181,24 +5105,20 @@ algorithm
 end getFileDir;
 
 public function checkModel " checks a model and returns number of variables and equations"
-  input FCore.Cache inCache;
+  input output FCore.Cache cache;
   input FCore.Graph inEnv;
   input Absyn.Path className;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
   output Values.Value outValue;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
+  input output GlobalScript.SymbolTable st;
+  input Absyn.Msg inMsg;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable) :=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg)
+  outValue := matchcontinue (inEnv,className,inMsg)
     local
+      Option<DAE.DAElist> odae;
       DAE.DAElist dae;
       FCore.Graph env;
-      GlobalScript.SymbolTable st;
       Absyn.Program p;
       Absyn.Msg msg;
-      FCore.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize;
       String errorMsg,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
       Boolean strEmpty;
@@ -5206,10 +5126,10 @@ algorithm
       Absyn.Class c;
 
     // handle normal models
-    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE()),_)
+    case (env,_,_)
       equation
-        (cache,env,dae,st) = runFrontEnd(cache,env,className,st,false);
-
+        (cache,env,odae,st) = runFrontEnd(cache,env,className,st,false);
+        SOME(dae) = odae;
         (varSize,eqnSize,simpleEqnSize) = CheckModel.checkModel(dae);
         eqnSizeStr = intString(eqnSize);
         varSizeStr = intString(varSize);
@@ -5218,29 +5138,25 @@ algorithm
         classNameStr = Absyn.pathString(className);
         retStr = stringAppendList({"Check of ",classNameStr," completed successfully.","\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s)."});
-      then
-        (cache,Values.STRING(retStr),st);
+      then Values.STRING(retStr);
 
     // handle functions
-    case (cache,env,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),_)
+    case (env,_,_)
       equation
-        (Absyn.CLASS(restriction=restriction)) = Interactive.getPathedClassInProgram(className, p);
+        (Absyn.CLASS(restriction=restriction)) = Interactive.getPathedClassInProgram(className, st.ast);
         true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
         (cache,env,_,st) = runFrontEnd(cache,env,className,st,true);
-        _ = Absyn.pathString(className);
-      then
-        (cache,Values.STRING(""),st);
+      then Values.STRING("");
 
-    case (cache,_,_,st as GlobalScript.SYMBOLTABLE(ast=p), _)
+    case (_,_,_)
       equation
         classNameStr = Absyn.pathString(className);
-        false = Interactive.existClass(Absyn.pathToCref(className), p);
+        false = Interactive.existClass(Absyn.pathToCref(className), st.ast);
         Error.addMessage(Error.LOOKUP_ERROR, {classNameStr,"<TOP>"});
-      then
-        (cache,Values.STRING(""),st);
+      then Values.STRING("");
 
     // errors
-    case (cache,_,_,st,_)
+    else
       equation
         classNameStr = Absyn.pathString(className);
         strEmpty = Error.getNumMessages() == 0;
@@ -5248,8 +5164,7 @@ algorithm
         if strEmpty then
           Error.addMessage(Error.INTERNAL_ERROR, {errorMsg,"<TOP>"});
         end if;
-      then
-        (cache,Values.STRING(""),st);
+      then Values.STRING("");
 
   end matchcontinue;
 end checkModel;
@@ -5780,72 +5695,6 @@ algorithm
         ();
   end matchcontinue;
 end checkAll;
-
-public function buildModelBeast " copy & pasted by: Otto
- translates and builds the model by running compiler script on the generated makefile"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input list<Values.Value> vals;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  input Absyn.Msg inMsg;
-  output FCore.Cache outCache;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
-  output String compileDir;
-  output String outString1 "className";
-  output String outString2 "method";
-  output String outString4 "initFileName";
-algorithm
-  (outCache,outInteractiveSymbolTable,compileDir,outString1,outString2,outString4):=
-  match (inCache,inEnv,vals,inInteractiveSymbolTable,inMsg)
-    local
-      GlobalScript.SymbolTable st,st2;
-      BackendDAE.BackendDAE indexed_dlow_1;
-      list<String> libs;
-      String file_dir,method_str,filenameprefix,s3;
-      Absyn.Path classname;
-      Absyn.Program p,p2;
-      Absyn.Class cdef;
-      FCore.Graph env;
-      Values.Value starttime,stoptime,interval,method,tolerance,options;
-      Absyn.Msg msg;
-      Absyn.Within win1;
-      FCore.Cache cache;
-      SimCode.SimulationSettings simSettings;
-
-    // normal call
-    case (cache,env,{Values.CODE(Absyn.C_TYPENAME(classname)),_,_,_,_, _,Values.STRING(filenameprefix),_},(st as GlobalScript.SYMBOLTABLE(ast = p  as Absyn.PROGRAM())),msg)
-      equation
-        Interactive.getPathedClassInProgram(classname,p);
-        Error.clearMessages() "Clear messages";
-        compileDir = System.pwd() + System.pathDelimiter();
-        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
-        (cache,st,_,libs,file_dir,_)
-          = translateModel(cache,env, classname, st, filenameprefix,true,SOME(simSettings));
-        SimCode.SIMULATION_SETTINGS() = simSettings;
-        //cname_str = Absyn.pathString(classname);
-        //(cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str)
-        //= calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
-        //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
-        if Flags.isSet(Flags.DYN_LOAD) then
-          Debug.traceln("buildModel: about to compile model " + filenameprefix + ", " + file_dir);
-        end if;
-        CevalScript.compileModel(filenameprefix, libs);
-        if Flags.isSet(Flags.DYN_LOAD) then
-          Debug.trace("buildModel: Compiling done.\n");
-        end if;
-        // SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir);
-        CevalScript.compileModel(filenameprefix, libs);
-        // (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false);
-        st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
-      then
-        (cache,st2,compileDir,filenameprefix,"","");
-
-    // failure
-    else
-      then
-        fail();
-  end match;
-end buildModelBeast;
 
 protected function getAlgorithms
 "Counts the number of Algorithm sections in a class."

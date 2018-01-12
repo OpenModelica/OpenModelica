@@ -507,7 +507,7 @@ algorithm
         execStat("Parsed file");
 
         // Instantiate the program.
-        (cache, env, d, cname) = instantiate(p);
+        (p, cache, env, d, cname) = instantiate(p);
 
         d = if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
 
@@ -588,7 +588,7 @@ protected function instantiate
   "Translates the Absyn.Program to SCode and instantiates either a given class
    specified by the +i flag on the command line, or the last class in the
    program if no class was specified."
-  input Absyn.Program program;
+  input output Absyn.Program program;
   output FCore.Cache cache;
   output FCore.Graph env;
   output DAE.DAElist dae;
@@ -602,7 +602,8 @@ algorithm
   // program. Otherwise, instantiate the given class name.
   cname := if stringEmpty(cls) then Absyn.lastClassname(program) else Absyn.stringPath(cls);
   st := GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable, program);
-  (cache, env, dae) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
+  (cache, env, SOME(dae), st) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
+  program := st.ast;
 end instantiate;
 
 protected function optimizeDae
