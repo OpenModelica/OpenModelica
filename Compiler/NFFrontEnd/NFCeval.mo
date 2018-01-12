@@ -751,6 +751,7 @@ function evalBuiltinInteger
   output Expression result;
 algorithm
   result := match arg
+    case Expression.INTEGER() then arg;
     case Expression.REAL() then Expression.INTEGER(realInt(arg.value));
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;

@@ -181,7 +181,7 @@ algorithm
         case Operator.ADD() then Expression.INTEGER(i1 + i2);
         case Operator.SUB() then Expression.INTEGER(i1 - i2);
         case Operator.MUL() then Expression.INTEGER(i1 * i2);
-        case Operator.DIV() then Expression.INTEGER(intDiv(i1, i2));
+        case Operator.DIV() then Expression.REAL(i1 / i2);
       end match;
 
     case Expression.BINARY(exp1=Expression.REAL(value=r1), exp2=Expression.REAL(value=r2))
