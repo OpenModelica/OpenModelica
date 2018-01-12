@@ -991,7 +991,7 @@ bool OMCProxy::setComponentModifierValue(QString className, QString modifierName
   QString expression;
   if (modifierValue.isEmpty()) {
     expression = QString("setComponentModifierValue(%1, %2, $Code(()))").arg(className).arg(modifierName);
-  } else if (modifierValue.startsWith("(")) {
+  } else if (modifierValue.startsWith("(") && modifierValue.contains("=")) {
     expression = QString("setComponentModifierValue(%1, %2, $Code(%3))").arg(className).arg(modifierName).arg(modifierValue);
   } else {
     expression = QString("setComponentModifierValue(%1, %2, $Code(=%3))").arg(className).arg(modifierName).arg(modifierValue);
