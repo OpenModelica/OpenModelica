@@ -35,7 +35,7 @@
   description: Flattening of state machines
 
   This module contains functions to transform an instantiated state machine to flat data-flow equations.
-  The approach a rather direct implementation of the state machine to data-flow equations transformation
+  This approach is a rather direct implementation of the state machine to data-flow equations transformation
   described in the specification. A more efficient implemention could avoid that transformation to
   data-flow and instead keep the state machine structure in the back-end in order to generate optimized
   code (in terms of memory requirements and minimized conditional statements).
@@ -414,7 +414,7 @@ Author: BTH
   input list<DAE.Element> accElems;
   output list<DAE.Element> outElems = accElems;
 protected
-  list<DAE.Element> varLst, assignedVarLst, stateVarLst, otherLst1, equationLst1, equationLst2, otherLst2, flatSmLst, otherLst3;
+  list<DAE.Element> varLst1, varLst2, assignedVarLst, stateVarLst, otherLst1, equationLst1, equationLst2, otherLst2, flatSmLst, otherLst3;
   DAE.ComponentRef componentRef;
   list<DAE.ComponentRef> stateVarCrefs;
   list<Option<DAE.VariableAttributes>> variableAttributesOptions;
@@ -425,15 +425,17 @@ protected
 algorithm
   DAE.SM_COMP(componentRef=componentRef, dAElist=dAElist) := inSMComp;
 
-  (varLst, otherLst1) := List.extractOnTrue(dAElist, isVar);
-  (equationLst1, otherLst2) := List.extractOnTrue(otherLst1, isEquation);
+  (varLst1, otherLst1) := List.extractOnTrue(dAElist, isVar);
+
+  // FIXME More general handling requires supporting all valid elements, e.g., also IF_EQUATION (also in downstream functions), but not sure what can be possibly encountered here
+  (equationLst1, otherLst2) := List.extractOnTrue(otherLst1, isEquationOrWhenEquation);
 
   // FIXME More general handling might require assignment matching algorithm. Current restriction relies on that any assigned variable appears at the LHS of an assignment equation.
   // FIXME Maybe better to just filter out variables declared as "inputs" and assume that the rest are assigned variables?
   // Retain all variables for which there exits an assignment equation
-  assignedVarLst := List.filterOnTrue(varLst, function List.exist1(inList=equationLst1, inFindFunc=isVarAtLHS));
+  assignedVarLst := List.filterOnTrue(varLst1, function List.exist1(inList=equationLst1, inFindFunc=isVarAtLHS));
   // Retain all variables which have "previous(x)" applied
-  stateVarLst := List.filterOnTrue(varLst, function List.exist1(inList=equationLst1, inFindFunc=isPreviousAppliedToVar));
+  stateVarLst := List.filterOnTrue(varLst1, function List.exist1(inList=equationLst1, inFindFunc=isPreviousAppliedToVar));
   //print("StateMachineFlatten.smCompToDataFlow: stateVarLst:\n" + DAEDump.dumpElementsStr(stateVarLst) +"\n");
 
   stateVarCrefs := List.map(stateVarLst, DAEUtil.varCref);
@@ -447,18 +449,55 @@ algorithm
 
   // 1. Make equations conditional so that they are only active if enclosing state is active
   // 2. Add reset equations for discrete-time states declared in the component
-  equationLst2 := List.fold3(equationLst1, addStateActivationAndReset, inSMComp, inEnclosingFlatSmSemantics, crToExpOpt, {});
+  (equationLst2, varLst2) := List.fold3(equationLst1, addStateActivationAndReset, inSMComp, inEnclosingFlatSmSemantics, crToExpOpt, ({},{}));
 
   (flatSmLst, otherLst3) := List.extractOnTrue(otherLst2, isFlatSm);
 
   // append non FLAT_SM elements to accumulator
-  outElems := List.flatten({outElems, varLst, equationLst2, otherLst3});
+  outElems := List.flatten({outElems, varLst1, varLst2, equationLst2, otherLst3});
 
   // recurse into FLAT_SM elements (if any)
   outElems := List.fold2(flatSmLst, flatSmToDataFlow, SOME(componentRef), SOME(inEnclosingFlatSmSemantics), outElems);
 end smCompToDataFlow;
 
+
 protected function addStateActivationAndReset "
+Author: BTH
+The real work is done in helper function addStateActivationAndReset1.
+This top-level function just handles the recursive descent if inEqn is a DAE.WHEN_EQUATION().
+"
+  input DAE.Element inEqn "Expects DAE.EQUATION() or DAE.WHEN_EQUATION()";
+  input DAE.Element inEnclosingSMComp "The state component enclosing the equation";
+  input FlatSmSemantics inEnclosingFlatSmSemantics "The flat state machine semantics structure governing the state component";
+  input HashTableCrToExpOption.HashTable crToExpOpt "Table mapping variable declaration in the enclosing state to start values";
+  input tuple<list<DAE.Element>,list<DAE.Element>> accEqnsVars "Tuple for accumulating equations and variable definitions";
+  output tuple<list<DAE.Element>,list<DAE.Element>> outEqnsVars;
+protected
+  list<DAE.Element> equations1;
+  list<DAE.Element> vars1;
+  // WHEN_EQUATION
+  DAE.Exp condition;
+  list<DAE.Element> equations;
+  DAE.ElementSource source;
+algorithm
+  outEqnsVars := match (inEqn)
+    case DAE.EQUATION() then addStateActivationAndReset1(inEqn, inEnclosingSMComp, inEnclosingFlatSmSemantics, crToExpOpt, accEqnsVars);
+    case DAE.WHEN_EQUATION(condition,equations,NONE(),source)
+      algorithm
+        (equations1,vars1) := List.fold3(equations, addStateActivationAndReset, inEnclosingSMComp, inEnclosingFlatSmSemantics, crToExpOpt, ({},{}));
+      then (DAE.WHEN_EQUATION(condition,equations1,NONE(),source)::Util.tuple21(accEqnsVars), listAppend(vars1,Util.tuple22(accEqnsVars)));
+    case DAE.WHEN_EQUATION(elsewhen_=SOME(_))
+      algorithm
+        Error.addCompilerError("Encountered elsewhen part in a when clause of a clocked state machine.\n");
+      then fail();
+    else
+      algorithm
+        Error.addCompilerError("Internal compiler error: StateMachineFlatten.addStateActivationAndReset(..) called with unexpected argument.\n");
+    then fail();
+  end match;
+end addStateActivationAndReset;
+
+protected function addStateActivationAndReset1 "
 Author: BTH
 The function has following purpose:
 1. Make equations conditional so that they are only active if enclosing state is active
@@ -483,8 +522,8 @@ which is then handled specially in the back-end.
   input DAE.Element inEnclosingSMComp "The state component enclosing the equation";
   input FlatSmSemantics inEnclosingFlatSmSemantics "The flat state machine semantics structure governing the state component";
   input HashTableCrToExpOption.HashTable crToExpOpt "Table mapping variable declaration in the enclosing state to start values";
-  input list<DAE.Element> accEqns;
-  output list<DAE.Element> outEqns;
+  input tuple<list<DAE.Element>,list<DAE.Element>> accEqnsVars "Tuple for accumulating equations and variable definitions";
+  output tuple<list<DAE.Element>,list<DAE.Element>> outEqnsVars;
 protected
   list<DAE.ComponentRef> stateVarCrefs;
 
@@ -521,9 +560,9 @@ algorithm
       // Create fresh reset equation: 'a.x_previous = if a.active and (smOf.a.activeReset or smOf.fsm_of_a.activeResetStates[i] then x_start else previous(a.x)'
       eqn2 := createResetEquation(crefLHS, tyLHS, enclosingStateRef, inEnclosingFlatSmSemantics, crToExpOpt);
 
-      outEqns := eqn1 :: var2 :: eqn2 :: accEqns;
+      outEqnsVars := (eqn1 ::  eqn2 :: Util.tuple21(accEqnsVars), var2 :: Util.tuple22(accEqnsVars));
     else
-      outEqns := wrapInStateActivationConditional(eqn, enclosingStateRef, false)::accEqns;
+      outEqnsVars := (wrapInStateActivationConditional(eqn, enclosingStateRef, false)::Util.tuple21(accEqnsVars), Util.tuple22(accEqnsVars));
     end if;
 
   else
@@ -552,7 +591,7 @@ algorithm
           // Change equation 'der(a.x) = e' to 'a.x_der$ = e'
           eqn1 := DAE.EQUATION(DAE.CREF(cref2, tyLHS), scalar, source);
 
-          outEqns := eqn1 :: var2 :: accEqns;
+          outEqnsVars := (eqn1 ::  Util.tuple21(accEqnsVars), var2 :: Util.tuple22(accEqnsVars));
         else
           // Transform equation 'der(a.x) = e' to 'der(a.x) = if a.active then e else 0'
           eqn1 := wrapInStateActivationConditionalCT(inEqn, enclosingStateRef);
@@ -560,7 +599,7 @@ algorithm
           // Create fresh reinit equation: 'when a.active and (smOf.a.activeReset or smOf.fsm_of_a.activeResetStates[i]) then reinit(a.x, a.x_start) end when'
           eqn2 := createResetEquationCT(crefLHS, tyLHS, enclosingStateRef, inEnclosingFlatSmSemantics, crToExpOpt);
 
-          outEqns := eqn1 :: eqn2 :: accEqns;
+          outEqnsVars := (eqn1 ::  eqn2 :: Util.tuple21(accEqnsVars), Util.tuple22(accEqnsVars));
         end if;
       else
         fail();
@@ -575,13 +614,14 @@ algorithm
     end try;
   end try;
 
-end addStateActivationAndReset;
+end addStateActivationAndReset1;
+
 
 protected function isVarAtLHS "
 Author: BTH
-Return true if variable appears as LHS assignment in the equation.
+Return true if variable appears as LHS assignment in a scalar equation or in the body of a when equation.
 "
-  input DAE.Element eqn "Expects DAE.EQUATION()";
+  input DAE.Element eqn "Expects DAE.EQUATION() or DAE.WHEN_EQUATION()";
   input DAE.Element var "Expects DAE.VAR())";
   output Boolean res;
 protected
@@ -591,23 +631,40 @@ protected
   DAE.Exp exp;
   DAE.Exp scalar, scalarNew;
   DAE.ElementSource source;
+  // WHEN_EQUATION
+  list<DAE.Element> equations;
+  Option<DAE.Element> elsewhen_;
 algorithm
-  DAE.EQUATION(exp, scalar, source) := eqn;
-  cref := DAEUtil.varCref(var);
-  try
-    // Handle case with LHS component reference
-    DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
-    res := ComponentReference.crefEqual(crefLHS, cref);
-  else
-    res := false;
-  end try;
+  res := match (eqn)
+    case DAE.EQUATION(exp, scalar, source)
+      algorithm
+        cref := DAEUtil.varCref(var);
+        try
+			    // Handle case with LHS component reference
+			    DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
+			    res := ComponentReference.crefEqual(crefLHS, cref);
+			  else
+			    res := false;
+			  end try;
+			then res;
+    case DAE.WHEN_EQUATION(equations=equations,elsewhen_=NONE())
+      then List.exist1(equations, isVarAtLHS, var);
+    case DAE.WHEN_EQUATION(elsewhen_=SOME(_))
+      algorithm
+        Error.addCompilerError("Encountered elsewhen part in a when clause of a clocked state machine.\n");
+      then fail();
+    else
+      algorithm
+        Error.addCompilerError("Internal compiler error: StateMachineFlatten.isVarAtLHS(..) called with unexpected argument.\n");
+    then fail();
+  end match;
 end isVarAtLHS;
 
 protected function isPreviousAppliedToVar "
 Author: BTH
-Return true if variable x appears as previous(x) in the RHS of equation.
+Return true if variable x appears as previous(x) in the RHS of a scalar equation or in the body of a when equation.
 "
-  input DAE.Element eqn "Expects DAE.EQUATION()";
+  input DAE.Element eqn "Expects DAE.EQUATION() or DAE.WHEN_EQUATION()";
   input DAE.Element var "Expects DAE.VAR())";
   output Boolean found = false;
 protected
@@ -616,13 +673,29 @@ protected
   DAE.Exp exp;
   DAE.Exp scalar, scalarNew;
   DAE.ElementSource source;
+  // WHEN_EQUATION
+  list<DAE.Element> equations;
+  Option<DAE.Element> elsewhen_;
 algorithm
-  DAE.EQUATION(exp, scalar, source) := eqn;
-  cref := DAEUtil.varCref(var);
-
-  (_, (_, found)) := Expression.traverseExpTopDown(scalar, traversingFindPreviousCref, (cref, false));
-
+  found := match (eqn)
+    case DAE.EQUATION(exp, scalar, source)
+      algorithm
+        cref := DAEUtil.varCref(var);
+        (_, (_, found)) := Expression.traverseExpTopDown(scalar, traversingFindPreviousCref, (cref, false));
+      then found;
+    case DAE.WHEN_EQUATION(equations=equations,elsewhen_=NONE())
+      then List.exist1(equations, isPreviousAppliedToVar, var);
+    case DAE.WHEN_EQUATION(elsewhen_=SOME(_))
+      algorithm
+        Error.addCompilerError("Encountered elsewhen part in a when clause of a clocked state machine.\n");
+      then fail();
+    else
+      algorithm
+        Error.addCompilerError("Internal compiler error: StateMachineFlatten.isPreviousAppliedToVar(..) called with unexpected argument.\n");
+    then fail();
+  end match;
 end isPreviousAppliedToVar;
+
 
 protected function traversingFindPreviousCref "
 Author: BTH
@@ -1825,6 +1898,19 @@ algorithm
     else false;
   end match;
 end isEquation;
+
+protected function isEquationOrWhenEquation "
+Author: BTH
+Return true if element is an EQUATION or WHEN_EQUATION, otherwise false"
+    input  DAE.Element inElement;
+  output Boolean result;
+algorithm
+  result := match (inElement)
+    case DAE.EQUATION() then true;
+    case DAE.WHEN_EQUATION() then true;
+    else false;
+  end match;
+end isEquationOrWhenEquation;
 
 protected function isPreOrPreviousEquation "
 Author: BTH
