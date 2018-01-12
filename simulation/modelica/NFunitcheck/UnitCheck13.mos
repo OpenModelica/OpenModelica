@@ -32,8 +32,8 @@ instantiateModel(unitCheckTests.UnitCheck13); getErrorString();
 // {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
 // "class unitCheckTests.UnitCheck13
-//   Real V;
-//   Real A;
+//   Real V(unit = \"m\");
+//   Real A(unit = \"m4\");
 //   Real S(unit = \"m2\");
 // equation
 //   A = 5.0;

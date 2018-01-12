@@ -26,7 +26,7 @@ getErrorString();
 // {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
 // "class test
-//   Real x(start = 1.0, fixed = true);
+//   Real x(unit = \"s2\", start = 1.0, fixed = true);
 // equation
 //   der(x) = time;
 // end test;

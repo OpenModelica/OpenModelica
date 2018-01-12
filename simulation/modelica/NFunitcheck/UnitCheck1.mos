@@ -81,9 +81,9 @@ getErrorString();
 //   constant Real X(unit = \"m\") = 8.0;
 //   Real X2(unit = \"m\") = 8.0;
 //   Real D;
-//   Real F;
-//   Real F1;
-//   Real G;
+//   Real F(unit = \"m/s\");
+//   Real F1(unit = \"m\");
+//   Real G(unit = \"m/s\");
 //   Real H(unit = \"m\");
 //   Real I(unit = \"m/s\");
 // equation

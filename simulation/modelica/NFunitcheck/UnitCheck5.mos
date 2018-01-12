@@ -34,7 +34,7 @@ instantiateModel(unitCheckTests.UnitCheck5); getErrorString();
 // "class unitCheckTests.UnitCheck5
 //   Real S(unit = \"\");
 //   Real V(unit = \"m/s\");
-//   Real A;
+//   Real A(unit = \"m.s-2\");
 // equation
 //   der(S) = V;
 //   A = der(V);
