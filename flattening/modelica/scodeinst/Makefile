@@ -33,6 +33,7 @@ BuiltinAttribute8.mo \
 BuiltinAttribute9.mo \
 BuiltinAttribute10.mo \
 BuiltinAttribute11.mo \
+BuiltinAttribute12.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 ceval1.mo \
@@ -513,6 +514,7 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+BuiltinAttribute13.mo \
 CevalDer2.mo \
 ActualStream.mo \
 ActualStreamMinMax.mo \
