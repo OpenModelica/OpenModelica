@@ -105,7 +105,7 @@ buildNightly.bat
 	c:\dev\OpenModelica
 	c:\dev\OpenModelica\Compiler\OpenModelicaSetup\
    It creates a folder for each revision in c:\dev\OpenModelicaReleases\{REVISION}\ and puts the results and installer here.
-   If the script fails please delete the incomplete (usually empty) folder for that revision to ensure that the sricpts generates everything again.
+   If the script fails please delete the incomplete (usually empty) folder for that revision to ensure that the script generates everything again.
    
    If the script fails using multiple cores, make the following changes. If you do not have at least 6 cores please modify the line in the .bat file:
 
