@@ -41,8 +41,8 @@ res := OpenModelica.Scripting.compareSimulationResults("TestSwitch2_res.mat",
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.2/Electrical/Analog/Sources.mo:290:5-290:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Sources.mo:288:5-288:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.2/Electrical/Analog/Sources.mo:284:5-284:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Sources.mo:282:5-282:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.2.2/Electrical/Analog/Basic.mo:304:5-304:52:writable] Warning: Parameter I.L has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
@@ -56,8 +56,8 @@ res := OpenModelica.Scripting.compareSimulationResults("TestSwitch2_res.mat",
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.2/Electrical/Analog/Sources.mo:290:5-290:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2/Electrical/Analog/Sources.mo:288:5-288:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.2/Electrical/Analog/Sources.mo:284:5-284:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.2/Electrical/Analog/Sources.mo:282:5-282:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.2.2/Electrical/Analog/Basic.mo:304:5-304:52:writable] Warning: Parameter I.L has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
