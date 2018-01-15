@@ -68,7 +68,7 @@ void* FMI2ModelExchangeConstructor_OMC(int fmi_log_level, char* working_director
   FMI2ME->FMICallbackFunctions.freeMemory = free;
   FMI2ME->FMICallbackFunctions.componentEnvironment = FMI2ME->FMIImportInstance;
   /* Load the binary (dll/so) */
-  status = fmi2_import_create_dllfmu(FMI2ME->FMIImportInstance, fmi2_import_get_fmu_kind(FMI2ME->FMIImportInstance), &FMI2ME->FMICallbackFunctions);
+  status = fmi2_import_create_dllfmu(FMI2ME->FMIImportInstance, fmi2_fmu_kind_me, &FMI2ME->FMICallbackFunctions);
   if (status == jm_status_error) {
     FMI2ME->FMISolvingMode = fmi2_none_mode;
     ModelicaFormatError("Loading of FMU dynamic link library failed with status : %s\n", jm_log_level_to_string(status));

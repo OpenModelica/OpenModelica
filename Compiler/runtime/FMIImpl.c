@@ -603,6 +603,7 @@ void FMIImpl__initializeFMI2Import(fmi2_import_t* fmi, void** fmiInfo, fmi_versi
     case fmi2_fmu_kind_me:
     case fmi2_fmu_kind_me_and_cs:
       modelIdentifier = fmi2_import_get_model_identifier_ME(fmi);
+      fmiType = fmi2_fmu_kind_me;
       break;
     case fmi2_fmu_kind_cs:
       modelIdentifier = fmi2_import_get_model_identifier_CS(fmi);
@@ -848,7 +849,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     }
     /* remove the following block once we have support for FMI 2.0 CS. */
     fmiType = fmi2_import_get_fmu_kind(fmi);
-    if (!isModelDescriptionImport && (fmiType == fmi2_fmu_kind_cs || fmiType == fmi2_fmu_kind_me_and_cs)) {
+    if (!isModelDescriptionImport && (fmiType == fmi2_fmu_kind_cs)) {
       const char* tokens[1] = {fmi2_fmu_kind_to_string(fmiType)};
       fmi2_import_free(fmi);
       fmi_import_free_context(context);
@@ -859,7 +860,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     /* Loading the binary (dll/so) can mess up the compiler, and the information is unused in the compiler */
 #if 0
     jm_status_enu_t status;
-    status = fmi2_import_create_dllfmu(fmi, fmi2_import_get_fmu_kind(fmi), &fmi2_callback_functions);
+    status = fmi2_import_create_dllfmu(fmi, fmi2_fmu_kind_me, &fmi2_callback_functions);
     if (status == jm_status_error) {
       fmi2_import_free(fmi);
       fmi_import_free_context(context);
