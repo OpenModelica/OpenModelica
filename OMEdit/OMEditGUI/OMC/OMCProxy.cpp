@@ -1509,12 +1509,19 @@ QList<QString> OMCProxy::parseString(QString value, QString fileName, bool print
  */
 bool OMCProxy::createClass(QString type, QString className, LibraryTreeItem *pExtendsLibraryTreeItem)
 {
-  QString expression;
-  if (!pExtendsLibraryTreeItem) {
-    expression = QString("%1 %2 end %3;").arg(type).arg(className).arg(className);
+  QString expression, equationOrAlgorithm;
+  if (type.compare("model") == 0) {
+    equationOrAlgorithm = "equation";
+  } else if (type.compare("function") == 0) {
+    equationOrAlgorithm = "algorithm";
   } else {
-    expression = QString("%1 %2 extends %3; end %4;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure())
-        .arg(className);
+    equationOrAlgorithm = "";
+  }
+  if (!pExtendsLibraryTreeItem) {
+    expression = QString("%1 %2 %3 end %4;").arg(type).arg(className).arg(equationOrAlgorithm).arg(className);
+  } else {
+    expression = QString("%1 %2 extends %3; %4 end %5;").arg(type).arg(className).arg(pExtendsLibraryTreeItem->getNameStructure())
+                 .arg(equationOrAlgorithm).arg(className);
   }
   return loadString(expression, className, Helper::utf8, false, false);
 }
@@ -1531,12 +1538,20 @@ bool OMCProxy::createClass(QString type, QString className, LibraryTreeItem *pEx
 bool OMCProxy::createSubClass(QString type, QString className, LibraryTreeItem *pParentLibraryTreeItem,
                               LibraryTreeItem *pExtendsLibraryTreeItem)
 {
-  QString expression;
-  if (!pExtendsLibraryTreeItem) {
-    expression = QString("within %1; %2 %3 end %4;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className).arg(className);
+  QString expression, equationOrAlgorithm;
+  if (type.compare("model") == 0) {
+    equationOrAlgorithm = "equation";
+  } else if (type.compare("function") == 0) {
+    equationOrAlgorithm = "algorithm";
   } else {
-    expression = QString("within %1; %2 %3 extends %4; end %5;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className)
-        .arg(pExtendsLibraryTreeItem->getNameStructure()).arg(className);
+    equationOrAlgorithm = "";
+  }
+  if (!pExtendsLibraryTreeItem) {
+    expression = QString("within %1; %2 %3 %4 end %5;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className)
+                 .arg(equationOrAlgorithm).arg(className);
+  } else {
+    expression = QString("within %1; %2 %3 extends %4; %5 end %6;").arg(pParentLibraryTreeItem->getNameStructure()).arg(type).arg(className)
+                 .arg(pExtendsLibraryTreeItem->getNameStructure()).arg(equationOrAlgorithm).arg(className);
   }
   QString fileName;
   if (pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
