@@ -6023,7 +6023,8 @@ algorithm
 
           if hasHomotopy then
             hasAnyHomotopy = true;
-            comp = BackendDAE.EQUATIONSYSTEM(eqnIndexes, listAppend(varIndexes, {lambdaIdx}), jac, jacType, mixedSystem);
+            // Add lambda in front of the list, list seems to be reversed later for EQUATIONSYSTEM
+            comp = BackendDAE.EQUATIONSYSTEM(eqnIndexes, lambdaIdx::varIndexes, jac, jacType, mixedSystem);
           end if;
         then comp;
 
