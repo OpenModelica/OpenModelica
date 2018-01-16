@@ -1028,7 +1028,12 @@ bool OMCProxy::removeComponentModifiers(QString className, QString name)
  */
 QString OMCProxy::getComponentModifierValues(QString className, QString name)
 {
-  return mpOMCInterface->getComponentModifierValues(className, name);
+  QString values = mpOMCInterface->getComponentModifierValues(className, name);
+  if (values.startsWith(" = ")) {
+    return values.mid(3);
+  } else {
+    return values;
+  }
 }
 
 QStringList OMCProxy::getExtendsModifierNames(QString className, QString extendsClassName)
