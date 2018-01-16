@@ -42,7 +42,11 @@ val(x, 0.0);
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy5_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 28 homotopy steps.
+//     messages = "assert            | warning | Homotopy algorithm did not converge.
+// |                 | |       | lambda is smaller than -1: lambda=-1.06603
+// |                 | |       | You can use -lv=LOG_INIT,LOG_NLS_HOMOTOPY to get more information.
+// assert            | info    | The homotopy algorithm is started again with opposing start direction.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 71 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
