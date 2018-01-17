@@ -40,25 +40,25 @@ void DiscreteEvents::savePreVars(double vars[], unsigned int n)
 /**
 Saves a variable in _sim_vars->_pre_real_vars vector
 */
-void DiscreteEvents::save(double& var)
+void DiscreteEvents::save(double& var,double value)
 {
-  _sim_vars->getPreVar(var) = var;
+  _sim_vars->getPreVar(var) = value;
 }
 
 /**
 Saves a variable in _sim_vars->_pre_int_vars vector
 */
-void DiscreteEvents::save(int& var)
+void DiscreteEvents::save(int& var,double value)
 {
-  _sim_vars->getPreVar(var) = var;
+  _sim_vars->getPreVar(var) = value;
 }
 
 /**
 Saves a variable in _sim_vars->_pre_bool_vars vector
 */
-void DiscreteEvents::save(bool& var)
+void DiscreteEvents::save(bool& var,double value)
 {
-  _sim_vars->getPreVar(var) = var;
+  _sim_vars->getPreVar(var) = value;
 }
 
 /**

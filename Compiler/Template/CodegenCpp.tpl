@@ -6472,7 +6472,7 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
       let varname = '_system-><%cref(componentRef, useFlatArrayNotation)%>'
       <<
       <%varname%> = vars[<%i0%>];
-      _discrete_events->save(<%varname%>);
+      _discrete_events->save(<%varname%>,<%varname%>);
       >>
     else
       <<
@@ -11275,10 +11275,10 @@ case SES_SIMPLE_ASSIGN(__) then
 
   match cref
   case CREF_QUAL(ident = "$PRE")  then
+    let sysderef = match context case ALGLOOP_CONTEXT(__) then '_system->'
     <<
-    //<%cref(componentRef, useFlatArrayNotation)%> = <%expPart%>;
-    //_discrete_events->save( <%cref(componentRef, useFlatArrayNotation)%>);
-    _discrete_events->pre(<%cref(componentRef, useFlatArrayNotation)%>)=<%expPart%>;
+     _discrete_events->save(<%sysderef%><%cref(componentRef, useFlatArrayNotation)%>,<%expPart%>);
+    //_discrete_events->pre(<%cref(componentRef, useFlatArrayNotation)%>)=<%expPart%>;
     >>
   else
   match exp
@@ -12343,7 +12343,7 @@ template saveconditionvar1(Integer index1, Exp relation,SimCode simCode ,Text& e
   match relation
   case RELATION(index=zerocrossingIndex) then
     <<
-    _discrete_events->save(_condition<%zerocrossingIndex%>);
+    _discrete_events->save(_condition<%zerocrossingIndex%>,_condition<%zerocrossingIndex%>);
     >>
 end saveconditionvar1;
 
@@ -13390,7 +13390,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     >>
     */
     <<
-    _discrete_events->save(<%expPart1%>);
+    _discrete_events->save(<%expPart1%>,<%expPart1%>);
      <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>

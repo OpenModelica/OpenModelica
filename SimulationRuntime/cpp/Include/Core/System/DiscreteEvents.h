@@ -18,9 +18,9 @@ public:
 
 
   //saves a variable in _pre_vars vector
-  void save(double& var);
-  void save(int& var);
-  void save(bool& var);
+  void save(double& var,double value);
+  void save(int& var,double value);
+  void save(bool& var,double value);
   //void savePreVars(double vars [], unsigned int n);
 
 
