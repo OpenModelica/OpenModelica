@@ -25,7 +25,7 @@ end FuncBuiltinZeros;
 //   Real y[4,1];
 //   Real y[4,2];
 // equation
-//   x = /*Real[3]*/(zeros(3));
-//   y = /*Real[4, 2]*/(zeros(4, 2));
+//   x = {0.0, 0.0, 0.0};
+//   y = {{0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}};
 // end FuncBuiltinZeros;
 // endResult
