@@ -511,6 +511,7 @@ public
       case UNBOX() then exp.ty;
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT() then exp.ty;
+      case BOX() then Type.METABOXED(typeOf(exp.exp));
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -2229,6 +2230,26 @@ public
   algorithm
     Expression.ARRAY(elements = elements) := array;
   end arrayElements;
+
+  function hasArrayCall
+    "Returns true if the given expression contains a function call that returns
+     an array, otherwise false."
+    input Expression exp;
+    output Boolean hasArrayCall;
+  algorithm
+    hasArrayCall := fold(exp, hasArrayCall2, false);
+  end hasArrayCall;
+
+  function hasArrayCall2
+    input Expression exp;
+    input output Boolean hasArrayCall;
+  algorithm
+    hasArrayCall := match exp
+      case CALL() then Type.isArray(Call.typeOf(exp.call));
+      else false;
+    end match;
+  end hasArrayCall2;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

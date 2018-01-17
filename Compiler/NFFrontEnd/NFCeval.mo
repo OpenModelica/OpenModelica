@@ -236,7 +236,6 @@ algorithm
   end match;
 end evalExpOpt;
 
-protected
 
 function evalBinding
   input Binding binding;
@@ -258,29 +257,6 @@ algorithm
         fail();
   end match;
 end evalBinding;
-
-function printUnboundError
-  input EvalTarget target;
-  input Expression exp;
-algorithm
-  () := match target
-    case EvalTarget.DIMENSION()
-      algorithm
-        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
-          {Expression.toString(exp), InstNode.name(target.component)}, target.info);
-      then
-        fail();
-
-    case EvalTarget.CONDITION()
-      algorithm
-        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
-          {Expression.toString(exp)}, target.info);
-      then
-        fail();
-
-    else ();
-  end match;
-end printUnboundError;
 
 function evalTypename
   input Type ty;
@@ -409,6 +385,31 @@ algorithm
         fail();
   end match;
 end evalBuiltinCall;
+
+protected
+
+function printUnboundError
+  input EvalTarget target;
+  input Expression exp;
+algorithm
+  () := match target
+    case EvalTarget.DIMENSION()
+      algorithm
+        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
+          {Expression.toString(exp), InstNode.name(target.component)}, target.info);
+      then
+        fail();
+
+    case EvalTarget.CONDITION()
+      algorithm
+        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
+          {Expression.toString(exp)}, target.info);
+      then
+        fail();
+
+    else ();
+  end match;
+end printUnboundError;
 
 function evalNormalCall
   input Function fn;

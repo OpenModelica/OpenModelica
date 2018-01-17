@@ -62,6 +62,8 @@ import NFFunction.NamedArg;
 import NFFunction.TypedArg;
 import NFFunction.TypedNamedArg;
 import NFFunction.FunctionMatchKind;
+import Ceval = NFCeval;
+import SimplifyExp = NFSimplifyExp;
 
 public
 uniontype CallAttributes
@@ -92,6 +94,34 @@ public constant CallAttributes callAttrBuiltinOther = CALL_ATTR(Type.UNKNOWN(),f
 public constant CallAttributes callAttrBuiltinImpureBool = CALL_ATTR(Type.BOOLEAN(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
 public constant CallAttributes callAttrBuiltinImpureInteger = CALL_ATTR(Type.INTEGER(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
 public constant CallAttributes callAttrBuiltinImpureReal = CALL_ATTR(Type.REAL(),false,true,true,false,DAE.NO_INLINE(),DAE.NO_TAIL());
+
+protected
+  type ParameterTree = ParameterTreeImpl.Tree;
+
+  encapsulated package ParameterTreeImpl
+    import BaseAvlTree;
+    import Expression = NFExpression;
+
+    extends BaseAvlTree(redeclare type Key = String,
+                        redeclare type Value = Expression);
+
+    redeclare function extends keyStr
+    algorithm
+      outString := inKey;
+    end keyStr;
+
+    redeclare function extends valueStr
+    algorithm
+      outString := Expression.toString(inValue);
+    end valueStr;
+
+    redeclare function extends keyCompare
+    algorithm
+      outResult := stringCompare(inKey1, inKey2);
+    end keyCompare;
+
+    annotation(__OpenModelica_Interface="util");
+  end ParameterTreeImpl;
 
 public
 uniontype Call
@@ -339,6 +369,7 @@ uniontype Call
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
       case "cardinality" then typeCardinalityCall(call, origin, info);
       case "change" then typeChangeCall(call, origin, info);
+      case "der" then typeDerCall(call, origin, info);
       case "edge" then typeEdgeCall(call, origin, info);
       case "fill" then typeFillCall(call, origin, info);
       case "initial" then typeDiscreteCall(call, origin, info);
@@ -451,7 +482,7 @@ uniontype Call
     Call argtycall;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (call, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (call, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
   end typeMatchNormalCall;
 
   function typeNormalCall
@@ -506,6 +537,7 @@ uniontype Call
 
   function matchTypedNormalCall
     input output Call argtycall;
+    input Integer origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -532,6 +564,11 @@ uniontype Call
 
         // Construct the call expression.
         ty := Function.returnType(fn);
+
+        if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+          ty := evaluateCallType(ty, fn, args);
+        end if;
+
         ca := CallAttributes.CALL_ATTR(
                                       ty, Type.isTuple(ty), Function.isBuiltin(fn)
                                       , Function.isImpure(fn), Function.isFunctionPointer(fn)
@@ -546,6 +583,104 @@ uniontype Call
         fail();
     end match;
   end matchTypedNormalCall;
+
+  function evaluateCallType
+    input output Type ty;
+    input Function fn;
+    input list<Expression> args;
+    input output ParameterTree ptree = ParameterTree.EMPTY();
+  algorithm
+    ty := match ty
+      local
+        list<Dimension> dims;
+        list<Type> tys;
+
+      case Type.ARRAY()
+        algorithm
+          (dims, ptree) := List.map1Fold(ty.dimensions, evaluateCallTypeDim, (fn, args), ptree);
+          ty.dimensions := dims;
+        then
+          ty;
+
+      case Type.TUPLE()
+        algorithm
+          (tys, ptree) := List.map2Fold(ty.types, evaluateCallType, fn, args, ptree);
+          ty.types := tys;
+        then
+          ty;
+
+      else ty;
+    end match;
+  end evaluateCallType;
+
+  function evaluateCallTypeDim
+    input output Dimension dim;
+    input tuple<Function, list<Expression>> fnArgs;
+    input output ParameterTree ptree;
+  algorithm
+    dim := match dim
+      local
+        Expression exp;
+
+      case Dimension.EXP()
+        algorithm
+          ptree := buildParameterTree(fnArgs, ptree);
+          exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
+          exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+        then
+          Dimension.fromExp(exp, dim.var);
+
+      else dim;
+    end match;
+  end evaluateCallTypeDim;
+
+  function buildParameterTree
+    input tuple<Function, list<Expression>> fnArgs;
+    input output ParameterTree ptree;
+  protected
+    Function fn;
+    list<Expression> args;
+    Expression arg;
+  algorithm
+    if not ParameterTree.isEmpty(ptree) then
+      return;
+    end if;
+
+    (fn, args) := fnArgs;
+
+    for i in fn.inputs loop
+      arg :: args := args;
+      ptree := ParameterTree.add(ptree, InstNode.name(i), arg);
+    end for;
+
+    // TODO: Add local variable bindings.
+  end buildParameterTree;
+
+  function evaluateCallTypeDimExp
+    input Expression exp;
+    input ParameterTree ptree;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      local
+        InstNode node;
+        Option<Expression> oexp;
+        Expression e;
+
+      case Expression.CREF(cref = ComponentRef.CREF(node = node, restCref = ComponentRef.EMPTY()))
+        algorithm
+          oexp := ParameterTree.getOpt(ptree, InstNode.name(node));
+
+          if isSome(oexp) then
+            SOME(outExp) := oexp;
+            // TODO: Apply subscripts.
+          end if;
+        then
+          outExp;
+
+      else exp;
+    end match;
+  end evaluateCallTypeDimExp;
 
   function typeArgs
     input output Call call;
@@ -947,6 +1082,7 @@ protected
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
         {"array" + List.toString(posArgs, Expression.toStringTyped, "", "(", ", ", ")", true),
          ":\n  array(Expression, Expression, ...) => Expression[:]"}, info);
+      fail();
     end if;
 
     //TODO: Check that the arguments are type compatible.
@@ -998,7 +1134,7 @@ protected
     TypedArg start,interval;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty) := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
   end typeDiscreteCall;
 
@@ -1025,6 +1161,7 @@ protected
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
         {"ndims" + List.toString(args, Expression.toStringTyped, "", "(", ", ", ")", true),
          ":\n  ndims(Expression) => Integer"}, info);
+      fail();
     end if;
 
     // The number of dimensions an expression has is always known,
@@ -1051,10 +1188,11 @@ protected
     // pre may not be used in a function context.
     if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"pre"}, info);
+      fail();
     end if;
 
     argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
-    (argtycall, _) := matchTypedNormalCall(argtycall, info);
+    (argtycall, _) := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
 
     {arg} := args;
@@ -1085,10 +1223,11 @@ protected
     // change may not be used in a function context.
     if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"change"}, info);
+      fail();
     end if;
 
     argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
-    (argtycall, ty) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty) := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
 
     {arg} := args;
@@ -1098,6 +1237,58 @@ protected
       fail();
     end if;
   end typeChangeCall;
+
+  function typeDerCall
+    input Call call;
+    input Integer origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability variability;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
+    Type ety;
+  algorithm
+    // der may not be used in a function context.
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"der"}, info);
+      fail();
+    end if;
+
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {"der", Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) <> 1 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {"der" + List.toString(args, Expression.toStringTyped, "", "(", ", ", ")", true),
+         ":\n  der(Real) => Real"}, info);
+    end if;
+
+    {arg} := args;
+    (arg, ty, variability) := Typing.typeExp(arg, origin, info);
+
+    ety := Type.arrayElementType(ty);
+
+    if Type.isInteger(ety) then
+      ty := Type.setArrayElementType(ty, Type.REAL());
+      arg := Expression.typeCastElements(arg, Type.REAL());
+    elseif not Type.isReal(ety) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg),
+         Type.toString(ty), "Real"}, info);
+    end if;
+
+    {fn} := typeCachedFunctions(fn_ref);
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+  end typeDerCall;
 
   function typeEdgeCall
     input Call call;
@@ -1117,10 +1308,11 @@ protected
     // edge may not be used in a function context.
     if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"edge"}, info);
+      fail();
     end if;
 
     argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
-    (argtycall, ty) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty) := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
 
     {arg} := args;
@@ -1145,7 +1337,7 @@ protected
     TypedArg start,interval;
   algorithm
     argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
     ty := Type.arrayElementType(Util.tuple32(listHead(args)));
     // TODO: check basic type in two argument overload.
@@ -1166,7 +1358,7 @@ protected
     Expression arg;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
 
     // TODO: check arrays of simple types.
@@ -1193,7 +1385,7 @@ protected
     TypedArg start,interval;
   algorithm
     argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
 
     // TODO: check if second argument is real or array of real or record of reals.
     callExp := Expression.CALL(unboxArgs(argtycall));
@@ -1225,6 +1417,7 @@ protected
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
         {"fill" + List.toString(args, Expression.toStringTyped, "", "(", ", ", ")", true),
          ":\n  fill(Expression, Integer, ...) => Expression[:, ...]"}, info);
+      fail();
     end if;
 
     fill_arg :: args := args;
@@ -1259,6 +1452,12 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
+      if arg_var <= Variability.PARAMETER then
+        arg := Ceval.evalExp(arg, Ceval.EvalTarget.IGNORE_ERRORS());
+        arg := SimplifyExp.simplifyExp(arg);
+        arg_ty := Expression.typeOf(arg);
+      end if;
+
       // Each dimension argument must be an Integer expression.
       if not Type.isInteger(arg_ty) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -1276,7 +1475,12 @@ protected
 
     {fn} := typeCachedFunctions(fnRef);
     ty := Type.ARRAY(fillType, dims);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, ty_args, ty));
+
+    if variability <= Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+      callExp := Ceval.evalBuiltinCall(fn, ty_args, Ceval.EvalTarget.IGNORE_ERRORS());
+    else
+      callExp := Expression.CALL(makeBuiltinCall2(fn, ty_args, ty));
+    end if;
   end typeFillCall2;
 
   function typeZerosOnesCall
@@ -1307,6 +1511,7 @@ protected
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
         {name + List.toString(args, Expression.toStringTyped, "", "(", ", ", ")", true),
          ":\n  " + name + "(Integer, ...) => Integer[:, ...]"}, info);
+      fail();
     end if;
 
     (callExp, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), {}, args, origin, info);
@@ -1327,7 +1532,7 @@ protected
     Dimension dim1,dim2;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
 
     // check extra dimensions (>0) are 1.
@@ -1367,7 +1572,7 @@ protected
     Integer size;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
 
     ty := match argtycall
@@ -1411,7 +1616,7 @@ protected
     Dimension dim1,dim2;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
 
     // check extra dimensions (>2) are 1.
@@ -1458,7 +1663,7 @@ protected
     Expression arg;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
 
     ty := match argtycall
@@ -1486,7 +1691,7 @@ protected
     Dimension dim1,dim2;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
 
     ty := match argtycall
@@ -1525,7 +1730,7 @@ protected
     Dimension dim1,dim2;
   algorithm
     argtycall := typeNormalCall(call, origin, info);
-    (argtycall, ty, _) := matchTypedNormalCall(argtycall, info);
+    (argtycall, ty, _) := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
     // TODO: Check cardinality restrictions, 3.7.2.3.
   end typeCardinalityCall;
@@ -1557,6 +1762,7 @@ protected
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
         {"noEvent" + List.toString(args, Expression.toString, "", "(", ", ", ")", true),
          ":\n  noEvent(Expression) => Expression"}, info);
+      fail();
     end if;
 
     {arg} := args;

@@ -371,6 +371,7 @@ public
     dims := match ty
       case ARRAY() then ty.dimensions;
       case FUNCTION() then arrayDims(ty.resultType);
+      case METABOXED() then arrayDims(ty.ty);
       else {};
     end match;
   end arrayDims;
@@ -383,6 +384,7 @@ public
     dim := match ty
       case ARRAY() then listGet(ty.dimensions, index);
       case FUNCTION() then nthDimension(ty.resultType, index);
+      case METABOXED() then nthDimension(ty.ty, index);
     end match;
   end nthDimension;
 
@@ -393,6 +395,7 @@ public
     dimCount := match ty
       case ARRAY() then listLength(ty.dimensions);
       case FUNCTION() then dimensionCount(ty.resultType);
+      case METABOXED() then dimensionCount(ty.ty);
       else 0;
     end match;
   end dimensionCount;

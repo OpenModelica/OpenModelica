@@ -1907,6 +1907,7 @@ algorithm
       MatchKind mk;
       Variability var, bvar;
       Integer next_origin;
+      Equation tyeq;
 
     case Equation.EQUALITY()
       algorithm
@@ -1920,8 +1921,15 @@ algorithm
              Type.toString(ty1) + " = " + Type.toString(ty2)}, eq.info);
           fail();
         end if;
+
+        // Array equations containing function calls should not be scalarized.
+        if Type.isArray(ty) and (Expression.hasArrayCall(e1) or Expression.hasArrayCall(e2)) then
+          tyeq := Equation.ARRAY_EQUALITY(e1, e2, ty, eq.info);
+        else
+          tyeq := Equation.EQUALITY(e1, e2, ty, eq.info);
+        end if;
       then
-        Equation.EQUALITY(e1, e2, ty, eq.info);
+        tyeq;
 
     case Equation.CONNECT()
       then typeConnect(eq.lhs, eq.rhs, origin, eq.info);
@@ -2254,8 +2262,10 @@ algorithm
       next_origin := intBitOr(origin, ExpOrigin.NONEXPANDABLE);
     end if;
 
-    eql := list(typeEquation(e, next_origin) for e in eql);
-    bl := (cond, eql) :: bl;
+    if not Expression.isFalse(cond) then
+      eql := list(typeEquation(e, next_origin) for e in eql);
+      bl := (cond, eql) :: bl;
+    end if;
   end for;
 
   // TODO: If accum_var <= PARAMETER, then each branch must have the same number
