@@ -856,12 +856,9 @@ namespace IAEX {
     layout_->addWidget( output_, 2, 1 );
 
     output_->setReadOnly( true );
-
     output_->setOpenLinks(false);
-
     output_->setFrameShape( QFrame::Box );
     output_->setAutoFormatting( QTextEdit::AutoNone );
-
     output_->setHorizontalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
     output_->setVerticalScrollBarPolicy( Qt::ScrollBarAlwaysOff );
 
@@ -908,6 +905,7 @@ namespace IAEX {
       output_->setAlignment( (Qt::AlignmentFlag)style.alignment() );
       output_->mergeCurrentCharFormat( (*style.textCharFormat()) );
       output_->document()->rootFrame()->setFrameFormat( (*style.textFrameFormat()) );
+      output_->setFont(style.textCharFormat()->font());
     }
     else
     {

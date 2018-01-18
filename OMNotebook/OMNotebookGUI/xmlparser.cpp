@@ -253,12 +253,14 @@ namespace IAEX
       throw e;
     }
 
+/* Do not throw an error if empty notebook is opened
     // check if root cell is empty
     if( !rootcell->hasChilds() )
     {
       string msg = "File " + filename_.toStdString() + " is empty";
       throw runtime_error( msg.c_str() );
     }
+*/
 
     return rootcell;
   }

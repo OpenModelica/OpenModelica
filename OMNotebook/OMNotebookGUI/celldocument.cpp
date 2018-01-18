@@ -945,13 +945,7 @@ namespace IAEX
    */
   void CellDocument::mouseClickedOnCell(Cell *clickedCell)
   {
-
-    // 2006-04-25, AF
-    if( lastClickedCell_ == clickedCell )
-      return;
-    else
-      lastClickedCell_ = clickedCell;
-
+    lastClickedCell_ = clickedCell;
 
     //Deselect all selection
     clearSelection();
