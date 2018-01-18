@@ -489,7 +489,7 @@ void SimManager::runSingleProcess()
         _writeFinalState = true;
         _timeevent_system->computeTimeEventConditions(_tStart);
     }
-    _cont_system->evaluateAll(IContinuous::CONTINUOUS);      // vxworksupdate
+   // _cont_system->evaluateAll(IContinuous::CONTINUOUS);      // vxworksupdate
     _event_system->getZeroFunc(zeroVal_new);
 
     for (int i = 0; i < _dimZeroFunc; i++)

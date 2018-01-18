@@ -91,48 +91,33 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   //_event_system->getClockConditions(_clockconditions0);
 
   //Handle all events
-
-  state_vars_reinitialized = _countinous_system->evaluateConditions();
-
-
-  //check if discrete variables changed
-  bool drestart= _event_system->checkForDiscreteEvents(); //discrete time conditions
-
-  _event_system->getConditions(_conditions1);
-  //_event_system->getClockConditions(_clockconditions1);
-  bool crestart =false;
-  if (dim > 0)
+  bool assert = false;
+  bool drestart = false;
+  bool crestart = false;
+  try
   {
-    LOGGER_WRITE_VECTOR("conditions", _conditions1, dim, LC_EVENTS, LL_DEBUG);
-    crestart = !std::equal(_conditions1, _conditions1 + dim, _conditions0);
+
+	  state_vars_reinitialized = _countinous_system->evaluateConditions();
+
+
+	  //check if discrete variables changed
+	   drestart = _event_system->checkForDiscreteEvents(); //discrete time conditions
+
+	  _event_system->getConditions(_conditions1);
+	  //_event_system->getClockConditions(_clockconditions1);
+
+	  if (dim > 0)
+	  {
+		  LOGGER_WRITE_VECTOR("conditions", _conditions1, dim, LC_EVENTS, LL_DEBUG);
+		  crestart = !std::equal(_conditions1, _conditions1 + dim, _conditions0);
+	  }
   }
-  //check for event clocks
-  /*bool eventclocksrestart =  false;
-  if(dimClock>0)
+  catch (std::exception& ex)
   {
-    eventclocksrestart = !std::equal (_clockconditions1, _clockconditions1+dimClock,_clockconditions0);
+
+	 // if  evaluateConditions throws and error during event iteration the event iteration will restarted
+	  assert = true;
   }
-  */
-  return((drestart||crestart)); //returns true if new events occurred
+  return(drestart || crestart || assert); //returns true if new events occurred
 }
-/** @} */ // end of coreSystem
-/*
-bool ContinuousEvents::checkConditions(const bool* events, bool all)
-{
-IEvent* event_system= dynamic_cast<IEvent*>(_system);
-int dim = event_system->getDimZeroFunc();
-bool* conditions0 = new bool[dim];
-bool* conditions1 = new bool[dim];
-event_system->getConditions(conditions0);
-
-for(int i=0;i<dim;i++)
-{
-if(all||events[i])
-getCondition(i);
-}
-event_system->getConditions(conditions1);
-return !std::equal (conditions1, conditions1+dim,conditions0);
-
-}
-*/
 
