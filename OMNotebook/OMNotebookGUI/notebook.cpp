@@ -3891,18 +3891,15 @@ void NotebookWindow::setAutoIndent(bool b)
 
 void NotebookWindow::eval()
 {
-  if(GraphCell *g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell()))
-  {
+  if(GraphCell *g = dynamic_cast<GraphCell*>(subject_->getCursor()->currentCell())) {
     g->eval();
   }
 
-  if(LatexCell *g = dynamic_cast<LatexCell*>(subject_->getCursor()->currentCell()))
-  {
+  if(LatexCell *g = dynamic_cast<LatexCell*>(subject_->getCursor()->currentCell())) {
     g->eval();
   }
 
-  if(InputCell *g = dynamic_cast<InputCell*>(subject_->getCursor()->currentCell()))
-  {
+  if(InputCell *g = dynamic_cast<InputCell*>(subject_->getCursor()->currentCell())) {
     g->eval();
   }
 }
@@ -4191,51 +4188,35 @@ void NotebookWindow::shiftcellsDown()
 
 void NotebookWindow::evalall()
 {
-    bool value =subject_->isEmpty();
-    if (value==false)
-    {
+    if (subject_->isEmpty()==false) {
         Cell* current=subject_->getMainCell()->child();
         QVector<Cell*> cellcount=SearchCells(current);
 
-        for (int i =0;i<cellcount.size();i++)
-        {
-            if(GraphCell *g = dynamic_cast<GraphCell*>(cellcount[i]))
-            {
+        for (int i =0;i<cellcount.size();i++) {
+            if(GraphCell *g = dynamic_cast<GraphCell*>(cellcount[i])) {
                 g->eval();
-                cout << "eva graph cell"<<endl;
             }
-            if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i]))
-            {
-              cout << "eva input cell"<<endl;
+            if(InputCell *g = dynamic_cast<InputCell*>(cellcount[i])) {
                 g->eval();
             }
         }
-    }
-    else
-    {
+    } else {
         qDebug()<<"The Document is Empty";
     }
 }
 
 void NotebookWindow::evalallLatex()
 {
-    bool value =subject_->isEmpty();
-    if (value==false)
-    {
+    if (subject_->isEmpty()==false) {
         Cell* current=subject_->getMainCell()->child();
         QVector<Cell*> cellcount=SearchCells(current);
 
-        for (int i =0;i<cellcount.size();i++)
-        {
-            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i]))
-            {
-              cout << "eva latex cell"<<endl;
+        for (int i =0;i<cellcount.size();i++) {
+            if(LatexCell *g = dynamic_cast<LatexCell*>(cellcount[i])) {
                 g->eval(true);
             }
         }
-    }
-    else
-    {
+    } else {
         qDebug()<<"The Document is Empty";
     }
 }

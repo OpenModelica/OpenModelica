@@ -114,7 +114,7 @@ void Indent::ISM::newToken(QString s, QString s2)
       lMod = true;
       break;
     }
-    lMod = false;
+    //lMod = false;
 
     if(s2 == "if" || s == "if" )
     {
@@ -124,13 +124,14 @@ void Indent::ISM::newToken(QString s, QString s2)
         equation = false;
 
       state = 1;
-      //      lMod = true;
+      ++level;
+      lMod = true;
     }
     else if(s == "when" || s == "for")
     {
       loopBlock = true;
+      ++level;
       state = 1;
-
     }
     break;
 
@@ -138,19 +139,18 @@ void Indent::ISM::newToken(QString s, QString s2)
     if(loopBlock && (s == "then" || s == "loop"))
     {
 //      ++level;
-//      lMod = true;
-      nextMod = +1;
+      lMod = true;
+//      nextMod = +1;
       state = 0;
     }
     else if(s == "then" )
     {
 //      ++level;
+     lMod = true;
       if(equation || equationSection)
         state = 2;
       else
         state = 3;
-//      lMod = true;
-      nextMod = +1;
     }
 
     break;
@@ -158,25 +158,31 @@ void Indent::ISM::newToken(QString s, QString s2)
   case 2:
     if(s == "elseif" || (s == "else" && s2 == "if" && (skipNext = true)))
     {
-//      lMod = true;;
-      --level;
+      lMod = true;
+//      --level;
 //            nextMod = -1;
       state = 1;
       break;
     }
-    else if(s2 == "else")
-    {
-      //      lMod = true;
-    }
     else if(s == "else")
     {
       lMod = true;
-
+    }
+    else if(s == "end" && s2.left(2)=="if")
+    {
+//      lMod = true;
+      level--;
+      state = 0;
+      skipNext = true;
     }
     else
     {
       //      lMod = false;
       //--level;
+      //nextMod = -1;
+      //state = 0;
+    }
+    if (equation && s.right(1)==";") {
       nextMod = -1;
       state = 0;
     }
