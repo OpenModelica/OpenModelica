@@ -39,12 +39,17 @@ double  division (const double &a,const double &b, bool throwEx,const char* text
     return a/b ;
     else
     {
-      std::string error_msg = "Division by zero: ";
-      if(throwEx)
-	   throw ModelicaSimulationError(UTILITY,error_msg+string(text));
+     if(a==0)
+	 {
+		 //LOGGER_WRITE("Division by Zero: Solver will try to handle division by zero with minimu norm  for" + string(text), LC_INIT, LL_DEBUG);
+		 return 0;
+	 }
+
+     if(throwEx)
+	   throw ModelicaSimulationError(UTILITY,"Division by zero: "+string(text));
      else
 	 {
-		// LOGGER_WRITE("Division: Solver will try to handle division by zero for" + string(text), LC_INIT, LL_DEBUG);
+		 //LOGGER_WRITE("Division: Solver will try to handle division by zero for" + string(text), LC_INIT, LL_DEBUG);
 		 return a;
 	 }
    }
