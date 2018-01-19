@@ -38,6 +38,7 @@ public import FCore;
 public import HashTable;
 public import Absyn;
 
+protected import AbsynUtil;
 protected import Array;
 protected import BaseHashTable;
 protected import ComponentReference;
@@ -47,7 +48,6 @@ protected import ExpressionDump;
 protected import Flags;
 protected import FNode;
 protected import FGraph;
-protected import GlobalScriptUtil;
 protected import List;
 protected import Lookup;
 protected import SCode;
@@ -176,7 +176,7 @@ algorithm
     case _
       equation
         true = Flags.getConfigBool(Flags.UNIT_CHECKING);
-        ((_,_,_)) = GlobalScriptUtil.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
+        ((_,_,_)) = AbsynUtil.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
       then ();
 
     else

@@ -61,6 +61,7 @@ import FGraph;
 import FGraphStream;
 import Error;
 import ErrorExt;
+import ExecStat.{execStat,execStatReset};
 import Flags;
 import GC;
 import Global;
@@ -73,82 +74,13 @@ import Print;
 import Settings;
 import SimCode;
 import SimCodeMain;
-import ExecStat.{execStat,execStatReset};
 import Socket;
 import StackOverflow;
+import SymbolTable;
 import System;
 import TplMain;
 import Util;
 import ZeroMQ;
-
-protected function serverLoop
-"This function is the main loop of the server listening
-  to a port which recieves modelica expressions."
-  input Boolean cont;
-  input Integer inInteger;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
-algorithm
-  outInteractiveSymbolTable := match (cont,inInteger,inInteractiveSymbolTable)
-    local
-      Boolean b;
-      String str,replystr;
-      GlobalScript.SymbolTable newsymb,ressymb,isymb;
-      Integer shandle;
-    case (false,_,isymb) then isymb;
-    case (_,-1,_) then fail();
-    case (_,shandle,isymb)
-      equation
-        str = Socket.handlerequest(shandle);
-        if Flags.isSet(Flags.INTERACTIVE_DUMP) then
-          Debug.trace("------- Recieved Data from client -----\n");
-          Debug.trace(str);
-          Debug.trace("------- End recieved Data-----\n");
-        end if;
-        (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
-        replystr = if b then replystr else "quit requested, shutting server down\n";
-        Socket.sendreply(shandle, replystr);
-        if not b then
-          Socket.close(shandle);
-          Socket.cleanup();
-        end if;
-      then serverLoop(b, shandle, newsymb);
-  end match;
-end serverLoop;
-
-protected function serverLoopZMQ
-"This function is the main loop of the ZeroMQ server listening
-  to a port which recieves modelica expressions."
-  input Boolean cont;
-  input Option<Integer> inZMQSocket;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
-algorithm
-  outInteractiveSymbolTable := match (cont,inZMQSocket,inInteractiveSymbolTable)
-    local
-      Boolean b;
-      String str,replystr;
-      GlobalScript.SymbolTable newsymb,ressymb,isymb;
-      Option<Integer> zmqSocket;
-    case (false,_,isymb) then isymb;
-    case (_,SOME(0),_) then fail();
-    case (_,zmqSocket,isymb)
-      equation
-        str = ZeroMQ.handleRequest(zmqSocket);
-        if Flags.isSet(Flags.INTERACTIVE_DUMP) then
-          Debug.trace("------- Recieved Data from client -----\n");
-          Debug.trace(str);
-          Debug.trace("------- End recieved Data-----\n");
-        end if;
-        (b,replystr,newsymb) = handleCommand(str, isymb) "Print.clearErrorBuf &" ;
-        replystr = if b then replystr else "quit requested, shutting server down\n";
-        ZeroMQ.sendReply(zmqSocket, replystr);
-        if not b then
-          ZeroMQ.close(zmqSocket);
-        end if;
-      then serverLoopZMQ(b, zmqSocket, newsymb);
-  end match;
-end serverLoopZMQ;
 
 protected function makeDebugResult
   input Flags.DebugFlag inFlag;
@@ -208,14 +140,11 @@ public function handleCommand
    If the command is quit, the function returns false, otherwise it sends the
    string to the parse function and returns true."
   input String inCommand;
-  input GlobalScript.SymbolTable inSymbolTable;
   output Boolean outContinue;
   output String outResult;
-  output GlobalScript.SymbolTable outSymbolTable = inSymbolTable;
 protected
   Option<GlobalScript.Statements> stmts;
   Option<Absyn.Program> prog;
-  GlobalScript.SymbolTable st;
 algorithm
   Print.clearBuf();
 
@@ -226,7 +155,7 @@ algorithm
     outContinue := true;
 
     (stmts, prog) := parseCommand(inCommand);
-    (outResult, outSymbolTable) := handleCommand2(stmts, prog, inCommand, outSymbolTable);
+    outResult := handleCommand2(stmts, prog, inCommand);
     outResult := makeDebugResult(Flags.DUMP, outResult);
     outResult := makeDebugResult(Flags.DUMP_GRAPHVIZ, outResult);
   end if;
@@ -236,28 +165,28 @@ protected function handleCommand2
   input Option<GlobalScript.Statements> inStatements;
   input Option<Absyn.Program> inProgram;
   input String inCommand;
-  input GlobalScript.SymbolTable inSymbolTable;
   output String outResult;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outResult, outSymbolTable) :=
-  matchcontinue(inStatements, inProgram, inSymbolTable)
+  outResult := matchcontinue(inStatements, inProgram)
     local
       GlobalScript.Statements stmts;
       Absyn.Program prog, prog2, ast;
       String result;
-      GlobalScript.SymbolTable st;
       list<GlobalScript.Variable> vars;
+      SymbolTable table;
 
     // Interactively evaluate an algorithm statement or expression.
-    case (SOME(stmts), NONE(), _)
+    case (SOME(stmts), NONE())
       equation
-        (result, st) = Interactive.evaluate(stmts, inSymbolTable, false);
-      then (result, st);
+        result = Interactive.evaluate(stmts, false);
+      then result;
 
     // Add a class or function to the interactive symbol table.
-    case (NONE(), SOME(prog), GlobalScript.SYMBOLTABLE(ast = ast, lstVarVal = vars))
+    case (NONE(), SOME(prog))
       equation
+        table = SymbolTable.get();
+        ast = table.ast;
+        vars = table.vars;
         prog2 = Interactive.addScope(prog, vars);
         prog2 = Interactive.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
@@ -268,32 +197,32 @@ algorithm
           DumpGraphviz.dump(prog2);
         end if;
         result = makeClassDefResult(prog) "Return vector of toplevel classnames.";
-        st = GlobalScriptUtil.setSymbolTableAST(inSymbolTable, prog2);
-      then (result, st);
+        SymbolTable.setAbsyn(prog2);
+      then result;
 
     // A parser error occured in parseCommand, display the error message. This
     // is handled here instead of in parseCommand, since parseCommand does not
     // return a result string.
-    case (NONE(), NONE(), _)
+    case (NONE(), NONE())
       equation
         Print.printBuf("Error occurred building AST\n");
         result = Print.getString();
         result = stringAppend(result, "Syntax Error\n");
         result = stringAppend(result, Error.printMessagesStr(false));
-      then (result, inSymbolTable);
+      then result;
 
     // A non-parser error occured, display the error message.
-    case (_, _, _)
+    case (_, _)
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
         result = Error.printMessagesStr(false);
-      then (result, inSymbolTable);
+      then result;
 
     else
       equation
         true = Util.isSome(inStatements) or Util.isSome(inProgram);
         Error.addMessage(Error.STACK_OVERFLOW, {inCommand});
-      then ("", inSymbolTable);
+      then "";
 
   end matchcontinue;
 end handleCommand2;
@@ -406,45 +335,35 @@ end showErrors;
 
 protected function loadLib
   input String inLib;
-  input GlobalScript.SymbolTable inSymTab;
-  output GlobalScript.SymbolTable outSymTab;
 protected
   Boolean is_modelica_file;
 algorithm
   is_modelica_file := isModelicaFile(inLib);
-
-  outSymTab := matchcontinue(is_modelica_file)
+  _ := matchcontinue(is_modelica_file)
     local
       String lib, mp;
       list<String> rest;
       Absyn.Program pnew, p;
-      list<GlobalScript.InstantiatedClass> ic;
-      list<GlobalScript.Variable> iv;
-      list<GlobalScript.CompiledCFunction> cf;
-      list<GlobalScript.LoadedFile> lf;
-      GlobalScript.SymbolTable st, newst;
       Absyn.Path path;
 
     // A .mo-file.
     case true
       equation
         pnew = Parser.parse(inLib, "UTF-8");
-        p = GlobalScriptUtil.getSymbolTableAST(inSymTab);
+        p = SymbolTable.getAbsyn();
         pnew = Interactive.mergeProgram(pnew, p);
-        newst = GlobalScriptUtil.setSymbolTableAST(inSymTab, pnew);
-      then
-       newst;
+        SymbolTable.setAbsyn(pnew);
+      then ();
 
     // some libs present
     case false
       equation
         path = Absyn.stringPath(inLib);
         mp = Settings.getModelicaPath(Config.getRunningTestsuite());
-        p = GlobalScriptUtil.getSymbolTableAST(inSymTab);
+        p = SymbolTable.getAbsyn();
         (pnew, true) = CevalScript.loadModel({(path, {"default"}, false)}, mp, p, true, true, true, false);
-        newst = GlobalScriptUtil.setSymbolTableAST(inSymTab, pnew);
-      then
-        newst;
+        SymbolTable.setAbsyn(pnew);
+      then ();
 
     // problem with the libs, ignore!
     case false
@@ -477,7 +396,6 @@ algorithm
       Absyn.Path cname;
       Boolean silent,notsilent;
       GlobalScript.Statements stmts;
-      GlobalScript.SymbolTable newst, st;
       FCore.Cache cache;
       FCore.Graph env;
       DAE.FunctionTree funcs;
@@ -486,36 +404,39 @@ algorithm
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
     case (libs)
-      equation
+      algorithm
         //print("Class to instantiate: " + Config.classToInstantiate() + "\n");
         isEmptyOrFirstIsModelicaFile(libs);
         execStatReset();
         // Parse libraries and extra mo-files that might have been given at the command line.
-        GlobalScript.SYMBOLTABLE(ast = p) = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
+        for lib in libs loop
+          loadLib(lib);
+        end for;
         // Show any errors that occured during parsing.
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
 
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
-          Dump.dump(p);
+          Dump.dump(SymbolTable.getAbsyn());
           print(Print.getString());
         end if;
         if Flags.isSet(Flags.DUMP_GRAPHVIZ) then
-          DumpGraphviz.dump(p);
+          DumpGraphviz.dump(SymbolTable.getAbsyn());
         end if;
 
         execStat("Parsed file");
 
         // Instantiate the program.
-        (p, cache, env, d, cname) = instantiate(p);
+        (cache, env, d, cname) := instantiate();
+        p := SymbolTable.getAbsyn();
 
-        d = if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
+        d := if Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP) then DAEUtil.transformationsBeforeBackend(cache,env,d) else d;
 
-        funcs = FCore.getFunctionTree(cache);
+        funcs := FCore.getFunctionTree(cache);
 
         Print.clearBuf();
         execStat("Transformations before Dump");
-        s = if Config.silent() then "" else DAEDump.dumpStr(d, funcs);
+        s := if Config.silent() then "" else DAEDump.dumpStr(d, funcs);
         execStat("DAEDump done");
         Print.printBuf(s);
         if Flags.isSet(Flags.DAE_DUMP_GRAPHV) then
@@ -524,7 +445,7 @@ algorithm
         execStat("Misc Dump");
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d = if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
+        d := if boolNot(Flags.isSet(Flags.TRANSFORMS_BEFORE_DUMP)) then DAEUtil.transformationsBeforeBackend(cache,env,d) else  d;
 
         if not Config.silent() then
           print(Print.getString());
@@ -539,15 +460,17 @@ algorithm
 
     /* Modelica script file .mos */
     case (f::libs)
-      equation
+      algorithm
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
-        st = List.fold(libs, loadLib, GlobalScript.emptySymboltable);
+        for lib in libs loop
+          loadLib(lib);
+        end for;
 
         //System.startTimer();
         //print("\nParseExp");
         // parse our algorithm given in the script
-        stmts = Parser.parseexp(f);
+        stmts := Parser.parseexp(f);
         //System.stopTimer();
         //print("\nParseExp: " + realString(System.getTimerIntervalTime()));
 
@@ -555,7 +478,7 @@ algorithm
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
         // evaluate statements and print the result to stdout directly
-        _ = Interactive.evaluateToStdOut(stmts, st, true);
+        Interactive.evaluateToStdOut(stmts, true);
       then
         ();
 
@@ -588,22 +511,18 @@ protected function instantiate
   "Translates the Absyn.Program to SCode and instantiates either a given class
    specified by the +i flag on the command line, or the last class in the
    program if no class was specified."
-  input output Absyn.Program program;
   output FCore.Cache cache;
   output FCore.Graph env;
   output DAE.DAElist dae;
   output Absyn.Path cname;
 protected
   String cls;
-  GlobalScript.SymbolTable st;
 algorithm
   cls := Config.classToInstantiate();
   // If no class was explicitly specified, instantiate the last class in the
   // program. Otherwise, instantiate the given class name.
-  cname := if stringEmpty(cls) then Absyn.lastClassname(program) else Absyn.stringPath(cls);
-  st := GlobalScriptUtil.setSymbolTableAST(GlobalScript.emptySymboltable, program);
-  (cache, env, SOME(dae), st) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, st, true);
-  program := st.ast;
+  cname := if stringEmpty(cls) then Absyn.lastClassname(SymbolTable.getAbsyn()) else Absyn.stringPath(cls);
+  (cache, env, SOME(dae)) := CevalScriptBackend.runFrontEnd(FCore.emptyCache(), FGraph.empty(), cname, true);
 end instantiate;
 
 protected function optimizeDae
@@ -663,18 +582,39 @@ end simcodegen;
 
 protected function interactivemode
 "Initiate the interactive mode using socket communication."
-  input GlobalScript.SymbolTable symbolTable;
+protected
+  Integer shandle;
+  Boolean b;
+  String str,replystr;
 algorithm
-  serverLoop(true, Socket.waitforconnect(29500), symbolTable);
+  shandle := Socket.waitforconnect(29500);
+  if shandle == -1 then
+    fail();
+  end if;
+  while true loop
+    str := Socket.handlerequest(shandle);
+    if Flags.isSet(Flags.INTERACTIVE_DUMP) then
+      Debug.trace("------- Recieved Data from client -----\n");
+      Debug.trace(str);
+      Debug.trace("------- End recieved Data-----\n");
+    end if;
+    (b,replystr) := handleCommand(str) "Print.clearErrorBuf &" ;
+    replystr := if b then replystr else "quit requested, shutting server down\n";
+    Socket.sendreply(shandle, replystr);
+    if not b then
+      Socket.close(shandle);
+      Socket.cleanup();
+      break;
+    end if;
+  end while;
 end interactivemode;
 
 protected function interactivemodeCorba
 "Initiate the interactive mode using corba communication."
-  input GlobalScript.SymbolTable inArguments;
 algorithm
   try
     Corba.initialize();
-    serverLoopCorba(inArguments);
+    serverLoopCorba();
   else
     Print.printBuf("Failed to initialize Corba! Is another OMC already running?\n");
     Print.printBuf("Exiting!\n");
@@ -683,67 +623,76 @@ end interactivemodeCorba;
 
 protected function interactivemodeZMQ
 "Initiate the interactive mode using ZMQ communication."
-  input GlobalScript.SymbolTable symbolTable;
+protected
+  Option<Integer> zmqSocket;
+  Boolean b;
+  String str,replystr;
 algorithm
-  serverLoopZMQ(true, ZeroMQ.initialize(), symbolTable);
+  zmqSocket := ZeroMQ.initialize();
+  false := valueEq(SOME(0), zmqSocket);
+  while true loop
+    str := ZeroMQ.handleRequest(zmqSocket);
+    if Flags.isSet(Flags.INTERACTIVE_DUMP) then
+      Debug.trace("------- Recieved Data from client -----\n");
+      Debug.trace(str);
+      Debug.trace("------- End recieved Data-----\n");
+    end if;
+    (b,replystr) := handleCommand(str) "Print.clearErrorBuf &" ;
+    replystr := if b then replystr else "quit requested, shutting server down\n";
+    ZeroMQ.sendReply(zmqSocket, replystr);
+    if not b then
+      ZeroMQ.close(zmqSocket);
+      break;
+    end if;
+  end while;
 end interactivemodeZMQ;
 
 protected function serverLoopCorba
 "This function is the main loop of the server for a CORBA impl."
-  input GlobalScript.SymbolTable inSettings;
-  output GlobalScript.SymbolTable outSettings;
 protected
   String str, reply_str;
-  GlobalScript.SymbolTable settings;
   Boolean cont;
 algorithm
   str := Corba.waitForCommand();
   Print.clearBuf();
-  (cont, reply_str, settings) := handleCommand(str, inSettings);
-
-  if cont then
-    Corba.sendreply(reply_str);
-    outSettings := serverLoopCorba(settings);
-  else
-    Corba.sendreply("quit requested, shutting server down\n");
-    Corba.close();
-    outSettings := inSettings;
-  end if;
+  cont := true;
+  while true loop
+    (cont, reply_str) := handleCommand(str);
+    if cont then
+      Corba.sendreply(reply_str);
+    else
+      break;
+    end if;
+  end while;
+  Corba.sendreply("quit requested, shutting server down\n");
+  Corba.close();
 end serverLoopCorba;
 
 public function readSettings
   " author: x02lucpo
    Checks if 'settings.mos' exist and uses handleCommand with runScript(...) to execute it.
-   Checks if '-s <file>.mos' has been
-   returns GlobalScript.SymbolTable which is used in the rest of the loop"
+   Checks if '-s <file>.mos' has been"
   input list<String> inArguments;
-  output GlobalScript.SymbolTable outSettings;
 protected
   String settings_file;
 algorithm
   settings_file := Util.flagValue("-s", inArguments);
 
-  if settings_file == "" then
-    outSettings := GlobalScript.emptySymboltable;
-  else
+  if settings_file <> "" then
     settings_file := System.trim(settings_file, " \"");
-    outSettings := readSettingsFile(settings_file, GlobalScript.emptySymboltable);
+    readSettingsFile(settings_file);
   end if;
 end readSettings;
 
 
 protected function readSettingsFile
   input String filePath;
-  input GlobalScript.SymbolTable inSettings;
-  output GlobalScript.SymbolTable outSettings;
 protected
   String command;
 algorithm
   if System.regularFileExists(filePath) then
     command := "runScript(\"" + filePath + "\")";
-    (_, _, outSettings) := handleCommand(command, inSettings);
-  else
-    outSettings := inSettings;
+    (_, _) := handleCommand(command);
   end if;
 end readSettingsFile;
 
@@ -823,6 +772,7 @@ algorithm
   end if;
   Global.initialize();
   ErrorExt.registerModelicaFormatError();
+  ErrorExt.initAssertionFunctions();
   System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
   args_1 := Flags.new(args);
   System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
@@ -900,20 +850,22 @@ algorithm
   try
     Settings.getInstallationDirectoryPath();
 
+    SymbolTable.reset();
+
+    readSettings(args);
     if Flags.isSet(Flags.INTERACTIVE_TCP) then
       print("The flag -d=interactive is depreciated. Please use --interactive=tcp\n");
-      interactivemode(readSettings(args));
+      interactivemode();
     elseif interactiveMode == "tcp" then
-      interactivemode(readSettings(args));
+      interactivemode();
     elseif Flags.isSet(Flags.INTERACTIVE_CORBA) then
       print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba\n");
-      interactivemodeCorba(readSettings(args));
+      interactivemodeCorba();
     elseif interactiveMode == "corba" then
-      interactivemodeCorba(readSettings(args));
+      interactivemodeCorba();
     elseif interactiveMode == "zmq" then
-      interactivemodeZMQ(readSettings(args));
+      interactivemodeZMQ();
     else // No interactive flag given, try to flatten the file.
-      readSettings(args);
       FGraphStream.start();
       translateFile(args);
       FGraphStream.finish();

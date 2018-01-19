@@ -37,26 +37,24 @@ encapsulated package BackendInterface
 public import Absyn;
 public import DAE;
 public import FCore;
-public import GlobalScript;
 public import Prefix;
 public import Values;
 
-protected import CevalScript;
-protected import StaticScript;
+protected
+import CevalScript;
+import RewriteRules;
+import StaticScript;
 
 public function cevalInteractiveFunctions
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input DAE.Exp inExp;
-  input GlobalScript.SymbolTable inSymbolTable;
   input Absyn.Msg inMsg;
   input Integer inNumIter;
   output FCore.Cache outCache;
   output Values.Value outValue;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outCache, outValue, outSymbolTable) := CevalScript.cevalInteractiveFunctions(
-    inCache, inEnv, inExp, inSymbolTable, inMsg, inNumIter);
+  (outCache, outValue) := CevalScript.cevalInteractiveFunctions( inCache, inEnv, inExp, inMsg, inNumIter);
 end cevalInteractiveFunctions;
 
 public function cevalCallFunction
@@ -65,15 +63,12 @@ public function cevalCallFunction
   input DAE.Exp inExp;
   input list<Values.Value> inValues;
   input Boolean inImplInst;
-  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Absyn.Msg inMsg;
   input Integer inNumIter = 1;
   output FCore.Cache outCache;
   output Values.Value outValue;
-  output Option<GlobalScript.SymbolTable> outSymbolTable;
 algorithm
-  (outCache, outValue, outSymbolTable) := CevalScript.cevalCallFunction(
-    inCache, inEnv, inExp, inValues, inImplInst, inSymbolTable, inMsg, inNumIter);
+  (outCache, outValue) := CevalScript.cevalCallFunction(inCache, inEnv, inExp, inValues, inImplInst, inMsg, inNumIter);
 end cevalCallFunction;
 
 public function elabCallInteractive
@@ -83,18 +78,29 @@ public function elabCallInteractive
   input list<Absyn.Exp> inExps;
   input list<Absyn.NamedArg> inNamedArgs;
   input Boolean inImplInst;
-  input Option<GlobalScript.SymbolTable> inSymbolTable;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outSymbolTable;
 algorithm
-  (outCache, outExp, outProperties, outSymbolTable) :=
-    StaticScript.elabCallInteractive(inCache, inEnv, inCref, inExps, inNamedArgs,
-      inImplInst, inSymbolTable, inPrefix, inInfo);
+  (outCache, outExp, outProperties) :=
+    StaticScript.elabCallInteractive(inCache, inEnv, inCref, inExps, inNamedArgs, inImplInst, inPrefix, inInfo);
 end elabCallInteractive;
+
+function noRewriteRulesFrontEnd
+  output Boolean noRules;
+algorithm
+  noRules := RewriteRules.noRewriteRulesFrontEnd();
+end noRewriteRulesFrontEnd;
+
+function rewriteFrontEnd
+  input Absyn.Exp inExp;
+  output Absyn.Exp outExp;
+  output Boolean isChanged;
+algorithm
+  (outExp,isChanged) := RewriteRules.rewriteFrontEnd(inExp);
+end rewriteFrontEnd;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end BackendInterface;

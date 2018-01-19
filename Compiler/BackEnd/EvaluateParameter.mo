@@ -462,7 +462,7 @@ algorithm
         // apply replacements
         (e1, _) = BackendVarTransform.replaceExp(e, repl, NONE());
         // evaluate expression
-        (cache, value, _) = Ceval.ceval(cache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
+        (cache, value) = Ceval.ceval(cache, graph, e1, false, Absyn.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var, SOME(e1));
@@ -495,7 +495,7 @@ algorithm
         // apply replacements
         (e1, _) = BackendVarTransform.replaceExp(e, repl, NONE());
         // evaluate expression
-        (cache, value, _) = Ceval.ceval(cache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
+        (cache, value) = Ceval.ceval(cache, graph, e1, false, Absyn.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setBindExp(var, SOME(e1));
@@ -518,7 +518,7 @@ algorithm
         // apply replacements
         (e1, _) = BackendVarTransform.replaceExp(e, repl, NONE());
         // evaluate expression
-        (cache, value, _) = Ceval.ceval(cache, graph, e1, false, NONE(), Absyn.NO_MSG(), 0);
+        (cache, value) = Ceval.ceval(cache, graph, e1, false, Absyn.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
         // set bind value
         v = BackendVariable.setVarStartValue(var, e1);
@@ -567,7 +567,7 @@ algorithm
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, repl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(), 0);
+        (cache, value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(), 0);
         e1 = ValuesUtil.valueExp(value);
         // also set this var final because it is used for the calculation of another variable
         v = BackendVariable.setVarFinal(var, true);
@@ -587,7 +587,7 @@ algorithm
         // apply replacements
         (e,_) = BackendVarTransform.replaceExp(e, repl, NONE());
         // evaluate expression
-        (cache, value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+        (cache, value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
         e1 = ValuesUtil.valueExp(value);
         // also set this var final because it is used for the calculation of another variable
         v = BackendVariable.setVarFinal(var, true);
@@ -836,12 +836,12 @@ algorithm
             local DAE.Exp e1;
             case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
               equation
-               (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+               (_,value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
                e1 = ValuesUtil.valueExp(value);
              then e1;
             case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
               equation
-               (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+               (_,value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
                e1 = ValuesUtil.valueExp(value);
              then e1;
             else e;
@@ -881,12 +881,12 @@ algorithm
           local DAE.Exp e1;
           case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
             equation
-             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             (_,value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 = ValuesUtil.valueExp(value);
            then e1;
           case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
             equation
-             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             (_,value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 = ValuesUtil.valueExp(value);
            then e1;
           else e;
@@ -918,12 +918,12 @@ algorithm
           local DAE.Exp e1;
           case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
             equation
-             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             (_,value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 = ValuesUtil.valueExp(value);
            then e1;
           case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
             equation
-             (_,value,_) = Ceval.ceval(cache, graph, e, false, NONE(), Absyn.NO_MSG(),0);
+             (_,value) = Ceval.ceval(cache, graph, e, false, Absyn.NO_MSG(),0);
              e1 = ValuesUtil.valueExp(value);
            then e1;
           else e;

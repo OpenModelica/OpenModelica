@@ -165,7 +165,7 @@ algorithm
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, inModScope, info);
         // print("Mod.elabMod: calling elabExp on mod exp: " + Dump.printExpStr(e) + " in env: " + FGraph.printGraphPathStr(env) + "\n");
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
+        (cache,e_1,prop) = Static.elabExp(cache, env, e, impl, Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         // Modifiers always apply to single components, so if the expression is
         // a tuple (i.e. from a function call) select the first tuple element.
         (e_1, prop) = Expression.tupleHead(e_1, prop);
@@ -469,7 +469,7 @@ algorithm
     case (cache, env, ih, pre, _, _, _, Absyn.TPATH(p,SOME(dims)))
       equation
         cref = Absyn.CREF_IDENT(name,{});
-        (cache,edims) = InstUtil.elabArraydim(cache, env, cref, p, dims, NONE(), impl, NONE(), true, false, pre, info, {});
+        (cache,edims) = InstUtil.elabArraydim(cache, env, cref, p, dims, NONE(), impl, true, false, pre, info, {});
         (cache,edims) = PrefixUtil.prefixDimensions(cache, env, ih, pre, edims);
         dims = List.map(edims, Expression.unelabDimension);
         (cache,p1) = Inst.makeFullyQualified(cache,env,p);
@@ -504,7 +504,7 @@ algorithm
     err_count := Error.getNumErrorMessages();
 
     try
-      (_, v) := Ceval.ceval(inCache, inEnv, inExp, false, NONE(), msg, 0);
+      (_, v) := Ceval.ceval(inCache, inEnv, inExp, false, msg, 0);
 
       if ValuesUtil.isRecord(v) then
         v := ValuesUtil.typeConvertRecord(v, Expression.typeof(inExp));
@@ -662,7 +662,7 @@ algorithm
     case (cache,env,ih,pre,(DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,binding = SOME(DAE.UNTYPED(e)), info = info)),impl,_)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
+        (cache,e_1,prop) = Static.elabExp(cache, env, e, impl, true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (e_val, cache) = elabModValue(cache,env,e_1,prop,impl,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -784,8 +784,7 @@ protected
   list<SCode.SubMod> submods;
 algorithm
   submods := compactSubMods(inSCodeSubModLst, inModScope);
-  (outCache, outTypesSubModLst) := elabSubmods2(inCache, inEnv, inIH, inPrefix,
-    submods, inBoolean, info, {});
+  (outCache, outTypesSubModLst) := elabSubmods2(inCache, inEnv, inIH, inPrefix, submods, inBoolean, info, {});
 end elabSubmods;
 
 protected function elabSubmods2

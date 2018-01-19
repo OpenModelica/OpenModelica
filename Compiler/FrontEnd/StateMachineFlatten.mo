@@ -640,13 +640,13 @@ algorithm
       algorithm
         cref := DAEUtil.varCref(var);
         try
-			    // Handle case with LHS component reference
-			    DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
-			    res := ComponentReference.crefEqual(crefLHS, cref);
-			  else
-			    res := false;
-			  end try;
-			then res;
+          // Handle case with LHS component reference
+          DAE.CREF(componentRef=crefLHS, ty=tyLHS) := exp;
+          res := ComponentReference.crefEqual(crefLHS, cref);
+        else
+          res := false;
+        end try;
+      then res;
     case DAE.WHEN_EQUATION(equations=equations,elsewhen_=NONE())
       then List.exist1(equations, isVarAtLHS, var);
     case DAE.WHEN_EQUATION(elsewhen_=SOME(_))

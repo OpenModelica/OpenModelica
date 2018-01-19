@@ -2738,6 +2738,20 @@ function pathStringDefault
   output String s = pathString(path);
 end pathStringDefault;
 
+public function classNameCompare
+  input Class c1,c2;
+  output Integer o;
+algorithm
+  o := stringCompare(c1.name, c2.name);
+end classNameCompare;
+
+public function classNameGreater
+  input Class c1,c2;
+  output Boolean b;
+algorithm
+  b := stringCompare(c1.name, c2.name) > 0;
+end classNameGreater;
+
 public function pathCompare
   input Path ip1;
   input Path ip2;

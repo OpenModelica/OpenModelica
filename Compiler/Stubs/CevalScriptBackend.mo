@@ -10,12 +10,10 @@ function runFrontEnd
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className;
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   output FCore.Cache cache;
   output FCore.Graph env;
   output Option<DAE.DAElist> dae;
-  output GlobalScript.SymbolTable st;
 algorithm
   assert(false, getInstanceName());
 end runFrontEnd;
@@ -29,7 +27,6 @@ end getSimulationResultType;
 function getDrModelicaSimulationResultType = getSimulationResultType;
 
 function buildSimulationOptionsFromModelExperimentAnnotation
-  input GlobalScript.SymbolTable inSymTab;
   input Absyn.Path inModelPath;
   input String inFileNamePrefix;
   input Option<GlobalScript.SimulationOptions> defaultOption;
@@ -51,13 +48,11 @@ function cevalInteractiveFunctions3
   input FCore.Graph inEnv;
   input String inFunctionName;
   input list<Values.Value> inVals;
-  input GlobalScript.SymbolTable inSt;
   input Absyn.Msg msg;
   output FCore.Cache outCache = inCache;
   output Values.Value outValue = Values.INTEGER(0);
-  output GlobalScript.SymbolTable outInteractiveSymbolTable = inSt;
 algorithm
-  assert(false, getInstanceName() + ": " + inFunctionName);
+  fail() "Do not print errors here; we expect this function to be called a lot";
 end cevalInteractiveFunctions3;
 
 annotation(__OpenModelica_Interface="backend");

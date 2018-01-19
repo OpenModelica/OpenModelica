@@ -183,7 +183,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
     return NULL;
   }
   /* intialize modelData */
-  fmu1_model_interface_setupDataStruc(comp->fmuData);
+  fmu1_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
   initializeDataStruc(comp->fmuData, comp->threadData);

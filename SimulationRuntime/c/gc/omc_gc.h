@@ -102,10 +102,12 @@ enum {
   LOCAL_ROOT_USER_DEFINED_6,
   LOCAL_ROOT_USER_DEFINED_7,
   LOCAL_ROOT_USER_DEFINED_8,
+  /* getGlobalRoot cannot access the following special local roots (only custom code can) */
   LOCAL_ROOT_ERROR_MO,
   LOCAL_ROOT_PRINT_MO,
   LOCAL_ROOT_SYSTEM_MO,
   LOCAL_ROOT_STACK_OVERFLOW,
+  LOCAL_ROOT_URI_LOOKUP,
   MAX_LOCAL_ROOTS
 };
 #define MAX_LOCAL_ROOTS 16

@@ -13025,6 +13025,9 @@ algorithm
         DAE.EMPTY(name=cr) := inExp2;
       then ComponentReference.crefCompareGeneric(inExp1.name, cr);
 
+    case DAE.CODE()
+      then valueCompare(inExp1, inExp2);
+
     else
       algorithm
         Error.addInternalError("Expression.compare failed: ctor:" + String(valueConstructor(inExp1)) + " " + printExpStr(inExp1) + " " + printExpStr(inExp2), sourceInfo());

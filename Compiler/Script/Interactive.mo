@@ -52,7 +52,6 @@ import ConnectionGraph;
 import DAE;
 import FCore;
 import Global;
-import GlobalScript;
 import SCode;
 import SCodeUtil;
 import Settings;
@@ -61,6 +60,7 @@ import Values;
 // protected imports
 protected
 
+import AbsynUtil;
 import Ceval;
 import CevalScript;
 import ClassInf;
@@ -96,6 +96,7 @@ import Refactor;
 import Static;
 import StaticScript;
 import StringUtil;
+import SymbolTable;
 import System;
 import Types;
 import UnitAbsyn;
@@ -130,48 +131,42 @@ end GraphicEnvCache;
 
 public function evaluate
 "This function evaluates expressions or statements feed interactively to the compiler.
-  inputs:   (GlobalScript.Statements, GlobalScript.SymbolTable, bool /* verbose */)
+  inputs:   (GlobalScript.Statements, bool /* verbose */)
   outputs:   string:
                      The resulting string after evaluation. If an error has occurred, this string
                      will be empty. The error messages can be retrieved by calling print_messages_str()
-                     in Error.mo.
-             GlobalScript.SymbolTable"
+                     in Error.mo."
   input GlobalScript.Statements inStatements;
-  input GlobalScript.SymbolTable inSymbolTable;
   input Boolean inBoolean;
   output String outString;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable,inBoolean)
+  outString := matchcontinue (inStatements,inBoolean)
     local
       String res,res_1,res2,res_2;
-      GlobalScript.SymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
       GlobalScript.Statement x;
       list<GlobalScript.Statement> xs;
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),verbose)
       equation
         showStatement(x, semicolon, true);
-        (res,newst) = evaluate2(GlobalScript.ISTMTS({x},verbose), st);
+        res = evaluate2(GlobalScript.ISTMTS({x},verbose));
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         showStatement(x, semicolon, false);
-      then
-        (res_1,newst);
+      then res_1;
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),verbose)
       equation
         showStatement(x, semicolon, true);
-        (res,newst) = evaluate2(GlobalScript.ISTMTS({x},semicolon), st);
+        res = evaluate2(GlobalScript.ISTMTS({x},semicolon));
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         showStatement(x, semicolon, false);
 
-        (res2,newst_1) = evaluate(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
+        res2 = evaluate(GlobalScript.ISTMTS(xs,semicolon), verbose);
         res_2 = stringAppendList({res_1,res2});
-      then
-        (res_2,newst_1);
+      then res_2;
   end matchcontinue;
 end evaluate;
 
@@ -181,66 +176,64 @@ public function evaluateToStdOut
   If an error has occurred, this string will be empty.
   The error messages can be retrieved by calling print_messages_str() in Error.mo."
   input GlobalScript.Statements inStatements;
-  input GlobalScript.SymbolTable inSymbolTable;
   input Boolean inBoolean;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable := match (inStatements,inSymbolTable,inBoolean)
+  _ := match (inStatements,inBoolean)
     local
       String res,res_1;
-      GlobalScript.SymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
       GlobalScript.Statement x;
       GlobalScript.Statements new;
       list<GlobalScript.Statement> xs;
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),verbose)
       equation
         showStatement(x, semicolon, true);
         new = GlobalScript.ISTMTS({x},verbose);
-        (res,newst) = evaluate2(new, st);
+        res = evaluate2(new);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
         showStatement(x, semicolon, false);
-      then
-        newst;
+      then ();
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
+    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),verbose)
       equation
         showStatement(x, semicolon, true);
         new = GlobalScript.ISTMTS({x},semicolon);
-        (res,newst) = evaluate2(new, st);
+        res = evaluate2(new);
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
         showStatement(x, semicolon, false);
 
-        newst_1 = evaluateToStdOut(GlobalScript.ISTMTS(xs,semicolon), newst, verbose);
-      then
-        newst_1;
+        evaluateToStdOut(GlobalScript.ISTMTS(xs,semicolon), verbose);
+      then ();
   end match;
 end evaluateToStdOut;
 
 public function evaluateFork
 "As evaluateToStdOut, but takes the inputs as a tuple of mos-script file and symbol table.
 As it is supposed to work in a thread without output, it also flushes the error-buffer since that will otherwise be lost to the void."
-  input tuple<String,GlobalScript.SymbolTable> inTpl;
+  input tuple<String,SymbolTable> inTpl;
   output Boolean b;
 algorithm
   b := matchcontinue inTpl
     local
       String mosfile;
       GlobalScript.Statements statements;
-      GlobalScript.SymbolTable st;
+      SymbolTable st;
       Absyn.Program ast;
       Option<SCode.Program> explodedAst;
 
-    case ((mosfile,GlobalScript.SYMBOLTABLE(ast=ast,explodedAst=explodedAst)))
+    case ((mosfile,st))
       equation
+        SymbolTable.reset();
+        SymbolTable.setAbsyn(st.ast);
+        SymbolTable.setSCode(st.explodedAst);
         setGlobalRoot(Global.instOnlyForcedFunctions,  NONE()); // thread-local root that has to be set!
         statements = Parser.parseexp(mosfile);
-        evaluateToStdOut(statements,GlobalScript.SYMBOLTABLE(ast,explodedAst,{},{},{},{}),true);
+        evaluateToStdOut(statements,true);
         print(Error.printMessagesStr(false));
       then true;
     else
@@ -327,14 +320,11 @@ end getEcho;
 public function evaluate2
 "Helper function to evaluate."
   input GlobalScript.Statements inStatements;
-  input GlobalScript.SymbolTable inSymbolTable;
   output String outString;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inStatements,inSymbolTable)
+  outString := matchcontinue inStatements
     local
       String str,str_1;
-      GlobalScript.SymbolTable st,newst,st_1;
       GlobalScript.Statements stmts;
       Absyn.AlgorithmItem algitem;
       Boolean outres;
@@ -343,7 +333,7 @@ algorithm
       SourceInfo info;
 
     // evaluate graphical API
-    case ((stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL())})),st)
+    case (stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL())}))
       equation
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
         partialInst = System.getPartialInstantiation();
@@ -353,28 +343,25 @@ algorithm
         keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
         Flags.setConfigBool(Flags.KEEP_ARRAYS, false);
         Inst.initInstHashTable();
-        (str,newst) = evaluateGraphicalApi(stmts, st, partialInst, gen, evalfunc, keepArrays);
+        str = evaluateGraphicalApi(stmts, partialInst, gen, evalfunc, keepArrays);
         str_1 = stringAppend(str, "\n");
-      then
-        (str_1,newst);
+      then str_1;
 
     // Evaluate algorithm statements in evaluateAlgStmt()
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))}),st)
+    case GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))})
       equation
         Inst.initInstHashTable();
-        (str,st_1) = evaluateAlgStmt(algitem, st);
+        str = evaluateAlgStmt(algitem);
         str_1 = stringAppend(str, "\n");
-      then
-        (str_1,st_1);
+      then str_1;
 
     // Evaluate expressions in evaluate_exprToStr()
-    case ((GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp, info = info)})),st)
+    case GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp, info = info)})
       equation
         Inst.initInstHashTable();
-        (str,st_1) = evaluateExprToStr(exp, st, info);
+        str = evaluateExprToStr(exp, info);
         str_1 = stringAppend(str, "\n");
-      then
-        (str_1,st_1);
+      then str_1;
   end matchcontinue;
 end evaluate2;
 
@@ -383,16 +370,13 @@ protected function evaluateAlgStmt
   algorithm section, and a symboltable as input arguments. The statements
   are recursivly evalutated and a new interactive symbol table is returned."
   input Absyn.AlgorithmItem inAlgorithmItem;
-  input GlobalScript.SymbolTable inSymbolTable;
   output String outString;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable) := matchcontinue (inAlgorithmItem,inSymbolTable)
+  outString := matchcontinue inAlgorithmItem
     local
       FCore.Graph env;
       DAE.Exp econd,msg_1,sexp,srexp;
       DAE.Properties prop,rprop;
-      GlobalScript.SymbolTable st_1,st_2,st_3,st_4,st,newst;
       Absyn.Exp cond,msg,exp,rexp;
       Absyn.Program p;
       String str,ident;
@@ -418,146 +402,130 @@ algorithm
       list<DAE.Subscript> dsubs;
       list<DAE.ComponentRef> crefs;
 
-    case (Absyn.ALGORITHMITEM(info=info,
+    case Absyn.ALGORITHMITEM(info=info,
           algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {cond,_}))),
-          (st as GlobalScript.SYMBOLTABLE()))
+          functionArgs = Absyn.FUNCTIONARGS(args = {cond,_})))
       equation
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
-        (cache,econd,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,Values.BOOL(true),SOME(st_2)) = CevalScript.ceval(cache,env, econd, true, SOME(st_1), Absyn.MSG(info), 0);
-      then
-        ("",st_2);
+        env = SymbolTable.buildEnv();
+        (cache,econd,_) = StaticScript.elabExp(FCore.emptyCache(), env, cond, true, true, Prefix.NOPRE(), info);
+        (_,Values.BOOL(true)) = CevalScript.ceval(cache,env, econd, true, Absyn.MSG(info), 0);
+      then "";
 
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {_,msg}))),
-          (st as GlobalScript.SYMBOLTABLE()))
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {_,msg})))
       equation
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
-        (cache,msg_1,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,Values.STRING(str),SOME(st_2)) = CevalScript.ceval(cache,env, msg_1, true, SOME(st_1), Absyn.MSG(info), 0);
-      then
-        (str,st_2);
+        env = SymbolTable.buildEnv();
+        (cache,msg_1,_) = StaticScript.elabExp(FCore.emptyCache(), env, msg, true, true, Prefix.NOPRE(), info);
+        (_,Values.STRING(str)) = CevalScript.ceval(cache,env, msg_1, true, Absyn.MSG(info), 0);
+      then str;
 
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)),st)
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs))
       equation
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
+        env = SymbolTable.buildEnv();
         exp = Absyn.CALL(cr,fargs);
-        (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
-        (_,_,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info), 0);
-      then
-        ("",st_2);
+        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, Prefix.NOPRE(), info);
+        (_,_) = CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(info), 0);
+      then "";
 
     // Special case to lookup fields of records.
     // SimulationResult, etc are not in the environment,
     // but it's nice to be able to script them anyway
-    case (Absyn.ALGORITHMITEM(algorithm_ =
+    case Absyn.ALGORITHMITEM(algorithm_ =
           Absyn.ALG_ASSIGN(assignComponent =
-          Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr))),
-          (st as GlobalScript.SYMBOLTABLE(lstVarVal = vars)))
+          Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr)))
       equation
-        value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
+        value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), SymbolTable.getVars());
         str = ValuesUtil.valString(value);
         t = Types.typeOfValue(value);
-        newst = GlobalScriptUtil.addVarToSymboltable(DAE.CREF_IDENT(ident, t, {}), value, FGraph.empty(), st);
-      then (str,newst);
+        SymbolTable.addVar(DAE.CREF_IDENT(ident, t, {}), value, FGraph.empty());
+      then str;
 
     case
-      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
+      Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
-        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp)),
-        (st as GlobalScript.SYMBOLTABLE()))
+        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = asubs)),value = exp))
       equation
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
-        (cache,sexp,DAE.PROP(_,_),SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, SOME(st),true,Prefix.NOPRE(),info);
-        (_,value,SOME(st_2)) = CevalScript.ceval(cache,env, sexp, true,SOME(st_1),Absyn.MSG(info),0);
-        (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true, Prefix.NOPRE(), info);
+        env = SymbolTable.buildEnv();
+        (cache,sexp,DAE.PROP(_,_)) = StaticScript.elabExp(FCore.emptyCache(),env, exp, true, true,Prefix.NOPRE(),info);
+        (_,value) = CevalScript.ceval(cache,env, sexp, true,Absyn.MSG(info),0);
+        (_, dsubs, _) = Static.elabSubscripts(cache, env, asubs, true,Prefix.NOPRE(), info);
 
         t = Types.typeOfValue(value) "This type can be more specific than the elaborated type; if the dimensions are unknown...";
         str = ValuesUtil.valString(value);
-        newst = GlobalScriptUtil.addVarToSymboltable(DAE.CREF_IDENT(ident, t, dsubs), value, env, st_2);
-      then
-        (str,newst);
+        SymbolTable.addVar(DAE.CREF_IDENT(ident, t, dsubs), value, env);
+      then str;
 
     // Since expressions cannot be tuples an empty string is returned
     case
-      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
+      Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_ASSIGN(assignComponent =
-        Absyn.TUPLE(expressions = crefexps),value = rexp)),
-        (st as GlobalScript.SYMBOLTABLE()))
+        Absyn.TUPLE(expressions = crefexps),value = rexp))
       equation
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
-        (cache,srexp,rprop,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, SOME(st),true,Prefix.NOPRE(),info);
+        env = SymbolTable.buildEnv();
+        (cache,srexp,rprop) = StaticScript.elabExp(FCore.emptyCache(),env, rexp, true, true,Prefix.NOPRE(),info);
         DAE.T_TUPLE(types = types) = Types.getPropType(rprop);
         crefs = makeTupleCrefs(crefexps, types, env, cache, info);
-        (_,Values.TUPLE(values),SOME(st_2)) = CevalScript.ceval(cache, env, srexp, true, SOME(st_1), Absyn.MSG(info),0);
-        newst = GlobalScriptUtil.addVarsToSymboltable(crefs, values, env, st_2);
-      then
-        ("",newst);
+        (_,Values.TUPLE(values)) = CevalScript.ceval(cache, env, srexp, true, Absyn.MSG(info),0);
+        SymbolTable.addVars(crefs, values, env);
+      then "";
 
     // if statement
     case
-      (Absyn.ALGORITHMITEM(info=info,algorithm_ =
+      Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_IF(
         ifExp = exp,
         trueBranch = algitemlist,
         elseIfAlgorithmBranch = elseifexpitemlist,
-        elseBranch = elseitemlist)),st)
+        elseBranch = elseitemlist))
       equation
         cond1 = (exp,algitemlist);
         cond2 = (cond1 :: elseifexpitemlist);
         cond3 = listAppend(cond2, {(Absyn.BOOL(true), elseitemlist)});
-        st_1 = evaluateIfStatementLst(cond3,st,info);
-      then
-        ("",st_1);
+        evaluateIfStatementLst(cond3,info);
+      then "";
 
     // while-statement
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_WHILE(boolExpr = exp,whileBody = algitemlist)),st)
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_WHILE(boolExpr = exp,whileBody = algitemlist))
       equation
-        (value,st_1) = evaluateExpr(exp, st, info);
-        st_2 = evaluateWhileStmt(value, exp, algitemlist, st_1,info);
-      then
-        ("",st_2);
+        value = evaluateExpr(exp, info);
+        evaluateWhileStmt(value, exp, algitemlist, info);
+      then "";
 
     // for-statement, optimized case, e.g.: for i in 1:1000 loop
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(Absyn.RANGE(start=starte,step=NONE(), stop=stope)))},
-        forBody = algItemList)),st)
+        forBody = algItemList))
       equation
-        (startv,st_1) = evaluateExpr(starte, st, info);
-        (stopv,st_2) = evaluateExpr(stope, st_1, info);
-        st_3 = evaluateForStmtRangeOpt(iter, startv, Values.INTEGER(1), stopv, algItemList, st_2);
-     then
-        ("",st_3);
+        startv = evaluateExpr(starte, info);
+        stopv = evaluateExpr(stope, info);
+        evaluateForStmtRangeOpt(iter, startv, Values.INTEGER(1), stopv, algItemList);
+     then "";
 
     // for-statement, optimized case, e.g.: for i in 7.3:0.4:1000.3 loop
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ =
         Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(Absyn.RANGE(start=starte, step=SOME(stepe), stop=stope)))},
-        forBody = algItemList)),st)
+        forBody = algItemList))
       equation
-        (startv,st_1) = evaluateExpr(starte, st, info);
-        (stepv,st_2) = evaluateExpr(stepe, st_1, info);
-        (stopv,st_3) = evaluateExpr(stope, st_2, info);
-        st_4 = evaluateForStmtRangeOpt(iter, startv, stepv, stopv, algItemList, st_3);
-      then
-        ("",st_4);
+        startv = evaluateExpr(starte, info);
+        stepv = evaluateExpr(stepe, info);
+        stopv = evaluateExpr(stope, info);
+        evaluateForStmtRangeOpt(iter, startv, stepv, stopv, algItemList);
+      then "";
 
     // for-statement, general case
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ =
-        Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(exp))},forBody = algItemList)),st)
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ =
+        Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(iter, NONE(), SOME(exp))},forBody = algItemList))
       equation
-        (Values.ARRAY(valueLst = valList),st_1) = evaluateExpr(exp, st, info);
-        st_2 = evaluateForStmt(iter, valList, algItemList, st_1);
-      then
-        ("",st_2);
+        Values.ARRAY(valueLst = valList) = evaluateExpr(exp, info);
+        evaluateForStmt(iter, valList, algItemList);
+      then "";
 
     // for-statement - not an array type
-    case (Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(range = SOME(exp))})),st)
+    case Absyn.ALGORITHMITEM(info=info,algorithm_ = Absyn.ALG_FOR(iterators = {Absyn.ITERATOR(range = SOME(exp))}))
       equation
-        (estr,_) = stringRepresOfExpr(exp, st);
+        estr = stringRepresOfExpr(exp);
         Error.addSourceMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr}, info);
-      then
-        fail();
+      then fail();
 
   end matchcontinue;
 end evaluateAlgStmt;
@@ -567,16 +535,12 @@ protected function evaluateForStmt
   input String iter "The iterator variable which will be assigned different values";
   input list<Values.Value> valList "List of values that the iterator later will be assigned to";
   input list<Absyn.AlgorithmItem> algItemList;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-protected GlobalScript.SymbolTable st = inSymbolTable;
 algorithm
   for val in valList loop
-    st := GlobalScriptUtil.appendVarToSymboltable(iter, val, Types.typeOfValue(val), st);
-    st := evaluateAlgStmtLst(algItemList, st);
-    st := GlobalScriptUtil.deleteVarFromSymboltable(iter, st);
+    SymbolTable.appendVar(iter, val, Types.typeOfValue(val));
+    evaluateAlgStmtLst(algItemList);
+    SymbolTable.deleteVarFirstEntry(iter);
   end for;
-  outSymbolTable := st;
 end evaluateForStmt;
 
 protected function evaluateForStmtRangeOpt
@@ -587,21 +551,16 @@ protected function evaluateForStmtRangeOpt
   input Values.Value stepVal;
   input Values.Value stopVal;
   input list<Absyn.AlgorithmItem> algItems;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable st;
 protected
   Values.Value val;
-  GlobalScript.SymbolTable st2 "Introduced to avoid leaving the symbol table containing the iterator";
 algorithm
-  st := inSymbolTable;
   val := startVal;
   try
     while ValuesUtil.safeLessEq(val, stopVal) loop
-      st2 := GlobalScriptUtil.appendVarToSymboltable(iter, val, Types.typeOfValue(val), st);
-      st2 := evaluateAlgStmtLst(algItems, st2);
-      st2 := GlobalScriptUtil.deleteVarFromSymboltable(iter, st2);
+      SymbolTable.appendVar(iter, val, Types.typeOfValue(val));
+      evaluateAlgStmtLst(algItems);
+      SymbolTable.deleteVarFirstEntry(iter);
       val := ValuesUtil.safeIntRealOp(val, stepVal, Values.ADDOP());
-      st := st2;
     end while;
   else
     // Just... ignore errors and stop the loop. Really bad, I know...
@@ -615,44 +574,38 @@ protected function evaluateWhileStmt
   input Values.Value inValue;
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input GlobalScript.SymbolTable inSymbolTable;
   input SourceInfo info;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable:=
-  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inSymbolTable,info)
+  _ :=
+  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,info)
     local
-      GlobalScript.SymbolTable st,st_1,st_2,st_3;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
       String estr,tstr;
       DAE.Type vtype;
 
-    case (Values.BOOL(boolean = false),_,_,st,_) then st;
+    case (Values.BOOL(boolean = false),_,_,_) then ();
 
-    case (Values.BOOL(boolean = true),exp,algitemlst,st,_)
+    case (Values.BOOL(boolean = true),exp,algitemlst,_)
       equation
-        st_1 = evaluateAlgStmtLst(algitemlst, st);
-        (value,st_2) = evaluateExpr(exp, st_1, info);
-        st_3 = evaluateWhileStmt(value, exp, algitemlst, st_2, info); /* Tail recursive */
-      then
-        st_3;
+        evaluateAlgStmtLst(algitemlst);
+        value = evaluateExpr(exp, info);
+        evaluateWhileStmt(value, exp, algitemlst, info); /* Tail recursive */
+      then ();
 
     // An error occured when evaluating the algorithm items
-    case (Values.BOOL(_), _,_,st,_)
-      then
-        st;
+    case (Values.BOOL(_), _,_,_)
+      then ();
 
     // The condition value was not a boolean
-    case (value,exp,_,st,_)
+    case (value,exp,_,_)
       equation
-        (estr,_) = stringRepresOfExpr(exp, st);
+        estr = stringRepresOfExpr(exp);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseTypeNoAttr(vtype);
         Error.addSourceMessage(Error.WHILE_CONDITION_TYPE_ERROR, {estr,tstr}, info);
-      then
-        fail();
+      then fail();
 
   end matchcontinue;
 end evaluateWhileStmt;
@@ -666,14 +619,11 @@ protected function evaluatePartOfIfStatement
   input Absyn.Exp inExp;
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
-  input GlobalScript.SymbolTable inSymbolTable;
   input SourceInfo info;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable:=
-  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,inSymbolTable,info)
+  _ :=
+  matchcontinue (inValue,inExp,inAbsynAlgorithmItemLst,inTplAbsynExpAbsynAlgorithmItemLstLst,info)
     local
-      GlobalScript.SymbolTable st_1,st;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
       String estr,tstr;
@@ -681,27 +631,24 @@ algorithm
       Values.Value value;
       Absyn.Exp exp;
 
-    case (Values.BOOL(boolean = true),_,algitemlst,_,st,_)
+    case (Values.BOOL(boolean = true),_,algitemlst,_,_)
       equation
-        st_1 = evaluateAlgStmtLst(algitemlst, st);
-      then
-        st_1;
+        evaluateAlgStmtLst(algitemlst);
+      then ();
 
-    case (Values.BOOL(boolean = false),_,_,algrest,st,_)
+    case (Values.BOOL(boolean = false),_,_,algrest,_)
       equation
-        st_1 = evaluateIfStatementLst(algrest, st, info);
-      then
-        st_1;
+        evaluateIfStatementLst(algrest, info);
+      then ();
 
     // Report type error
-    case (value,exp,_,_,st,_)
+    case (value,exp,_,_,_)
       equation
-        (estr,_) = stringRepresOfExpr(exp, st);
+        estr = stringRepresOfExpr(exp);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseTypeNoAttr(vtype);
         Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR, {estr,tstr}, info);
-      then
-        fail();
+      then fail();
 
   end matchcontinue;
 end evaluatePartOfIfStatement;
@@ -710,27 +657,23 @@ protected function evaluateIfStatementLst
 "Evaluates all parts of a if statement
   (i.e. a list of exp  statements)"
   input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
-  input GlobalScript.SymbolTable inSymbolTable;
   input SourceInfo info;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  outSymbolTable:=
-  match (inTplAbsynExpAbsynAlgorithmItemLstLst,inSymbolTable,info)
+  _ :=
+  match (inTplAbsynExpAbsynAlgorithmItemLstLst,info)
     local
-      GlobalScript.SymbolTable st,st_1,st_2;
       Values.Value value;
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
 
-    case ({},st,_) then st;
+    case ({},_) then ();
 
-    case (((exp,algitemlst) :: algrest),st,_)
+    case (((exp,algitemlst) :: algrest),_)
       equation
-        (value,st_1) = evaluateExpr(exp, st, info);
-        st_2 = evaluatePartOfIfStatement(value, exp, algitemlst, algrest, st_1, info);
-      then
-        st_2;
+        value = evaluateExpr(exp, info);
+        evaluatePartOfIfStatement(value, exp, algitemlst, algrest, info);
+      then ();
 
   end match;
 end evaluateIfStatementLst;
@@ -738,15 +681,10 @@ end evaluateIfStatementLst;
 protected function evaluateAlgStmtLst
 " Evaluates a list of algorithm statements"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input GlobalScript.SymbolTable inSymbolTable;
-  output GlobalScript.SymbolTable outSymbolTable;
-protected
-  GlobalScript.SymbolTable st = inSymbolTable;
 algorithm
   for algitem in inAbsynAlgorithmItemLst loop
-    (_,st) := evaluateAlgStmt(algitem, st);
+    evaluateAlgStmt(algitem);
   end for;
-  outSymbolTable := st;
 end evaluateAlgStmtLst;
 
 protected function evaluateExpr
@@ -756,21 +694,17 @@ protected function evaluateExpr
    Note that this function may fail.
 
    Input:  Absyn.Exp - Expression to be evaluated
-           GlobalScript.SymbolTable - The symbol table
    Output: Values.Value - Resulting value of the expression"
   input Absyn.Exp inExp;
-  input GlobalScript.SymbolTable inSymbolTable;
   input SourceInfo info;
   output Values.Value outValue;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outValue,outSymbolTable):=
-  matchcontinue (inExp,inSymbolTable,info)
+  outValue:=
+  matchcontinue (inExp,info)
     local
       FCore.Graph env;
       DAE.Exp sexp;
       DAE.Properties prop;
-      GlobalScript.SymbolTable st_1,st_2,st;
       Values.Value value;
       Absyn.Exp exp;
       Absyn.Program p;
@@ -780,20 +714,15 @@ algorithm
 
     // Special case to lookup fields of records.
     // SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
-    case (Absyn.CREF(cr),(st as GlobalScript.SYMBOLTABLE(lstVarVal = vars)),_)
-      equation
-        value = getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), vars);
-      then
-        (value,st);
+    case (Absyn.CREF(cr),_)
+      then getVariableValueLst(Absyn.pathToStringList(Absyn.crefToPath(cr)), SymbolTable.getVars());
 
-    case (exp,(st as GlobalScript.SYMBOLTABLE()),_)
+    case (exp,_)
       equation
-        (env,st) = GlobalScriptUtil.buildEnvFromSymboltable(st);
-        (cache,sexp,_,SOME(st_1)) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), info);
-
-        (_,value,SOME(st_2)) = CevalScript.ceval(cache, env, sexp, true, SOME(st_1), Absyn.MSG(info),0);
-      then
-        (value,st_2);
+        env = SymbolTable.buildEnv();
+        (cache,sexp,_) = StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, Prefix.NOPRE(), info);
+        (_,value) = CevalScript.ceval(cache, env, sexp, true, Absyn.MSG(info),0);
+      then value;
 
   end matchcontinue;
 end evaluateExpr;
@@ -802,17 +731,14 @@ protected function stringRepresOfExpr
 " This function returns a string representation of an expression. For example expression
    33+22 will result in \"55\" and expression: \"my\" + \"string\" will result in  \"\"my\"+\"string\"\". "
   input Absyn.Exp exp;
-  input GlobalScript.SymbolTable ist;
   output String estr;
-  output GlobalScript.SymbolTable st;
 protected
   FCore.Graph env;
   DAE.Exp sexp;
   DAE.Properties prop;
-  GlobalScript.SymbolTable st_1;
 algorithm
-  (env,st) := GlobalScriptUtil.buildEnvFromSymboltable(ist);
-  (_,sexp,prop,SOME(st_1)) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, SOME(st), true, Prefix.NOPRE(), Absyn.dummyInfo);
+  env := SymbolTable.buildEnv();
+  (_, sexp, prop) := StaticScript.elabExp(FCore.emptyCache(), env, exp, true, true, Prefix.NOPRE(), Absyn.dummyInfo);
   (_, sexp, prop) := Ceval.cevalIfConstant(FCore.emptyCache(), env, sexp, prop, true, Absyn.dummyInfo);
   estr := ExpressionDump.printExpStr(sexp);
 end stringRepresOfExpr;
@@ -823,30 +749,25 @@ protected function evaluateExprToStr
    and the errors will be stated using Error.mo
 
    Input:  Absyn.Exp - Expression to be evaluated
-           GlobalScript.SymbolTable - The symbol table
    Output: string - The resulting value represented as a string"
   input Absyn.Exp inExp;
-  input GlobalScript.SymbolTable inSymbolTable;
   input SourceInfo info;
   output String outString;
-  output GlobalScript.SymbolTable outSymbolTable;
 algorithm
-  (outString,outSymbolTable):=
-  matchcontinue (inExp,inSymbolTable,info)
+  outString:=
+  matchcontinue (inExp,info)
     local
       Values.Value value;
-      GlobalScript.SymbolTable st_1,st;
       String str;
       Absyn.Exp exp;
 
-    case (exp,st,_)
+    case (exp,_)
       equation
-        (value,st_1) = evaluateExpr(exp, st, info);
+        value = evaluateExpr(exp, info);
         str = ValuesUtil.valString(value);
-      then
-        (str,st_1);
+      then str;
 
-    else ("",inSymbolTable);
+    else "";
 
   end matchcontinue;
 end evaluateExprToStr;
@@ -880,8 +801,7 @@ algorithm
 
     case (Absyn.CREF(componentRef = Absyn.CREF_IDENT(id, asubs)), _, _, _, _)
       equation
-        (_, dsubs, _) = Static.elabSubscripts(inCache, inEnv, asubs, true,
-          Prefix.NOPRE(), inInfo);
+        (_, dsubs, _) = Static.elabSubscripts(inCache, inEnv, asubs, true, Prefix.NOPRE(), inInfo);
       then
         DAE.CREF_IDENT(id, inType, dsubs);
 
@@ -959,21 +879,18 @@ protected function evaluateGraphicalApi
 "Evaluating graphical api.
   NOTE: the graphical API is always evaluated with checkModel ON and -d=nogen,noevalfunc ON"
   input GlobalScript.Statements inStatements;
-  input GlobalScript.SymbolTable inSymbolTable;
   input Boolean isPartialInst;
   input Boolean flagGen;
   input Boolean flagEvalFunc;
   input Boolean flagKeepArrays;
   output String outResult;
-  output GlobalScript.SymbolTable outSymbolTable;
 protected
   String fn_name;
   SourceInfo info;
   Boolean failed = false;
 algorithm
   try
-    (outResult, outSymbolTable) :=
-      evaluateGraphicalApi_dispatch(inStatements, inSymbolTable);
+    outResult := evaluateGraphicalApi_dispatch(inStatements);
   else
     failed := true;
   end try;
@@ -990,9 +907,7 @@ end evaluateGraphicalApi;
 protected function evaluateGraphicalApi_dispatch
 "This function evaluates all primitives in the graphical api."
   input GlobalScript.Statements inStatements;
-  input GlobalScript.SymbolTable inSymbolTable;
   output String outResult;
-  output GlobalScript.SymbolTable outSymbolTable = inSymbolTable;
 protected
   String fn_name, name;
   Absyn.Program old_p, p, p_1;
@@ -1005,7 +920,6 @@ protected
   Integer n;
   String cmt, variability, causality/*, isField*/;
   Absyn.Class cls;
-  list<GlobalScript.LoadedFile> lf;
   Absyn.Modification mod;
   Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2, evalParamAnn;
   Boolean addFunctions, graphicsExpMode;
@@ -1014,8 +928,7 @@ protected
   list<Absyn.Exp> dimensions;
 algorithm
   fn_name := getApiFunctionNameInfo(inStatements);
-  GlobalScript.SYMBOLTABLE(ast = old_p) := inSymbolTable;
-  p := old_p;
+  p := SymbolTable.getAbsyn();
   args := getApiFunctionArgs(inStatements);
 
   outResult := match(fn_name)
@@ -1120,8 +1033,7 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         nargs := getApiFunctionNamedArgs(inStatements);
-        (outResult, outSymbolTable) :=
-          getComponents(cr, useQuotes(nargs), inSymbolTable);
+        outResult := getComponents(cr, useQuotes(nargs));
       then
         outResult;
 
@@ -1170,7 +1082,7 @@ algorithm
     case "getNthInheritedClass"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        (outResult, outSymbolTable) := getNthInheritedClass(cr, n, inSymbolTable);
+        outResult := getNthInheritedClass(cr, n);
       then
         outResult;
 
@@ -1422,10 +1334,7 @@ algorithm
         {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} := args;
         // For now, renaming a class clears all caches...
         // Substantial analysis required to find out what to keep in cache and what must be thrown out
-        (outResult, p_1) := renameClass(p, old_cname, new_cname);
-        GlobalScript.SYMBOLTABLE(loadedFiles = lf) := inSymbolTable;
-        s := SCodeUtil.translateAbsyn2SCode(p_1);
-        outSymbolTable := GlobalScript.SYMBOLTABLE(p, SOME(s), {}, {}, {}, lf);
+        (outResult, p) := renameClass(p, old_cname, new_cname);
       then
         outResult;
 
@@ -1434,22 +1343,16 @@ algorithm
         {Absyn.CREF(componentRef = cr),
          Absyn.CREF(componentRef = old_cname),
          Absyn.CREF(componentRef = new_cname)} := args;
-        (outResult, p_1) := renameComponent(p, cr, old_cname, new_cname);
-        GlobalScript.SYMBOLTABLE(loadedFiles = lf) := inSymbolTable;
-        outSymbolTable := GlobalScript.SYMBOLTABLE(p_1, NONE(), {}, {}, {}, lf);
-      then
-        outResult;
+        (outResult, p) := renameComponent(p, cr, old_cname, new_cname);
+      then outResult;
 
     case "renameComponentInClass"
       algorithm
         {Absyn.CREF(componentRef = cr),
          Absyn.CREF(componentRef = old_cname),
          Absyn.CREF(componentRef = new_cname)} := args;
-        (outResult, p_1) := renameComponentOnlyInClass(p, cr, old_cname, new_cname);
-        GlobalScript.SYMBOLTABLE(loadedFiles = lf) := inSymbolTable;
-        outSymbolTable := GlobalScript.SYMBOLTABLE(p_1, NONE(), {}, {}, {}, lf);
-      then
-        outResult;
+        (outResult, p) := renameComponentOnlyInClass(p, cr, old_cname, new_cname);
+      then outResult;
 
     case "getCrefInfo"
       algorithm
@@ -1575,7 +1478,7 @@ algorithm
         nargs := getApiFunctionNamedArgs(inStatements);
         path := Absyn.crefToPath(cr);
         cls := getPathedClassInProgram(path, p);
-        (env, outSymbolTable) := GlobalScriptUtil.buildEnvFromSymboltable(inSymbolTable);
+        env := SymbolTable.buildEnv();
       then
         getLocalVariables(cls, useQuotes(nargs), env);
 
@@ -1590,9 +1493,7 @@ algorithm
 
   end match;
 
-  if not referenceEq(old_p, p) then
-    outSymbolTable := GlobalScriptUtil.setSymbolTableAST(outSymbolTable, p);
-  end if;
+  SymbolTable.setAbsyn(p);
 end evaluateGraphicalApi_dispatch;
 
 protected function listClass
@@ -1820,7 +1721,7 @@ algorithm
     case (p,comp_reps)
       equation
         comp_rep = firstComponentReplacement(comp_reps);
-        ((p_1,_,_)) = GlobalScriptUtil.traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
+        ((p_1,_,_)) = AbsynUtil.traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
         res = restComponentReplacementRules(comp_reps);
         p_2 = renameComponentFromComponentreplacements(p_1, res);
       then
@@ -3373,7 +3274,7 @@ algorithm
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(p_1);
-        ((_,_,(comps,_,_))) = GlobalScriptUtil.traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
+        ((_,_,(comps,_,_))) = AbsynUtil.traverseClasses(p, NONE(), extractAllComponentsVisitor,(GlobalScript.COMPONENTS({},0),p,env), true) "traverse protected";
       then
         comps;
   end match;
@@ -6850,7 +6751,7 @@ algorithm
         new_path = Absyn.crefToPath(new_name);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(pa_1);
-        ((p_1,_,(_,_,_,path_str_lst,_))) = GlobalScriptUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -6864,7 +6765,7 @@ algorithm
         new_path = Absyn.joinPaths(old_path_no_last, new_path_1);
         pa_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(pa_1);
-        ((p_1,_,(_,_,_,path_str_lst,_))) = GlobalScriptUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
+        ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
           true) "traverse protected" ;
         path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
         res = stringAppendList({"{",path_str_lst_no_empty,"}"});
@@ -8370,199 +8271,6 @@ algorithm
   end match;
 end isPrimitiveClass;
 
-public function removeCompiledFunctions
-" A Compiled function should be removed if its definition is updated."
-  input Absyn.Program inProgram;
-  input list<GlobalScript.CompiledCFunction> inTplAbsynPathTypesTypeLst;
-  output list<GlobalScript.CompiledCFunction> outTplAbsynPathTypesTypeLst;
-algorithm
-  outTplAbsynPathTypesTypeLst := matchcontinue (inProgram,inTplAbsynPathTypesTypeLst)
-    local
-      list<GlobalScript.CompiledCFunction> cfs_1,cfs;
-      String id;
-    case (Absyn.PROGRAM(classes = {Absyn.CLASS(name = id,restriction = Absyn.R_FUNCTION(_))}),cfs)
-      equation
-        cfs_1 = removeCf(cfs, Absyn.IDENT(id));
-      then
-        cfs_1;
-    else inTplAbsynPathTypesTypeLst;
-  end matchcontinue;
-end removeCompiledFunctions;
-
-protected function removeAnySubFunctions
-"Will remove any functions contain within the class from cflist."
-  input Absyn.Path inPath;
-  input Absyn.Class inClass;
-  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
-  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
-algorithm
-  outCompiledFunctions:=
-  matchcontinue (inPath,inClass,inCompiledFunctions)
-    local
-      list<GlobalScript.CompiledCFunction> cf, newCF;
-      Absyn.Path p;
-      list<Absyn.ClassPart> parts;
-    case (p, Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)), cf)
-      equation
-        newCF = removeCf(cf, p);
-      then
-        newCF;
-    /* a classs with parts */
-    case (p, Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), cf)
-      equation
-        newCF = removeAnyPartsFunctions(p, parts, cf);
-      then
-        newCF;
-    /* an extended class with parts: model extends M end M; */
-    case (p, Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)), cf)
-      equation
-        newCF = removeAnyPartsFunctions(p, parts, cf);
-      then
-        newCF;
-    else inCompiledFunctions;
-  end matchcontinue;
-end removeAnySubFunctions;
-
-protected function removeAnyPartsFunctions
-"Helper function to removeAnyBodyFunctions."
-  input Absyn.Path inPath;
-  input list<Absyn.ClassPart> inParts;
-  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
-  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
-algorithm
- outCompiledFunctions:=
- matchcontinue (inPath,inParts,inCompiledFunctions)
-   local
-     list<Absyn.ClassPart> rest;
-     list<Absyn.ElementItem> elts;
-     list<GlobalScript.CompiledCFunction> cf, newCF, newCF_1;
-     Absyn.Path p,p1;
-     String id;
-
-   case (_,{},cf) then cf;
-
-   case (p, (Absyn.PUBLIC(contents = elts) :: rest), cf)
-     equation
-       newCF = removeAnyPartsFunctions(p, rest, cf);
-       newCF_1 = removeAnyEltsFunctions(p, elts, newCF);
-     then
-       newCF_1;
-
-   case (p, (Absyn.PROTECTED(contents = elts) :: rest), cf)
-     equation
-       newCF = removeAnyPartsFunctions(p, rest, cf);
-       newCF_1 = removeAnyEltsFunctions(p, elts, newCF);
-     then
-       newCF_1;
-
-   case (p,Absyn.EXTERNAL(externalDecl = Absyn.EXTERNALDECL(funcName = SOME(id))) :: rest, cf)
-     equation
-       p1 = Absyn.joinPaths(p, Absyn.IDENT(id));
-       newCF = removeCf(cf, p1);
-       newCF_1 = removeAnyPartsFunctions(p, rest, newCF);
-     then
-       newCF_1;
-
-   case (p, (_ :: rest), cf)
-     equation
-        newCF = removeAnyPartsFunctions(p, rest, cf);
-     then
-       newCF;
-
- end matchcontinue;
-end removeAnyPartsFunctions;
-
-function removeAnyEltsFunctions
-"Helper function to removeAnyPartsFunctions."
-  input Absyn.Path inPath;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
-  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
-algorithm
-  outCompiledFunctions:=
-  matchcontinue (inPath, inAbsynElementItemLst, inCompiledFunctions)
-    local
-      list<GlobalScript.CompiledCFunction> cf, newCF, newCF_1;
-      Absyn.Class class_;
-      list<Absyn.ElementItem> rest;
-      Absyn.Path p,p1;
-      Absyn.Ident id;
-    case (_,{},cf) then cf;
-    case (p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = (class_ as Absyn.CLASS(name = id))))) :: rest), cf)
-      equation
-        p1 = Absyn.joinPaths(p, Absyn.IDENT(id));
-        newCF = removeAnySubFunctions(p1, class_, cf);
-        newCF_1 = removeAnyEltsFunctions(p, rest, newCF);
-      then
-        newCF_1;
-    case (p,(_ :: rest),cf)
-      equation
-        newCF = removeAnyEltsFunctions(p, rest, cf);
-      then
-        newCF;
-  end matchcontinue;
-end removeAnyEltsFunctions;
-
-public function removeCfAndDependencies
-"Helper function to removeCompiledFunctions and removeAnySubFunctions."
-  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
-  input list<Absyn.Path> functionAndDependencies "the main function path plus all dependencies!";
-  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
-algorithm
-  outCompiledFunctions := matchcontinue (inCompiledFunctions, functionAndDependencies)
-    local
-      list<GlobalScript.CompiledCFunction> cf;
-      Absyn.Path functionName;
-      list<Absyn.Path> functionNames;
-
-    case ({}, _) then {};
-
-    case (cf, {}) then cf;
-
-    case (cf, functionName::functionNames)
-      equation
-        cf = removeCf(cf, functionName);
-        cf = removeCfAndDependencies(cf, functionNames);
-      then
-        cf;
-
-  end matchcontinue;
-end removeCfAndDependencies;
-
-public function removeCf
-"Helper function to removeCompiledFunctions and removeAnySubFunctions."
-  input list<GlobalScript.CompiledCFunction> inCompiledFunctions;
-  input Absyn.Path functionName "the main function path";
-  output list<GlobalScript.CompiledCFunction> outCompiledFunctions;
-algorithm
-  outCompiledFunctions := matchcontinue (inCompiledFunctions, functionName)
-    local
-      list<GlobalScript.CompiledCFunction> res,rest;
-      Absyn.Path functionInCf;
-      DAE.Type t;
-      Integer funcHandle;
-      String tmp;
-      GlobalScript.CompiledCFunction item;
-
-    case ({}, _) then {};
-
-    case (GlobalScript.CFunction(functionInCf,_,funcHandle,_,_) :: rest, _)
-      equation
-        true = Absyn.pathEqual(functionInCf, functionName);
-        // _ = Absyn.pathStringUnquoteReplaceDot(functionName, "_");
-        System.freeFunction(funcHandle, Flags.isSet(Flags.DYN_LOAD));
-        res = removeCf(rest, functionName);
-      then
-        res;
-
-    case (item :: rest, _)
-      equation
-        res = removeCf(rest, functionName);
-      then
-        item :: res;
-  end matchcontinue;
-end removeCf;
-
 public function mergeProgram
   "Merges two programs into one."
   input Absyn.Program newProgram;
@@ -9390,10 +9098,9 @@ end getInheritedClassesHelper;
 
 public function getInheritedClasses
   input Absyn.Path inPath;
-  input GlobalScript.SymbolTable ist;
   output list<Absyn.Path> outPaths;
 algorithm
-  outPaths := matchcontinue (inPath,ist)
+  outPaths := matchcontinue inPath
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -9404,13 +9111,12 @@ algorithm
       Absyn.Program p;
       list<Absyn.ElementSpec> extendsLst;
       FCore.Cache cache;
-      GlobalScript.SymbolTable st;
       list<Absyn.Path> paths;
 
-    case (modelpath,st as GlobalScript.SYMBOLTABLE(ast=p))
+    case (modelpath)
       equation
-        cdef = getPathedClassInProgram(modelpath, p);
-        (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
+        cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
+        p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         lst = getInheritedClassesHelper(c, cdef, env_1);
@@ -9418,9 +9124,9 @@ algorithm
         paths = List.map(lst, Absyn.crefToPath);
       then
         paths;
-    case (modelpath,GlobalScript.SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
+    case (modelpath) /* if above fails, baseclass not defined. return its name */
       equation
-        cdef = getPathedClassInProgram(modelpath, p);
+        cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         extendsLst = getExtendsInClass(cdef);
         paths = List.map(extendsLst, Absyn.elementSpecToPath);
       then
@@ -9460,11 +9166,9 @@ protected function getNthInheritedClass
   the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
-  input GlobalScript.SymbolTable ist;
   output String outString;
-  output GlobalScript.SymbolTable outSt;
 algorithm
-  (outString,outSt) := matchcontinue (inComponentRef,inInteger,ist)
+  outString := matchcontinue (inComponentRef,inInteger)
     local
       Absyn.Path modelpath,path;
       Absyn.Class cdef;
@@ -9479,28 +9183,27 @@ algorithm
       Absyn.Program p;
       list<Absyn.ElementSpec> extends_;
       FCore.Cache cache;
-      GlobalScript.SymbolTable st;
 
-    case (model_,n,st as GlobalScript.SYMBOLTABLE(ast=p))
+    case (model_,n)
       equation
         modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
+        cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
+        p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
-        (str,st);
-    case (model_,n,st as GlobalScript.SYMBOLTABLE(ast=p)) /* if above fails, baseclass not defined. return its name */
+        str;
+    case (model_,n) /* if above fails, baseclass not defined. return its name */
       equation
         modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
+        cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
         extends_ = getExtendsInClass(cdef);
         Absyn.EXTENDS(path,_,_) = listGet(extends_, n);
         s = Absyn.pathString(path);
       then
-        (s,st);
-    else ("Error",ist);
+        s;
+    else "Error";
   end matchcontinue;
 end getNthInheritedClass;
 
@@ -10000,11 +9703,9 @@ public function getComponents
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef cr;
   input Boolean inBoolean;
-  input GlobalScript.SymbolTable st;
   output String outString;
-  output GlobalScript.SymbolTable outSt;
 algorithm
-  (outString,outSt) := getComponents2(cr,inBoolean,st);
+  outString := getComponents2(cr,inBoolean);
 end getComponents;
 
 protected function getComponents2
@@ -10012,11 +9713,9 @@ protected function getComponents2
    a list of all components, as returned by get_nth_component."
   input Absyn.ComponentRef inComponentRef;
   input Boolean inBoolean;
-  input GlobalScript.SymbolTable ist;
   output String outString;
-  output GlobalScript.SymbolTable outSt;
 algorithm
-  (outString,outSt) := matchcontinue (inComponentRef,inBoolean,ist)
+  outString := matchcontinue (inComponentRef,inBoolean)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -10032,13 +9731,12 @@ algorithm
       Absyn.Program p;
       FCore.Cache cache;
       Boolean b, permissive;
-      GlobalScript.SymbolTable st;
 
-    case (model_,b,st as GlobalScript.SYMBOLTABLE(ast=p))
+    case (model_,b)
       equation
         modelpath = Absyn.crefToPath(model_);
-        cdef = getPathedClassInProgram(modelpath, p);
-        (p_1,st) = GlobalScriptUtil.symbolTableToSCode(st);
+        cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
+        p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath);
         env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
@@ -10055,9 +9753,8 @@ algorithm
         s2 = getComponentsInfo(comps2, b, "\"protected\"", env_2);
         str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
         res = stringAppendList({"{",str,"}"});
-      then
-        (res,st);
-    else ("Error",ist);
+      then res;
+    else "Error";
   end matchcontinue;
 end getComponents2;
 
@@ -16312,46 +16009,6 @@ algorithm
   end matchcontinue;
 end namedargToModification;
 
-public function addInstantiatedClass
-" This function adds an instantiated class to the list of instantiated
-   classes. If the class path already exists, the class is replaced."
-  input list<GlobalScript.InstantiatedClass> inClasses;
-  input GlobalScript.InstantiatedClass inInstantiatedClass;
-  output list<GlobalScript.InstantiatedClass> outClasses;
-protected
-  Boolean replaced;
-  Absyn.Path path;
-algorithm
-  GlobalScript.INSTCLASS(qualName = path) := inInstantiatedClass;
-  (outClasses, replaced) := List.replaceOnTrue(inInstantiatedClass,
-    inClasses, function isInstantiatedClassNamed(inName = path));
-
-  if not replaced then
-    outClasses := listAppend(inClasses, {inInstantiatedClass});
-  end if;
-end addInstantiatedClass;
-
-protected function isInstantiatedClassNamed
-  input Absyn.Path inName;
-  input GlobalScript.InstantiatedClass inClass;
-  output Boolean outIsNamed;
-protected
-  Absyn.Path path;
-algorithm
-  GlobalScript.INSTCLASS(qualName = path) := inClass;
-  outIsNamed := Absyn.pathEqual(inName, path);
-end isInstantiatedClassNamed;
-
-public function getInstantiatedClass
-"This function get an instantiated class
-  from the list of instantiated classes."
-  input list<GlobalScript.InstantiatedClass> inInstantiatedClassLst;
-  input Absyn.Path inPath;
-  output GlobalScript.InstantiatedClass outInstantiatedClass;
-algorithm
-  outInstantiatedClass := List.getMemberOnTrue(inPath, inInstantiatedClassLst, isInstantiatedClassNamed);
-end getInstantiatedClass;
-
 public function getContainedClassAndFile
 " author: PA
    Returns the package or class in which the model is saved and the file
@@ -16532,7 +16189,7 @@ output Absyn.Program newP;
 algorithm
   newP := match(p)
     case _ equation
-      ((newP,_,_)) = GlobalScriptUtil.traverseClasses(p,NONE(), transformFlatClass, 0, true) "traverse protected" ;
+      ((newP,_,_)) = AbsynUtil.traverseClasses(p,NONE(), transformFlatClass, 0, true) "traverse protected" ;
       then newP;
   end match;
 end transformFlatProgram;
@@ -17116,178 +16773,6 @@ algorithm
   end match;
 end transformFlatElseIfAlgorithm;
 
-protected function updateLoadedFiles
-"@author adrpo
- This function updates the loaded files cache.
- It works like this: move from loadedFiles to tempList all
- the elements that do not need update. Then put the new update
- in front of the tempList and return the list"
-  input String fileName                      "Filename to load";
-  input list<GlobalScript.LoadedFile> loadedFiles         "The already loaded files";
-  input list<Absyn.Path> qualifiedClasses              "The qualified classes";
-  input list<GlobalScript.LoadedFile> tempList            "A temp list to build the new one";
-  output list<GlobalScript.LoadedFile> updatedLoadedFiles "Update file info cache";
-algorithm
-  updatedLoadedFiles := matchcontinue (fileName, loadedFiles, qualifiedClasses, tempList)
-    local
-      String f,f1;
-      list<GlobalScript.LoadedFile> rest, tmp, newTemp;
-      list<Absyn.Path> qc;
-      GlobalScript.LoadedFile x;
-      Real now;
-    case (f, {}, qc, tmp) // we reached the end, put the updated element in front.
-      equation
-        now = System.getCurrentTime();
-      then // put it as the first in the list
-        GlobalScript.FILE(f,now,qc)::tmp;
-    case (f, GlobalScript.FILE(f1,_,_)::rest, qc, tmp) // found it, and ignore it
-      equation
-        true = stringEq(f, f1);
-        newTemp = updateLoadedFiles(f, rest, qc, tmp);
-      then
-        newTemp;
-    case (f, x::rest, qc, tmp) // not an interesting element, just add it to the tmp
-      equation
-        newTemp = updateLoadedFiles(f, rest, qc, x::tmp);
-      then
-        newTemp; // report none so that it gets loaded
-  end matchcontinue;
-end updateLoadedFiles;
-
-protected function getLoadedFileInfo
-"@author adrpo
- This function checks if the file is already
- loaded and if the one on the disk is not newer.
- - if YES take the info from cache and return SOME(info)
- - if NOT report that as NONE"
-  input String fileName                   "Filename to load";
-  input list<GlobalScript.LoadedFile> loadedFiles      "The already loaded files";
-  output Option<list<Absyn.Path>> qualifiedClasses  "The qualified classes";
-protected
-  String name;
-  Real loadtime, modtime;
-  list<Absyn.Path> classes;
-  Option<Real> omodtime;
-algorithm
-  for file in loadedFiles loop
-    GlobalScript.FILE(name, loadtime, classes) := file;
-
-    if stringEq(fileName, name) then
-      omodtime := System.getFileModificationTime(fileName);
-
-      if isSome(omodtime) then
-        SOME(modtime) := omodtime;
-
-        if loadtime >= modtime then
-          // The file is loaded and is not changed since the last load.
-          qualifiedClasses := SOME(classes);
-          return;
-        end if;
-      end if;
-
-      // The file was found, stop looking.
-      break;
-    end if;
-  end for;
-
-  // The file wasn't found or has been changed since it was loaded.
-  qualifiedClasses := NONE();
-end getLoadedFileInfo;
-
-protected function checkLoadedFiles
-"@author adrpo
- This function checks if the file is already loaded:
- - if loaded then take the info from cache
- - if not, load it, add the info to cache"
-  input String fileName                   "Filename to load";
-  input String encoding;
-  input list<GlobalScript.LoadedFile> loadedFiles      "The already loaded files";
-  input Absyn.Program ast                 "The program from the symboltable";
-  input Boolean shouldUpdateProgram       "Should the program be pushed into the AST?";
-  output list<Absyn.Path> topClassNamesQualified    "The names of the classes from file, qualified!";
-  output list<GlobalScript.LoadedFile> newLoadedFiles  "The new loaded files";
-  output Absyn.Program newAst             "The new program to put it in the symboltable";
-algorithm
-  (topClassNamesQualified, newLoadedFiles, newAst) :=
-  matchcontinue (fileName, encoding, loadedFiles, ast, shouldUpdateProgram)
-    local
-      String f;
-      list<Absyn.Path> topNamesStr;
-      Absyn.Program pAst,newP,parsed;
-      list<GlobalScript.LoadedFile> lf, newLF;
-    case (f, _, lf, pAst, _)
-      equation
-        // did the file was loaded since it was last saved?
-        SOME(topNamesStr) = getLoadedFileInfo(f, lf);
-      then
-        (topNamesStr, lf, pAst); // not worth loading
-    case (f, _, lf, pAst, true)
-      equation
-        // it seems the file was not loaded yet or the one on the disk is newer
-        NONE() = getLoadedFileInfo(f, lf);
-        // fall back to basis :)
-        parsed = Parser.parse(f,encoding);
-        parsed = MetaUtil.createMetaClassesInProgram(parsed);
-        newP = updateProgram(parsed, pAst);
-        topNamesStr = getTopQualifiedClassnames(parsed);
-        // fix the modification and topNames in the list<GlobalScript.LoadedFile> cache
-        newLF = updateLoadedFiles(f, lf, topNamesStr, {});
-      then
-        (topNamesStr, newLF, newP); // loading
-    case (f, _, lf, pAst, false)
-      equation
-        // it seems the file was not loaded yet or the one on the disk is newer
-        NONE() = getLoadedFileInfo(f, lf);
-        // fall back to basis :)
-        parsed = Parser.parse(f,encoding);
-        parsed = MetaUtil.createMetaClassesInProgram(parsed);
-        topNamesStr = getTopQualifiedClassnames(parsed);
-        // fix the modification and topNames in the list<GlobalScript.LoadedFile> cache
-        newLF = updateLoadedFiles(f, lf, topNamesStr, {});
-      then
-        (topNamesStr, newLF, pAst); // loading
-    case (f, _, lf, pAst, _)
-      equation
-        failure(_ = Parser.parse(f,encoding)); // failed to parse!
-      then ({},lf,pAst); // return error
-  end matchcontinue;
-end checkLoadedFiles;
-
-public function loadFileInteractiveQualified
-"@author adrpo
- This function loads a file ONLY if the
- file is newer than the one already loaded."
-  input  String fileName               "Filename to load";
-  input  String encoding;
-  input  GlobalScript.SymbolTable st     "The symboltable where to load the file";
-  output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
-  output GlobalScript.SymbolTable newst  "The new interactive symboltable";
-algorithm
-  (topClassNamesQualified, newst) := matchcontinue (fileName, encoding, st)
-    local
-      String file               "Filename to load";
-      GlobalScript.SymbolTable s  "The symboltable where to load the file";
-      list<Absyn.Path> topNamesStr;
-      Absyn.Program pAst,newP;
-      list<GlobalScript.InstantiatedClass> ic;
-      list<GlobalScript.Variable> iv;
-      list<GlobalScript.LoadedFile> lf, newLF;
-      list<GlobalScript.CompiledCFunction> cf;
-
-    // See that the file exists
-    case (file, _, s as GlobalScript.SYMBOLTABLE())
-      equation
-        false = System.regularFileExists(file);
-      then ({},s);
-    // check if we have the stuff in the loadedFiles!
-    case (file, _, GlobalScript.SYMBOLTABLE(pAst,_,ic,iv,cf,lf))
-      equation
-        (topNamesStr,_,newP) = checkLoadedFiles(file, encoding, lf, pAst, true);
-      then
-        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,NONE(),ic,iv,cf,lf));
-  end matchcontinue;
-end loadFileInteractiveQualified;
-
 /* Start getDefinitions */
 
 protected function getDefinitions
@@ -17722,35 +17207,23 @@ public function parseFile
 "@author adrpo
  This function just parses a file and report contents ONLY if the
  file is newer than the one already loaded."
-  input  String fileName               "Filename to load";
+  input String fileName               "Filename to load";
   input String encoding;
-  input  GlobalScript.SymbolTable st     "The symboltable where to load the file";
+  input Boolean updateProgram=false;
   output list<Absyn.Path> topClassNamesQualified "The names of the classes from file, qualified!";
-  output GlobalScript.SymbolTable newst  "The new interactive symboltable";
+protected
+  Absyn.Program parsed;
 algorithm
-  (topClassNamesQualified, newst) := matchcontinue (fileName, encoding, st)
-    local
-      String file               "Filename to load";
-      GlobalScript.SymbolTable s  "The symboltable where to load the file";
-      list<Absyn.Path> topNamesStr;
-      Absyn.Program pAst,newP;
-      list<GlobalScript.InstantiatedClass> ic;
-      list<GlobalScript.Variable> iv;
-      list<GlobalScript.LoadedFile> lf, newLF;
-      list<GlobalScript.CompiledCFunction> cf;
-    // See that the file exists
-    case (file, _, s as GlobalScript.SYMBOLTABLE())
-      equation
-        false = System.regularFileExists(file);
-      then ({},s);
-    // check if we have the stuff in the loadedFiles!
-    case (file, _, GlobalScript.SYMBOLTABLE(pAst,_,ic,iv,cf,lf))
-      equation
-        (topNamesStr,_,newP) = checkLoadedFiles(file, encoding, lf, pAst, false);
-      then
-        /* shouldn't newLF be used here? no; we only parse the files; not loading them */
-        (topNamesStr, GlobalScript.SYMBOLTABLE(newP,NONE(),ic,iv,cf,lf));
-  end matchcontinue;
+  if not System.regularFileExists(fileName) then
+    topClassNamesQualified := {};
+    return;
+  end if;
+  parsed := Parser.parse(fileName,encoding);
+  parsed := MetaUtil.createMetaClassesInProgram(parsed);
+  topClassNamesQualified := getTopQualifiedClassnames(parsed);
+  if updateProgram then
+    SymbolTable.setAbsyn(.Interactive.updateProgram(parsed, SymbolTable.getAbsyn()));
+  end if;
 end parseFile;
 
 //he-mag begin
@@ -17766,21 +17239,9 @@ algorithm
       list<String> names;
       Absyn.ElementAttributes attr;
       list<Absyn.ComponentItem> lst;
- /*   case (Absyn.EXTENDS(path = path))
-      equation
-        path_str = Absyn.pathString(path);
-        str = stringAppendList({"elementtype=extends, path=",path_str});
-      then
-        str;
-    case (Absyn.IMPORT(import_ = import_))
-      equation
-        import_str = getImportString(import_);
-        str = stringAppendList({"elementtype=import, ",import_str});
-      then
-        str;*/
+
     case (Absyn.COMPONENTS(components = lst))
       equation
-//        str = Dump.unparseTypeSpec(typeSpec);
         names = getComponentItemsNameAndComment(lst,false);
         str = stringDelimitList(names, ", ");
         //print("names: " + str + "\n");
@@ -18290,44 +17751,6 @@ algorithm
     else {};
   end matchcontinue;
 end getAllClassesInClass;
-
-public function getCompiledFunctions
-"function: getCompiledFunctions"
-  input GlobalScript.SymbolTable inSymTab;
-  output list<GlobalScript.CompiledCFunction> compiledFunctions;
-algorithm
-  GlobalScript.SYMBOLTABLE(compiledFunctions = compiledFunctions) := inSymTab;
-end getCompiledFunctions;
-
-public function dumpCompiledFunctions
-"function: dumpCompiledFunctions"
-  input GlobalScript.SymbolTable inSymTab;
-  output String compiledFunctionsStr;
-protected
-  list<GlobalScript.CompiledCFunction> compiledFunctions;
-algorithm
-  compiledFunctions := getCompiledFunctions(inSymTab);
-  compiledFunctionsStr := "Functions:\n\t" + stringDelimitList(List.map(compiledFunctions, dumpCompiledFunction), "\n\t");
-end dumpCompiledFunctions;
-
-public function dumpCompiledFunction
-"function: dumpCompiledFunctions"
-  input GlobalScript.CompiledCFunction inCompiledFunction;
-  output String compiledFunctionStr;
-protected
-  Absyn.Path path;
-  DAE.Type retType;
-  Integer funcHandle;
-  Real buildTime "the build time for this function";
-  String loadedFromFile "the file we loaded this function from";
-algorithm
-  GlobalScript.CFunction(path, retType, funcHandle, buildTime, loadedFromFile) := inCompiledFunction;
-  compiledFunctionStr := Absyn.pathString(path) +
-                         " ty[" + Types.printTypeStr(retType) +
-                         "] hndl[" + intString(funcHandle) +
-                         "] build[" + realString(buildTime) +
-                         "] file[" + loadedFromFile + "]";
-end dumpCompiledFunction;
 
 public function getAllInheritedClasses
   input Absyn.Path inClassName;

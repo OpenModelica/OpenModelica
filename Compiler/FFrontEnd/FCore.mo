@@ -412,7 +412,6 @@ public uniontype Cache
     Mutable<DAE.FunctionTree> functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
     StructuralParameters evaluatedParams "ht of prefixed crefs and a stack of evaluated but not yet prefix crefs";
     Absyn.Path modelName "name of the model being instantiated";
-    Absyn.Program program "send the program around if we don't have a symbol table";
   end CACHE;
 
   record NO_CACHE "no cache" end NO_CACHE;
@@ -443,7 +442,7 @@ protected
 algorithm
   instFuncs := Mutable.create(DAE.AvlTreePathFunction.Tree.EMPTY());
   ht := (AvlSetCR.EMPTY(),{});
-  cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"),Absyn.dummyProgram);
+  cache := CACHE(NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
 
 
@@ -467,13 +466,12 @@ algorithm
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
-      Absyn.Program program;
 
-    case (CACHE(initialGraph,functions,(ht,crs::st),p,program),SCode.PARAM(),_)
-      then CACHE(initialGraph,functions,(ht,(cr::crs)::st),p,program);
+    case (CACHE(initialGraph,functions,(ht,crs::st),p),SCode.PARAM(),_)
+      then CACHE(initialGraph,functions,(ht,(cr::crs)::st),p);
 
-    case (CACHE(initialGraph,functions,(ht,{}),p,program),SCode.PARAM(),_)
-      then CACHE(initialGraph,functions,(ht,{cr}::{}),p,program);
+    case (CACHE(initialGraph,functions,(ht,{}),p),SCode.PARAM(),_)
+      then CACHE(initialGraph,functions,(ht,{cr}::{}),p);
 
     else cache;
 
@@ -506,10 +504,9 @@ algorithm
       Mutable<DAE.FunctionTree> ef;
       StructuralParameters ht;
       Option<Graph> igraph;
-      Absyn.Program program;
 
-    case (CACHE(igraph,ef,ht,_,program),_)
-      then CACHE(igraph,ef,ht,p,program);
+    case (CACHE(igraph,ef,ht,_),_)
+      then CACHE(igraph,ef,ht,p);
     else inCache;
   end match;
 end setCacheClassName;
@@ -586,7 +583,6 @@ algorithm
       Option<Graph> igraph;
       StructuralParameters ht;
       Absyn.Path p;
-      Absyn.Program program;
 
     // Don't overwrite SOME() with NONE()
     case (_, _)
@@ -595,7 +591,7 @@ algorithm
         // print("Func quard [there]: " + Absyn.pathString(func) + "\n");
       then cache;
 
-    case (CACHE(_,ef,_,_,_),Absyn.FULLYQUALIFIED(_))
+    case (CACHE(functions=ef),Absyn.FULLYQUALIFIED(_))
       equation
         Mutable.update(ef,DAE.AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
         // print("Func quard [new]: " + Absyn.pathString(func) + "\n");
@@ -622,9 +618,8 @@ algorithm
       Option<Graph> igraph;
       StructuralParameters ht;
       Absyn.Path p;
-      Absyn.Program program;
 
-    case (CACHE(_,ef,_,_,_),_)
+    case (CACHE(_,ef,_,_),_)
       equation
         Mutable.update(ef,DAEUtil.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
@@ -645,9 +640,8 @@ algorithm
       Option<Graph> igraph;
       StructuralParameters ht;
       Absyn.Path p;
-      Absyn.Program program;
 
-    case (CACHE(_,ef,_,_,_),_)
+    case (CACHE(_,ef,_,_),_)
       equation
         Mutable.update(ef,DAEUtil.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;
@@ -655,33 +649,6 @@ algorithm
 
   end match;
 end addDaeExtFunction;
-
-public function getProgramFromCache
-  input Cache inCache;
-  output Absyn.Program program;
-algorithm
-  program := match(inCache)
-    case NO_CACHE() then Absyn.dummyProgram;
-    case CACHE(program = program) then program;
-  end match;
-end getProgramFromCache;
-
-public function setProgramInCache
-  input Cache inCache;
-  input Absyn.Program program;
-  output Cache outCache;
-algorithm
-  outCache := match(inCache,program)
-    local
-      Mutable<DAE.FunctionTree> ef;
-      StructuralParameters ht;
-      Absyn.Path p;
-      Option<Graph> ograph;
-
-    case (CACHE(ograph,ef,ht,p,_),_) then CACHE(ograph,ef,ht,p,program);
-    else inCache;
-  end match;
-end setProgramInCache;
 
 public function setCachedFunctionTree
   input Cache inCache;
@@ -735,11 +702,6 @@ public function setCachedInitialGraph "set the initial environment in the cache"
   input Graph g;
 algorithm
   cache := match cache
-    local
-      Mutable<DAE.FunctionTree> ef;
-      StructuralParameters ht;
-      Absyn.Path p;
-      Absyn.Program program;
 
     case CACHE()
       algorithm

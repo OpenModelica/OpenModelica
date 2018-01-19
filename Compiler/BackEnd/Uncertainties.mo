@@ -70,6 +70,7 @@ import Print;
 import SCode;
 import SCodeUtil;
 import Sorting;
+import SymbolTable;
 import System;
 import Util;
 
@@ -90,16 +91,14 @@ public function modelEquationsUC
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input GlobalScript.SymbolTable inInteractiveSymbolTable;
   input String outputFileIn;
   input Boolean dumpSteps;
   output FCore.Cache outCache;
   output Values.Value outValue;
-  output GlobalScript.SymbolTable outInteractiveSymbolTable;
 
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,outputFileIn,dumpSteps)
+  (outCache,outValue):=
+  matchcontinue (inCache,inEnv,className,outputFileIn,dumpSteps)
     local
       String outputFile,resstr;
 
@@ -109,7 +108,6 @@ algorithm
       Absyn.Program p;
 
       BackendDAE.BackendDAE dlow,dlow_1;
-      GlobalScript.SymbolTable st;
 
       BackendDAE.IncidenceMatrix m,mt;
 
@@ -134,10 +132,11 @@ algorithm
 
       Boolean forceOrdering = Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING);
 
-    case (cache,graph,_,(st as GlobalScript.SYMBOLTABLE(ast = p)),outputFile,_)
+    case (cache,graph,_,outputFile,_)
       equation
         //print("Initiating\n");
         Print.clearBuf();
+        p = SymbolTable.getAbsyn();
 
         (dae,cache,graph) = flattenModel(className,p,cache);
         description = DAEUtil.daeDescription(dae);
@@ -284,8 +283,8 @@ algorithm
         resstr=writeFileIfNonEmpty(outputFile,outString);
         //resstr="Done...";
       then
-        (cache,Values.STRING(resstr),st);
-    case (_,_,_,_,outputFile,_)
+        (cache,Values.STRING(resstr));
+    case (_,_,_,outputFile,_)
       equation
         Print.printBuf("{"+getMathematicaText("Extraction failed")+"}");
         outStringA = "Grid[{"+Print.getString()+"}]";

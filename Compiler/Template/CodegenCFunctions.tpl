@@ -179,14 +179,6 @@ template functionsFile(String filePrefix,
   >>
   %>
 
-  <% if mainFunction then
-  <<
-  void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
-  void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
-  void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
-  void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
-  >> %>
-
   <%match mainFunction case SOME(fn) then functionBody(fn,true,false)%>
   <%functionBodies(functions,false)%>
   <%\n%>
@@ -1065,6 +1057,11 @@ template generateInFunc(Text fname, list<Variable> functionArguments, list<Varia
     fflush(NULL);
     return 1;
   }
+
+  void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+  void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+  void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
+  void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
 
   int main(int argc, char **argv) {
     MMC_INIT(0);
@@ -3012,7 +3009,7 @@ case RANGE(__) then
                     case "1"
                     case "((modelica_integer) 1)"
                     case "((modelica_integer) -1)" then ''
-                    else 'if(!<%stepVar%>) {<%\n%>  FILE_INFO info = omc_dummyFileInfo;  omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
+                    else 'if(!<%stepVar%>) {<%\n%>  FILE_INFO info = omc_dummyFileInfo;<%\n%>  omc_assert<%AddionalFuncName%>(threadData, info, <%eqnsindx%>"assertion range step != 0 failed");<%\n%>} else '
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>;

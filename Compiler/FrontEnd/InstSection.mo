@@ -335,9 +335,9 @@ algorithm
         // Check that the equation is valid if the lhs is a tuple.
         checkTupleCallEquationMessage(lhs_aexp, rhs_aexp, info);
 
-        (outCache, lhs_exp, lhs_prop) := Static.elabExpLHS(inCache, inEnv, lhs_aexp, inImpl, NONE(), true, inPrefix, info);
+        (outCache, lhs_exp, lhs_prop) := Static.elabExpLHS(inCache, inEnv, lhs_aexp, inImpl, true, inPrefix, info);
         (outCache, rhs_exp, rhs_prop) :=
-          Static.elabExp(inCache, inEnv, rhs_aexp, inImpl, NONE(), true, inPrefix, info);
+          Static.elabExp(inCache, inEnv, rhs_aexp, inImpl, true, inPrefix, info);
 
         (outCache, lhs_exp, lhs_prop) :=
           Ceval.cevalIfConstant(outCache, inEnv, lhs_exp, lhs_prop, inImpl, info);
@@ -365,7 +365,7 @@ algorithm
       algorithm
         // Elaborate all of the conditions.
         (outCache, expl, props) := Static.elabExpList(outCache, outEnv,
-          inEEquation.condition, inImpl, NONE(), true, inPrefix, info);
+          inEEquation.condition, inImpl, true, inPrefix, info);
 
         // Check that all conditions are Boolean.
         prop := Types.propsAnd(props);
@@ -385,8 +385,7 @@ algorithm
             DAE.PROP(constFlag = c) :: props := props;
             true := Types.isParameterOrConstant(c);
 
-            (outCache, val) := Ceval.ceval(outCache, outEnv, cond, inImpl,
-                NONE(), Absyn.NO_MSG(), 0);
+            (outCache, val) := Ceval.ceval(outCache, outEnv, cond, inImpl, Absyn.NO_MSG(), 0);
             true := checkIfConditionBinding(val, info);
 
             if ValuesUtil.valueBool(val) then
@@ -466,8 +465,8 @@ algorithm
           SOME(range_aexp) := inEEquation.range;
 
           // Elaborate the range.
-          (outCache, exp, DAE.PROP(type_ = DAE.T_ARRAY(ty = ty), constFlag = c), _) :=
-            Static.elabExp(outCache, inEnv, range_aexp, inImpl, NONE(), true, inPrefix, info);
+          (outCache, exp, DAE.PROP(type_ = DAE.T_ARRAY(ty = ty), constFlag = c)) :=
+            Static.elabExp(outCache, inEnv, range_aexp, inImpl, true, inPrefix, info);
         else
           iter_crefs := SCode.findIteratorIndexedCrefsInEEquations(
             inEEquation.eEquationLst, inEEquation.index);
@@ -483,7 +482,7 @@ algorithm
 
         // Try to constant evaluate the range.
         try
-          (outCache, val) := Ceval.ceval(outCache, inEnv, exp, inImpl, NONE(), Absyn.NO_MSG(), 0);
+          (outCache, val) := Ceval.ceval(outCache, inEnv, exp, inImpl, Absyn.NO_MSG(), 0);
         else
           // Evaluation failed, which is normally an error since the range
           // should be a parameter expression. If we're doing checkModel we
@@ -545,7 +544,7 @@ algorithm
 
         // Elaborate the reinit expression.
         (outCache, exp, prop) :=
-          Static.elabExp(outCache, inEnv, inEEquation.expReinit, inImpl, NONE(), true, inPrefix, info);
+          Static.elabExp(outCache, inEnv, inEEquation.expReinit, inImpl, true, inPrefix, info);
         (outCache, exp, prop) :=
           Ceval.cevalIfConstant(outCache, inEnv, exp, prop, inImpl, info);
 
@@ -576,7 +575,7 @@ algorithm
         else
           // Handle normal no return calls.
           (outCache, exp) := Static.elabExp(inCache, inEnv, inEEquation.exp,
-            inImpl, NONE(), false, inPrefix, info);
+            inImpl, false, inPrefix, info);
           // This is probably an external function call that the user wants to
           // evaluate at runtime, so don't ceval it.
           (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix);
@@ -691,7 +690,7 @@ protected
   DAE.Type ty;
 algorithm
   (outCache, outArg, props) :=
-    Static.elabExp(inCache, inEnv, inArg, inImpl, NONE(), true, inPrefix, inInfo);
+    Static.elabExp(inCache, inEnv, inArg, inImpl, true, inPrefix, inInfo);
   ty := Types.getPropType(props);
 
   if not Types.subtype(ty, inExpectedType) then
@@ -858,8 +857,8 @@ algorithm
               functionArgs = functionArgs)),_,_,graph,_)
       equation
         (cr, msg) = uniqueRootArguments(functionArgs, info, pre, inEEquation);
-        (cache,exp,_,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, NONE(), true, pre, info);
-        (cache,msg_1,_,_) = Static.elabExp(cache, env, msg, false, NONE(), false, pre, info);
+        (cache,exp,_) = Static.elabExp(cache, env, Absyn.CREF(cr), false, true, pre, info);
+        (cache,msg_1,_) = Static.elabExp(cache, env, msg, false, false, pre, info);
         (cache,exp) = PrefixUtil.prefixExp(cache,env,ih,exp,pre);
         (cache,msg_1) = PrefixUtil.prefixExp(cache,env,ih,msg_1,pre);
         graph = ConnectionGraph.addUniqueRoots(graph, exp, msg_1);
@@ -1124,9 +1123,9 @@ algorithm
       true = boolOr(b3,b4);
       true = Expression.containFunctioncall(elabedE2);
       (e1,prop) = expandTupleEquationWithWild(e1,prop2,prop);
-      (cache,elabedE1_2,prop1,_) = Static.elabExpLHS(cache,env, e1, impl,NONE(),false,pre,info);
+      (cache,elabedE1_2,prop1) = Static.elabExpLHS(cache,env, e1, impl,false,pre,info);
       (cache, elabedE1_2, prop1) = Ceval.cevalIfConstant(cache, env, elabedE1_2, prop1, impl, info);
-      (cache,elabedE2_2,prop2,_) = Static.elabExp(cache,env, e2, impl,NONE(),false,pre,info);
+      (cache,elabedE2_2,prop2) = Static.elabExp(cache,env, e2, impl,false,pre,info);
       (cache, elabedE2_2, prop2) = Ceval.cevalIfConstant(cache, env, elabedE2_2, prop2, impl, info);
       then
         (cache,elabedE1_2,elabedE2_2,prop);
@@ -1835,7 +1834,7 @@ algorithm
     true := Types.isParameterOrConstant(c);
     env := addForLoopScope(inEnv, inIterator, ty, SCode.VAR(), SOME(c));
     (outCache, val) :=
-      Ceval.ceval(inCache, env, inRange, inImpl, NONE(), Absyn.MSG(inInfo), 0);
+      Ceval.ceval(inCache, env, inRange, inImpl, Absyn.MSG(inInfo), 0);
     (outCache, outStatements) := loopOverRange(inCache, env, inIH, inPrefix,
       inState, inIterator, val, inBody, inSource, inInitial, inImpl, inUnrollLoops);
   else
@@ -1872,7 +1871,7 @@ algorithm
   if isSome(oarange) then
     SOME(arange) := oarange;
     (outCache, range, prop) :=
-      Static.elabExp(inCache, inEnv, arange, inImpl, NONE(), true, inPrefix, info);
+      Static.elabExp(inCache, inEnv, arange, inImpl, true, inPrefix, info);
   else
     iter_crefs := SCode.findIteratorIndexedCrefsInStatements(body, iterator);
     (range, prop, outCache) :=
@@ -1919,8 +1918,8 @@ algorithm
   // Remove the for-loop if the range is empty.
   if Types.isParameterOrConstant(c) then
     try
-      (outCache, Values.ARRAY(valueLst = {}), _) :=
-        Ceval.ceval(outCache, inEnv, inRange, inImpl, NONE(), Absyn.MSG(inInfo), 0);
+      (outCache, Values.ARRAY(valueLst = {})) :=
+        Ceval.ceval(outCache, inEnv, inRange, inImpl, Absyn.MSG(inInfo), 0);
       outStatements := {};
       return;
     else
@@ -2170,7 +2169,7 @@ algorithm
         ci_state = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM());
         source = ElementSource.createElementSource(Absyn.dummyInfo, FGraph.getScopePath(env), pre);
 
-        (cache,constraints_1,_,_) = Static.elabExpList(cache, env, constraints, impl, NONE(), true /*vect*/, pre, Absyn.dummyInfo);
+        (cache,constraints_1,_) = Static.elabExpList(cache, env, constraints, impl, true /*vect*/, pre, Absyn.dummyInfo);
         // (constraints_1,_) = DAEUtil.traverseDAEEquationsStmts(constraints_1,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,false));
 
         dae = DAE.DAE({DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(constraints_1),source)});
@@ -2235,7 +2234,7 @@ protected function instExp
   output DAE.Properties outProperties;
 algorithm
   (outCache, outExp, outProperties) := Static.elabExp(inCache, inEnv, inExp,
-    inImpl, NONE(), true, inPrefix, inInfo);
+    inImpl, true, inPrefix, inInfo);
   (outCache, outExp, outProperties) := Ceval.cevalIfConstant(outCache, inEnv,
     outExp, outProperties, inImpl, inInfo);
   (outCache, outExp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, outExp, inPrefix);
@@ -2393,7 +2392,7 @@ algorithm
     case SCode.ALG_NORETCALL(info = info)
       algorithm
         (outCache, exp) := Static.elabExp(outCache, inEnv, inStatement.exp,
-          inImpl, NONE(), true, inPrefix, info);
+          inImpl, true, inPrefix, info);
         checkValidNoRetcall(exp, info);
         (outCache, exp) := PrefixUtil.prefixExp(outCache, inEnv, inIH, exp, inPrefix);
         source := ElementSource.addElementSourceFileInfo(inSource, info);
@@ -2855,7 +2854,7 @@ algorithm
 
     case (cache,env,ih,pre,_,((e,l) :: tail),_,_,impl,_,_)
       equation
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,prop) = Static.elabExp(cache, env, e, impl, true,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,stmts) = instStatements(cache, env, ih, pre, ci_state, l, source, initial_, impl, unrollForLoops);
@@ -4237,8 +4236,8 @@ algorithm
         // Evaluate constant crefs away
         const1 = NFInstUtil.toConst(vt1);
         const2 = NFInstUtil.toConst(vt2);
-        (cache, crefExp1, _) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
-        (cache, crefExp2, _) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
+        (cache, crefExp1) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
+        (cache, crefExp2) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
 
         lhsl = Expression.arrayElements(crefExp1);
         rhsl = Expression.arrayElements(crefExp2);
@@ -4992,14 +4991,14 @@ algorithm
 
     case (cache,env,_,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),_,_,_,_,_)
       equation
-        (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
+        (cache,e_1,eprop) = Static.elabExp(cache,env,value,impl,true,pre,info);
         (cache,stmts) = instAssignment2(cache,env,ih,pre,var,value,e_1,eprop,info,ElementSource.addAnnotation(source, alg.comment),initial_,impl,unrollForLoops,numError);
       then (cache,stmts);
 
     case (cache,env,_,pre,SCode.ALG_ASSIGN(value=value,info=info),_,_,_,_,_)
       equation
         true = numError == Error.getNumErrorMessages();
-        failure((_,_,_,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info));
+        failure(Static.elabExp(cache,env,value,impl,true,pre,info));
         str = Dump.unparseAlgorithmStr(SCode.statementToAlgorithmItem(alg));
         Error.addSourceMessage(Error.ASSIGN_RHS_ELABORATION,{str},info);
       then fail();
@@ -5092,8 +5091,8 @@ algorithm
       equation
         (cache,_,cprop,attr) =
           Static.elabCrefNoEval(cache,inEnv, cr, inImpl,false,inPre,info);
-        (cache,(e2_2 as DAE.CALL()),_,_) =
-          Static.elabExp(cache,inEnv, e2, inImpl,NONE(),true,inPre,info);
+        (cache,(e2_2 as DAE.CALL()),_) =
+          Static.elabExp(cache,inEnv, e2, inImpl,true,inPre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e2_2, inPre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
@@ -5122,8 +5121,8 @@ algorithm
         true = List.all(expl, Absyn.isCref);
         (cache, e_1 as DAE.CALL(), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
-        (cache,expl_1,cprops,attrs,_) =
-          Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, NONE(), false, inPre, info);
+        (cache,expl_1,cprops,attrs) =
+          Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, false, inPre, info);
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
         checkNoDuplicateAssignments(expl_1, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
@@ -5140,8 +5139,8 @@ algorithm
         true = Types.isTuple(Types.getPropType(eprop));
         (cache, e_1 as DAE.MATCHEXPRESSION(), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, inEnv, inIH, e_1, inPre);
-        (cache,expl_1,cprops,attrs,_) =
-          Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, NONE(), false, inPre, info);
+        (cache,expl_1,cprops,attrs) =
+          Static.elabExpCrefNoEvalList(cache, inEnv, expl, inImpl, false, inPre, info);
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
         checkNoDuplicateAssignments(expl_1, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_1, inPre);
@@ -5164,8 +5163,8 @@ algorithm
     case (cache,Absyn.TUPLE(expressions = expl),e_1,eprop)
       equation
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, inEnv, e_1, eprop, inImpl, info);
-        (cache,expl_2,cprops,attrs,_) =
-          Static.elabExpCrefNoEvalList(cache,inEnv, expl, inImpl,NONE(),false,inPre,info);
+        (cache,expl_2,cprops,attrs) =
+          Static.elabExpCrefNoEvalList(cache,inEnv, expl, inImpl,false,inPre,info);
         Static.checkAssignmentToInputs(expl, attrs, inEnv, info);
         checkNoDuplicateAssignments(expl_2, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, inEnv, inIH, expl_2, inPre);
@@ -5188,7 +5187,7 @@ algorithm
       equation
         Absyn.CALL() = inRhs;
         true = List.all(expl, Absyn.isCref);
-        (cache,e_1,prop1,_) = Static.elabExpLHS(cache,inEnv,e1,inImpl,NONE(),false,inPre,info);
+        (cache,e_1,prop1) = Static.elabExpLHS(cache,inEnv,e1,inImpl,false,inPre,info);
         lt = Types.getPropType(prop1);
         rt = Types.getPropType(prop2);
         false = Types.subtype(lt, rt);
@@ -5315,7 +5314,7 @@ algorithm
   if isSome(oarange) then
     SOME(arange) := oarange;
     (outCache, range, prop) :=
-      Static.elabExp(inCache, inEnv, arange, inImpl, NONE(), true, inPrefix, info);
+      Static.elabExp(inCache, inEnv, arange, inImpl, true, inPrefix, info);
   else
     iter_crefs := SCode.findIteratorIndexedCrefsInStatements(body, iterator);
     (range, prop, outCache) :=
@@ -5364,8 +5363,8 @@ algorithm
   // Remove the for-loop if the range is empty.
   if Types.isParameterOrConstant(c) then
     try
-      (outCache, Values.ARRAY(valueLst = {}), _) :=
-        Ceval.ceval(outCache, inEnv, inRange, inImpl, NONE(), Absyn.MSG(inInfo), 0);
+      (outCache, Values.ARRAY(valueLst = {})) :=
+        Ceval.ceval(outCache, inEnv, inRange, inImpl, Absyn.MSG(inInfo), 0);
       outStatements := {};
       return;
     else

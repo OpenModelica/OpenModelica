@@ -9,8 +9,8 @@ template getCevalScriptInterface(list<DAE.Type> tys)
   <<
   import Absyn;
   import CevalScript;
-  import GlobalScript;
   import Parser;
+  import SymbolTable;
 
   protected
 
@@ -92,10 +92,10 @@ template getCevalScriptInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Ty
     else '<%getOutValue("res", res, &varDecl, &postMatch)%>'
   <<
   function <%name%>
-    input GlobalScript.SymbolTable st;
+    input SymbolTable st;
     <%args |> arg as FUNCARG(__) =>
       'input <%getInType(arg.ty)%> <%arg.name%>;' ; separator="\n" %>
-    output GlobalScript.SymbolTable outSymTab;
+    output SymbolTable outSymTab;
     <%
     match res
     case T_TUPLE(__) then (types |> ty hasindex i fromindex 1 => 'output <%getInType(ty)%> res<%i%>;' ; separator="\n")
@@ -109,8 +109,10 @@ template getCevalScriptInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Ty
   >>
   %>
   algorithm
-    (_,<%outVals%>,outSymTab) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), FGraph.empty(), "<%name%>", {<%inVals%>}, st, dummyMsg);
+    SymbolTable.update(st);
+    (_,<%outVals%>) := CevalScript.cevalInteractiveFunctions2(FCore.emptyCache(), FGraph.empty(), "<%name%>", {<%inVals%>}, dummyMsg);
     <%postMatch%>
+    outSymTab := SymbolTable.get();
   end <%name%>;<%\n%>
   >>
 end getCevalScriptInterfaceFunc;

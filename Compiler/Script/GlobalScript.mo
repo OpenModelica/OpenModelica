@@ -38,8 +38,6 @@ encapsulated package GlobalScript
 
 public import Absyn;
 public import DAE;
-public import FCore;
-public import SCode;
 public import Values;
 
 public
@@ -59,17 +57,6 @@ uniontype SimulationOptions "these are the simulation/buildModel* options"
     DAE.Exp simflags "Flags sent to the simulation executable (doesn't do anything for buildModel)";
   end SIMULATION_OPTIONS;
 end SimulationOptions;
-
-public
-uniontype CompiledCFunction
-  record CFunction
-    Absyn.Path path;
-    DAE.Type retType;
-    Integer funcHandle;
-    Real buildTime "the build time for this function";
-    String loadedFromFile "the file we loaded this function from";
-  end CFunction;
-end CompiledCFunction;
 
 public
 uniontype Statement
@@ -99,16 +86,6 @@ uniontype Statements
 end Statements;
 
 public
-uniontype InstantiatedClass "- Instantiated Class"
-  record INSTCLASS
-    Absyn.Path qualName "qualName ;  The F.Q.name of the inst:ed class" ;
-    DAE.DAElist daeElementLst "daeElementLst ; The list of DAE elements" ;
-    FCore.Graph env "env ; The env of the inst:ed class" ;
-  end INSTCLASS;
-
-end InstantiatedClass;
-
-public
 uniontype Variable "- GlobalScript.Variable"
   record IVAR
     Absyn.Ident varIdent "The variable identifier" ;
@@ -117,31 +94,6 @@ uniontype Variable "- GlobalScript.Variable"
   end IVAR;
 
 end Variable;
-
-public
-uniontype LoadedFile
-  "@author adrpo
-   A file entry holder, needed to cache the file information
-   so files are not loaded if not really necessary"
-  record FILE
-    String                  fileName            "The path of the file";
-    Real                    loadTime            "The time the file was loaded";
-    list<Absyn.Path>        classNamesQualified "The names of the classes from the file";
-  end FILE;
-end LoadedFile;
-
-public
-uniontype SymbolTable "- Interactive Symbol Table"
-  record SYMBOLTABLE
-    Absyn.Program ast "ast ; The ast" ;
-    Option<SCode.Program> explodedAst "the explodedAst is invalidated every time the program is updated";
-    list<InstantiatedClass> instClsLst "List of instantiated classes" ;
-    list<Variable> lstVarVal "List of variables with values" ;
-    list<CompiledCFunction> compiledFunctions "List of compiled functions, F.Q name + type + functionhandler" ;
-    list<LoadedFile> loadedFiles "The list of the loaded files with their load time." ;
-  end SYMBOLTABLE;
-
-end SymbolTable;
 
 public
 uniontype Component "- a component in a class
@@ -186,14 +138,6 @@ uniontype ComponentReplacementRules
   end COMPONENTREPLACEMENTRULES;
 
 end ComponentReplacementRules;
-
-public constant SymbolTable emptySymboltable =
-     SYMBOLTABLE(Absyn.PROGRAM({},Absyn.TOP()),
-                 NONE(),
-                 {},
-                 {},
-                 {},
-                 {}) "Empty Interactive Symbol Table" ;
 
 annotation(__OpenModelica_Interface="frontend");
 end GlobalScript;

@@ -1440,7 +1440,7 @@ algorithm
       equation
         false = valueEq(c,DAE.C_VAR());
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache, env, bind1, false, NONE(), Absyn.NO_MSG(), 0);
+        (cache,v) = Ceval.ceval(cache, env, bind1, false, Absyn.NO_MSG(), 0);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
         DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
@@ -1450,7 +1450,7 @@ algorithm
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
         expectedTp = Types.liftArray(expectedTp, d);
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
-        (cache,v,_) = Ceval.ceval(cache,env, bind1, false,NONE(), Absyn.NO_MSG(), 0);
+        (cache,v) = Ceval.ceval(cache,env, bind1, false, Absyn.NO_MSG(), 0);
       then DAE.TYPES_VAR(id,DAE.dummyAttrParam,t_1,
         DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
@@ -1577,7 +1577,7 @@ algorithm
   // Check that we don't have an instantiation loop.
   if numIter >= Global.recursionDepthLimit then
     Error.addSourceMessage(Error.RECURSION_DEPTH_REACHED,
-      {FGraph.printGraphPathStr(env)}, SCode.elementInfo(cls));
+      {String(Global.recursionDepthLimit), FGraph.printGraphPathStr(env)}, SCode.elementInfo(cls));
     fail();
   end if;
 
@@ -2211,7 +2211,7 @@ algorithm
 
         mods_1 = Mod.merge(mods, mod_1, className);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = InstUtil.elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,NONE(),true,pre,info,inst_dims) "owncref not valid here" ;
+        (cache,dims) = InstUtil.elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl,true,pre,info,inst_dims) "owncref not valid here" ;
         // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, dims);
 
@@ -2251,7 +2251,7 @@ algorithm
         mods_1 = Mod.merge(mods, mod_1, className);
 
         eq = Mod.modEquation(mods_1) "instantiate array dimensions";
-        (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
+        (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, true, pre, info, inst_dims) "owncref not valid here" ;
         // inst_dims2 = InstUtil.instDimExpLst(dims, impl);
         inst_dims_1 = List.appendLastList(inst_dims, dims);
 
@@ -2352,7 +2352,7 @@ algorithm
         (cache,mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, impl, Mod.DERIVED(cn), info);
         mods_1 = Mod.merge(mods, mod_1, className);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
-        (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, NONE(), true, pre, info, inst_dims) "owncref not valid here" ;
+        (cache,dims) = InstUtil.elabArraydimOpt(cache, parentEnv, Absyn.CREF_IDENT("",{}), cn, ad, eq, impl, true, pre, info, inst_dims) "owncref not valid here" ;
         inst_dims_1 = List.appendLastList(inst_dims, dims);
         (cache,env_2,ih,store,dae,csets_1,ci_state_1,vars,bc,oDA,eqConstraint,graph) = instClassIn(cache, cenv_2, ih, store, mods_1, pre, new_ci_state, c, vis, inst_dims_1, impl, callscope, graph, inSets, instSingleCref) "instantiate class in opened scope. " ;
         ClassInf.assertValid(ci_state_1, re, info) "Check for restriction violations" ;
@@ -2923,7 +2923,7 @@ algorithm
           cls := SCode.setClassName(class_name, cls);
           eq := Mod.modEquation(mod);
           (outCache, dims) := InstUtil.elabArraydimOpt(outCache, parent_env,
-            Absyn.CREF_IDENT("", {}), class_path, class_dims, eq, false, NONE(),
+            Absyn.CREF_IDENT("", {}), class_path, class_dims, eq, false,
             true, inPrefix, info, inInstDims);
           inst_dims := List.appendLastList(inInstDims, dims);
         else
@@ -3450,7 +3450,7 @@ algorithm
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
         is_function_input = InstUtil.isFunctionInput(ci_state, dir);
         (cache, dims) = InstUtil.elabArraydim(cache, env2, own_cref, t, ad, eq, impl,
-          NONE(), true, is_function_input, pre, info, inst_dims);
+          true, is_function_input, pre, info, inst_dims);
 
         //PDEModelica:
         if intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA) then
@@ -3570,7 +3570,7 @@ algorithm
         // Gather all the dimensions
         // (Absyn.IDENT("Integer") is used as a dummy)
         (cache, dims) = InstUtil.elabArraydim(cache, env, own_cref, Absyn.IDENT("Integer"),
-          ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+          ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // Instantiate the component
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) =
@@ -4288,7 +4288,7 @@ algorithm
 
     own_cref := Absyn.CREF_IDENT(inName, {});
     (outCache, dims) := InstUtil.elabArraydim(outCache, outEnv, own_cref, inPath,
-      inSubscripts, eq, inImpl, NONE(), true, false, inPrefix, inInfo, {});
+      inSubscripts, eq, inImpl, true, false, inPrefix, inInfo, {});
 
     // Instantiate the component.
     (cls_env, cls, outIH) :=
@@ -4732,7 +4732,7 @@ algorithm
     case (cache,env,pre,(na :: rest),impl,_,clsAttrs)
       equation
         Absyn.NAMEDARG(attrName, attrExp) = na;
-        (cache,outExp,_,_) = Static.elabExp(cache, env, attrExp, impl, NONE(), false /*vectorize*/, pre, inInfo);
+        (cache,outExp,_) = Static.elabExp(cache, env, attrExp, impl, false /*vectorize*/, pre, inInfo);
         (clsAttrs) = insertClassAttribute(clsAttrs,attrName,outExp);
         (cache,env_2,clsAttrs) = instClassAttributes2(cache, env, pre, rest, impl, inInfo,clsAttrs);
       then
@@ -4999,7 +4999,7 @@ algorithm
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
-        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeSelfReferenceFromMod(scodeMod, c1);
@@ -5037,7 +5037,7 @@ algorithm
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
-        (cache,dims) = InstUtil.elabArraydim(cache, cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+        (cache,dims) = InstUtil.elabArraydim(cache, cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, false);
@@ -5075,7 +5075,7 @@ algorithm
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
-        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
         smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, true);
@@ -5113,7 +5113,7 @@ algorithm
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = InstUtil.removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, SOME(info));
-        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+        (cache,dims) = InstUtil.elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, true, false, pre, info, inst_dims);
 
         // we really need to keep at least the redeclare modifications here!!
         // smod = SCodeUtil.removeNonConstantBindingsKeepRedeclares(scodeMod, true);

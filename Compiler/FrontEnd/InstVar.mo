@@ -1705,8 +1705,7 @@ algorithm
         //SOME(attr3) = SCode.mergeAttributes(attr,SOME(absynAttr));
 
         smod := InstUtil.chainRedeclares(inMod, smod);
-        (_, mod) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, smod, inImpl,
-          Mod.DERIVED(cls_path), inInfo);
+        (_, mod) := Mod.elabMod(outCache, outEnv, outIH, inPrefix, smod, inImpl, Mod.DERIVED(cls_path), inInfo);
         mod := Mod.merge(inMod, mod);
       then
         (cls, mod, attr, {});

@@ -946,7 +946,7 @@ public constant Message META_COMPLEX_TYPE_MOD = MESSAGE(5006, TRANSLATION(), ERR
   Util.gettext("MetaModelica complex types may not have modifiers."));
 public constant Message META_CEVAL_FUNCTION_REFERENCE = MESSAGE(5008, TRANSLATION(), ERROR(),
   Util.gettext("Cannot evaluate function pointers (got %s)."));
-public constant Message NON_INSTANTIATED_FUNCTION = MESSAGE(5009, SYMBOLIC(), ERROR(),
+public constant Message NON_INSTANTIATED_FUNCTION = MESSAGE(5009, TRANSLATION(), ERROR(),
   Util.gettext("Tried to use function %s, but it was not instantiated."));
 public constant Message META_UNSOLVED_POLYMORPHIC_BINDINGS = MESSAGE(5010, TRANSLATION(), ERROR(),
   Util.gettext("Could not solve the polymorphism in the function call to %s\n  Input bindings:\n%s\n  Solved bindings:\n%s\n  Unsolved bindings:\n%s"));

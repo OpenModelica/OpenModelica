@@ -7,6 +7,7 @@ if true then /* Suppress output */
     // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc, maybe
     "../Util/File.mo",
     "../FrontEnd/Absyn.mo",
+    "../FrontEnd/AbsynUtil.mo",
     "../FrontEnd/Algorithm.mo",
     "../FrontEnd/BackendInterface.mo",
     "../FrontEnd/Builtin.mo",
@@ -155,8 +156,9 @@ if true then /* Suppress output */
     "../Script/GlobalScript.mo",
     "../Script/GlobalScriptDump.mo",
     "../Script/GlobalScriptUtil.mo",
-    "../Script/StaticScript.mo",
     "../Script/Interactive.mo",
+    "../Script/StaticScript.mo",
+    "../Script/SymbolTable.mo",
 
   // "Template";
     "../Template/AbsynDumpTpl.mo",
@@ -184,6 +186,7 @@ if true then /* Suppress output */
     "../Util/AvlSetCR.mo",
     "../Util/AvlSetPath.mo",
     "../Util/AvlSetString.mo",
+    "../Util/AvlTreeStringString.mo",
     "../Util/AvlTreeCRToInt.mo",
     "../Util/BaseAvlTree.mo",
     "../Util/BaseAvlSet.mo",
@@ -334,8 +337,8 @@ if true then /* Suppress output */
     "../Script/BlockCallRewrite.mo",
     "../Script/Binding.mo",
     "../Script/OpenModelicaScriptingAPI.mo",
-
     "../Script/CevalScriptBackend.mo",
+
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
     "../SimCode/SerializeModelInfo.mo",

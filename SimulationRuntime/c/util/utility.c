@@ -139,3 +139,170 @@ extern int OpenModelica_regex(const char* str, const char* re, int maxn, int ext
 }
 
 #endif /* OMC_MINIMAL_RUNTIME */
+
+/* TODO: What is the ifdef for filesystem availability? */
+
+void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs)
+{
+  int i;
+  threadData->localRoots[LOCAL_ROOT_URI_LOOKUP] = namesAndDirs; /* This should keep the names from being garbage collected */
+}
+
+#include <sys/stat.h>
+#include <unistd.h>
+
+static modelica_string uriToFilenameRegularPaths(modelica_string uri_om, const char *uri, char buf[PATH_MAX], const char *origUri)
+{
+  struct stat stat_buf;
+  size_t len;
+  if (0==stat(uri, &stat_buf)) {
+    /* This is a file, directory, etc. Can't use open to check this. */
+    if (0==realpath(uri, buf)) {
+      /* Unexpected; we know the file exists, but realpath failed. Just return the URI */
+      return uri_om ? uri_om : mmc_mk_scon(uri);
+    }
+    /* Use the realpath result */
+    if (S_ISDIR(stat_buf.st_mode)) {
+      /* Make directories end with a / if the original URI ends with a / */
+      len = strlen(buf);
+      if (buf[len-1]!='/' && origUri[strlen(origUri)-1]=='/') {
+        if (len+1 >= PATH_MAX) {
+          /* Can't fit the path; just return the original URI */
+          return uri_om ? uri_om : mmc_mk_scon(uri);
+        }
+        strcpy(buf+len, "/");
+      }
+    }
+    return (0==strcmp(uri, buf) && uri_om) ? uri_om : mmc_mk_scon(buf);
+  }
+
+  if (uri[0]=='/') {
+    /* Absolute path */
+    return uri_om ? uri_om : mmc_mk_scon(uri);
+  }
+  if (0==realpath("./", buf)) {
+    /* Failed to resolve ./ */
+    return uri_om ? uri_om : mmc_mk_scon(uri);
+  }
+  len = strlen(buf);
+  if (len+strlen(uri)+1 >= PATH_MAX) {
+    /* Can't fit the path; just return the original URI */
+    return uri_om ? uri_om : mmc_mk_scon(uri);
+  }
+  /* Copy the rest of the URI onto the buffer */
+  if (buf[len-1]!='/') {
+    buf[len++]='/';
+  }
+  strcpy(buf+len, uri);
+  return mmc_mk_scon(buf);
+}
+
+static int findString(const void *name, const void *entry)
+{
+  return strcmp((const char *)name, MMC_STRINGDATA(((void**)entry)[0]));
+}
+
+static modelica_string lookupDirectoryFromName(const char *name, void *nameDirArray)
+{
+  size_t len;
+  void **strs;
+  void **obj;
+  assert(0!=nameDirArray);
+  len = MMC_HDRSLOTS(MMC_GETHDR(nameDirArray));
+  strs = MMC_STRUCTDATA(nameDirArray);
+  obj=bsearch(name, strs, len/2, 2*sizeof(void*), findString);
+  if (obj==NULL) {
+    return NULL;
+  }
+  return obj[1];
+}
+
+static void getIdent(const char *str, char *this, const char **next)
+{
+  while (*str != 0 && *str != '.' && *str != '/') {
+    *(this++) = *(str++);
+  }
+  *this = '\0';
+  *next = str;
+}
+
+extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData, modelica_string uri_om)
+{
+  FILE_INFO info = omc_dummyFileInfo;
+  char buf[PATH_MAX];
+  const char *uri = MMC_STRINGDATA(uri_om);
+  modelica_string dir;
+  static MMC_DEFSTRINGLIT(OMC_STRINGLIT_UNKNOWN_ERROR,13,"Unknown error");
+  static MMC_DEFSTRINGLIT(OMC_STRINGLIT_MALFORMED_URL,30,"Malformed modelica:// URI");
+  static MMC_DEFSTRINGLIT(OMC_STRINGLIT_PATH_MAX,33,"file path is longer than PATH_MAX");
+  if (0==strncasecmp(uri, "modelica://", 11)) {
+    uri += 11;
+    getIdent(uri, buf, &uri);
+    if (0 == *buf) {
+      omc_assert(threadData, info, "Malformed URI (couldn't get a class name): %s", MMC_STRINGDATA(uri_om));
+      MMC_THROW();
+    }
+    dir = lookupDirectoryFromName(buf, threadData->localRoots[LOCAL_ROOT_URI_LOOKUP]);
+    if (dir==NULL || MMC_STRLEN(dir)==0) {
+      omc_assert(threadData, info, "Failed to lookup URI (is the package loaded?) %s", MMC_STRINGDATA(uri_om));
+      MMC_THROW();
+    }
+    /* We found where the package is stored */
+    while (1) {
+      struct stat stat_buf;
+      if (*uri == '.') {
+        uri++;
+      } else {
+        break;
+      }
+      getIdent(uri, buf, &uri);
+      if (0 == *buf) {
+        if (*uri == '.') {
+          omc_assert(threadData, info, "Malformed URI (double dot in class name): %s", MMC_STRINGDATA(uri_om));
+          MMC_THROW();
+        }
+        break; /* / or end of string */
+      }
+      if (MMC_STRLEN(dir)+strlen(buf)+1 >= PATH_MAX) {
+        omc_assert(threadData, info, "Failed to resolve URI; path longer than PATH_MAX(%d): %s", PATH_MAX, MMC_STRINGDATA(uri_om));
+        MMC_THROW();
+      }
+      /* Move the found ident last in the path */
+      strcpy(buf+MMC_STRLEN(dir)+1, buf);
+      /* Copy the old directory in there */
+      strcpy(buf, MMC_STRINGDATA(dir));
+      buf[MMC_STRLEN(dir)]='/';
+      if (!(0==stat(dir, &stat_buf) && S_ISDIR(stat_buf.st_mode))) {
+        break;
+      }
+      dir = mmc_mk_scon(buf);
+    }
+    while (*uri && *(uri++) != '/') /* Ignore */;
+    if (0 == strlen(uri)) {
+      /* realpath, etc */
+      return uriToFilenameRegularPaths(dir, MMC_STRINGDATA(dir), buf, MMC_STRINGDATA(uri_om));
+    }
+    if (MMC_STRLEN(dir)+strlen(uri-1) >= PATH_MAX) {
+      return mmc_emptystring;
+    }
+    strcpy(buf, MMC_STRINGDATA(dir));
+    strcpy(buf+MMC_STRLEN(dir), uri-1);
+    dir = mmc_mk_scon(buf);
+    return uriToFilenameRegularPaths(dir, MMC_STRINGDATA(dir), buf, MMC_STRINGDATA(uri_om));
+  }
+  if (0==strncasecmp(uri, "file://", 7)) {
+    return uriToFilenameRegularPaths(NULL, uri+7, buf, MMC_STRINGDATA(uri_om));
+  }
+  if (strstr(uri, "://")) {
+    omc_assert(threadData, info, "Unknown URI schema: %s", MMC_STRINGDATA(uri_om));
+    MMC_THROW();
+  }
+  return uriToFilenameRegularPaths(uri_om, uri, buf, MMC_STRINGDATA(uri_om));
+}
+
+/* TODO: Remove this function after @sjoelund is done prototyping */
+extern void uriToFilename(threadData_t *threadData)
+{
+  abort();
+}
+

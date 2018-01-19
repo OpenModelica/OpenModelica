@@ -75,54 +75,55 @@ algorithm
       SimCode.VarInfo varInfo,varInfo_1;
       SimCodeVar.SimVars vars,vars_1;
       list<SimCodeFunction.Function> functions;
-	  Boolean hasLargeLinearEquationSystems;
-	  Integer nClocks,nSubClocks;
+      Boolean hasLargeLinearEquationSystems;
+      Integer nClocks,nSubClocks;
       list<SimCodeVar.SimVar> states,derVar,alg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param,
                            intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,jacobianVar,const,intConst,boolConst,stringConst;
 
       Integer nZC,nTE,nR,nMEF,nStates,nAlg,nDiscReal,nIntAlg,nBoolAlg,nAlgAlias,nIntAlias,nBoolAlias,
               nParam,nIntParam,nBoolParam,nOut,nIn,nExtObj,nStringAlg,nStringParam,nStringAlias,nEq,nLSys,nNLSys,nMixSys,
-			  nStateSet,nJacobian,nOptCons,nOptFinalConst,nSensParam;
+        nStateSet,nJacobian,nOptCons,nOptFinalConst,nSensParam;
 
       list<String> labels,labels_1,labels_2;
       Integer i,p;
       list<Absyn.Exp> exp_list;
       BackendVarTransform.VariableReplacements repl;
-    case (eqns,SimCode.MODELINFO(name,description,directory,
-      SimCode.VARINFO(nZC,nTE,nR,nMEF,nStates,nAlg,nDiscReal,nIntAlg,nBoolAlg,nAlgAlias,nIntAlias,nBoolAlias,
-              nParam,nIntParam,nBoolParam,nOut,nIn,nExtObj,nStringAlg,nStringParam,nStringAlias,nEq,nLSys,nNLSys,nMixSys,nStateSet,nJacobian,nOptCons,
-			  nOptFinalConst,nSensParam),
-      vars,functions,labels,nClocks,nSubClocks,hasLargeLinearEquationSystems,linearSystems,nonLinearSystems),_,Absyn.FUNCTIONARGS(args = {Absyn.CREF(_), Absyn.ARRAY(arrayExp = exp_list)}))
-      equation
+    case (eqns,modelInfo as SimCode.MODELINFO(varInfo=varInfo as SimCode.VARINFO()),_,Absyn.FUNCTIONARGS(args = {Absyn.CREF(_), Absyn.ARRAY(arrayExp = exp_list)}))
+      algorithm
         //create replacements for algebraic and state variables together with the time variable by their average values
-        repl=meanValueReplacements(vars,exp_list);
+        repl:=meanValueReplacements(modelInfo.vars,exp_list);
         //add labels to equations
-        (eqns_1,vars_1,(i,p),labels_1)=addLabelToEquations(eqns,vars,(0,nParam),reduceList,repl);
+        (eqns_1,vars_1,(i,p),labels_1):=addLabelToEquations(eqns,modelInfo.vars,(0,varInfo.numParams),reduceList,repl);
         //append original (empty list) and created labels
-        labels_2=listAppend(labels,labels_1);
+        labels_2:=listAppend(modelInfo.labels,labels_1);
         //update number of parameters in the varInfo nParam=p
-        varInfo_1=SimCode.VARINFO(nZC,nTE,nR,nMEF,nStates,nAlg,nDiscReal,nIntAlg,nBoolAlg,nAlgAlias,nIntAlias,nBoolAlias,
-              p,nIntParam,nBoolParam,nOut,nIn,nExtObj,nStringAlg,nStringParam,nStringAlias,nEq,nLSys,nNLSys,nMixSys,nStateSet,nJacobian,nOptCons,
-			  nOptFinalConst,nSensParam);
-
+        if varInfo.numParams <> p then
+          varInfo.numParams := p;
+          modelInfo.varInfo := varInfo;
+        end if;
+        modelInfo.labels := labels_2;
+        if not referenceEq(modelInfo.vars, vars_1) then
+          modelInfo.vars := vars_1;
+        end if;
       then
-        (eqns_1,SimCode.MODELINFO(name,description,directory,varInfo_1,vars_1,functions,labels_2,nClocks,nSubClocks,hasLargeLinearEquationSystems,linearSystems,nonLinearSystems));
+        (eqns_1,modelInfo);
 
     //this case is only necessary for calling generateLabeledDAE from Eclipse, because the first case fails, because there are no inArgs
-    case (eqns,SimCode.MODELINFO(name,description,directory,
-      SimCode.VARINFO(nZC,nTE,nR,nMEF,nStates,nAlg,nDiscReal,nIntAlg,nBoolAlg,nAlgAlias,nIntAlias,nBoolAlias,
-              nParam,nIntParam,nBoolParam,nOut,nIn,nExtObj,nStringAlg,nStringParam,nStringAlias,nEq,nLSys,nNLSys,nMixSys,nStateSet,nJacobian,nOptCons,
-			  nOptFinalConst,nSensParam),
-      vars,functions,labels,nClocks,nSubClocks,hasLargeLinearEquationSystems,linearSystems,nonLinearSystems),_,args)
-      equation
-        repl=BackendVarTransform.emptyReplacements();
-        (eqns_1,vars_1,(i,p),labels_1)=addLabelToEquations(eqns,vars,(0,nParam),reduceList,repl);
-        labels_2=listAppend(labels,labels_1);
-        varInfo_1=SimCode.VARINFO(nZC,nTE,nR,nMEF,nStates,nAlg,nDiscReal,nIntAlg,nBoolAlg,nAlgAlias,nIntAlias,nBoolAlias,
-              p,nIntParam,nBoolParam,nOut,nIn,nExtObj,nStringAlg,nStringParam,nStringAlias,nEq,nLSys,nNLSys,nMixSys,nStateSet,nJacobian,nOptCons,
-			  nOptFinalConst,nSensParam);
+    case (eqns,modelInfo as SimCode.MODELINFO(varInfo=varInfo as SimCode.VARINFO()),_,args)
+      algorithm
+        repl:=BackendVarTransform.emptyReplacements();
+        (eqns_1,vars_1,(i,p),labels_1):=addLabelToEquations(eqns,modelInfo.vars,(0,varInfo.numParams),reduceList,repl);
+        labels_2:=listAppend(modelInfo.labels,labels_1);
+        if varInfo.numParams <> p then
+          varInfo.numParams := p;
+          modelInfo.varInfo := varInfo;
+        end if;
+        modelInfo.labels := labels_2;
+        if not referenceEq(modelInfo.vars, vars_1) then
+          modelInfo.vars := vars_1;
+        end if;
       then
-        (eqns_1,SimCode.MODELINFO(name,description,directory,varInfo_1,vars_1,functions,labels_2,nClocks,nSubClocks,hasLargeLinearEquationSystems,linearSystems,nonLinearSystems));
+        (eqns_1,modelInfo);
   end matchcontinue;
 end buildLabels;
 
@@ -238,7 +239,7 @@ algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for time \n" );
-		end if;
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add replacement for time \n" );
 
@@ -251,7 +252,7 @@ algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by " + value + "\n" );
-		end if;
+    end if;
 
       then repl;
     //replacements for integer values
@@ -263,7 +264,7 @@ algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by " + value + "\n" );
-		end if;
+    end if;
       then repl;
     //replacements for negative reals
     case(repl,SimCodeVar.SIMVAR(name = name,type_ = DAE.T_REAL(_))::restVar,Absyn.UNARY(op = Absyn.UMINUS(),exp = Absyn.REAL(value))::restVal)
@@ -273,7 +274,7 @@ algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + value + "\n" );
-		end if;
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + realString(value) + "\n" );
 
@@ -287,13 +288,13 @@ algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + value + "\n" );
-		end if;
+    end if;
       then repl;
     case(repl,var::restVar,meanValue::restVal)
       equation
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add no replacement \n" );
-		end if;
+    end if;
 
       then repl;
     case(repl,var::restVar,meanValue::restVal)
@@ -326,19 +327,19 @@ protected function addLabelToEquations
       list<DAE.Exp> s,t,inputs,outputs,expl,b;
       DAE.ComponentRef cr_1,cr;
       DAE.ElementSource source "origin of the equation";
-	  list<DAE.ElementSource> sourcelist;
+    list<DAE.ElementSource> sourcelist;
       SimCodeVar.SimVars vars,vars_1,vars_2,vars_3;
       list<String> labels,labels2,labels3,labels4,labels5;
       tuple <Integer,Integer> idx,idx2,idx3,idx4;
       Integer i,indexSys,idxLS,idxNLS,nUnknownsLS,nUnknownsNLS;
       list<DAE.ComponentRef> conditions;
-	  Boolean partOfLinear,tornSystem,initialCall;
-	   list<BackendDAE.WhenOperator> whenStmtLst;
+    Boolean partOfLinear,tornSystem,initialCall;
+     list<BackendDAE.WhenOperator> whenStmtLst;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> A,A2;
       list<DAE.ComponentRef> crefs,crefs_1;
       list<SimCodeVar.SimVar> varsLin,discVars;
       list<DAE.Statement> statements,statements2;
-	 list<SimCode.SimEqSystem> residual;
+   list<SimCode.SimEqSystem> residual;
     Option<SimCode.JacobianMatrix> jacobianMatrix;
 
     // nothing
@@ -349,7 +350,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace residuals  \n" );
-		end if;
+    end if;
 
         //label a residual equation
         (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
@@ -366,7 +367,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace simple assignments  \n" );
-		end if;
+    end if;
         //label simple assigment
         (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
         //simplify the labeled equation
@@ -382,7 +383,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace algorithms  \n" );
-		end if;
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"---Replace algorithms  \n" );
 
@@ -399,7 +400,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace linear equation systems  \n" );
-		end if;
+    end if;
         //call helper function for labeling linear equation systems
         (A2,vars_1,idx2,labels)=addLabelToLinearEquationSystems(A,vars,idx,reduceList,inVarRepl);
         //label rest
@@ -414,7 +415,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace non-linear equation systems  \n" );
-		end if;
+    end if;
         //call addLabelToEquations for equations in a nonlinear equation system
         (nl_1,vars_1,idx2,labels)=addLabelToEquations(nl,vars,idx,reduceList,inVarRepl);
         //label rest
@@ -428,7 +429,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace mixed equation systems  \n" );
-		end if;
+    end if;
         //call addLabelToEquations for equations in a mixed system
         ({cont_1},vars_1,idx2,labels)=addLabelToEquations({cont},vars,idx,reduceList,inVarRepl);
         //label rest
@@ -437,12 +438,12 @@ protected function addLabelToEquations
       then
         (SimCode.SES_MIXED(i,cont_1,discVars,disc,indexSys) :: es_1,vars_2,idx3,labels3);
     // when without else
-	case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source)) :: es),vars,idx,_,_)
+  case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when equations without else statement  \n" );
-		end if;
+    end if;
         //label rest
         (es_1 ,vars_1,idx2,labels)= addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
       then
@@ -454,7 +455,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when equations with else statement  \n" );
-		end if;
+    end if;
         //label when equations
         //call addLabelToEquations for labeling else part
         ({elsePart} ,vars_1,idx2,labels)= addLabelToEquations({elsePart},vars,idx,reduceList,inVarRepl);
@@ -470,7 +471,7 @@ protected function addLabelToEquations
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace unknown equations  \n" );
-		end if;
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"---Replace unknown equations  \n" );
 
@@ -507,24 +508,24 @@ protected function addLabelToAlgorithms
       Boolean iterIsArray;
       DAE.Ident iter;
       list<Integer> helpVarIndices;
-	  Integer index;
-	  list<DAE.ComponentRef> conditions;
+    Integer index;
+    list<DAE.ComponentRef> conditions;
     Boolean initialCall;
     case({},vars,idx,_,_)
       equation
 
-	    if Flags.isSet(Flags.REDUCE_DAE) then
+      if Flags.isSet(Flags.REDUCE_DAE) then
            Debug.trace("---Replace empty algorithm  \n" );
-		end if;
+    end if;
       then ({},vars,idx,{});
 
-	case(DAE.STMT_ASSIGN(ty,e1,e,source)::rest,vars,idx,_,_)
+  case(DAE.STMT_ASSIGN(ty,e1,e,source)::rest,vars,idx,_,_)
       equation
 
         if Flags.isSet(Flags.REDUCE_DAE) then
           Debug.trace("---Replace assignment algorithm  \n");
         end if;
-		(e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
+    (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
 
         labels3=listAppend(labels,labels2);
@@ -536,7 +537,7 @@ protected function addLabelToAlgorithms
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace if algorithm  \n" );
-		end if;
+    end if;
        // //Debug.fcall(Flags.CPP,print,"---Replace if algorithm  \n" );
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
@@ -550,7 +551,7 @@ protected function addLabelToAlgorithms
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace for algorithm  \n" );
-		end if;
+    end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
@@ -561,7 +562,7 @@ protected function addLabelToAlgorithms
       equation
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace while algorithm  \n" );
-		end if;
+    end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
@@ -573,7 +574,7 @@ protected function addLabelToAlgorithms
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when algorithm without else statement  \n" );
-		end if;
+    end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
@@ -585,7 +586,7 @@ protected function addLabelToAlgorithms
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when algorithm with else statement  \n" );
-		end if;
+    end if;
         (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
         ({elseWhen2},vars_2,idx3,labels2) = addLabelToAlgorithms({elseWhen},vars_1,idx2,reduceList,inVarRepl);
         (rest2,vars_3,idx4,labels3) = addLabelToAlgorithms(rest,vars_2,idx3,reduceList,inVarRepl);
@@ -599,7 +600,7 @@ protected function addLabelToAlgorithms
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace other algorithm  \n" );
-		end if;
+    end if;
         (rest2,vars_1,idx2,labels) = addLabelToAlgorithms(rest,vars,idx,reduceList,inVarRepl);
       then
         (stmt::rest2,vars_1,idx2,labels);
@@ -763,8 +764,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to add exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to add exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //labels e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
@@ -787,8 +788,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sub exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to sub exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
         //labels e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
@@ -809,8 +810,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to mul exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to mul exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
         //labels e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,false,reduceList);
         //labels e_2
@@ -827,8 +828,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to div exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -844,8 +845,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to pow exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to pow exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //labels e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
@@ -867,8 +868,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to unary exp "+ ExpressionDump.printExpStr(e) +"\n");
-		end if;
+    Debug.trace("Add label to unary exp "+ ExpressionDump.printExpStr(e) +"\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to unary exp "+& ExpressionDump.printExpStr(e) +&"\n");
 
@@ -882,8 +883,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Not Implemented: Add label to relation " + ExpressionDump.printExpStr(e)+"\n");
-		end if;
+    Debug.trace("Not Implemented: Add label to relation " + ExpressionDump.printExpStr(e)+"\n");
+    end if;
       then
         (e,vars,idx,{});
 
@@ -893,8 +894,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to if exp" + ExpressionDump.printExpStr(e)+"\n");
-		end if;
+    Debug.trace("Add label to if exp" + ExpressionDump.printExpStr(e)+"\n");
+    end if;
         //labels if-clause
         (e2_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e2,vars,idx,true,reduceList);
         //labels else-clause
@@ -909,8 +910,8 @@ algorithm
      equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("add no label to pre arguments  \n");
-		end if;
+    Debug.trace("add no label to pre arguments  \n");
+    end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
       then
@@ -921,8 +922,8 @@ algorithm
       equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("add no label to edge arguments \n");
-		end if;
+    Debug.trace("add no label to edge arguments \n");
+    end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
       then
@@ -933,8 +934,8 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("add no label to change arguments \n");
-		end if;
+    Debug.trace("add no label to change arguments \n");
+    end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
         then
@@ -945,8 +946,8 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("add no label to sample arguments \n");
-		end if;
+    Debug.trace("add no label to sample arguments \n");
+    end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
         then
@@ -957,8 +958,8 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("add no label for no event arguments \n");
-		end if;
+    Debug.trace("add no label for no event arguments \n");
+    end if;
           //creates a label and multiplies it with the expression
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
         then
@@ -968,8 +969,8 @@ algorithm
     equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to max exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to max exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to max exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -988,8 +989,8 @@ algorithm
     equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to min exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to min exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
         //labels e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
@@ -1005,8 +1006,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to abs exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to abs exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to abs exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1026,8 +1027,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression under the square root
         (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
@@ -1044,8 +1045,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
@@ -1055,8 +1056,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
@@ -1068,8 +1069,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
@@ -1079,8 +1080,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
@@ -1092,8 +1093,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
@@ -1103,8 +1104,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
@@ -1114,8 +1115,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
         //labels the expression e_1
         (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
@@ -1128,8 +1129,8 @@ algorithm
     equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
         //labels only the nominator of a division expression
         (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //(e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,false,reduceList);
@@ -1142,8 +1143,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to other call function "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add no label to other call function "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
       then
         (DAE.CALL(path,expl,attr),vars,idx,{});
 
@@ -1153,8 +1154,8 @@ algorithm
          equality(valueR = 0.0);
 
          if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to const 0.0 \n");
-		end if;
+    Debug.trace("Add no label to const 0.0 \n");
+    end if;
        then
         (DAE.RCONST(0.0),vars,idx,{});
 
@@ -1162,8 +1163,8 @@ algorithm
      case ((e as DAE.RCONST(_)),vars,idx,_,_)
        equation
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to real const variable " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to real const variable " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
        then
         (e2,vars_1,idx1,labels);
@@ -1174,8 +1175,8 @@ algorithm
         equality(valueI = 0);
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to const 0 \n");
-		end if;
+    Debug.trace("Add no label to const 0 \n");
+    end if;
         then
          (DAE.ICONST(0),vars,idx,{});
 
@@ -1183,8 +1184,8 @@ algorithm
       case ((e as DAE.ICONST(_)),vars,idx,_,_)
       equation
            if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to integer const variable " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to integer const variable " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
        then
         (e2,vars_1,idx1,labels);
@@ -1193,8 +1194,8 @@ algorithm
       case ((e as DAE.SCONST(_)),vars,idx,_,_)
       equation
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to string const variable " + ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add no label to string const variable " + ExpressionDump.printExpStr(e) + "\n");
+    end if;
       then
         (e,vars,idx,{});
 
@@ -1204,8 +1205,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to boolean const variable " + ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add no label to boolean const variable " + ExpressionDump.printExpStr(e) + "\n");
+    end if;
       then
         (e,vars,idx,{});
 
@@ -1213,16 +1214,16 @@ algorithm
      case(e as DAE.CREF(_,DAE.T_STRING(_)),vars,idx,_,_)
         equation
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to string variable " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add no label to string variable " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
        then
         (e,vars,idx,{});
      ///Add label string const values, variables, parameters
      case(e as DAE.CREF(_,DAE.T_BOOL(_)),vars,idx,_,_)
         equation
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add no label to boolean variable " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add no label to boolean variable " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
        then
         (e,vars,idx,{});
      ///Add label const values, variables, parameters
@@ -1231,8 +1232,8 @@ algorithm
         equation
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to variable " + ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to variable " + ExpressionDump.printExpStr(e) + "\n");
+    end if;
           (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
        then
         (e2,vars_1,idx1,labels);
@@ -1242,8 +1243,8 @@ algorithm
        equation
 
          if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to unknown expression " + ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to unknown expression " + ExpressionDump.printExpStr(e) + "\n");
+    end if;
        then
          (e,vars,idx,{});
 
@@ -1379,8 +1380,8 @@ algorithm
         false = Expression.expHasCrefs(e2);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to pow exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to pow exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to pow exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1394,8 +1395,8 @@ algorithm
         true = Expression.expHasCrefs(e2);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to pow exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to pow exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to pow exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1411,8 +1412,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to binary exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to binary exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to binary exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1426,8 +1427,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to unary exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to unary exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to unary exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1439,8 +1440,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to if exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to if exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to if exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1456,8 +1457,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to sin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1475,8 +1476,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to cos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1494,8 +1495,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to tan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1513,8 +1514,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to asin exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to asin exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to asin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1532,8 +1533,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to acos exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to acos exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to acos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1551,8 +1552,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to atan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1570,8 +1571,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to exp exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1589,8 +1590,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to log exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to log exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to log exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1608,8 +1609,8 @@ algorithm
         true = Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to sqrt exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1776,8 +1777,8 @@ algorithm
         labels4=listAppend(labels3,labels2);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to binary exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to binary exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to binary exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -1788,8 +1789,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to unary exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to unary exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to unary exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -1801,8 +1802,8 @@ algorithm
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to if exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to if exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to if exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -1817,8 +1818,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to max exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to max exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to max exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -1838,8 +1839,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to min exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to min exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to min exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -1859,8 +1860,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to abs exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to abs exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to abs exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1876,8 +1877,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to sqrt exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1893,8 +1894,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to sin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1910,8 +1911,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to cos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1927,8 +1928,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to tan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1944,8 +1945,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to asin exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to asin exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to asin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1961,8 +1962,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to acos exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to acos exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to acos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1978,8 +1979,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
-		end if;
+    Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to atan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -1995,8 +1996,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(ex) + "\n");
-		end if;
+    Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(ex) + "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to exp exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
@@ -2012,8 +2013,8 @@ algorithm
         (ex,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to div exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -2041,8 +2042,8 @@ algorithm
         (e1,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to integer variable " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to integer variable " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to integer variable " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -2056,8 +2057,8 @@ algorithm
         (e1,true)=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("Add label to real variable " + ExpressionDump.printExpStr(e) +  "\n");
-		end if;
+    Debug.trace("Add label to real variable " + ExpressionDump.printExpStr(e) +  "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"Add label to real variable " +& ExpressionDump.printExpStr(e) +&  "\n");
 
@@ -2144,8 +2145,8 @@ algorithm
         e2 = Expression.expMul(DAE.CREF(DAE.CREF_IDENT(name,DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT),e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
-		Debug.trace("generate label  " + ExpressionDump.printExpStr(e2) + " for term " +ExpressionDump.printExpStr(e)+ "\n");
-		end if;
+    Debug.trace("generate label  " + ExpressionDump.printExpStr(e2) + " for term " +ExpressionDump.printExpStr(e)+ "\n");
+    end if;
 
         //Debug.fcall(Flags.CPP,print,"generate label  " +& ExpressionDump.printExpStr(e2) +& " for term " +& ExpressionDump.printExpStr(e)+& "\n");
 
@@ -2168,14 +2169,14 @@ algorithm
     local
      list<SimCodeVar.SimVar> states,derVar,alg,disAlg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param,
                           intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
-						  seedVar,realOptConst,realOptFinalConst,sensVar;
+              seedVar,realOptConst,realOptFinalConst,sensVar;
      SimCodeVar.SimVar simVar_1,simVar_2;
      list<SimCodeVar.SimVar> param_1,param_2;
      Integer i,p;
      String name, name1, name2, indexStr;
     case (SimCodeVar.SIMVARS(states,derVar,alg,disAlg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param,
                            intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
-						   seedVar,realOptConst,realOptFinalConst,sensVar),p,i)
+               seedVar,realOptConst,realOptFinalConst,sensVar),p,i)
 
       equation
         indexStr = intString(i);
@@ -2201,7 +2202,7 @@ algorithm
 
         (SimCodeVar.SIMVARS(states,derVar,alg,disAlg,intAlg,boolAlg,inVar,outVar,algAlias,intAlias,boolAlias,param_2,
                            intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
-						   seedVar,realOptConst,realOptFinalConst,sensVar),name);
+               seedVar,realOptConst,realOptFinalConst,sensVar),name);
 
   end matchcontinue;
 end createLabelVar;

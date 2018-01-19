@@ -329,8 +329,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp = (ModelInstance *)functions->allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
     DATA* fmudata = NULL;
-  MODEL_DATA* modelData = NULL;
-  SIMULATION_INFO* simInfo = NULL;
+    MODEL_DATA* modelData = NULL;
+    SIMULATION_INFO* simInfo = NULL;
     threadData_t *threadData = NULL;
     int i;
 
@@ -372,7 +372,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->loggingOn = loggingOn;
   comp->state = modelInstantiated;
   /* intialize modelData */
-  fmu2_model_interface_setupDataStruc(comp->fmuData);
+  fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
   initializeDataStruc(comp->fmuData, comp->threadData);
@@ -576,7 +576,7 @@ fmi2Status fmi2Reset(fmi2Component c)
 
   if (comp->state & modelTerminated) {
     /* intialize modelData */
-    fmu2_model_interface_setupDataStruc(comp->fmuData);
+    fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
     initializeDataStruc(comp->fmuData, comp->threadData);
   }
   /* reset the values to start */

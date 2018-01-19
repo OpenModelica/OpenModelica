@@ -17,18 +17,9 @@ sum("RELPATH_" + typeNameString(cl) + "=" + stringReplace(getSourceFile(cl),relD
 */
 );getErrorString();
 
-loadString("within Absyn; /* So it is not listed by getClassNames() */
-function delimit
-  input String str1;
-  input String str2;
-  output String o;
-algorithm
-  o := str1 + \",\" + str2;
-end delimit;");getErrorString();
-
 writeFile("LoadCompilerInterface.mos.tmp","if true then /* Suppress output */
   setCommandLineOptions(\"-g=MetaModelica\");
-  files:={"+Absyn.delimit("\"build/" + typeNameString(cl) + ".interface.mo\"" for cl in getClassNames())+"};
+  files:={"+stringDelimitList(list("\"build/" + typeNameString(cl) + ".interface.mo\"" for cl in getClassNames()), ",")+"};
   LoadCompilerSourcesRes:= OpenModelica.Scripting.loadFiles(files,numThreads=min(5,OpenModelica.Scripting.numProcessors()));
   if not LoadCompilerSourcesRes then
     print(\"Failed to load compiler sources:
@@ -38,3 +29,4 @@ writeFile("LoadCompilerInterface.mos.tmp","if true then /* Suppress output */
   end if;
 end if;
 ");
+getErrorString();

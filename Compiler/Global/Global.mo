@@ -45,6 +45,8 @@ constant Integer maxFunctionFileLength = 50;
 constant Integer instOnlyForcedFunctions = 0;
 constant Integer codegenTryThrowIndex = 1;
 constant Integer codegenFunctionList = 2;
+constant Integer symbolTable = 3;
+
 // Global roots start at index=9
 constant Integer instHashIndex = 9;
 constant Integer builtinIndex = 12;

@@ -53,7 +53,7 @@ typedef struct _FILE_INFO
   int readonly;
 } FILE_INFO;
 
-#define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
+#define omc_dummyFileInfo {"",0,0,0,0,0}
 
 DLLExport extern void printInfo(FILE *stream, FILE_INFO info);
 DLLExport extern void (*omc_assert)(threadData_t*, FILE_INFO, const char*, ...) __attribute__ ((noreturn));

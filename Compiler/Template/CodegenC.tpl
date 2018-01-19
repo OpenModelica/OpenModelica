@@ -1184,6 +1184,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__),vars=SIMVARS(__)) then
     <<
+    OpenModelica_updateUriMapping(threadData, MMC_REFSTRUCTLIT(_OMC_LIT_RESOURCES));
     data->modelData->modelName = "<%dotPath(name)%>";
     data->modelData->modelFilePrefix = "<%fileNamePrefix%>";
     data->modelData->resultFileName = NULL;
@@ -1283,6 +1284,27 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   "Generates function in simulation file."
 ::=
   <<
+  <%
+  match modelInfo
+  case MODELINFO(__) then
+  <<
+  <% sortedClasses |> c as CLASS(info=SOURCEINFO(fileName=fileName)) hasindex index0 =>
+  let escName = Util.escapeModelicaStringToCString(name)
+  let escDir = Util.escapeModelicaStringToCString(dirname(fileName))
+  <<
+  #define _OMC_LIT_RESOURCE_<%index0%>_name_data "<%escName%>"
+  #define _OMC_LIT_RESOURCE_<%index0%>_dir_data "<%escDir%>"
+  static const MMC_DEFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_name,<%unescapedStringLength(escName)%>,_OMC_LIT_RESOURCE_<%index0%>_name_data);
+  static const MMC_DEFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_dir,<%unescapedStringLength(escDir)%>,_OMC_LIT_RESOURCE_<%index0%>_dir_data);
+  <%\n%>
+  >>
+  %>
+  static const MMC_DEFSTRUCTLIT(_OMC_LIT_RESOURCES,<%intMul(2,listLength(sortedClasses))%>,MMC_ARRAY_TAG) {<%
+    sortedClasses |> c as CLASS(info=SOURCEINFO(fileName=fileName)) hasindex index0 =>
+    'MMC_REFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_name), MMC_REFSTRINGLIT(_OMC_LIT_RESOURCE_<%index0%>_dir)' ; separator=", "
+  %>}};
+  >>
+  %>
   void <%symbolName(modelNamePrefix,"setupDataStruc")%>(DATA *data, threadData_t *threadData)
   {
     assertStreamPrint(threadData,0!=data, "Error while initialize Data");

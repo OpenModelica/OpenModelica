@@ -395,7 +395,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -6826,6 +6826,7 @@ end createVarAsserts;
 
 public function createModelInfo
   input Absyn.Path class_;
+  input Absyn.Program program;
   input BackendDAE.BackendDAE dlow "simulation";
   input BackendDAE.BackendDAE inInitDAE "initialization";
   input list<SimCodeFunction.Function> functions;
@@ -6879,7 +6880,7 @@ algorithm
     hasLargeEqSystems := hasLargeEquationSystems(dlow, inInitDAE);
     if debug then execStat("simCode: hasLargeEquationSystems"); end if;
     modelInfo := SimCode.MODELINFO(class_, dlow.shared.info.description, directory, varInfo, vars, functions,
-                                   labels, arrayLength(dlow.shared.partitionsInfo.basePartitions),
+                                   labels, List.sort(program.classes, Absyn.classNameGreater), arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions), hasLargeEqSystems, {}, {});
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
@@ -6949,12 +6950,12 @@ algorithm
           local DAE.Exp startValue1;
           case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
             equation
-             (_,value,_) = Ceval.ceval(cache, graph, startValue, false, NONE(), Absyn.NO_MSG(),0);
+             (_,value) = Ceval.ceval(cache, graph, startValue, false, Absyn.NO_MSG(),0);
              startValue1 = ValuesUtil.valueExp(value);
            then startValue1;
           case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
             equation
-             (_,value,_) = Ceval.ceval(cache, graph, startValue, false, NONE(), Absyn.NO_MSG(),0);
+             (_,value) = Ceval.ceval(cache, graph, startValue, false, Absyn.NO_MSG(),0);
              startValue1 = ValuesUtil.valueExp(value);
            then startValue1;
           else startValue;
@@ -6999,12 +7000,12 @@ algorithm
         local DAE.Exp exp1;
         case(DAE.CALL(expLst=exps)) guard Expression.isConstWorkList(exps)
           equation
-           (_,value,_) = Ceval.ceval(cache, graph, exp, false, NONE(), Absyn.NO_MSG(),0);
+           (_,value) = Ceval.ceval(cache, graph, exp, false, Absyn.NO_MSG(),0);
            exp1 = ValuesUtil.valueExp(value);
          then exp1;
         case(DAE.ASUB(DAE.CALL(expLst=exps),_)) guard Expression.isConstWorkList(exps)
           equation
-           (_,value,_) = Ceval.ceval(cache, graph, exp, false, NONE(), Absyn.NO_MSG(),0);
+           (_,value) = Ceval.ceval(cache, graph, exp, false, Absyn.NO_MSG(),0);
            exp1 = ValuesUtil.valueExp(value);
          then exp1;
         else exp;

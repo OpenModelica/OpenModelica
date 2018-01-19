@@ -142,6 +142,24 @@ The application will exit with return code -1 if this identifier does not match.
   external "C" ErrorImpl__rollBack(OpenModelica.threadData(),id) annotation(Library = "omcruntime");
 end rollBack;
 
+function popCheckPoint "rolls back error messages until the latest checkpoint,
+returning all error messages added since that point in time. A unique identifier for the checkpoint must be provided
+The application will exit with return code -1 if this identifier does not match."
+  input String id "unique identifier";
+  output list<Integer> handles "opaque pointers; you MUST pass them back or memory is leaked";
+  external "C" handles=ErrorImpl__pop(OpenModelica.threadData(),id) annotation(Library = "omcruntime");
+end popCheckPoint;
+
+function pushMessages "Pushes stored pointers back to the error stack."
+  input list<Integer> handles "opaque pointers from popCheckPoint";
+  external "C" ErrorImpl__pushMessages(OpenModelica.threadData(),handles) annotation(Library = "omcruntime");
+end pushMessages;
+
+function freeMessages "Pushes stored pointers back to the error stack."
+  input list<Integer> handles "opaque pointers from popCheckPoint";
+  external "C" ErrorImpl__freeMessages(OpenModelica.threadData(),handles) annotation(Library = "omcruntime");
+end freeMessages;
+
 function isTopCheckpoint
 "@author: adrpo
   This function checks if the specified checkpoint exists AT THE TOP OF THE STACK!.
@@ -160,6 +178,10 @@ end setShowErrorMessages;
 function moveMessagesToParentThread
   external "C" Error_moveMessagesToParentThread(OpenModelica.threadData()) annotation(Library = "omcruntime");
 end moveMessagesToParentThread;
+
+function initAssertionFunctions "Makes assert() and other runtime assertions print to the error buffer"
+  external "C" Error_initAssertionFunctions() annotation(Library = "omcruntime");
+end initAssertionFunctions;
 
 annotation(__OpenModelica_Interface="util");
 end ErrorExt;

@@ -554,6 +554,7 @@ package SimCode
       SimCodeVar.SimVars vars;
       list<SimCodeFunction.Function> functions;
       list<String> labels;
+      list<Absyn.Class> sortedClasses;
       Integer nClocks;
       Integer nSubClocks;
       list<SimEqSystem> linearSystems;
@@ -1398,6 +1399,11 @@ package System
     output String outStr;
   end unquoteIdentifier;
 
+  function dirname
+    input String str;
+    output String outStr;
+  end dirname;
+
   function os
     output String str;
   end os;
@@ -1463,6 +1469,13 @@ end Tpl;
 package Absyn
 
   type Ident = String;
+
+  uniontype Class
+    record CLASS
+      Ident name;
+      builtin.SourceInfo info;
+    end CLASS;
+  end Class;
 
   uniontype Path
     record QUALIFIED

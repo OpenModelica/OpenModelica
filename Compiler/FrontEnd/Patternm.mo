@@ -48,7 +48,6 @@ import HashTableStringToPath;
 import SCode;
 import Dump;
 import InnerOuter;
-import GlobalScript;
 import Prefix;
 import Types;
 import UnitAbsyn;
@@ -348,7 +347,7 @@ algorithm
           else false;
         end match)
       equation
-        (cache,elabExp,DAE.PROP(type_=ty2, constFlag=const),_) = Static.elabExp(cache,env,inLhs,false,NONE(),false,Prefix.NOPRE(),info);
+        (cache,elabExp,DAE.PROP(type_=ty2, constFlag=const)) = Static.elabExp(cache,env,inLhs,false,false,Prefix.NOPRE(),info);
         et = validPatternType(ty1,ty2,inLhs,info);
         true = Types.isConstant(const);
         (cache, val) = Ceval.ceval(cache, env, elabExp, false, inMsg = Absyn.MSG(info));
@@ -724,18 +723,16 @@ public function elabMatchExpression
   input FCore.Graph inEnv;
   input Absyn.Exp matchExp;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix inPrefix;
   input SourceInfo info;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<GlobalScript.SymbolTable> outSt;
 protected
   Integer numError = Error.getNumErrorMessages();
 algorithm
-  (outCache,outExp,outProperties,outSt) := matchcontinue (inCache,inEnv,matchExp,impl,inSt,performVectorization,inPrefix,info,numError)
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,matchExp,impl,performVectorization,inPrefix,info,numError)
     local
       Absyn.MatchType matchTy;
       Absyn.Exp inExp;
@@ -743,7 +740,6 @@ algorithm
       list<Absyn.ElementItem> decls;
       list<Absyn.Case> cases;
       list<DAE.Element> matchDecls;
-      Option<GlobalScript.SymbolTable> st;
       Prefix.Prefix pre;
       list<DAE.Exp> elabExps;
       list<DAE.MatchCase> elabCases;
@@ -762,17 +758,17 @@ algorithm
       list<list<String>> inputAliases,inputAliasesAndCrefs;
       AvlSetString.Tree declsTree;
 
-    case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,st,_,pre,_,_)
+    case (cache,env,Absyn.MATCHEXP(matchTy=matchTy,inputExp=inExp,localDecls=decls,cases=cases),_,_,pre,_,_)
       equation
         // First do inputs
         inExps = convertExpToPatterns(inExp);
         (inExps,inputAliases,inputAliasesAndCrefs) = List.map_3(inExps,getInputAsBinding);
-        (cache,elabExps,elabProps,st) = Static.elabExpList(cache,env,inExps,impl,st,performVectorization,pre,info);
+        (cache,elabExps,elabProps) = Static.elabExpList(cache,env,inExps,impl,performVectorization,pre,info);
         // Then add locals
         (cache,SOME((env,DAE.DAE(matchDecls),declsTree))) = addLocalDecls(cache,env,decls,FCore.matchScopeName,impl,info);
         tys = List.map(elabProps, Types.getPropType);
         env = addAliasesToEnv(env, tys, inputAliases, info);
-        (cache,elabCases,resType,st) = elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,st,performVectorization,pre,info);
+        (cache,elabCases,resType) = elabMatchCases(cache,env,cases,tys,inputAliasesAndCrefs,declsTree,impl,performVectorization,pre,info);
         prop = DAE.PROP(resType,DAE.C_VAR());
         et = Types.simplifyType(resType);
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() First time to speed up the other optimizations.";
@@ -787,7 +783,7 @@ algorithm
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
         (elabMatchTy, elabCases) = optimizeMatchToSwitch(matchTy,elabCases,info);
         exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
-      then (cache,exp,prop,st);
+      then (cache,exp,prop);
     else
       equation
         true = numError == Error.getNumErrorMessages();
@@ -1969,20 +1965,18 @@ protected function elabMatchCases
   input list<list<String>> inputAliases;
   input AvlSetString.Tree matchExpLocalTree;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> st;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input SourceInfo info;
   output FCore.Cache outCache;
   output list<DAE.MatchCase> elabCases;
   output DAE.Type resType;
-  output Option<GlobalScript.SymbolTable> outSt;
 protected
   list<DAE.Exp> resExps;
   list<DAE.Type> resTypes,tysFixed;
 algorithm
   tysFixed := List.map(tys, Types.getUniontypeIfMetarecordReplaceAllSubtypes);
-  (outCache,elabCases,resExps,resTypes,outSt) := elabMatchCases2(cache,env,cases,tysFixed,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre,{},{},{});
+  (outCache,elabCases,resExps,resTypes) := elabMatchCases2(cache,env,cases,tysFixed,inputAliases,matchExpLocalTree,impl,performVectorization,pre,{},{},{});
   (elabCases,resType) := fixCaseReturnTypes(elabCases,resExps,resTypes,info);
 end elabMatchCases;
 
@@ -1994,7 +1988,6 @@ protected function elabMatchCases2
   input list<list<String>> inputAliases;
   input AvlSetString.Tree matchExpLocalTree;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input list<DAE.MatchCase> inAccCases "Order does matter";
@@ -2004,10 +1997,9 @@ protected function elabMatchCases2
   output list<DAE.MatchCase> elabCases;
   output list<DAE.Exp> resExps;
   output list<DAE.Type> resTypes;
-  output Option<GlobalScript.SymbolTable> outSt;
 algorithm
-  (outCache,elabCases,resExps,resTypes,outSt) :=
-  match (inCache,inEnv,cases,tys,inputAliases,matchExpLocalTree,impl,inSt,performVectorization,pre,inAccCases,inAccExps,inAccTypes)
+  (outCache,elabCases,resExps,resTypes) :=
+  match (inCache,inEnv,cases,inAccExps,inAccTypes)
     local
       Absyn.Case case_;
       list<Absyn.Case> rest;
@@ -2016,16 +2008,15 @@ algorithm
       Option<DAE.Exp> optExp;
       FCore.Cache cache;
       FCore.Graph env;
-      Option<GlobalScript.SymbolTable> st;
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,_,{},_,_,_,_,st,_,_,_,accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes),st);
-    case (cache,env,case_::rest,_,_,_,_,st,_,_,_,accExps,accTypes)
+    case (cache,_,{},accExps,accTypes) then (cache,listReverse(inAccCases),listReverse(accExps),listReverse(accTypes));
+    case (cache,env,case_::rest,accExps,accTypes)
       equation
-        (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre);
-        (cache,elabCases,accExps,accTypes,st) = elabMatchCases2(cache,env,rest,tys,inputAliases,matchExpLocalTree,impl,st,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
-      then (cache,elabCases,accExps,accTypes,st);
+        (cache,elabCase,optExp,optType) = elabMatchCase(cache,env,case_,tys,inputAliases,matchExpLocalTree,impl,performVectorization,pre);
+        (cache,elabCases,accExps,accTypes) = elabMatchCases2(cache,env,rest,tys,inputAliases,matchExpLocalTree,impl,performVectorization,pre,elabCase::inAccCases,List.consOption(optExp,accExps),List.consOption(optType,accTypes));
+      then (cache,elabCases,accExps,accTypes);
   end match;
 end elabMatchCases2;
 
@@ -2037,17 +2028,15 @@ protected function elabMatchCase
   input list<list<String>> inputAliases;
   input AvlSetString.Tree matchExpLocalTree;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   output FCore.Cache outCache;
   output DAE.MatchCase elabCase;
   output Option<DAE.Exp> resExp;
   output Option<DAE.Type> resType;
-  output Option<GlobalScript.SymbolTable> outSt;
 algorithm
-  (outCache,elabCase,resExp,resType,outSt) :=
-  match (inCache,inEnv,acase,tys,inputAliases,matchExpLocalTree,impl,inSt,performVectorization,pre)
+  (outCache,elabCase,resExp,resType) :=
+  match (inCache,inEnv,acase)
     local
       Absyn.Exp result,pattern;
       list<Absyn.Exp> patterns;
@@ -2064,10 +2053,9 @@ algorithm
       Integer len;
       FCore.Cache cache;
       FCore.Graph env;
-      Option<GlobalScript.SymbolTable> st;
       AvlSetString.Tree caseLocalTree,localsTree,useTree;
 
-    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info))
       equation
         (cache,SOME((env,DAE.DAE(caseDecls),caseLocalTree))) = addLocalDecls(cache,env,decls,FCore.caseScopeName,impl,info);
         patterns = convertExpToPatterns(pattern);
@@ -2082,8 +2070,8 @@ algorithm
         eqAlgs = Static.fromEquationsToAlgAssignments(cp);
         algs = SCodeUtil.translateClassdefAlgorithmitems(eqAlgs);
         (cache,body) = InstSection.instStatements(cache, env, InnerOuter.emptyInstHierarchy, pre, ClassInf.FUNCTION(Absyn.IDENT("match"), false), algs, ElementSource.addElementSourceFileInfo(DAE.emptyElementSource,patternInfo), SCode.NON_INITIAL(), true, InstTypes.neverUnroll);
-        (cache,body,elabResult,resultInfo,resType,st) = elabResultExp(cache,env,body,result,impl,st,performVectorization,pre,resultInfo);
-        (cache,dPatternGuard,st) = elabPatternGuard(cache,env,patternGuard,impl,st,performVectorization,pre,patternInfo);
+        (cache,body,elabResult,resultInfo,resType) = elabResultExp(cache,env,body,result,impl,performVectorization,pre,resultInfo);
+        (cache,dPatternGuard) = elabPatternGuard(cache,env,patternGuard,impl,performVectorization,pre,patternInfo);
         localsTree = AvlSetString.join(matchExpLocalTree, caseLocalTree);
         // Start building the def-use chain bottom-up
         useTree = AvlSetString.new();
@@ -2098,17 +2086,17 @@ algorithm
         (_,useTree) = Expression.traverseExpBottomUp(DAE.META_OPTION(dPatternGuard), useLocalCref, useTree);
         (elabPatterns,_) = traversePatternList(elabPatterns, checkDefUsePattern, (localsTree,useTree,patternInfo));
         elabCase = DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info);
-      then (cache,elabCase,elabResult,resType,st);
+      then (cache,elabCase,elabResult,resType);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info),_,_,_,_,st,_,_)
+    case (cache,env,Absyn.ELSE(localDecls=decls,classPart=cp,result=result,resultInfo=resultInfo,info=info))
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);
         patterns = List.fill(Absyn.CREF(Absyn.WILD()),listLength(tys));
         pattern = if len == 1 then Absyn.CREF(Absyn.WILD()) else Absyn.TUPLE(patterns);
-        (cache,elabCase,elabResult,resType,st) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,cp,result,resultInfo,NONE(),info), tys, inputAliases, matchExpLocalTree, impl, st, performVectorization, pre);
-      then (cache,elabCase,elabResult,resType,st);
+        (cache,elabCase,elabResult,resType) = elabMatchCase(cache, env, Absyn.CASE(pattern,NONE(),info,decls,cp,result,resultInfo,NONE(),info), tys, inputAliases, matchExpLocalTree, impl, performVectorization, pre);
+      then (cache,elabCase,elabResult,resType);
 
   end match;
 end elabMatchCase;
@@ -2119,7 +2107,6 @@ protected function elabResultExp
   input list<DAE.Statement> inBody "Is input in case we want to optimize for tail-recursion";
   input Absyn.Exp exp;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input SourceInfo inInfo;
@@ -2128,30 +2115,28 @@ protected function elabResultExp
   output Option<DAE.Exp> resExp;
   output SourceInfo resultInfo;
   output Option<DAE.Type> resType;
-  output Option<GlobalScript.SymbolTable> outSt;
 algorithm
-  (outCache,outBody,resExp,resultInfo,resType,outSt) :=
-  matchcontinue (inCache,inEnv,inBody,exp,impl,inSt,performVectorization,pre,inInfo)
+  (outCache,outBody,resExp,resultInfo,resType) :=
+  matchcontinue (inCache,inEnv,inBody,exp)
     local
       DAE.Exp elabExp;
       DAE.Properties prop;
       DAE.Type ty;
       FCore.Cache cache;
       FCore.Graph env;
-      Option<GlobalScript.SymbolTable> st;
       list<DAE.Statement> body;
       SourceInfo info;
 
-    case (cache,_,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})),_,st,_,_,info)
-      then (cache,body,NONE(),info,NONE(),st);
+    case (cache,_,body,Absyn.CALL(function_ = Absyn.CREF_IDENT("fail",{}), functionArgs = Absyn.FUNCTIONARGS({},{})))
+      then (cache,body,NONE(),inInfo,NONE());
 
-    case (cache,env,body,_,_,st,_,_,info)
+    case (cache,env,body,_)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (cache,elabExp,prop) = Static.elabExp(cache,env,exp,impl,performVectorization,pre,inInfo);
         ty = Types.getPropType(prop);
         (elabExp,ty) = makeTupleFromMetaTuple(elabExp,ty);
-        (body,elabExp,info) = elabResultExp2(not Flags.isSet(Flags.PATTERNM_MOVE_LAST_EXP),body,elabExp,info);
-      then (cache,body,SOME(elabExp),info,SOME(ty),st);
+        (body,elabExp,info) = elabResultExp2(not Flags.isSet(Flags.PATTERNM_MOVE_LAST_EXP),body,elabExp,inInfo);
+      then (cache,body,SOME(elabExp),info,SOME(ty));
   end matchcontinue;
 end elabResultExp;
 
@@ -2160,38 +2145,35 @@ protected function elabPatternGuard
   input FCore.Graph inEnv;
   input Option<Absyn.Exp> patternGuard;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> inSt;
   input Boolean performVectorization;
   input Prefix.Prefix pre;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output Option<DAE.Exp> outPatternGuard;
-  output Option<GlobalScript.SymbolTable> outSt;
 algorithm
-  (outCache,outPatternGuard,outSt) :=
-  matchcontinue (inCache,inEnv,patternGuard,impl,inSt,performVectorization,pre,inInfo)
+  (outCache,outPatternGuard) :=
+  matchcontinue (inCache,inEnv,patternGuard,impl,performVectorization,pre,inInfo)
     local
       Absyn.Exp exp;
       DAE.Exp elabExp;
       DAE.Properties prop;
       FCore.Cache cache;
       FCore.Graph env;
-      Option<GlobalScript.SymbolTable> st;
       SourceInfo info;
       String str;
 
-    case (cache,_,NONE(),_,st,_,_,_)
-      then (cache,NONE(),st);
+    case (cache,_,NONE(),_,_,_,_)
+      then (cache,NONE());
 
-    case (cache,env,SOME(exp),_,st,_,_,info)
+    case (cache,env,SOME(exp),_,_,_,info)
       equation
-        (cache,elabExp,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (cache,elabExp,prop) = Static.elabExp(cache,env,exp,impl,performVectorization,pre,info);
         (elabExp,_) = Types.matchType(elabExp,Types.getPropType(prop),DAE.T_BOOL_DEFAULT,true);
-      then (cache,SOME(elabExp),st);
+      then (cache,SOME(elabExp));
 
-    case (cache,env,SOME(exp),_,st,_,_,info)
+    case (cache,env,SOME(exp),_,_,_,info)
       equation
-        (_,_,prop,st) = Static.elabExp(cache,env,exp,impl,st,performVectorization,pre,info);
+        (_,_,prop) = Static.elabExp(cache,env,exp,impl,performVectorization,pre,info);
         str = Types.unparseType(Types.getPropType(prop));
         Error.addSourceMessage(Error.GUARD_EXPRESSION_TYPE_MISMATCH, {str}, info);
       then fail();

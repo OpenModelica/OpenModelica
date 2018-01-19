@@ -1293,6 +1293,13 @@ void SystemImpl__fflush(void)
 </html>"));
 end fflush;
 
+function updateUriMapping
+  input array<String> namesAndDirs;
+external "C" OpenModelica_updateUriMapping(OpenModelica.threadData(), namesAndDirs) annotation(Documentation(info="<html>
+<p>Used to set the mapping from package names to directories, for loadResource. Part of the C runtime.</p>
+<p>Odd indexes are names and even indexes are the corresponding directory.</p>
+</html>"));
+end updateUriMapping;
 
 annotation(__OpenModelica_Interface="util");
 end System;

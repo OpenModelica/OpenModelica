@@ -143,6 +143,16 @@ static void pop_message(threadData_t *threadData, bool rollback)
   } while (pop_more);
 }
 
+static void* pop_message_and_return(threadData_t *threadData, bool rollback)
+{
+  errorext_members *members = getMembers(threadData);
+  ErrorMessage *msg = members->errorMessageQueue->back();
+  if (msg->getSeverity() == ErrorLevel_error || msg->getSeverity() == ErrorLevel_internal) members->numErrorMessages--;
+  if (msg->getSeverity() == ErrorLevel_warning) members->numWarningMessages--;
+  members->errorMessageQueue->pop_back();
+  return msg;
+}
+
 /* Adds a message with file information */
 void add_source_message(threadData_t *threadData,
       int errorID,
@@ -217,19 +227,19 @@ extern void ErrorImpl__delCheckpoint(threadData_t *threadData,const char* id)
     // extract last checkpoint
     cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
-      printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+      fprintf(stderr, "ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
           id,
           cp.second.c_str());
       printCheckpointStack(threadData);
-      exit(-1);
+      abort();
     }
     // remember the last deleted checkpoint
     *members->lastDeletedCheckpoint = cp.second;
     members->checkPoints->pop_back();
   }
   else{
-    printf(" ERROREXT: nothing to delete when calling delCheckPoint(%s)\n",id);
-    exit(-1);
+    fprintf(stderr, " ERROREXT: nothing to delete when calling delCheckPoint(%s)\n",id);
+    abort();
   }
 }
 extern void ErrorImpl__deleteNumCheckpoints(threadData_t *threadData, int n)
@@ -239,7 +249,7 @@ extern void ErrorImpl__deleteNumCheckpoints(threadData_t *threadData, int n)
   // fprintf(stderr, "delCheckpoint(%s)\n",id); fflush(stderr);
   if (members->checkPoints->size() < n) {
     std::cerr << "ERROREXT: calling ErrorImpl__deleteNumCheckpoints with n: " << n << " > " << members->checkPoints->size() << std::endl;
-    exit(1);
+    abort();
   }
   while (--n >= 0) {
     // extract last checkpoint
@@ -263,9 +273,9 @@ extern void ErrorImpl__rollBack(threadData_t *threadData,const char* id)
     //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints->back(),errorMessageQueue->size());
     //std::string res("");
     //printf(res.c_str());
-    //printf(" rollback from: %d to: %d\n",errorMessageQueue->size(),checkPoints->back().first);
+    //printf(" rollback from: %d to: %d\n",members->errorMessageQueue->size(),members->checkPoints->back().first);
     while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
-      //printf("*** %d deleted %d ***\n",errorMessageQueue->size(),checkPoints->back().first);
+      //printf("*** %d deleted %d ***\n",members->errorMessageQueue->size(),members->checkPoints->back().first);
       /*if(!errorMessageQueue->empty()){
         res = res+errorMessageQueue->back()->getMessage()+string("\n");
         printf( (string("Deleted: ") + res).c_str());
@@ -279,17 +289,62 @@ extern void ErrorImpl__rollBack(threadData_t *threadData,const char* id)
     pair<int,string> cp;
     cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
-      printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+      fprintf(stderr, "ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
           id,
           cp.second.c_str());
       printCheckpointStack(threadData);
-      exit(-1);
+      abort();
     }
     members->checkPoints->pop_back();
   } else {
-    printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
-      exit(-1);
+    fprintf(stderr, "ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
+    abort();
+  }
+}
+
+extern void* ErrorImpl__pop(threadData_t *threadData,const char* id)
+{
+  void *lst = mmc_mk_nil();
+  errorext_members *members = getMembers(threadData);
+  if (members->checkPoints->size() > 0){
+    while(members->errorMessageQueue->size() > members->checkPoints->back().first && !members->errorMessageQueue->empty()){
+      lst = mmc_mk_cons(pop_message_and_return(threadData,true), lst);
     }
+    pair<int,string> cp;
+    cp = (*members->checkPoints)[members->checkPoints->size()-1];
+    if (0 != strcmp(cp.second.c_str(),id)) {
+      fprintf(stderr, "ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+          id,
+          cp.second.c_str());
+      printCheckpointStack(threadData);
+      abort();
+    }
+    members->checkPoints->pop_back();
+  } else {
+    fprintf(stderr, "ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
+    abort();
+  }
+  return lst;
+}
+
+extern void ErrorImpl__pushMessages(threadData_t *threadData, void *handles)
+{
+  errorext_members *members = getMembers(threadData);
+  while (!listEmpty(handles)) {
+    char *handle = (char*) MMC_CAR(handles);
+    handles = MMC_CDR(handles);
+    push_message(threadData,(ErrorMessage*) handle /* pointer was stored as Integer */);
+  }
+}
+
+extern void ErrorImpl__freeMessages(threadData_t *threadData, void *handles)
+{
+  errorext_members *members = getMembers(threadData);
+  while (!listEmpty(handles)) {
+    char *handle = (char*) MMC_CAR(handles);
+    handles = MMC_CDR(handles);
+    free((ErrorMessage*) handle);
+  }
 }
 
 extern void ErrorImpl__rollbackNumCheckpoints(threadData_t *threadData, int n)
@@ -320,16 +375,16 @@ extern char* ErrorImpl__rollBackAndPrint(threadData_t *threadData,const char* id
     pair<int,string> cp;
     cp = (*members->checkPoints)[members->checkPoints->size()-1];
     if (0 != strcmp(cp.second.c_str(),id)) {
-      printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+      fprintf(stderr, "ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
           id,
           cp.second.c_str());
       printCheckpointStack(threadData);
-      exit(-1);
+      abort();
     }
     members->checkPoints->pop_back();
   } else {
-    printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
-      exit(-1);
+    fprintf(stderr, "ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
+    abort();
   }
   // fprintf(stderr, "Returning %s\n", res.c_str());
   return strdup(res.c_str());

@@ -138,4 +138,9 @@ extern int OpenModelica_regexImpl(const char* str, const char* re, const int max
 extern int OpenModelica_regex(const char* str, const char* re, int maxn, int extended, int sensitive, const char **result);
 #endif
 
+extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData, modelica_string uri);
+#define OpenModelica_uriToFilename(URI) OpenModelica_uriToFilename_impl(threadData, URI)
+#define OpenModelica__uriToFilename(URI) OpenModelica_uriToFilename(URI)
+extern void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs);
+
 #endif

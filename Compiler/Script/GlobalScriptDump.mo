@@ -36,13 +36,18 @@ encapsulated package GlobalScriptDump
 
 "
 
-public import Absyn;
-public import GlobalScript;
+import Absyn;
+import GlobalScript;
+import SymbolTable;
 
-protected import Dump;
-protected import List;
+protected
 
-public function printIstmtsStr
+import Dump;
+import List;
+
+public
+
+function printIstmtsStr
   "Prints a group of interactive statements to a string."
   input GlobalScript.Statements inStatements;
   output String outString;
@@ -58,7 +63,7 @@ algorithm
   end match;
 end printIstmtsStr;
 
-public function printIstmtStr
+function printIstmtStr
   input GlobalScript.Statement inStatement;
   output String outString;
 algorithm
@@ -77,21 +82,7 @@ algorithm
   end match;
 end printIstmtStr;
 
-protected function loadedFileString
-"author: vwaurich TUD 10-2016"
-  input GlobalScript.LoadedFile file;
-  output String s = "";
-protected
-  Absyn.Path p;
-  list<Absyn.Path> paths;
-algorithm
-  GlobalScript.FILE(classNamesQualified = paths) := file;
-  for p in paths loop
-    s := s +"\n"+ Absyn.pathString(p);
-  end for;
-end loadedFileString;
-
-public function printAST
+function printAST
 "author: vwaurich TUD 10-2016"
   input Absyn.Program pr;
 protected
@@ -107,7 +98,17 @@ algorithm
   print(s);
 end printAST;
 
-protected function classString
+function printGlobalScript
+"author: vwaurich TUD 10-2016"
+  input SymbolTable st;
+algorithm
+  print("AST\n");
+  printAST(st.ast);
+end printGlobalScript;
+
+protected
+
+function classString
 "author: vwaurich TUD 10-2016"
   input Absyn.Class cl;
   output String s;
@@ -118,41 +119,5 @@ algorithm
   s := id +": "+ Absyn.classFilename(cl);
 end classString;
 
-protected function InstantiatedClassString
-"author: vwaurich TUD 10-2016"
-  input GlobalScript.InstantiatedClass file;
-  output String s="CLASS:";
-protected
-  Absyn.Path p;
-  list<Absyn.Path> paths;
-algorithm
-  GlobalScript.INSTCLASS(qualName = p) := file;
-  s := Absyn.pathString(p);
-end InstantiatedClassString;
-
-public function printGlobalScript
-"author: vwaurich TUD 10-2016"
-  input GlobalScript.SymbolTable st;
-protected
-  list<GlobalScript.LoadedFile> loadedFiles;
-  list<GlobalScript.InstantiatedClass> instClsLst;
-  GlobalScript.InstantiatedClass cls;
-  GlobalScript.LoadedFile file;
-  Absyn.Program ast;
-algorithm
-  loadedFiles := st.loadedFiles;
-  instClsLst := st.instClsLst;
-  ast := st.ast;
-  print("Loaded Files"+intString(listLength(loadedFiles))+" InstantiatedClasses:"+intString(listLength(instClsLst))+"\n");
-  for file in loadedFiles loop
-    print(loadedFileString(file)+"\n");
-  end for;
-  for cls in instClsLst loop
-    print(InstantiatedClassString(cls)+"\n");
-  end for;
-  print("AST\n");
-  printAST(ast);
-end printGlobalScript;
-
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="backend");
 end GlobalScriptDump;

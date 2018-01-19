@@ -33,6 +33,7 @@ extern "C" {
 
 #include "openmodelica.h"
 #include "meta_modelica.h"
+#include "util/modelica_string.h"
 #define ADD_METARECORD_DEFINITIONS static
 #include "OpenModelicaBootstrappingHeader.h"
 #include "ModelicaUtilitiesExtra.h"
@@ -103,6 +104,40 @@ extern int Error_getNumMessages(threadData_t *threadData)
 void Error_setShowErrorMessages(threadData_t *threadData,int show)
 {
   getMembers(threadData)->showErrorMessages = show ? 1 : 0;
+}
+
+static void omc_assert_compiler_common(threadData_t *threadData,ErrorLevel severity, FILE_INFO info, const char *msg, va_list args)
+{
+  ErrorMessage::TokenList tokens;
+  char *str;
+  GC_vasprintf(&str, msg, args);
+  add_source_message(threadData, 0, ErrorType_runtime, severity, str, tokens, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly, info.filename);
+}
+
+static void omc_assert_compiler(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+static void omc_assert_compiler(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  omc_assert_compiler_common(threadData, ErrorLevel_error, info, msg, args);
+  va_end(args);
+  MMC_THROW_INTERNAL();
+}
+
+static void omc_assert_compiler_warning(FILE_INFO info, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  omc_assert_compiler_common(NULL, ErrorLevel_warning, info, msg, args);
+  va_end(args);
+}
+
+void Error_initAssertionFunctions()
+{
+#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+  omc_assert = omc_assert_compiler;
+  omc_assert_warning = omc_assert_compiler_warning;
+#endif
 }
 
 }

@@ -267,13 +267,13 @@ case SIMCODE(__) then
   // implementation of the Model Exchange functions
   <%if isFMIVersion20(FMUVersion) then
     <<
-    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data);
+    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
     #define fmu2_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmu2_model_interface.c"
     >>
   else
     <<
-    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data);
+    extern void <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>(DATA *data, threadData_t *threadData);
     #define fmu1_model_interface_setupDataStruc <%symbolName(modelNamePrefix(simCode),"setupDataStruc")%>
     #include "fmu1_model_interface.c"
     >>

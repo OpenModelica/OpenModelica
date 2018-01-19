@@ -24,5 +24,5 @@ algorithm
   assert(false, getInstanceName());
 end clearRules;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="backend");
 end RewriteRules;

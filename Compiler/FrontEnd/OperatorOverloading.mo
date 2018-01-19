@@ -35,7 +35,6 @@ public
 import Absyn;
 import DAE;
 import FCore;
-import GlobalScript;
 import Prefix;
 import SCode;
 import Util;
@@ -77,7 +76,6 @@ function binary
   input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
   input Absyn.Exp AbExp2 "We need this when/if we elaborate user defined operator functions";
   input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSymTab;
   input Prefix.Prefix inPre "For error-messages only";
   input SourceInfo inInfo "For error-messages only";
   output FCore.Cache outCache;
@@ -85,7 +83,7 @@ function binary
   output DAE.Properties outProp;
 algorithm
   (outCache, outExp, outProp) :=
-   match (inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo)
+   match (inCache,inEnv,inOperator1, inProp1, inExp1, inProp2, inExp2)
        local
          FCore.Cache cache;
          FCore.Graph env;
@@ -103,26 +101,26 @@ algorithm
          Boolean didInline;
 
      // handle tuple op non_tuple
-     case (_, _, _, props1 as DAE.PROP_TUPLE(), _, DAE.PROP(), _, _, _, _, _, _, _, _) guard not Config.acceptMetaModelicaGrammar()
+     case (_, _, _, props1 as DAE.PROP_TUPLE(), _, DAE.PROP(), _) guard not Config.acceptMetaModelicaGrammar()
        equation
          (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(props1);
          exp = DAE.TSUB(inExp1, 1, type1);
-         (cache, exp, prop) = binary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
+         (cache, exp, prop) = binary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inPre, inInfo);
        then (cache, exp, prop);
 
      // handle non_tuple op tuple
-     case (_, _, _, DAE.PROP(), _, props2 as DAE.PROP_TUPLE(), _, _, _, _, _, _, _, _) guard not Config.acceptMetaModelicaGrammar()
+     case (_, _, _, DAE.PROP(), _, props2 as DAE.PROP_TUPLE(), _) guard not Config.acceptMetaModelicaGrammar()
        equation
          (prop as DAE.PROP(type2, _)) = Types.propTupleFirstProp(props2);
          exp = DAE.TSUB(inExp2, 1, type2);
-         (cache, exp, prop) = binary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
+         (cache, exp, prop) = binary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inPre, inInfo);
        then (cache, exp, prop);
 
-     case (cache, env, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _)
+     case (cache, env, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2)
        algorithm
          if Types.isRecord(Types.arrayElementType(type1)) or Types.isRecord(Types.arrayElementType(type2)) then
            // Overloaded records
-           (cache, exp, _, otype) := binaryUserdef(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inSymTab,inPre,inInfo);
+           (cache, exp, _, otype) := binaryUserdef(cache,env,aboper,inExp1,inExp2,type1,type2,inImpl,inPre,inInfo);
            functionTree := FCore.getFunctionTree(cache);
            exp := ExpressionSimplify.simplify1(exp);
            (exp,_,didInline,_) := Inline.inlineExp(exp,(SOME(functionTree),{DAE.BUILTIN_EARLY_INLINE(),DAE.EARLY_INLINE()}),DAE.emptyElementSource);
@@ -163,7 +161,6 @@ resulting expression. "
   input Absyn.Exp AbExp "needed for function replaceOperatorWithFcall (not  really sure what is done in there though.)";
   input Absyn.Exp AbExp1 "We need this when/if we elaborate user defined operator functions";
   input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSymTab;
   input Prefix.Prefix inPre "For error-messages only";
   input SourceInfo inInfo "For error-messages only";
   output FCore.Cache outCache;
@@ -171,7 +168,7 @@ resulting expression. "
   output DAE.Properties outProp;
 algorithm
   (outCache, outExp, outProp) :=
-   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo)
+   matchcontinue(inCache,inEnv,inOperator1, inProp1, inExp1, AbExp, AbExp1)
      local
        String str1;
        FCore.Cache cache;
@@ -191,16 +188,16 @@ algorithm
        Absyn.Exp  absexp1;
 
      // handle op tuple
-     case (_, _, _, DAE.PROP_TUPLE(), exp1, _, _, _, _, _, _)
+     case (_, _, _, DAE.PROP_TUPLE(), exp1, _, _)
        equation
          false = Config.acceptMetaModelicaGrammar();
          (prop as DAE.PROP(type1, _)) = Types.propTupleFirstProp(inProp1);
          exp = DAE.TSUB(exp1, 1, type1);
-         (cache, exp, prop) = unary(inCache, inEnv, inOperator1, prop, exp, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo);
+         (cache, exp, prop) = unary(inCache, inEnv, inOperator1, prop, exp, AbExp, AbExp1, inImpl, inPre, inInfo);
        then
          (cache, exp, prop);
 
-     case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _, _, _, _, _)
+     case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _)
        equation
          false = Types.isRecord(Types.arrayElementType(type1));
          opList = operatorsUnary(aboper);
@@ -213,7 +210,7 @@ algorithm
 
       // if we have a record check for overloaded operators
       // TODO: Improve this the same way we improved binary operators!
-     case(cache, env, aboper, DAE.PROP(type1,_) , _, _, absexp1, _, _, _, _)
+     case(cache, env, aboper, DAE.PROP(type1,_) , _, _, absexp1)
        equation
 
          path = getRecordPath(type1);
@@ -229,7 +226,7 @@ algorithm
          operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
          (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
 
-         (cache,SOME((exp,prop))) = Static.elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inSymTab,inPre,inInfo);
+         (cache,SOME((exp,prop))) = Static.elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inPre,inInfo);
 
        then
          (cache,exp,prop);
@@ -243,23 +240,18 @@ function string
   input FCore.Graph inEnv;
   input Absyn.Exp inExp1;
   input Boolean inImpl;
-  input Option<GlobalScript.SymbolTable> inSyTabOpt;
   input Boolean inDoVect;
   input Prefix.Prefix inPre;
   input SourceInfo inInfo;
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProp;
-  output Option<GlobalScript.SymbolTable> outSyTabOpt;
-
 algorithm
-
-  (outCache,outExp,outProp,outSyTabOpt) :=
-  match (inCache, inEnv,inExp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo)
+  (outCache,outExp,outProp) :=
+  match (inCache, inEnv,inExp1)
     local
       String str1;
       Absyn.Path path;
-      Option<GlobalScript.SymbolTable> st_1;
       list<Absyn.Path> operNames;
       FCore.Graph recordEnv,operatorEnv,env;
       SCode.Element operatorCl;
@@ -272,9 +264,9 @@ algorithm
       list<Absyn.Exp> restargs;
       list<Absyn.NamedArg> nargs;
 
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = exp1::restargs,argNames = nargs)),_,_,_,_,_)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT("String",_),functionArgs = Absyn.FUNCTIONARGS(args = exp1::restargs,argNames = nargs)))
       equation
-        (cache,_,DAE.PROP(type1,_),st_1) = Static.elabExp(cache,env,exp1,inImpl,inSyTabOpt,inDoVect,inPre,inInfo);
+        (cache,_,DAE.PROP(type1,_)) = Static.elabExp(cache,env,exp1,inImpl,inDoVect,inPre,inInfo);
 
         path = getRecordPath(type1);
         path = Absyn.makeFullyQualified(path);
@@ -289,9 +281,9 @@ algorithm
         operNames = SCodeUtil.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
 
-        (cache,SOME((daeExp,prop))) = Static.elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,st_1,inPre,inInfo);
+        (cache,SOME((daeExp,prop))) = Static.elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,inPre,inInfo);
       then
-        (cache,daeExp,prop,st_1);
+        (cache,daeExp,prop);
 
    end match;
 
@@ -570,7 +562,6 @@ resulting expression. "
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input SourceInfo info;
   output FCore.Cache outCache;
@@ -579,7 +570,7 @@ resulting expression. "
   output DAE.Type outType;
 algorithm
   (outCache,outExp,foldType,outType) :=
-  match (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
+  match (inCache, inEnv, inOper,inExp1,inExp2,inType1,inType2)
     local
       Boolean bool1,bool2;
       String opStr;
@@ -597,7 +588,7 @@ algorithm
       DAE.Exp  daeExp;
       list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 
-   case (cache, env, op, exp1, exp2, type1, type2, _, _, _, _)
+   case (cache, env, op, exp1, exp2, type1, type2)
       equation
         // Step 1 already failed (pre-defined types)
         // Apply operation according to the Specifications.See the function.
@@ -618,7 +609,7 @@ algorithm
         exps = deoverloadBinaryUserdefNoConstructor(types,exp1,exp2,type1,type2,{});
         // Step 3: Look for constructors to call that would have made Step 2 work
         (cache,exps) = binaryCastConstructor(cache,env,inExp1,inExp2,inType1,inType2,exps,types,info);
-        (cache,exps) = binaryUserdefArray(cache,env,exps,bool1 or bool2,inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info);
+        (cache,exps) = binaryUserdefArray(cache,env,exps,bool1 or bool2,inOper,inExp1,inExp2,inType1,inType2,impl,pre,info);
         {(daeExp,foldType)} = exps;
       then
         (cache,daeExp,foldType,Expression.typeof(daeExp) /*FIXME?*/);
@@ -637,19 +628,18 @@ function binaryUserdefArray
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
-  (cache,exps) := match (inCache,env,inExps,isArray,inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
+  (cache,exps) := match (env,inExps,isArray)
     local
       Boolean isRelation,isLogical,isVector1,isVector2,isScalar1,isScalar2,isMatrix1,isMatrix2;
     // Already found a match
-    case (_,_,{_},_,_,_,_,_,_,_,_,_,_) then (inCache,inExps);
+    case (_,{_},_) then (inCache,inExps);
     // No match in Step 3; look for array expansions
-    case (_,_,{},true,_,_,_,_,_,_,_,_,_)
+    case (_,{},true)
       equation
         isRelation = listMember(inOper,{Absyn.LESS(),Absyn.LESSEQ(),Absyn.GREATER(),Absyn.GREATEREQ(),Absyn.EQUAL(),Absyn.NEQUAL()});
         Error.assertionOrAddSourceMessage(not isRelation,Error.COMPILER_ERROR,{"Not supporting overloading of relation array operations"},info);
@@ -660,10 +650,10 @@ algorithm
         isMatrix1 = Types.isArray2D(inType1);
         isMatrix2 = Types.isArray2D(inType2);
         (cache,exps) = binaryUserdefArray2(inCache,env,isScalar1,isVector1,isMatrix1,isScalar2,isVector2,isMatrix2,
-          inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info);
+          inOper,inExp1,inExp2,inType1,inType2,impl,pre,info);
       then (cache,exps);
       /*
-    case (_,{},_,_,_,_,_)
+    case ({},_,_)
       // Error-message? collect all functions we tried to match? use matchcontinue?
       then fail();
       */
@@ -689,13 +679,12 @@ function binaryUserdefArray2
   input DAE.Type inType1;
   input DAE.Type inType2;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> st;
   input Prefix.Prefix pre;
   input SourceInfo info;
   output FCore.Cache cache;
   output list<tuple<DAE.Exp,Option<DAE.Type>>> exps;
 algorithm
-  (cache,exps) := match (inCache,env,isScalar1,isVector1,isMatrix1,isScalar2,isVector2,isMatrix2,inOper,inExp1,inExp2,inType1,inType2,impl,st,pre,info)
+  (cache,exps) := match (inCache,env,isScalar1,isVector1,isMatrix1,isScalar2,isVector2,isMatrix2,inOper)
     local
       DAE.Exp mulExp,exp,cr,cr1,cr2,cr3,cr4,cr5,cr6,foldExp,transposed;
       DAE.Type newType1,newType2,resType,newType1_1,newType2_1,ty;
@@ -706,7 +695,7 @@ algorithm
       Option<DAE.Type> foldType;
       list<DAE.Type> zeroTypes;
       Absyn.Operator op;
-    case (cache,_,false,_,_,true,_,_,_,_,_,_,_,_,_,_,_) // non-scalar op scalar
+    case (cache,_,false,_,_,true,_,_,_) // non-scalar op scalar
       equation
         DAE.T_ARRAY(ty=newType1,dims=dim1::{}) = inType1;
         // Not all operators are valid operations
@@ -723,12 +712,12 @@ algorithm
         foldName = Util.getTempVariableIndex();
         resultName = Util.getTempVariableIndex();
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType1,{}),newType1);
-        (cache,exp,_,resType) = binaryUserdef(cache,env,op,cr,inExp2,newType1,inType2,impl,st,pre,info);
+        (cache,exp,_,resType) = binaryUserdef(cache,env,op,cr,inExp2,newType1,inType2,impl,pre,info);
         resType = Types.liftArray(resType,dim1);
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp1,NONE(),newType1)::{});
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
-    case (cache,_,true,_,_,false,_,_,_,_,_,_,_,_,_,_,_) // scalar op non-scalar
+    case (cache,_,true,_,_,false,_,_,_) // scalar op non-scalar
       equation
         op = Util.assoc(inOper, {
             (Absyn.ADD_EW(),Absyn.ADD_EW()),
@@ -743,16 +732,16 @@ algorithm
         foldName = Util.getTempVariableIndex();
         resultName = Util.getTempVariableIndex();
         cr = DAE.CREF(DAE.CREF_IDENT(iterName,newType2,{}),newType2);
-        (cache,exp,_,resType) = binaryUserdef(cache,env,op,inExp1,cr,inType1,newType2,impl,st,pre,info);
+        (cache,exp,_,resType) = binaryUserdef(cache,env,op,inExp1,cr,inType1,newType2,impl,pre,info);
         resType = DAE.T_ARRAY(resType,{dim2});
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName,resultName,NONE()),exp,DAE.REDUCTIONITER(iterName,inExp2,NONE(),newType2)::{});
         // exp = ExpressionSimplify.simplify1(exp);
       then (cache,{(exp,NONE())});
       // '*' invalid operations: vector*vector or vector*matrix
-    case (_,_,_,true,_,_,true,_,Absyn.MUL(),_,_,_,_,_,_,_,_) then fail();
-    case (_,_,_,true,_,_,_,true,Absyn.MUL(),_,_,_,_,_,_,_,_) then fail();
+    case (_,_,_,true,_,_,true,_,Absyn.MUL()) then fail();
+    case (_,_,_,true,_,_,_,true,Absyn.MUL()) then fail();
       // matrix-vector-multiply
-    case (cache,_,_,_,true,_,true,_,Absyn.MUL(),_,_,_,_,_,_,_,_)
+    case (cache,_,_,_,true,_,true,_,Absyn.MUL())
       equation
         DAE.T_ARRAY(ty=newType1_1,dims=dim1_1::{}) = inType1;
         DAE.T_ARRAY(ty=newType1,dims=dim1_2::{}) = newType1_1;
@@ -776,11 +765,11 @@ algorithm
         cr3 = DAE.CREF(DAE.CREF_IDENT(foldName1,newType1,{}),newType1);
         cr4 = DAE.CREF(DAE.CREF_IDENT(resultName1,newType2,{}),newType2);
         // TODO: SUM?
-        (cache,exp,SOME(ty),resType) = binaryUserdef(cache,env,Absyn.ADD(),cr1,cr2,newType1,newType2,impl,st,pre,info);
-        (cache,foldExp,_,_) = binaryUserdef(cache,env,Absyn.ADD(),cr3,cr4,ty,ty,impl,st,pre,info);
+        (cache,exp,SOME(ty),resType) = binaryUserdef(cache,env,Absyn.ADD(),cr1,cr2,newType1,newType2,impl,pre,info);
+        (cache,foldExp,_,_) = binaryUserdef(cache,env,Absyn.ADD(),cr3,cr4,ty,ty,impl,pre,info);
         // TODO: Check that the expression can be folded? Pass it as input to the function, or pass the chosen function as output, or pass the chosen lhs,rhs types as outputs!
         (cache,zeroTypes) = getOperatorFuncsOrEmpty(cache,env,{ty},"'0'",info,{});
-        (cache,zeroConstructor) = getZeroConstructor(cache,env,List.filterMap(zeroTypes,getZeroConstructorExpression),impl,st,info);
+        (cache,zeroConstructor) = getZeroConstructor(cache,env,List.filterMap(zeroTypes,getZeroConstructorExpression),impl,info);
 
         resType = DAE.T_ARRAY(resType,{dim1_1});
         iter = DAE.REDUCTIONITER(iterName1,cr,NONE(),newType1);
@@ -790,7 +779,7 @@ algorithm
         exp = DAE.REDUCTION(DAE.REDUCTIONINFO(Absyn.IDENT("array"),Absyn.COMBINE(),resType,NONE(),foldName2,resultName2,NONE()),exp,iter1::{});
       then (cache,{(exp,NONE())});
       // matrix-matrix-multiply
-    case (cache,_,_,_,true,_,_,true,Absyn.MUL(),_,_,_,_,_,_,_,_)
+    case (cache,_,_,_,true,_,_,true,Absyn.MUL())
       equation
         DAE.T_ARRAY(ty=newType1_1,dims=dim1_1::{}) = inType1;
         DAE.T_ARRAY(ty=newType1,dims=dim1_2::{}) = newType1_1;
@@ -813,12 +802,12 @@ algorithm
         cr3 = DAE.CREF(DAE.CREF_IDENT(iterName3,newType1,{}),newType1);
         cr4 = DAE.CREF(DAE.CREF_IDENT(iterName4,newType2,{}),newType2);
 
-        (cache,mulExp,_,ty) = binaryUserdef(cache,env,Absyn.MUL(),cr3,cr4,newType1,newType2,impl,st,pre,info);
+        (cache,mulExp,_,ty) = binaryUserdef(cache,env,Absyn.MUL(),cr3,cr4,newType1,newType2,impl,pre,info);
         cr5 = DAE.CREF(DAE.CREF_IDENT(foldName,ty,{}),ty);
         cr6 = DAE.CREF(DAE.CREF_IDENT(resultName,ty,{}),ty);
-        (cache,foldExp,SOME(ty),_) = binaryUserdef(cache,env,Absyn.ADD(),cr5,cr6,ty,ty,impl,st,pre,info);
+        (cache,foldExp,SOME(ty),_) = binaryUserdef(cache,env,Absyn.ADD(),cr5,cr6,ty,ty,impl,pre,info);
         (cache,zeroTypes) = getOperatorFuncsOrEmpty(cache,env,{ty},"'0'",info,{});
-        (cache,zeroConstructor) = getZeroConstructor(cache,env,List.filterMap(zeroTypes,getZeroConstructorExpression),impl,st,info);
+        (cache,zeroConstructor) = getZeroConstructor(cache,env,List.filterMap(zeroTypes,getZeroConstructorExpression),impl,info);
 
         iter1 = DAE.REDUCTIONITER(iterName1,inExp1,NONE(),newType1_1);
         iter2 = DAE.REDUCTIONITER(iterName2,transposed,NONE(),newType2_1);
@@ -833,7 +822,7 @@ algorithm
       then (cache,{(exp,NONE())});
       // The rest are array op array, which are element-wise operations
       // We thus change the operator to the element-wise one to avoid other vector operations than this one
-    case (cache,_,false,_,_,false,_,_,_,_,_,_,_,_,_,_,_) // array op array, 1-D through n-D
+    case (cache,_,false,_,_,false,_,_,_) // array op array, 1-D through n-D
       equation
         op = Util.assoc(inOper, {
             (Absyn.ADD(),Absyn.ADD_EW()),
@@ -855,7 +844,7 @@ algorithm
         iterName2 = Util.getTempVariableIndex();
         cr1 = DAE.CREF(DAE.CREF_IDENT(iterName1,newType1,{}),newType1);
         cr2 = DAE.CREF(DAE.CREF_IDENT(iterName2,newType2,{}),newType2);
-        (cache,exp,_,resType) = binaryUserdef(cache,env,op,cr1,cr2,newType1,newType2,impl,st,pre,info);
+        (cache,exp,_,resType) = binaryUserdef(cache,env,op,cr1,cr2,newType1,newType2,impl,pre,info);
         resType = DAE.T_ARRAY(resType,{dim2});
         iter1 = DAE.REDUCTIONITER(iterName1,inExp1,NONE(),newType1);
         iter2 = DAE.REDUCTIONITER(iterName2,inExp2,NONE(),newType2);
@@ -2003,31 +1992,31 @@ algorithm
       DAE.Const c;
 
     case (Absyn.BINARY(_,_,_), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1,e2},DAE.callAttrOther);
 
     case (Absyn.BINARY(_,_,_), e1, _, SOME(e2), _)
       then DAE.BINARY(e1, inOper, e2);
 
     case (Absyn.UNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(), _)
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1},DAE.callAttrOther);
 
     case (Absyn.UNARY(_, _), e1, _, NONE(), _)
         then DAE.UNARY(inOper,e1);
 
     case (Absyn.LBINARY(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2), _)
-       then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+       then DAE.CALL(funcname,{e1,e2},DAE.callAttrOther);
 
     case (Absyn.LBINARY(_,_,_), e1, _, SOME(e2), _)
       then DAE.LBINARY(e1, inOper, e2);
 
     case (Absyn.LUNARY(_, _), e1, DAE.USERDEFINED(fqName = funcname), NONE(),_)
-      then DAE.CALL(funcname,{e1},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1},DAE.callAttrOther);
 
     case (Absyn.LUNARY(_, _), e1, _, NONE(), _)
         then DAE.LUNARY(inOper,e1);
 
     case (Absyn.RELATION(_, _, _), e1, DAE.USERDEFINED(fqName = funcname), SOME(e2),_)
-      then DAE.CALL(funcname,{e1,e2},DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+      then DAE.CALL(funcname,{e1,e2},DAE.callAttrOther);
 
     case (Absyn.RELATION(_,_,_), e1, _, SOME(e2), _)
       then DAE.RELATION(e1, inOper, e2, -1, NONE());
@@ -2148,19 +2137,18 @@ function getZeroConstructor
   input FCore.Graph env;
   input list<DAE.Exp> zexps;
   input Boolean impl;
-  input Option<GlobalScript.SymbolTable> st;
   input SourceInfo info;
   output FCore.Cache cache;
   output Option<Values.Value> zeroExpression;
 algorithm
-  (cache,zeroExpression) := match (inCache,env,zexps,impl,st,info)
+  (cache,zeroExpression) := match zexps
     local
       DAE.Exp zc;
       Values.Value v;
-    case (_,_,{},_,_,_) then (inCache,NONE());
-    case (cache,_,{zc},_,_,_)
+    case {} then (inCache,NONE());
+    case {zc}
       equation
-        (cache, v, _) = Ceval.ceval(cache, env, zc, impl, st, Absyn.MSG(info), 0);
+        (cache, v) = Ceval.ceval(inCache, env, zc, impl, Absyn.MSG(info), 0);
       then (cache,SOME(v));
     else
       equation

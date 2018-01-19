@@ -1217,5 +1217,5 @@ algorithm
   end matchcontinue;
 end stmtsToRules;
 
-annotation(__OpenModelica_Interface="frontend");
+annotation(__OpenModelica_Interface="backend");
 end RewriteRules;

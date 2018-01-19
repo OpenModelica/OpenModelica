@@ -92,6 +92,7 @@ import SimCodeUtil;
 import StackOverflow;
 import StringUtil;
 import SymbolicJacobian;
+import SymbolTable;
 import System;
 import Util;
 
@@ -711,7 +712,6 @@ public function translateModel "
   input output FCore.Cache cache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input output GlobalScript.SymbolTable st;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
@@ -751,7 +751,7 @@ algorithm
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
       ExecStat.execStatReset();
-      (cache, graph, odae, st) := CevalScriptBackend.runFrontEnd(cache, graph, className, st, false);
+      (cache, graph, odae) := CevalScriptBackend.runFrontEnd(cache, graph, className, false);
       ExecStat.execStat("FrontEnd");
       SOME(dae) := odae;
 
@@ -759,7 +759,7 @@ algorithm
         serializeNotify(dae, filenameprefix, "dae");
         serializeNotify(graph, filenameprefix, "graph");
         serializeNotify(cache, filenameprefix, "cache");
-        serializeNotify(st, filenameprefix, "st");
+        serializeNotify(SymbolTable.get(), filenameprefix, "st");
         ExecStat.execStat("Serialize FrontEnd");
       end if;
 
@@ -825,15 +825,15 @@ algorithm
       (libs, file_dir, timeSimCode, timeTemplates) := match kind
         case TranslateModelKind.NORMAL()
           algorithm
-            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, st.ast, className, filenameprefix, inSimSettingsOpt, args);
+            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCode(dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst, SymbolTable.getAbsyn(), className, filenameprefix, inSimSettingsOpt, args);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.FMU()
           algorithm
-            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, st.ast, className, kind.version, kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
+            (libs,file_dir,timeSimCode,timeTemplates) := generateModelCodeFMU(dlow, initDAE, initDAE_lambda0, fmiDer, removedInitialEquationLst, SymbolTable.getAbsyn(), className, kind.version, kind.kind, filenameprefix, kind.targetName, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         case TranslateModelKind.XML()
           algorithm
-            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeXML(dlow, initDAE, initDAE_lambda0, removedInitialEquationLst, st.ast, className, filenameprefix, inSimSettingsOpt);
+            (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeXML(dlow, initDAE, initDAE_lambda0, removedInitialEquationLst, SymbolTable.getAbsyn(), className, filenameprefix, inSimSettingsOpt);
           then (libs, file_dir, timeSimCode, timeTemplates);
         else
           algorithm
