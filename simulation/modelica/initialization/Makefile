@@ -17,6 +17,7 @@ bug_3014.mos \
 bug_3052.mos \
 bug_3536.mos \
 bug_4387.mos \
+bug_4718.mos \
 discreteTest01.mos \
 discreteTest02.mos \
 discreteTest03.mos \
