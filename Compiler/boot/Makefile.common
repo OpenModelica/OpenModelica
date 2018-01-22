@@ -67,7 +67,7 @@ bootstrap-from-tarball: $(PATCHES)
 	@echo "Bootstrapping phase 1/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
-	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= BOOTSTRAP_OMHOME=1
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= BOOTSTRAP_OMHOME=1 TEMPLATES_TARGET=templates-bootstrap
 	# Patch _main.c to avoid a new tarball
 	$(PATCH_SOURCES)
 	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
@@ -103,7 +103,7 @@ make-bootstrap-tarball: clean
 	xz --best --force bootstrap-sources.tar
 
 templates:
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMBUILDDIR=$(OMBUILDDIR) $(TEMPLATES_TARGET)
 
 scripting:
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Script OMBUILDDIR=$(OMBUILDDIR)
