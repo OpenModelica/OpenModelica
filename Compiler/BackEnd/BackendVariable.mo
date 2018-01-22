@@ -344,7 +344,7 @@ algorithm
       DAE.Exp e;
 
     case (BackendDAE.VAR(bindExp=SOME(e)))
-    then not Expression.isConst(e);
+    then not Expression.isConstValue(e) /* Do not use isConst here; we need to evaluate non-literals at runtime */;
 
     else not varHasConstantStartExp(v);
   end match;
@@ -359,7 +359,7 @@ protected
 algorithm
   try
     e := varStartValueFail(v);
-    out := Expression.isConst(e);
+    out := Expression.isConstValue(e) /* Do not use isConst here; we need to evaluate non-literals at runtime */;
   else
     out := true;
   end try;
