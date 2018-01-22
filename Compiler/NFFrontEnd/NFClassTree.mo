@@ -676,11 +676,12 @@ public
       input String name;
       input ClassTree tree;
       output InstNode element;
+      output Boolean isImport;
     protected
       LookupTree.Entry entry;
     algorithm
       entry := LookupTree.get(lookupTree(tree), name);
-      element := resolveEntry(entry, tree);
+      (element, isImport) := resolveEntry(entry, tree);
     end lookupElement;
 
     function lookupElementPtr
@@ -1214,11 +1215,12 @@ public
       input LookupTree.Entry entry;
       input ClassTree tree;
       output InstNode element;
+      output Boolean isImport;
     algorithm
-      element := match entry
-        case LookupTree.Entry.CLASS() then resolveClass(entry.index, tree);
-        case LookupTree.Entry.COMPONENT() then resolveComponent(entry.index, tree);
-        case LookupTree.Entry.IMPORT() then resolveImport(entry.index, tree);
+      (element, isImport) := match entry
+        case LookupTree.Entry.CLASS() then (resolveClass(entry.index, tree), false);
+        case LookupTree.Entry.COMPONENT() then (resolveComponent(entry.index, tree), false);
+        case LookupTree.Entry.IMPORT() then (resolveImport(entry.index, tree), true);
       end match;
     end resolveEntry;
 

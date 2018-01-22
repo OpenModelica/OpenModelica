@@ -166,8 +166,9 @@ uniontype Class
     input String name;
     input Class cls;
     output InstNode node;
+    output Boolean isImport;
   algorithm
-    node := ClassTree.lookupElement(name, classTree(cls));
+    (node, isImport) := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
 
   function lookupAttribute

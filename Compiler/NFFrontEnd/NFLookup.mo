@@ -657,15 +657,17 @@ function lookupSimpleCref
   input InstNode scope;
   output InstNode node;
   output InstNode foundScope = scope;
+protected
+  Boolean is_import;
 algorithm
   // Look for the name in the given scope, and if not found there continue
   // through the enclosing scopes of that scope until we either run out of
   // scopes or for some reason exceed the recursion depth limit.
   for i in 1:Global.recursionDepthLimit loop
     try
-      node := match foundScope
+      (node, is_import) := match foundScope
         case InstNode.IMPLICIT_SCOPE()
-          then lookupIterator(name, foundScope.locals);
+          then (lookupIterator(name, foundScope.locals), false);
         case InstNode.CLASS_NODE()
           then Class.lookupElement(name, InstNode.getClass(foundScope));
         case InstNode.COMPONENT_NODE()
@@ -674,8 +676,10 @@ algorithm
           then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
       end match;
 
-      // If the node is an outer node, return the inner instead.
-      if InstNode.isInnerOuterNode(node) then
+      if is_import then
+        foundScope := InstNode.parent(node);
+      elseif InstNode.isInnerOuterNode(node) then
+        // If the node is an outer node, return the inner instead.
         node := InstNode.resolveInner(node);
         foundScope := InstNode.parent(node);
       end if;
@@ -700,10 +704,12 @@ function lookupLocalSimpleCref
   input InstNode scope;
   output InstNode node;
   output InstNode foundScope = scope;
+protected
+  Boolean is_import;
 algorithm
-  node := match foundScope
+  (node, is_import) := match foundScope
     case InstNode.IMPLICIT_SCOPE()
-      then lookupIterator(name, foundScope.locals);
+      then (lookupIterator(name, foundScope.locals), false);
     case InstNode.CLASS_NODE()
       then Class.lookupElement(name, InstNode.getClass(foundScope));
     case InstNode.COMPONENT_NODE()
@@ -712,8 +718,10 @@ algorithm
       then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
   end match;
 
-  // If the node is an outer node, return the inner instead.
-  if InstNode.isInnerOuterNode(node) then
+  if is_import then
+    foundScope := InstNode.parent(node);
+  elseif InstNode.isInnerOuterNode(node) then
+    // If the node is an outer node, return the inner instead.
     node := InstNode.resolveInner(node);
     foundScope := InstNode.parent(node);
   end if;
