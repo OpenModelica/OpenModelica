@@ -17,6 +17,6 @@ end ImportUnqualified2;
 
 // Result:
 // class ImportUnqualified2
-//   Real y = x;
+//   Real y = 2.0;
 // end ImportUnqualified2;
 // endResult
