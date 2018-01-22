@@ -3200,6 +3200,9 @@ void MainWindow::createMenus()
   libraries.sort();
   for (int i = 0; i < libraries.size(); ++i) {
     QAction *pAction = new QAction(libraries[i], this);
+    if (libraries[i].compare("Modelica") == 0) {
+      pAction->setShortcut(QKeySequence("Ctrl+m"));
+    }
     connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
     mpLibrariesMenu->addAction(pAction);
   }
