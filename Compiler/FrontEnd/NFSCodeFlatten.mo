@@ -122,7 +122,10 @@ algorithm
         env = NFEnvExtends.update(env);
 
         (prog, env) = NFSCodeDependency.analyse(inClassName, env, prog);
-        (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
+
+        if not Flags.isSet(Flags.SCODE_INST) then
+          (prog, env) = NFSCodeFlattenImports.flattenProgram(prog, env);
+        end if;
 
         //System.stopTimer();
         //Debug.traceln("NFSCodeFlatten.flattenClassInProgram took " +
