@@ -424,7 +424,6 @@ NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \
 PackageConstant1.mo \
-PackageConstant2.mo \
 ParameterBug.mos \
 PropagateExtends.mo \
 RangeInvalidStep1.mo \
@@ -591,6 +590,7 @@ redeclare8.mo \
 RedeclaredFunction1.mo \
 type4.mo \
 type5.mo \
+PackageConstant2.mo \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

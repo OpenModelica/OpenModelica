@@ -37,11 +37,11 @@ end M;
 // class M
 //   Integer x = 2;
 //   constant Integer a.j = 3;
-//   Integer y = a.j;
+//   Integer y = 3;
 //   constant Integer b.i = 2;
-//   Integer z = b.i;
+//   Integer z = 2;
 //   constant Integer j = 2;
-//   Integer w = j;
+//   Integer w = 2;
 //   Integer v = 2;
 // end M;
 // endResult

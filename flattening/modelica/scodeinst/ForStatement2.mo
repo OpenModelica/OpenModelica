@@ -23,7 +23,7 @@ end ForStatement2;
 //   Real x[5];
 //   constant Integer s = 5;
 // algorithm
-//   for i in 1:s loop
+//   for i in 1:5 loop
 //     x[i] := /*Real*/(i);
 //   end for;
 // end ForStatement2;

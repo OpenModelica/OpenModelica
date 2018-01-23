@@ -21,6 +21,6 @@ end B;
 // Result:
 // class B
 //   constant Integer j = 2;
-//   Real x = /*Real*/(j);
+//   Real x = 2.0;
 // end B;
 // endResult

@@ -20,6 +20,6 @@ end C;
 // Result:
 // class C
 //   constant Integer b.j = 3;
-//   Real b.x = /*Real*/(b.j);
+//   Real b.x = 3.0;
 // end C;
 // endResult

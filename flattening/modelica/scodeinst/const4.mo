@@ -21,6 +21,6 @@ end A;
 //   Real x[1];
 //   Real x[2];
 // equation
-//   x = {p[1].i, p[2].i};
+//   x = {1.0, 2.0};
 // end A;
 // endResult

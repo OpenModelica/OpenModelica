@@ -24,6 +24,6 @@ end M;
 
 // Result:
 // class M
-//   Real x = /*Real*/(2);
+//   Real x = 2.0;
 // end M;
 // endResult
