@@ -105,28 +105,33 @@ end TypingError;
 
 public
 package ExpOrigin
-  constant Integer CLASS           = 0;     // In class.
-  constant Integer FUNCTION        = 1;     // In function.
-  constant Integer ALGORITHM       = 2;     // In algorithm section.
-  constant Integer EQUATION        = 4;     // In equation section.
-  constant Integer INITIAL         = 8;     // In initial section.
-  constant Integer LHS             = 16;    // On left hand side of equality/assignment.
-  constant Integer RHS             = 32;    // On right hand side of equality/assignment.
-  constant Integer WHEN            = 64;    // In when equation/statement.
-  constant Integer NONEXPANDABLE   = 128;   // In non-parameter if/for.
-  constant Integer ITERATION_RANGE = 256;   // In range used for iteration.
-  constant Integer DIMENSION       = 512;   // In dimension.
-  constant Integer BINDING         = 1024;  // In binding.
-  constant Integer CONDITION       = 2048;  // In conditional expression.
-  constant Integer SUBSCRIPT       = 4096;  // In subscript.
-  constant Integer SUBEXPRESSION   = 8192;  // Part of a larger expression.
-  constant Integer CONNECT         = 16384; // Part of connect argument.
-  constant Integer NOEVENT         = 32768; // Part of noEvent argument.
+  // ExpOrigin is used to keep track of where an expression is coming from,
+  // and is implemented as an integer bitfield.
+  type Type = Integer;
+
+  // Flag values:
+  constant Type CLASS           = 0;     // In class.
+  constant Type FUNCTION        = 1;     // In function.
+  constant Type ALGORITHM       = 2;     // In algorithm section.
+  constant Type EQUATION        = 4;     // In equation section.
+  constant Type INITIAL         = 8;     // In initial section.
+  constant Type LHS             = 16;    // On left hand side of equality/assignment.
+  constant Type RHS             = 32;    // On right hand side of equality/assignment.
+  constant Type WHEN            = 64;    // In when equation/statement.
+  constant Type NONEXPANDABLE   = 128;   // In non-parameter if/for.
+  constant Type ITERATION_RANGE = 256;   // In range used for iteration.
+  constant Type DIMENSION       = 512;   // In dimension.
+  constant Type BINDING         = 1024;  // In binding.
+  constant Type CONDITION       = 2048;  // In conditional expression.
+  constant Type SUBSCRIPT       = 4096;  // In subscript.
+  constant Type SUBEXPRESSION   = 8192;  // Part of a larger expression.
+  constant Type CONNECT         = 16384; // Part of connect argument.
+  constant Type NOEVENT         = 32768; // Part of noEvent argument.
 
   // Combined flags:
-  constant Integer EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
-  constant Integer VALID_TYPENAME_SCOPE = intBitOr(ITERATION_RANGE, DIMENSION);
-  constant Integer DISCRETE_SCOPE = intBitOr(WHEN, intBitOr(INITIAL, FUNCTION));
+  constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
+  constant Type VALID_TYPENAME_SCOPE = intBitOr(ITERATION_RANGE, DIMENSION);
+  constant Type DISCRETE_SCOPE = intBitOr(WHEN, intBitOr(INITIAL, FUNCTION));
 end ExpOrigin;
 
 public
@@ -144,7 +149,7 @@ end typeClass;
 
 function typeComponents
   input InstNode cls;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
@@ -253,7 +258,7 @@ end makeConnectorType;
 
 function typeComponent
   input InstNode component;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   output Type ty;
 protected
   InstNode node = InstNode.resolveOuter(component);
@@ -339,7 +344,7 @@ end checkConnectorType;
 function typeIterator
   input InstNode iterator;
   input SourceInfo info;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input Boolean structural "If the iteration range must be a parameter expression or not.";
 protected
   Component c = InstNode.component(iterator);
@@ -399,7 +404,7 @@ function typeDimensions
   input output array<Dimension> dimensions;
   input InstNode component;
   input Binding binding;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
 algorithm
   for i in 1:arrayLength(dimensions) loop
@@ -412,7 +417,7 @@ function typeDimension
   input Integer index;
   input InstNode component;
   input Binding binding;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Dimension dimension = dimensions[index];
 algorithm
@@ -530,7 +535,7 @@ end typeDimension;
 function typeBindings
   input InstNode cls;
   input InstNode component;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 protected
   Class c;
   ClassTree cls_tree;
@@ -565,7 +570,7 @@ end typeBindings;
 
 function typeComponentBinding
   input InstNode component;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c;
@@ -647,7 +652,7 @@ end typeComponentBinding;
 
 function typeBinding
   input output Binding binding;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 algorithm
   binding := match binding
     local
@@ -677,7 +682,7 @@ end typeBinding;
 
 function typeComponentCondition
   input output Binding condition;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 algorithm
   condition := match condition
     local
@@ -717,7 +722,7 @@ function typeTypeAttributes
   input output list<Modifier> attributes;
   input Type ty;
   input InstNode component;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 protected
   partial function attrTypeFn
     input String name;
@@ -745,7 +750,7 @@ function typeTypeAttribute
   input attrTypeFn attrTyFn;
   input Type ty;
   input InstNode component;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 
   partial function attrTypeFn
     input String name;
@@ -976,9 +981,16 @@ algorithm
 end getAnyAttributeType;
 
 function typeExp
+  "Types an untyped expression, returning the typed expression itself along with
+   its type and variability. The default behaviour is to replace any constants
+   found with their bound values (giving an error if they have none), but this
+   can be turned off with the replaceConstants parameter. Note that replaceConstants
+   is not propagated when typing subexpressions, because this is so far only
+   used when we need the whole expression to be kept as a cref (like connectors)."
   input output Expression exp;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
+  input Boolean replaceConstants = true;
         output Type ty;
         output Variability variability;
 algorithm
@@ -1000,8 +1012,13 @@ algorithm
     case Expression.CREF()
       algorithm
         (cref, ty, variability) := typeCref(exp.cref, origin, info);
+        e1 := Expression.CREF(ty, cref);
+
+        if replaceConstants and variability == Variability.CONSTANT then
+          e1 := Ceval.evalExp(e1, Ceval.EvalTarget.GENERIC(info));
+        end if;
       then
-        (Expression.CREF(ty, cref), ty, variability);
+        (e1, ty, variability);
 
     case Expression.TYPENAME()
       algorithm
@@ -1104,7 +1121,7 @@ end typeExp;
 
 function typeExpl
   input list<Expression> expl;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output list<Expression> explTyped = {};
   output list<Type> tyl = {};
@@ -1129,7 +1146,7 @@ function typeExpDim
    returned dimension is undefined."
   input Expression exp;
   input Integer dimIndex;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
         output Dimension dim;
         output TypingError error;
@@ -1208,7 +1225,7 @@ end typeArrayDim2;
 function typeCrefDim
   input ComponentRef cref;
   input Integer dimIndex;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Dimension dim;
   output TypingError error;
@@ -1230,7 +1247,7 @@ function typeComponentDim
   input InstNode component;
   input Integer dimIndex;
   input Integer offset "The number of dimensions to skip due to subscripts.";
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Dimension dim;
   output TypingError error;
@@ -1287,7 +1304,7 @@ end nthDimensionBoundsChecked;
 
 function typeCref
   input output ComponentRef cref;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
         output Type ty;
         output Variability variability;
@@ -1307,7 +1324,7 @@ end typeCref;
 
 function typeCref2
   input output ComponentRef cref;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
         output Type ty;
 
@@ -1354,7 +1371,7 @@ function typeSubscripts
   input list<Subscript> subscripts;
   input Type crefType;
   input ComponentRef cref;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output list<Subscript> typedSubs;
 protected
@@ -1389,7 +1406,7 @@ function typeSubscript
   input Dimension dimension;
   input ComponentRef cref;
   input Integer index;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Subscript outSubscript = subscript;
 protected
@@ -1438,7 +1455,7 @@ end typeSubscript;
 
 function typeArray
   input list<Expression> elements;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Expression arrayExp;
   output Type arrayType = Type.UNKNOWN();
@@ -1462,7 +1479,7 @@ end typeArray;
 
 function typeRange
   input output Expression rangeExp;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
         output Type rangeType;
         output Variability variability;
@@ -1520,7 +1537,7 @@ end typeRange;
 
 function typeTuple
   input list<Expression> elements;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Expression tupleExp;
   output Type tupleType;
@@ -1560,7 +1577,7 @@ end printRangeTypeError;
 
 function typeSize
   input output Expression sizeExp;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
         output Type sizeType;
         output Variability variability;
@@ -1667,7 +1684,7 @@ function evaluateEnd
   input Dimension dim;
   input ComponentRef cref;
   input Integer index;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Expression outExp;
  algorithm
@@ -1692,7 +1709,7 @@ end evaluateEnd;
 
 function typeSections
   input InstNode classNode;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 protected
   Class cls, typed_cls;
   array<InstNode> components;
@@ -1773,7 +1790,7 @@ algorithm
     else
       algorithm
         if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
-          outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.IGNORE_ERRORS());
+          outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
           outArg := SimplifyExp.simplifyExp(arg);
         else
           Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
@@ -1867,7 +1884,7 @@ end makeDefaultExternalCall;
 
 function typeComponentSections
   input InstNode component;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 protected
   Component comp;
 algorithm
@@ -1895,7 +1912,7 @@ end typeComponentSections;
 
 function typeEquation
   input output Equation eq;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 algorithm
   eq := match eq
     local
@@ -1991,7 +2008,7 @@ end typeEquation;
 function typeConnect
   input Expression lhsConn;
   input Expression rhsConn;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Equation connEq;
 protected
@@ -2011,8 +2028,8 @@ algorithm
   end if;
 
   next_origin := intBitOr(origin, ExpOrigin.CONNECT);
-  (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, next_origin, info);
-  (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, next_origin, info);
+  (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, next_origin, info, replaceConstants = false);
+  (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, next_origin, info, replaceConstants = false);
 
   checkConnector(lhs, info);
   checkConnector(rhs, info);
@@ -2100,14 +2117,14 @@ end checkConnectorForm;
 
 function typeAlgorithm
   input output list<Statement> alg;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 algorithm
   alg := list(typeStatement(stmt, origin) for stmt in alg);
 end typeAlgorithm;
 
 function typeStatement
   input output Statement st;
-  input Integer origin;
+  input ExpOrigin.Type origin;
 algorithm
   st := match st
     local
@@ -2210,7 +2227,7 @@ end typeStatement;
 
 function typeCondition
   input output Expression condition;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   input Error.Message errorMsg;
   input Boolean allowVector = false;
@@ -2236,7 +2253,7 @@ end typeCondition;
 
 function typeIfEquation
   input list<tuple<Expression, list<Equation>>> branches;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Equation ifEq;
 protected
@@ -2276,7 +2293,7 @@ end typeIfEquation;
 function typeOperatorArg
   input output Expression arg;
   input Type expectedType;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input String operatorName;
   input String argName;
   input Integer argIndex;
@@ -2299,7 +2316,7 @@ end typeOperatorArg;
 function typeReinit
   input output Expression crefExp;
   input output Expression exp;
-  input Integer origin;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
 protected
   Variability var;
@@ -2307,7 +2324,7 @@ protected
   Type ty1, ty2;
   ComponentRef cref;
 algorithm
-  (crefExp, ty1, _) := typeExp(crefExp, origin, info);
+  (crefExp, ty1, _) := typeExp(crefExp, origin, info, replaceConstants = false);
   (exp, ty2, _) := typeExp(exp, origin, info);
 
   // The first argument must be a cref.

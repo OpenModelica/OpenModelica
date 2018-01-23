@@ -260,7 +260,7 @@ function intBitRShift
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise right shift (like C, i << s).</p>
+<p>Bit-wise right shift (like C, i >> s).</p>
 </html>"));
 end intBitRShift;
 

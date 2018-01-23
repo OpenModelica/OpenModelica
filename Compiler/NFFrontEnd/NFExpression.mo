@@ -39,6 +39,7 @@ protected
   import Function = NFFunction;
   import RangeIterator = NFRangeIterator;
   import NFPrefixes.Variability;
+  import Prefixes = NFPrefixes;
 
 public
   import Absyn.Path;
@@ -2249,7 +2250,6 @@ public
       else false;
     end match;
   end hasArrayCall2;
-
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

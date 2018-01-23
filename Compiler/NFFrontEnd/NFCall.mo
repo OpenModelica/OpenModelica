@@ -352,7 +352,7 @@ uniontype Call
 
   function typeSpecialBuiltinFunction
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -400,7 +400,7 @@ uniontype Call
   public
   function typeCall
     input output Expression callExp;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -430,7 +430,7 @@ uniontype Call
 
   function typeMapIteratorCall
     input output Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -474,7 +474,7 @@ uniontype Call
 
   function typeMatchNormalCall
     input output Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -487,7 +487,7 @@ uniontype Call
 
   function typeNormalCall
     input output Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
     call := match call
@@ -537,7 +537,7 @@ uniontype Call
 
   function matchTypedNormalCall
     input output Call argtycall;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -684,7 +684,7 @@ uniontype Call
 
   function typeArgs
     input output Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
     call := match call
@@ -1122,7 +1122,7 @@ protected
     "Types a function call that can be typed normally, but which always has
      discrete variability regardless of the variability of the arguments."
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1140,7 +1140,7 @@ protected
 
   function typeNdimsCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty = Type.INTEGER();
@@ -1172,7 +1172,7 @@ protected
 
   function typePreCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1207,7 +1207,7 @@ protected
 
   function typeChangeCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1240,7 +1240,7 @@ protected
 
   function typeDerCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1292,7 +1292,7 @@ protected
 
   function typeEdgeCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1325,7 +1325,7 @@ protected
 
   function typeMinMaxCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1347,7 +1347,7 @@ protected
 
   function typeSumProductCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1373,7 +1373,7 @@ protected
 
   function typeSmoothCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1393,7 +1393,7 @@ protected
 
   function typeFillCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1432,7 +1432,7 @@ protected
     input Type fillType;
     input list<Expression> fillArgs;
     input list<Expression> dimensionArgs;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1485,7 +1485,7 @@ protected
 
   function typeZerosOnesCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1519,7 +1519,7 @@ protected
 
   function typeScalarCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1559,7 +1559,7 @@ protected
 
   function typeVectorCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1603,7 +1603,7 @@ protected
 
   function typeMatrixCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1653,7 +1653,7 @@ protected
 
   function typeSymmetricCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1678,7 +1678,7 @@ protected
 
   function typeTransposeCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1717,7 +1717,7 @@ protected
 
   function typeCardinalityCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1737,7 +1737,7 @@ protected
 
   function typeNoEventCall
     input Call call;
-    input Integer origin;
+    input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;

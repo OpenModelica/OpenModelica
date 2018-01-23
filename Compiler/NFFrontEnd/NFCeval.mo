@@ -70,6 +70,10 @@ uniontype EvalTarget
     SourceInfo info;
   end CONDITION;
 
+  record GENERIC
+    SourceInfo info;
+  end GENERIC;
+
   record IGNORE_ERRORS end IGNORE_ERRORS;
 
   function isRange
@@ -124,7 +128,8 @@ algorithm
       ComponentRef cref;
       Dimension dim;
 
-    case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE()))
+    case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
+                                                          origin = NFComponentRef.Origin.CREF))
       algorithm
         Typing.typeComponentBinding(c, ExpOrigin.CLASS);
         binding := Component.getBinding(InstNode.component(c));
@@ -235,7 +240,6 @@ algorithm
     else oexp;
   end match;
 end evalExpOpt;
-
 
 function evalBinding
   input Binding binding;
@@ -404,6 +408,14 @@ algorithm
       algorithm
         Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
           {Expression.toString(exp)}, target.info);
+      then
+        fail();
+
+    case EvalTarget.GENERIC()
+      algorithm
+        Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
+          {Expression.toString(exp)},
+          {InstNode.info(ComponentRef.node(Expression.toCref(exp))), target.info});
       then
         fail();
 

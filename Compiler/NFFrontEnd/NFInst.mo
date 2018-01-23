@@ -140,13 +140,15 @@ algorithm
   // Flatten and convert the class into a DAE.
   (flat_model, funcs) := Flatten.flatten(inst_cls, name);
 
-  // Replace or collect package constants depending on the
-  // replacePackageConstants debug flag.
-  if Flags.isSet(Flags.REPLACE_PACKAGE_CONSTS) then
-    (flat_model, funcs) := Package.replaceConstants(flat_model, funcs);
-  else
-    flat_model := Package.collectConstants(flat_model, funcs);
-  end if;
+  // The backend doesn't handle constants well, so for now we just replace all
+  // constants in Typing.typeExp.
+  //// Replace or collect package constants depending on the
+  //// replacePackageConstants debug flag.
+  //if Flags.isSet(Flags.REPLACE_PACKAGE_CONSTS) then
+  //  (flat_model, funcs) := Package.replaceConstants(flat_model, funcs);
+  //else
+  //  flat_model := Package.collectConstants(flat_model, funcs);
+  //end if;
 
   flat_model := Scalarize.scalarize(flat_model, name);
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
