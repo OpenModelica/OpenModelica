@@ -36,22 +36,20 @@
 #include <QTextStream>
 #include <QMap>
 
-class IndentationState
-{
+class IndentationState {
 public:
   IndentationState(int state_, int level_, int nextMod_, QString current_, QString next_, bool skipNext_, bool lMod_, bool equation_, bool equationSection_, bool loopBlock_):
-    state(state_), level(level_), nextMod(nextMod_), current(current_), next(next_), skipNext(skipNext_), lMod(lMod_), equation(equation_), equationSection(equationSection_), loopBlock(loopBlock_)
-    {
-
+    state(state_), level(level_), nextMod(nextMod_), current(current_), next(next_), skipNext(skipNext_), lMod(lMod_), equation(equation_), equationSection(equationSection_), loopBlock(loopBlock_) {
     }
+
     ~IndentationState();
 
   int level, state, nextMod;
   QString current, next;
   bool skipNext, lMod, equation, equationSection, loopBlock;
 };
-class Indent
-{
+
+class Indent {
 public:
   Indent(QString t = QString(), bool a = false);
   ~Indent();
@@ -68,8 +66,7 @@ private:
   bool aggressive, lmod;
   QString buffer1, buffer2;
 
-  class ISM
-  {
+  class ISM {
   public:
     ISM();
     ~ISM();
@@ -80,13 +77,11 @@ private:
     bool skipNext;
     bool lMod;
     int oldState;
-
-
   };
+
 public:
   ISM ism;
   QString current, next;
 };
-
 
 #endif

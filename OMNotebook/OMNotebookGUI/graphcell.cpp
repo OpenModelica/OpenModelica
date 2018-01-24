@@ -548,11 +548,11 @@ namespace IAEX {
 
   void MyTextEdit2a::goToPos(const QUrl& u)
   {
-    QRegExp e("\\-|:");
-    int r=u.toString().section(e, 0,0).toInt();
-    int c=u.toString().section(e, 1,1).toInt();
-    int r2=u.toString().section(e, 2,2).toInt();
-    int c2=u.toString().section(e, 3,3).toInt();
+    QRegExp e("/|\\-|:");
+    int r=u.path().section(e, 1,1).toInt();
+    int c=u.path().section(e, 2,2).toInt();
+    int r2=u.path().section(e, 3,3).toInt();
+    int c2=u.path().section(e, 4,4).toInt();
 
     int p = 0;
     for(int i = 1; i < r; ++i)
@@ -563,11 +563,11 @@ namespace IAEX {
     tc.setPosition(p);
 
     int p2 = 0;
-    if(r2 > 0)
+    if(r2 > 0 && ((r!=r2) || (c!=c2)))
     {
       for(int i = 1; i < r2; ++i)
         p2 = toPlainText().indexOf("\n", p2)+1;
-      p2 += (c2-1);
+      p2 += c2;
       tc.setPosition(p2, QTextCursor::KeepAnchor);
     }
     setTextCursor(tc);
@@ -1633,28 +1633,20 @@ namespace IAEX {
     //delete sender();
     guard->unlock();
 
-    if( res.isEmpty() && (error.isEmpty() || error.size() == 0) )
-    {
+    if( res.isEmpty() && (error.isEmpty() || error.size() == 0) ) {
       res = "[done]";
       setState(Finished);
     }
 
-    if( !error.isEmpty() && error.size() != 0)
-    {
+    if( !error.isEmpty() && error.size() != 0) {
       setState(Error);
       res += QString("\n") + error;
     }
     else
       setState(Finished);
 
-#if 0
-    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
-
-    // bool b;
-    int p=0;
-#endif
-
     output_->selectAll();
+    res = res.replace(QRegExp("\\[<interactive>:([\\d]+):([\\d]+)-([\\d]+):([\\d]+):.*\\](.*)"),"[\\1:\\2-\\3:\\4]\\5");
     output_->textCursor().insertText( res );
 
     QPalette pal = output_->palette(); // define palette for textEdit.
@@ -1667,52 +1659,32 @@ namespace IAEX {
     }
     output_->setPalette(pal);
 
-#if 0
+    QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
+    int cap = 1;
+    int p=0;
     QList<QAction*> actions;
-    while((p=res.indexOf(e, p)) > 0)
-    {
+    while((p=res.indexOf(e, p)) > 0) {
       QTextCharFormat f;
       f.setAnchor(true);
 
-      if(e.cap(1).size() > e.cap(2).size())
-      {
-        f.setAnchorHref(e.cap(1));
-        QTextCursor c(output_->textCursor());
-        c.setPosition(p);
-        c.setPosition(p+=e.cap(1).size(), QTextCursor::KeepAnchor);
-
-        f.setAnchor(true);
-        f.setFontUnderline(true);
-        c.mergeCharFormat(f);
-        c.setPosition(output_->toPlainText().size());
-        output_->setTextCursor(c);
-
-        MyAction* a = new MyAction(e.cap(1), 0);
-        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-        actions.push_back(a);
+      if(e.cap(2).size() > e.cap(1).size()) {
+        cap = 2;
       }
-      else
-      {
-        f.setAnchorHref(e.cap(2));
-        QTextCursor c(output_->textCursor());
-        c.setPosition(p);
-        c.setPosition(p+=e.cap(2).size(), QTextCursor::KeepAnchor);
+      f.setAnchorHref("http://fake.url/"+e.cap(cap));
+      QTextCursor c(output_->textCursor());
+      c.setPosition(p);
+      c.setPosition(p+=e.cap(cap).size(), QTextCursor::KeepAnchor);
 
-        f.setAnchor(true);
-        f.setFontUnderline(true);
-        c.mergeCharFormat(f);
-        c.setPosition(output_->toPlainText().size());
-        output_->setTextCursor(c);
+      f.setFontUnderline(true);
+      f.setUnderlineColor(QColor(0,0,255));
+      c.mergeCharFormat(f);
 
-        MyAction* a = new MyAction(e.cap(2), 0);
-        connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
-        connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
-        actions.push_back(a);
-      }
+      MyAction* a = new MyAction("_"+e.cap(cap), 0);
+      connect(a, SIGNAL(triggered()), a, SLOT(triggered2()));
+      connect(a, SIGNAL(urlClicked(const QUrl&)), output_, SIGNAL(anchorClicked(const QUrl&)));
+      actions.push_back(a);
     }
     emit setStatusMenu(actions);
-#endif
 
     ++numEvals_;
     contentChanged();
