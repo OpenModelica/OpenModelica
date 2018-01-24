@@ -132,22 +132,22 @@ static int RTLD_LAZY __attribute__((unused)) = 0;
 /** definition of the return data for dladdr().
  */
 typedef struct {
-	/** Filename of defining DLL or EXE */
-	const char *dli_fname;
+  /** Filename of defining DLL or EXE */
+  const char *dli_fname;
 
-	/** Load address of the DLL or EXE that defines the object */
-	void *dli_fbase;
+  /** Load address of the DLL or EXE that defines the object */
+  void *dli_fbase;
 
-	/** Name of nearest Symbol, string memory allocated possibly allocated
-	 *  on the heap. See #dli_salloc;
-	 */
-	const char *dli_sname;
+  /** Name of nearest Symbol, string memory allocated possibly allocated
+   *  on the heap. See #dli_salloc;
+   */
+  const char *dli_sname;
 
-	/** Exact value of nearest symbol (Not implemented on Windows) */
-	void *dli_saddr;
+  /** Exact value of nearest symbol (Not implemented on Windows) */
+  void *dli_saddr;
 
-	/** Non-zero if the memory for dli_sname was allocated on the heap */
-	int dli_salloc;
+  /** Non-zero if the memory for dli_sname was allocated on the heap */
+  int dli_salloc;
 
 } Dl_info;
 
@@ -177,6 +177,27 @@ static OMC_INLINE int dlclose(void *handle) {
 static OMC_INLINE int dladdr(void *addr, Dl_info *info) {
   return omc_dladdr(addr, info);
 }
+
+#endif
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+
+#if defined(_MSC_VER)
+
+#include <win32_dirent.h>
+#if !defined(PATH_MAX)
+#define PATH_MAX MAX_PATH
+#endif
+char *realpath(const char *path, char resolved_path[PATH_MAX]);
+
+#else
+
+#include <limits.h>
+#include <stdlib.h>
+
+#endif
+
+
 
 #endif
 
