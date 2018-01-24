@@ -33,9 +33,9 @@ msgstr ""
 
 #: ../BackEnd/Initialization.mo:265
 msgid ""
-"For more information set -d=initialization. In OMEdit Tools->Options-"
-">Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-"
-"d=initialization\")"
+"For more information set -d=initialization. In OMEdit "
+"Tools->Options->Simulation->OMCFlags, in OMNotebook call "
+"setCommandLineOptions(\"-d=initialization\")"
 msgstr ""
 
 #: ../Main/Main.mo:575
@@ -224,15 +224,16 @@ msgstr ""
 " %s"
 
 #: ../Util/Error.mo:200
-#, c-format
+#, fuzzy, c-format
 msgid "The language feature %s is not supported. Suggested workaround: %s"
 msgstr ""
-"Die Sprachfunktion %s wird nicht unterstützt. Vorgeschlagener Workaround: %s"
+"Die Sprachfunktion %s wird nicht unterstützt. Vorgeschlagene "
+"Hilfskonstruktion: %s"
 
 #: ../Util/Error.mo:202
-#, fuzzy, c-format
+#, c-format
 msgid "Derivative of expression \"%s\" w.r.t. \"%s\" is non-existent."
-msgstr "Ableitung des Ausdrucks %s ist nicht existent."
+msgstr "Ableitung des Ausdrucks \"%s\" bezüglich \"%s\" ist nicht existent."
 
 #: ../Util/Error.mo:204
 msgid "No classes are loaded."
@@ -254,6 +255,7 @@ msgid "Invalid redeclaration of %s %s as %s."
 msgstr "Ungültige Redeklaration von %s %s als %s."
 
 #: ../Util/Error.mo:212
+#, qt-format
 msgid "Trying to redeclare %1 %2 but %1 not declared as replaceable."
 msgstr ""
 
@@ -311,6 +313,7 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:232
+#, qt-format
 msgid "Cannot connect %1 component %2 to non-%1 component %3."
 msgstr "Kann %1 Komponente %2 nicht mit nicht-%1 Komponente %3 verbinden."
 
@@ -341,15 +344,14 @@ msgstr "Tuple %s darf nur Komponentenreferenzen enthalten."
 #: ../Util/Error.mo:242
 #, c-format
 msgid "Missing redeclare keyword on redeclaration of class %s."
-msgstr ""
-"Fehlende Redeklaration von Schlüsselwort in Redeklaration von Klasse %s."
+msgstr "Fehlendes Schlüsselwort redeclare in Redeklaration von Klasse %s."
 
 #: ../Util/Error.mo:244
 #, c-format
 msgid "%s found in several unqualified import statements (import ABC.*)."
 msgstr ""
-"%s wurde in mehreren unqualifizierten Importanweisungen gefunden (import ABC."
-"*)."
+"%s wurde in mehreren unqualifizierten Importanweisungen gefunden (import "
+"ABC.*)."
 
 #: ../Util/Error.mo:246
 #, c-format
@@ -455,7 +457,8 @@ msgid ""
 "No matching function found for %s in component %s\n"
 "candidates are %s"
 msgstr ""
-"Keine passende Funktion für %s in Komponente %s gefunden. Kandidaten sind %s"
+"Keine passende Funktion für %s in Komponente %s gefunden.\n"
+"Kandidaten sind %s"
 
 #: ../Util/Error.mo:284
 #, c-format
@@ -473,9 +476,9 @@ msgid "Slot %s already filled in a function call in component %s."
 msgstr ""
 
 #: ../Util/Error.mo:290
-#, fuzzy, c-format
+#, c-format
 msgid "Function %s has no parameter named %s."
-msgstr "Funktion %s wurde im Geltungsbereich %s nicht gefunden."
+msgstr "Funktion %s hat keinen Parameter mit Namen %s."
 
 #: ../Util/Error.mo:292
 #, c-format
@@ -678,9 +681,9 @@ msgid "Illegal access of class '%s' via component '%s' when looking for '%s'."
 msgstr ""
 
 #: ../Util/Error.mo:356
-#, fuzzy, c-format
+#, c-format
 msgid "Function call %s contains subscripts."
-msgstr "Funktion %s wurde im Geltungsbereich %s nicht gefunden."
+msgstr ""
 
 #: ../Util/Error.mo:358
 #, c-format
@@ -830,9 +833,8 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:408
-#, fuzzy
 msgid "when-clause is not allowed in initial section."
-msgstr "Element ist in Funktionskontext nicht erlaubt: %s"
+msgstr ""
 
 #: ../Util/Error.mo:410
 #, c-format
@@ -1020,9 +1022,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:474
-#, fuzzy, c-format
+#, c-format
 msgid "Class %s in extends %s is replaceable."
-msgstr "Basisklasse %s ist ersetzbar."
+msgstr ""
 
 #: ../Util/Error.mo:476
 #, c-format
@@ -1050,8 +1052,8 @@ msgstr ""
 msgid ""
 "The lhs (result) of the external function declaration has array type (%s), "
 "but this is not allowed in the specification. You need to pass it as an "
-"input to the function (preferably also with a size()-expression to avoid out-"
-"of-bounds errors in the external call)."
+"input to the function (preferably also with a size()-expression to avoid "
+"out-of-bounds errors in the external call)."
 msgstr ""
 
 #: ../Util/Error.mo:486
@@ -1070,10 +1072,11 @@ msgid "Linear solver (%s) returned invalid input for linear system %s."
 msgstr ""
 
 #: ../Util/Error.mo:492
+#, qt-format
 msgid ""
 "The linear system: %1\n"
-" might be structurally or numerically singular for variable %3 since U(%2,"
-"%2) = 0.0. It might be hard to solve. Compilation continues anyway."
+" might be structurally or numerically singular for variable %3 since "
+"U(%2,%2) = 0.0. It might be hard to solve. Compilation continues anyway."
 msgstr ""
 
 #: ../Util/Error.mo:494
@@ -1148,8 +1151,8 @@ msgstr ""
 #: ../Util/Error.mo:518
 #, c-format
 msgid ""
-"Could not vectorize call with unknown dimensions due to finding two for-"
-"iterators: %s and %s."
+"Could not vectorize call with unknown dimensions due to finding two "
+"for-iterators: %s and %s."
 msgstr ""
 
 #: ../Util/Error.mo:520
@@ -1411,12 +1414,14 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:608
+#, qt-format
 msgid ""
-"%1 was referenced in the package.order file, but was not found in package."
-"mo, %1/package.mo or %1.mo."
+"%1 was referenced in the package.order file, but was not found in "
+"package.mo, %1/package.mo or %1.mo."
 msgstr ""
 
 #: ../Util/Error.mo:610
+#, qt-format
 msgid "Got element %1 that was not referenced in the package.order file."
 msgstr ""
 
@@ -1439,6 +1444,7 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:618
+#, qt-format
 msgid ""
 "Failed elaborate assignment for some unknown reason: %1 := %2. File a bug "
 "report and we will make sure this error gets a better message in the future."
@@ -1452,6 +1458,7 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:622
+#, qt-format
 msgid "Expression %1 has type %3, expected type %2."
 msgstr "Ausdruck %1 hat Typ %3, erwarteter Typ %2."
 
@@ -1464,8 +1471,8 @@ msgstr ""
 #, c-format
 msgid ""
 "Got type mismatch error, but matching types %s.\n"
-"This is a ***COMPILER BUG***, please report it to https://trac.openmodelica."
-"org/OpenModelica."
+"This is a ***COMPILER BUG***, please report it to "
+"https://trac.openmodelica.org/OpenModelica."
 msgstr ""
 
 #: ../Util/Error.mo:628
@@ -1619,10 +1626,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:660
-#, fuzzy, c-format
+#, c-format
 msgid "Negative dimension index (%s) for component %s."
-msgstr ""
-"Unterschiedliche Dimensionsgrößen in Argumenten für %s in Komponente %s."
+msgstr "Negativer Dimensionsindex (%s) für Komponente %s."
 
 #: ../Util/Error.mo:662
 #, c-format
@@ -1739,8 +1745,8 @@ msgstr ""
 #: ../Util/Error.mo:698
 #, c-format
 msgid ""
-"Failed to get dependencies for package %s. %s contains an import to non-"
-"existing package %s."
+"Failed to get dependencies for package %s. %s contains an import to "
+"non-existing package %s."
 msgstr ""
 
 #: ../Util/Error.mo:700
@@ -1808,13 +1814,13 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:720
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Type mismatch in range: '%s' of type\n"
 "  %s\n"
 "is not type compatible with '%s' of type\n"
 "  %s"
-msgstr "Unterschiedliche Typen in Gleichung %s von Typ %s."
+msgstr ""
 
 #: ../Util/Error.mo:722
 msgid "Range may not have a step size of 0."
@@ -2076,9 +2082,9 @@ msgstr ""
 
 #: ../Util/Error.mo:807
 msgid ""
-"classDirectory() is a non-standard operator that was replaced by Modelica."
-"Utilities.Files.loadResource(uri) before it was added to the language "
-"specification."
+"classDirectory() is a non-standard operator that was replaced by "
+"Modelica.Utilities.Files.loadResource(uri) before it was added to the "
+"language specification."
 msgstr ""
 
 #: ../Util/Error.mo:809
@@ -2179,9 +2185,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:839
-#, fuzzy, c-format
+#, c-format
 msgid "Class %s not found inside class %s."
-msgstr "Klasse %s konnte nicht im Geltungsbereich von %s gefunden werden."
+msgstr "Klasse %s konnte nicht innerhalb der Klasse %s gefunden werden."
 
 #: ../Util/Error.mo:841
 #, c-format
@@ -2201,8 +2207,8 @@ msgstr ""
 #: ../Util/Error.mo:845
 #, c-format
 msgid ""
-"Uses-annotation is missing version for library %s. Assuming the tool-"
-"specific version=\"default\"."
+"Uses-annotation is missing version for library %s. Assuming the "
+"tool-specific version=\"default\"."
 msgstr ""
 
 #: ../Util/Error.mo:847
@@ -2280,20 +2286,21 @@ msgstr ""
 msgid ""
 "Tearing is skipped for strong component %s because system size of %s exceeds "
 "maximum system size for tearing of %s systems (%s).\n"
-"To adjust the maximum system size for tearing use --"
-"maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.\n"
+"To adjust the maximum system size for tearing use "
+"--maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.\n"
 msgstr ""
 
 #: ../Util/Error.mo:879
+#, qt-format
 msgid ""
 "Tearing is skipped for strong component %s because of activated compiler "
 "flag 'noTearingForComponent=%1'.\n"
 msgstr ""
 
 #: ../Util/Error.mo:881
-#, fuzzy, c-format
+#, c-format
 msgid "Wrong value of argument to %s: %s = %s %s."
-msgstr "Falsche Anzahl an Argumenten für %s."
+msgstr "Falsche Anzahl an Argumenten für %s: %s = %s %s."
 
 #: ../Util/Error.mo:883
 #, c-format
@@ -2317,9 +2324,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:889
-#, fuzzy, c-format
+#, c-format
 msgid "Trying to assign to parameter component %s(fixed=true) in %s := %s"
-msgstr "Versuche %s der Komponente %s zuzuweisen."
+msgstr ""
 
 #: ../Util/Error.mo:891
 #, c-format
@@ -2439,14 +2446,14 @@ msgid "In pattern %s: %s is not part of uniontype %s"
 msgstr ""
 
 #: ../Util/Error.mo:932
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Type mismatch in pattern %s\n"
 "expression type:\n"
 "  %s\n"
 "pattern type:\n"
 "  %s"
-msgstr "Unterschiedliche Typen in Gleichung %s von Typ %s."
+msgstr ""
 
 #: ../Util/Error.mo:934
 #, c-format
@@ -2509,9 +2516,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:956
-#, fuzzy, c-format
+#, c-format
 msgid "Removing unused assignment to: %s."
-msgstr "Falsche Anzahl an Argumenten für %s."
+msgstr ""
 
 #: ../Util/Error.mo:958
 #, c-format
@@ -2535,6 +2542,7 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:966
+#, qt-format
 msgid ""
 "%1:=listAppend(%1, _) has the first argument in the \"wrong\" order.\n"
 "  It is very slow to keep appending a linked list (scales like O(N²)).\n"
@@ -2545,9 +2553,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:968
-#, fuzzy, c-format
+#, c-format
 msgid "isPresent needs to be called from a function scope, got %s."
-msgstr "Element ist in Funktionskontext nicht erlaubt: %s"
+msgstr ""
 
 #: ../Util/Error.mo:970
 msgid "isPresent needs to be called on an input or output formal parameter."
@@ -2574,9 +2582,9 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:978
-#, fuzzy, c-format
+#, c-format
 msgid "Uniontype %s has %s type variables, but got %s."
-msgstr "Falscher typ von Flag %s, erwarte %s, anstatt %s."
+msgstr ""
 
 #: ../Util/Error.mo:980
 #, c-format
@@ -2584,9 +2592,9 @@ msgid "%s has serialized size %s."
 msgstr ""
 
 #: ../Util/Error.mo:993
-#, fuzzy, c-format
+#, c-format
 msgid "Template error: %s."
-msgstr "Interner Fehler %s"
+msgstr "Template Fehler: %s."
 
 #: ../Util/Error.mo:995 ../Util/Error.mo:997
 #, c-format
@@ -2606,16 +2614,16 @@ msgstr ""
 #: ../Util/Error.mo:1009
 #, c-format
 msgid ""
-"Unknown FMU type %s. Supported types are me (model exchange), cs (co-"
-"simulation) & me_cs (model exchange & co-simulation)."
+"Unknown FMU type %s. Supported types are me (model exchange), cs "
+"(co-simulation) & me_cs (model exchange & co-simulation)."
 msgstr ""
 
 #: ../Util/Error.mo:1011
 #, c-format
 msgid ""
 "Export of FMU type %s for version %s is not supported. Supported "
-"combinations are me (model exchange) for versions 1.0 & 2.0, cs (co-"
-"simulation) & me_cs (model exchange & co-simulation) for version 2.0."
+"combinations are me (model exchange) for versions 1.0 & 2.0, cs "
+"(co-simulation) & me_cs (model exchange & co-simulation) for version 2.0."
 msgstr ""
 
 #: ../Util/Error.mo:1018
@@ -2640,6 +2648,7 @@ msgid ""
 msgstr ""
 
 #: ../Util/Error.mo:1024
+#, qt-format
 msgid "'%1' is deprecated. It is recommended to use '%2' instead."
 msgstr ""
 
@@ -2746,8 +2755,8 @@ msgstr ""
 
 #: ../Util/Flags.mo:223
 msgid ""
-"Optimization that moves the last assignment(s) into the result of a match-"
-"expression. For example: equation c = fn(b); then c; => then fn(b);"
+"Optimization that moves the last assignment(s) into the result of a "
+"match-expression. For example: equation c = fn(b); then c; => then fn(b);"
 msgstr ""
 
 #: ../Util/Flags.mo:225
@@ -2973,9 +2982,8 @@ msgid "Enables dumping of the DAE startOrigin attribute of the variables."
 msgstr ""
 
 #: ../Util/Flags.mo:327
-#, fuzzy
 msgid "Dumps the simCode model used for code generation."
-msgstr "Setzt die Zielsprache für die Codegenerierung."
+msgstr ""
 
 #: ../Util/Flags.mo:329
 msgid "Dumps the initial equation system."
@@ -3013,8 +3021,8 @@ msgstr ""
 
 #: ../Util/Flags.mo:345
 msgid ""
-"Enables analytical jacobian for non-linear strong components without user-"
-"defined function calls, for that see forceNLSanalyticJacobian"
+"Enables analytical jacobian for non-linear strong components without "
+"user-defined function calls, for that see forceNLSanalyticJacobian"
 msgstr ""
 
 #: ../Util/Flags.mo:347
@@ -3052,8 +3060,8 @@ msgstr ""
 #: ../Util/Flags.mo:363
 msgid ""
 "Activates additional graphviz dumps (as .dot files). It can be used in "
-"addition to one of the following flags: {dumpdaelow|dumpinitialsystems|"
-"dumpindxdae}."
+"addition to one of the following flags: "
+"{dumpdaelow|dumpinitialsystems|dumpindxdae}."
 msgstr ""
 
 #: ../Util/Flags.mo:365
@@ -3109,8 +3117,8 @@ msgstr ""
 #: ../Util/Flags.mo:387
 msgid ""
 "Accepts passing records with more fields than expected to a function. This "
-"is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica."
-"org/Modelica/ticket/1245 for details."
+"is not allowed, but is used in Fluid.Dissipation. See "
+"https://trac.modelica.org/Modelica/ticket/1245 for details."
 msgstr ""
 
 #: ../Util/Flags.mo:389
@@ -3257,8 +3265,9 @@ msgstr ""
 #: ../Util/Flags.mo:456
 msgid ""
 "disable simplifyComplexFunction\n"
-"Deprecated flag: Use --postOptModules-=simplifyComplexFunction/--"
-"initOptModules-=simplifyComplexFunction instead."
+"Deprecated flag: Use "
+"--postOptModules-=simplifyComplexFunction/--initOptModules-=simplifyComplexFunction "
+"instead."
 msgstr ""
 
 #: ../Util/Flags.mo:458
@@ -3314,8 +3323,8 @@ msgstr ""
 
 #: ../Util/Flags.mo:480
 msgid ""
-"Disables calculation of jacobians to detect if a SCC is linear or non-"
-"linear. By disabling all SCC will handled like non-linear."
+"Disables calculation of jacobians to detect if a SCC is linear or "
+"non-linear. By disabling all SCC will handled like non-linear."
 msgstr ""
 
 #: ../Util/Flags.mo:482
@@ -3412,20 +3421,18 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:704
-#, fuzzy
 msgid "Sets debug flags. Use --help=debug to see available flags."
 msgstr ""
-"Setzt die Debug-Flags. Verwenden Sie +help=debug, um verfügbare Flags zu "
+"Setzt die Debug-Flags. Verwenden Sie --help=debug, um verfügbare Flags zu "
 "sehen."
 
 #: ../Util/Flags.mo:708
-#, fuzzy
 msgid "Displays the help text. Use --help=topics for more information."
-msgstr "Zeigt den Hilfetext. Benutze +help=topics für mehr Informationen."
+msgstr "Zeigt den Hilfetext. Benutze --help=topics für mehr Informationen."
 
 #: ../Util/Flags.mo:712
 msgid "Used when running the testsuite."
-msgstr "Wird verwendet, um die Tests deterministisch zu machen."
+msgstr ""
 
 #: ../Util/Flags.mo:716
 msgid "Print the version and exit."
@@ -3441,11 +3448,11 @@ msgstr "Setzt die zu akzeptierende Grammatik und Semantik."
 
 #: ../Util/Flags.mo:729
 msgid "Sets the annotation version that should be used."
-msgstr "Setzt die Annotation-Version, die verwendet werden sollten."
+msgstr "Setzt die Annotation-Version, die verwendet werden soll."
 
 #: ../Util/Flags.mo:735
 msgid "Sets the language standard that should be used."
-msgstr "Setzt die Sprache Norm, die verwendet werden sollte."
+msgstr "Setzt den Sprachstandard, der verwendet werden soll."
 
 #: ../Util/Flags.mo:739
 msgid "Show error messages immediately when they happen."
@@ -3453,11 +3460,11 @@ msgstr "Zeige Fehlermeldungen sofort wenn sie passieren."
 
 #: ../Util/Flags.mo:743
 msgid "Show annotations in the flattened code."
-msgstr "Zeigen Sie Annotationen im flach Code."
+msgstr ""
 
 #: ../Util/Flags.mo:747
 msgid "Do not simplify expressions if set."
-msgstr "Führen Sie keine teuren Vereinfachungen."
+msgstr ""
 
 #: ../Util/Flags.mo:748
 msgid ""
@@ -3492,12 +3499,12 @@ msgstr ""
 
 #: ../Util/Flags.mo:776 ../Util/Flags.mo:878
 msgid ""
-"Evaluates parameters with annotation(Evaluate=true). Use '--"
-"evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to "
-"specify additional parameters to be evaluated. Use '--"
-"replaceEvaluatedParameters=true' if the evaluated parameters should be "
-"replaced in the DAE. To evaluate all parameters in the Frontend use -"
-"d=evaluateAllParameters."
+"Evaluates parameters with annotation(Evaluate=true). Use "
+"'--evaluateFinalParameters=true' or '--evaluateProtectedParameters=true' to "
+"specify additional parameters to be evaluated. Use "
+"'--replaceEvaluatedParameters=true' if the evaluated parameters should be "
+"replaced in the DAE. To evaluate all parameters in the Frontend use "
+"-d=evaluateAllParameters."
 msgstr ""
 
 #: ../Util/Flags.mo:779 ../Util/Flags.mo:883
@@ -3527,10 +3534,10 @@ msgstr ""
 #: ../Util/Flags.mo:788
 msgid ""
 "[Experimental] Like removeSimpleEquations, but less thorough. Note that this "
-"always uses the experimental new alias elimination, --"
-"removeSimpleEquations=new, which makes it unstable. In particular, MultiBody "
-"systems fail to translate correctly. It can be used for simple (but large) "
-"systems of equations."
+"always uses the experimental new alias elimination, "
+"--removeSimpleEquations=new, which makes it unstable. In particular, "
+"MultiBody systems fail to translate correctly. It can be used for simple "
+"(but large) systems of equations."
 msgstr ""
 
 #: ../Util/Flags.mo:789
@@ -3570,13 +3577,10 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:799
-#, fuzzy
 msgid ""
-"Sets the pre optimization modules to use in the back end. See --"
-"help=optmodules for more info."
+"Sets the pre optimization modules to use in the back end. See "
+"--help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:804
 msgid "No cheap matching."
@@ -3659,12 +3663,9 @@ msgid "BBs try."
 msgstr ""
 
 #: ../Util/Flags.mo:831
-#, fuzzy
 msgid ""
 "Sets the matching algorithm to use. See --help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:836
 msgid "Skip index reduction"
@@ -3687,11 +3688,10 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:841
-#, fuzzy
 msgid ""
 "Sets the index reduction method to use. See --help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
+"Legt die Methode zur Indexreduktion fest. Benutze --help=optmodules für mehr "
 "Informationen."
 
 #: ../Util/Flags.mo:867
@@ -3739,8 +3739,8 @@ msgstr ""
 #: ../Util/Flags.mo:880
 msgid ""
 "Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. "
-"This matrix can be used by dassl or ida solver with simulation flag '-"
-"jacobian'."
+"This matrix can be used by dassl or ida solver with simulation flag "
+"'-jacobian'."
 msgstr ""
 
 #: ../Util/Flags.mo:881
@@ -3789,13 +3789,10 @@ msgid "Simplifies calls to semiLinear."
 msgstr ""
 
 #: ../Util/Flags.mo:908
-#, fuzzy
 msgid ""
-"Sets the post optimization modules to use in the back end. See --"
-"help=optmodules for more info."
+"Sets the post optimization modules to use in the back end. See "
+"--help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:913
 msgid "Sets the target language for the code generation."
@@ -3822,18 +3819,16 @@ msgid "Turns on silent mode."
 msgstr "Schaltet stillen Modus ein."
 
 #: ../Util/Flags.mo:937
-#, fuzzy
 msgid ""
-"Sets the name of the corba session if -d=interactiveCorba or --"
-"interactive=corba is used."
+"Sets the name of the corba session if -d=interactiveCorba or "
+"--interactive=corba is used."
 msgstr ""
-"Legt den Namen der CORBA-Sitzung fest, wenn -d=interactiveCorba verwendet "
-"wird."
+"Legt den Namen der CORBA-Sitzung fest, wenn -d=interactiveCorba oder "
+"--interactive=corba verwendet wird."
 
 #: ../Util/Flags.mo:941
-#, fuzzy
 msgid "Sets the number of processors to use (0=default=auto)."
-msgstr "Legt die Anzahl der zu benutzenden Prozessoren fest."
+msgstr "Legt die Anzahl der zu benutzenden Prozessoren fest (0=default=auto)."
 
 #: ../Util/Flags.mo:945
 msgid "Sets the latency for parallel execution."
@@ -3864,10 +3859,11 @@ msgid "Sets whether to evaluate parameters in annotations or not."
 msgstr "Legt fest, ob Parameter in Annotationen zu bewerten sind oder nicht."
 
 #: ../Util/Flags.mo:969
+#, fuzzy
 msgid "Set when checkModel is used to turn on specific features for checking."
 msgstr ""
 "Wird gesetzt, wenn checkModel genutzt wird, um spezifische Features für "
-"Pruefung anzuschalten."
+"Prüfung anzuschalten."
 
 #: ../Util/Flags.mo:985
 msgid "Turns on labeled SimCode generation for reduction algorithms."
@@ -4056,8 +4052,8 @@ msgstr ""
 #: ../Util/Flags.mo:1088
 msgid ""
 "Generates symbolic Jacobian matrix, where der(x) is differentiated w.r.t. x. "
-"This matrix can be utilise by dassl with the runtime option: -"
-"dasslJacobian=coloredSymbolical|symbolical.\n"
+"This matrix can be utilise by dassl with the runtime option: "
+"-dasslJacobian=coloredSymbolical|symbolical.\n"
 "Deprecated flag: Use --postOptModules+=generateSymbolicJacobian instead."
 msgstr ""
 
@@ -4073,9 +4069,8 @@ msgid "Allow Integer to enumeration conversion."
 msgstr ""
 
 #: ../Util/Flags.mo:1100
-#, fuzzy
 msgid "Generate code without profiling"
-msgstr "Erzeuge Code ohne Profiling."
+msgstr "Erzeuge Code ohne Profiling"
 
 #: ../Util/Flags.mo:1101
 msgid ""
@@ -4089,9 +4084,8 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1103
-#, fuzzy
 msgid "Generate code for profiling of all functions and equations"
-msgstr "Erzeuge Code für Profiling aller Funktionen und Gleichungen."
+msgstr "Erzeuge Profiling Code für alle Funktionen und Gleichungen"
 
 #: ../Util/Flags.mo:1104
 msgid ""
@@ -4134,10 +4128,11 @@ msgid "Max size for solveLinearSystem."
 msgstr ""
 
 #: ../Util/Flags.mo:1135
+#, fuzzy
 msgid ""
-"Sets extra flags for compilation with the C++ compiler (e.g. +cppFlags=-O3,-"
-"Wall)"
-msgstr "Setzt extra Flags für C++-Compiler (z.B. +cppFlags=-O3,-Wall)."
+"Sets extra flags for compilation with the C++ compiler (e.g. "
+"+cppFlags=-O3,-Wall)"
+msgstr "Setzt extra Flags für C++-Compiler (z.B. +cppFlags=-O3,-Wall)"
 
 #: ../Util/Flags.mo:1140 ../Util/Flags.mo:1170
 msgid "Disables module"
@@ -4177,9 +4172,8 @@ msgid "Specifies method that removes simple equations."
 msgstr ""
 
 #: ../Util/Flags.mo:1152
-#, fuzzy
 msgid "No dynamic tearing."
-msgstr "Überspringe Tearing."
+msgstr "Kein dynamisches Tearing"
 
 #: ../Util/Flags.mo:1153
 msgid "Dynamic tearing for linear and nonlinear systems."
@@ -4254,9 +4248,8 @@ msgid "linear tearing set of size 1"
 msgstr ""
 
 #: ../Util/Flags.mo:1194
-#, fuzzy
 msgid "linear tearing"
-msgstr "Tearing wird geinlined und wiederholt."
+msgstr "lineares Tearing"
 
 #: ../Util/Flags.mo:1196
 msgid "Inline and repeat tearing."
@@ -4295,13 +4288,10 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1240
-#, fuzzy
 msgid ""
-"Sets the initialization optimization modules to use in the back end. See --"
-"help=optmodules for more info."
+"Sets the initialization optimization modules to use in the back end. See "
+"--help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1244
 msgid ""
@@ -4322,64 +4312,46 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1253
-#, fuzzy
 msgid ""
-"Enables additional pre-optimization modules, e.g. --preOptModules+=module1,"
-"module2 would additionally enable module1 and module2. See --help=optmodules "
-"for more info."
+"Enables additional pre-optimization modules, e.g. "
+"--preOptModules+=module1,module2 would additionally enable module1 and "
+"module2. See --help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1256
-#, fuzzy
 msgid ""
-"Disables a list of pre-optimization modules, e.g. --preOptModules-=module1,"
-"module2 would disable module1 and module2. See --help=optmodules for more "
-"info."
+"Disables a list of pre-optimization modules, e.g. "
+"--preOptModules-=module1,module2 would disable module1 and module2. See "
+"--help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1259
-#, fuzzy
 msgid ""
-"Enables additional post-optimization modules, e.g. --postOptModules+=module1,"
-"module2 would additionally enable module1 and module2. See --help=optmodules "
-"for more info."
+"Enables additional post-optimization modules, e.g. "
+"--postOptModules+=module1,module2 would additionally enable module1 and "
+"module2. See --help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1262
-#, fuzzy
 msgid ""
-"Disables a list of post-optimization modules, e.g. --postOptModules-=module1,"
-"module2 would disable module1 and module2. See --help=optmodules for more "
-"info."
+"Disables a list of post-optimization modules, e.g. "
+"--postOptModules-=module1,module2 would disable module1 and module2. See "
+"--help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1265
-#, fuzzy
 msgid ""
-"Enables additional init-optimization modules, e.g. --initOptModules+=module1,"
-"module2 would additionally enable module1 and module2. See --help=optmodules "
-"for more info."
+"Enables additional init-optimization modules, e.g. "
+"--initOptModules+=module1,module2 would additionally enable module1 and "
+"module2. See --help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1268
-#, fuzzy
 msgid ""
-"Disables a list of init-optimization modules, e.g. --initOptModules-=module1,"
-"module2 would disable module1 and module2. See --help=optmodules for more "
-"info."
+"Disables a list of init-optimization modules, e.g. "
+"--initOptModules-=module1,module2 would disable module1 and module2. See "
+"--help=optmodules for more info."
 msgstr ""
-"Legt die Methode zur Indexreduktion fest. Benutze +help=optmodules für mehr "
-"Informationen."
 
 #: ../Util/Flags.mo:1271
 msgid "Disables some error checks to allow erroneous models to compile."
@@ -4431,9 +4403,8 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1309
-#, fuzzy
 msgid "Sets the inline method to use.\n"
-msgstr "Legt die Methode zur Reduktion fest."
+msgstr ""
 
 #: ../Util/Flags.mo:1314
 msgid ""
@@ -4511,9 +4482,8 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:1350
-#, fuzzy
 msgid "Replaces all the evaluated parameters in the DAE."
-msgstr "Legt fest, ob Parameter in Annotationen zu bewerten sind oder nicht."
+msgstr ""
 
 #: ../Util/Flags.mo:1353
 msgid ""
@@ -4567,11 +4537,8 @@ msgid "Sets the interactive mode for omc."
 msgstr ""
 
 #: ../Util/Flags.mo:1379
-#, fuzzy
 msgid "Sets the file suffix for zeroMQ port file if --interactive=zmq is used."
 msgstr ""
-"Legt den Pfad für die CORBA Referenzdatei fest, wenn -d=interactiveCorba "
-"verwendet wird."
 
 #: ../Util/Flags.mo:1383
 msgid ""
@@ -4615,7 +4582,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:2457
 msgid "This help-text."
-msgstr "Zeigt disen Hilfetext."
+msgstr "Zeigt diesen Hilfetext."
 
 #: ../Util/Flags.mo:2459
 msgid "The available topics (help(\"topics\")) are as follows:\n"
@@ -4691,9 +4658,8 @@ msgid ""
 msgstr ""
 
 #: ../Util/Flags.mo:2608
-#, fuzzy
 msgid "Copyright © 2015 Open Source Modelica Consortium (OSMC)\n"
-msgstr "Copyright © 2013 Open Source Modelica Consortium (OSMC)\n"
+msgstr "Copyright © 2015 Open Source Modelica Consortium (OSMC)\n"
 
 #: ../Util/Flags.mo:2609
 msgid ""
@@ -4712,13 +4678,12 @@ msgid ""
 "             The libraries should be separated by spaces: Lib1 Lib2 ... "
 "LibN.\n"
 msgstr ""
-"Aufruf: omc [-runtimeOptionen +omcOptionen] (Modell.mo | Script.mos) "
-"[Bibliotheken | .mo-Dateien] \n"
+"Aufruf: omc [Optionen] (Modell.mo | Script.mos) [Bibliotheken | .mo-Dateien] "
+"\n"
 "* Bibliotheken: Namen von Bibliotheken vor der Verarbeitung Modell oder "
 "Skript zu laden.\n"
 "                Die Bibliotheken sollten durch Leerzeichen getrennt werden: "
-"Bib1 Bib2 ... BibN.\n"
-"* runtimeOptionen: call omc -help to see runtime options\n"
+"Lib1 Lib2 ... LibN.\n"
 
 #: ../Util/Flags.mo:2612
 #, fuzzy
@@ -4727,7 +4692,7 @@ msgid ""
 "* Options:\n"
 msgstr ""
 "\n"
-"* +omcOptionen:\n"
+"* Optionen:\n"
 
 #: ../Util/Flags.mo:2614
 msgid ""
@@ -4752,7 +4717,7 @@ msgstr ""
 msgid ""
 "  omc -s Model.mo          will produce simulation code for the model:\n"
 msgstr ""
-"  omc +s Modell.mo         produziert Simulation-Code für das Modell:\n"
+"  omc -s Modell.mo         produziert Simulation-Code für das Modell:\n"
 
 #: ../Util/Flags.mo:2618
 msgid "                            * Model.c           The model C code.\n"
@@ -4818,8 +4783,8 @@ msgstr ""
 msgid ""
 "Documentation is available in the built-in package OpenModelica.Scripting "
 "or\n"
-"online <https://build.openmodelica.org/Documentation/OpenModelica.Scripting."
-"html>.\n"
+"online "
+"<https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"
 msgstr ""
 
 #: ../Util/Flags.mo:2647
@@ -4831,25 +4796,20 @@ msgid ""
 "Model or Script.\n"
 "  The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"
 msgstr ""
-"Aufruf: omc [-runtimeOptionen +omcOptionen] (Modell.mo | Script.mos) "
-"[Bibliotheken | .mo-Dateien] \n"
+"Aufruf: omc [Optionen] (Modell.mo | Script.mos) [Bibliotheken | .mo-Dateien] "
+"\n"
 "* Bibliotheken: Namen von Bibliotheken vor der Verarbeitung Modell oder "
 "Skript zu laden.\n"
-"                Die Bibliotheken sollten durch Leerzeichen getrennt werden: "
-"Bib1 Bib2 ... BibN.\n"
-"* runtimeOptionen: call omc -help to see runtime options\n"
+"  Die Bibliotheken sollten durch Leerzeichen getrennt werden: Lib1 Lib2 ... "
+"LibN.\n"
 
 #: ../Util/Flags.mo:2649
-#, fuzzy
 msgid "Options"
-msgstr ""
-"\n"
-"* +omcOptionen:\n"
+msgstr "Optionen"
 
 #: ../Util/Flags.mo:2659
-#, fuzzy
 msgid "Debug flags"
-msgstr "Unbekanntes Debug Flag %s."
+msgstr ""
 
 #: ../Util/Flags.mo:2671
 msgid "Flags for Optimization Modules"
@@ -4895,9 +4855,8 @@ msgid "Valid options:"
 msgstr "Gültige Optionen:"
 
 #: ../Util/Flags.mo:2822 ../Util/Flags.mo:2827
-#, fuzzy
 msgid "Valid options"
-msgstr "Gültige Optionen:"
+msgstr "Gültige Optionen"
 
 #: ../Util/Flags.mo:2841
 msgid "Boolean (default"
@@ -4933,8 +4892,8 @@ msgstr ""
 
 #: ../Util/Flags.mo:423
 msgid ""
-"Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-"
-"round flag,"
+"Adds for every der-call an alias equation e.g. dx = der(x). It's a "
+"work-a-round flag,"
 msgstr ""
 
 #: ../runtime/FMIImpl.c:74 ../runtime/FMIImpl.c:77 ../runtime/FMIImpl.c:82
@@ -5029,7 +4988,7 @@ msgid "readDataSet() not implemented for plot format: %s\n"
 msgstr ""
 
 #: ../runtime/SimulationResults.c:397
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to write to file %s."
 msgstr "Fehler beim Schreiben auf Datei %s."
 
@@ -5064,7 +5023,7 @@ msgstr ""
 
 #: ../runtime/SimulationResultsCmp.c:760
 msgid "Cannot write to the difference (.csv) file!\n"
-msgstr "Kann nicht auf die Differendatei (.csv) schreiben!\n"
+msgstr "Kann nicht auf die Differenzdatei (.csv) schreiben!\n"
 
 #: ../runtime/SimulationResultsCmp.c:771
 msgid "Files not Equal\n"
@@ -5081,14 +5040,13 @@ msgid "Error opening file: %s."
 msgstr "Fehler beim öffnen der Datei: %s."
 
 #: ../runtime/SimulationResultsCmp.c:843
-#, fuzzy, c-format
+#, c-format
 msgid "Error opening reference file: %s."
-msgstr "Fehler beim öffnen der Datei: %s."
+msgstr "Fehler beim öffnen der Referenz-Datei: %s."
 
 #: ../runtime/SimulationResultsCmp.c:861
-#, fuzzy
 msgid "Error Getting Vars."
-msgstr "Fehler beim öffnen der Datei: %s."
+msgstr ""
 
 #: ../runtime/SimulationResultsCmp.c:877
 msgid "Error get time!"
@@ -5134,9 +5092,9 @@ msgid "Error compiling regular expression: %s or %s."
 msgstr ""
 
 #: ../runtime/systemimpl.c:351
-#, fuzzy, c-format
+#, c-format
 msgid "Error opening file: %s: %s."
-msgstr "Fehler beim öffnen der Datei: %s."
+msgstr "Fehler beim öffnen der Datei: %s: %s."
 
 #: ../runtime/systemimpl.c:364
 #, c-format
@@ -5149,9 +5107,9 @@ msgid "Error opening file: %s (its size is known, but failed to open it): %s"
 msgstr ""
 
 #: ../runtime/systemimpl.c:389
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to read the entire file: %s: %s"
-msgstr "Auswertung der Funktion %s fehlgeschlagen."
+msgstr ""
 
 #: ../runtime/systemimpl.c:472
 #, c-format
@@ -5231,9 +5189,9 @@ msgstr ""
 #: ../runtime/systemimpl.c:2429
 #, c-format
 msgid ""
-"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and C."
-"UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so you "
-"might have some issues.\n"
+"Warning: Failed to set LC_CTYPE to UTF-8 using the chosen locale and "
+"C.UTF-8. OpenModelica assumes all input and output it makes is in UTF-8 so "
+"you might have some issues.\n"
 msgstr ""
 
 #: ../runtime/systemimpl.c:2775 ../runtime/systemimpl.c:2785
@@ -5255,35 +5213,16 @@ msgstr "Fehler beim Erzeugen des temporären Verzeichnis %s:%s."
 
 #: ../runtime/systemimpl.c:3116 ../runtime/systemimpl.c:3121
 #: ../runtime/systemimpl.c:3133 ../runtime/systemimpl.c:3137
-#, fuzzy, c-format
+#, c-format
 msgid "Error opening library %s: %s."
-msgstr "Fehler beim öffnen der Datei: %s."
+msgstr ""
 
 #: ../runtime/systemimpl.c:3154
 msgid "OMC not compiled with support for relocatable functions."
 msgstr ""
 
 #: ../runtime/UnitParserExt_omc.cpp:50
-#, fuzzy, c-format
+#, c-format
 msgid "error parsing unit %s"
-msgstr "Fehler beim öffnen der Datei: %s."
+msgstr ""
 
-#~ msgid "No such argument %s in component %s."
-#~ msgstr "Argument %s nicht in Komponente %s vorhanden."
-
-#~ msgid ""
-#~ "Index out of bounds. Addressing position: %s, while array length is: %s."
-#~ msgstr "Index außerhalb der Grenzen. Position: %s, Arraylänge: %s."
-
-#~ msgid ""
-#~ "Defines whether plot commands should open OMPlot or show the list of "
-#~ "arguments that would have been sent to OMPlot."
-#~ msgstr ""
-#~ "Legt fest, ob Plot-Befehle von OMPlot geöffnet werden oder zeigt die "
-#~ "Liste der Argumente, die zum OMPlot Befehl gesendet worden wäre."
-
-#~ msgid "Fork is not available on Windows"
-#~ msgstr "Fork ist auf Windows nicht verfügbar"
-
-#~ msgid "fork() failed: %s"
-#~ msgstr "fork() fehlgeschlagen: %s"
