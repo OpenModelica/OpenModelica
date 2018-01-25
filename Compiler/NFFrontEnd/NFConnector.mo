@@ -64,22 +64,21 @@ public
   function fromCref
     input ComponentRef cref;
     input Type ty;
-    input SourceInfo info;
-    output Connector conn = fromFacedCref(cref, ty, crefFace(cref), info);
+    input DAE.ElementSource source;
+    output Connector conn = fromFacedCref(cref, ty, crefFace(cref), source);
   end fromCref;
 
   function fromFacedCref
     input ComponentRef cref;
     input Type ty;
     input Face face;
-    input SourceInfo info;
+    input DAE.ElementSource source;
     output Connector conn;
   protected
     InstNode node = ComponentRef.node(cref);
   algorithm
     conn := CONNECTOR(ComponentRef.simplifySubscripts(cref), ty, face,
-      Component.connectorType(InstNode.component(node)), NONE(),
-      ElementSource.createElementSource(InstNode.info(node)));
+      Component.connectorType(InstNode.component(node)), NONE(), source);
   end fromFacedCref;
 
   function getType

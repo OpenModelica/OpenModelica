@@ -43,6 +43,7 @@ protected
   import Expression = NFExpression;
   import Type = NFType;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import ElementSource;
 
 public
   record CONNECTIONS
@@ -76,7 +77,7 @@ public
     ComponentRef cr, lhs, rhs;
     Connector c1, c2;
     Type ty1, ty2;
-    SourceInfo info;
+    DAE.ElementSource source;
     list<Equation> eql = {};
   algorithm
     // Collect all flow variables.
@@ -85,7 +86,7 @@ public
 
       if Component.isFlow(comp) then
         c1 := Connector.fromFacedCref(var.name, var.ty,
-          NFConnector.Face.INSIDE, Component.info(comp));
+          NFConnector.Face.INSIDE, ElementSource.createElementSource(Component.info(comp)));
         conns := addFlow(c1, conns);
       end if;
     end for;
@@ -94,10 +95,10 @@ public
     for eq in flatModel.equations loop
       eql := match eq
         case Equation.CONNECT(lhs = Expression.CREF(cref = lhs, ty = ty1),
-                              rhs = Expression.CREF(cref = rhs, ty = ty2), info = info)
+                              rhs = Expression.CREF(cref = rhs, ty = ty2), source = source)
           algorithm
-            c1 := Connector.fromCref(lhs, ty1, info);
-            c2 := Connector.fromCref(rhs, ty2, info);
+            c1 := Connector.fromCref(lhs, ty1, source);
+            c2 := Connector.fromCref(rhs, ty2, source);
             conns := addConnection(Connection.CONNECTION(c1, c2), conns);
           then
             eql;

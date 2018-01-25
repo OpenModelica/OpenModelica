@@ -34,95 +34,102 @@ encapsulated uniontype NFStatement
   import Type = NFType;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import DAE;
 
 protected
   import Statement = NFStatement;
+  import ElementSource;
 
 public
   record ASSIGNMENT
     Expression lhs "The asignee";
     Expression rhs "The expression";
-    SourceInfo info;
+    DAE.ElementSource source;
   end ASSIGNMENT;
 
   record FUNCTION_ARRAY_INIT "Used to mark in which order local array variables in functions should be initialized"
     String name;
     Type ty;
-    SourceInfo info;
+    DAE.ElementSource source;
   end FUNCTION_ARRAY_INIT;
 
   record FOR
     InstNode iterator;
     list<Statement> body "The body of the for loop.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end FOR;
 
   record IF
     list<tuple<Expression, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end IF;
 
   record WHEN
     list<tuple<Expression, list<Statement>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end WHEN;
 
   record ASSERT
     Expression condition "The assert condition.";
     Expression message "The message to display if the assert fails.";
     Expression level;
-    SourceInfo info;
+    DAE.ElementSource source;
   end ASSERT;
 
   record TERMINATE
     Expression message "The message to display if the terminate triggers.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end TERMINATE;
 
   record NORETCALL
     Expression exp;
-    SourceInfo info;
+    DAE.ElementSource source;
   end NORETCALL;
 
   record WHILE
     Expression condition;
     list<Statement> body;
-    SourceInfo info;
+    DAE.ElementSource source;
   end WHILE;
 
   record RETURN
-    SourceInfo info;
+    DAE.ElementSource source;
   end RETURN;
 
   record BREAK
-    SourceInfo info;
+    DAE.ElementSource source;
   end BREAK;
 
   record FAILURE
     list<Statement> body;
-    SourceInfo info;
+    DAE.ElementSource source;
   end FAILURE;
+
+  function source
+    input Statement stmt;
+    output DAE.ElementSource source;
+  algorithm
+    source := match stmt
+      case ASSIGNMENT() then stmt.source;
+      case FUNCTION_ARRAY_INIT() then stmt.source;
+      case FOR() then stmt.source;
+      case IF() then stmt.source;
+      case WHEN() then stmt.source;
+      case ASSERT() then stmt.source;
+      case TERMINATE() then stmt.source;
+      case NORETCALL() then stmt.source;
+      case WHILE() then stmt.source;
+      case RETURN() then stmt.source;
+      case BREAK() then stmt.source;
+      case FAILURE() then stmt.source;
+    end match;
+  end source;
 
   function info
     input Statement stmt;
-    output SourceInfo info;
-  algorithm
-    info := match stmt
-      case ASSIGNMENT() then stmt.info;
-      case FUNCTION_ARRAY_INIT() then stmt.info;
-      case FOR() then stmt.info;
-      case IF() then stmt.info;
-      case WHEN() then stmt.info;
-      case ASSERT() then stmt.info;
-      case TERMINATE() then stmt.info;
-      case NORETCALL() then stmt.info;
-      case WHILE() then stmt.info;
-      case RETURN() then stmt.info;
-      case BREAK() then stmt.info;
-      case FAILURE() then stmt.info;
-    end match;
+    output SourceInfo info = ElementSource.getInfo(source(stmt));
   end info;
 
   function mapExpListList
@@ -165,7 +172,7 @@ public
           e2 := func(stmt.rhs);
         then
           if referenceEq(e1, stmt.lhs) and referenceEq(e2, stmt.rhs) then
-            stmt else ASSIGNMENT(e1, e2, stmt.info);
+            stmt else ASSIGNMENT(e1, e2, stmt.source);
 
       case FOR()
         algorithm
@@ -194,22 +201,22 @@ public
           e3 := func(stmt.level);
         then
           if referenceEq(e1, stmt.condition) and referenceEq(e2, stmt.message) and
-            referenceEq(e3, stmt.level) then stmt else ASSERT(e1, e2, e3, stmt.info);
+            referenceEq(e3, stmt.level) then stmt else ASSERT(e1, e2, e3, stmt.source);
 
       case TERMINATE()
         algorithm
           e1 := func(stmt.message);
         then
-          if referenceEq(e1, stmt.message) then stmt else TERMINATE(e1, stmt.info);
+          if referenceEq(e1, stmt.message) then stmt else TERMINATE(e1, stmt.source);
 
       case NORETCALL()
         algorithm
           e1 := func(stmt.exp);
         then
-          if referenceEq(e1, stmt.exp) then stmt else NORETCALL(e1, stmt.info);
+          if referenceEq(e1, stmt.exp) then stmt else NORETCALL(e1, stmt.source);
 
       case WHILE()
-        then WHILE(func(stmt.condition), mapExpList(stmt.body, func), stmt.info);
+        then WHILE(func(stmt.condition), mapExpList(stmt.body, func), stmt.source);
 
       else stmt;
     end match;

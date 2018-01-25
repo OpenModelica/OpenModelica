@@ -93,6 +93,7 @@ import Package = NFPackage;
 import NFFunction.Function;
 import FlatModel = NFFlatModel;
 import BindingOrigin = NFBindingOrigin;
+import ElementSource;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -1122,7 +1123,7 @@ algorithm
         // Instantiate attributes and create the untyped components.
         attr := instComponentAttributes(def.attributes, def.prefixes, attributes, comp_node);
         inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
-          binding, condition, attr, def.info);
+          binding, condition, attr, SOME(def.comment), def.info);
         InstNode.updateComponent(inst_comp, comp_node);
 
         // Instantiate the type of the component.
@@ -1900,7 +1901,7 @@ algorithm
           fail();
         end if;
       then
-        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), info);
+        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_CONNECT(info = info)
       algorithm
@@ -1914,7 +1915,7 @@ algorithm
         exp1 := instCref(scodeEq.crefLeft, scope, info);
         exp2 := instCref(scodeEq.crefRight, scope, info);
       then
-        Equation.CONNECT(exp1, exp2, info);
+        Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
@@ -1924,7 +1925,7 @@ algorithm
         (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
         eql := instEEquations(scodeEq.eEquationLst, for_scope, eqScope);
       then
-        Equation.FOR(iter, eql, info);
+        Equation.FOR(iter, eql, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_IF(info = info)
       algorithm
@@ -1946,7 +1947,7 @@ algorithm
           branches := (Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
-        Equation.IF(listReverse(branches), info);
+        Equation.IF(listReverse(branches), makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_WHEN(info = info)
       algorithm
@@ -1966,7 +1967,7 @@ algorithm
           branches := (exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(branches, info);
+        Equation.WHEN(branches, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_ASSERT(info = info)
       algorithm
@@ -1974,13 +1975,13 @@ algorithm
         exp2 := instExp(scodeEq.message, scope, info);
         exp3 := instExp(scodeEq.level, scope, info);
       then
-        Equation.ASSERT(exp1, exp2, exp3, info);
+        Equation.ASSERT(exp1, exp2, exp3, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeEq.message, scope, info);
       then
-        Equation.TERMINATE(exp1, info);
+        Equation.TERMINATE(exp1, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_REINIT(info = info)
       algorithm
@@ -1992,13 +1993,13 @@ algorithm
         exp1 := instExp(scodeEq.cref, scope, info);
         exp2 := instExp(scodeEq.expReinit, scope, info);
       then
-        Equation.REINIT(exp1, exp2, info);
+        Equation.REINIT(exp1, exp2, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_NORETCALL(info = info)
       algorithm
         exp1 := instExp(scodeEq.exp, scope, info);
       then
-        Equation.NORETCALL(exp1, info);
+        Equation.NORETCALL(exp1, makeSource(scodeEq.comment, info));
 
     else
       algorithm
@@ -2008,6 +2009,14 @@ algorithm
 
   end match;
 end instEEquation;
+
+function makeSource
+  input SCode.Comment comment;
+  input SourceInfo info;
+  output DAE.ElementSource source;
+algorithm
+  source := DAE.ElementSource.SOURCE(info, {}, DAE.Prefix.NOCOMPPRE(), {}, {}, {}, {comment});
+end makeSource;
 
 function instAlgorithmSections
   input list<SCode.AlgorithmSection> algorithmSections;
@@ -2053,7 +2062,7 @@ algorithm
         exp1 := instExp(scodeStmt.assignComponent, scope, info);
         exp2 := instExp(scodeStmt.value, scope, info);
       then
-        Statement.ASSIGNMENT(exp1, exp2, info);
+        Statement.ASSIGNMENT(exp1, exp2, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
@@ -2063,7 +2072,7 @@ algorithm
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);
         stmtl := instStatements(scodeStmt.forBody, for_scope);
       then
-        Statement.FOR(iter, stmtl, info);
+        Statement.FOR(iter, stmtl, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_IF(info = info)
       algorithm
@@ -2074,10 +2083,12 @@ algorithm
           branches := (exp1, stmtl) :: branches;
         end for;
 
-        stmtl := instStatements(scodeStmt.elseBranch, scope);
-        branches := listReverse((Expression.BOOLEAN(true), stmtl) :: branches);
+        if not listEmpty(scodeStmt.elseBranch) then
+          stmtl := instStatements(scodeStmt.elseBranch, scope);
+          branches := (Expression.BOOLEAN(true), stmtl) :: branches;
+        end if;
       then
-        Statement.IF(branches, info);
+        Statement.IF(listReverse(branches), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_WHEN_A(info = info)
       algorithm
@@ -2088,7 +2099,7 @@ algorithm
           branches := (exp1, stmtl) :: branches;
         end for;
       then
-        Statement.WHEN(listReverse(branches), info);
+        Statement.WHEN(listReverse(branches), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_ASSERT(info = info)
       algorithm
@@ -2096,13 +2107,13 @@ algorithm
         exp2 := instExp(scodeStmt.message, scope, info);
         exp3 := instExp(scodeStmt.level, scope, info);
       then
-        Statement.ASSERT(exp1, exp2, exp3, info);
+        Statement.ASSERT(exp1, exp2, exp3, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_TERMINATE(info = info)
       algorithm
         exp1 := instExp(scodeStmt.message, scope, info);
       then
-        Statement.TERMINATE(exp1, info);
+        Statement.TERMINATE(exp1, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_REINIT(info = info)
       algorithm
@@ -2114,23 +2125,26 @@ algorithm
       algorithm
         exp1 := instExp(scodeStmt.exp, scope, info);
       then
-        Statement.NORETCALL(exp1, info);
+        Statement.NORETCALL(exp1, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_WHILE(info = info)
       algorithm
         exp1 := instExp(scodeStmt.boolExpr, scope, info);
         stmtl := instStatements(scodeStmt.whileBody, scope);
       then
-        Statement.WHILE(exp1, stmtl, info);
+        Statement.WHILE(exp1, stmtl, makeSource(scodeStmt.comment, info));
 
-    case SCode.Statement.ALG_RETURN() then Statement.RETURN(scodeStmt.info);
-    case SCode.Statement.ALG_BREAK() then Statement.BREAK(scodeStmt.info);
+    case SCode.Statement.ALG_RETURN()
+      then Statement.RETURN(makeSource(scodeStmt.comment, scodeStmt.info));
+
+    case SCode.Statement.ALG_BREAK()
+      then Statement.BREAK(makeSource(scodeStmt.comment, scodeStmt.info));
 
     case SCode.Statement.ALG_FAILURE()
       algorithm
         stmtl := instStatements(scodeStmt.stmts, scope);
       then
-        Statement.FAILURE(stmtl, scodeStmt.info);
+        Statement.FAILURE(stmtl, makeSource(scodeStmt.comment, scodeStmt.info));
 
     else
       algorithm

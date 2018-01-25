@@ -236,6 +236,7 @@ constant InstNode STATESELECT_NEVER =
       STATESELECT_NEVER_BINDING,
       Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     STATESELECT_NODE);
@@ -252,6 +253,7 @@ constant InstNode STATESELECT_AVOID =
       STATESELECT_AVOID_BINDING,
       Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     STATESELECT_NODE);
@@ -268,6 +270,7 @@ constant InstNode STATESELECT_DEFAULT =
       STATESELECT_DEFAULT_BINDING,
       Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     STATESELECT_NODE);
@@ -284,6 +287,7 @@ constant InstNode STATESELECT_PREFER =
       STATESELECT_PREFER_BINDING,
       Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     STATESELECT_NODE);
@@ -300,6 +304,7 @@ constant InstNode STATESELECT_ALWAYS =
       STATESELECT_ALWAYS_BINDING,
       Binding.UNBOUND(),
       NFComponent.CONSTANT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     STATESELECT_NODE);
@@ -332,6 +337,7 @@ constant InstNode TIME =
       Binding.UNBOUND(),
       Binding.UNBOUND(),
       NFComponent.INPUT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     InstNode.EMPTY_NODE());

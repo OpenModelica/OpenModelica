@@ -34,7 +34,7 @@ encapsulated uniontype NFEquation
   import Expression = NFExpression;
   import Type = NFType;
   import NFInstNode.InstNode;
-  import DAE.ElementSource;
+  import DAE;
   import ComponentRef = NFComponentRef;
 
 protected
@@ -45,67 +45,67 @@ public
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
     Type ty;
-    SourceInfo info;
+    DAE.ElementSource source;
   end EQUALITY;
 
   record CREF_EQUALITY
     ComponentRef lhs;
     ComponentRef rhs;
-    ElementSource source;
+    DAE.ElementSource source;
   end CREF_EQUALITY;
 
   record ARRAY_EQUALITY
     Expression lhs;
     Expression rhs;
     Type ty;
-    SourceInfo info;
+    DAE.ElementSource source;
   end ARRAY_EQUALITY;
 
   record CONNECT
     Expression lhs;
     Expression rhs;
-    SourceInfo info;
+    DAE.ElementSource source;
   end CONNECT;
 
   record FOR
     InstNode iterator;
     list<Equation> body   "The body of the for loop.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end FOR;
 
   record IF
     list<tuple<Expression, list<Equation>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end IF;
 
   record WHEN
     list<tuple<Expression, list<Equation>>> branches
       "List of branches, where each branch is a tuple of a condition and a body.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end WHEN;
 
   record ASSERT
     Expression condition "The assert condition.";
     Expression message "The message to display if the assert fails.";
     Expression level "Error or warning";
-    SourceInfo info;
+    DAE.ElementSource source;
   end ASSERT;
 
   record TERMINATE
     Expression message "The message to display if the terminate triggers.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end TERMINATE;
 
   record REINIT
     Expression cref "The variable to reinitialize.";
     Expression reinitExp "The new value of the variable.";
-    SourceInfo info;
+    DAE.ElementSource source;
   end REINIT;
 
   record NORETCALL
     Expression exp;
-    SourceInfo info;
+    DAE.ElementSource source;
   end NORETCALL;
 
   function mapExpList
@@ -137,7 +137,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.info);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.source);
 
       case ARRAY_EQUALITY()
         algorithm
@@ -145,7 +145,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.info);
+            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.source);
 
       case CONNECT()
         algorithm
@@ -153,7 +153,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else CONNECT(e1, e2, eq.info);
+            then eq else CONNECT(e1, e2, eq.source);
 
       case FOR()
         algorithm
@@ -180,13 +180,13 @@ public
           e3 := func(eq.level);
         then
           if referenceEq(e1, eq.condition) and referenceEq(e2, eq.message) and
-            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.info);
+            referenceEq(e3, eq.level) then eq else ASSERT(e1, e2, e3, eq.source);
 
       case TERMINATE()
         algorithm
           e1 := func(eq.message);
         then
-          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.info);
+          if referenceEq(e1, eq.message) then eq else TERMINATE(e1, eq.source);
 
       case REINIT()
         algorithm
@@ -194,13 +194,13 @@ public
           e2 := func(eq.reinitExp);
         then
           if referenceEq(e1, eq.cref) and referenceEq(e2, eq.reinitExp) then
-            eq else REINIT(e1, e2, eq.info);
+            eq else REINIT(e1, e2, eq.source);
 
       case NORETCALL()
         algorithm
           e1 := func(eq.exp);
         then
-          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.info);
+          if referenceEq(e1, eq.exp) then eq else NORETCALL(e1, eq.source);
 
       else eq;
     end match;

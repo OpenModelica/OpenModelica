@@ -93,6 +93,7 @@ algorithm
       Binding.UNBOUND(),
       Binding.UNBOUND(),
       NFComponent.OUTPUT_ATTR,
+      NONE(),
       Absyn.dummyInfo)),
     0,
     node);

@@ -412,6 +412,8 @@ algorithm
   end match;
 end getStatementSource;
 
+function getInfo = getElementSourceFileInfo;
+
 function getElementSourceFileInfo
 "Gets the file information associated with an element.
 If there are several candidates, select the first one."

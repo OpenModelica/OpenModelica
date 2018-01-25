@@ -49,6 +49,7 @@ public
     Visibility visibility;
     Component.Attributes attributes;
     list<tuple<String, Binding>> typeAttributes;
+    Option<SCode.Comment> comment;
     SourceInfo info;
   end VARIABLE;
 
@@ -62,6 +63,7 @@ public
     Binding binding;
     Visibility vis;
     Component.Attributes attr;
+    Option<SCode.Comment> cmt;
     SourceInfo info;
   algorithm
     node := ComponentRef.node(cref);
@@ -70,8 +72,9 @@ public
     binding := Component.getBinding(comp);
     vis := InstNode.visibility(node);
     attr := Component.getAttributes(comp);
+    cmt := Component.comment(comp);
     info := InstNode.info(node);
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, info);
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, cmt, info);
   end fromCref;
 
   annotation(__OpenModelica_Interface="frontend");

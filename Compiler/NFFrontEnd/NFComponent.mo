@@ -116,6 +116,7 @@ uniontype Component
     Binding binding;
     Binding condition;
     Component.Attributes attributes;
+    Option<SCode.Comment> comment;
     SourceInfo info;
   end UNTYPED_COMPONENT;
 
@@ -125,6 +126,7 @@ uniontype Component
     Binding binding;
     Binding condition;
     Component.Attributes attributes;
+    Option<SCode.Comment> comment;
     SourceInfo info;
   end TYPED_COMPONENT;
 
@@ -258,7 +260,7 @@ uniontype Component
     component := match component
       case UNTYPED_COMPONENT()
         then TYPED_COMPONENT(component.classInst, ty, component.binding,
-          component.condition, component.attributes, component.info);
+          component.condition, component.attributes, component.comment, component.info);
 
       case TYPED_COMPONENT()
         algorithm
@@ -557,6 +559,17 @@ uniontype Component
       else 0;
     end match;
   end dimensionCount;
+
+  function comment
+    input Component component;
+    output Option<SCode.Comment> comment;
+  algorithm
+    comment := match component
+      case COMPONENT_DEF() then SCode.getElementComment(component.definition);
+      case UNTYPED_COMPONENT() then component.comment;
+      case TYPED_COMPONENT() then component.comment;
+    end match;
+  end comment;
 
 end Component;
 

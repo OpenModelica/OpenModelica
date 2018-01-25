@@ -78,6 +78,7 @@ import NFInstNode.CachedData;
 import NFPrefixes.Variability;
 import Variable = NFVariable;
 import BindingOrigin = NFBindingOrigin;
+import ElementSource;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -119,8 +120,10 @@ protected
   list<Variable> vars;
   list<Equation> eql, ieql;
   list<list<Statement>> alg, ialg;
+  Option<SCode.Comment> cmt;
 algorithm
   sections := Sections.EMPTY();
+  cmt := SCode.getElementComment(InstNode.definition(classInst));
 
   (vars, sections) :=
     flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), Visibility.PUBLIC, {}, sections);
@@ -134,9 +137,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(vars, eql, ieql, alg, ialg);
+        FlatModel.FLAT_MODEL(vars, eql, ieql, alg, ialg, cmt);
 
-    else FlatModel.FLAT_MODEL(vars, {}, {}, {}, {});
+    else FlatModel.FLAT_MODEL(vars, {}, {}, {}, {}, cmt);
   end match;
 
   execStat(getInstanceName() + "(" + name + ")");
@@ -239,13 +242,15 @@ protected
   ComponentRef name;
   Binding binding;
   Type ty;
+  Option<SCode.Comment> cmt;
   SourceInfo info;
   Component.Attributes comp_attr;
   Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
 algorithm
-  Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr, info = info) := comp;
+  Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
+    comment = cmt, info = info) := comp;
 
   binding := flattenBinding(binding, prefix, comp_node);
   name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
@@ -254,13 +259,14 @@ algorithm
   // move the binding into an equation. This avoids having to scalarize the binding.
   if Type.isArray(ty) and Binding.isBound(binding) and
      Component.variability(comp) >= Variability.DISCRETE then
-    eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty, info);
+    eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
+      ElementSource.createElementSource(info));
     sections := Sections.prependEquation(eq, sections);
     binding := Binding.UNBOUND();
   end if;
 
   ty_attrs := list(flattenTypeAttribute(m, prefix, node) for m in typeAttrs);
-  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, info) :: vars;
+  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info) :: vars;
 end flattenSimpleComponent;
 
 function flattenTypeAttribute
@@ -430,7 +436,7 @@ algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
       then
-        Equation.EQUALITY(e1, e2, eq.ty, eq.info) :: equations;
+        Equation.EQUALITY(e1, e2, eq.ty, eq.source) :: equations;
 
     case Equation.FOR()
       algorithm
@@ -443,10 +449,10 @@ algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
       then
-        Equation.CONNECT(e1, e2, eq.info) :: equations;
+        Equation.CONNECT(e1, e2, eq.source) :: equations;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, prefix, eq.info, equations);
+      then flattenIfEquation(eq.branches, prefix, eq.source, equations);
 
     case Equation.WHEN()
       algorithm
@@ -460,26 +466,26 @@ algorithm
         e2 := flattenExp(eq.message, prefix);
         e3 := flattenExp(eq.level, prefix);
       then
-        Equation.ASSERT(e1, e2, e3, eq.info) :: equations;
+        Equation.ASSERT(e1, e2, e3, eq.source) :: equations;
 
     case Equation.TERMINATE()
       algorithm
         e1 := flattenExp(eq.message, prefix);
       then
-        Equation.TERMINATE(e1, eq.info) :: equations;
+        Equation.TERMINATE(e1, eq.source) :: equations;
 
     case Equation.REINIT()
       algorithm
         e1 := flattenExp(eq.cref, prefix);
         e2 := flattenExp(eq.reinitExp, prefix);
       then
-        Equation.REINIT(e1, e2, eq.info) :: equations;
+        Equation.REINIT(e1, e2, eq.source) :: equations;
 
     case Equation.NORETCALL()
       algorithm
         e1 := flattenExp(eq.exp, prefix);
       then
-        Equation.NORETCALL(e1, eq.info) :: equations;
+        Equation.NORETCALL(e1, eq.source) :: equations;
 
     else eq :: equations;
   end match;
@@ -488,7 +494,7 @@ end flattenEquation;
 function flattenIfEquation
   input list<tuple<Expression, list<Equation>>> branches;
   input ComponentRef prefix;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
   list<tuple<Expression, list<Equation>>> bl = {};
@@ -514,7 +520,7 @@ algorithm
   // Add the flattened if equation to the list of equations if we got this far,
   // and there are any branches still remaining.
   if not listEmpty(bl) then
-    equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
+    equations := Equation.IF(listReverseInPlace(bl), source) :: equations;
   end if;
 end flattenIfEquation;
 
@@ -677,7 +683,7 @@ algorithm
         e1 := ConnectEquations.evaluateOperators(eq.lhs, sets, setsArray);
         e2 := ConnectEquations.evaluateOperators(eq.rhs, sets, setsArray);
       then
-        Equation.EQUALITY(e1, e2, eq.ty, eq.info);
+        Equation.EQUALITY(e1, e2, eq.ty, eq.source);
 
     case Equation.ARRAY_EQUALITY()
       algorithm

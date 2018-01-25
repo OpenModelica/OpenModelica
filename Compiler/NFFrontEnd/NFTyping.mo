@@ -84,6 +84,7 @@ import NFFunction.Function;
 import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
 import BindingOrigin = NFBindingOrigin;
+import ElementSource;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -1925,40 +1926,43 @@ algorithm
       Variability var, bvar;
       Integer next_origin;
       Equation tyeq;
+      SourceInfo info;
 
     case Equation.EQUALITY()
       algorithm
-        (e1, ty1) := typeExp(eq.lhs, intBitOr(origin, ExpOrigin.LHS), eq.info);
-        (e2, ty2) := typeExp(eq.rhs, intBitOr(origin, ExpOrigin.RHS), eq.info);
+        info := ElementSource.getInfo(eq.source);
+        (e1, ty1) := typeExp(eq.lhs, intBitOr(origin, ExpOrigin.LHS), info);
+        (e2, ty2) := typeExp(eq.rhs, intBitOr(origin, ExpOrigin.RHS), info);
         (e1, e2, ty, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR,
             {Expression.toString(e1) + " = " + Expression.toString(e2),
-             Type.toString(ty1) + " = " + Type.toString(ty2)}, eq.info);
+             Type.toString(ty1) + " = " + Type.toString(ty2)}, info);
           fail();
         end if;
 
         // Array equations containing function calls should not be scalarized.
         if Type.isArray(ty) and (Expression.hasArrayCall(e1) or Expression.hasArrayCall(e2)) then
-          tyeq := Equation.ARRAY_EQUALITY(e1, e2, ty, eq.info);
+          tyeq := Equation.ARRAY_EQUALITY(e1, e2, ty, eq.source);
         else
-          tyeq := Equation.EQUALITY(e1, e2, ty, eq.info);
+          tyeq := Equation.EQUALITY(e1, e2, ty, eq.source);
         end if;
       then
         tyeq;
 
     case Equation.CONNECT()
-      then typeConnect(eq.lhs, eq.rhs, origin, eq.info);
+      then typeConnect(eq.lhs, eq.rhs, origin, eq.source);
 
     case Equation.FOR()
       algorithm
-        typeIterator(eq.iterator, eq.info, origin, structural = true);
+        info := ElementSource.getInfo(eq.source);
+        typeIterator(eq.iterator, info, origin, structural = true);
         body := list(typeEquation(e, origin) for e in eq.body);
       then
-        Equation.FOR(eq.iterator, body, eq.info);
+        Equation.FOR(eq.iterator, body, eq.source);
 
-    case Equation.IF() then typeIfEquation(eq.branches, origin, eq.info);
+    case Equation.IF() then typeIfEquation(eq.branches, origin, eq.source);
 
     case Equation.WHEN()
       algorithm
@@ -1967,39 +1971,41 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, next_origin, eq.info, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
+              e1 := typeCondition(cond, next_origin, eq.source, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
               eqs1 := list(typeEquation(beq, next_origin) for beq in body);
             then (e1, eqs1);
           end match
         for br in eq.branches);
       then
-        Equation.WHEN(tybrs, eq.info);
+        Equation.WHEN(tybrs, eq.source);
 
     case Equation.ASSERT()
       algorithm
-        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(), origin, "assert", "condition", 1, eq.info);
-        e2 := typeOperatorArg(eq.message, Type.STRING(), origin, "assert", "message", 2, eq.info);
-        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, origin, "assert", "level", 3, eq.info);
+        info := ElementSource.getInfo(eq.source);
+        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(), origin, "assert", "condition", 1, info);
+        e2 := typeOperatorArg(eq.message, Type.STRING(), origin, "assert", "message", 2, info);
+        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, origin, "assert", "level", 3, info);
       then
-        Equation.ASSERT(e1, e2, e3, eq.info);
+        Equation.ASSERT(e1, e2, e3, eq.source);
 
     case Equation.TERMINATE()
       algorithm
-        e1 := typeOperatorArg(eq.message, Type.STRING(), origin, "terminate", "message", 1, eq.info);
+        info := ElementSource.getInfo(eq.source);
+        e1 := typeOperatorArg(eq.message, Type.STRING(), origin, "terminate", "message", 1, info);
       then
-        Equation.TERMINATE(e1, eq.info);
+        Equation.TERMINATE(e1, eq.source);
 
     case Equation.REINIT()
       algorithm
-        (e1, e2) := typeReinit(eq.cref, eq.reinitExp, origin, eq.info);
+        (e1, e2) := typeReinit(eq.cref, eq.reinitExp, origin, eq.source);
       then
-        Equation.REINIT(e1, e2, eq.info);
+        Equation.REINIT(e1, e2, eq.source);
 
     case Equation.NORETCALL()
       algorithm
-        e1 := typeExp(eq.exp, origin, eq.info);
+        e1 := typeExp(eq.exp, origin, ElementSource.getInfo(eq.source));
       then
-        Equation.NORETCALL(e1, eq.info);
+        Equation.NORETCALL(e1, eq.source);
 
     else eq;
   end match;
@@ -2009,7 +2015,7 @@ function typeConnect
   input Expression lhsConn;
   input Expression rhsConn;
   input ExpOrigin.Type origin;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   output Equation connEq;
 protected
   Expression lhs, rhs;
@@ -2017,7 +2023,10 @@ protected
   Variability lhs_var, rhs_var;
   MatchKind mk;
   Integer next_origin;
+  SourceInfo info;
 algorithm
+  info := ElementSource.getInfo(source);
+
   // Connections may not be used in if-equations unless the conditions are
   // parameter expressions.
   // TODO: Also check for cardinality etc. as per 8.3.3.
@@ -2058,7 +2067,7 @@ algorithm
   //  fail();
   //end if;
 
-  connEq := Equation.CONNECT(lhs, rhs, info);
+  connEq := Equation.CONNECT(lhs, rhs, source);
 end typeConnect;
 
 function checkConnector
@@ -2135,11 +2144,13 @@ algorithm
       InstNode iterator;
       MatchKind mk;
       Integer next_origin;
+      SourceInfo info;
 
     case Statement.ASSIGNMENT()
       algorithm
-        (e1, ty1) := typeExp(st.lhs, intBitOr(origin, ExpOrigin.LHS), st.info);
-        (e2, ty2) := typeExp(st.rhs, intBitOr(origin, ExpOrigin.RHS), st.info);
+        info := ElementSource.getInfo(st.source);
+        (e1, ty1) := typeExp(st.lhs, intBitOr(origin, ExpOrigin.LHS), info);
+        (e2, ty2) := typeExp(st.rhs, intBitOr(origin, ExpOrigin.RHS), info);
 
         // TODO: Should probably only be allowUnknown = true if in a function.
         (e2,_, mk) := TypeCheck.matchTypes(ty2, ty1, e2, allowUnknown = true);
@@ -2147,31 +2158,32 @@ algorithm
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
             {Expression.toString(e1), Expression.toString(e2),
-             Type.toString(ty1), Type.toString(ty2)}, st.info);
+             Type.toString(ty1), Type.toString(ty2)}, info);
           fail();
         end if;
       then
-        Statement.ASSIGNMENT(e1, e2, st.info);
+        Statement.ASSIGNMENT(e1, e2, st.source);
 
     case Statement.FOR()
       algorithm
-        typeIterator(st.iterator, st.info, origin, structural = false);
+        info := ElementSource.getInfo(st.source);
+        typeIterator(st.iterator, info, origin, structural = false);
         body := typeAlgorithm(st.body, origin);
       then
-        Statement.FOR(st.iterator, body, st.info);
+        Statement.FOR(st.iterator, body, st.source);
 
     case Statement.IF()
       algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, origin, st.info, Error.IF_CONDITION_TYPE_ERROR);
+              e1 := typeCondition(cond, origin, st.source, Error.IF_CONDITION_TYPE_ERROR);
               sts1 := list(typeStatement(bst, origin) for bst in body);
             then (e1, sts1);
           end match
         for br in st.branches);
       then
-        Statement.IF(tybrs, st.info);
+        Statement.IF(tybrs, st.source);
 
     case Statement.WHEN()
       algorithm
@@ -2180,46 +2192,48 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, next_origin, st.info, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
+              e1 := typeCondition(cond, next_origin, st.source, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
               sts1 := list(typeStatement(bst, next_origin) for bst in body);
             then (e1, sts1);
           end match
         for br in st.branches);
       then
-        Statement.WHEN(tybrs, st.info);
+        Statement.WHEN(tybrs, st.source);
 
     case Statement.ASSERT()
       algorithm
-        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(), origin, "assert", "condition", 1, st.info);
-        e2 := typeOperatorArg(st.message, Type.STRING(), origin, "assert", "message", 2, st.info);
-        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, origin, "assert", "level", 3, st.info);
+        info := ElementSource.getInfo(st.source);
+        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(), origin, "assert", "condition", 1, info);
+        e2 := typeOperatorArg(st.message, Type.STRING(), origin, "assert", "message", 2, info);
+        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, origin, "assert", "level", 3, info);
       then
-        Statement.ASSERT(e1, e2, e3, st.info);
+        Statement.ASSERT(e1, e2, e3, st.source);
 
     case Statement.TERMINATE()
       algorithm
-        e1 := typeOperatorArg(st.message, Type.STRING(), origin, "terminate", "message", 1, st.info);
+        info := ElementSource.getInfo(st.source);
+        e1 := typeOperatorArg(st.message, Type.STRING(), origin, "terminate", "message", 1, info);
       then
-        Statement.TERMINATE(e1, st.info);
+        Statement.TERMINATE(e1, st.source);
 
     case Statement.NORETCALL()
       algorithm
-        e1 := typeExp(st.exp, origin, st.info);
+        e1 := typeExp(st.exp, origin, ElementSource.getInfo(st.source));
       then
-        Statement.NORETCALL(e1, st.info);
+        Statement.NORETCALL(e1, st.source);
 
     case Statement.WHILE()
       algorithm
-        e1 := typeCondition(st.condition, origin, st.info, Error.WHILE_CONDITION_TYPE_ERROR);
+        e1 := typeCondition(st.condition, origin, st.source, Error.WHILE_CONDITION_TYPE_ERROR);
         sts1 := list(typeStatement(bst, origin) for bst in st.body);
       then
-        Statement.WHILE(e1, sts1, st.info);
+        Statement.WHILE(e1, sts1, st.source);
 
     case Statement.FAILURE()
       algorithm
         sts1 := list(typeStatement(bst, origin) for bst in st.body);
       then
-        Statement.FAILURE(sts1, st.info);
+        Statement.FAILURE(sts1, st.source);
 
     else st;
   end match;
@@ -2228,14 +2242,16 @@ end typeStatement;
 function typeCondition
   input output Expression condition;
   input ExpOrigin.Type origin;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   input Error.Message errorMsg;
   input Boolean allowVector = false;
         output Variability variability;
 protected
   Type ty;
   MatchKind mk;
+  SourceInfo info;
 algorithm
+  info := ElementSource.getInfo(source);
   (condition, ty, variability) := typeExp(condition, origin, info);
 
   if allowVector and Type.isVector(ty) then
@@ -2254,7 +2270,7 @@ end typeCondition;
 function typeIfEquation
   input list<tuple<Expression, list<Equation>>> branches;
   input ExpOrigin.Type origin;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   output Equation ifEq;
 protected
   Expression cond;
@@ -2265,7 +2281,7 @@ protected
 algorithm
   for b in branches loop
     (cond, eql) := b;
-    (cond, var) := typeCondition(cond, next_origin, info, Error.IF_CONDITION_TYPE_ERROR);
+    (cond, var) := typeCondition(cond, next_origin, source, Error.IF_CONDITION_TYPE_ERROR);
     accum_var := Prefixes.variabilityMax(accum_var, var);
 
     if var <= Variability.PARAMETER then
@@ -2287,7 +2303,7 @@ algorithm
 
   // TODO: If accum_var <= PARAMETER, then each branch must have the same number
   //       of equations.
-  ifEq := Equation.IF(listReverseInPlace(bl), info);
+  ifEq := Equation.IF(listReverseInPlace(bl), source);
 end typeIfEquation;
 
 function typeOperatorArg
@@ -2317,13 +2333,15 @@ function typeReinit
   input output Expression crefExp;
   input output Expression exp;
   input ExpOrigin.Type origin;
-  input SourceInfo info;
+  input DAE.ElementSource source;
 protected
   Variability var;
   MatchKind mk;
   Type ty1, ty2;
   ComponentRef cref;
+  SourceInfo info;
 algorithm
+  info := ElementSource.getInfo(source);
   (crefExp, ty1, _) := typeExp(crefExp, origin, info, replaceConstants = false);
   (exp, ty2, _) := typeExp(exp, origin, info);
 

@@ -40,6 +40,7 @@ encapsulated uniontype NFFlatModel
     list<Equation> initialEquations;
     list<list<Statement>> algorithms;
     list<list<Statement>> initialAlgorithms;
+    Option<SCode.Comment> comment;
   end FLAT_MODEL;
 
   annotation(__OpenModelica_Interface="frontend");

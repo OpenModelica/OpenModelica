@@ -49,6 +49,8 @@ import Variable = NFVariable;
 import NFComponent.Component;
 import NFPrefixes.Visibility;
 import List;
+import ElementSource;
+import DAE;
 
 public
 function scalarize
@@ -87,6 +89,7 @@ protected
   Visibility vis;
   Component.Attributes attr;
   list<tuple<String, Binding>> ty_attr;
+  Option<SCode.Comment> cmt;
   SourceInfo info;
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
@@ -96,7 +99,7 @@ protected
   array<ExpressionIterator> ty_attr_iters;
 algorithm
   if Type.isArray(var.ty) then
-    Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, info) := var;
+    Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
     crefs := ComponentRef.scalarize(name);
     ty := Type.arrayElementType(ty);
     (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
@@ -108,12 +111,12 @@ algorithm
         (binding_iter, exp) := ExpressionIterator.next(binding_iter);
         binding := Binding.FLAT_BINDING(exp);
         ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, info) :: vars;
+        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
       end for;
     else
       for cr in crefs loop
         ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, info) :: vars;
+        vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
       end for;
     end if;
   else
@@ -177,10 +180,11 @@ algorithm
       ExpressionIterator lhs_iter, rhs_iter;
       Expression lhs, rhs;
       Type ty;
+      DAE.ElementSource src;
       SourceInfo info;
       list<Equation> eql;
 
-    case Equation.EQUALITY(ty = ty, info = info) guard Type.isArray(ty)
+    case Equation.EQUALITY(ty = ty, source = src) guard Type.isArray(ty)
       algorithm
         lhs_iter := ExpressionIterator.fromExp(eq.lhs);
         rhs_iter := ExpressionIterator.fromExp(eq.rhs);
@@ -189,12 +193,12 @@ algorithm
         while ExpressionIterator.hasNext(lhs_iter) loop
           if not ExpressionIterator.hasNext(rhs_iter) then
             Error.addInternalError(getInstanceName() + " could not expand rhs " +
-              Expression.toString(eq.rhs), eq.info);
+              Expression.toString(eq.rhs), ElementSource.getInfo(src));
           end if;
 
           (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
           (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-          equations := Equation.EQUALITY(lhs, rhs, ty, info) :: equations;
+          equations := Equation.EQUALITY(lhs, rhs, ty, src) :: equations;
         end while;
       then
         equations;
@@ -203,15 +207,15 @@ algorithm
       algorithm
         rhs := Expression.expand(eq.rhs);
       then
-        Equation.ARRAY_EQUALITY(eq.lhs, rhs, eq.ty, eq.info) :: equations;
+        Equation.ARRAY_EQUALITY(eq.lhs, rhs, eq.ty, eq.source) :: equations;
 
     case Equation.CONNECT() then equations;
 
     case Equation.IF()
-      then scalarizeIfEquation(eq.branches, eq.info, equations);
+      then scalarizeIfEquation(eq.branches, eq.source, equations);
 
     case Equation.WHEN()
-      then Equation.WHEN(list(scalarizeBranch(b) for b in eq.branches), eq.info) :: equations;
+      then Equation.WHEN(list(scalarizeBranch(b) for b in eq.branches), eq.source) :: equations;
 
     else eq :: equations;
   end match;
@@ -219,7 +223,7 @@ end scalarizeEquation;
 
 function scalarizeIfEquation
   input list<tuple<Expression, list<Equation>>> branches;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
   list<tuple<Expression, list<Equation>>> bl = {};
@@ -239,7 +243,7 @@ algorithm
   // Add the scalarized if equation to the list of equations unless we don't
   // have any branches left.
   if not listEmpty(bl) then
-    equations := Equation.IF(listReverseInPlace(bl), info) :: equations;
+    equations := Equation.IF(listReverseInPlace(bl), source) :: equations;
   end if;
 end scalarizeIfEquation;
 

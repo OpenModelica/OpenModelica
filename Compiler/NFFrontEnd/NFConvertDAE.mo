@@ -80,7 +80,7 @@ algorithm
   elems := convertAlgorithms(flatModel.algorithms, elems);
   elems := convertInitialAlgorithms(flatModel.initialAlgorithms, elems);
 
-  class_elem := DAE.COMP(name, elems, ElementSource.createElementSource(info), NONE());
+  class_elem := DAE.COMP(name, elems, ElementSource.createElementSource(info), flatModel.comment);
   dae := DAE.DAE({class_elem});
 
   daeFunctions := convertFunctionTree(functions);
@@ -105,21 +105,13 @@ function convertVariable
   input Boolean useLocalDir;
   output DAE.Element daeVar;
 protected
-  ComponentRef cref;
-  Binding binding;
-  InstNode comp_node, cls_node;
-  Type ty;
-  Component comp;
-  Class cls;
-  SourceInfo info;
-  Component.Attributes attr;
   Option<DAE.VariableAttributes> var_attr;
   Option<DAE.Exp> binding_exp;
 algorithm
   binding_exp := convertBinding(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
-    var.visibility, var_attr, useLocalDir, var.info);
+    var.visibility, var_attr, var.comment, useLocalDir, var.info);
 end convertVariable;
 
 function makeDAEVar
@@ -129,6 +121,7 @@ function makeDAEVar
   input Component.Attributes attr;
   input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
+  input Option<SCode.Comment> comment;
   input Boolean useLocalDir;
   input SourceInfo info;
   output DAE.Element var;
@@ -165,14 +158,14 @@ algorithm
           Prefixes.connectorTypeToDAE(attr.connectorType),
           source,
           vattr,
-          NONE(),
+          comment,
           Absyn.NOT_INNER_OUTER()
         );
 
     else
       DAE.VAR(dcref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
         DAE.VarParallelism.NON_PARALLEL(), Prefixes.visibilityToDAE(vis), dty,
-        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, NONE(),
+        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, comment,
         Absyn.NOT_INNER_OUTER());
 
   end match;
@@ -455,7 +448,6 @@ algorithm
     local
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cr1, cr2;
-      DAE.ElementSource src;
       list<DAE.Dimension> dims;
       list<DAE.Element> body;
 
@@ -463,9 +455,8 @@ algorithm
       algorithm
         e1 := Expression.toDAE(eq.lhs);
         e2 := Expression.toDAE(eq.rhs);
-        src := ElementSource.createElementSource(eq.info);
       then
-        DAE.Element.EQUATION(e1, e2, src) :: elements;
+        DAE.Element.EQUATION(e1, e2, eq.source) :: elements;
 
     case Equation.CREF_EQUALITY()
       algorithm
@@ -478,10 +469,9 @@ algorithm
       algorithm
         e1 := Expression.toDAE(eq.lhs);
         e2 := Expression.toDAE(eq.rhs);
-        src := ElementSource.createElementSource(eq.info);
         dims := list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty));
       then
-        DAE.Element.ARRAY_EQUATION(dims, e1, e2, src) :: elements;
+        DAE.Element.ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     // For equations should have been unrolled here.
     case Equation.FOR()
@@ -491,41 +481,31 @@ algorithm
         fail();
 
     case Equation.IF()
-      then convertIfEquation(eq.branches, eq.info, isInitial = false) :: elements;
+      then convertIfEquation(eq.branches, eq.source, isInitial = false) :: elements;
 
     case Equation.WHEN()
-      then convertWhenEquation(eq.branches, eq.info) :: elements;
+      then convertWhenEquation(eq.branches, eq.source) :: elements;
 
     case Equation.ASSERT()
       algorithm
         e1 := Expression.toDAE(eq.condition);
         e2 := Expression.toDAE(eq.message);
         e3 := Expression.toDAE(eq.level);
-        src := ElementSource.createElementSource(eq.info);
       then
-        DAE.Element.ASSERT(e1, e2, e3, src) :: elements;
+        DAE.Element.ASSERT(e1, e2, e3, eq.source) :: elements;
 
     case Equation.TERMINATE()
-      algorithm
-        e1 := Expression.toDAE(eq.message);
-        src := ElementSource.createElementSource(eq.info);
-      then
-        DAE.Element.TERMINATE(e1, src) :: elements;
+      then DAE.Element.TERMINATE(Expression.toDAE(eq.message), eq.source) :: elements;
 
     case Equation.REINIT()
       algorithm
         cr1 := ComponentRef.toDAE(Expression.toCref(eq.cref));
         e1 := Expression.toDAE(eq.reinitExp);
-        src := ElementSource.createElementSource(eq.info);
       then
-        DAE.Element.REINIT(cr1, e1, src) :: elements;
+        DAE.Element.REINIT(cr1, e1, eq.source) :: elements;
 
     case Equation.NORETCALL()
-      algorithm
-        e1 := Expression.toDAE(eq.exp);
-        src := ElementSource.createElementSource(eq.info);
-      then
-        DAE.Element.NORETCALL(e1, src) :: elements;
+      then DAE.Element.NORETCALL(Expression.toDAE(eq.exp), eq.source) :: elements;
 
     else elements;
   end match;
@@ -533,7 +513,7 @@ end convertEquation;
 
 function convertIfEquation
   input list<tuple<Expression, list<Equation>>> ifBranches;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   input Boolean isInitial;
   output DAE.Element ifEquation;
 protected
@@ -542,7 +522,6 @@ protected
   list<DAE.Exp> dconds;
   list<list<DAE.Element>> dbranches;
   list<DAE.Element> else_branch;
-  DAE.ElementSource src = ElementSource.createElementSource(info);
 algorithm
   (conds, branches) := List.unzipReverse(ifBranches);
   dbranches := if isInitial then
@@ -559,26 +538,23 @@ algorithm
 
   dconds := listReverse(Expression.toDAE(c) for c in conds);
   ifEquation := if isInitial then
-    DAE.Element.INITIAL_IF_EQUATION(dconds, dbranches, else_branch, src) else
-    DAE.Element.IF_EQUATION(dconds, dbranches, else_branch, src);
+    DAE.Element.INITIAL_IF_EQUATION(dconds, dbranches, else_branch, source) else
+    DAE.Element.IF_EQUATION(dconds, dbranches, else_branch, source);
 end convertIfEquation;
 
 function convertWhenEquation
   input list<tuple<Expression, list<Equation>>> whenBranches;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   output DAE.Element whenEquation;
 protected
-  DAE.ElementSource src;
   DAE.Exp cond;
   list<DAE.Element> els;
   Option<DAE.Element> when_eq = NONE();
 algorithm
-  src := ElementSource.createElementSource(info);
-
   for b in listReverse(whenBranches) loop
     cond := Expression.toDAE(Util.tuple21(b));
     els := convertEquations(Util.tuple22(b));
-    when_eq := SOME(DAE.Element.WHEN_EQUATION(cond, els, when_eq, src));
+    when_eq := SOME(DAE.Element.WHEN_EQUATION(cond, els, when_eq, source));
   end for;
 
   SOME(whenEquation) := when_eq;
@@ -601,7 +577,6 @@ algorithm
     local
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cref;
-      DAE.ElementSource src;
       list<DAE.Dimension> dims;
       list<DAE.Element> body;
 
@@ -609,18 +584,16 @@ algorithm
       algorithm
         e1 := Expression.toDAE(eq.lhs);
         e2 := Expression.toDAE(eq.rhs);
-        src := ElementSource.createElementSource(eq.info);
       then
-        DAE.Element.INITIALEQUATION(e1, e2, src) :: elements;
+        DAE.Element.INITIALEQUATION(e1, e2, eq.source) :: elements;
 
     case Equation.ARRAY_EQUALITY()
       algorithm
         e1 := Expression.toDAE(eq.lhs);
         e2 := Expression.toDAE(eq.rhs);
-        src := ElementSource.createElementSource(eq.info);
         dims := list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty));
       then
-        DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, src) :: elements;
+        DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     // For equations should have been unrolled here.
     case Equation.FOR()
@@ -630,30 +603,21 @@ algorithm
         fail();
 
     case Equation.IF()
-      then convertIfEquation(eq.branches, eq.info, isInitial = true) :: elements;
+      then convertIfEquation(eq.branches, eq.source, isInitial = true) :: elements;
 
     case Equation.ASSERT()
       algorithm
         e1 := Expression.toDAE(eq.condition);
         e2 := Expression.toDAE(eq.message);
         e3 := Expression.toDAE(eq.level);
-        src := ElementSource.createElementSource(eq.info);
       then
-        DAE.Element.INITIAL_ASSERT(e1, e2, e3, src) :: elements;
+        DAE.Element.INITIAL_ASSERT(e1, e2, e3, eq.source) :: elements;
 
     case Equation.TERMINATE()
-      algorithm
-        e1 := Expression.toDAE(eq.message);
-        src := ElementSource.createElementSource(eq.info);
-      then
-        DAE.Element.INITIAL_TERMINATE(e1, src) :: elements;
+      then DAE.Element.INITIAL_TERMINATE(Expression.toDAE(eq.message), eq.source) :: elements;
 
     case Equation.NORETCALL()
-      algorithm
-        e1 := Expression.toDAE(eq.exp);
-        src := ElementSource.createElementSource(eq.info);
-      then
-        DAE.Element.INITIAL_NORETCALL(e1, src) :: elements;
+      then DAE.Element.INITIAL_NORETCALL(Expression.toDAE(eq.exp), eq.source) :: elements;
 
     else elements;
   end match;
@@ -695,7 +659,6 @@ algorithm
     local
       DAE.Exp e1, e2, e3;
       DAE.Type ty;
-      DAE.ElementSource src;
       list<DAE.Statement> body;
 
     case Statement.ASSIGNMENT()
@@ -703,64 +666,48 @@ algorithm
         ty := Type.toDAE(Expression.typeOf(stmt.lhs));
         e1 := Expression.toDAE(stmt.lhs);
         e2 := Expression.toDAE(stmt.rhs);
-        src := ElementSource.createElementSource(stmt.info);
       then
-        DAE.Statement.STMT_ASSIGN(ty, e1, e2, src);
+        DAE.Statement.STMT_ASSIGN(ty, e1, e2, stmt.source);
 
     case Statement.FUNCTION_ARRAY_INIT()
       algorithm
         ty := Type.toDAE(stmt.ty);
-        src := ElementSource.createElementSource(stmt.info);
       then
-        DAE.Statement.STMT_ARRAY_INIT(stmt.name, ty, src);
+        DAE.Statement.STMT_ARRAY_INIT(stmt.name, ty, stmt.source);
 
     case Statement.FOR() then convertForStatement(stmt);
-    case Statement.IF() then convertIfStatement(stmt.branches, stmt.info);
-    case Statement.WHEN() then convertWhenStatement(stmt.branches, stmt.info);
+    case Statement.IF() then convertIfStatement(stmt.branches, stmt.source);
+    case Statement.WHEN() then convertWhenStatement(stmt.branches, stmt.source);
 
     case Statement.ASSERT()
       algorithm
         e1 := Expression.toDAE(stmt.condition);
         e2 := Expression.toDAE(stmt.message);
         e3 := Expression.toDAE(stmt.level);
-        src := ElementSource.createElementSource(stmt.info);
       then
-        DAE.Statement.STMT_ASSERT(e1, e2, e3, src);
+        DAE.Statement.STMT_ASSERT(e1, e2, e3, stmt.source);
 
     case Statement.TERMINATE()
-      algorithm
-        e1 := Expression.toDAE(stmt.message);
-        src := ElementSource.createElementSource(stmt.info);
-      then
-        DAE.Statement.STMT_TERMINATE(e1, src);
+      then DAE.Statement.STMT_TERMINATE(Expression.toDAE(stmt.message), stmt.source);
 
     case Statement.NORETCALL()
-      algorithm
-        e1 := Expression.toDAE(stmt.exp);
-        src := ElementSource.createElementSource(stmt.info);
-      then
-        DAE.Statement.STMT_NORETCALL(e1, src);
+      then DAE.Statement.STMT_NORETCALL(Expression.toDAE(stmt.exp), stmt.source);
 
     case Statement.WHILE()
       algorithm
         e1 := Expression.toDAE(stmt.condition);
         body := convertStatements(stmt.body);
-        src := ElementSource.createElementSource(stmt.info);
       then
-        DAE.Statement.STMT_WHILE(e1, body, src);
+        DAE.Statement.STMT_WHILE(e1, body, stmt.source);
 
     case Statement.RETURN()
-      then DAE.Statement.STMT_RETURN(ElementSource.createElementSource(stmt.info));
+      then DAE.Statement.STMT_RETURN(stmt.source);
 
     case Statement.BREAK()
-      then DAE.Statement.STMT_BREAK(ElementSource.createElementSource(stmt.info));
+      then DAE.Statement.STMT_BREAK(stmt.source);
 
     case Statement.FAILURE()
-      algorithm
-        body := convertStatements(stmt.body);
-        src := ElementSource.createElementSource(stmt.info);
-      then
-        DAE.Statement.STMT_FAILURE(body, src);
+      then DAE.Statement.STMT_FAILURE(convertStatements(stmt.body), stmt.source);
 
   end match;
 end convertStatement;
@@ -775,22 +722,21 @@ protected
   Expression range;
   list<Statement> body;
   list<DAE.Statement> dbody;
-  SourceInfo info;
+  DAE.ElementSource source;
 algorithm
-  Statement.FOR(iterator = iterator, body = body, info = info) := forStmt;
+  Statement.FOR(iterator = iterator, body = body, source = source) := forStmt;
   dbody := convertStatements(body);
 
   Component.ITERATOR(ty = ty, binding = binding) := InstNode.component(iterator);
   SOME(range) := Binding.typedExp(binding);
 
   forDAE := DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
-    InstNode.name(iterator), 0, Expression.toDAE(range), dbody,
-    ElementSource.createElementSource(info));
+    InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
 end convertForStatement;
 
 function convertIfStatement
   input list<tuple<Expression, list<Statement>>> ifBranches;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   output DAE.Statement ifStatement;
 protected
   DAE.Exp cond1, cond2;
@@ -809,25 +755,22 @@ algorithm
     elseStatement := DAE.Else.ELSEIF(cond2, stmts2, elseStatement);
   end for;
 
-  ifStatement := DAE.Statement.STMT_IF(cond1, stmts1,  elseStatement, ElementSource.createElementSource(info));
+  ifStatement := DAE.Statement.STMT_IF(cond1, stmts1,  elseStatement, source);
 end convertIfStatement;
 
 function convertWhenStatement
   input list<tuple<Expression, list<Statement>>> whenBranches;
-  input SourceInfo info;
+  input DAE.ElementSource source;
   output DAE.Statement whenStatement;
 protected
-  DAE.ElementSource src;
   DAE.Exp cond;
   list<DAE.Statement> stmts;
   Option<DAE.Statement> when_stmt = NONE();
 algorithm
-  src := ElementSource.createElementSource(info);
-
   for b in listReverse(whenBranches) loop
     cond := Expression.toDAE(Util.tuple21(b));
     stmts := convertStatements(Util.tuple22(b));
-    when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, {}, false, stmts, when_stmt, src));
+    when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, {}, false, stmts, when_stmt, source));
   end for;
 
   SOME(whenStatement) := when_stmt;
@@ -963,7 +906,7 @@ algorithm
         var_attr := convertVarAttributes(ty_attr, ty);
         attr := comp.attributes;
       then
-        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, true, info);
+        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, comp.comment, true, info);
 
     else
       algorithm
