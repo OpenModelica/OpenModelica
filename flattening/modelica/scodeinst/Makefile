@@ -97,6 +97,7 @@ ClassExtendsBuiltin2.mo \
 ClassExtendsMissing1.mo \
 ClassMod1.mo \
 ClassMod2.mo \
+Comment1.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \
 ComponentAttributes1.mo \
