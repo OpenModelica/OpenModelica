@@ -1386,6 +1386,12 @@ protected
   algorithm
     argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
     (argtycall, ty, variability) := matchTypedNormalCall(argtycall, origin, info);
+    argtycall := unboxArgs(argtycall);
+
+    // The return type of smooth is the same as that of the second argument.
+    ty := match argtycall
+      case TYPED_CALL() then Expression.typeOf(listGet(argtycall.arguments, 2));
+    end match;
 
     // TODO: check if second argument is real or array of real or record of reals.
     callExp := Expression.CALL(unboxArgs(argtycall));
