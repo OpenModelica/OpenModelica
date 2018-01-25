@@ -10,7 +10,7 @@ model FuncBuiltinSmooth
   parameter Integer k = 1;
   Real x = time;
   Real y = smooth(k, x);
-  Real z = smooth(2, {x, x});
+  Real z[2] = smooth(2, {x, x});
 end FuncBuiltinSmooth;
 
 // Result:
@@ -18,6 +18,9 @@ end FuncBuiltinSmooth;
 //   parameter Integer k = 1;
 //   Real x = time;
 //   Real y = smooth(k, x);
-//   Real z = smooth(2, {x, x});
+//   Real z[1];
+//   Real z[2];
+// equation
+//   z = smooth(2, {x, x});
 // end FuncBuiltinSmooth;
 // endResult
