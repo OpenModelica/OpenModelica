@@ -503,6 +503,7 @@ typedef struct MODEL_DATA
   const char* modelDir;
   const char* modelGUID;
   const char* initXMLData;
+  char* resourcesDir;
 
   long nSamples;                       /* number of different sample-calls */
   SAMPLE_INFO* samplesInfo;            /* array containing each sample-call */

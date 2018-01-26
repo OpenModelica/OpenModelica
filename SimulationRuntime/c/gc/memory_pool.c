@@ -88,6 +88,9 @@ static inline size_t round_up(size_t num, size_t factor)
 static inline void pool_expand(size_t len)
 {
   list *newlist = NULL;
+  if (0==memory_pools) {
+    pool_init();
+  }
   /* Check if we have enough memory already */
   if (memory_pools->size - memory_pools->used >= len) {
     return;

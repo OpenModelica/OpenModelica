@@ -182,7 +182,8 @@ end dumpRecordVarBinding;
 
 template dumpFunctionBody(list<Element> dAElist)
 ::=
-(dAElist |> lst => dumpFunctionElement(lst) ;separator="\n")
+  (dAElist |> lst => dumpFunctionElement(lst) ;separator="\n")+
+  (dAElist |> lst => dumpFunctionAnnotation(lst))
 end dumpFunctionBody;
 
 template dumpFunctionElement(DAE.Element lst)
@@ -191,9 +192,20 @@ match lst
  case VAR(__) then dumpVar(lst,true)
  case INITIALALGORITHM(__) then dumpFunctionAlgorithm(algorithm_ ,"initial algorithm")
  case ALGORITHM(__) then dumpFunctionAlgorithm(algorithm_ ,"algorithm")
+ case COMMENT(__) then ""
  else 'Element not found'
 
 end dumpFunctionElement;
+
+template dumpFunctionAnnotation(DAE.Element lst)
+::=
+match lst
+ case COMMENT(__) then
+   let x=dumpCommentAnnotationNoOpt(cmt)
+   if x then \n+x
+ else ""
+
+end dumpFunctionAnnotation;
 
 template dumpFunctionAlgorithm(Algorithm algorithm_, String label)
 ::=
@@ -1004,9 +1016,17 @@ template dumpCommentAnnotation(Option<SCode.Comment> comment)
 ::=
 if Config.showAnnotations() then
   match comment
-    case SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = ann_mod)))) then
-      'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
+    case SOME(cmt) then
+      dumpCommentAnnotationNoOpt(cmt)
 end dumpCommentAnnotation;
+
+template dumpCommentAnnotationNoOpt(SCode.Comment comment)
+::=
+if Config.showAnnotations() then
+  match comment
+    case SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = ann_mod))) then
+      'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
+end dumpCommentAnnotationNoOpt;
 
 template dumpCommentOpt(Option<SCode.Comment> comment)
 ::= match comment case SOME(cmt) then dumpComment(cmt)

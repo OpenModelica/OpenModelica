@@ -332,19 +332,6 @@ modelica_metatype stringDelimitList(modelica_metatype lst, metamodelica_string_c
   return p;
 }
 
-modelica_integer mmc_stringCompare(const void *str1, const void *str2)
-{
-  int res;
-  MMC_CHECK_STRING(str1);
-  MMC_CHECK_STRING(str2);
-  res = strcmp(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2));
-  if (res < 0)
-    return -1;
-  if (res > 0)
-    return 1;
-  return 0;
-}
-
 modelica_metatype boxptr_stringGetStringChar(threadData_t *threadData,metamodelica_string str, modelica_metatype iix)
 {
   modelica_metatype res;

@@ -1771,6 +1771,16 @@ algorithm
   end match;
 end isFunctionRefVar;
 
+function isComment
+  input DAE.Element elt;
+  output Boolean b;
+algorithm
+  b := match elt
+    case DAE.COMMENT(__) then true;
+    else false;
+  end match;
+end isComment;
+
 public function isAlgorithm "author: LS
   Succeeds if Element is an algorithm."
   input DAE.Element inElement;
@@ -2304,7 +2314,6 @@ algorithm
       list<list<DAE.Element>> trueBranches, trueBranches_1;
       Boolean partialPrefix;
       list<DAE.FunctionDefinition> derFuncs;
-      DAE.InlineType inlineType;
       DAE.ElementSource source "the element origin";
       DAE.Algorithm alg;
 
@@ -4283,6 +4292,8 @@ algorithm
       then
         ();
 
+    case DAE.COMMENT()
+      then ();
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
@@ -5096,6 +5107,7 @@ public function splitElements
   output list<DAE.Element> constraints = {};
   output list<DAE.Element> externalObjects = {};
   output list<DAEDump.compWithSplitElements> stateMachineComps = {};
+  output list<SCode.Comment> comments = {};
 protected
   DAEDump.compWithSplitElements split_comp;
 algorithm
@@ -5170,6 +5182,10 @@ algorithm
           stateMachineComps := split_comp :: stateMachineComps;
         then
           ();
+
+      case DAE.COMMENT()
+        algorithm comments := e.cmt :: comments; then ();
+
       else
         algorithm
           Error.addInternalError("DAEUtil.splitElements got unknown element.", Absyn.dummyInfo);

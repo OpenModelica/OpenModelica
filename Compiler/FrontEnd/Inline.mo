@@ -56,6 +56,7 @@ import Ceval;
 import ClassInf;
 import ComponentReference;
 import Config;
+import DAEDump;
 import Debug;
 import ElementSource;
 import Error;
@@ -1124,6 +1125,7 @@ algorithm
       VarTransform.VariableReplacements repl;
       Option<DAE.Exp> binding;
       DAE.Type tp;
+      DAE.Element elt;
     case ({},_,_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody,iRepl);
     case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
       equation
@@ -1152,6 +1154,10 @@ algorithm
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st,iRepl);
       then
         (oInputs,oOutput,oBody,repl);
+    case (elt::rest,_,_,_,_)
+      algorithm
+        Error.addInternalError("Unknown element: " + DAEDump.dumpElementsStr({elt}), sourceInfo());
+      then fail();
   end match;
 end getFunctionInputsOutputBody;
 

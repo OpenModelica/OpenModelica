@@ -1096,7 +1096,7 @@ algorithm
       Integer i,i1,i2,dim;
       Real r1;
       array<array<DAE.Exp>> marr;
-      String name;
+      String name, s1, s2;
 
     // If the argument to min/max is an array, try to flatten it.
     case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.ARRAY()},
@@ -1456,6 +1456,16 @@ algorithm
 
     case (DAE.CALL(path=Absyn.IDENT("solverClock"),expLst={e1,e2}))
       then DAE.CLKCONST(DAE.SOLVER_CLOCK(e1, e2));
+
+    case (DAE.CALL(path=Absyn.IDENT("OpenModelica_uriToFilename"),expLst={DAE.SCONST(s1)}))
+      algorithm
+        s2 := OpenModelica.Scripting.uriToFilename(s1);
+        if Flags.getConfigBool(Flags.BUILDING_FMU) then
+          e := Expression.makeImpureBuiltinCall("OpenModelica_fmuLoadResource",{DAE.SCONST(s2)},DAE.T_STRING_DEFAULT);
+        else
+          e := DAE.SCONST(s2);
+        end if;
+      then e;
 
   end matchcontinue;
 end simplifyBuiltinCalls;

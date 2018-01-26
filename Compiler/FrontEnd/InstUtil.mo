@@ -715,7 +715,7 @@ algorithm
     try
       SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION(), classDef = SCode.PARTS(elementLst = els)) := el;
       dimension := equalityConstraintOutputDimension(els);
-      inlineType := isInlineFunc(el);
+      inlineType := classIsInlineFunc(el);
       outResult := SOME((path, dimension, inlineType));
       return;
     else
@@ -4639,20 +4639,30 @@ algorithm
   end match;
 end setFullyQualifiedTypename;
 
-public function isInlineFunc
-  input SCode.Element inClass;
+public function classIsInlineFunc
+  input SCode.Element elt;
   output DAE.InlineType outInlineType;
 algorithm
-  outInlineType := matchcontinue(inClass)
+  outInlineType := match elt
+    case SCode.CLASS() then commentIsInlineFunc(elt.cmt);
+    else DAE.DEFAULT_INLINE();
+  end match;
+end classIsInlineFunc;
+
+public function commentIsInlineFunc
+  input SCode.Comment cmt;
+  output DAE.InlineType outInlineType;
+algorithm
+  outInlineType := matchcontinue(cmt)
     local
       list<SCode.SubMod> smlst;
 
-    case SCode.CLASS(cmt=SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst)))))
+    case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst = smlst))))
       then isInlineFunc2(smlst);
 
     else DAE.DEFAULT_INLINE();
   end matchcontinue;
-end isInlineFunc;
+end commentIsInlineFunc;
 
 protected function isInlineFunc2
   input list<SCode.SubMod> inSubModList;
@@ -5436,6 +5446,7 @@ public function mktype
   input Option<DAE.Type> inTypesTypeOption;
   input DAE.EqualityConstraint inEqualityConstraint;
   input SCode.Element inClass;
+  input SCode.Comment inheritedComment;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inEqualityConstraint,inClass)
@@ -5477,7 +5488,7 @@ algorithm
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
     case (p,(ClassInf.FUNCTION()),vl,_,_,cl)
       equation
-        funcattr = getFunctionAttributes(cl,vl);
+        funcattr = getFunctionAttributes(cl, vl, inheritedComment);
         functype = Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
@@ -5492,7 +5503,7 @@ algorithm
     case (_, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), NONE(), _)
       equation
         classState = arrayTTypeToClassInfState(arrayType);
-        resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
+        resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass, inheritedComment);
       then
         resType;
 
@@ -5500,7 +5511,7 @@ algorithm
     case (_, ClassInf.TYPE(), _, SOME(DAE.T_ARRAY(ty = arrayType)), SOME(_), _)
       equation
         classState = arrayTTypeToClassInfState(arrayType);
-        resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
+        resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass, inheritedComment);
         resType = DAE.T_SUBTYPE_BASIC(inState,{},resType,inEqualityConstraint);
       then
         resType;
@@ -5567,6 +5578,7 @@ public function mktypeWithArrays
   input list<DAE.Var> inTypesVarLst;
   input Option<DAE.Type> inTypesTypeOption;
   input SCode.Element inClass;
+  input SCode.Comment inheritedComment;
   output DAE.Type outType;
 algorithm
   outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inClass)
@@ -5611,7 +5623,7 @@ algorithm
     // Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION
     case (p,(ClassInf.FUNCTION()),vl,_,cl)
       equation
-        funcattr = getFunctionAttributes(cl,vl);
+        funcattr = getFunctionAttributes(cl,vl,inheritedComment);
         functype = Types.makeFunctionType(p, vl, funcattr);
       then
         functype;
@@ -7118,31 +7130,21 @@ algorithm
   end match;
 end isFunctionInput;
 
-public function extractClassDefComment
-  "This function extracts the comment section from a class definition."
-  input FCore.Cache cache;
-  input FCore.Graph env;
-  input SCode.ClassDef classDef;
-  input SCode.Comment inComment;
-  input SourceInfo inInfo;
-  output SCode.Comment comment;
+public function extractComment
+  "This function extracts the comment section from a list of elements."
+  input list<DAE.Element> elts;
+  output SCode.Comment cmt=SCode.COMMENT(NONE(),NONE());
 algorithm
-  comment := matchcontinue classDef
-    local
-      list<SCode.Annotation> al;
-      Absyn.Path p;
-      SCode.ClassDef cd;
-      SCode.Comment cmt;
-
-    case SCode.DERIVED(typeSpec = Absyn.TPATH(path = p))
-      equation
-        (_, SCode.CLASS(cmt=cmt), _) = Lookup.lookupClass(cache, env, p, SOME(inInfo));
-        cmt = mergeClassComments(inComment, cmt);
-      then cmt;
-
-    else inComment;
-  end matchcontinue;
-end extractClassDefComment;
+  for elt in elts loop
+    _ := match elt
+      case DAE.COMMENT(cmt=cmt)
+        algorithm
+          return;
+        then fail();
+      else ();
+    end match;
+  end for;
+end extractComment;
 
 protected function mergeClassComments
   "This function merges two comments together. The rule is that the string
@@ -7187,14 +7189,15 @@ algorithm
   end match;
 end makeNonExpSubscript;
 
-public function getFunctionAttributes
+protected function getFunctionAttributes
 "Looks at the annotations of an SCode.Element to create the function attributes,
 i.e. Inline and Purity"
   input SCode.Element cl;
   input list<DAE.Var> vl;
+  input SCode.Comment inheritedComment;
   output DAE.FunctionAttributes attr;
 algorithm
-  attr := matchcontinue (cl,vl)
+  attr := matchcontinue cl
     local
       SCode.Restriction restriction;
       Boolean isOpenModelicaPure, isImpure, hasOutVars, unboxArgs;
@@ -7203,48 +7206,48 @@ algorithm
       String name;
       list<DAE.Var> inVars,outVars;
 
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),_)
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure)))
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
-        inlineType = isInlineFunc(cl);
-        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-        isImpure = if isImpure then true else SCode.hasBooleanNamedAnnotationInClass(cl,"__ModelicaAssociation_Impure");
-        unboxArgs = SCode.hasBooleanNamedAnnotationInClass(cl, "__OpenModelica_UnboxArguments");
+        inlineType = commentIsInlineFunc(inheritedComment);
+        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        isImpure = if isImpure then true else SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure");
+        unboxArgs = SCode.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()))
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
         name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
-        inlineType = isInlineFunc(cl);
-        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
-        unboxArgs = SCode.hasBooleanNamedAnnotationInClass(cl, "__OpenModelica_UnboxArguments");
+        inlineType = commentIsInlineFunc(inheritedComment);
+        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
+        unboxArgs = SCode.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()))
       equation
-        inlineType = isInlineFunc(cl);
-        isBuiltin = if SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+        inlineType = commentIsInlineFunc(inheritedComment);
+        isBuiltin = if SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
     //kernel functions: never builtin and never inlined.
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
+    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()))
       then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
-    case (SCode.CLASS(restriction=restriction),_)
+    case SCode.CLASS(restriction=restriction)
       equation
-        inlineType = isInlineFunc(cl);
+        inlineType = commentIsInlineFunc(inheritedComment);
         hasOutVars = List.exist(vl,Types.isOutputVar);
-        isBuiltin = if SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-        isOpenModelicaPure = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+        isBuiltin = if SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+        isOpenModelicaPure = not SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         // In Modelica 3.2 and before, external functions with side-effects are not marked
-        isImpure = SCode.hasBooleanNamedAnnotationInClass(cl,"__ModelicaAssociation_Impure") or SCode.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
+        isImpure = SCode.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure") or SCode.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
       then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
@@ -7271,6 +7274,8 @@ algorithm
       then ();
 
     case (DAE.ALGORITHM(), false, _) then ();
+
+    case (DAE.COMMENT(), _, _) then ();
 
     else
       equation

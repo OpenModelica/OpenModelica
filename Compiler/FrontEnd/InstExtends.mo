@@ -94,6 +94,7 @@ protected function instExtendsList
   output list<SCode.Equation> outInitialEqs = {};
   output list<SCode.AlgorithmSection> outNormalAlgs = {};
   output list<SCode.AlgorithmSection> outInitialAlgs = {};
+  output list<SCode.Comment> outComments = {};
 algorithm
   for el in listReverse(inLocalElements) loop
     _ := matchcontinue el
@@ -110,6 +111,8 @@ algorithm
         list<tuple<SCode.Element, DAE.Mod, Boolean>> els2;
         list<SCode.Equation> eq1, ieq1, eq2, ieq2;
         list<SCode.AlgorithmSection> alg1, ialg1, alg2, ialg2;
+        list<SCode.Comment> comments1, comments2;
+        SCode.Comment cmt;
         DAE.Mod mod;
         AvlSetString.Tree tree;
         array<FCore.Cache> cacheArr;
@@ -141,7 +144,7 @@ algorithm
 
           if isSome(ocls) then
             SOME(cls) := ocls;
-            SCode.CLASS(name = cn, encapsulatedPrefix = encf) := cls;
+            SCode.CLASS(name = cn, encapsulatedPrefix = encf, cmt=cmt) := cls;
           else
             // Base class could not be found, print an error unless --permissive
             // is used.
@@ -154,7 +157,7 @@ algorithm
             fail();
           end if;
 
-          (outCache, cenv, outIH, els1, eq1, ieq1, alg1, ialg1, mod) :=
+          (outCache, cenv, outIH, els1, eq1, ieq1, alg1, ialg1, mod, comments1) :=
             instDerivedClasses(outCache, cenv, outIH, outMod, inPrefix, cls, inImpl, el.info);
           els1 := updateElementListVisibility(els1, el.visibility);
 
@@ -184,7 +187,7 @@ algorithm
           outMod := Mod.elabUntypedMod(emod, Mod.EXTENDS(el.baseClassPath));
           outMod := Mod.merge(mod, outMod, "", false);
 
-          (outCache, _, outIH, _, els2, eq2, ieq2, alg2, ialg2) :=
+          (outCache, _, outIH, _, els2, eq2, ieq2, alg2, ialg2, comments2) :=
             instExtendsAndClassExtendsList2(outCache, cenv, outIH, outMod, inPrefix,
               rest_els, clsext_els, els1, inState, inClassName, inImpl, inPartialInst);
 
@@ -206,6 +209,7 @@ algorithm
           outInitialEqs := List.unionAppendListOnTrue(listReverse(ieq2), outInitialEqs, valueEq);
           outNormalAlgs := List.unionAppendListOnTrue(listReverse(alg2), outNormalAlgs, valueEq);
           outInitialAlgs := List.unionAppendListOnTrue(listReverse(ialg2), outInitialAlgs, valueEq);
+          outComments := listAppend(comments1, listAppend(comments2, cmt::outComments));
 
           if not inPartialInst then
             if htHasEntries then
@@ -220,7 +224,6 @@ algorithm
             outInitialAlgs := List.unionAppendListOnTrue(listReverse(ialg1), outInitialAlgs, valueEq);
           end if;
           outCache := arrayGet(cacheArr, 1);
-
         then
           ();
 
@@ -240,6 +243,7 @@ algorithm
       case SCode.CLASS()
         algorithm
           outElements := (el, DAE.NOMOD(), false) :: outElements;
+          outComments := {el.cmt};
         then
           ();
 
@@ -353,13 +357,14 @@ public function instExtendsAndClassExtendsList "
   output list<SCode.Equation> outInitialEqs;
   output list<SCode.AlgorithmSection> outNormalAlgs;
   output list<SCode.AlgorithmSection> outInitialAlgs;
+  output list<SCode.Comment> outComments;
 protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> elts;
   list<SCode.Element> cdefelts, tmpelts, extendselts;
 algorithm
   extendselts := List.map(inExtendsElementLst, SCodeUtil.expandEnumerationClass);
   //fprintln(Flags.DEBUG,"instExtendsAndClassExtendsList: " + inClassName);
-  (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
+  (outCache,outEnv,outIH,outMod,elts,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs,outComments):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,extendselts,inClassExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
   outElements := List.map(elts, Util.tuple312);
@@ -397,8 +402,9 @@ protected function instExtendsAndClassExtendsList2 "
   output list<SCode.Equation> outInitialEqs;
   output list<SCode.AlgorithmSection> outNormalAlgs;
   output list<SCode.AlgorithmSection> outInitialAlgs;
+  output list<SCode.Comment> comments;
 algorithm
-  (outCache,outEnv,outIH,outMod,outElements,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs):=
+  (outCache,outEnv,outIH,outMod,outElements,outNormalEqs,outInitialEqs,outNormalAlgs,outInitialAlgs,comments):=
   instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inElementsFromExtendsScope,inState,inClassName,inImpl,isPartialInst);
   (outMod,outElements):=instClassExtendsList(inEnv,outMod,inClassExtendsElementLst,outElements);
 end instExtendsAndClassExtendsList2;
@@ -578,8 +584,9 @@ public function instDerivedClasses
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
   output DAE.Mod outMod;
+  output list<SCode.Comment> outComments;
 algorithm
-  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6,outMod) :=
+  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6,outMod,outComments) :=
   instDerivedClassesWork(inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,false,0);
 end instDerivedClasses;
 
@@ -608,8 +615,9 @@ protected function instDerivedClassesWork
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
   output DAE.Mod outMod;
+  output list<SCode.Comment> outComments;
 algorithm
-  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6,outMod):=
+  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6,outMod,outComments):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inBoolean,inInfo,overflow)
     local
       list<SCode.Element> elt;
@@ -636,7 +644,7 @@ algorithm
       equation
         true = InstUtil.isBuiltInClass(name);
       then
-        (cache,env,ih,{},{},{},{},{},inMod);
+        (cache,env,ih,{},{},{},{},{},inMod,{});
 
     case (cache,env,ih,_,_,SCode.CLASS(name = name, classDef =
           SCode.PARTS(elementLst = elt,
@@ -647,7 +655,7 @@ algorithm
         /* elt_1 = noImportElements(elt); */
         Error.assertionOrAddSourceMessage(Util.isNone(extdecl), Error.EXTENDS_EXTERNAL, {name}, info);
       then
-        (cache,env,ih,elt,eq,ieq,alg,ialg,inMod);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,inMod,{inClass.cmt});
 
     case (cache,env,ih,mod,pre,SCode.CLASS( info = info, classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl, _, false)
       equation
@@ -660,17 +668,17 @@ algorithm
         (cache,daeDMOD) = Mod.elabMod(cache, env, ih, pre, dmod, impl, Mod.DERIVED(tp), info);
         mod = Mod.merge(mod, daeDMOD);
         // print("DER: " + SCodeDump.unparseElementStr(inClass, SCodeDump.defaultOptions) + "\n");
-        (cache,env,ih,elt,eq,ieq,alg,ialg,mod) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) = instDerivedClassesWork(cache, cenv, ih, mod, pre, c, impl, info, numIter >= Global.recursionDepthLimit, numIter+1)
         "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
       then
-        (cache,env,ih,elt,eq,ieq,alg,ialg,mod);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,inClass.cmt::outComments);
 
     case (cache,env,ih,mod,pre,SCode.CLASS(name=n, prefixes = prefixes, classDef = SCode.ENUMERATION(enumLst), cmt = cmt, info = info),impl,_,false)
       equation
         c = SCodeUtil.expandEnumeration(n, enumLst, prefixes, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg,mod) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments) = instDerivedClassesWork(cache, env, ih, mod, pre, c, impl,info, numIter >= Global.recursionDepthLimit, numIter+1);
       then
-        (cache,env,ih,elt,eq,ieq,alg,ialg,mod);
+        (cache,env,ih,elt,eq,ieq,alg,ialg,mod,outComments);
 
     case (_,_,_,_,_,_,_,_,true)
       equation

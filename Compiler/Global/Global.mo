@@ -43,6 +43,7 @@ constant Integer maxFunctionFileLength = 50;
 
 // Thread-local roots
 constant Integer instOnlyForcedFunctions = 0;
+constant Integer simulationData = 0 "For simulations";
 constant Integer codegenTryThrowIndex = 1;
 constant Integer codegenFunctionList = 2;
 constant Integer symbolTable = 3;

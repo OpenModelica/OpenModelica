@@ -42,6 +42,7 @@
 #include "simulation_data.h"
 
 #include "util/rtclock.h"
+#include "simulation/omc_simulation_util.h"
 #include <stdlib.h>
 #include <string.h>
 

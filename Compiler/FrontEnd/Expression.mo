@@ -5271,6 +5271,23 @@ algorithm
   otpl := if referenceEq(ext_arg, ext_arg2) then itpl else (rel,ext_arg2);
 end traverseSubexpressionsHelper;
 
+public function traverseSubexpressions
+"This function is used as input to a traverse function that does not traverse all subexpressions.
+The extra argument is a tuple of the actul function to call on each subexpression and the extra argument."
+  replaceable type Type_a subtypeof Any;
+  input output DAE.Exp e;
+  input output Type_a arg;
+  input FuncExpType func;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    input Type_a inTypeA;
+    output DAE.Exp outExp;
+    output Type_a outA;
+  end FuncExpType;
+algorithm
+  (e, arg) := traverseExpBottomUp(e, func, arg);
+end traverseSubexpressions;
+
 public function traverseSubexpressionsDummyHelper
 "This function is used as input to a traverse function that does not traverse all subexpressions.
 The extra argument is a tuple of the actul function to call on each subexpression and the extra argument.

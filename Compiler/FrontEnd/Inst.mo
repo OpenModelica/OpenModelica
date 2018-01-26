@@ -620,7 +620,7 @@ algorithm
         dae = ConnectUtil.equations(callscope_1, csets, dae1_1, graph, Absyn.pathString(Absyn.makeNotFullyQualified(fq_class)));
         //System.stopTimer();
         //print("\nConnect and Overconstrained: " + realString(System.getTimerIntervalTime()) + "\n");
-        ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c);
+        ty = InstUtil.mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c, InstUtil.extractComment(dae.elementLst));
         dae = InstUtil.updateDeducedUnits(callscope_1,store,dae);
 
         // Fixes partial functions.
@@ -711,7 +711,7 @@ algorithm
         (cache,fq_class) = makeFullyQualifiedIdent(cache,env_3, n);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         dae = dae1_1;
-        ty = InstUtil.mktypeWithArrays(fq_class, ci_state_1, tys, bc_ty, c);
+        ty = InstUtil.mktypeWithArrays(fq_class, ci_state_1, tys, bc_ty, c, InstUtil.extractComment(dae.elementLst));
       then
         (cache,env_3,ih,store,dae,csets,ty,tys,ci_state_1);
 
@@ -1097,7 +1097,7 @@ algorithm
         ty2 = DAE.T_ENUMERATION(NONE(), fq_class, names, tys1, tys);
         bc = arrayBasictypeBaseclass(inst_dims, ty2);
         bc = if isSome(bc) then bc else SOME(ty2);
-        ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
+        ty = InstUtil.mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c, SCode.noComment);
         // update Enumerationtypes in environment
         (cache,env_3) = InstUtil.updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
         tys2 = listAppend(tys, tys1); // <--- this is wrong as the tys belong to the component variable not the Enumeration Class!
@@ -1875,7 +1875,7 @@ algorithm
       FCore.Graph env1,env2,env3,env,env5,cenv,cenv_2,env_2,parentEnv,parentClassEnv;
       list<tuple<SCode.Element, DAE.Mod>> cdefelts_1,extcomps,compelts_1,compelts_2, comp_cond, derivedClassesWithConstantMods;
       Connect.Sets csets,csets1,csets2,csets3,csets4,csets5,csets_1;
-      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae;
+      DAE.DAElist dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae8,dae;
       ClassInf.State ci_state1,ci_state,ci_state2,ci_state3,ci_state4,ci_state5,ci_state6,ci_state7,new_ci_state,ci_state_1;
       list<DAE.Var> vars;
       Option<DAE.Type> bc;
@@ -1903,6 +1903,7 @@ algorithm
       SCode.Mod mod;
       FCore.Cache cache;
       Option<SCode.Attributes> oDA;
+      list<SCode.Comment> comments;
       DAE.EqualityConstraint eqConstraint;
       InstTypes.CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
@@ -1957,7 +1958,7 @@ algorithm
         (cdefelts,extendsclasselts,extendselts as _::_,{}) = InstUtil.splitElts(els);
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, List.select(els, SCodeUtil.isRedeclareElement));
         (cache,env1,ih) = InstUtil.addClassdefsToEnv(cache, env, ih, pre, cdefelts, impl, SOME(mods));
-        (cache,_,_,_,extcomps,{},{},{},{}) =
+        (cache,_,_,_,extcomps,{},{},{},{},_) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false);
 
         compelts_2_elem = List.map(extcomps,Util.tuple21);
@@ -2027,7 +2028,7 @@ algorithm
         // if a record -> components ok
         // checkRestrictionsOnTheKindOfBaseClass(cache, env, ih, re, extendselts);
 
-        (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
+        (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2,comments) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, pre, extendselts, extendsclasselts, els, ci_state, className, impl, false)
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
 
@@ -2146,13 +2147,15 @@ algorithm
         (cache,env5,dae7,_) =
           instConstraints(cache,env5, pre, ci_state6, constrs, impl);
 
+        dae8 = instFunctionAnnotations(comment::comments, ci_state6);
+
         // BTH: Relate state machine components to the flat state machine that they are part of
         smCompToFlatSM = InstStateMachineUtil.createSMNodeToFlatSMGroupTable(dae2);
         // BTH: Wrap state machine components (including transition statements) into corresponding flat state machine containers
         (dae1,dae2) = InstStateMachineUtil.wrapSMCompsInFlatSMs(ih, dae1, dae2, smCompToFlatSM, smInitialCrefs);
 
         //Collect the DAE's
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5,dae6,dae7});
+        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4,dae5,dae6,dae7,dae8});
 
         //Change outer references to corresponding inner reference
         // adrpo: TODO! FIXME! very very very expensive function, try to get rid of it!
@@ -5593,6 +5596,37 @@ algorithm
     print(inMsg + Absyn.pathString(inPath) + "\n");
   end if;
 end showCacheInfo;
+
+function instFunctionAnnotations "Merges the function's comments from inherited classes"
+  input list<SCode.Comment> comments;
+  input ClassInf.State state;
+  output DAE.DAElist dae=DAE.emptyDae;
+protected
+  Option<String> comment=NONE();
+  SCode.Mod mod=SCode.NOMOD(), mod2;
+algorithm
+  if not ClassInf.isFunction(state) then
+    return;
+  end if;
+
+  for cmt in comments loop
+
+    if isNone(comment) then
+      comment := cmt.comment;
+    end if;
+
+    mod := match cmt
+      case SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification=mod2)))
+        then SCode.mergeModifiers(mod2, mod);
+      else mod;
+    end match;
+
+  end for;
+  dae := match mod
+    case SCode.NOMOD() then if isNone(comment) then dae else DAE.DAE({DAE.COMMENT(SCode.COMMENT(NONE(),comment))});
+    else DAE.DAE({DAE.COMMENT(SCode.COMMENT(SOME(SCode.ANNOTATION(mod)), comment))});
+  end match;
+end instFunctionAnnotations;
 
 annotation(__OpenModelica_Interface="frontend");
 end Inst;

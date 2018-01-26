@@ -1357,6 +1357,10 @@ algorithm
     case (cache,_,"OpenModelica_uriToFilename",{Values.STRING(s1)},_)
       equation
         res = OpenModelica.Scripting.uriToFilename(s1);
+        if Flags.getConfigBool(Flags.BUILDING_FMU) then
+          print("The following path is a loaded resource... "+res+"\n");
+          fail();
+        end if;
       then
         (cache,Values.STRING(res));
    /* Note: Do not evaluate uriToFilename if it says it fails. We need simulations to be able to report URI not found */
@@ -3342,6 +3346,7 @@ algorithm
   fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then Absyn.pathString(className) else inFileNamePrefix);
   defaulSimOpt := buildSimulationOptionsFromModelExperimentAnnotation(className, filenameprefix, SOME(defaultSimulationOptions));
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
+  Flags.setConfigBool(Flags.BUILDING_FMU, true);
   try
     (success, cache, _, libs,_, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;
@@ -3350,6 +3355,7 @@ algorithm
     outValue := Values.STRING("");
     return;
   end try;
+  Flags.setConfigBool(Flags.BUILDING_FMU, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BUILD_MODEL);
 

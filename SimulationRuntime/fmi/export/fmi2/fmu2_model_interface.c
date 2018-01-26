@@ -55,9 +55,9 @@ static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems
 
 // macro to be used to log messages. The macro check if current
 // log category is valid and, if true, call the logger provided by simulator.
-#define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) \
+#define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) { \
     instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
-        logCategoriesNames[categoryIndex], message, ##__VA_ARGS__);
+        logCategoriesNames[categoryIndex], message, ##__VA_ARGS__); }
 
 // array of value references of states
 #if NUMBER_OF_STATES>0
@@ -153,6 +153,36 @@ fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex)
     return fmi2True;
   }
   return fmi2False;
+}
+
+static void omc_assert_fmi_common(threadData_t *threadData, fmi2Status status, int categoryIndex, FILE_INFO info, const char *msg, va_list args)
+{
+  char *str;
+  ModelInstance* c = (ModelInstance*) threadData->localRoots[LOCAL_ROOT_FMI_DATA];
+  GC_vasprintf(&str, msg, args);
+  if (info.lineStart) {
+    FILTERED_LOG(c, status, categoryIndex, "%s:%d: %s", info.filename, info.lineStart, str)
+  } else {
+    FILTERED_LOG(c, status, categoryIndex, "%s", str)
+  }
+}
+
+static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...) __attribute__ ((noreturn));
+static void omc_assert_fmi(threadData_t *threadData, FILE_INFO info, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  omc_assert_fmi_common(threadData, fmi2Error, LOG_STATUSERROR, info, msg, args);
+  va_end(args);
+  MMC_THROW_INTERNAL();
+}
+
+static void omc_assert_fmi_warning(FILE_INFO info, const char *msg, ...)
+{
+  va_list args;
+  va_start(args, msg);
+  omc_assert_fmi_common((threadData_t*)pthread_getspecific(mmc_thread_data_key), fmi2Warning, LOG_STATUSWARNING, info, msg, args);
+  va_end(args);
 }
 
 // ---------------------------------------------------------------------------
@@ -283,7 +313,6 @@ fmi2Status fmi2SetDebugLogging(fmi2Component c, fmi2Boolean loggingOn, size_t nC
   int i, j;
   ModelInstance *comp = (ModelInstance *)c;
   comp->loggingOn = loggingOn;
-
   for (j = 0; j < NUMBER_OF_CATEGORIES; j++) {
     comp->logCategories[j] = fmi2False;
   }
@@ -308,6 +337,13 @@ fmi2Status fmi2SetDebugLogging(fmi2Component c, fmi2Boolean loggingOn, size_t nC
 
 fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2String fmuGUID, fmi2String fmuResourceLocation, const fmi2CallbackFunctions* functions,
     fmi2Boolean visible, fmi2Boolean loggingOn) {
+  /*
+  TODO: We should set the interface, but we can't until it's no longer a global variable.
+  * The problem is that we might overwrite the main simulation's copy of the interface...
+  omc_alloc_interface = omc_alloc_interface_pooled;
+  */
+  mmc_init_nogc();
+  omc_alloc_interface.init();
   // ignoring arguments: fmuResourceLocation, visible
   ModelInstance *comp;
   if (!functions->logger) {
@@ -351,6 +387,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 
     comp->threadData = threadData;
     comp->fmuData = fmudata;
+    threadData->localRoots[LOCAL_ROOT_FMI_DATA] = comp;
+    pthread_setspecific(mmc_thread_data_key, threadData);
     if (!comp->fmuData) {
       functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Could not initialize the global data structure file.");
       return NULL;
@@ -360,6 +398,10 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
       comp->logCategories[i] = loggingOn;
     }
   }
+
+  omc_assert = omc_assert_fmi;
+  omc_assert_warning = omc_assert_fmi_warning;
+
   if (!comp || !comp->instanceName || !comp->GUID) {
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
     return NULL;
@@ -384,6 +426,15 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
+
+  /* Add the resourcesDir */
+  fmuResourceLocation = OpenModelica_parseFmuResourcePath(fmuResourceLocation);
+  if (fmuResourceLocation) {
+    comp->fmuData->modelData->resourcesDir = functions->allocateMemory(1 + strlen(fmuResourceLocation), sizeof(char));
+    strcpy(comp->fmuData->modelData->resourcesDir, fmuResourceLocation);
+  } else {
+    FILTERED_LOG(comp, fmi2OK, LOG_STATUSWARNING, "fmi2Instantiate: Ignoring unknown resource URI: %s", fmuResourceLocation)
+  }
   /* read input vars */
   /* input_function(comp->fmuData); */
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
@@ -427,6 +478,8 @@ void fmi2FreeInstance(fmi2Component c)
     return;
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance")
+
+  comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
 
   /* free simuation data */
   comp->functions->freeMemory(comp->fmuData->modelData);
@@ -478,6 +531,7 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
     if (initialization(comp->fmuData, comp->threadData, "", "", 0.0)) {
       comp->state = modelError;

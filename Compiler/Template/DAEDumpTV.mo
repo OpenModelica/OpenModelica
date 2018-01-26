@@ -438,6 +438,10 @@ package DAE
       ElementSource source "the origin of the component/equation/algorithm";
     end CONSTRAINT;
 
+    record COMMENT
+      SCode.Comment cmt;
+    end COMMENT;
+
   end Element;
 
   uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.

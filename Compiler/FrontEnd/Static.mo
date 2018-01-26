@@ -6962,30 +6962,6 @@ algorithm
   farg := DAE.FUNCARG(name, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), DAE.NON_PARALLEL(), NONE());
 end createDummyFarg;
 
-protected function propagateDerivedInlineAnnotation
-  "Inserts an inline annotation from the given class into the given comment, if
-   the comment doesn't already have such an annotation."
-  input SCode.Element inExtendedClass;
-  input SCode.Comment inComment;
-  output SCode.Comment outComment;
-algorithm
-  outComment := matchcontinue inExtendedClass
-    local
-      SCode.Comment cmt;
-      SCode.Annotation ann;
-
-    case SCode.CLASS(cmt = cmt)
-      algorithm
-        NONE() := SCode.getInlineTypeAnnotationFromCmt(inComment);
-        SOME(ann) := SCode.getInlineTypeAnnotationFromCmt(cmt);
-        cmt := SCode.appendAnnotationToComment(ann, cmt);
-      then
-        cmt;
-
-    else inComment;
-  end matchcontinue;
-end propagateDerivedInlineAnnotation;
-
 public function elabCallArgs "
 function: elabCallArgs
   Given the name of a function and two lists of expression and
@@ -7437,7 +7413,6 @@ algorithm
   tuple_ := Types.isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
   inlineType := inlineBuiltin(isBuiltin,inlineType);
-
   //check the env to see if a call to a parallel or kernel function is a valid one.
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
 
@@ -11986,8 +11961,6 @@ algorithm
     ty1_str := Types.unparseTypeNoAttr(true_ty);
     ty2_str := Types.unparseTypeNoAttr(false_ty);
     pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-   // print("True Type: " + anyString(true_ty) + "\n");
-   // print("False Type: " + anyString(false_ty) + "\n");
     Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_IF_EXP,
       {pre_str, e1_str, ty1_str, e2_str, ty2_str}, inInfo);
   end if;

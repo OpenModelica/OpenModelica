@@ -1308,6 +1308,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   void <%symbolName(modelNamePrefix,"setupDataStruc")%>(DATA *data, threadData_t *threadData)
   {
     assertStreamPrint(threadData,0!=data, "Error while initialize Data");
+    threadData->localRoots[LOCAL_ROOT_SIMULATION_DATA] = data;
     data->callback = &<%symbolName(modelNamePrefix,"callback")%>;
     <%populateModelInfo(modelInfo, fileNamePrefix, guid, delayed, isModelExchangeFMU)%>
   }

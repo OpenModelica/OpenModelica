@@ -1044,7 +1044,7 @@ protected
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCode.isBuiltinFunction(def, in_params, out_params);
-          inline_ty := InstUtil.isInlineFunc(def);
+          inline_ty := InstUtil.classIsInlineFunc(def);
           is_impure := is_impure or hasImpure(def);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, false,
@@ -1056,7 +1056,7 @@ protected
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCode.isBuiltinFunction(def, in_params, out_params);
-          inline_ty := InstUtil.isInlineFunc(def);
+          inline_ty := InstUtil.classIsInlineFunc(def);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, false,
             DAE.FUNCTION_BUILTIN(SOME(name), hasUnboxArgs(def)), DAE.FP_PARALLEL_FUNCTION());
@@ -1064,7 +1064,7 @@ protected
       // Parallel function: non-builtin.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
-          inline_ty := InstUtil.isInlineFunc(def);
+          inline_ty := InstUtil.classIsInlineFunc(def);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, false,
             getBuiltin(def), DAE.FP_PARALLEL_FUNCTION());
@@ -1077,7 +1077,7 @@ protected
       // Normal function.
       else
         algorithm
-          inline_ty := InstUtil.isInlineFunc(def);
+          inline_ty := InstUtil.classIsInlineFunc(def);
 
           // In Modelica 3.2 and before, external functions with side-effects are not marked.
           is_impure := SCode.isRestrictionImpure(res,

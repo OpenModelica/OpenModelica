@@ -355,3 +355,16 @@ modelica_string stringAppend(modelica_string s1, modelica_string s2)
 
   return res;
 }
+
+modelica_integer mmc_stringCompare(const void *str1, const void *str2)
+{
+  int res;
+  MMC_CHECK_STRING(str1);
+  MMC_CHECK_STRING(str2);
+  res = strcmp(MMC_STRINGDATA(str1),MMC_STRINGDATA(str2));
+  if (res < 0)
+    return -1;
+  if (res > 0)
+    return 1;
+  return 0;
+}

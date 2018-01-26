@@ -1409,20 +1409,24 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
   Util.gettext("Sets whether to ignore replaceability or not when redeclaring."));
 
   constant ConfigFlag LABELED_REDUCTION = CONFIG_FLAG(118,
-  "labeledReduction", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "labeledReduction", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Turns on labeling and reduce terms to do whole process of reduction."));
 
   constant ConfigFlag DISABLE_EXTRA_LABELING = CONFIG_FLAG(119,
-  "disableExtraLabeling", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  "disableExtraLabeling", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Disable adding extra label into the whole experssion with more than one term and +,- operations."));
 
-    constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(120,
-  "loadMSLModel", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  constant ConfigFlag LOAD_MSL_MODEL = CONFIG_FLAG(120,
+  "loadMSLModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Used to know loadFile doesn't need to be called in cpp-runtime (for labeled model reduction)."));
 
-   constant ConfigFlag Load_PACKAGE_FILE = CONFIG_FLAG(121,
-  "loadPackageFile", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  constant ConfigFlag Load_PACKAGE_FILE = CONFIG_FLAG(121,
+  "loadPackageFile", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("used when the outside name is different with the inside name of the packge, in cpp-runtime (for labeled model reduction)."));
+
+  constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(122,
+  "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Is true when building an FMU (so the compiler can look for URIs to package as FMI resources)."));
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1548,7 +1552,8 @@ constant list<ConfigFlag> allConfigFlags = {
   LABELED_REDUCTION,
   DISABLE_EXTRA_LABELING,
   LOAD_MSL_MODEL,
-  Load_PACKAGE_FILE
+  Load_PACKAGE_FILE,
+  BUILDING_FMU
 };
 
 public function new

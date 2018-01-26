@@ -2748,11 +2748,13 @@ algorithm
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a,ca,co;
       list<compWithSplitElements> sm;
+      list<SCode.Comment> comments;
+      Option<SCode.Annotation> ann;
 
     case (_, str)
      equation
        // classify DAE
-       (v,ie,ia,e,a,_,co,_,sm) = DAEUtil.splitElements(l);
+       (v,ie,ia,e,a,_,co,_,sm,comments) = DAEUtil.splitElements(l);
 
        // dump components with split elements (e.g., state machines)
        str = dumpCompWithSplitElementsStream(sm, str);
@@ -2772,6 +2774,11 @@ algorithm
 
        str = IOStream.append(str, if listEmpty(co) then "" else "constraint\n");
        str = dumpConstraintStream(co, str);
+
+       str = IOStream.append(str, stringAppendList(list(match cmt
+         case SCode.COMMENT(annotation_=ann as SOME(_))
+           then SCodeDump.printCommentStr(SCode.COMMENT(ann,NONE()));
+         else ""; end match for cmt in comments)));
      then
        str;
   end match;

@@ -344,7 +344,7 @@ algorithm
       SCode.Visibility visibility;
 
     // normal functions
-    case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info,cmt=cmt),inst_dims,_)
+    case (cache,env,ih,mod,pre,SCode.CLASS(classDef=cd, prefixes=SCode.PREFIXES(visibility=visibility), partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(funcRest),info = info),inst_dims,_)
       equation
         false = SCode.isExternalFunctionRestriction(funcRest);
         isImpure = SCode.isImpureFunctionRestriction(funcRest);
@@ -361,7 +361,7 @@ algorithm
         env_1 = env; // Env.extendFrameC(env,c);
         (cache,fpath) = Inst.makeFullyQualifiedIdent(cache, env_1, n);
         //print("2 Prefix: " + PrefixUtil.printPrefixStr(pre) + " path: " + Absyn.pathString(fpath) + "\n");
-        cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, info);
+        cmt = InstUtil.extractComment(daeElts);
         derFuncs = InstUtil.getDeriveAnnotation(cd, cmt,fpath,cache,cenv,ih,pre,info);
 
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);
@@ -372,7 +372,7 @@ algorithm
 
         // set the source of this element
         source = ElementSource.createElementSource(info, FGraph.getScopePath(env), pre);
-        inlineType = InstUtil.isInlineFunc(c);
+        inlineType = InstUtil.commentIsInlineFunc(cmt);
         partialPrefixBool = SCode.partialBool(partialPrefix);
 
         daeElts = InstUtil.optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
@@ -382,11 +382,11 @@ algorithm
           InstUtil.checkFunctionInputUsed(daeElts,NONE(),Absyn.pathString(fpath));
         end if;
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(list(e for e guard not DAEUtil.isComment(e) in daeElts))::derFuncs,ty1,visibility,partialPrefixBool,isImpure,inlineType,source,SOME(cmt))});
 
     // External functions should also have their type in env, but no dae.
     case (cache,env,ih,mod,pre,(c as SCode.CLASS(partialPrefix=partialPrefix, prefixes=SCode.PREFIXES(visibility=visibility), name = n,restriction = (restr as SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(isImpure))),
-        classDef = cd as (parts as SCode.PARTS(externalDecl=SOME(scExtdecl))), cmt=cmt, info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
+        classDef = cd as (parts as SCode.PARTS(externalDecl=SOME(scExtdecl))), info=info, encapsulatedPrefix = encapsulatedPrefix)),inst_dims,_)
       equation
         (cache,cenv,ih,_,DAE.DAE(daeElts),_,ty,_,_,_) =
           Inst.instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre,
@@ -396,7 +396,7 @@ algorithm
         // Only created to be able to get FQ path.
         (cache,fpath) = Inst.makeFullyQualifiedIdent(cache,env,n);
 
-        cmt = InstUtil.extractClassDefComment(cache, env, cd, cmt, c.info);
+        cmt = InstUtil.extractComment(daeElts);
         derFuncs = InstUtil.getDeriveAnnotation(cd,cmt,fpath,cache,env,ih,pre,info);
 
         (cache) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath,info);

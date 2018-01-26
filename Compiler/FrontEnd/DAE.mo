@@ -377,6 +377,9 @@ public uniontype Element
     list<Element> dAElist "a component with subelements";
   end SM_COMP;
 
+  record COMMENT
+    SCode.Comment cmt "Functions store the inherited class annotations in the DAE";
+  end COMMENT;
 
 end Element;
 

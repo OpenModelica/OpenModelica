@@ -99,8 +99,8 @@ SIM_OBJS_C_FMI=modelinfo$(OBJ_EXT) simulation_input_xml$(OBJ_EXT)
 else
 SIM_OBJS_C_FMI=
 endif
-SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT)
-SIM_HFILES = options.h simulation_input_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h
+SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT) omc_simulation_util$(OBJ_EXT)
+SIM_HFILES = options.h simulation_input_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h omc_simulation_util.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
