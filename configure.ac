@@ -12,6 +12,7 @@ AC_SUBST(with_paradiseo_include)
 AC_SUBST(with_paradiseo_lib)
 AC_SUBST(with_qwt)
 AC_SUBST(with_qwt_suffix)
+AC_SUBST(CHECK_C_ERRORS)
 AC_SUBST(EXTRA_CFLAGS_GENERATED_CODE)
 AC_SUBST(HAVE_GETTEXT)
 AC_SUBST(LIBSOCKET)
@@ -206,9 +207,19 @@ for flag in $TRY_FLAGS; do
   AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
 done
 OLD_CFLAGS="$CFLAGS"
-for flag in -Wno-parentheses-equality -Wno-unused-variable -Werror=implicit-function-declaration; do
+for flag in -Wno-parentheses-equality -Wno-unused-variable; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
-  AC_TRY_LINK([], [return 0;], [EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"],[])
+  AC_TRY_LINK([], [return 0;], [
+    CHECK_C_ERRORS="$CHECK_C_ERRORS $flag"
+    EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"
+  ],[])
+done
+for flag in -Werror=implicit-function-declaration; do
+  CFLAGS="$RUNTIMECFLAGS $flag -Werror"
+  AC_TRY_LINK([], [return 0;], [
+    CHECK_C_ERRORS="$CHECK_C_ERRORS $flag"
+    EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"
+  ],[])
 done
 CFLAGS="$OLD_CFLAGS"
 

@@ -93,4 +93,7 @@ dassl_initial(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo, 
 int
 dassl_deinitial(DASSL_DATA *dasslData);
 
+int printCurrentStatesVector(int logLevel, double* states, DATA* data, double time);
+int printVector(int logLevel, const char* name,  double* vec, int n, double time);
+
 #endif

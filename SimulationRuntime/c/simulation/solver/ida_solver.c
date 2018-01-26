@@ -51,6 +51,7 @@
 #include "simulation/solver/epsilon.h"
 #include "simulation/solver/omc_math.h"
 #include "simulation/solver/ida_solver.h"
+#include "simulation/solver/dassl.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -298,7 +299,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     flag = IDASetMaxOrd(idaData->ida_mem, maxOrder);
     if (checkIDAflag(flag)){
       throwStreamPrint(threadData, "##IDA## Failed to set max integration order!");
-	  }
+    }
   }
   infoStreamPrint(LOG_SOLVER, 0, "maximum integration order %d", maxOrder);
 
@@ -911,7 +912,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         }
       } else {
         break;
-			}
+      }
     }
 
   } while(!finished);
