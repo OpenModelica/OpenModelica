@@ -241,6 +241,40 @@ end getSimulationArguments;
 public function elabCallInteractive "This function elaborates the functions defined in the interactive environment.
   Since some of these functions are meta-functions, they can not be described in the type
   system, and is thus given the the type T_UNKNOWN"
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input Absyn.ComponentRef fn;
+  input list<Absyn.Exp> args;
+  input list<Absyn.NamedArg> nargs;
+  input Boolean impl;
+  input Prefix.Prefix pre;
+  input SourceInfo info;
+  output DAE.Exp e;
+  output DAE.Properties prop;
+protected
+  list<Integer> handles;
+algorithm
+  if Flags.getConfigBool(Flags.BUILDING_MODEL) then
+    ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
+    fail();
+  end if;
+  handles := ErrorExt.popCheckPoint("elabCall_InteractiveFunction");
+  try
+    /* An extra try-block to avoid the assignment to handles being optimized away */
+    ErrorExt.setCheckpoint("elabCall_InteractiveFunction1");
+    (cache,e,prop) := elabCallInteractive_work(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+    ErrorExt.delCheckpoint("elabCall_InteractiveFunction1");
+  else
+    ErrorExt.rollBack("elabCall_InteractiveFunction1");
+    ErrorExt.pushMessages(handles);
+    fail();
+  end try;
+  ErrorExt.freeMessages(handles);
+end elabCallInteractive;
+
+protected function elabCallInteractive_work "This function elaborates the functions defined in the interactive environment.
+  Since some of these functions are meta-functions, they can not be described in the type
+  system, and is thus given the the type T_UNKNOWN"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -252,7 +286,7 @@ public function elabCallInteractive "This function elaborates the functions defi
   output FCore.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
- algorithm
+algorithm
    (outCache,outExp,outProperties):=
    matchcontinue
      (inCache,inEnv,inComponentRef,inExps,inNamedArgs,inImplInst,inPrefix,info)
@@ -467,7 +501,7 @@ public function elabCallInteractive "This function elaborates the functions defi
         DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
 
   end matchcontinue;
-end elabCallInteractive;
+end elabCallInteractive_work;
 
 public function elabExp "
 function: elabExp
@@ -560,7 +594,7 @@ algorithm
       Prefix.Prefix pre;
   case (cache,env,fn,args,nargs,impl,pre,_,_)
       equation
-        (cache,e,prop) = elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
+        (cache,e,prop) = elabCallInteractive_work(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
         (cache,e,prop);
   end match;

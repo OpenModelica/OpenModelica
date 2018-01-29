@@ -6737,24 +6737,10 @@ algorithm
       then
         fail();
 
-    case () /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
+    case ()
+      /* Handle the scripting interface */
       algorithm
-        /* Remove errors relating to elabCallArgs, keeping only elabCallInteractive messages.
-         * Push these messages back if BackendInterface fails.
-         * This order is necessary if getErrorString() is called in the Backend (runScript, etc)
-         */
-        handles := ErrorExt.popCheckPoint("elabCall_InteractiveFunction");
-        try
-          /* An extra try-block to avoid the assignment to handles being optimized away */
-          ErrorExt.setCheckpoint("elabCall_InteractiveFunction1");
-          (cache,e,prop) := BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
-          ErrorExt.delCheckpoint("elabCall_InteractiveFunction1");
-        else
-          ErrorExt.rollBack("elabCall_InteractiveFunction1");
-          ErrorExt.pushMessages(handles);
-          fail();
-        end try;
-        ErrorExt.freeMessages(handles);
+        (cache,e,prop) := BackendInterface.elabCallInteractive(cache, env, fn, args, nargs, impl, pre, info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then (cache,e,prop);
 
   end matchcontinue;

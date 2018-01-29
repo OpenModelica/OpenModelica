@@ -71,7 +71,7 @@ algorithm
   (outCache, outValue) := CevalScript.cevalCallFunction(inCache, inEnv, inExp, inValues, inImplInst, inMsg, inNumIter);
 end cevalCallFunction;
 
-public function elabCallInteractive
+public function elabCallInteractive "Note: elabCall_InteractiveFunction is set in the error buffer; the called function should pop it"
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.ComponentRef inCref;
