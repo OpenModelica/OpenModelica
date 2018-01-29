@@ -740,6 +740,7 @@ protected
   type State = enumeration(frontend, backend, templates, simcode);
   State state = State.frontend;
 algorithm
+  Flags.setConfigBool(Flags.BUILDING_MODEL, true);
   (success, outBackendDAE, outStringLst, outFileDir) :=
   matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
@@ -891,6 +892,7 @@ algorithm
                   ("timeSimCode", Values.REAL(timeSimCode)),
                   ("timeBackend", Values.REAL(timeBackend)),
                   ("timeFrontend", Values.REAL(timeFrontend))};
+  Flags.setConfigBool(Flags.BUILDING_MODEL, false);
 end translateModel;
 
 protected function serializeNotify<T>

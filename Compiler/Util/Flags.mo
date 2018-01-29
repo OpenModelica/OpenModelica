@@ -1427,6 +1427,11 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
   constant ConfigFlag BUILDING_FMU = CONFIG_FLAG(122,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Is true when building an FMU (so the compiler can look for URIs to package as FMI resources)."));
+
+  constant ConfigFlag BUILDING_MODEL = CONFIG_FLAG(123,
+  "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Is true when building a model (as opposed to running a Modelica script)."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1553,7 +1558,8 @@ constant list<ConfigFlag> allConfigFlags = {
   DISABLE_EXTRA_LABELING,
   LOAD_MSL_MODEL,
   Load_PACKAGE_FILE,
-  BUILDING_FMU
+  BUILDING_FMU,
+  BUILDING_MODEL
 };
 
 public function new

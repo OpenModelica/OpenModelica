@@ -1361,9 +1361,11 @@ algorithm
           print("The following path is a loaded resource... "+res+"\n");
           fail();
         end if;
-      then
-        (cache,Values.STRING(res));
-   /* Note: Do not evaluate uriToFilename if it says it fails. We need simulations to be able to report URI not found */
+      then (cache,Values.STRING(res));
+     /* Note: Only evaluate uriToFilename during scripting. We need simulations to be able to report URI not found */
+    case (cache,_,"OpenModelica_uriToFilename",_,_)
+      guard not Flags.getConfigBool(Flags.BUILDING_MODEL)
+      then (cache,Values.STRING(""));
 
     case (cache,_,"getAnnotationVersion",{},_)
       equation
@@ -2936,6 +2938,7 @@ protected
 algorithm
   // add program to the cache so it can be used to lookup modelica://
   // URIs in external functions IncludeDirectory/LibraryDirectory
+  Flags.setConfigBool(Flags.BUILDING_MODEL, true);
   try
     b := runFrontEndLoadProgram(className);
     true := b;
@@ -2951,6 +2954,7 @@ algorithm
   else
     // Return odae=NONE(); needed to update cache and symbol table if we fail
   end try;
+  Flags.setConfigBool(Flags.BUILDING_MODEL, false);
 end runFrontEnd;
 
 protected function runFrontEndLoadProgram
