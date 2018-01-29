@@ -41,8 +41,8 @@ simulate(Tearing12); getErrorString();
 //  * Number of discrete variables: 288 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3885):
-//  * Single equations (assignments): 3881
+// Notification: Strong component statistics for initialization (3713):
+//  * Single equations (assignments): 3709
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -60,8 +60,8 @@ simulate(Tearing12); getErrorString();
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1894):
-//  * Single equations (assignments): 1890
+// Notification: Strong component statistics for simulation (1722):
+//  * Single equations (assignments): 1718
 //  * Array equations: 3
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -71,7 +71,7 @@ simulate(Tearing12); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(61,76.6%) 844}
+//  * Linear torn systems: 1 {(60,77.4%) 845}
 //  * Non-linear torn systems: 0
 // "
 // endResult

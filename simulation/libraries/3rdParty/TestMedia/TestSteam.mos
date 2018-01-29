@@ -1270,7 +1270,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   h := 2087546.84511715 * (1.0 + x * (0.4880153718655694 + x * (0.2079670746250689 + x * (-6.084122698421623 + x * (25.08887602293532 + x * (-48.38215180269516 + x * (45.66489164833212 + (-16.98555442961553 + 0.0006616936460057692 * x) * x)))))));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hv_p_R4b;
 //
-// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p \"Inline after index reduction\"
+// function Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hvl_p \"Inline after index reduction\" \"Icon for a function\"
 //   input Real p(quantity = \"Pressure\", unit = \"Pa\", displayUnit = \"bar\", min = -1000000000.0, max = 1000000000.0, start = 100000.0, nominal = 100000.0) \"pressure\";
 //   input Modelica.Media.Common.IF97PhaseBoundaryProperties bpro \"property record\";
 //   output Real h(quantity = \"SpecificEnergy\", unit = \"J/kg\", nominal = 1000000.0) \"specific enthalpy\";

@@ -53,5 +53,10 @@ test();getErrorString();
 // expected type:
 //   tuple<polymorphic<T1>, polymorphic<T2>>
 // [SimCode/SimCodeFunctionUtil.mo:0:0-0:0:writable] Error: Internal error function getCalledFunctionsInFunction2: Class P.f2 not found in global scope.
+// [<interactive>:26:5-26:10:writable] Error: Type mismatch for positional argument 1 in P.f(inTup=t1). The argument has type:
+//   polymorphic<T1>
+// expected type:
+//   tuple<polymorphic<T1>, polymorphic<T2>>
+// [SimCode/SimCodeFunctionUtil.mo:0:0-0:0:writable] Error: Internal error function getCalledFunctionsInFunction2: Class P.f2 not found in global scope.
 // "
 // endResult

@@ -67,7 +67,6 @@ setComponentComment.mos \
 setComponentModifierValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
-simplify.mos \
 stringSplit.mos \
 strings.mos  \
 variables.mos \

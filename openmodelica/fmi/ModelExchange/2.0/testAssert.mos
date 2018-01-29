@@ -33,24 +33,24 @@ getErrorString();
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testAssertFMI_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: testAssertFMI_me_FMU
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 0.204000
-// |                 | |       | x < 1.5
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.204000
+// x < 1.5
 // assert            | error   | x is too big at time = 0.204
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
-// assert            | warning | The following assertion has been violated at time 0.204000
-// |                 | |       | x < 1.5
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.204000
+// x < 1.5
 // assert            | error   | x is too big at time = 0.204
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
 // stdout            | warning | Integrator attempt to handle a problem with a called assert.
-// assert            | warning | The following assertion has been violated at time 0.202853
-// |                 | |       | x < 1.5
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.202853
+// x < 1.5
 // assert            | error   | x is too big at time = 0.202853
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error
-// assert            | warning | The following assertion has been violated at time 0.202853
-// |                 | |       | x < 1.5
+// module = testAssertFMI, log level = WARNING: [logStatusWarning][FMU status:Warning] <interactive>:7: The following assertion has been violated at time 0.202853
+// x < 1.5
 // assert            | error   | x is too big at time = 0.202853
 // module = testAssertFMI, log level = ERROR: [logFmi2Call][FMU status:Error] fmi2CompletedIntegratorStep: terminated by an assertion.
 // assert            | debug   | fmi2CompletedIntegratorStep failed with status : Error

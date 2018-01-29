@@ -3898,7 +3898,7 @@ end InnerOuterSamePrefix;// Result:
 //   Q := Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T({{R.T[1,1], R.T[1,2], R.T[1,3]}, {R.T[2,1], R.T[2,2], R.T[2,3]}, {R.T[3,1], R.T[3,2], R.T[3,3]}}, {Q_guess[1], Q_guess[2], Q_guess[3], Q_guess[4]});
 // end Modelica.Mechanics.MultiBody.Frames.to_Q;
 //
-// function Modelica.Mechanics.MultiBody.World.gravityAcceleration "Gravity field acceleration depending on field type and position"
+// function Modelica.Mechanics.MultiBody.World.gravityAcceleration "Inline before index reduction" "Gravity field acceleration depending on field type and position"
 //   input Real[3] r(quantity = "Length", unit = "m") "Position vector from world frame to actual point, resolved in world frame";
 //   input enumeration(NoGravity, UniformGravity, PointGravity) gravityType = gravityType "Type of gravity field";
 //   input Real[3] g(quantity = "Acceleration", unit = "m/s2") = {0.0, -g, 0.0} "Constant gravity acceleration, resolved in world frame, if gravityType=1";
