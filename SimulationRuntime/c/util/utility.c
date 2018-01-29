@@ -151,7 +151,12 @@ void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs)
 }
 
 #include <sys/stat.h>
+
+#if defined(_MSC_VER)
+#define stat _stat
+#else
 #include <unistd.h>
+#endif
 
 static const char *PATH_NOT_IN_FMU_RESOURCES = "Returning path (%s) not in the resources directory. The FMU might not work as expected if you send it to a different system";
 

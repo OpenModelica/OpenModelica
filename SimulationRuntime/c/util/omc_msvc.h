@@ -184,7 +184,7 @@ static OMC_INLINE int dladdr(void *addr, Dl_info *info) {
 
 #if defined(_MSC_VER)
 
-#include <win32_dirent.h>
+#include <windows.h>
 #if !defined(PATH_MAX)
 #define PATH_MAX MAX_PATH
 #endif
