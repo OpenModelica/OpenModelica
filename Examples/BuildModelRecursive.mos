@@ -177,7 +177,8 @@ end if;
 outputFormat := if outputFormat == \"default\" then (if referenceExists then \"mat\" else \"empty\") else outputFormat;
 
 compareVarsUri := \"modelica://\" + /*libraryString*/ \"Buildings\" + \"/Resources/Scripts/OpenModelica/compareVars/" + s + ".mos\";
-(compareVarsFile,compareVarsFileMessages) := uriToFilename(compareVarsUri);
+compareVarsFile := uriToFilename(compareVarsUri);
+compareVarsFileMessages := getErrorString();
 
 if regularFileExists(compareVarsFile) then
   runScript(compareVarsFile);

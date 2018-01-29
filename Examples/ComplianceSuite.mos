@@ -81,5 +81,5 @@ echo '</testsuites>' >> \"$OMCRESULT\"
 echo \"$OMCRESULT\"
 ");getErrorString();
 system("bash ComplianceSuite.sh");
-(filename,error) := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl");getErrorString();
+filename := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl");getErrorString();
 system("xsltproc -o openmodelica.html '" + filename + "' openmodelica.xml");getErrorString();
