@@ -23,10 +23,10 @@ OpenModelica.Scripting.uriToFilename("Modelicax://A.B.C/Resources/Icons/D.jpeg")
 // ""
 // "openmodelica/typed-API/UriLookup/A/Resources/Icons/D.jpeg"
 // ""
-//
+// ""
 // "Error: Malformed URI (couldn't get a class name): Modelica:///A.B.C/Resources/Icons/D.jpeg
 // "
-//
+// ""
 // "Error: Failed to lookup URI (is the package loaded?) modelica://X.B.C/D.jpeg
 // "
 // "/tmp/D%20E.jpeg"
@@ -35,7 +35,7 @@ OpenModelica.Scripting.uriToFilename("Modelicax://A.B.C/Resources/Icons/D.jpeg")
 // ""
 // true
 // ""
-//
+// ""
 // "Error: Unknown URI schema: Modelicax://A.B.C/Resources/Icons/D.jpeg
 // "
 // endResult
