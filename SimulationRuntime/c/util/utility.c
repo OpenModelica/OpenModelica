@@ -35,6 +35,7 @@
 #include "simulation_data.h"
 #include "simulation/options.h"
 #include <string.h>
+#include <errno.h>
 
 modelica_real real_int_pow(threadData_t *threadData, modelica_real base, modelica_integer n)
 {

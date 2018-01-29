@@ -414,11 +414,22 @@ static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
   case ERROR_INTEGRATOR:
   case ERROR_OPTIMIZE:
 #ifndef OMC_EMCC
-    return threadData->simulationJumpBuffer;
+    if (threadData->simulationJumpBuffer) {
+      return threadData->simulationJumpBuffer;
+    }
+    fprintf(stderr, "getBestJumpBuffer got simulationJumpBuffer=%p\n", threadData->simulationJumpBuffer);
+    abort();
 #endif
   case ERROR_EVENTHANDLING:
   default:
-    return threadData->globalJumpBuffer ? threadData->globalJumpBuffer : threadData->mmc_jumper;
+    if (threadData->globalJumpBuffer) {
+      return threadData->globalJumpBuffer;
+    }
+    if (threadData->mmc_jumper) {
+      return threadData->mmc_jumper;
+    }
+    fprintf(stderr, "getBestJumpBuffer got mmc_jumper=%p, globalJumpBuffer=%p\n", threadData->globalJumpBuffer, threadData->mmc_jumper);
+    abort();
   }
 }
 

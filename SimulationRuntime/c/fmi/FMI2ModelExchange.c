@@ -271,7 +271,7 @@ int fmi2CompletedIntegratorStep_OMC(void* in_fmi2me, double flowStates)
     fmi2_boolean_t callEventUpdate = fmi2_false;
     fmi2_boolean_t terminateSimulation = fmi2_false;
     fmi2_status_t status = fmi2_import_completed_integrator_step(FMI2ME->FMIImportInstance, fmi2_true, &callEventUpdate, &terminateSimulation);
-    if (status != fmi1_status_ok && status != fmi1_status_warning) {
+    if (status != fmi2_status_ok && status != fmi2_status_warning) {
       ModelicaFormatError("fmi2CompletedIntegratorStep failed with status : %s\n", fmi2_status_to_string(status));
     }
     return callEventUpdate;

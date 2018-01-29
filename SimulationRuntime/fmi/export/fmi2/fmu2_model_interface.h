@@ -76,7 +76,7 @@ typedef struct {
   fmi2EventInfo eventInfo;
 
   DATA* fmuData;
-  threadData_t *threadData;
+  threadData_t *threadData, *threadDataParent;
   fmi2Boolean toleranceDefined;
   fmi2Real tolerance;
   fmi2Real startTime;
