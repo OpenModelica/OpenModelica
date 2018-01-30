@@ -48,7 +48,6 @@ class OmcInteractiveEnvironment
 
   public:
     threadData_t *threadData_;
-    void *symbolTable_;
 
     static OmcInteractiveEnvironment* getInstance();
     virtual std::string getResult();
