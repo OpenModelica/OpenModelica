@@ -235,8 +235,8 @@ omcCAPIinstall:
 	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
 	  cmake -G "MSYS Makefiles" -DPLATFORM=$(PLATFORM) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DOMC_PATH="$(OMBUILDDIR)"  -DCMAKE_INSTALL_PREFIX:PATH="./lib" MAKE_CXX_COMPILER=g++ ../omcCAPI/; \
 	  $(MAKE) install;)
-	(cp -puf Build_CAPI/lib/* $(OMBUILDDIR)/lib/omc/)
-	(cp -puf Build_CAPI/lib/*.dll $(OMBUILDDIR)/bin/)
+	(cp -puf Build_CAPI/*.dll* $(OMBUILDDIR)/bin/)
+	(cp -puf Build_CAPI/*.dll* $(OMBUILDDIR)/lib/omc/)
 
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
