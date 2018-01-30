@@ -41,9 +41,8 @@ void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
-int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
+int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
-void* omc_Main_readSettings(void *threadData, void *args);
 void omc_System_initGarbageCollector(void *threadData);
 #ifdef WIN32
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
@@ -200,15 +199,13 @@ bool OMCProxy::initializeOMC()
   args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
   // initialize threadData
   omc_System_initGarbageCollector(NULL);
-  threadData_t *threadData = (threadData_t *) GC_malloc(sizeof(threadData_t));
-  void *st = 0;
+  threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, args);
-  st = omc_Main_readSettings(threadData, mmc_mk_nil());
   threadData->plotClassPointer = MainWindow::instance();
   threadData->plotCB = MainWindow::PlotCallbackFunction;
   MMC_CATCH_TOP(return false;)
-  mpOMCInterface = new OMCInterface(threadData, st);
+  mpOMCInterface = new OMCInterface(threadData);
   connect(mpOMCInterface, SIGNAL(logCommand(QString,QTime*)), this, SLOT(logCommand(QString,QTime*)));
   connect(mpOMCInterface, SIGNAL(logResponse(QString,QTime*)), this, SLOT(logResponse(QString,QTime*)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
@@ -275,7 +272,7 @@ void OMCProxy::sendCommand(const QString expression)
 
   MMC_TRY_STACK()
 
-  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toStdString().c_str()), mpOMCInterface->st, &reply_str, &mpOMCInterface->st)) {
+  if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression.toStdString().c_str()), &reply_str)) {
     if (expression == "quit()") {
       return;
     }
