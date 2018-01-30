@@ -45,8 +45,8 @@ SOURCES += \
     serializingvisitor.cpp \
     graphcell.cpp \
     latexcell.cpp \
-    evalthread.cpp \
     indent.cpp \
+#    evalthread.cpp \
 #    ../OMSketch/Tools.cpp \
 #    ../OMSketch/Sketch_files.cpp \
 #    ../OMSketch/Shapes.cpp \
@@ -118,8 +118,8 @@ HEADERS += \
     searchform.h \
     graphcell.h \
     latexcell.h \
-    evalthread.h \
     indent.h \
+#    evalthread.h \
 #    ../OMSketch/Tools.h \
 #    ../OMSketch/Sketch_files.h \
 #    ../OMSketch/Shapes.h \

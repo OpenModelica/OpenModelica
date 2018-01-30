@@ -78,7 +78,7 @@
 #include "omcinteractiveenvironment.h"
 #include "indent.h"
 
-#include "evalthread.h"
+//#include "evalthread.h"
 
 using namespace OMPlot;
 
@@ -1586,7 +1586,7 @@ namespace IAEX {
       setClosed(false);
 
       // 2006-02-17 AF, set text '{evaluation expression}" during
-      // evaluation of expressiuon
+      // evaluation of expression
       output_->selectAll();
       output_->textCursor().insertText( "{evaluating expression}" );
       setOutputStyle();
@@ -1618,10 +1618,9 @@ namespace IAEX {
         getDelegate()->evalExpression(expr);
         delegateFinished(getDelegate());
       }
-
-      input_->blockSignals(false);
-      output_->blockSignals(false);
     }
+    input_->blockSignals(false);
+    output_->blockSignals(false);
   }
 
   void GraphCell::delegateFinished(InputCellDelegate *delegate)
