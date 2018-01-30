@@ -448,6 +448,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  * hybrid\n"
   "  * kinsol\n"
   "  * newton\n"
+  "  * homotopy\n"
   "  * mixed",
   /* FLAG_NLS_INFO */
   "  Outputs detailed information about solving process of non-linear systems into csv files.",
@@ -748,14 +749,17 @@ const char *NLS_NAME[NLS_MAX+1] = {
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_NEWTON */       "newton",
-  /* NLS_MIXED */        "mixed",
 #else
   /* NLS_HYBRID */       "hybrid-not-available",
   /* NLS_KINSOL */       "kinsol-not-available",
   /* NLS_NEWTON */       "newton-not-available",
-  /* NLS_MIXED */        "mixed-not-available",
 #endif
   /* NLS_HOMOTOPY */     "homotopy",
+#if !defined(OMC_MINIMAL_RUNTIME)
+  /* NLS_MIXED */        "mixed",
+#else
+  /* NLS_MIXED */        "mixed-not-available",
+#endif
   "NLS_MAX"
 };
 
