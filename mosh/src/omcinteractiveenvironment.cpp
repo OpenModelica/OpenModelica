@@ -39,13 +39,14 @@
 #ifndef WIN32
 #include "omc_config.h"
 #endif
+#include "gc.h"
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
-int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
+int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 modelica_metatype omc_Main_init(void *threadData, modelica_metatype args);
 modelica_metatype omc_Main_readSettings(void *threadData, modelica_metatype args);
 #ifdef WIN32
@@ -82,18 +83,15 @@ static bool contains(std::string s1, std::string s2);
     args = mmc_mk_cons(mmc_mk_scon("+locale=C"), args);
 
     // initialize threadData
-    threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
-    void *st = 0;
+    threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
     MMC_TRY_TOP_INTERNAL()
     omc_Main_init(threadData, args);
-    st = omc_Main_readSettings(threadData, mmc_mk_nil());
     MMC_CATCH_TOP()
     threadData_ = threadData;
-    symbolTable_ = st;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
-    // set the +d=initialization flag default.
-    evalExpression("setCommandLineOptions(\"+d=initialization\")");
+    // set the -d=initialization flag default.
+    evalExpression("setCommandLineOptions(\"-d=initialization\")");
 #ifdef WIN32
     evalExpression("getInstallationDirectoryPath()");
     std::string result = getResult();
@@ -105,7 +103,10 @@ static bool contains(std::string s1, std::string s2);
 #endif
   }
 
-  OmcInteractiveEnvironment::~OmcInteractiveEnvironment() { }
+  OmcInteractiveEnvironment::~OmcInteractiveEnvironment()
+  {
+    GC_free(threadData_);
+  }
 
   std::string OmcInteractiveEnvironment::getResult() {
     return result_;
@@ -150,14 +151,14 @@ static bool contains(std::string s1, std::string s2);
 
     MMC_TRY_STACK()
 
-    if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.c_str()), symbolTable_, &reply_str, &symbolTable_)) {
+    if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.c_str()), &reply_str)) {
       return;
     }
     result_ = MMC_STRINGDATA(reply_str);
     result_ = trim(result_);
     reply_str = NULL;
     // see if there are any errors if the expr is not "quit()"
-    if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), symbolTable_, &reply_str, &symbolTable_)) {
+    if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), &reply_str)) {
       return;
     }
     error_ = MMC_STRINGDATA(reply_str);

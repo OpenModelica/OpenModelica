@@ -53,15 +53,15 @@
 #ifndef WIN32
 #include "omc_config.h"
 #endif
+#include "gc.h"
 
 extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
-int omc_Main_handleCommand(void *threadData, void *imsg, void *ist, void **omsg, void **ost);
+int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
-void* omc_Main_readSettings(void *threadData, void *args);
 #ifdef WIN32
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
@@ -93,14 +93,11 @@ namespace IAEX
     QString locale = "+locale=" + settingsLocale.name();
     args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
     // initialize threadData
-    threadData_t *threadData = (threadData_t *) calloc(1, sizeof(threadData_t));
-    void *st = 0;
+    threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
     MMC_TRY_TOP_INTERNAL()
     omc_Main_init(threadData, args);
-    st = omc_Main_readSettings(threadData, mmc_mk_nil());
     MMC_CATCH_TOP()
     threadData_ = threadData;
-    symbolTable_ = st;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
     // set the +d=initialization flag default.
@@ -119,6 +116,7 @@ namespace IAEX
   {
     //if (selfInstance)
     //  delete selfInstance;
+    GC_free(threadData_);
   }
 
   QString OmcInteractiveEnvironment::getResult()
@@ -168,14 +166,14 @@ namespace IAEX
 
     MMC_TRY_STACK()
 
-    if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.toStdString().c_str()), symbolTable_, &reply_str, &symbolTable_)) {
+    if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expr.toStdString().c_str()), &reply_str)) {
       return;
     }
     result_ = QString::fromUtf8(MMC_STRINGDATA(reply_str));
     result_ = result_.trimmed();
     reply_str = NULL;
     // see if there are any errors if the expr is not "quit()"
-    if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), symbolTable_, &reply_str, &symbolTable_)) {
+    if (!omc_Main_handleCommand(threadData, mmc_mk_scon("getErrorString()"), &reply_str)) {
       return;
     }
     error_ = QString::fromUtf8(MMC_STRINGDATA(reply_str));
