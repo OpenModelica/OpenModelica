@@ -637,7 +637,7 @@ algorithm
       Debug.trace(str);
       Debug.trace("------- End recieved Data-----\n");
     end if;
-    (b,replystr) := handleCommand(str) "Print.clearErrorBuf &" ;
+    (b,replystr) := handleCommand(str);
     replystr := if b then replystr else "quit requested, shutting server down\n";
     ZeroMQ.sendReply(zmqSocket, replystr);
     if not b then
@@ -653,10 +653,9 @@ protected
   String str, reply_str;
   Boolean cont;
 algorithm
-  str := Corba.waitForCommand();
-  Print.clearBuf();
   cont := true;
   while true loop
+    str := Corba.waitForCommand();
     (cont, reply_str) := handleCommand(str);
     if cont then
       Corba.sendreply(reply_str);
