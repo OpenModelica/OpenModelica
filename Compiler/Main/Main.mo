@@ -776,6 +776,7 @@ algorithm
   args_1 := Flags.new(args);
   System.gettextInit(if Config.getRunningTestsuite() then "C" else Flags.getConfigString(Flags.LOCALE_FLAG));
   setDefaultCC();
+  SymbolTable.reset();
 end init;
 
 public function main
@@ -848,8 +849,6 @@ algorithm
 
   try
     Settings.getInstallationDirectoryPath();
-
-    SymbolTable.reset();
 
     readSettings(args);
     if Flags.isSet(Flags.INTERACTIVE_TCP) then
