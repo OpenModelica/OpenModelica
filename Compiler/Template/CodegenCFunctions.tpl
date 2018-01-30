@@ -4242,37 +4242,19 @@ template tempDeclZero(String ty, Text &varDecls)
 
 end tempDeclZero;
 
-template tempDeclMatchInput(String ty, String prefix, String startIndex, String index, Text &varDecls)
+template tempDeclMatchInput(MatchType matchTy, String ty, String startIndex, String index, Text &varDecls)
  "Declares a temporary variable in varDecls for variables in match input list and returns the name."
 ::=
-  let newVar
-         =
-    match ty /* TODO! FIXME! UGLY! UGLY! hack! */
-      case "modelica_metatype"
-      case "metamodelica_string"
-      case "metamodelica_string_const"
-        then 'tmpMeta[<%startIndex%>+<%index%>]'
-      else
-        let newVarIx = '<%prefix%>_in<%index%>'
-        let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
-        newVarIx
-  newVar
+  // Note: We use volatile variables in matchcontinue to avoid problems with optimizing compilers
+  let ix = 'tmp<%startIndex%>_<%index%>'
+  let &varDecls += '<% match matchTy case MATCHCONTINUE(__) then 'volatile '%><%ty%> <%ix%>;'
+  ix
 end tempDeclMatchInput;
 
-template getTempDeclMatchInputName(list<Exp> inputs, String prefix, String startIndex, Integer index)
+template getTempDeclMatchInputName(String startIndex, Integer index)
  "Returns the name of the temporary variable from the match input list."
 ::=
-  let typ = '<%expTypeFromExpModelica(listGet(inputs, index))%>'
-  let newVar =
-      match typ /* TODO! FIXME! UGLY! UGLY! hack! */
-      case "modelica_metatype"
-      case "metamodelica_string"
-      case "metamodelica_string_const"
-        then 'tmpMeta[<%startIndex%>+<%intSub(index, 1)%>]'
-      else
-        let newVarIx = '<%prefix%>_in<%intSub(index, 1)%>'
-        newVarIx
-  newVar
+  'tmp<%startIndex%>_<%index%>'
 end getTempDeclMatchInputName;
 
 template tempDeclMatchOutput(String ty, String prefix, String startIndex, String index, Text &varDecls)
@@ -6684,22 +6666,22 @@ case exp as MATCHEXPRESSION(__) then
   let &preExpInput = buffer ""
   let &expInput = buffer ""
   // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
-  let startIndexInputs = '<%System.tmpTickIndexReserve(1, listLength(inputs))%>'
-  let ignore3 = (List.threadTuple(inputs,aliases) |> (exp,alias) hasindex i0 =>
-    let typ = '<%expTypeFromExpModelica(exp)%>'
-    let decl = tempDeclMatchInput(typ, prefix, startIndexInputs, i0, &varDeclsInput)
-    let &expInput += '<%decl%> = <%daeExp(exp, context, &preExpInput, &varDeclsInput, &auxFunction)%>;<%\n%>'
+  let startIndexInputs = '<%System.tmpTickIndexReserve(0, 0)%>'
+  let ignore3 = (List.threadTuple(inputs,aliases) |> (e1,alias) hasindex i1 fromindex 1 =>
+    let typ = '<%expTypeFromExpModelica(e1)%>'
+    let decl = tempDeclMatchInput(exp.matchType, typ, startIndexInputs, i1, &varDeclsInput)
+    let &expInput += '<%decl%> = <%daeExp(e1, context, &preExpInput, &varDeclsInput, &auxFunction)%>;<%\n%>'
     let &expInput += alias |> a => let &varDeclsInput += '<%typ%> _<%a%>;' '_<%a%> = <%decl%>;' ; separator="\n"
     ""; empty)
   let ix = match exp.matchType
     case MATCH(switch=SOME((switchIndex,ty as T_STRING(__),div))) then
-      let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex)
+      let matchInputVar = getTempDeclMatchInputName(startIndexInputs, switchIndex)
       'stringHashDjb2Mod(<%matchInputVar%>,<%div%>)'
     case MATCH(switch=SOME((switchIndex,ty as T_METATYPE(__),_))) then
-      let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex)
+      let matchInputVar = getTempDeclMatchInputName(startIndexInputs, switchIndex)
       'valueConstructor(<%matchInputVar%>)'
     case MATCH(switch=SOME((switchIndex,ty as T_INTEGER(__),_))) then
-      let matchInputVar = getTempDeclMatchInputName(exp.inputs, prefix, startIndexInputs, switchIndex)
+      let matchInputVar = getTempDeclMatchInputName(startIndexInputs, switchIndex)
       '<%matchInputVar%>'
     case MATCH(switch=SOME(_)) then
       error(sourceInfo(), 'Unknown switch: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
@@ -6823,7 +6805,8 @@ template daeExpMatchCases(list<MatchCase> cases, list<Exp> tupleAssignExps, DAE.
   let &assignments = buffer ""
   let &preRes = buffer ""
   let &varFrees = buffer ""
-  let patternMatching = (sortPatternsByComplexity(c.patterns) |> (lhs,i0) => patternMatch(lhs,'<%getTempDeclMatchInputName(inputs, prefix, startIndexInputs, i0)%>', onPatternFail, &varDeclsCaseInner, &assignments); empty)
+  let patternMatching = (sortPatternsByComplexity(c.patterns) |> (lhs,i0)
+    => patternMatch(lhs,'<%getTempDeclMatchInputName(startIndexInputs, i0)%>', onPatternFail, &varDeclsCaseInner, &assignments); empty)
   let() = System.tmpTickSetIndex(startTmpTickIndex,1)
   let stmts = (c.body |> stmt => algStatement(stmt, context, &varDeclsCaseInner, &auxFunction); separator="\n")
   let &preGuardCheck = buffer ""
