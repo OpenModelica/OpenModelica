@@ -522,22 +522,6 @@ void array_alloc_boolean_array(boolean_array_t* dest, int n,
     free(elts);
 }
 
-void array_scalar_boolean_array(boolean_array_t* dest, int n,
-                                m_boolean first, ...)
-{
-    int i;
-    va_list ap;
-    assert(base_array_ok(dest));
-    assert(dest->ndims == 1);
-    assert(dest->dim_size[0] == n);
-    put_boolean_element(first, 0, dest);
-    va_start(ap,first);
-    for(i = 0; i < n; ++i) {
-        put_boolean_element((m_boolean) va_arg(ap, int),i,dest);
-    }
-    va_end(ap);
-}
-
 /* array_alloc_scalar_boolean_array
  *
  * Creates(incl allocation) an array from scalar elements.

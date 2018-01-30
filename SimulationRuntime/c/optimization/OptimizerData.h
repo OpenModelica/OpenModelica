@@ -53,7 +53,7 @@ typedef struct OptDataDim{
  int NRes;
  int nJ;
  int nJ2;
- int nsi;
+ modelica_integer nsi;
  int nt;
 
  int np;

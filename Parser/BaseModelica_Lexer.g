@@ -333,12 +333,12 @@ STRING : '"' STRING_GUTS '"'
          pANTLR3_STRING text = $STRING_GUTS.text;
          char *res = 0;
          if (*text->chars) {
-           res = SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0);
+           res = (char*) SystemImpl__iconv((const char*)text->chars,ModelicaParser_encoding,"UTF-8",0);
            if (!*res) {
              const char *strs[2];
              signed char buf[76];
              int len, i;
-             res = SystemImpl__iconv__ascii((const char*)text->chars);
+             res = (char*) SystemImpl__iconv__ascii((const char*)text->chars);
              len = strlen((const char*)res);
              /* Avoid printing huge strings */
              if (len > 75) {

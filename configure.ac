@@ -214,7 +214,7 @@ for flag in -Wno-parentheses-equality -Wno-unused-variable; do
     EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"
   ],[])
 done
-for flag in -Werror=implicit-function-declaration; do
+for flag in -Werror=implicit-function-declaration -Werror=incompatible-pointer-types; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [
     CHECK_C_ERRORS="$CHECK_C_ERRORS $flag"

@@ -463,22 +463,6 @@ void array_alloc_string_array(string_array_t* dest, int n,
     free(elts);
 }
 
-void array_scalar_string_array(string_array_t* dest, int n,
-                               modelica_string first, ...)
-{
-    int i;
-    va_list ap;
-    assert(base_array_ok(dest));
-    assert(dest->ndims == 1);
-    assert(dest->dim_size[0] == n);
-    put_string_element(first, 0, dest);
-    va_start(ap,first);
-    for(i = 0; i < n; ++i) {
-        put_string_element(va_arg(ap, modelica_string),i,dest);
-    }
-    va_end(ap);
-}
-
 /* array_alloc_scalar_string_array
  *
  * Creates(incl allocation) an array from scalar elements.

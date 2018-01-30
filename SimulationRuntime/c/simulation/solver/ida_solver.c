@@ -1099,7 +1099,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->simulationInfo->daeModeData->residualVars[i];
-      infoStreamPrint(LOG_SOLVER_V, 0, "%d. residual = %e", i, NV_Ith_S(res, i));
+      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
     }
   }
   else
@@ -1109,7 +1109,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
-      infoStreamPrint(LOG_SOLVER_V, 0, "%d. residual = %e", i, NV_Ith_S(res, i));
+      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
     }
   }
 

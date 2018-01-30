@@ -1264,7 +1264,7 @@ function stringAllocatorResult<T>
   input T dummy "This is just added so we do not make an extra allocation for the string" annotation(__OpenModelica_UnusedVariable=true);
   output T res;
 external "C" res=om_stringAllocatorResult(sa) annotation(Include="
-const char* om_stringAllocatorResult(void *sa) {
+void* om_stringAllocatorResult(void *sa) {
   return sa;
 }
 ");

@@ -150,8 +150,7 @@ extern void array_alloc_boolean_array(boolean_array_t* dest,int n,
                                boolean_array_t first,...);
 
 /* array(s1,s2,s3)  for scalars s1,s2,s3 */
-extern void array_scalar_boolean_array(boolean_array_t* dest,int n,
-                                m_boolean first,...);
+extern void array_scalar_boolean_array(boolean_array_t* dest,int n,...);
 extern void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,...);
 
 extern m_boolean* boolean_array_element_addr(const boolean_array_t* source,int ndims,...);
