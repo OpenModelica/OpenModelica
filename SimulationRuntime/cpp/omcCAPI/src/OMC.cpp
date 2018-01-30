@@ -61,7 +61,7 @@ extern "C" {
 		try
 		{
 			MMC_TRY_TOP_INTERNAL()
-				omcPtr->st = omc_OpenModelicaScriptingAPI_setCommandLineOptions(threadData, omcPtr->st, mmc_mk_scon(expression), &result);
+			result = omc_OpenModelicaScriptingAPI_setCommandLineOptions(threadData, mmc_mk_scon(expression));
 			MMC_CATCH_TOP()
 		}
 		catch (std::exception &exception)
@@ -80,9 +80,9 @@ extern "C" {
 		void *result_mm = NULL;
 		MMC_TRY_TOP_INTERNAL()
 			std::string name = "OpenModelica";
-		omcPtr->st = omc_OpenModelicaScriptingAPI_getVersion(threadData, omcPtr->st, mmc_mk_scon(name.c_str()), &result_mm);
+		result_mm = omc_OpenModelicaScriptingAPI_getVersion(threadData, mmc_mk_scon(name.c_str()));
 		MMC_CATCH_TOP()
-			*result = MMC_STRINGDATA(result_mm);
+		*result = MMC_STRINGDATA(result_mm);
 
 		return 1;
 	}
@@ -106,7 +106,7 @@ extern "C" {
 		try
 		{
 			MMC_TRY_TOP_INTERNAL()
-				omcPtr->st = omc_OpenModelicaScriptingAPI_loadModel(threadData, omcPtr->st, mmc_mk_scon(className), priorityVersion_lst, notify, mmc_mk_scon(languageStandard.c_str()), requireExactVersion, &result);
+				result = omc_OpenModelicaScriptingAPI_loadModel(threadData, mmc_mk_scon(className), priorityVersion_lst, notify, mmc_mk_scon(languageStandard.c_str()), requireExactVersion);
 			MMC_CATCH_TOP()
 		}
 		catch (std::exception &exception)
@@ -129,7 +129,7 @@ extern "C" {
 		try
 		{
 			MMC_TRY_TOP_INTERNAL()
-				omcPtr->st = omc_OpenModelicaScriptingAPI_loadFile(threadData, omcPtr->st, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses, &result);
+				result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses);
 			MMC_CATCH_TOP()
 		}
 		catch (std::exception &ex)
@@ -151,7 +151,7 @@ extern "C" {
 		try
 		{
 			MMC_TRY_TOP_INTERNAL()
-				omcPtr->st = omc_OpenModelicaScriptingAPI_getErrorString(threadData, omcPtr->st, warningsAsErrors, &result_mm);
+				result_mm = omc_OpenModelicaScriptingAPI_getErrorString(threadData, warningsAsErrors);
 			(*result) = MMC_STRINGDATA(result_mm);
 			MMC_CATCH_TOP()
 		}
@@ -169,7 +169,7 @@ extern "C" {
 		try
 		{
 			MMC_TRY_TOP_INTERNAL()
-				omcPtr->st = omc_OpenModelicaScriptingAPI_cd(threadData, omcPtr->st, mmc_mk_scon(directory), &reply_str);
+				reply_str = omc_OpenModelicaScriptingAPI_cd(threadData, mmc_mk_scon(directory));
 			(*result) = MMC_STRINGDATA(reply_str);
 			MMC_CATCH_TOP()
 		}
