@@ -187,7 +187,7 @@ extern "C" {
 		void *reply_str = NULL;
 		MMC_TRY_TOP_INTERNAL()
 			MMC_TRY_STACK()
-			if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression), omcPtr->st, &reply_str, &omcPtr->st))
+			if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression), &reply_str))
 			{
 				return -1;
 			}

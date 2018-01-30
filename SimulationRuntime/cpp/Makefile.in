@@ -33,7 +33,7 @@ CMAKE_ARGS=$(patsubst CMAKE_%, -D%, $(filter CMAKE_%, $(MAKEFLAGS)))
 
 CMAKE_FLAGS=-DCMAKE_BUILD_TYPE=$(BUILDTYPE) $(BOOST_ROOT_COMMAND) $(BOOST_STATIC_LINKING_COMMAND) $(CPP_03_COMMAND) $(BOOST_REALPATHS_COMMAND) $(PARALLEL_OUTPUT_COMMAND) $(RUNTIME_PROFILING_COMMAND) $(SCOREP_COMMAND) $(FMU_SUNDIALS_COMMAND) $(LOGGER_COMMAND) -DCMAKE_BUILD_TYPE=$(BUILDTYPE) -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIBINSTALLEXT=$(LIBINSTALLEXT) -DSCOREP_HOME:STRING="$(SCOREP_HOME)" $(BUILD_DOC_COMMAND) $(CMAKE_ARGS) -DOpenMP_CXX_FLAGS="$(OMPCFLAGS)"
 
-runtimeCpp:
+runtimeCpp: # omcCAPIinstall
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  mkdir -p Build_$(PLATFORM); \
 	  (cd ./Build_$(PLATFORM) && echo "change to Build_$(PLATFORM)" && $(CMAKE_COMMANDS) cmake -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) ../); \
@@ -42,6 +42,14 @@ runtimeCpp:
 install: runtimeCpp
 	$(foreach PLATFORM, $(PLATFORMS), \
 	  (cd Build_$(PLATFORM); $(MAKE) install);)
+
+omcCAPIinstall:
+	mkdir -p Build_CAPI;
+	(cd ./Build_CAPI; echo "change to Build_CAPI"; \
+	  $(CMAKE_COMMANDS) cmake -DPLATFORM=$(PLATFORM) -DOMC_PATH="$(OMBUILDDIR)" $(CMAKE_FLAGS) ../omcCAPI/; \
+	  $(MAKE) install;)
+	(cp -puf Build_CAPI/lib/* $(OMBUILDDIR)/lib/omc/)
+	(cp -puf Build_CAPI/lib/*.so $(OMBUILDDIR)/bin/)
 
 clean:
 	$(foreach PLATFORM, $(PLATFORMS), \
