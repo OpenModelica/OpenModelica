@@ -248,7 +248,7 @@ void indexed_assign_string_array(const string_array_t source,
                                  string_array_t* dest,
                                  const index_spec_t* dest_spec)
 {
-    _index_t* idx_vec1, idx_size;
+    _index_t *idx_vec1, *idx_size;
     int j;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 

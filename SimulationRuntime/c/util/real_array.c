@@ -279,7 +279,7 @@ void simple_indexed_assign_real_array2(const real_array_t * source,
 void indexed_assign_real_array(const real_array_t source, real_array_t* dest,
                                const index_spec_t* dest_spec)
 {
-    _index_t* idx_vec1, idx_size;
+    _index_t *idx_vec1, *idx_size;
     int j;
     indexed_assign_base_array_size_alloc(&source, dest, dest_spec, &idx_vec1, &idx_size);
 
