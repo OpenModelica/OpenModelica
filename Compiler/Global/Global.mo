@@ -46,7 +46,6 @@ constant Integer instOnlyForcedFunctions = 0;
 constant Integer simulationData = 0 "For simulations";
 constant Integer codegenTryThrowIndex = 1;
 constant Integer codegenFunctionList = 2;
-constant Integer symbolTable = 3;
 
 // Global roots start at index=9
 constant Integer instHashIndex = 9;
@@ -64,6 +63,7 @@ constant Integer currentInstVar = 22;
 constant Integer operatorOverloadingCache = 23;
 constant Integer optionSimCode = 24;
 constant Integer interactiveCache = 25;
+constant Integer symbolTable = 27;
 
 // indexes in System.tick
 // ----------------------
