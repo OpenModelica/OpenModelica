@@ -23,6 +23,6 @@ end B;
 //   Real a.y[3];
 // equation
 //   a.x = {1.0, 2.0, 3.0};
-//   a.y = {a.x[1], a.x[2], a.x[3]};
+//   a.y = a.x;
 // end B;
 // endResult

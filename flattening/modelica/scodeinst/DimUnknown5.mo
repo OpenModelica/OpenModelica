@@ -25,7 +25,7 @@ end DimUnknown5;
 //   Real y[2,2];
 //   Real y[2,3];
 // equation
-//   x = {{y[1,1], y[1,2], y[1,3]}, {y[2,1], y[2,2], y[2,3]}};
-//   y = {{x[1,1], x[1,2], x[1,3]}, {x[2,1], x[2,2], x[2,3]}};
+//   x = y;
+//   y = x;
 // end DimUnknown5;
 // endResult

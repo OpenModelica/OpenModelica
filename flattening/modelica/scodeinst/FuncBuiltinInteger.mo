@@ -16,6 +16,6 @@ end FuncBuiltinInteger;
 // class FuncBuiltinInteger
 //   Integer r1 = integer(4.25);
 //   Integer r2 = integer(-9.9);
-//   Integer r3 = integer(r1 / r2);
+//   Integer r3 = integer(/*Real*/(r1) / /*Real*/(r2));
 // end FuncBuiltinInteger;
 // endResult

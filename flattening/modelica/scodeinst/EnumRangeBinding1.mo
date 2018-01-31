@@ -19,7 +19,7 @@ end EnumRangeBinding1;
 //   enumeration(one, two, three, four) e2[1];
 //   enumeration(one, two, three, four) e2[2];
 // equation
-//   e1 = {E.one, E.two, E.three, E.four};
-//   e2 = {E.two, E.three};
+//   e1 = E.one:E.four;
+//   e2 = E.two:E.three;
 // end EnumRangeBinding1;
 // endResult
