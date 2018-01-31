@@ -32,11 +32,11 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+extern "C" {
 #include "meta/meta_modelica.h"
 #include "omc_config.h"
 #include "gc.h"
 
-extern "C" {
 void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
 void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
 void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_function;
@@ -69,9 +69,10 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
  * \brief OMCProxy::OMCProxy
  * \param pParent
  */
-OMCProxy::OMCProxy(QWidget *pParent)
+OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent )
   : QObject(pParent), mHasInitialized(false), mResult(""), mTotalOMCCallsTime(0.0)
 {
+  this->mpThreadData = threadData;
   mCurrentCommandIndex = -1;
   // OMC Commands Logger Widget
   mpOMCLoggerWidget = new QWidget;
@@ -125,7 +126,7 @@ OMCProxy::OMCProxy(QWidget *pParent)
   mDerivedUnitsMap.clear();
   setLoggingEnabled(true);
   //start the server
-  if(!initializeOMC()) {  // if we are unable to start OMC. Exit the application.
+  if(!initializeOMC(threadData)) {  // if we are unable to start OMC. Exit the application.
     MainWindow::instance()->setExitApplicationStatus(true);
     return;
   }
@@ -180,7 +181,7 @@ void OMCProxy::getNextCommand()
   Creates the omeditcommunication.log & omeditcommands.mos files.
   \return status - returns true if initialization is successful otherwise false.
   */
-bool OMCProxy::initializeOMC()
+bool OMCProxy::initializeOMC(threadData_t *threadData)
 {
   /* create the tmp path */
   QString& tmpPath = Utilities::tempDirectory();
@@ -199,7 +200,9 @@ bool OMCProxy::initializeOMC()
   args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
   // initialize threadData
   omc_System_initGarbageCollector(NULL);
-  threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
+  //threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
+  //GC_add_roots(&threadData->localRoots[0], &threadData->localRoots[MAX_LOCAL_ROOTS]);
+  //memset(threadData, 0, sizeof(threadData_t));
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, args);
   threadData->plotClassPointer = MainWindow::instance();
@@ -255,7 +258,7 @@ void OMCProxy::sendCommand(const QString expression)
 {
   if (!mHasInitialized) {
     // if we are unable to start OMC. Exit the application.
-    if(!initializeOMC()) {
+    if(!initializeOMC(mpThreadData)) {
       MainWindow::instance()->setExitApplicationStatus(true);
       return;
     }

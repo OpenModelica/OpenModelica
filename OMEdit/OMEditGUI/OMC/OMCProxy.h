@@ -81,12 +81,13 @@ private:
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
   bool mIsLoggingEnabled;
+  threadData_t *mpThreadData;
 public:
-  OMCProxy(QWidget *pParent = 0);
+  OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();
   void getPreviousCommand();
   void getNextCommand();
-  bool initializeOMC();
+  bool initializeOMC(threadData_t *threadData);
   void quitOMC();
   void sendCommand(const QString expression);
   void setResult(QString value);

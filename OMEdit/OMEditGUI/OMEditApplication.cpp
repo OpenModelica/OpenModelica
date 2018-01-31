@@ -52,9 +52,10 @@
  * \param argc
  * \param argv
  */
-OMEditApplication::OMEditApplication(int &argc, char **argv)
+OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData)
   : QApplication(argc, argv)
 {
+  mpThreadData = threadData;
   // set the stylesheet
   setStyleSheet("file:///:/Resources/css/stylesheet.qss");
 #if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
@@ -143,7 +144,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv)
   }
   // MainWindow Initialization
   MainWindow *pMainwindow = MainWindow::instance(debug);
-  pMainwindow->setUpMainWindow();
+  pMainwindow->setUpMainWindow(threadData);
   if (pMainwindow->getExitApplicationStatus()) {        // if there is some issue in running the application.
     quit();
     exit(1);

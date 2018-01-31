@@ -57,7 +57,11 @@
 
 #include "OMEditApplication.h"
 #include "CrashReport/CrashReportDialog.h"
+#define GC_THREADS
+
+extern "C" {
 #include "meta/meta_modelica.h"
+}
 
 #include <QMessageBox>
 
@@ -143,6 +147,7 @@ int main(int argc, char *argv[])
 {
   /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
   MMC_INIT();
+  MMC_TRY_TOP()
 
 #ifdef QT_NO_DEBUG
 #ifdef WIN32
@@ -166,6 +171,8 @@ int main(int argc, char *argv[])
     }
   }
   Q_INIT_RESOURCE(resource_omedit);
-  OMEditApplication a(argc, argv);
+  OMEditApplication a(argc, argv, threadData);
   return a.exec();
+
+  MMC_CATCH_TOP();
 }

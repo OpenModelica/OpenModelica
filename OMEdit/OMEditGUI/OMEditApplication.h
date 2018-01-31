@@ -34,15 +34,22 @@
 #ifndef OMEDITAPPLICATION_H
 #define OMEDITAPPLICATION_H
 
+extern "C" {
+#include "meta/meta_modelica.h"
+#include "omc_config.h"
+#include "gc.h"
+}
+
 #include <QApplication>
 #include <QStringList>
 
 class OMEditApplication : public QApplication
 {
 public:
-  OMEditApplication(int& argc, char**argv);
+  OMEditApplication(int& argc, char**argv, threadData_t* threadData);
 private:
   QStringList mFilesToOpenList;
+  threadData_t *mpThreadData;
 protected:
   virtual bool event(QEvent *pEvent);
 };

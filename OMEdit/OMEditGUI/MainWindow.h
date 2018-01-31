@@ -37,6 +37,12 @@
 
 #undef smooth
 
+extern "C" {
+#include "meta/meta_modelica.h"
+#include "omc_config.h"
+#include "gc.h"
+}
+
 #include <QtGlobal>
 #if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
 #error "OMEdit requires Qt 4.6.0 or newer"
@@ -93,7 +99,7 @@ private:
   static MainWindow *mpInstance;
 public:
   static MainWindow *instance(bool debug = false);
-  void setUpMainWindow();
+  void setUpMainWindow(threadData_t *threadData);
   bool isDebug() {return mDebug;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
@@ -217,6 +223,7 @@ public:
                                    const char* variables);
 private:
   bool mDebug;
+  threadData_t *mpThreadData;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   SearchWidget *mpSearchWidget;
