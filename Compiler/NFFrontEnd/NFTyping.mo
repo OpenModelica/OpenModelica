@@ -1049,7 +1049,7 @@ algorithm
         next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
         (e1, ty1, var1) := typeExp(exp.exp1, next_origin, info);
         (e2, ty2, var2) := typeExp(exp.exp2, next_origin, info);
-        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, exp.operator, e2, ty2);
+        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, exp.operator, e2, ty2, info);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2));
 
@@ -1057,7 +1057,7 @@ algorithm
       algorithm
         next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
         (e1, ty1, var1) := typeExp(exp.exp, next_origin, info);
-        (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, exp.operator);
+        (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, exp.operator, info);
       then
         (exp, ty, var1);
 
@@ -1066,7 +1066,7 @@ algorithm
         next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
         (e1, ty1, var1) := typeExp(exp.exp1, next_origin, info);
         (e2, ty2, var2) := typeExp(exp.exp2, next_origin, info);
-        (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, exp.operator, e2, ty2);
+        (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, exp.operator, e2, ty2, info);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2));
 
@@ -1074,7 +1074,7 @@ algorithm
       algorithm
         next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
         (e1, ty1, var1) := typeExp(exp.exp, next_origin, info);
-        (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, exp.operator);
+        (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, exp.operator, info);
       then
         (exp, ty, var1);
 
@@ -1083,7 +1083,7 @@ algorithm
         next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
         (e1, ty1, var1) := typeExp(exp.exp1, next_origin, info);
         (e2, ty2, var2) := typeExp(exp.exp2, next_origin, info);
-        (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, exp.operator, e2, ty2);
+        (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, exp.operator, e2, ty2, origin, info);
         variability := Prefixes.variabilityMax(var1, var2);
 
         // A relation involving continuous expressions which is not inside

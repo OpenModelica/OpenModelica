@@ -205,12 +205,12 @@ algorithm
   if Type.isReal(ty) then
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
-    exp := Expression.BINARY(lhs_exp, Operator.SUB(ty), rhs_exp);
+    exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
     exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.ABS_REAL, {exp}));
-    exp := Expression.RELATION(exp, Operator.LESSEQ(ty), Expression.REAL(0.0));
+    exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
-    exp := Expression.RELATION(lhs_exp, Operator.EQUAL(ty), rhs_exp);
+    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(ty), rhs_exp);
   end if;
 
   equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, source);
@@ -255,7 +255,7 @@ algorithm
     sum := makeFlowExp(c);
 
     for e in c_rest loop
-      sum := Expression.BINARY(sum, Operator.ADD(Type.REAL()), makeFlowExp(e));
+      sum := Expression.BINARY(sum, Operator.makeAdd(Type.REAL()), makeFlowExp(e));
       src := ElementSource.mergeSources(src, e.source);
     end for;
   end if;
@@ -276,7 +276,7 @@ algorithm
   // TODO: Remove unnecessary variable 'face' once #4502 is fixed.
   face := element.face;
   if face == Face.OUTSIDE then
-    exp := Expression.UNARY(Operator.UMINUS(Type.REAL()), exp);
+    exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), exp);
   end if;
 end makeFlowExp;
 
@@ -376,12 +376,12 @@ algorithm
     // No outside components.
     inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold);
     inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold);
-    sumExp := Expression.BINARY(inside_sum1, Operator.DIV(Type.REAL()), inside_sum2);
+    sumExp := Expression.BINARY(inside_sum1, Operator.makeDiv(Type.REAL()), inside_sum2);
   elseif listEmpty(insideElements) then
     // No inside components.
     outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold);
     outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold);
-    sumExp := Expression.BINARY(outside_sum1, Operator.DIV(Type.REAL()), outside_sum2);
+    sumExp := Expression.BINARY(outside_sum1, Operator.makeDiv(Type.REAL()), outside_sum2);
   else
     // Both outside and inside components.
     outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold);
@@ -389,9 +389,9 @@ algorithm
     inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold);
     inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold);
     sumExp := Expression.BINARY(
-      Expression.BINARY(outside_sum1, Operator.ADD(Type.REAL()), inside_sum1),
-      Operator.DIV(Type.REAL()),
-      Expression.BINARY(outside_sum2, Operator.ADD(Type.REAL()), inside_sum2));
+      Expression.BINARY(outside_sum1, Operator.makeAdd(Type.REAL()), inside_sum1),
+      Operator.makeDiv(Type.REAL()),
+      Expression.BINARY(outside_sum2, Operator.makeAdd(Type.REAL()), inside_sum2));
   end if;
 end streamSumEquationExp;
 
@@ -411,7 +411,7 @@ function sumMap
 algorithm
   exp := func(listHead(elements), flowThreshold);
   for e in listRest(elements) loop
-    exp := Expression.BINARY(func(e, flowThreshold), Operator.ADD(Type.REAL()), exp);
+    exp := Expression.BINARY(func(e, flowThreshold), Operator.makeAdd(Type.REAL()), exp);
   end for;
 end sumMap;
 
@@ -451,7 +451,7 @@ protected
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   exp := Expression.BINARY(makePositiveMaxCall(flow_exp, flowThreshold),
-    Operator.MUL(Type.REAL()), makeInStreamCall(stream_exp));
+    Operator.makeMul(Type.REAL()), makeInStreamCall(stream_exp));
 end sumOutside1;
 
 function sumInside1
@@ -465,9 +465,9 @@ protected
   Expression stream_exp, flow_exp, flow_threshold;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
-  flow_exp := Expression.UNARY(Operator.UMINUS(Type.REAL()), flow_exp);
+  flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
   exp := Expression.BINARY(makePositiveMaxCall(flow_exp, flowThreshold),
-    Operator.MUL(Type.REAL()), stream_exp);
+    Operator.makeMul(Type.REAL()), stream_exp);
 end sumInside1;
 
 function sumOutside2
@@ -495,7 +495,7 @@ protected
   Expression flow_exp;
 algorithm
   flow_exp := flowExp(element);
-  flow_exp := Expression.UNARY(Operator.UMINUS(Type.REAL()), flow_exp);
+  flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
   exp := makePositiveMaxCall(flow_exp, flowThreshold);
 end sumInside2;
 
@@ -523,7 +523,7 @@ algorithm
 
   if isSome(nominal_oexp) then
     SOME(nominal_exp) := nominal_oexp;
-    flow_threshold := Expression.BINARY(flowThreshold, Operator.MUL(Type.REAL()), nominal_exp);
+    flow_threshold := Expression.BINARY(flowThreshold, Operator.makeMul(Type.REAL()), nominal_exp);
   else
     flow_threshold := flowThreshold;
   end if;

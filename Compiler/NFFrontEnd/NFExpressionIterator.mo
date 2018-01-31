@@ -81,7 +81,12 @@ public
         then
           iterator;
 
-      else SCALAR_ITERATOR(exp);
+      else
+        algorithm
+          e := Expression.expand(exp);
+        then
+          if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e);
+
     end match;
   end fromExp;
 

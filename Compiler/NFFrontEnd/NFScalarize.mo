@@ -204,10 +204,7 @@ algorithm
         equations;
 
     case Equation.ARRAY_EQUALITY()
-      algorithm
-        rhs := Expression.expand(eq.rhs);
-      then
-        Equation.ARRAY_EQUALITY(eq.lhs, rhs, eq.ty, eq.source) :: equations;
+      then Equation.ARRAY_EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.source) :: equations;
 
     case Equation.CONNECT() then equations;
 

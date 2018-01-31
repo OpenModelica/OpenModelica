@@ -156,6 +156,8 @@ protected
   Real r1, r2;
   Boolean b1, b2;
   list<Expression> expl = {};
+
+  import NFOperator.Op;
 algorithm
   exp := match exp
     case Expression.ARRAY()
@@ -177,78 +179,78 @@ algorithm
       then fail();
 
     case Expression.BINARY(exp1=Expression.INTEGER(value=i1), exp2=Expression.INTEGER(value=i2))
-      then match exp.operator
-        case Operator.ADD() then Expression.INTEGER(i1 + i2);
-        case Operator.SUB() then Expression.INTEGER(i1 - i2);
-        case Operator.MUL() then Expression.INTEGER(i1 * i2);
-        case Operator.DIV() then Expression.REAL(i1 / i2);
+      then match exp.operator.op
+        case Op.ADD then Expression.INTEGER(i1 + i2);
+        case Op.SUB then Expression.INTEGER(i1 - i2);
+        case Op.MUL then Expression.INTEGER(i1 * i2);
+        case Op.DIV then Expression.REAL(i1 / i2);
       end match;
 
     case Expression.BINARY(exp1=Expression.REAL(value=r1), exp2=Expression.REAL(value=r2))
-      then match exp.operator
-        case Operator.ADD() then Expression.REAL(r1 + r2);
-        case Operator.SUB() then Expression.REAL(r1 - r2);
-        case Operator.MUL() then Expression.REAL(r1 * r2);
-        case Operator.DIV() then Expression.REAL(r1 / r2);
+      then match exp.operator.op
+        case Op.ADD then Expression.REAL(r1 + r2);
+        case Op.SUB then Expression.REAL(r1 - r2);
+        case Op.MUL then Expression.REAL(r1 * r2);
+        case Op.DIV then Expression.REAL(r1 / r2);
       end match;
 
-    case Expression.UNARY(operator=Operator.UMINUS(), exp=Expression.INTEGER(value=i1))
-      then Expression.INTEGER(-i1);
-
-    case Expression.UNARY(operator=Operator.UMINUS(), exp=Expression.REAL(value=r1))
-      then Expression.REAL(-r1);
+    case Expression.UNARY(operator = Operator.OPERATOR(op = Op.UMINUS))
+      then match exp.exp
+        case Expression.INTEGER(value = i1) then Expression.INTEGER(-i1);
+        case Expression.REAL(value = r1) then Expression.REAL(-r1);
+        else exp;
+      end match;
 
     case Expression.LBINARY(exp1=Expression.BOOLEAN(value=b1), exp2=Expression.BOOLEAN(value=b2))
-      then match exp.operator
-        case Operator.AND() then Expression.BOOLEAN(b1 and b2);
-        case Operator.OR() then Expression.BOOLEAN(b1 or b2);
+      then match exp.operator.op
+        case Op.AND then Expression.BOOLEAN(b1 and b2);
+        case Op.OR then Expression.BOOLEAN(b1 or b2);
       end match;
 
-    case Expression.LUNARY(operator=Operator.NOT(), exp=Expression.BOOLEAN(value=b1))
+    case Expression.LUNARY(operator = Operator.OPERATOR(op = NFOperator.Op.NOT),
+                           exp = Expression.BOOLEAN(value=b1))
       then Expression.BOOLEAN(not b1);
 
     case Expression.RELATION(exp1=Expression.BOOLEAN(value=b1), exp2=Expression.BOOLEAN(value=b2))
-      then match exp.operator
-        case Operator.EQUAL() then Expression.BOOLEAN(b1 == b2);
-        case Operator.NEQUAL() then Expression.BOOLEAN(b1 <> b2);
+      then match exp.operator.op
+        case Op.EQUAL then Expression.BOOLEAN(b1 == b2);
+        case Op.NEQUAL then Expression.BOOLEAN(b1 <> b2);
       end match;
 
     case Expression.RELATION(exp1=Expression.INTEGER(value=i1), exp2=Expression.INTEGER(value=i2))
-      then match exp.operator
-        case Operator.LESS() then Expression.BOOLEAN(i1 < i2);
-        case Operator.LESSEQ() then Expression.BOOLEAN(i1 <= i2);
-        case Operator.GREATER() then Expression.BOOLEAN(i1 > i2);
-        case Operator.GREATEREQ() then Expression.BOOLEAN(i1 >= i2);
-        case Operator.EQUAL() then Expression.BOOLEAN(i1 == i2);
-        case Operator.NEQUAL() then Expression.BOOLEAN(i1 <> i2);
+      then match exp.operator.op
+        case Op.LESS then Expression.BOOLEAN(i1 < i2);
+        case Op.LESSEQ then Expression.BOOLEAN(i1 <= i2);
+        case Op.GREATER then Expression.BOOLEAN(i1 > i2);
+        case Op.GREATEREQ then Expression.BOOLEAN(i1 >= i2);
+        case Op.EQUAL then Expression.BOOLEAN(i1 == i2);
+        case Op.NEQUAL then Expression.BOOLEAN(i1 <> i2);
       end match;
 
     case Expression.RELATION(exp1=Expression.REAL(value=r1), exp2=Expression.REAL(value=r2))
-      then match exp.operator
-        case Operator.LESS() then Expression.BOOLEAN(r1 < r2);
-        case Operator.LESSEQ() then Expression.BOOLEAN(r1 <= r2);
-        case Operator.GREATER() then Expression.BOOLEAN(r1 > r2);
-        case Operator.GREATEREQ() then Expression.BOOLEAN(r1 >= r2);
+      then match exp.operator.op
+        case Op.LESS then Expression.BOOLEAN(r1 < r2);
+        case Op.LESSEQ then Expression.BOOLEAN(r1 <= r2);
+        case Op.GREATER then Expression.BOOLEAN(r1 > r2);
+        case Op.GREATEREQ then Expression.BOOLEAN(r1 >= r2);
       end match;
 
     case Expression.RELATION(exp1 = Expression.ENUM_LITERAL(index = i1),
                              exp2 = Expression.ENUM_LITERAL(index = i2))
-      then Expression.BOOLEAN(match exp.operator
-        case Operator.LESS()      then i1 < i2;
-        case Operator.LESSEQ()    then i1 <= i2;
-        case Operator.GREATER()   then i1 > i2;
-        case Operator.GREATEREQ() then i1 >= i2;
-        case Operator.EQUAL()     then i1 == i2;
-        case Operator.NEQUAL()    then i1 <> i2;
+      then Expression.BOOLEAN(match exp.operator.op
+        case Op.LESS      then i1 < i2;
+        case Op.LESSEQ    then i1 <= i2;
+        case Op.GREATER   then i1 > i2;
+        case Op.GREATEREQ then i1 >= i2;
+        case Op.EQUAL     then i1 == i2;
+        case Op.NEQUAL    then i1 <> i2;
       end match);
 
     case Expression.IF(condition=Expression.BOOLEAN(value=b1))
       then if b1 then exp.trueBranch else exp.falseBranch;
 
     case Expression.CAST()
-      algorithm
-        Error.assertion(false, "Unimplemented case for " + Expression.toString(exp) + " in " + getInstanceName(), sourceInfo());
-      then fail();
+      then simplifyCast(exp.ty, exp.exp);
 
     case Expression.UNBOX()
       algorithm
@@ -258,6 +260,26 @@ algorithm
     else exp;
   end match;
 end postSimplify;
+
+function simplifyCast
+  input Type ty;
+  input Expression exp;
+  output Expression outExp;
+algorithm
+  outExp := match (ty, exp)
+    case (Type.REAL(), Expression.INTEGER())
+      then Expression.REAL(intReal(exp.value));
+
+    case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
+      then Expression.mapArrayElements(exp, function simplifyCast(ty = Type.REAL()));
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " failed on " + Expression.toString(exp), sourceInfo());
+      then
+        fail();
+  end match;
+end simplifyCast;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;

@@ -39,217 +39,142 @@ public
   import Absyn;
   import DAE;
 
-  record ADD
+  type Op = enumeration(
+    // Basic arithmetic operators.
+    ADD,               // +
+    SUB,               // -
+    MUL,               // *
+    DIV,               // /
+    POW,               // ^
+    // Element-wise arithmetic operators. These are only used until the type
+    // checking, then replaced with a more specific operator.
+    ADD_EW,            // .+
+    SUB_EW,            // .-
+    MUL_EW,            // .*
+    DIV_EW,            // ./
+    POW_EW,            // .^
+    // Scalar-Array and Array-Scalar arithmetic operators.
+    ADD_SCALAR_ARRAY,  // scalar + array
+    ADD_ARRAY_SCALAR,  // array + scalar
+    SUB_SCALAR_ARRAY,  // scalar - array
+    SUB_ARRAY_SCALAR,  // array - scalar
+    MUL_SCALAR_ARRAY,  // scalar * array
+    MUL_ARRAY_SCALAR,  // array * scalar
+    MUL_VECTOR_MATRIX, // vector * matrix
+    MUL_MATRIX_VECTOR, // matrix * vector
+    SCALAR_PRODUCT,    // vector * vector
+    MATRIX_PRODUCT,    // matrix * matrix
+    DIV_SCALAR_ARRAY,  // scalar / array
+    DIV_ARRAY_SCALAR,  // array / scalar
+    POW_SCALAR_ARRAY,  // scalar ^ array
+    POW_ARRAY_SCALAR,  // array ^ scalar
+    POW_MATRIX,        // matrix ^ Integer
+    // Unary arithmetic operators.
+    UMINUS,            // -
+    // Logic operators.
+    AND,               // and
+    OR,                // or
+    NOT,               // not
+    // Relational operators.
+    LESS,              // <
+    LESSEQ,            // <=
+    GREATER,           // >
+    GREATEREQ,         // >=
+    EQUAL,             // ==
+    NEQUAL,            // <>
+    USERDEFINED        // Overloaded operator.
+  );
+
+  record OPERATOR
     Type ty;
-  end ADD;
-
-  record SUB
-    Type ty;
-  end SUB;
-
-  record MUL
-    Type ty;
-  end MUL;
-
-  record DIV
-    Type ty;
-  end DIV;
-
-  record POW
-    Type ty;
-  end POW;
-
-  record UMINUS
-    Type ty;
-  end UMINUS;
-
-  record UMINUS_ARR
-    Type ty;
-  end UMINUS_ARR;
-
-  record ADD_ARR
-    Type ty;
-  end ADD_ARR;
-
-  record SUB_ARR
-    Type ty;
-  end SUB_ARR;
-
-  record MUL_ARR "Element-wise array multiplication"
-    Type ty;
-  end MUL_ARR;
-
-  record DIV_ARR
-    Type ty;
-  end DIV_ARR;
-
-  record MUL_ARRAY_SCALAR " {a,b,c} * s"
-    Type ty "type of the array" ;
-  end MUL_ARRAY_SCALAR;
-
-  record ADD_ARRAY_SCALAR " {a,b,c} .+ s"
-    Type ty "type of the array";
-  end ADD_ARRAY_SCALAR;
-
-  record SUB_SCALAR_ARRAY "s .- {a,b,c}"
-    Type ty "type of the array" ;
-  end SUB_SCALAR_ARRAY;
-
-  record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
-    Type ty "type of the array" ;
-  end MUL_SCALAR_PRODUCT;
-
-  record MUL_MATRIX_PRODUCT "M1 * M2, matrix dot product"
-    Type ty "{{..},..}  {{..},{..}}" ;
-  end MUL_MATRIX_PRODUCT;
-
-  record DIV_ARRAY_SCALAR "{a, b} / c"
-    Type ty  "type of the array";
-  end DIV_ARRAY_SCALAR;
-
-  record DIV_SCALAR_ARRAY "c / {a,b}"
-    Type ty "type of the array" ;
-  end DIV_SCALAR_ARRAY;
-
-  record POW_ARRAY_SCALAR
-    Type ty "type of the array" ;
-  end POW_ARRAY_SCALAR;
-
-  record POW_SCALAR_ARRAY
-    Type ty "type of the array" ;
-  end POW_SCALAR_ARRAY;
-
-  record POW_ARR "Power of a matrix: {{1,2,3},{4,5.0,6},{7,8,9}}^2"
-    Type ty "type of the array";
-  end POW_ARR;
-
-  record POW_ARR2 "elementwise power of arrays: {1,2,3}.^{3,2,1}"
-    Type ty "type of the array";
-  end POW_ARR2;
-
-  record AND
-    Type ty;
-  end AND;
-
-  record OR
-    Type ty;
-  end OR;
-
-  record NOT
-    Type ty;
-  end NOT;
-
-  record LESS
-    Type ty;
-  end LESS;
-
-  record LESSEQ
-    Type ty;
-  end LESSEQ;
-
-  record GREATER
-    Type ty;
-  end GREATER;
-
-  record GREATEREQ
-    Type ty;
-  end GREATEREQ;
-
-  record EQUAL
-    Type ty;
-  end EQUAL;
-
-  record NEQUAL
-    Type ty;
-  end NEQUAL;
-
-  record USERDEFINED
-    Absyn.Path fqName "The FQ name of the overloaded operator function" ;
-  end USERDEFINED;
+    Op op;
+  end OPERATOR;
 
   function compare
     input Operator op1;
     input Operator op2;
     output Integer comp;
+  protected
+    Op o1 = op1.op, o2 = op2.op;
   algorithm
-    comp := match (op1, op2)
-      case (USERDEFINED(), USERDEFINED())
-        then Absyn.pathCompare(op1.fqName, op2.fqName);
-
-      else Util.intCompare(valueConstructor(op1), valueConstructor(op2));
-    end match;
+    // TODO: Compare the types instead if both operators are USERDEFINED.
+    comp := Util.intCompare(Integer(o1), Integer(o2));
   end compare;
 
   function fromAbsyn
     input Absyn.Operator inOperator;
     output Operator outOperator;
+  protected
+    Op op;
   algorithm
-    outOperator := match(inOperator)
-      case Absyn.ADD() then Operator.ADD(Type.UNKNOWN());
-      case Absyn.SUB() then Operator.SUB(Type.UNKNOWN());
-      case Absyn.MUL() then Operator.MUL(Type.UNKNOWN());
-      case Absyn.DIV() then Operator.DIV(Type.UNKNOWN());
-      case Absyn.POW() then Operator.POW(Type.UNKNOWN());
-      case Absyn.UPLUS() then Operator.ADD(Type.UNKNOWN());
-      case Absyn.UMINUS() then Operator.UMINUS(Type.UNKNOWN());
-      case Absyn.ADD_EW() then Operator.ADD_ARR(Type.UNKNOWN());
-      case Absyn.SUB_EW() then Operator.SUB_ARR(Type.UNKNOWN());
-      case Absyn.MUL_EW() then Operator.MUL_ARR(Type.UNKNOWN());
-      case Absyn.DIV_EW() then Operator.DIV_ARR(Type.UNKNOWN());
-      case Absyn.POW_EW() then Operator.POW_ARR2(Type.UNKNOWN());
-      case Absyn.UPLUS_EW() then Operator.ADD(Type.UNKNOWN());
-      case Absyn.UMINUS_EW() then Operator.UMINUS(Type.UNKNOWN());
-      // logical have boolean type
-      case Absyn.AND() then Operator.AND(Type.BOOLEAN());
-      case Absyn.OR() then Operator.OR(Type.BOOLEAN());
-      case Absyn.NOT() then Operator.NOT(Type.BOOLEAN());
-      // relational have boolean type too
-      case Absyn.LESS() then Operator.LESS(Type.BOOLEAN());
-      case Absyn.LESSEQ() then Operator.LESSEQ(Type.BOOLEAN());
-      case Absyn.GREATER() then Operator.GREATER(Type.BOOLEAN());
-      case Absyn.GREATEREQ() then Operator.GREATEREQ(Type.BOOLEAN());
-      case Absyn.EQUAL() then Operator.EQUAL(Type.BOOLEAN());
-      case Absyn.NEQUAL() then Operator.NEQUAL(Type.BOOLEAN());
+    op := match inOperator
+      case Absyn.ADD()       then Op.ADD;
+      case Absyn.SUB()       then Op.SUB;
+      case Absyn.MUL()       then Op.MUL;
+      case Absyn.DIV()       then Op.DIV;
+      case Absyn.POW()       then Op.POW;
+      case Absyn.ADD_EW()    then Op.ADD_EW;
+      case Absyn.SUB_EW()    then Op.SUB_EW;
+      case Absyn.MUL_EW()    then Op.MUL_EW;
+      case Absyn.DIV_EW()    then Op.DIV_EW;
+      case Absyn.POW_EW()    then Op.POW_EW;
+      case Absyn.UPLUS()     then Op.ADD;
+      case Absyn.UPLUS_EW()  then Op.ADD;
+      case Absyn.UMINUS()    then Op.UMINUS;
+      case Absyn.UMINUS_EW() then Op.UMINUS;
+      case Absyn.AND()       then Op.AND;
+      case Absyn.OR()        then Op.OR;
+      case Absyn.NOT()       then Op.NOT;
+      case Absyn.LESS()      then Op.LESS;
+      case Absyn.LESSEQ()    then Op.LESSEQ;
+      case Absyn.GREATER()   then Op.GREATER;
+      case Absyn.GREATEREQ() then Op.GREATEREQ;
+      case Absyn.EQUAL()     then Op.EQUAL;
+      case Absyn.NEQUAL()    then Op.NEQUAL;
     end match;
+
+    outOperator := OPERATOR(Type.UNKNOWN(), op);
   end fromAbsyn;
 
   function toDAE
     input Operator op;
     output DAE.Operator daeOp;
+  protected
+    DAE.Type ty;
   algorithm
-    daeOp := match op
-      case ADD() then DAE.ADD(Type.toDAE(op.ty));
-      case SUB() then DAE.SUB(Type.toDAE(op.ty));
-      case MUL() then DAE.MUL(Type.toDAE(op.ty));
-      case DIV() then DAE.DIV(Type.toDAE(op.ty));
-      case POW() then DAE.POW(Type.toDAE(op.ty));
-      case UMINUS() then DAE.UMINUS(Type.toDAE(op.ty));
-      case UMINUS_ARR() then DAE.UMINUS_ARR(Type.toDAE(op.ty));
-      case ADD_ARR() then DAE.ADD_ARR(Type.toDAE(op.ty));
-      case SUB_ARR() then DAE.SUB_ARR(Type.toDAE(op.ty));
-      case MUL_ARR() then DAE.MUL_ARR(Type.toDAE(op.ty));
-      case DIV_ARR() then DAE.DIV_ARR(Type.toDAE(op.ty));
-      case MUL_ARRAY_SCALAR() then DAE.MUL_ARRAY_SCALAR(Type.toDAE(op.ty));
-      case ADD_ARRAY_SCALAR() then DAE.ADD_ARRAY_SCALAR(Type.toDAE(op.ty));
-      case SUB_SCALAR_ARRAY() then DAE.SUB_SCALAR_ARRAY(Type.toDAE(op.ty));
-      case MUL_SCALAR_PRODUCT() then DAE.MUL_SCALAR_PRODUCT(Type.toDAE(op.ty));
-      case MUL_MATRIX_PRODUCT() then DAE.MUL_MATRIX_PRODUCT(Type.toDAE(op.ty));
-      case DIV_ARRAY_SCALAR() then DAE.DIV_ARRAY_SCALAR(Type.toDAE(op.ty));
-      case DIV_SCALAR_ARRAY() then DAE.DIV_SCALAR_ARRAY(Type.toDAE(op.ty));
-      case POW_ARRAY_SCALAR() then DAE.POW_ARRAY_SCALAR(Type.toDAE(op.ty));
-      case POW_SCALAR_ARRAY() then DAE.POW_SCALAR_ARRAY(Type.toDAE(op.ty));
-      case POW_ARR() then DAE.POW_ARR(Type.toDAE(op.ty));
-      case POW_ARR2() then DAE.POW_ARR2(Type.toDAE(op.ty));
-      case AND() then DAE.AND(Type.toDAE(op.ty));
-      case OR() then DAE.OR(Type.toDAE(op.ty));
-      case NOT() then DAE.NOT(Type.toDAE(op.ty));
-      case LESS() then DAE.LESS(Type.toDAE(op.ty));
-      case LESSEQ() then DAE.LESSEQ(Type.toDAE(op.ty));
-      case GREATER() then DAE.GREATER(Type.toDAE(op.ty));
-      case GREATEREQ() then DAE.GREATEREQ(Type.toDAE(op.ty));
-      case EQUAL() then DAE.EQUAL(Type.toDAE(op.ty));
-      case NEQUAL() then DAE.NEQUAL(Type.toDAE(op.ty));
-      case USERDEFINED() then DAE.USERDEFINED(op.fqName);
+    ty := Type.toDAE(op.ty);
+
+    daeOp := match op.op
+      case Op.ADD               then DAE.ADD(ty);
+      case Op.SUB               then DAE.SUB(ty);
+      case Op.MUL               then DAE.MUL(ty);
+      case Op.DIV               then DAE.DIV(ty);
+      case Op.POW               then DAE.POW(ty);
+      case Op.ADD_SCALAR_ARRAY  then DAE.ADD(ty);
+      case Op.ADD_ARRAY_SCALAR  then DAE.ADD(ty);
+      case Op.SUB_SCALAR_ARRAY  then DAE.SUB(ty);
+      case Op.SUB_ARRAY_SCALAR  then DAE.SUB(ty);
+      case Op.MUL_SCALAR_ARRAY  then DAE.MUL(ty);
+      case Op.MUL_ARRAY_SCALAR  then DAE.MUL(ty);
+      case Op.MUL_VECTOR_MATRIX then DAE.MUL(ty);
+      case Op.MUL_MATRIX_VECTOR then DAE.MUL(ty);
+      case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
+      case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
+      case Op.DIV_SCALAR_ARRAY  then DAE.DIV(ty);
+      case Op.DIV_ARRAY_SCALAR  then DAE.DIV(ty);
+      case Op.POW_SCALAR_ARRAY  then DAE.POW_SCALAR_ARRAY(ty);
+      case Op.POW_ARRAY_SCALAR  then DAE.POW_ARRAY_SCALAR(ty);
+      case Op.POW_MATRIX        then DAE.POW_ARR(ty);
+      case Op.UMINUS            then DAE.UMINUS(ty);
+      case Op.AND               then DAE.AND(Type.toDAE(op.ty));
+      case Op.OR                then DAE.OR(Type.toDAE(op.ty));
+      case Op.NOT               then DAE.NOT(Type.toDAE(op.ty));
+      case Op.LESS              then DAE.LESS(Type.toDAE(op.ty));
+      case Op.LESSEQ            then DAE.LESSEQ(Type.toDAE(op.ty));
+      case Op.GREATER           then DAE.GREATER(Type.toDAE(op.ty));
+      case Op.GREATEREQ         then DAE.GREATEREQ(Type.toDAE(op.ty));
+      case Op.EQUAL             then DAE.EQUAL(Type.toDAE(op.ty));
+      case Op.NEQUAL            then DAE.NEQUAL(Type.toDAE(op.ty));
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
@@ -260,147 +185,58 @@ public
 
   function typeOf
     input Operator op;
-    output Type ty;
-  algorithm
-    ty := match op
-      case ADD() then op.ty;
-      case SUB() then op.ty;
-      case MUL() then op.ty;
-      case DIV() then op.ty;
-      case POW() then op.ty;
-      case UMINUS() then op.ty;
-      case UMINUS_ARR() then op.ty;
-      case ADD_ARR() then op.ty;
-      case SUB_ARR() then op.ty;
-      case MUL_ARR() then op.ty;
-      case DIV_ARR() then op.ty;
-      case MUL_ARRAY_SCALAR() then op.ty;
-      case ADD_ARRAY_SCALAR() then op.ty;
-      case SUB_SCALAR_ARRAY() then op.ty;
-      case MUL_SCALAR_PRODUCT() then op.ty;
-      case MUL_MATRIX_PRODUCT() then op.ty;
-      case DIV_ARRAY_SCALAR() then op.ty;
-      case DIV_SCALAR_ARRAY() then op.ty;
-      case POW_ARRAY_SCALAR() then op.ty;
-      case POW_SCALAR_ARRAY() then op.ty;
-      case POW_ARR() then  op.ty;
-      case POW_ARR2() then op.ty;
-      case AND() then op.ty;
-      case OR() then op.ty;
-      case NOT() then  op.ty;
-      case LESS() then op.ty;
-      case LESSEQ() then op.ty;
-      case GREATER() then op.ty;
-      case GREATEREQ() then op.ty;
-      case EQUAL() then op.ty;
-      case NEQUAL() then op.ty;
-      case USERDEFINED() then Type.UNKNOWN();
-      else
-        algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
-        then
-          fail();
-    end match;
+    output Type ty = op.ty;
   end typeOf;
 
   function setType
     input Type ty;
-    input Operator op;
-    output Operator newOp;
+    input output Operator op;
   algorithm
-    newOp := match op
-      case ADD() then ADD(ty);
-      case SUB() then SUB(ty);
-      case MUL() then MUL(ty);
-      case DIV() then DIV(ty);
-      case POW() then POW(ty);
-      case UMINUS() then UMINUS(ty);
-      case UMINUS_ARR() then UMINUS_ARR(ty);
-      case ADD_ARR() then ADD_ARR(ty);
-      case SUB_ARR() then SUB_ARR(ty);
-      case MUL_ARR() then MUL_ARR(ty);
-      case DIV_ARR() then DIV_ARR(ty);
-      case MUL_ARRAY_SCALAR() then MUL_ARRAY_SCALAR(ty);
-      case ADD_ARRAY_SCALAR() then ADD_ARRAY_SCALAR(ty);
-      case SUB_SCALAR_ARRAY() then SUB_SCALAR_ARRAY(ty);
-      case MUL_SCALAR_PRODUCT() then MUL_SCALAR_PRODUCT(ty);
-      case MUL_MATRIX_PRODUCT() then MUL_MATRIX_PRODUCT(ty);
-      case DIV_ARRAY_SCALAR() then DIV_ARRAY_SCALAR(ty);
-      case DIV_SCALAR_ARRAY() then DIV_SCALAR_ARRAY(ty);
-      case POW_ARRAY_SCALAR() then POW_ARRAY_SCALAR(ty);
-      case POW_SCALAR_ARRAY() then POW_SCALAR_ARRAY(ty);
-      case POW_ARR() then POW_ARR(ty);
-      case POW_ARR2() then POW_ARR2(ty);
-      case AND() then AND(ty);
-      case OR() then OR(ty);
-      case NOT() then NOT(ty);
-      case LESS() then LESS(ty);
-      case LESSEQ() then LESSEQ(ty);
-      case GREATER() then GREATER(ty);
-      case GREATEREQ() then GREATEREQ(ty);
-      case EQUAL() then EQUAL(ty);
-      case NEQUAL() then NEQUAL(ty);
-      case USERDEFINED() then op;
-      else
-        algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
-        then
-          fail();
-    end match;
+    op.ty := ty;
   end setType;
-
-  function isBinaryElementWise
-    input Operator op;
-    output Boolean isElementWise;
-  algorithm
-    isElementWise := match op
-      case ADD_ARR() then true;
-      case SUB_ARR() then true;
-      case MUL_ARR() then true;
-      case DIV_ARR() then true;
-      case POW_ARR2() then true;
-      else false;
-    end match;
-  end isBinaryElementWise;
 
   function symbol
     input Operator op;
     input String spacing = " ";
     output String symbol;
   algorithm
-    symbol := match op
-      case ADD()                then  "+";
-      case SUB()                then  "-";
-      case MUL()                then ".*";
-      case DIV()                then  "/";
-      case POW()                then  "^";
-      case UMINUS()             then  "-";
-      case UMINUS_ARR()         then  "-";
-      case ADD_ARR()            then  "+";
-      case SUB_ARR()            then  "-";
-      case MUL_ARR()            then ".*";
-      case DIV_ARR()            then "./";
-      case MUL_ARRAY_SCALAR()   then  "*";
-      case ADD_ARRAY_SCALAR()   then ".+";
-      case SUB_SCALAR_ARRAY()   then ".-";
-      case MUL_SCALAR_PRODUCT() then  "*";
-      case MUL_MATRIX_PRODUCT() then  "*";
-      case DIV_ARRAY_SCALAR()   then  "/";
-      case DIV_SCALAR_ARRAY()   then "./";
-      case POW_ARRAY_SCALAR()   then ".^";
-      case POW_SCALAR_ARRAY()   then ".^";
-      case POW_ARR()            then  "^";
-      case POW_ARR2()           then ".^";
-      case AND()                then "and";
-      case OR()                 then "or";
-      case NOT()                then "not";
-      case LESS()               then "<";
-      case LESSEQ()             then "<=";
-      case GREATER()            then ">";
-      case GREATEREQ()          then ">=";
-      case EQUAL()              then "==";
-      case NEQUAL()             then "<>";
-      case USERDEFINED()        then "Userdefined:" + Absyn.pathString(op.fqName);
+    symbol := match op.op
+      case Op.ADD               then "+";
+      case Op.SUB               then "-";
+      case Op.MUL               then ".*";
+      case Op.DIV               then "/";
+      case Op.POW               then "^";
+      case Op.ADD_EW            then ".+";
+      case Op.SUB_EW            then ".-";
+      case Op.MUL_EW            then ".*";
+      case Op.DIV_EW            then "./";
+      case Op.POW_EW            then ".^";
+      case Op.ADD_SCALAR_ARRAY  then ".+";
+      case Op.ADD_ARRAY_SCALAR  then ".+";
+      case Op.SUB_SCALAR_ARRAY  then ".-";
+      case Op.SUB_ARRAY_SCALAR  then ".-";
+      case Op.MUL_SCALAR_ARRAY  then "*";
+      case Op.MUL_ARRAY_SCALAR  then ".*";
+      case Op.MUL_VECTOR_MATRIX then "*";
+      case Op.MUL_MATRIX_VECTOR then "*";
+      case Op.SCALAR_PRODUCT    then "*";
+      case Op.MATRIX_PRODUCT    then "*";
+      case Op.DIV_SCALAR_ARRAY  then "./";
+      case Op.DIV_ARRAY_SCALAR  then "/";
+      case Op.POW_SCALAR_ARRAY  then ".^";
+      case Op.POW_ARRAY_SCALAR  then ".^";
+      case Op.POW_MATRIX        then "^";
+      case Op.UMINUS            then "-";
+      case Op.AND               then "and";
+      case Op.OR                then "or";
+      case Op.NOT               then "not";
+      case Op.LESS              then "<";
+      case Op.LESSEQ            then "<=";
+      case Op.GREATER           then ">";
+      case Op.GREATEREQ         then ">=";
+      case Op.EQUAL             then "==";
+      case Op.NEQUAL            then "<>";
+      //case Op.USERDEFINED      then "Userdefined:" + Absyn.pathString(op.fqName);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
@@ -422,29 +258,29 @@ public
     input Boolean lhs;
     output Integer priority;
   algorithm
-    priority := match op
-      case ADD() then if lhs then 5 else 6;
-      case SUB() then 5;
-      case MUL() then 2;
-      case DIV() then 2;
-      case POW() then 1;
-      case ADD_ARR() then if lhs then 5 else 6;
-      case SUB_ARR() then 5;
-      case MUL_ARR() then if lhs then 2 else 3;
-      case DIV_ARR() then 2;
-      case MUL_ARRAY_SCALAR() then if lhs then 2 else 3;
-      case ADD_ARRAY_SCALAR() then if lhs then 5 else 6;
-      case SUB_SCALAR_ARRAY() then 5;
-      case MUL_SCALAR_PRODUCT() then if lhs then 2 else 3;
-      case MUL_MATRIX_PRODUCT() then if lhs then 2 else 3;
-      case DIV_ARRAY_SCALAR() then 2;
-      case DIV_SCALAR_ARRAY() then 2;
-      case POW_ARRAY_SCALAR() then 1;
-      case POW_SCALAR_ARRAY() then 1;
-      case POW_ARR() then 1;
-      case POW_ARR2() then 1;
-      case AND() then 8;
-      case OR() then 9;
+    priority := match op.op
+      case Op.ADD              then if lhs then 5 else 6;
+      case Op.SUB              then 5;
+      case Op.MUL              then 2;
+      case Op.DIV              then 2;
+      case Op.POW              then 1;
+      case Op.ADD_EW           then if lhs then 5 else 6;
+      case Op.SUB_EW           then 5;
+      case Op.MUL_EW           then if lhs then 2 else 3;
+      case Op.DIV_EW           then 2;
+      case Op.POW_EW           then 1;
+      //case MUL_ARRAY_SCALAR() then if lhs then 2 else 3;
+      //case ADD_ARRAY_SCALAR() then if lhs then 5 else 6;
+      //case SUB_SCALAR_ARRAY() then 5;
+      //case SCALAR_PRODUCT()   then if lhs then 2 else 3;
+      //case MATRIX_PRODUCT()   then if lhs then 2 else 3;
+      //case DIV_ARRAY_SCALAR() then 2;
+      //case DIV_SCALAR_ARRAY() then 2;
+      //case POW_ARRAY_SCALAR() then 1;
+      //case POW_SCALAR_ARRAY() then 1;
+      //case POW_ARR()          then 1;
+      case Op.AND              then 8;
+      case Op.OR               then 9;
       else 0;
     end match;
   end priority;
@@ -453,15 +289,111 @@ public
     input Operator op;
     output Boolean isAssociative;
   algorithm
-    isAssociative := match op
-      case ADD() then true;
-      case ADD_ARR() then true;
-      case ADD_ARRAY_SCALAR() then true;
-      case MUL_ARR() then true;
-      case MUL_ARRAY_SCALAR() then true;
+    isAssociative := match op.op
+      case Op.ADD then true;
+      case Op.ADD_EW then true;
+      //case ADD_ARRAY_SCALAR() then true;
+      case Op.MUL_EW then true;
+      //case MUL_ARRAY_SCALAR() then true;
       else false;
     end match;
   end isAssociative;
+
+  function makeAdd
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.ADD);
+  end makeAdd;
+
+  function makeSub
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.SUB);
+  end makeSub;
+
+  function makeMul
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.MUL);
+  end makeMul;
+
+  function makeDiv
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.DIV);
+  end makeDiv;
+
+  function makePow
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.POW);
+  end makePow;
+
+  function makeAddEW
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.ADD_EW);
+  end makeAddEW;
+
+  function makeSubEW
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.SUB_EW);
+  end makeSubEW;
+
+  function makeMulEW
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.MUL_EW);
+  end makeMulEW;
+
+  function makeDivEW
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.DIV_EW);
+  end makeDivEW;
+
+  function makeUMinus
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.UMINUS);
+  end makeUMinus;
+
+  function makeLessEq
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.LESSEQ);
+  end makeLessEq;
+
+  function makeEqual
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.EQUAL);
+  end makeEqual;
+
+  function makeScalarArray
+    input Type ty;
+    input Op op;
+    output Operator outOp;
+  protected
+    Op o;
+  algorithm
+    o := match op
+      case Op.ADD then Op.ADD_SCALAR_ARRAY;
+      case Op.SUB then Op.SUB_SCALAR_ARRAY;
+      case Op.MUL then Op.MUL_SCALAR_ARRAY;
+      case Op.DIV then Op.DIV_SCALAR_ARRAY;
+      case Op.POW then Op.POW_SCALAR_ARRAY;
+    end match;
+
+    outOp := OPERATOR(ty, o);
+  end makeScalarArray;
+
+  function makeArrayScalar
+    input Type ty;
+    input Op op;
+    output Operator outOp;
+  protected
+    Op o;
+  algorithm
+    o := match op
+      case Op.ADD then Op.ADD_ARRAY_SCALAR;
+      case Op.SUB then Op.SUB_ARRAY_SCALAR;
+      case Op.MUL then Op.MUL_ARRAY_SCALAR;
+      case Op.DIV then Op.DIV_ARRAY_SCALAR;
+      case Op.POW then Op.POW_ARRAY_SCALAR;
+    end match;
+
+    outOp := OPERATOR(ty, o);
+  end makeArrayScalar;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

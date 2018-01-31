@@ -728,32 +728,10 @@ end evalBuiltinFloor;
 function evalBuiltinIdentity
   input Expression arg;
   output Expression result;
-protected
-  Type row_ty;
-  list<Expression> row, rows = {};
-  Integer n;
 algorithm
   result := match arg
-    case Expression.INTEGER(value = n)
-      algorithm
-        row := {};
-        row_ty := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(n)});
-
-        for i in 1:n loop
-          for j in 2:i loop
-            row := Expression.INTEGER(0) :: row;
-          end for;
-
-          row := Expression.INTEGER(1) :: row;
-
-          for j in i:n-1 loop
-            row := Expression.INTEGER(0) :: row;
-          end for;
-        end for;
-
-        rows := Expression.ARRAY(row_ty, row) :: rows;
-      then
-        Expression.ARRAY(Type.liftArrayLeft(row_ty, Dimension.INTEGER(n)), rows);
+    case Expression.INTEGER()
+      then Expression.makeIdentityMatrix(arg.value, Type.INTEGER());
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;

@@ -517,6 +517,12 @@ public
     end match;
   end typeOf;
 
+  function typeCast
+    input Expression exp;
+    input Type castTy;
+    output Expression castExp = CAST(castTy, exp);
+  end typeCast;
+
   function typeCastElements
     input output Expression exp;
     input Type ty;
@@ -1479,6 +1485,27 @@ public
     end match;
   end mapCallShallow;
 
+  function mapArrayElements
+    "Applies the given function to each scalar elements of an array."
+    input Expression exp;
+    input MapFunc func;
+    output Expression outExp;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outExp := match exp
+      case ARRAY()
+        algorithm
+          exp.elements := list(mapArrayElements(e, func) for e in exp.elements);
+        then
+          exp;
+
+      else func(exp);
+    end match;
+  end mapArrayElements;
+
   function foldList<ArgT>
     input list<Expression> expl;
     input FoldFunc func;
@@ -2007,11 +2034,13 @@ public
 
       case CREF(ty = Type.ARRAY()) then expandCref(exp);
 
-      case ARRAY(ty = Type.ARRAY(elementType = Type.ARRAY()))
+      case ARRAY(ty = Type.ARRAY(dimensions = _ :: _ :: {}))
         algorithm
           exp.elements := list(expand(e) for e in exp.elements);
         then
           exp;
+
+      case ARRAY() then exp;
 
       case RANGE()
         algorithm
@@ -2019,7 +2048,14 @@ public
         then
           ARRAY(exp.ty, RangeIterator.toList(range_iter));
 
-      else exp;
+      case BINARY() then expandBinary(exp.exp1, exp.operator, exp.exp2);
+      case UNARY() then expandUnary(exp.exp, exp.operator);
+      case LBINARY() then expandLogicalBinary(exp.exp1, exp.operator, exp.exp2);
+      case LUNARY() then expandLogicalUnary(exp.exp, exp.operator);
+
+      case CAST() then expandCast(exp.exp, exp.ty);
+
+      else if Type.isArray(typeOf(exp)) then expandGeneric(exp) else exp;
     end match;
   end expand;
 
@@ -2095,6 +2131,388 @@ public
           ARRAY(arr_ty, expl);
     end match;
   end expandCref4;
+
+  function expandBinary
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    output Expression exp;
+
+    import NFOperator.Op;
+  algorithm
+    exp := match op.op
+      case Op.ADD_SCALAR_ARRAY then expandBinaryScalarArray(exp1, op, exp2, Op.ADD);
+      case Op.ADD_ARRAY_SCALAR then expandBinaryArrayScalar(exp1, op, exp2, Op.ADD);
+      case Op.SUB_SCALAR_ARRAY then expandBinaryScalarArray(exp1, op, exp2, Op.SUB);
+      case Op.SUB_ARRAY_SCALAR then expandBinaryArrayScalar(exp1, op, exp2, Op.SUB);
+      case Op.MUL_SCALAR_ARRAY then expandBinaryScalarArray(exp1, op, exp2, Op.MUL);
+      case Op.MUL_ARRAY_SCALAR then expandBinaryArrayScalar(exp1, op, exp2, Op.MUL);
+      case Op.MUL_VECTOR_MATRIX then expandBinaryVectorMatrix(exp1, exp2);
+      case Op.MUL_MATRIX_VECTOR then expandBinaryMatrixVector(exp1, exp2);
+      case Op.SCALAR_PRODUCT then expandBinaryDotProduct(exp1, exp2);
+      case Op.MATRIX_PRODUCT then expandBinaryMatrixProduct(exp1, exp2);
+      case Op.DIV_SCALAR_ARRAY then expandBinaryScalarArray(exp1, op, exp2, Op.DIV);
+      case Op.DIV_ARRAY_SCALAR then expandBinaryArrayScalar(exp1, op, exp2, Op.DIV);
+      case Op.POW_SCALAR_ARRAY then expandBinaryScalarArray(exp1, op, exp2, Op.POW);
+      case Op.POW_ARRAY_SCALAR then expandBinaryArrayScalar(exp1, op, exp2, Op.POW);
+      case Op.POW_MATRIX then expandBinaryPowMatrix(exp1, op, exp2);
+      else expandBinaryElementWise(exp1, op, exp2);
+    end match;
+  end expandBinary;
+
+  function expandBinaryElementWise
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    output Expression exp;
+  protected
+    list<Expression> expl1, expl2, expl;
+    Type ty;
+    Operator eop;
+  algorithm
+    expl1 := arrayElements(expand(exp1));
+    expl2 := arrayElements(expand(exp2));
+    ty := Operator.typeOf(op);
+
+    if Type.dimensionCount(ty) > 1 then
+      eop := Operator.setType(Type.unliftArray(ty), op);
+      expl := list(expandBinaryElementWise(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
+    else
+      expl := list(BINARY(e1, op, e2) threaded for e1 in expl1, e2 in expl2);
+    end if;
+
+    exp := ARRAY(Operator.typeOf(op), expl);
+  end expandBinaryElementWise;
+
+  function expandBinaryScalarArray
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    input NFOperator.Op scalarOp;
+    output Expression exp;
+  protected
+    list<Expression> expl;
+    Operator eop;
+  algorithm
+    exp := expand(exp2);
+    eop := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp);
+    exp := mapArrayElements(exp, function makeBinaryOp(op = eop, exp1 = exp1));
+  end expandBinaryScalarArray;
+
+  function makeScalarArrayBinary_traverser
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    output Expression exp;
+  algorithm
+    exp := match exp2
+      case ARRAY() then exp2;
+      else BINARY(exp1, op, exp2);
+    end match;
+  end makeScalarArrayBinary_traverser;
+
+  function expandBinaryArrayScalar
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    input NFOperator.Op scalarOp;
+    output Expression exp;
+  protected
+    list<Expression> expl;
+    Operator eop;
+  algorithm
+    exp := expand(exp1);
+    eop := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp);
+    exp := mapArrayElements(exp, function makeBinaryOp(op = eop, exp2 = exp2));
+  end expandBinaryArrayScalar;
+
+  function expandBinaryVectorMatrix
+    "Expands a vector*matrix expression, c[m] = a[n] * b[n, m]."
+    input Expression exp1;
+    input Expression exp2;
+    output Expression exp;
+  protected
+    list<Expression> expl;
+    Expression e1;
+    Type ty;
+    Dimension m;
+  algorithm
+    ARRAY(Type.ARRAY(ty, {m, _}), expl) := expand(exp2);
+    ty := Type.ARRAY(ty, {m});
+
+    if listEmpty(expl) then
+      exp := makeZero(ty);
+    else
+      e1 := expand(exp1);
+      // c[i] = a * b[:, i] for i in 1:m
+      expl := list(makeScalarProduct(e1, e2) for e2 in expl);
+      exp := ARRAY(ty, expl);
+    end if;
+  end expandBinaryVectorMatrix;
+
+  function expandBinaryMatrixVector
+    "Expands a matrix*vector expression, c[n] = a[n, m] * b[m]."
+    input Expression exp1;
+    input Expression exp2;
+    output Expression exp;
+  protected
+    list<Expression> expl;
+    Expression e2;
+    Type ty;
+    Dimension n;
+  algorithm
+    ARRAY(Type.ARRAY(ty, {n, _}), expl) := expand(exp1);
+    ty := Type.ARRAY(ty, {n});
+
+    if listEmpty(expl) then
+      exp := makeZero(ty);
+    else
+      e2 := expand(exp2);
+      // c[i] = a[i, :] * b for i in 1:n
+      expl := list(makeScalarProduct(e1, e2) for e1 in expl);
+      exp := ARRAY(ty, expl);
+    end if;
+  end expandBinaryMatrixVector;
+
+  function expandBinaryDotProduct
+    "Expands a vector*vector expression, c = a[n] * b[n]."
+    input Expression exp1;
+    input Expression exp2;
+    output Expression exp;
+  algorithm
+    exp := makeScalarProduct(expand(exp1), expand(exp2));
+  end expandBinaryDotProduct;
+
+  function makeScalarProduct
+    input Expression exp1;
+    input Expression exp2;
+    output Expression exp;
+  protected
+    list<Expression> expl1, expl2;
+    Type ty;
+    Operator mul_op, add_op;
+  algorithm
+    ARRAY(ty, expl1) := exp1;
+    ARRAY( _, expl2) := exp2;
+
+    if listEmpty(expl1) then
+      // Scalar product of two empty arrays. The result is defined in the spec
+      // by sum, so we return 0 since that's the default value of sum.
+      exp := makeZero(ty);
+    end if;
+
+    mul_op := Operator.makeMul(ty);
+    add_op := Operator.makeAdd(ty);
+    expl1 := list(BINARY(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
+    exp := List.reduce(expl1, function makeBinaryOp(op = add_op));
+  end makeScalarProduct;
+
+  function expandBinaryMatrixProduct
+    "Expands a matrix*matrix expression, c[n, p] = a[n, m] * b[m, p]."
+    input Expression exp1;
+    input Expression exp2;
+    output Expression exp;
+  algorithm
+    exp := makeBinaryMatrixProduct(expand(exp1), expand(exp2));
+  end expandBinaryMatrixProduct;
+
+  function makeBinaryMatrixProduct
+    input Expression exp1;
+    input Expression exp2;
+    output Expression exp;
+  protected
+    list<Expression> expl1, expl2;
+    list<list<Expression>> matrix;
+    Type ty, row_ty, mat_ty;
+    Dimension n, p;
+  algorithm
+    ARRAY(Type.ARRAY(ty, {n, _}), expl1) := exp1;
+    // Transpose the second matrix. This makes it easier to do the multiplication,
+    // since we can do row-row multiplications instead of row-column.
+    ARRAY(Type.ARRAY(dimensions = {p, _}), expl2) := transposeArray(exp2);
+    mat_ty := Type.ARRAY(ty, {n, p});
+
+    if listEmpty(expl1) then
+      // If any of the matrices' dimensions are zero, the result will be a matrix
+      // of zeroes (the default value of sum).
+      exp := makeZero(mat_ty);
+    else
+      // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p.
+      row_ty := Type.ARRAY(ty, {p});
+      expl1 := list(ARRAY(row_ty, makeBinaryMatrixProduct2(e, expl2)) for e in expl1);
+      exp := ARRAY(mat_ty, expl1);
+    end if;
+  end makeBinaryMatrixProduct;
+
+  function makeBinaryMatrixProduct2
+    input Expression row;
+    input list<Expression> matrix;
+    output list<Expression> outRow;
+  algorithm
+    outRow := list(makeScalarProduct(row, e) for e in matrix);
+  end makeBinaryMatrixProduct2;
+
+  function expandBinaryPowMatrix
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    output Expression exp;
+  algorithm
+    exp := match exp2
+      local
+        Integer n;
+
+      // a ^ 0 = identity(size(a, 1))
+      case INTEGER(0)
+        algorithm
+          n := Dimension.size(listHead(Type.arrayDims(Operator.typeOf(op))));
+        then
+          makeIdentityMatrix(n, Type.REAL());
+
+      // a ^ n where n is a literal value.
+      case INTEGER(n) then expandBinaryPowMatrix2(expand(exp1), n);
+
+      // a ^ n where n is unknown, subscript the whole expression.
+      else expandGeneric(BINARY(exp1, op, exp2));
+    end match;
+  end expandBinaryPowMatrix;
+
+  function expandBinaryPowMatrix2
+    input Expression matrix;
+    input Integer n;
+    output Expression exp;
+  algorithm
+    exp := match n
+      // A^1 = A
+      case 1 then matrix;
+      // A^2 = A * A
+      case 2 then makeBinaryMatrixProduct(matrix, matrix);
+
+      // A^n = A^m * A^m where n = 2*m
+      case _ guard intMod(n, 2) == 0
+        algorithm
+          exp := expandBinaryPowMatrix2(matrix, intDiv(n, 2));
+        then
+          makeBinaryMatrixProduct(exp, exp);
+
+      // A^n = A * A^(n-1)
+      else
+        algorithm
+          exp := expandBinaryPowMatrix2(matrix, n - 1);
+        then
+          makeBinaryMatrixProduct(matrix, exp);
+
+    end match;
+  end expandBinaryPowMatrix2;
+
+  function makeBinaryOp
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    output Expression exp = BINARY(exp1, op, exp2);
+  end makeBinaryOp;
+
+  function expandUnary
+    input Expression exp;
+    input Operator op;
+    output Expression outExp;
+  algorithm
+    outExp := expand(exp);
+    outExp := mapArrayElements(outExp, function makeUnaryOp(op = op));
+  end expandUnary;
+
+  function makeUnaryOp
+    input Expression exp1;
+    input Operator op;
+    output Expression exp = UNARY(op, exp1);
+  end makeUnaryOp;
+
+  function expandLogicalBinary
+    input Expression exp1;
+    input Operator op;
+    input Expression exp2;
+    output Expression exp;
+  protected
+    list<Expression> expl1, expl2, expl;
+    Type ty;
+    Operator eop;
+  algorithm
+    expl1 := arrayElements(expand(exp1));
+    expl2 := arrayElements(expand(exp2));
+    ty := Operator.typeOf(op);
+
+    if Type.dimensionCount(ty) > 1 then
+      eop := Operator.setType(Type.unliftArray(ty), op);
+      expl := list(expandLogicalBinary(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
+    else
+      expl := list(LBINARY(e1, op, e2) threaded for e1 in expl1, e2 in expl2);
+    end if;
+
+    exp := ARRAY(Operator.typeOf(op), expl);
+  end expandLogicalBinary;
+
+  function expandLogicalUnary
+    input Expression exp;
+    input Operator op;
+    output Expression outExp;
+  algorithm
+    outExp := expand(exp);
+    outExp := mapArrayElements(outExp, function makeLogicalUnaryOp(op = op));
+  end expandLogicalUnary;
+
+  function makeLogicalUnaryOp
+    input Expression exp1;
+    input Operator op;
+    output Expression exp = LUNARY(op, exp1);
+  end makeLogicalUnaryOp;
+
+  function expandCast
+    input Expression exp;
+    input Type ty;
+    output Expression outExp;
+  protected
+    Type ety = Type.arrayElementType(ty);
+  algorithm
+    outExp := expand(exp);
+    outExp := mapArrayElements(outExp, function typeCast(castTy = ety));
+  end expandCast;
+
+  function expandGeneric
+    input Expression exp;
+    output Expression outExp;
+  protected
+    Type ty;
+    list<Dimension> dims;
+    list<list<Expression>> subs;
+  algorithm
+    ty := typeOf(exp);
+    dims := Type.arrayDims(ty);
+    subs := list(RangeIterator.toList(RangeIterator.fromDim(d)) for d in dims);
+    outExp := expandGeneric2(subs, exp, ty);
+  end expandGeneric;
+
+  function expandGeneric2
+    input list<list<Expression>> subs;
+    input Expression exp;
+    input Type ty;
+    input list<Expression> accum = {};
+    output Expression outExp;
+  protected
+    Type t;
+    list<Expression> sub, expl;
+    list<list<Expression>> rest_subs;
+  algorithm
+    outExp := match subs
+      case sub :: rest_subs
+        algorithm
+          t := Type.unliftArray(ty);
+          expl := list(expandGeneric2(rest_subs, exp, t, s :: accum) for s in sub);
+        then
+          ARRAY(ty, expl);
+
+      case {} then SUBSCRIPTED_EXP(exp, listReverse(accum), ty);
+    end match;
+  end expandGeneric2;
 
   function arrayFirstScalar
     "Returns the first scalar element of an array. Fails if the array is empty."
@@ -2201,8 +2619,24 @@ public
     zeroExp := match ty
       case Type.REAL() then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
+      case Type.ARRAY()
+        then ARRAY(ty, List.fill(makeZero(Type.unliftArray(ty)),
+                                 Dimension.size(listHead(ty.dimensions))));
     end match;
   end makeZero;
+
+  function makeOne
+    input Type ty;
+    output Expression zeroExp;
+  algorithm
+    zeroExp := match ty
+      case Type.REAL() then REAL(1.0);
+      case Type.INTEGER() then INTEGER(1);
+      case Type.ARRAY()
+        then ARRAY(ty, List.fill(makeZero(Type.unliftArray(ty)),
+                                 Dimension.size(listHead(ty.dimensions))));
+    end match;
+  end makeOne;
 
   function unbox
     input Expression boxedExp;
@@ -2221,7 +2655,7 @@ public
       case INTEGER() then INTEGER(-exp.value);
       case REAL() then REAL(-exp.value);
       case CAST() then CAST(exp.ty, negate(exp.exp));
-      else UNARY(Operator.UMINUS(typeOf(exp)), exp);
+      else UNARY(Operator.OPERATOR(typeOf(exp), NFOperator.Op.UMINUS), exp);
     end match;
   end negate;
 
@@ -2247,9 +2681,63 @@ public
   algorithm
     hasArrayCall := match exp
       case CALL() then Type.isArray(Call.typeOf(exp.call));
-      else false;
+      else hasArrayCall;
     end match;
   end hasArrayCall2;
+
+  function transposeArray
+    input Expression arrayExp;
+    output Expression outExp;
+  protected
+    Dimension dim1, dim2;
+    list<Dimension> rest_dims;
+    Type ty, row_ty;
+    list<Expression> expl;
+    list<list<Expression>> matrix;
+  algorithm
+    ARRAY(Type.ARRAY(ty, dim1 :: dim2 :: rest_dims), expl) := arrayExp;
+
+    if not listEmpty(expl) then
+      row_ty := Type.ARRAY(ty, dim1 :: rest_dims);
+      matrix := list(arrayElements(e) for e in expl);
+      matrix := List.transposeList(matrix);
+      expl := list(ARRAY(row_ty, row) for row in matrix);
+    end if;
+
+    outExp := ARRAY(Type.ARRAY(ty, dim2 :: dim1 :: rest_dims), expl);
+  end transposeArray;
+
+  function makeIdentityMatrix
+    input Integer n;
+    input Type elementType;
+    output Expression matrix;
+  protected
+    Expression zero, one;
+    list<Expression> row, rows = {};
+    Type row_ty;
+  algorithm
+    zero := makeZero(elementType);
+    one := makeOne(elementType);
+    row_ty := Type.ARRAY(elementType, {Dimension.INTEGER(n)});
+
+    for i in 1:n loop
+      row := {};
+
+      for j in 2:i loop
+        row := zero :: row;
+      end for;
+
+      row := one :: row;
+
+      for j in i:n-1 loop
+        row := zero :: row;
+      end for;
+
+      rows := Expression.ARRAY(row_ty, row) :: rows;
+    end for;
+
+    matrix := ARRAY(Type.liftArrayLeft(row_ty, Dimension.INTEGER(n)), rows);
+  end makeIdentityMatrix;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

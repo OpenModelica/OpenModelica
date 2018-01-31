@@ -231,6 +231,29 @@ public
     end match;
   end isVector;
 
+  function isMatrix
+    input Type ty;
+    output Boolean isMatrix;
+  algorithm
+    isMatrix := match ty
+      case ARRAY(dimensions = {_, _}) then true;
+      else false;
+    end match;
+  end isMatrix;
+
+  function isSquareMatrix
+    input Type ty;
+    output Boolean isSquareMatrix;
+  algorithm
+    isSquareMatrix := match ty
+      local
+        Dimension d1, d2;
+
+      case ARRAY(dimensions = {d1, d2}) then Dimension.isEqualKnown(d1, d2);
+      else false;
+    end match;
+  end isSquareMatrix;
+
   function isEnumeration
     input Type ty;
     output Boolean isEnum;
@@ -375,6 +398,21 @@ public
       else {};
     end match;
   end arrayDims;
+
+  function copyDims
+    "Copies array dimensions from one type to another, discarding the existing
+     dimensions of the destination type but keeping its element type."
+    input Type srcType;
+    input Type dstType;
+    output Type ty;
+  algorithm
+    ty := match dstType
+      case ARRAY()
+        then ARRAY(dstType.elementType, arrayDims(srcType));
+
+      else ARRAY(dstType, arrayDims(srcType));
+    end match;
+  end copyDims;
 
   function nthDimension
     input Type ty;
