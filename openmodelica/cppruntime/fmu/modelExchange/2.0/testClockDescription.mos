@@ -49,6 +49,8 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
+// rm -f OMCppSubClocks* SubClocks_FMU.* SubClocks.def SubClocks.sh SubClocks.bat SubClocks.makefile SubClocks_init.xml
+// rm -rf modelDescription.xml binaries sources documentation
 // "SubClocks.fmu"
 // ""
 // 0
