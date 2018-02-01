@@ -778,6 +778,7 @@ uniontype Function
           // argument should be a cref?
           case "change" then true;
           case "der" then true;
+          case "diagonal" then true;
           // Function should not be used in function context.
           case "edge" then true;
           // can have variable number of arguments

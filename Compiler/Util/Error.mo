@@ -769,6 +769,8 @@ public constant Message ARGUMENT_OUT_OF_RANGE = MESSAGE(320, TRANSLATION(), ERRO
   Util.gettext("Argument %s of %s is out of range (%s)"));
 public constant Message UNBOUND_CONSTANT = MESSAGE(321, TRANSLATION(), ERROR(),
   Util.gettext("Constant %s is used without having been given a value."));
+public constant Message INVALID_ARGUMENT_VARIABILITY = MESSAGE(322, TRANSLATION(), ERROR(),
+  Util.gettext("Argument %s of %s must be a %s expression, but %s is %s."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
