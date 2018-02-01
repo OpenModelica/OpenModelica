@@ -25,7 +25,7 @@ generate-files-in-steps:
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
 
-.PHONY: interfaces generate-files runtime-depends parser compilerruntime patches
+.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files
 
 GEN_DIR=build/
 
@@ -55,13 +55,13 @@ endif
 %.patch: %.patch.xz
 	xz --keep --decompress --force $<
 
-patches: $(PATCHES)
+patch-files: $(PATCHES)
 
 bootstrap-from-tarball:
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
 	tar xJf bootstrap-sources.tar.xz
 	# Patch _main.c to avoid a new tarball
-	$(MAKE) patches
+	$(MAKE) -f $(defaultMakefileTarget) patch-files
 	$(PATCH_SOURCES)
 	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | $(SED) 's/\([.][0-9]*\)\?[.]patch//'`" || exit 1; done
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
