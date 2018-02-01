@@ -6353,21 +6353,16 @@ template daeExpSize(Exp exp, Context context, Text &preExp,
  "Generates code for a size expression."
 ::=
   match exp
-  case SIZE(exp=CREF(__), sz=SOME(dim)) then
+  case SIZE(sz=SOME(dim)) then
     let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     let dimPart = daeExp(dim, context, &preExp, &varDecls, &auxFunction)
     let resVar = tempDecl("modelica_integer", &varDecls)
     let &preExp += '<%resVar%> = size_of_dimension_base_array(<%expPart%>, <%dimPart%>);<%\n%>'
     resVar
-  case SIZE(exp=CREF(__)) then
+  case SIZE(sz=NONE()) then
     let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     let resVar = tempDecl("integer_array", &varDecls)
     let &preExp += 'sizes_of_dimensions_base_array(&<%expPart%>, &<%resVar%>);<%\n%>'
-    resVar
-  /* array of zero? */
-  case SIZE(exp=ARRAY(array = {})) then
-    let resVar = tempDecl("modelica_integer", &varDecls)
-    let &preExp += '<%resVar%> = 0;<%\n%>'
     resVar
   else error(sourceInfo(), ExpressionDumpTpl.dumpExp(exp,"\"") + " not implemented")
 end daeExpSize;
