@@ -628,7 +628,7 @@ protected
   Boolean b;
   String str,replystr;
 algorithm
-  zmqSocket := ZeroMQ.initialize();
+  zmqSocket := ZeroMQ.initialize(Flags.getConfigString(Flags.ZEROMQ_FILE_SUFFIX));
   false := valueEq(SOME(0), zmqSocket);
   while true loop
     str := ZeroMQ.handleRequest(zmqSocket);

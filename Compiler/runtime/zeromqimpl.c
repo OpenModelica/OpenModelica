@@ -38,21 +38,8 @@
 #include "settingsimpl.h"
 
 char* zeroMQFilePath = 0;
-char* zeroMQFileSuffix = 0;
 
-void ZeroMQ_setFileSuffix(const char *fileSuffix)
-{
-  if (strlen(fileSuffix) == 0) return;
-  if (zeroMQFileSuffix) free(zeroMQFileSuffix);
-
-  if (*fileSuffix) {
-    zeroMQFileSuffix = strdup(fileSuffix);
-  } else {
-    zeroMQFileSuffix = NULL;
-  }
-}
-
-void* ZeroMQ_initialize()
+void* ZeroMQ_initialize(const char *zeroMQFileSuffix)
 {
   // Create a pointer for storing the ZeroMQ socket
   void *mmcZmqSocket = mmc_mk_some(0);
@@ -71,22 +58,12 @@ void* ZeroMQ_initialize()
   // create the file path
   const char* tempPath = SettingsImpl__getTempDirectoryPath();
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  if (zeroMQFileSuffix != NULL) {
-    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.port.") + strlen(zeroMQFileSuffix) + 1);
-    sprintf(zeroMQFilePath, "%s/openmodelica.port.%s", tempPath, zeroMQFileSuffix);
-  } else {
-    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.port") + 1);
-    sprintf(zeroMQFilePath, "%s/openmodelica.port", tempPath);
-  }
+  zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.port") + strlen(zeroMQFileSuffix) + 1);
+  sprintf(zeroMQFilePath, "%s/openmodelica.port%s", tempPath, zeroMQFileSuffix);
 #else
   char *tmp_user = getenv("USER");
-  if (zeroMQFileSuffix != NULL) {
-    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.") + (tmp_user ? strlen(tmp_user) : strlen("nobody")) + strlen(zeroMQFileSuffix) + 1);
-    sprintf(zeroMQFilePath, "%s/openmodelica.%s.port.%s", tempPath, tmp_user ? tmp_user : "nobody", zeroMQFileSuffix);
-  } else {
-    zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica.") + (tmp_user ? strlen(tmp_user) : strlen("nobody")) + 1);
-    sprintf(zeroMQFilePath, "%s/openmodelica.%s.port", tempPath, tmp_user ? tmp_user : "nobody");
-  }
+  zeroMQFilePath = (char*)malloc(strlen(tempPath) + strlen("/openmodelica..port.") + strlen(tmp_user ? tmp_user : "nobody") + strlen(zeroMQFileSuffix) + 1);
+  sprintf(zeroMQFilePath, "%s/openmodelica.%s.port.%s", tempPath, tmp_user ? tmp_user : "nobody", zeroMQFileSuffix);
 #endif
   // Create the file with port number
   FILE *fp;
@@ -143,7 +120,6 @@ void ZeroMQ_close(void *mmcZmqSocket)
     remove(zeroMQFilePath);
     free(zeroMQFilePath);
   }
-  if (zeroMQFileSuffix) free(zeroMQFileSuffix);
   // Convert the void* to ZeroMQ Socket
   intptr_t zmqSocket = (intptr_t)MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmcZmqSocket),1));
   // close the ZeroMQ socket

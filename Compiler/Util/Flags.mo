@@ -2307,15 +2307,6 @@ algorithm
       then
         ();
 
-    // The zeroMQ file suffix needs to be sent to the C runtime.
-    case (_, _)
-      equation
-        true = configFlagsIsEqualIndex(inFlag, ZEROMQ_FILE_SUFFIX);
-        STRING_FLAG(data = zeroMQFileSuffix) = inValue;
-        ZeroMQ.setFileSuffix(zeroMQFileSuffix);
-      then
-        ();
-
     else ();
   end matchcontinue;
 end applySideEffects;
