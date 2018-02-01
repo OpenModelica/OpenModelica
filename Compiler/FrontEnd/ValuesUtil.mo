@@ -2145,6 +2145,7 @@ algorithm
   outValue:=
   match (inLst, inValue,lastValue)
     local
+      Boolean b;
       Integer n;
       Values.Value res,preRes;
       list<Values.Value> vlst,vlst2;
@@ -2153,6 +2154,16 @@ algorithm
     case (((Values.INTEGER(integer=n))::vlst2),Values.ARRAY(valueLst = vlst),_)
       equation
         res = listGet(vlst, n);
+        res = nthnthArrayelt(vlst2,res,res);
+      then res;
+    case (((Values.ENUM_LITERAL(index=n))::vlst2),Values.ARRAY(valueLst = vlst),_)
+      equation
+        res = listGet(vlst, n);
+        res = nthnthArrayelt(vlst2,res,res);
+      then res;
+    case (((Values.BOOL(boolean=b))::vlst2),Values.ARRAY(valueLst = vlst),_)
+      equation
+        res = listGet(vlst, if b then 2 else 1);
         res = nthnthArrayelt(vlst2,res,res);
       then res;
   end match;
