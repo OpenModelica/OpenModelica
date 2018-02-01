@@ -1423,9 +1423,10 @@ protected
     list<Expression> args;
     list<NamedArg> named_args;
     Expression arg1, arg2;
-    Type ty1;
+    Type ty1, ty2;
     Variability var;
     Function fn;
+    TypeCheck.MatchKind mk;
   algorithm
     UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
@@ -1442,7 +1443,7 @@ protected
 
     {arg1, arg2} := args;
     (arg1, ty1, var) := Typing.typeExp(arg1, origin, info);
-    (arg2, ty, variability) := Typing.typeExp(arg2, origin, info);
+    (arg2, ty2, variability) := Typing.typeExp(arg2, origin, info);
 
     // First argument must be Integer.
     if not Type.isInteger(ty1) then
@@ -1461,10 +1462,12 @@ protected
     // Second argument must be Real, array of allowed expressions or record
     // containing only components of allowed expressions.
     // TODO: Also handle records here.
-    if not Type.isReal(Type.arrayElementType(ty)) then
+    (arg2, ty, mk) := TypeCheck.matchTypes(ty2, Type.setArrayElementType(ty2, Type.REAL()), arg2, true);
+
+    if not TypeCheck.isCompatibleMatch(mk) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
-         Type.toString(ty), "Real\n  Real[:, ...]\n  Real record\n  Real record[:, ...]"}, info);
+         Type.toString(ty2), "Real\n  Real[:, ...]\n  Real record\n  Real record[:, ...]"}, info);
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);

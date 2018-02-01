@@ -1646,7 +1646,6 @@ algorithm
   end if;
 
   outExp := Expression.IF(ec, e1, e2);
-  outType := thenType;
   outVar := Prefixes.variabilityMax(thenVar, elseVar);
 end checkIfExpression;
 
