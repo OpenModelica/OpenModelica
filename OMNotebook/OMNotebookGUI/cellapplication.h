@@ -59,6 +59,12 @@
 #include "documentview.h"
 #include "xmlnodename.h"
 
+extern "C" {
+#include "meta/meta_modelica.h"
+#include "omc_config.h"
+#include "gc.h"
+}
+
 namespace IAEX
 {
 
@@ -66,7 +72,7 @@ namespace IAEX
   {
     Q_OBJECT
   public:
-    CellApplication(int &argc, char *argv[]);
+    CellApplication(int &argc, char *argv[], threadData_t *threadData);
     virtual ~CellApplication();
 
     virtual CommandCenter *commandCenter();

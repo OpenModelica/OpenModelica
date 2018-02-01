@@ -49,8 +49,6 @@
 
 #include <cstdlib>
 
-#include "omc_config.h"
-
 namespace IAEX
 {
   /*!
@@ -111,7 +109,7 @@ namespace IAEX
         }
     };
 
-  CellApplication::CellApplication( int &argc, char *argv[] )
+  CellApplication::CellApplication(int &argc, char *argv[], threadData_t *threadData)
     : QObject()
   {
     app_ = new MyApp(argc, argv, this);
@@ -151,6 +149,11 @@ namespace IAEX
     /* Force C-style doubles */
     setlocale(LC_NUMERIC, "C");
 
+    /* Don't move this line
+     * Is importat for threadData initialization
+     */
+    OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance(threadData);
+
     // 2006-04-10 AF, use environment variable to find xml files
     QString openmodelica = OmcInteractiveEnvironment::OpenModelicaHome();
 
@@ -161,7 +164,6 @@ namespace IAEX
     }
 
     // Avoid cluttering the whole disk with omc temp-files
-    OmcInteractiveEnvironment *env = OmcInteractiveEnvironment::getInstance();
     env->evalExpression("setCommandLineOptions(\"+d=shortOutput\")");
     QString cmdLine = env->getResult();
     //cout << "Set shortOutput flag: " << cmdLine.toStdString() << std::endl;

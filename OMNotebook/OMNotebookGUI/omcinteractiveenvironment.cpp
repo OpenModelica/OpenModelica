@@ -62,6 +62,7 @@ void (*omc_terminate)(FILE_INFO info,const char *msg,...) = omc_terminate_functi
 void (*omc_throw)(threadData_t*) __attribute__ ((noreturn)) = omc_throw_function;
 int omc_Main_handleCommand(void *threadData, void *imsg, void **omsg);
 void* omc_Main_init(void *threadData, void *args);
+void omc_System_initGarbageCollector(void *threadData);
 #ifdef WIN32
 void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 #endif
@@ -72,11 +73,11 @@ using namespace std;
 namespace IAEX
 {
   OmcInteractiveEnvironment* OmcInteractiveEnvironment::selfInstance = NULL;
-  OmcInteractiveEnvironment* OmcInteractiveEnvironment::getInstance()
+  OmcInteractiveEnvironment* OmcInteractiveEnvironment::getInstance(threadData_t *threadData)
   {
     if (selfInstance == NULL)
     {
-      selfInstance = new OmcInteractiveEnvironment();
+      selfInstance = new OmcInteractiveEnvironment(threadData);
     }
     return selfInstance;
   }
@@ -85,7 +86,7 @@ namespace IAEX
   *
   * \brief Implements evaluation for modelica code.
   */
-  OmcInteractiveEnvironment::OmcInteractiveEnvironment():result_(""),error_("")
+  OmcInteractiveEnvironment::OmcInteractiveEnvironment(threadData_t *threadData):threadData_(threadData),result_(""),error_("")
   {
     // set the language by reading the OMEdit settings file.
     QSettings settings(QSettings::IniFormat, QSettings::UserScope, "openmodelica", "omedit");
@@ -94,14 +95,13 @@ namespace IAEX
     void *args = mmc_mk_nil();
     QString locale = "+locale=" + settingsLocale.name();
     args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
-    // initialize threadData
-    threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
+    // initialize garbage collector
+    omc_System_initGarbageCollector(NULL);
     MMC_TRY_TOP_INTERNAL()
     omc_Main_init(threadData, args);
-    MMC_CATCH_TOP()
-    threadData_ = threadData;
     threadData_->plotClassPointer = 0;
     threadData_->plotCB = 0;
+    MMC_CATCH_TOP()
     // set the +d=initialization flag default.
     evalExpression(QString("setCommandLineOptions(\"+d=initialization\")"));
 #ifdef WIN32

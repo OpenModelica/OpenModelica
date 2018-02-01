@@ -43,13 +43,13 @@ namespace IAEX
   class OmcInteractiveEnvironment : public InputCellDelegate
   {
   private:
-    OmcInteractiveEnvironment();
+    OmcInteractiveEnvironment(threadData_t *threadData);
     virtual ~OmcInteractiveEnvironment();
 
   public:
     threadData_t *threadData_;
 
-    static OmcInteractiveEnvironment* getInstance();
+    static OmcInteractiveEnvironment* getInstance(threadData_t *threadData = 0);
     virtual QString getResult();
     virtual QString getError();
     virtual int getErrorLevel();

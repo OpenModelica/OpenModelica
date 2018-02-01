@@ -60,7 +60,12 @@
 #include <sys/time.h>
 #endif
 
+#define GC_THREADS
+
+extern "C" {
 #include "meta/meta_modelica.h"
+}
+
 #include <locale.h>
 
 using namespace std;
@@ -81,10 +86,11 @@ int main(int argc, char *argv[])
 #endif
 
   MMC_INIT();
+  MMC_TRY_TOP()
 
   try
   {
-    CellApplication a(argc, argv);
+    CellApplication a(argc, argv, threadData);
     return a.exec();
   }
   catch(exception &e)
@@ -95,5 +101,7 @@ int main(int argc, char *argv[])
   }
 
   return 0;
+
+  MMC_CATCH_TOP();
 }
 
