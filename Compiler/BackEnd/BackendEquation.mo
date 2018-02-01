@@ -1330,11 +1330,12 @@ algorithm
       BackendDAE.Equation backendEq;
       list<Integer> ds;
       Integer size;
-      list<DAE.Exp> explst;
+      list<DAE.Exp> explst, explst2;
       list<BackendDAE.Equation> eqns;
       list<list<DAE.Subscript>> subslst;
       Real r;
       BackendDAE.EquationAttributes attr;
+      list<DAE.ComponentRef> crlst;
 
     case (BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source, attr=attr)) equation
       ((_, eqns)) = List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
@@ -1367,6 +1368,28 @@ algorithm
       subslst = Expression.rangesToSubscripts(subslst);
       explst = List.map1r(subslst, Expression.applyExpSubscripts, exp);
       explst = ExpressionSimplify.simplifyList(explst);
+      eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
+    then eqns;
+
+    case (BackendDAE.COMPLEX_EQUATION(left=DAE.CALL(expLst=explst,
+          attr=DAE.CALL_ATTR(DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))),
+          right=e2, source=source, attr=attr))
+    guard(Expression.isCref(e2))
+    equation
+      crlst = ComponentReference.expandCref(Expression.expCref(e2),true);
+      explst2 = list(Expression.crefExp(c) for c in crlst);
+      explst = List.threadMap(explst, explst2, Expression.createResidualExp);
+      eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
+    then eqns;
+
+    case (BackendDAE.COMPLEX_EQUATION(right=DAE.CALL(expLst=explst,
+          attr=DAE.CALL_ATTR(DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))),
+          left=e2, source=source, attr=attr))
+    guard(Expression.isCref(e2))
+    equation
+      crlst = ComponentReference.expandCref(Expression.expCref(e2),true);
+      explst2 = list(Expression.crefExp(c) for c in crlst);
+      explst = List.threadMap(explst, explst2, Expression.createResidualExp);
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
