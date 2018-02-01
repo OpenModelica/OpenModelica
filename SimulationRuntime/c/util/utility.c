@@ -314,7 +314,7 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
       /* Copy the old directory in there */
       strcpy(buf, MMC_STRINGDATA(dir));
       buf[MMC_STRLEN(dir)]='/';
-      if (!(0==stat(dir, &stat_buf) && S_ISDIR(stat_buf.st_mode))) {
+      if (!(0==stat(buf, &stat_buf) && S_ISDIR(stat_buf.st_mode))) {
         break;
       }
       dir = mmc_mk_scon(buf);
