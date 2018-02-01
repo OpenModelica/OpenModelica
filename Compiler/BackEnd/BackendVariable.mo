@@ -44,6 +44,7 @@ protected
 import Absyn;
 import Array;
 import BackendDAEUtil;
+import BackendDump;
 import BaseHashSet;
 import BaseHashTable;
 import ComponentReference;
@@ -1178,6 +1179,40 @@ algorithm
     else false;
   end match;
 end isRealOptimizeConstraintsVars;
+
+public function isDAEmodeVar
+"Return true if variable is a daeMode variable"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.DAE_RESIDUAL_VAR())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.DAE_AUX_VAR())) then true;
+    else false;
+  end match;
+end isDAEmodeVar;
+
+public function isDAEmodeResVar
+"Return true if variable is a daeMode variable"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.DAE_RESIDUAL_VAR())) then true;
+    else false;
+  end match;
+end isDAEmodeResVar;
+
+public function isDAEmodeAuxVar
+"Return true if variable is a daeMode variable"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.DAE_AUX_VAR())) then true;
+    else false;
+  end match;
+end isDAEmodeAuxVar;
 
 public function isRealOptimizeFinalConstraintsVars
 "Return true if variable is a final constraint(slack variable)"
@@ -2546,7 +2581,7 @@ algorithm
   cr_indices := indices[hash_idx];
   cr_indices := List.deleteMemberOnTrue(BackendDAE.CREFINDEX(cr, inIndex - 1), cr_indices, removeVar2);
   arrayUpdate(indices, hash_idx, cr_indices);
-  outVariables := BackendDAE.VARIABLES(indices, arr, buckets, num_vars);
+  outVariables := BackendDAE.VARIABLES(indices, arr, buckets, num_vars-1);
 end removeVar;
 
 protected function removeVar2
@@ -3400,6 +3435,31 @@ algorithm
     else (inVar,inCrefs);
   end matchcontinue;
 end traversingVarCrefFinder;
+
+public function collectVarKindVarinVariables
+  input BackendDAE.Var inVar;
+  input tuple<checkVarKindFunc, BackendDAE.Variables>  inVarArrays;
+  output BackendDAE.Var outVar = inVar;
+  output tuple<checkVarKindFunc, BackendDAE.Variables>  outVarArrays = inVarArrays;
+  partial function checkVarKindFunc
+    input BackendDAE.Var inVar;
+    output Boolean outArg;
+  end checkVarKindFunc;
+protected
+  BackendDAE.Variables vararray;
+  checkVarKindFunc checkVarKind;
+algorithm
+  (checkVarKind, vararray) := inVarArrays;
+  outVarArrays := match(inVar)
+    local
+       BackendDAE.VarKind varKind;
+    case (_) guard(checkVarKind(inVar)) algorithm
+      vararray := BackendVariable.addVar(inVar, vararray);
+    then (checkVarKind, vararray);
+
+    else outVarArrays;
+  end match;
+end collectVarKindVarinVariables;
 
 public function getAllDiscreteVarFromVariables
   input BackendDAE.Variables inVariables;

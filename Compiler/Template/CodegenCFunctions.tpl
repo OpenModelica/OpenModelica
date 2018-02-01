@@ -4104,6 +4104,7 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
   case SIMVAR(varKind=JAC_DIFF_VAR())
   case SIMVAR(varKind=SEED_VAR())
   case SIMVAR(varKind=DAE_RESIDUAL_VAR())
+  case SIMVAR(varKind=DAE_AUX_VAR())
   case SIMVAR(index=-2)
   then
     if intEq(ix,0) then (if isPre then "$P$PRE")+crefDefine(cr)

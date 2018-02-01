@@ -56,7 +56,10 @@ import SimCode;
 protected
 import AvlSetString;
 import BackendDAECreate;
+import BackendDAEOptimize;
 import BackendDump;
+import BackendEquation;
+import BackendVariable;
 import Builtin;
 import ClockIndexes;
 import CevalScriptBackend;
@@ -74,6 +77,7 @@ import CodegenXML;
 import CodegenJava;
 import CodegenJS;
 import Config;
+import DAEMode;
 import DAEUtil;
 import Debug;
 import Error;
@@ -82,12 +86,16 @@ import ExecStat;
 import Flags;
 import FMI;
 import GC;
+import HashTable;
+import HashTableCrIListArray;
+import HashTableCrILst;
 import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
 import SerializeModelInfo;
 import TaskSystemDump;
 import SerializeInitXML;
 import Serializer;
+import SimCodeDump;
 import SimCodeUtil;
 import StackOverflow;
 import StringUtil;
@@ -167,13 +175,12 @@ algorithm
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs,libPaths,includes, includeDirs, recordDecls, functions, literals) :=
-    SimCodeUtil.createFunctions(p, inBackendDAE);
+    SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(),
     inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions,
     includes, includeDirs, libs, libPaths, p, simSettings, recordDecls,
     literals, Absyn.FUNCTIONARGS({},{}), isFMU=true, FMUVersion=FMUVersion,
     fmuTargetName=fmuTargetName, inFMIDer=inFMIDer);
-
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
 
@@ -214,7 +221,7 @@ algorithm
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
   (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) :=
-    SimCodeUtil.createFunctions(p, inBackendDAE);
+    SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   (simCode,_) := SimCodeUtil.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, NONE(), inRemovedInitialEquationLst,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
@@ -263,7 +270,7 @@ algorithm
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScriptBackend.getFileDir(a_cref, p);
 
-  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE);
+  (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
   simCode := createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inInlineData, inRemovedInitialEquationLst, className, filenamePrefix, fileDir, functions, includes, includeDirs, libs,libPaths, p, simSettingsOpt, recordDecls, literals, args);
   timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
   ExecStat.execStat("SimCode");
@@ -730,7 +737,6 @@ public function translateModel "
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args=Absyn.emptyFunctionArgs "labels for remove terms";
-  output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
@@ -741,7 +747,7 @@ protected
   State state = State.frontend;
 algorithm
   Flags.setConfigBool(Flags.BUILDING_MODEL, true);
-  (success, outBackendDAE, outStringLst, outFileDir) :=
+  (success, outStringLst, outFileDir) :=
   matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
       String filenameprefix, file_dir, resstr, description;
@@ -826,7 +832,6 @@ algorithm
       else
         fmiDer := {};
       end if;
-
       timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
       state := State.simcode;
 
@@ -855,7 +860,7 @@ algorithm
             Error.addInternalError("Unknown translateModel kind: " + anyString(kind), sourceInfo());
           then fail();
       end match;
-    then (true, dlow, libs, file_dir);
+    then (true, libs, file_dir);
 
     else
       algorithm
@@ -882,8 +887,7 @@ algorithm
         else
           timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
         end if;
-        shared := BackendDAEUtil.createEmptyShared(BackendDAE.BackendDAEType.SIMULATION(), BackendDAE.EXTRA_INFO("",""), cache, inEnv);
-      then (false, BackendDAE.DAE({}, shared), {}, "");
+      then (false, {}, "");
   end matchcontinue;
   if generateFunctions then
     Flags.set(Flags.GEN, true);
@@ -894,6 +898,399 @@ algorithm
                   ("timeFrontend", Values.REAL(timeFrontend))};
   Flags.setConfigBool(Flags.BUILDING_MODEL, false);
 end translateModel;
+
+public function translateModelDAEMode
+" Entry point to translate a Modelica model for simulation in DAE mode
+  Called from CevalScriptBackend"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String inFileNamePrefix;
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  input Absyn.FunctionArgs args "labels for remove terms";
+  output FCore.Cache outCache;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String, Values.Value>> resultValues;
+protected
+  Boolean generateFunctions = false;
+algorithm
+  (outStringLst, outFileDir, resultValues) :=
+  matchcontinue (inCache, inEnv, className, inFileNamePrefix, inSimSettingsOpt, args)
+    local
+      String filenameprefix = inFileNamePrefix;
+      String file_dir, resstr, description;
+      DAE.DAElist dae;
+      FCore.Graph graph;
+      BackendDAE.BackendDAE dlow, bdae;
+      list<String> libs;
+      Absyn.Program p;
+      //DAE.Exp fileprefix;
+      FCore.Cache cache;
+      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+      BackendDAE.BackendDAE initDAE;
+      list<BackendDAE.Equation> removedInitialEquationLst;
+      Real fsize;
+      Absyn.ComponentRef classNameCref;
+
+    case (_, _, _, _, _, _) algorithm
+      // calculate stuff that we need to create SimCode data structure
+      System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
+      ExecStat.execStatReset();
+      (outCache, graph, SOME(dae)) := CevalScriptBackend.runFrontEnd(inCache, inEnv, className, false);
+      ExecStat.execStat("FrontEnd");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, filenameprefix, "dae");
+        serializeNotify(graph, filenameprefix, "graph");
+        serializeNotify(outCache, filenameprefix, "cache");
+        ExecStat.execStat("Serialize FrontEnd");
+      end if;
+
+      timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
+
+      System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
+      dae := DAEUtil.transformationsBeforeBackend(outCache, graph, dae);
+      ExecStat.execStat("Transformations before backend");
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dae, filenameprefix, "dae2");
+        ExecStat.execStat("Serialize DAE (2)");
+      end if;
+
+      generateFunctions := Flags.set(Flags.GEN, false);
+      // We should not need to lookup constants and classes in the backend,
+      // so let's free up the old graph and just make it the initial environment.
+      if not Flags.isSet(Flags.BACKEND_KEEP_ENV_GRAPH) then
+        (outCache,graph) := Builtin.initialGraph(outCache);
+      end if;
+
+      description := DAEUtil.daeDescription(dae);
+      dlow := BackendDAECreate.lower(dae, outCache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
+
+      GC.free(dae);
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(dlow, filenameprefix, "dlow");
+        ExecStat.execStat("Serialize dlow");
+      end if;
+
+      //BackendDump.printBackendDAE(dlow);
+      (bdae, initDAE, removedInitialEquationLst) := DAEMode.getEqSystemDAEmode(dlow,inFileNamePrefix);
+      ExecStat.execStat("Backend");
+
+      timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+
+      if Flags.isSet(Flags.SERIALIZED_SIZE) then
+        serializeNotify(bdae, filenameprefix, "simDAE");
+        serializeNotify(initDAE, filenameprefix, "initDAE");
+        serializeNotify(removedInitialEquationLst, filenameprefix, "removedInitialEquationLst");
+        ExecStat.execStat("Serialize solved system");
+      end if;
+
+      (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeDAE(bdae, initDAE, removedInitialEquationLst, SymbolTable.getAbsyn(), className, filenameprefix, inSimSettingsOpt, args);
+      timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+      timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+
+      resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
+                      ("timeSimCode", Values.REAL(timeSimCode)),
+                      ("timeBackend", Values.REAL(timeBackend)),
+                      ("timeFrontend", Values.REAL(timeFrontend))};
+
+
+
+    then (libs, file_dir, resultValues);
+
+    else equation
+      if generateFunctions then
+        Flags.set(Flags.GEN, true);
+      end if;
+      true = Flags.isSet(Flags.FAILTRACE);
+      resstr = Absyn.pathStringNoQual(className);
+      resstr = stringAppendList({"SimCode DAEmode: The model ", resstr, " could not be translated"});
+      Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+    then fail();
+  end matchcontinue;
+  if generateFunctions then
+    Flags.set(Flags.GEN, true);
+  end if;
+end translateModelDAEMode;
+
+protected function generateModelCodeDAE
+" Generates code for a model by creating a SimCode structure for the DAEmode
+  and call the template target generator. "
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.BackendDAE inInitDAE;
+  input list<BackendDAE.Equation> inRemovedInitialEquationLst;
+  input Absyn.Program p;
+  input Absyn.Path className;
+  input String filenamePrefix;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
+  input Absyn.FunctionArgs args;
+  output list<String> libs;
+  output String fileDir;
+  output Real timeSimCode;
+  output Real timeTemplates;
+protected
+  constant Boolean debug = false;
+  list<String> includes, includeDirs,libPaths;
+  list<SimCodeFunction.Function> functions;
+  SimCode.SimCode simCode;
+  list<SimCodeFunction.RecordDeclaration> recordDecls;
+  Absyn.ComponentRef a_cref;
+  tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
+  list<DAE.Exp> lits;
+  list<tuple<String, String>> program;
+  Integer numCheckpoints;
+  list<SimCodeVar.SimVar> tempVars = {};
+
+  SimCode.ModelInfo modelInfo;
+  SimCode.ExtObjInfo extObjInfo;
+  SimCode.HashTableCrefToSimVar crefToSimVarHT;
+  SimCodeFunction.MakefileParams makefileParams;
+  list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  Integer maxDelayedExpIndex;
+  Integer uniqueEqIndex = 1;
+  Integer numberofEqns, numStateSets, numberofLinearSys, numberofNonLinearSys,
+  numberofMixedSys, numberOfJacobians, numberofFixedParameters;
+
+  list<DAE.ComponentRef> discreteModelVars;
+  list<BackendDAE.TimeEvent> timeEvents;
+  BackendDAE.ZeroCrossingSet zeroCrossingsSet, sampleZCSet;
+  DoubleEndedList<BackendDAE.ZeroCrossing> de_relations;
+  list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
+
+  BackendDAE.Variables daeVars, resVars, algVars, auxVars;
+  list<BackendDAE.Var> varsLst;
+  list<BackendDAE.Equation> eqnsLst;
+  BackendDAE.EquationArray daeEqns;
+  BackendDAE.Variables localSharedAlgVars;
+  Option<SimCode.JacobianMatrix> daeModeSP;
+  Option<SimCode.DaeModeData> daeModeData;
+  SimCode.DaeModeConfig daeModeConf;
+  list<SimCode.SimEqSystem> daeEquations;
+  list<SimCodeVar.SimVar> residualVars, algebraicVars, auxiliaryVars;
+  list<SimCode.StateSet> stateSets;
+
+  tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJac;
+  SimCode.JacobianMatrix symDAESparsPattern;
+  list<SimCode.JacobianMatrix> symJacs, SymbolicJacs, SymbolicJacsNLS, SymbolicJacsTemp, SymbolicJacsStateSelect;
+  list<SimCode.SimEqSystem> initialEquations, removedInitialEquations, jacobianEquations;
+  list<SimCodeVar.SimVar> jacobianSimvars, seedVars;
+  list<SimCode.SimEqSystem> startValueEquations;        // --> updateBoundStartValues
+  list<SimCode.SimEqSystem> maxValueEquations;          // --> updateBoundMaxValues
+  list<SimCode.SimEqSystem> minValueEquations;          // --> updateBoundMinValues
+  list<SimCode.SimEqSystem> nominalValueEquations;      // --> updateBoundNominalValues
+  list<SimCode.SimEqSystem> parameterEquations;         // --> updateBoundParameters
+algorithm
+  numCheckpoints:=ErrorExt.getNumCheckpoints();
+  try
+    StackOverflow.clearStacktraceMessages();
+    System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
+
+    // +++ create SimCode stuff +++
+    // create SimCode functions
+    a_cref := Absyn.pathToCref(className);
+    fileDir := CevalScriptBackend.getFileDir(a_cref, p);
+    (libs, libPaths, includes, includeDirs, recordDecls, functions, literals) := SimCodeUtil.createFunctions(p, inBackendDAE.shared.functionTree);
+
+    // create external objects
+    extObjInfo := SimCodeUtil.createExtObjInfo(inBackendDAE.shared);
+    // create make file params
+    makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
+    //create delay exps
+    (delayedExps, maxDelayedExpIndex) := SimCodeUtil.extractDelayedExpressions(inBackendDAE);
+
+    // created event suff e.g. zeroCrossings, samples, ...
+    timeEvents := inBackendDAE.shared.eventInfo.timeEvents;
+    (zeroCrossings,relations,sampleZC) := match inBackendDAE.shared.eventInfo
+      case BackendDAE.EVENT_INFO(zeroCrossings=zeroCrossingsSet, relations=de_relations, samples=sampleZCSet)
+      then (ZeroCrossings.toList(zeroCrossingsSet), DoubleEndedList.toListNoCopyNoClear(de_relations), ZeroCrossings.toList(sampleZCSet));
+    end match;
+
+    // initialization stuff
+    // ********************
+
+    // generate equations for initDAE
+    (initialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createInitialEquations(inInitDAE, uniqueEqIndex, tempVars);
+    initialEquations := listReverse(initialEquations);
+
+    // generate equations for removed initial equations
+    (removedInitialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempVars);
+    removedInitialEquations := listReverse(removedInitialEquations);
+
+    ExecStat.execStat("simCode: created initialization part");
+
+    // create parameter equations
+    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
+    if debug then ExecStat.execStat("simCode: createStartValueEquations"); end if;
+    ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, {}));
+    if debug then ExecStat.execStat("simCode: createNominalValueEquations"); end if;
+    ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMinValueEquations, (uniqueEqIndex, {}));
+    if debug then ExecStat.execStat("simCode: createMinValueEquations"); end if;
+    ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createMaxValueEquations, (uniqueEqIndex, {}));
+    if debug then ExecStat.execStat("simCode: createMaxValueEquations"); end if;
+    ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createVarNominalAssertFromVars, (uniqueEqIndex, {}));
+    if debug then ExecStat.execStat("simCode: createVarNominalAssertFromVars"); end if;
+    (uniqueEqIndex, parameterEquations, _) := SimCodeUtil.createParameterEquations(uniqueEqIndex, parameterEquations, inBackendDAE.shared.globalKnownVars);
+    parameterEquations := listReverse(parameterEquations);
+    if debug then ExecStat.execStat("simCode: createParameterEquations"); end if;
+
+    discreteModelVars := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.extractDiscreteModelVars, {});
+
+    //prepare DAEmode stuff
+    eqnsLst := BackendEquation.equationSystemsEqnsLst(inBackendDAE.eqs);
+    varsLst := BackendVariable.equationSystemsVarsLst(inBackendDAE.eqs);
+    daeVars := BackendVariable.listVar(varsLst);
+    daeEqns := BackendEquation.listEquation(eqnsLst);
+    // create SimCode residual equation
+    (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromList(listReverse(eqnsLst), varsLst, false, uniqueEqIndex, tempVars, inBackendDAE.shared.info);
+
+    // state set stuff
+    (_, stateSets, uniqueEqIndex, tempVars, numStateSets) := SimCodeUtil.createStateSets(inBackendDAE, {}, uniqueEqIndex, tempVars);
+    if debug then ExecStat.execStat("simCode: createStateSets"); end if;
+
+    // create model info
+    modelInfo := SimCodeUtil.createModelInfo(className, p, inBackendDAE, inInitDAE, functions, {}, numStateSets, fileDir, 0, tempVars);
+
+    //create hash table
+    crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+
+    // collect symbolic jacobians from state selection
+    (stateSets, modelInfo, SymbolicJacsStateSelect) :=  SimCodeUtil.addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
+    // collect symbolic jacobians in initialization loops of the overall jacobians
+    SymbolicJacsNLS := {};
+    (initialEquations, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfo(initialEquations, modelInfo);
+    SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+    (parameterEquations, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfo(parameterEquations, modelInfo);
+    SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+    (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, {"A", "B", "C", "D"}, {});
+    (SymbolicJacs, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfoSymJacs(symJacs, modelInfo);
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
+    // collect jacobian equation only for equantion info file
+    jacobianEquations := SimCodeUtil.collectAllJacobianEquations(SymbolicJacs);
+    if debug then ExecStat.execStat("simCode: create Jacobian linear code"); end if;
+
+    SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
+    jacobianSimvars := SimCodeUtil.collectAllJacobianVars(SymbolicJacs);
+    modelInfo := SimCodeUtil.setJacobianVars(jacobianSimvars, modelInfo);
+    seedVars := SimCodeUtil.collectAllSeedVars(SymbolicJacs);
+    modelInfo := SimCodeUtil.setSeedVars(seedVars, modelInfo);
+
+
+    // create dae SimVars: residual and algebraic
+    // create residual variables, set index and push them SimCode Hash Table
+    ((_, resVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
+    ((residualVars, _)) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    residualVars := SimCodeUtil.rewriteIndex(residualVars, 0);
+    (residualVars, _) := SimCodeUtil.setVariableIndexHelper(residualVars, 0);
+    crefToSimVarHT:= List.fold(residualVars,SimCodeUtil.addSimVarToHashTable,crefToSimVarHT);
+
+    // create auxiliary variables, set index and push them SimCode Hash Table
+    ((_, auxVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeAuxVar, BackendVariable.emptyVars()));
+    ((auxiliaryVars, _)) :=  BackendVariable.traverseBackendDAEVars(auxVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 0);
+    (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0);
+    crefToSimVarHT:= List.fold(auxiliaryVars,SimCodeUtil.addSimVarToHashTable,crefToSimVarHT);
+
+    // filter states and der states from inBackendDAE.shared.localKnownVars
+    ((_, algVars)) := BackendVariable.traverseBackendDAEVars(inBackendDAE.shared.localKnownVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isVarAlg, BackendVariable.emptyVars()));
+    ((algebraicVars, _)) :=  BackendVariable.traverseBackendDAEVars(algVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    //algebraicVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
+
+    // create DAE mode Sparse pattern and TODO: Jacobians
+    // sparsity pattern generation
+    daeModeJac := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
+    ({symDAESparsPattern}, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({daeModeJac}, crefToSimVarHT, uniqueEqIndex, {"daeMode"}, {});
+    daeModeSP := SOME(symDAESparsPattern);
+    daeModeConf := SimCode.ALL_EQUATIONS();
+    daeModeData := SOME(SimCode.DAEMODEDATA({daeEquations}, daeModeSP, residualVars, algebraicVars, auxiliaryVars, daeModeConf));
+
+    /* This is a *much* better estimate than the guessed number of equations */
+    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex);
+
+    // update hash table
+    crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
+
+    simCode := SimCode.SIMCODE(modelInfo,
+                              {}, // Set by the traversal below...
+                              recordDecls,
+                              includeDirs,
+                              {},
+                              {},
+                              {},
+                              {},
+                              {},
+                              initialEquations,
+                              {},
+                              removedInitialEquations,
+                              startValueEquations,
+                              nominalValueEquations,
+                              minValueEquations,
+                              maxValueEquations,
+                              parameterEquations,
+                              {},
+                              {},
+                              {},
+                              jacobianEquations,
+                              stateSets,
+                              {},
+                              {},
+                              zeroCrossings,
+                              relations,
+                              timeEvents,
+                              discreteModelVars,
+                              extObjInfo,
+                              makefileParams,
+                              SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+                              SymbolicJacs,
+                              simSettingsOpt,
+                              filenamePrefix,
+                              "",
+                              "",
+                              HpcOmSimCode.emptyHpcomData,
+                              AvlTreeCRToInt.EMPTY(),
+                              HashTableCrIListArray.emptyHashTable(),
+                              HashTableCrILst.emptyHashTable(),
+                              crefToSimVarHT,
+                              HashTable.emptyHashTable(),
+                              NONE(),
+                              NONE(),
+                              SimCode.emptyPartitionData,
+                              daeModeData,
+                              {}
+                              );
+
+    (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
+    simCode.literals := listReverse(lits);
+
+    timeSimCode := System.realtimeTock(ClockIndexes.RT_CLOCK_SIMCODE);
+    ExecStat.execStat("SimCode");
+
+    if Flags.isSet(Flags.SERIALIZED_SIZE) then
+      serializeNotify(simCode, filenamePrefix, "simCode");
+      ExecStat.execStat("Serialize simCode");
+    end if;
+
+    if Flags.isSet(Flags.DUMP_SIMCODE) then
+      SimCodeUtil.dumpSimCodeDebug(simCode);
+    end if;
+
+    System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
+    callTargetTemplates(simCode, Config.simCodeTarget());
+    timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
+    ExecStat.execStat("Templates");
+    return;
+  else
+    setGlobalRoot(Global.stackoverFlowIndex, NONE());
+    ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+    Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+    /* Do not fail or we can loop too much */
+    StackOverflow.clearStacktraceMessages();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+  fail();
+end generateModelCodeDAE;
 
 protected function serializeNotify<T>
   input T data;

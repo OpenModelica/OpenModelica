@@ -1314,11 +1314,12 @@ constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
   Util.gettext("Experimental: Enable continuous-time state machine prototype"));
 
 constant ConfigFlag DAE_MODE = CONFIG_FLAG(95, "daeMode",
-  NONE(), EXTERNAL(), ENUM_FLAG(1, {("none", 1), ("all",2), ("dynamic",3)}),
+  NONE(), EXTERNAL(), ENUM_FLAG(1, {("none", 1), ("all",2), ("dynamic",3), ("new",4)}),
   SOME(STRING_OPTION({"none", "all", "dynamic"})),
   Util.gettext("Generates additional code for DAE mode, where the equations are not causelized, when one of the following option is selected:\n"+
-               "all    : In this mode all equations are passed to the integrator.\n"+
-               "dynamic : In this mode only the equation for the dynamic part of the system are passed to the integrator.")
+               "all     : In this mode all equations are passed to the integrator.\n"+
+               "dynamic : In this mode only the equation for the dynamic part of the system are passed to the integrator."+
+               "new     : This option enables the new daeMode. Currently alpha development status.\n")
 );
 
 constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
@@ -1431,6 +1432,23 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
   constant ConfigFlag BUILDING_MODEL = CONFIG_FLAG(123,
   "", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Is true when building a model (as opposed to running a Modelica script)."));
+
+  constant ConfigFlag POST_OPT_MODULES_DAE = CONFIG_FLAG(124, "postOptModulesDAE",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    "lateInlineFunction",
+    "wrapFunctionCalls",
+    //"replaceDerCalls",
+    "simplifysemiLinear",
+    "simplifyComplexFunction",
+    "calculateStateSetsJacobians",
+    "removeConstants",
+    "simplifyTimeIndepFuncCalls",
+    "simplifyAllExpressions",
+    "findZeroCrossings",
+    "createDAEmodeBDAE",
+    "detectDAEmodeSparsePattern"
+    }),NONE(),
+    Util.gettext("Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1559,7 +1577,8 @@ constant list<ConfigFlag> allConfigFlags = {
   LOAD_MSL_MODEL,
   Load_PACKAGE_FILE,
   BUILDING_FMU,
-  BUILDING_MODEL
+  BUILDING_MODEL,
+  POST_OPT_MODULES_DAE
 };
 
 public function new

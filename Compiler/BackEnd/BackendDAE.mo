@@ -131,6 +131,7 @@ uniontype Shared "Data shared for all equation-systems"
     SymbolicJacobians symjacs               "Symbolic Jacobians";
     ExtraInfo info "contains extra info that we send around like the model name";
     PartitionsInfo partitionsInfo;
+    BackendDAEModeData daeModeData "DAEMode Data";
   end SHARED;
 end Shared;
 
@@ -180,6 +181,7 @@ uniontype BackendDAEType "BackendDAEType to indicate different types of BackendD
   record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE"          end PARAMETERSYSTEM;
   record INITIALSYSTEM   "Type for initial system BackendDAE.DAE"            end INITIALSYSTEM;
   record INLINESYSTEM    "Type for inline system BackendDAE.DAE"             end INLINESYSTEM;
+  record DAEMODESYSTEM   "Type for DAEmode system BackendDAE.DAE"            end DAEMODESYSTEM;
 end BackendDAEType;
 
 //
@@ -270,6 +272,7 @@ uniontype VarKind "variable kind"
   record ALG_STATE  end ALG_STATE; // algebraic state used by inline solver
   record ALG_STATE_OLD  end ALG_STATE_OLD; // algebraic state old value used by inline solver
   record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
+  record DAE_AUX_VAR end DAE_AUX_VAR; // auxiliary variable used for DAEmode
 end VarKind;
 
 public uniontype TearingSelect
@@ -291,6 +294,10 @@ public uniontype EquationKind "equation kind"
   record CLOCKED_EQUATION
     Integer clk;
   end CLOCKED_EQUATION;
+  record DISCRETE_EQUATION
+  end DISCRETE_EQUATION;
+  record AUX_EQUATION
+  end AUX_EQUATION;
   record UNKNOWN_EQUATION_KIND
   end UNKNOWN_EQUATION_KIND;
 end EquationKind;
@@ -835,6 +842,23 @@ public uniontype CompInfo"types to count operations for the components"
 
 end CompInfo;
 
+public
+uniontype BackendDAEModeData
+  record BDAE_MODE_DATA
+    Integer numAuxVars;
+    list<Var> auxVars;
+
+    Integer numResVars;
+    list<Var> resVars;
+
+    Integer numAuxEqns;
+    list<Equation> auxEqns;
+
+    Integer numResEqns;
+    list<Equation> resEqns;
+  end BDAE_MODE_DATA;
+end BackendDAEModeData;
+constant BackendDAEModeData emptyDAEModeData = BDAE_MODE_DATA(0,{},0,{},0,{},0,{});
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAE;

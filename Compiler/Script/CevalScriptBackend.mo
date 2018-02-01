@@ -1282,7 +1282,7 @@ algorithm
     case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_},_)
       equation
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
-        (b,cache,_,_,_,_) = translateModel(cache, env, className, filenameprefix, true, SOME(simSettings));
+        (b,cache,_,_,_) = translateModel(cache, env, className, filenameprefix, true, SOME(simSettings));
       then
         (cache,Values.BOOL(b));
 
@@ -3110,17 +3110,15 @@ protected function translateModel " author: x02lucpo
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Boolean success;
   output FCore.Cache outCache;
-  output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  (outCache,outStringLst,outFileDir,resultValues):=
   match (inCache,inEnv,className,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       FCore.Cache cache;
       FCore.Graph env;
-      BackendDAE.BackendDAE indexed_dlow;
       list<String> libs;
       String file_dir, fileNamePrefix;
       Absyn.Program p;
@@ -3132,8 +3130,8 @@ algorithm
     case (cache,env,_,fileNamePrefix,_,_)
       algorithm
         if Config.ignoreCommandLineOptionsAnnotation() then
-          (success, cache, indexed_dlow, libs, file_dir, resultValues) :=
-            SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt);
+          (success, cache, libs, file_dir, resultValues) :=
+            callTranslateModel(cache,env,className,fileNamePrefix,inSimSettingsOpt);
         else
           // read the __OpenModelica_commandLineOptions
           Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
@@ -3147,8 +3145,8 @@ algorithm
               _ := Flags.readArgs(args);
             end if;
 
-            (success, cache, indexed_dlow, libs, file_dir, resultValues) :=
-              SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt);
+            (success, cache, libs, file_dir, resultValues) :=
+              callTranslateModel(cache,env,className,fileNamePrefix,inSimSettingsOpt);
             // reset to the original flags
             Flags.saveFlags(flags);
           else
@@ -3157,7 +3155,7 @@ algorithm
           end try;
         end if;
       then
-        (cache,indexed_dlow,libs,file_dir,resultValues);
+        (cache,libs,file_dir,resultValues);
 
   end match;
 end translateModel;
@@ -3177,7 +3175,7 @@ protected function translateLabeledModel " author: Fatima
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  (outCache,outStringLst,outFileDir,resultValues):=
   match (inCache,inEnv,className,inFileNamePrefix,addDummy,inSimSettingsOpt,inLabelstoCancel)
     local
       FCore.Cache cache;
@@ -3196,7 +3194,7 @@ algorithm
       algorithm
 
         if Config.ignoreCommandLineOptionsAnnotation() then
-          (true, cache, indexed_dlow, libs, file_dir, resultValues) :=
+          (true, cache, libs, file_dir, resultValues) :=
             SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
         else
           // read the __OpenModelica_commandLineOptions
@@ -3211,7 +3209,7 @@ algorithm
               _ := Flags.readArgs(args);
             end if;
 
-            (true, cache, indexed_dlow, libs, file_dir, resultValues) :=
+            (true, cache, libs, file_dir, resultValues) :=
               SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),cache,env,className,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},argNames =labelstoCancel));
             // reset to the original flags
             Flags.saveFlags(flags);
@@ -3221,10 +3219,37 @@ algorithm
           end try;
         end if;
       then
-        (cache,indexed_dlow,libs,file_dir,resultValues);
+        (cache,libs,file_dir,resultValues);
 
   end match;
 end translateLabeledModel;
+
+protected function callTranslateModel
+"Call the main translate function. This function
+ distinguish between the modes. Now between DAEMode and ODEmode.
+ The appropriate function create model code and writes also a makefile"
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String inFileNamePrefix;
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Boolean success;
+  output FCore.Cache outCache;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  if Flags.getConfigEnum(Flags.DAE_MODE) > 3 then
+    (outCache, outStringLst, outFileDir, resultValues) :=
+    SimCodeMain.translateModelDAEMode(inCache,inEnv,className,inFileNamePrefix,
+    inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+    success := true;
+  else
+    (success, outCache, outStringLst, outFileDir, resultValues) :=
+    SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.NORMAL(),inCache,inEnv,
+      className,inFileNamePrefix,true,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+  end if;
+end callTranslateModel;
 
 protected function configureFMU
   input String platform;
@@ -3352,7 +3377,7 @@ algorithm
   simSettings := convertSimulationOptionsToSimCode(defaulSimOpt);
   Flags.setConfigBool(Flags.BUILDING_FMU, true);
   try
-    (success, cache, _, libs,_, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
+    (success, cache, libs,_, _) := SimCodeMain.translateModel(SimCodeMain.TranslateModelKind.FMU(FMUVersion, FMUType, fmuTargetName), cache, inEnv, className, filenameprefix, addDummy, SOME(simSettings));
     true := success;
     outValue := Values.STRING((if not Config.getRunningTestsuite() then System.pwd() + System.pathDelimiter() else "") + fmuTargetName + ".fmu");
   else
@@ -4800,7 +4825,7 @@ algorithm
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
            := simSettings;
 
-        (success,cache,_,libs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
+        (success,cache,libs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);

@@ -608,7 +608,8 @@ package SimCode
       list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
       Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
       list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
-      list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
+      list<SimCodeVar.SimVar> algebraicVars;  // algebraic variable used to calculate residuals of a DAE form, they are real
+      list<SimCodeVar.SimVar> auxiliaryVars;  // auxiliary variable used to calculate residuals of a DAE form, they are real
     end DAEMODEDATA;
   end DaeModeData;
 
@@ -1222,6 +1223,7 @@ package BackendDAE
   record ALG_STATE  end ALG_STATE; // algebraic state used by inline solver
   record ALG_STATE_OLD  end ALG_STATE_OLD; // algebraic state old value used by inline solver
   record DAE_RESIDUAL_VAR end DAE_RESIDUAL_VAR; // variable kind used for DAEmode
+  record DAE_AUX_VAR end DAE_AUX_VAR; // auxiliary variable used for DAEmode
   end VarKind;
 
   uniontype SubClock

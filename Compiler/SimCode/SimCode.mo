@@ -284,7 +284,8 @@ uniontype DaeModeData
     list<list<SimEqSystem>> daeEquations "daeModel residuals equations";
     Option<JacobianMatrix> sparsityPattern "contains the sparsity pattern for the daeMode";
     list<SimCodeVar.SimVar> residualVars;  // variable used to calculate residuals of a DAE form, they are real
-    list<SimCodeVar.SimVar> algebraicDAEVars;  // variable used to calculate residuals of a DAE form, they are real
+    list<SimCodeVar.SimVar> algebraicVars;
+    list<SimCodeVar.SimVar> auxiliaryVars;
     DaeModeConfig modeCreated; // indicates the mode in which
   end DAEMODEDATA;
 end DaeModeData;

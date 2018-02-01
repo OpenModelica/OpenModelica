@@ -279,6 +279,7 @@ if true then /* Suppress output */
     "../BackEnd/Causalize.mo",
     "../BackEnd/CommonSubExpression.mo",
     "../BackEnd/DAEQuery.mo",
+    "../BackEnd/DAEMode.mo",
     "../BackEnd/Differentiate.mo",
     "../BackEnd/DumpGraphML.mo",
     "../BackEnd/DumpHTML.mo",

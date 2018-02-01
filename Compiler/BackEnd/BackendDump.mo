@@ -2481,6 +2481,8 @@ algorithm
     case BackendDAE.OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT";
     case BackendDAE.ALG_STATE()  then "ALG_STATE";
     case BackendDAE.ALG_STATE_OLD()  then "ALG_STATE_OLD";
+    case BackendDAE.DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR";
+    case BackendDAE.DAE_AUX_VAR() then "DAE_AUX_VAR";
   end match;
 end kindString;
 

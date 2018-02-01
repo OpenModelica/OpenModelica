@@ -856,11 +856,15 @@ template simulationFile_dae_header(SimCode simCode)
 "DAEmode header generation"
 ::=
   match simCode
-    case simCode as SIMCODE(daeModeData=SOME(DAEMODEDATA(residualVars=residualVars))) then
+    case simCode as SIMCODE(daeModeData=SOME(DAEMODEDATA(residualVars=residualVars,auxiliaryVars=auxiliaryVars))) then
     <<
     /* residual variable define for daeMode */
     <%residualVars |> var =>
       defineSimVarArray(var, "residualVars")
+    ;separator="\n"%>
+    /* auxiliary variable define for daeMode */
+    <%auxiliaryVars |> var =>
+      defineSimVarArray(var, "auxiliaryVars")
     ;separator="\n"%>
     >>
     /* adrpo: leave a newline at the end of file to get rid of the warning */
@@ -880,12 +884,13 @@ template simulationFile_dae(SimCode simCode)
   match simCode
     case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),
         daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
-                                     algebraicDAEVars=algebraicDAEVars, residualVars=residualVars))) then
+                                     algebraicVars=algebraicVars, residualVars=residualVars,
+                                     auxiliaryVars=auxiliaryVars))) then
      let modelNamePrefixStr = modelNamePrefix(simCode)
      let initDAEmode =
        match sparsityPattern
-       case SOME(JAC_MATRIX(sparsityT=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
-         '<%initializeDAEmodeData(listLength(residualVars), listLength(algebraicDAEVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
+       case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
+         '<%initializeDAEmodeData(listLength(residualVars), listLength(algebraicVars), listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
        case NONE() then
          'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }'
        end match
@@ -900,7 +905,7 @@ template simulationFile_dae(SimCode simCode)
 
      <%evaluateDAEResiduals(daeEquations, modelNamePrefixStr)%>
 
-     <%algebraicDAEVar(algebraicDAEVars, modelNamePrefixStr)%>
+     <%algebraicDAEVar(algebraicVars, modelNamePrefixStr)%>
 
      <%initDAEmode%>
 
@@ -4092,7 +4097,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
   >>
 end algebraicDAEVar;
 
-template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, Integer nAuxVars, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
 ::=
   let sizeCols = listLength(sparsepattern)
@@ -4114,8 +4119,10 @@ template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, list<tuple<In
 
     daeModeData->nResidualVars = <%nResVars%>;
     daeModeData->nAlgebraicDAEVars = <%nAlgVars%>;
+    daeModeData->nAuxiliaryVars = <%nAuxVars%>;
 
     daeModeData->residualVars = (double*) malloc(sizeof(double)*<%nResVars%>);
+    daeModeData->auxiliaryVars = (double*) malloc(sizeof(double)*<%nAuxVars%>);
 
     /* set the function pointer */
     daeModeData->evaluateDAEResiduals = <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>;

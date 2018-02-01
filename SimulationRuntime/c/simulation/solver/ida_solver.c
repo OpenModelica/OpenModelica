@@ -91,6 +91,10 @@ static int idaReScaleData(IDA_SOLVER *idaData);
 static int idaScaleVector(N_Vector vec, double* factors, unsigned int size);
 static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
+static IDA_SOLVER *idaDataGlobal;
+static int initializedSolver = 0;
+int ida_calcReinitAfterEvent(DATA* data, threadData_t *threadData);
+
 
 int checkIDAflag(int flag)
 {
@@ -643,6 +647,12 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       N_VSetArrayPointer_Serial((data->simulationInfo->sensitivityMatrix + i*idaData->N), idaData->ySResult[i]);
     }
   }
+  /* for the event handling in the dae mode */
+  if (compiledInDAEMode == 4){
+    idaDataGlobal = idaData;
+    initializedSolver = 1;
+    data->callback->functionDAE = ida_calcReinitAfterEvent;
+  }
 
   free(tmp);
   TRACE_POP
@@ -683,6 +693,43 @@ ida_solver_deinitial(IDA_SOLVER *idaData){
 
   TRACE_POP
   return 0;
+}
+
+int
+ida_calcReinitAfterEvent(DATA* data, threadData_t *threadData)
+{
+  IDA_SOLVER *idaData = idaDataGlobal;
+  int flag;
+  if (compiledInDAEMode == 4){
+    if (initializedSolver){
+      data->simulationInfo->discreteCall = 1;
+
+      memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
+
+      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+
+      flag = IDAReInit(idaData->ida_mem,
+          data->localData[0]->timeValue,
+          idaData->y,
+          idaData->yp);
+
+      //flag = IDASetStepToleranceIC(idaData->ida_mem, 1e-12);
+      IDASetMaxNumStepsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
+      IDASetMaxNumJacsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
+      IDASetMaxNumItersIC(idaData->ida_mem, 2*data->modelData->nStates*10);
+      flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+1);
+      if (checkIDAflag(flag)){
+        throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
+      }
+
+      data->simulationInfo->discreteCall = 0;
+    }
+  }
+  else{
+    data->callback->functionDAE(data, threadData);
+  }
+
 }
 
 /* main ida function to make a step */
@@ -774,7 +821,6 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         throwStreamPrint(threadData, "##IDA## set IDASensInit failed!");
       }
     }
-
     idaData->setInitialSolution = 1;
   }
 

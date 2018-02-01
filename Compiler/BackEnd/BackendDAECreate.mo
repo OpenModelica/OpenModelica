@@ -166,7 +166,8 @@ algorithm
                                                     extObjCls,
                                                     BackendDAE.SIMULATION(),
                                                     symjacs,inExtraInfo,
-                                                    BackendDAEUtil.emptyPartitionsInfo()
+                                                    BackendDAEUtil.emptyPartitionsInfo(),
+                                                    BackendDAE.emptyDAEModeData
                                                     ));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   BackendDAEUtil.checkIncidenceMatrixSolvability(syst, functionTree);

@@ -9542,7 +9542,7 @@ end clockIntervalsInit;
 template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
   match simCode
-    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)),daeModeData=SOME(DAEMODEDATA(algebraicDAEVars=algebraicDAEVars, residualVars=residualVars)), partitionData = PARTITIONDATA(__))
+    case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__)),daeModeData=SOME(DAEMODEDATA(algebraicVars=algebraicVars, residualVars=residualVars)), partitionData = PARTITIONDATA(__))
       then
         let numRealVars = numRealvars(modelInfo)
         let numIntVars = numIntvars(modelInfo)
@@ -9550,8 +9550,8 @@ template dimension1(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text 
         let numStringVars = numStringvars(modelInfo)
         <<
         _dimContinuousStates = <%vi.numStateVars%>;
-        _dimAE = <%listLength(algebraicDAEVars)%>;
-        _dimRHS =  <%intAdd(vi.numStateVars,listLength(algebraicDAEVars))%>;
+        _dimAE = <%listLength(algebraicVars)%>;
+        _dimRHS =  <%intAdd(vi.numStateVars,listLength(algebraicVars))%>;
         _dimBoolean = <%numBoolVars%>;
         _dimInteger = <%numIntVars%>;
         _dimString = <%numStringVars%>;
@@ -13912,7 +13912,7 @@ template simulationDAEMethodsDeclaration(SimCode simCode)
 match simCode
     case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),
         daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
-                                     algebraicDAEVars=algebraicDAEVars, residualVars=residualVars))) then
+                                     algebraicVars=algebraicDAEVars, residualVars=residualVars))) then
  <<
   <%generateDAEEquationMemberFuncDecls(daeEquations,"evaluateDAE")%>
 
@@ -13952,7 +13952,7 @@ template simulationDAEMethods(SimCode simCode,Text& extraFuncs,Text& extraFuncsD
   match simCode
     case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),
         daeModeData=SOME(DAEMODEDATA(daeEquations=daeEquations, sparsityPattern=sparsityPattern,
-                                     algebraicDAEVars=algebraicDAEVars, residualVars=residualVars))) then
+                                     algebraicVars=algebraicDAEVars, residualVars=residualVars))) then
      let modelNamePrefixStr = lastIdentOfPath(modelInfo.name)
 
      <<

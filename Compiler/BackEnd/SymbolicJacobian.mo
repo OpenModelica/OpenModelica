@@ -174,6 +174,64 @@ algorithm
   end try;
 end detectSparsePatternODE;
 
+
+
+// =============================================================================
+// section for postOptModule >>detectSparsePatternDAE<<
+//
+// Generate sparse pattern
+// =============================================================================
+public function detectSparsePatternDAE
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.BackendDAE DAE;
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+  BackendDAE.SparseColoring coloredCols;
+  BackendDAE.SparsePattern sparsePattern;
+  list<BackendDAE.Var> inDepVars;
+  list<BackendDAE.Var> depVars;
+  BackendDAE.Var dummyVar;
+  BackendDAE.Variables v, resVars;
+  BackendDAE.Variables emptyVars = BackendVariable.emptyVars();
+  constant Boolean debug = false;
+algorithm
+  try
+    if debug then execStat("detectSparsePatternDAE -> start "); end if;
+    BackendDAE.DAE(eqs = eqs) := inBackendDAE;
+
+    // prepare a DAE
+    DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+    if debug then execStat("detectSparsePatternDAE -> copy dae "); end if;
+    DAE := BackendDAEOptimize.collapseIndependentBlocks(DAE);
+    if debug then execStat("detectSparsePatternDAE -> collapse blocks "); end if;
+    DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
+    if debug then execStat("detectSparsePatternDAE -> transform backend dae "); end if;
+
+    // get states for DAE
+    BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
+    ((_, resVars)) := BackendVariable.traverseBackendDAEVars(v, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, emptyVars));
+    depVars := BackendVariable.varList(resVars);
+
+    inDepVars := BackendVariable.varList(shared.localKnownVars);
+
+    if debug then execStat("detectSparsePatternDAE -> get all vars "); end if;
+
+    // generate sparse pattern
+    (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
+    if debug then execStat("detectSparsePatternDAE -> generateSparsePattern "); end if;
+    shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+    if debug then execStat("detectSparsePatternDAE -> addBackendDAESharedJacobianSparsePattern "); end if;
+
+    outBackendDAE := BackendDAE.DAE(eqs, shared);
+  else
+    // skip this optimization module
+    Error.addCompilerWarning("The optimization module detectJacobianSparsePattern failed. This module will be skipped and the transformation process continued.");
+    outBackendDAE := inBackendDAE;
+  end try;
+end detectSparsePatternDAE;
+
 // =============================================================================
 // section for postOptModule >>generateSymbolicJacobianPast<<
 //

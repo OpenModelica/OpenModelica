@@ -5169,6 +5169,152 @@ algorithm
   end matchcontinue;
 end introDerAlias;
 
+
+// =============================================================================
+// section for replaceDerCall
+//
+// =============================================================================
+
+public function replaceDerCalls
+" This module replaces all der(cref)-calls by $DER.cref crefs expression."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE := BackendDAEUtil.mapEqSystem(inDAE, replaceDerCallWork);
+end replaceDerCalls;
+
+protected function replaceDerCallWork
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.Shared shared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared = shared;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  list<BackendDAE.Equation> eqnsList;
+algorithm
+  osyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+      BackendDAE.Variables localKnowns;
+    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
+      algorithm
+        (eqns, vars) :=
+          BackendEquation.traverseEquationArray_WithUpdate(eqns, traverserreplaceDerCall, vars);
+        (localKnowns, vars) := BackendVariable.traverseBackendDAEVars(vars,
+          moveStatesVariables, (oshared.localKnownVars, vars));
+        oshared.localKnownVars := localKnowns;
+        syst.orderedEqs := eqns; syst.orderedVars := vars;
+      then syst;
+  end match;
+end replaceDerCallWork;
+
+protected function traverserreplaceDerCall "
+  Help function to e.g. replaceDerCall"
+  input BackendDAE.Equation inEq;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Equation outEq;
+  output BackendDAE.Variables outVars = inVars;
+protected
+  BackendDAE.Equation e;
+  BackendDAE.Variables vars;
+  list<DAE.SymbolicOperation> ops;
+algorithm
+  (e, ops) := BackendEquation.traverseExpsOfEquation(inEq, traverserreplaceDerCallExp, {});
+  outEq := List.foldr(ops, BackendEquation.addOperation, e);
+end traverserreplaceDerCall;
+
+protected function traverserreplaceDerCallExp "
+  Help function to e.g. traverserreplaceDerCall"
+  input DAE.Exp inExp;
+  input list<DAE.SymbolicOperation> tpl;
+  output DAE.Exp outExp;
+  output list<DAE.SymbolicOperation> outTpl;
+protected
+  DAE.Exp e, e1;
+  tuple<BackendDAE.Variables, Boolean> ext_arg;
+  BackendDAE.Variables vars;
+  list<DAE.SymbolicOperation> ops;
+  DAE.FunctionTree funcs;
+  Boolean b, addVars;
+  BackendDAE.Shared shared;
+  list<BackendDAE.Equation> eqnLst;
+algorithm
+  e := inExp;
+  ops := tpl;
+  (e1, b) := Expression.traverseExpBottomUp(e, replaceDerCall, false);
+  ops := List.consOnTrue(b, DAE.SUBSTITUTION({e1}, e), ops);
+  outExp := e1;
+  outTpl := ops;
+end traverserreplaceDerCallExp;
+
+protected function replaceDerCall "
+  Help function to e.g. traverserreplaceDerCallExp"
+  input DAE.Exp inExp;
+  input Boolean itpl;
+  output DAE.Exp outExp;
+  output Boolean tpl;
+algorithm
+  (outExp,tpl) := matchcontinue (inExp, itpl)
+    local
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr,cref;
+      DAE.Type ty;
+      String str;
+      BackendDAE.Shared shared;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.Var v, v1;
+      Boolean b, addVar;
+      DAE.FunctionTree funcs;
+      list<BackendDAE.Equation> eqnLst;
+      Integer numVars;
+      list<DAE.Exp> expLst;
+      String str;
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr, ty=ty)}), _) equation
+      cref = ComponentReference.crefPrefixDer(cr);
+      outExp = DAE.CREF(cref,ty);
+    then (outExp, true);
+
+    case (DAE.CALL(path=Absyn.IDENT(name="der")), _) equation
+      str = "BackendDAEOptimize.replaceDerCall failed for: " + ExpressionDump.printExpStr(inExp) + "\n";
+      Error.addMessage(Error.INTERNAL_ERROR, {str});
+    then fail();
+
+    else (inExp, itpl);
+  end matchcontinue;
+end replaceDerCall;
+
+protected function moveStatesVariables
+  input BackendDAE.Var inVar;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables> inTpl;
+  output BackendDAE.Var outVar = inVar;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables> outTpl = inTpl;
+algorithm
+  _ := match(inVar)
+  local
+    DAE.ComponentRef cref;
+    BackendDAE.Var newVar;
+    BackendDAE.Variables localKnowns, newVars;
+    case(BackendDAE.VAR(varKind = BackendDAE.STATE(), varName=cref)) algorithm
+      (localKnowns, newVars) := inTpl;
+      // remove the state from variables
+      newVars := BackendVariable.deleteVar(cref, newVars);
+      // push it to the local knows
+      localKnowns := BackendVariable.addVar(inVar, localKnowns);
+
+      cref := ComponentReference.crefPrefixDer(cref);
+      newVar := BackendVariable.copyVarNewName(cref, inVar);
+      newVar := BackendVariable.setVarKind(newVar, BackendDAE.STATE_DER());
+
+      newVars := BackendVariable.addVar(newVar, newVars);
+      outTpl := (localKnowns, newVars);
+    then ();
+    else then();
+  end match;
+end moveStatesVariables;
+
+
 // =============================================================================
 // replace expression with rewritten expression
 //

@@ -75,6 +75,7 @@ import CommonSubExpression;
 import ComponentReference;
 import Config;
 import DAEDump;
+import DAEMode;
 import DAEUtil;
 import Debug;
 import Differentiate;
@@ -6924,7 +6925,7 @@ algorithm
   outDAE := preOptimizeDAE(inDAE, preOptModules);
 end preOptimizeBackendDAE;
 
-protected function preOptimizeDAE "
+public function preOptimizeDAE "
   This function runs the pre-optimization modules."
   input BackendDAE.BackendDAE inDAE;
   input list<tuple<BackendDAEFunc.optimizationModule, String>> inPreOptModules;
@@ -6975,7 +6976,7 @@ algorithm
   outDAE := causalizeDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod,true);
 end transformBackendDAE;
 
-protected function causalizeDAE "
+public function causalizeDAE "
   Run the matching Algorithm.
   In case of a DAE a DAE handler is used to reduce the index of the DAE."
   input BackendDAE.BackendDAE inDAE;
@@ -7249,6 +7250,130 @@ algorithm
   //fcall2(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outDAE, "system for jacobians");
 end getSolvedSystemforJacobians;
 
+public function getOptimizesDAEModeSystem
+ "Run the equation system pipeline."
+  input BackendDAE.BackendDAE inDAE;
+  input String fileNamePrefix;
+  input Option<list<String>> strPreOptModules = NONE();
+  input Option<String> strmatchingAlgorithm = NONE();
+  input Option<String> strdaeHandler = NONE();
+  input Option<list<String>> strPostOptModules = NONE();
+  output BackendDAE.BackendDAE outSimDAE;
+  output BackendDAE.BackendDAE outInitDAE;
+  output Option<BackendDAE.InlineData > outInlineData;
+  output list<BackendDAE.Equation> outRemovedInitialEquationLst;
+protected
+  BackendDAE.BackendDAE dae, simDAE;
+  list<tuple<BackendDAEFunc.optimizationModule, String>> preOptModules;
+  list<tuple<BackendDAEFunc.optimizationModule, String>> postOptModules;
+  tuple<BackendDAEFunc.StructurallySingularSystemHandlerFunc, String, BackendDAEFunc.stateDeselectionFunc, String> daeHandler;
+  tuple<BackendDAEFunc.matchingAlgorithmFunc, String> matchingAlgorithm;
+  BackendDAE.InlineData inlineData;
+  BackendDAE.Variables globalKnownVars;
+  Integer numCheckpoints;
+  DAE.FunctionTree funcTree;
+algorithm
+  numCheckpoints:=ErrorExt.getNumCheckpoints();
+  try
+  StackOverflow.clearStacktraceMessages();
+  preOptModules := getPreOptModules(strPreOptModules);
+  postOptModules := getPostOptModules(strPostOptModules);
+  matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
+  daeHandler := getIndexReductionMethod(strdaeHandler);
+
+  if Flags.isSet(Flags.DUMP_DAE_LOW) then
+    BackendDump.dumpBackendDAE(inDAE, "dumpdaelow");
+    if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
+      BackendDump.graphvizIncidenceMatrix(inDAE, "dumpdaelow");
+    end if;
+  end if;
+
+  // pre-optimization phase
+  dae := preOptimizeDAE(inDAE, preOptModules);
+
+  execStat("pre-optimization done (n="+String(daeSize(dae))+")");
+  // transformation phase (matching and sorting using index reduction method)
+  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
+  execStat("matching and sorting (n="+String(daeSize(dae))+")");
+
+  // synchronous features post-phase
+  dae := SynchronousFeatures.synchronousFeatures(dae);
+  if Flags.isSet(Flags.OPT_DAE_DUMP) then
+    BackendDump.dumpBackendDAE(dae, "synchronousFeatures");
+  end if;
+
+  if Flags.isSet(Flags.GRAPHML) then
+    BackendDump.dumpBipartiteGraphDAE(dae, fileNamePrefix);
+  end if;
+
+  if Flags.isSet(Flags.BLT_DUMP) then
+    BackendDump.bltdump("bltdump", dae);
+  end if;
+
+  if Flags.isSet(Flags.EVAL_OUTPUT_ONLY) then
+    // prepare the equations
+    dae := BackendDAEOptimize.evaluateOutputsOnly(dae);
+  end if;
+
+  // generate system for initialization
+  (outInitDAE, _, outRemovedInitialEquationLst, globalKnownVars) := Initialization.solveInitialSystem(dae);
+
+  // use function tree from initDAE further for simDAE
+  simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
+
+  // Set updated globalKnownVars
+  simDAE := setDAEGlobalKnownVars(simDAE, globalKnownVars);
+
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
+  simDAE := Initialization.removeInitializationStuff(simDAE);
+
+  // generate inline solver
+  outInlineData := SymbolicImplicitSolver.symSolver(simDAE);
+
+  // post-optimization phase
+  simDAE := postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
+
+  // sort the globalKnownVars
+  simDAE := sortGlobalKnownVarsInDAE(simDAE);
+  execStat("sort global known variables");
+
+  // remove unused functions
+  funcTree := BackendDAEOptimize.copyRecordConstructorAndExternalObjConstructorDestructor(BackendDAEUtil.getFunctions(simDAE.shared));
+  funcTree := BackendDAEOptimize.removeUnusedFunctions(outInitDAE.eqs, outInitDAE.shared, outRemovedInitialEquationLst, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
+  funcTree := BackendDAEOptimize.removeUnusedFunctions(simDAE.eqs, simDAE.shared, {}, BackendDAEUtil.getFunctions(simDAE.shared), funcTree);
+  outSimDAE := BackendDAEUtil.setFunctionTree(simDAE, funcTree);
+  execStat("remove unused functions");
+
+  if Flags.isSet(Flags.DUMP_INDX_DAE) then
+    BackendDump.dumpBackendDAE(outSimDAE, "dumpindxdae");
+    if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
+      BackendDump.graphvizBackendDAE(outSimDAE, "dumpindxdae");
+    end if;
+  end if;
+  if Flags.isSet(Flags.DUMP_TRANSFORMED_MODELICA_MODEL) then
+    BackendDump.dumpBackendDAEToModelica(outSimDAE, "dumpindxdae");
+  end if;
+  if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
+    BackendDump.dumpCompShort(outSimDAE);
+  end if;
+  if Flags.isSet(Flags.DUMP_EQNINORDER) then
+    BackendDump.dumpEqnsSolved(outSimDAE, "indxdae: eqns in order");
+  end if;
+  if Flags.isSet(Flags.DUMP_LOOPS) then
+    BackendDump.dumpLoops(outSimDAE);
+  end if;
+  checkBackendDAEWithErrorMsg(outSimDAE);
+  return;
+  else
+  setGlobalRoot(Global.stackoverFlowIndex, NONE());
+  ErrorExt.rollbackNumCheckpoints(ErrorExt.getNumCheckpoints()-numCheckpoints);
+  Error.addInternalError("Stack overflow in "+getInstanceName()+"...\n"+stringDelimitList(StackOverflow.readableStacktraceMessages(), "\n"), sourceInfo());
+  /* Do not fail or we can loop too much */
+  StackOverflow.clearStacktraceMessages();
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
+  fail();
+end getOptimizesDAEModeSystem;
+
 protected function sortGlobalKnownVarsInDAE "
 author: ptaeuber
 This function sorts the globalKnownVars"
@@ -7442,7 +7567,7 @@ end selectMatchingAlgorithm;
 //
 // =============================================================================
 
-protected function allPreOptimizationModules
+public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (UnitCheck.unitChecking, "unitChecking"),
@@ -7480,7 +7605,7 @@ protected function allPreOptimizationModules
   };
 end allPreOptimizationModules;
 
-protected function allPostOptimizationModules
+public function allPostOptimizationModules
   "This list contains all back end sim-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPostOptimizationModules = {
     (BackendDAEUtil.createAliasVarsForOutputStates, "createAliasVarsForOutputStates"),
@@ -7488,6 +7613,7 @@ protected function allPostOptimizationModules
     (DynamicOptimization.simplifyConstraints, "simplifyConstraints"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),
     (CommonSubExpression.cseBinary, "cseBinary"),
+    (BackendDAEOptimize.replaceDerCalls, "replaceDerCalls"),
     (OnRelaxation.relaxSystem, "relaxSystem"),
     (InlineArrayEquations.inlineArrayEqn, "inlineArrayEqn"),
     (SymbolicJacobian.constantLinearSystem, "constantLinearSystem"),
@@ -7525,7 +7651,10 @@ protected function allPostOptimizationModules
     (BackendDump.dumpDAE, "dumpDAE"),
     (XMLDump.dumpDAEXML, "dumpDAEXML"),
     // This should indeed be at the end
-    (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions")
+    (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions"),
+    // DAEmode modules
+    (DAEMode.createDAEmodeBDAE, "createDAEmodeBDAE"),
+    (SymbolicJacobian.detectSparsePatternDAE, "detectDAEmodeSparsePattern")
   };
 end allPostOptimizationModules;
 
@@ -7585,7 +7714,7 @@ algorithm
   end if;
 end deprecatedConfigFlag;
 
-protected function getPreOptModules
+public function getPreOptModules
   input Option<list<String>> inPreOptModules;
   output list<tuple<BackendDAEFunc.optimizationModule, String>> outPreOptModules;
 protected
@@ -8464,7 +8593,8 @@ algorithm
                               backendDAEType,
                               {},
                               ei,
-                              emptyPartitionsInfo()
+                              emptyPartitionsInfo(),
+                              BackendDAE.emptyDAEModeData
                               );
 end createEmptyShared;
 
@@ -8636,6 +8766,20 @@ algorithm
   end match;
 end setEqSystMatching;
 
+public function setEqSystStateSets
+  input BackendDAE.EqSystem inSyst;
+  input BackendDAE.StateSets stateSets;
+  output BackendDAE.EqSystem outSyst;
+algorithm
+  outSyst := match inSyst
+    local
+      BackendDAE.EqSystem syst;
+    case syst as BackendDAE.EQSYSTEM()
+      algorithm syst.stateSets := stateSets;
+      then syst;
+  end match;
+end setEqSystStateSets;
+
 public function setEqSystRemovedEqns
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.EquationArray removedEqs;
@@ -8757,6 +8901,16 @@ algorithm
       then shared;
   end match;
 end setSharedOptimica;
+
+public function collapseOrderedEqs
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.EquationArray outEqns;
+protected
+  list<BackendDAE.Equation> eqsLst;
+algorithm
+  eqsLst := List.fold(inDAE.eqs, collapseRemovedEqs1, {});
+  outEqns := BackendEquation.listEquation(listAppend(eqsLst, BackendEquation.equationList(inDAE.shared.removedEqs)));
+end collapseOrderedEqs;
 
 public function collapseRemovedEqs
   input BackendDAE.BackendDAE inDAE;

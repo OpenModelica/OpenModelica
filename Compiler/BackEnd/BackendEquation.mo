@@ -2233,6 +2233,29 @@ algorithm
   outEqn := BackendDAE.RESIDUAL_EQUATION(e, source, inEqAttr);
 end generateRESIDUAL_EQUATION1;
 
+public function equationSystemsEqnsLst
+  input BackendDAE.EqSystems systs;
+  output list<BackendDAE.Equation> outEqns = {};
+protected
+  list<BackendDAE.Equation> eqns;
+  BackendDAE.EquationArray eq;
+algorithm
+  for es in systs loop
+    BackendDAE.EQSYSTEM(orderedEqs=eq) := es;
+    eqns := equationList(eq);
+    outEqns := List.append_reverse(eqns, outEqns);
+  end for;
+  outEqns := MetaModelica.Dangerous.listReverseInPlace(outEqns);
+end equationSystemsEqnsLst;
+
+public function getEqnsFromEqSystems "
+  Extracts the orderedEqs attribute from an equation system."
+  input BackendDAE.EqSystems inEqSystems;
+  output BackendDAE.EquationArray outOrderedEqs;
+algorithm
+  outOrderedEqs := listEquation(equationSystemsEqnsLst(inEqSystems));
+end getEqnsFromEqSystems;
+
 public function getEqnsFromEqSystem "
   Extracts the orderedEqs attribute from an equation system."
   input BackendDAE.EqSystem inEqSystem;

@@ -1591,7 +1591,7 @@ algorithm
   end matchcontinue;
 end isCSECref;
 
-protected function isCSEExp
+public function isCSEExp
 "Returns true if the exp is prefixed with '$cse'"
   input DAE.Exp inExp;
   output Boolean b;

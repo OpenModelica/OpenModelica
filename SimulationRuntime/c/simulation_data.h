@@ -421,8 +421,14 @@ typedef struct DAEMODE_DATA
   /* number of algebraic variables */
   long nAlgebraicDAEVars;
 
+  /* number of algebraic variables */
+  long nAuxiliaryVars;
+
   /* workspace for the residual variables */
   modelica_real* residualVars;
+
+  /* workspace for the auxiliary variables */
+  modelica_real* auxiliaryVars;
 
   /* daeMode sparse pattern */
   SPARSE_PATTERN* sparsePattern;

@@ -129,8 +129,7 @@ algorithm
 end sortEqSystems;
 
 protected function simulationFindLiterals
-  "Finds all literal expressions in the DAE"
-  input BackendDAE.BackendDAE dae;
+  "Finds all literal expressions in functionsa"
   input list<DAE.Function> fns;
   output list<DAE.Function> ofns;
   output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> literals;
@@ -519,7 +518,7 @@ algorithm
       crefToSimVarHT:= List.fold(residualVars,addSimVarToHashTable,crefToSimVarHT);
       algebraicVars := sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
       daeModeConf := match Flags.getConfigEnum(Flags.DAE_MODE) case 2 then SimCode.ALL_EQUATIONS(); case 3 then SimCode.DYNAMIC_EQUATIONS(); end match;
-      daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars, daeModeConf));
+      daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicVars, {}, daeModeConf));
     else
       daeModeData := NONE();
     end if;
@@ -630,7 +629,7 @@ end createSimCode;
 
 public function createFunctions
   input Absyn.Program inProgram;
-  input BackendDAE.BackendDAE inBackendDAE;
+  input DAE.FunctionTree functionTree;
   output list<String> outLibs;
   output list<String> outLibPaths;
   output list<String> outIncludes;
@@ -640,15 +639,13 @@ public function createFunctions
   output tuple<Integer, HashTableExpToIndex.HashTable, list<DAE.Exp>> outLiterals;
 protected
   list<DAE.Function> funcelems;
-  DAE.FunctionTree functionTree;
   list<DAE.Exp> lits;
 algorithm
   try
-    BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)) := inBackendDAE;
     // get all the used functions from the function tree
     funcelems := DAEUtil.getFunctionList(functionTree);
     funcelems := Inline.inlineCallsInFunctions(funcelems, (NONE(), {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}), {});
-    (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(inBackendDAE, funcelems);
+    (funcelems, outLiterals as (_, _, lits)) := simulationFindLiterals(funcelems);
     (outFunctions, outRecordDecls, outIncludes, outIncludeDirs, outLibs, outLibPaths) := SimCodeFunctionUtil.elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
   else
     Error.addInternalError("Creation of Modelica functions failed.", sourceInfo());
@@ -916,7 +913,7 @@ algorithm
   end for;
 end addTempVars;
 
-protected function setJacobianVars "author: unknown
+public function setJacobianVars "author: unknown
   Set the given jacobian vars in the given model info. The old jacobian variables will be replaced."
   input list<SimCodeVar.SimVar> iJacobianVars;
   input SimCode.ModelInfo iModelInfo;
@@ -931,7 +928,7 @@ algorithm
   end if;
 end setJacobianVars;
 
-protected function setSeedVars
+public function setSeedVars
   "Set the given seed vars in the given model info, replacing old seed vars.
    author: rfranke"
   input list<SimCodeVar.SimVar> seedVars;
@@ -944,7 +941,7 @@ algorithm
   modelInfo.vars := vars;
 end setSeedVars;
 
-protected function addNumEqns
+public function addNumEqns
   input SimCode.ModelInfo modelInfo;
   input Integer numEqns;
   output SimCode.ModelInfo omodelInfo = modelInfo;
@@ -1056,7 +1053,7 @@ algorithm
   end match;
 end setSystemIndexMap;
 
-protected function addAlgebraicLoopsModelInfo "
+public function addAlgebraicLoopsModelInfo "
 Adds algebraic loops from list of SimEqSystem into ModelInfo
 and SimEqSystem equation algebraic system index."
   input output list<SimCode.SimEqSystem> eqns;
@@ -1199,7 +1196,7 @@ algorithm
   end if;
 end updateLinearSyst;
 
-protected function addAlgebraicLoopsModelInfoSymJacs "
+public function addAlgebraicLoopsModelInfoSymJacs "
 Adds algebraic loops from list of SimEqSystem into ModelInfo
 and SimEqSystem equation algebraic system index."
   input output list<SimCode.JacobianMatrix> symjacs;
@@ -1236,7 +1233,7 @@ algorithm
   outSymJacsInSymJacs := listReverse(outSymJacsInSymJacs);
 end addAlgebraicLoopsModelInfoSymJacs;
 
-protected function addAlgebraicLoopsModelInfoStateSets
+public function addAlgebraicLoopsModelInfoStateSets
 " function to collect jacobians for statesets"
   input list<SimCode.StateSet> inSets;
   input SimCode.ModelInfo inModelInfo;
@@ -1890,7 +1887,7 @@ tuple<list<list<SimCode.SimEqSystem>> /* daeEquations */,
       BackendDAE.EquationArray /* daeMode equations */
       >;
 
-protected function createDAEEquations
+public function createDAEEquations
 "Creates DAE equations of the form:
 residualVar = eqRHS - eqLHS "
   input BackendDAE.EqSystems inSysts;
@@ -2126,7 +2123,7 @@ algorithm
   end try;
 end createDAEEquationForComp;
 
-protected function createDaeModeSparsePattern
+public function createDaeModeSparsePattern
   "create sparse pattern for daeMode equations and variables.
    the sparsity pattern is determined just using adjacency matrix,
    since no other dependencies are necessary "
@@ -2202,7 +2199,7 @@ algorithm
     sparsetupleT := list((cr,t) threaded for cr in varCrefs, t in translated);
 
     // build sparse pattern
-    bdaeSP :=(sparsetuple, sparsetupleT, (varCrefsList, varCrefsList), nonZeroElements);
+    bdaeSP :=(sparsetupleT, sparsetuple, (varCrefsList, varCrefsList), nonZeroElements);
 
     if debug then
       BackendDump.dumpSparsityPattern(bdaeSP, "DAE mode sparsity pattern");
@@ -2214,11 +2211,13 @@ algorithm
     // or without coloring
     //coloring := List.transposeList({varCrefsList});
 
+
     // translate to SimCode sparsity
     (simCodeJac, _) :=  createSimCodeSparsePattenDAEmode({(NONE(), bdaeSP, coloring)}, crefToSimVarHT, 0, "daeMode");
 
     outSimCodeJac := SOME(simCodeJac);
   else
+    outSimCodeJac := NONE();
     Error.addInternalError("function createDaeModeSparsePattern failed", sourceInfo());
   end try;
 end createDaeModeSparsePattern;
@@ -2237,7 +2236,7 @@ algorithm
   end if;
 end getSimCodeDAEModeDataEqns;
 
-protected function sortSimVarsAndWriteIndex
+public function sortSimVarsAndWriteIndex
   input list<SimCodeVar.SimVar> inSimVar;
   input SimCode.HashTableCrefToSimVar crefToSimVarHT;
   output list<SimCodeVar.SimVar> outSimVar;
@@ -3260,7 +3259,7 @@ algorithm
   end match;
 end createTempVars;
 
-protected function createNonlinearResidualEquations
+public function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
@@ -4147,7 +4146,7 @@ end createTornSystemInnerEqns1;
 //
 // =============================================================================
 
-protected function createStateSets "author: Frenkel TUD 2012
+public function createStateSets "author: Frenkel TUD 2012
   This function handle states sets for code generation."
   input BackendDAE.BackendDAE inDAE;
   input list<SimCode.StateSet> iEquations;
@@ -4464,7 +4463,7 @@ algorithm
   end if;
 end getFurtherVars;
 
-protected function createJacobianLinearCode
+public function createJacobianLinearCode
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
   input Integer iuniqueEqIndex;
@@ -4502,7 +4501,7 @@ algorithm
    end match;
 end checkForEmptyBDAE;
 
-protected function createSymbolicJacobianssSimCode
+public function createSymbolicJacobianssSimCode
 "function creates the linear model matrices column-wise
  author: wbraun"
   input BackendDAE.SymbolicJacobians inSymJacobians;
@@ -4840,7 +4839,7 @@ algorithm
   end match;
 end createAllDiffedSimVars;
 
-protected function collectAllJacobianEquations
+public function collectAllJacobianEquations
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
   output list<SimCode.SimEqSystem> outEqn = {};
 protected
@@ -4856,7 +4855,7 @@ algorithm
   end for;
 end collectAllJacobianEquations;
 
-protected function collectAllJacobianVars
+public function collectAllJacobianVars
   input list<SimCode.JacobianMatrix> inJacobianMatrix;
   output list<SimCodeVar.SimVar> outVars = {};
 protected
@@ -4872,7 +4871,7 @@ algorithm
   end for;
 end collectAllJacobianVars;
 
-protected function collectAllSeedVars
+public function collectAllSeedVars
  "Collect seed vars of Jacobian matrices. author: rfranke"
   input list<SimCode.JacobianMatrix> inJacobianMatrices;
   output list<SimCodeVar.SimVar> outVars = {};
@@ -5106,7 +5105,7 @@ algorithm
   end for;
 end dumpSparsePattern;
 
-protected function createSimCodeSparsePattenDAEmode
+public function createSimCodeSparsePattenDAEmode
 "function translates the sparse pattern of the daeMode
  author: wbraun"
   input BackendDAE.SymbolicJacobians inSymJacobian;
@@ -5162,10 +5161,6 @@ algorithm
           print("diffedCrefs: " + ComponentReference.printComponentRefListStr(diffedCompRefs) + "\n");
           print("\n---+++  indexVars +++---\n");
           print(Tpl.tplString(SimCodeDump.dumpVarsShort, indexVars));
-          print("\n---+++  sparse pattern vars +++---\n");
-          dumpSparsePattern(sparsepattern);
-          print("\n---+++  sparse pattern transpose +++---\n");
-          dumpSparsePattern(sparsepatternT);
         end if;
         seedVars = rewriteIndex(seedVars, 0);
         indexVars = rewriteIndex(indexVars, 0);
@@ -5239,7 +5234,7 @@ algorithm
   end match;
 end collectDelayExpressions;
 
-protected function extractDelayedExpressions
+public function extractDelayedExpressions
   input BackendDAE.BackendDAE dlow;
   output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   output Integer maxDelayedExpIndex;
@@ -5276,7 +5271,7 @@ algorithm
   end match;
 end extractIdAndExpFromDelayExp;
 
-protected function createExtObjInfo
+public function createExtObjInfo
   input BackendDAE.Shared shared;
   output SimCode.ExtObjInfo extObjInfo;
 protected
@@ -5394,7 +5389,7 @@ algorithm
   end matchcontinue;
 end traversedlowEqToSimEqSystem;
 
-protected function extractDiscreteModelVars
+public function extractDiscreteModelVars
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input list<DAE.ComponentRef> acc;
@@ -5660,7 +5655,7 @@ algorithm
   end matchcontinue;
 end createEquationsIfBranch;
 
-protected function createEquationsfromList
+public function createEquationsfromList
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Var> inVars;
   input Boolean genDiscrete;
@@ -6244,7 +6239,7 @@ algorithm
   end matchcontinue;
 end createSingleAlgorithmCode;
 
-protected function createInitialEquations "author: lochel"
+public function createInitialEquations "author: lochel"
   input BackendDAE.BackendDAE inInitDAE;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
@@ -6283,7 +6278,7 @@ algorithm
   otempvars := tempvars;
 end createInitialEquations;
 
-protected function createInitialEquations_lambda0 "author: lochel"
+public function createInitialEquations_lambda0 "author: lochel"
   input BackendDAE.BackendDAE inInitDAE;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
@@ -6430,7 +6425,7 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end dlowAlgToSimEqSystem;
 
-protected function createVarNominalAssertFromVars
+public function createVarNominalAssertFromVars
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
@@ -6451,7 +6446,7 @@ algorithm
   end match;
 end createVarNominalAssertFromVars;
 
-protected function createStartValueEquations
+public function createStartValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input tuple<Integer, list<SimCode.SimEqSystem>, BackendDAE.Variables > acc;
@@ -6483,7 +6478,7 @@ algorithm
   end matchcontinue;
 end createStartValueEquations;
 
-protected function createNominalValueEquations
+public function createNominalValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
@@ -6512,7 +6507,7 @@ algorithm
   end matchcontinue;
 end createNominalValueEquations;
 
-protected function createMinValueEquations
+public function createMinValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
@@ -6541,7 +6536,7 @@ algorithm
   end matchcontinue;
 end createMinValueEquations;
 
-protected function createMaxValueEquations
+public function createMaxValueEquations
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
   input tuple<Integer, list<SimCode.SimEqSystem>> acc;
@@ -6587,7 +6582,7 @@ algorithm
   outUniqueEqIndex := inUniqueEqIndex+1;
 end makeSolved_SES_SIMPLE_ASSIGN_fromStartValue;
 
-protected function createParameterEquations
+public function createParameterEquations
 "Traverses the globalKnownVars and creates simEqns for the variable if necessary."
   input Integer inUniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
@@ -7652,6 +7647,8 @@ algorithm
     addSimVar(simVar, SimVarsIndex.realOptimizeFinalConstraints, simVars);
   elseif BackendVariable.isOptInputVar(dlowVar) then
     addSimVar(simVar, SimVarsIndex.alg, simVars);
+  elseif BackendVariable.isDAEmodeVar(dlowVar) then
+    // skip, they are only used localy in daeMode
   else
     Error.addInternalError("Failed to find the correct SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
   end if;
@@ -8276,6 +8273,33 @@ algorithm
   str := str + "Hold Events: "+boolString(subPart.holdEvents);
 end subPartitionString;
 
+public function dumpSimCodeDAEmodeDataString
+  input Option<SimCode.DaeModeData> inDaeModedata;
+  output String str;
+algorithm
+  _ := match(inDaeModedata)
+  local
+    SimCode.DaeModeData dmd;
+    SimCode.SparsityPattern sparsityT;
+  case(SOME(dmd)) algorithm
+    print("\ndaeMode: \n" + UNDERLINE + "\n");
+	  str := "residual Equations:\n"+UNDERLINE+"\n";
+	  print(str);
+	  dumpSimEqSystemLst(List.flatten(dmd.daeEquations),"\n");
+	  dumpVarLst(dmd.residualVars,"residualVars("+intString(listLength(dmd.residualVars))+")");
+	  dumpVarLst(dmd.algebraicVars,"algebraicDAEVars("+intString(listLength(dmd.algebraicVars))+")");
+	  dumpVarLst(dmd.auxiliaryVars,"auxVars("+intString(listLength(dmd.auxiliaryVars))+")");
+	  if isSome(dmd.sparsityPattern) then
+	    str := "Sparsity Pattern:\n"+UNDERLINE+"\n";
+	    print(str);
+	    SimCode.JAC_MATRIX(sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
+	    dumpSparsePatternInt(sparsityT);
+	  end if;
+	then ();
+  case(NONE()) then ();
+  end match;
+end dumpSimCodeDAEmodeDataString;
+
 public function dumpSimCodeDebug"prints the simcode debug output to std out."
   input SimCode.SimCode simCode;
 protected
@@ -8329,6 +8353,7 @@ algorithm
   List.map_0(jacObs,dumpJacobianMatrix);
   print("\nmodelInfo: \n" + UNDERLINE + "\n");
   dumpModelInfo(simCode.modelInfo);
+  dumpSimCodeDAEmodeDataString(simCode.daeModeData);
 end dumpSimCodeDebug;
 
 protected function isAliasVar
@@ -8482,7 +8507,7 @@ algorithm
   end for;
 end fixIndex;
 
-protected function rewriteIndex
+public function rewriteIndex
   input list<SimCodeVar.SimVar> inVars;
   output list<SimCodeVar.SimVar> outVars = {};
   input output Integer index;
@@ -8508,7 +8533,7 @@ algorithm
   end for;
 end setVariableIndex;
 
-protected function setVariableIndexHelper
+public function setVariableIndexHelper
   input list<SimCodeVar.SimVar> inVars;
   input Integer inIndex;
   output list<SimCodeVar.SimVar> outVars;
@@ -9012,7 +9037,7 @@ algorithm
   (_, outTpl) := traversingdlowvarToSimvar(v, inTpl);
 end traversingdlowvarToSimvarFold;
 
-protected function traversingdlowvarToSimvar
+public function traversingdlowvarToSimvar
   input output BackendDAE.Var var;
   input tuple<list<SimCodeVar.SimVar>, BackendDAE.Variables> inTpl;
   output tuple<list<SimCodeVar.SimVar>, BackendDAE.Variables> outTpl;
@@ -10696,7 +10721,7 @@ algorithm
 end traveseSimVars;
 
 
-protected function traverseExpsSimCode
+public function traverseExpsSimCode
   input SimCode.SimCode simCode;
   input Func func;
   input A ia;
