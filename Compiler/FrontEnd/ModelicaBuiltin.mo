@@ -3037,6 +3037,17 @@ annotation(
   preferredView="text");
 end getComponentModifierValues;
 
+function getInstantiatedParametersAndValues
+  input TypeName cls;
+  output String[:] values;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the parameter names and values from the DAE.</p>
+</html>"),
+  preferredView="text");
+end getInstantiatedParametersAndValues;
+
 function removeComponentModifiers
   input TypeName class_;
   input String componentName;

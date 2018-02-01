@@ -68,6 +68,7 @@ import ClockIndexes;
 import Config;
 import Connect;
 import Constants;
+import DAEDump;
 import DAEUtil;
 import Debug;
 import DoubleEndedList;
@@ -18060,6 +18061,30 @@ algorithm
       then filtered;
   end matchcontinue;
 end excludeElementsFromFile;
+
+public function getInstantiatedParametersAndValues
+  input Option<DAE.DAElist> odae;
+  output list<String> parametersAndValues = {};
+protected
+  list<DAE.Element> els, params;
+  list<String> strs = {};
+  String s;
+  Option<DAE.Exp> oe;
+algorithm
+  parametersAndValues := match(odae)
+    case SOME(DAE.DAE(els))
+      algorithm
+       params := DAEUtil.getParameters(els, {});
+       for p in params loop
+         DAE.VAR(binding=oe) := p;
+         s := DAEUtil.varName(p) + DAEDump.dumpVarBindingStr(oe);
+         strs := s::strs;
+       end for;
+     then
+       listReverse(strs);
+    else strs;
+  end match;
+end getInstantiatedParametersAndValues;
 
 annotation(__OpenModelica_Interface="backend");
 end Interactive;

@@ -3318,7 +3318,7 @@ algorithm
   print("tuple_: "+boolString(tpl)+" builtin: "+boolString(bi)+" impure: "+boolString(impure_)+"\n\n");
 end dumpCallAttr;
 
-protected function dumpVarBindingStr
+public function dumpVarBindingStr
   input Option<DAE.Exp> inBinding;
   output String outString;
 algorithm

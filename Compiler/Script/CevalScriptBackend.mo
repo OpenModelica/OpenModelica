@@ -2532,6 +2532,22 @@ algorithm
       then
         (cache,Values.BOOL(b));
 
+    case (cache,env,"getInstantiatedParametersAndValues",{Values.CODE(Absyn.C_TYPENAME(className))},_)
+      equation
+        (cache,env,odae) = runFrontEnd(cache,env,className,true);
+        strings = Interactive.getInstantiatedParametersAndValues(odae);
+        vals = List.map(strings, ValuesUtil.makeString);
+        v = ValuesUtil.makeArray(vals);
+      then
+        (cache,v);
+
+    case (cache,_,"getInstantiatedParametersAndValues",_,_)
+      equation
+        Error.addCompilerWarning("getInstantiatedParametersAndValues failed to instantiate the model.");
+        v = ValuesUtil.makeArray({});
+      then
+        (cache,v);
+
     case (cache,_,"getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());

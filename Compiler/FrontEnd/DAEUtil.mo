@@ -6525,6 +6525,36 @@ algorithm
   end match;
 end moveElementToInitialSection;
 
+public function getParameters
+  input list<DAE.Element> elts;
+  input list<DAE.Element> acc;
+  output list<DAE.Element> params;
+algorithm
+  (params) := match (elts,acc)
+    local
+      DAE.Element e;
+      list<DAE.Element> rest, celts, a;
+
+    case ({},_) then acc;
+
+    case ((e as DAE.COMP(dAElist = celts))::rest,_)
+      algorithm
+        a := getParameters(celts, acc);
+        a := getParameters(rest, a);
+      then
+        a;
+
+    case ((e as DAE.VAR())::rest,_)
+      then if isParameterOrConstant(e)
+           then e::getParameters(rest, acc)
+           else getParameters(rest, acc);
+
+    case (_::rest,_)
+      then getParameters(rest, acc);
+
+  end match;
+end getParameters;
+
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;
 
