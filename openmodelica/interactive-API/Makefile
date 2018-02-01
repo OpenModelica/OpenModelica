@@ -72,6 +72,7 @@ strings.mos  \
 variables.mos \
 getDefinitions.mos \
 StateMachine.mos \
+Ticket4674.mos \
 
 
 # test that currently fail. Move up when fixed.
