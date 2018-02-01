@@ -51,6 +51,12 @@
 #include "omcinteractiveenvironment.h"
 #include <stdio.h>
 
+#define GC_THREADS
+
+extern "C" {
+#include "meta/meta_modelica.h"
+}
+
 #define CONSUME_CHAR(value,res,i) \
     if (value.at(i) == '\\') { \
     i++; \
@@ -89,10 +95,11 @@ QString unparse(QString value)
 int main(int argc, char *argv[])
 {
   MMC_INIT();
+  MMC_TRY_TOP()
 
   QApplication app(argc, argv);
 
-  IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance();
+  IAEX::OmcInteractiveEnvironment *env = IAEX::OmcInteractiveEnvironment::getInstance(threadData);
   env->evalExpression("getInstallationDirectoryPath()");
   QString dir = unparse(env->getResult()) + "/share/omshell/nls";
   QString locale = QString("OMShell_") + QLocale::system().name();
@@ -111,7 +118,7 @@ int main(int argc, char *argv[])
   QString cdRes = env->getResult();
   cdRes.remove("\"");
   if (0 != tmpDir.compare(cdRes)) {
-    QMessageBox::critical( 0, "OpenModelica Error", QString("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
+    QMessageBox::critical( 0, "OpenModelica Error", QString("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(cdCmd).arg(cdRes));
     exit(1);
   }
 
@@ -119,4 +126,6 @@ int main(int argc, char *argv[])
   oms.show();
 
   return app.exec();
+
+  MMC_CATCH_TOP();
 }
