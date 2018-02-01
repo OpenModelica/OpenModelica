@@ -824,7 +824,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%fmuTargetName%>.fmu: $(OFILES)
   <%\t%>$(CXX) -shared -o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(LDFLAGS) $(LIBS)
   <%\t%><%mkdir%> -p "binaries/$(PLATFORM)"
-  <%\t%>cp $(BINARIES) "binaries/$(PLATFORM)/"
+  <%\t%>mv $(BINARIES) "binaries/$(PLATFORM)/"
+  <%\t%>rm -rf sources
+  <%\t%><%mkdir%> -p sources
+  <%\t%>install -p OMCpp<%fileNamePrefix%>*.h OMCpp<%fileNamePrefix%>*.cpp <%fileNamePrefix%>_init.xml <%fileNamePrefix%>_FMU.makefile sources/
   ifeq ($(USE_FMU_SUNDIALS),ON)
   <%\t%>rm -rf documentation
   <%\t%><%mkdir%> -p "documentation"
@@ -833,15 +836,15 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   endif
   <%\t%>rm -f <%fmuTargetName%>.fmu
   ifeq ($(USE_FMU_SUNDIALS),ON)
-  <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries documentation
+  <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries sources documentation
   <%\t%>rm -rf documentation
   else
-  <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries
+  <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries sources
   endif
 
   clean:
-  <%\t%>rm <%fileNamePrefix%>$(DLLEXT)
-  <%\t%>rm -rf binaries
+  <%\t%>rm -f OMCpp<%fileNamePrefix%>* <%fileNamePrefix%>_FMU.* <%fileNamePrefix%>.def <%fileNamePrefix%>.sh <%fileNamePrefix%>.bat <%fileNamePrefix%>.makefile <%fileNamePrefix%>_init.xml
+  <%\t%>rm -rf modelDescription.xml binaries sources documentation
 
   >>
 end fmuMakefile;
