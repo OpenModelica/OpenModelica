@@ -279,6 +279,7 @@ FuncBuiltinInteger.mo \
 FuncBuiltinLinspace.mo \
 FuncBuiltinMath.mo \
 FuncBuiltinMatrix.mo \
+FuncBuiltinMatrixWrongType1.mo \
 FuncBuiltinMax.mo \
 FuncBuiltinMin.mo \
 FuncBuiltinMod.mo \
@@ -295,6 +296,10 @@ FuncBuiltinSign.mo \
 FuncBuiltinSize.mo \
 FuncBuiltinSkew.mo \
 FuncBuiltinSmooth.mo \
+FuncBuiltinSmoothNonParam.mo \
+FuncBuiltinSmoothWrongArgs1.mo \
+FuncBuiltinSmoothWrongType1.mo \
+FuncBuiltinSmoothWrongType2.mo \
 FuncBuiltinSpatialDistribution.mo \
 FuncBuiltinSqrt.mo \
 FuncBuiltinSum.mo \
@@ -303,6 +308,7 @@ FuncBuiltinTerminal1.mo \
 FuncBuiltinTerminal2.mo \
 FuncBuiltinTranspose.mo \
 FuncBuiltinVector.mo \
+FuncBuiltinVectorWrongType1.mo \
 FuncBuiltinZeros.mo \
 FuncClassParam.mo \
 FuncDefaultArg1.mo \
