@@ -145,10 +145,9 @@ void printOMEditUsage()
 
 int main(int argc, char *argv[])
 {
-  /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
   MMC_INIT();
   MMC_TRY_TOP()
-
+  /* Do not use the signal handler OR exception filter if user is building a debug version. Perhaps the user wants to use gdb. */
 #ifdef QT_NO_DEBUG
 #ifdef WIN32
   SetUnhandledExceptionFilter(exceptionFilter);

@@ -51,11 +51,11 @@
  * \brief OMEditApplication::OMEditApplication
  * \param argc
  * \param argv
+ * \param threadData
  */
 OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threadData)
   : QApplication(argc, argv)
 {
-  mpThreadData = threadData;
   // set the stylesheet
   setStyleSheet("file:///:/Resources/css/stylesheet.qss");
 #if !(QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))

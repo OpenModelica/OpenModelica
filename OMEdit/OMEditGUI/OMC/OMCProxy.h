@@ -81,7 +81,6 @@ private:
   QMap<QString, QList<QString> > mDerivedUnitsMap;
   OMCInterface *mpOMCInterface;
   bool mIsLoggingEnabled;
-  threadData_t *mpThreadData;
 public:
   OMCProxy(threadData_t *threadData, QWidget *pParent = 0);
   ~OMCProxy();

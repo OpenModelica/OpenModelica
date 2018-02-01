@@ -223,7 +223,6 @@ public:
                                    const char* variables);
 private:
   bool mDebug;
-  threadData_t *mpThreadData;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   SearchWidget *mpSearchWidget;

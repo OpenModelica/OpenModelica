@@ -46,10 +46,9 @@ extern "C" {
 class OMEditApplication : public QApplication
 {
 public:
-  OMEditApplication(int& argc, char**argv, threadData_t* threadData);
+  OMEditApplication(int& argc, char**argv, threadData_t *threadData);
 private:
   QStringList mFilesToOpenList;
-  threadData_t *mpThreadData;
 protected:
   virtual bool event(QEvent *pEvent);
 };

@@ -63,16 +63,16 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 
 /*!
  * \class OMCProxy
- * \brief It contains the reference of the CORBA object used to communicate with the OpenModelica Compiler.
+ * \brief Interface to send commands to OpenModelica Compiler.
  */
 /*!
  * \brief OMCProxy::OMCProxy
+ * \param threadData
  * \param pParent
  */
-OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent )
+OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   : QObject(pParent), mHasInitialized(false), mResult(""), mTotalOMCCallsTime(0.0)
 {
-  this->mpThreadData = threadData;
   mCurrentCommandIndex = -1;
   // OMC Commands Logger Widget
   mpOMCLoggerWidget = new QWidget;
@@ -198,11 +198,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   void *args = mmc_mk_nil();
   QString locale = "+locale=" + settingsLocale.name();
   args = mmc_mk_cons(mmc_mk_scon(locale.toStdString().c_str()), args);
-  // initialize threadData
+  // initialize garbage collector
   omc_System_initGarbageCollector(NULL);
-  //threadData_t *threadData = (threadData_t *) GC_malloc_uncollectable(sizeof(threadData_t));
-  //GC_add_roots(&threadData->localRoots[0], &threadData->localRoots[MAX_LOCAL_ROOTS]);
-  //memset(threadData, 0, sizeof(threadData_t));
   MMC_TRY_TOP_INTERNAL()
   omc_Main_init(threadData, args);
   threadData->plotClassPointer = MainWindow::instance();
@@ -256,13 +253,6 @@ void OMCProxy::quitOMC()
  */
 void OMCProxy::sendCommand(const QString expression)
 {
-  if (!mHasInitialized) {
-    // if we are unable to start OMC. Exit the application.
-    if(!initializeOMC(mpThreadData)) {
-      MainWindow::instance()->setExitApplicationStatus(true);
-      return;
-    }
-  }
   // write command to the commands log.
   QTime commandTime;
   commandTime.start();

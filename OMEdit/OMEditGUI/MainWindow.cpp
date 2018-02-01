@@ -119,10 +119,10 @@ MainWindow *MainWindow::instance(bool debug)
 /*!
  * \brief MainWindow::setUpMainWindow
  * Creates all the GUI widgets.
+ * \param threadData
  */
 void MainWindow::setUpMainWindow(threadData_t *threadData)
 {
-  mpThreadData = threadData;
   // Reopen the standard output stream.
   QString outputFileName = Utilities::tempDirectory() + "/omeditoutput.txt";
   freopen(outputFileName.toStdString().c_str(), "w", stdout);
@@ -143,7 +143,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpMessagesDockWidget->hide();
   connect(MessagesWidget::instance(), SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
   // Create the OMCProxy object.
-  mpOMCProxy = new OMCProxy(this->mpThreadData, this);
+  mpOMCProxy = new OMCProxy(threadData, this);
   if (getExitApplicationStatus()) {
     return;
   }
