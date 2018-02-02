@@ -99,4 +99,16 @@ package testDAE
     x-der(y) = inRecordF(r)+v*w;
   end p7;
 
+  // problem8: event trigger example
+  model p8
+    Real v = cos(time)*x;
+    Real w = der(x)+x*y;
+    Real z(start=-3);
+    Real x(start=0.8),y(start=1);
+  equation
+    z = if x > 1.2 then 10*cos(y) else sin(y);
+    der(x) = sin(time)+v*z;
+    der(y) = x^2-y*w;
+  end p8;
+
 end testDAE;

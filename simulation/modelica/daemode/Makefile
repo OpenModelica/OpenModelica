@@ -7,6 +7,8 @@ testDAEp3.mos \
 testDAEp4.mos \
 testDAEp5.mos \
 testDAEp6.mos \
+testDAEp7.mos \
+testDAEp8.mos \
 testDAEmodeDrumBoiler.mos \
 testDAEScaling.mos
 
