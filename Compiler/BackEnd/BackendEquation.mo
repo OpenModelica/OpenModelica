@@ -1319,6 +1319,7 @@ public function equationToScalarResidualForm "author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
   For instance, a=b is transformed to a-b=0, and the instance {a[1], a[2]}=b to a[1]=b[1] and a[2]=b[2]"
   input BackendDAE.Equation inEquation;
+  input DAE.FunctionTree funcTree;
   output list<BackendDAE.Equation> outEquations;
 algorithm
 
@@ -1335,7 +1336,7 @@ algorithm
       list<list<DAE.Subscript>> subslst;
       Real r;
       BackendDAE.EquationAttributes attr;
-      list<DAE.ComponentRef> crlst;
+      list<DAE.ComponentRef> crlst, crlst2;
 
     case (BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source, attr=attr)) equation
       ((_, eqns)) = List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
@@ -1371,10 +1372,9 @@ algorithm
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=DAE.CALL(expLst=explst,
-          attr=DAE.CALL_ATTR(DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))),
+    case (BackendDAE.COMPLEX_EQUATION(left=e1 as DAE.CALL(expLst=explst),
           right=e2, source=source, attr=attr))
-    guard(Expression.isCref(e2))
+    guard(Expression.isRecordCall(e1, funcTree) and Expression.isCref(e2))
     equation
       crlst = ComponentReference.expandCref(Expression.expCref(e2),true);
       explst2 = list(Expression.crefExp(c) for c in crlst);
@@ -1382,13 +1382,23 @@ algorithm
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
 
-    case (BackendDAE.COMPLEX_EQUATION(right=DAE.CALL(expLst=explst,
-          attr=DAE.CALL_ATTR(DAE.T_COMPLEX(complexClassType=ClassInf.RECORD()))),
+    case (BackendDAE.COMPLEX_EQUATION(right=e1 as DAE.CALL(expLst=explst),
           left=e2, source=source, attr=attr))
-    guard(Expression.isCref(e2))
+    guard(Expression.isRecordCall(e1, funcTree) and Expression.isCref(e2))
     equation
       crlst = ComponentReference.expandCref(Expression.expCref(e2),true);
       explst2 = list(Expression.crefExp(c) for c in crlst);
+      explst = List.threadMap(explst, explst2, Expression.createResidualExp);
+      eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
+    then eqns;
+
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr))
+    guard(Expression.isCref(e1) and Expression.isCref(e2))
+    equation
+      crlst = ComponentReference.expandCref(Expression.expCref(e1),true);
+      crlst2 = ComponentReference.expandCref(Expression.expCref(e2),true);
+      explst = list(Expression.crefExp(c) for c in crlst);
+      explst2 = list(Expression.crefExp(c) for c in crlst2);
       explst = List.threadMap(explst, explst2, Expression.createResidualExp);
       eqns = List.map2(explst, generateRESIDUAL_EQUATION, source, attr);
     then eqns;
@@ -1515,20 +1525,21 @@ end equationToResidualForm;
 public function traverseEquationToScalarResidualForm
 "author: Frenkel TUD 2010-11"
   input BackendDAE.Equation inEq;
-  input list<BackendDAE.Equation> inEqs;
+  input tuple<DAE.FunctionTree, list<BackendDAE.Equation>> inEqs;
   output BackendDAE.Equation outEq;
-  output list<BackendDAE.Equation> outEqs;
+  output tuple<DAE.FunctionTree, list<BackendDAE.Equation>> outEqs;
 algorithm
   (outEq,outEqs) := matchcontinue(inEq,inEqs)
     local
       list<BackendDAE.Equation> eqns,reqn;
       BackendDAE.Equation eqn;
+      DAE.FunctionTree funcs;
 
-    case (eqn, eqns)
+    case (eqn, (funcs, eqns))
       equation
-        reqn = equationToScalarResidualForm(eqn);
+        reqn = equationToScalarResidualForm(eqn, funcs);
         eqns = listAppend(reqn,eqns);
-      then (eqn, eqns);
+      then (eqn, (funcs, eqns));
 
     else (inEq,inEqs);
   end matchcontinue;
@@ -2234,7 +2245,7 @@ algorithm
   end matchcontinue;
 end solveEquation;
 
-protected function generateRESIDUAL_EQUATION "author: Frenkel TUD 2010-05"
+public function generateRESIDUAL_EQUATION "author: Frenkel TUD 2010-05"
   input DAE.Exp inExp;
   input DAE.ElementSource inSource;
   input BackendDAE.EquationAttributes inEqAttr;

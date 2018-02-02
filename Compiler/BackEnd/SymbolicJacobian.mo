@@ -2370,6 +2370,7 @@ protected function prepareTornStrongComponentData
   input list<Integer> inIterationvarsInts;
   input list<Integer> inResidualequations;
   input BackendDAE.InnerEquations innerEquations;
+  input DAE.FunctionTree funcTree;
   output BackendDAE.Variables outDiffVars;
   output BackendDAE.Variables outResidualVars;
   output BackendDAE.Variables outOtherVars;
@@ -2397,7 +2398,7 @@ try
   reqns := BackendEquation.replaceDerOpInEquationList(reqns);
   outResidualEqns := BackendEquation.listEquation(reqns);
   // create  residual equations
-  reqns := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+  (_, reqns) := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, (funcTree, {}));
   reqns := listReverse(reqns);
   (reqns, resVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
   outResidualVars := BackendVariable.listVar1(resVarsLst);
@@ -2494,7 +2495,7 @@ algorithm
       print("*** "+ prename + "-JAC *** start creating Jacobian for a torn system " + name + " of size " + intString(listLength(inTearingSet.tearingvars)) + " time: " + realString(clock()) + "\n");
     end if;
 
-    (diffVars, resVars, oVars, resEqns, oEqns) := prepareTornStrongComponentData(inVars, inEqns, inTearingSet.tearingvars, inTearingSet.residualequations, inTearingSet.innerEquations);
+    (diffVars, resVars, oVars, resEqns, oEqns) := prepareTornStrongComponentData(inVars, inEqns, inTearingSet.tearingvars, inTearingSet.residualequations, inTearingSet.innerEquations, inShared.functionTree);
 
     if debug then
       print("*** "+ prename + "-JAC *** prepared all data for differentiation at time: " + realString(clock()) + "\n");
@@ -2589,7 +2590,7 @@ algorithm
 
           eqns = BackendEquation.listEquation(reqns);
           // create  residual equations
-          reqns = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, {});
+          (_, reqns) = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, (inShared.functionTree, {}));
           reqns = listReverse(reqns);
           (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
           resVars = BackendVariable.listVar1(resVarsLst);

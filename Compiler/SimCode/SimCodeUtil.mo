@@ -2072,7 +2072,7 @@ algorithm
       // try as it is
       try
         // make residual equations => 0 = f(x,xd,y)
-        eqnlst := List.flattenReverse(List.map(orgeqnLst, BackendEquation.equationToScalarResidualForm));
+        eqnlst := List.flattenReverse(List.map1(orgeqnLst, BackendEquation.equationToScalarResidualForm, shared.functionTree));
         tmpEqns := {};
       // this fallback case is a hack for complex record equations
       else

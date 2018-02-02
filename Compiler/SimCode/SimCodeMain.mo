@@ -1051,6 +1051,7 @@ protected
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   Integer maxDelayedExpIndex;
   Integer uniqueEqIndex = 1;
+  Integer nStates;
   Integer numberofEqns, numStateSets, numberofLinearSys, numberofNonLinearSys,
   numberofMixedSys, numberOfJacobians, numberofFixedParameters;
 
@@ -1113,11 +1114,11 @@ algorithm
 
     // generate equations for initDAE
     (initialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createInitialEquations(inInitDAE, uniqueEqIndex, tempVars);
-    initialEquations := listReverse(initialEquations);
+    //initialEquations := listReverse(initialEquations);
 
     // generate equations for removed initial equations
     (removedInitialEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempVars);
-    removedInitialEquations := listReverse(removedInitialEquations);
+    //removedInitialEquations := listReverse(removedInitialEquations);
 
     ExecStat.execStat("simCode: created initialization part");
 
@@ -1197,7 +1198,12 @@ algorithm
     // filter states and der states from inBackendDAE.shared.localKnownVars
     ((_, algVars)) := BackendVariable.traverseBackendDAEVars(inBackendDAE.shared.localKnownVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isVarAlg, BackendVariable.emptyVars()));
     ((algebraicVars, _)) :=  BackendVariable.traverseBackendDAEVars(algVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
-    //algebraicVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
+    SimCode.VARINFO(numStateVars=nStates) := modelInfo.varInfo;
+    //auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 2*nStates);
+    //(auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0);
+    algebraicVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
+    (algebraicVars, _) := SimCodeUtil.setVariableIndexHelper(algebraicVars, 2*nStates);
+    crefToSimVarHT:= List.fold(algebraicVars,SimCodeUtil.addSimVarToHashTable,crefToSimVarHT);
 
     // create DAE mode Sparse pattern and TODO: Jacobians
     // sparsity pattern generation

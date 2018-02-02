@@ -93,8 +93,7 @@ static int idaReScaleVector(N_Vector vec, double* factors, unsigned int size);
 
 static IDA_SOLVER *idaDataGlobal;
 static int initializedSolver = 0;
-int ida_calcReinitAfterEvent(DATA* data, threadData_t *threadData);
-
+int ida_event_update(DATA* data, threadData_t *threadData);
 
 int checkIDAflag(int flag)
 {
@@ -647,11 +646,10 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       N_VSetArrayPointer_Serial((data->simulationInfo->sensitivityMatrix + i*idaData->N), idaData->ySResult[i]);
     }
   }
-  /* for the event handling in the dae mode */
-  if (compiledInDAEMode == 4){
+  if (compiledInDAEMode == 3){
     idaDataGlobal = idaData;
     initializedSolver = 1;
-    data->callback->functionDAE = ida_calcReinitAfterEvent;
+    data->callback->functionDAE = ida_event_update;
   }
 
   free(tmp);
@@ -695,12 +693,13 @@ ida_solver_deinitial(IDA_SOLVER *idaData){
   return 0;
 }
 
+
 int
-ida_calcReinitAfterEvent(DATA* data, threadData_t *threadData)
+ida_event_update(DATA* data, threadData_t *threadData)
 {
   IDA_SOLVER *idaData = idaDataGlobal;
   int flag;
-  if (compiledInDAEMode == 4){
+  if (compiledInDAEMode == 3){
     if (initializedSolver){
       data->simulationInfo->discreteCall = 1;
 
@@ -723,13 +722,18 @@ ida_calcReinitAfterEvent(DATA* data, threadData_t *threadData)
         throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
       }
 
+      memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
+      // and  also algebraic vars
+      data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+
+
       data->simulationInfo->discreteCall = 0;
     }
   }
   else{
     data->callback->functionDAE(data, threadData);
   }
-
 }
 
 /* main ida function to make a step */
@@ -1145,7 +1149,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->simulationInfo->daeModeData->residualVars[i];
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
+      infoStreamPrint(LOG_SOLVER_V, 0, "%d. residual = %e", i, NV_Ith_S(res, i));
     }
   }
   else
@@ -1155,7 +1159,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(res, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(res, i));
+      infoStreamPrint(LOG_SOLVER_V, 0, "%d. residual = %e", i, NV_Ith_S(res, i));
     }
   }
 

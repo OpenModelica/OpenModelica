@@ -59,8 +59,11 @@ import DAE;
 import ErrorExt;
 import ExecStat.execStat;
 import Expression;
+import ExpressionDump;
+import ExpressionSimplify;
 import Global;
 import Initialization;
+import List;
 import StackOverflow;
 import Util;
 
@@ -155,7 +158,7 @@ end getEqSystemDAEmode;
 // =============================================================================
 
 protected
-type TraverseEqnAryFold = tuple <BackendDAE.BackendDAEModeData, BackendDAE.Variables>;
+type TraverseEqnAryFold = tuple <BackendDAE.BackendDAEModeData, BackendDAE.Variables, DAE.FunctionTree>;
 
 public function createDAEmodeBDAE
 " This modules creates a BDAE with residual Variables."
@@ -180,12 +183,12 @@ protected
   constant Boolean debug = false;
 algorithm
   extraArgs := BackendDAE.BDAE_MODE_DATA(shared.daeModeData.numAuxVars,{},shared.daeModeData.numResVars,{},shared.daeModeData.numAuxEqns,{},shared.daeModeData.numResEqns,{});
-  travArgs := (extraArgs, syst.orderedVars);
+  travArgs := (extraArgs, syst.orderedVars, shared.functionTree);
   if debug then BackendDump.printEqSystem(syst); end if;
   // for every equation create corresponding residiual variable(s)
   travArgs := BackendEquation.traverseEquationArray(syst.orderedEqs,
     traverserEqnAryAuxRes, travArgs);
-  (extraArgs, vars) := travArgs;
+  (extraArgs, vars, _) := travArgs;
   syst.orderedVars := vars;
 
   // push ordered variables to known vars
@@ -224,28 +227,48 @@ algorithm
       BackendDAE.Var dummyVar;
       BackendDAE.Equation eq;
       Integer newnumResVars;
-      DAE.Exp exp;
+      DAE.Exp exp, exp2;
       BackendDAE.BackendDAEModeData travArgs;
-      DAE.ComponentRef cref;
-      String str;
+      DAE.ComponentRef cref, newCref;
+      DAE.FunctionTree funcsTree;
+      list<DAE.ComponentRef> crlst;
 
-    case (eq as BackendDAE.EQUATION(exp=exp)) guard( CommonSubExpression.isCSEExp(exp))
+      constant Boolean debug = false;
+
+    case (eq as BackendDAE.EQUATION(exp=exp)) guard(CommonSubExpression.isCSEExp(exp))
       equation
-        (travArgs, orderedVars) = extraArgs;
+        (travArgs, orderedVars, funcsTree) = extraArgs;
         cref = Expression.expCref(exp);
         (newResVars,_) = BackendVariable.getVar(cref, orderedVars);
         newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newResVars);
         travArgs.auxVars = listAppend(newResVars, travArgs.auxVars);
         travArgs.auxEqns = listAppend({eq}, travArgs.auxEqns);
         orderedVars = BackendVariable.removeCref(cref, orderedVars);
-        extraArgs = (travArgs, orderedVars);
+        extraArgs = (travArgs, orderedVars, funcsTree);
+      then
+        (extraArgs);
+
+    case (eq as BackendDAE.COMPLEX_EQUATION(left=exp)) guard(CommonSubExpression.isCSEExp(exp))
+      equation
+        if debug then print("case: Complex Left: " + BackendDump.equationString(orgEquation) + "\n"); end if;
+        (travArgs, orderedVars, funcsTree) = extraArgs;
+        cref = Expression.expCref(exp);
+        if debug then print("Got cref from exp: " + ExpressionDump.printExpStr(exp) + "\n"); end if;
+        (newResVars,_) = BackendVariable.getVar(cref, orderedVars);
+        if debug then print("Got vars: " + BackendDump.varListString(newResVars, "newVars") + "\n"); end if;
+        newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newResVars);
+        if debug then print("Created new vars: " + BackendDump.varListString(newResVars, "newVars") + "\n"); end if;
+        travArgs.auxVars = listAppend(newResVars, travArgs.auxVars);
+        travArgs.auxEqns = listAppend({eq}, travArgs.auxEqns);
+        orderedVars = BackendVariable.removeCref(cref, orderedVars);
+        extraArgs = (travArgs, orderedVars, funcsTree);
       then
         (extraArgs);
 
     case (eq as BackendDAE.EQUATION())
       equation
-        (travArgs, orderedVars) = extraArgs;
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq);
+        (travArgs, orderedVars, funcsTree) = extraArgs;
+        newResEqns = BackendEquation.equationToScalarResidualForm(eq, funcsTree);
         dummyVar = BackendVariable.makeVar(DAE.emptyCref);
         dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
@@ -253,14 +276,14 @@ algorithm
         travArgs.numResVars = newnumResVars;
         travArgs.resVars = listAppend(newResVars, travArgs.resVars);
         travArgs.resEqns = listAppend(newResEqns, travArgs.resEqns);
-        extraArgs = (travArgs, orderedVars);
+        extraArgs = (travArgs, orderedVars, funcsTree);
       then
         (extraArgs);
 
     case (eq as BackendDAE.SOLVED_EQUATION())
       equation
-        (travArgs, orderedVars) = extraArgs;
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq);
+        (travArgs, orderedVars, funcsTree) = extraArgs;
+        newResEqns = BackendEquation.equationToScalarResidualForm(eq, funcsTree);
         dummyVar = BackendVariable.makeVar(DAE.emptyCref);
         dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
@@ -268,43 +291,89 @@ algorithm
         travArgs.numResVars = newnumResVars;
         travArgs.resVars = listAppend(newResVars, travArgs.resVars);
         travArgs.resEqns = listAppend(newResEqns, travArgs.resEqns);
-        extraArgs = (travArgs, orderedVars);
+        extraArgs = (travArgs, orderedVars, funcsTree);
       then
         (extraArgs);
 
     case (eq as BackendDAE.ARRAY_EQUATION())
       equation
-        (travArgs, orderedVars) = extraArgs;
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq);
+        (travArgs, orderedVars, funcsTree) = extraArgs;
+        newResEqns = BackendEquation.equationToScalarResidualForm(eq, funcsTree);
+        dummyVar = BackendVariable.makeVar(DAE.emptyCref);
+        dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
+        (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
+            "$DAEres", dummyVar, travArgs.numResVars);
+        travArgs.numResVars = newnumResVars;
+        travArgs.resVars = listAppend(newResVars, travArgs.resVars);
+        travArgs.resEqns = listAppend(newResEqns, travArgs.resEqns);
+        extraArgs = (travArgs, orderedVars, funcsTree);
+      then
+        (extraArgs);
+
+    case (eq as BackendDAE.COMPLEX_EQUATION(left=exp, right=exp2))
+      equation
+        if debug then print("case: Complex: " + BackendDump.equationString(orgEquation) + "\n"); end if;
+        /*
+        if debug then print("case: left:  " + ExpressionDump.dumpExpStr(exp ,0) + "\n"); end if;
+        if debug then print("case: right: " + ExpressionDump.dumpExpStr(exp2,0) + "\n"); end if;
+        */
+        (travArgs, orderedVars, funcsTree) = extraArgs;
+        newResEqns = BackendEquation.equationToScalarResidualForm(eq, funcsTree);
+        if debug then print("case: new eqns:\n" + BackendDump.dumpEqnsStr(newResEqns) + "\n"); end if;
         dummyVar = BackendVariable.makeVar(DAE.emptyCref);
         dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
             "$DAEres", dummyVar, travArgs.numResVars);
         travArgs.numResVars = newnumResVars;
         travArgs.resVars = listAppend(listReverse(newResVars), travArgs.resVars);
-        travArgs.resEqns = listAppend(newResEqns, travArgs.resEqns);
-        extraArgs = (travArgs, orderedVars);
+        travArgs.resEqns = listAppend(listReverse(newResEqns), travArgs.resEqns);
+        extraArgs = (travArgs, orderedVars, funcsTree);
       then
         (extraArgs);
 
-    case (eq as BackendDAE.COMPLEX_EQUATION())
+    // recordCref = f(...)
+    case (eq as BackendDAE.COMPLEX_EQUATION(left=exp))
+      guard(Expression.isCref(exp))
       equation
-        (travArgs, orderedVars) = extraArgs;
-        newResEqns = BackendEquation.equationToScalarResidualForm(eq);
+        if debug then print("case: Complex: " + BackendDump.equationString(orgEquation) + "\n"); end if;
+        /*
+        if debug then print("case: left:  " + ExpressionDump.dumpExpStr(exp ,0) + "\n"); end if;
+        if debug then print("case: right: " + ExpressionDump.dumpExpStr(exp2,0) + "\n"); end if;
+        */
+        (travArgs, orderedVars, funcsTree) = extraArgs;
+        cref = Expression.expCref(exp);
+
+        // create aux variables for recordCref
+        (newResVars,_) = BackendVariable.getVar(cref, orderedVars);
+        crlst = list(BackendVariable.varCref(v) for v in newResVars);
+        newResVars = list(BackendVariable.copyVarNewName(ComponentReference.crefPrefixAux(cr), v) threaded for cr in crlst, v in newResVars);
+        newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in newResVars);
+        travArgs.auxVars = listAppend(newResVars, travArgs.auxVars);
+
+        // create aux equation aux = f(...)
+        newCref = ComponentReference.crefPrefixAux(cref);
+        eq.left = Expression.crefExp(newCref);
+        travArgs.auxEqns = listAppend({eq}, travArgs.auxEqns);
+
+        // prepare res equation aux = recordCref
+        eq.right = Expression.crefExp(cref);
+        newResEqns = BackendEquation.equationToScalarResidualForm(eq, funcsTree);
+        if debug then print("case: new eqns:\n" + BackendDump.dumpEqnsStr(newResEqns) + "\n"); end if;
         dummyVar = BackendVariable.makeVar(DAE.emptyCref);
         dummyVar = BackendVariable.setVarKind(dummyVar, BackendDAE.DAE_RESIDUAL_VAR());
         (newResEqns, newResVars, newnumResVars) = BackendEquation.convertResidualsIntoSolvedEquations(newResEqns,
             "$DAEres", dummyVar, travArgs.numResVars);
         travArgs.numResVars = newnumResVars;
-        travArgs.resVars = listAppend(newResVars, travArgs.resVars);
-        travArgs.resEqns = listAppend(newResEqns, travArgs.resEqns);
-        extraArgs = (travArgs, orderedVars);
+        travArgs.resVars = listAppend(listReverse(newResVars), travArgs.resVars);
+        travArgs.resEqns = listAppend(listReverse(newResEqns), travArgs.resEqns);
+        extraArgs = (travArgs, orderedVars, funcsTree);
       then
         (extraArgs);
 
+
     else equation
-      str = BackendDump.equationString(orgEquation);
-      Error.addInternalError("DAEMode.traverserEqnAryAuxRes failed on equation:\n" + str + "\n", sourceInfo());
+      Error.addInternalError("DAEMode.traverserEqnAryAuxRes failed on equation:\n" +
+                              BackendDump.equationString(orgEquation) + "\n", sourceInfo());
     then fail();
   end matchcontinue;
 end traverserEqnAryAuxRes;

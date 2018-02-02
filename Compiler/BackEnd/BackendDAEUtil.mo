@@ -3070,6 +3070,12 @@ algorithm
        list<Integer> irest;
        Integer i;
     case ({},{},_,_) then vars;
+    case (BackendDAE.VAR(varKind = BackendDAE.DAE_AUX_VAR())::rest,i::irest,_,_)
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+    case (BackendDAE.VAR(varKind = BackendDAE.DAE_RESIDUAL_VAR())::rest,i::irest,_,_)
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.JAC_DIFF_VAR())::rest,i::irest,_,_)
       guard not AvlSetInt.hasKey(vars, i)
       then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);

@@ -116,6 +116,10 @@ ida_solver_deinitial(IDA_SOLVER *idaData);
 int
 ida_solver_step(DATA* simData, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
+/* event handing reinitialization function  */
+int
+ida_event_update(DATA* data, threadData_t *threadData);
+
 #endif
 
 #endif

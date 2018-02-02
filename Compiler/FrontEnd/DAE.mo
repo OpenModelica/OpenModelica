@@ -64,6 +64,7 @@ public constant String derivativeNamePrefix = "$DER";
 public constant String preNamePrefix = "$PRE";
 public constant String previousNamePrefix = "$CLKPRE";
 public constant String startNamePrefix = "$START";
+public constant String auxNamePrefix = "$AUX";
 
 
 public uniontype VarKind
