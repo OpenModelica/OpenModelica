@@ -1847,10 +1847,21 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="sqrt"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let typeStr = expTypeShort(attr.ty )
-    let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
-    let &preExp += '<%retVar%> = std::sqrt(<%argStr%>);<%\n%>'
-    '<%retVar%>'
+    (if isPositiveOrZero(e1) then
+       let typeStr = expTypeShort(attr.ty )
+       let retVar = tempDecl(typeStr, &varDecls /*BUFD*/)
+       let &preExp += '<%retVar%> = std::sqrt(<%argStr%>);<%\n%>'
+
+      '<%retVar%>'
+    else
+        let tmp = tempDecl(expTypeFromExpModelica(e1), &varDecls)
+        let cstr = ExpressionDumpTpl.dumpExp(e1,"\"")
+        let &preExp +=
+          <<
+          <%tmp%> = <%argStr%>;
+          <%assertCommonVar('<%tmp%> >= 0.0', '"Model error: Argument of sqrt(<%Util.escapeModelicaStringToCString(cstr)%>) should be >= 0"', context, &varDecls, dummyInfo)%>
+          >>
+       'sqrt(<%tmp%>)')
 
   // built-in mathematical functions
   case CALL(path=IDENT(name="sin"), expLst={e1})
@@ -2973,6 +2984,39 @@ template functionClosure(String funcName, String closureArgs, Type t, Type t_ori
     >>
     '<%closureName%>(<%functionsObject%><%closureArgs%>)'
 end functionClosure;
+
+
+template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDecls, builtin.SourceInfo info)
+::=
+  match context
+  case FUNCTION_CONTEXT(__) then
+    <<
+    if(!(<%condVar%>))
+    {
+
+      throw ModelicaSimulationError(MODEL_EQ_SYSTEM,  <%msgVar%>);
+    }
+    >>
+  // OpenCL doesn't have support for variadic args. So message should be just a single string.
+  case PARALLEL_FUNCTION_CONTEXT(__) then
+    <<
+    if(!(<%condVar%>))
+    {
+
+      throw ModelicaSimulationError(MODEL_EQ_SYSTEM, "Common assertion failed");
+
+    }
+    >>
+  else
+    <<
+    if(!(<%condVar%>))
+    {
+       //string error_msg = "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+       throw ModelicaSimulationError(MODEL_EQ_SYSTEM,<%msgVar%>);
+    }
+    >>
+end assertCommonVar;
+
 
 template expTypeUnboxed(Type t)
   "Returns the actual type in the box"
