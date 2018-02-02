@@ -70,6 +70,8 @@
 #include "Traceability/TraceabilityGraphViewWidget.h"
 #include "omc_config.h"
 
+#include "OMSimulator.h"
+
 #include <QtSvg/QSvgGenerator>
 
 MainWindow::MainWindow(bool debug, QWidget *parent)
@@ -3828,7 +3830,8 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
      "<b>%3</b><br />"
-     "<b>Connected to %4</b><br /><br />"
+     "<b>Connected to %4</b><br />"
+     "<b>Connected to %5</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
      "Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis."
@@ -3858,7 +3861,8 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
           GIT_SHA,
-          Helper::OpenModelicaVersion);
+          Helper::OpenModelicaVersion,
+          oms_getVersion());
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

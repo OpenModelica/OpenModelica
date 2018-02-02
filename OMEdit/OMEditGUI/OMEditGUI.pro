@@ -87,17 +87,21 @@ win32 {
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -llibfmilib -lshlwapi\
-    -lws2_32
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
+    -lws2_32 \
+    -L../../../OMSimulator/install/mingw/bin -lOMSimulatorLib
 
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include/omplot/qwt \
-    $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
+    $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c \
+    ../../../OMSimulator/install/mingw/include
 
   RC_FILE = rc_omedit.rc
   CONFIG += osg
 } else { # Unix libraries and includes
   include(OMEdit.config)
+  LIBS += -L../../../OMSimulator/install/linux/bin -lOMSimulatorLib
+  INCLUDEPATH += ../../../OMSimulator/install/linux/include
   # required for backtrace
   # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
   # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
