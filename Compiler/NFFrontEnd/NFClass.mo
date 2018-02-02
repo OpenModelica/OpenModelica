@@ -177,6 +177,12 @@ uniontype Class
     output Modifier attribute = Modifier.NOMOD();
   algorithm
     () := match cls
+      case PARTIAL_BUILTIN()
+        algorithm
+          attribute := Modifier.lookupModifier(name, cls.modifier);
+        then
+          ();
+
       case INSTANCED_BUILTIN()
         algorithm
           for attr in cls.attributes loop

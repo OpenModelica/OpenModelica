@@ -492,7 +492,14 @@ algorithm
     // If the dimension is unknown in a class, try to infer it from the components binding.
     case Dimension.UNKNOWN()
       algorithm
-        dim := match binding
+        // If the component doesn't have a binding, try to use the start attribute instead.
+        b := match binding
+          case Binding.UNBOUND()
+            then Modifier.binding(Class.lookupAttribute("start", InstNode.getClass(component)));
+          else binding;
+        end match;
+
+        dim := match b
           // Print an error if there's no binding.
           case Binding.UNBOUND()
             algorithm
@@ -506,8 +513,8 @@ algorithm
           case Binding.UNTYPED_BINDING()
             algorithm
               prop_dims := InstNode.countDimensions(InstNode.parent(component),
-                InstNode.level(component) - BindingOrigin.level(binding.origin));
-              dim := typeExpDim(binding.bindingExp, index + prop_dims,
+                InstNode.level(component) - BindingOrigin.level(b.origin));
+              dim := typeExpDim(b.bindingExp, index + prop_dims,
                 intBitOr(origin, ExpOrigin.DIMENSION), info);
             then
               dim;
@@ -516,8 +523,8 @@ algorithm
           case Binding.TYPED_BINDING()
             algorithm
               prop_dims := InstNode.countDimensions(InstNode.parent(component),
-                InstNode.level(component) - BindingOrigin.level(binding.origin));
-              dim := nthDimensionBoundsChecked(binding.bindingType, index + prop_dims);
+                InstNode.level(component) - BindingOrigin.level(b.origin));
+              dim := nthDimensionBoundsChecked(b.bindingType, index + prop_dims);
             then
               dim;
 
