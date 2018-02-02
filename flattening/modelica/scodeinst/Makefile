@@ -165,6 +165,7 @@ DimUnknown3.mo \
 DimUnknown4.mo \
 DimUnknown5.mo \
 DimUnknown6.mo \
+DimUnknown7.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
