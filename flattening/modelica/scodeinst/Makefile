@@ -114,6 +114,9 @@ Connect2.mo \
 Connect4.mo \
 Connect5.mo \
 ConnectAlgorithm.mo \
+ConnectArrays1.mo \
+ConnectArrays2.mo \
+ConnectArrays3.mo \
 ConnectDiffOrder1.mo \
 ConnectDiffOrder2.mo \
 ConnectInitial.mo \
@@ -204,6 +207,8 @@ eq1.mo \
 eq2.mo \
 eq3.mo \
 eq4.mo \
+eq5.mo \
+eq6.mo \
 eq7.mo \
 eq8.mo \
 eq10.mo \
@@ -557,19 +562,14 @@ DuplicateElementsValid2.mo \
 DuplicateElementsCond1.mo \
 ceval4.mo \
 cond3.mo \
-conn11.mo \
 conn12.mo \
 conn13.mo \
 conn14.mo \
-conn6.mo \
-conn7.mo \
 conn8.mo \
 conn9.mo \
 conngraph1.mo \
 conngraph2.mo \
 enum6.mo \
-eq5.mo \
-eq6.mo \
 expconn1.mo \
 expconn2.mo \
 expconn3.mo \
@@ -581,7 +581,6 @@ func1.mo \
 FuncBuiltinCardinality.mo \
 FuncBuiltinEnumTypeName.mo \
 FuncBuiltinReduction.mo \
-function1.mo \
 FunctionRecordArg1.mo \
 ImportConflict1.mo \
 ImportShadowing1.mo \

@@ -20,13 +20,12 @@ end B;
 
 // Result:
 // class B
-//   constant Integer P.i = 2;
 //   Real a[1].x;
 //   Real a[2].x;
 //   Real a[3].x;
 // equation
-//   a[1].x = /*Real*/(P.i);
-//   a[2].x = /*Real*/(P.i);
-//   a[3].x = /*Real*/(P.i);
+//   a[1].x = 2.0;
+//   a[2].x = 2.0;
+//   a[3].x = 2.0;
 // end B;
 // endResult
