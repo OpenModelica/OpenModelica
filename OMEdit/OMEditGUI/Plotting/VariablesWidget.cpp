@@ -962,6 +962,26 @@ void VariablesTreeView::mouseReleaseEvent(QMouseEvent *event)
   QTreeView::mouseReleaseEvent(event);
 }
 
+/*!
+ * \brief VariablesTreeView::keyPressEvent
+ * Reimplementation of keypressevent.
+ * \param event
+ */
+void VariablesTreeView::keyPressEvent(QKeyEvent *event)
+{
+  QModelIndexList indexes = selectionModel()->selectedIndexes();
+  if (!indexes.isEmpty()) {
+    QModelIndex index = indexes.at(0);
+    index = mpVariablesWidget->getVariableTreeProxyModel()->mapToSource(index);
+    VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
+    if (event->key() == Qt::Key_Delete && pVariablesTreeItem->isRootItem()) {
+      mpVariablesWidget->getVariablesTreeModel()->removeVariableTreeItem(pVariablesTreeItem->getVariableName());
+      return;
+    }
+  }
+  QTreeView::keyPressEvent(event);
+}
+
 VariablesWidget::VariablesWidget(QWidget *pParent)
   : QWidget(pParent)
 {
@@ -1901,6 +1921,7 @@ void VariablesWidget::showContextMenu(QPoint point)
     /* delete result action */
     QAction *pDeleteResultAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete Result"), this);
     pDeleteResultAction->setData(pVariablesTreeItem->getVariableName());
+    pDeleteResultAction->setShortcut(QKeySequence::Delete);
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
     connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
 

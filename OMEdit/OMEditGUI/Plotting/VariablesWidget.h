@@ -166,6 +166,7 @@ private:
   VariablesWidget *mpVariablesWidget;
 protected:
   virtual void mouseReleaseEvent(QMouseEvent *event);
+  virtual void keyPressEvent(QKeyEvent *event);
 };
 
 class VariablesWidget : public QWidget
