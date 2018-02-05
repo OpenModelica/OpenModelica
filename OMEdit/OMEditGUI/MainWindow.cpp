@@ -367,7 +367,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
-    bool restoreMessagesWidget = !MessagesWidget::instance()->getMessagesTextBrowser()->toPlainText().isEmpty();
+    bool restoreMessagesWidget = !MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->toPlainText().isEmpty();
     restoreState(pSettings->value("application/windowState").toByteArray());
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */

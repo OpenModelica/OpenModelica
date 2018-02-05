@@ -86,45 +86,21 @@ QString MessageItem::getLocation()
 }
 
 /*!
- * \class MessagesWidget
- * \brief Shows warnings, notifications and error messages.
+ * \class MessageWidget
+ * \brief Message widget with QTextBrowser for showing notifications, warning and error messages.
  */
-
-MessagesWidget *MessagesWidget::mpInstance = 0;
-
 /*!
- * \brief MessagesWidget::create
- */
-void MessagesWidget::create()
-{
-  if (!mpInstance) {
-    mpInstance = new MessagesWidget;
-  }
-}
-
-/*!
- * \brief MessagesWidget::destroy
- */
-void MessagesWidget::destroy()
-{
-  mpInstance->deleteLater();
-}
-
-/*!
- * \brief MessagesWidget::MessagesWidget
+ * \brief MessageWidget::MessageWidget
  * \param pParent
  */
-MessagesWidget::MessagesWidget(QWidget *pParent)
+MessageWidget::MessageWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   mMessageNumber = 1;
   mpMessagesTextBrowser = new QTextBrowser;
   mpMessagesTextBrowser->setOpenLinks(false);
   mpMessagesTextBrowser->setOpenExternalLinks(false);
-  // since the QFrame::StyledPanel is not a grey rectangle around it so we need to put it in a QFrame.
   mpMessagesTextBrowser->setFrameStyle(QFrame::NoFrame);
-  QFrame *pMessagesTextBrowserFrame = new QFrame;
-  pMessagesTextBrowserFrame->setFrameStyle(QFrame::StyledPanel);
   mpMessagesTextBrowser->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(mpMessagesTextBrowser, SIGNAL(anchorClicked(QUrl)), SLOT(openErrorMessageClass(QUrl)));
   connect(mpMessagesTextBrowser, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
@@ -137,27 +113,24 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mpCopyAction->setShortcut(QKeySequence("Ctrl+c"));
   mpCopyAction->setStatusTip(tr("Copy the Message"));
   connect(mpCopyAction, SIGNAL(triggered()), mpMessagesTextBrowser, SLOT(copy()));
-  mpClearAllAction = new QAction(tr("Clear All"), this);
-  mpClearAllAction->setStatusTip(tr("clears the Messages Browser"));
-  connect(mpClearAllAction, SIGNAL(triggered()), SLOT(clearMessages()));
-  // set layout for MessagesTextBrowser frame
-  QVBoxLayout *pMessagesTextBrowserLayout = new QVBoxLayout;
-  pMessagesTextBrowserLayout->setContentsMargins(0, 0, 0, 0);
-  pMessagesTextBrowserLayout->addWidget(mpMessagesTextBrowser);
-  pMessagesTextBrowserFrame->setLayout(pMessagesTextBrowserLayout);
+  mpClearThisTabAction = new QAction(tr("Clear This Tab"), this);
+  mpClearThisTabAction->setStatusTip(tr("clears the messages from this tab"));
+  connect(mpClearThisTabAction, SIGNAL(triggered()), SLOT(clearThisTabMessages()));
+  mpClearAllTabsAction = new QAction(tr("Clear All Tabs"), this);
+  mpClearAllTabsAction->setStatusTip(tr("clears the messages from all tabs"));
+  connect(mpClearAllTabsAction, SIGNAL(triggered()), SLOT(clearAllTabsMessages()));
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setSpacing(1);
-  pMainLayout->addWidget(pMessagesTextBrowserFrame);
+  pMainLayout->addWidget(mpMessagesTextBrowser);
   setLayout(pMainLayout);
 }
 
 /*!
- * \brief MessagesWidget::applyMessagesSettings
+ * \brief MessageWidget::applyMessagesSettings
  * Applies the Messages settings e.g size, font, color.
  */
-void MessagesWidget::applyMessagesSettings()
+void MessageWidget::applyMessagesSettings()
 {
   MessagesPage *pMessagesPage = OptionsDialog::instance()->getMessagesPage();
   // set the output size
@@ -183,12 +156,12 @@ void MessagesWidget::applyMessagesSettings()
 }
 
 /*!
- * \brief MessagesWidget::addGUIMessage
- * Adds the error message.\n
- * Moves to the most recent error message in the view.
+ * \brief MessageWidget::addGUIMessage
+ * Adds the message.\n
+ * Moves to the most recent message in the view.
  * \param messageItem
  */
-void MessagesWidget::addGUIMessage(MessageItem messageItem)
+void MessageWidget::addGUIMessage(MessageItem messageItem)
 {
   // move the cursor down before adding message.
   QTextCursor textCursor = mpMessagesTextBrowser->textCursor();
@@ -265,16 +238,15 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   // move the cursor down after adding message.
   textCursor.movePosition(QTextCursor::End);
   mpMessagesTextBrowser->setTextCursor(textCursor);
-  emit MessageAdded();
 }
 
 /*!
- * \brief MessagesWidget::openErrorMessageClass
+ * \brief MessageWidget::openErrorMessageClass
  * Slot activated when a link e.g., "<a href="omeditmessagesbrowser:///className?lineNumber=4></a>" is clicked from MessagesWidget.\n
  * Parses the url and loads the Modelica class with the line selected.
  * \param url - the url that is clicked
  */
-void MessagesWidget::openErrorMessageClass(QUrl url)
+void MessageWidget::openErrorMessageClass(QUrl url)
 {
   if (url.scheme() != "omeditmessagesbrowser") {
     /*! @todo Write error-message?! */
@@ -314,27 +286,155 @@ void MessagesWidget::openErrorMessageClass(QUrl url)
 }
 
 /*!
- * \brief MessagesWidget::showContextMenu
+ * \brief MessageWidget::showContextMenu
  * Shows a context menu when user right click on the Messages tree.
- * Slot activated when Message::customContextMenuRequested() signal is raised.
+ * Slot activated when mpMessagesTextBrowser customContextMenuRequested signal is raised.
  * \param point
  */
-void MessagesWidget::showContextMenu(QPoint point)
+void MessageWidget::showContextMenu(QPoint point)
 {
   QMenu menu(this);
   menu.addAction(mpSelectAllAction);
   menu.addAction(mpCopyAction);
-  menu.addAction(mpClearAllAction);
+  menu.addAction(mpClearThisTabAction);
+  menu.addAction(mpClearAllTabsAction);
   menu.exec(mpMessagesTextBrowser->viewport()->mapToGlobal(point));
 }
 
 /*!
+ * \brief MessageWidget::clearThisTabMessages
+ * Clears the messages and resets the messages number from this tab.
+ */
+void MessageWidget::clearThisTabMessages()
+{
+  resetMessagesNumber();
+  mpMessagesTextBrowser->clear();
+}
+
+/*!
+ * \brief MessageWidget::clearAllTabsMessages
+ * Clears the messages and resets the messages number from all tabs.
+ */
+void MessageWidget::clearAllTabsMessages()
+{
+  MessagesWidget::instance()->getAllMessageWidget()->resetMessagesNumber();
+  MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->clear();
+  MessagesWidget::instance()->getNotificationMessageWidget()->resetMessagesNumber();
+  MessagesWidget::instance()->getNotificationMessageWidget()->getMessagesTextBrowser()->clear();
+  MessagesWidget::instance()->getWarningMessageWidget()->resetMessagesNumber();
+  MessagesWidget::instance()->getWarningMessageWidget()->getMessagesTextBrowser()->clear();
+  MessagesWidget::instance()->getErrorMessageWidget()->resetMessagesNumber();
+  MessagesWidget::instance()->getErrorMessageWidget()->getMessagesTextBrowser()->clear();
+}
+
+/*!
+ * \class MessagesWidget
+ * \brief Tab widget for showing notifications, warning and error messages.
+ */
+
+MessagesWidget *MessagesWidget::mpInstance = 0;
+
+/*!
+ * \brief MessagesWidget::create
+ */
+void MessagesWidget::create()
+{
+  if (!mpInstance) {
+    mpInstance = new MessagesWidget;
+  }
+}
+
+/*!
+ * \brief MessagesWidget::destroy
+ */
+void MessagesWidget::destroy()
+{
+  mpInstance->deleteLater();
+}
+
+/*!
+ * \brief MessagesWidget::MessagesWidget
+ * \param pParent
+ */
+MessagesWidget::MessagesWidget(QWidget *pParent)
+  : QWidget(pParent)
+{
+  mpMessagesTabWidget = new QTabWidget;
+  mpAllMessageWidget = new MessageWidget;
+  mpMessagesTabWidget->addTab(mpAllMessageWidget, tr("All"));
+  mpNotificationMessageWidget = new MessageWidget;
+  mpMessagesTabWidget->addTab(mpNotificationMessageWidget, tr("Notifications"));
+  mpWarningMessageWidget = new MessageWidget;
+  mpMessagesTabWidget->addTab(mpWarningMessageWidget, tr("Warnings"));
+  mpErrorMessageWidget = new MessageWidget;
+  mpMessagesTabWidget->addTab(mpErrorMessageWidget, tr("Errors"));
+  // Main Layout
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpMessagesTabWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief MessagesWidget::resetMessagesNumber
+ * Resets the Message number of the appropriate message tab widget.
+ */
+void MessagesWidget::resetMessagesNumber()
+{
+  mpAllMessageWidget->resetMessagesNumber();
+  mpNotificationMessageWidget->resetMessagesNumber();
+  mpWarningMessageWidget->resetMessagesNumber();
+  mpErrorMessageWidget->resetMessagesNumber();
+}
+
+/*!
+ * \brief MessagesWidget::applyMessagesSettings
+ * Applies the Messages settings to the appropriate message tab widget.
+ */
+void MessagesWidget::applyMessagesSettings()
+{
+  mpAllMessageWidget->applyMessagesSettings();
+  mpNotificationMessageWidget->applyMessagesSettings();
+  mpWarningMessageWidget->applyMessagesSettings();
+  mpErrorMessageWidget->applyMessagesSettings();
+}
+
+/*!
+ * \brief MessagesWidget::addGUIMessage
+ * Adds the error message to the appropriate message tab widget.
+ * \param messageItem
+ */
+void MessagesWidget::addGUIMessage(MessageItem messageItem)
+{
+  switch (messageItem.getErrorType()) {
+    case StringHandler::Notification:
+      mpNotificationMessageWidget->addGUIMessage(messageItem);
+      mpAllMessageWidget->addGUIMessage(messageItem);
+      break;
+    case StringHandler::Warning:
+      mpWarningMessageWidget->addGUIMessage(messageItem);
+      mpAllMessageWidget->addGUIMessage(messageItem);
+      break;
+    case StringHandler::OMError:
+      mpErrorMessageWidget->addGUIMessage(messageItem);
+      mpAllMessageWidget->addGUIMessage(messageItem);
+      break;
+    default:
+      mpAllMessageWidget->addGUIMessage(messageItem);
+      break;
+  }
+  mpMessagesTabWidget->setCurrentWidget(mpAllMessageWidget);
+  emit MessageAdded();
+}
+
+/*!
  * \brief MessagesWidget::clearMessages
- * Clears the Messages Browser and resets the messages number.
  * Slot activated when mpClearAllAction triggered signal is raised.
  */
 void MessagesWidget::clearMessages()
 {
-  resetMessagesNumber();
-  mpMessagesTextBrowser->clear();
+  mpAllMessageWidget->clearAllTabsMessages();
+  mpNotificationMessageWidget->clearAllTabsMessages();
+  mpWarningMessageWidget->clearAllTabsMessages();
+  mpErrorMessageWidget->clearAllTabsMessages();
 }

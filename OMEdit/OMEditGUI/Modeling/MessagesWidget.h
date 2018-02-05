@@ -72,6 +72,30 @@ private:
   MessageItemType mMessageItemType;
 };
 
+class MessageWidget : public QWidget
+{
+  Q_OBJECT
+private:
+  int mMessageNumber;
+  QTextBrowser *mpMessagesTextBrowser;
+  QAction *mpSelectAllAction;
+  QAction *mpCopyAction;
+  QAction *mpClearThisTabAction;
+  QAction *mpClearAllTabsAction;
+public:
+  MessageWidget(QWidget *pParent = 0);
+  void resetMessagesNumber() {mMessageNumber = 1;}
+  QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
+  void applyMessagesSettings();
+  void addGUIMessage(MessageItem messageItem);
+private slots:
+  void openErrorMessageClass(QUrl url);
+  void showContextMenu(QPoint point);
+public slots:
+  void clearThisTabMessages();
+  void clearAllTabsMessages();
+};
+
 class MessagesWidget : public QWidget
 {
   Q_OBJECT
@@ -84,22 +108,23 @@ private:
   MessagesWidget(QWidget *pParent = 0);
 
   static MessagesWidget *mpInstance;
-  int mMessageNumber;
-  QTextBrowser *mpMessagesTextBrowser;
-  QAction *mpSelectAllAction;
-  QAction *mpCopyAction;
-  QAction *mpClearAllAction;
+  QTabWidget *mpMessagesTabWidget;
+  MessageWidget *mpAllMessageWidget;
+  MessageWidget *mpNotificationMessageWidget;
+  MessageWidget *mpWarningMessageWidget;
+  MessageWidget *mpErrorMessageWidget;
+
 public:
   static MessagesWidget* instance() {return mpInstance;}
-  void resetMessagesNumber() {mMessageNumber = 1;}
-  QTextBrowser* getMessagesTextBrowser() {return mpMessagesTextBrowser;}
+  MessageWidget* getAllMessageWidget() {return mpAllMessageWidget;}
+  MessageWidget* getNotificationMessageWidget() {return mpNotificationMessageWidget;}
+  MessageWidget* getWarningMessageWidget() {return mpWarningMessageWidget;}
+  MessageWidget* getErrorMessageWidget() {return mpErrorMessageWidget;}
+  void resetMessagesNumber();
   void applyMessagesSettings();
   void addGUIMessage(MessageItem messageItem);
 signals:
   void MessageAdded();
-private slots:
-  void openErrorMessageClass(QUrl url);
-  void showContextMenu(QPoint point);
 public slots:
   void clearMessages();
 };
