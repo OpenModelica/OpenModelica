@@ -50,7 +50,7 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 // 1: y.r1[3]:VARIABLE()  type: Real  [3]
 // 2: y.r1[2]:VARIABLE()  type: Real  [3]
 // 3: y.r1[1]:VARIABLE()  type: Real  [3]
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (2, 4)

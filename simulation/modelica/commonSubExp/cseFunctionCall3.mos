@@ -64,7 +64,7 @@ simulate(CSE.FunctionCallTest3); getErrorString();
 // 5: z:STATE(1)()  type: Real 
 // 6: y:STATE(1)()  type: Real 
 // 7: x:VARIABLE()  type: Real 
-// 8: $cse1:VARIABLE()  type: Real  unreplaceable
+// 8: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (6, 8)

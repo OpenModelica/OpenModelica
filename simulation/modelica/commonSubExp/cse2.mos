@@ -118,8 +118,8 @@ simulate(Tearing3); getErrorString();
 // 13: $DER.i1:DUMMY_DER(fixed = false )  type: Real 
 // 14: $DER.u1:DUMMY_DER(fixed = false )  type: Real 
 // 15: $DER.uL:DUMMY_DER(fixed = false )  type: Real 
-// 16: $cseb10:VARIABLE()  type: Real  unreplaceable
-// 17: $cseb3:VARIABLE()  type: Real  unreplaceable
+// 16: $cseb10:VARIABLE(protected = true )  type: Real  unreplaceable
+// 17: $cseb3:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List ########### (17, 17)

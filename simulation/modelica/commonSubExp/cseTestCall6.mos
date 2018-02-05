@@ -54,8 +54,8 @@ simulate(CSE.TestCall6); getErrorString();
 // ########### Updated Variable List (simulation) (3)
 // ========================================
 // 1: a:VARIABLE()  type: Real 
-// 2: $cse1.y:VARIABLE()  type: Real  unreplaceable
-// 3: $cse1.x:VARIABLE()  type: Real  unreplaceable
+// 2: $cse1.y:VARIABLE(protected = true )  type: Real  unreplaceable
+// 3: $cse1.x:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (2, 3)

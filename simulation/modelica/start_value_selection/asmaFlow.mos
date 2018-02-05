@@ -1010,7 +1010,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 79: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real  [3]
 // 80: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real  [3]
 // 81: $DER.aimc.i_0_s:DUMMY_DER(fixed = false )  "Stator zero-sequence current" type: Real 
-// 82: $cse1:VARIABLE()  type: Real  unreplaceable
+// 82: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 83: aimc.airGapS.RotationMatrix[2,1]:DUMMY_STATE(fixed = false )  "Matrix of rotation from rotor to stator" type: Real  [2,2]
 // 84: aimc.rs.resistor[3].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]
 // 85: aimc.rs.resistor[2].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real  [3]

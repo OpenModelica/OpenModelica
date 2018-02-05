@@ -2262,7 +2262,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2364,7 +2364,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2466,7 +2466,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2568,7 +2568,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2670,7 +2670,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2772,7 +2772,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2874,7 +2874,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -2976,7 +2976,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3078,7 +3078,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3180,7 +3180,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3282,7 +3282,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3384,7 +3384,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3486,7 +3486,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3588,7 +3588,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3690,7 +3690,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3792,7 +3792,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)
@@ -3894,7 +3894,7 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1: y:VARIABLE()  type: Real 
 // 2: x:VARIABLE()  type: Real 
-// 3: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (3, 3)

@@ -94,8 +94,8 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 // 2: p1:PARAM()  = 5  type: Integer 
 // 3: p2:PARAM()  = 10  type: Integer 
 // 4: p3:PARAM()  = 1.0  type: Real 
-// 5: $cse1.d2 in $cse1:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
-// 6: $cse1.d1 in $cse1:DISCRETE(fixed = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
+// 5: $cse1.d2 in $cse1:DISCRETE(fixed = true protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
+// 6: $cse1.d1 in $cse1:DISCRETE(fixed = true protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer  unreplaceable
 //
 //
 // ########### CSE Replacements (2/43)

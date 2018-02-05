@@ -77,9 +77,9 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // ========================================
 // 1: z:VARIABLE()  type: Real 
 // 2: x:DISCRETE()  type: Integer 
-// 3: $cse3:VARIABLE()  type: Real  unreplaceable
-// 4: $cse2:VARIABLE()  type: Real  unreplaceable
-// 5: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (5, 5)
@@ -115,7 +115,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 //
 // Variables (1)
 // ========================================
-// 1: $cse2:VARIABLE()  type: Real  unreplaceable
+// 1: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (1, 1)
@@ -149,8 +149,8 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls13_res.mat");
 // ========================================
 // 1: z:VARIABLE()  type: Real 
 // 2: x:DISCRETE()  type: Integer 
-// 3: $cse3:VARIABLE()  type: Real  unreplaceable
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (4, 4)

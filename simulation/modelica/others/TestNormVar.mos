@@ -61,7 +61,7 @@ simulate(foo,stopTime=0);
 // 1: u_norm:VARIABLE()  type: Real 
 // 2: x_norm:VARIABLE()  type: Real 
 // 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 5: x__OMC$scaled_state:VARIABLE()  type: Real 
 //
 //
@@ -181,7 +181,7 @@ simulate(foo,stopTime=0);
 // 1: u_norm:VARIABLE()  type: Real 
 // 2: x_norm:VARIABLE()  type: Real 
 // 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 5: u__OMC$scaled_input:VARIABLE()  type: Real 
 //
 //
@@ -301,7 +301,7 @@ simulate(foo,stopTime=0);
 // 1: u_norm:VARIABLE()  type: Real 
 // 2: x_norm:VARIABLE()  type: Real 
 // 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 5: x__OMC$scaled_state:VARIABLE()  type: Real 
 // 6: u__OMC$scaled_input:VARIABLE()  type: Real 
 //

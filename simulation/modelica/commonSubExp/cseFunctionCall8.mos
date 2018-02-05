@@ -79,8 +79,8 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // 1: i.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real 
 // 2: $DER.u2.$pDERLSJac0.dummyVarLSJac0:VARIABLE(fixed = false )  type: Real 
 // 3: $res1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  type: Real  unreplaceable
-// 4: $cse2:VARIABLE()  type: Real  unreplaceable
-// 5: $cse1:VARIABLE()  type: Real  unreplaceable
+// 4: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (5, 5)
@@ -119,9 +119,9 @@ simulate(CSE.FunctionCallTest8); getErrorString();
 // 2: u2:DUMMY_STATE()  type: Real 
 // 3: u1:STATE(1)()  type: Real 
 // 4: $DER.u2:DUMMY_DER(fixed = false )  type: Real 
-// 5: $cse5:VARIABLE()  type: Real  unreplaceable
-// 6: $cse4:VARIABLE()  type: Real  unreplaceable
-// 7: $cse3:VARIABLE()  type: Real  unreplaceable
+// 5: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 7: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (7, 7)

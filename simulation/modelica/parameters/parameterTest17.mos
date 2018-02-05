@@ -80,7 +80,7 @@ val(p9,0.0);
 // 14: p9:PARAM(fixed = false )  = 2 * p4  type: Integer 
 // 15: pr1:PARAM(protected = true )  = 5  type: Integer 
 // 16: pr2:PARAM(protected = true )  = pr1  type: Integer 
-// 17: $cse1:VARIABLE(fixed = true )  = sin(/*Real*/(p2))  type: Real  unreplaceable
+// 17: $cse1:VARIABLE(fixed = true protected = true )  = sin(/*Real*/(p2))  type: Real  unreplaceable
 //
 //
 // ########### CSE Replacements (1/43)

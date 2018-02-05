@@ -83,10 +83,10 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat");
 // 3: a:VARIABLE(fixed = true )  = sin(x)  type: Real 
 // 4: b in (d, b, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real 
 // 5: d in (d, b, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real 
-// 6: $cse4:VARIABLE(fixed = true )  = cos(p1)  type: Real  unreplaceable
-// 7: $cse3:VARIABLE(fixed = true )  = sin($cse4)  type: Real  unreplaceable
-// 8: $cse2 in ($cse2, _, _):VARIABLE(fixed = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real  unreplaceable
-// 9: $cse1:VARIABLE(fixed = true )  = sin($cse2)  type: Real  unreplaceable
+// 6: $cse4:VARIABLE(fixed = true protected = true )  = cos(p1)  type: Real  unreplaceable
+// 7: $cse3:VARIABLE(fixed = true protected = true )  = sin($cse4)  type: Real  unreplaceable
+// 8: $cse2 in ($cse2, _, _):VARIABLE(fixed = true protected = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(fixed = true protected = true )  = sin($cse2)  type: Real  unreplaceable
 //
 //
 // ########### CSE Replacements (6/46)

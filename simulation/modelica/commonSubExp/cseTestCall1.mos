@@ -80,8 +80,8 @@ simulate(CSE.TestCall1); getErrorString();
 // 2: D:VARIABLE()  type: Real 
 // 3: C:VARIABLE()  type: Real 
 // 4: A:VARIABLE()  type: Real 
-// 5: $cse2:VARIABLE()  type: Real  unreplaceable
-// 6: $cse1:VARIABLE()  type: Real  unreplaceable
+// 5: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (6, 6)

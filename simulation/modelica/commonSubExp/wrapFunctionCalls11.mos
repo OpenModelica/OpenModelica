@@ -37,7 +37,7 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
 // 1: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
-// 2: $cse1:VARIABLE()  type: Real  unreplaceable
+// 2: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)
@@ -99,7 +99,7 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 // ########### Updated Variable List (jacobian) (2)
 // ========================================
 // 1: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
-// 2: $cse2:VARIABLE()  type: Real  unreplaceable
+// 2: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (2, 2)

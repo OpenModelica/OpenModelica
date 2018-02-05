@@ -4416,7 +4416,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
 // 9: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
-// 10: $cse1:VARIABLE()  type: Real  unreplaceable
+// 10: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (10, 10)
@@ -4552,7 +4552,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
 // 9: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
-// 10: $cse1:VARIABLE()  type: Real  unreplaceable
+// 10: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (10, 10)
@@ -4688,7 +4688,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
 // 9: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
-// 10: $cse1:VARIABLE()  type: Real  unreplaceable
+// 10: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (10, 10)
@@ -4824,7 +4824,7 @@ buildModel(testOptdaedump); getErrorString();
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
 // 9: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
-// 10: $cse1:VARIABLE()  type: Real  unreplaceable
+// 10: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // Equations (10, 10)
@@ -4959,7 +4959,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -5095,7 +5095,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -5231,7 +5231,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -5367,7 +5367,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -5504,7 +5504,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -6856,7 +6856,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -6993,7 +6993,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -7130,7 +7130,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -7267,7 +7267,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -7404,7 +7404,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -7541,7 +7541,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -7678,7 +7678,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //
@@ -7815,7 +7815,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: uC:DUMMY_STATE()  type: Real 
 // 7: uL:VARIABLE()  type: Real 
 // 8: u1:VARIABLE()  type: Real 
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 10: $DER.uC:DUMMY_DER(fixed = false )  type: Real 
 //
 //

@@ -258,9 +258,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // index: 2: $res3.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 1: $res2.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 0: $res1.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: $cse3 (no alias)  initial: 	no arrCref index:() [] 
-// index: 1: $cse2 (no alias)  initial: 	no arrCref index:() [] 
-// index: 2: $cse1 (no alias)  initial: 	no arrCref index:() [] 
+// index: 0: $cse3 (no alias)  protected  initial: 	no arrCref index:() [] 
+// index: 1: $cse2 (no alias)  protected  initial: 	no arrCref index:() [] 
+// index: 2: $cse1 (no alias)  protected  initial: 	no arrCref index:() [] 
 // 	simJac:
 //
 //
@@ -326,9 +326,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // index: 2: $res3.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 1: $res2.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
 // index: 0: $res1.$pDERLSJac0.dummyVarLSJac0 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: $cse3 (no alias)  initial: 	no arrCref index:() [] 
-// index: 1: $cse2 (no alias)  initial: 	no arrCref index:() [] 
-// index: 2: $cse1 (no alias)  initial: 	no arrCref index:() [] 
+// index: 0: $cse3 (no alias)  protected  initial: 	no arrCref index:() [] 
+// index: 1: $cse2 (no alias)  protected  initial: 	no arrCref index:() [] 
+// index: 2: $cse1 (no alias)  protected  initial: 	no arrCref index:() [] 
 // 	Jacobian idx: 1
 // 	32: $res1.$pDERLSJac1.dummyVarLSJac1=x2SeedLSJac1 - $cse4 * x3SeedLSJac1 [Real ]
 // 	33: x4.$pDERLSJac1.dummyVarLSJac1=0.25 * (-$cse5) * x2SeedLSJac1 - (-0.5) * x3SeedLSJac1 [Real ]
@@ -380,9 +380,9 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // ========================================
 // algVars (11)
 // ----------------------
-// index: 0: $cse4 (no alias)  initial: 	no arrCref index:(1) [] 
-// index: 1: $cse5 (no alias)  initial: 	no arrCref index:(2) [] 
-// index: 2: $cse6 (no alias)  initial: 	no arrCref index:(3) [] 
+// index: 0: $cse4 (no alias)  protected  initial: 	no arrCref index:(1) [] 
+// index: 1: $cse5 (no alias)  protected  initial: 	no arrCref index:(2) [] 
+// index: 2: $cse6 (no alias)  protected  initial: 	no arrCref index:(3) [] 
 // index: 3: x1 (no alias)  initial: 	no arrCref index:(4) [] 
 // index: 4: x2 (no alias)  initial: 	no arrCref index:(5) [] 
 // index: 5: x3 (no alias)  initial: 	no arrCref index:(6) [] 

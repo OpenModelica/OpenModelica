@@ -44,9 +44,9 @@ simulate(wrapFunctionCalls7); getErrorString();
 // 1: x:VARIABLE()  type: Real 
 // 2: b:VARIABLE()  type: Real 
 // 3: a:VARIABLE()  type: Real 
-// 4: $cse4:VARIABLE()  type: Real  unreplaceable
-// 5: $cse3:VARIABLE()  type: Real  unreplaceable
-// 6: $cse2:VARIABLE()  type: Real  unreplaceable
+// 4: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (5, 6)

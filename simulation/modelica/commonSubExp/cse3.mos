@@ -103,11 +103,11 @@ simulate(testCSE); getErrorString();
 // 2: z:VARIABLE(start = 0.0 )  type: Real 
 // 3: y:VARIABLE(start = 1.0 )  type: Real 
 // 4: x:STATE(1)(start = 0.0 fixed = true )  type: Real 
-// 5: $cse5:VARIABLE()  type: Real  unreplaceable
-// 6: $cse4:VARIABLE()  type: Real  unreplaceable
-// 7: $cse3:VARIABLE()  type: Real  unreplaceable
-// 8: $cse2:VARIABLE()  type: Real  unreplaceable
-// 9: $cse1:VARIABLE()  type: Real  unreplaceable
+// 5: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 7: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 8: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (9, 9)
@@ -145,12 +145,12 @@ simulate(testCSE); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (6)
 // ========================================
-// 1: $cse5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
-// 2: $cse3.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
+// 1: $cse5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(protected = true )  type: Real  unreplaceable
+// 2: $cse3.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 3: $res2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
 // 4: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
-// 5: $cse7:VARIABLE()  type: Real  unreplaceable
-// 6: $cse6:VARIABLE()  type: Real  unreplaceable
+// 5: $cse7:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (6, 6)
@@ -167,13 +167,13 @@ simulate(testCSE); getErrorString();
 // ========================================
 // 1: input ySeedNLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input zSeedNLSJac1:STATE_DER()  type: Real  unreplaceable
-// 3: input $cse4:VARIABLE()  type: Real  unreplaceable
-// 4: input $cse2:VARIABLE()  type: Real  unreplaceable
-// 5: input $cse1:VARIABLE()  type: Real  unreplaceable
+// 3: input $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: input $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 5: input $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 // 6: input $res1:VARIABLE()  type: Real 
 // 7: input $res2:VARIABLE()  type: Real 
-// 8: input $cse3:VARIABLE()  type: Real  unreplaceable
-// 9: input $cse5:VARIABLE()  type: Real  unreplaceable
+// 8: input $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
+// 9: input $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### CSE Replacements (2/46)

@@ -50,8 +50,8 @@ simulate(Tearing15); getErrorString();
 // 2: v2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE(start = 1.0 )  type: Real 
 // 3: $res2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
 // 4: $res1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real  unreplaceable
-// 5: $cse2:VARIABLE()  type: Real  unreplaceable
-// 6: $cse1:VARIABLE()  type: Real  unreplaceable
+// 5: $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
+// 6: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (6, 6)
@@ -90,8 +90,8 @@ simulate(Tearing15); getErrorString();
 // ========================================
 // 1: v5.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE(start = 1.0 )  type: Real 
 // 2: $res1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real  unreplaceable
-// 3: $cse4:VARIABLE()  type: Real  unreplaceable
-// 4: $cse3:VARIABLE()  type: Real  unreplaceable
+// 3: $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
+// 4: $cse3:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (4, 4)
@@ -132,8 +132,8 @@ simulate(Tearing15); getErrorString();
 // 6: v2:VARIABLE(start = 1.0 )  type: Real 
 // 7: v1:VARIABLE(start = 7.0 )  type: Real 
 // 8: source:VARIABLE()  type: Real 
-// 9: $cse6:VARIABLE()  type: Real  unreplaceable
-// 10: $cse5:VARIABLE()  type: Real  unreplaceable
+// 9: $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
+// 10: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (simulation) (10, 10)
@@ -170,10 +170,10 @@ simulate(Tearing15); getErrorString();
 // 6: v2:VARIABLE(start = 1.0 )  type: Real 
 // 7: v1:VARIABLE(start = 7.0 )  type: Real 
 // 8: source:VARIABLE()  type: Real 
-// 9: $cse6:VARIABLE()  type: Real  unreplaceable
-// 10: $cse5:VARIABLE()  type: Real  unreplaceable
-// 11: $cseb17:VARIABLE()  type: Real  unreplaceable
-// 12: $cseb3:VARIABLE()  type: Real  unreplaceable
+// 9: $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
+// 10: $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
+// 11: $cseb17:VARIABLE(protected = true )  type: Real  unreplaceable
+// 12: $cseb3:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List ########### (12, 12)
@@ -200,9 +200,9 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Variable List (jacobian) (3)
 // ========================================
-// 1: $cse5.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real  unreplaceable
+// 1: $cse5.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE(protected = true )  type: Real  unreplaceable
 // 2: $res1.$pDERNLSJac3.dummyVarNLSJac3:VARIABLE()  type: Real  unreplaceable
-// 3: $cse7:VARIABLE()  type: Real  unreplaceable
+// 3: $cse7:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (3, 3)
@@ -215,9 +215,9 @@ simulate(Tearing15); getErrorString();
 // ########### Updated globalKnownVars (jacobian) (4)
 // ========================================
 // 1: input v1SeedNLSJac3:STATE_DER()  type: Real  unreplaceable
-// 2: input $cseb3:VARIABLE()  type: Real  unreplaceable
+// 2: input $cseb3:VARIABLE(protected = true )  type: Real  unreplaceable
 // 3: input $res1:VARIABLE()  type: Real 
-// 4: input $cse5:VARIABLE()  type: Real  unreplaceable
+// 4: input $cse5:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### CSE Replacements (1/44)
@@ -233,9 +233,9 @@ simulate(Tearing15); getErrorString();
 // ########### Updated Variable List (jacobian) (4)
 // ========================================
 // 1: v5.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(start = 1.0 )  type: Real 
-// 2: $cse6.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real  unreplaceable
+// 2: $cse6.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE(protected = true )  type: Real  unreplaceable
 // 3: $res1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real  unreplaceable
-// 4: $cse8:VARIABLE()  type: Real  unreplaceable
+// 4: $cse8:VARIABLE(protected = true )  type: Real  unreplaceable
 //
 //
 // ########### Updated Equation List (jacobian) (4, 4)
@@ -252,7 +252,7 @@ simulate(Tearing15); getErrorString();
 // 2: input v3:VARIABLE(start = 1.0 )  type: Real 
 // 3: input source:VARIABLE()  type: Real 
 // 4: input $res1:VARIABLE()  type: Real 
-// 5: input $cse6:VARIABLE()  type: Real  unreplaceable
+// 5: input $cse6:VARIABLE(protected = true )  type: Real  unreplaceable
 // 6: input v5:VARIABLE(start = 1.0 )  type: Real 
 //
 //
