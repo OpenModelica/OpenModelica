@@ -1544,12 +1544,12 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
       source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, source, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
     else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
 end createCSEVar;
@@ -1624,12 +1624,12 @@ algorithm
       DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)) = inType;
       source = DAE.SOURCE(Absyn.dummyInfo, {}, Prefix.NOCOMPPRE(), {}, {path}, {}, {});
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, source, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
 
     else equation
       varKind = if Types.isDiscreteType(inType) then BackendDAE.DISCRETE() else BackendDAE.VARIABLE();
-      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), inArryDim, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
 end createCSEArrayVar;
