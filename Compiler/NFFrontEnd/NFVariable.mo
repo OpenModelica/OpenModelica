@@ -68,7 +68,7 @@ public
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
-    ty := ComponentRef.getType(cref);
+    ty := ComponentRef.getSubscriptedType(cref);
     binding := Component.getBinding(comp);
     vis := InstNode.visibility(node);
     attr := Component.getAttributes(comp);

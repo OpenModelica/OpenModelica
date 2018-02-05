@@ -1380,12 +1380,19 @@ function matchDimensions
   input Dimension dim2;
   input Boolean allowUnknown;
   output Dimension compatibleDim;
-  output Boolean compatible = true;
+  output Boolean compatible;
+protected
+  Boolean known1, known2;
 algorithm
-  if Dimension.isEqualKnown(dim1, dim2) then
+  known1 := Dimension.isKnown(dim1);
+  known2 := Dimension.isKnown(dim2);
+
+  if known1 and known2 then
     compatibleDim := dim1;
+    compatible := Dimension.isEqual(dim1, dim2);
   elseif allowUnknown then
-    compatibleDim := if Dimension.isKnown(dim1) then dim1 else dim2;
+    compatibleDim := if known1 then dim1 else dim2;
+    compatible := true;
   else
     compatibleDim := dim1;
     compatible := false;
@@ -1673,7 +1680,7 @@ algorithm
           parent := component;
 
           for i in 1:InstNode.level(component) - binding_level loop
-            parent := InstNode.parent(component);
+            parent := InstNode.parent(parent);
             dims := Type.arrayDims(InstNode.getType(parent));
             comp_ty := Type.liftArrayLeftList(comp_ty, dims);
           end for;

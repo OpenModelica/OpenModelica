@@ -2081,13 +2081,15 @@ public
     input output list<list<list<Subscript>>> subs = {};
   protected
     list<list<Subscript>> cr_subs = {};
+    list<Dimension> dims;
+
+    import NFComponentRef.Origin;
   algorithm
     subs := match cref
-      case ComponentRef.CREF()
+      case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
-          for dim in listReverse(Type.arrayDims(cref.ty)) loop
-            cr_subs := RangeIterator.map(RangeIterator.fromDim(dim), Subscript.makeIndex) :: cr_subs;
-          end for;
+          dims := Type.arrayDims(cref.ty);
+          cr_subs := Subscript.expandList(cref.subscripts, dims);
         then
           expandCref2(cref.restCref, cr_subs :: subs);
 
@@ -2103,7 +2105,7 @@ public
     output Expression arrayExp;
   algorithm
     arrayExp := match subs
-      case {} then CREF(crefType, ComponentRef.fillSubscripts(accum, cref));
+      case {} then CREF(crefType, ComponentRef.setSubscriptsList(accum, cref));
       else expandCref4(listHead(subs), {}, accum, listRest(subs), cref, crefType);
     end match;
   end expandCref3;
@@ -2555,7 +2557,7 @@ public
     input ComponentRef cref;
     output Expression exp;
   algorithm
-    exp := Expression.CREF(ComponentRef.getType(cref), cref);
+    exp := Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
   end fromCref;
 
   function toCref

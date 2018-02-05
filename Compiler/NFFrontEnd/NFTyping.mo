@@ -1326,7 +1326,8 @@ algorithm
     fail();
   end if;
 
-  (cref, ty) := typeCref2(cref, origin, info);
+  cref := typeCref2(cref, origin, info);
+  ty := ComponentRef.getSubscriptedType(cref);
   variability := ComponentRef.getVariability(cref);
 end typeCref;
 
@@ -1334,44 +1335,27 @@ function typeCref2
   input output ComponentRef cref;
   input ExpOrigin.Type origin;
   input SourceInfo info;
-        output Type ty;
 
   import NFComponentRef.Origin;
 algorithm
-  (cref, ty) := match cref
+  cref := match cref
     local
       ComponentRef rest_cr;
-      Type node_ty, cref_ty;
+      Type node_ty;
       list<Subscript> subs;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
-      then (cref, Type.UNKNOWN());
+      then cref;
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
         node_ty := typeComponent(cref.node, origin);
         subs := typeSubscripts(cref.subscripts, node_ty, cref, origin, info);
-        cref_ty := Type.subscript(node_ty, subs);
-        (rest_cr, ty) := typeCref2(cref.restCref, origin, info);
-        ty := Type.liftArrayLeftList(cref_ty, Type.arrayDims(ty));
+        rest_cr := typeCref2(cref.restCref, origin, info);
       then
-        (ComponentRef.CREF(cref.node, subs, cref_ty, cref.origin, rest_cr), ty);
+        ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr);
 
-    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
-      then (cref, Type.UNKNOWN());
-
-    case ComponentRef.EMPTY()
-      then (cref, Type.UNKNOWN());
-
-    case ComponentRef.WILD()
-      then (cref, Type.ANY());
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got unknown cref", sourceInfo());
-      then
-        fail();
-
+    else cref;
   end match;
 end typeCref2;
 
@@ -1537,6 +1521,12 @@ algorithm
   else
     ostep_exp := NONE();
     ostep_ty := NONE();
+  end if;
+
+  if variability <= Variability.PARAMETER then
+    start_exp := SimplifyExp.simplifyExp(Ceval.evalExp(start_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
+    ostep_exp := SimplifyExp.simplifyExpOpt(Ceval.evalExpOpt(ostep_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
+    stop_exp := SimplifyExp.simplifyExp(Ceval.evalExp(stop_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
   end if;
 
   rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);

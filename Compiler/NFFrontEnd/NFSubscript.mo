@@ -36,10 +36,13 @@ protected
   import DAE;
   import List;
   import SimplifyExp = NFSimplifyExp;
+  import Type = NFType;
+  import RangeIterator = NFRangeIterator;
 
 public
   import Expression = NFExpression;
   import Absyn;
+  import Dimension = NFDimension;
 
   record RAW_SUBSCRIPT
     Absyn.Subscript subscript;
@@ -65,6 +68,8 @@ public
   algorithm
     subscript := match exp
       case Expression.INTEGER() then INDEX(exp);
+      case Expression.BOOLEAN() then INDEX(exp);
+      case Expression.ENUM_LITERAL() then INDEX(exp);
       else UNTYPED(exp);
     end match;
   end fromExp;
@@ -264,6 +269,52 @@ public
       else ();
     end match;
   end simplify;
+
+  function toDimension
+    "Returns a dimension representing the size of the given subscript."
+    input Subscript subscript;
+    output Dimension dimension;
+  algorithm
+    dimension := match subscript
+      case INDEX() then Dimension.INTEGER(1);
+      case SLICE() then listHead(Type.arrayDims(Expression.typeOf(subscript.slice)));
+      case WHOLE() then Dimension.UNKNOWN();
+    end match;
+  end toDimension;
+
+  function expand
+    input Subscript subscript;
+    input Dimension dimension;
+    output list<Subscript> subscripts;
+  algorithm
+    subscripts := match subscript
+      case INDEX() then {subscript};
+      case SLICE()
+        then list(INDEX(e) for e in Expression.arrayElements(Expression.expand(subscript.slice)));
+      case WHOLE()
+        then RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex);
+    end match;
+  end expand;
+
+  function expandList
+    input list<Subscript> subscripts;
+    input list<Dimension> dimensions;
+    output list<list<Subscript>> outSubscripts = {};
+  protected
+    Dimension dim;
+    list<Dimension> rest_dims = dimensions;
+  algorithm
+    for s in subscripts loop
+      dim :: rest_dims := rest_dims;
+      outSubscripts := expand(s, dim) :: outSubscripts;
+    end for;
+
+    for d in rest_dims loop
+      outSubscripts := RangeIterator.map(RangeIterator.fromDim(d), makeIndex) :: outSubscripts;
+    end for;
+
+    outSubscripts := listReverse(outSubscripts);
+  end expandList;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

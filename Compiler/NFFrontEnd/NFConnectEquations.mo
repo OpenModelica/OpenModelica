@@ -198,7 +198,7 @@ algorithm
   source := ElementSource.mergeSources(lhsSource, rhsSource);
   //source := ElementSource.addElementSourceConnect(source, (lhsCref, rhsCref));
 
-  ty := ComponentRef.getType(lhsCref);
+  ty := ComponentRef.getComponentType(lhsCref);
   lhs_exp := Expression.fromCref(lhsCref);
   rhs_exp := Expression.fromCref(rhsCref);
 

@@ -511,14 +511,34 @@ public
   end toDAE;
 
   function subscript
+    "Reduces a type's dimensions based on the given list of subscripts."
     input output Type ty;
     input list<Subscript> subs;
+  protected
+    Dimension dim;
+    list<Dimension> dims, subbed_dims = {};
   algorithm
+    if listEmpty(subs) then
+      return;
+    end if;
+
+    dims := arrayDims(ty);
+
     for sub in subs loop
-      if Subscript.isIndex(sub) then
-        ty := unliftArray(ty);
-      end if;
+      dim :: dims := dims;
+
+      subbed_dims := match sub
+        case Subscript.INDEX() then subbed_dims;
+        case Subscript.SLICE() then Subscript.toDimension(sub) :: subbed_dims;
+        case Subscript.WHOLE() then dim :: subbed_dims;
+      end match;
     end for;
+
+    ty := arrayElementType(ty);
+
+    if not (listEmpty(subbed_dims) and listEmpty(dims)) then
+      ty := ARRAY(ty, listAppend(listReverse(subbed_dims), dims));
+    end if;
   end subscript;
 
   function isEqual

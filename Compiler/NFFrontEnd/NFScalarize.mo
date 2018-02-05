@@ -65,7 +65,8 @@ algorithm
   end for;
 
   for eq in flatModel.equations loop
-    eql := scalarizeEquation(eq, eql); end for;
+    eql := scalarizeEquation(eq, eql);
+  end for;
 
   for eq in flatModel.initialEquations loop
     ieql := scalarizeEquation(eq, ieql);

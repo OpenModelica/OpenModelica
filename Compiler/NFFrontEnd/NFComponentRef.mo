@@ -44,6 +44,7 @@ protected
   import NFPrefixes.Variability;
   import System;
   import NFClass.Class;
+  import List;
 
   import ComponentRef = NFComponentRef;
 
@@ -57,7 +58,7 @@ public
   record CREF
     InstNode node;
     list<Subscript> subscripts;
-    Type ty;
+    Type ty "The type of the node, without taking subscripts into account.";
     Origin origin;
     ComponentRef restCref;
   end CREF;
@@ -199,7 +200,9 @@ public
     end match;
   end append;
 
-  function getType
+  function getComponentType
+    "Returns the type of the component the given cref refers to, without taking
+     subscripts into account."
     input ComponentRef cref;
     output Type ty;
   algorithm
@@ -207,20 +210,37 @@ public
       case CREF() then cref.ty;
       else Type.UNKNOWN();
     end match;
-  end getType;
+  end getComponentType;
 
-  function setType
-    input Type ty;
-    input output ComponentRef cref;
+  function getSubscriptedType
+    "Returns the type of a cref, with the subscripts taken into account."
+    input ComponentRef cref;
+    output Type ty;
   algorithm
-    () := match cref
+    ty := match cref
       case CREF()
-        algorithm
-          cref.ty := ty;
-        then
-          ();
+        then getSubscriptedType2(cref.restCref, Type.subscript(cref.ty, cref.subscripts));
+      case EMPTY() then Type.UNKNOWN();
+      case WILD() then Type.ANY();
     end match;
-  end setType;
+  end getSubscriptedType;
+
+  function getSubscriptedType2
+    input ComponentRef restCref;
+    input Type accumTy;
+    output Type ty;
+  algorithm
+    ty := match restCref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          ty := Type.liftArrayLeftList(accumTy,
+            Type.arrayDims(Type.subscript(restCref.ty, restCref.subscripts)));
+        then
+          getSubscriptedType2(restCref.restCref, ty);
+
+      else accumTy;
+    end match;
+  end getSubscriptedType2;
 
   function getVariability
     input ComponentRef cref;
@@ -243,12 +263,22 @@ public
     end match;
   end addSubscript;
 
-  function fillSubscripts
-    "This function takes a list of subscript lists and a cref, and adds the
-     first subscript list to the first part of the cref, the second list to the
-     second part, and so on. This function is meant to be used to fill in all
-     subscripts in a cref such that it becomes a scalar, so the type of each
-     cref part is set to the array element type for that part."
+  function setSubscripts
+    "Sets the subscripts of the first part of a cref."
+    input list<Subscript> subscripts;
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case CREF()
+        algorithm
+          cref.subscripts := subscripts;
+        then
+          ();
+    end match;
+  end setSubscripts;
+
+  function setSubscriptsList
+    "Sets the subscripts of each part of a cref to the corresponding list of subscripts."
     input list<list<Subscript>> subscripts;
     input output ComponentRef cref;
   algorithm
@@ -260,37 +290,13 @@ public
 
       case (subs :: rest_subs, CREF())
         algorithm
-          rest_cref := fillSubscripts(rest_subs, cref.restCref);
+          rest_cref := setSubscriptsList(rest_subs, cref.restCref);
         then
-          CREF(cref.node, listAppend(cref.subscripts, subs),
-            Type.arrayElementType(cref.ty), cref.origin, rest_cref);
+          CREF(cref.node, subs, Type.arrayElementType(cref.ty), cref.origin, rest_cref);
 
       case ({}, _) then cref;
     end match;
-  end fillSubscripts;
-
-  function setSubscripts
-    input list<Subscript> subscripts;
-    input output ComponentRef cref;
-  algorithm
-    cref := match cref
-      case CREF()
-        then CREF(cref.node, subscripts, Type.arrayElementType(cref.ty), cref.origin, cref.restCref);
-    end match;
-  end setSubscripts;
-
-  function replaceSubscripts
-    input list<Subscript> subscripts;
-    input output ComponentRef cref;
-  algorithm
-    () := match cref
-      case CREF()
-        algorithm
-          cref.subscripts := subscripts;
-        then
-          ();
-    end match;
-  end replaceSubscripts;
+  end setSubscriptsList;
 
   function subscriptsAll
     "Returns all subscripts of a cref in reverse order.
@@ -322,6 +328,8 @@ public
   end subscriptsN;
 
   function transferSubscripts
+    "Copies subscripts from one cref to another, overwriting any subscripts on
+     the destination cref."
     input ComponentRef srcCref;
     input ComponentRef dstCref;
     output ComponentRef cref;
@@ -341,7 +349,7 @@ public
         algorithm
           cref := transferSubscripts(srcCref.restCref, dstCref.restCref);
         then
-          CREF(dstCref.node, srcCref.subscripts, srcCref.ty, dstCref.origin, cref);
+          CREF(dstCref.node, srcCref.subscripts, dstCref.ty, dstCref.origin, cref);
 
       else
         algorithm
@@ -497,34 +505,15 @@ public
     crefs := match cref
       local
         list<Dimension> dims;
-        RangeIterator iter;
-        Expression exp;
         list<list<Subscript>> subs;
-        list<list<Subscript>> new_subs;
-        Subscript sub;
-        ComponentRef scalar_cref;
 
       case CREF()
         algorithm
           dims := Type.arrayDims(cref.ty);
-          subs := {cref.subscripts};
-
-          for dim in listReverse(dims) loop
-            iter := RangeIterator.fromDim(dim);
-            new_subs := {};
-
-            while RangeIterator.hasNext(iter) loop
-              (iter, exp) := RangeIterator.next(iter);
-              sub := Subscript.INDEX(exp);
-              new_subs := listAppend(list(sub :: s for s in subs), new_subs);
-            end while;
-
-            subs := new_subs;
-          end for;
-
-          scalar_cref := setType(Type.arrayElementType(cref.ty), cref);
+          subs := Subscript.expandList(cref.subscripts, dims);
+          subs := List.combination(subs);
         then
-          listReverse(replaceSubscripts(s, scalar_cref) for s in subs);
+          list(setSubscripts(s, cref) for s in subs);
 
       else {cref};
     end match;
