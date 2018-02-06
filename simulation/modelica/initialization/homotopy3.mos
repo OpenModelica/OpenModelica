@@ -37,7 +37,7 @@ end initializationTests;
 "); getErrorString();
 
 setCommandLineOptions("--homotopyApproach=adaptiveLocal"); getErrorString();
-simulate(initializationTests.homotopy3, startTime=0.0, stopTime=0.0); getErrorString();
+simulate(initializationTests.homotopy3, startTime=0.0, stopTime=0.0, simflags="-homotopyOnFirstTry"); getErrorString();
 res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy3_res.mat", {time, x}, 2); getErrorString();
 
 // Result:
@@ -47,7 +47,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
