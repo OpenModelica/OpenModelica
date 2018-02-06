@@ -809,11 +809,9 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonData;
 
-
     /* try to solve the system if it is the strict set, only try to solve the casual set if the constraints are satisfied */
     if ((!casualTearingSet) || constraintsSatisfied)
       success = solveHomotopy(data, threadData, sysNumber);
-
 
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (!success && casualTearingSet){
@@ -855,6 +853,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   int step;
   int equidistantHomotopy = 0;
   int solveWithHomotopySolver = 0;
+  int homotopyDeactivated = 0;
   int j;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
@@ -905,10 +904,34 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
                             && nonlinsys->homotopySupport
                             && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3);
 
+  homotopyDeactivated = !data->simulationInfo->initial           // Not an initialization system
+                        || !nonlinsys->homotopySupport           // There is no homotopy in this component
+                        || (data->callback->useHomotopy == 1)    // Equidistant homotopy is performed globally in symbolic_initialization()
+                        || (data->callback->useHomotopy == 0     // Equidistant local homotopy is selected but homotopy is deactivated ...
+                            && init_lambda_steps <= 1);          // ... by the number of steps
+
   nonlinsys->solved = 0;
-  /* If the adaptive local/global homotopy approach is activated and the component contains the homotopy operator
-     use the HOMOTOPY SOLVER, otherwise use the selected solver */
-  if (solveWithHomotopySolver) {
+  nonlinsys->initHomotopy = 0;
+
+  /* If homotopy is deactivated in this place or flag homotopyOnFirstTry is not set,
+     solve the system with the selected solver */
+  if (homotopyDeactivated || !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
+    if (!homotopyDeactivated && !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+      infoStreamPrint(LOG_INIT, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
+
+    data->simulationInfo->lambda = 1.0;
+    /* SOLVE! */
+    nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+  }
+
+  /* The following cases are only valid for initial systems with homotopy */
+  /* **********************************************************************/
+
+  /* If the adaptive local/global homotopy approach is activated and trying without homotopy failed or is not wanted,
+     use the HOMOTOPY SOLVER */
+  if (solveWithHomotopySolver && !nonlinsys->solved) {
+    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method.", sysNumber);
     data->simulationInfo->lambda = 0.0;
     if (data->callback->useHomotopy == 3) {
       // First solve the lambda0-system separately
@@ -931,6 +954,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
         solverData = nonlinsys->solverData;
         nonlinsys->solverData = solverData->initHomotopyData;
       }
+      nonlinsys->initHomotopy = 1;
       nonlinsys->solved = solveHomotopy(data, threadData, sysNumber);
       if (data->simulationInfo->nlsMethod == NLS_MIXED) {
         nonlinsys->solverData = mixedSolverData;
@@ -939,22 +963,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       }
     }
   }
-  else {
-    if (!(equidistantHomotopy && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])) {
-      if (equidistantHomotopy)
-        infoStreamPrint(LOG_INIT, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
-
-      data->simulationInfo->lambda = 1.0;
-      /* SOLVE! */
-      nonlinsys->solved = solveNLS(data, threadData, sysNumber);
-    }
-  }
 
   /* If equidistant local homotopy is activated and trying without homotopy failed or is not wanted,
      use EQUIDISTANT LOCAL HOMOTOPY */
-  if (!nonlinsys->solved && equidistantHomotopy) {
+  if (equidistantHomotopy && !nonlinsys->solved) {
     if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
-      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
+      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method. The local homotopy method with equidistant step size is used now.", sysNumber);
     else
       infoStreamPrint(LOG_INIT, 0, "Local homotopy with equidistant step size started for nonlinear system %d.", sysNumber);
 #if !defined(OMC_NO_FILESYSTEM)

@@ -2106,13 +2106,12 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
   int pos;
   int rank;
   int tries = 0;
-  /* Modelica homotopy operator could be used!! */
   int runHomotopy = 0;
   int skipNewton = 0;
   int numberOfFunctionEvaluationsOld = solverData->numberOfFunctionEvaluations;
   solverData->casualTearingSet = systemData->strictTearingFunctionCall != NULL;
   int constraintViolated;
-  solverData->initHomotopy = (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3) && systemData->homotopySupport;
+  solverData->initHomotopy = systemData->initHomotopy;
 
   modelica_boolean* relationsPreBackup;
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));

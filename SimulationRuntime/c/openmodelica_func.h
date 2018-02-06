@@ -150,7 +150,7 @@ int (*functionInitialEquations)(DATA *data, threadData_t*);
  * 2: new global homotopy approach (adaptive lambda steps)
  * 3: new local homotopy approach (adaptive lambda steps)
  */
-const int useHomotopy;
+int useHomotopy;
 
 /*! \fn functionInitialEquations_lambda0
  *

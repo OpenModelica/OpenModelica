@@ -187,6 +187,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   MODEL_DATA *mData = data->modelData;
   int homotopySupport = 0;
   int solveWithGlobalHomotopy;
+  int adaptiveGlobal;
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   for(i=0; i<mData->nNonLinearSystems; i++) {
@@ -196,7 +197,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
   }
 #endif
-  solveWithGlobalHomotopy = homotopySupport && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || data->callback->useHomotopy == 2);
+  adaptiveGlobal = data->callback->useHomotopy == 2;
+  solveWithGlobalHomotopy = homotopySupport
+                            && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || adaptiveGlobal);
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -210,21 +213,21 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
      or homotopy is disabled by runtime flag '-ils=<lambda_steps>',
      solve WITHOUT HOMOTOPY or LOCAL HOMOTOPY. */
   if (!solveWithGlobalHomotopy){
-    if (data->callback->useHomotopy == 3 && !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
-      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive local approach yet.");
     data->simulationInfo->lambda = 1.0;
     data->callback->functionInitialEquations(data, threadData);
 
   /* If there is homotopy in the model and global homotopy is activated
      and homotopy on first try is deactivated,
      TRY TO SOLVE WITHOUT HOMOTOPY FIRST.
-     To-Do: Activate trying without homotopy first also for the adaptive global homotopy approach */
-  } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] && data->callback->useHomotopy != 2) {
+     TO-DO: For the adaptive global approach, provide a separate DAE with
+     the original unmanipulated systems for trying without homotopy */
+  } else if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
     /* try */
 #ifndef OMC_EMCC
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-
+    if (adaptiveGlobal)
+      data->callback->useHomotopy = 1;
     data->simulationInfo->lambda = 1.0;
     infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
     data->callback->functionInitialEquations(data, threadData);
@@ -234,17 +237,21 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+    if (adaptiveGlobal)
+      data->callback->useHomotopy = 2;
     if(solveWithGlobalHomotopy)
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
   }
 
-  /* If there is homotopy in the model and global homotopy is activated
+  /* If there is homotopy in the model and the equidistant global homotopy approach is activated
      and solving without homotopy failed or is not wanted,
      use EQUIDISTANT GLOBAL HOMOTOPY METHOD. */
   if (data->callback->useHomotopy == 1 && solveWithGlobalHomotopy)
   {
     long step;
     char buffer[4096];
+
+    infoStreamPrint(LOG_INIT, 0, "Global homotopy with equidistant step size started.");
 
 #if !defined(OMC_NO_FILESYSTEM)
     const char sep[] = ",";
@@ -260,7 +267,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
 #endif
 
-    infoStreamPrint(LOG_INIT, 0, "Global homotopy with equidistant step size started.");
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
     for(step=0; step<init_lambda_steps; ++step)
     {
@@ -302,9 +308,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
      use ADAPTIVE GLOBAL HOMOTOPY APPROACH. */
   if (data->callback->useHomotopy == 2 && solveWithGlobalHomotopy)
   {
-    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
-      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach yet.");
-
     infoStreamPrint(LOG_INIT, 0, "Global homotopy with adaptive step size started.");
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
 
