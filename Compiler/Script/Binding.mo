@@ -117,6 +117,9 @@ algorithm
      for d in design_alts loop
 
         ag_elems := populateModel(s::d::reqs, 0 , {});
+        ag_elems := Absyn.ELEMENTITEM(Absyn.ELEMENT(false, NONE(), Absyn.NOT_INNER_OUTER(),
+        Absyn.EXTENDS(Absyn.QUALIFIED("VVDRlib",Absyn.QUALIFIED("Verification",Absyn.IDENT("VerificationModel"))), {},  NONE()),
+        Absyn.dummyInfo, NONE()))::ag_elems;
         autogen_class := Absyn.CLASS("verif_model_autogen_" + intString(i),
           false, false, false, Absyn.R_MODEL(),
           Absyn.PARTS({}, {}, {Absyn.PUBLIC(ag_elems)},{},
