@@ -257,7 +257,7 @@ namespace IAEX
    * \brief Adds a rule to the cell
    *
    *
-   * 2006-02-03 AF, check and see if rule already existes, if it dose
+   * 2006-02-03 AF, check and see if rule already existes, if it does
    * only replace the value
    * 2006-02-09 AF, ignore some types of rules
    *

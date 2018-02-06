@@ -162,6 +162,7 @@ private slots:
 
   void createNewCell();
   void deleteCurrentCell();
+  void deleteCurrentCellAsk();
   void cutCell();
   void copyCell();
   void pasteCell();

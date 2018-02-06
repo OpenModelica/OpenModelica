@@ -748,7 +748,7 @@ void NotebookWindow::createCellMenu()
   deleteCellAction = new QAction( tr("&Delete Cell"), this);
   deleteCellAction->setShortcut( QKeySequence("Ctrl+Shift+D") );
   deleteCellAction->setStatusTip( tr("Delete selected cell") );
-  connect(deleteCellAction, SIGNAL(triggered()), this, SLOT(deleteCurrentCell()));
+  connect(deleteCellAction, SIGNAL(triggered()), this, SLOT(deleteCurrentCellAsk()));
 
   nextCellAction = new QAction( tr("&Next Cell"), this);
   nextCellAction->setStatusTip( tr("Move to next cell") );
@@ -3751,6 +3751,15 @@ void NotebookWindow::deleteCurrentCell()
 {
   subject_->cursorDeleteCell();
   updateChapterCounters();
+}
+
+void NotebookWindow::deleteCurrentCellAsk()
+{
+  if (QMessageBox::warning( 0, "Delete Cell", tr("Delete current cell?\nThis action cannot be undone!"), QMessageBox::Ok|QMessageBox::Default,QMessageBox::Cancel ) == QMessageBox::Ok)
+  {
+    subject_->cursorDeleteCell();
+    updateChapterCounters();
+  }
 }
 
 /*!

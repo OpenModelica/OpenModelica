@@ -22,24 +22,24 @@
 <context>
     <name>IAEX::CellApplication</name>
     <message>
-        <location filename="../../cellapplication.cpp" line="123"/>
-        <location filename="../../cellapplication.cpp" line="195"/>
-        <location filename="../../cellapplication.cpp" line="215"/>
+        <location filename="../../cellapplication.cpp" line="121"/>
+        <location filename="../../cellapplication.cpp" line="197"/>
+        <location filename="../../cellapplication.cpp" line="217"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="../../cellapplication.cpp" line="123"/>
+        <location filename="../../cellapplication.cpp" line="121"/>
         <source>OPENMODELICAHOME not set</source>
         <translation>OPENMODELICAHOME nicht gesetzt</translation>
     </message>
     <message>
-        <location filename="../../cellapplication.cpp" line="159"/>
+        <location filename="../../cellapplication.cpp" line="162"/>
         <source>The environment variable OPENMODELICAHOME=%1 is not a valid directory</source>
         <translation>Die Umgebungsvariable OPENMODELICAHOME=%1 zeigt nicht auf ein gültiges Verzeichnis</translation>
     </message>
     <message>
-        <location filename="../../cellapplication.cpp" line="177"/>
+        <location filename="../../cellapplication.cpp" line="179"/>
         <source>Could not create or cd to temp-dir
 Command:
   %1
@@ -52,12 +52,12 @@ Rückgabe:
   %2</translation>
     </message>
     <message>
-        <location filename="../../cellapplication.cpp" line="314"/>
+        <location filename="../../cellapplication.cpp" line="316"/>
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
     <message>
-        <location filename="../../cellapplication.cpp" line="314"/>
+        <location filename="../../cellapplication.cpp" line="316"/>
         <source>Could not remove temporary image %1 from harddrive.</source>
         <translation>Konnte temporäre Bilddatei %1 nicht löschen.</translation>
     </message>
@@ -78,33 +78,33 @@ Rückgabe:
         <translation>Neue Simulationsdaten verfügbar</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="915"/>
+        <location filename="../../graphcell.cpp" line="913"/>
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="915"/>
+        <location filename="../../graphcell.cpp" line="913"/>
         <source>No Output style defined, please define an Output style in stylesheet.xml</source>
         <translation>Kein Output style definiert, bitte definieren Sie ein Output style in der Datei stylesheet.xml</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1739"/>
+        <location filename="../../graphcell.cpp" line="1708"/>
         <source>Ready</source>
         <translation>Bereit</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1742"/>
+        <location filename="../../graphcell.cpp" line="1711"/>
         <source>Evaluating...</source>
         <translation>Ausführen...</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1745"/>
+        <location filename="../../graphcell.cpp" line="1714"/>
         <source>Done</source>
         <translation>Fertig</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1541"/>
-        <location filename="../../graphcell.cpp" line="1748"/>
+        <location filename="../../graphcell.cpp" line="1539"/>
+        <location filename="../../graphcell.cpp" line="1717"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
@@ -660,15 +660,15 @@ The script generates more than 1 page.</source>
         <location filename="../../notebook.cpp" line="3304"/>
         <location filename="../../notebook.cpp" line="3318"/>
         <location filename="../../notebook.cpp" line="3686"/>
-        <location filename="../../notebook.cpp" line="3837"/>
-        <location filename="../../notebook.cpp" line="3979"/>
-        <location filename="../../notebook.cpp" line="3994"/>
+        <location filename="../../notebook.cpp" line="3846"/>
+        <location filename="../../notebook.cpp" line="3985"/>
         <location filename="../../notebook.cpp" line="4000"/>
-        <location filename="../../notebook.cpp" line="4077"/>
-        <location filename="../../notebook.cpp" line="4082"/>
-        <location filename="../../notebook.cpp" line="4101"/>
+        <location filename="../../notebook.cpp" line="4006"/>
+        <location filename="../../notebook.cpp" line="4083"/>
+        <location filename="../../notebook.cpp" line="4088"/>
         <location filename="../../notebook.cpp" line="4107"/>
-        <location filename="../../notebook.cpp" line="4188"/>
+        <location filename="../../notebook.cpp" line="4113"/>
+        <location filename="../../notebook.cpp" line="4194"/>
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
@@ -772,33 +772,40 @@ The script generates more than 1 page.</source>
         <translation>Das Dokument %1 wurde als Reintext unter %2 exportiert.</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="3793"/>
+        <location filename="../../notebook.cpp" line="3758"/>
+        <source>Delete current cell?
+This action cannot be undone!</source>
+        <translation>Aktuelle Zelle löschen?
+Diese Aktion kann nicht rückgängig gemacht werden!</translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="3802"/>
         <source>Ungroup can only be done on one cell at the time. Please select only one cell</source>
         <translation>Gruppierung Aufheben kann nur auf einzelne Zellen angewandt werden. Wählen Sie bitte nur eine Zelle aus</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="3838"/>
+        <location filename="../../notebook.cpp" line="3847"/>
         <source>A textcell, latexcell or inputcell must first be added, before a groupcell can be done</source>
         <translation>Es muss eine Textzelle, LaTeXzelle oder Eingabezelle eingefügt werden, bevor eine Gruppierung vorgenommen werden kann</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="3978"/>
+        <location filename="../../notebook.cpp" line="3984"/>
         <source>This functionality works only on the selected cells. Put the cursor to a position where you want to shift and then select cells you like to move and press this button.</source>
         <translation>Diese Funktion geht nur mit angewählten Zellen. Setzen Sie den Cursor dahin, wohin Sie Zellen verschieben wollen, wählen dann die Zellen aus, die verschoben werden sollen und drücken diesen Knopf.</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="4000"/>
-        <location filename="../../notebook.cpp" line="4107"/>
+        <location filename="../../notebook.cpp" line="4006"/>
+        <location filename="../../notebook.cpp" line="4113"/>
         <source>Cannot move closed cells.</source>
         <translation>Geschlossene Zellen können nicht verschoben werden.</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="4082"/>
+        <location filename="../../notebook.cpp" line="4088"/>
         <source>This functionality does not work on selected cells. Click on the cell to move up, and press this action.</source>
         <translation>Diese Funktion geht nicht mit angewählten Zellen. Klicken Sie in die Zelle, die aufwärts verschoben werden soll und drücken Sie erneut.</translation>
     </message>
     <message>
-        <location filename="../../notebook.cpp" line="4188"/>
+        <location filename="../../notebook.cpp" line="4194"/>
         <source>This functionality does not work on selected cells. Click on the cell to move down, and press this action</source>
         <translation>Diese Funktion geht nicht mit angewählten Zellen. Klicken Sie in die Zelle, die abwärts verschoben werden soll und drücken Sie erneut</translation>
     </message>
@@ -1374,12 +1381,12 @@ The script generates more than 1 page.</source>
         <translation>Keine Zellen in der Zwischenablage. Um eine Zelle einzufügen, wählen Sie Zellen aus und kopieren Sie sie.</translation>
     </message>
     <message>
-        <location filename="../../omcinteractiveenvironment.cpp" line="234"/>
+        <location filename="../../omcinteractiveenvironment.cpp" line="231"/>
         <source>OMC Error</source>
         <translation>OMC Fehler</translation>
     </message>
     <message>
-        <location filename="../../omcinteractiveenvironment.cpp" line="234"/>
+        <location filename="../../omcinteractiveenvironment.cpp" line="231"/>
         <source>Unable to get OMC version, OMC is not started.</source>
         <translation>Kann OMC Version nicht auslesen, OMC ist nicht gestartet.</translation>
     </message>
