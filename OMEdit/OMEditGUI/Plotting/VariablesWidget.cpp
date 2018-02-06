@@ -1551,13 +1551,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               if (xUnit.isEmpty()) {
                 pPlotWindow->setXLabel(xVariable);
               } else {
-                pPlotWindow->setXLabel(xVariable + " [" + xUnit + "]");
+                pPlotWindow->setXLabel(xVariable + " (" + xUnit + ")");
               }
 
               if (yUnit.isEmpty()) {
                 pPlotWindow->setYLabel(yVariable);
               } else {
-                pPlotWindow->setYLabel(yVariable + " [" + yUnit + "]");
+                pPlotWindow->setYLabel(yVariable + " (" + yUnit + ")");
               }
             }
             if (pPlotWindow->getAutoScaleButton()->isChecked()) {
@@ -1620,13 +1620,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                   if (xUnit.isEmpty()) {
                     pPlotWindow->setXLabel(xVariable);
                   } else {
-                    pPlotWindow->setXLabel(xVariable + " [" + xUnit + "]");
+                    pPlotWindow->setXLabel(xVariable + " (" + xUnit + ")");
                   }
 
                   if (yUnit.isEmpty()) {
                     pPlotWindow->setYLabel(yVariable);
                   } else {
-                    pPlotWindow->setYLabel(yVariable + " [" + yUnit + "]");
+                    pPlotWindow->setYLabel(yVariable + " (" + yUnit + ")");
                   }
                 } else {
                   pPlotWindow->setXLabel("");
@@ -1859,6 +1859,9 @@ void VariablesWidget::selectInteractivePlotWindow(VariablesTreeItem *pVariablesT
  */
 void VariablesWidget::timeUnitChanged(QString unit)
 {
+  if (unit.isEmpty()) {
+    return;
+  }
   try {
     OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     // if still pPlotWindow is 0 then return.
@@ -1866,25 +1869,22 @@ void VariablesWidget::timeUnitChanged(QString unit)
       return;
     }
     if (pPlotWindow->getPlotType()==PlotWindow::PLOTARRAY ||
-        pPlotWindow->getPlotType()==PlotWindow::PLOTARRAYPARAMETRIC)
-    {
-        pPlotWindow->setTimeUnit(unit);
-        pPlotWindow->updateTimeText(unit);
-    }
-    else
-    {
-        OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
-        if (convertUnit.unitsCompatible) {
-          foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-            for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
-              pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
-            }
-            pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+        pPlotWindow->getPlotType()==PlotWindow::PLOTARRAYPARAMETRIC) {
+      pPlotWindow->setTimeUnit(unit);
+      pPlotWindow->updateTimeText(unit);
+    } else {
+      OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
+      if (convertUnit.unitsCompatible) {
+        foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+          for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
+            pPlotCurve->updateXAxisValue(i, Utilities::convertUnit(pPlotCurve->mXAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
           }
-          pPlotWindow->setXLabel(QString("time [%1]").arg(unit));
-          pPlotWindow->setTimeUnit(unit);
-          pPlotWindow->getPlot()->replot();
+          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         }
+        pPlotWindow->setXLabel(QString("time (%1)").arg(unit));
+        pPlotWindow->setTimeUnit(unit);
+        pPlotWindow->getPlot()->replot();
+      }
     }
   } catch (PlotException &e) {
     QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error), e.what(), Helper::ok);
