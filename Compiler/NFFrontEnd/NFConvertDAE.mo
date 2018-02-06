@@ -661,13 +661,7 @@ algorithm
       DAE.Type ty;
       list<DAE.Statement> body;
 
-    case Statement.ASSIGNMENT()
-      algorithm
-        ty := Type.toDAE(Expression.typeOf(stmt.lhs));
-        e1 := Expression.toDAE(stmt.lhs);
-        e2 := Expression.toDAE(stmt.rhs);
-      then
-        DAE.Statement.STMT_ASSIGN(ty, e1, e2, stmt.source);
+    case Statement.ASSIGNMENT() then convertAssignment(stmt);
 
     case Statement.FUNCTION_ARRAY_INIT()
       algorithm
@@ -711,6 +705,58 @@ algorithm
 
   end match;
 end convertStatement;
+
+function convertAssignment
+  input Statement stmt;
+  output DAE.Statement daeStmt;
+protected
+  Expression lhs, rhs;
+  DAE.ElementSource src;
+  Type ty;
+  DAE.Type dty;
+  DAE.Exp dlhs, drhs;
+  list<Expression> expl;
+algorithm
+  Statement.ASSIGNMENT(lhs, rhs, src) := stmt;
+  ty := Expression.typeOf(lhs);
+
+  if Type.isTuple(ty) then
+    Expression.TUPLE(elements = expl) := lhs;
+
+    daeStmt := match expl
+      // () := call(...) => call(...)
+      case {} then DAE.Statement.STMT_NORETCALL(Expression.toDAE(rhs), src);
+
+      // (lhs) := call(...) => lhs := TSUB[call(...), 1]
+      case {lhs}
+        algorithm
+          ty := Expression.typeOf(lhs);
+          dty := Type.toDAE(ty);
+          dlhs := Expression.toDAE(lhs);
+          drhs := DAE.Exp.TSUB(Expression.toDAE(rhs), 1, dty);
+
+          if Type.isArray(ty) then
+            daeStmt := DAE.Statement.STMT_ASSIGN_ARR(dty, dlhs, drhs, src);
+          else
+            daeStmt := DAE.Statement.STMT_ASSIGN(dty, dlhs, drhs, src);
+          end if;
+        then
+          daeStmt;
+
+      else
+        algorithm
+          dty := Type.toDAE(ty);
+          drhs := Expression.toDAE(rhs);
+        then
+          DAE.Statement.STMT_TUPLE_ASSIGN(dty, list(Expression.toDAE(e) for e in expl), drhs, src);
+    end match;
+  else
+    dty := Type.toDAE(ty);
+    dlhs := Expression.toDAE(lhs);
+    drhs := Expression.toDAE(rhs);
+    daeStmt := DAE.Statement.STMT_ASSIGN(dty, dlhs, drhs, src);
+  end if;
+end convertAssignment;
 
 function convertForStatement
   input Statement forStmt;
