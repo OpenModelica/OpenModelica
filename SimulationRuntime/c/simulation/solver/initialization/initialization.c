@@ -239,8 +239,13 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #endif
     if (adaptiveGlobal)
       data->callback->useHomotopy = 2;
-    if(solveWithGlobalHomotopy)
+    if(solveWithGlobalHomotopy) {
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
+      setAllParamsToStart(data);
+      setAllVarsToStart(data);
+      data->callback->updateBoundParameters(data, threadData);
+      data->callback->updateBoundVariableAttributes(data, threadData);
+    }
   }
 
   /* If there is homotopy in the model and the equidistant global homotopy approach is activated
