@@ -577,5 +577,19 @@ public
     end match;
   end simplifySubscripts;
 
+  function isDeleted
+    input ComponentRef cref;
+    output Boolean isDeleted;
+  algorithm
+    isDeleted := match cref
+      local
+        InstNode node;
+
+      case CREF(node = node, origin = Origin.CREF)
+        then InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node)) or isDeleted(cref.restCref);
+      else false;
+    end match;
+  end isDeleted;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

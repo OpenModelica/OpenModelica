@@ -97,9 +97,11 @@ public
         case Equation.CONNECT(lhs = Expression.CREF(cref = lhs, ty = ty1),
                               rhs = Expression.CREF(cref = rhs, ty = ty2), source = source)
           algorithm
-            c1 := Connector.fromCref(lhs, ty1, source);
-            c2 := Connector.fromCref(rhs, ty2, source);
-            conns := addConnection(Connection.CONNECTION(c1, c2), conns);
+            if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
+              c1 := Connector.fromCref(lhs, ty1, source);
+              c2 := Connector.fromCref(rhs, ty2, source);
+              conns := addConnection(Connection.CONNECTION(c1, c2), conns);
+            end if;
           then
             eql;
 

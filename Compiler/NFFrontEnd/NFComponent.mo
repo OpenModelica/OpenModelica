@@ -571,6 +571,19 @@ uniontype Component
     end match;
   end comment;
 
+  function isDeleted
+    input Component component;
+    output Boolean isDeleted;
+  algorithm
+    isDeleted := match component
+      local
+        Binding condition;
+
+      case TYPED_COMPONENT(condition = condition)
+        then Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition));
+      else false;
+    end match;
+  end isDeleted;
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");
