@@ -867,9 +867,36 @@ uniontype Function
     par := false; // TODO: Use the actual partial prefix.
     impr := fn.attributes.isImpure;
     ity := fn.attributes.inline;
-    ty := DAE.T_FUNCTION({}, Type.toDAE(fn.returnType), fn.attributes, fn.path);
-    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, DAE.emptyElementSource, NONE());
+    ty := makeDAEType(fn);
+    daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity,
+      DAE.emptyElementSource, SCode.getElementComment(InstNode.definition(fn.node)));
   end toDAE;
+
+  function makeDAEType
+    input Function fn;
+    output DAE.Type ty;
+  protected
+    list<DAE.FuncArg> params = {};
+    String pname;
+    DAE.Type ptype;
+    DAE.Const pconst;
+    DAE.VarParallelism ppar;
+    Option<DAE.Exp> pdefault;
+    Component comp;
+  algorithm
+    for param in fn.inputs loop
+      comp := InstNode.component(param);
+      pname := InstNode.name(param);
+      ptype := Type.toDAE(Component.getType(comp));
+      pconst := Prefixes.variabilityToDAEConst(Component.variability(comp));
+      ppar := Prefixes.parallelismToDAE(Component.parallelism(comp));
+      pdefault := Util.applyOption(Binding.typedExp(Component.getBinding(comp)), Expression.toDAE);
+      params := DAE.FuncArg.FUNCARG(pname, ptype, pconst, ppar, pdefault) :: params;
+    end for;
+
+    params := listReverse(params);
+    ty := DAE.T_FUNCTION(params, Type.toDAE(fn.returnType), fn.attributes, fn.path);
+  end makeDAEType;
 
 protected
   function collectParams

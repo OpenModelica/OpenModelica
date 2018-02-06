@@ -199,6 +199,17 @@ algorithm
   end match;
 end variabilityToDAE;
 
+function variabilityToDAEConst
+  input Variability var;
+  output DAE.Const const;
+algorithm
+  const := match var
+    case Variability.CONSTANT then DAE.Const.C_CONST();
+    case Variability.PARAMETER then DAE.Const.C_PARAM();
+    else DAE.Const.C_VAR();
+  end match;
+end variabilityToDAEConst;
+
 function variabilityString
   input Variability var;
   output String str;

@@ -409,6 +409,17 @@ uniontype Component
     output Boolean isOutput = direction(component) == Direction.OUTPUT;
   end isOutput;
 
+  function parallelism
+    input Component component;
+    output Parallelism parallelism;
+  algorithm
+    parallelism := match component
+      case TYPED_COMPONENT(attributes = ATTRIBUTES(parallelism = parallelism)) then parallelism;
+      case UNTYPED_COMPONENT(attributes = ATTRIBUTES(parallelism = parallelism)) then parallelism;
+      else Parallelism.NON_PARALLEL;
+    end match;
+  end parallelism;
+
   function variability
     input Component component;
     output Variability variability;
