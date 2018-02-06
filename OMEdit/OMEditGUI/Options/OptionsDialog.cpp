@@ -192,6 +192,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("showProtectedClasses")) {
     mpGeneralSettingsPage->setShowProtectedClasses(mpSettings->value("showProtectedClasses").toBool());
   }
+  // read show hidden classes
+  if (mpSettings->contains("showHiddenClasses")) {
+    mpGeneralSettingsPage->setShowHiddenClasses(mpSettings->value("showHiddenClasses").toBool());
+  }
   // read the modeling view mode
   if (mpSettings->contains("modeling/viewmode")) {
     mpGeneralSettingsPage->setModelingViewMode(mpSettings->value("modeling/viewmode").toString());
@@ -839,6 +843,8 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save show protected classes
   mpSettings->setValue("showProtectedClasses", mpGeneralSettingsPage->getShowProtectedClasses());
+  // save show hidden classes
+  mpSettings->setValue("showHiddenClasses", mpGeneralSettingsPage->getShowHiddenClasses());
   // show/hide the protected classes
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
   // save modeling view mode
@@ -1585,6 +1591,8 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpLibraryIconSizeSpinBox->setValue(24);
   // show protected classes
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
+  // show hidden classes
+  mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide))"));
   // Libraries Browser group box layout
   QGridLayout *pLibrariesBrowserLayout = new QGridLayout;
   pLibrariesBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1592,6 +1600,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeLabel, 0, 0);
   pLibrariesBrowserLayout->addWidget(mpLibraryIconSizeSpinBox, 0, 1);
   pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 1, 0, 1, 2);
+  pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 2, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
   // Modeling View Mode
   mpModelingViewModeGroupBox = new QGroupBox(tr("Default Modeling View Mode"));
@@ -1690,73 +1699,50 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   setLayout(pMainLayout);
 }
 
-QComboBox* GeneralSettingsPage::getLanguageComboBox()
-{
-  return mpLanguageComboBox;
-}
-
-//! Sets the working directory text box value.
-//! @param value the working directory value.
-//! @see getWorkingDirectory();
-void GeneralSettingsPage::setWorkingDirectory(QString value)
-{
-  mpWorkingDirectoryTextBox->setText(value);
-}
-
-//! Returns the working directory text box value.
-//! @return working directory as string.
-//! @see setWorkingDirectory();
-QString GeneralSettingsPage::getWorkingDirectory()
-{
-  return mpWorkingDirectoryTextBox->text();
-}
-
-void GeneralSettingsPage::setPreserveUserCustomizations(bool value)
-{
-  mpPreserveUserCustomizations->setChecked(value);
-}
-
-bool GeneralSettingsPage::getPreserveUserCustomizations()
-{
-  return mpPreserveUserCustomizations->isChecked();
-}
-
-void GeneralSettingsPage::setShowProtectedClasses(bool value)
-{
-  mpShowProtectedClasses->setChecked(value);
-}
-
-bool GeneralSettingsPage::getShowProtectedClasses()
-{
-  return mpShowProtectedClasses->isChecked();
-}
-
+/*!
+ * \brief GeneralSettingsPage::setModelingViewMode
+ * Sets the Modeling view mode.
+ * \param value
+ */
 void GeneralSettingsPage::setModelingViewMode(QString value)
 {
-  if (value.compare(Helper::subWindow) == 0)
+  if (value.compare(Helper::subWindow) == 0) {
     mpModelingSubWindowViewRadioButton->setChecked(true);
-  else
+  } else {
     mpModelingTabbedViewRadioButton->setChecked(true);
+  }
 }
 
+/*!
+ * \brief GeneralSettingsPage::getModelingViewMode
+ * Gets the Modeling view mode.
+ * \return
+ */
 QString GeneralSettingsPage::getModelingViewMode()
 {
-  if (mpModelingSubWindowViewRadioButton->isChecked())
+  if (mpModelingSubWindowViewRadioButton->isChecked()) {
     return Helper::subWindow;
-  else
+  } else {
     return Helper::tabbed;
+  }
 }
 
+/*!
+ * \brief GeneralSettingsPage::setDefaultView
+ * Sets the default view.
+ * \param value
+ */
 void GeneralSettingsPage::setDefaultView(QString value)
 {
-  if (value.compare(Helper::iconView) == 0)
+  if (value.compare(Helper::iconView) == 0) {
     mpIconViewRadioButton->setChecked(true);
-  else if (value.compare(Helper::textView) == 0)
+  } else if (value.compare(Helper::textView) == 0) {
     mpTextViewRadioButton->setChecked(true);
-  else if (value.compare(Helper::documentationView) == 0)
+  } else if (value.compare(Helper::documentationView) == 0) {
     mpDocumentationViewRadioButton->setChecked(true);
-  else
+  } else {
     mpDiagramViewRadioButton->setChecked(true);
+  }
 }
 
 /*!

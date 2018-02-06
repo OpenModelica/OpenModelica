@@ -1023,7 +1023,8 @@ bool LibraryTreeProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &s
     }
     // check current index itself
     if (pLibraryTreeItem) {
-      if ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide)
+      if ((pLibraryTreeItem->getAccess() == LibraryTreeItem::hide
+           && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowHiddenClasses())
           || (pLibraryTreeItem->isProtected() && !OptionsDialog::instance()->getGeneralSettingsPage()->getShowProtectedClasses())) {
         return false;
       } else {

@@ -198,20 +198,22 @@ class GeneralSettingsPage : public QWidget
   Q_OBJECT
 public:
   GeneralSettingsPage(OptionsDialog *pOptionsDialog);
-  QComboBox* getLanguageComboBox();
-  void setWorkingDirectory(QString value);
-  QString getWorkingDirectory();
+  QComboBox* getLanguageComboBox() {return mpLanguageComboBox;}
+  void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
+  QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
   QSpinBox* getToolbarIconSizeSpinBox() {return mpToolbarIconSizeSpinBox;}
-  void setPreserveUserCustomizations(bool value);
-  bool getPreserveUserCustomizations();
+  void setPreserveUserCustomizations(bool value) {mpPreserveUserCustomizations->setChecked(value);}
+  bool getPreserveUserCustomizations() {return mpPreserveUserCustomizations->isChecked();}
   void setTerminalCommand(QString value) {mpTerminalCommandTextBox->setText(value);}
   QString getTerminalCommand() {return mpTerminalCommandTextBox->text();}
   void setTerminalCommandArguments(QString value) {mpTerminalCommandArgumentsTextBox->setText(value);}
   QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
   QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
-  void setShowProtectedClasses(bool value);
-  bool getShowProtectedClasses();
+  void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
+  bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
+  void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
+  bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
   void setModelingViewMode(QString value);
   QString getModelingViewMode();
   void setDefaultView(QString value);
@@ -242,6 +244,7 @@ private:
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
   QCheckBox *mpShowProtectedClasses;
+  QCheckBox *mpShowHiddenClasses;
   QGroupBox *mpModelingViewModeGroupBox;
   QRadioButton *mpModelingTabbedViewRadioButton;
   QRadioButton *mpModelingSubWindowViewRadioButton;
