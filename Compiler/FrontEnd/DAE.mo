@@ -199,7 +199,7 @@ public uniontype Element
     VarVisibility protection "if protected or public";
     Type ty "Full type information required";
     Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute";
-    InstDims  dims "dimensions";
+    InstDims dims "dimensions";
     ConnectorType connectorType "The connector type: flow, stream, no prefix, or not a connector element.";
     ElementSource source "the origins of the component/equation/algorithm";
     Option<VariableAttributes> variableAttributesOption;
