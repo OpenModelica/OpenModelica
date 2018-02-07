@@ -5924,7 +5924,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
   }
 }
@@ -6043,18 +6043,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
-  }
-  /* enable/disable the find/replace and goto line actions depending on the text editor visibility. */
-  if (pModelWidget && pModelWidget->getEditor()->isVisible()) {
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      enabled = true;
-    } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
-      enabled = true;
-    } else {
-      enabled = false;
-    }
-  } else {
-    enabled = false;
   }
 }
 
