@@ -77,9 +77,10 @@ class LibraryTreeItem : public QObject
   Q_OBJECT
 public:
   enum LibraryType {
-    Modelica,    /* Used to represent Modelica models. */
-    Text,        /* Used to represent text based files. */
-    CompositeModel    /* Used to represent CompositeModel files. */
+    Modelica,         /* Used to represent Modelica models. */
+    Text,             /* Used to represent text based files. */
+    CompositeModel,   /* Used to represent CompositeModel files. */
+    OMSimulator       /* Used to represent OMSimulatorModel files. */
   };
   enum Access {
     hide,
@@ -145,6 +146,8 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
+  void setOMSimulatorModel(void *pOMSimulatorModel) {mpOMSimulatorModel = pOMSimulatorModel;}
+  void* getOMSimulatorModel() {return mpOMSimulatorModel;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -192,6 +195,7 @@ private:
   QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
+  void *mpOMSimulatorModel;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();
@@ -269,6 +273,7 @@ public:
   void showHideProtectedClasses();
   bool unloadClass(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
+  bool unloadOMSimulatorModel(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
@@ -356,6 +361,8 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
+  QAction *mpSimulateOMSimulatorModelAction;
+  QAction *mpUnloadOMSimulatorModelAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
   void libraryTreeItemExpanded(LibraryTreeItem* pLibraryTreeItem);
@@ -401,6 +408,8 @@ public slots:
   void generateVerificationScenarios();
   void fetchInterfaceData();
   void TLMSimulate();
+  void simulateOMSimulatorModel();
+  void unloadOMSimulatorModel();
 protected:
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
   virtual void startDrag(Qt::DropActions supportedActions);

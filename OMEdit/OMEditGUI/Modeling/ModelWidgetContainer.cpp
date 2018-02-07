@@ -3450,11 +3450,6 @@ void ModelWidget::createModelWidgetComponents()
       connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
-      // icon graphics framework
-      mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
-      mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
-      mpIconGraphicsView->setScene(mpIconGraphicsScene);
-      mpIconGraphicsView->hide();
       // diagram graphics framework
       mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
       mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
@@ -3495,7 +3490,33 @@ void ModelWidget::createModelWidgetComponents()
         getCompositeModelSubModels();
         getCompositeModelConnections();
       }
-      mpIconGraphicsScene->clearSelection();
+      mpDiagramGraphicsScene->clearSelection();
+      mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
+      mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
+      mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
+      mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
+      // set layout
+      pMainLayout->addWidget(mpModelStatusBar);
+      if (MainWindow::instance()->isDebug()) {
+        pMainLayout->addWidget(mpUndoView);
+      }
+      pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      mpUndoStack->clear();
+    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMSimulator) {
+      connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
+      pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
+      // diagram graphics framework
+      mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
+      mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
+      mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+      mpDiagramGraphicsView->hide();
+      // Undo stack for model
+      mpUndoStack = new QUndoStack;
+      connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
+      connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
+      if (MainWindow::instance()->isDebug()) {
+        mpUndoView = new QUndoView(mpUndoStack);
+      }
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
@@ -3509,9 +3530,11 @@ void ModelWidget::createModelWidgetComponents()
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     }
-    connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
-    connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
-    pMainLayout->addWidget(mpEditor, 1);
+    if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::OMSimulator) {
+      connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
+      connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
+      pMainLayout->addWidget(mpEditor, 1);
+    }
     mCreateModelWidgetComponents = true;
   }
 }
@@ -3640,6 +3663,9 @@ void ModelWidget::reDrawModelWidget()
  */
 bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMSimulator) {
+    return true;
+  }
   if (ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor)) {
     return pModelicaEditor->validateText(pLibraryTreeItem);
   } else if (CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor)) {
@@ -5368,8 +5394,14 @@ void ModelWidget::showDiagramView(bool checked)
     return;
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
-  mpIconGraphicsView->hide();
-  mpEditor->hide();
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    mpIconGraphicsView->hide();
+  }
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel
+      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+    mpEditor->hide();
+  }
   mpDiagramGraphicsView->show();
   mpDiagramGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Diagram);
@@ -5392,11 +5424,17 @@ void ModelWidget::showTextView(bool checked)
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
-  mpIconGraphicsView->hide();
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    mpIconGraphicsView->hide();
+  }
   mpDiagramGraphicsView->hide();
-  mpEditor->show();
-  mpEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
-  mpEditor->getPlainTextEdit()->updateCursorPosition();
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel
+      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+    mpEditor->show();
+    mpEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
+    mpEditor->getPlainTextEdit()->updateCursorPosition();
+  }
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
   updateUndoRedoActions();
 }
@@ -5605,6 +5643,8 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMSimulator) {
+    pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   pModelWidget->updateViewButtonsBasedOnAccess();
   if (!checkPreferedView || pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::Modelica) {
@@ -6045,7 +6085,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     pModelWidget->updateUndoRedoActions();
   }
   /* enable/disable the find/replace and goto line actions depending on the text editor visibility. */
-  if (pModelWidget && pModelWidget->getEditor()->isVisible()) {
+  if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
     if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
       enabled = true;
     } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {

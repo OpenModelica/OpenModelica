@@ -190,6 +190,7 @@ QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
 QString Helper::unloadCompositeModelOrTextTip;
+QString Helper::unloadOMSimulatorModelTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
@@ -361,6 +362,7 @@ QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
+QString Helper::simulateOMSimulatorModelTip;
 
 void Helper::initHelperVariables()
 {
@@ -444,6 +446,7 @@ void Helper::initHelperVariables()
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
+  Helper::unloadOMSimulatorModelTip = tr("Unloads the OMSimulator Model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -615,6 +618,7 @@ void Helper::initHelperVariables()
   Helper::priority = tr("Priority:");
   Helper::secs = tr("secs");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
+  Helper::simulateOMSimulatorModelTip = tr("Simulates the OMSimulator model");
 }
 
 QString GUIMessages::getMessage(int type)

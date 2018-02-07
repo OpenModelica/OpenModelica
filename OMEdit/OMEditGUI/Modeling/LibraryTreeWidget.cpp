@@ -42,6 +42,7 @@
 #include "ModelicaClassDialog.h"
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
+#include "OMSimulator.h"
 
 ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
   : QItemDelegate(pParent)
@@ -376,6 +377,7 @@ LibraryTreeItem::LibraryTreeItem()
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
+  setOMSimulatorModel(0);
 }
 
 /*!
@@ -429,6 +431,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(false);
+  setOMSimulatorModel(0);
 }
 
 /*!
@@ -439,6 +442,9 @@ LibraryTreeItem::~LibraryTreeItem()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
+  if (mLibraryType == LibraryTreeItem::OMSimulator && mpOMSimulatorModel) {
+    oms_unload(mpOMSimulatorModel);
+  }
 }
 
 /*!
@@ -579,6 +585,8 @@ QString LibraryTreeItem::getTooltip() const {
 QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
 {
   if (mLibraryType == LibraryTreeItem::CompositeModel) {
+    return QIcon(":/Resources/icons/tlm-icon.svg");
+  } else if (mLibraryType == LibraryTreeItem::OMSimulator) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
@@ -1852,6 +1860,67 @@ bool LibraryTreeModel::unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryT
 }
 
 /*!
+ * \brief LibraryTreeModel::unloadOMSimulatorModel
+ * Unloads/deletes the OMSimulator Model.
+ * \param pLibraryTreeItem
+ * \param askQuestion
+ * \return
+ */
+bool LibraryTreeModel::unloadOMSimulatorModel(LibraryTreeItem *pLibraryTreeItem, bool askQuestion)
+{
+  if (askQuestion) {
+    QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
+    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
+    pMessageBox->setIcon(QMessageBox::Question);
+    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::UNLOAD_TEXT_FILE_MSG).arg(pLibraryTreeItem->getNameStructure()));
+    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+    pMessageBox->setDefaultButton(QMessageBox::Yes);
+    int answer = pMessageBox->exec();
+    switch (answer) {
+      case QMessageBox::Yes:
+        // Yes was clicked. Don't return.
+        break;
+      case QMessageBox::No:
+        // No was clicked. Return
+        return false;
+      default:
+        // should never be reached
+        return false;
+    }
+  }
+  // unload from OMSimualator
+  oms_unload(pLibraryTreeItem->getOMSimulatorModel());
+  pLibraryTreeItem->setOMSimulatorModel(0);
+  /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
+   * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
+   * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
+   */
+  int row = pLibraryTreeItem->row();
+  LibraryTreeItem *pNextLibraryTreeItem = 0;
+  bool expandState = false;
+  if (pLibraryTreeItem->parent()->childrenSize() > row + 1) {
+    pNextLibraryTreeItem = pLibraryTreeItem->parent()->child(row + 1);
+    QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
+  }
+  // remove the LibraryTreeItem from Libraries Browser
+  beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
+  // unload the LibraryTreeItem children if any and then unload the LibraryTreeItem.
+  unloadFileChildren(pLibraryTreeItem);
+  endRemoveRows();
+  if (pNextLibraryTreeItem) {
+    QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
+    QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    mpLibraryWidget->getLibraryTreeView()->setExpanded(proxyIndex, expandState);
+  }
+  /* Update the model switcher toolbar button. */
+  MainWindow::instance()->updateModelSwitcherMenu(0);
+  return true;
+}
+
+/*!
  * \brief LibraryTreeModel::unloadLibraryTreeItem
  * Removes the LibraryTreeItem and deletes the Modelica class if doDeleteClass argument is true.
  * \param pLibraryTreeItem
@@ -2810,6 +2879,15 @@ void LibraryTreeView::createActions()
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // simulate OMSimulator model action
+  mpSimulateOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
+  mpSimulateOMSimulatorModelAction->setStatusTip(Helper::simulateOMSimulatorModelTip);
+  connect(mpSimulateOMSimulatorModelAction, SIGNAL(triggered(bool)), SLOT(simulateOMSimulatorModel()));
+  // unload OMSimulator Model Action
+  mpUnloadOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
+  mpUnloadOMSimulatorModelAction->setShortcut(QKeySequence::Delete);
+  mpUnloadOMSimulatorModelAction->setStatusTip(Helper::unloadOMSimulatorModelTip);
+  connect(mpUnloadOMSimulatorModelAction, SIGNAL(triggered()), SLOT(unloadOMSimulatorModel()));
 }
 
 /*!
@@ -2979,6 +3057,11 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpTLMCoSimulationAction);
           menu.addSeparator();
           menu.addAction(mpUnloadCompositeModelFileAction);
+          break;
+        case LibraryTreeItem::OMSimulator:
+          menu.addAction(mpSimulateOMSimulatorModelAction);
+          menu.addSeparator();
+          menu.addAction(mpUnloadOMSimulatorModelAction);
           break;
       }
     }
@@ -3479,6 +3562,48 @@ void LibraryTreeView::TLMSimulate()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->TLMSimulate(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::simulateOMSimulatorModel
+ */
+void LibraryTreeView::simulateOMSimulatorModel()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+
+    oms_instantiateFMU(pLibraryTreeItem->getOMSimulatorModel(), "C:/Users/adeas31/AppData/Local/Temp/OpenModelica/OMEdit/DualMassOscillator.System1.fmu", "System1");
+    oms_instantiateFMU(pLibraryTreeItem->getOMSimulatorModel(), "C:/Users/adeas31/AppData/Local/Temp/OpenModelica/OMEdit/DualMassOscillator.System2.fmu", "System2");
+
+    oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.F", "System2.F");
+    oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.s", "System2.s");
+    oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.v", "System2.v");
+    oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.a", "System2.a");
+
+    oms_setResultFile(pLibraryTreeItem->getOMSimulatorModel(), "DualMassOscillator_me.mat");
+
+    oms_setStopTime(pLibraryTreeItem->getOMSimulatorModel(), 0.1);
+    oms_setCommunicationInterval(pLibraryTreeItem->getOMSimulatorModel(), 1e-5);
+
+    oms_initialize(pLibraryTreeItem->getOMSimulatorModel());
+    oms_simulate(pLibraryTreeItem->getOMSimulatorModel());
+
+    oms_terminate(pLibraryTreeItem->getOMSimulatorModel());
+
+    MainWindow::instance()->openResultFiles(QStringList(Utilities::tempDirectory() + "/DualMassOscillator_me.mat"));
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::unloadOMSimulatorModel
+ * Calls LibraryTreeModel::unloadOMSimulatorModel()
+ */
+void LibraryTreeView::unloadOMSimulatorModel()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->unloadOMSimulatorModel(pLibraryTreeItem);
   }
 }
 

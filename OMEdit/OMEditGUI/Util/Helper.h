@@ -192,6 +192,7 @@ public:
   static QString unloadClass;
   static QString unloadClassTip;
   static QString unloadCompositeModelOrTextTip;
+  static QString unloadOMSimulatorModelTip;
   static QString refresh;
   static QString simulate;
   static QString simulateTip;
@@ -363,6 +364,7 @@ public:
   static QString priority;
   static QString secs;
   static QString saveContentsInOneFile;
+  static QString simulateOMSimulatorModelTip;
 };
 
 class GUIMessages : public QObject

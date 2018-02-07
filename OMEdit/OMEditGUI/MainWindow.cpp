@@ -100,6 +100,9 @@ MainWindow::MainWindow(bool debug, QWidget *parent)
   setMinimumSize(400, 300);
   resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
+  // OMSimulator global settings
+  oms_setLogFile(QString(Utilities::tempDirectory() + "/omsllog.txt").toStdString().c_str());
+  oms_setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
 }
 
 MainWindow *MainWindow::mpInstance = 0;
@@ -1360,6 +1363,35 @@ void MainWindow::openCompositeModelFile()
   }
   mpStatusBar->clearMessage();
   hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::createNewOMSimulatorModelFile
+ * Creates a new OMS LibraryTreeItem & ModelWidget.\n
+ * Slot activated when mpNewOMSimulatorModelFileAction triggered signal is raised.
+ */
+void MainWindow::createNewOMSimulatorModelFile()
+{
+  void* pOMSimulatorModel = oms_newModel();
+  QString OMSimulatorModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
+  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMSimulator, OMSimulatorModelName,
+                                                                               OMSimulatorModelName, "", false,
+                                                                               pLibraryTreeModel->getRootLibraryTreeItem());
+  pLibraryTreeItem->setOMSimulatorModel(pOMSimulatorModel);
+  if (pLibraryTreeItem) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief MainWindow::openOMSimulatorModelFile
+ * Opens the OMSimulatorModel file(s).\n
+ * Slot activated when mpOpenOMSimulatorModelFileAction triggered signal is raised.
+ */
+void MainWindow::openOMSimulatorModelFile()
+{
+
 }
 
 /*!
@@ -2736,6 +2768,14 @@ void MainWindow::createActions()
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
+  // create new OMSimulator Model action
+  mpNewOMSimulatorModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New OMSimulator Model"), this);
+  mpNewOMSimulatorModelFileAction->setStatusTip(tr("Create New OMSimulator Model file"));
+  connect(mpNewOMSimulatorModelFileAction, SIGNAL(triggered()), SLOT(createNewOMSimulatorModelFile()));
+  // open OMSimulator Model file action
+  mpOpenOMSimulatorModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open OMSimulator Model(s)"), this);
+  mpOpenOMSimulatorModelFileAction->setStatusTip(tr("Opens the OMSimulator Model file(s)"));
+  connect(mpOpenOMSimulatorModelFileAction, SIGNAL(triggered()), SLOT(openOMSimulatorModelFile()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -3186,6 +3226,9 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpNewCompositeModelFileAction);
   pFileMenu->addAction(mpOpenCompositeModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
+  pFileMenu->addSeparator();
+  pFileMenu->addAction(mpNewOMSimulatorModelFileAction);
+  pFileMenu->addAction(mpOpenOMSimulatorModelFileAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpOpenDirectoryAction);
   pFileMenu->addSeparator();
