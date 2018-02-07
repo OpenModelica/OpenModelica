@@ -65,9 +65,8 @@ struct dataSolver
 
 struct dataMixedSolver
 {
-  void* newtonData;
+  void* newtonHomotopyData;
   void* hybridData;
-  void* initHomotopyData;
 };
 
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -470,24 +469,20 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       break;
 #endif
     case NLS_HOMOTOPY:
-      solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        allocateHomotopyData(size-1, &(solverData->ordinaryData));
-        allocateHomotopyData(size-1, &(solverData->initHomotopyData));
+        allocateHomotopyData(size-1, &nonlinsys[i].solverData);
       } else {
-        allocateHomotopyData(size, &(solverData->ordinaryData));
+        allocateHomotopyData(size, &nonlinsys[i].solverData);
       }
-      nonlinsys[i].solverData = (void*) solverData;
       break;
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_MIXED:
       mixedSolverData = (struct dataMixedSolver*) malloc(sizeof(struct dataMixedSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        allocateHomotopyData(size-1, &(mixedSolverData->newtonData));
+        allocateHomotopyData(size-1, &(mixedSolverData->newtonHomotopyData));
         allocateHybrdData(size-1, &(mixedSolverData->hybridData));
-        allocateHomotopyData(size-1, &(mixedSolverData->initHomotopyData));
       } else {
-        allocateHomotopyData(size, &(mixedSolverData->newtonData));
+        allocateHomotopyData(size, &(mixedSolverData->newtonHomotopyData));
         allocateHybrdData(size, &(mixedSolverData->hybridData));
       }
       nonlinsys[i].solverData = (void*) mixedSolverData;
@@ -590,19 +585,13 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
       break;
 #endif
     case NLS_HOMOTOPY:
-      freeHomotopyData(&((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
-      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        freeHomotopyData(&((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
-      }
+      freeHomotopyData(&nonlinsys[i].solverData);
       free(nonlinsys[i].solverData);
       break;
 #if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_MIXED:
-      freeHomotopyData(&((struct dataMixedSolver*) nonlinsys[i].solverData)->newtonData);
+      freeHomotopyData(&((struct dataMixedSolver*) nonlinsys[i].solverData)->newtonHomotopyData);
       freeHybrdData(&((struct dataMixedSolver*) nonlinsys[i].solverData)->hybridData);
-      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        freeHomotopyData(&((struct dataMixedSolver*) nonlinsys[i].solverData)->initHomotopyData);
-      }
       free(nonlinsys[i].solverData);
       break;
 #endif
@@ -799,15 +788,12 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
     break;
 #endif
   case NLS_HOMOTOPY:
-    solverData = nonlinsys->solverData;
-    nonlinsys->solverData = solverData->ordinaryData;
     success = solveHomotopy(data, threadData, sysNumber);
-    nonlinsys->solverData = solverData;
     break;
 #if !defined(OMC_MINIMAL_RUNTIME)
   case NLS_MIXED:
     mixedSolverData = nonlinsys->solverData;
-    nonlinsys->solverData = mixedSolverData->newtonData;
+    nonlinsys->solverData = mixedSolverData->newtonHomotopyData;
 
     /* try to solve the system if it is the strict set, only try to solve the casual set if the constraints are satisfied */
     if ((!casualTearingSet) || constraintsSatisfied)
@@ -828,6 +814,44 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
       nonlinsys->solverData = mixedSolverData->hybridData;
       success = solveHybrd(data, threadData, sysNumber);
     }
+    nonlinsys->solverData = mixedSolverData;
+    break;
+#endif
+  default:
+    throwStreamPrint(threadData, "unrecognized nonlinear solver");
+  }
+
+  return success;
+}
+
+int solveWithInitHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
+{
+  int success = 0;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
+  struct dataSolver *solverData;
+  struct dataMixedSolver *mixedSolverData;
+
+  /* use the homotopy solver for solving the initial system */
+  switch(data->simulationInfo->nlsMethod)
+  {
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case NLS_HYBRID:
+  case NLS_KINSOL:
+  case NLS_NEWTON:
+    solverData = nonlinsys->solverData;
+    nonlinsys->solverData = solverData->initHomotopyData;
+    success = solveHomotopy(data, threadData, sysNumber);
+    nonlinsys->solverData = solverData;
+    break;
+#endif
+  case NLS_HOMOTOPY:
+    success = solveHomotopy(data, threadData, sysNumber);
+    break;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  case NLS_MIXED:
+    mixedSolverData = nonlinsys->solverData;
+    nonlinsys->solverData = mixedSolverData->newtonHomotopyData;
+    success = solveHomotopy(data, threadData, sysNumber);
     nonlinsys->solverData = mixedSolverData;
     break;
 #endif
@@ -947,20 +971,8 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     /* SOLVE! */
     if (data->callback->useHomotopy == 2 || nonlinsys->solved) {
       infoStreamPrint(LOG_INIT, 0, "run along the homotopy path and solve the actual system");
-      if (data->simulationInfo->nlsMethod == NLS_MIXED) {
-        mixedSolverData = nonlinsys->solverData;
-        nonlinsys->solverData = mixedSolverData->initHomotopyData;
-      } else {
-        solverData = nonlinsys->solverData;
-        nonlinsys->solverData = solverData->initHomotopyData;
-      }
       nonlinsys->initHomotopy = 1;
-      nonlinsys->solved = solveHomotopy(data, threadData, sysNumber);
-      if (data->simulationInfo->nlsMethod == NLS_MIXED) {
-        nonlinsys->solverData = mixedSolverData;
-      } else {
-        nonlinsys->solverData = solverData;
-      }
+      nonlinsys->solved = solveWithInitHomotopy(data, threadData, sysNumber);
     }
   }
 
