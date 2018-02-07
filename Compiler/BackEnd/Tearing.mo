@@ -311,7 +311,11 @@ algorithm
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       true = BackendDAEUtil.getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
-      if intGt(listLength(vindx),maxSize) then
+      if intGt(listLength(vindx), maxSize) and not
+         // always apply tearing if maxSize > 0 and dense matrices are used
+         (intGt(maxSize, 0) and stringEqual(Config.simCodeTarget(), "Cpp") and
+          stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense"))
+      then
         Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
         fail();
       end if;
@@ -325,8 +329,6 @@ algorithm
       if debugFlag then
         print("\nTearing of LINEAR component\nUse Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
       end if;
-      // TODO: Remove when cpp runtime ready for doLinearTearing
-      //false = stringEqual(Config.simCodeTarget(), "Cpp");
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
       end if;
@@ -338,7 +340,11 @@ algorithm
     case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
       false = BackendDAEUtil.getLinearfromJacType(jacType);
       maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
-      if intGt(listLength(vindx),maxSize) then
+      if intGt(listLength(vindx), maxSize) and not
+         // always apply tearing if maxSize > 0 and dense matrices are used
+         (intGt(maxSize, 0) and stringEqual(Config.simCodeTarget(), "Cpp") and
+          stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense"))
+      then
         Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
         fail();
       end if;
