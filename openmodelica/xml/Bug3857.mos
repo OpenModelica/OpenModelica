@@ -4977,7 +4977,7 @@ readFile("Bug3857.xml"); getErrorString();
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
 //     </ScalarVariable> 
-//     <ScalarVariable name=\"$whenCondition1\"  valueReference=\"4\" variability=\"discrete\" causality=\"internal\" alias=\"noAlias\">
+//     <ScalarVariable name=\"$whenCondition1\" description=\"h &lt; 0.0\" valueReference=\"4\" variability=\"discrete\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean />
 //       <QualifiedName>
 //         <exp:QualifiedNamePart name=\"$whenCondition1\"/>

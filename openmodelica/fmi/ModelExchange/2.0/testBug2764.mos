@@ -147,6 +147,7 @@ readFile("modelDescription.tmp.xml");
 //   <ScalarVariable
 //     name=\"_D_whenCondition1\"
 //     valueReference=\"0\"
+//     description=\"b\"
 //     variability=\"discrete\"
 //     causality=\"local\"
 //     initial=\"calculated\">

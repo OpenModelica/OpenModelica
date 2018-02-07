@@ -78,7 +78,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </variable>
 // <variable id=\"5\" name=\"tt.y\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Real output signal\">
 // </variable>
-// <variable id=\"6\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"6\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"b\">
 // <attributesValues>
 // <fixed string=\"true\">
 // <MathML>
@@ -91,7 +91,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </fixed>
 // </attributesValues>
 // </variable>
-// <variable id=\"7\" name=\"$whenCondition2\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"7\" name=\"$whenCondition2\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"not b\">
 // <attributesValues>
 // <fixed string=\"true\">
 // <MathML>

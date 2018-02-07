@@ -77,7 +77,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"4\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"4\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"b1.y &lt;= 0.0 and b1.vy &lt;= 0.0\">
 // <attributesValues>
 // <fixed string=\"true\">
 // <MathML>
