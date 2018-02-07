@@ -1214,7 +1214,7 @@ protected
     if var > Variability.DISCRETE then
       Error.addSourceMessageAndFail(Error.INVALID_ARGUMENT_VARIABILITY,
         {"1", ComponentRef.toString(fn_ref), Prefixes.variabilityString(Variability.DISCRETE),
-         Expression.toString(arg), Prefixes.variabilityString(variability)}, info);
+         Expression.toString(arg), Prefixes.variabilityString(var)}, info);
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);
