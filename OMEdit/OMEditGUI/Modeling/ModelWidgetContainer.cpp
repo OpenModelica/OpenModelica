@@ -6012,9 +6012,12 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       modelica = false;
       compositeModel = false;
-    } else {
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
       modelica = false;
       compositeModel = true;
+    } else {
+      modelica = false;
+      compositeModel = false;
     }
   } else {
     enabled = false;
