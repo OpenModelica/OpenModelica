@@ -527,6 +527,9 @@ uniontype VariableAttributes
   end VAR_ATTR_ENUMERATION;
 end VariableAttributes;
 
+public constant VariableAttributes emptyVarAttrReal = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrBool = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+
 public uniontype StateSelect
   record NEVER end NEVER;
   record AVOID end AVOID;

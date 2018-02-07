@@ -329,7 +329,7 @@ algorithm
         ht := BaseHashTable.add((inCondition, inIndex), inHT);
         crStr := "$whenCondition" + intString(inIndex);
 
-        var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+        var := BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), DAE.BCONST(false), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
         var := BackendVariable.setVarFixed(var, true);
         eqn := BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
 
@@ -484,7 +484,7 @@ algorithm
     case (DAE.ARRAY(array={condition})) equation
       crStr = "$whenCondition" + intString(inIndex);
 
-      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), DAE.BCONST(false), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
       var = BackendVariable.setVarFixed(var, true);
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
 
@@ -500,7 +500,7 @@ algorithm
     case _ equation
       crStr = "$whenCondition" + intString(inIndex);
 
-      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, DAEUtil.setProtectedAttr(SOME(DAE.emptyVarAttrBool), true), NONE(), DAE.BCONST(false), SOME(SCode.COMMENT(NONE(), SOME(ExpressionDump.printExpStr(inCondition)))), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
       var = BackendVariable.setVarFixed(var, true);
       stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), inCondition, inSource);
 

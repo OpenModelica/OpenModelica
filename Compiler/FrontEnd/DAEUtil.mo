@@ -1182,7 +1182,7 @@ public function setProtectedAttr "
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  match (attr,isProtected)
+  match (attr)
     local
       Option<DAE.Exp> q,u,du,i,f,n,so,min,max;
       Option<DAE.StateSelect> ss;
@@ -1191,20 +1191,21 @@ algorithm
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,_,fn,so)),_)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,_,fn,so)))
       then SOME(DAE.VAR_ATTR_REAL(q,u,du,min,max,i,f,n,ss,unc,distOpt,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,_,fn,so)),_)
+    case (SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,_,fn,so)))
       then SOME(DAE.VAR_ATTR_INT(q,min,max,i,f,unc,distOpt,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,_,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,_,fn,so)),_)
+    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn,so)))
+      then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,_,fn,so)))
+      then SOME(DAE.VAR_ATTR_STRING(q,i,f,eb,SOME(isProtected),fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,_,fn,so)))
       then SOME(DAE.VAR_ATTR_ENUMERATION(q,min,max,u,du,eb,SOME(isProtected),fn,so));
-    case (SOME(DAE.VAR_ATTR_CLOCK(fn,_)), _)
+    case (SOME(DAE.VAR_ATTR_CLOCK(fn,_)))
       then SOME(DAE.VAR_ATTR_CLOCK(fn,SOME(isProtected)));
-    case (NONE(),_)
-      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE(),NONE()));
+    case (NONE())
+      // lochel: maybe we should let this case just fail
+      then setProtectedAttr(SOME(DAE.emptyVarAttrReal), isProtected);
   end match;
 end setProtectedAttr;
 
