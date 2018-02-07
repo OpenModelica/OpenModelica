@@ -2154,6 +2154,10 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     debugVectorDouble(LOG_NLS_V,"System extrapolation", solverData->xStart, solverData->n);
   }
   vecCopy(solverData->n, solverData->xStart, solverData->x0);
+  // Initialize lambda variable with 0
+  solverData->x0[solverData->n] = 0.0;
+  solverData->x[solverData->n] = 0.0;
+  solverData->x1[solverData->n] = 0.0;
   /* Use actual working point for scaling */
   for (i=0;i<solverData->n;i++){
     solverData->xScaling[i] = fmax(systemData->nominal[i],fabs(solverData->x0[i]));
