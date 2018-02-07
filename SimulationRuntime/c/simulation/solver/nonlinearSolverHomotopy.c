@@ -193,10 +193,10 @@ int allocateHomotopyData(int size, void** voiddata)
   data->gradFx = (double*) calloc(size,sizeof(double));
 
   /* damped newton */
-  data->x = (double*) calloc(size,sizeof(double));
-  data->x0 = (double*) calloc(size,sizeof(double));
+  data->x = (double*) calloc((size+1),sizeof(double));
+  data->x0 = (double*) calloc((size+1),sizeof(double));
   data->xStart = (double*) calloc(size,sizeof(double));
-  data->x1 = (double*) calloc(size,sizeof(double));
+  data->x1 = (double*) calloc((size+1),sizeof(double));
   data->finit = (double*) calloc(size,sizeof(double));
   data->fx0 = (double*) calloc(size,sizeof(double));
   data->fJac = (double*) calloc((size*(size+1)),sizeof(double));
@@ -910,6 +910,8 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
   void *dataAndThreadData[2] = {solverData->data, solverData->threadData};
   int iflag = 0;
 
+  if ((solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].homotopySupport && !solverData->initHomotopy && (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].size > solverData->n)
+    x[solverData->n] = 1.0;
   /*TODO: change input to residualFunc from data to systemData */
   (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].residualFunc(dataAndThreadData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
