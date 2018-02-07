@@ -1316,6 +1316,8 @@ function typeCref
   input SourceInfo info;
         output Type ty;
         output Variability variability;
+protected
+  Variability subs_var;
 algorithm
   // Check that time isn't used in a function context.
   // TODO: Fix NFBuiltin.TIME_CREF so that the compiler treats it like an actual
@@ -1326,36 +1328,39 @@ algorithm
     fail();
   end if;
 
-  cref := typeCref2(cref, origin, info);
+  (cref, subs_var) := typeCref2(cref, origin, info);
   ty := ComponentRef.getSubscriptedType(cref);
-  variability := ComponentRef.getVariability(cref);
+  variability := Prefixes.variabilityMax(ComponentRef.getVariability(cref), subs_var);
 end typeCref;
 
 function typeCref2
   input output ComponentRef cref;
   input ExpOrigin.Type origin;
   input SourceInfo info;
+        output Variability subsVariability;
 
   import NFComponentRef.Origin;
 algorithm
-  cref := match cref
+  (cref, subsVariability) := match cref
     local
       ComponentRef rest_cr;
       Type node_ty;
       list<Subscript> subs;
+      Variability subs_var, rest_var;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
-      then cref;
+      then (cref, Variability.CONSTANT);
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
         node_ty := typeComponent(cref.node, origin);
-        subs := typeSubscripts(cref.subscripts, node_ty, cref, origin, info);
-        rest_cr := typeCref2(cref.restCref, origin, info);
+        (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, origin, info);
+        (rest_cr, rest_var) := typeCref2(cref.restCref, origin, info);
+        subsVariability := Prefixes.variabilityMax(subs_var, rest_var);
       then
-        ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr);
+        (ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr), subsVariability);
 
-    else cref;
+    else (cref, Variability.CONSTANT);
   end match;
 end typeCref2;
 
@@ -1366,10 +1371,13 @@ function typeSubscripts
   input ExpOrigin.Type origin;
   input SourceInfo info;
   output list<Subscript> typedSubs;
+  output Variability variability = Variability.CONSTANT;
 protected
   list<Dimension> dims;
   Dimension dim;
   Integer next_origin, i;
+  Subscript sub;
+  Variability var;
 algorithm
   dims := Type.arrayDims(crefType);
 
@@ -1386,7 +1394,9 @@ algorithm
 
   for s in subscripts loop
     dim :: dims := dims;
-    typedSubs := typeSubscript(s, dim, cref, i, origin, info) :: typedSubs;
+    (sub, var) := typeSubscript(s, dim, cref, i, origin, info);
+    typedSubs := sub :: typedSubs;
+    variability := Prefixes.variabilityMax(variability, var);
     i := i + 1;
   end for;
 
@@ -1401,6 +1411,7 @@ function typeSubscript
   input ExpOrigin.Type origin;
   input SourceInfo info;
   output Subscript outSubscript = subscript;
+  output Variability variability = Variability.CONSTANT;
 protected
   Expression e;
   Type ty, ety;
@@ -1411,7 +1422,7 @@ algorithm
     case Subscript.UNTYPED()
       algorithm
         e := evaluateEnd(subscript.exp, dimension, cref, index, origin, info);
-        (e, ty, _) := typeExp(e, origin, info);
+        (e, ty, variability) := typeExp(e, origin, info);
 
         if Type.isArray(ty) then
           outSubscript := Subscript.SLICE(e);
