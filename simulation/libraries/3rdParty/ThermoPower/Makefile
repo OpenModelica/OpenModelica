@@ -3,6 +3,7 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 Bug2537.mos \
 ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.mos \
+ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.mos \
 ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen.mos \
 ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phDB_hf.mos \
 ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop.mos \
