@@ -910,8 +910,6 @@ static int wrapper_fvec(DATA_HOMOTOPY* solverData, double* x, double* f)
   void *dataAndThreadData[2] = {solverData->data, solverData->threadData};
   int iflag = 0;
 
-  if ((solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].homotopySupport && !solverData->initHomotopy && (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].size > solverData->n)
-    x[solverData->n] = 1.0;
   /*TODO: change input to residualFunc from data to systemData */
   (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].residualFunc(dataAndThreadData, x, f, &iflag);
   solverData->numberOfFunctionEvaluations++;
@@ -2156,10 +2154,16 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
     debugVectorDouble(LOG_NLS_V,"System extrapolation", solverData->xStart, solverData->n);
   }
   vecCopy(solverData->n, solverData->xStart, solverData->x0);
-  // Initialize lambda variable with 0
-  solverData->x0[solverData->n] = 0.0;
-  solverData->x[solverData->n] = 0.0;
-  solverData->x1[solverData->n] = 0.0;
+  // Initialize lambda variable
+  if ((solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].homotopySupport && !solverData->initHomotopy && (solverData->data)->simulationInfo->nonlinearSystemData[solverData->sysNumber].size > solverData->n) {
+    solverData->x0[solverData->n] = 1.0;
+    solverData->x[solverData->n] = 1.0;
+    solverData->x1[solverData->n] = 1.0;
+  } else {
+    solverData->x0[solverData->n] = 0.0;
+    solverData->x[solverData->n] = 0.0;
+    solverData->x1[solverData->n] = 0.0;
+  }
   /* Use actual working point for scaling */
   for (i=0;i<solverData->n;i++){
     solverData->xScaling[i] = fmax(systemData->nominal[i],fabs(solverData->x0[i]));

@@ -93,19 +93,19 @@ int allocateNewtonData(int size, void** voiddata)
   data->fvecScaled = (double*) malloc(size*sizeof(double));
 
   data->n = size;
-  data->x = (double*) malloc(size*sizeof(double));
+  data->x = (double*) malloc((size+1)*sizeof(double));
   data->fvec = (double*) calloc(size,sizeof(double));
   data->xtol = 1e-6;
   data->ftol = 1e-6;
   data->maxfev = size*100;
   data->epsfcn = DBL_EPSILON;
-  data->fjac = (double*) malloc((size*size)*sizeof(double));
+  data->fjac = (double*) malloc((size*(size+1))*sizeof(double));
 
   data->rwork = (double*) malloc((size)*sizeof(double));
   data->iwork = (int*) malloc(size*sizeof(int));
 
   /* damped newton */
-  data->x_new = (double*) malloc(size*sizeof(double));
+  data->x_new = (double*) malloc((size+1)*sizeof(double));
   data->x_increment = (double*) malloc(size*sizeof(double));
   data->f_old = (double*) calloc(size,sizeof(double));
   data->fvec_minimum = (double*) calloc(size,sizeof(double));
@@ -166,7 +166,8 @@ int freeNewtonData(void **voiddata)
  */
 int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solverData, void* userdata)
 {
-
+  DATA_USER* uData = (DATA_USER*) userdata;
+  DATA* data = (DATA*) uData->data;
   int i, j, k = 0, l = 0, nrsh = 1;
   int *n = &(solverData->n);
   double *x = solverData->x;
@@ -182,7 +183,6 @@ int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solver
 
   double error_f  = 1.0 + *eps, scaledError_f = 1.0 + *eps, delta_x = 1.0 + *eps, delta_f = 1.0 + *eps, delta_x_scaled = 1.0 + *eps, lambda = 1.0;
   double current_fvec_enorm, enorm_new;
-
 
   if(ACTIVE_STREAM(LOG_NLS_V))
   {

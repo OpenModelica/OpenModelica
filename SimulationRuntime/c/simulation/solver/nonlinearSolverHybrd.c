@@ -75,9 +75,9 @@ int allocateHybrdData(int size, void** voiddata)
   data->xScalefactors = (double*) malloc(size*sizeof(double));
 
   data->n = size;
-  data->x = (double*) malloc(size*sizeof(double));
-  data->xSave = (double*) malloc(size*sizeof(double));
-  data->xScaled = (double*) malloc(size*sizeof(double));
+  data->x = (double*) malloc((size+1)*sizeof(double));
+  data->xSave = (double*) malloc((size+1)*sizeof(double));
+  data->xScaled = (double*) malloc((size+1)*sizeof(double));
   data->fvec = (double*) calloc(size, sizeof(double));
   data->fvecSave = (double*) calloc(size, sizeof(double));
   data->xtol = 1e-12;
@@ -93,8 +93,8 @@ int allocateHybrdData(int size, void** voiddata)
   data->info = 0;
   data->nfev = 0;
   data->njev = 0;
-  data->fjac = (double*) calloc((size*size), sizeof(double));
-  data->fjacobian = (double*) calloc((size*size), sizeof(double));
+  data->fjac = (double*) calloc((size*(size+1)), sizeof(double));
+  data->fjacobian = (double*) calloc((size*(size+1)), sizeof(double));
   data->ldfjac = size;
   data->r__ = (double*) malloc(((size*(size+1))/2)*sizeof(double));
   data->lr = (size*(size + 1)) / 2;
@@ -445,6 +445,19 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
   solverData->numberOfFunctionEvaluations = 0;
+
+  // Initialize lambda variable
+  if (data->simulationInfo->nonlinearSystemData[sysNumber].homotopySupport) {
+    solverData->x[solverData->n] = 1.0;
+    solverData->xSave[solverData->n] = 1.0;
+    solverData->xScaled[solverData->n] = 1.0;
+  }
+  else {
+    solverData->x[solverData->n] = 0.0;
+    solverData->xSave[solverData->n] = 0.0;
+    solverData->xScaled[solverData->n] = 0.0;
+  }
+
   /* debug output */
   if(ACTIVE_STREAM(LOG_NLS_V))
   {

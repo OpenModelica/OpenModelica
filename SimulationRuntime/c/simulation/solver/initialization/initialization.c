@@ -177,6 +177,7 @@ void dumpInitialSolution(DATA *simData)
  *  \param [ref] [threadData]
  *
  *  \author lochel
+ *  \author ptaeuber
  */
 static int symbolic_initialization(DATA *data, threadData_t *threadData)
 {

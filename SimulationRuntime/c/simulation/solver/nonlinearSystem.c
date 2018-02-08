@@ -448,9 +448,10 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     case NLS_KINSOL:
       solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        nlsKinsolAllocate(size-1, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
-        solverData->ordinaryData = nonlinsys[i].solverData;
-        allocateHomotopyData(size-1, &(solverData->initHomotopyData));
+        // nlsKinsolAllocate(size-1, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
+        // solverData->ordinaryData = nonlinsys[i].solverData;
+        // allocateHomotopyData(size-1, &(solverData->initHomotopyData));
+        throwStreamPrint(threadData, "kinsol solver not compatible with adaptive homotopy approaches");
       } else {
         nlsKinsolAllocate(size, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
         solverData->ordinaryData = nonlinsys[i].solverData;
@@ -824,6 +825,14 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
   return success;
 }
 
+/*! \fn solve system with homotopy solver
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [threadData]
+ *  \param [in]  [sysNumber] index of corresponding non-linear system
+ *
+ *  \author ptaeuber
+ */
 int solveWithInitHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 {
   int success = 0;
@@ -867,6 +876,8 @@ int solveWithInitHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
  *  \param [in]  [data]
  *  \param [in]  [threadData]
  *  \param [in]  [sysNumber] index of corresponding non-linear system
+ *
+ *  \author ptaeuber
  */
 int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 {
