@@ -904,7 +904,7 @@ protected
 
       case TYPED_MAP_CALL()
         then DAE.REDUCTION(
-          DAE.REDUCTIONINFO(Function.name(call.fn), Absyn.COMBINE(), Type.toDAE(call.ty), NONE(), "TMP", "TMP", NONE()),
+          DAE.REDUCTIONINFO(Function.name(call.fn), Absyn.COMBINE(), Type.toDAE(call.ty), NONE(), String(Util.getTempVariableIndex()), String(Util.getTempVariableIndex()), NONE()),
           Expression.toDAE(call.exp),
           list(iteratorToDAE(iter) for iter in call.iters));
 
