@@ -241,6 +241,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       data->callback->useHomotopy = 2;
     if(solveWithGlobalHomotopy) {
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
+      omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
       setAllParamsToStart(data);
       setAllVarsToStart(data);
       data->callback->updateBoundParameters(data, threadData);
@@ -311,7 +312,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   /* If there is homotopy in the model and the adaptive global homotopy approach is activated
      and solving without homotopy failed or is not wanted,
      use ADAPTIVE GLOBAL HOMOTOPY APPROACH. */
-  if (data->callback->useHomotopy == 2 && solveWithGlobalHomotopy)
+  if (adaptiveGlobal && solveWithGlobalHomotopy)
   {
     infoStreamPrint(LOG_INIT, 0, "Global homotopy with adaptive step size started.");
     infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
@@ -323,7 +324,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     infoStreamPrint(LOG_INIT, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
-    infoStreamPrint(LOG_INIT, 0, "run along the homotopy path and solve the actual system");
     data->callback->functionInitialEquations(data, threadData);
 
     messageClose(LOG_INIT);

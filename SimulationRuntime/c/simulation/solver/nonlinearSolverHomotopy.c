@@ -2064,9 +2064,11 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
   /* copy solution back to vector x */
   vecCopy(solverData->n, solverData->y1, x);
 
-  solverData->data->simulationInfo->homotopySteps += numSteps+1;
   debugString(LOG_NLS_HOMOTOPY, "HOMOTOPY ALGORITHM SUCCEEDED");
-  debugInt(LOG_INIT, "Total number of lambda steps for this homotopy loop:", numSteps+1);
+  if (solverData->initHomotopy) {
+    solverData->data->simulationInfo->homotopySteps += numSteps+1;
+    debugInt(LOG_INIT, "Total number of lambda steps for this homotopy loop:", numSteps+1);
+  }
   debugString(LOG_NLS_HOMOTOPY, "======================================================");
   solverData->info = 1;
 
