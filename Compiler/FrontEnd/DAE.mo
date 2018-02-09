@@ -1360,7 +1360,7 @@ uniontype Exp "Expressions
     Exp exp1;
     Operator operator;
     Exp exp2;
-    Integer index;
+    Integer index "Use -1 as a default; other indexes are used in the backend for some silly reasons";
     Option<tuple<Exp,Integer,Integer>> optionExpisASUB;
   end RELATION;
 

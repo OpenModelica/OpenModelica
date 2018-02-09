@@ -558,7 +558,7 @@ algorithm
   valid := isCompatibleMatch(mk);
 
   resultType := Type.BOOLEAN();
-  outExp := Expression.RELATION(e1, Operator.setType(resultType, operator), e2);
+  outExp := Expression.RELATION(e1, Operator.setType(ty, operator), e2);
 
   valid := match ty
     case Type.INTEGER() then valid;

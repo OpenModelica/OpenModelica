@@ -166,15 +166,15 @@ public
       case Op.POW_ARRAY_SCALAR  then DAE.POW_ARRAY_SCALAR(ty);
       case Op.POW_MATRIX        then DAE.POW_ARR(ty);
       case Op.UMINUS            then DAE.UMINUS(ty);
-      case Op.AND               then DAE.AND(Type.toDAE(op.ty));
-      case Op.OR                then DAE.OR(Type.toDAE(op.ty));
-      case Op.NOT               then DAE.NOT(Type.toDAE(op.ty));
-      case Op.LESS              then DAE.LESS(Type.toDAE(op.ty));
-      case Op.LESSEQ            then DAE.LESSEQ(Type.toDAE(op.ty));
-      case Op.GREATER           then DAE.GREATER(Type.toDAE(op.ty));
-      case Op.GREATEREQ         then DAE.GREATEREQ(Type.toDAE(op.ty));
-      case Op.EQUAL             then DAE.EQUAL(Type.toDAE(op.ty));
-      case Op.NEQUAL            then DAE.NEQUAL(Type.toDAE(op.ty));
+      case Op.AND               then DAE.AND(ty);
+      case Op.OR                then DAE.OR(ty);
+      case Op.NOT               then DAE.NOT(ty);
+      case Op.LESS              then DAE.LESS(ty);
+      case Op.LESSEQ            then DAE.LESSEQ(ty);
+      case Op.GREATER           then DAE.GREATER(ty);
+      case Op.GREATEREQ         then DAE.GREATEREQ(ty);
+      case Op.EQUAL             then DAE.EQUAL(ty);
+      case Op.NEQUAL            then DAE.NEQUAL(ty);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
