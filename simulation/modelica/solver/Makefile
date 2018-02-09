@@ -20,6 +20,7 @@ problem2-imprk.mos \
 problem2-irksco.mos \
 problem2-ida.mos \
 problem2-idaLinearSolver.mos \
+problem2-idaJacobian.mos \
 problem2-imprkLS.mos \
 problem2-symSolverImp.mos \
 problem2-symSolverExp.mos \
