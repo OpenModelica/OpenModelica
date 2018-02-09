@@ -809,8 +809,7 @@ const char *JACOBIAN_METHOD[JAC_MAX] = {
   "internalNumerical",
   "coloredSymbolical",
   "numerical",
-  "symbolical",
-  "kluSparse"
+  "symbolical"
 };
 
 const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
@@ -821,7 +820,6 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "  * coloredSymbolical - A dense colored symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
   "  * numerical - A dense numerical Jacobian. Usable with dassl and ida.",
   "  * symbolical - A dense symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
-  "  * kluSparse - A sparse colored numerical Jacobian, which is default for ida. Usable with ida."
  };
 
 const char *IDA_LS_METHOD[IDA_LS_MAX] = {

@@ -72,12 +72,12 @@
 #include <idas/idas_spbcgs.h>
 #include <idas/idas_sptfqmr.h>
 
-static int callDenseNumJac(long int Neq, double tt, double cj,
+static int callDenseJacobian(long int Neq, double tt, double cj,
     N_Vector yy, N_Vector yp, N_Vector rr,
     DlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
-static int jacobianSparseNum(realtype tt, realtype cj,
+static int callSparseJacobian(realtype tt, realtype cj,
     N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3);
 
@@ -403,7 +403,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
 
 
-  /* if FLAG_JACOBIAN is set, choose dassl jacobian calculation method */
+  /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
   if (omc_flag[FLAG_JACOBIAN])
   {
     for(i=1; i< JAC_MAX;i++)
@@ -412,6 +412,11 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
         idaData->jacobianMethod = (int)i;
         break;
       }
+    }
+    if(idaData->daeMode && ( idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC ))
+    {
+      warningStreamPrint(LOG_STDOUT, 1, "Symbolic Jacobians are currently not supported by DAE Mode. Switch back to numerical Jacobian!");
+      idaData->jacobianMethod = COLOREDNUMJAC;
     }
     if(idaData->jacobianMethod == JAC_UNKNOWN)
     {
@@ -430,21 +435,13 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   }
   else
   {
-    if (idaData->linearSolverMethod == IDA_LS_KLU)
-    {
-      idaData->jacobianMethod = KLUSPARSE;
-    }
-    else
-    {
-      idaData->jacobianMethod = COLOREDNUMJAC;
-    }
+    idaData->jacobianMethod = COLOREDNUMJAC;
   }
 
   /* selects the calculation method of the jacobian */
   /* in daeMode sparse pattern is already initialized in DAEMODE_DATA */
   if(!idaData->daeMode && (idaData->jacobianMethod == COLOREDNUMJAC ||
       idaData->jacobianMethod == COLOREDSYMJAC ||
-      idaData->jacobianMethod == KLUSPARSE ||
       idaData->jacobianMethod == SYMJAC))
   {
     if (data->callback->initialAnalyticJacobianA(data, threadData))
@@ -466,6 +463,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     {
       idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNoneZeros;
       flag = IDAKLU(idaData->ida_mem, idaData->N, idaData->NNZ);
+      idaData->jacobianMethod = COLOREDNUMJAC; /* In DAE mode only numerical matrix is supported */
     }
     else
     {
@@ -479,11 +477,14 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     }
 
     switch (idaData->jacobianMethod){
-    case KLUSPARSE:
-      flag = IDASlsSetSparseJacFn(idaData->ida_mem, jacobianSparseNum);
+    case SYMJAC:
+    case NUMJAC:
+    case COLOREDSYMJAC:
+    case COLOREDNUMJAC:
+      flag = IDASlsSetSparseJacFn(idaData->ida_mem, callSparseJacobian);
       break;
     default:
-      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s", JACOBIAN_METHOD[KLUSPARSE]);
+      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD[COLOREDSYMJAC], JACOBIAN_METHOD[COLOREDNUMJAC]);
       break;
     }
   }
@@ -492,12 +493,10 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     switch (idaData->jacobianMethod){
     case SYMJAC:
     case COLOREDSYMJAC:
-      infoStreamPrint(LOG_STDOUT, 0, "The symbolic jacobian is not implemented, yet! Switch back to internal.");
-      break;
     case COLOREDNUMJAC:
     case NUMJAC:
       /* set jacobian function */
-      flag = IDADlsSetDenseJacFn(idaData->ida_mem, callDenseNumJac);
+      flag = IDADlsSetDenseJacFn(idaData->ida_mem, callDenseJacobian);
       break;
     case INTERNALNUMJAC:
       break;
@@ -1268,7 +1267,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
  *  into a dense DlsMat matrix
  */
 static
-int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, double cj, void *userData)
+int jacColoredNumericalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, double cj, void *userData)
 {
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
@@ -1365,69 +1364,60 @@ int jacOwnNumColoredIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat
 }
 
 /*
- *  function calculates a jacobian matrix by
- *  numerical method finite differences without coloring
- *  into a dense DlsMat matrix
+ *  function calculates the Jacobian matrix symbolical
+ *  with considering also the coloring and pass it in a
+ *  dense DlsMat matrix.
  */
 static
-int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, double cj, void *userData)
+int jacColoredSymbolicalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, double cj, void *userData)
 {
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
+  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->simData)->threadData);
   void* ida_mem = idaData->ida_mem;
+  const int index = data->callback->INDEX_JAC_A;
+  unsigned int i,ii,j, nth;
+  ANALYTIC_JACOBIAN* jacData = &(data->simulationInfo->analyticJacobians[index]);
+  SPARSE_PATTERN* sparsePattern = &(jacData->sparsePattern);
 
   /* prepare variables */
   double *states = N_VGetArrayPointer(yy);
   double *yprime = N_VGetArrayPointer(yp);
-  double *delta  = N_VGetArrayPointer(rr);
-  double *newdelta = N_VGetArrayPointer(idaData->newdelta);
-  double *errwgt = N_VGetArrayPointer(idaData->errwgt);
-
-  double ysave, ypsave;
-
-  double delta_h = numericalDifferentiationDeltaXsolver;
-  double delta_hh;
-  double delta_hhh;
-  double deltaInv;
-  long int i,j;
-
-  double currentStep;
-
-  /* set values */
-  IDAGetCurrentStep(ida_mem, &currentStep);
-  if (!idaData->disableScaling){
-    IDAGetErrWeights(ida_mem, idaData->errwgt);
-  }
 
   setContext(data, &tt, CONTEXT_JACOBIAN);
 
-  for(i = 0; i < idaData->N; i++)
+  for(i = 0; i < sparsePattern->maxColors; i++)
   {
-    delta_hhh = currentStep * yprime[i];
-    delta_hh = delta_h * fmax(fmax(fabs(states[i]),fabs(delta_hhh)),fabs(1./errwgt[i]));
-    delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
-    delta_hh = (states[i] + delta_hh) - states[i];
-    deltaInv = 1. / delta_hh;
-    ysave = states[i];
-    states[i] += delta_hh;
-    if (idaData->daeMode){
-      ypsave = yprime[i];
-      yprime[i] += cj * delta_hh;
+    for(ii=0; ii < idaData->N; ii++)
+    {
+      if(sparsePattern->colorCols[ii]-1 == i)
+      {
+        jacData->seedVars[ii] = 1;
+      }
     }
 
-    (*idaData->residualFunction)(tt, yy, yp, idaData->newdelta, userData);
-
+    data->callback->functionJacA_column(data, threadData);
     increaseJacContext(data);
 
-    for(j = 0; j < idaData->N; j++)
+    for(ii = 0; ii < idaData->N; ii++)
     {
-      DENSE_ELEM(Jac, j, i) = (newdelta[j] - delta[j]) * deltaInv;
-
+      if(sparsePattern->colorCols[ii]-1 == i)
+      {
+        nth = sparsePattern->leadindex[ii];
+        while(nth < sparsePattern->leadindex[ii+1])
+        {
+          j  =  sparsePattern->index[nth];
+          infoStreamPrint(LOG_JAC, 0, "### symbolical jacobian  at [%d,%d] = %f ###", j, ii, jacData->resultVars[j]);
+          DENSE_ELEM(Jac, j, ii) = jacData->resultVars[j];
+          nth++;
+        };
+      }
     }
-    states[i] = ysave;
-    if (idaData->daeMode){
-      yprime[i] = ypsave;
+
+    for(ii=0; ii < idaData->N; ii++)
+    {
+      jacData->seedVars[ii] = 0;
     }
   }
   unsetContext(data);
@@ -1437,9 +1427,9 @@ int jacOwnNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, DlsMat Jac, d
 }
 
 /*
- * provides a numerical Jacobian
+ * wrapper function to call dense Jacobian
  */
-static int callDenseNumJac(long int Neq, double tt, double cj,
+static int callDenseJacobian(long int Neq, double tt, double cj,
     N_Vector yy, N_Vector yp, N_Vector rr,
     DlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
@@ -1452,13 +1442,17 @@ static int callDenseNumJac(long int Neq, double tt, double cj,
   /* profiling */
   rt_tick(SIM_TIMER_JACOBIAN);
 
-  if (idaData->jacobianMethod == COLOREDNUMJAC)
+  if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
   {
-    retVal = jacOwnNumColoredIDA(tt, yy, yp, rr, Jac, cj, user_data);
+    retVal = jacColoredNumericalDense(tt, yy, yp, rr, Jac, cj, user_data);
   }
-  else if (idaData->jacobianMethod == NUMJAC)
+  else if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
   {
-    retVal = jacOwnNumIDA(tt, yy, yp, rr, Jac, cj, user_data);
+    retVal = jacColoredSymbolicalDense(tt, yy, yp, rr, Jac, cj, user_data);
+  }
+  else
+  {
+    throwStreamPrint(threadData, "##IDA## Something goes wrong while obtain jacobian matrix!");
   }
 
   /* profiling */
@@ -1514,7 +1508,7 @@ static void finishSparseColPtr(SlsMat mat, int nnz)
  *  into a sparse SlsMat matrix
  */
 static
-int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, double cj, void *userData)
+int jacoColoredNumericalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, double cj, void *userData)
 {
   TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
@@ -1645,15 +1639,83 @@ int jacobianSparseNumIDA(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMa
   return 0;
 }
 
-/*
- * Wrapper function for jacobianSparseNumIDA
+/* \fn jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, double cj, void *userData)
+ *
+ *
+ * This function calculates symbolically the jacobian matrix and exploiting the coloring.
  */
-static int jacobianSparseNum(double tt, double cj,
+int
+jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, SlsMat Jac, double cj, void *userData)
+{
+  TRACE_PUSH
+  IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
+  DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
+  threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->simData)->threadData);
+  void* ida_mem = idaData->ida_mem;
+  const int index = data->callback->INDEX_JAC_A;
+  unsigned int i,ii,j,nth;
+
+  /* prepare variables */
+  double *states = N_VGetArrayPointer(yy);
+  double *yprime = N_VGetArrayPointer(yp);
+
+  ANALYTIC_JACOBIAN* jacData = &(data->simulationInfo->analyticJacobians[index]);
+  SPARSE_PATTERN* sparsePattern = &(jacData->sparsePattern);
+
+  /* it's needed to clear the matrix */
+  SlsSetToZero(Jac);
+
+  setContext(data, &tt, CONTEXT_JACOBIAN);
+
+  for(i = 0; i < sparsePattern->maxColors; i++)
+  {
+    for(ii=0; ii < idaData->N; ii++)
+    {
+      if(sparsePattern->colorCols[ii]-1 == i)
+      {
+        jacData->seedVars[ii] = 1;
+      }
+    }
+
+    data->callback->functionJacA_column(data, threadData);
+    increaseJacContext(data);
+
+    for(ii = 0; ii < idaData->N; ii++)
+    {
+      if(sparsePattern->colorCols[ii]-1 == i)
+      {
+        nth = sparsePattern->leadindex[ii];
+        while(nth < sparsePattern->leadindex[ii+1])
+        {
+          j  =  sparsePattern->index[nth];
+          setJacElementKluSparse(j, ii, jacData->resultVars[j], nth, Jac);
+          nth++;
+        };
+      }
+    }
+
+    for(ii=0; ii < idaData->N; ii++)
+    {
+      jacData->seedVars[ii] = 0;
+    }
+  }
+  finishSparseColPtr(Jac, sparsePattern->numberOfNoneZeros);
+  unsetContext(data);
+
+  TRACE_POP
+  return 0;
+}
+
+/*
+ * Wrapper function to call numerical or symbolical jacobian matrix
+ */
+static int callSparseJacobian(double tt, double cj,
     N_Vector yy, N_Vector yp, N_Vector rr,
     SlsMat Jac, void *user_data,
     N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   TRACE_PUSH
+  int retVal;
 
   IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
@@ -1662,11 +1724,13 @@ static int jacobianSparseNum(double tt, double cj,
   /* profiling */
   rt_tick(SIM_TIMER_JACOBIAN);
 
-  if(jacobianSparseNumIDA(tt, yy, yp, rr, Jac, cj, user_data))
+  if (idaData->jacobianMethod == COLOREDSYMJAC || idaData->jacobianMethod == SYMJAC)
   {
-    throwStreamPrint(threadData, "Error, can not get Matrix A ");
-    TRACE_POP
-    return 1;
+    retVal = jacColoredSymbolicalSparse(tt, yy, yp, rr, Jac, cj, user_data);
+  }
+  else if (idaData->jacobianMethod == COLOREDNUMJAC || idaData->jacobianMethod == NUMJAC)
+  {
+    retVal = jacoColoredNumericalSparse(tt, yy, yp, rr, Jac, cj, user_data);
   }
 
   /* profiling */
@@ -1692,7 +1756,7 @@ static int jacobianSparseNum(double tt, double cj,
   }
 
   TRACE_POP
-  return 0;
+  return retVal;
 }
 
 static
@@ -1727,13 +1791,13 @@ int getScalingFactors(DATA* data, IDA_SOLVER *idaData, SlsMat inScaleMatrix)
     if (idaData->linearSolverMethod == IDA_LS_KLU)
     {
       scaleMatrix = NewSparseMat(idaData->N, idaData->N, idaData->NNZ);
-      jacobianSparseNum(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
+      callSparseJacobian(data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
                         scaleMatrix, idaData, tmp1, tmp2, tmp3);
     }
     else
     {
       DlsMat denseMatrix = NewDenseMat(idaData->N, idaData->N);
-      callDenseNumJac(idaData->N, data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
+      callDenseJacobian(idaData->N, data->localData[0]->timeValue, 1.0, idaData->y, idaData->yp, rres,
                       denseMatrix, idaData, tmp1, tmp2, tmp3);
       scaleMatrix = SlsConvertDls(denseMatrix);
     }
