@@ -55,6 +55,8 @@ public:
   bool statusToBool(oms_status_t status);
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
+  void setWorkingDirectory(QString path);
+  void setDebugLogging(bool useDebugLogging);
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);

@@ -96,9 +96,9 @@ void OMSProxy::destroy()
 OMSProxy::OMSProxy()
 {
   // OMSimulator global settings
-  oms2_setLoggingCallback(loggingCallback);
   setLogFile(QString(Utilities::tempDirectory() + "/omsllog.txt").toStdString().c_str());
   setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
+  oms2_setLoggingCallback(loggingCallback);
 }
 
 /*!
@@ -139,6 +139,16 @@ void OMSProxy::setTempDirectory(QString path)
 }
 
 /*!
+ * \brief OMSProxy::setWorkingDirectory
+ * Sets the working directory.
+ * \param path
+ */
+void OMSProxy::setWorkingDirectory(QString path)
+{
+  oms_setWorkingDirectory(path.toStdString().c_str());
+}
+
+/*!
  * \brief OMSProxy::newFMIModel
  * Creates a new FMI model.
  * \param ident
@@ -148,6 +158,16 @@ bool OMSProxy::newFMIModel(QString ident)
 {
   oms_status_t status = oms2_newFMIModel(ident.toStdString().c_str());
   return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setDebugLogging
+ * Sets the debug logging.
+ * \param useDebugLogging
+ */
+void OMSProxy::setDebugLogging(bool useDebugLogging)
+{
+  oms2_setDebugLogging(useDebugLogging);
 }
 
 /*!

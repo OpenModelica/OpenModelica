@@ -65,6 +65,7 @@ class FigaroPage;
 class DebuggerPage;
 class FMIPage;
 class TLMPage;
+class OMSimulatorPage;
 class TraceabilityPage;
 class TabSettings;
 class StackFramesWidget;
@@ -103,6 +104,7 @@ public:
   void readDebuggerSettings();
   void readFMISettings();
   void readTLMSettings();
+  void readOMSimulatorSettings();
   void readTraceabilitySettings();
   void saveGeneralSettings();
   void saveLibrariesSettings();
@@ -113,6 +115,7 @@ public:
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
   void saveTLMSettings();
+  void saveOMSimulatorSettings();
   void saveTraceabilitySettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
@@ -146,6 +149,7 @@ public:
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   TLMPage* getTLMPage() {return mpTLMPage;}
+  OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
@@ -182,6 +186,7 @@ private:
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   TLMPage *mpTLMPage;
+  OMSimulatorPage *mpOMSimulatorPage;
   TraceabilityPage *mpTraceabilityPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
@@ -886,6 +891,25 @@ private slots:
   void browseTLMPluginPath();
   void browseTLMManagerProcess();
   void browseTLMMonitorProcess();
+};
+
+class OMSimulatorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  OMSimulatorPage(OptionsDialog *pOptionsDialog);
+  void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
+  QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
+  QCheckBox* getDebugLoggingCheckBox() {return mpDebugLoggingCheckBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpGeneralGroupBox;
+  Label *mpWorkingDirectoryLabel;
+  QLineEdit *mpWorkingDirectoryTextBox;
+  QPushButton *mpBrowseWorkingDirectoryButton;
+  QCheckBox *mpDebugLoggingCheckBox;
+private slots:
+  void browseWorkingDirectory();
 };
 
 class TraceabilityPage : public QWidget
