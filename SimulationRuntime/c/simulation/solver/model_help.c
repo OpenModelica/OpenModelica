@@ -1476,6 +1476,7 @@ const char *context_string[CONTEXT_MAX] = {
  "context algebraic evaluation",
  "context event search",
  "context jacobian evaluation",
+ "context symbolica jacobian evaluation"
 };
 
 /*! \fn setContext
@@ -1489,8 +1490,10 @@ const char *context_string[CONTEXT_MAX] = {
 void setContext(DATA* data, double* currentTime, int currentContext){
   data->simulationInfo->currentContextOld =  data->simulationInfo->currentContext;
   data->simulationInfo->currentContext =  currentContext;
-  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", context_string[data->simulationInfo->currentContext], *currentTime);
-  if (currentContext == CONTEXT_JACOBIAN){
+  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", context_string[currentContext], *currentTime);
+  if (currentContext == CONTEXT_JACOBIAN ||
+      currentContext == CONTEXT_SYM_JACOBIAN)
+  {
     data->simulationInfo->currentJacobianEval = 0;
   }
 }
@@ -1502,9 +1505,12 @@ void setContext(DATA* data, double* currentTime, int currentContext){
  * Increase Jacobian column context in simulation info object
  */
 void increaseJacContext(DATA* data){
-  if (data->simulationInfo->currentContext == CONTEXT_JACOBIAN){
+  int currentContext = data->simulationInfo->currentContext;
+  if (currentContext == CONTEXT_JACOBIAN ||
+      currentContext == CONTEXT_SYM_JACOBIAN)
+  {
     data->simulationInfo->currentJacobianEval++;
-    infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Increase Jacobian column context %s +++ to %d", context_string[data->simulationInfo->currentContext], data->simulationInfo->currentJacobianEval);
+    infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Increase Jacobian column context %s +++ to %d", context_string[currentContext], data->simulationInfo->currentJacobianEval);
   }
 }
 

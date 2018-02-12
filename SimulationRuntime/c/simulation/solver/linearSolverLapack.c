@@ -49,6 +49,8 @@
 extern int dgesv_(int *n, int *nrhs, double *a, int *lda,
                   int *ipiv, double *b, int *ldb, int *info);
 
+extern int dgetrs_(char* tran, int *n, int *nrhs, double *a, int *lda,
+                  int *ipiv, double *b, int *ldb, int *info);
 /*! \fn allocate memory for linear system solver lapack
  *
  */
@@ -173,6 +175,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
   int indexes[2] = {1,eqSystemNumber};
   _omc_scalar residualNorm = 0;
   double tmpJacEvalTime;
+  int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Lapack Solver",
          eqSystemNumber, (int) systemData->size,
@@ -184,25 +187,28 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
   _omc_setVectorData(solverData->b, systemData->b);
   _omc_setMatrixData(solverData->A, systemData->A);
 
-
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method) {
 
-    /* reset matrix A */
-    memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
+    if (!reuseMatrixJac){
+      /* reset matrix A */
+      memset(systemData->A, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
-    /* update matrix A */
-    systemData->setA(data, threadData, systemData);
+      /* update matrix A */
+      systemData->setA(data, threadData, systemData);
+    }
 
     /* update vector b (rhs) */
     systemData->setb(data, threadData, systemData);
   } else {
 
-    /* calculate jacobian -> matrix A*/
-    if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianLapack(data, threadData, solverData->A->data, sysNumber);
-    } else {
-      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
+    if (!reuseMatrixJac){
+      /* calculate jacobian -> matrix A*/
+      if(systemData->jacobianIndex != -1){
+        getAnalyticalJacobianLapack(data, threadData, solverData->A->data, sysNumber);
+      } else {
+        assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
+      }
     }
 
     /* calculate vector b (rhs) */
@@ -222,15 +228,35 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber)
 
   rt_ext_tp_tick(&(solverData->timeClock));
 
-  /* Solve system */
-  dgesv_((int*) &systemData->size,
-         (int*) &solverData->nrhs,
-         solverData->A->data,
-         (int*) &systemData->size,
-         solverData->ipiv,
-         solverData->b->data,
-         (int*) &systemData->size,
-         &solverData->info);
+  /* if reuseMatrixJac use also previous factorization */
+  if (!reuseMatrixJac)
+  {
+    /* Solve system */
+    dgesv_((int*) &systemData->size,
+           (int*) &solverData->nrhs,
+           solverData->A->data,
+           (int*) &systemData->size,
+           solverData->ipiv,
+           solverData->b->data,
+           (int*) &systemData->size,
+           &solverData->info);
+
+  } /* further Jacobian evaluations */
+  else
+  {
+    char trans = 'N';
+    /* Solve system */
+    dgetrs_(&trans,
+            (int*) &systemData->size,
+            (int*) &solverData->nrhs,
+            solverData->A->data,
+            (int*) &systemData->size,
+            solverData->ipiv,
+            solverData->b->data,
+            (int*) &systemData->size,
+            &solverData->info);
+  }
+
 
   infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 

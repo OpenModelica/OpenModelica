@@ -182,6 +182,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
 
   int i, j, status = 0, success = 0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   double tmpJacEvalTime;
+  int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with Klu Solver",
    eqSystemNumber, (int) systemData->size,
@@ -190,30 +191,27 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method)
   {
-    /* set A matrix */
-    solverData->Ap[0] = 0;
-    systemData->setA(data, threadData, systemData);
-    solverData->Ap[solverData->n_row] = solverData->nnz;
-
-    if (ACTIVE_STREAM(LOG_LS_V))
-    {
-      infoStreamPrint(LOG_LS_V, 1, "Matrix A");
-      printMatrixCSR(solverData->Ap, solverData->Ai, solverData->Ax, n);
-      messageClose(LOG_LS_V);
+    if (!reuseMatrixJac){
+      /* set A matrix */
+      solverData->Ap[0] = 0;
+      systemData->setA(data, threadData, systemData);
+      solverData->Ap[solverData->n_row] = solverData->nnz;
     }
 
     /* set b vector */
     systemData->setb(data, threadData, systemData);
   } else {
 
-    solverData->Ap[0] = 0;
-    /* calculate jacobian -> matrix A*/
-    if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobian(data, threadData, sysNumber);
-    } else {
-      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
+    if (!reuseMatrixJac){
+      solverData->Ap[0] = 0;
+      /* calculate jacobian -> matrix A*/
+      if(systemData->jacobianIndex != -1){
+        getAnalyticalJacobian(data, threadData, sysNumber);
+      } else {
+        assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
+      }
+      solverData->Ap[solverData->n_row] = solverData->nnz;
     }
-    solverData->Ap[solverData->n_row] = solverData->nnz;
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
@@ -244,6 +242,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
   }
   rt_ext_tp_tick(&(solverData->timeClock));
 
+
   /* symbolic pre-ordering of A to reduce fill-in of L and U */
   if (0 == solverData->numberSolving)
   {
@@ -251,21 +250,25 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
     solverData->symbolic = klu_analyze(solverData->n_col, solverData->Ap, solverData->Ai, &solverData->common);
   }
 
-  /* compute the LU factorization of A */
-  if (0 == solverData->common.status){
-    if(solverData->numeric){
-      /* Just refactor using the same pivots, but check that the refactor is still accurate */
-      klu_refactor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
-      klu_rgrowth(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
-      infoStreamPrint(LOG_LS_V, 0, "Klu rgrowth after refactor: %f", solverData->common.rgrowth);
-      /* If rgrowth is small then do a whole factorization with new pivots (What should this tolerance be?) */
-      if (solverData->common.rgrowth < 1e-3){
-        klu_free_numeric(&solverData->numeric, &solverData->common);
+  /* if reuseMatrixJac use also previous factorization */
+  if (!reuseMatrixJac)
+  {
+    /* compute the LU factorization of A */
+    if (0 == solverData->common.status){
+      if(solverData->numeric){
+        /* Just refactor using the same pivots, but check that the refactor is still accurate */
+        klu_refactor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
+        klu_rgrowth(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
+        infoStreamPrint(LOG_LS_V, 0, "Klu rgrowth after refactor: %f", solverData->common.rgrowth);
+        /* If rgrowth is small then do a whole factorization with new pivots (What should this tolerance be?) */
+        if (solverData->common.rgrowth < 1e-3){
+          klu_free_numeric(&solverData->numeric, &solverData->common);
+          solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
+          infoStreamPrint(LOG_LS_V, 0, "Klu new factorization performed.");
+        }
+      } else {
         solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
-        infoStreamPrint(LOG_LS_V, 0, "Klu new factorization performed.");
       }
-    } else {
-      solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
     }
   }
 

@@ -1385,7 +1385,7 @@ int jacColoredSymbolicalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, 
   double *states = N_VGetArrayPointer(yy);
   double *yprime = N_VGetArrayPointer(yp);
 
-  setContext(data, &tt, CONTEXT_JACOBIAN);
+  setContext(data, &tt, CONTEXT_SYM_JACOBIAN);
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {
@@ -1665,7 +1665,7 @@ jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, Sls
   /* it's needed to clear the matrix */
   SlsSetToZero(Jac);
 
-  setContext(data, &tt, CONTEXT_JACOBIAN);
+  setContext(data, &tt, CONTEXT_SYM_JACOBIAN);
 
   for(i = 0; i < sparsePattern->maxColors; i++)
   {

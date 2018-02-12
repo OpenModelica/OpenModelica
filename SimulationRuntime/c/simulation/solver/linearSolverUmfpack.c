@@ -198,6 +198,7 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
   int i, j, status = UMFPACK_OK, success = 0, ni=0, n = systemData->size, eqSystemNumber = systemData->equationIndex, indexes[2] = {1,eqSystemNumber};
   int casualTearingSet = systemData->strictTearingFunctionCall != NULL;
   double tmpJacEvalTime;
+  int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
   infoStreamPrintWithEquationIndexes(LOG_LS, 0, indexes, "Start solving Linear System %d (size %d) at time %g with UMFPACK Solver",
    eqSystemNumber, (int) systemData->size,
@@ -207,30 +208,27 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method)
   {
-    /* set A matrix */
-    solverData->Ap[0] = 0;
-    systemData->setA(data, threadData, systemData);
-    solverData->Ap[solverData->n_row] = solverData->nnz;
-
-    if (ACTIVE_STREAM(LOG_LS_V))
-    {
-      infoStreamPrint(LOG_LS_V, 1, "Matrix A");
-      printMatrixCSR(solverData->Ap, solverData->Ai, solverData->Ax, n);
-      messageClose(LOG_LS_V);
+    if (!reuseMatrixJac){
+      /* set A matrix */
+      solverData->Ap[0] = 0;
+      systemData->setA(data, threadData, systemData);
+      solverData->Ap[solverData->n_row] = solverData->nnz;
     }
 
     /* set b vector */
     systemData->setb(data, threadData, systemData);
   } else {
 
-    solverData->Ap[0] = 0;
-    /* calculate jacobian -> matrix A*/
-    if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianUmfPack(data, threadData, sysNumber);
-    } else {
-      assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
+    if (!reuseMatrixJac){
+      solverData->Ap[0] = 0;
+      /* calculate jacobian -> matrix A*/
+      if(systemData->jacobianIndex != -1){
+        getAnalyticalJacobianUmfPack(data, threadData, sysNumber);
+      } else {
+        assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
+      }
+      solverData->Ap[solverData->n_row] = solverData->nnz;
     }
-    solverData->Ap[solverData->n_row] = solverData->nnz;
 
     /* calculate vector b (rhs) */
     memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
@@ -268,9 +266,13 @@ solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber)
   }
 
   /* compute the LU factorization of A */
-  if (0 == status){
-    umfpack_di_free_numeric(&(solverData->numeric));
-    status = umfpack_di_numeric(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &(solverData->numeric), solverData->control, solverData->info);
+  /* if reuseMatrixJac use also previous factorization */
+  if (!reuseMatrixJac)
+  {
+    if (0 == status){
+      umfpack_di_free_numeric(&(solverData->numeric));
+      status = umfpack_di_numeric(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &(solverData->numeric), solverData->control, solverData->info);
+    }
   }
 
   if (0 == status){

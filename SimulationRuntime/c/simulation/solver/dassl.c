@@ -987,6 +987,10 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta, double 
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,l,k,ii;
 
+  /* set symbolical jacobian to reuse the matrix A and the factorization
+   * in the Linear loops of  functionJacA_column */
+  setContext(data, t, CONTEXT_SYM_JACOBIAN);
+
   for(i=0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors; i++)
   {
     for(ii=0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
@@ -994,6 +998,8 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta, double 
         data->simulationInfo->analyticJacobians[index].seedVars[ii] = 1;
 
     data->callback->functionJacA_column(data, threadData);
+
+    increaseJacContext(data);
 
     for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
     {
@@ -1033,12 +1039,18 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta, double *matrix
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,j,k;
 
+  /* set symbolical jacobian to reuse the matrix A and the factorization
+   * in the Linear loops of  functionJacA_column */
+  setContext(data, t, CONTEXT_SYM_JACOBIAN);
+
   k = 0;
   for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
 
     data->callback->functionJacA_column(data, threadData);
+
+    increaseJacContext(data);
 
     for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
     {
@@ -1073,6 +1085,8 @@ int jacA_num(double *t, double *y, double *yprime, double *delta, double *matrix
   int ires;
   int i,j;
 
+  /* set context for the start values extrapolation of non-linear algebraic loops */
+  setContext(data, t, CONTEXT_JACOBIAN);
 
   for(i=dasslData->N-1; i >= 0; i--)
   {
@@ -1136,6 +1150,9 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta, double 
   double* ypsave = dasslData->ypsave;
 
   unsigned int i,j,l,k,ii;
+
+  /* set context for the start values extrapolation of non-linear algebraic loops */
+  setContext(data, t, CONTEXT_JACOBIAN);
 
   for(i = 0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors; i++)
   {
@@ -1204,9 +1221,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD, do
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
-
-  /* set context for the start values extrapolation of non-linear algebraic loops */
-  setContext(data, t, CONTEXT_JACOBIAN);
 
   /* profiling */
   rt_tick(SIM_TIMER_JACOBIAN);

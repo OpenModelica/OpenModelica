@@ -833,6 +833,9 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 
   modelica_real **sV = optData->s.seedVec[index];
 
+  /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
+  setContext(data, &(data->localData[0]->timeValue), CONTEXT_SYM_JACOBIAN);
+
   for(i = 1; i < Cmax; ++i){
     data->simulationInfo->analyticJacobians[h_index].seedVars = sV[i];
 
@@ -842,6 +845,8 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
       data->callback->functionJacC_column(data, threadData);
     }else
       assert(0);
+
+    increaseJacContext(data);
 
     for(ii = 0; ii < nx; ++ii){
       if(cC[ii] == i){
@@ -862,6 +867,8 @@ void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const in
 
     }
   }
+  /* set context for the start values extrapolation of non-linear algebraic loops */
+  unsetContext(data);
 }
 
 void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
@@ -880,10 +887,15 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
 
     modelica_real **sV = optData->s.seedVec[index];
 
+    /* set symbolic jacobian context to reuse the matrix and the factorization in every column */
+    setContext(data,  &(data->localData[0]->timeValue), CONTEXT_SYM_JACOBIAN);
+
     for(i = 1; i < Cmax; ++i){
       data->simulationInfo->analyticJacobians[h_index].seedVars = sV[i];
 
       data->callback->functionJacD_column(data, threadData);
+
+      increaseJacContext(data);
 
       for(ii = 0; ii < nx; ++ii){
         if(cC[ii] == i){
@@ -894,6 +906,8 @@ void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J){
         }
       }
     }
+    /* set context for the start values extrapolation of non-linear algebraic loops */
+    unsetContext(data);
   }
 }
 
