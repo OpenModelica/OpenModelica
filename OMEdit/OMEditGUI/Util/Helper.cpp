@@ -152,6 +152,7 @@ QString Helper::type;
 QString Helper::information;
 QString Helper::rename;
 QString Helper::renameTip;
+QString Helper::renameOMSimulatorModelTip;
 QString Helper::checkModel;
 QString Helper::checkModelTip;
 QString Helper::checkAllModels;
@@ -408,6 +409,7 @@ void Helper::initHelperVariables()
   Helper::information = tr("Information");
   Helper::rename = tr("Rename");
   Helper::renameTip = tr("Renames an item");
+  Helper::renameOMSimulatorModelTip = tr("Renames the model");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
   Helper::checkAllModels = tr("Check All Models");
@@ -446,7 +448,7 @@ void Helper::initHelperVariables()
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
-  Helper::unloadOMSimulatorModelTip = tr("Unloads the OMSimulator Model");
+  Helper::unloadOMSimulatorModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");

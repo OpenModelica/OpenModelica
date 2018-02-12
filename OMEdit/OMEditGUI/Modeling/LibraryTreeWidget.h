@@ -146,8 +146,6 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
-  void setOMSimulatorModel(void *pOMSimulatorModel) {mpOMSimulatorModel = pOMSimulatorModel;}
-  void* getOMSimulatorModel() {return mpOMSimulatorModel;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -195,7 +193,6 @@ private:
   QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
-  void *mpOMSimulatorModel;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();
@@ -362,6 +359,7 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
   QAction *mpSimulateOMSimulatorModelAction;
+  QAction *mpRenameOMSimulatorModelAction;
   QAction *mpUnloadOMSimulatorModelAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
@@ -409,6 +407,7 @@ public slots:
   void fetchInterfaceData();
   void TLMSimulate();
   void simulateOMSimulatorModel();
+  void renameOMSimulatorModel();
   void unloadOMSimulatorModel();
 protected:
   virtual void mouseDoubleClickEvent(QMouseEvent *event);

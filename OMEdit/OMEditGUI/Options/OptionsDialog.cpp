@@ -35,6 +35,7 @@
 #include "OptionsDialog.h"
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
+#include "OMS/OMSProxy.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
@@ -162,6 +163,7 @@ void OptionsDialog::readGeneralSettings()
   // read the working directory
   if (mpSettings->contains("workingDirectory")) {
     MainWindow::instance()->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
+    OMSProxy::instance()->setTempDirectory(mpSettings->value("workingDirectory").toString());
   }
   mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
   // read toolbar icon size
@@ -827,6 +829,7 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("language", language);
   // save working directory
   MainWindow::instance()->getOMCProxy()->changeDirectory(mpGeneralSettingsPage->getWorkingDirectory());
+  OMSProxy::instance()->setTempDirectory(mpGeneralSettingsPage->getWorkingDirectory());
   mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
   mpSettings->setValue("workingDirectory", mpGeneralSettingsPage->getWorkingDirectory());
   // save toolbar icon size

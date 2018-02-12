@@ -38,6 +38,7 @@
 #include "Plotting/PlotWindowContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
@@ -70,8 +71,6 @@
 #include "Traceability/TraceabilityGraphViewWidget.h"
 #include "omc_config.h"
 
-#include "OMSimulator.h"
-
 #include <QtSvg/QSvgGenerator>
 
 MainWindow::MainWindow(bool debug, QWidget *parent)
@@ -100,9 +99,6 @@ MainWindow::MainWindow(bool debug, QWidget *parent)
   setMinimumSize(400, 300);
   resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
-  // OMSimulator global settings
-  oms_setLogFile(QString(Utilities::tempDirectory() + "/omsllog.txt").toStdString().c_str());
-  oms_setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
 }
 
 MainWindow *MainWindow::mpInstance = 0;
@@ -158,6 +154,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
+  // create an object of OMSProxy
+  OMSProxy::create();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setMaximumWidth(300);
@@ -524,6 +522,16 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
   delete mpOMCProxy;
+  // Unload the OMSimulator models
+  LibraryTreeItem* pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMSimulator) {
+      mpLibraryWidget->getLibraryTreeModel()->unloadOMSimulatorModel(pChildLibraryTreeItem, false);
+    }
+  }
+  // delete the OMSProxy object
+  OMSProxy::destroy();
   delete mpModelWidgetContainer;
   if (mpSimulationDialog) {
     delete mpSimulationDialog;
@@ -1366,21 +1374,22 @@ void MainWindow::openCompositeModelFile()
 }
 
 /*!
- * \brief MainWindow::createNewOMSimulatorModelFile
- * Creates a new OMS LibraryTreeItem & ModelWidget.\n
- * Slot activated when mpNewOMSimulatorModelFileAction triggered signal is raised.
+ * \brief MainWindow::createNewFMIModel
+ * Creates a new OMSimulator FMI Model LibraryTreeItem & ModelWidget.\n
+ * Slot activated when mpNewFMIModelAction triggered signal is raised.
  */
-void MainWindow::createNewOMSimulatorModelFile()
+void MainWindow::createNewFMIModel()
 {
-  void* pOMSimulatorModel = oms_newModel();
-  QString OMSimulatorModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
-  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMSimulator, OMSimulatorModelName,
-                                                                               OMSimulatorModelName, "", false,
-                                                                               pLibraryTreeModel->getRootLibraryTreeItem());
-  pLibraryTreeItem->setOMSimulatorModel(pOMSimulatorModel);
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+  QString newFMIModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
+  // create new FMI Model
+  if (OMSProxy::instance()->newFMIModel(newFMIModelName)) {
+    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMSimulator, newFMIModelName,
+                                                                                 newFMIModelName, "", false,
+                                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    }
   }
 }
 
@@ -2768,10 +2777,10 @@ void MainWindow::createActions()
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
-  // create new OMSimulator Model action
-  mpNewOMSimulatorModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New OMSimulator Model"), this);
-  mpNewOMSimulatorModelFileAction->setStatusTip(tr("Create New OMSimulator Model file"));
-  connect(mpNewOMSimulatorModelFileAction, SIGNAL(triggered()), SLOT(createNewOMSimulatorModelFile()));
+  // create new FMI Model action
+  mpNewFMIModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New FMI Model"), this);
+  mpNewFMIModelAction->setStatusTip(tr("Create a new FMI Model"));
+  connect(mpNewFMIModelAction, SIGNAL(triggered()), SLOT(createNewFMIModel()));
   // open OMSimulator Model file action
   mpOpenOMSimulatorModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open OMSimulator Model(s)"), this);
   mpOpenOMSimulatorModelFileAction->setStatusTip(tr("Opens the OMSimulator Model file(s)"));
@@ -3227,7 +3236,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenCompositeModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
-  pFileMenu->addAction(mpNewOMSimulatorModelFileAction);
+  pFileMenu->addAction(mpNewFMIModelAction);
   pFileMenu->addAction(mpOpenOMSimulatorModelFileAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpOpenDirectoryAction);

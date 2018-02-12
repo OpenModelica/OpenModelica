@@ -154,6 +154,7 @@ public:
   static QString information;
   static QString rename;
   static QString renameTip;
+  static QString renameOMSimulatorModelTip;
   static QString checkModel;
   static QString checkModelTip;
   static QString checkAllModels;

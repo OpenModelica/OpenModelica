@@ -278,7 +278,7 @@ private:
   QAction *mpOpenCompositeModelFileAction;
   QAction *mpLoadExternModelAction;
   // OMSimulator File Actions
-  QAction *mpNewOMSimulatorModelFileAction;
+  QAction *mpNewFMIModelAction;
   QAction *mpOpenOMSimulatorModelFileAction;
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
@@ -417,7 +417,7 @@ public slots:
   void createNewCompositeModelFile();
   void openCompositeModelFile();
   void loadExternalModels();
-  void createNewOMSimulatorModelFile();
+  void createNewFMIModel();
   void openOMSimulatorModelFile();
   void openDirectory();
   void loadSystemLibrary();
