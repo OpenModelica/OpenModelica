@@ -2069,8 +2069,14 @@ public
       case CREF(cref = ComponentRef.CREF())
         algorithm
           subs := expandCref2(crefExp.cref);
+
+          if listEmpty(subs) then
+            arrayExp := ARRAY(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.INTEGER(0)}), {});
+          else
+            arrayExp := expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
+          end if;
         then
-          expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
+          arrayExp;
 
       else crefExp;
     end match;
@@ -2091,7 +2097,7 @@ public
           dims := Type.arrayDims(cref.ty);
           cr_subs := Subscript.expandList(cref.subscripts, dims);
         then
-          expandCref2(cref.restCref, cr_subs :: subs);
+          if listEmpty(cr_subs) then {} else expandCref2(cref.restCref, cr_subs :: subs);
 
       else subs;
     end match;

@@ -303,14 +303,29 @@ public
   protected
     Dimension dim;
     list<Dimension> rest_dims = dimensions;
+    list<Subscript> subs;
   algorithm
     for s in subscripts loop
       dim :: rest_dims := rest_dims;
-      outSubscripts := expand(s, dim) :: outSubscripts;
+      subs := expand(s, dim);
+
+      if listEmpty(subs) then
+        outSubscripts := {};
+        return;
+      else
+        outSubscripts := subs :: outSubscripts;
+      end if;
     end for;
 
     for d in rest_dims loop
-      outSubscripts := RangeIterator.map(RangeIterator.fromDim(d), makeIndex) :: outSubscripts;
+      subs := RangeIterator.map(RangeIterator.fromDim(d), makeIndex);
+
+      if listEmpty(subs) then
+        outSubscripts := {};
+        return;
+      else
+        outSubscripts := subs :: outSubscripts;
+      end if;
     end for;
 
     outSubscripts := listReverse(outSubscripts);

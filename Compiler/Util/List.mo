@@ -6935,8 +6935,12 @@ public function combination<TI>
 protected
   list<list<TI>> elems;
 algorithm
-  elems := combination_tail(inElements, {}, {});
-  outElements := listReverse(elems);
+  if listEmpty(inElements) then
+    outElements := {};
+  else
+    elems := combination_tail(inElements, {}, {});
+    outElements := listReverse(elems);
+  end if;
 end combination;
 
 protected function combination_tail<TI>

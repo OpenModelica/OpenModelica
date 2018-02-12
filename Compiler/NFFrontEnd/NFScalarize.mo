@@ -102,6 +102,11 @@ algorithm
   if Type.isArray(var.ty) then
     Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
     crefs := ComponentRef.scalarize(name);
+
+    if listEmpty(crefs) then
+      return;
+    end if;
+
     ty := Type.arrayElementType(ty);
     (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
 
