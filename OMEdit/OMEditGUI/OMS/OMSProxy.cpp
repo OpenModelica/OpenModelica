@@ -162,12 +162,12 @@ bool OMSProxy::newFMIModel(QString ident)
 
 /*!
  * \brief OMSProxy::setDebugLogging
- * Sets the debug logging.
- * \param useDebugLogging
+ * Sets the logging level.
+ * \param logLevel
  */
-void OMSProxy::setDebugLogging(bool useDebugLogging)
+void OMSProxy::setLoggingLevel(int logLevel)
 {
-  oms2_setDebugLogging(useDebugLogging);
+  oms2_setLoggingLevel(logLevel);
 }
 
 /*!

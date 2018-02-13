@@ -796,10 +796,14 @@ void OptionsDialog::readOMSimulatorSettings()
     mpOMSimulatorPage->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
     OMSProxy::instance()->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
   }
-  // read debug logging
-  if (mpSettings->contains("OMSimulator/debugLogging")) {
-    mpOMSimulatorPage->getDebugLoggingCheckBox()->setChecked(mpSettings->value("OMSimulator/debugLogging").toBool());
-    OMSProxy::instance()->setDebugLogging(mpSettings->value("OMSimulator/debugLogging").toBool());
+  // read logging level
+  int index;
+  if (mpSettings->contains("OMSimulator/loggingLevel")) {
+    index = mpOMSimulatorPage->getLoggingLevelComboBox()->findData(mpSettings->value("OMSimulator/loggingLevel").toInt());
+    if (index > -1) {
+      mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
+      OMSProxy::instance()->setLoggingLevel(mpSettings->value("OMSimulator/loggingLevel").toInt());
+    }
   }
 }
 
@@ -1250,9 +1254,9 @@ void OptionsDialog::saveOMSimulatorSettings()
   // set working directory
   mpSettings->setValue("OMSimulator/workingDirectory", mpOMSimulatorPage->getWorkingDirectory());
   OMSProxy::instance()->setWorkingDirectory(mpOMSimulatorPage->getWorkingDirectory());
-  // set debug logging
-  mpSettings->setValue("OMSimulator/debugLogging", mpOMSimulatorPage->getDebugLoggingCheckBox()->isChecked());
-  OMSProxy::instance()->setDebugLogging(mpOMSimulatorPage->getDebugLoggingCheckBox()->isChecked());
+  // set logging level
+  mpSettings->setValue("OMSimulator/loggingLevel", mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt());
+  OMSProxy::instance()->setLoggingLevel(mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt());
 }
 
 /*!
@@ -4532,15 +4536,20 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   mpBrowseWorkingDirectoryButton = new QPushButton(Helper::browse);
   mpBrowseWorkingDirectoryButton->setAutoDefault(false);
   connect(mpBrowseWorkingDirectoryButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
-  // debug logging
-  mpDebugLoggingCheckBox = new QCheckBox(tr("Use Debug Logging"));
+  // logging level
+  mpLoggingLevelLabel = new Label(tr("Logging Level:"));
+  mpLoggingLevelComboBox = new QComboBox;
+  mpLoggingLevelComboBox->addItem("default", QVariant(0));
+  mpLoggingLevelComboBox->addItem("default+debug", QVariant(1));
+  mpLoggingLevelComboBox->addItem("default+debug+trace", QVariant(2));
   // set the layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryLabel, 0, 0);
   pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryTextBox, 0, 1);
   pGeneralGroupBoxLayout->addWidget(mpBrowseWorkingDirectoryButton, 0, 2);
-  pGeneralGroupBoxLayout->addWidget(mpDebugLoggingCheckBox, 1, 0, 1, 3);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 1, 1, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);

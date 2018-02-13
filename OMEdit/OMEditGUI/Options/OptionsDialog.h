@@ -900,14 +900,15 @@ public:
   OMSimulatorPage(OptionsDialog *pOptionsDialog);
   void setWorkingDirectory(QString value) {mpWorkingDirectoryTextBox->setText(value);}
   QString getWorkingDirectory() {return mpWorkingDirectoryTextBox->text();}
-  QCheckBox* getDebugLoggingCheckBox() {return mpDebugLoggingCheckBox;}
+  QComboBox* getLoggingLevelComboBox() {return mpLoggingLevelComboBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
   Label *mpWorkingDirectoryLabel;
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpBrowseWorkingDirectoryButton;
-  QCheckBox *mpDebugLoggingCheckBox;
+  Label *mpLoggingLevelLabel;
+  QComboBox *mpLoggingLevelComboBox;
 private slots:
   void browseWorkingDirectory();
 };

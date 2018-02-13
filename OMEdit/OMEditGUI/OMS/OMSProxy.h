@@ -56,7 +56,7 @@ public:
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
   void setWorkingDirectory(QString path);
-  void setDebugLogging(bool useDebugLogging);
+  void setLoggingLevel(int logLevel);
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);
