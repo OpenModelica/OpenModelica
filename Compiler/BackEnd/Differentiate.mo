@@ -1365,6 +1365,10 @@ algorithm
         cr = ComponentReference.crefPrefixDer(cr);
         cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = Expression.makeCrefExp(cr, tp);
+
+        b = ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref);
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        res = if b then zero else res;
       then
         (res,  inFunctionTree);
 
