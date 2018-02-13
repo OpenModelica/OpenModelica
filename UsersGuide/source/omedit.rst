@@ -504,6 +504,33 @@ windows by clicking on the New Plot Parametric toolbar button (|parametric-plot-
   :alt: OMEdit New Parametric Plot Window Icon
   :height: 14pt
 
+Array Plot
+^^^^^^^^^^
+
+Plots an array variable so that the array elements' indexes are on the x-axis and corresponding
+elements' values are on the y-axis. The time is controlled by the slider above the variable tree.
+When an array is present in the model, it has a principal array node in the variable tree.
+To plot this array as an Array Plot, match the principal node. The principal node may be expanded
+into particular array elements. To plot a single element in the Time Plot, match the element.
+A new Array Plot window is opened using the New Array Plot Window toolbar button (|array-plot-window|).
+
+.. |array-plot-window| image:: media/omedit-icons/array-plot-window.*
+  :alt: OMEdit New Array Plot Window Icon
+  :height: 14pt
+
+Array Parametric Plot
+^^^^^^^^^^^^^^^^^^^^^
+
+Plots the first array elements' values on the x-axis versus the second array elements' values on the y-axis. The time
+is controlled by the slider above the variable tree. To create a new Array Parametric Plot, press
+the New Array Parametric Plot Window toolbar button (|array-parametric-plot-window|), then match the principle
+array node in the variable tree view to be plotted on the x-axis and match the principle array node to be plotted
+on the y-axis.
+
+.. |array-parametric-plot-window| image:: media/omedit-icons/array-parametric-plot-window.*
+  :alt: OMEdit New Array Parametric Plot Window Icon
+  :height: 14pt
+
 .. _omedit-resimulation :
 
 Re-simulating a Model
