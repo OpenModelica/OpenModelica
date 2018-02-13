@@ -448,10 +448,10 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     case NLS_KINSOL:
       solverData = (struct dataSolver*) malloc(sizeof(struct dataSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+        // Try without homotopy not supported for kinsol
         // nlsKinsolAllocate(size-1, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
         // solverData->ordinaryData = nonlinsys[i].solverData;
-        // allocateHomotopyData(size-1, &(solverData->initHomotopyData));
-        throwStreamPrint(threadData, "kinsol solver not compatible with adaptive homotopy approaches");
+        allocateHomotopyData(size-1, &(solverData->initHomotopyData));
       } else {
         nlsKinsolAllocate(size, &nonlinsys[i], data->simulationInfo->nlsLinearSolver);
         solverData->ordinaryData = nonlinsys[i].solverData;
@@ -571,9 +571,10 @@ int freeNonlinearSystems(DATA *data, threadData_t *threadData)
       free(nonlinsys[i].solverData);
       break;
     case NLS_KINSOL:
-      nlsKinsolFree(&((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
         freeHomotopyData(&((struct dataSolver*) nonlinsys[i].solverData)->initHomotopyData);
+      } else {
+        nlsKinsolFree(&((struct dataSolver*) nonlinsys[i].solverData)->ordinaryData);
       }
       free(nonlinsys[i].solverData);
       break;
@@ -890,10 +891,16 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   int solveWithHomotopySolver = 0;
   int homotopyDeactivated = 0;
   int j;
+  int nlsLs;
+  int kinsol = 0;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
   char buffer[4096];
   FILE *pFile = NULL;
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
+#endif
 
   data->simulationInfo->currentNonlinearSystemIndex = sysNumber;
 
@@ -951,12 +958,16 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* If homotopy is deactivated in this place or flag homotopyOnFirstTry is not set,
      solve the system with the selected solver */
   if (homotopyDeactivated || !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY]) {
-    if (!homotopyDeactivated && !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
-      infoStreamPrint(LOG_INIT, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
+    if (solveWithHomotopySolver && kinsol) {
+      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the local global approach in combination with KINSOL.");
+    } else {
+      if (!homotopyDeactivated && !omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+        infoStreamPrint(LOG_INIT, 0, "Try to solve nonlinear initial system %d without homotopy first.", sysNumber);
 
-    data->simulationInfo->lambda = 1.0;
-    /* SOLVE! */
-    nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+      data->simulationInfo->lambda = 1.0;
+      /* SOLVE! */
+      nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+    }
   }
 
   /* The following cases are only valid for initial systems with homotopy */
@@ -965,7 +976,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* If the adaptive local/global homotopy approach is activated and trying without homotopy failed or is not wanted,
      use the HOMOTOPY SOLVER */
   if (solveWithHomotopySolver && !nonlinsys->solved) {
-    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY])
+    if (!omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] && !kinsol)
       warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initial system %d without homotopy method.", sysNumber);
     data->simulationInfo->lambda = 0.0;
     if (data->callback->useHomotopy == 3) {
@@ -974,7 +985,14 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_INIT, 1, "homotopy process\n---------------------------");
       infoStreamPrint(LOG_INIT, 0, "solve lambda0-system");
       nonlinsys->homotopySupport = 0;
-      nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+      if (!kinsol) {
+        nonlinsys->solved = solveNLS(data, threadData, sysNumber);
+      } else {
+        nlsLs = data->simulationInfo->nlsLinearSolver;
+        data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+        nonlinsys->solved = solveWithInitHomotopy(data, threadData, sysNumber);
+        data->simulationInfo->nlsLinearSolver = nlsLs;
+      }
       nonlinsys->homotopySupport = 1;
       infoStreamPrint(LOG_INIT, 0, "solving lambda0-system done with%s success\n---------------------------", nonlinsys->solved ? "" : " no");
       messageClose(LOG_INIT);

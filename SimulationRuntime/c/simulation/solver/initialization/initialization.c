@@ -189,6 +189,11 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   int homotopySupport = 0;
   int solveWithGlobalHomotopy;
   int adaptiveGlobal;
+  int kinsol = 0;
+
+#if !defined(OMC_MINIMAL_RUNTIME)
+  kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
+#endif
 
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   for(i=0; i<mData->nNonLinearSystems; i++) {
@@ -227,12 +232,16 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    if (adaptiveGlobal)
-      data->callback->useHomotopy = 1;
-    data->simulationInfo->lambda = 1.0;
-    infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
-    data->callback->functionInitialEquations(data, threadData);
-    solveWithGlobalHomotopy = 0;
+    if (adaptiveGlobal && kinsol) {
+      infoStreamPrint(LOG_INIT, 0, "Automatically set -homotopyOnFirstTry, because trying without homotopy first is not supported for the adaptive global approach in combination with KINSOL.");
+    } else {
+      if (adaptiveGlobal)
+        data->callback->useHomotopy = 1;
+      data->simulationInfo->lambda = 1.0;
+      infoStreamPrint(LOG_INIT, 0, "Try to solve the initialization problem without homotopy first.");
+      data->callback->functionInitialEquations(data, threadData);
+      solveWithGlobalHomotopy = 0;
+    }
 
     /* catch */
 #ifndef OMC_EMCC
@@ -241,7 +250,8 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     if (adaptiveGlobal)
       data->callback->useHomotopy = 2;
     if(solveWithGlobalHomotopy) {
-      warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
+      if (!kinsol)
+        warningStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
       setAllParamsToStart(data);
       setAllVarsToStart(data);
