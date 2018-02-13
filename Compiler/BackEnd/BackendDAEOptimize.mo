@@ -40,7 +40,6 @@ encapsulated package BackendDAEOptimize
                - Inline Integration
                - and so on ..."
 
-
 public import Absyn;
 public import BackendDAE;
 public import DAE;
