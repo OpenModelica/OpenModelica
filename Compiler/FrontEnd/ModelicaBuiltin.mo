@@ -2451,6 +2451,14 @@ external "builtin";
 annotation(preferredView="text");
 end buildModelFMU;
 
+function buildEncryptedPackage
+  input TypeName className "the class that should encrypted";
+  output Boolean success;
+  output String commandOutput "Output of the packagetool execuable";
+external "builtin";
+annotation(preferredView="text");
+end buildEncryptedPackage;
+
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some default values.
  simulate(className, [startTime], [stopTime], [numberOfIntervals], [tolerance], [method], [fileNamePrefix], [options], [outputFormat], [variableFilter], [cflags], [simflags])

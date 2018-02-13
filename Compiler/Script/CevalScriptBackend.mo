@@ -1314,6 +1314,15 @@ algorithm
     case (cache,_,"buildModelFMU", _,_)
       then (cache,Values.STRING(""));
 
+    case (cache,env,"buildEncryptedPackage", {Values.CODE(Absyn.C_TYPENAME(className))},_)
+      algorithm
+        p := SymbolTable.getAbsyn();
+        (b, str) := buildEncryptedPackage(className, p);
+      then (cache,Values.TUPLE({Values.BOOL(b),Values.STRING(str)}));
+
+    case (cache,_,"buildEncryptedPackage",_,_)
+      then (cache,Values.TUPLE({Values.BOOL(false),Values.STRING("")}));
+
     case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},_)
       equation
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
@@ -3445,6 +3454,54 @@ algorithm
   System.removeDirectory(fmutmp);
 end buildModelFMU;
 
+protected function buildEncryptedPackage
+  input Absyn.Path className "path for the model";
+  input Absyn.Program inProgram;
+  output Boolean success;
+  output String commandOutput;
+protected
+  Absyn.Class cls;
+  String fileName, omhome, pd, str1, str2, str3, call, logFile;
+algorithm
+  cls := Interactive.getPathedClassInProgram(className, inProgram);
+  fileName := Absyn.classFilename(cls);
+  if (System.regularFileExists(fileName)) then
+    // get OPENMODELICAHOME
+    omhome := Settings.getInstallationDirectoryPath();
+    pd := System.pathDelimiter();
+    str1 := if System.os() == "Windows_NT" then ".exe" else "";
+    // create the path till packagetool
+    str2 := stringAppendList({omhome,pd,"bin",pd,"packagetool",str1});
+    if System.regularFileExists(str2) then
+	    // create the list of arguments for packagetool
+	    str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"true\"";
+	    call := stringAppendList({str2," ",str3});
+	    logFile := "packagetool.log";
+	    // remove the logFile if it already exists.
+	    if System.regularFileExists(logFile) then
+	      System.removeFile(logFile);
+	    end if;
+	    // run the packagetool command
+	    if 0 == System.systemCall(call, logFile) then
+	      success := true;
+	    else
+	      success := false;
+	    end if;
+	    // read the logFile
+	    if System.regularFileExists(logFile) then
+	      commandOutput := System.readFile(logFile);
+	    end if;
+	  else
+	    Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {str2});
+      commandOutput := "";
+      success := false;
+	  end if;
+  else
+    Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {fileName});
+    commandOutput := "";
+    success := false;
+  end if;
+end buildEncryptedPackage;
 
 protected function translateModelXML " author: Alachew
  translates a model into XML code "

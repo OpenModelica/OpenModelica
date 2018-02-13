@@ -27,6 +27,21 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
 .PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS)
 
+ifeq ($(OMENCRYPTION),ON)
+.PHONY : semla
+CPPFLAGS=-DOMENCRYPTION
+
+semla: mkbuilddirs
+	mkdir -p ../SEMLA/build
+	(cd ../SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
+	(cd ../SEMLA/build && $(CMAKE) --build .)
+	(cd ../SEMLA/build && $(CMAKE) --build . --target install)
+	cp -pPR ../SEMLA/install/bin/* $(builddir_bin)
+	cp -pPR ../SEMLA/install/lib/* $(builddir_lib_omc)
+	mkdir -p $(builddir_bin)/LVE
+	mv $(builddir_bin)/lve.exe $(builddir_bin)/LVE/lve_win64.exe
+endif # end of OMENCRYPTION
+
 mkbuilddirs:
 	echo Making build directories under $(OMBUILDDIR)
 	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
