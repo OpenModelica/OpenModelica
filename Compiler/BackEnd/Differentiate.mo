@@ -1379,7 +1379,9 @@ algorithm
       then
         (zero,  inFunctionTree);
 
+    /* Exclude records here, they are handled component-wise in differentiateFunctionCall */
     case (e as DAE.CALL(attr=DAE.CALL_ATTR(ty=tp)), DAE.CREF_IDENT(ident="$"), _, _, _)
+      guard ( not Expression.isRecordCall(e, inFunctionTree) )
       equation
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
