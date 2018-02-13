@@ -626,9 +626,10 @@ protected function interactivemodeZMQ
 protected
   Option<Integer> zmqSocket;
   Boolean b;
-  String str,replystr;
+  String str,replystr,suffix;
 algorithm
-  zmqSocket := ZeroMQ.initialize(Flags.getConfigString(Flags.ZEROMQ_FILE_SUFFIX));
+  suffix := Flags.getConfigString(Flags.ZEROMQ_FILE_SUFFIX);
+  zmqSocket := ZeroMQ.initialize(if suffix=="" then "" else ("."+suffix));
   false := valueEq(SOME(0), zmqSocket);
   while true loop
     str := ZeroMQ.handleRequest(zmqSocket);
