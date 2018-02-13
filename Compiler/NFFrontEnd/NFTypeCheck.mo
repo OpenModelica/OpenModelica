@@ -489,7 +489,7 @@ algorithm
 
   unaryExp := match operator.op
     case Op.ADD then exp1; // + is a no-op for arithmetic unary operations.
-    else Expression.UNARY(operator, exp1);
+    else Expression.UNARY(op, exp1);
   end match;
 
   if not Type.isNumeric(type1) then
