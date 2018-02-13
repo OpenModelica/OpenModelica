@@ -8,7 +8,7 @@ loadModel(Modelica);getErrorString();
 loadFile("./SteamPipe.mo");
 loadString("
 model testSteamPipeLin
-  extends SteamPipe(N=1);
+  extends SteamPipe(N=2);
 end testSteamPipeLin;
 ");
 
@@ -16,7 +16,7 @@ setCommandLineOptions("--generateSymbolicLinearization");
 linearize(testSteamPipeLin, stopTime=0.0);getErrorString();
 
 loadFile("linear_testSteamPipeLin.mo");
-list(linear_testSteamPiperLin);
+list(linear_testSteamPipeLin);
 
 
 // Result:
@@ -36,5 +36,28 @@ list(linear_testSteamPiperLin);
 // end SimulationResult;
 // ""
 // true
-// ""
+// "model linear_testSteamPipeLin
+//   parameter Integer n = 4;
+//   // states
+//   parameter Integer k = 0;
+//   // top-level inputs
+//   parameter Integer l = 0;
+//   // top-level outputs
+//   parameter Real x0[4] = {3100000, 3100000, 1000000, 1000000};
+//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real A[4, 4] = [0, 0, -7.506579624472663, 7.506579624472661; 0, 0, 7.506579624472663, -15.01315924894532; 0, 0, -27.8910278969507, 27.8910278969507; 0, 0, 27.8910278969507, -55.78205579390141];
+//   parameter Real B[4, 0] = zeros(4, 0);
+//   parameter Real C[0, 4] = zeros(0, 4);
+//   parameter Real D[0, 0] = zeros(0, 0);
+//   Real x[4](start = x0);
+//   input Real u[0];
+//   output Real y[0];
+//   Real 'x_h[1]' = x[1];
+//   Real 'x_h[2]' = x[2];
+//   Real 'x_p[1]' = x[3];
+//   Real 'x_p[2]' = x[4];
+// equation
+//   der(x) = A * x + B * u;
+//   y = C * x + D * u;
+// end linear_testSteamPipeLin;"
 // endResult
