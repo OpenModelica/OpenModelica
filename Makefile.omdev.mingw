@@ -34,7 +34,7 @@ endif
 all: omc omc-diff omlibrary-core
 
 omc:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
 omc-diff: omc
 	$(MAKE) -C testsuite/ -f Makefile omc-diff OMBUILDDIR=$(OMBUILDDIR)
