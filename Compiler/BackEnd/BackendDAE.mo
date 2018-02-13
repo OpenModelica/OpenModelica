@@ -36,6 +36,7 @@ encapsulated package BackendDAE
 "
 
 import Absyn;
+import AvlSetPath;
 import DAE;
 import DoubleEndedList;
 import ExpandableArray;
@@ -775,10 +776,11 @@ uniontype DifferentiateInputData
     list< Var> controlVars;                       // variables to save control vars of for algorithm
     list< .DAE.ComponentRef> diffCrefs;           // all crefs to differentiate, needed for generic gradient
     Option<String> matrixName;                    // name to create temporary vars, needed for generic gradient
+    AvlSetPath.Tree diffedFunctions;              // current functions, to prevent recursive differentiation
   end DIFFINPUTDATA;
 end DifferentiateInputData;
 
-public constant DifferentiateInputData emptyInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},NONE());
+public constant DifferentiateInputData emptyInputData = DIFFINPUTDATA(NONE(),NONE(),NONE(),NONE(),{},{},NONE(),AvlSetPath.EMPTY());
 
 public
 type DifferentiateInputArguments = tuple< .DAE.ComponentRef, DifferentiateInputData, DifferentiationType, .DAE.FunctionTree>;

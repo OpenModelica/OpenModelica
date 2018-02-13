@@ -2124,7 +2124,13 @@ algorithm
       end if;
       diffVarsArr = BackendVariable.listVar1(diffVars);
       comref_diffvars = List.map(diffVars, BackendVariable.varCref);
-      diffData = BackendDAE.DIFFINPUTDATA(SOME(diffVarsArr), SOME(diffedVars), SOME(globalKnownVars), SOME(orderedVars), {}, comref_diffvars, SOME(matrixName));
+      diffData = BackendDAE.emptyInputData;
+      diffData.independenentVars = SOME(diffVarsArr);
+      diffData.dependenentVars = SOME(diffedVars);
+      diffData.knownVars = SOME(globalKnownVars);
+      diffData.allVars = SOME(orderedVars);
+      diffData.diffCrefs = comref_diffvars;
+      diffData.matrixName = SOME(matrixName);
       eqns = BackendEquation.equationList(orderedEqs);
       if Flags.isSet(Flags.JAC_DUMP2) then
         print("*** analytical Jacobians -> before derive all equation: " + realString(clock()) + "\n");
