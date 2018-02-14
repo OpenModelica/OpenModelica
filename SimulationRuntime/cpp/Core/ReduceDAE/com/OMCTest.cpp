@@ -3,20 +3,21 @@
 #include <string>
 #include <iostream>
 #include "meta/meta_modelica.h"
+
 int main(int argc, const char* argv[])
 {
 
 
    std::cout << "Test OMC C-API dll ..." << std::endl;
-   OMCData* omcPtr=0;
+   OMCData omcPtr = {0};
    int status =0;
 
    string omhome;
    if(argc > 0)
 	   omhome = argv[0];
    /*----------------------------------------*/
-   std::cout << "Intialize OMC, use Visual Studio 2013 compiler" << std::endl;
-   status = InitOMC(&omcPtr,"msvc13",omhome);
+   std::cout << "Intialize OMC, use gcc compiler" << std::endl;
+   status = InitOMC(&omcPtr,"gcc",omhome);
    if(status > 0)
      std::cout << "..ok" << std::endl;
    else

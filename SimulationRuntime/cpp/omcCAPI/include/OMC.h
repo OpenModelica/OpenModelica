@@ -6,13 +6,19 @@
 
 #include "OMCAPI.h"
 
+/**
+Complete definition for OMCData
+*/
+OMC_DLL typedef struct OMCData
+{
+   OMCData(void *threadData);
+   ~OMCData();
+   void *threadData;
+} data;
+
+
 extern "C"
 {
-    /**
-    Incomplete definition for OMCData
-    */
-    typedef struct OMCData data;
-
     void OMC_DLL InitMetaOMC();
     /**
     *  \brief Allocates and initializes OpenModelica compiler(omc) instance
@@ -20,20 +26,20 @@ extern "C"
     *  \param [out] omcPtr  pointer to allocated omc instance
     *  \return returns a status flag
     */
-   int OMC_DLL InitOMC(data** omcPtr,const char* compiler,const char* openModelicaHome);
+   int OMC_DLL InitOMC(data* omcData, const char* compiler, const char* openModelicaHome, int initThreadData = 1);
    /**
     *  \brief returns the version of the OpenModelica compiler (omc) instance
     *  \param [in] omcPtr Pointer to omc instance
     *  \param [out] version string of omc instance
     *  \return returns a status flag
     */
-   int OMC_DLL GetOMCVersion(data* omcPtr,char** result);
+   int OMC_DLL GetOMCVersion(data* omcData, char** result);
 
    /**
     *  \brief Free memory for OpenModelica compiler(omc) instance
     *  \param [in] omcPtr Pointer to omc instance
     */
-   void OMC_DLL FreeOMC(data* omcPtr);
+   void OMC_DLL FreeOMC(data* omcData);
 
    /**
     *  \brief Return an error text for the last omc function call
@@ -41,7 +47,7 @@ extern "C"
     *  \param [in] result includes an error text if an error occured else it is empty
     *  \return a status flag
     */
-   int OMC_DLL GetError(data* omcPtr,char** result);
+   int OMC_DLL GetError(data* omcData, char** result);
 
 
     /**
@@ -51,7 +57,7 @@ extern "C"
     *  \param [in] version version number of library
     *  \return a status flag
     */
-   int OMC_DLL LoadModel(data* omcPtr,const char* className);
+   int OMC_DLL LoadModel(data* omcData, const char* className);
 
    /**
     *  \brief Load a Modelica mo- file
@@ -60,7 +66,7 @@ extern "C"
     *  \param [in] fileName path to mo- file
     *  \return a status flag
     */
-   int OMC_DLL LoadFile(data* omcPtr,const char* fileName);
+   int OMC_DLL LoadFile(data* omcData, const char* fileName);
 
    /**
     *  \brief Sends a command to OpenModelica compiler (omc)
@@ -69,7 +75,7 @@ extern "C"
     *  \param [out] result Result of command execution
     *  \return  a status flag
     */
-   int OMC_DLL SendCommand(data* omcPtr,const char* expression,char** result);
+   int OMC_DLL SendCommand(data* omcData, const char* expression, char** result);
 
 
      /**
@@ -78,7 +84,7 @@ extern "C"
     *  \param [in] expression configuration string e.g "+simCodeTarget=Cpp"
     *  \return a status flag
     */
-   int OMC_DLL SetCommandLineOptions(data* omcPtr,const char* expression);
+   int OMC_DLL SetCommandLineOptions(data* omcData, const char* expression);
 
    /**
    *  \brief Setthe workingdirectoryto OpemModelica compiler (omc)
@@ -86,7 +92,7 @@ extern "C"
    *  \param [in] directory workingdirectory string e.g "C:\temp\"
    *  \return a status flag
    */
-   int OMC_DLL SetWorkingDirectory(data* omcPtr, const char* directory, char** result);
+   int OMC_DLL SetWorkingDirectory(data* omcData, const char* directory, char** result);
 }
 
 

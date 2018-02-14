@@ -253,6 +253,9 @@ void mmc_catch_dummy_fn();
 #define MMC_TRY_TOP_INTERNAL() { threadData_t *oldThreadData = (threadData_t*)pthread_getspecific(mmc_thread_data_key); pthread_setspecific(mmc_thread_data_key,threadData); pthread_mutex_init(&threadData->parentMutex,NULL); mmc_init_stackoverflow(threadData); MMC_TRY_INTERNAL(mmc_jumper) threadData->mmc_stack_overflow_jumper = threadData->mmc_jumper;
 #define MMC_CATCH_TOP(X) pthread_setspecific(mmc_thread_data_key,oldThreadData); } else {pthread_setspecific(mmc_thread_data_key,oldThreadData);X;}}}
 
+/* use this to allocate and initialize threadData */
+#define MMC_ALLOC_AND_INIT_THREADDATA(_omc_threadData) { size_t len = sizeof(threadData_t); _omc_threadData = (threadData_t*)GC_malloc_uncollectable(len); memset(_omc_threadData, 0, len); pthread_setspecific(mmc_thread_data_key, _omc_threadData); pthread_mutex_init(&_omc_threadData->parentMutex,NULL); mmc_init_stackoverflow(_omc_threadData); }
+
 /* adrpo: assume MMC_DBL_PAD always! */
 struct mmc_real_lit { /* there must be no padding between `header' and `data' */
     mmc_uint_t filler;
