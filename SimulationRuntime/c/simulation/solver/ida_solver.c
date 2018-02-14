@@ -179,7 +179,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
     data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
-    memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+    memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
     idaData->y = N_VMake_Serial(idaData->N, idaData->states);
     idaData->yp = N_VMake_Serial(idaData->N, idaData->statesDer);
@@ -703,10 +703,10 @@ ida_event_update(DATA* data, threadData_t *threadData)
       data->simulationInfo->discreteCall = 1;
 
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
-
       data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
-      memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+      memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
+      infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
       flag = IDAReInit(idaData->ida_mem,
           data->localData[0]->timeValue,
           idaData->y,
@@ -720,12 +720,12 @@ ida_event_update(DATA* data, threadData_t *threadData)
       if (checkIDAflag(flag)){
         throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
       }
+      IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
 
       memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
       // and  also algebraic vars
       data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
-
 
       data->simulationInfo->discreteCall = 0;
     }
@@ -778,7 +778,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
       /* and  also algebraic vars */
       data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
-      memcpy(idaData->statesDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+      memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
     }
 
     /* calculate matrix for residual scaling */
