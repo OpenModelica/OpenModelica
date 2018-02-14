@@ -66,6 +66,8 @@ LIBMODELICASTANDARDTABLES=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaStandardT
 LIBMODELICAZLIB=@OMBUILDDIR@/lib/@host_short@/omc/libzlib@SHREXT@
 LIBMODELICAIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaIO@SHREXT@
 LIBMODELICAMATIO=@OMBUILDDIR@/lib/@host_short@/omc/libModelicaMatIO@SHREXT@
+OMENCRYPTION=@OMENCRYPTION@
+LVE_EXE_SUFFIX=@MODELICA_SPEC_PLATFORM@
 
 SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)"
 
@@ -75,7 +77,11 @@ include Makefile.common
 .testvariables:
 settings:
 
+ifeq ($(OMENCRYPTION),yes)
+omc: omc-bootstrapped semla
+else
 omc: omc-bootstrapped
+endif
 
 boehm-gc-lib: @LIBGC@
 $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so

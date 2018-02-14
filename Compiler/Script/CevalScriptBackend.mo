@@ -3471,7 +3471,7 @@ algorithm
     pd := System.pathDelimiter();
     str1 := if System.os() == "Windows_NT" then ".exe" else "";
     // create the path till packagetool
-    str2 := stringAppendList({omhome,pd,"bin",pd,"packagetool",str1});
+    str2 := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",str1});
     if System.regularFileExists(str2) then
 	    // create the list of arguments for packagetool
 	    str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"true\"";
@@ -3492,7 +3492,7 @@ algorithm
 	      commandOutput := System.readFile(logFile);
 	    end if;
 	  else
-	    Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {str2});
+	    Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {str2});
       commandOutput := "";
       success := false;
 	  end if;

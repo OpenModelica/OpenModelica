@@ -27,8 +27,8 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
 .PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS)
 
-ifeq ($(OMENCRYPTION),ON)
-.PHONY : semla
+ifeq ($(OMENCRYPTION),yes)
+.PHONY : semla semla-clean
 CPPFLAGS=-DOMENCRYPTION
 
 semla: mkbuilddirs
@@ -36,10 +36,14 @@ semla: mkbuilddirs
 	(cd ../SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
 	(cd ../SEMLA/build && $(CMAKE) --build .)
 	(cd ../SEMLA/build && $(CMAKE) --build . --target install)
-	cp -pPR ../SEMLA/install/bin/* $(builddir_bin)
-	cp -pPR ../SEMLA/install/lib/* $(builddir_lib_omc)
-	mkdir -p $(builddir_bin)/LVE
-	mv $(builddir_bin)/lve.exe $(builddir_bin)/LVE/lve_win64.exe
+	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
+	cp -pPR ../SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
+	cp -pPR ../SEMLA/install/lib/* $(builddir_lib)/omc/SEMLA
+	mv $(builddir_lib)/omc/SEMLA/lve$(EXE) $(builddir_lib)/omc/SEMLA/LVE/lve_$(LVE_EXE_SUFFIX)$(EXE)
+
+semla-clean:
+	#rm -rf ../SEMLA/build
+	#rm -rf ../SEMLA/install
 endif # end of OMENCRYPTION
 
 mkbuilddirs:

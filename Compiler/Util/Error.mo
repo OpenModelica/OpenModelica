@@ -1066,6 +1066,8 @@ public constant Message DEPRECATED_API_CALL = MESSAGE(7016, SCRIPTING(), WARNING
   Util.gettext("'%1' is deprecated. It is recommended to use '%2' instead."));
 public constant Message CONFLICTING_ALIAS_SET = MESSAGE(7017, SYMBOLIC(), WARNING(),
   Util.gettext("The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts."));
+public constant Message ENCRYPTION_NOT_SUPPORTED = MESSAGE(7018, SCRIPTING(), ERROR(),
+  Util.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
 
 protected import ErrorExt;
 

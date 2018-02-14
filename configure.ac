@@ -94,6 +94,7 @@ AC_SUBST(LIBDL)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(LDFLAGS_LIBSTDCXX)
 AC_SUBST(CPP_RUNTIME_ARGS)
+AC_SUBST(OMENCRYPTION)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -778,6 +779,17 @@ AC_ARG_WITH(PATOH, [  --with-PATOH=DIR                 Compile with PATOH hyperg
         USE_GRAPH=0
     fi
     USE_PATOH=0;
+])
+
+AC_ARG_WITH(ENCRYPTION, [  --with-ENCRYPTION                 Compile SEMLA and link omc to it],
+[
+  if test "$withval" = "yes"; then
+    OMENCRYPTION=yes
+  else
+    OMENCRYPTION=no
+  fi
+], [
+    OMENCRYPTION=no
 ])
 
 m4_include([common/m4/semver.m4])
