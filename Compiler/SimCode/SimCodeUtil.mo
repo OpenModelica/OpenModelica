@@ -7972,14 +7972,12 @@ algorithm
     case(SimCode.SES_ALGORITHM(index=idx,statements=stmts))
       equation
         sLst = List.map(stmts,DAEDump.ppStatementStr);
-        sLst = List.map1(sLst, stringAppend, "\t");
-        s = intString(idx) +": "+ List.fold(sLst,stringAppend,"");
+        s = intString(idx) +": "+ List.foldr(sLst, stringAppend, "");
     then s;
 
     case(SimCode.SES_INVERSE_ALGORITHM(index=idx,statements=stmts)) equation
       sLst = List.map(stmts, DAEDump.ppStatementStr);
-      sLst = List.map1(sLst, stringAppend, "\t");
-      s = intString(idx) +": "+ List.fold(sLst, stringAppend, "");
+      s = intString(idx) +": "+ List.foldr(sLst, stringAppend, "");
     then s;
 
     // no dynamic tearing
