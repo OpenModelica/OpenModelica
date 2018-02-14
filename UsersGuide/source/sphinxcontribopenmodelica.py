@@ -12,7 +12,8 @@ except ImportError:
     from io import StringIO
 import subprocess
 
-from sphinx.util.compat import Directive
+#from sphinx.util.compat import Directive
+from docutils.parsers.rst import Directive
 from docutils import nodes
 from docutils.parsers.rst.directives.misc import Include as BaseInclude
 from sphinx import directives
