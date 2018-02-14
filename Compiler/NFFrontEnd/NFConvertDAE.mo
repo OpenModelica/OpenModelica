@@ -61,6 +61,7 @@ import ClassTree = NFClassTree;
 import NFPrefixes.Visibility;
 import NFPrefixes.Direction;
 import Variable = NFVariable;
+import ComponentReference;
 
 public
 function convert
@@ -111,7 +112,7 @@ algorithm
   binding_exp := convertBinding(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
-    var.visibility, var_attr, var.comment, useLocalDir, var.info);
+    var.visibility, var_attr, var.comment, useLocalDir, false, var.info);
 end convertVariable;
 
 function makeDAEVar
@@ -123,6 +124,7 @@ function makeDAEVar
   input Option<DAE.VariableAttributes> vattr;
   input Option<SCode.Comment> comment;
   input Boolean useLocalDir;
+  input Boolean isFunctionParam;
   input SourceInfo info;
   output DAE.Element var;
 protected
@@ -154,7 +156,7 @@ algorithm
           Prefixes.visibilityToDAE(vis),
           dty,
           binding,
-          {},
+          if isFunctionParam then {} else ComponentReference.crefDims(dcref),
           Prefixes.connectorTypeToDAE(attr.connectorType),
           source,
           vattr,
@@ -952,7 +954,7 @@ algorithm
         var_attr := convertVarAttributes(ty_attr, ty);
         attr := comp.attributes;
       then
-        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, comp.comment, true, info);
+        makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, comp.comment, true, true, info);
 
     else
       algorithm
