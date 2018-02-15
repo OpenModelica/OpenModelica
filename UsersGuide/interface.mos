@@ -22,7 +22,7 @@ algorithm
   out := out + sum(\"\" + trim(l) + \"\\n\" for l in OpenModelica.Scripting.strtok(OpenModelica.Scripting.getClassComment(cl), \"\\n\"));
   OpenModelica.Scripting.writeFile(\"tmp/interface.inc.tmp\", doc1, false);
   // Disable wrapping in order to fix some modelica:// links
-  OpenModelica.Scripting.system(\"pandoc --no-wrap -t rst -f html -o tmp/interface.inc.tmp.rst tmp/interface.inc.tmp\");
+  OpenModelica.Scripting.system(\"pandoc --wrap=none -t rst -f html -o tmp/interface.inc.tmp.rst tmp/interface.inc.tmp\");
   OpenModelica.Scripting.system(\"sed -i= 's,`\\\\([^`]*\\\\) <modelica://OpenModelica.Scripting.\\\\([A-Za-z0-9_-]*\\\\)>`__,:ref:`\\\\1 <\\\\2>`,g' tmp/interface.inc.tmp.rst\");
   out := out + \"\\n\" + sum(\"\" + l + \"\\n\" for l in OpenModelica.Scripting.stringSplit(OpenModelica.Scripting.readFile(\"tmp/interface.inc.tmp.rst\"), \"\\n\")) + \"  \\n\";
   s := OpenModelica.Scripting.list(cl, interfaceOnly=true);
