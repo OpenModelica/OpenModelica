@@ -22,8 +22,6 @@ class DgesvSolver : public IAlgLoopSolver
   virtual void restoreOldValues();
   virtual void restoreNewValues();
 
-
-
  private:
   // Member variables
   //---------------------------------------------------------------
@@ -35,12 +33,12 @@ class DgesvSolver : public IAlgLoopSolver
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
   long int
-    _dimSys;              ///< Temp   - Number of unknowns (=dimension of system of equations)
+    _dimSys,              ///< Number of unknowns (=dimension of system of equations)
+    *_iHelp,              ///< Pivot indices for LAPACK routines
+    *_jHelp;              ///< Pivot indices for LAPACK routines
 
   bool
     _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
-
-  long int *_ihelpArray;  //pivot indices for lapackroutine
 
   const char*
     *_yNames;             ///< Names of variables
@@ -48,11 +46,11 @@ class DgesvSolver : public IAlgLoopSolver
     *_yNominal,           ///< Nominal values of variables
     *_y,                  ///< Temp   - Unknowns
     *_y0,                 ///< Temp   - Auxillary variables
-    *_y_old,              //stores old solution
-    *_y_new,              //stores new solution
-    *_b,                  ///< right hand side
-    *_A,                  ///coefficients of linear system
-    *_zeroVec,            ///zero vector
+    *_y_old,              ///< Temp   - Stores old solution
+    *_y_new,              ///< Temp   - Stores new solution
+    *_b,                  ///< Right hand side
+    *_A,                  ///< Coefficients of linear system
+    *_zeroVec,            ///< Zero vector
     *_fNominal;
 };
 /** @} */ // end of solverLinearSolver

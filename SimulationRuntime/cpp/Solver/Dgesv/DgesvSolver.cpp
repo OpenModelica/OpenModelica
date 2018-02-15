@@ -27,7 +27,8 @@ DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
   , _y_new              (NULL)
   , _b                  (NULL)
   , _A                  (NULL)
-  , _ihelpArray         (NULL)
+  , _iHelp              (NULL)
+  , _jHelp              (NULL)
   , _zeroVec            (NULL)
   , _iterationStatus    (CONTINUE)
   , _firstCall          (true)
@@ -45,7 +46,8 @@ DgesvSolver::~DgesvSolver()
   if (_y_new)           delete [] _y_new;
   if (_b)               delete [] _b;
   if (_A)               delete [] _A;
-  if (_ihelpArray)      delete [] _ihelpArray;
+  if (_iHelp)           delete [] _iHelp;
+  if (_jHelp)           delete [] _jHelp;
   if (_zeroVec)         delete [] _zeroVec;
   if (_fNominal)        delete [] _fNominal;
 }
@@ -72,7 +74,8 @@ void DgesvSolver::initialize()
       if (_y_new)          delete [] _y_new;
       if (_b)              delete [] _b;
       if (_A)              delete [] _A;
-      if (_ihelpArray)     delete [] _ihelpArray;
+      if (_iHelp)          delete [] _iHelp;
+      if (_jHelp)          delete [] _jHelp;
       if (_zeroVec)        delete [] _zeroVec;
       if (_fNominal)       delete [] _fNominal;
 
@@ -84,7 +87,8 @@ void DgesvSolver::initialize()
       _y_new            = new double[_dimSys];
       _b                = new double[_dimSys];
       _A                = new double[_dimSys*_dimSys];
-      _ihelpArray       = new long int[_dimSys];
+      _iHelp            = new long int[_dimSys];
+      _jHelp            = new long int[_dimSys];
       _zeroVec          = new double[_dimSys];
       _fNominal         = new double[_dimSys];
 
@@ -95,7 +99,8 @@ void DgesvSolver::initialize()
       _algLoop->getReal(_y_new);
       _algLoop->getReal(_y_old);
       memset(_b, 0, _dimSys*sizeof(double));
-      memset(_ihelpArray, 0, _dimSys*sizeof(long int));
+      memset(_iHelp, 0, _dimSys*sizeof(long int));
+      memset(_jHelp, 0, _dimSys*sizeof(long int));
       memset(_A, 0, _dimSys*_dimSys*sizeof(double));
       memset(_zeroVec, 0, _dimSys*sizeof(double));
     }
@@ -152,17 +157,23 @@ void DgesvSolver::solve()
   for (int i = 0; i < _dimSys; i++)
     _b[i] /= _fNominal[i];
 
-  dgesv_(&_dimSys,&dimRHS,_A,&_dimSys,_ihelpArray,_b,&_dimSys,&irtrn);
+  dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _iHelp, _b, &_dimSys, &irtrn);
 
-  if (irtrn != 0) {
+  if  (irtrn > 0) {
+    long int info = 0;
+    double scale = 0.0;
+    dgetc2_(&_dimSys, _A, &_dimSys, _iHelp, _jHelp, &info);
+    dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
+    LOGGER_WRITE("DgesvSolver: using complete pivoting (dgesv info: " + to_string(irtrn) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
+  }
+  else if (irtrn < 0) {
+    _iterationStatus = SOLVERERROR;
     if (_algLoop->isLinearTearing())
       throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear tearing system (dgesv info: " + to_string(irtrn) + ")");
     else
       throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear system (dgesv info: " + to_string(irtrn) + ")");
   }
-  else
-    _iterationStatus = DONE;
-
+  _iterationStatus = DONE;
 
   //we need to revert the sign of y, because the sign of b was changed before.
   if (_algLoop->isLinearTearing()) {
@@ -170,7 +181,7 @@ void DgesvSolver::solve()
       _y[i] = -_b[i];
   }
   else {
-    memcpy(_y,_b,_dimSys*sizeof(double));
+    memcpy(_y, _b, _dimSys*sizeof(double));
   }
 
   _algLoop->setReal(_y);
