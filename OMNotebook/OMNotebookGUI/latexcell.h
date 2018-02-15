@@ -183,7 +183,6 @@ namespace IAEX
     void focusInEvent(QFocusEvent* event);
 
   private:
-    bool inCommand;
   };
 
   class MyAction1: public QAction

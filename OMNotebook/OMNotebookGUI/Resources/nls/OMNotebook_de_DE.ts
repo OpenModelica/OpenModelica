@@ -73,38 +73,33 @@ Rückgabe:
 <context>
     <name>IAEX::GraphCell</name>
     <message>
-        <location filename="../../graphcell.cpp" line="786"/>
-        <source>New simulation data available</source>
-        <translation>Neue Simulationsdaten verfügbar</translation>
-    </message>
-    <message>
-        <location filename="../../graphcell.cpp" line="913"/>
+        <location filename="../../graphcell.cpp" line="889"/>
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="913"/>
+        <location filename="../../graphcell.cpp" line="889"/>
         <source>No Output style defined, please define an Output style in stylesheet.xml</source>
         <translation>Kein Output style definiert, bitte definieren Sie ein Output style in der Datei stylesheet.xml</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1708"/>
+        <location filename="../../graphcell.cpp" line="1684"/>
         <source>Ready</source>
         <translation>Bereit</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1711"/>
+        <location filename="../../graphcell.cpp" line="1687"/>
         <source>Evaluating...</source>
         <translation>Ausführen...</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1714"/>
+        <location filename="../../graphcell.cpp" line="1690"/>
         <source>Done</source>
         <translation>Fertig</translation>
     </message>
     <message>
-        <location filename="../../graphcell.cpp" line="1539"/>
-        <location filename="../../graphcell.cpp" line="1717"/>
+        <location filename="../../graphcell.cpp" line="1515"/>
+        <location filename="../../graphcell.cpp" line="1693"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
@@ -130,50 +125,50 @@ Rückgabe:
 <context>
     <name>IAEX::LatexCell</name>
     <message>
-        <location filename="../../latexcell.cpp" line="416"/>
-        <location filename="../../latexcell.cpp" line="1028"/>
+        <location filename="../../latexcell.cpp" line="395"/>
+        <location filename="../../latexcell.cpp" line="1007"/>
         <source>Warning</source>
         <translation>Warnung</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="416"/>
+        <location filename="../../latexcell.cpp" line="395"/>
         <source>No Output style defined, please define an Output style in stylesheet.xml</source>
         <translation>Kein Output style definiert, bitte definieren Sie ein Output style in der Datei stylesheet.xml</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="960"/>
+        <location filename="../../latexcell.cpp" line="939"/>
         <source>Latex is not installed in your System. This cell cannot be evaluated.</source>
         <translation>LaTeX ist nicht auf Ihrem System installiert. Diese Zelle kann nicht ausgewertet werden.</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="1028"/>
+        <location filename="../../latexcell.cpp" line="1007"/>
         <source>Maximum of 1 page document generation is supported per Latexcell.
 The script generates more than 1 page.</source>
         <translation>Nur einseitige Dokumente sind in LaTeX-Zellen erlaubt. Das Skript generiert mehr als eine Seite.</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="1036"/>
+        <location filename="../../latexcell.cpp" line="1015"/>
         <source>Message: Empty Latex Cells cannot be evaluated.</source>
         <translation>Hnweis: Leere LaTeX-Zellen können nicht ausgewertet werden.</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="1051"/>
+        <location filename="../../latexcell.cpp" line="1030"/>
         <source>Ready</source>
         <translation>Bereit</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="1054"/>
+        <location filename="../../latexcell.cpp" line="1033"/>
         <source>Evaluating...</source>
         <translation>Ausführen...</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="1057"/>
+        <location filename="../../latexcell.cpp" line="1036"/>
         <source>Done</source>
         <translation>Fertig</translation>
     </message>
     <message>
-        <location filename="../../latexcell.cpp" line="960"/>
-        <location filename="../../latexcell.cpp" line="1060"/>
+        <location filename="../../latexcell.cpp" line="939"/>
+        <location filename="../../latexcell.cpp" line="1039"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
@@ -676,7 +671,13 @@ The script generates more than 1 page.</source>
         <location filename="../../notebook.cpp" line="2500"/>
         <source>In OpenFile(), Exception: 
 </source>
-        <translation></translation>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../../notebook.cpp" line="2682"/>
+        <source>In HelpText(), Exception: 
+</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2560"/>
@@ -692,12 +693,6 @@ The script generates more than 1 page.</source>
         <location filename="../../notebook.cpp" line="2677"/>
         <source>Could not find the help document OMNotebookHelp.onb</source>
         <translation>Konnte die Hilfedatei OMNotebookHelp.onb nicht finden</translation>
-    </message>
-    <message>
-        <location filename="../../notebook.cpp" line="2682"/>
-        <source>In HelpText(), Exception: 
-</source>
-        <translation></translation>
     </message>
     <message>
         <location filename="../../notebook.cpp" line="2720"/>

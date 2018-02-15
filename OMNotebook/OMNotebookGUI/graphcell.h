@@ -133,7 +133,6 @@ namespace IAEX
     virtual void setFocus(const bool focus);
     virtual void setFocusOutput(const bool focus);  // Added 2006-02-03 AF
     void setExpr(QString);
-    void showVariableButton(bool);
 
     void delegateFinished(InputCellDelegate *delegate);
     void setState(int state);
@@ -148,7 +147,6 @@ namespace IAEX
 
   private slots:
     void addToHighlighter();              // Added 2005-12-29 AF
-    void charFormatChanged(const QTextCharFormat &);  // Added 2006-01-17 AF
 
   private:
     void createGraphCell();
@@ -205,7 +203,6 @@ namespace IAEX
     void forwardAction( int );      // Added 2006-04-27 AF
     void updatePos(int, int);
     void setState(int);
-    void showVariableButton(bool);
 
   protected:
     void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF
@@ -254,7 +251,6 @@ namespace IAEX
     void forwardAction( int );      // Added 2006-04-27 AF
     void updatePos(int, int);
     void setState(int);
-    void showVariableButton(bool);
 
   protected:
     void mousePressEvent(QMouseEvent *event);      // Added 2005-11-01 AF

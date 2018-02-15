@@ -88,8 +88,7 @@ namespace IAEX {
   * clicks on the editor
   */
   MyTextEdit3::MyTextEdit3(QWidget *parent)
-    : QTextBrowser(parent),
-    inCommand(false)
+    : QTextBrowser(parent)
   {
 
   }
@@ -104,7 +103,6 @@ namespace IAEX {
   */
   void MyTextEdit3::mousePressEvent(QMouseEvent *event)
   {
-    inCommand = false;
     QTextBrowser::mousePressEvent(event);
 
     if( event->modifiers() == Qt::ShiftModifier ||
@@ -149,8 +147,6 @@ namespace IAEX {
     if( event->modifiers() == Qt::ShiftModifier &&
       (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
     {
-      inCommand = false;
-
       event->accept();
       emit eval();
     }
@@ -158,38 +154,28 @@ namespace IAEX {
     else if( event->key() == Qt::Key_Backspace ||
       event->key() == Qt::Key_Delete )
     {
-      inCommand = false;
-
       QTextBrowser::keyPressEvent( event );
     }
     // ALT+ENTER (ignore)
     else if( event->modifiers() == Qt::AltModifier &&
       ( event->key() == Qt::Key_Enter || event->key() == Qt::Key_Return ))
     {
-      inCommand = false;
-
       event->ignore();
     }
     // PAGE UP (ignore)
     else if( event->key() == Qt::Key_PageUp )
     {
-      inCommand = false;
-
       event->ignore();
     }
     // PAGE DOWN (ignore)
     else if( event->key() == Qt::Key_PageDown )
     {
-      inCommand = false;
-
       event->ignore();
     }
     // CTRL+C
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_C )
     {
-      inCommand = false;
-
       event->ignore();
       emit forwardAction( 1 );
     }
@@ -197,8 +183,6 @@ namespace IAEX {
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_X )
     {
-      inCommand = false;
-
       event->ignore();
       emit forwardAction( 2 );
     }
@@ -206,14 +190,11 @@ namespace IAEX {
     else if( event->modifiers() == Qt::ControlModifier &&
       event->key() == Qt::Key_V )
     {
-      inCommand = false;
-
       event->ignore();
       emit forwardAction( 3 );
     }
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
-      inCommand = false;
       QTextCursor tc(textCursor());
       int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
 
@@ -228,12 +209,10 @@ namespace IAEX {
     // TAB
     else if( event->key() == Qt::Key_Tab )
     {
-      inCommand = false;
       textCursor().insertText( "  " );
     }
     else
     {
-      inCommand = false;
       QTextBrowser::keyPressEvent( event );
     }
 

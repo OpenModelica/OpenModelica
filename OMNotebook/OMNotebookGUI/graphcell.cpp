@@ -313,7 +313,6 @@ namespace IAEX {
 
   void MyTextEdit2a::keyPressEvent(QKeyEvent *event )
   {
-    emit showVariableButton(false);
     // EVAL, key: SHIFT + RETURN || SHIFT + ENTER
     if( event->modifiers() == Qt::ShiftModifier &&
       (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
@@ -608,7 +607,6 @@ namespace IAEX {
   */
   void MyTextEdit2::keyPressEvent(QKeyEvent *event )
   {
-    emit showVariableButton(false);
     // EVAL, key: SHIFT + RETURN || SHIFT + ENTER
     if( event->modifiers() == Qt::ShiftModifier &&
       (event->key() == Qt::Key_Return || event->key() == Qt::Key_Enter) )
@@ -736,10 +734,7 @@ namespace IAEX {
     createOutputCell();
     createPlotWindow();
 
-    connect(input_, SIGNAL(showVariableButton(bool)), this, SLOT(showVariableButton(bool)));
-
     connect(output_, SIGNAL(anchorClicked(const QUrl&)), input_, SLOT(goToPos(const QUrl&)));
-
     connect(this, SIGNAL(plotVariables(QStringList)), this, SLOT(plotVariablesSlot(QStringList)));
 
     imageFile=0;
@@ -782,14 +777,7 @@ namespace IAEX {
     input_->setFont(style.textCharFormat()->font());
 
     mpModelicaTextHighlighter = new ModelicaTextHighlighter(input_->document());
-    variableButton = new QPushButton("D",input_);
-    variableButton->setToolTip(tr("New simulation data available"));
-
-    variableButton->setMaximumWidth(25);
     layout_->addWidget( input_, 1, 1 );
-    layout_->addWidget(variableButton, 1, 2);
-    variableButton->hide();
-    // 2006-03-02 AF, Add a chapter counter
     createChapterCounter();
 
     input_->setReadOnly( true );
@@ -805,7 +793,6 @@ namespace IAEX {
     palette.setColor(input_->backgroundRole(), QColor(200,200,255));
     input_->setPalette(palette);
 
-    variableButton->setPalette(palette);
     // is this needed, don't know /AF
     input_->installEventFilter(this);
 
@@ -819,9 +806,6 @@ namespace IAEX {
     connect( input_, SIGNAL( nextField() ), this, SLOT( nextField() ));
     //2005-12-29 AF
     connect( input_, SIGNAL( textChanged() ), this, SLOT( addToHighlighter() ));
-    // 2006-01-17 AF, new...
-    //connect( input_, SIGNAL( currentCharFormatChanged(const QTextCharFormat &) ),
-    //  this, SLOT( charFormatChanged(const QTextCharFormat &) ));
     // 2006-04-27 AF,
     connect( input_, SIGNAL( forwardAction(int) ), this, SIGNAL( forwardAction(int) ));
 
@@ -830,14 +814,6 @@ namespace IAEX {
 
     connect(input_, SIGNAL(setState(int)), this, SLOT(setState(int)));
     connect(input_, SIGNAL(textChanged()), input_, SLOT(setModified()));
-  }
-
-  void GraphCell::showVariableButton(bool b)
-  {
-    if(b)
-      variableButton->show();
-    else
-      variableButton->hide();
   }
 
   /*!
@@ -1787,29 +1763,6 @@ namespace IAEX {
     emit textChanged(true);
   }
 
-  /*!
-  * \author Anders Fernström
-  * \date 2006-01-17
-  *
-  * \brief set the correct style if the charFormat is changed and the
-  * cell is empty. This is done because otherwise the style is lost if
-  * all text is removed inside a cell.
-  */
-  void GraphCell::charFormatChanged(const QTextCharFormat &)
-  {
-    //if( input_->toPlainText().isEmpty() )
-    //{
-    input_->blockSignals( true );
-//    input_->setAlignment( (Qt::AlignmentFlag)style_.alignment() );
-    input_->mergeCurrentCharFormat( (*style_.textCharFormat()) );
-    input_->document()->rootFrame()->setFrameFormat( (*style_.textFrameFormat()) );
-    input_->blockSignals( false );
-    contentChanged();
-    //}
-  }
-
-
-
 
   // ***************************************************************
 
@@ -1841,19 +1794,12 @@ namespace IAEX {
   void GraphCell::addCellWidgets()
   {
     layout_->addWidget(input_,0,0);
-
     if(evaluated_)
       layout_->addWidget(output_,1,0);
   }
 
   void GraphCell::removeCellWidgets()
   {
-    /*
-    // PORT >> layout_->remove(input_);
-    if(evaluated_)
-    layout_->remove(output_);
-    */
-
     layout_->removeWidget(input_);
     if(evaluated_)
       layout_->removeWidget(output_);
@@ -1868,7 +1814,6 @@ namespace IAEX {
     {
       output_->clear();
       evaluated_ = false;
-      // PORT >> layout_->remove(output_);
       layout_->removeWidget(output_);
     }
 
@@ -1893,7 +1838,6 @@ namespace IAEX {
 
   void GraphCell::mouseDoubleClickEvent(QMouseEvent *)
   {
-    // PORT >>if(treeView()->hasMouse())
     if(treeView()->testAttribute(Qt::WA_UnderMouse))
     {
       setClosed(!closed_);
