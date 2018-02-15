@@ -17,6 +17,7 @@ OpenModelica User's Guide
   plotting
   debugger
   graphs
+  fmi
   omnotebook
   omsimulator
   optimization
