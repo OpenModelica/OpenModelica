@@ -1574,6 +1574,14 @@ algorithm
         (exp_1, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then (exp_1, inFuncs);
 
+    case ("transpose",_)
+      equation
+        tp = Expression.typeof(exp);
+        (exp_1, funcs) = differentiateExp(exp, inDiffwrtCref, inInputData,inDiffType,inFuncs, maxIter);
+        exp_2 = Expression.makePureBuiltinCall("transpose",{exp_1},tp);
+      then
+       (exp_2, funcs);
+
     case ("sum",_)
       equation
         tp = Expression.typeof(exp);
@@ -1702,12 +1710,6 @@ algorithm
         res = DAE.RELATION(e, DAE.GREATEREQ(tp), res, -1, NONE());
       then
         (DAE.IFEXP(res, res1, res2), funcs);
-
-    case ("transpose", expl, DAE.CALL_ATTR(ty=tp))
-      equation
-        (dexpl, funcs) = List.map3Fold(expl, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
-      then
-        (Expression.makePureBuiltinCall("transpose", dexpl, tp), funcs);
 
     case ("cross", {e1,e2}, DAE.CALL_ATTR(ty=tp))
       equation
