@@ -1148,7 +1148,7 @@ algorithm
       list<tuple<Integer, list<Integer>>>  sparseGraph, sparseGraphT;
       array<tuple<Integer, list<Integer>>> arraysparseGraph;
 
-      Integer sizeN, adjSize, adjSizeT;
+      Integer sizeN, sizeM, adjSize, adjSizeT;
       Integer nonZeroElements, maxColor;
       list<Integer> nodesList, nodesEqnsIndex;
       list<list<Integer>> sparsepattern,sparsepatternT, coloredlist;
@@ -1186,6 +1186,7 @@ algorithm
         // create jacobian vars
         jacDiffVars := list(BackendVariable.createpDerVar(v) for v in independentVars);
         sizeN := arrayLength(inDepCompRefs);
+        sizeM := arrayLength(depCompRefs);
 
         // generate adjacency matrix including diff vars
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) := BackendDAEUtil.addVarsToEqSystem(syst,jacDiffVars);
@@ -1268,7 +1269,7 @@ algorithm
         if debug then execStat("generateSparsePattern -> coloring start "); end if;
         if not Flags.isSet(Flags.DISABLE_COLORING) then
           // get coloring based on sparse pattern
-          coloredArray := createColoring(sparseArray, sparseArrayT, sizeN, adjSize);
+          coloredArray := createColoring(sparseArray, sparseArrayT, sizeN, sizeM);
           coloring := list(list(arrayGet(inDepCompRefs, i) for i in lst) for lst in coloredArray);
         else
           //without coloring
