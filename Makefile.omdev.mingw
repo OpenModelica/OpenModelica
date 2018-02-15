@@ -26,8 +26,12 @@ OSG_PATH = $(OMDEVMSYS)/tools/msys/mingw64/
 PKG_CONFIG_PATH=$(OMDEVMSYS)/tools/msys/mingw64/lib/pkgconfig
 endif
 ifeq ($(BUILDTYPE),)
+BUILDTYPE=$(BuildType)
+endif
+ifeq ($(BUILDTYPE),)
 BUILDTYPE=Debug
 endif
+
 
 .PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim
 
