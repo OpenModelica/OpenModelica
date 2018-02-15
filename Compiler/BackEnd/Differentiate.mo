@@ -717,6 +717,12 @@ algorithm
     case DAE.LUNARY()
     then (inExp, inFunctionTree);
 
+    case DAE.SIZE()
+    then (inExp, inFunctionTree);
+
+    case DAE.RANGE()
+    then (inExp, inFunctionTree);
+
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
       s1 = ExpressionDump.printExpStr(inExp);
