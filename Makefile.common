@@ -42,8 +42,8 @@ semla: mkbuilddirs
 	mv $(builddir_lib)/omc/SEMLA/lve$(EXE) $(builddir_lib)/omc/SEMLA/LVE/lve_$(LVE_EXE_SUFFIX)$(EXE)
 
 semla-clean:
-	#rm -rf ../SEMLA/build
-	#rm -rf ../SEMLA/install
+	rm -rf ../SEMLA/build
+	rm -rf ../SEMLA/install
 endif # end of OMENCRYPTION
 
 mkbuilddirs:
