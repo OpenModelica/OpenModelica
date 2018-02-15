@@ -10,7 +10,7 @@ generated_pdfs/dyOptInitialGuess.pdf:
 usersguide:
 	$(MAKE) -C UsersGuide html
 	@# OMPython sucks at cleaning up...
-	@killall omc >/dev/null 2>&1
+	@killall omc >/dev/null 2>&1 || true
 BUILDDIR=openmodelica-doc_$(BUILDDIR_VER)
 
 cppruntime-doc:
