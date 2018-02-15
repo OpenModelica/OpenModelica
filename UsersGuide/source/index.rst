@@ -1,5 +1,10 @@
 OpenModelica User's Guide
 =========================
+.. |date| date::
+.. |time| date:: %H:%M
+
+Generated on |date| at |time|
+
 
 .. only :: html or epub
 
