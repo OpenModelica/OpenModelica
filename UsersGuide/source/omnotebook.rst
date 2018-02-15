@@ -271,7 +271,6 @@ undesired behavior of the system.
   :caption: Open loop control example.
   :name: omnotebook-open-loop
 
-  r
   y
   yNoise
 
@@ -321,7 +320,6 @@ mechanism in between.
   :caption: Closed loop control example.
   :name: omnotebook-closed-loop
 
-  r
   y
   yNoise
 
