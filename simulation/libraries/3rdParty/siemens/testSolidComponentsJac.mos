@@ -9,7 +9,7 @@
 loadModel(SiemensPower, {"2.1 beta"});getErrorString();
 
 // test jacobians
-setCommandLineOptions("--postOptModules+=generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
 simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-jacobian=symbolical"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",getEnvironmentVar("REFERENCEFILES")+"/SiemensPower/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,

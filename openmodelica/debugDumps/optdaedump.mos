@@ -7113,7 +7113,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 //
 // ########################################
-// post-optimization module detectJacobianSparsePattern (simulation)
+// post-optimization module symbolicJacobian (simulation)
 // ########################################
 //
 //
