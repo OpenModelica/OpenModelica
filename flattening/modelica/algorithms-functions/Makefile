@@ -89,6 +89,7 @@ LogCall1.mo \
 modelica_1_1_Function10.mo \
 MRFcall.mo \
 MultFuncCall.mo \
+OutOfMemory.mos \
 RecursiveCallExtends.mo \
 RecursiveFunctionCall.mo \
 StackOverflowTest.mos \
