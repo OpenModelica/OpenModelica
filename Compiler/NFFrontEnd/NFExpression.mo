@@ -874,7 +874,7 @@ public
         then DAE.LUNARY(Operator.toDAE(exp.operator), toDAE(exp.exp));
 
       case RELATION()
-        then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), 0, NONE());
+        then DAE.RELATION(toDAE(exp.exp1), Operator.toDAE(exp.operator), toDAE(exp.exp2), -1, NONE());
 
       case IF()
         then DAE.IFEXP(toDAE(exp.condition), toDAE(exp.trueBranch), toDAE(exp.falseBranch));
