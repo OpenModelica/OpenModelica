@@ -7802,7 +7802,11 @@ algorithm
     enabledModules := deprecatedConfigFlag(Flags.CSE_CALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
     enabledModules := deprecatedConfigFlag(Flags.CSE_EACHCALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
-    enabledModules := deprecatedConfigFlag(Flags.GENERATE_SYMBOLIC_JACOBIAN, enabledModules, "generateSymbolicJacobian", "postOptModules+");
+
+    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+      enabledModules := "generateSymbolicJacobian"::enabledModules;
+      disabledModules := "detectJacobianSparsePattern"::disabledModules;
+    end if;
 
     if Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING) then
       Flags.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
