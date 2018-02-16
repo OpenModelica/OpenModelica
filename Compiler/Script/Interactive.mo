@@ -80,6 +80,7 @@ import ExpressionSimplify;
 import FBuiltin;
 import Flags;
 import FGraph;
+import GC;
 import GlobalScriptDump;
 import GlobalScriptUtil;
 import InnerOuter;
@@ -94,6 +95,7 @@ import Parser;
 import Prefix;
 import Print;
 import Refactor;
+import StackOverflow;
 import Static;
 import StaticScript;
 import StringUtil;
@@ -322,11 +324,14 @@ public function evaluate2
 "Helper function to evaluate."
   input GlobalScript.Statements inStatements;
   output String outString;
+protected
+  GlobalScript.Statement stmt;
+  String str, str_1;
 algorithm
-  outString := matchcontinue inStatements
+  GlobalScript.ISTMTS(interactiveStmtLst = {stmt}) := inStatements;
+  try /* Stack overflow */
+  outString := matchcontinue stmt
     local
-      String str,str_1;
-      GlobalScript.Statements stmts;
       Absyn.AlgorithmItem algitem;
       Boolean outres;
       Absyn.Exp exp;
@@ -334,7 +339,7 @@ algorithm
       SourceInfo info;
 
     // evaluate graphical API
-    case (stmts as GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL())}))
+    case GlobalScript.IEXP(exp = Absyn.CALL())
       equation
         // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
         partialInst = System.getPartialInstantiation();
@@ -344,12 +349,12 @@ algorithm
         keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
         Flags.setConfigBool(Flags.KEEP_ARRAYS, false);
         Inst.initInstHashTable();
-        str = evaluateGraphicalApi(stmts, partialInst, gen, evalfunc, keepArrays);
+        str = evaluateGraphicalApi(stmt, partialInst, gen, evalfunc, keepArrays);
         str_1 = stringAppend(str, "\n");
       then str_1;
 
     // Evaluate algorithm statements in evaluateAlgStmt()
-    case GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))})
+    case GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))
       equation
         Inst.initInstHashTable();
         str = evaluateAlgStmt(algitem);
@@ -357,13 +362,28 @@ algorithm
       then str_1;
 
     // Evaluate expressions in evaluate_exprToStr()
-    case GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = exp, info = info)})
+    case GlobalScript.IEXP(exp = exp, info = info)
       equation
         Inst.initInstHashTable();
         str = evaluateExprToStr(exp, info);
         str_1 = stringAppend(str, "\n");
       then str_1;
   end matchcontinue;
+  else
+    str := "";
+    str_1 := "";
+    GC.gcollect();
+    str := StackOverflow.getReadableMessage();
+    if Config.getRunningTestsuite() then
+      /* It's useful to print the name of the component we failed on.
+       * But we crash in different places, so for the testsuite we skip this.
+       */
+      Error.clearCurrentComponent();
+    end if;
+    Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(stmt), str});
+    Error.clearCurrentComponent();
+    outString := "\n";
+  end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end evaluate2;
 
 protected function evaluateAlgStmt
@@ -839,47 +859,43 @@ end getTypeOfVariable;
 
 protected function getApiFunctionNameInfo
   "Returns the name of the called API function."
-  input GlobalScript.Statements inStmts;
+  input GlobalScript.Statement inStmt;
   output String outName;
   output SourceInfo outInfo;
 algorithm
-  GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(
+  GlobalScript.IEXP(
       exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = outName)),
       info = outInfo
-    )}) := inStmts;
+    ) := inStmt;
 end getApiFunctionNameInfo;
 
 protected function getApiFunctionArgs
   "Returns a list of arguments to the function in the interactive statement list."
-  input GlobalScript.Statements inStmts;
+  input GlobalScript.Statement inStmt;
   output list<Absyn.Exp> outArgs;
 algorithm
-  outArgs := match(inStmts)
+  outArgs := match(inStmt)
     local
       list<Absyn.Exp> args;
 
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
-      Absyn.FUNCTIONARGS(args = args)))})) then args;
+    case GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
+      Absyn.FUNCTIONARGS(args = args))) then args;
     else {};
   end match;
 end getApiFunctionArgs;
 
 protected function getApiFunctionNamedArgs
   "Returns a list of named arguments to the function in the interactive statement list."
-  input GlobalScript.Statements inStmts;
+  input GlobalScript.Statement inStmt;
   output list<Absyn.NamedArg> outArgs;
 algorithm
-  outArgs := match(inStmts)
-    local list<Absyn.NamedArg> args;
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
-      Absyn.FUNCTIONARGS(argNames = args)))})) then args;
-  end match;
+  GlobalScript.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(argNames = outArgs))) := inStmt;
 end getApiFunctionNamedArgs;
 
 protected function evaluateGraphicalApi
 "Evaluating graphical api.
   NOTE: the graphical API is always evaluated with checkModel ON and -d=nogen,noevalfunc ON"
-  input GlobalScript.Statements inStatements;
+  input GlobalScript.Statement inStatement;
   input Boolean isPartialInst;
   input Boolean flagGen;
   input Boolean flagEvalFunc;
@@ -891,7 +907,7 @@ protected
   Boolean failed = false;
 algorithm
   try
-    outResult := evaluateGraphicalApi_dispatch(inStatements);
+    outResult := evaluateGraphicalApi_dispatch(inStatement);
   else
     failed := true;
   end try;
@@ -907,7 +923,7 @@ end evaluateGraphicalApi;
 
 protected function evaluateGraphicalApi_dispatch
 "This function evaluates all primitives in the graphical api."
-  input GlobalScript.Statements inStatements;
+  input GlobalScript.Statement inStatement;
   output String outResult;
 protected
   String fn_name, name;
@@ -928,9 +944,9 @@ protected
   Absyn.Exp exp;
   list<Absyn.Exp> dimensions;
 algorithm
-  fn_name := getApiFunctionNameInfo(inStatements);
+  fn_name := getApiFunctionNameInfo(inStatement);
   p := SymbolTable.getAbsyn();
-  args := getApiFunctionArgs(inStatements);
+  args := getApiFunctionArgs(inStatement);
 
   outResult := match(fn_name)
     case "setComponentModifierValue"
@@ -990,7 +1006,7 @@ algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
          Absyn.CREF(componentRef = tp),
          Absyn.CREF(componentRef = model_)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
         p := addComponent(name, tp, model_, nargs, p);
         Print.clearBuf();
       then
@@ -1001,7 +1017,7 @@ algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
          Absyn.CREF(componentRef = tp),
          Absyn.CREF(componentRef = model_)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
         (p, outResult) := updateComponent(name, tp, model_, nargs, p);
       then
         outResult;
@@ -1010,7 +1026,7 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
          Absyn.CREF(componentRef = model_)} := args;
-        {} := getApiFunctionNamedArgs(inStatements);
+        {} := getApiFunctionNamedArgs(inStatement);
         p := deleteOrUpdateComponent(name, model_, p, NONE());
         Print.clearBuf();
       then "true";
@@ -1033,7 +1049,7 @@ algorithm
     case "getComponents"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
         outResult := getComponents(cr, useQuotes(nargs));
       then
         outResult;
@@ -1102,7 +1118,7 @@ algorithm
         {Absyn.CREF(componentRef = cr1),
          Absyn.CREF(componentRef = cr2),
          Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
         (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
       then
         outResult;
@@ -1121,7 +1137,7 @@ algorithm
         {Absyn.CREF(componentRef = cr1),
          Absyn.CREF(componentRef = cr2),
          Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
         (_, p) := deleteConnection(cr, cr1, cr2, p);
         (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
       then
@@ -1374,7 +1390,7 @@ algorithm
     case "getExtendsModifierNames"
       algorithm
         {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
       then
         getExtendsModifierNames(class_, cr, useQuotes(nargs), p);
 
@@ -1476,7 +1492,7 @@ algorithm
     case "getLocalVariables"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatements);
+        nargs := getApiFunctionNamedArgs(inStatement);
         path := Absyn.crefToPath(cr);
         cls := getPathedClassInProgram(path, p);
         env := SymbolTable.buildEnv();

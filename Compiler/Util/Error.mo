@@ -933,6 +933,8 @@ public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE
   Util.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
 public constant Message MIXED_DETERMINED = MESSAGE(583, SYMBOLIC(), ERROR(),
   Util.gettext("The given system is mixed-determined.   [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\"."));
+public constant Message STACK_OVERFLOW_DETAILED = MESSAGE(584, SCRIPTING(), ERROR(),
+  Util.gettext("Stack overflow occurred while evaluating %s:\n%s"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
@@ -1069,7 +1071,19 @@ public constant Message CONFLICTING_ALIAS_SET = MESSAGE(7017, SYMBOLIC(), WARNIN
 public constant Message ENCRYPTION_NOT_SUPPORTED = MESSAGE(7018, SCRIPTING(), ERROR(),
   Util.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
 
-protected import ErrorExt;
+protected
+
+import ErrorExt;
+constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
+
+public function clearCurrentComponent
+protected function dummy
+  input output String str;
+  input Integer i;
+end dummy;
+algorithm
+  updateCurrentComponent(0, "", dummyInfo, dummy);
+end clearCurrentComponent;
 
 public function updateCurrentComponent<T> "Function: updateCurrentComponent
 This function takes a String and set the global var to

@@ -624,10 +624,10 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
         }
       }
       msg[4] = inFile;
-      GC_asprintf((char**)msg+3, "%d", simresglob.matReader.nrows);
-      GC_asprintf((char**)msg+2, "%d", numberOfIntervals);
-      GC_asprintf((char**)msg+1, "%d", nevents);
-      GC_asprintf((char**)msg+0, "%d", neventpoints);
+      GC_asprintf(msg+3, "%d", simresglob.matReader.nrows);
+      GC_asprintf(msg+2, "%d", numberOfIntervals);
+      GC_asprintf(msg+1, "%d", nevents);
+      GC_asprintf(msg+0, "%d", neventpoints);
       c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_notification, gettext("Resampling %s from %s points to %s points, removing %s events stored in %s points.\n"), msg, 5);
     }
 
@@ -650,8 +650,8 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
           var.index=indexesToOutput[i];
           if (omc_matlab4_val(vals+j, &simresglob.matReader, &var, t)) {
             msg[2] = inFile;
-            GC_asprintf((char**)msg+1, "%d", indexesToOutput[i]);
-            GC_asprintf((char**)msg+0, "%.15g", t);
+            GC_asprintf(msg+1, "%d", indexesToOutput[i]);
+            GC_asprintf(msg+0, "%.15g", t);
             c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Resampling %s failed to get variable %s at time %s.\n"), msg, 3);
             return 0;
           }

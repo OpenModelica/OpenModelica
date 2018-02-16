@@ -68,7 +68,7 @@ static void indent(FILE *fout, int n) {
 static void convertProfileData(const char *outputPath, const char *prefix, int numFnsAndBlocks)
 {
   const char* fullFileName;
-  if (0 > GC_asprintf((char**)&fullFileName, "%s%s", outputPath, prefix)) {
+  if (0 > GC_asprintf(&fullFileName, "%s%s", outputPath, prefix)) {
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   size_t len = strlen(fullFileName);
@@ -320,7 +320,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
 {
   static char buf[256];
   const char* fullFileName;
-  if (0 > GC_asprintf((char**)&fullFileName, "%s%s", outputPath, filename)) {
+  if (0 > GC_asprintf(&fullFileName, "%s%s", outputPath, filename)) {
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   FILE *fout = fopen(fullFileName, "w");
@@ -329,7 +329,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
   int i;
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
   const char* fullPlotFile;
-  if (0 > GC_asprintf((char**)&fullPlotFile, "%s%s", outputPath, plotfile)) {
+  if (0 > GC_asprintf(&fullPlotFile, "%s%s", outputPath, plotfile)) {
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   plotCommands = fopen(fullPlotFile, "w");
@@ -563,7 +563,7 @@ int printModelInfoJSON(DATA *data, threadData_t *threadData, const char *outputP
 {
   char buf[256];
   const char* fullFileName;
-  if (0 > GC_asprintf((char**)&fullFileName, "%s%s", outputPath, filename)) {
+  if (0 > GC_asprintf(&fullFileName, "%s%s", outputPath, filename)) {
     throwStreamPrint(NULL, "modelinfo.c: Error: can not allocate memory.");
   }
   FILE *fout = fopen(fullFileName, "wb");

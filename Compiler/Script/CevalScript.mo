@@ -677,6 +677,11 @@ algorithm
         b = GC.expandHeap(i);
       then (cache,Values.BOOL(b));
 
+    case (cache,_,"GC_set_max_heap_size",{Values.INTEGER(i)},_)
+      equation
+        GC.setMaxHeapSize(i);
+      then (cache,Values.BOOL(true));
+
     case (cache,_,"clear",{},_)
       algorithm
         SymbolTable.reset();

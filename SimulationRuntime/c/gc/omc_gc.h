@@ -112,7 +112,7 @@ enum {
 };
 #define LOCAL_ROOT_SIMULATION_DATA LOCAL_ROOT_ERROR_MO
 #define LOCAL_ROOT_FMI_DATA LOCAL_ROOT_PRINT_MO
-#define MAX_LOCAL_ROOTS 16
+#define MAX_LOCAL_ROOTS 20
 
 typedef struct threadData_s {
   jmp_buf *mmc_jumper;
@@ -142,6 +142,21 @@ typedef struct threadData_s {
 
 typedef threadData_t* OpenModelica_threadData_ThreadData;
 
+#include "meta/meta_modelica_segv.h"
+void mmc_do_out_of_memory() __attribute__ ((noreturn));
+#define GC_RETURN_REPORT_ALLOC_FAILED(X) { void *res = (X); \
+  if (0==res) { \
+    mmc_do_out_of_memory(); \
+  } \
+  return res; }
+static inline void* mmc_check_out_of_memory(void *ptr)
+{
+  if (0==ptr) {
+    mmc_do_out_of_memory();
+  }
+  return ptr;
+}
+
 #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
 
 #if !defined(OMC_NO_GC_MAPPING)
@@ -156,6 +171,8 @@ typedef threadData_t* OpenModelica_threadData_ThreadData;
 #define GC_malloc_atomic_ignore_off_page  omc_alloc_interface_pooled.malloc_atomic
 #define GC_register_displacement          /* nothing */
 #define GC_set_force_unmap_on_gcollect    /* nothing */
+#define omc_GC_set_max_heap_size(X)       /* nothing */
+#define omc_GC_get_max_heap_size()        0
 #endif
 
 #else /* #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
@@ -164,6 +181,9 @@ typedef threadData_t* OpenModelica_threadData_ThreadData;
 /* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
 int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
 int GC_pthread_join(pthread_t, void **);
+
+void omc_GC_set_max_heap_size(size_t);
+size_t omc_GC_get_max_heap_size();
 
 #endif /* #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
 
@@ -211,14 +231,14 @@ static inline void* mmc_alloc_words_atomic(unsigned int nwords) {
 #if defined(OMC_RECORD_ALLOC_WORDS)
   mmc_record_alloc_words((nwords) * sizeof(void*));
 #endif
-  return GC_malloc_atomic((nwords) * sizeof(void*));
+  GC_RETURN_REPORT_ALLOC_FAILED(GC_malloc_atomic((nwords) * sizeof(void*)));
 }
 
 static inline void* mmc_alloc_words(unsigned int nwords) {
 #if defined(OMC_RECORD_ALLOC_WORDS)
   mmc_record_alloc_words((nwords) * sizeof(void*));
 #endif
-  return GC_malloc((nwords) * sizeof(void*));
+  GC_RETURN_REPORT_ALLOC_FAILED(GC_malloc((nwords) * sizeof(void*)));
 }
 
 /* for arrays only */
@@ -226,7 +246,7 @@ static inline void* mmc_alloc_words_atomic_ignore_off_page(unsigned int nwords) 
 #if defined(OMC_RECORD_ALLOC_WORDS)
   mmc_record_alloc_words((nwords) * sizeof(void*));
 #endif
-  return GC_malloc_atomic_ignore_off_page((nwords) * sizeof(void*));
+  GC_RETURN_REPORT_ALLOC_FAILED(GC_malloc_atomic_ignore_off_page((nwords) * sizeof(void*)));
 }
 
 /* for arrays only */
@@ -234,7 +254,7 @@ static inline void* mmc_alloc_words_ignore_off_page(unsigned int nwords) {
 #if defined(OMC_RECORD_ALLOC_WORDS)
   mmc_record_alloc_words((nwords) * sizeof(void*));
 #endif
-  return GC_malloc_atomic_ignore_off_page((nwords) * sizeof(void*));
+  GC_RETURN_REPORT_ALLOC_FAILED(GC_malloc_atomic_ignore_off_page((nwords) * sizeof(void*)));
 }
 #endif
 

@@ -93,8 +93,15 @@ function generateReadableMessage
   output String str;
 algorithm
   StackOverflow.setStacktraceMessages(numSkip, numFrames);
-  str := stringDelimitList(StackOverflow.readableStacktraceMessages(),delimiter);
+  str := getReadableMessage(delimiter=delimiter);
 end generateReadableMessage;
+
+function getReadableMessage
+  input String delimiter="\n";
+  output String str;
+algorithm
+  str := stringDelimitList(StackOverflow.readableStacktraceMessages(),delimiter);
+end getReadableMessage;
 
 function readableStacktraceMessages
   output list<String> symbols = {};

@@ -90,6 +90,11 @@ function setForceUnmapOnGcollect
   external "C" GC_set_force_unmap_on_gcollect(forceUnmap) annotation(Library = {"omcgc"});
 end setForceUnmapOnGcollect;
 
+function setMaxHeapSize
+  input Real sz "To avoid the 32-bit signed limit on sizes";
+external "C" GC_set_max_heap_size_dbl(sz) annotation(Include="#define GC_set_max_heap_size_dbl(sz) omc_GC_set_max_heap_size((size_t)sz)",Library = {"omcgc"});
+end setMaxHeapSize;
+
 uniontype ProfStats "TODO: Support regular records in the bootstrapped compiler to avoid allocation to return the stats in the GC..."
   record PROFSTATS
     Integer heapsize_full, free_bytes_full, unmapped_bytes, bytes_allocd_since_gc, allocd_bytes_before_gc, non_gc_bytes, gc_no, markers_m1, bytes_reclaimed_since_gc, reclaimed_bytes_before_gc;

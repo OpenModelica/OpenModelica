@@ -306,17 +306,24 @@ extern char* omc__escapedString(const char* str, int nl)
   return res;
 }
 
-int GC_vasprintf(char **strp, const char *fmt, va_list ap) {
+int GC_vasprintf(const char **strp, const char *fmt, va_list ap) {
   int len;
+  char *tmp;
+  if (0==strstr(fmt, "%")) {
+    /* A no-op; we don't actually create a copy of the string which might be unexpected... */
+    *strp = fmt;
+    return strlen(fmt);
+  }
   va_list ap2;
   va_copy(ap2, ap);
   len = vsnprintf(NULL, 0, fmt, ap);
-  *strp = omc_alloc_interface.malloc_atomic(len+1);
-  len = vsnprintf(*strp, len+1, fmt, ap2);
+  tmp = mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(len+1));
+  len = vsnprintf(tmp, len+1, fmt, ap2);
+  *strp = tmp;
   return len;
 }
 
-int GC_asprintf(char **strp, const char *fmt, ...) {
+int GC_asprintf(const char **strp, const char *fmt, ...) {
   int len;
   va_list ap;
   va_start(ap, fmt);

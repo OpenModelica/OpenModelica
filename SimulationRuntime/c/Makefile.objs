@@ -15,10 +15,10 @@ meta_modelica.h \
 meta_modelica_mk_box.h
 
 #Files for gc folder
-GC_OBJS_MINIMAL = memory_pool$(OBJ_EXT)
+GC_OBJS_MINIMAL = memory_pool$(OBJ_EXT) omc_gc$(OBJ_EXT)
 GC_HFILES_MINIMAL = memory_pool.h
 
-GC_OBJS = omc_gc$(OBJ_EXT) $(GC_OBJS_MINIMAL)
+GC_OBJS = $(GC_OBJS_MINIMAL)
 GC_HFILES = omc_gc.h $(GC_HFILES_MINIMAL)
 
 # Files for util functions
@@ -173,7 +173,7 @@ FMI_ME_OBJS = $(GCOBJSPATH_MINIMAL) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SIMOBJSPAT
   $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
   $(LAPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
   $(BLAS_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
-  $(LIBF2C_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
+  $(LIBF2C_OBJS:%=./external_solvers/%$(OBJ_EXT))
 
 ALL_HEADERS = $(METAHFILESPATH) $(GCFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(GCPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/

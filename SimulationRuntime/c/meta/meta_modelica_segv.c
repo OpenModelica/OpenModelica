@@ -110,14 +110,35 @@ void mmc_setStacktraceMessages(int numSkip, int numFrames) {
   trace_size_skip = numSkip;
 }
 
+#define _OMC_LIT_OOM_data "Out of memory! Printed backtrace to stderr."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT_OOM,45,_OMC_LIT_OOM_data);
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT_OOM_LST,2,1) {MMC_REFSTRINGLIT(_OMC_LIT_STRUCT_OOM),MMC_REFSTRUCTLIT(mmc_nil)}};
+
 void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip, int numFrames)
 {
   assert(numFrames > 0);
-  void **trace = (void**) GC_malloc_atomic(numFrames*sizeof(void*));
+  void **trace;
   char **messages;
   void *res;
   int i;
-  int trace_size = backtrace(trace, numFrames);
+  int trace_size;
+  size_t max_heap_size;
+
+  max_heap_size = omc_GC_get_max_heap_size();
+
+  if (0 != max_heap_size) {
+    /* Disable the memory limit so we can store the error-message */
+    GC_set_max_heap_size(0);
+  }
+
+  trace = (void**) GC_malloc_atomic(numFrames*sizeof(void*));
+  if (trace==0) {
+    mmc_setStacktraceMessages(numSkip, numFrames);
+    printStacktraceMessages();
+    threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = MMC_REFSTRINGLIT(_OMC_LIT_STRUCT_OOM_LST);
+    return;
+  }
+  trace_size = backtrace(trace, numFrames);
 
   res = mmc_mk_nil();
   messages = backtrace_symbols(trace, trace_size);
@@ -130,6 +151,9 @@ void mmc_setStacktraceMessages_threadData(threadData_t *threadData, int numSkip,
   }
   GC_free(trace);
   free(messages);
+  if (0 != max_heap_size) {
+    GC_set_max_heap_size(max_heap_size);
+  }
   threadData->localRoots[LOCAL_ROOT_STACK_OVERFLOW] = res;
 }
 

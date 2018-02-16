@@ -568,10 +568,9 @@ extern "C" {
 
 void OpenModelica_ErrorModule_ModelicaVFormatError(const char *fmt, va_list ap)
 {
-  char *str;
+  const char *str;
   GC_vasprintf(&str, fmt, ap);
   c_add_message(NULL,0,ErrorType_runtime,ErrorLevel_error,str,NULL,0);
-  GC_free(str);
   MMC_THROW();
 }
 

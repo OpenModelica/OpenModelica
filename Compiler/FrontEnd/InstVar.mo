@@ -604,9 +604,9 @@ algorithm
     outCache := InstFunction.addRecordConstructorFunction(outCache, inEnv,
       Types.arrayElementType(outType), SCode.elementInfo(inClass));
 
-    Error.updateCurrentComponent(Prefix.NOPRE(), "", Absyn.dummyInfo, PrefixUtil.identAndPrefixToPath);
+    Error.clearCurrentComponent();
   else
-    Error.updateCurrentComponent(Prefix.NOPRE(), "", Absyn.dummyInfo, PrefixUtil.identAndPrefixToPath);
+    Error.clearCurrentComponent();
     fail();
   end try;
 end instVar_dispatch;

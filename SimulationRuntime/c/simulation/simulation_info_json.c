@@ -380,7 +380,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   if (!xml->infoXMLData) {
     const char *filename;
     if (omc_flag[FLAG_INPUT_PATH]) { /* read the input path from the command line (if any) */
-      if (0 > GC_asprintf((char**)&filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName)) {
+      if (0 > GC_asprintf(&filename, "%s/%s", omc_flagValue[FLAG_INPUT_PATH], xml->fileName)) {
         throwStreamPrint(NULL, "simulation_info_json.c: Error: can not allocate memory.");
       }
       mmap_reader = omc_mmap_open_read(filename);

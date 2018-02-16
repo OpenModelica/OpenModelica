@@ -109,7 +109,7 @@ void Error_setShowErrorMessages(threadData_t *threadData,int show)
 static void omc_assert_compiler_common(threadData_t *threadData,ErrorLevel severity, FILE_INFO info, const char *msg, va_list args)
 {
   ErrorMessage::TokenList tokens;
-  char *str;
+  const char *str;
   GC_vasprintf(&str, msg, args);
   add_source_message(threadData, 0, ErrorType_runtime, severity, str, tokens, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly, info.filename);
 }

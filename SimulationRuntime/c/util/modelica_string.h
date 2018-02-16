@@ -68,8 +68,8 @@ extern modelica_string enum_to_modelica_string(modelica_integer nr, const char *
 int omc__escapedStringLength(const char* str, int nl, int *hasEscape);
 extern char* omc__escapedString(const char* str, int nl);
 
-int GC_vasprintf(char **strp, const char *fmt, va_list ap);
-int GC_asprintf(char **strp, const char *fmt, ...);
+int GC_vasprintf(const char **strp, const char *fmt, va_list ap);
+int GC_asprintf(const char **strp, const char *fmt, ...);
 
 static inline void* mmc_alloc_scon(size_t nbytes)
 {
@@ -78,7 +78,7 @@ static inline void* mmc_alloc_scon(size_t nbytes)
     struct mmc_string *p;
     void *res;
     if (nbytes == 0) return mmc_emptystring;
-    p = (struct mmc_string *) omc_alloc_interface.malloc_atomic(nwords*sizeof(void*));
+    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
     p->header = header;
     p->data[0] = 0;
     res = MMC_TAGPTR(p);
@@ -94,7 +94,7 @@ static inline void* mmc_mk_scon_len(mmc_uint_t nbytes)
     mmc_uint_t nwords = MMC_HDRSLOTS(header) + 1;
     struct mmc_string *p;
     void *res;
-    p = (struct mmc_string *) omc_alloc_interface.malloc_atomic(nwords*sizeof(void*));
+    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
     p->header = header;
     res = MMC_TAGPTR(p);
     return res;
@@ -112,7 +112,7 @@ static inline void* mmc_mk_scon(const char *s)
       unsigned char c = *s;
       return mmc_strings_len1[(unsigned int)c];
     }
-    p = (struct mmc_string *) omc_alloc_interface.malloc_atomic(nwords*sizeof(void*));
+    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
     p->header = header;
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);
@@ -135,7 +135,7 @@ static inline void* mmc_mk_scon_persist(const char *s)
       unsigned char c = *s;
       return mmc_strings_len1[(unsigned int)c];
     }
-    p = (struct mmc_string *) omc_alloc_interface.malloc_string_persist(nwords*sizeof(void*));
+    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_string_persist(nwords*sizeof(void*)));
     p->header = header;
     memcpy(p->data, s, nbytes+1);  /* including terminating '\0' */
     res = MMC_TAGPTR(p);

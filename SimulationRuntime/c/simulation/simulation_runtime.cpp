@@ -460,7 +460,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   if (result_file) {
     data->modelData->resultFileName = GC_strdup(result_file);
   } else if (omc_flag[FLAG_OUTPUT_PATH]) { /* read the output path from the command line (if any) */
-    if (0 > GC_asprintf((char**)&result_file, "%s/%s_res.%s", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, data->simulationInfo->outputFormat)) {
+    if (0 > GC_asprintf(&result_file, "%s/%s_res.%s", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix, data->simulationInfo->outputFormat)) {
       throwStreamPrint(NULL, "simulation_runtime.c: Error: can not allocate memory.");
     }
     data->modelData->resultFileName = GC_strdup(result_file);

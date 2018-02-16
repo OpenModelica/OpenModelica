@@ -813,7 +813,8 @@ modelica_integer mmc_gdb_arrayLength(modelica_metatype arr)
  */
 char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt) {
   void *name;
-  char *displayName = NULL, *ty = NULL, *formatString = NULL, *formattedString = NULL;
+  char *displayName = NULL, *ty = NULL, *formatString = NULL;
+  const char *formattedString = NULL;
   int n, n1;
 
   /* get the pointer to the element from the array/list */
@@ -873,7 +874,6 @@ char* getMetaTypeElement(modelica_metatype arr, modelica_integer i, metaType mt)
   }
 
   /* free the memory */
-  GC_free(formattedString);
   if (mt == record_metaType) {
     free(displayName);
   }

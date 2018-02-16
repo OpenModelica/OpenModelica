@@ -3869,6 +3869,16 @@ annotation(
 </html>"));
 end GC_expand_hp;
 
+function GC_set_max_heap_size
+  input Integer size;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Forces the GC to limit the maximum heap size.</p>
+</html>"));
+end GC_set_max_heap_size;
+
 function checkInterfaceOfPackages
   input TypeName cl;
   input String dependencyMatrix[:,:];
