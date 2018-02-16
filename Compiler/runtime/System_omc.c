@@ -815,8 +815,39 @@ extern void* System_launchParallelTasks(threadData_t *threadData, int numThreads
 #if defined(__MINGW32__)
   /* adrpo: set thread stack size on Windows to 4MB */
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setstacksize(&attr, 4194304);
+  if (pthread_attr_init(&attr))
+  {
+    const char *tok[1] = {strerror(errno)};
+    data.fail = 1;
+    c_add_message(NULL,5999,
+      ErrorType_scripting,
+      ErrorLevel_internal,
+      gettext("System.launchParallelTasks: failed to initialize the pthread attributes: %s"),
+      NULL,
+      0);
+    MMC_THROW_INTERNAL();
+  }
+  /* try to set a stack size of 4MB */
+  if (pthread_attr_setstacksize(&attr, 4194304))
+  {
+    /* did not work, try half 2MB */
+    if (pthread_attr_setstacksize(&attr, 2097152))
+    {
+      /* did not work, try half 1MB */
+      if (pthread_attr_setstacksize(&attr, 1048576))
+      {
+        const char *tok[1] = {strerror(errno)};
+        data.fail = 1;
+        c_add_message(NULL,5999,
+          ErrorType_scripting,
+          ErrorLevel_internal,
+          gettext("System.launchParallelTasks: failed to set the pthread stack size to 1MB: %s"),
+          NULL,
+          0);
+        MMC_THROW_INTERNAL();
+      }
+    }
+  }
 #endif
 
 #else /* MSVC */
