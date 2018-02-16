@@ -441,7 +441,7 @@ runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc Umfpack_msvc fmil_msvc sundials
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
 
-simulationruntimecmsvc: mkbuilddirs Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
+simulationruntimecmsvc: mkbuilddirs getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug

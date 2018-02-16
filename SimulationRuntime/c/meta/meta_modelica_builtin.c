@@ -422,29 +422,29 @@ void boxptr_listSetFirst(threadData_t *threadData, modelica_metatype cellToDestr
   MMC_CAR(cellToDestroy) = newContent;
 }
 
-modelica_metatype listAppend(modelica_metatype lst1,modelica_metatype lst2)
+modelica_metatype listAppend(modelica_metatype l1,modelica_metatype l2)
 {
   int length = 0, i = 0;
   struct mmc_cons_struct *res = NULL;
   struct mmc_cons_struct *p = NULL;
-  if (MMC_NILTEST(lst2)) /* If lst2 is empty, simply return lst1; huge performance gain for some uses of listAppend */
-    return lst1;
-  length = listLength(lst1);
-  if (length == 0) /* We need to check for empty lst1 */
-    return lst2;
+  if (MMC_NILTEST(l2)) /* If l2 is empty, simply return l1; huge performance gain for some uses of listAppend */
+    return l1;
+  length = listLength(l1);
+  if (length == 0) /* We need to check for empty l1 */
+    return l2;
   res = (struct mmc_cons_struct*)mmc_alloc_words( length * 3 /*(sizeof(struct mmc_cons_struct)/sizeof(void*))*/ ); /* Do one single big alloc. It's cheaper */
   for (i=0; i<length-1; i++) { /* Write all except the last element... */
     struct mmc_cons_struct *p = res+i;
     p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);
-    p->data[0] = MMC_CAR(lst1);
+    p->data[0] = MMC_CAR(l1);
     p->data[1] = MMC_TAGPTR(res+i+1);
-    lst1 = MMC_CDR(lst1);
+    l1 = MMC_CDR(l1);
   }
-  /* The last element is a bit special. It points to lst2. */
+  /* The last element is a bit special. It points to l2. */
   p = res+length-1;
   p->header = MMC_STRUCTHDR(2, MMC_CONS_CTOR);
-  p->data[0] = MMC_CAR(lst1);
-  p->data[1] = lst2;
+  p->data[0] = MMC_CAR(l1);
+  p->data[1] = l2;
   return MMC_TAGPTR(res);
 }
 

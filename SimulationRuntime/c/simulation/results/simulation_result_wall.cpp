@@ -40,7 +40,7 @@
 #include <assert.h>
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-#include <winsock2.h> /* htonl */
+// #include <winsock2.h> /* htonl */
 #if defined(_MSC_VER)
 #include <stdint.h> /* for int32_t */
 #endif

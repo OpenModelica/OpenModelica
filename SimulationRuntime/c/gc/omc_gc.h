@@ -51,6 +51,7 @@ extern "C" {
 
 #if defined(_MSC_VER)
 #include "omc_inline.h"
+#include "omc_msvc.h"
 #endif
 
 typedef struct {
