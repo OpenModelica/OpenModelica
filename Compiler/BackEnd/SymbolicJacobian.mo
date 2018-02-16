@@ -78,6 +78,26 @@ import Values;
 import ValuesUtil;
 
 // =============================================================================
+// section for postOptModule >>symbolicJacobian<<
+//
+// Detects the sparse pattern of the ODE system and calculates also the symbolic
+// Jacobian if flag "--generateSymbolicJacobian" is enabled.
+// =============================================================================
+
+public function symbolicJacobian "author: lochel
+  Detects the sparse pattern of the ODE system and calculates also the symbolic
+  Jacobian if flag '--generateSymbolicJacobian' is enabled."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    outDAE := generateSymbolicJacobianPast(inDAE);
+  else
+    outDAE := detectSparsePatternODE(inDAE);
+  end if;
+end symbolicJacobian;
+
+// =============================================================================
 // section for postOptModule >>calculateStateSetsJacobians<<
 //
 // =============================================================================
@@ -128,7 +148,7 @@ end constantLinearSystem;
 //
 // Generate sparse pattern
 // =============================================================================
-public function detectSparsePatternODE
+protected function detectSparsePatternODE
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
@@ -238,7 +258,7 @@ end detectSparsePatternDAE;
 // Symbolic Jacobian subsection
 // =============================================================================
 
-public function generateSymbolicJacobianPast
+protected function generateSymbolicJacobianPast
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
 protected

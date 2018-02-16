@@ -7643,8 +7643,7 @@ public function allPostOptimizationModules
     (BackendDAEOptimize.addTimeAsState, "addTimeAsState"),
     (SymbolicJacobian.calculateStrongComponentJacobians, "calculateStrongComponentJacobians"),
     (SymbolicJacobian.calculateStateSetsJacobians, "calculateStateSetsJacobians"),
-    (SymbolicJacobian.detectSparsePatternODE, "detectJacobianSparsePattern"),
-    (SymbolicJacobian.generateSymbolicJacobianPast, "generateSymbolicJacobian"),
+    (SymbolicJacobian.symbolicJacobian, "symbolicJacobian"),
     (SymbolicJacobian.generateSymbolicSensitivities, "generateSymbolicSensitivities"),
     (SymbolicJacobian.generateSymbolicLinearizationPast, "generateSymbolicLinearization"),
     (BackendDAEOptimize.removeConstants, "removeConstants"),
@@ -7802,11 +7801,6 @@ algorithm
     enabledModules := deprecatedConfigFlag(Flags.CSE_CALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
     enabledModules := deprecatedConfigFlag(Flags.CSE_EACHCALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
-
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
-      enabledModules := "generateSymbolicJacobian"::enabledModules;
-      disabledModules := "detectJacobianSparsePattern"::disabledModules;
-    end if;
 
     if Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING) then
       Flags.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
