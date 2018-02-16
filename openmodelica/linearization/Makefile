@@ -27,6 +27,7 @@ testDrumBoiler.mos \
 testknownvar.mos \
 testMathFuncs.mos \
 testRecordDiff.mos \
+testSortFunction.mos \
 testSteamPipe.mos \
 ticket3701.mos \
 
