@@ -2838,7 +2838,9 @@ algorithm
   (fargs1, _) := List.splitOnBoolList(fargs, inBooltLst);
   newfargs := List.threadMap(inElementLst, fargs1, makeElementFarg);
   newfargs := listAppend(fargs, newfargs);
-  rettype := makeElementReturnType(inOutputElementLst);
+  // The type of DAE.Element.VAR seems to be wrong,
+  // but the original type should be also correct
+  //rettype := makeElementReturnType(inOutputElementLst);
   outType := DAE.T_FUNCTION(newfargs,rettype,functionAttributes,tysrc);
 end extendsFunctionTypeArgs;
 
