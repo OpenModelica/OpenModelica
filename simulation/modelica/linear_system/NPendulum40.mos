@@ -29,7 +29,6 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
-// Warning: Deprecated flag --generateSymbolicJacobian detected. Use --postOptModules+=generateSymbolicJacobian instead.
 // Notification: Tearing is skipped for strong component 1 because system size of 1178 exceeds maximum system size for tearing of linear systems (0).
 // To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
 // Notification: Tearing is skipped for strong component 2 because system size of 1175 exceeds maximum system size for tearing of linear systems (0).
