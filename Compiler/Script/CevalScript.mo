@@ -320,7 +320,20 @@ algorithm
         // see https://trac.openmodelica.org/OpenModelica/ticket/2422
         // prio = if_(stringEq(prio,""), "default", prio);
         mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
-        (p1,true) = loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true);
+        (p1,true) = loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, false);
+      then p1;
+
+    case (_, _, _, _)
+      equation
+        true = System.regularFileExists(name);
+        (dir,"package.moc") = Util.getAbsoluteDirectoryAndFile(name);
+        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
+        prio = stringDelimitList(rest, " ");
+        // send "" priority if that is it, don't send "default"
+        // see https://trac.openmodelica.org/OpenModelica/ticket/2422
+        // prio = if_(stringEq(prio,""), "default", prio);
+        mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
+        (p1,true) = loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, true);
       then p1;
 
     case (_, _, _, _)
@@ -345,7 +358,7 @@ end loadFile;
 
 
 protected type LoadModelFoldArg =
-  tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/>;
+  tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/, Boolean /*encrypted*/>;
 
 public function loadModel
   input list<tuple<Absyn.Path,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
@@ -355,10 +368,11 @@ public function loadModel
   input Boolean notifyLoad;
   input Boolean checkUses;
   input Boolean requireExactVersion;
+  input Boolean encrypted = false;
   output Absyn.Program pnew;
   output Boolean success;
 protected
-  LoadModelFoldArg arg = (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion);
+  LoadModelFoldArg arg = (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted);
 algorithm
   (pnew, success) := List.fold1(imodelsToLoad, loadModel1, arg, (ip, true));
 end loadModel;
@@ -370,7 +384,7 @@ protected function loadModel1
   output tuple<Absyn.Program, Boolean> outTpl;
 protected
   list<tuple<Absyn.Path,list<String>,Boolean>> modelsToLoad;
-  Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion, onlyCheckFirstModelicaPath;
+  Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion, onlyCheckFirstModelicaPath, encrypted;
   Absyn.Path path;
   list<String> versionsLst;
   String pathStr, versions, className, version, modelicaPath, thisModelicaPath;
@@ -378,7 +392,7 @@ protected
   Error.MessageTokens msgTokens;
 algorithm
   (path, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
-  (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion) := inArg;
+  (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
   if onlyCheckFirstModelicaPath then
     /* Using loadFile() */
     thisModelicaPath::_ := System.strtok(modelicaPath, System.groupDelimiter());
@@ -391,7 +405,7 @@ algorithm
       pnew := Absyn.PROGRAM({}, Absyn.TOP());
       version := "";
     else
-      pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion);
+      pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
       version := getPackageVersion(path, pnew);
       b := not notifyLoad or forceLoad;
       msgTokens := {Absyn.pathString(path), version};
@@ -402,7 +416,7 @@ algorithm
     b := true;
     if checkUses then
       modelsToLoad := Interactive.getUsesAnnotationOrDefault(pnew, requireExactVersion);
-      (p, b) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion);
+      (p, b) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
     end if;
     outTpl := (p, success and b);
   else
@@ -530,7 +544,7 @@ algorithm
   (outCache,outValue) := matchcontinue (inCache,inEnv,inFunctionName,inVals,msg)
     local
       String omdev,simflags,s1,s2,s3,str,str1,str2,str3,token,varid,cmd,executable,executable1,encoding,method_str,
-             outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,
+             outputFormat_str,initfilename,pd,executableSuffixedExe,sim_call,result_file,filename_1,filename,filename1,filename2,
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
@@ -1327,7 +1341,7 @@ algorithm
         if b1 then
           Config.setLanguageStandard(Config.versionStringToStd(str));
         end if;
-        (p,b) = loadModel({(path,strings,false)},mp,p,true,b,true,requireExactVersion);
+        (p,b) = loadModel({(path,strings,false)},mp,p,true,b,true,requireExactVersion,false);
         if b1 then
           Config.setLanguageStandard(oldLanguageStd);
         end if;
@@ -1369,6 +1383,42 @@ algorithm
       equation
         // System.GC_enable();
       then (cache,Values.BOOL(false));
+
+    case (_,_,"loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::_,_)
+      equation
+        b = false;
+        if (System.regularFileExists(filename)) then
+          workdir = if System.directoryExists(workdir) then workdir else System.pwd();
+          b = false;
+          if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
+            b = true;
+            s1 = System.basename(filename);
+            s2::_ = System.strtok(s1, ".");
+            s3 = System.dirname(filename);
+            filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
+            filename2 = s3 + "/" + s2 + "/package.moc";
+            filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
+            if (System.regularFileExists(filename_1)) then
+              filename_1 = Util.testsuiteFriendlyPath(filename_1);
+              p = SymbolTable.getAbsyn();
+              newp = loadFile(filename_1, "UTF-8", p, true);
+              execStat("loadFile("+filename_1+")");
+              SymbolTable.setAbsyn(newp);
+            else
+              Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
+            end if;
+          else
+            Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
+          end if;
+        else
+          Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+        end if;
+      then
+        (FCore.emptyCache(),Values.BOOL(b));
+
+    case (cache,_,"loadEncryptedPackage",_,_)
+      then
+        (cache,Values.BOOL(false));
 
     case (cache,_,"alarm",{Values.INTEGER(i)},_)
       equation

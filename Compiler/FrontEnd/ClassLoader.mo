@@ -91,6 +91,7 @@ public function loadClass
   input String modelicaPath;
   input Option<String> encoding;
   input Boolean requireExactVersion = false;
+  input Boolean encrypted = false;
   output Absyn.Program outProgram;
 algorithm
   outProgram := matchcontinue (inPath,priorityList,modelicaPath,encoding)
@@ -104,7 +105,7 @@ algorithm
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion);
+        p = loadClassFromMps(classname, priorityList, mps, encoding, requireExactVersion, encrypted);
         checkOnLoadMessage(p);
       then
         p;
@@ -113,7 +114,7 @@ algorithm
       equation
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        p = loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion);
+        p = loadClassFromMps(pack, priorityList, mps, encoding, requireExactVersion, encrypted);
         checkOnLoadMessage(p);
       then
         p;
@@ -134,6 +135,7 @@ protected function loadClassFromMps
   input list<String> mps;
   input Option<String> encoding;
   input Boolean requireExactVersion = false;
+  input Boolean encrypted = false;
   output Absyn.Program outProgram;
 protected
   String mp, name, pwd, cmd, version, userLibraries;
@@ -164,7 +166,7 @@ algorithm
   end try;
   // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
-  cl := loadClassFromMp(id, mp, name, isDir, encoding);
+  cl := loadClassFromMp(id, mp, name, isDir, encoding, encrypted);
   outProgram := Absyn.PROGRAM({cl},Absyn.TOP());
 end loadClassFromMps;
 
@@ -174,6 +176,7 @@ protected function loadClassFromMp
   input String name;
   input Boolean isDir;
   input Option<String> optEncoding;
+  input Boolean encrypted = false;
   output Absyn.Class outClass;
 algorithm
   outClass := match (id,path,name,isDir,optEncoding)
@@ -204,11 +207,11 @@ algorithm
         if Config.getRunningTestsuite() or Config.noProc()==1 then
           strategy = STRATEGY_ON_DEMAND(encoding);
         else
-          filenames = getAllFilesFromDirectory(path + pd + name);
+          filenames = getAllFilesFromDirectory(path + pd + name, encrypted);
       // print("Files load in parallel:\n" + stringDelimitList(filenames, "\n") + "\n");
-          strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding));
+          strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding, Config.noProc(), encrypted));
         end if;
-        cl = loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages());
+        cl = loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages(), encrypted);
       then
         cl;
   end match;
@@ -216,15 +219,20 @@ end loadClassFromMp;
 
 protected function getAllFilesFromDirectory
   input String dir;
+  input Boolean encrypted;
   input list<String> acc = {};
   output list<String> files;
 protected
   list<String> subdirs;
   String pd = System.pathDelimiter();
 algorithm
-  files := (dir + pd + "package.mo") :: listAppend(list(dir + pd + f for f in System.moFiles(dir)), acc);
-  subdirs := list(dir + pd + d for d in List.filter1OnTrue(System.subDirectories(dir), existPackage, dir));
-  files := List.fold(subdirs, getAllFilesFromDirectory, files);
+  if encrypted then
+    files := (dir + pd + "package.moc") :: listAppend(list(dir + pd + f for f in System.mocFiles(dir)), acc);
+  else
+    files := (dir + pd + "package.mo") :: listAppend(list(dir + pd + f for f in System.moFiles(dir)), acc);
+  end if;
+  subdirs := list(dir + pd + d for d in List.filter2OnTrue(System.subDirectories(dir), existPackage, dir, encrypted));
+  files := List.fold1(subdirs, getAllFilesFromDirectory, encrypted, files);
 end getAllFilesFromDirectory;
 
 protected function loadCompletePackageFromMp
@@ -235,6 +243,7 @@ protected function loadCompletePackageFromMp
   input LoadFileStrategy strategy;
   input Absyn.Within inWithin;
   input Integer numError;
+  input Boolean encrypted = false;
   output Absyn.Class cl;
 algorithm
   cl := matchcontinue (id,inIdent,inString,inWithin)
@@ -256,7 +265,7 @@ algorithm
       equation
         pd = System.pathDelimiter();
         mp_1 = stringAppendList({mp,pd,pack});
-        packagefile = stringAppendList({mp_1,pd,"package.mo"});
+        packagefile = stringAppendList({mp_1,pd,if encrypted then "package.moc" else "package.mo"});
         orderfile = stringAppendList({mp_1,pd,"package.order"});
         if not System.regularFileExists(packagefile) then
           Error.addInternalError("Expected file " + packagefile + " to exist", sourceInfo());
@@ -265,10 +274,10 @@ algorithm
         // print("Look for " + packagefile + "\n");
         (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, strategy, true, within_, id);
         // print("Got " + packagefile + "\n");
-        reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages());
+        reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
         path = Absyn.joinWithinPath(within_,Absyn.IDENT(id));
         w2 = Absyn.WITHIN(path);
-        cp = List.fold3(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, {});
+        cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
       then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
     case (_,pack,mp,_)
       equation
@@ -305,6 +314,7 @@ protected function loadCompletePackageFromMp2
   input String mp;
   input LoadFileStrategy strategy;
   input Absyn.Within w1 "With the parent added";
+  input Boolean encrypted = false;
   input list<Absyn.ClassPart> acc;
   output list<Absyn.ClassPart> cps;
 algorithm
@@ -334,14 +344,14 @@ algorithm
     case CLASSLOAD(id)
       equation
         pd = System.pathDelimiter();
-        file = mp + pd + id + "/package.mo";
+        file = mp + pd + id + (if encrypted then "/package.moc" else "/package.mo");
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if bDirectoryAndFileExists then
-          cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages());
+          cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages(),encrypted);
           ei = Absyn.makeClassElement(cl);
           cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
         else
-          file = mp + pd + id + ".mo";
+          file = mp + pd + id + (if encrypted then ".moc" else ".mo");
           if not System.regularFileExists(file) then
             Error.addInternalError("Expected file " + file + " to exist", sourceInfo());
             fail();
@@ -408,6 +418,7 @@ protected function getPackageContentNames
   input String filename;
   input String mp;
   input Integer numError;
+  input Boolean encrypted = false;
   output list<PackageOrder> po "reverse";
 algorithm
   (po) := matchcontinue (cl,filename,mp,numError)
@@ -428,11 +439,16 @@ algorithm
           duplicatesStr = stringDelimitList(duplicates, ", ");
           Error.assertionOrAddSourceMessage(listEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
 
-          // get all the .mo files in the directory!
-          mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
-          // get all the subdirs containing package.mo
+          if encrypted then
+            // get all the .moc files in the directory!
+            mofiles = List.map(System.mocFiles(mp), Util.removeLast4Char);
+          else
+            // get all the .mo files in the directory!
+            mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
+          end if;
+          // get all the subdirs
           subdirs = System.subDirectories(mp);
-          subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+          subdirs = List.filter2OnTrue(subdirs, existPackage, mp, encrypted);
           // build a list
           intersection = List.intersectionOnTrue(subdirs,mofiles,stringEq);
           differencesStr = stringDelimitList(List.map1(intersection, getBothPackageAndFilename, mp), ", ");
@@ -444,7 +460,7 @@ algorithm
           differencesStr = stringDelimitList(differences, "\n\t");
           Error.assertionOrAddSourceMessage(listEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},SOURCEINFO(filename,true,0,0,0,0,0.0));
           po1 = getPackageContentNamesinParts(namesToFind,cp,{});
-          List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
+          List.map3_0(po1,checkPackageOrderFilesExist,mp,info,encrypted);
 
           po2 = List.map(differences, makeClassLoad);
 
@@ -452,7 +468,7 @@ algorithm
         else // file not found
           mofiles = List.map(System.moFiles(mp), Util.removeLast3Char) "Here .mo files in same directory as package.mo should be loaded as sub-packages";
           subdirs = System.subDirectories(mp);
-          subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+          subdirs = List.filter2OnTrue(subdirs, existPackage, mp, encrypted);
           mofiles = List.sort(listAppend(subdirs,mofiles), Util.strcmpBool);
           // Look for duplicates
           intersection = List.sortedDuplicates(mofiles,stringEq);
@@ -499,6 +515,7 @@ protected function checkPackageOrderFilesExist
   input PackageOrder po;
   input String mp;
   input SourceInfo info;
+  input Boolean encrypted = false;
 algorithm
   _ := match (po,mp,info)
     local
@@ -506,7 +523,7 @@ algorithm
     case (CLASSLOAD(str),_,_)
       equation
         pd = System.pathDelimiter();
-        Error.assertionOrAddSourceMessage(System.directoryExists(mp + pd + str) or System.regularFileExists(mp + pd + str + ".mo"),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
+        Error.assertionOrAddSourceMessage(System.directoryExists(mp + pd + str) or System.regularFileExists(mp + pd + str + (if encrypted then ".moc" else ".mo")),Error.PACKAGE_ORDER_FILE_NOT_FOUND,{str},info);
       then ();
     else ();
   end match;
@@ -515,12 +532,13 @@ end checkPackageOrderFilesExist;
 protected function existPackage
   input String name;
   input String mp;
+  input Boolean encrypted = false;
   output Boolean b;
 protected
   String pd;
 algorithm
   pd := System.pathDelimiter();
-  b := System.regularFileExists(mp + pd + name + pd + "package.mo");
+  b := System.regularFileExists(mp + pd + name + pd + (if encrypted then "package.moc" else "package.mo"));
 end existPackage;
 
 protected function getPackageContentNamesinParts

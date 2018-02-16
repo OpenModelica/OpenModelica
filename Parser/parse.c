@@ -392,6 +392,10 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
   return parseStream(input, langStd, runningTestsuite);
 }
 
+#ifdef OMENCRYPTION
+#include "../../OMEncryption/Parser/parseEncryption.c"
+#endif
+
 static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int runningTestsuite)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
@@ -415,6 +419,12 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   len = strlen(fileName);
   if (len > 3 && 0==strcmp(fileName+len-4,".mof"))
     ModelicaParser_flags |= PARSE_FLAT;
+
+#ifdef OMENCRYPTION
+  if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
+    return parseEncryptedFile(fileName, members.filename_C, langStd, runningTestsuite);
+  }
+#endif
 
   /*
    * Workaround: ANTLR3 does not like 0-length files on Windows!

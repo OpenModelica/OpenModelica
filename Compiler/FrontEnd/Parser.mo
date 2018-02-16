@@ -122,11 +122,12 @@ function parallelParseFiles
   input list<String> filenames;
   input String encoding;
   input Integer numThreads = Config.noProc();
+  input Boolean encrypted = false;
   output HashTableStringToProgram.HashTable ht;
 protected
   list<ParserResult> partialResults;
 algorithm
-  partialResults := parallelParseFilesWork(filenames, encoding, numThreads);
+  partialResults := parallelParseFilesWork(filenames, encoding, numThreads, encrypted);
   ht := HashTableStringToProgram.emptyHashTableSized(Util.nextPrime(listLength(partialResults)));
   for res in partialResults loop
     ht := match res
@@ -167,11 +168,12 @@ function parallelParseFilesWork
   input list<String> filenames;
   input String encoding;
   input Integer numThreads;
+  input Boolean encrypted = false;
   output list<ParserResult> partialResults;
 protected
   list<tuple<String,String>> workList = list((file,encoding) for file in filenames);
 algorithm
-  if Config.getRunningTestsuite() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 then
+  if Config.getRunningTestsuite() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or encrypted then
     partialResults := list(loadFileThread(t) for t in workList);
   else
     // GC.disable(); // Seems to sometimes break building nightly omc

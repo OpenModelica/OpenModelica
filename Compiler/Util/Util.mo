@@ -1548,6 +1548,13 @@ algorithm
   outStr := substring(str,1,stringLength(str)-3);
 end removeLast3Char;
 
+public function removeLast4Char
+  input String str;
+  output String outStr;
+algorithm
+  outStr := substring(str,1,stringLength(str)-4);
+end removeLast4Char;
+
 public function stringNotEqual
   input String str1;
   input String str2;

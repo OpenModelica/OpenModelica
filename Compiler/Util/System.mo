@@ -432,6 +432,12 @@ public function moFiles
   external "C" outStringLst=System_moFiles(inString) annotation(Library = "omcruntime");
 end moFiles;
 
+public function mocFiles
+  input String inString;
+  output list<String> outStringLst;
+  external "C" outStringLst=System_mocFiles(inString) annotation(Library = "omcruntime");
+end mocFiles;
+
 public function getLoadModelPath
   input String className;
   input list<String> prios;

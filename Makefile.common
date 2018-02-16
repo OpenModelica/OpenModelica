@@ -29,7 +29,6 @@ INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
 ifeq ($(OMENCRYPTION),yes)
 .PHONY : semla semla-clean
-CPPFLAGS=-DOMENCRYPTION
 
 semla: mkbuilddirs
 	mkdir -p ../SEMLA/build
@@ -76,7 +75,7 @@ release: omc
 bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS) interactive-short libzmq
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install_bootstrapping BOOTSTRAPPING=1 OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
 sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc
 

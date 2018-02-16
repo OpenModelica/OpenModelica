@@ -1156,6 +1156,16 @@ external "builtin";
 annotation(preferredView="text");
 end loadFiles;
 
+function loadEncryptedPackage
+  input String fileName;
+  input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Loads the given encrypted package.</p>
+</html>"), preferredView="text");
+end loadEncryptedPackage;
+
 function reloadClass "reloads the file associated with the given (loaded class)"
   input TypeName name;
   input String encoding = "UTF-8";

@@ -475,6 +475,47 @@ void* System_moFiles(const char *directory)
 }
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+void* System_mocFiles(const char *directory)
+{
+  void *res;
+  WIN32_FIND_DATA FileData;
+  BOOL more = TRUE;
+  char pattern[1024];
+  HANDLE sh;
+  sprintf(pattern, "%s\\*.moc", directory);
+  res = mmc_mk_nil();
+  sh = FindFirstFile(pattern, &FileData);
+  if (sh != INVALID_HANDLE_VALUE) {
+    while(more) {
+      if (strcmp(FileData.cFileName,"package.moc") != 0)
+      {
+        res = mmc_mk_cons(mmc_mk_scon(FileData.cFileName),res);
+      }
+      more = FindNextFile(sh, &FileData);
+    }
+    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
+  }
+  return res;
+}
+#else
+void* System_mocFiles(const char *directory)
+{
+  int i,count;
+  void *res;
+  struct dirent **files;
+  select_from_dir = directory;
+  count = scandir(directory, &files, file_select_moc, NULL);
+  res = mmc_mk_nil();
+  for (i=0; i<count; i++)
+  {
+    res = mmc_mk_cons(mmc_mk_scon(files[i]->d_name),res);
+    free(files[i]);
+  }
+  return res;
+}
+#endif
+
 extern int System_lookupFunction(int _inLibHandle, const char* _inFunc)
 {
   int res = SystemImpl__lookupFunction(_inLibHandle, _inFunc);

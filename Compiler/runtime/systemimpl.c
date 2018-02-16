@@ -1170,6 +1170,24 @@ static int file_select_mo(direntry entry)
   }
 }
 
+static int file_select_moc(direntry entry)
+{
+  char* ptr;
+  if ((strcmp(entry->d_name, ".") == 0) ||
+      (strcmp(entry->d_name, "..") == 0) ||
+      (strcmp(entry->d_name, "package.moc") == 0)) {
+    return (0);
+  } else {
+    ptr = (char*)rindex(entry->d_name, '.');
+    if ((ptr != NULL) &&
+  ((strcmp(ptr, ".moc") == 0))) {
+      return (1);
+    } else {
+      return (0);
+    }
+  }
+}
+
 #endif
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -1906,13 +1924,13 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
 #else
         mightbedir = 1;
 #endif
-        if (mightbedir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
+        if (mightbedir && (regularFileExistsInDirectory(mp,ent->d_name,"package.mo") || regularFileExistsInDirectory(mp,ent->d_name,"package.moc"))) {
           /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
           (*numMatches)++;
           continue;
         }
         entlen = strlen(ent->d_name);
-        if (entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+        if (((entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo")) || (entlen > 4 && 0==strcmp(ent->d_name+entlen-4,".moc"))) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
           /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
           (*numMatches)++;
         }
@@ -1938,13 +1956,13 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
 #else
         maybeDir = 1;
 #endif
-        if (maybeDir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
+        if (maybeDir && (regularFileExistsInDirectory(mp,ent->d_name,"package.mo") || regularFileExistsInDirectory(mp,ent->d_name,"package.moc"))) {
           ok=1;
           res[i].fileIsDir=1;
           /* fprintf(stderr, "found dir match: %ld %s - ok=%d\n", i, ent->d_name, ok); */
         }
         entlen = strlen(ent->d_name);
-        if (!ok && entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+        if (!ok && ((entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo")) || entlen > 4 && 0==strcmp(ent->d_name+entlen-4,".moc")) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
           /* fprintf(stderr, "found match file: %ld %s - ok=%d\n", i, ent->d_name, ok); */
           res[i].fileIsDir=0;
           ok=1;

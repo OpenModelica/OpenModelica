@@ -90,7 +90,7 @@ runtime-depends:
 	$(MAKE) -f $(defaultMakefileTarget) -C .. OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR) OMC="$(OMC)"
 	$(MAKE) -f $(defaultMakefileTarget) parser compilerruntime
 parser:
-	$(MAKE) -f $(defaultMakefileTarget) -C ../../Parser install OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C ../../Parser install OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 compilerruntime:
 	$(MAKE) -f $(defaultMakefileTarget) -C ../runtime install OMBUILDDIR=$(OMBUILDDIR)
 

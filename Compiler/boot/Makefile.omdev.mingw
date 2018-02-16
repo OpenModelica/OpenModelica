@@ -11,6 +11,11 @@ CXX=g++
 override CFLAGS += -fno-ipa-pure-const
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
+ifeq ($(OMENCRYPTION),yes)
+OMENCRYPTIONLIBS=-L$(OMBUILDDIR)/lib/omc/SEMLA -ltool -lssl -lcrypto -lgdi32 -lws2_32
+else
+OMENCRYPTIONLIBS=
+endif
 LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lOpenModelicaRuntimeC \
 -lModelicaExternalC -lm \
@@ -20,6 +25,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -L../../3rdParty/lpsolve/build/lib \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
 -lzmq \
+$(OMENCRYPTIONLIBS) \
 $(EXTRA_LD_FLAGS)
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
