@@ -4,18 +4,31 @@
 #include <string>
 #include <iostream>
 
+/**
+Complete definition for OMCData
+*/
+OMC_DLL typedef struct OMCData
+{
+   OMCData(threadData_t *threadData);
+   ~OMCData();
+   threadData_t *threadData;
+} data;
+
+
 OMC_DLL OMCData::~OMCData()
 {
 
 
 }
 
-OMC_DLL OMCData::OMCData(void *data)
+OMC_DLL OMCData::OMCData(threadData_t *data)
   : threadData(data)
 {
 
 
 }
+
+#define CP_TD() (memcpy(omcData->threadData, threadData, sizeof(threadData_t)))
 
 extern "C" {
 
@@ -26,57 +39,43 @@ extern "C" {
     mmc_GC_init();
   }
 
-  int InitOMC(OMCData* omcData, const char* compiler, const char* openModelicaHome, int initThreadData)
+  int InitOMC(OMCData** omcDataPtr, const char* compiler, const char* openModelicaHome)
   {
-    threadData_t *threadData = 0;
-    // thread data is not initialized, do so
-    if (initThreadData)
-    {
-      MMC_ALLOC_AND_INIT_THREADDATA(threadData);
-      omcData->threadData = (void*)threadData;
-    }
-    else
-    {
-      threadData = (threadData_t *)omcData->threadData;
-    }
-    try
-    {
-      MMC_TRY_TOP_INTERNAL()
+    // alloc omcData
+    OMCData* omcData = new OMCData((threadData_t*)GC_malloc_uncollectable(sizeof(threadData_t)));
+    *omcDataPtr = omcData;
+    memset(omcData->threadData, 0, sizeof(threadData_t));
+
+    MMC_TRY_TOP_SET(omcData->threadData)
       void *args = mmc_mk_nil();
       omc_Main_init(threadData, mmc_mk_nil());
+      CP_TD();
 #ifdef WIN32
       omc_Main_setWindowsPaths(threadData, mmc_mk_scon(openModelicaHome));
+      CP_TD();
 #endif
       omc_Main_readSettings(threadData, mmc_mk_nil());
-      MMC_CATCH_TOP()
-    }
-    catch (std::exception &exception)
-    {
-      return -1;
-    }
+      CP_TD();
+    MMC_CATCH_TOP(return -1)
 
     std::string options = "+d=execstat +simCodeTarget=Cpp +target=" + std::string(compiler);
     std::cout << "options " << options << "\n";
-    if (SetCommandLineOptions(omcData, options.c_str()))
-      return 1;
-    else
+    if (SetCommandLineOptions(omcData, options.c_str()) == -1)
+    {
+      std::cout << "could not set OpenModelica options: " << options << std::endl;
       return -1;
+    }
   }
 
   int SetCommandLineOptions(data* omcData, const char* expression)
   {
     modelica_boolean result;
-    threadData_t *threadData = (threadData_t *)omcData->threadData;
-    try
-    {
-      MMC_TRY_TOP_INTERNAL()
+
+    MMC_TRY_TOP_SET(omcData->threadData)
       result = omc_OpenModelicaScriptingAPI_setCommandLineOptions(threadData, mmc_mk_scon(expression));
-      MMC_CATCH_TOP()
-    }
-    catch (std::exception &exception)
-    {
-      return -1;
-    }
+      CP_TD();
+    MMC_CATCH_TOP(return -1)
+
     if (result == true)
       return 1;
     else
@@ -85,20 +84,21 @@ extern "C" {
 
   int GetOMCVersion(OMCData* omcData, char** result)
   {
-    threadData_t *threadData = (threadData_t *)omcData->threadData;
     void *result_mm = NULL;
-    MMC_TRY_TOP_INTERNAL()
     std::string name = "OpenModelica";
-    result_mm = omc_OpenModelicaScriptingAPI_getVersion(threadData, mmc_mk_scon(name.c_str()));
-    MMC_CATCH_TOP()
-    *result = MMC_STRINGDATA(result_mm);
 
+    MMC_TRY_TOP_SET(omcData->threadData)
+      result_mm = omc_OpenModelicaScriptingAPI_getVersion(threadData, mmc_mk_scon(name.c_str()));
+      CP_TD();
+    MMC_CATCH_TOP(return -1)
+    *result = MMC_STRINGDATA(result_mm);
     return 1;
   }
 
   void FreeOMC(OMCData* omcData)
   {
-    // GC_free(omcData->threadData);
+    GC_free(omcData->threadData);
+    delete omcData;
   }
 
   int LoadModel(OMCData* omcData, const char* className)
@@ -112,16 +112,11 @@ extern "C" {
     modelica_boolean requireExactVersion = false;
     modelica_boolean result = false;
 
-    try
-    {
-      MMC_TRY_TOP_INTERNAL()
-        result = omc_OpenModelicaScriptingAPI_loadModel(threadData, mmc_mk_scon(className), priorityVersion_lst, notify, mmc_mk_scon(languageStandard.c_str()), requireExactVersion);
-      MMC_CATCH_TOP()
-    }
-    catch (std::exception &exception)
-    {
-      return -1;
-    }
+    MMC_TRY_TOP_SET(omcData->threadData)
+      result = omc_OpenModelicaScriptingAPI_loadModel(threadData, mmc_mk_scon(className), priorityVersion_lst, notify, mmc_mk_scon(languageStandard.c_str()), requireExactVersion);
+      CP_TD();
+    MMC_CATCH_TOP(return -1)
+
     if (result == true)
       return 1;
     else
@@ -130,21 +125,15 @@ extern "C" {
 
   int LoadFile(data* omcData, const char* fileName)
   {
-    threadData_t *threadData = (threadData_t *)omcData->threadData;
     modelica_boolean result;
     std::string encoding = "UTF-8";
     modelica_boolean uses = true; //Uses-annotations
 
-    try
-    {
-      MMC_TRY_TOP_INTERNAL()
-        result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses);
-      MMC_CATCH_TOP()
-    }
-    catch (std::exception &ex)
-    {
-      return -1;
-    }
+    MMC_TRY_TOP_SET(omcData->threadData)
+      result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses);
+      CP_TD();
+    MMC_CATCH_TOP(return -1)
+
     if (result == true)
       return 1;
     else
@@ -153,58 +142,53 @@ extern "C" {
 
   int GetError(data* omcData, char** result)
   {
-    threadData_t *threadData = (threadData_t *)omcData->threadData;
     modelica_boolean warningsAsErrors = true;
     void *result_mm = NULL;
 
-    try
-    {
-      MMC_TRY_TOP_INTERNAL()
-        result_mm = omc_OpenModelicaScriptingAPI_getErrorString(threadData, warningsAsErrors);
+    MMC_TRY_TOP_SET(omcData->threadData)
+      result_mm = omc_OpenModelicaScriptingAPI_getErrorString(threadData, warningsAsErrors);
+      CP_TD();
       (*result) = MMC_STRINGDATA(result_mm);
-      MMC_CATCH_TOP()
-    }
-    catch (std::exception &ex)
-    {
-      return -1;
-    }
+    MMC_CATCH_TOP(return -1)
+
     return 1;
   }
 
   int SetWorkingDirectory(data* omcData, const char* directory, char** result)
   {
-    threadData_t *threadData = (threadData_t *)omcData->threadData;
     void *reply_str = NULL;
-    try
-    {
-      MMC_TRY_TOP_INTERNAL()
-        reply_str = omc_OpenModelicaScriptingAPI_cd(threadData, mmc_mk_scon(directory));
-        (*result) = MMC_STRINGDATA(reply_str);
-      MMC_CATCH_TOP()
-    }
-    catch (std::exception &ex)
-    {
-      return -1;
-    }
+    MMC_TRY_TOP_SET(omcData->threadData)
+      reply_str = omc_OpenModelicaScriptingAPI_cd(threadData, mmc_mk_scon(directory));
+      CP_TD();
+      (*result) = MMC_STRINGDATA(reply_str);
+    MMC_CATCH_TOP(return -1)
 
     return 1;
   }
 
   int SendCommand(data* omcData, const char* expression, char** result)
   {
-    threadData_t *threadData = (threadData_t *)omcData->threadData;
+    int flagError = 0;
     void *reply_str = NULL;
-    MMC_TRY_TOP_INTERNAL()
+
+    MMC_TRY_TOP_SET(omcData->threadData)
     MMC_TRY_STACK()
-      if (!omc_Main_handleCommand(threadData, mmc_mk_scon(expression), &reply_str))
+      if (omc_Main_handleCommand(threadData, mmc_mk_scon(expression), &reply_str))
       {
-        return -1;
+        (*result) = MMC_STRINGDATA(reply_str);
       }
-      (*result) = MMC_STRINGDATA(reply_str);
+      else
+      {
+        flagError = 1;
+      }
+      CP_TD();
     MMC_ELSE()
       return -1;
     MMC_CATCH_STACK()
     MMC_CATCH_TOP();
+
+    if (flagError) return -1;
     return 1;
   }
 }
+

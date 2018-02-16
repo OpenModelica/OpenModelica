@@ -33,7 +33,7 @@ _model(model)
   std::cout << "Intialize OMC, use gcc" << std::endl;
 
 
-  status = InitOMC(&_omcPtr,"gcc",omhome, 1);
+  status = InitOMC(&_omcPtr,"gcc",omhome);
   if(status > 0)
   {
     std::cout << "..ok" << std::endl;
@@ -43,7 +43,7 @@ _model(model)
   {
     std::cout << "..failed" << std::endl;
     char* errorMsg = 0;
-    status = GetError(&_omcPtr, &errorMsg);
+    status = GetError(_omcPtr, &errorMsg);
     string errorMsgStr(errorMsg);
     throw std::runtime_error("error to intialize OMC: " + errorMsgStr);
   }
@@ -52,7 +52,7 @@ _model(model)
 
 ModelicaCompiler::~ModelicaCompiler(void)
 {
-
+   FreeOMC(_omcPtr);
 }
 
 void ModelicaCompiler::loadFile(bool load_file)
@@ -65,7 +65,7 @@ void ModelicaCompiler::loadFile(bool load_file)
   {
     //command="loadModel(Modelica)";
     command="loadModel(Modelica,{\"3.2.2\"})";
-    status=SendCommand(&_omcPtr,command.c_str(),&result);
+    status=SendCommand(_omcPtr,command.c_str(),&result);
     if(status>0)
       cout<<"load Modelica Library : "<< result<<std::endl;
     else
@@ -82,7 +82,7 @@ void ModelicaCompiler::loadFile(bool load_file)
   {
     //command="loadModel(Modelica)";
     command="loadModel(Modelica,{\"3.2.2\"})";
-    status=SendCommand(&_omcPtr,command.c_str(),&result);
+    status=SendCommand(_omcPtr,command.c_str(),&result);
 
     if(status>0)
       cout<<"load Modelica Library : "<< result<<std::endl;
@@ -101,7 +101,7 @@ void ModelicaCompiler::loadFile()
   char* result =0;
 
   command="loadModel(Modelica,{\"3.2.2\"})";
-  status = SendCommand(&_omcPtr, command.c_str(), &result);
+  status = SendCommand(_omcPtr, command.c_str(), &result);
 
   if(status>0)
     cout<<"load Modelica Library : "<< result<<std::endl;
@@ -131,7 +131,7 @@ void ModelicaCompiler::loadFile()
 
   cout << "PackageName : " << str << std::endl;
 
-  status=LoadFile(&_omcPtr,fileToLoad);
+  status=LoadFile(_omcPtr,fileToLoad);
   //status=LoadFile(_omcPtr,"package.mo");
 
   if(status>0)
@@ -141,7 +141,7 @@ void ModelicaCompiler::loadFile()
 
     std::cout << "failed to load "<<str << std::endl;
     char* errorMsg=0;
-    status = GetError(&_omcPtr,&errorMsg);
+    status = GetError(_omcPtr,&errorMsg);
     string errorMsgStr(errorMsg);
     throw std::runtime_error("error while loading file: " + str+" " + errorMsgStr);
   }
@@ -169,7 +169,7 @@ void ModelicaCompiler::generateLabeledSimCode(string reduction_method)
   //command.append(s);
   command.append(")");
   cout << command << std::endl;
-  int status = SendCommand(&_omcPtr, command.c_str(), &result);
+  int status = SendCommand(_omcPtr, command.c_str(), &result);
   if(status>0)
     cout<<"generated labeled simcode for: "<<_model<<" "<< result<<std::endl;
   else
@@ -177,7 +177,7 @@ void ModelicaCompiler::generateLabeledSimCode(string reduction_method)
 
     std::cout << "..failed" << std::endl;
     char* errorMsg=0;
-    status = GetError(&_omcPtr, &errorMsg);
+    status = GetError(_omcPtr, &errorMsg);
 
     throw std::runtime_error("error while executing " + command+ " with error " + errorMsg);
   }
@@ -192,7 +192,7 @@ void ModelicaCompiler::generateReferenceSolution()
   command.append(_model);
   command.append(_model);
   command.append(")");
-  int status = SendCommand(&_omcPtr, command.c_str(), &result);
+  int status = SendCommand(_omcPtr, command.c_str(), &result);
 
   if(status>0)
     cout<<"generated reference solution for: "<<_model<<" "<< result<<std::endl;
@@ -201,7 +201,7 @@ void ModelicaCompiler::generateReferenceSolution()
 
     std::cout << "..failed" << std::endl;
     char* errorMsg = 0;
-    status = GetError(&_omcPtr, &errorMsg);
+    status = GetError(_omcPtr, &errorMsg);
 
     throw std::runtime_error("error while executing  " + command+ " with error " + errorMsg);
   }
@@ -243,7 +243,7 @@ void ModelicaCompiler::reduceTerms(std::vector<unsigned int>& labels, double sta
   //command.append(")");
 
   cout<<command<<std::endl;
-  status = SendCommand(&_omcPtr, command.c_str(), &result);
+  status = SendCommand(_omcPtr, command.c_str(), &result);
   if(status>0)
     cout<<"reduceTerms for: "<<_model<<" "<< result<<std::endl;
   else
@@ -251,7 +251,7 @@ void ModelicaCompiler::reduceTerms(std::vector<unsigned int>& labels, double sta
 
     std::cout << "..failed" << std::endl;
     char* errorMsg = 0;
-    status = GetError(&_omcPtr, &errorMsg);
+    status = GetError(_omcPtr, &errorMsg);
 
     throw std::runtime_error("error while executing " + command+ " with error " + errorMsg);
   }
@@ -271,7 +271,7 @@ void ModelicaCompiler::reduceTerms(std::vector<unsigned int>& labels, double sta
   command.append(",startTime=0.0,stopTime = 20.0)");
 
   cout<<command<<std::endl;
-  status=SendCommand(&_omcPtr,command.c_str(),&result);
+  status=SendCommand(_omcPtr,command.c_str(),&result);
   if(status>0)
     cout<<"simulation for reduced model: "<<_model<<" "<< result<<std::endl;
   else
@@ -279,7 +279,7 @@ void ModelicaCompiler::reduceTerms(std::vector<unsigned int>& labels, double sta
 
     std::cout << "simulation for reduced model failed" << std::endl;
     char* errorMsg=0;
-    status = GetError(&_omcPtr, &errorMsg);
+    status = GetError(_omcPtr, &errorMsg);
 
     throw std::runtime_error("error while executing " + command+ " with error " + errorMsg);
   }

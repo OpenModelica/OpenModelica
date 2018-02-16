@@ -101,42 +101,35 @@ void runTest(OMCData* omcData, std::string testfolder, std::string omhome)
 
 int main(int argc, const char* argv[])
 {
-  OMCData omcData = {0};
+  OMCData *omcData = 0;
   int status = 0;
 
   std::cout << "Test OMC C-API dll ..." << std::endl;
   InitMetaOMC();
 
-  // define the threadData on the stack as
-  // Boehm GC on Windows has issues otherwise
-  MMC_TRY_TOP();
-
-  omcData.threadData = (threadData_t*)threadData;
-
   /*----------------------------------------*/
   std::cout << "Initialize OMC, use gcc compiler" << std::endl;
   // if you send in 1 here it will crash on Windows, i need do debug more why this happens
-  status = InitOMC(&omcData, "gcc", "", 0);
+  status = InitOMC(&omcData, "gcc", "");
   if(status > 0)
     std::cout << "..ok" << std::endl;
   else
     std::cout << "..failed" << std::endl;
   /*----------------------------------------*/
 
+
   std::cout << "starting test 1" << std::endl;
   std::string dir = "./tmp1";
-  runTest(&omcData, dir, "");
+  runTest(omcData, dir, "");
   std::cout << "starting test 2" << std::endl;
   dir = "./tmp2";
-  runTest(&omcData, dir, "");
+  runTest(omcData, dir, "");
   std::cout << "starting test 3" << std::endl;
   dir = "./tmp3";
-  runTest(&omcData, dir, "");
+  runTest(omcData, dir, "");
 
   /*------------------------------------------*/
 
-  MMC_CATCH();
-
-  FreeOMC(&omcData);
+  FreeOMC(omcData);
 }
 

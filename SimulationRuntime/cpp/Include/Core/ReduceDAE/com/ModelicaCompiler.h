@@ -17,6 +17,6 @@ private:
   string _model;
   string _model_path;
   string _file_name;
-  OMCData _omcPtr;
+  OMCData* _omcPtr;
   bool _load_package;
 };

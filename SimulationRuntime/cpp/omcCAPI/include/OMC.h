@@ -6,19 +6,10 @@
 
 #include "OMCAPI.h"
 
-/**
-Complete definition for OMCData
-*/
-OMC_DLL typedef struct OMCData
-{
-   OMCData(void *threadData);
-   ~OMCData();
-   void *threadData;
-} data;
-
-
 extern "C"
 {
+    OMC_DLL typedef struct OMCData data;
+
     void OMC_DLL InitMetaOMC();
     /**
     *  \brief Allocates and initializes OpenModelica compiler(omc) instance
@@ -26,7 +17,7 @@ extern "C"
     *  \param [out] omcPtr  pointer to allocated omc instance
     *  \return returns a status flag
     */
-   int OMC_DLL InitOMC(data* omcData, const char* compiler, const char* openModelicaHome, int initThreadData = 1);
+   int OMC_DLL InitOMC(data** omcDataPtr, const char* compiler, const char* openModelicaHome);
    /**
     *  \brief returns the version of the OpenModelica compiler (omc) instance
     *  \param [in] omcPtr Pointer to omc instance
