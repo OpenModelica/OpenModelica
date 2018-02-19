@@ -3,7 +3,7 @@
 
 
 #include <string>
-#include <unordered_set>
+#include <set>
 #include <stack>
 
 using namespace std;
@@ -56,7 +56,7 @@ static inline size_t actualByteSize(size_t sz)
 double SystemImpl__getSizeOfData(void *data)
 {
   size_t sz=0;
-  std::unordered_set<void*> handled;
+  std::set<void*> handled;
   std::stack<void*> work;
   work.push(data);
   while (!work.empty()) {
