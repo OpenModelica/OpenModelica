@@ -33,6 +33,8 @@
 #include "openmodelica.h"
 #include "omc_config.h"
 
+extern const char* System_modelicaPlatform();
+extern const char* System_dirname(const char* str);
 char* _replace(const char* source_str,
                const char* search_str,
                const char* replace_str);

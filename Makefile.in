@@ -78,7 +78,7 @@ include Makefile.common
 settings:
 
 ifeq ($(OMENCRYPTION),yes)
-omc: omc-bootstrapped semla
+omc: semla omc-bootstrapped
 else
 omc: omc-bootstrapped
 endif
