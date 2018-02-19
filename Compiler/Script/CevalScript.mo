@@ -1393,7 +1393,7 @@ algorithm
           if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
             b = true;
             s1 = System.basename(filename);
-            s2::_ = System.strtok(s1, ".");
+            s2 = Util.removeLast3Char(s1);
             s3 = System.dirname(filename);
             filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
             filename2 = s3 + "/" + s2 + "/package.moc";
