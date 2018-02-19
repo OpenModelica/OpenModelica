@@ -216,6 +216,8 @@ enum LINEAR_SOLVER
 
   LS_MAX
 };
+extern const char *LS_NAME[LS_MAX];
+extern const char *LS_DESC[LS_MAX];
 
 enum LINEAR_SPARSE_SOLVER
 {
@@ -232,10 +234,8 @@ enum LINEAR_SPARSE_SOLVER
   LSS_MAX
 };
 
-extern const char *LS_NAME[LS_MAX];
-extern const char *LS_DESC[LS_MAX];
-extern const char *LSS_NAME[LS_MAX];
-extern const char *LSS_DESC[LS_MAX];
+extern const char *LSS_NAME[LSS_MAX];
+extern const char *LSS_DESC[LSS_MAX];
 
 enum NONLINEAR_SOLVER
 {
@@ -244,17 +244,21 @@ enum NONLINEAR_SOLVER
 #if !defined(OMC_MINIMAL_RUNTIME)
   NLS_HYBRID,
   NLS_KINSOL,
+  NLS_NEWTON,
+  NLS_MIXED,
 #else
   NLS_HYBRID_DOESNT_EXIST,
   NLS_KINSOL_DOESNT_EXIST,
+  NLS_NEWTON_DOESNT_EXIST,
+  NLS_MIXED_DOESNT_EXIST,
 #endif
-  NLS_NEWTON,
   NLS_HOMOTOPY,
-  NLS_MIXED,
 
   NLS_MAX
 };
 
+extern const char *NLS_NAME[NLS_MAX];
+extern const char *NLS_DESC[NLS_MAX];
 
 enum NEWTON_STRATEGY
 {
@@ -268,9 +272,6 @@ enum NEWTON_STRATEGY
 
   NEWTON_MAX
 };
-
-extern const char *NLS_NAME[NLS_MAX+1];
-extern const char *NLS_DESC[NLS_MAX+1];
 
 extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
 extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];

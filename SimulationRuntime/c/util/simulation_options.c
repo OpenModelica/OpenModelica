@@ -196,7 +196,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_JAC */                    "value specifies the Jacobian for Ipopt",
   /* FLAG_IPOPT_MAX_ITER */               "value specifies the max number of iteration for ipopt",
   /* FLAG_IPOPT_WARM_START */             "value specifies lvl for a warm start in ipopt: 1,2,3,...",
-  /* FLAG_JACOBIAN */                     "select the calculation method for Jacobian if needed by the integrator. Valid values depend on the used method.",
+  /* FLAG_JACOBIAN */                     "select the calculation method of the Jacobian used only by ida and dassl solver.",
   /* FLAG_L */                            "value specifies a time where the linearization of the model should be performed",
   /* FLAG_L_DATA_RECOVERY */              "emit data recovery matrices with model linearization",
   /* FLAG_LOG_FORMAT */                   "value specifies the log format of the executable. -logFormat=text (default), -logFormat=xml or -logFormat=xmltcp",
@@ -212,7 +212,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_MAX_STEP_SIZE */                "value specifies maximum absolute step size for supported solver",
   /* FLAG_MEASURETIMEPLOTFORMAT */        "value specifies the output format of the measure time functionality",
   /* FLAG_NEWTON_FTOL */                  "[double (default 1e-12)] tolerance respecting residuals for updating solution vector in Newton solver",
-  /* FLAG_NEWTON_MAX_STEP_FACTOR */       "[double (default 1e12)] maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). Used currently only by kinsol.",
+  /* FLAG_NEWTON_MAX_STEP_FACTOR */       "[double (default 1e12)] maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling). Used currently only by KINSOL.",
   /* FLAG_NEWTON_XTOL */                  "[double (default 1e-12)] tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver",
   /* FLAG_NEWTON_STRATEGY */              "value specifies the damping strategy for the newton solver",
   /* FLAG_NLS */                          "value specifies the nonlinear solver",
@@ -227,7 +227,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_NOEVENTEMIT */                  "do not emit event points to the result file",
   /* FLAG_NO_RESTART */                   "disables the restart of the integration method after an event is performed, used by the methods: dassl, ida",
   /* FLAG_NO_ROOTFINDING */               "disables the internal root finding procedure of methods: dassl and ida.",
-  /* FLAG_NO_SCALING */                   "disables scaling for the variables and the residuals in the algebraic nonlinear solver kinsol.",
+  /* FLAG_NO_SCALING */                   "disables scaling for the variables and the residuals in the algebraic nonlinear solver KINSOL.",
   /* FLAG_NO_SUPPRESS_ALG */              "flag to not suppress algebraic variables in the local error test of ida solver in daeMode",
   /* FLAG_OPTDEBUGEJAC */                 "value specifies the number of iter from the dyn. optimization, which will be debug, creating *csv and *py file",
   /* FLAG_OPTIMIZER_NP */                 "value specifies the number of points in a subinterval",
@@ -286,17 +286,17 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_F */
   "  Value specifies a new setup XML file to the generated simulation code.\n",
   /* FLAG_HELP */
-  "  Get detailed information that specifies the command-line flag\n"
+  "  Get detailed information that specifies the command-line flag\n\n"
   "  For example, -help=f prints detailed information for command-line flag f.",
   /* FLAG_HOMOTOPY_ADAPT_BEND */
   "  Maximum trajectory bending to accept the homotopy step.\n"
   "  Default: 0.5, which means the corrector vector has to be smaller than half of the predictor vector.",
   /* FLAG_HOMOTOPY_BACKTRACE_STRATEGY */
-  "  Value specifies the backtrace strategy in the homotopy corrector step. Valid values:\n"
+  "  Value specifies the backtrace strategy in the homotopy corrector step. Valid values:\n\n"
   "  * fix - default, go back to the path by fixing one coordinate\n"
   "  * orthogonal - go back to the path in an orthogonal direction to the tangent vector",
   /* FLAG_HOMOTOPY_H_EPS */
-  "  Tolerance respecting residuals for the homotopy H-function (default: 1e-5).\n"
+  "  Tolerance respecting residuals for the homotopy H-function (default: 1e-5).\n\n"
   "  In the last step (lambda=1) newtonFTol is used as tolerance.",
   /* FLAG_HOMOTOPY_MAX_LAMBDA_STEPS */
   "  Maximum lambda steps allowed to run the homotopy path (default: system size * 100).",
@@ -305,7 +305,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_HOMOTOPY_MAX_TRIES */
   "  Maximum number of tries for one homotopy lambda step (default: 10).",
   /* FLAG_HOMOTOPY_NEG_START_DIR */
-  "  Start to run along the homotopy path in the negative direction.\n"
+  "  Start to run along the homotopy path in the negative direction.\n\n"
   "  If one direction fails, the other direction is always used as fallback option.",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */
   "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
@@ -333,12 +333,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IDA_NONLINCONVCOEF */
   "  Value specifies the safety factor in the nonlinear convergence test. The default value is 0.33.",
   /* FLAG_IDA_LS */
-  "  Value specifies the linear solver of the ida integration method. Valid values:\n"
-  "  * klu - default, fast sparse linear solver\n"
-  "  * dense - dense linear solver, sundials default method\n"
-  "  * spgmr - sparse iterative linear solver based on generalized minimal residual method, convergance is not guaranteed, sundials method\n"
-  "  * spbcg - sparse iterative linear solver based on biconjugate gradient method, convergance is not guaranteed, sundials method\n"
-  "  * spgmr - sparse iterative linear solver based on transpose free quasi-minimal residual method, convergance is not guaranteed, sundials method",
+  "  Value specifies the linear solver of the ida integration method. Valid values:\n",
   /* FLAG_IDA_SCALING */
   "  Enable scaling of the IDA solver.",
   /* FLAG_IDAS */
@@ -357,9 +352,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IMPRK_ORDER */
   "  Value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1 to 6. Default order is 5.",
   /* FLAG_IMPRK_LS */
-  "  Selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta\n"
+  "  Selects the linear solver of the integration methods impeuler, trapezoid and imprungekuta:\n\n"
   "  * iterativ - default, sparse iterativ linear solver with fallback case to dense solver\n"
-  "  * dense - dense linear solver, sundials default method",
+  "  * dense - dense linear solver, SUNDIALS default method",
   /* FLAG_INITIAL_STEP_SIZE */
   "  Value specifies an initial step size, used by the methods: dassl, ida",
   /* FLAG_INPUT_CSV */
@@ -381,13 +376,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_IPOPT_WARM_START */
   "  Value specifies lvl for a warm start in ipopt: 1,2,3,...",
   /* FLAG_JACOBIAN */
-  "  Select the calculation method for Jacobian used by the integration method:\n"
-  "  * coloredNumerical - A dense colored numerical Jacobian, which is default for dassl. Usable with dassl and ida.\n"
-  "  * internalNumerical - A dense internal numerical Jacobian. Usable with dassl and ida.\n"
-  "  * coloredSymbolical - A dense colored symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.\n"
-  "  * numerical - A dense numerical Jacobian. Usable with dassl and ida.\n"
-  "  * symbolical - A dense symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.\n"
-  "  * kluSparse - A sparse colored numerical Jacobian, which is default for ida. Usable with ida.",
+  "  Select the calculation method for Jacobian used by the integration method:\n",
   /* FLAG_L */
   "  Value specifies a time where the linearization of the model should be performed.",
   /* FLAG_L_DATA_RECOVERY */
@@ -436,7 +425,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  The value is a Double with default value 1e-12.",
   /* FLAG_NEWTON_MAX_STEP_FACTOR */
   "  Maximum newton step factor mxnewtstep = maxStepFactor * norm2(xScaling)."
-  "  Used currently only by kinsol.",
+  "  Used currently only by KINSOL.",
   /* FLAG_NEWTON_XTOL */
   "  Tolerance respecting newton correction (delta_x) for updating solution vector in Newton solver.\n"
   "  Solution is accepted if the (scaled) 2-norm of the residuals is smaller than the tolerance newtonFTol and the (scaled) newton correction (delta_x) is smaller than the tolerance newtonXTol.\n"
@@ -444,16 +433,11 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NEWTON_STRATEGY */
   "  Value specifies the damping strategy for the newton solver.",
   /* FLAG_NLS */
-  "  Value specifies the nonlinear solver:\n\n"
-  "  * hybrid\n"
-  "  * kinsol\n"
-  "  * newton\n"
-  "  * homotopy\n"
-  "  * mixed",
+  "  Value specifies the nonlinear solver:",
   /* FLAG_NLS_INFO */
   "  Outputs detailed information about solving process of non-linear systems into csv files.",
   /* FLAG_NLS_LS */
-  "  Value specifies the linear solver used by the non-linear solver:\n  * totalpivot\n  * lapack (default)\n  * klu",
+  "  Value specifies the linear solver used by the non-linear solver:",
   /* FLAG_NLS_MAX_DENSITY */
   "  Value specifies the maximum density for using a non-linear sparse solver.\n"
   "  The value is a Double with default value 0.2.",
@@ -478,7 +462,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_NO_ROOTFINDING */
   "  Disables the internal root finding procedure of methods: dassl and ida.",
   /* FLAG_NO_SCALING */
-  "  Disables scaling for the variables and the residuals in the algebraic nonlinear solver kinsol.",
+  "  Disables scaling for the variables and the residuals in the algebraic nonlinear solver KINSOL.",
   /* FLAG_NO_SUPPRESS_ALG */
   "  Flag to not suppress algebraic variables in the local error test of the ida solver in daeMode.\n"
   "  In general, the use of this option is discouraged when solving DAE systems of index 1,\n"
@@ -706,79 +690,74 @@ const char *LS_NAME[LS_MAX] = {
 const char *LS_DESC[LS_MAX] = {
   "unknown",
 
-  /* LS_LAPACK */       "method using lapack LU factorization",
+  /* LS_LAPACK */       "method using LAPACK LU factorization",
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* LS_LIS */          "method using iterative solver Lis",
 #else
   /* LS_LIS */          "iterative solver Lis is not available",
 #endif
-  /* LS_KLU */          "method using klu sparse linear solver",
-  /* LS_UMFPACK */      "method using umfpack sparse linear solver",
+  /* LS_KLU */          "method using KLU sparse linear solver",
+  /* LS_UMFPACK */      "method using UMFPACK sparse linear solver",
   /* LS_TOTALPIVOT */   "method using a total pivoting LU factorization for underdetermination systems",
-  /* LS_DEFAULT */      "default method - lapack with total pivoting as fallback"
+  /* LS_DEFAULT */      "default method - LAPACK with total pivoting as fallback"
 };
 
-const char *LSS_NAME[LS_MAX] = {
+const char *LSS_NAME[LSS_MAX] = {
   "LS_UNKNOWN",
-                        "default",
+  /* LSS_DEFAULT */     "default",
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* LS_LIS */          "lis",
+  /* LSS_LIS */         "lis",
 #else
-  /* LS_LIS */          "lis-not-available",
+  /* LSS_LIS */         "lis-not-available",
 #endif
-  /* LS_KLU */          "klu",
-  /* LS_UMFPACK */      "umfpack"
+  /* LSS_KLU */         "klu",
+  /* LSS_UMFPACK */     "umfpack"
 };
 
-const char *LSS_DESC[LS_MAX] = {
+const char *LSS_DESC[LSS_MAX] = {
   "unknown",
-                        "the default sparse linear solver (or a dense solver if there is none available)"
+  /* LSS_DEFAULT */     "the default sparse linear solver (or a dense solver if there is none available) ",
 #if !defined(OMC_MINIMAL_RUNTIME)
-  /* LS_LIS */          "method using iterative solver Lis",
+  /* LSS_LIS */         "method using iterative solver Lis",
 #else
-  /* LS_LIS */          "iterative solver Lis not available",
+  /* LSS_LIS */         "iterative solver Lis not available",
 #endif
-  /* LS_KLU */          "method using klu sparse linear solver",
-  /* LS_UMFPACK */      "method using umfpack sparse linear solver"
+  /* LSS_KLU */         "method using klu sparse linear solver",
+  /* LSS_UMFPACK */     "method using umfpack sparse linear solver"
 };
 
-const char *NLS_NAME[NLS_MAX+1] = {
+const char *NLS_NAME[NLS_MAX] = {
   "NLS_UNKNOWN",
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "hybrid",
   /* NLS_KINSOL */       "kinsol",
   /* NLS_NEWTON */       "newton",
+  /* NLS_MIXED */        "mixed",
 #else
   /* NLS_HYBRID */       "hybrid-not-available",
   /* NLS_KINSOL */       "kinsol-not-available",
   /* NLS_NEWTON */       "newton-not-available",
-#endif
-  /* NLS_HOMOTOPY */     "homotopy",
-#if !defined(OMC_MINIMAL_RUNTIME)
-  /* NLS_MIXED */        "mixed",
-#else
   /* NLS_MIXED */        "mixed-not-available",
 #endif
-  "NLS_MAX"
+  /* NLS_HOMOTOPY */     "homotopy"
 };
 
-const char *NLS_DESC[NLS_MAX+1] = {
+const char *NLS_DESC[NLS_MAX] = {
   "unknown",
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver",
-  /* NLS_KINSOL */       "sundials/kinsol - prototype implementation",
+  /* NLS_KINSOL */       "SUNDIALS/KINSOL includes an interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information.",
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver.",
 #else
   /* NLS_HYBRID */       "Modification of the Powell hybrid method from minpack - former default solver. Not available in minimal runtime.",
-  /* NLS_KINSOL */       "sundials/kinsol - prototype implementation. Not available in minimal runtime.",
+  /* NLS_KINSOL */       "SUNDIALS/KINSOL includes interface to the sparse direct solver, KLU. See simulation option -nlsLS for more information."
   /* NLS_NEWTON */       "Newton Raphson - prototype implementation. Not available in minimal runtime.",
   /* NLS_MIXED */        "Mixed strategy. First the homotopy solver is tried and then as fallback the hybrid solver. Not available in minimal runtime.",
 #endif
-  /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried.",
-  "NLS_MAX"
+  /* NLS_HOMOTOPY */     "Damped Newton solver if failing case fixed-point and Newton homotopies are tried."
 };
 
 const char *NEWTONSTRATEGY_NAME[NEWTON_MAX] = {
@@ -815,11 +794,11 @@ const char *JACOBIAN_METHOD[JAC_MAX] = {
 const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "unknown",
 
-  "  * coloredNumerical - A dense colored numerical Jacobian, which is default for dassl. Usable with dassl and ida.",
-  "  * internalNumerical - A dense internal numerical Jacobian. Usable with dassl and ida.",
-  "  * coloredSymbolical - A dense colored symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
-  "  * numerical - A dense numerical Jacobian. Usable with dassl and ida.",
-  "  * symbolical - A dense symbolical Jacobian. Needs omc compiler flag --postOptModules+=generateSymbolicJacobian. Usable with dassl and ida.",
+  "Colored numerical Jacobian, which is default for dassl and ida. With option -idaLS=klu a sparse matrix is used.",
+  "Dense solver internal numerical Jacobian.",
+  "Colored symbolical Jacobian. Needs omc compiler flag --generateSymbolicJacobian. With option -idaLS=klu a sparse matrix is used.",
+  "Dense numerical Jacobian.",
+  "Dense symbolical Jacobian. Needs omc compiler flag --generateSymbolicJacobian.",
  };
 
 const char *IDA_LS_METHOD[IDA_LS_MAX] = {
@@ -835,8 +814,8 @@ const char *IDA_LS_METHOD[IDA_LS_MAX] = {
 const char *IDA_LS_METHOD_DESC[IDA_LS_MAX] = {
   "unknown",
 
-  "ida internal dense method",
-  "ida use sparse direct solver KLU",
+  "ida internal dense method.",
+  "ida use sparse direct solver KLU. (default)",
   "ida generalized minimal residual method. Iterative method",
   "ida Bi-CGStab. Iterative method",
   "ida TFQMR. Iterative method"
@@ -856,8 +835,8 @@ const char *NLS_LS_METHOD_DESC[NLS_LS_MAX] = {
 
   "chooses the nls linear solver based on which nls is being used.",
   "internal total pivot implementation. Solve in some case even under-determined systems.",
-  "use external lapack implementation.",
-  "use klu direct sparse solver."
+  "use external LAPACK implementation.",
+  "use KLU direct sparse solver. Only with KINSOL available."
 };
 
 const char *IMPRK_LS_METHOD[IMPRK_LS_MAX] = {

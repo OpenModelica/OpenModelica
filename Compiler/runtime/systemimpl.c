@@ -2506,22 +2506,35 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       }
 
       switch(i) {
+
+      case FLAG_IDA_LS:
+        numExtraFlags = IDA_LS_MAX;
+        flagName = IDA_LS_METHOD;
+        flagDesc = IDA_LS_METHOD_DESC;
+        break;
+
+      case FLAG_IIM:
+        numExtraFlags = IIM_MAX;
+        flagName = INIT_METHOD_NAME;
+        flagDesc = INIT_METHOD_DESC;
+        break;
+
+      case FLAG_JACOBIAN:
+        numExtraFlags = JAC_MAX;
+        flagName = JACOBIAN_METHOD;
+        flagDesc = JACOBIAN_METHOD_DESC;
+        break;
+
       case FLAG_LS:
         numExtraFlags = LS_MAX;
         flagName = LS_NAME;
         flagDesc = LS_DESC;
         break;
 
-      case FLAG_NLS:
-        numExtraFlags = NLS_MAX;
-        flagName = NLS_NAME;
-        flagDesc = NLS_DESC;
-        break;
-
-      case FLAG_NEWTON_STRATEGY:
-        numExtraFlags = NEWTON_MAX;
-        flagName = NEWTONSTRATEGY_NAME;
-        flagDesc = NEWTONSTRATEGY_DESC;
+      case FLAG_LSS:
+        numExtraFlags = LSS_MAX;
+        flagName = LSS_NAME;
+        flagDesc = LSS_DESC;
         break;
 
       case FLAG_LV:
@@ -2531,11 +2544,24 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
         flagDesc = LOG_STREAM_DESC;
         break;
 
-      case FLAG_IIM:
-        numExtraFlags = IIM_MAX;
-        flagName = INIT_METHOD_NAME;
-        flagDesc = INIT_METHOD_DESC;
+      case FLAG_NEWTON_STRATEGY:
+        numExtraFlags = NEWTON_MAX;
+        flagName = NEWTONSTRATEGY_NAME;
+        flagDesc = NEWTONSTRATEGY_DESC;
         break;
+
+      case FLAG_NLS:
+        numExtraFlags = NLS_MAX;
+        flagName = NLS_NAME;
+        flagDesc = NLS_DESC;
+        break;
+
+      case FLAG_NLS_LS:
+        numExtraFlags = NLS_LS_MAX;
+        flagName = NLS_LS_METHOD;
+        flagDesc = NLS_LS_METHOD_DESC;
+        break;
+
 
       case FLAG_S:
         numExtraFlags = S_MAX;

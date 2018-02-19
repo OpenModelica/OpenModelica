@@ -720,21 +720,65 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
         /* detailed information for some flags */
         switch(i)
         {
-        case FLAG_LV:
-          for(j=firstOMCErrorStream; j<SIM_LOG_MAX; ++j)
-            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
-          break;
+          case FLAG_IDA_LS:
+            for(j=1; j<IDA_LS_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", IDA_LS_METHOD[j], IDA_LS_METHOD_DESC[j]);
+            }
+            break;
 
-        case FLAG_IIM:
-          for(j=1; j<IIM_MAX; ++j)
-            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
-          break;
+          case FLAG_IIM:
+            for(j=1; j<IIM_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", INIT_METHOD_NAME[j], INIT_METHOD_DESC[j]);
+            }
+            break;
 
-        case FLAG_S:
-          for(j=1; j<S_MAX; ++j) {
-            infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
-          }
-          break;
+          case FLAG_JACOBIAN:
+            for(j=1; j<JAC_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", JACOBIAN_METHOD[j], JACOBIAN_METHOD_DESC[j]);
+            }
+            break;
+
+          case FLAG_LS:
+            for(j=1; j<LS_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LS_NAME[j], LS_DESC[j]);
+            }
+            break;
+
+          case FLAG_LSS:
+            for(j=1; j<LSS_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LSS_NAME[j], LSS_DESC[j]);
+            }
+            break;
+
+          case FLAG_LV:
+            for(j=firstOMCErrorStream; j<SIM_LOG_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", LOG_STREAM_NAME[j], LOG_STREAM_DESC[j]);
+            }
+            break;
+
+          case FLAG_NEWTON_STRATEGY:
+            for(j=firstOMCErrorStream; j<NEWTON_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[j], NEWTONSTRATEGY_DESC[j]);
+            }
+            break;
+
+          case FLAG_NLS:
+            for(j=firstOMCErrorStream; j<NLS_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[j], NLS_DESC[j]);
+            }
+            break;
+
+          case FLAG_NLS_LS:
+            for(j=firstOMCErrorStream; j<NLS_LS_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD[j], NLS_LS_METHOD_DESC[j]);
+            }
+            break;
+
+          case FLAG_S:
+            for(j=1; j<S_MAX; ++j) {
+              infoStreamPrint(LOG_STDOUT, 0, "%-18s [%s]", SOLVER_METHOD_NAME[j], SOLVER_METHOD_DESC[j]);
+            }
+            break;
         }
         messageClose(LOG_STDOUT);
 
