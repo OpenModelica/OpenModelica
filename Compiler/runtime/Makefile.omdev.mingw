@@ -49,6 +49,6 @@ SHELL	= /bin/sh
 CC	= gcc
 CXX = g++
 override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(LPSOLVEINCLUDE) -I$(SQLITE3INCLUDE) -I$(ZMQINCLUDE)
-CXXFLAGS = $(CFLAGS)
+CXXFLAGS = -std=c++11 $(CFLAGS)
 
 include Makefile.common
