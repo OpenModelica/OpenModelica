@@ -31,10 +31,11 @@ OMC_OBJ_STUBS = corbaimpl_stub_omc.o
 
 OMC_OBJ_BOOT = $(OMC_OBJ_SHARED) $(OMC_OBJ_STUBS)
 
-OMC_OBJ = $(OMC_OBJ_SHARED) serializer.o \
+OMC_OBJ = $(OMC_OBJ_SHARED) \
   ptolemyio_omc.o SimulationResults_omc.o \
   $(OMCCORBASRC)
 
+# serializer.o # Disabled 2018-02-19; doesn't work to read back data
 # Database_omc.o
 
 all: install

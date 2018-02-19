@@ -34,28 +34,33 @@ protected
   GC.ProfStats stats, oldStats;
 algorithm
   if Flags.isSet(Flags.EXEC_STAT) then
-    (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GC.getProfStats();
-    memory := since+before;
-    oldStats := getGlobalRoot(Global.gcProfilingIndex);
-    GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before) := oldStats;
-    oldMemory := since+before;
-    t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
-    total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
-    timeStr := System.snprintff("%.4g", 20, t);
-    totalTimeStr := System.snprintff("%.4g", 20, total);
-    if Flags.isSet(Flags.GC_PROF) then
-      gcStr := GC.profStatsStr(stats, head="", delimiter=" / ");
-      Error.addMessage(Error.EXEC_STAT_GC, {name, timeStr, totalTimeStr, gcStr});
-    else
-      Error.addMessage(Error.EXEC_STAT, {name, timeStr, totalTimeStr,
-          StringUtil.bytesToReadableUnit(memory-oldMemory, maxSizeInUnit=500, significantDigits=4),
-          StringUtil.bytesToReadableUnit(memory, maxSizeInUnit=500, significantDigits=4),
-          StringUtil.bytesToReadableUnit(free_bytes_full, maxSizeInUnit=500, significantDigits=4),
-          StringUtil.bytesToReadableUnit(heapsize_full, maxSizeInUnit=500, significantDigits=4)
-      });
-    end if;
-    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
-    setGlobalRoot(Global.gcProfilingIndex, stats);
+    for i in if Flags.isSet(Flags.EXEC_STAT_EXTRA_GC) then {1,2} else {1} loop
+      if i==2 then
+        GC.gcollect();
+      end if;
+      (stats as GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before, heapsize_full=heapsize_full, free_bytes_full=free_bytes_full)) := GC.getProfStats();
+      memory := since+before;
+      oldStats := getGlobalRoot(Global.gcProfilingIndex);
+      GC.PROFSTATS(bytes_allocd_since_gc=since, allocd_bytes_before_gc=before) := oldStats;
+      oldMemory := since+before;
+      t := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT);
+      total := System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_CUMULATIVE);
+      timeStr := System.snprintff("%.4g", 20, t);
+      totalTimeStr := System.snprintff("%.4g", 20, total);
+      if Flags.isSet(Flags.GC_PROF) then
+        gcStr := GC.profStatsStr(stats, head="", delimiter=" / ");
+        Error.addMessage(Error.EXEC_STAT_GC, {name + (if i==2 then " GC" else ""), timeStr, totalTimeStr, gcStr});
+      else
+        Error.addMessage(Error.EXEC_STAT, {name + (if i==2 then " GC" else ""), timeStr, totalTimeStr,
+            StringUtil.bytesToReadableUnit(memory-oldMemory, maxSizeInUnit=500, significantDigits=4),
+            StringUtil.bytesToReadableUnit(memory, maxSizeInUnit=500, significantDigits=4),
+            StringUtil.bytesToReadableUnit(free_bytes_full, maxSizeInUnit=500, significantDigits=4),
+            StringUtil.bytesToReadableUnit(heapsize_full, maxSizeInUnit=500, significantDigits=4)
+        });
+      end if;
+      System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT);
+      setGlobalRoot(Global.gcProfilingIndex, stats);
+    end for;
   end if;
 end execStat;
 

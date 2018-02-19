@@ -395,7 +395,6 @@ if true then /* Suppress output */
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
     "../Util/PriorityQueue.mo",
-    "../Util/Serializer.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo"
   };

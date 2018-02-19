@@ -94,7 +94,6 @@ import HpcOmTaskGraph;
 import SerializeModelInfo;
 import TaskSystemDump;
 import SerializeInitXML;
-import Serializer;
 import SimCodeDump;
 import SimCodeUtil;
 import StackOverflow;
@@ -276,7 +275,7 @@ algorithm
   ExecStat.execStat("SimCode");
 
   if Flags.isSet(Flags.SERIALIZED_SIZE) then
-    serializeNotify(simCode, filenamePrefix, "simCode");
+    serializeNotify(simCode, "SimCode");
     ExecStat.execStat("Serialize simCode");
   end if;
 
@@ -741,6 +740,7 @@ public function translateModel "
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
 protected
+  FCore.Cache inCache = cache;
   Boolean generateFunctions = false;
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0, timeFrontend=0.0;
   type State = enumeration(frontend, backend, templates, simcode);
@@ -777,10 +777,13 @@ algorithm
       SOME(dae) := odae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, filenameprefix, "dae");
-        serializeNotify(graph, filenameprefix, "graph");
-        serializeNotify(cache, filenameprefix, "cache");
-        serializeNotify(SymbolTable.get(), filenameprefix, "st");
+        serializeNotify(dae, "FrontEnd DAE");
+        serializeNotify(graph, "FCore.Graph");
+        serializeNotify((graph,inEnv), "FCore.Graph + Old graph");
+        serializeNotify(cache, "FCore.Cache");
+        serializeNotify((cache,inCache), "FCore.Cache + Old cache");
+        serializeNotify(SymbolTable.get(), "Symbol Table (Absyn and SCode)");
+        serializeNotify((SymbolTable.get(),dae,graph,inEnv,cache,inCache), "Symbol Table, DAE, Graph, OldGraph, Cache, OldCache");
         ExecStat.execStat("Serialize FrontEnd");
       end if;
 
@@ -792,7 +795,7 @@ algorithm
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, filenameprefix, "dae2");
+        serializeNotify(dae, "FrontEnd DAE after transformations");
         ExecStat.execStat("Serialize DAE (2)");
       end if;
 
@@ -809,7 +812,7 @@ algorithm
       GC.free(dae);
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dlow, filenameprefix, "dlow");
+        serializeNotify(dlow, "BackendDAECreate.lower");
         ExecStat.execStat("Serialize dlow");
       end if;
 
@@ -836,9 +839,11 @@ algorithm
       state := State.simcode;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dlow, filenameprefix, "simDAE");
-        serializeNotify(initDAE, filenameprefix, "initDAE");
-        serializeNotify(removedInitialEquationLst, filenameprefix, "removedInitialEquationLst");
+        serializeNotify(dlow, "BackendDAE (simulation)");
+        serializeNotify(initDAE, "BackendDAE (initialization)");
+        serializeNotify(initDAE_lambda0, "BackendDAE (lambda0)");
+        serializeNotify((dlow,initDAE,initDAE_lambda0), "BackendDAE (simulation+initialization+lambda0)");
+        serializeNotify(removedInitialEquationLst, "removedInitialEquationLst");
         ExecStat.execStat("Serialize solved system");
       end if;
 
@@ -941,9 +946,9 @@ algorithm
       ExecStat.execStat("FrontEnd");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, filenameprefix, "dae");
-        serializeNotify(graph, filenameprefix, "graph");
-        serializeNotify(outCache, filenameprefix, "cache");
+        serializeNotify(dae, "dae");
+        serializeNotify(graph, "graph");
+        serializeNotify(outCache, "cache");
         ExecStat.execStat("Serialize FrontEnd");
       end if;
 
@@ -954,7 +959,7 @@ algorithm
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, filenameprefix, "dae2");
+        serializeNotify(dae, "dae2");
         ExecStat.execStat("Serialize DAE (2)");
       end if;
 
@@ -971,7 +976,7 @@ algorithm
       GC.free(dae);
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dlow, filenameprefix, "dlow");
+        serializeNotify(dlow, "dlow");
         ExecStat.execStat("Serialize dlow");
       end if;
 
@@ -982,9 +987,9 @@ algorithm
       timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(bdae, filenameprefix, "simDAE");
-        serializeNotify(initDAE, filenameprefix, "initDAE");
-        serializeNotify(removedInitialEquationLst, filenameprefix, "removedInitialEquationLst");
+        serializeNotify(bdae, "simDAE");
+        serializeNotify(initDAE, "initDAE");
+        serializeNotify(removedInitialEquationLst, "removedInitialEquationLst");
         ExecStat.execStat("Serialize solved system");
       end if;
 
@@ -1275,7 +1280,7 @@ algorithm
     ExecStat.execStat("SimCode");
 
     if Flags.isSet(Flags.SERIALIZED_SIZE) then
-      serializeNotify(simCode, filenamePrefix, "simCode");
+      serializeNotify(simCode, "SimCode");
       ExecStat.execStat("Serialize simCode");
     end if;
 
@@ -1300,14 +1305,9 @@ end generateModelCodeDAE;
 
 protected function serializeNotify<T>
   input T data;
-  input String prefix;
   input String name;
-protected
-  Real fsize;
 algorithm
-  Serializer.outputFile(data, prefix + "_"+name+".bin");
-  (,fsize,) := System.stat(prefix + "_"+name+".bin");
-  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(fsize)});
+  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(System.getSizeOfData(data))});
 end serializeNotify;
 
 annotation(__OpenModelica_Interface="backend");

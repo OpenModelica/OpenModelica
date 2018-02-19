@@ -41,6 +41,7 @@ encapsulated package Serializer
  This package provides functions to serialize MetaModelica data.
  The external C implementation is in TOP/Compiler/runtime/Serializer.c"
 
+// Note: Reading back the data does not work as of 2018-02-19
 
 public function outputFile<T> "
 Prints the structure of the object."
