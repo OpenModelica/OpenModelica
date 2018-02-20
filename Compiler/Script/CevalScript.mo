@@ -1388,28 +1388,32 @@ algorithm
       equation
         b = false;
         if (System.regularFileExists(filename)) then
-          workdir = if System.directoryExists(workdir) then workdir else System.pwd();
-          b = false;
-          if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
-            b = true;
-            s1 = System.basename(filename);
-            s2 = Util.removeLast3Char(s1);
-            s3 = System.dirname(filename);
-            filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
-            filename2 = s3 + "/" + s2 + "/package.moc";
-            filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
-            if (System.regularFileExists(filename_1)) then
-              filename_1 = Util.testsuiteFriendlyPath(filename_1);
-              p = SymbolTable.getAbsyn();
-              newp = loadFile(filename_1, "UTF-8", p, true);
-              execStat("loadFile("+filename_1+")");
-              SymbolTable.setAbsyn(newp);
-            else
-              Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
-            end if;
-          else
-            Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
-          end if;
+          if (Util.endsWith(filename, ".mol")) then
+	          workdir = if System.directoryExists(workdir) then workdir else System.pwd();
+	          b = false;
+	          if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
+	            b = true;
+	            s1 = System.basename(filename);
+	            s2 = Util.removeLast4Char(s1);
+	            s3 = System.dirname(filename);
+	            filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
+	            filename2 = s3 + "/" + s2 + "/package.moc";
+	            filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
+	            if (System.regularFileExists(filename_1)) then
+	              filename_1 = Util.testsuiteFriendlyPath(filename_1);
+	              p = SymbolTable.getAbsyn();
+	              newp = loadFile(filename_1, "UTF-8", p, true);
+	              execStat("loadFile("+filename_1+")");
+	              SymbolTable.setAbsyn(newp);
+	            else
+	              Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
+	            end if;
+	          else
+	            Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
+	          end if;
+	        else
+	          Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
+	        end if;
         else
           Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
         end if;

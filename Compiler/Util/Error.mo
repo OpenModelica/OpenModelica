@@ -1074,6 +1074,8 @@ public constant Message ENCRYPTED_FILE_NOT_FOUND_ERROR = MESSAGE(7019, SCRIPTING
   Util.gettext("No encrypted files found. Looked for %s and %s."));
 public constant Message UNABLE_TO_UNZIP_FILE = MESSAGE(7020, SCRIPTING(), ERROR(),
   Util.gettext("Unable to unzip the file: %s."));
+public constant Message EXPECTED_ENCRYPTED_PACKAGE = MESSAGE(7021, SCRIPTING(), ERROR(),
+  Util.gettext("Expected encrypted package with .mol extension got: %s."));
 
 protected
 
