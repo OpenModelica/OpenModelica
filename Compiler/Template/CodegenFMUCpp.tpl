@@ -698,8 +698,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
   OMCPP_SOLVER_LIBS=OMCppNewton_static.lib OMCppDgesv_static.lib OMCppDgesvSolver_static.lib
+  MODELICA_EXTERNAL_LIBS=ModelicaExternalC.lib ModelicaStandardTables.lib OMCppModelicaUtilities_static.lib
   EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
-  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib $(OMCPP_SOLVER_LIBS) ModelicaExternalC.lib ModelicaStandardTables.lib OMCppModelicaUtilities_static.lib $(EXTRA_LIBS)
+  LDFLAGS=/link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/msvc" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem_static.lib OMCppMath_static.lib OMCppExtensionUtilities_static.lib OMCppFMU_static.lib $(OMCPP_SOLVER_LIBS) $(EXTRA_LIBS) $(MODELICA_EXTERNAL_LIBS)
   PLATFORM="<%makefileParams.platform%>"
 
   MODELICA_SYSTEM_LIB=<%fileNamePrefix%>
@@ -797,7 +798,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   OMCPP_LIBS=-lOMCppSystem_static -lOMCppMath_static -lOMCppModelicaUtilities_static -lOMCppFMU_static $(OMCPP_SOLVER_LIBS) -lOMCppExtensionUtilities_static
   MODELICA_EXTERNAL_LIBS=-lModelicaExternalC -lModelicaStandardTables -lOMCppModelicaUtilities_static
   EXTRA_LIBS=<%dirExtra%> <%libsExtra%>
-  LIBS=$(OMCPP_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB) $(EXTRA_LIBS)
+  LIBS=$(OMCPP_LIBS) $(EXTRA_LIBS) $(MODELICA_EXTERNAL_LIBS) $(BASE_LIB)
 
   # link with simple dgesv or full lapack
   ifeq ($(USE_DGESV),ON)
