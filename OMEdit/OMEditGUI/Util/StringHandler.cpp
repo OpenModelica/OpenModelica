@@ -782,8 +782,12 @@ QString StringHandler::getTextStyleString(StringHandler::TextStyle textStyle)
   }
 }
 
-//! Removes the first and last curly brackest {} from the string.
-//! @param value is the string which is parsed.
+/*!
+ * \brief StringHandler::removeFirstLastCurlBrackets
+ * Removes the first and last curly brackets {} from the string.
+ * \param value is the string which is parsed.
+ * \return
+ */
 QString StringHandler::removeFirstLastCurlBrackets(QString value)
 {
   value = value.trimmed();
@@ -793,12 +797,31 @@ QString StringHandler::removeFirstLastCurlBrackets(QString value)
   return value;
 }
 
-//! Removes the first and last brackest () from the string.
-//! @param value is the string which is parsed.
-QString StringHandler::removeFirstLastBrackets(QString value)
+/*!
+ * \brief StringHandler::removeFirstLastParentheses
+ * Removes the first and last parentheses () from the string.
+ * \param value is the string which is parsed.
+ * \return
+ */
+QString StringHandler::removeFirstLastParentheses(QString value)
 {
   value = value.trimmed();
   if (value.length() > 1 && value.at(0) == '(' && value.at(value.length() - 1) == ')') {
+    value = value.mid(1, (value.length() - 2));
+  }
+  return value;
+}
+
+/*!
+ * \brief StringHandler::removeFirstLastSquareBrackets
+ * Removes the first and last sqaure brackets [] from the string.
+ * \param value is the string which is parsed.
+ * \return
+ */
+QString StringHandler::removeFirstLastSquareBrackets(QString value)
+{
+  value = value.trimmed();
+  if (value.length() > 1 && value.at(0) == '[' && value.at(value.length() - 1) == ']') {
     value = value.mid(1, (value.length() - 2));
   }
   return value;
@@ -1358,7 +1381,7 @@ QStringList StringHandler::getAnnotation(QString componentAnnotation, QString an
   foreach (QString annotation, annotations) {
     if (annotation.startsWith(annotationName)) {
       annotation = annotation.mid(QString(annotationName).length());
-      annotation = StringHandler::removeFirstLastBrackets(annotation);
+      annotation = StringHandler::removeFirstLastParentheses(annotation);
       if (annotation.toLower().contains("error")) {
         return QStringList();
       } else {
@@ -1378,7 +1401,7 @@ QString StringHandler::getPlacementAnnotation(QString componentAnnotation)
   QStringList annotations = StringHandler::getStrings(componentAnnotation, '(', ')');
   foreach (QString annotation, annotations) {
     if (annotation.startsWith("Placement")) {
-      QString placementAnnotation = StringHandler::removeFirstLastBrackets(annotation);
+      QString placementAnnotation = StringHandler::removeFirstLastParentheses(annotation);
       if (placementAnnotation.toLower().contains("error")) {
         return "";
       } else {

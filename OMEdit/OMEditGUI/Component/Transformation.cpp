@@ -96,7 +96,7 @@ void Transformation::parseTransformationString(QString value, qreal width, qreal
   foreach (QString annotation, annotations) {
     if (annotation.startsWith("Placement")) {
       annotation = annotation.mid(QString("Placement").length());
-      annotation = StringHandler::removeFirstLastBrackets(annotation);
+      annotation = StringHandler::removeFirstLastParentheses(annotation);
       QStringList list = StringHandler::getStrings(annotation);
       // get transformations of diagram
       // get the visible value
