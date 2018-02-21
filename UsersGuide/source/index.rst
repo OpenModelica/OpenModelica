@@ -27,6 +27,7 @@ Generated on |date| at |time|
   omsimulator
   optimization
   parametersensitivity
+  pdemodelica
   mdt
   mdtdebugger
   profiler

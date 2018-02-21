@@ -504,6 +504,8 @@ windows by clicking on the New Plot Parametric toolbar button (|parametric-plot-
   :alt: OMEdit New Parametric Plot Window Icon
   :height: 14pt
 
+.. _array-plot :
+
 Array Plot
 ^^^^^^^^^^
 
@@ -517,6 +519,8 @@ A new Array Plot window is opened using the New Array Plot Window toolbar button
 .. |array-plot-window| image:: media/omedit-icons/array-plot-window.*
   :alt: OMEdit New Array Plot Window Icon
   :height: 14pt
+
+.. _array-parametric-plot :
 
 Array Parametric Plot
 ^^^^^^^^^^^^^^^^^^^^^
