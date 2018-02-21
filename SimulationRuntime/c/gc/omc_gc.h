@@ -51,7 +51,7 @@ extern "C" {
 
 #if defined(_MSC_VER)
 #include "omc_inline.h"
-#include "omc_msvc.h"
+#include "util/omc_msvc.h"
 #endif
 
 typedef struct {
@@ -180,8 +180,10 @@ static inline void* mmc_check_out_of_memory(void *ptr)
 
 #include <gc.h>
 /* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
+#if !defined(OMC_NO_THREADS)
 int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
 int GC_pthread_join(pthread_t, void **);
+#endif
 
 void omc_GC_set_max_heap_size(size_t);
 size_t omc_GC_get_max_heap_size();

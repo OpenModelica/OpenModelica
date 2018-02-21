@@ -1,4 +1,4 @@
-inclu.PHONY : all omc release clean .testvariables mkbuilddirs
+inclu.PHONY : all omc release clean .testvariables mkbuilddirs checkMSVCwine
 
 unexport PREFIX
 

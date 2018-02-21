@@ -57,11 +57,6 @@ typedef struct print_members_s {
   long* savedNfilled;
 } print_members;
 
-#include <pthread.h>
-
-pthread_once_t printimpl_once_create_key = PTHREAD_ONCE_INIT;
-pthread_key_t printimplKey;
-
 static void free_printimpl(void *data)
 {
   int i;
@@ -83,19 +78,31 @@ static void free_printimpl(void *data)
   free(members);
 }
 
+#if !defined(OMC_NO_THREADS)
+#include <pthread.h>
+
+pthread_once_t printimpl_once_create_key = PTHREAD_ONCE_INIT;
+pthread_key_t printimplKey;
+
 static void make_key()
 {
   pthread_key_create(&printimplKey,free_printimpl);
 }
+#endif
 
 static print_members* getMembers(threadData_t *threadData)
 {
-  print_members *res;
+#if defined(OMC_NO_THREADS)
+  static
+#endif
+  print_members *res = NULL;
   if (threadData && threadData->localRoots[LOCAL_ROOT_PRINT_MO]) {
     return threadData->localRoots[LOCAL_ROOT_PRINT_MO];
   }
+#if !defined(OMC_NO_THREADS)
   pthread_once(&printimpl_once_create_key,make_key);
   res = (print_members*) pthread_getspecific(printimplKey);
+#endif
   if (res != NULL) return res;
   res = (print_members*) calloc(1,sizeof(print_members));
   pthread_setspecific(printimplKey,res);

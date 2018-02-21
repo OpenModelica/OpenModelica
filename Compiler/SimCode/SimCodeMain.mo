@@ -751,7 +751,7 @@ algorithm
   matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
       String filenameprefix, file_dir, resstr, description;
-      DAE.DAElist dae;
+      DAE.DAElist dae, dae1;
       FCore.Graph graph;
       BackendDAE.BackendDAE dlow, dlow_1;
       BackendDAE.Shared shared;
@@ -774,16 +774,37 @@ algorithm
       ExecStat.execStatReset();
       (cache, graph, odae) := CevalScriptBackend.runFrontEnd(cache, graph, className, false);
       ExecStat.execStat("FrontEnd");
-      SOME(dae) := odae;
+      SOME(dae1) := odae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(dae, "FrontEnd DAE");
+        serializeNotify(getGlobalRoot(Global.instHashIndex), "Global.instHash");
+        try
+          serializeNotify(getGlobalRoot(Global.builtinEnvIndex), "Global.builtinIndex");
+        else
+        end try;
+        try
+          serializeNotify(getGlobalRoot(Global.rewriteRulesIndex), "Global.rewriteRulesIndex");
+        else
+        end try;
+        try
+          serializeNotify(getGlobalRoot(Global.inlineHashTable), "Global.inlineHashTable");
+        else
+        end try;
+        try
+          serializeNotify(getGlobalRoot(Global.operatorOverloadingCache), "Global.operatorOverloadingCache");
+        else
+        end try;
+        try
+          serializeNotify(getGlobalRoot(Global.interactiveCache), "Global.interactiveCache");
+        else
+        end try;
+        serializeNotify(dae1, "FrontEnd DAE");
         serializeNotify(graph, "FCore.Graph");
         serializeNotify((graph,inEnv), "FCore.Graph + Old graph");
         serializeNotify(cache, "FCore.Cache");
         serializeNotify((cache,inCache), "FCore.Cache + Old cache");
         serializeNotify(SymbolTable.get(), "Symbol Table (Absyn and SCode)");
-        serializeNotify((SymbolTable.get(),dae,graph,inEnv,cache,inCache), "Symbol Table, DAE, Graph, OldGraph, Cache, OldCache");
+        serializeNotify((SymbolTable.get(),dae1,graph,inEnv,cache,inCache), "Symbol Table, DAE, Graph, OldGraph, Cache, OldCache");
         ExecStat.execStat("Serialize FrontEnd");
       end if;
 
@@ -791,13 +812,18 @@ algorithm
 
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       state := State.backend;
-      dae := DAEUtil.transformationsBeforeBackend(cache, graph, dae);
+      dae := DAEUtil.transformationsBeforeBackend(cache, graph, dae1);
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dae, "FrontEnd DAE after transformations");
+        serializeNotify((dae,dae1), "FrontEnd DAE before+after transformations");
         ExecStat.execStat("Serialize DAE (2)");
       end if;
+      GC.free(dae1);
+      GC.free(odae);
+      odae := NONE();
+      dae1 := DAE.emptyDae;
 
       generateFunctions := Flags.set(Flags.GEN, false);
       // We should not need to lookup constants and classes in the backend,
@@ -810,6 +836,7 @@ algorithm
       dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,filenameprefix));
 
       GC.free(dae);
+      dae := DAE.emptyDae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
         serializeNotify(dlow, "BackendDAECreate.lower");
@@ -842,8 +869,7 @@ algorithm
         serializeNotify(dlow, "BackendDAE (simulation)");
         serializeNotify(initDAE, "BackendDAE (initialization)");
         serializeNotify(initDAE_lambda0, "BackendDAE (lambda0)");
-        serializeNotify((dlow,initDAE,initDAE_lambda0), "BackendDAE (simulation+initialization+lambda0)");
-        serializeNotify(removedInitialEquationLst, "removedInitialEquationLst");
+        serializeNotify((dlow,initDAE,initDAE_lambda0,inlineData,removedInitialEquationLst), "BackendDAE (simulation+initialization+lambda0+inlineData+removedInitialEquationLst)");
         ExecStat.execStat("Serialize solved system");
       end if;
 

@@ -35,7 +35,6 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include <unistd.h>
 #include <errno.h>
 #include <io.h>
 
@@ -81,7 +80,6 @@ fsync (int fd)
 
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <errno.h>
 #include "errorext.h"
 

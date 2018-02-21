@@ -132,3 +132,85 @@ emcc-simulationruntime:
 	$(MAKE) -C SimulationRuntime/c emcc
 
 copycppheader:
+
+OMDEV_CMAKE="$(OMDEV)/bin/cmake/bin/cmake.exe"
+
+checkMSVCwine:
+	@echo 'Test for WINE, OMDEV, VS140COMNTOOLS env.vars'
+	test ! -z "$(WINE)"
+	test ! -z "$(OMDEV)"
+	test ! -z "$(VS140COMNTOOLS)"
+	"$(WINE)" cl.exe
+	"$(WINE)" cmd /c "if not exist $(OMDEV_CMAKE) (exit 1)"
+
+wine_fmil_msvc: .wine_fmil_msvc
+.wine_fmil_msvc: checkMSVCwine
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/FMIL
+
+	(test -f $@ && test -d 3rdParty/FMIL/build_msvc && test -d 3rdParty/FMIL/install_msvc) || (rm -rf 3rdParty/FMIL/build_msvc && rm -rf 3rdParty/FMIL/install_msvc && mkdir -p 3rdParty/FMIL/build_msvc && cd 3rdParty/FMIL/build_msvc && "$(WINE)" "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFMILIB_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
+
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib.dll)
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib.lib)
+	# copy the dll with the actual name: fmilib_shared.dll as the fmilib.lib contains that name and the exe will look for it
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.dll)
+	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib_shared.lib)
+	@touch $@
+
+wine_sundials_msvc: .wine_sundials_msvc
+.wine_sundials_msvc: checkMSVCwine
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/sundials*
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/sundials
+
+	(test -f $@ && test -d 3rdParty/sundials/build_msvc) || (rm -rf 3rdParty/sundials/build_msvc && mkdir -p 3rdParty/sundials/build_msvc && cd 3rdParty/sundials/build_msvc && "$(WINE)" "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DBUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
+	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
+	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
+	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
+	@touch $@
+
+wine_runc_msvc_release: .wine_runc_msvc_release
+.wine_runc_msvc_release: mkbuilddirs checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
+	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/release
+	echo 'Build the MSVC RELEASE'
+
+	(test -f $@ && test -d SimulationRuntime/c/build_msvc/) || (rm -rf SimulationRuntime/c/build_msvc && mkdir -p SimulationRuntime/c/build_msvc && cd SimulationRuntime/c/build_msvc && "$(WINE)" "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=$(OMBUILDDIR) ../ -G "NMake Makefiles" && "$(WINE)" nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
+	(cd SimulationRuntime/c/build_msvc && find . -type f -path "*.lib" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/release/. \;)
+	(cd SimulationRuntime/c/build_msvc && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/release/. \;)
+	@touch $@
+
+wine_runc_msvc_debug: .wine_runc_msvc_debug
+.wine_runc_msvc_debug: mkbuilddirs checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
+	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug
+	echo 'Build the MSVC DEBUG'
+
+	(test -f $@ && test -d SimulationRuntime/c/build_msvc_debug/) || (rm -rf SimulationRuntime/c/build_msvc_debug && mkdir -p SimulationRuntime/c/build_msvc_debug && cd SimulationRuntime/c/build_msvc && "$(WINE)" "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX:String=$(OMBUILDDIR) ../ -G "NMake Makefiles" && "$(WINE)" nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc'
+	(cd SimulationRuntime/c/build_msvc_debug && find . -type f -path "*.lib" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
+	(cd SimulationRuntime/c/build_msvc_debug && find . -type f -path "*.pdb" -exec cp {} $(OMBUILDDIR)/lib/omc/msvc/debug/. \;)
+	@touch $@
+
+wine_runc_msvc_gc: .wine_runc_msvc_gc
+.wine_runc_msvc_gc: mkbuilddirs checkMSVCwine
+	# build gc as well, as it is needed for the msvc c runtime
+	@echo 'Build gc (RelWithDebInfo)'
+
+	(test -f $@ && test -d 3rdParty/gc/build_msvc/) || (rm -rf 3rdParty/gc/build_msvc/ && mkdir -p 3rdParty/gc/build_msvc && cd 3rdParty/gc/build_msvc && "$(WINE)" "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles" && "$(WINE)" nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
+	cp -u 3rdParty/gc/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	@touch $@
+
+wine_run_omc_msvc: .wine_run_omc_msvc
+.wine_run_omc_msvc: checkMSVCwine
+	@echo 'Build MSVC Compiler/runtime (RelWithDebInfo)'
+
+	(test -f $@ && test -d Compiler/runtime/build_msvc/) || (rm -rf Compiler/runtime/build_msvc/ && mkdir -p Compiler/runtime/build_msvc && cd Compiler/runtime/build_msvc && "$(WINE)" "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles" && "$(WINE)" nmake /f Makefile)
+	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
+	# cp -u Compiler/runtime/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	@touch $@

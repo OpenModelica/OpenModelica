@@ -3473,29 +3473,29 @@ algorithm
     // create the path till packagetool
     str2 := stringAppendList({omhome,pd,"lib",pd,"omc",pd,"SEMLA",pd,"packagetool",str1});
     if System.regularFileExists(str2) then
-	    // create the list of arguments for packagetool
-	    str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"true\"";
-	    call := stringAppendList({str2," ",str3});
-	    logFile := "packagetool.log";
-	    // remove the logFile if it already exists.
-	    if System.regularFileExists(logFile) then
-	      System.removeFile(logFile);
-	    end if;
-	    // run the packagetool command
-	    if 0 == System.systemCall(call, logFile) then
-	      success := true;
-	    else
-	      success := false;
-	    end if;
-	    // read the logFile
-	    if System.regularFileExists(logFile) then
-	      commandOutput := System.readFile(logFile);
-	    end if;
-	  else
-	    Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {str2});
+      // create the list of arguments for packagetool
+      str3 := "-librarypath \"" + System.dirname(fileName) + "\" -version \"1.0\" -language \"3.2\" -encrypt \"true\"";
+      call := stringAppendList({str2," ",str3});
+      logFile := "packagetool.log";
+      // remove the logFile if it already exists.
+      if System.regularFileExists(logFile) then
+        System.removeFile(logFile);
+      end if;
+      // run the packagetool command
+      if 0 == System.systemCall(call, logFile) then
+        success := true;
+      else
+        success := false;
+      end if;
+      // read the logFile
+      if System.regularFileExists(logFile) then
+        commandOutput := System.readFile(logFile);
+      end if;
+    else
+      Error.addMessage(Error.ENCRYPTION_NOT_SUPPORTED, {str2});
       commandOutput := "";
       success := false;
-	  end if;
+    end if;
   else
     Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {fileName});
     commandOutput := "";
