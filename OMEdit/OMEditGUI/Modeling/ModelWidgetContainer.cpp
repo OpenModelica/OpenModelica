@@ -3296,7 +3296,7 @@ void ModelWidget::getModelConnections()
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
         lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
         break;  // break the loop once we have got the line annotation.
       }
     }
@@ -4767,7 +4767,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   foreach (QString shape, shapesList) {
     if (shape.startsWith("Line")) {
       shape = shape.mid(QString("Line").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
+      shape = StringHandler::removeFirstLastParentheses(shape);
       LineAnnotation *pLineAnnotation = new LineAnnotation(shape, pGraphicsView);
       pLineAnnotation->initializeTransformation();
       pLineAnnotation->drawCornerItems();
@@ -4776,7 +4776,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
       pGraphicsView->addItem(pLineAnnotation);
     } else if (shape.startsWith("Polygon")) {
       shape = shape.mid(QString("Polygon").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
+      shape = StringHandler::removeFirstLastParentheses(shape);
       PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(shape, pGraphicsView);
       pPolygonAnnotation->initializeTransformation();
       pPolygonAnnotation->drawCornerItems();
@@ -4785,7 +4785,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
       pGraphicsView->addItem(pPolygonAnnotation);
     } else if (shape.startsWith("Rectangle")) {
       shape = shape.mid(QString("Rectangle").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
+      shape = StringHandler::removeFirstLastParentheses(shape);
       RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(shape, pGraphicsView);
       pRectangleAnnotation->initializeTransformation();
       pRectangleAnnotation->drawCornerItems();
@@ -4794,7 +4794,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
       pGraphicsView->addItem(pRectangleAnnotation);
     } else if (shape.startsWith("Ellipse")) {
       shape = shape.mid(QString("Ellipse").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
+      shape = StringHandler::removeFirstLastParentheses(shape);
       EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation(shape, pGraphicsView);
       pEllipseAnnotation->initializeTransformation();
       pEllipseAnnotation->drawCornerItems();
@@ -4803,7 +4803,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
       pGraphicsView->addItem(pEllipseAnnotation);
     } else if (shape.startsWith("Text")) {
       shape = shape.mid(QString("Text").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
+      shape = StringHandler::removeFirstLastParentheses(shape);
       TextAnnotation *pTextAnnotation = new TextAnnotation(shape, pGraphicsView);
       pTextAnnotation->initializeTransformation();
       pTextAnnotation->drawCornerItems();
@@ -4813,7 +4813,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
     } else if (shape.startsWith("Bitmap")) {
       /* create the bitmap shape */
       shape = shape.mid(QString("Bitmap").length());
-      shape = StringHandler::removeFirstLastBrackets(shape);
+      shape = StringHandler::removeFirstLastParentheses(shape);
       BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mpLibraryTreeItem->mClassInformation.fileName, shape, pGraphicsView);
       pBitmapAnnotation->initializeTransformation();
       pBitmapAnnotation->drawCornerItems();
@@ -5062,10 +5062,10 @@ void ModelWidget::getModelTransitions()
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
         lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
       } else if (shape.startsWith("Text")) {
         textShape = shape.mid(QString("Text").length());
-        textShape = StringHandler::removeFirstLastBrackets(textShape);
+        textShape = StringHandler::removeFirstLastParentheses(textShape);
       }
     }
     LineAnnotation *pTransitionLineAnnotation;
@@ -5103,7 +5103,7 @@ void ModelWidget::getModelInitialStates()
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
         lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
       }
     }
     LineAnnotation *pInitialStateLineAnnotation;
@@ -5300,7 +5300,7 @@ void ModelWidget::getCompositeModelConnections()
     foreach (QString shape, shapesList) {
       if (shape.startsWith("Line")) {
         lineShape = shape.mid(QString("Line").length());
-        lineShape = StringHandler::removeFirstLastBrackets(lineShape);
+        lineShape = StringHandler::removeFirstLastParentheses(lineShape);
         break;  // break the loop once we have got the line annotation.
       }
     }

@@ -107,7 +107,8 @@ public:
   static QString getTextAlignmentString(StringHandler::TextAlignment alignment);
   static QString getTextStyleString(StringHandler::TextStyle textStyle);
   static QString removeFirstLastCurlBrackets(QString value);
-  static QString removeFirstLastBrackets(QString value);
+  static QString removeFirstLastParentheses(QString value);
+  static QString removeFirstLastSquareBrackets(QString value);
   static QString removeFirstLastQuotes(QString value);
   static QString removeFirstLastSingleQuotes(QString value);
   static QStringList getStrings(QString value);

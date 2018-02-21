@@ -1299,7 +1299,7 @@ void ComponentAttributes::setUpDialog()
   // dimensions
   mpDimensionsLabel = new Label(tr("Dimensions:"));
   mpDimensionsTextBox = new QLineEdit;
-  mpDimensionsTextBox->setToolTip(tr("Array of dimensions e.g {1, 5, 2}"));
+  mpDimensionsTextBox->setToolTip(tr("Array of dimensions e.g [1, 5, 2]"));
   mpCommentLabel = new Label(Helper::comment);
   mpCommentTextBox = new QLineEdit;
   mpPathLabel = new Label(Helper::path);
@@ -1399,7 +1399,8 @@ void ComponentAttributes::initializeDialog()
   mpNameTextBox->setText(mpComponent->getComponentInfo()->getName());
   mpNameTextBox->setCursorPosition(0);
   // get dimensions
-  mpDimensionsTextBox->setText(mpComponent->getComponentInfo()->getArrayIndex());
+  QString dimensions = StringHandler::removeFirstLastCurlBrackets(mpComponent->getComponentInfo()->getArrayIndex());
+  mpDimensionsTextBox->setText(QString("[%1]").arg(dimensions));
   // get Comment
   mpCommentTextBox->setText(mpComponent->getComponentInfo()->getComment());
   mpCommentTextBox->setCursorPosition(0);
@@ -1505,7 +1506,8 @@ void ComponentAttributes::updateComponentAttributes()
   newComponentInfo.setInner(mpInnerCheckBox->isChecked());
   newComponentInfo.setOuter(mpOuterCheckBox->isChecked());
   newComponentInfo.setCausality(causality);
-  newComponentInfo.setArrayIndex(mpDimensionsTextBox->text());
+  QString dimensions = StringHandler::removeFirstLastSquareBrackets(mpDimensionsTextBox->text());
+  newComponentInfo.setArrayIndex(QString("{%1}").arg(dimensions));
   /* If user has really changed the Component's attributes then push that change on the stack.
    */
   if (oldComponentInfo != newComponentInfo) {
