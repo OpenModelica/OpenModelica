@@ -89,7 +89,6 @@ LogCall1.mo \
 modelica_1_1_Function10.mo \
 MRFcall.mo \
 MultFuncCall.mo \
-OutOfMemory.mos \
 RecursiveCallExtends.mo \
 RecursiveFunctionCall.mo \
 StackOverflowTest.mos \
@@ -130,6 +129,7 @@ Inline3.mo \
 Inline4.mo \
 Inline5.mo \
 Inline6.mo \
+OutOfMemory.mos \
 StatementCall.mo \
 Vectorizable2.mo
 
