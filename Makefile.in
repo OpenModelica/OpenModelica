@@ -137,6 +137,7 @@ OMDEV_CMAKE="$(OMDEV)/bin/cmake/bin/cmake.exe"
 
 checkMSVCwine:
 	@echo 'Test for WINE, OMDEV, VS140COMNTOOLS env.vars'
+	env
 	test ! -z "$(WINE)"
 	test ! -z "$(OMDEV)"
 	test ! -z "$(VS140COMNTOOLS)"
