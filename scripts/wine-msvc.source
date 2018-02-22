@@ -1,7 +1,10 @@
 #!/bin/bash
 
+# Note: Depends on WSDK and W10SDK already being set. OMDEV should
+# also be set to compile using cmake with our makefiles
+
 WINEARCH=win32
-WINE=/opt/wine-stable/bin/wine
+WINE="env -u MAKE -u MAKEFLAGS /opt/wine-stable/bin/wine"
 WINEPREFIX=${WINEPREFIX:-$HOME/.wineprefixes/vs2015}
 export WINE
 export WINEARCH
