@@ -835,6 +835,7 @@ Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
 Compiler/runtime/config.unix.h \
+Compiler/runtime/revision.h \
 Parser/Makefile \
 SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
