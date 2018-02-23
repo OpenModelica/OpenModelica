@@ -1310,7 +1310,8 @@ end updateUriMapping;
 function getSizeOfData<T>
   input T data;
   output Real sz;
-external "C" sz=SystemImpl__getSizeOfData(data) annotation(Library = {"omcruntime"}, Documentation(info="<html>
+  output Real raw_sz "The size without granule overhead";
+external "C" sz=SystemImpl__getSizeOfData(data, raw_sz) annotation(Library = {"omcruntime"}, Documentation(info="<html>
 Counts the number of bytes that were allocated to hold the given data structure.
 Includes constant data and handles cycles.
 </html>"));

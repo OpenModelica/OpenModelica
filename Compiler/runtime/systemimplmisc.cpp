@@ -48,14 +48,16 @@ extern "C" {
 
 static inline size_t actualByteSize(size_t sz)
 {
-  /* GC uses 2 words as the minimum allocation unit: a granule */
-  size_t res = GC_GRANULE_BYTES*((sz+GC_GRANULE_BYTES-1) / GC_GRANULE_BYTES);
+  /* GC uses 2 words as the minimum allocation unit: a granule
+   * GC also uses up 1 byte of the allocation for its internal use.
+   */
+  size_t res = GC_GRANULE_BYTES*((sz+GC_GRANULE_BYTES-1+1) / GC_GRANULE_BYTES);
   return res;
 }
 #include <stdio.h>
-double SystemImpl__getSizeOfData(void *data)
+double SystemImpl__getSizeOfData(void *data, double *raw_size_res)
 {
-  size_t sz=0;
+  size_t sz=0, raw_sz=0;
   std::set<void*> handled;
   std::stack<void*> work;
   work.push(data);
@@ -76,16 +78,19 @@ double SystemImpl__getSizeOfData(void *data)
       continue;
     }
     if (hdr==MMC_REALHDR) {
+      raw_sz += sizeof(void*)+sizeof(double);
       sz += actualByteSize(sizeof(void*)+sizeof(double));
       continue;
     }
     if (MMC_HDRISSTRING(hdr)) {
+      raw_sz += sizeof(void*)+MMC_STRLEN(item)+1;
       sz += actualByteSize(sizeof(void*)+MMC_STRLEN(item)+1);
       continue;
     }
     if (MMC_HDRISSTRUCT(hdr)) {
       mmc_uint_t slots = MMC_HDRSLOTS(hdr);
       mmc_uint_t ctor  = MMC_HDRCTOR(hdr);
+      raw_sz += sizeof(void*)*(slots+1);
       sz += actualByteSize(sizeof(void*)*(slots+1));
       // Push the sub-objects to the stack
       for (int i = (ctor>=3 && ctor != MMC_ARRAY_TAG) ? 2 /* MM record description */ : 1; i <= slots; i++) {
@@ -98,6 +103,7 @@ fprintf(stderr, "abort... bytes=%d num items=%d\n", sz, handled.size());
 printAny(item);
     abort();
   }
+  *raw_size_res = raw_sz;
   return sz;
 }
 

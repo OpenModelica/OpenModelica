@@ -202,7 +202,7 @@ algorithm
           ExecStat.execStat("FrontEnd - scodeFlatten");
         end if;
         (cache,env) = Builtin.initialGraph(cache);
-        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
+        env = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
 
         // set the source of this element
         source = ElementSource.addElementSourcePartOfOpt(DAE.emptyElementSource, FGraph.getScopePath(env));
@@ -212,7 +212,7 @@ algorithm
         end if;
         ExecStat.execStat("FrontEnd - mkProgramGraph");
 
-        (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path, source);
+        (cache,env,ih,dae2) = instClassInProgram(cache, env, ih, cdecls, path, source);
         // check the models for balancing
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae1);
         //Debug.fcall2(Flags.CHECK_MODEL_BALANCE, checkModelBalancing, SOME(path), dae2);
@@ -220,7 +220,7 @@ algorithm
         // let the GC collect these as they are used only by Inst!
         releaseInstHashTable();
       then
-        (cache,env_2,ih,dae2);
+        (cache,env,ih,dae2);
 
     // class in package
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED()))
@@ -240,13 +240,13 @@ algorithm
 
         //System.startTimer();
         //print("\nInstClassDecls");
-        env_1 = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
+        env = FGraphBuildEnv.mkProgramGraph(cdecls, FCore.USERDEFINED(), env);
         //System.stopTimer();
         //print("\nInstClassDecls: " + realString(System.getTimerIntervalTime()));
 
         //System.startTimer();
         //print("\nLookupClass");
-        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, SOME(Absyn.dummyInfo));
+        (cache,(cdef as SCode.CLASS(name = n)),env) = Lookup.lookupClass(cache, env, path, SOME(Absyn.dummyInfo));
 
         //System.stopTimer();
         //print("\nLookupClass: " + realString(System.getTimerIntervalTime()));
@@ -258,8 +258,8 @@ algorithm
         end if;
         ExecStat.execStat("FrontEnd - mkProgramGraph");
 
-        (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih,
-          UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env_2, n), cdef,
+        (cache,env,ih,_,dae,_,_,_,_,_) = instClass(cache,env,ih,
+          UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), makeTopComponentPrefix(env, n), cdef,
           {}, false, InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl";
         //System.stopTimer();
         //print("\nInstClass: " + realString(System.getTimerIntervalTime()));
@@ -267,7 +267,7 @@ algorithm
         //System.startTimer();
         //print("\nReEvaluateIf");
         //print(" ********************** backpatch 1 **********************\n");
-        dae = InstUtil.reEvaluateInitialIfEqns(cache,env_2,dae,true);
+        dae = InstUtil.reEvaluateInitialIfEqns(cache,env,dae,true);
         //System.stopTimer();
         //print("\nReEvaluateIf: " + realString(System.getTimerIntervalTime()));
 
@@ -287,7 +287,7 @@ algorithm
         // let the GC collect these as they are used only by Inst!
         releaseInstHashTable();
       then
-        (cache, env_2, ih, dae);
+        (cache, env, ih, dae);
 
   end match;
 end instantiateClass_dispatch;

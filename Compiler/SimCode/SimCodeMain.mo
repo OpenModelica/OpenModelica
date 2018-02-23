@@ -767,6 +767,7 @@ algorithm
       String fmiVersion;
       BackendDAE.SymbolicJacobians fmiDer;
       DAE.FunctionTree funcs;
+      list<Option<Integer>> allRoots;
 
     case (graph, _, filenameprefix, _, _, _) algorithm
       // calculate stuff that we need to create SimCode data structure
@@ -777,33 +778,16 @@ algorithm
       SOME(dae1) := odae;
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
-        serializeNotify(getGlobalRoot(Global.instHashIndex), "Global.instHash");
-        try
-          serializeNotify(getGlobalRoot(Global.builtinEnvIndex), "Global.builtinIndex");
-        else
-        end try;
-        try
-          serializeNotify(getGlobalRoot(Global.rewriteRulesIndex), "Global.rewriteRulesIndex");
-        else
-        end try;
-        try
-          serializeNotify(getGlobalRoot(Global.inlineHashTable), "Global.inlineHashTable");
-        else
-        end try;
-        try
-          serializeNotify(getGlobalRoot(Global.operatorOverloadingCache), "Global.operatorOverloadingCache");
-        else
-        end try;
-        try
-          serializeNotify(getGlobalRoot(Global.interactiveCache), "Global.interactiveCache");
-        else
-        end try;
+        allRoots := {};
+        for i in 1:300 loop
+          try
+            allRoots := getGlobalRoot(i)::allRoots;
+          else
+          end try;
+        end for;
+        serializeNotify(allRoots, "All local+global roots (1:300)");
         serializeNotify(dae1, "FrontEnd DAE");
-        serializeNotify(graph, "FCore.Graph");
-        serializeNotify((graph,inEnv), "FCore.Graph + Old graph");
-        serializeNotify(cache, "FCore.Cache");
-        serializeNotify((cache,inCache), "FCore.Cache + Old cache");
-        serializeNotify(SymbolTable.get(), "Symbol Table (Absyn and SCode)");
+        serializeNotify((graph,inEnv,cache,inCache), "FCore.Graph + Cache + Old graph + Old cache");
         serializeNotify((SymbolTable.get(),dae1,graph,inEnv,cache,inCache), "Symbol Table, DAE, Graph, OldGraph, Cache, OldCache");
         ExecStat.execStat("Serialize FrontEnd");
       end if;
@@ -1332,8 +1316,11 @@ end generateModelCodeDAE;
 protected function serializeNotify<T>
   input T data;
   input String name;
+protected
+  Real sz,raw_sz;
 algorithm
-  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(System.getSizeOfData(data))});
+  (sz,raw_sz) := System.getSizeOfData(data);
+  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(sz), StringUtil.bytesToReadableUnit(raw_sz)});
 end serializeNotify;
 
 annotation(__OpenModelica_Interface="backend");
