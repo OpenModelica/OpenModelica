@@ -50,6 +50,7 @@
 #if !defined(WITHOUT_OSG)
 #include "Animation/ThreeDViewer.h"
 #endif
+#include "OMS/OMSProxy.h"
 
 #include <QNetworkReply>
 
@@ -3502,7 +3503,7 @@ void ModelWidget::createModelWidgetComponents()
       }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
-    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMSimulator) {
+    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       // diagram graphics framework
@@ -3517,6 +3518,11 @@ void ModelWidget::createModelWidgetComponents()
       if (MainWindow::instance()->isDebug()) {
         mpUndoView = new QUndoView(mpUndoStack);
       }
+      // only get the components and connectoi if the we are not creating a new class.
+      if (!mpLibraryTreeItem->getFileName().isEmpty()) {
+        getOMSModelComponents();
+        //getCompositeModelConnections();
+      }
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
@@ -3530,7 +3536,7 @@ void ModelWidget::createModelWidgetComponents()
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     }
-    if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::OMSimulator) {
+    if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::OMS) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
       pMainLayout->addWidget(mpEditor, 1);
@@ -3663,7 +3669,7 @@ void ModelWidget::reDrawModelWidget()
  */
 bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMSimulator) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     return true;
   }
   if (ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor)) {
@@ -5337,6 +5343,24 @@ void ModelWidget::getCompositeModelConnections()
   }
 }
 
+void ModelWidget::getOMSModelComponents()
+{
+  for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+    const oms_element_geometry_t *pElementGeometry;
+    if (OMSProxy::instance()->getElementGeometry(pChildLibraryTreeItem->getNameStructure(), &pElementGeometry)) {
+      QString annotation = QString("Placement(true,0.0,0.0,%1,%2,%3,%4,0.0,-,-,-,-,-,-,)")
+                           .arg(pElementGeometry->x1).arg(pElementGeometry->y1)
+                           .arg(pElementGeometry->x2).arg(pElementGeometry->y2);
+      ComponentInfo *pComponentInfo = new ComponentInfo;
+      pComponentInfo->setName(pChildLibraryTreeItem->getName());
+      pComponentInfo->setClassName(pChildLibraryTreeItem->getNameStructure());
+      mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pChildLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
+                                                false, true);
+    }
+  }
+}
+
 /*!
  * \brief ModelWidget::showIconView
  * \param checked
@@ -5643,7 +5667,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMSimulator) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   pModelWidget->updateViewButtonsBasedOnAccess();

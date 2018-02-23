@@ -206,3 +206,83 @@ bool OMSProxy::renameModel(QString identOld, QString identNew)
   oms_status_t status = oms2_renameModel(identOld.toStdString().c_str(), identNew.toStdString().c_str());
   return statusToBool(status);
 }
+
+/*!
+ * \brief OMSProxy::loadModel
+ * Loads the model.
+ * \param filename
+ * \param pModelName
+ * \return
+ */
+bool OMSProxy::loadModel(QString filename, QString* pModelName)
+{
+  char* ident = NULL;
+  oms_status_t status = oms2_loadModel(filename.toStdString().c_str(), &ident);
+  *pModelName = QString(ident);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::saveModel
+ * Saves the model.
+ * \param filename
+ * \param ident
+ * \return
+ */
+bool OMSProxy::saveModel(QString filename, QString ident)
+{
+  oms_status_t status = oms2_saveModel(filename.toStdString().c_str(), ident.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getComponentType
+ * Gets the component type.
+ * \param ident
+ * \param pType
+ * \return
+ */
+bool OMSProxy::getComponentType(QString ident, oms_component_type_t* pType)
+{
+  oms_status_t status = oms2_getComponentType(ident.toStdString().c_str(), pType);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getComponents
+ * Get the model components
+ * \param cref
+ * \param pComponents
+ * \return
+ */
+bool OMSProxy::getComponents(QString cref, oms_component_t*** pComponents)
+{
+  oms_status_t status = oms2_getComponents(cref.toStdString().c_str(), pComponents);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getElementGeometry
+ * Get the element geometry
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::getElementGeometry(QString cref, const oms_element_geometry_t** pGeometry)
+{
+  oms_status_t status = oms2_getElementGeometry(cref.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setElementGeometry
+ * Sets the element geometry
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setElementGeometry(QString cref, const oms_element_geometry_t* pGeometry)
+{
+  oms_status_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}

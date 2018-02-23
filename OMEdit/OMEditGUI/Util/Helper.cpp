@@ -152,7 +152,7 @@ QString Helper::type;
 QString Helper::information;
 QString Helper::rename;
 QString Helper::renameTip;
-QString Helper::renameOMSimulatorModelTip;
+QString Helper::renameOMSModelTip;
 QString Helper::checkModel;
 QString Helper::checkModelTip;
 QString Helper::checkAllModels;
@@ -191,7 +191,7 @@ QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
 QString Helper::unloadCompositeModelOrTextTip;
-QString Helper::unloadOMSimulatorModelTip;
+QString Helper::unloadOMSModelTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
@@ -363,7 +363,7 @@ QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
-QString Helper::simulateOMSimulatorModelTip;
+QString Helper::simulateOMSModelTip;
 
 void Helper::initHelperVariables()
 {
@@ -409,7 +409,7 @@ void Helper::initHelperVariables()
   Helper::information = tr("Information");
   Helper::rename = tr("Rename");
   Helper::renameTip = tr("Renames an item");
-  Helper::renameOMSimulatorModelTip = tr("Renames the model");
+  Helper::renameOMSModelTip = tr("Renames the model");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
   Helper::checkAllModels = tr("Check All Models");
@@ -448,7 +448,7 @@ void Helper::initHelperVariables()
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
-  Helper::unloadOMSimulatorModelTip = tr("Unloads the model");
+  Helper::unloadOMSModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -620,7 +620,7 @@ void Helper::initHelperVariables()
   Helper::priority = tr("Priority:");
   Helper::secs = tr("secs");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
-  Helper::simulateOMSimulatorModelTip = tr("Simulates the OMSimulator model");
+  Helper::simulateOMSModelTip = tr("Simulates the OMSimulator model");
 }
 
 QString GUIMessages::getMessage(int type)

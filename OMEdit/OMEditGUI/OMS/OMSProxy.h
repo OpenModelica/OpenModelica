@@ -61,6 +61,12 @@ public:
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);
   bool renameModel(QString identOld, QString identNew);
+  bool loadModel(QString filename, QString* pModelName);
+  bool saveModel(QString filename, QString ident);
+  bool getComponentType(QString ident, oms_component_type_t* pType);
+  bool getComponents(QString cref, oms_component_t*** pComponents);
+  bool getElementGeometry(QString cref, const oms_element_geometry_t** pGeometry);
+  bool setElementGeometry(QString cref, const oms_element_geometry_t* pGeometry);
 };
 
 #endif // OMSPROXY_H

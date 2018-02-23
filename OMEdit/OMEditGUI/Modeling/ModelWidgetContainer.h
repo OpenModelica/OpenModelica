@@ -467,6 +467,7 @@ private:
   QString getCompositeModelName();
   void getCompositeModelSubModels();
   void getCompositeModelConnections();
+  void getOMSModelComponents();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

@@ -460,6 +460,9 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
     drawInterfacePoints();
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    mpDefaultComponentRectangle->setVisible(true);
+    mpDefaultComponentText->setVisible(true);
   } else {
     drawComponent();
   }
@@ -1939,6 +1942,21 @@ void Component::updatePlacementAnnotation()
     pCompositeModelEditor->updateSubModelPlacementAnnotation(mpComponentInfo->getName(), mTransformation.getVisible()? "true" : "false",
                                                         getTransformationOrigin(), getTransformationExtent(),
                                                         QString::number(mTransformation.getRotateAngle()));
+  } else if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::OMS) {
+    oms_element_geometry_t elementGeometry;
+    QPointF extent1 = mTransformation.getExtent1();
+    QPointF extent2 = mTransformation.getExtent2();
+    if (mTransformation.hasOrigin()) {
+      extent1.setX(extent1.x() + mTransformation.getOrigin().x());
+      extent1.setY(extent1.y() + mTransformation.getOrigin().y());
+      extent2.setX(extent2.x() + mTransformation.getOrigin().x());
+      extent2.setY(extent2.y() + mTransformation.getOrigin().y());
+    }
+    elementGeometry.x1 = extent1.x();
+    elementGeometry.y1 = extent1.y();
+    elementGeometry.x2 = extent2.x();
+    elementGeometry.y2 = extent2.y();
+    OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
@@ -2602,13 +2620,6 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     }
     pComponent->setSelected(true);
   }
-  QMenu menu(mpGraphicsView);
-  menu.addAction(pComponent->getParametersAction());
-  menu.addAction(pComponent->getAttributesAction());
-  menu.addSeparator();
-  menu.addAction(pComponent->getOpenClassAction());
-  menu.addAction(pComponent->getViewDocumentationAction());
-  menu.addSeparator();
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem) {
     QMenu menu(mpGraphicsView);
@@ -2621,6 +2632,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getOpenClassAction());
         menu.addAction(pComponent->getViewDocumentationAction());
         menu.addSeparator();
+        menu.addAction(mpGraphicsView->getDuplicateAction());
         if (pComponent->isInheritedComponent()) {
           mpGraphicsView->getDeleteAction()->setDisabled(true);
           mpGraphicsView->getDuplicateAction()->setDisabled(true);
@@ -2629,20 +2641,22 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
           mpGraphicsView->getFlipHorizontalAction()->setDisabled(true);
           mpGraphicsView->getFlipVerticalAction()->setDisabled(true);
         }
-        menu.addAction(mpGraphicsView->getDeleteAction());
-        menu.addAction(mpGraphicsView->getDuplicateAction());
-        menu.addSeparator();
-        menu.addAction(mpGraphicsView->getRotateClockwiseAction());
-        menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
-        menu.addAction(mpGraphicsView->getFlipHorizontalAction());
-        menu.addAction(mpGraphicsView->getFlipVerticalAction());
         break;
       case LibraryTreeItem::CompositeModel:
         menu.addAction(pComponent->getFetchInterfaceDataAction());
         menu.addSeparator();
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
+      case LibraryTreeItem::OMS:
+        break;
     }
+    menu.addSeparator();
+    menu.addAction(mpGraphicsView->getDeleteAction());
+    menu.addSeparator();
+    menu.addAction(mpGraphicsView->getRotateClockwiseAction());
+    menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
+    menu.addAction(mpGraphicsView->getFlipHorizontalAction());
+    menu.addAction(mpGraphicsView->getFlipVerticalAction());
     menu.exec(event->screenPos());
   }
 }
