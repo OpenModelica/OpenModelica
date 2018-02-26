@@ -2574,8 +2574,8 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 2/2 (1): u1.$pDERLSJac0.dummyVarLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 3/3 (1): u1.$pDERLSJac0.dummyVarLSJac0 = -uLSeedLSJac0   [dynamic]
-// 4/4 (1): uLSeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 3/3 (1): u1.$pDERLSJac0.dummyVarLSJac0 = -uL.SeedLSJac0   [dynamic]
+// 4/4 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -2619,7 +2619,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: input R1:PARAM()  = 1.0  type: Real 
 // 7: input uC:DUMMY_STATE()  type: Real 
 // 8: input iL:VARIABLE()  type: Real 
-// 9: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 9: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -2688,8 +2688,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 2/2 (1): -uLSeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 1/1 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 2/2 (1): -uL.SeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -2710,7 +2710,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -2735,7 +2735,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -2788,8 +2788,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 2/2 (1): -uLSeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 1/1 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 2/2 (1): -uL.SeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -2810,7 +2810,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -2835,7 +2835,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -2889,8 +2889,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 2/2 (1): -uLSeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 1/1 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 2/2 (1): -uL.SeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -2923,7 +2923,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -2948,7 +2948,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3001,8 +3001,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 2/2 (1): -uLSeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 1/1 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 2/2 (1): -uL.SeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3035,7 +3035,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3060,7 +3060,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3113,8 +3113,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
-// 2/2 (1): -uLSeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 1/1 (1): uL.SeedLSJac0 = R2 * i2.$pDERLSJac0.dummyVarLSJac0   [dynamic]
+// 2/2 (1): -uL.SeedLSJac0 = R1 * i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3147,7 +3147,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3172,7 +3172,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3225,8 +3225,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uLSeedLSJac0 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uLSeedLSJac0) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uL.SeedLSJac0 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uL.SeedLSJac0) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3259,7 +3259,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3284,7 +3284,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3337,8 +3337,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uLSeedLSJac0 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uLSeedLSJac0) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uL.SeedLSJac0 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uL.SeedLSJac0) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3371,7 +3371,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3396,7 +3396,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3449,8 +3449,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uLSeedLSJac0 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uLSeedLSJac0) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uL.SeedLSJac0 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uL.SeedLSJac0) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3483,7 +3483,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3508,7 +3508,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3561,8 +3561,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uLSeedLSJac0 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uLSeedLSJac0) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uL.SeedLSJac0 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uL.SeedLSJac0) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3595,7 +3595,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3620,7 +3620,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -3673,8 +3673,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uLSeedLSJac0 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uLSeedLSJac0) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac0.dummyVarLSJac0 = uL.SeedLSJac0 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac0.dummyVarLSJac0 = (-uL.SeedLSJac0) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac0.dummyVarLSJac0 = i2.$pDERLSJac0.dummyVarLSJac0 - i1.$pDERLSJac0.dummyVarLSJac0   [dynamic]
 //
 //
@@ -3707,7 +3707,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:VARIABLE()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R1:PARAM()  = 1.0  type: Real 
@@ -3732,7 +3732,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uLSeedLSJac0  type: Real 
+// 1: u1.$pDERLSJac0.dummyVarLSJac0:VARIABLE()  = -uL.SeedLSJac0  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -5643,8 +5643,8 @@ buildModel(testOptdaedump); getErrorString();
 // ========================================
 // 1/1 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 // 2/2 (1): u1.$pDERLSJac1.dummyVarLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 3/3 (1): u1.$pDERLSJac1.dummyVarLSJac1 = -uLSeedLSJac1   [dynamic]
-// 4/4 (1): uLSeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 3/3 (1): u1.$pDERLSJac1.dummyVarLSJac1 = -uL.SeedLSJac1   [dynamic]
+// 4/4 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
 // Simple Equations (0, 0)
@@ -5688,7 +5688,7 @@ buildModel(testOptdaedump); getErrorString();
 // 6: input R2:PARAM()  = 2.0  type: Real 
 // 7: input uC:DUMMY_STATE()  type: Real 
 // 8: input iL:STATE(1)()  type: Real 
-// 9: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 9: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -5757,8 +5757,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 2/2 (1): -uLSeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 1/1 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 2/2 (1): -uL.SeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -5779,7 +5779,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -5804,7 +5804,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -5857,8 +5857,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 2/2 (1): -uLSeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 1/1 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 2/2 (1): -uL.SeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -5879,7 +5879,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -5904,7 +5904,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -5958,8 +5958,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 2/2 (1): -uLSeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 1/1 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 2/2 (1): -uL.SeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -5992,7 +5992,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6017,7 +6017,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6070,8 +6070,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 2/2 (1): -uLSeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 1/1 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 2/2 (1): -uL.SeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6104,7 +6104,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6129,7 +6129,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6182,8 +6182,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): uLSeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
-// 2/2 (1): -uLSeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 1/1 (1): uL.SeedLSJac1 = R2 * i2.$pDERLSJac1.dummyVarLSJac1   [dynamic]
+// 2/2 (1): -uL.SeedLSJac1 = R1 * i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6216,7 +6216,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6241,7 +6241,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6294,8 +6294,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uLSeedLSJac1 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uLSeedLSJac1) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6328,7 +6328,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6353,7 +6353,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6406,8 +6406,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uLSeedLSJac1 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uLSeedLSJac1) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6440,7 +6440,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6465,7 +6465,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6518,8 +6518,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uLSeedLSJac1 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uLSeedLSJac1) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6552,7 +6552,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6577,7 +6577,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6630,8 +6630,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uLSeedLSJac1 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uLSeedLSJac1) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6664,7 +6664,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6689,7 +6689,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)
@@ -6742,8 +6742,8 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uLSeedLSJac1 / R2   [dynamic]
-// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uLSeedLSJac1) / R1   [dynamic]
+// 1/1 (1): i2.$pDERLSJac1.dummyVarLSJac1 = uL.SeedLSJac1 / R2   [dynamic]
+// 2/2 (1): i1.$pDERLSJac1.dummyVarLSJac1 = (-uL.SeedLSJac1) / R1   [dynamic]
 // 3/3 (1): $res1.$pDERLSJac1.dummyVarLSJac1 = i2.$pDERLSJac1.dummyVarLSJac1 - i1.$pDERLSJac1.dummyVarLSJac1   [dynamic]
 //
 //
@@ -6776,7 +6776,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: input uLSeedLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input uL.SeedLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input iL:STATE(1)()  type: Real 
 // 3: input uC:DUMMY_STATE()  type: Real 
 // 4: input R2:PARAM()  = 2.0  type: Real 
@@ -6801,7 +6801,7 @@ buildModel(testOptdaedump); getErrorString();
 //
 // Alias Variables (1)
 // ========================================
-// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uLSeedLSJac1  type: Real 
+// 1: u1.$pDERLSJac1.dummyVarLSJac1:VARIABLE()  = -uL.SeedLSJac1  type: Real 
 //
 //
 // Simple Shared Equations (0, 0)

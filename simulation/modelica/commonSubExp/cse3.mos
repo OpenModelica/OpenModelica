@@ -155,18 +155,18 @@ simulate(testCSE); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
-// 1/1 (1): $res2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * ySeedNLSJac1   [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * zSeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic]
-// 3/3 (1): $cse5.$pDERNLSJac1.dummyVarNLSJac1 = ySeedNLSJac1 * $cse6   [unknown]
-// 4/4 (1): $cse3.$pDERNLSJac1.dummyVarNLSJac1 = zSeedNLSJac1 * $cse7   [unknown]
+// 1/1 (1): $res2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * y.SeedNLSJac1   [dynamic]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * z.SeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic]
+// 3/3 (1): $cse5.$pDERNLSJac1.dummyVarNLSJac1 = y.SeedNLSJac1 * $cse6   [unknown]
+// 4/4 (1): $cse3.$pDERNLSJac1.dummyVarNLSJac1 = z.SeedNLSJac1 * $cse7   [unknown]
 // 5/5 (1): $cse7 = cosh(z)   [unknown]
 // 6/6 (1): $cse6 = cosh(y)   [unknown]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (9)
 // ========================================
-// 1: input ySeedNLSJac1:STATE_DER()  type: Real  unreplaceable
-// 2: input zSeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input y.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 2: input z.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
 // 3: input $cse4:VARIABLE(protected = true )  type: Real  unreplaceable
 // 4: input $cse2:VARIABLE(protected = true )  type: Real  unreplaceable
 // 5: input $cse1:VARIABLE(protected = true )  type: Real  unreplaceable

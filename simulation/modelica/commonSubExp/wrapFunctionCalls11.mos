@@ -42,13 +42,13 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (2, 2)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * ySeedNLSJac0   [dynamic]
+// 1/1 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = (-$cse1) * y.SeedNLSJac0   [dynamic]
 // 2/2 (1): $cse1 = cos(y)   [unknown]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: input ySeedNLSJac0:STATE_DER()  type: Real  unreplaceable
+// 1: input y.SeedNLSJac0:STATE_DER()  type: Real  unreplaceable
 // 2: input x:VARIABLE()  type: Real 
 // 3: input $res1:VARIABLE()  type: Real 
 //
@@ -104,13 +104,13 @@ simulate(CSE.wrapFunctionCalls11); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (2, 2)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse2) * ySeedNLSJac1   [unknown]
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse2) * y.SeedNLSJac1   [unknown]
 // 2/2 (1): $cse2 = cos(y)   [unknown]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (3)
 // ========================================
-// 1: input ySeedNLSJac1:STATE_DER()  type: Real  unreplaceable
+// 1: input y.SeedNLSJac1:STATE_DER()  type: Real  unreplaceable
 // 2: input x:VARIABLE(fixed = true )  = cos(z)  type: Real 
 // 3: input $res1:VARIABLE()  type: Real 
 //
