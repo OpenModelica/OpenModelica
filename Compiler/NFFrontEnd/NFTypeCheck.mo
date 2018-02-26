@@ -242,7 +242,7 @@ algorithm
       algorithm
         valid := Dimension.isEqual(dim12, dim21);
       then
-        (Type.ARRAY(resultType, {dim12}), Op.MUL_MATRIX_VECTOR);
+        (Type.ARRAY(resultType, {dim11}), Op.MUL_MATRIX_VECTOR);
 
     // matrix[n, m] * matrix[m, p] = vector[n, p]
     case ({dim11, dim12}, {dim21, dim22})
