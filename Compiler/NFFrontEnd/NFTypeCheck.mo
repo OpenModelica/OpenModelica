@@ -1326,6 +1326,9 @@ algorithm
   if isCompatibleMatch(matchKind) then
     // The arrays must have the same number of dimensions.
     if listLength(dims1) == listLength(dims2) then
+      // We lift the array which means we have to iterate in theopposite order
+      dims1 := listReverse(dims1);
+      dims2 := listReverse(dims2);
       while not listEmpty(dims1) loop
         dim1 :: dims1 := dims1;
         dim2 :: dims2 := dims2;
