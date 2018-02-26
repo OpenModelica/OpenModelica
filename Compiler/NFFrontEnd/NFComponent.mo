@@ -557,6 +557,10 @@ uniontype Component
              List.toString(arrayList(component.dimensions), Dimension.toString, "", "[", ", ", "]", false) +
              Binding.toString(component.binding, " = ");
 
+      case TYPED_COMPONENT()
+        then Type.toString(component.ty) + " " + name +
+             Binding.toString(component.binding, " = ");
+
     end match;
   end toString;
 

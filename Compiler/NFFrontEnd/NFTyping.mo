@@ -1113,6 +1113,13 @@ algorithm
     case Expression.CALL()
       then Call.typeCall(exp, origin, info);
 
+    case Expression.CAST()
+      algorithm
+        next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
+        (exp, ty, var1) := typeExp(exp.exp, next_origin, info);
+      then
+        (exp, ty, var1);
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown expression", sourceInfo());

@@ -61,27 +61,74 @@ import NFPrefixes.Visibility;
 import NFFunction.Function;
 import ClassTree = NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
+import ComponentRef = NFComponentRef;
+import ErrorExt;
 
 public
 
-function newDefaultConstructor
+function instConstructors
   input Absyn.Path path;
-  input InstNode node;
-  output Function fn;
-protected
-  Class cls;
-  list<InstNode> inputs, outputs, locals;
-  InstNode out_rec;
-  DAE.FunctionAttributes attr;
-  Pointer<Boolean> collected;
-  Absyn.Path con_path;
-algorithm
+  input output InstNode node;
+  input SourceInfo info;
+ protected
+   Class cls;
+   list<InstNode> inputs, outputs, locals;
+  InstNode out_rec, ctor_over;
+   DAE.FunctionAttributes attr;
+   Pointer<Boolean> collected;
+   Absyn.Path con_path;
+  ComponentRef con_ref;
+  Boolean ctor_defined;
+ algorithm
+
+  // See if we have overloaded costructors.
+  ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+  try
+    con_ref := Function.lookupFunction(Absyn.CREF_IDENT("'constructor'",{}), node, info);
+    ctor_defined := true;
+    ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+  else
+    ctor_defined := false;
+    ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+  end try;
+
+  if ctor_defined then
+    ctor_over := ComponentRef.node(con_ref);
+    ctor_over := Function.instFunc2(InstNode.scopePath(ctor_over), ctor_over, InstNode.info(ctor_over));
+    for f in Function.getCachedFuncs(ctor_over) loop
+      node := InstNode.cacheAddFunc(node, f, false);
+    end for;
+  end if;
+
+  // See if we have '0' costructor.
+  ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+  try
+    con_ref := Function.lookupFunction(Absyn.CREF_IDENT("'0'",{}), node, info);
+    ctor_defined := true;
+    ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+
+  else
+    ctor_defined := false;
+    ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+  end try;
+
+  if ctor_defined then
+    ctor_over := ComponentRef.node(con_ref);
+
+    ctor_over := Function.instFunc2(InstNode.scopePath(ctor_over), ctor_over, InstNode.info(ctor_over));
+    for f in Function.getCachedFuncs(ctor_over) loop
+      node := InstNode.cacheAddFunc(node, f, false);
+    end for;
+  end if;
+
+  // Create the default constructor.
   (inputs, locals) := collectRecordParams(node);
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   // attr := makeAttributes(node, inputs, outputs);
   collected := Pointer.create(false);
-  con_path := Absyn.suffixPath(path,"'$ctor'");
+  con_path := Absyn.suffixPath(path,"'constructor'.'$default'");
 
+  // Create an output record element for the default constructor.
   // create a TYPED_COMPONENT here since this output "default constructed" record is not part
   // of the class node. So it will not be typed later by typeFunction. Instead of changing
   // things there just handle it here.
@@ -98,8 +145,9 @@ algorithm
     0,
     node);
 
-  fn := Function.FUNCTION(con_path, node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected);
-end newDefaultConstructor;
+  InstNode.cacheAddFunc(node, Function.FUNCTION(con_path, node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected), false);
+
+end instConstructors;
 
 
 function collectRecordParams
@@ -109,7 +157,7 @@ function collectRecordParams
 protected
 
   Class cls;
-  array<InstNode> components;
+  array<Mutable<InstNode>> components;
   InstNode n;
   Component comp;
 algorithm
@@ -118,16 +166,15 @@ algorithm
   cls := InstNode.getClass(recNode);
 
   () := match cls
-    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components))
+    case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE(components = components))
       algorithm
         for i in arrayLength(components):-1:1 loop
-          n := components[i];
-          comp := InstNode.component(components[i]);
+          n := Mutable.access(components[i]);
+          comp := InstNode.component(n);
 
           if InstNode.isProtected(n) then
             locals := n :: locals;
           else
-            comp := InstNode.component(n);
             if Component.isConst(comp) then
               if not Component.hasBinding(comp) then
                 inputs := n :: inputs;
@@ -141,7 +188,6 @@ algorithm
         end for;
       then
         ();
-
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
@@ -149,236 +195,40 @@ algorithm
         fail();
   end match;
 
-
-  // Class.INSTANCED_CLASS(components = components) := InstNode.getClass(recNode);
-
-  // for i in arrayLength(components):-1:1 loop
-     // comp := InstNode.component(components[i]);
-     // if Component.isPublic(comp) then
-       // if Component.isConst(comp) then
-         // if not Component.hasBinding(comp) then
-           // inputs := components[i]::inputs;
-         // else
-           // locals := components[i]::inputs;
-         // end if;
-       // else
-         // inputs := components[i]::inputs;
-       // end if;
-     // else
-       // locals := components[i]::inputs;
-     // end if;
-  // end for;
-
 end collectRecordParams;
 
-
 function instOperatorFunctions
-  input InstNode node;
+  input output InstNode node;
   input SourceInfo info;
-  output list<Function> outFuncs = {};
 protected
   Class cls;
-  array<InstNode> clss;
+  array<Mutable<InstNode>> mclss;
   InstNode op;
   Absyn.Path path;
+  list<Function> allfuncs = {}, funcs;
+
 algorithm
   cls := InstNode.getClass(node);
 
     () := match cls
-      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(classes = clss))  algorithm
-        for i in arrayLength(clss):-1:1 loop
-          op := clss[i];
+      case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE(classes = mclss))  algorithm
+        for i in arrayLength(mclss):-1:1 loop
+          op := Mutable.access(mclss[i]);
           path := InstNode.scopePath(op);
           Function.instFunc2(path, op, info);
-          outFuncs := listAppend(outFuncs,Function.getCachedFuncs(op));
+          funcs := Function.getCachedFuncs(op);
+          allfuncs := listAppend(allfuncs,funcs);
+        end for;
+        for f in allfuncs loop
+          node := InstNode.cacheAddFunc(node, f, false);
         end for;
       then ();
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
+      then fail();
     end match;
 end instOperatorFunctions;
-
-// function typeRecordCall
-  // input Absyn.ComponentRef recName;
-  // input Absyn.FunctionArgs callArgs;
-  // input InstNode classNode;
-  // input Type classType;
-  // input InstNode callScope;
-  // input SourceInfo info;
-  // output Expression typedExp;
-  // output Type ty;
-  // output DAE.Const variability;
-// protected
- // InstNode instClassNode;
- // list<InstNode> inputs;
- // Component comp;
- // DAE.VarKind vari;
- // list<Func.FunctionSlot> slots;
- // list<Dimension> vectDims;
- // NFExpression.CallAttributes ca;
- // list <Expression> recElems, recExps;
- // Absyn.Path recPath;
-// algorithm
-  // typedExp := Expression.INTEGER(0);
-  // ty := Type.UNKNOWN();
-  // variability := DAE.Const.C_VAR();
-
- // inputs := getRecordConstructorInputs(classNode);
-
- // slots := Func.createAndFillSlots(recName, prefix, inputs, callArgs, callScope, info);
-
- // (slots,vectDims) := Func.typeCheckFunctionSlots(slots, Absyn.crefToPath(recName), prefix, info);
- // (recElems, variability) := Func.argsFromSlots(slots);
-
- // ty := classType;
- // // Prefix?
- // recPath := Absyn.crefToPath(recName);
-
- // if listLength(vectDims) == 0 then
-   // typedExp := Expression.RECORD(recPath, ty, recElems);
- // else
-   // recExps := vectorizeRecordCall(recPath, ty, recElems, vectDims);
-   // typedExp := Expression.arrayFromList(recExps, ty, vectDims);
- // end if;
-
-// end typeRecordCall;
-
-// function createAndFillSlots
- // input Absyn.ComponentRef funcName;
- // input list<InstNode> funcInputs;
- // input Absyn.FunctionArgs callArgs;
- // input InstNode callScope;
- // input SourceInfo info;
- // output list<Func.FunctionSlot> filledSlots;
-// protected
- // Component comp;
- // DAE.VarKind vari;
- // DAE.Const const;
- // list<Absyn.Exp> posargs;
- // list<Absyn.NamedArg> namedargs;
- // Func.FunctionSlot sl;
- // list<Func.FunctionSlot> slots, posfilled;
- // Expression argExp;
- // Type argTy;
- // DAE.Const argConst;
-// algorithm
-
- // slots := {};
- // for compnode in funcInputs loop
-   // // argName := InstNode.name(compnode);
-   // comp := InstNode.component(compnode);
-   // vari := Component.variability(comp);
-   // const := Typing.variabilityToConst(NFInstUtil.daeToSCodeVariability(vari));
-   // // bind := Component.getBinding(comp)
-   // // ty := Component.getType(comp);
-   // slots := Func.SLOT(InstNode.name(compnode),
-                 // NONE(),
-                 // Component.getBinding(comp),
-                 // SOME((Component.getType(comp), const)),
-                 // false)::slots;
- // end for;
- // slots := listReverse(slots);
-
- // Absyn.FUNCTIONARGS(args = posargs, argNames = namedargs) := callArgs;
-
- // posfilled := {};
- // // handle positional args
- // for arg in posargs loop
-   // (argExp, argTy, argConst) := Typing.typeExp(arg, callScope, info);
-   // sl::slots := slots;
-   // sl := Func.fillPosSlotWithArg(sl,(argExp, argTy, argConst));
-   // posfilled := sl::posfilled;
- // end for;
- // slots := listAppend(listReverse(posfilled), slots);
-
- // // handle named args
- // for narg in namedargs loop
-   // Absyn.NAMEDARG() := narg;
-   // (argExp, argTy, argConst) := Typing.typeExp(narg.argValue, callScope, info);
-   // slots := Func.fillNamedSlot(slots, narg.argName, (argExp, argTy, argConst), Absyn.crefToPath(funcName), info);
- // end for;
-
- // filledSlots := slots;
-// end createAndFillSlots;
-
-// function getRecordConstructorInputs
- // input InstNode classNode;
- // output list<InstNode> inputs = {};
-// protected
- // InstNode compnode;
- // Component.Attributes attr;
- // array<InstNode> components;
- // Component comp;
-// algorithm
- // Class.INSTANCED_CLASS(components = components) := InstNode.getClass(classNode);
-
- // for i in arrayLength(components):-1:1 loop
-    // comp := InstNode.component(components[i]);
-    // if Component.isPublic(comp) then
-      // if Component.isConst(comp) then
-        // if not Component.hasBinding(comp) then
-          // inputs := components[i]::inputs;
-        // end if;
-      // else
-        // inputs := components[i]::inputs;
-      // end if;
-    // end if;
- // end for;
-// end getRecordConstructorInputs;
-
-// function vectorizeRecordCall
- // input Absyn.Path inRecName;
- // input Type recType;
- // input list<Expression> valExps;
- // input list<Dimension> vecDims;
- // output list<Expression> outRecs;
-// protected
- // list<list<Subscript>> vectsubs;
- // list<list<Expression>> vecargslst;
-// algorithm
-
- // // Create combinations of each dims subs, i.e., expand an array[dims]
- // vectsubs := Func.vectorizeDims(vecDims);
-
- // // Apply the set of subs to each argument, i.e., expand each arg.
- // vecargslst := {};
- // for currsubs in vectsubs loop
-   // vecargslst := list(Expression.subscript(arg, currsubs) for arg in valExps)::vecargslst;
- // end for;
-
-
- // outRecs := {};
- // for vals in vecargslst loop
-   // outRecs := Expression.RECORD(inRecName, recType, vals)::outRecs;
- // end for;
-
-// end vectorizeRecordCall;
-
-// function recVariabilityfromSlots
- // "Not sure about how to deal with record variability. But this should do for now."
- // input list<Func.FunctionSlot> slots;
- // output DAE.Const variability;
-// protected
- // DAE.Const const;
- // Binding b;
-// algorithm
- // variability := DAE.C_CONST();
- // for s in slots loop
-   // Func.SLOT() := s;
-   // if isSome(s.arg) then
-     // SOME((_, _, const)) := s.arg;
-     // variability := Types.constAnd(variability, const);
-   // else
-     // variability := match s.default
-     // // TODO FIXME what do we do with the propagatedDims?
-       // case b as Binding.TYPED_BINDING()
-         // then Types.constAnd(variability, b.variability);
-       // else
-         // algorithm
-           // Error.addMessage(Error.INTERNAL_ERROR, {"NFRecord.typeRecordCall failed."});
-         // then fail();
-       // end match;
-   // end if;
- // end for;
-// end recVariabilityfromSlots;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

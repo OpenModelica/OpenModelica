@@ -159,11 +159,11 @@ constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.STRING(), NFClassTree.EMPTY,
     Modifier.NOMOD(), Restriction.TYPE())),
   listArray({ NFInstNode.CachedData.FUNCTION({
-	                                              NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
-	                                              NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
-	                                              NFBuiltinFuncs.STRING_REAL_FORMAT
+                                                  NFBuiltinFuncs.STRING_ENUM, NFBuiltinFuncs.STRING_INT,
+                                                  NFBuiltinFuncs.STRING_BOOL, NFBuiltinFuncs.STRING_REAL,
+                                                  NFBuiltinFuncs.STRING_REAL_FORMAT
                                               },
-                                              true, false),
+                                              true, true),
               NFInstNode.CachedData.NO_CACHE(),
               NFInstNode.CachedData.NO_CACHE()}
             ),

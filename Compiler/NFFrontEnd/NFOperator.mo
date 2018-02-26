@@ -203,7 +203,7 @@ public
     symbol := match op.op
       case Op.ADD               then "+";
       case Op.SUB               then "-";
-      case Op.MUL               then ".*";
+      case Op.MUL               then "*";
       case Op.DIV               then "/";
       case Op.POW               then "^";
       case Op.ADD_EW            then ".+";

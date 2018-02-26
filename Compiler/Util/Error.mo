@@ -771,6 +771,10 @@ public constant Message UNBOUND_CONSTANT = MESSAGE(321, TRANSLATION(), ERROR(),
   Util.gettext("Constant %s is used without having been given a value."));
 public constant Message INVALID_ARGUMENT_VARIABILITY = MESSAGE(322, TRANSLATION(), ERROR(),
   Util.gettext("Argument %s of %s must be a %s expression, but %s is %s."));
+public constant Message AMBIGUOUS_MATCHING_FUNCTIONS_NFINST = MESSAGE(323, TRANSLATION(), ERROR(),
+  Util.gettext("Ambiguous matching functions found for %s.\nCandidates are:\n  %s"));
+public constant Message AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST = MESSAGE(324, TRANSLATION(), ERROR(),
+  Util.gettext("Ambiguous matching overloaded operator functions found for %s.\nCandidates are:\n  %s"));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

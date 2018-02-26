@@ -1118,7 +1118,7 @@ public
         algorithm
           args := list(map(arg, func) for arg in call.arguments);
         then
-          Call.TYPED_CALL(call.fn, call.ty, args, call.attributes);
+          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
       case Call.UNTYPED_MAP_CALL()
         algorithm
@@ -1468,7 +1468,7 @@ public
         algorithm
           args := list(func(arg) for arg in call.arguments);
         then
-          Call.TYPED_CALL(call.fn, call.ty, args, call.attributes);
+          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
       case Call.UNTYPED_MAP_CALL()
         algorithm
@@ -1943,7 +1943,7 @@ public
         algorithm
           (args, foldArg) := List.map1Fold(call.arguments, mapFold, func, foldArg);
         then
-          Call.TYPED_CALL(call.fn, call.ty, args, call.attributes);
+          Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
       case Call.UNTYPED_MAP_CALL()
         algorithm

@@ -141,6 +141,7 @@ uniontype Call
   record TYPED_CALL
     Function fn;
     Type ty;
+    Variability var;
     list<Expression> arguments;
     CallAttributes attributes;
   end TYPED_CALL;
@@ -367,6 +368,7 @@ uniontype Call
     UNTYPED_CALL(ref = cref) := call;
 
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
+      case "String" then typeStringCall(call, origin, info);
       case "cardinality" then typeCardinalityCall(call, origin, info);
       case "change" then typeChangeCall(call, origin, info);
       case "der" then typeDerCall(call, origin, info);
@@ -424,6 +426,12 @@ uniontype Call
         algorithm
           (call, ty, variability) := typeMapIteratorCall(callExp.call, origin, info);
           callExp := Expression.CALL(call);
+        then
+          ();
+      case Expression.CALL(call as TYPED_CALL())
+        algorithm
+          ty := call.ty;
+          variability := call.var;
         then
           ();
     end match;
@@ -517,7 +525,6 @@ uniontype Call
       case ComponentRef.CREF(node = fn_node)
         algorithm
           CachedData.FUNCTION(functions, typed, special) := InstNode.getFuncCache(fn_node);
-
           // Type the function(s) if not already done.
           if not typed then
             functions := list(Function.typeFunction(f) for f in functions);
@@ -554,7 +561,7 @@ uniontype Call
       case ARG_TYPED_CALL() algorithm
 
         // Match the arguments with the expected ones.
-        (fn,tyArgs) := matchFunctions(argtycall,info);
+        (fn,tyArgs) := checkMatchingFunctions(argtycall,info);
 
         args := list(Util.tuple31(a) for a in tyArgs);
 
@@ -562,8 +569,6 @@ uniontype Call
         for a in tyArgs loop
           variability := Prefixes.variabilityMax(variability, Util.tuple33(a));
         end for;
-
-        // Construct the call expression.
         ty := Function.returnType(fn);
 
         if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
@@ -576,7 +581,7 @@ uniontype Call
                                       , Function.inlineBuiltin(fn), DAE.NO_TAIL()
                                       );
       then
-        (TYPED_CALL(fn, ty, args, ca), ty, variability);
+        (TYPED_CALL(fn, ty, variability, args, ca), ty, variability);
 
       else algorithm
         Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
@@ -720,7 +725,7 @@ uniontype Call
     end match;
   end typeArgs;
 
-  function matchFunctions
+  function checkMatchingFunctions
     input Call call;
     input SourceInfo info;
     output Function outFunc;
@@ -728,29 +733,20 @@ uniontype Call
   protected
     list<FunctionMatchKind.MatchedFunction> matchedFunctions, exactMatches;
     Boolean typematched, has_cast;
-    list<Function> allfuncs, matchingFuncs;
+    list<Function> allfuncs;
     InstNode fn_node;
     FunctionMatchKind matchKind;
     Absyn.Path ov_name;
     Integer numerr = Error.getNumErrorMessages();
   algorithm
-    ErrorExt.setCheckpoint("NFCall:matchFunctions");
-    matchingFuncs := {};
+    ErrorExt.setCheckpoint("NFCall:checkMatchingFunctions");
     matchedFunctions := {};
 
     _ := match call
       case ARG_TYPED_CALL(ref = ComponentRef.CREF(node = fn_node)) algorithm
         ov_name := ComponentRef.toPath(call.ref);
         allfuncs := Function.getCachedFuncs(fn_node);
-        for fn in allfuncs loop
-
-          (args, typematched, matchKind) := matchFunction(fn, call.arguments, call.named_args, info);
-
-          if typematched then
-            matchedFunctions := (fn,args,matchKind)::matchedFunctions;
-            matchingFuncs := fn::matchingFuncs;
-          end if;
-        end for;
+        matchedFunctions := Function.matchFunctions(allfuncs, call.arguments, call.named_args, info);
       then
         ();
     end match;
@@ -759,9 +755,9 @@ uniontype Call
     // implementation details and usually doesn't provide any more info than
     // what the "no match found" error gives anyway.
     if listLength(allfuncs) > 1 then
-      ErrorExt.rollBack("NFCall:matchFunctions");
+      ErrorExt.rollBack("NFCall:checkMatchingFunctions");
     else
-      ErrorExt.delCheckpoint("NFCall:matchFunctions");
+      ErrorExt.delCheckpoint("NFCall:checkMatchingFunctions");
     end if;
 
     if listEmpty(matchedFunctions) then
@@ -808,15 +804,13 @@ uniontype Call
         end if;
         return;
       else
-        // TODO: FIX ME: Add proper error message.
-        print("Ambiguous call: " + toString(call) + "\nCandidates:\n  ");
-        print(candidateFuncListString(matchingFuncs,SOME(ov_name)));
-        print("\n");
+        Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
+          {typedString(call), candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions),SOME(ov_name))}, info);
         fail();
       end if;
     end if;
 
-  end matchFunctions;
+  end checkMatchingFunctions;
 
   function typeOf
     input Call call;
@@ -839,24 +833,6 @@ uniontype Call
     end match;
   end setType;
 
-
-protected
-  function matchFunction
-    input Function func;
-    input list<TypedArg> args;
-    input list<TypedNamedArg> named_args;
-    input SourceInfo info;
-    output list<TypedArg> out_args;
-    output Boolean matched;
-    output FunctionMatchKind matchKind;
-  algorithm
-    (out_args, matched) := Function.fillArgs(args, named_args, func, info);
-    if matched then
-      (out_args, matched, matchKind) := Function.matchArgs(func, out_args, info);
-    end if;
-  end matchFunction;
-
-  public
   function arguments
     input Call call;
     output list<Expression> arguments;
@@ -1098,9 +1074,10 @@ protected
      argument expressions."
     input Function func;
     input list<Expression> args;
+    input Variability var = Variability.CONSTANT;
     output Call call;
   algorithm
-    call := TYPED_CALL(func, func.returnType, args,
+    call := TYPED_CALL(func, func.returnType, var, args,
       CallAttributes.CALL_ATTR(func.returnType, false, true, false, false,
         DAE.NO_INLINE(), DAE.NO_TAIL()));
   end makeBuiltinCall;
@@ -1112,12 +1089,89 @@ protected
     input Function func;
     input list<Expression> args;
     input Type returnType;  // you can use func.returnType if the buiting function is defined with the corrrect type.
+    input Variability var = Variability.CONSTANT; // :( We don't have variability info in the arg expressions.
     output Call call;
   algorithm
-    call := TYPED_CALL(func, returnType, args,
+    call := TYPED_CALL(func, returnType, var, args,
       CallAttributes.CALL_ATTR(returnType, false, true, false, false,
         DAE.NO_INLINE(), DAE.NO_TAIL()));
   end makeBuiltinCall2;
+
+  function typeStringCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type outType;
+    output Variability var;
+  protected
+    Call argtycall;
+    Function operfn;
+    list<TypedArg> args;
+    list<TypedNamedArg> named_args;
+    Type argty;
+    Expression exp;
+    ComponentRef fn_ref;
+    list<Function> candidates;
+    Boolean matched;
+    InstNode recopnode;
+    FunctionMatchKind matchKind;
+    list<FunctionMatchKind.MatchedFunction> matchedFunctions, exactMatches;
+  algorithm
+    argtycall as ARG_TYPED_CALL(_, args, named_args) := typeNormalCall(call, origin, info);
+    (exp, argty, _)::_ := args;
+
+    candidates := {};
+    matchedFunctions := {};
+    if Type.isComplex(Type.arrayElementType(argty)) then
+          Type.COMPLEX(cls=recopnode) := argty;
+          ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+          try
+            fn_ref := Function.lookupFunction(Absyn.CREF_IDENT("'String'",{}), recopnode, InstNode.info(recopnode));
+            ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+          else
+            ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+            fail();
+          end try;
+
+          fn_ref := Function.instFuncRef(fn_ref, InstNode.info(recopnode));
+      candidates := Call.typeCachedFunctions(fn_ref);
+        for fn in candidates loop
+            TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
+          end for;
+
+      ErrorExt.setCheckpoint("NFCall:typeStringCall");
+      matchedFunctions := Function.matchFunctions(candidates, args, named_args, info);
+      ErrorExt.rollBack("NFCall:typeStringCall");
+
+          exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
+          if listEmpty(exactMatches) then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+          {typedString(argtycall), candidateFuncListString(candidates,NONE())}, info);
+            fail();
+          end if;
+
+          if listLength(exactMatches) == 1 then
+            (operfn,args,_) ::_ := exactMatches;
+            outType := Function.returnType(operfn);
+            callExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
+                                                      , CallAttributes.CALL_ATTR(
+                                                          outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
+                                                      )
+                                      );
+
+            return;
+          else
+            Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
+          {typedString(call), candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions),NONE())}, info);
+            fail();
+          end if;
+
+    end if;
+
+    (argtycall, outType, var) := matchTypedNormalCall(argtycall, origin, info);
+    callExp := Expression.CALL(argtycall);
+  end typeStringCall;
 
   function typeDiscreteCall
     "Types a function call that can be typed normally, but which always has
@@ -1218,7 +1272,7 @@ protected
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, var));
   end typePreCall;
 
   function typeChangeCall
@@ -1281,7 +1335,7 @@ protected
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeDerCall;
 
   function typeDiagonalCall
@@ -1327,7 +1381,7 @@ protected
     end match;
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeDiagonalCall;
 
   function typeEdgeCall
@@ -1464,14 +1518,14 @@ protected
     // TODO: Also handle records here.
     (arg2, ty, mk) := TypeCheck.matchTypes(ty2, Type.setArrayElementType(ty2, Type.REAL()), arg2, true);
 
-    if not TypeCheck.isCompatibleMatch(mk) then
+    if not TypeCheck.isValidArgumentMatch(mk) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
          Type.toString(ty2), "Real\n  Real[:, ...]\n  Real record\n  Real record[:, ...]"}, info);
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg1, arg2}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg1, arg2}, ty, var));
   end typeSmoothCall;
 
   function typeFillCall
@@ -1560,7 +1614,7 @@ protected
     if variability <= Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
       callExp := Ceval.evalBuiltinCall(fn, ty_args, Ceval.EvalTarget.IGNORE_ERRORS());
     else
-      callExp := Expression.CALL(makeBuiltinCall2(fn, ty_args, ty));
+      callExp := Expression.CALL(makeBuiltinCall2(fn, ty_args, ty, variability));
     end if;
   end typeFillCall2;
 
@@ -1633,7 +1687,7 @@ protected
 
     ty := Type.arrayElementType(ty);
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeScalarCall;
 
   function typeVectorCall
@@ -1691,7 +1745,7 @@ protected
 
     ty := Type.ARRAY(Type.arrayElementType(ty), {Dimension.INTEGER(dim_size)});
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeVectorCall;
 
   function typeMatrixCall
@@ -1751,7 +1805,7 @@ protected
 
     ty := Type.ARRAY(Type.arrayElementType(ty), dims);
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeMatrixCall;
 
   function typeSymmetricCall
@@ -1789,7 +1843,7 @@ protected
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeSymmetricCall;
 
   function typeTransposeCall
@@ -1836,7 +1890,7 @@ protected
     end match;
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeTransposeCall;
 
   function typeCardinalityCall
@@ -1891,7 +1945,7 @@ protected
     (arg, ty, variability) := Typing.typeExp(arg, intBitOr(origin, ExpOrigin.NOEVENT), info);
 
     {fn} := typeCachedFunctions(fn_ref);
-    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty));
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeNoEventCall;
 
   function unboxArgs
@@ -1906,6 +1960,7 @@ protected
     end match;
   end unboxArgs;
 
+public
   function candidateFuncListString
     input list<Function> fns;
     input Option<Absyn.Path> overload_name;

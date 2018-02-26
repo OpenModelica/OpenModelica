@@ -461,6 +461,9 @@ public
       clsNode := InstNode.replaceClass(cls, clsNode);
 
       () := match cls
+        case Class.EXPANDED_CLASS(elements = INSTANTIATED_TREE())
+          then ();
+
         case Class.EXPANDED_CLASS()
           algorithm
             // If the instance is an empty node, use the cloned clsNode as the instance.

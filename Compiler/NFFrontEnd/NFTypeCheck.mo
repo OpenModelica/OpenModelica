@@ -64,6 +64,16 @@ import ComplexType = NFComplexType;
 import BindingOrigin = NFBindingOrigin;
 import NFOperator.Op;
 import NFTyping.ExpOrigin;
+import NFFunction.Function;
+import NFFunction.TypedArg;
+import NFFunction.FunctionMatchKind;
+import NFCall.Call;
+import NFCall.CallAttributes;
+import ComponentRef = NFComponentRef;
+import ErrorExt;
+import NFBuiltin;
+
+
 
 public
 type MatchKind = enumeration(
@@ -72,6 +82,7 @@ type MatchKind = enumeration(
   UNKNOWN_EXPECTED "The expected type was unknown",
   UNKNOWN_ACTUAL   "The actual type was unknown",
   GENERIC "Matched with a generic type e.g. function F<T> input T i; end F; F(1)",
+  PLUG_COMPATIBLE "Component by component matching, e.g. class A R r; end A; is plug compatible with class B R r; end B;",
   NOT_COMPATIBLE
 );
 
@@ -95,6 +106,34 @@ function isGenericMatch
   output Boolean isCast = kind == MatchKind.GENERIC;
 end isGenericMatch;
 
+function isValidAssignmentMatch
+  input MatchKind kind;
+  output Boolean v = kind == MatchKind.EXACT
+                     or kind == MatchKind.CAST
+                     ;
+end isValidAssignmentMatch;
+
+function isValidBindingMatch
+  input MatchKind kind;
+  output Boolean v = isValidAssignmentMatch(kind);
+end isValidBindingMatch;
+
+function isValidArgumentMatch
+  input MatchKind kind;
+  output Boolean v = kind == MatchKind.EXACT
+                     or kind == MatchKind.CAST
+                     or kind == MatchKind.GENERIC
+                     ;
+end isValidArgumentMatch;
+
+function isValidPlugCompatibleMatch
+  input MatchKind kind;
+  output Boolean v = kind == MatchKind.EXACT
+                     or kind == MatchKind.PLUG_COMPATIBLE
+                     ;
+end isValidPlugCompatibleMatch;
+
+
 function checkBinaryOperation
   input Expression exp1;
   input Type type1;
@@ -107,9 +146,7 @@ function checkBinaryOperation
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    // TODO: Operator overloading.
-    Error.assertion(false, "IMPLEMENT ME: Operator overloading", sourceInfo());
-    fail();
+    (binaryExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
   else
     (binaryExp, resultType) := match operator.op
       case Op.ADD then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
@@ -125,6 +162,272 @@ algorithm
     end match;
   end if;
 end checkBinaryOperation;
+
+public function checkBinaryOperationOperatorRecords
+  input Expression inExp1;
+  input Type inType1;
+  input Operator inOp;
+  input Expression inExp2;
+  input Type inType2;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  String opstr;
+  Function operfn;
+  InstNode node1, node2;
+  ComponentRef fn_ref;
+  list<Function> candidates;
+  Boolean matched, oper_defined;
+  list<TypedArg> args;
+  FunctionMatchKind matchKind;
+  list<FunctionMatchKind.MatchedFunction> matchedFunctions = {}, exactMatches;
+algorithm
+
+  opstr := Operator.symbol(inOp,"'");
+
+  candidates := {};
+  if Type.isComplex(inType1) then
+    Type.COMPLEX(cls=node1) := inType1;
+    ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+    try
+        fn_ref := Function.lookupFunction(Absyn.CREF_IDENT(opstr,{}), node1, InstNode.info(node1));
+        ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+        oper_defined := true;
+    else
+      ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+      oper_defined := false;
+    end try;
+
+    if oper_defined then
+      fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
+      for fn in Call.typeCachedFunctions(fn_ref) loop
+        checkValidOperatorOverload(opstr, fn, node1);
+        candidates := fn::candidates;
+      end for;
+    end if;
+  end if;
+
+  if Type.isComplex(inType2) then
+    Type.COMPLEX(cls=node2) := inType2;
+
+    // If the other operand is complex, make sure the two are not of the same class before collecting
+    // operators from this one.
+    if not (Type.isComplex(inType1) and InstNode.isSame(node1, node2)) then
+        ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+        try
+          fn_ref := Function.lookupFunction(Absyn.CREF_IDENT(opstr,{}), node2, InstNode.info(node2));
+          ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+          oper_defined := true;
+        else
+          ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+          oper_defined := false;
+        end try;
+
+        if oper_defined then
+          fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node2));
+          for fn in Call.typeCachedFunctions(fn_ref) loop
+            checkValidOperatorOverload(opstr, fn, node2);
+            candidates := fn::candidates;
+          end for;
+        end if;
+      end if;
+  end if;
+  candidates := listReverse(candidates);
+
+  args := {(inExp1,inType1,Variability.CONSTANT),(inExp2,inType2,Variability.CONSTANT)};
+
+  ErrorExt.setCheckpoint("NFTypeCheck:checkBinaryOperationOperatorRecords");
+  matchedFunctions := Function.matchFunctions(candidates, args, {}, info);
+
+  // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
+  exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
+  if listEmpty(exactMatches) then
+    // TODO: new error mentioning overloaded operators.
+    if not listEmpty(candidates) then
+      try
+        (outExp, outType) := implicitConstructAndMatch(candidates, inExp1, inType1,inExp2, inType2);
+        ErrorExt.rollBack("NFTypeCheck:checkBinaryOperationOperatorRecords");
+        return;
+      else
+        printUnresolvableTypeError(Expression.BINARY(inExp1, inOp, inExp2), {inType1, inType2}, info);
+        fail();
+      end try;
+    else
+      printUnresolvableTypeError(Expression.BINARY(inExp1, inOp, inExp2), {inType1, inType2}, info);
+      fail();
+    end if;
+  end if;
+
+  ErrorExt.rollBack("NFTypeCheck:checkBinaryOperationOperatorRecords");
+  if listLength(exactMatches) == 1 then
+    (operfn,args,_) ::_ := exactMatches;
+    outType := Function.returnType(operfn);
+    outExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
+                                              , CallAttributes.CALL_ATTR(
+                                                  outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
+                                              )
+                              );
+  else
+    Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
+          {Expression.toString(Expression.BINARY(inExp1, inOp, inExp2))
+            , Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions)
+            ,NONE())}, info);
+    fail();
+  end if;
+
+end checkBinaryOperationOperatorRecords;
+
+function implicitConstructAndMatch
+  input list<Function> candidates;
+  input Expression inExp1;
+  input Type inType1;
+  input Expression inExp2;
+  input Type inType2;
+  output Expression outExp;
+  output Type outType;
+protected
+  list<InstNode> inputs;
+  InstNode in1, in2;
+  MatchKind mk1,mk2;
+  ComponentRef fn_ref;
+  Function operfn;
+  list<tuple<Function, list<Expression>, Variability>> matchedfuncs = {};
+  Expression exp1,exp2;
+  Type ty;
+  Variability var;
+algorithm
+
+  exp1 := inExp1; exp2 := inExp2;
+  for fn in candidates loop
+    {in1,in2} := fn.inputs;
+    (_, _, mk1) := matchTypes(InstNode.getType(in1),inType1,inExp1,false);
+    (_, _, mk2) := matchTypes(InstNode.getType(in2),inType2,inExp2,false);
+
+    // If the first argument matched the expected one, then we try
+    // to construct the second argument to the class of the second input.
+    if mk1 == MatchKind.EXACT then
+      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),InstNode.classScope(in2),InstNode.info(in2));
+      exp2 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {}, {inExp2}, {}));
+      (exp2, ty, var) := Call.typeCall(exp2, 0, InstNode.info(in1));
+      matchedfuncs := (fn,{inExp1,exp2}, var)::matchedfuncs;
+    elseif mk2 == MatchKind.EXACT then
+      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),InstNode.classScope(in1),InstNode.info(in1));
+      exp1 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {}, {inExp1}, {}));
+      (exp1, ty, var) := Call.typeCall(exp1, 0, InstNode.info(in2));
+      matchedfuncs := (fn,{exp1,inExp2},var)::matchedfuncs;
+    end if;
+  end for;
+
+
+  if listLength(matchedfuncs) == 1 then
+    (operfn, {exp1,exp2}, var)::_ := matchedfuncs;
+      outType := Function.returnType(operfn);
+      outExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, var, {exp1,exp2}
+                                                , CallAttributes.CALL_ATTR(
+                                                    outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
+                                                )
+                                );
+    else
+    // TODO: FIX ME: Add proper error message.
+    print("Ambiguous operator: " + "\nCandidates:\n  ");
+    print(Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs),NONE()));
+    print("\n");
+    fail();
+  end if;
+
+end implicitConstructAndMatch;
+
+function checkValidOperatorOverload
+  input String oper_name;
+  input Function oper_func;
+  input InstNode rec_node;
+protected
+  Type ty1, ty2;
+  InstNode out_class;
+algorithm
+  () := match oper_name
+    case "'constructor'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'0'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'+'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'-'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'*'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'/'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'^'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+    then ();
+    case "'and'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
+    then ();
+    case "'or'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
+    then ();
+    case "'not'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
+    then ();
+    case "'String'" algorithm
+      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.STRING_NODE, InstNode.info(oper_func.node));
+    then ();
+
+    else ();
+
+  end match;
+end checkValidOperatorOverload;
+
+public
+function checkOneOutput
+  input String oper_name;
+  input list<InstNode> outputs;
+  input InstNode rec_node;
+  input SourceInfo info;
+protected
+  InstNode out_class;
+algorithm
+  if listLength(outputs) <> 1 then
+      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
+          {"Overloaded " + oper_name + " operator functions are required to have exactly one output. Found "
+          + intString(listLength(outputs))}, info);
+  end if;
+end checkOneOutput;
+
+function checkOutputType
+  input String oper_name;
+  input InstNode outc;
+  input InstNode expected;
+  input SourceInfo info;
+protected
+  InstNode out_class;
+algorithm
+  out_class := InstNode.classScope(outc);
+  if not InstNode.isSame(out_class, expected) then
+    Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
+      {"Wrong type for output of overloaded operator function '"+ oper_name +
+        "'. Expected '" + InstNode.toString(expected) + "' Found '"+ InstNode.toString(outc) + "'"}, info);
+  end if;
+end checkOutputType;
 
 function checkBinaryOperationAdd
   input Expression exp1;
@@ -484,6 +787,11 @@ protected
   Boolean valid = true;
   Operator op;
 algorithm
+  if Type.isComplex(Type.arrayElementType(type1)) then
+    (unaryExp,unaryType) := checkUnaryOperationOperatorRecords(exp1, type1, operator, info);
+    return;
+  end if;
+
   unaryType := type1;
   op := Operator.setType(unaryType, operator);
 
@@ -496,6 +804,72 @@ algorithm
     printUnresolvableTypeError(unaryExp, {type1}, info);
   end if;
 end checkUnaryOperation;
+
+public function checkUnaryOperationOperatorRecords
+  input Expression inExp1;
+  input Type inType1;
+  input Operator inOp;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  String opstr;
+  Function operfn;
+  InstNode node1, fn_node;
+  ComponentRef fn_ref;
+  list<Function> candidates;
+  Boolean matched;
+  list<TypedArg> args;
+  FunctionMatchKind matchKind;
+  list<FunctionMatchKind.MatchedFunction> matchedFunctions = {}, exactMatches;
+algorithm
+
+  opstr := Operator.symbol(inOp,"'");
+  Type.COMPLEX(cls=node1) := inType1;
+  ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+  try
+    fn_ref := Function.lookupFunction(Absyn.CREF_IDENT(opstr,{}), node1, InstNode.info(node1));
+    ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+  else
+    ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+    fail();
+  end try;
+
+  fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
+  candidates := Call.typeCachedFunctions(fn_ref);
+  for fn in candidates loop
+    checkValidOperatorOverload(opstr, fn, node1);
+  end for;
+
+  args := {(inExp1,inType1,Variability.CONSTANT)};
+  ErrorExt.setCheckpoint("NFTypeCheck:checkUnaryOperationOperatorRecords");
+  matchedFunctions := Function.matchFunctions(candidates, args, {}, info);
+  ErrorExt.rollBack("NFTypeCheck:checkUnaryOperationOperatorRecords");
+
+  // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
+  exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
+  if listEmpty(exactMatches) then
+    printUnresolvableTypeError(Expression.UNARY(inOp, inExp1), {inType1}, info);
+    fail();
+  end if;
+
+  if listLength(exactMatches) == 1 then
+    (operfn,args,_) ::_ := exactMatches;
+    outType := Function.returnType(operfn);
+    outExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
+                                              , CallAttributes.CALL_ATTR(
+                                                  outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
+                                              )
+                              );
+  else
+    Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
+          {Expression.toString(Expression.UNARY(inOp, inExp1))
+            , Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions)
+            ,NONE())}, info);
+    fail();
+  end if;
+
+end checkUnaryOperationOperatorRecords;
 
 function checkLogicalBinaryOperation
   input Expression exp1;
@@ -510,6 +884,14 @@ protected
   Expression e1, e2;
   MatchKind mk;
 algorithm
+
+  if Type.isComplex(Type.arrayElementType(type1)) or
+    Type.isComplex(Type.arrayElementType(type2)) then
+    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
+    return;
+  end if;
+
+
   (e1, e2, resultType, mk) := matchExpressions(exp1, type1, exp2, type2, true);
   outExp := Expression.LBINARY(e1, Operator.setType(resultType, operator), e2);
 
@@ -530,6 +912,12 @@ protected
   Expression e1, e2;
   MatchKind mk;
 algorithm
+
+  if Type.isComplex(Type.arrayElementType(type1)) then
+    (outExp,resultType) := checkUnaryOperationOperatorRecords(exp1, type1, operator, info);
+    return;
+  end if;
+
   outExp := Expression.LUNARY(Operator.setType(type1, operator), exp1);
 
   if not Type.isBoolean(Type.arrayElementType(type1)) then
@@ -554,6 +942,13 @@ protected
   Boolean valid;
   Op o;
 algorithm
+
+  if Type.isComplex(Type.arrayElementType(type1)) or
+    Type.isComplex(Type.arrayElementType(type2)) then
+    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
+    return;
+  end if;
+
   (e1, e2, ty, mk) := matchExpressions(exp1, type1, exp2, type2);
   valid := isCompatibleMatch(mk);
 
@@ -1191,7 +1586,7 @@ function matchComplexTypes
   input output Expression expression;
   input Boolean allowUnknown;
         output Type compatibleType = actualType;
-        output MatchKind matchKind = MatchKind.EXACT;
+        output MatchKind matchKind = MatchKind.NOT_COMPATIBLE;
 protected
   Class cls1, cls2;
   InstNode anode, enode;
@@ -1205,14 +1600,24 @@ protected
 algorithm
   Type.COMPLEX(cls = anode) := actualType;
   Type.COMPLEX(cls = enode) := expectedType;
+
+  // TODO: revise this.
+  if InstNode.isSame(anode, enode) then
+    matchKind := MatchKind.EXACT;
+    return;
+  end if;
+
   cls1 := InstNode.getClass(anode);
   cls2 := InstNode.getClass(enode);
 
   () := match (cls1, cls2, expression)
+
     case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
           Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)),
           Expression.RECORD(elements = elements))
       algorithm
+        matchKind := MatchKind.PLUG_COMPATIBLE;
+
         if arrayLength(comps1) <> arrayLength(comps2) or
            arrayLength(comps1) <> listLength(elements) then
           matchKind := MatchKind.NOT_COMPATIBLE;
@@ -1224,7 +1629,7 @@ algorithm
 
             if mk == MatchKind.CAST then
               matchKind := mk;
-            elseif mk <> MatchKind.EXACT then
+            elseif not isValidPlugCompatibleMatch(mk) then
               matchKind := MatchKind.NOT_COMPATIBLE;
               break;
             end if;
@@ -1234,6 +1639,11 @@ algorithm
             expression.elements := listReverse(matched_elements);
           end if;
         end if;
+
+        if matchKind <> MatchKind.NOT_COMPATIBLE then
+          matchKind := MatchKind.PLUG_COMPATIBLE;
+        end if;
+
       then
         ();
 
@@ -1247,19 +1657,26 @@ algorithm
             matchKind := matchComponentList(cty1.streams, cty2.streams, allowUnknown);
           end if;
         end if;
+
+        if matchKind <> MatchKind.NOT_COMPATIBLE then
+          matchKind := MatchKind.PLUG_COMPATIBLE;
+        end if;
+
       then
         ();
 
     case (Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps1)),
           Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps2)), _)
       algorithm
+        matchKind := MatchKind.PLUG_COMPATIBLE;
+
         if arrayLength(comps1) <> arrayLength(comps2) then
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
             (_, _, mk) := matchTypes(InstNode.getType(comps1[i]), InstNode.getType(comps2[i]), expression, allowUnknown);
 
-            if mk <> MatchKind.EXACT then
+            if not isValidPlugCompatibleMatch(mk) then
               matchKind := MatchKind.NOT_COMPATIBLE;
               break;
             end if;

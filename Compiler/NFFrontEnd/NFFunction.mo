@@ -224,19 +224,34 @@ uniontype Function
   algorithm
     // Look up the the function.
     fn_ref := lookupFunction(functionName, scope, info);
+    (fn_ref, fn_node, specialBuiltin) := instFuncRef(fn_ref, info);
+  end instFunc;
+
+  function instFuncRef
+    input output ComponentRef fn_ref;
+    input SourceInfo info;
+    output InstNode fn_node;
+    output Boolean specialBuiltin;
+  protected
+    CachedData cache;
+  algorithm
+    // Look up the the function.
     fn_node := ComponentRef.node(fn_ref);
     cache := InstNode.getFuncCache(fn_node);
 
     // Check if a cached instantiation of this function already exists.
     (fn_node, specialBuiltin) := match cache
       case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
-      else instFunc2(ComponentRef.toPath(fn_ref),fn_node, info);
+      else algorithm
+        (fn_node, specialBuiltin) := instFunc2(ComponentRef.toPath(fn_ref), fn_node, info);
+        instFuncExpressions(fn_node);
+      then (fn_node, specialBuiltin);
     end match;
-  end instFunc;
+  end instFuncRef;
 
   function instFuncNode
     "Instantiates the given InstNode as a function."
-    input InstNode node;
+    input output InstNode node;
   protected
     CachedData cache;
   algorithm
@@ -246,11 +261,25 @@ uniontype Function
       case CachedData.FUNCTION() then ();
       else
         algorithm
-          instFunc2(InstNode.scopePath(node), node, InstNode.info(node));
+          node := instFunc2(InstNode.scopePath(node), node, InstNode.info(node));
+          Inst.instExpressions(node);
         then
           ();
     end match;
   end instFuncNode;
+
+  function instFuncExpressions
+    input InstNode node;
+  protected
+    list<Function> funcs;
+    Boolean special;
+  algorithm
+    funcs := getCachedFuncs(node);
+
+    for func in funcs loop
+      Inst.instExpressions(func.node);
+    end for;
+  end instFuncExpressions;
 
   function instFunc2
     input Absyn.Path fnPath;
@@ -270,11 +299,9 @@ uniontype Function
 
       case SCode.CLASS(classDef = cdef as SCode.PARTS()) guard SCode.isRecord(def)
         algorithm
-          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
+          // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);
-          Inst.instExpressions(fnNode);
-          fn := Record.newDefaultConstructor(fnPath, fnNode);
-          fnNode := InstNode.cacheAddFunc(fnNode, fn, false);
+          fnNode := Record.instConstructors(fnPath, fnNode, info);
         then
           (fnNode, false);
 
@@ -282,11 +309,7 @@ uniontype Function
         algorithm
           // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);
-          Inst.instExpressions(fnNode);
-          funcs := Record.instOperatorFunctions(fnNode, info);
-          for f in funcs loop
-            fnNode := InstNode.cacheAddFunc(fnNode, f, false);
-          end for;
+          fnNode := Record.instOperatorFunctions(fnNode, info);
         then
           (fnNode, false);
 
@@ -309,7 +332,6 @@ uniontype Function
           fn := Function.new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
-          Inst.instExpressions(fnNode);
         then
           (fnNode, specialBuiltin);
 
@@ -653,7 +675,7 @@ uniontype Function
       comp := InstNode.component(inputnode);
 
       (margexp, mty, matchKind) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp, allowUnknown = true);
-      correct := TypeCheck.isCompatibleMatch(matchKind);
+      correct := TypeCheck.isValidArgumentMatch(matchKind);
       if TypeCheck.isCastMatch(matchKind) then
         funcMatchKind := CAST_MATCH;
       elseif TypeCheck.isGenericMatch(matchKind) then
@@ -686,6 +708,42 @@ uniontype Function
     correct := true;
     args := listReverse(checked_args);
   end matchArgs;
+
+  function matchFunction
+    input Function func;
+    input list<TypedArg> args;
+    input list<TypedNamedArg> named_args;
+    input SourceInfo info;
+    output list<TypedArg> out_args;
+    output Boolean matched;
+    output FunctionMatchKind matchKind;
+  algorithm
+    (out_args, matched) := fillArgs(args, named_args, func, info);
+    if matched then
+      (out_args, matched, matchKind) := matchArgs(func, out_args, info);
+    end if;
+  end matchFunction;
+
+  function matchFunctions
+    input list<Function> funcs;
+    input list<TypedArg> args;
+    input list<TypedNamedArg> named_args;
+    input SourceInfo info;
+    output list<FunctionMatchKind.MatchedFunction> matchedFunctions;
+  protected
+    list<TypedArg> out_args;
+    FunctionMatchKind matchKind;
+    Boolean matched;
+  algorithm
+    matchedFunctions := {};
+    for func in funcs loop
+      (out_args, matched, matchKind) := matchFunction(func, args, named_args, info);
+
+      if matched then
+        matchedFunctions := (func,out_args,matchKind)::matchedFunctions;
+      end if;
+    end for;
+  end matchFunctions;
 
   function isTyped
     input Function fn;

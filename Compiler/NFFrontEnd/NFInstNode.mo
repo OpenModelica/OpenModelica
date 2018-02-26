@@ -978,6 +978,24 @@ uniontype InstNode
     end match;
   end refEqual;
 
+  function isSame
+    input InstNode node1;
+    input InstNode node2;
+    output Boolean same = false;
+  protected
+    InstNode n1 = resolveOuter(node1);
+    InstNode n2 = resolveOuter(node2);
+  algorithm
+    if referenceEq(n1, n2) then
+      same := true;
+      return;
+    // TODO: This is not enough. We need a better way.
+    elseif stringEqual(name(n1), name(n2)) then
+      same := true;
+      return;
+    end if;
+  end isSame;
+
   function checkIdentical
     input InstNode node1;
     input InstNode node2;
