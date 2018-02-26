@@ -2487,78 +2487,7 @@ end realpath;
 function uriToFilename
   input String uri;
   output String filename = "";
-  output String message = "";
-protected
-  String [:,2] libraries;
-  Integer numMatches;
-  String [:] matches,matches2;
-  String path, schema, str;
-  Boolean isUri,isMatch=false,isModelicaUri,isFileUri,isFileUriAbsolute;
-algorithm
-  isUri := regexBool(uri, "^[A-Za-z]*://");
-  if isUri then
-    (numMatches,matches) := regex(uri,"^[A-Za-z]*://?([^/]*)(.*)$",4);
-    isModelicaUri := regexBool(uri, "^modelica://", caseInsensitive=true);
-    isFileUriAbsolute := regexBool(uri, "^file:///", caseInsensitive=true);
-    isFileUri := regexBool(uri, "^file://", caseInsensitive=true);
-    if isModelicaUri then
-      libraries := getLoadedLibraries();
-      if sum(1 for lib in libraries) == 0 then
-        filename := "";
-        return;
-      end if;
-      path := matches[2];
-      if path == "" then
-        message := "Malformed modelica:// URI path. Package name '" + matches[2]+"', path: '"+matches[3] + "'";
-        return;
-      end if;
-      while path <> "" loop
-        (numMatches,matches2) := regex(path, "^([A-Za-z_][A-Za-z0-9_]*)?[.]?(.*)?$",3);
-        path := matches2[3];
-        if isMatch then
-          /* We already have a match for the first part. The full name was e.g. Modelica.Blocks, so we now see if the Blocks directory exists, and so on */
-          if directoryExists(filename + "/" + matches2[2]) then
-            filename := realpath(filename + "/" + matches2[2]);
-          else
-            break;
-          end if;
-        else
-          /* It is the first part of the name (Modelica.XXX) - look among the loaded classes for the name Modelica and use that path */
-          for i in 1:sum(1 for lib in libraries) loop
-            if libraries[i,1] == matches2[2] then
-              filename := libraries[i,2];
-              isMatch := true;
-              break;
-            end if;
-          end for;
-          if not isMatch then
-            message := "Could not resolve URI: " + uri;
-            filename := "";
-            return;
-          end if;
-        end if;
-      end while;
-      filename := if isMatch then filename + matches[3] else filename;
-    elseif isFileUriAbsolute then
-      (,matches) := regex(uri,"file://(/.*)?",2,caseInsensitive=true);
-      filename := matches[2];
-    elseif isFileUri and not isFileUriAbsolute then
-      (,matches) := regex(uri,"file://(.*)",2,caseInsensitive=true);
-      filename := realpath("./") + "/" + matches[2];
-      return;
-    elseif not (isModelicaUri or isFileUri) then
-      /* Not using else because OpenModelica handling of assertions at runtime is not very good */
-      message := "Unknown URI schema: " + uri;
-      filename := "";
-      return;
-    else
-      /* empty */
-      message := "Unknown error";
-      filename := "";
-    end if;
-  else
-    filename := if regularFileExists(uri) then realpath(uri) else if regexBool(uri, "^/") then uri else (realpath("./") + "/" + uri);
-  end if;
+external "builtin" filename=OpenModelica_uriToFilename(uri);
 annotation(Documentation(info="<html>
 Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
 modelica:// URI's are only handled if the class is already loaded.
