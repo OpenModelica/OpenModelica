@@ -775,6 +775,8 @@ public constant Message AMBIGUOUS_MATCHING_FUNCTIONS_NFINST = MESSAGE(323, TRANS
   Util.gettext("Ambiguous matching functions found for %s.\nCandidates are:\n  %s"));
 public constant Message AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST = MESSAGE(324, TRANSLATION(), ERROR(),
   Util.gettext("Ambiguous matching overloaded operator functions found for %s.\nCandidates are:\n  %s"));
+public constant Message REDECLARE_CONDITION = MESSAGE(325, TRANSLATION(), ERROR(),
+  Util.gettext("Invalid redeclaration of %s, a redeclare may not have a condition attribute."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

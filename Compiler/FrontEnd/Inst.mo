@@ -3175,6 +3175,12 @@ algorithm
     (el, _) := element;
     (el_name, info) := InstUtil.extractCurrentName(el);
 
+    // An element redeclare may not have a condition.
+    if SCode.isElementRedeclare(el) then
+      Error.addSourceMessage(Error.REDECLARE_CONDITION, {el_name}, info);
+      fail();
+    end if;
+
     (cond_val_opt, cache) :=
       InstUtil.instElementCondExp(cache, env, el, prefix, info);
 
