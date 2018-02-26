@@ -1269,7 +1269,6 @@ algorithm
   if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
 end createDifferentiatedCrefName;
 
-
 public function createSeedCrefName
   input DAE.ComponentRef inCref;
   input String inMatrixName;
@@ -1278,9 +1277,6 @@ protected
   list<DAE.Subscript> subs;
   constant Boolean debug = false;
 algorithm
-  /* TODO: check cref generation of seed vars with cosideration of the subscripts
-           with the folowing cold removeSimpleEquation eliminates to many equations.
-  /*
   if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
   if debug then print("after full type  " + Types.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
   subs := ComponentReference.crefLastSubs(inCref);
@@ -1291,9 +1287,6 @@ algorithm
   outCref := ComponentReference.crefSetLastSubs(outCref, subs);
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
   if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
-  */
-  outCref := ComponentReference.replaceSubsWithString(inCref);
-  outCref := ComponentReference.makeCrefIdent(ComponentReference.crefModelicaStr(outCref) + "Seed" + inMatrixName, ComponentReference.crefTypeConsiderSubs(inCref), {});
 end createSeedCrefName;
 
 protected function differentiateCalls

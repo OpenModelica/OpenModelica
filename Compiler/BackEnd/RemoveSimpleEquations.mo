@@ -1744,11 +1744,11 @@ algorithm
 end timeIndependentExpressionAcausal;
 
 protected function toplevelInputOrUnfixed "author: Frenkel TUD 2012-12
-  return true is var on topliven and input or is unfixed parameter"
+  return true is var on topliven and input or is unfixed parameter or unreplaceable"
   input BackendDAE.Var inVar;
   output Boolean b;
 algorithm
-  b := BackendVariable.isVarOnTopLevelAndInput(inVar) or
+  b := BackendVariable.isVarOnTopLevelAndInput(inVar) or BackendVariable.varUnreplaceable(inVar) or
        BackendVariable.isParam(inVar) and not BackendVariable.varFixed(inVar);
 end toplevelInputOrUnfixed;
 
