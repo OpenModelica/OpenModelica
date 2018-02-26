@@ -4,7 +4,20 @@
 
 #include <string>
 #include <stack>
+
+#if !defined(__has_include)
+#define __has_include(X) 0
+#endif
+
+#if __has_include(<unordered_set>) && __has_include(<unordered_map>)
+#include <unordered_set>
 #include <unordered_map>
+#else
+#define unordered_set set
+#define unordered_map map
+#include <set>
+#include <map>
+#endif
 
 using namespace std;
 
@@ -60,7 +73,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
   size_t sz=0, raw_sz=0, nonshared_str_sz=0;
   std::unordered_map<void*,void*> handled;
   std::stack<void*> work;
-  std::unordered_map<std::string, void*> strings;
+  std::unordered_set<std::string> strings;
   work.push(data);
   while (!work.empty()) {
     void *item = work.top();
@@ -90,7 +103,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
       if (strings.find(s) != strings.end()) {
         nonshared_str_sz += actual;
       } else {
-        strings[s] = item;
+        strings.insert(s);
       }
       raw_sz += t;
       sz += actual;
