@@ -1021,7 +1021,7 @@ public constant Message UNIONTYPE_MISSING_TYPEVARS = MESSAGE(5044, TRANSLATION()
 public constant Message UNIONTYPE_WRONG_NUM_TYPEVARS = MESSAGE(5045, TRANSLATION(), ERROR(),
   Util.gettext("Uniontype %s has %s type variables, but got %s."));
 public constant Message SERIALIZED_SIZE = MESSAGE(5046, TRANSLATION(), NOTIFICATION(),
-  Util.gettext("%s uses %s of memory (%s without GC overhead)."));
+  Util.gettext("%s uses %s of memory (%s without GC overhead; %s is consumed by not performing String sharing)."));
 
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));

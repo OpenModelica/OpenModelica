@@ -3828,5 +3828,38 @@ algorithm
   File.write(file, "]");
 end writeSubscripts;
 
+function getConsumedMemory
+  input DAE.ComponentRef inCref;
+  output Real szIdents=0;
+  output Real szTypes=0;
+  output Real szSubs=0;
+protected
+  DAE.ComponentRef cr=inCref;
+  Boolean b = true;
+algorithm
+  while b loop
+    (b,cr) := match cr
+      case DAE.CREF_IDENT()
+        algorithm
+          szIdents := szIdents + System.getSizeOfData(cr.ident);
+          szTypes := szTypes + System.getSizeOfData(cr.identType);
+          szSubs := szSubs + System.getSizeOfData(cr.subscriptLst);
+        then (false,cr);
+      case DAE.CREF_ITER()
+        algorithm
+          szIdents := szIdents + System.getSizeOfData(cr.ident);
+          szTypes := szTypes + System.getSizeOfData(cr.identType);
+        then (false,cr);
+      case DAE.CREF_QUAL()
+        algorithm
+          szIdents := szIdents + System.getSizeOfData(cr.ident);
+          szTypes := szTypes + System.getSizeOfData(cr.identType);
+          szSubs := szSubs + System.getSizeOfData(cr.subscriptLst);
+        then (true,cr.componentRef);
+      else (false,cr);
+    end match;
+  end while;
+end getConsumedMemory;
+
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

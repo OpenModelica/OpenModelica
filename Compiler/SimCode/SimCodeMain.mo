@@ -1317,10 +1317,10 @@ protected function serializeNotify<T>
   input T data;
   input String name;
 protected
-  Real sz,raw_sz;
+  Real sz,raw_sz,nonSharedStringSize;
 algorithm
-  (sz,raw_sz) := System.getSizeOfData(data);
-  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(sz), StringUtil.bytesToReadableUnit(raw_sz)});
+  (sz,raw_sz,nonSharedStringSize) := System.getSizeOfData(data);
+  Error.addMessage(Error.SERIALIZED_SIZE, {name, StringUtil.bytesToReadableUnit(sz), StringUtil.bytesToReadableUnit(raw_sz), StringUtil.bytesToReadableUnit(nonSharedStringSize)});
 end serializeNotify;
 
 annotation(__OpenModelica_Interface="backend");

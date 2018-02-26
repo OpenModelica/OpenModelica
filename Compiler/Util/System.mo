@@ -1311,7 +1311,8 @@ function getSizeOfData<T>
   input T data;
   output Real sz;
   output Real raw_sz "The size without granule overhead";
-external "C" sz=SystemImpl__getSizeOfData(data, raw_sz) annotation(Library = {"omcruntime"}, Documentation(info="<html>
+  output Real nonSharedStringSize "The size that could be saved if String sharing was enabled";
+external "C" sz=SystemImpl__getSizeOfData(data, raw_sz, nonSharedStringSize) annotation(Library = {"omcruntime"}, Documentation(info="<html>
 Counts the number of bytes that were allocated to hold the given data structure.
 Includes constant data and handles cycles.
 </html>"));

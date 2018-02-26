@@ -3,8 +3,8 @@
 
 
 #include <string>
-#include <set>
 #include <stack>
+#include <unordered_map>
 
 using namespace std;
 
@@ -55,11 +55,12 @@ static inline size_t actualByteSize(size_t sz)
   return res;
 }
 #include <stdio.h>
-double SystemImpl__getSizeOfData(void *data, double *raw_size_res)
+double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonshared_str_res)
 {
-  size_t sz=0, raw_sz=0;
-  std::set<void*> handled;
+  size_t sz=0, raw_sz=0, nonshared_str_sz=0;
+  std::unordered_map<void*,void*> handled;
   std::stack<void*> work;
+  std::unordered_map<std::string, void*> strings;
   work.push(data);
   while (!work.empty()) {
     void *item = work.top();
@@ -67,7 +68,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res)
     if (handled.find(item) != handled.end()) {
       continue;
     }
-    handled.insert(item);
+    handled[item] = 0;
     if (MMC_IS_IMMEDIATE(item)) {
       /* Uses up zero space */
       continue;
@@ -83,8 +84,16 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res)
       continue;
     }
     if (MMC_HDRISSTRING(hdr)) {
-      raw_sz += sizeof(void*)+MMC_STRLEN(item)+1;
-      sz += actualByteSize(sizeof(void*)+MMC_STRLEN(item)+1);
+      size_t t = sizeof(void*)+MMC_STRLEN(item)+1;
+      size_t actual = actualByteSize(t);
+      std::string s(MMC_STRINGDATA(item));
+      if (strings.find(s) != strings.end()) {
+        nonshared_str_sz += actual;
+      } else {
+        strings[s] = item;
+      }
+      raw_sz += t;
+      sz += actual;
       continue;
     }
     if (MMC_HDRISSTRUCT(hdr)) {
@@ -99,11 +108,12 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res)
       }
       continue;
     }
-fprintf(stderr, "abort... bytes=%d num items=%d\n", sz, handled.size());
-printAny(item);
+    fprintf(stderr, "abort... bytes=%ld num items=%ld\n", sz, handled.size());
+    printAny(item);
     abort();
   }
   *raw_size_res = raw_sz;
+  *nonshared_str_res = nonshared_str_sz;
   return sz;
 }
 
