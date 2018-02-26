@@ -1674,8 +1674,8 @@ protected
           if dim_size == -1 then
             dim_size := Dimension.size(dim);
           else
-            Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
-              {String(i), "vector", "1", Dimension.toString(dim)}, info);
+            Error.addSourceMessageAndFail(Error.NF_VECTOR_INVALID_DIMENSIONS,
+              {Type.toString(ty), toString(call)}, info);
           end if;
         end if;
       end if;

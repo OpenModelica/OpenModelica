@@ -1465,19 +1465,44 @@ function typeArray
   output Variability variability = Variability.CONSTANT;
 protected
   Expression exp;
-  list<Expression> expl = {};
+  list<Expression> expl = {}, expl2 = {};
   Variability var;
-  Type ty;
+  Type ty1 = Type.UNKNOWN(), ty2, ty3;
+  list<Type> tys = {};
+  MatchKind mk;
+  Integer n=1;
 algorithm
   for e in elements loop
-    // TODO: Type checking.
-    (exp, ty, var) := typeExp(e, origin, info);
+    (exp, ty2, var) := typeExp(e, origin, info);
     variability := Prefixes.variabilityMax(var, variability);
+    (, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, exp, allowUnknown = true);
+    if TypeCheck.isIncompatibleMatch(mk) then
+      // Try the other way around to get the super-type of the array
+      (, ty3, mk) := TypeCheck.matchTypes(ty1, ty2, exp, allowUnknown = false);
+      if TypeCheck.isCompatibleMatch(mk) then
+        ty1 := ty3;
+      end if;
+    else
+      ty1 := ty3;
+    end if;
     expl := exp :: expl;
+    tys := ty2 :: tys;
+    n := n+1;
+  end for;
+  // Give the actual error-messages here after we got the super-type of the array
+  for e in expl loop
+    ty2::tys := tys;
+    (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e);
+    expl2 := exp::expl2;
+    n := n-1;
+    if TypeCheck.isIncompatibleMatch(mk) then
+      Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+      fail();
+    end if;
   end for;
 
-  arrayType := Type.liftArrayLeft(ty, Dimension.fromExpList(expl));
-  arrayExp := Expression.ARRAY(arrayType, listReverse(expl));
+  arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
+  arrayExp := Expression.ARRAY(arrayType, expl2);
 end typeArray;
 
 function typeRange

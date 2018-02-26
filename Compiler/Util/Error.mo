@@ -935,6 +935,10 @@ public constant Message MIXED_DETERMINED = MESSAGE(583, SYMBOLIC(), ERROR(),
   Util.gettext("The given system is mixed-determined.   [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\"."));
 public constant Message STACK_OVERFLOW_DETAILED = MESSAGE(584, SCRIPTING(), ERROR(),
   Util.gettext("Stack overflow occurred while evaluating %s:\n%s"));
+public constant Message NF_VECTOR_INVALID_DIMENSIONS = MESSAGE(585, TRANSLATION(), ERROR(),
+  Util.gettext("Invalid dimensions %s in %s, no more than one dimension may have size > 1."));
+public constant Message NF_ARRAY_TYPE_MISMATCH = MESSAGE(586, TRANSLATION(), ERROR(),
+  Util.gettext("Array types mismatch. Argument %s (%s) has type %s whereas previous arguments have type %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
