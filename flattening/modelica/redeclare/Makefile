@@ -38,6 +38,7 @@ RedeclareArrayComponent1.mo \
 RedeclareBaseClass1.mo \
 RedeclareClass1.mo \
 RedeclareClass4.mo \
+RedeclareElementCondition.mo \
 RedeclareFlowEffort.mo \
 RedeclareFunction.mo \
 RedeclareFunction1.mo \
