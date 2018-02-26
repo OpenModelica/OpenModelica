@@ -10977,6 +10977,36 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     >>
 end equationArrayCallAssign;
 
+template assignDerArray(Context context, String arr, Exp lhs_ecr, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Assign array considering special treatment of states and Jacobian vars"
+::=
+match lhs_ecr
+case CREF(componentRef=c, ty=ty as DAE.T_ARRAY(ty=elty, dims=dims)) then
+  let &varDeclsCref = buffer "" /*BUFD*/
+  let lhsStr = cref1(c, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)
+  match cref2simvar(c, simCode)
+  case SIMVAR(varKind=varKind) then
+    match varKind
+    case STATE()
+    case STATE_DER() then
+      //STATE vars are flat vectors
+      <<
+      /*assign to <%cref(c,useFlatArrayNotation)%>*/
+      memcpy(&<%lhsStr%>, <%arr%>.getData(), <%arr%>.getNumElems()*sizeof(double));
+      >>
+    case JAC_VAR()
+    case JAC_DIFF_VAR()
+    case SEED_VAR() then
+      <<
+      <%assignJacArray(lhsStr, arr, ty)%>
+      >>
+    else
+      <<
+      /*default array assign*/
+      <%lhsStr%>.assign(<%arr%>);
+      >>
+end assignDerArray;
+
 template equationWhen(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates a when equation."
