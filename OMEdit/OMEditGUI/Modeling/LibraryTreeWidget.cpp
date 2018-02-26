@@ -377,6 +377,7 @@ LibraryTreeItem::LibraryTreeItem()
   setExpanded(false);
   setNonExisting(true);
   setOMSComponentType(oms_component_none);
+  setOMSComponent(0);
 }
 
 /*!
@@ -431,6 +432,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setExpanded(false);
   setNonExisting(false);
   setOMSComponentType(oms_component_none);
+  setOMSComponent(0);
 }
 
 /*!
@@ -586,6 +588,8 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     switch (getOMSComponentType()) {
       case oms_component_fmu:
         return QIcon(":/Resources/icons/fmu-icon.svg");
+      case oms_component_port:
+        return QIcon(":/Resources/icons/connect-mode.svg");
       default:
         return QIcon(":/Resources/icons/tlm-icon.svg");
     }
@@ -2424,11 +2428,24 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     oms_component_t** pComponents = NULL;
     if (OMSProxy::instance()->getComponents(pLibraryTreeItem->getNameStructure(), &pComponents)) {
       for (int i = 0 ; pComponents[i] ; i++) {
-        LibraryTreeItem *pNewLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, pComponents[i]->name,
-                                                                         QString("%1.%2").arg(pLibraryTreeItem->getNameStructure())
-                                                                         .arg(pComponents[i]->name), pLibraryTreeItem->getFileName(),
-                                                                         pLibraryTreeItem->isSaved(), pLibraryTreeItem);
-        pNewLibraryTreeItem->setOMSComponentType(pComponents[i]->type);
+        QString name = StringHandler::getLastWordAfterDot(pComponents[i]->name);
+        LibraryTreeItem *pComponentLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
+                                                                               QString("%1.%2").arg(pLibraryTreeItem->getNameStructure())
+                                                                               .arg(name), pLibraryTreeItem->getFileName(),
+                                                                               pLibraryTreeItem->isSaved(), pLibraryTreeItem);
+        pComponentLibraryTreeItem->setOMSComponentType(pComponents[i]->type);
+        pComponentLibraryTreeItem->setOMSComponent(pComponents[i]);
+        for (int j = 0 ; pComponents[i]->interfaces[j] ; j++) {
+          QString name = StringHandler::getLastWordAfterDot(pComponents[i]->interfaces[j]->name);
+          name = name.split(':', QString::SkipEmptyParts).last();
+          LibraryTreeItem *pInterfaceLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
+                                                                                 QString("%1.%2")
+                                                                                 .arg(pComponentLibraryTreeItem->getNameStructure())
+                                                                                 .arg(name), pComponentLibraryTreeItem->getFileName(),
+                                                                                 pLibraryTreeItem->isSaved(), pComponentLibraryTreeItem);
+          pInterfaceLibraryTreeItem->setOMSComponentType(oms_component_port);
+          pInterfaceLibraryTreeItem->setOMSComponent(0);
+        }
       }
     }
   } else {
@@ -3664,6 +3681,8 @@ void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
         setExpandsOnDoubleClick(false);
         return;
       }
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && pLibraryTreeItem->getOMSComponentType() == oms_component_fmu) {
+      return;
     }
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   }
@@ -4013,6 +4032,7 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
     oms_component_type_t componentType = oms_component_none;
     OMSProxy::instance()->getComponentType(pLibraryTreeItem->getNameStructure(), &componentType);
     pLibraryTreeItem->setOMSComponentType(componentType);
+    pLibraryTreeItem->setOMSComponent(0);
     // add the item to recent files list
     if (pLibraryTreeItem) {
       MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);

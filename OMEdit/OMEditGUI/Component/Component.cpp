@@ -87,6 +87,7 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mDimensions = 3;
   mTLMCausality = StringHandler::getTLMCausality(StringHandler::TLMBidirectional);
   mDomain = StringHandler::getTLMDomain(StringHandler::Mechanical);
+  mOMSCausality = oms_causality_undefined;
 }
 
 /*!
@@ -137,6 +138,7 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mDimensions = pComponentInfo->getDimensions();
   mTLMCausality = pComponentInfo->getTLMCausality();
   mDomain = pComponentInfo->getDomain();
+  mOMSCausality = pComponentInfo->getOMSCausality();
 }
 
 /*!
@@ -374,7 +376,9 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
       (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
       (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getGeometryFile() == this->getGeometryFile()) &&
-      (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321());
+      (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321()) &&
+      (componentInfo.getDimensions() == this->getDimensions()) && (componentInfo.getTLMCausality() == this->getTLMCausality()) &&
+      (componentInfo.getDomain() == this->getDomain()) && (componentInfo.getOMSCausality() == this->getOMSCausality());
 }
 
 /*!
@@ -463,6 +467,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
+    drawSignals();
   } else {
     drawComponent();
   }
@@ -526,6 +531,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
+  mpInputOutputComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -560,6 +566,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
+  mpInputOutputComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -653,6 +660,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
+  mpInputOutputComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -686,6 +694,44 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpDefaultComponentRectangle->setVisible(true);
   mpDefaultComponentText->setFontSize(5);
   mpDefaultComponentText->setVisible(true);
+  // Transformation. Doesn't matter what we set here since it will be overwritten in adjustInterfacePoints();
+  QString transformation = QString("Placement(true,100.0,100.0,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)");
+  mTransformation = Transformation(mpGraphicsView->getViewType(), this);
+  mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+  setTransform(mTransformation.getTransformationMatrix());
+  mpOriginItem = 0;
+  mpBottomLeftResizerItem = 0;
+  mpTopLeftResizerItem = 0;
+  mpTopRightResizerItem = 0;
+  mpBottomRightResizerItem = 0;
+  updateToolTip();
+}
+
+Component::Component(ComponentInfo *pComponentInfo, LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent)
+  : QGraphicsItem(pParentComponent), mpReferenceComponent(0), mpParentComponent(pParentComponent)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mpComponentInfo = pComponentInfo;
+  mIsInheritedComponent = false;
+  mComponentType = Component::Port;
+  mpGraphicsView = mpParentComponent->getGraphicsView();
+  mTransformationString = "";
+  mDialogAnnotation.clear();
+  mChoicesAnnotation.clear();
+  mpResizerRectangle = 0;
+  mpNonExistingComponentLine = 0;
+  mpDefaultComponentRectangle = 0;
+  mpDefaultComponentText = 0;
+  mpInputOutputComponentPolygon = new PolygonAnnotation(this);
+  if (mpComponentInfo->getOMSCausality() == oms_causality_input) {
+    mpInputOutputComponentPolygon->setFillColor(QColor(0, 0, 127));
+  } else if (mpComponentInfo->getOMSCausality() == oms_causality_output) {
+    mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
+  }
+  mpStateComponentRectangle = 0;
+  mHasTransition = false;
+  mIsInitialState = false;
+
   // Transformation. Doesn't matter what we set here since it will be overwritten in adjustInterfacePoints();
   QString transformation = QString("Placement(true,100.0,100.0,-15.0,-15.0,15.0,15.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)");
   mTransformation = Transformation(mpGraphicsView->getViewType(), this);
@@ -824,7 +870,7 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
   if (mTransformation.isValid()) {
     setVisible(mTransformation.getVisible());
     if (mpStateComponentRectangle) {
-      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && mpLibraryTreeItem->isState()) {
         if (mHasTransition && mIsInitialState) {
           mpStateComponentRectangle->setLinePattern(StringHandler::LineSolid);
           mpStateComponentRectangle->setLineThickness(0.5);
@@ -1422,6 +1468,73 @@ void Component::adjustInterfacePoints()
 }
 
 /*!
+ * \brief Component::adjustOMSSignals
+ * Dynamically adjusts the size of OMSimulator signals.
+ */
+void Component::adjustOMSSignals()
+{
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (!mComponentsList.isEmpty()) {
+      // build two lists based on inputs and outputs
+      QList<Component*> inputComponentsList, outputComponentsList;
+      foreach (Component *pComponent, mComponentsList) {
+        if (pComponent->getComponentInfo()->getOMSCausality() == oms_causality_input) {
+          inputComponentsList.append(pComponent);
+        } else if (pComponent->getComponentInfo()->getOMSCausality() == oms_causality_output) {
+          outputComponentsList.append(pComponent);
+        }
+      }
+      // we start with default size of 30
+      int inputSignalSize = 30;
+      // keep the separator size to 1/3.
+      int inputSignalSeparatorSize = (inputSignalSize / 3);
+      // 200 is the maximum height of submodel
+      while (200 <= inputComponentsList.size() * (inputSignalSize + inputSignalSeparatorSize)) {
+        inputSignalSize -= 1;
+        if (inputSignalSize <= 0) {
+          inputSignalSize = 1;
+          break;
+        }
+        inputSignalSeparatorSize = (inputSignalSize / 3);
+      }
+      // set the new transformation for each input signal.
+      qreal inputYPosition = 100 - (inputSignalSize / 2);
+      foreach (Component *pComponent, inputComponentsList) {
+        qreal inputXPosition = -100 - (inputSignalSize / 2);
+        QString transformation = QString("Placement(true,%1,%2,-%3,-%3,%3,%3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(inputXPosition).arg(inputYPosition)
+            .arg(inputSignalSize / 2);
+        inputYPosition -= (inputSignalSize + inputSignalSeparatorSize);
+        pComponent->mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+        pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
+      }
+      // we start with default size of 30
+      int outputSignalSize = 30;
+      // keep the separator size to 1/3.
+      int outputSignalSeparatorSize = (outputSignalSize / 3);
+      // 200 is the maximum height of submodel
+      while (200 <= outputComponentsList.size() * (outputSignalSize + outputSignalSeparatorSize)) {
+        outputSignalSize -= 1;
+        if (outputSignalSize <= 0) {
+          outputSignalSize = 1;
+          break;
+        }
+        outputSignalSeparatorSize = (outputSignalSize / 3);
+      }
+      // set the new transformation for each output signal.
+      qreal outputYPosition = 100 - (outputSignalSize / 2);
+      foreach (Component *pComponent, outputComponentsList) {
+        qreal outputXPosition = 100 + (outputSignalSize / 2);
+        QString transformation = QString("Placement(true,%1,%2,-%3,-%3,%3,%3,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0)").arg(outputXPosition).arg(outputYPosition)
+            .arg(outputSignalSize / 2);
+        outputYPosition -= (outputSignalSize + outputSignalSeparatorSize);
+        pComponent->mTransformation.parseTransformationString(transformation, boundingRect().width(), boundingRect().height());
+        pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
+      }
+    }
+  }
+}
+
+/*!
  * \brief Component::createNonExistingComponent
  * Creates a non-existing component.
  */
@@ -1484,6 +1597,29 @@ void Component::drawInterfacePoints()
       }
     }
   }
+}
+
+void Component::drawSignals()
+{
+  oms_signal_t** pInterfaces = mpLibraryTreeItem->getOMSComponent()->interfaces;
+  ComponentInfo *pComponentInfo = 0;
+  for (int i = 0 ; pInterfaces[i] ; i++) {
+    switch (pInterfaces[i]->causality) {
+      case oms_causality_input:
+      case oms_causality_output:
+        pComponentInfo = new ComponentInfo;
+        pComponentInfo->setName(pInterfaces[i]->name);
+        //pComponentInfo->setClassName(pInterfaces[i]->type);
+        pComponentInfo->setOMSCausality(pInterfaces[i]->causality);
+        mComponentsList.append(new Component(pComponentInfo, mpLibraryTreeItem, this));
+        break;
+      case oms_causality_parameter:
+      case oms_causality_undefined:
+      default:
+        break;
+    }
+  }
+  adjustOMSSignals();
 }
 
 /*!
@@ -1956,6 +2092,8 @@ void Component::updatePlacementAnnotation()
     elementGeometry.y1 = extent1.y();
     elementGeometry.x2 = extent2.x();
     elementGeometry.y2 = extent2.y();
+    elementGeometry.rotation = mTransformation.getRotateAngle();
+    elementGeometry.iconSource = NULL;
     OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();

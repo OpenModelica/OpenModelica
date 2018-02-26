@@ -46,6 +46,7 @@
 #include "Annotations/EllipseAnnotation.h"
 #include "Annotations/TextAnnotation.h"
 #include "Annotations/BitmapAnnotation.h"
+#include "OMS/OMSProxy.h"
 
 class OMCProxy;
 class GraphicsScene;
@@ -121,6 +122,8 @@ public:
   int getDimensions() const {return mDimensions;}
   void setTLMCausality(QString causality) {mTLMCausality = causality;}
   QString getTLMCausality() const {return mTLMCausality;}
+  void setOMSCausality(oms_causality_t causality) {mOMSCausality = causality;}
+  oms_causality_t getOMSCausality() const {return mOMSCausality;}
   void setDomain(QString domain) {mDomain = domain;}
   QString getDomain() const {return mDomain;}
   // operator overloading
@@ -157,6 +160,7 @@ private:
   int mDimensions;
   QString mTLMCausality;
   QString mDomain;
+  oms_causality_t mOMSCausality;
 
   bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };
@@ -178,6 +182,8 @@ public:
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   // used for interface point
   Component(ComponentInfo *pComponentInfo, Component *pParentComponent);
+  // used for OMSimulator signals
+  Component(ComponentInfo *pComponentInfo, LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   bool hasShapeAnnotation(Component *pComponent);
   bool hasNonExistingClass();
@@ -241,6 +247,7 @@ public:
   void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
   void removeInterfacePoint(QString interfaceName);
   void adjustInterfacePoints();
+  void adjustOMSSignals();
 
   Transformation mTransformation;
   Transformation mOldTransformation;
@@ -261,6 +268,7 @@ private:
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
   RectangleAnnotation *mpStateComponentRectangle;
+  PolygonAnnotation *mpInputOutputComponentPolygon;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
@@ -290,6 +298,7 @@ private:
   void createDefaultComponent();
   void createStateComponent();
   void drawInterfacePoints();
+  void drawSignals();
   void drawComponent();
   void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();

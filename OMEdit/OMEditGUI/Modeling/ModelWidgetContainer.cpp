@@ -3520,7 +3520,7 @@ void ModelWidget::createModelWidgetComponents()
       }
       // only get the components and connectoi if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
-        getOMSModelComponents();
+        drawOMSModelComponents();
         //getCompositeModelConnections();
       }
       mpDiagramGraphicsScene->clearSelection();
@@ -5343,15 +5343,34 @@ void ModelWidget::getCompositeModelConnections()
   }
 }
 
-void ModelWidget::getOMSModelComponents()
+/*!
+ * \brief ModelWidget::drawOMSModelComponents
+ * Draws the OMSimulator model components.
+ */
+void ModelWidget::drawOMSModelComponents()
 {
   for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
     LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
     const oms_element_geometry_t *pElementGeometry;
     if (OMSProxy::instance()->getElementGeometry(pChildLibraryTreeItem->getNameStructure(), &pElementGeometry)) {
-      QString annotation = QString("Placement(true,0.0,0.0,%1,%2,%3,%4,0.0,-,-,-,-,-,-,)")
-                           .arg(pElementGeometry->x1).arg(pElementGeometry->y1)
-                           .arg(pElementGeometry->x2).arg(pElementGeometry->y2);
+      // check if we have zero width and height
+      double x1, y1, x2, y2;
+      x1 = pElementGeometry->x1;
+      y1 = pElementGeometry->y1;
+      x2 = pElementGeometry->x2;
+      y2 = pElementGeometry->y2;
+      double width = x2 - x1;
+      double height = y2 - y1;
+      if (width <= 0 && height <= 0) {
+        x1 = -10.0;
+        y1 = -10.0;
+        x2 = 10.0;
+        y2 = 10.0;
+      }
+      QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
+                           .arg(x1).arg(y1)
+                           .arg(x2).arg(y2)
+                           .arg(pElementGeometry->rotation);
       ComponentInfo *pComponentInfo = new ComponentInfo;
       pComponentInfo->setName(pChildLibraryTreeItem->getName());
       pComponentInfo->setClassName(pChildLibraryTreeItem->getNameStructure());

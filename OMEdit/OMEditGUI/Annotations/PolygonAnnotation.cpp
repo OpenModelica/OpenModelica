@@ -73,6 +73,24 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Graphics
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
+PolygonAnnotation::PolygonAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // create a blue arrow
+  setLineColor(QColor(0, 0, 127));
+  setFillColor(QColor(0, 0, 127));
+  setFillPattern(StringHandler::FillSolid);
+  QList<QPointF> points;
+  points << QPointF(-100, 100) << QPointF(100, 0) << QPointF(-100, -100) << QPointF(-100, 100);
+  setPoints(points);
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
 void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 {
   GraphicItem::parseShapeAnnotation(annotation);
