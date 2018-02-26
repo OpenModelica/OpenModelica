@@ -3681,7 +3681,7 @@ void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
         setExpandsOnDoubleClick(false);
         return;
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && pLibraryTreeItem->getOMSComponentType() == oms_component_fmu) {
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && !pLibraryTreeItem->isTopLevel()) {
       return;
     }
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);

@@ -6040,7 +6040,7 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, compositeModel, gitWorkingDirectory;
+  bool enabled, modelica, compositeModel, oms, gitWorkingDirectory;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
@@ -6052,20 +6052,29 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
       compositeModel = false;
+      oms = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       modelica = false;
       compositeModel = false;
+      oms = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
       modelica = false;
       compositeModel = true;
+      oms = false;
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      modelica = false;
+      compositeModel = false;
+      oms = true;
     } else {
       modelica = false;
       compositeModel = false;
+      oms = false;
     }
   } else {
     enabled = false;
     modelica = false;
     compositeModel = false;
+    oms = false;
     pModelWidget = 0;
     pLibraryTreeItem = 0;
   }
@@ -6074,17 +6083,17 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
-  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel));
-  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel));
-  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel));
+  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
+  MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel || oms));
+  MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel || oms));
+  MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel || oms));
   MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getEllipseShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getTransitionModeAction()->setEnabled(enabled && (modelica) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
