@@ -22,7 +22,7 @@ end MatrixImplCast;
 //   input Real[:] v;
 //   output Real[size(v, 1), 2] m;
 // algorithm
-//   m := cat(2, promote(fill(0.0, size(v, 1)), 1), promote(v, 1));
+//   m := cat(2, promote(fill(0.0, size(v, 1)), 2), promote(v, 2));
 // end MatrixImplCast.f;
 //
 // class MatrixImplCast
