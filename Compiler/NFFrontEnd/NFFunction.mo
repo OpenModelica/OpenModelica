@@ -136,7 +136,7 @@ uniontype FunctionMatchKind
         outFuncs := mf::outFuncs;
       end if;
     end for;
-    listReverse(outFuncs);
+    outFuncs := listReverse(outFuncs);
   end getExactMatches;
 
   function isExactMatch

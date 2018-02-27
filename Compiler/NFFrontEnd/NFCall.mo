@@ -804,13 +804,40 @@ uniontype Call
         end if;
         return;
       else
-        Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
-          {typedString(call), candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions),SOME(ov_name))}, info);
-        fail();
+        matchedFunctions := resolveOverloadedVsDefaultConstructorAmbigutiy(matchedFunctions);
+        if listLength(matchedFunctions) == 1 then
+	        (outFunc,args,_) ::_ := matchedFunctions;
+	        return;
+        else
+	        Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
+	          {typedString(call), candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions),SOME(ov_name))}, info);
+	        fail();
+	      end if;
       end if;
     end if;
 
   end checkMatchingFunctions;
+
+  function resolveOverloadedVsDefaultConstructorAmbigutiy
+    input list<FunctionMatchKind.MatchedFunction> matchedFunctions;
+    output list<FunctionMatchKind.MatchedFunction> outMatches;
+  protected
+    Function fn;
+  algorithm
+    outMatches := {};
+    // We have at least two exact matches. find the default constructor (if there is one) and remove it from the list
+    // so that it
+    // - doesn't cause ambiguities if there is only one other match left OR
+    // - it doesn't appear in the error messages in the case of more than one overloaded constructor matches.
+    for mt_fn in matchedFunctions loop
+      fn := Util.tuple31(mt_fn);
+      if not stringEqual(Absyn.pathLastIdent(fn.path), "'constructor'.'$default'") then
+        outMatches := mt_fn::outMatches;
+      end if;
+    end for;
+
+    outMatches := listReverse(outMatches);
+  end resolveOverloadedVsDefaultConstructorAmbigutiy;
 
   function typeOf
     input Call call;
@@ -1124,48 +1151,47 @@ protected
     candidates := {};
     matchedFunctions := {};
     if Type.isComplex(Type.arrayElementType(argty)) then
-          Type.COMPLEX(cls=recopnode) := argty;
-          ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
-          try
-            fn_ref := Function.lookupFunction(Absyn.CREF_IDENT("'String'",{}), recopnode, InstNode.info(recopnode));
-            ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
-          else
-            ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
-            fail();
-          end try;
+      Type.COMPLEX(cls=recopnode) := argty;
+      ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
+      try
+        fn_ref := Function.lookupFunction(Absyn.CREF_IDENT("'String'",{}), recopnode, InstNode.info(recopnode));
+        ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+      else
+        ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
+        fail();
+      end try;
 
-          fn_ref := Function.instFuncRef(fn_ref, InstNode.info(recopnode));
+      fn_ref := Function.instFuncRef(fn_ref, InstNode.info(recopnode));
       candidates := Call.typeCachedFunctions(fn_ref);
-        for fn in candidates loop
-            TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
-          end for;
+      for fn in candidates loop
+        TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
+      end for;
 
       ErrorExt.setCheckpoint("NFCall:typeStringCall");
       matchedFunctions := Function.matchFunctions(candidates, args, named_args, info);
       ErrorExt.rollBack("NFCall:typeStringCall");
 
-          exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
-          if listEmpty(exactMatches) then
-            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-          {typedString(argtycall), candidateFuncListString(candidates,NONE())}, info);
-            fail();
-          end if;
+      exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
+      if listEmpty(exactMatches) then
+        Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+      {typedString(argtycall), candidateFuncListString(candidates,NONE())}, info);
+        fail();
+      end if;
 
-          if listLength(exactMatches) == 1 then
-            (operfn,args,_) ::_ := exactMatches;
-            outType := Function.returnType(operfn);
-            callExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
-                                                      , CallAttributes.CALL_ATTR(
-                                                          outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
-                                                      )
-                                      );
-
-            return;
-          else
-            Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
+      if listLength(exactMatches) == 1 then
+        (operfn,args,_) ::_ := exactMatches;
+        outType := Function.returnType(operfn);
+        callExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
+                                                  , CallAttributes.CALL_ATTR(
+                                                      outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
+                                                  )
+                                  );
+        return;
+      else
+        Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
           {typedString(call), candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions),NONE())}, info);
-            fail();
-          end if;
+        fail();
+      end if;
 
     end if;
 
