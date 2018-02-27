@@ -234,7 +234,7 @@ algorithm
     ((_, resVars)) := BackendVariable.traverseBackendDAEVars(v, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, emptyVars));
     depVars := BackendVariable.varList(resVars);
 
-    inDepVars := BackendVariable.varList(shared.localKnownVars);
+    inDepVars := listAppend(shared.daeModeData.stateVars, shared.daeModeData.algStateVars);
 
     if debug then execStat("detectSparsePatternDAE -> get all vars "); end if;
 

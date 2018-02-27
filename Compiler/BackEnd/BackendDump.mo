@@ -4564,6 +4564,24 @@ algorithm
   str := ComponentReference.printComponentRefStr(Util.tuple21(tpl)) + " -> " + ComponentReference.printComponentRefStr(Util.tuple22(tpl));
 end printStateOrderStr;
 
+public function dumpBackendDAEModeData
+  input BackendDAE.BackendDAEModeData inDAEmodeData;
+protected
+  BackendDAE.Variables modelVars;
+algorithm
+  print("\n" + BORDER + "\nDAEMode\n" + UNDERLINE + "\n");
+  if isSome(inDAEmodeData.modelVars) then
+    SOME(modelVars) := inDAEmodeData.modelVars;
+    dumpVariables(modelVars, "ModelVariables");
+  else
+    print("No ModelVariables\n");
+  end if;
+  print("DAEmode System:\n " + intString(inDAEmodeData.numResVars) + " residual variables\n " +
+        intString(listLength(inDAEmodeData.stateVars)) + " state variables\n " +
+        intString(listLength(inDAEmodeData.algStateVars)) + " algebraic state variables\n");
+  dumpVarList(inDAEmodeData.stateVars, "State Variables");
+  dumpVarList(inDAEmodeData.algStateVars, "Algebraic State Variables");
+end dumpBackendDAEModeData;
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDump;

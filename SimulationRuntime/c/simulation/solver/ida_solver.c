@@ -698,13 +698,22 @@ ida_event_update(DATA* data, threadData_t *threadData)
 {
   IDA_SOLVER *idaData = idaDataGlobal;
   int flag;
+  long nonLinIters;
+  double init_h;
   if (compiledInDAEMode == 3){
     if (initializedSolver){
+
+      /* get new values from data -> TODO: update all discrete */
       data->simulationInfo->discreteCall = 1;
 
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
       data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
+
+      /* update inner algebraic get new values from data */
+      idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, idaData->newdelta, idaData);
+      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      data->simulationInfo->discreteCall = 0;
 
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
       flag = IDAReInit(idaData->ida_mem,
@@ -712,22 +721,42 @@ ida_event_update(DATA* data, threadData_t *threadData)
           idaData->y,
           idaData->yp);
 
-      //flag = IDASetStepToleranceIC(idaData->ida_mem, 1e-12);
+      /* get initial step to provide a direction of the solution */
+      IDAGetActualInitStep(idaData->ida_mem, &init_h);
+      /* increase limits of the non-linear solver */
       IDASetMaxNumStepsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
       IDASetMaxNumJacsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
       IDASetMaxNumItersIC(idaData->ida_mem, 2*data->modelData->nStates*10);
-      flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+1);
+      /* Calc Consistent y_algebraic and y_prime with current y */
+      flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+init_h);
+
+      /* debug */
+      IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
+      infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
+
+      /* try again without line search if first try fails */
       if (checkIDAflag(flag)){
-        throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
+        infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
+        IDASetLineSearchOffIC(idaData->ida_mem, TRUE);
+        flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+1);
+        IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
+        infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
+        if (checkIDAflag(flag)){
+          throwStreamPrint(threadData, "##IDA## discrete update failed flag %d!", flag);
+        }
       }
+      /* obtain consistent values of y_algebraic and y_prime */
       IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
+
+      /* update inner algebraic variables */
+      data->simulationInfo->discreteCall = 1;
+      idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, idaData->newdelta, idaData);
+      data->simulationInfo->discreteCall = 0;
 
       memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
       // and  also algebraic vars
       data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
-
-      data->simulationInfo->discreteCall = 0;
     }
   }
   else{
@@ -980,6 +1009,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* initialize states and der(states) */
   if (idaData->daeMode)
   {
+    idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, idaData->newdelta, idaData);
     memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
     data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);

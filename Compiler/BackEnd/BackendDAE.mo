@@ -847,20 +847,15 @@ end CompInfo;
 public
 uniontype BackendDAEModeData
   record BDAE_MODE_DATA
-    Integer numAuxVars;
-    list<Var> auxVars;
+    list<Var> stateVars;
+    list<Var> algStateVars;
 
     Integer numResVars;
-    list<Var> resVars;
 
-    Integer numAuxEqns;
-    list<Equation> auxEqns;
-
-    Integer numResEqns;
-    list<Equation> resEqns;
+    Option<Variables> modelVars;
   end BDAE_MODE_DATA;
 end BackendDAEModeData;
-constant BackendDAEModeData emptyDAEModeData = BDAE_MODE_DATA(0,{},0,{},0,{},0,{});
+constant BackendDAEModeData emptyDAEModeData = BDAE_MODE_DATA({},{},0,NONE());
 
 annotation(__OpenModelica_Interface="backend");
 end BackendDAE;

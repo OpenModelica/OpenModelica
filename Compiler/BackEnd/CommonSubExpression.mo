@@ -1575,7 +1575,7 @@ algorithm
   end match;
 end createVarsForExp;
 
-protected function isCSECref
+public function isCSECref
 "Returns true if the cref is prefixed with '$cse'"
   input DAE.ComponentRef cr;
   output Boolean b;

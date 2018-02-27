@@ -528,6 +528,8 @@ constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(176, "oldFrontEndUnitCheck", fa
   Util.gettext("Checks the consistency of units in equation (for the old front-end)."));
 constant DebugFlag EXEC_STAT_EXTRA_GC = DEBUG_FLAG(177, "execstatGCcollect", false,
   Util.gettext("When running execstat, also perform an extra full garbage collection."));
+constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(178, "debugDAEmode", false,
+  Util.gettext("Dump debug output for the DAEmode."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -711,7 +713,8 @@ constant list<DebugFlag> allDebugFlags = {
   ALIAS_CONFLICTS,
   SUSAN_MATCHCONTINUE_DEBUG,
   OLD_FE_UNITCHECK,
-  EXEC_STAT_EXTRA_GC
+  EXEC_STAT_EXTRA_GC,
+  DEBUG_DAEMODE
 };
 
 public

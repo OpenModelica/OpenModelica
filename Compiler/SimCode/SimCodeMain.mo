@@ -1058,6 +1058,7 @@ protected
   list<tuple<String, String>> program;
   Integer numCheckpoints;
   list<SimCodeVar.SimVar> tempVars = {};
+  BackendDAE.BackendDAE emptyBDAE;
 
   SimCode.ModelInfo modelInfo;
   SimCode.ExtObjInfo extObjInfo;
@@ -1076,7 +1077,7 @@ protected
   DoubleEndedList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
 
-  BackendDAE.Variables daeVars, resVars, algVars, auxVars;
+  BackendDAE.Variables daeVars, resVars, algStateVars, auxVars;
   list<BackendDAE.Var> varsLst;
   list<BackendDAE.Equation> eqnsLst;
   BackendDAE.EquationArray daeEqns;
@@ -1085,7 +1086,7 @@ protected
   Option<SimCode.DaeModeData> daeModeData;
   SimCode.DaeModeConfig daeModeConf;
   list<SimCode.SimEqSystem> daeEquations;
-  list<SimCodeVar.SimVar> residualVars, algebraicVars, auxiliaryVars;
+  list<SimCodeVar.SimVar> residualVars, algebraicStateVars, auxiliaryVars;
   list<SimCode.StateSet> stateSets;
 
   tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJac;
@@ -1167,7 +1168,13 @@ algorithm
     if debug then ExecStat.execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := SimCodeUtil.createModelInfo(className, p, inBackendDAE, inInitDAE, functions, {}, numStateSets, fileDir, 0, tempVars);
+    // create dummy system where all original variables are created
+    emptyBDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(
+                                  Util.getOption(inBackendDAE.shared.daeModeData.modelVars))::{},
+                                inBackendDAE.shared);
+    // disable start value calculation, since it fails for some reason
+    Flags.enableDebug(Flags.NO_START_CALC);
+    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, numStateSets, fileDir, 0, tempVars);
 
     //create hash table
     crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
@@ -1196,7 +1203,7 @@ algorithm
 
 
     // create dae SimVars: residual and algebraic
-    // create residual variables, set index and push them SimCode Hash Table
+    // create residual variables, set index and push them SimCode HashTable
     ((_, resVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
     ((residualVars, _)) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     residualVars := SimCodeUtil.rewriteIndex(residualVars, 0);
@@ -1210,15 +1217,14 @@ algorithm
     (auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0);
     crefToSimVarHT:= List.fold(auxiliaryVars,SimCodeUtil.addSimVarToHashTable,crefToSimVarHT);
 
-    // filter states and der states from inBackendDAE.shared.localKnownVars
-    ((_, algVars)) := BackendVariable.traverseBackendDAEVars(inBackendDAE.shared.localKnownVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isVarAlg, BackendVariable.emptyVars()));
-    ((algebraicVars, _)) :=  BackendVariable.traverseBackendDAEVars(algVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
+    // create SimCodeVars for algebraic states
+    algStateVars := BackendVariable.listVar(inBackendDAE.shared.daeModeData.algStateVars);
+    ((algebraicStateVars, _)) :=  BackendVariable.traverseBackendDAEVars(algStateVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
     SimCode.VARINFO(numStateVars=nStates) := modelInfo.varInfo;
-    //auxiliaryVars := SimCodeUtil.rewriteIndex(auxiliaryVars, 2*nStates);
-    //(auxiliaryVars, _) := SimCodeUtil.setVariableIndexHelper(auxiliaryVars, 0);
-    algebraicVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicVars, crefToSimVarHT);
-    (algebraicVars, _) := SimCodeUtil.setVariableIndexHelper(algebraicVars, 2*nStates);
-    crefToSimVarHT:= List.fold(algebraicVars,SimCodeUtil.addSimVarToHashTable,crefToSimVarHT);
+
+    algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
+    (algebraicStateVars, _) := SimCodeUtil.setVariableIndexHelper(algebraicStateVars, 2*nStates);
+    crefToSimVarHT:= List.fold(algebraicStateVars,SimCodeUtil.addSimVarToHashTable,crefToSimVarHT);
 
     // create DAE mode Sparse pattern and TODO: Jacobians
     // sparsity pattern generation
@@ -1226,7 +1232,7 @@ algorithm
     ({symDAESparsPattern}, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({daeModeJac}, crefToSimVarHT, uniqueEqIndex, {"daeMode"}, {});
     daeModeSP := SOME(symDAESparsPattern);
     daeModeConf := SimCode.ALL_EQUATIONS();
-    daeModeData := SOME(SimCode.DAEMODEDATA({daeEquations}, daeModeSP, residualVars, algebraicVars, auxiliaryVars, daeModeConf));
+    daeModeData := SOME(SimCode.DAEMODEDATA({daeEquations}, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
 
     /* This is a *much* better estimate than the guessed number of equations */
     modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex);

@@ -9037,6 +9037,50 @@ algorithm
   comps := Sorting.TarjanTransposed(mT, ass2);
 end causalizeVarBindSystem;
 
+public function traverseEqSystemStrongComponents
+"This function goes through the strong components of a EqSystem and pass
+ the variables and equation with their indexes to the traversing function.
+ It fail if the EqSytem does not have the matching and strong components are
+ empty. It does not change the input EqSystem."
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.EqSystem syst;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA = inTypeA;
+  partial function FuncExpType
+    input list<BackendDAE.Equation> inEqns;
+    input list<BackendDAE.Var> inVars;
+    input list<Integer> varIdxs;
+    input list<Integer> eqnIdxs;
+    input Type_a inA;
+    output Type_a outA;
+  end FuncExpType;
+protected
+  BackendDAE.StrongComponents comps;
+  BackendDAE.Variables varArr;
+  BackendDAE.EquationArray eqnArr;
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Equation> eqns;
+  list<Integer> varIdxs, eqnIdxs;
+  String name;
+algorithm
+  try
+    BackendDAE.EQSYSTEM(matching    = BackendDAE.MATCHING(comps=comps),
+                        orderedVars = varArr,
+                        orderedEqs  = eqnArr) := syst;
+
+    for component in comps loop
+      (vars, varIdxs, eqns, eqnIdxs) := getStrongComponentVarsAndEquations(component, varArr, eqnArr);
+      outTypeA := func(eqns, vars, varIdxs, eqnIdxs, outTypeA);
+    end for;
+  else
+    (_, _, name) := System.dladdr(func);
+    Error.addInternalError("BackendDAEUtil.traverseEqSystemStrongComponents failed
+                            with function:\n" +  name + "\n", sourceInfo());
+    fail();
+  end try;
+end traverseEqSystemStrongComponents;
+
 public function getStrongComponentsVarsAndEquations"gets the variables and and the equations from all sccs.
 author: Waurich TUD 09-2015"
   input BackendDAE.StrongComponents comps;
