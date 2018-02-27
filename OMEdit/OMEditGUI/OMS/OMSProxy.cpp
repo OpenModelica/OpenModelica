@@ -268,7 +268,7 @@ bool OMSProxy::getComponents(QString cref, oms_component_t*** pComponents)
  * \param pGeometry
  * \return
  */
-bool OMSProxy::getElementGeometry(QString cref, const oms_element_geometry_t** pGeometry)
+bool OMSProxy::getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry)
 {
   oms_status_t status = oms2_getElementGeometry(cref.toStdString().c_str(), pGeometry);
   return statusToBool(status);
@@ -281,7 +281,7 @@ bool OMSProxy::getElementGeometry(QString cref, const oms_element_geometry_t** p
  * \param pGeometry
  * \return
  */
-bool OMSProxy::setElementGeometry(QString cref, const oms_element_geometry_t* pGeometry)
+bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
   oms_status_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
   return statusToBool(status);

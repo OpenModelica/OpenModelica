@@ -2304,6 +2304,10 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
         if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
           pRootComponent->showSubModelAttributes();
           return;
+        } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+          removeCurrentConnection();
+          pRootComponent->showOMSModelAttributes();
+          return;
         } else {
           removeCurrentConnection();
           removeCurrentTransition();
@@ -5351,7 +5355,7 @@ void ModelWidget::drawOMSModelComponents()
 {
   for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
     LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-    const oms_element_geometry_t *pElementGeometry;
+    const ssd_element_geometry_t *pElementGeometry;
     if (OMSProxy::instance()->getElementGeometry(pChildLibraryTreeItem->getNameStructure(), &pElementGeometry)) {
       // check if we have zero width and height
       double x1, y1, x2, y2;

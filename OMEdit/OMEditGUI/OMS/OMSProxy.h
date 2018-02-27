@@ -65,8 +65,8 @@ public:
   bool saveModel(QString filename, QString ident);
   bool getComponentType(QString ident, oms_component_type_t* pType);
   bool getComponents(QString cref, oms_component_t*** pComponents);
-  bool getElementGeometry(QString cref, const oms_element_geometry_t** pGeometry);
-  bool setElementGeometry(QString cref, const oms_element_geometry_t* pGeometry);
+  bool getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry);
+  bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
 };
 
 #endif // OMSPROXY_H

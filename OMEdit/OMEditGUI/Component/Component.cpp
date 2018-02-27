@@ -2079,7 +2079,7 @@ void Component::updatePlacementAnnotation()
                                                         getTransformationOrigin(), getTransformationExtent(),
                                                         QString::number(mTransformation.getRotateAngle()));
   } else if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::OMS) {
-    oms_element_geometry_t elementGeometry;
+    ssd_element_geometry_t elementGeometry;
     QPointF extent1 = mTransformation.getExtent1();
     QPointF extent2 = mTransformation.getExtent2();
     if (mTransformation.hasOrigin()) {
@@ -2738,6 +2738,16 @@ void Component::showSubModelAttributes()
 {
   CompositeModelSubModelAttributes *pCompositeModelSubModelAttributes = new CompositeModelSubModelAttributes(this, MainWindow::instance());
   pCompositeModelSubModelAttributes->exec();
+}
+
+/*!
+ * \brief Component::showOMSModelAttributes
+ * Slot that opens up the CompositeModelSubModelAttributes Dialog.
+ */
+void Component::showOMSModelAttributes()
+{
+  OMSSubModelAttributes *pOMSSubModelAttributes = new OMSSubModelAttributes(this, MainWindow::instance());
+  pOMSSubModelAttributes->exec();
 }
 
 /*!

@@ -1847,3 +1847,76 @@ void CompositeModelConnectionAttributes::createCompositeModelConnection()
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }
+
+/*!
+ * \class OMSSubModelAttributes
+ * \brief A dialog for displaying OMSSubModel attributes.
+ */
+/*!
+ * \brief OMSSubModelAttributes::OMSSubModelAttributes
+ * \param pComponent - pointer to Component
+ * \param pParent
+ */
+OMSSubModelAttributes::OMSSubModelAttributes(Component *pComponent, QWidget *pParent)
+  : QDialog(pParent)
+{
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("SubModel Attributes")));
+  setAttribute(Qt::WA_DeleteOnClose);
+  mpComponent = pComponent;
+  // Create the name label and text box
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit(mpComponent->getName());
+  mpNameTextBox->setDisabled(true);
+  // Model parameters
+  mpParametersLabel = new Label("Parameters:");
+  mpParametersLayout = new QGridLayout;
+  mpParametersLayout->addWidget(mpParametersLabel, 0, 0, 1, 2);
+  mpParametersScrollWidget = new QWidget;
+  mpParametersScrollWidget->setLayout(mpParametersLayout);
+  mpParametersScrollArea = new QScrollArea;
+  mpParametersScrollArea->setWidgetResizable(true);
+  mpParametersScrollArea->setWidget(mpParametersScrollWidget);
+  mParameterLabels.clear();
+  mParameterLineEdits.clear();
+  int index = 0;
+  if (mpComponent->getLibraryTreeItem()->getOMSComponent()) {
+    oms_signal_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSComponent()->interfaces;
+    for (int i = 0 ; pInterfaces[i] ; i++) {
+      if (pInterfaces[i]->causality == oms_causality_parameter) {
+        index++;
+        QString name = StringHandler::getLastWordAfterDot(pInterfaces[i]->name);
+        name = name.split(':', QString::SkipEmptyParts).last();
+        mParameterLabels.append(new Label(name));
+        mParameterLineEdits.append(new QLineEdit);
+        mpParametersLayout->addWidget(mParameterLabels.last(), index, 0);
+        mpParametersLayout->addWidget(mParameterLineEdits.last(), index, 1);
+      }
+    }
+  }
+  mpParametersScrollWidget->setVisible(index > 0);
+  mpParametersLabel->setVisible(index > 0);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateSubModelParameters()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  // Create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // Create a layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpParametersScrollArea, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void OMSSubModelAttributes::updateSubModelParameters()
+{
+
+}
