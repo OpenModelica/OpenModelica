@@ -1224,6 +1224,8 @@ void MainWindow::showSearchBrowser()
   mpSearchDockWidget->show();
   mpSearchWidget->getSearchStringComboBox()->lineEdit()->selectAll();
   mpSearchWidget->getSearchStringComboBox()->lineEdit()->setFocus(Qt::ActiveWindowFocusReason);
+  mpSearchWidget->getSearchStackedWidget()->setCurrentIndex(0);
+  mpSearchWidget->getSearchHistoryCombobox()->setCurrentIndex(0);
 }
 
 //! Opens the new model widget.
