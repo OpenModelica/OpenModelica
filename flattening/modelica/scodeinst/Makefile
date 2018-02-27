@@ -103,6 +103,7 @@ CompAsFunc.mo \
 ComponentAsTypeError.mo \
 ComponentAttributes1.mo \
 ComponentAttributes2.mo \
+Concatenation.mo \
 cond4.mo \
 Condition1.mo \
 Condition2.mo \
