@@ -436,12 +436,14 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
     match varKind
         case STATE()
         case STATE_DER()
-        case DAE_RESIDUAL_VAR()
+        case DAE_RESIDUAL_VAR() then
+          let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
+          daeExpCrefRhsArrayBox2(arrdata, ty, false, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
         case JAC_VAR()
         case JAC_DIFF_VAR()
         case SEED_VAR() then
           let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
-          daeExpCrefRhsArrayBox2(arrdata, ty, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+          daeExpCrefRhsArrayBox2(arrdata, ty, true, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
         else
           match context
           case FUNCTION_CONTEXT(__) then ''
@@ -469,31 +471,29 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
 end daeExpCrefRhsArrayBox;
 
 
-template daeExpCrefRhsArrayBox2(Text var,DAE.Type type, Context context, Text &preExp /*BUFP*/,
-                               Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace) ::=
- match type
-  case t as T_ARRAY(ty=aty,dims=dims)        then
-
+template daeExpCrefRhsArrayBox2(Text arrayData, DAE.Type ty, Boolean isRowMajorData, Context context, Text &preExp /*BUFP*/,
+                                Text &varDecls /*BUFP*/, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
+::=
+ match ty
+  case t as T_ARRAY(ty=aty,dims=dims) then
     let dimstr = checkDimension(dims)
-
-    let arraytype =   match dimstr
-      case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(type)%>>'
-      else   'StatArrayDim<%listLength(dims)%><<%expTypeShort(type)%>,<%dimstr%>> /*testarray3*/'
+    let arrayType = match dimstr
+      case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>'
+      else 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%dimstr%>>'
       end match
     let &tmpdecl = buffer "" /*BUFD*/
-    let arrayVar = tempDecl(arraytype, &tmpdecl /*BUFD*/)
-    let boostExtents = '<%arraytype%><%arrayVar%>;'
-    //let size = (dims |> dim => dimension(dim) ;separator="+")
-   // let arrayassign =  '<%arrayVar%>.assign(&<%var%>,&<%var%>+(<%size%>));<%\n%>'
-    let arrayassign =  '<%arrayVar%>.assign(&<%var%>);<%\n%>'
+    let arrayVar = tempDecl(arrayType, &tmpdecl /*BUFD*/)
+    let arrayAssign = if isRowMajorData then
+      'assignRowMajorData(&<%arrayData%>, <%arrayVar%>)' else
+      '<%arrayVar%>.assign(&<%arrayData%>)'
     let &preExp +=
       <<
-      <%boostExtents%>
-      <%arrayassign%>
+      <%arrayType%> <%arrayVar%>;
+      <%arrayAssign%>;<%\n%>
       >>
     arrayVar
   else
-    var
+    arrayData
 end daeExpCrefRhsArrayBox2;
 
 template daeExpRecordCrefRhs(DAE.Type ty, ComponentRef cr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
