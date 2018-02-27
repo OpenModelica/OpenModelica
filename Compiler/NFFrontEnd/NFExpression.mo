@@ -35,6 +35,7 @@ protected
   import Absyn;
   import List;
 
+  import Builtin = NFBuiltin;
   import Expression = NFExpression;
   import Function = NFFunction;
   import RangeIterator = NFRangeIterator;
@@ -87,6 +88,11 @@ public
     Type ty;
     list<Expression> elements;
   end ARRAY;
+
+  record MATRIX "The array concatentation operator [a,b; c,d]; this should be removed during type-checking"
+    // Does not have a type since we only keep this operator before type-checking
+    list<list<Expression>> elements;
+  end MATRIX;
 
   record RANGE
     Type ty;
@@ -716,6 +722,7 @@ public
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
       case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
+      case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toString(e) for e in el), ", ") for el in exp.elements), "; ") + "]";
 
       case RANGE() then operandString(exp.start, exp, false) +
                         (
@@ -2746,6 +2753,18 @@ public
 
     matrix := ARRAY(Type.liftArrayLeft(row_ty, Dimension.INTEGER(n)), rows);
   end makeIdentityMatrix;
+
+  function promote
+    input output Expression e;
+    input output Type ty;
+    input Integer n;
+  protected
+    list<Dimension> dims;
+  algorithm
+    dims := list(Dimension.INTEGER(1) for i in Type.dimensionCount(ty):n-1);
+    ty := Type.liftArrayRightList(ty, dims);
+    e := CALL(Call.makeBuiltinCall2(NFBuiltinFuncs.PROMOTE, {e, INTEGER(n)}, ty));
+  end promote;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

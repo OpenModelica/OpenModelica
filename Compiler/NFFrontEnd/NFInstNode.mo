@@ -369,7 +369,7 @@ uniontype InstNode
       case INNER_OUTER_NODE() then name(node.innerNode);
       // For bug catching, these names should never be used.
       case REF_NODE() then "$REF[" + String(node.index) + "]";
-      case NAME_NODE() then "$NAME[" + node.name + "]";
+      case NAME_NODE() then node.name;
       case IMPLICIT_SCOPE() then "$IMPLICIT";
       case EMPTY_NODE() then "$EMPTY";
     end match;

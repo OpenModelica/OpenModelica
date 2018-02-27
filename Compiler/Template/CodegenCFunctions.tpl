@@ -5790,7 +5790,8 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
     let var2 = daeExp(n, context, &preExp, &varDecls, &auxFunction)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls)
-    let &preExp += 'promote_alloc_<%arr_tp_str%>(&<%var1%>, <%var2%>, &<%tvar%>);<%\n%>'
+    /* Runtime gets number of dimensions to promote; Modelica has the total number of dimensions that the promoted result should have */
+    let &preExp += 'promote_alloc_<%arr_tp_str%>(&<%var1%>, <%var2%> - ndims_base_array(&<%var1%>), &<%tvar%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="transpose"), expLst={A}) then

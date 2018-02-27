@@ -161,5 +161,13 @@ constant Function IN_STREAM = Function.FUNCTION(Path.IDENT("inStream"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
+constant Function PROMOTE = Function.FUNCTION(Path.IDENT("promote"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+
+constant Function CAT = Function.FUNCTION(Path.IDENT("cat"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

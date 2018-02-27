@@ -1499,6 +1499,7 @@ algorithm
       Option<Expression> oe;
       Operator op;
       list<Expression> expl;
+      list<list<Expression>> expll;
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
     case Absyn.Exp.REAL() then Expression.REAL(stringReal(absynExp.value));
@@ -1516,11 +1517,9 @@ algorithm
 
     case Absyn.Exp.MATRIX()
       algorithm
-        expl := list(Expression.ARRAY(
-            Type.UNKNOWN(), list(instExp(e, scope, info) for e in el))
-          for el in absynExp.matrix);
+        expll := list(list(instExp(e, scope, info) for e in el) for el in absynExp.matrix);
       then
-        Expression.ARRAY(Type.UNKNOWN(), expl);
+        Expression.MATRIX(expll);
 
     case Absyn.Exp.RANGE()
       algorithm

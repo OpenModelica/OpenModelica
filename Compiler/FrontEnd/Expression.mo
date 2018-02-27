@@ -10778,7 +10778,7 @@ algorithm
 
         // Use the constructed types to promote the expression.
         is_array_ty = Types.isArray(inType);
-        exp = promoteExp2(inExp, is_array_ty, dims_to_add, tys);
+        exp = promoteExp2(inExp, is_array_ty, inDims, tys);
       then
         (exp, res_ty);
 

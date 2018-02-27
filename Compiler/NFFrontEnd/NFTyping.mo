@@ -1039,6 +1039,7 @@ algorithm
         (exp, exp.ty, Variability.CONSTANT);
 
     case Expression.ARRAY() then typeArray(exp.elements, origin, info);
+    case Expression.MATRIX() then typeMatrix(exp.elements, origin, info);
     case Expression.RANGE() then typeRange(exp, origin, info);
     case Expression.TUPLE() then typeTuple(exp.elements, origin, info);
     case Expression.SIZE() then typeSize(exp, origin, info);
@@ -1122,7 +1123,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown expression", sourceInfo());
+        Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());
       then
         fail();
 
@@ -1511,6 +1512,99 @@ algorithm
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
   arrayExp := Expression.ARRAY(arrayType, expl2);
 end typeArray;
+
+function typeMatrix "The array concatenation operator"
+  input list<list<Expression>> elements;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+  output Expression arrayExp;
+  output Type arrayType = Type.UNKNOWN();
+  output Variability variability = Variability.CONSTANT;
+protected
+  Expression exp;
+  list<Expression> expl = {}, res = {};
+  Variability var;
+  Type ty = Type.UNKNOWN();
+  list<Type> tys = {}, resTys = {};
+  Integer n = 2;
+algorithm
+  if listLength(elements) > 1 then
+    for el in elements loop
+      (exp, ty, var) := typeMatrixComma(el, origin, info);
+      variability := Prefixes.variabilityMax(var, variability);
+      expl := exp :: expl;
+      tys := ty :: tys;
+      n := max(n, Type.dimensionCount(ty));
+    end for;
+    for e in expl loop
+      ty::tys := tys;
+      (e,ty) := Expression.promote(e, ty, n);
+      resTys := ty::resTys;
+      res := e::res;
+    end for;
+    (arrayExp, arrayType) := Call.makeBuiltinCat(1, res, resTys, info);
+  else
+    (arrayExp, arrayType, variability) := typeMatrixComma(listHead(elements), origin, info);
+    if Type.dimensionCount(arrayType) < 2 then
+      (arrayExp, arrayType) := Expression.promote(arrayExp, arrayType, n);
+    end if;
+  end if;
+end typeMatrix;
+
+function typeMatrixComma
+  input list<Expression> elements;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+  output Expression arrayExp;
+  output Type arrayType;
+  output Variability variability = Variability.CONSTANT;
+protected
+  Expression exp;
+  list<Expression> expl = {}, res = {};
+  Variability var;
+  Type ty = Type.UNKNOWN(), ty1, ty2, ty3;
+  list<Type> tys = {}, tys2;
+  Integer n = 2, pos;
+  TypeCheck.MatchKind mk;
+algorithm
+  Error.assertion(not listEmpty(elements), getInstanceName() + " expected non-empty arguments", sourceInfo());
+  if listLength(elements) > 1 then
+    for e in elements loop
+      (exp, ty1, ) := typeExp(e, origin, info);
+      expl := exp :: expl;
+      if Type.isEqual(ty, Type.UNKNOWN()) then
+        ty := ty1;
+      else
+        (,,ty2,mk) := TypeCheck.matchExpressions(Expression.INTEGER(0), Type.arrayElementType(ty1), Expression.INTEGER(0), Type.arrayElementType(ty));
+        if TypeCheck.isCompatibleMatch(mk) then
+          ty := ty2;
+        end if;
+      end if;
+      tys := ty1 :: tys;
+      n := max(n, Type.dimensionCount(ty));
+    end for;
+    tys2 := {};
+    res := {};
+    pos := n+1;
+    for e in expl loop
+      ty1::tys := tys;
+      pos := pos-1;
+      if Type.dimensionCount(ty1) <> n then
+        (e,ty1) := Expression.promote(e, ty1, n);
+      end if;
+      ty2 := Type.setArrayElementType(ty1, ty);
+      (e, ty3, mk) := TypeCheck.matchTypes(ty1, ty2, e);
+      if TypeCheck.isIncompatibleMatch(mk) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "matrix constructor ", "arg", Expression.toString(e), Type.toString(ty1), Type.toString(ty2)}, info);
+      end if;
+      res := e :: res;
+      tys2 := ty3 :: tys2;
+    end for;
+    (arrayExp, arrayType) := Call.makeBuiltinCat(2, res, tys2, info);
+  else
+    (arrayExp, arrayType, variability) := typeExp(listHead(elements), origin, info);
+  end if;
+end typeMatrixComma;
 
 function typeRange
   input output Expression rangeExp;

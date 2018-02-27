@@ -32,6 +32,8 @@
 encapsulated uniontype NFDimension
 protected
   import Dimension = NFDimension;
+  import Operator = NFOperator;
+  import Prefixes = NFPrefixes;
 
 public
   import Absyn.{Exp, Path, Subscript};
@@ -121,6 +123,21 @@ public
       case UNKNOWN() then DAE.DIM_UNKNOWN();
     end match;
   end toDAE;
+
+  function add
+    input Dimension a, b;
+    output Dimension c;
+  algorithm
+    c := match (a, b)
+      case (UNKNOWN(),_) then UNKNOWN();
+      case (_,UNKNOWN()) then UNKNOWN();
+      case (INTEGER(),INTEGER()) then INTEGER(a.size+b.size);
+      case (INTEGER(),EXP()) then EXP(Expression.BINARY(b.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(a.size)), b.var);
+      case (EXP(),INTEGER()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(b.size)), a.var);
+      case (EXP(),EXP()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), b.exp), Prefixes.variabilityMax(a.var, b.var));
+      else UNKNOWN();
+    end match;
+  end add;
 
   function size
     input Dimension dim;

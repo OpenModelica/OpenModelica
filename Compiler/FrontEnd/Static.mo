@@ -2823,7 +2823,7 @@ protected
   DAE.Properties prop;
   list<DAE.Properties> rest_props;
   DAE.Type ty, sty;
-  DAE.Dimension dim2;
+  DAE.Dimension dim1, dim2;
 algorithm
   try
     exp :: rest_expl := inExpl;
@@ -2839,7 +2839,10 @@ algorithm
 
       (exp, prop as DAE.PROP(type_ = ty)) := promoteExp(exp, prop, inDims);
       accum_expl := exp :: accum_expl;
-      _ :: dim2 :: _ := Types.getDimensions(ty);
+      dim1 :: dim2 :: _ := Types.getDimensions(ty);
+      if not Expression.dimensionsEqual(dim1, outDim1) then
+        Error.addSourceMessageAndFail(Error.COMMA_OPERATOR_DIFFERENT_SIZES, {ExpressionDump.printExpStr(listHead(inExpl)), ExpressionDump.dimensionString(outDim1), ExpressionDump.printExpStr(exp), ExpressionDump.dimensionString(dim1)}, inInfo);
+      end if;
       // Comma between matrices => concatenation along second dimension.
       outDim2 := Expression.dimensionsAdd(dim2, outDim2);
       outProperties := Types.matchWithPromote(prop, outProperties, inHaveReal);

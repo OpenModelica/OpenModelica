@@ -832,6 +832,7 @@ uniontype Function
           // Can have variable number of arguments.
           case "array" then true;
           case "cardinality" then true;
+          case "cat" then true;
           // Function should not be used in function context.
           // argument should be a cref?
           case "change" then true;

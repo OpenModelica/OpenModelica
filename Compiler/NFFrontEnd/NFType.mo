@@ -135,6 +135,22 @@ public
     end match;
   end liftArrayLeftList;
 
+  function liftArrayRightList
+    "Adds array dimensions to a type on the left side, e.g.
+       listArrayLeft(Real[2, 3], [4, 5]) => Real[2, 3, 4, 5]."
+    input output Type ty;
+    input list<Dimension> dims;
+  algorithm
+    if listEmpty(dims) then
+      return;
+    end if;
+
+    ty := match ty
+      case ARRAY() then ARRAY(ty.elementType, listAppend(ty.dimensions, dims));
+      else ARRAY(ty, dims);
+    end match;
+  end liftArrayRightList;
+
   function unliftArray
     input output Type ty;
   protected

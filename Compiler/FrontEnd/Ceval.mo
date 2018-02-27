@@ -1819,12 +1819,13 @@ algorithm
       Boolean impl;
       Absyn.Msg msg;
       FCore.Cache cache;
+      list<Integer> dims;
 
     case (cache,env,{arr,dim},impl,msg,_)
       equation
-        (cache,arr_val) = ceval(cache,env, arr, impl, msg,numIter+1);
+        (cache,arr_val as Values.ARRAY(dimLst=dims)) = ceval(cache,env, arr, impl, msg,numIter+1);
         (cache,Values.INTEGER(dim_val)) = ceval(cache,env, dim, impl, msg,numIter+1);
-        res = cevalBuiltinPromote2(arr_val, dim_val);
+        res = cevalBuiltinPromote2(arr_val, dim_val - listLength(dims));
       then
         (cache,res);
   end match;
@@ -1847,8 +1848,13 @@ algorithm
       equation
         n_1 = n - 1;
         (vs_1 as (Values.ARRAY(dimLst = il)::_)) = List.map1(vs, cevalBuiltinPromote2, n_1);
-      then
-        Values.ARRAY(vs_1,i::il);
+      then Values.ARRAY(vs_1,i::il);
+    case (v,n)
+      equation
+        failure(Values.ARRAY() = v);
+        n_1 = n - 1;
+        (v as Values.ARRAY(dimLst = il)) = cevalBuiltinPromote2(v, n_1);
+      then Values.ARRAY({v},1::il);
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);

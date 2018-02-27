@@ -370,6 +370,7 @@ uniontype Call
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
       case "String" then typeStringCall(call, origin, info);
       case "cardinality" then typeCardinalityCall(call, origin, info);
+      case "cat" then typeCatCall(call, origin, info);
       case "change" then typeChangeCall(call, origin, info);
       case "der" then typeDerCall(call, origin, info);
       case "diagonal" then typeDiagonalCall(call, origin, info);
@@ -394,7 +395,7 @@ uniontype Call
       case "zeros" then typeZerosOnesCall(call, origin, info);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unhandled builtin function", sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
         then
           fail();
     end match;
@@ -434,6 +435,10 @@ uniontype Call
           variability := call.var;
         then
           ();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
+        then fail();
     end match;
   end typeCall;
 
@@ -520,6 +525,7 @@ uniontype Call
   protected
     InstNode fn_node;
     Boolean typed, special;
+    String name;
   algorithm
     functions := match functionRef
       case ComponentRef.CREF(node = fn_node)
@@ -860,6 +866,138 @@ uniontype Call
     end match;
   end setType;
 
+  function makeBuiltinCat
+    input Integer n;
+    input list<Expression> args;
+    input list<Type> tys;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+  protected
+    Expression arg2;
+    list<Expression> args2 = {}, res = {};
+    list<Type> tys2 = tys, tys3;
+    list<list<Dimension>> dimsLst = {};
+    list<Dimension> dims;
+    Type resTy = Type.UNKNOWN(), ty1, ty2, resTyToMatch;
+    TypeCheck.MatchKind mk;
+    Integer maxn, pos;
+    Dimension sumDim;
+  algorithm
+    Error.assertion(listLength(args)==listLength(tys) and listLength(args)>=1, getInstanceName() + " got wrong input sizes", sourceInfo());
+
+    // First: Get the number of dimensions and the element type
+
+    for arg in args loop
+      ty::tys2 := tys2;
+      dimsLst := Type.arrayDims(ty) :: dimsLst;
+      if Type.isEqual(resTy, Type.UNKNOWN()) then
+        resTy := Type.arrayElementType(ty);
+      else
+        (,, ty1, mk) := TypeCheck.matchExpressions(Expression.INTEGER(0), Type.arrayElementType(ty), Expression.INTEGER(0), resTy);
+        if TypeCheck.isCompatibleMatch(mk) then
+          resTy := ty1;
+        end if;
+      end if;
+    end for;
+
+    maxn := max(listLength(d) for d in dimsLst);
+    if maxn <> min(listLength(d) for d in dimsLst) then
+      Error.addSourceMessageAndFail(Error.NF_DIFFERENT_NUM_DIM_IN_ARGUMENTS, {stringDelimitList(list(String(listLength(d)) for d in dimsLst), ", "), "cat"}, info);
+    end if;
+    if n < 1 or n > maxn then
+      Error.addSourceMessageAndFail(Error.NF_CAT_WRONG_DIMENSION, {String(maxn), String(n)}, info);
+    end if;
+
+    tys2 := tys;
+    tys3 := {};
+    args2 := {};
+    pos := listLength(args)+2;
+
+    // Second: Try to match the element type of all the arguments
+
+    for arg in args loop
+      ty::tys2 := tys2;
+      pos := pos-1;
+      ty2 := Type.setArrayElementType(ty, resTy);
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg);
+      if TypeCheck.isIncompatibleMatch(mk) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(ty2)}, info);
+      end if;
+      args2 := arg2 :: args2;
+      tys3 := ty1 :: tys3;
+    end for;
+
+    // Third: We now have matched the element types of all arguments
+    //        Try to match the dimensions as well
+
+    resTy := Type.UNKNOWN();
+    tys2 := tys3;
+
+    for arg in args2 loop
+      ty::tys2 := tys2;
+
+      if Type.isEqual(resTy, Type.UNKNOWN()) then
+        resTy := ty;
+      else
+        (,, ty1, mk) := TypeCheck.matchExpressions(Expression.INTEGER(0), ty, Expression.INTEGER(0), resTy);
+        if TypeCheck.isCompatibleMatch(mk) then
+          resTy := ty1;
+        end if;
+      end if;
+    end for;
+
+    // Got the supertype of the dimensions; trying to match all arguments
+    // with the concatenated dimension set to unknown.
+
+    dims := Type.arrayDims(resTy);
+    resTyToMatch := Type.ARRAY(Type.arrayElementType(resTy), List.set(dims, n, Dimension.UNKNOWN()));
+    dims := list(listGet(lst, n) for lst in dimsLst);
+    sumDim := Dimension.INTEGER(0);
+    for d in dims loop
+      // Create the concatenated dimension
+      sumDim := Dimension.add(sumDim, d);
+    end for;
+    resTy := Type.ARRAY(Type.arrayElementType(resTy), List.set(Type.arrayDims(resTy), n, sumDim));
+    tys2 := tys3;
+    tys3 := {};
+    res := {};
+    pos := listLength(args)+2;
+
+    for arg in args2 loop
+      ty::tys2 := tys2;
+      pos := pos-1;
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, resTyToMatch, arg, allowUnknown=true);
+      if TypeCheck.isIncompatibleMatch(mk) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(resTyToMatch)}, info);
+      end if;
+      res := arg2 :: res;
+      tys3 := ty1 :: tys3;
+    end for;
+
+    // We have all except dimension n having equal sizes; with matching types
+
+    ty := resTy;
+    callExp := Expression.CALL(makeBuiltinCall2(NFBuiltinFuncs.CAT, Expression.INTEGER(n)::res, resTy));
+  end makeBuiltinCat;
+
+protected
+  function matchFunction
+    input Function func;
+    input list<TypedArg> args;
+    input list<TypedNamedArg> named_args;
+    input SourceInfo info;
+    output list<TypedArg> out_args;
+    output Boolean matched;
+    output FunctionMatchKind matchKind;
+  algorithm
+    (out_args, matched) := Function.fillArgs(args, named_args, func, info);
+    if matched then
+      (out_args, matched, matchKind) := Function.matchArgs(func, out_args, info);
+    end if;
+  end matchFunction;
+
+  public
   function arguments
     input Call call;
     output list<Expression> arguments;
@@ -1109,7 +1247,6 @@ uniontype Call
         DAE.NO_INLINE(), DAE.NO_TAIL()));
   end makeBuiltinCall;
 
-protected
   function makeBuiltinCall2
     "Creates a call to a builtin function, given a Function, list of
      argument expressions and a return type. Used for builtin functions defined with no return type."
@@ -1199,6 +1336,7 @@ protected
     callExp := Expression.CALL(argtycall);
   end typeStringCall;
 
+protected
   function typeDiscreteCall
     "Types a function call that can be typed normally, but which always has
      discrete variability regardless of the variability of the arguments."
@@ -1833,6 +1971,61 @@ protected
     {fn} := typeCachedFunctions(fn_ref);
     callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeMatrixCall;
+
+  function typeCatCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability variability;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args, res;
+    list<NamedArg> named_args;
+    list<Type> tys;
+    Expression arg;
+    Variability var;
+    TypeCheck.MatchKind mk;
+    Function fn;
+    Integer n;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {ComponentRef.toString(fn_ref), Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) < 2 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), "cat(Integer, Any[:,:], ...) => Any[:]"}, info);
+    end if;
+
+    arg::args := args;
+
+    (arg, ty, variability) := Typing.typeExp(arg, origin, info);
+    (arg, ty, mk) := TypeCheck.matchTypes(ty, Type.INTEGER(), arg);
+
+    if variability > Variability.PARAMETER then
+      Error.addSourceMessageAndFail(Error.NF_CAT_FIRST_ARG_EVAL, {Expression.toString(arg), Prefixes.variabilityString(variability)}, info);
+    end if;
+    arg := Ceval.evalExp(arg, Ceval.EvalTarget.GENERIC(info));
+    Expression.INTEGER(n) := SimplifyExp.simplifyExp(arg);
+
+    res := {};
+    tys := {};
+
+    for a in args loop
+      (arg, ty, var) := Typing.typeExp(a, origin, info);
+      variability := Prefixes.variabilityMax(var, variability);
+      res := arg :: res;
+      tys := ty :: tys;
+    end for;
+
+    (callExp, ty) := makeBuiltinCat(n, listReverse(res), listReverse(tys), info);
+
+  end typeCatCall;
 
   function typeSymmetricCall
     input Call call;

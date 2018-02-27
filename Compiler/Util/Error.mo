@@ -945,6 +945,14 @@ public constant Message NF_VECTOR_INVALID_DIMENSIONS = MESSAGE(585, TRANSLATION(
   Util.gettext("Invalid dimensions %s in %s, no more than one dimension may have size > 1."));
 public constant Message NF_ARRAY_TYPE_MISMATCH = MESSAGE(586, TRANSLATION(), ERROR(),
   Util.gettext("Array types mismatch. Argument %s (%s) has type %s whereas previous arguments have type %s."));
+public constant Message NF_DIFFERENT_NUM_DIM_IN_ARGUMENTS = MESSAGE(587, TRANSLATION(), ERROR(),
+  Util.gettext("Different number of dimensions (%s) in arguments to %s."));
+public constant Message NF_CAT_WRONG_DIMENSION = MESSAGE(588, TRANSLATION(), ERROR(),
+  Util.gettext("The first argument of cat characterizes an existing dimension in the other arguments (1..%s), but got dimension %s."));
+public constant Message NF_CAT_FIRST_ARG_EVAL = MESSAGE(589, TRANSLATION(), ERROR(),
+  Util.gettext("The first argument of cat must be possible to evaluate during compile-time. Expression %s has variability %s."));
+public constant Message COMMA_OPERATOR_DIFFERENT_SIZES = MESSAGE(590, TRANSLATION(), ERROR(),
+  Util.gettext("Arguments of concatenation comma operator have different sizes for the first dimension: %s has dimension %s and %s has dimension %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
