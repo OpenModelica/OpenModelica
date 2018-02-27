@@ -3,6 +3,7 @@ TEST=../../../rtest -v
 TESTFILES=\
 ABCDsystem.mo \
 AdvancedDimensions.mo \
+AppendElement.mo \
 Array10.mo \
 Array11.mo \
 Array12.mo \
@@ -160,7 +161,6 @@ XPowers3.mo \
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
 FAILINGTESTFILES=\
-AppendElement.mo \
 Array5.mo \
 Array6.mo \
 ArraySlice.mo \
