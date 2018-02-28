@@ -3525,7 +3525,7 @@ void ModelWidget::createModelWidgetComponents()
       // only get the components and connectoi if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
         drawOMSModelComponents();
-        //getCompositeModelConnections();
+        drawOMSModelConnections();
       }
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -5380,6 +5380,97 @@ void ModelWidget::drawOMSModelComponents()
       pComponentInfo->setClassName(pChildLibraryTreeItem->getNameStructure());
       mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pChildLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
                                                 false, true);
+    }
+  }
+}
+
+/*!
+ * \brief ModelWidget::drawOMSModelConnections
+ * Gets the OMSimulator model connections and draws them.
+ */
+void ModelWidget::drawOMSModelConnections()
+{
+  MessagesWidget *pMessagesWidget = MessagesWidget::instance();
+  oms_connection_t** pConnections = NULL;
+  if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
+    for (int i = 0 ; pConnections[i] ; i++) {
+      // get start submodel
+      QStringList startConnectionList = StringHandler::getLastWordAfterDot(pConnections[i]->from).split(':', QString::SkipEmptyParts);
+      if (startConnectionList.size() < 2) {
+        continue;
+      }
+      Component *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
+      if (!pStartSubModelComponent) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                   .arg(startConnectionList.at(0)).arg(pConnections[i]->from),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        continue;
+      }
+      // get start interface point
+      Component *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
+      if (!pStartInterfacePointComponent) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                   .arg(startConnectionList.at(1)).arg(pConnections[i]->from),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        continue;
+      }
+      // get end submodel
+      QStringList endConnectionList = StringHandler::getLastWordAfterDot(pConnections[i]->to).split(':', QString::SkipEmptyParts);
+      if (endConnectionList.size() < 2) {
+        continue;
+      }
+      Component *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
+      if (!pEndSubModelComponent) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                   .arg(endConnectionList.at(0)).arg(pConnections[i]->to),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        continue;
+      }
+      // get end interface point
+      Component *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
+      if (!pEndInterfacePointComponent) {
+        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                   .arg(endConnectionList.at(1)).arg(pConnections[i]->to),
+                                                   Helper::scriptingKind, Helper::errorLevel));
+        continue;
+      }
+      // default connection annotation
+      QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
+      QStringList shapesList;
+      const ssd_connection_geometry_t *pConnectionGeometry;
+      QString point = QString("{%1,%2}");
+      QStringList points;
+      if (OMSProxy::instance()->getConnectionGeometry(pConnections[i]->from, pConnections[i]->to, &pConnectionGeometry)) {
+        for (unsigned int i = 0 ; i < pConnectionGeometry->n ; i++) {
+          points.append(point.arg(pConnectionGeometry->pointsX[i]).arg(pConnectionGeometry->pointsY[i]));
+        }
+      } else {
+        QPointF startPoint = pStartInterfacePointComponent->mapToScene(pStartInterfacePointComponent->boundingRect().center());
+        points.append(point.arg(startPoint.x()).arg(startPoint.y()));
+        QPointF endPoint = pEndInterfacePointComponent->mapToScene(pEndInterfacePointComponent->boundingRect().center());
+        points.append(point.arg(endPoint.x()).arg(endPoint.y()));
+      }
+      QString pointsString = QString("{%1}").arg(points.join(","));
+      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+      // Now parse the shapes available in list
+      QString lineShape = "";
+      foreach (QString shape, shapesList) {
+        if (shape.startsWith("Line")) {
+          lineShape = shape.mid(QString("Line").length());
+          lineShape = StringHandler::removeFirstLastParentheses(lineShape);
+          break;  // break the loop once we have got the line annotation.
+        }
+      }
+      LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartInterfacePointComponent, pEndInterfacePointComponent,
+                                                                     mpDiagramGraphicsView);
+      pConnectionLineAnnotation->setStartComponentName(pConnections[i]->from);
+      pConnectionLineAnnotation->setEndComponentName(pConnections[i]->to);
+
+      mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
     }
   }
 }

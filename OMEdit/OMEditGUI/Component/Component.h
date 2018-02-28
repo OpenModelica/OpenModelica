@@ -122,8 +122,8 @@ public:
   int getDimensions() const {return mDimensions;}
   void setTLMCausality(QString causality) {mTLMCausality = causality;}
   QString getTLMCausality() const {return mTLMCausality;}
-  void setOMSCausality(oms_causality_t causality) {mOMSCausality = causality;}
-  oms_causality_t getOMSCausality() const {return mOMSCausality;}
+  void setOMSCausality(oms_causality_enu_t causality) {mOMSCausality = causality;}
+  oms_causality_enu_t getOMSCausality() const {return mOMSCausality;}
   void setDomain(QString domain) {mDomain = domain;}
   QString getDomain() const {return mDomain;}
   // operator overloading
@@ -160,7 +160,7 @@ private:
   int mDimensions;
   QString mTLMCausality;
   QString mDomain;
-  oms_causality_t mOMSCausality;
+  oms_causality_enu_t mOMSCausality;
 
   bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };

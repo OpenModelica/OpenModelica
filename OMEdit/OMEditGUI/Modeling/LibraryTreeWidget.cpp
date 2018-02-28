@@ -4029,7 +4029,7 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
     pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, modelName, modelName, fileInfo.absoluteFilePath(), true,
                                                                  mpLibraryTreeModel->getRootLibraryTreeItem());
     // set the component type
-    oms_component_type_t componentType = oms_component_none;
+    oms_component_type_enu_t componentType = oms_component_none;
     OMSProxy::instance()->getComponentType(pLibraryTreeItem->getNameStructure(), &componentType);
     pLibraryTreeItem->setOMSComponentType(componentType);
     pLibraryTreeItem->setOMSComponent(0);

@@ -1114,6 +1114,18 @@ void LineAnnotation::updateConnectionAnnotation()
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    ssd_connection_geometry_t connectionGeometry;
+    connectionGeometry.n = mPoints.size();
+    connectionGeometry.pointsX = new double[mPoints.size()];
+    connectionGeometry.pointsY = new double[mPoints.size()];
+    for (int i = 0 ; i < mPoints.size() ; i++) {
+      connectionGeometry.pointsX[i] = mPoints.at(i).x();
+      connectionGeometry.pointsY[i] = mPoints.at(i).y();
+    }
+    OMSProxy::instance()->setConnectionGeometry(getStartComponentName(), getEndComponentName(), &connectionGeometry);
+    delete[] connectionGeometry.pointsX;
+    delete[] connectionGeometry.pointsY;
   } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());

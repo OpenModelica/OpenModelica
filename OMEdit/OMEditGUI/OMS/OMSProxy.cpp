@@ -42,7 +42,7 @@
  * \param type
  * \param message
  */
-void loggingCallback(oms_message_type_t type, const char *message)
+void loggingCallback(oms_message_type_enu_t type, const char *message)
 {
   QString level = Helper::notificationLevel;
   switch (type) {
@@ -103,11 +103,11 @@ OMSProxy::OMSProxy()
 
 /*!
  * \brief OMSProxy::statusToBool
- * Converts the oms_status_t to bool.
+ * Converts the oms_status_enu_t to bool.
  * \param status
  * \return
  */
-bool OMSProxy::statusToBool(oms_status_t status)
+bool OMSProxy::statusToBool(oms_status_enu_t status)
 {
   switch (status) {
     case oms_status_ok:
@@ -156,7 +156,7 @@ void OMSProxy::setWorkingDirectory(QString path)
  */
 bool OMSProxy::newFMIModel(QString ident)
 {
-  oms_status_t status = oms2_newFMIModel(ident.toStdString().c_str());
+  oms_status_enu_t status = oms2_newFMIModel(ident.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -178,7 +178,7 @@ void OMSProxy::setLoggingLevel(int logLevel)
  */
 bool OMSProxy::newTLMModel(QString ident)
 {
-  oms_status_t status = oms2_newTLMModel(ident.toStdString().c_str());
+  oms_status_enu_t status = oms2_newTLMModel(ident.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -190,7 +190,7 @@ bool OMSProxy::newTLMModel(QString ident)
  */
 bool OMSProxy::unloadModel(QString ident)
 {
-  oms_status_t status = oms2_unloadModel(ident.toStdString().c_str());
+  oms_status_enu_t status = oms2_unloadModel(ident.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -203,7 +203,7 @@ bool OMSProxy::unloadModel(QString ident)
  */
 bool OMSProxy::renameModel(QString identOld, QString identNew)
 {
-  oms_status_t status = oms2_renameModel(identOld.toStdString().c_str(), identNew.toStdString().c_str());
+  oms_status_enu_t status = oms2_renameModel(identOld.toStdString().c_str(), identNew.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -217,7 +217,7 @@ bool OMSProxy::renameModel(QString identOld, QString identNew)
 bool OMSProxy::loadModel(QString filename, QString* pModelName)
 {
   char* ident = NULL;
-  oms_status_t status = oms2_loadModel(filename.toStdString().c_str(), &ident);
+  oms_status_enu_t status = oms2_loadModel(filename.toStdString().c_str(), &ident);
   *pModelName = QString(ident);
   return statusToBool(status);
 }
@@ -231,7 +231,7 @@ bool OMSProxy::loadModel(QString filename, QString* pModelName)
  */
 bool OMSProxy::saveModel(QString filename, QString ident)
 {
-  oms_status_t status = oms2_saveModel(filename.toStdString().c_str(), ident.toStdString().c_str());
+  oms_status_enu_t status = oms2_saveModel(filename.toStdString().c_str(), ident.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -242,9 +242,9 @@ bool OMSProxy::saveModel(QString filename, QString ident)
  * \param pType
  * \return
  */
-bool OMSProxy::getComponentType(QString ident, oms_component_type_t* pType)
+bool OMSProxy::getComponentType(QString ident, oms_component_type_enu_t* pType)
 {
-  oms_status_t status = oms2_getComponentType(ident.toStdString().c_str(), pType);
+  oms_status_enu_t status = oms2_getComponentType(ident.toStdString().c_str(), pType);
   return statusToBool(status);
 }
 
@@ -257,7 +257,7 @@ bool OMSProxy::getComponentType(QString ident, oms_component_type_t* pType)
  */
 bool OMSProxy::getComponents(QString cref, oms_component_t*** pComponents)
 {
-  oms_status_t status = oms2_getComponents(cref.toStdString().c_str(), pComponents);
+  oms_status_enu_t status = oms2_getComponents(cref.toStdString().c_str(), pComponents);
   return statusToBool(status);
 }
 
@@ -270,7 +270,7 @@ bool OMSProxy::getComponents(QString cref, oms_component_t*** pComponents)
  */
 bool OMSProxy::getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry)
 {
-  oms_status_t status = oms2_getElementGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms2_getElementGeometry(cref.toStdString().c_str(), pGeometry);
   return statusToBool(status);
 }
 
@@ -283,6 +283,47 @@ bool OMSProxy::getElementGeometry(QString cref, const ssd_element_geometry_t** p
  */
 bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
-  oms_status_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getConnections
+ * Get the model connections
+ * \param cref
+ * \param pConnections
+ * \return
+ */
+bool OMSProxy::getConnections(QString cref, oms_connection_t*** pConnections)
+{
+  oms_status_enu_t status = oms2_getConnections(cref.toStdString().c_str(), pConnections);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getConnectionGeometry
+ * Gets the connection geometry
+ * \param signalA
+ * \param signalB
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::getConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t** pGeometry)
+{
+  oms_status_enu_t status = oms2_getConnectionGeometry(signalA.toStdString().c_str(), signalB.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setConnectionGeometry
+ * Sets the connection geometry
+ * \param signalA
+ * \param signalB
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t* pGeometry)
+{
+  oms_status_enu_t status = oms2_setConnectionGeometry(signalA.toStdString().c_str(), signalB.toStdString().c_str(), pGeometry);
   return statusToBool(status);
 }

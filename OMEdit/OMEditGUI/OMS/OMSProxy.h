@@ -52,7 +52,7 @@ private:
   static OMSProxy *mpInstance;
 public:
   static OMSProxy* instance() {return mpInstance;}
-  bool statusToBool(oms_status_t status);
+  bool statusToBool(oms_status_enu_t status);
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
   void setWorkingDirectory(QString path);
@@ -63,10 +63,13 @@ public:
   bool renameModel(QString identOld, QString identNew);
   bool loadModel(QString filename, QString* pModelName);
   bool saveModel(QString filename, QString ident);
-  bool getComponentType(QString ident, oms_component_type_t* pType);
+  bool getComponentType(QString ident, oms_component_type_enu_t* pType);
   bool getComponents(QString cref, oms_component_t*** pComponents);
   bool getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
+  bool getConnections(QString cref, oms_connection_t*** pConnections);
+  bool setConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t* pGeometry);
+  bool getConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t** pGeometry);
 };
 
 #endif // OMSPROXY_H

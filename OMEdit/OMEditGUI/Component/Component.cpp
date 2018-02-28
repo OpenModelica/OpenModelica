@@ -1603,12 +1603,15 @@ void Component::drawSignals()
 {
   oms_signal_t** pInterfaces = mpLibraryTreeItem->getOMSComponent()->interfaces;
   ComponentInfo *pComponentInfo = 0;
+  QString name;
   for (int i = 0 ; pInterfaces[i] ; i++) {
     switch (pInterfaces[i]->causality) {
       case oms_causality_input:
       case oms_causality_output:
         pComponentInfo = new ComponentInfo;
-        pComponentInfo->setName(pInterfaces[i]->name);
+        name = StringHandler::getLastWordAfterDot(pInterfaces[i]->name);
+        name = name.split(':', QString::SkipEmptyParts).last();
+        pComponentInfo->setName(name);
         //pComponentInfo->setClassName(pInterfaces[i]->type);
         pComponentInfo->setOMSCausality(pInterfaces[i]->causality);
         mComponentsList.append(new Component(pComponentInfo, mpLibraryTreeItem, this));
