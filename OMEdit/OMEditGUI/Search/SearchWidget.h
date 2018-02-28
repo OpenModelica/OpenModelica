@@ -42,7 +42,7 @@
 class Label;
 class SearchFileDetails;
 class Search;
-class SearchWidgetResult;
+class SearchResultWidget;
 class SearchWidget : public QWidget
 {
   Q_OBJECT
@@ -55,7 +55,7 @@ public:
   QStackedWidget *getSearchStackedWidget() {return mpSearchStackedWidget;}
   QComboBox * getSearchHistoryCombobox() {return mpSearchHistoryComboBox;}
   void updateComboBoxSearchStrings(QComboBox *pComboBox);
-  QList<SearchWidgetResult*> pSearchWidgetResultobjects;
+  QList<SearchResultWidget*> mSearchResultWidgetobjects;
   void deleteSearchResultWidgets();
 signals:
   void setCancelSearch();
@@ -77,15 +77,15 @@ private:
   QAction * mpClearAction;
   QAction * mpExpandAction;
   QAction * mpCollapseAction;
-  SearchWidgetResult * mpSearchWidgetResult;
+  SearchResultWidget * mpSearchResultWidget;
   Search *mpSearch;
 };
 
-class SearchWidgetResult : public QWidget
+class SearchResultWidget : public QWidget
 {
   Q_OBJECT
 public:
-  SearchWidgetResult(QWidget *pParent = 0);
+  SearchResultWidget(QWidget *pParent = 0);
   QProgressBar *getProgressBar() {return mpProgressBar;}
   QTreeWidget *getSearchTreeWidget() {return mpSearchTreeWidget;}
 signals:

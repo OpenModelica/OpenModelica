@@ -169,10 +169,10 @@ void SearchWidget::updateComboBoxSearchStrings(QComboBox *pComboBox)
  */
 void SearchWidget::deleteSearchResultWidgets()
 {
-  for (int i = 0; i < pSearchWidgetResultobjects.size(); ++i) {
-    delete pSearchWidgetResultobjects[i];
+  for (int i = 0; i < mSearchResultWidgetobjects.size(); ++i) {
+    delete mSearchResultWidgetobjects[i];
   }
-  pSearchWidgetResultobjects.clear();
+  mSearchResultWidgetobjects.clear();
 }
 
 /*!
@@ -188,21 +188,21 @@ void SearchWidget::searchInFiles()
   updateComboBoxSearchStrings(mpSearchStringComboBox);
   updateComboBoxSearchStrings(mpSearchFilePatternComboBox);
   /* create a new instance of searchresult widget and search widget for every new search */
-  mpSearchWidgetResult = new SearchWidgetResult;
-  pSearchWidgetResultobjects.append(mpSearchWidgetResult);
+  mpSearchResultWidget = new SearchResultWidget;
+  mSearchResultWidgetobjects.append(mpSearchResultWidget);
   mpSearch = new Search(this);
-  connect(mpSearch, SIGNAL(setTreeWidgetItems(SearchFileDetails)), mpSearchWidgetResult, SLOT(updateTreeWidgetItems(SearchFileDetails)));
-  connect(mpSearch, SIGNAL(setProgressBarRange(int)), mpSearchWidgetResult, SLOT(updateProgressBarRange(int)));
-  connect(mpSearch, SIGNAL(setProgressBarValue(int,int)), mpSearchWidgetResult, SLOT(updateProgressBarValue(int,int)));
-  connect(mpSearch, SIGNAL(setFoundFilesLabel(int)), mpSearchWidgetResult, SLOT(updateFoundFilesLabel(int)));
-  connect(mpSearch, SIGNAL(setProgressBarCancelValue(int,int)), mpSearchWidgetResult, SLOT(updateProgressBarCancelValue(int,int)));
-  connect(mpSearchWidgetResult, SIGNAL(setCancelSearchResult()), mpSearch, SLOT(updateCancelSearch()));
+  connect(mpSearch, SIGNAL(setTreeWidgetItems(SearchFileDetails)), mpSearchResultWidget, SLOT(updateTreeWidgetItems(SearchFileDetails)));
+  connect(mpSearch, SIGNAL(setProgressBarRange(int)), mpSearchResultWidget, SLOT(updateProgressBarRange(int)));
+  connect(mpSearch, SIGNAL(setProgressBarValue(int,int)), mpSearchResultWidget, SLOT(updateProgressBarValue(int,int)));
+  connect(mpSearch, SIGNAL(setFoundFilesLabel(int)), mpSearchResultWidget, SLOT(updateFoundFilesLabel(int)));
+  connect(mpSearch, SIGNAL(setProgressBarCancelValue(int,int)), mpSearchResultWidget, SLOT(updateProgressBarCancelValue(int,int)));
+  connect(mpSearchResultWidget, SIGNAL(setCancelSearchResult()), mpSearch, SLOT(updateCancelSearch()));
   /*emit the signals to stop any ongoing search operation when mainwindow is closed*/
   connect(this, SIGNAL(setCancelSearch()), mpSearch, SLOT(updateCancelSearch()));
 
-  mpSearchStackedWidget->addWidget(mpSearchWidgetResult);
-  mpSearchStackedWidget->setCurrentWidget(mpSearchWidgetResult);
-  QString searchHistoryItem = QString("%1%2%3 %4").arg("Project-").arg(mpSearchScopeComboBox->currentText()).arg(":").arg(mpSearchStringComboBox->currentText());
+  mpSearchStackedWidget->addWidget(mpSearchResultWidget);
+  mpSearchStackedWidget->setCurrentWidget(mpSearchResultWidget);
+  QString searchHistoryItem = QString("%1-%2: %3").arg(tr("Project")).arg(mpSearchScopeComboBox->currentText()).arg(mpSearchStringComboBox->currentText());
   mpSearchHistoryComboBox->addItem(searchHistoryItem);
   mpSearchHistoryComboBox->setCurrentIndex(mpSearchHistoryComboBox->findText(searchHistoryItem));
   /* start the search in seperate thread using QtConcurrent */
@@ -234,7 +234,7 @@ void SearchWidget::switchSearchPage(int index)
 void SearchWidget::expandAll()
 {
   if(mpSearchStackedWidget->currentIndex()!=0){
-    pSearchWidgetResultobjects[mpSearchStackedWidget->currentIndex()-1]->getSearchTreeWidget()->expandAll();
+    mSearchResultWidgetobjects[mpSearchStackedWidget->currentIndex()-1]->getSearchTreeWidget()->expandAll();
   }
 }
 
@@ -245,7 +245,7 @@ void SearchWidget::expandAll()
 void SearchWidget::collapseAll()
 {
   if(mpSearchStackedWidget->currentIndex()!=0){
-    pSearchWidgetResultobjects[mpSearchStackedWidget->currentIndex()-1]->getSearchTreeWidget()->collapseAll();
+    mSearchResultWidgetobjects[mpSearchStackedWidget->currentIndex()-1]->getSearchTreeWidget()->collapseAll();
   }
 }
 
@@ -278,13 +278,13 @@ void SearchWidget::enableDisableExpandCollapseAction(int index)
 }
 
 /*!
- * \brief SearchWidgetResult::SearchWidgetResult
+ * \brief SearchResultWidget::SearchResultWidget
  * \class which handles the results for the search operation
  * \create a instance of this class and add to stack widget for each search operation
  * \param pParent
  */
 
-SearchWidgetResult::SearchWidgetResult(QWidget *pParent)
+SearchResultWidget::SearchResultWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   mpProgressLabel = new Label;
@@ -323,11 +323,11 @@ SearchWidgetResult::SearchWidgetResult(QWidget *pParent)
 }
 
 /*!
- * \brief SearchWidgetResult::findAndOpenTreeWidgetItems
+ * \brief SearchResultWidget::findAndOpenTreeWidgetItems
  * SLOT function to open the search results from the
  * tree items in the editor and to the corresponding line number
  */
-void SearchWidgetResult::findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column)
+void SearchResultWidget::findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column)
 {
   QVariant value = item->data(column, Qt::UserRole);
   if (!value.isNull()) {
@@ -346,7 +346,7 @@ void SearchWidgetResult::findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int c
  * each tree item with filename and subchild with line numbers and
  * found lines
  */
-void SearchWidgetResult::updateTreeWidgetItems(SearchFileDetails fileDetails)
+void SearchResultWidget::updateTreeWidgetItems(SearchFileDetails fileDetails)
 {
   QTreeWidgetItem *pTreeWidgetItem = new QTreeWidgetItem();
   pTreeWidgetItem->setText(0, fileDetails.mFileName);
@@ -366,51 +366,51 @@ void SearchWidgetResult::updateTreeWidgetItems(SearchFileDetails fileDetails)
 }
 
 /*!
- * \brief SearchWidgetResult::updateProgressBarRange
+ * \brief SearchResultWidget::updateProgressBarRange
  * SLOT to update the progressbarrange in the GUI
  */
-void SearchWidgetResult::updateProgressBarRange(int size)
+void SearchResultWidget::updateProgressBarRange(int size)
 {
   mpProgressBar->setRange(0,size);
 }
 
 /*!
- * \brief SearchWidgetResult::updateProgressBarValue
+ * \brief SearchResultWidget::updateProgressBarValue
  * SLOT to update the progressbarvalue in the GUI
  * in incremental order according to file search
  */
-void SearchWidgetResult::updateProgressBarValue(int value, int size)
+void SearchResultWidget::updateProgressBarValue(int value, int size)
 {
   mpProgressBar->setValue(value+1);
   mpProgressLabel->setText(tr("Searching <b>%1</b> of <b>%2</b> files. Please wait for a while").arg(QString::number(value+1)).arg(QString::number(size)));
 }
 
 /*!
- * \brief SearchWidgetResult::updateProgressBarCancelValue
+ * \brief SearchResultWidget::updateProgressBarCancelValue
  * SLOT to update the progressbarcancelvalue in the GUI
  * when the user cancels the search and update the results
  */
-void SearchWidgetResult::updateProgressBarCancelValue(int value, int size)
+void SearchResultWidget::updateProgressBarCancelValue(int value, int size)
 {
   mpProgressBar->setValue(size);
   mpProgressLabel->setText(tr("Searched <b>%1</b> of <b>%2</b> files. Search Cancelled").arg(QString::number(value+1)).arg(QString::number(size)));
 }
 
 /*!
- * \brief SearchWidgetResult::updateFoundFilesLabel
+ * \brief SearchResultWidget::updateFoundFilesLabel
  * SLOT to update the number of foundfiles from
  * the search results
  */
-void SearchWidgetResult::updateFoundFilesLabel(int value)
+void SearchResultWidget::updateFoundFilesLabel(int value)
 {
   mpProgressLabelFoundFiles->setText(tr("<b>%1</b> FOUND").arg(value));
 }
 
 /*!
- * \brief SearchWidgetResult::cancelSearch
+ * \brief SearchResultWidget::cancelSearch
  * SLOT to cance the current ongoing search operation
  */
-void SearchWidgetResult::cancelSearch()
+void SearchResultWidget::cancelSearch()
 {
   emit setCancelSearchResult();
 }
@@ -467,6 +467,7 @@ void Search::run()
       // check for cancel operation
       if (mStop) {
         emit setProgressBarCancelValue(i,filelist.size());
+        emit setFoundFilesLabel(count-1);
         return;
       }
       emit setProgressBarValue(i,filelist.size());
