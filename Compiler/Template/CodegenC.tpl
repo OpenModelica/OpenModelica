@@ -2675,7 +2675,12 @@ match system
     ;separator="\n")
     let body = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
-        (alg.knownOutputCrefs |> cr hasindex i0 => 'res[<%i0%>] = OLD_<%i0%> - <%cref(cr)%>;' ;separator="\n")
+        let init = (nls.crefs |> cr hasindex i0 => 'res[<%i0%>] = 0;' ;separator="\n")
+        let known = (alg.knownOutputCrefs |> cr hasindex i0 => 'res[(int)fmod(<%i0%>, <%listLength(nls.crefs)%>)] += pow(OLD_<%i0%> - <%cref(cr)%>, 2);' ;separator="\n")
+        <<
+        <%init%>
+        <%known%>
+        >>
       else
         (nls.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
           let &preExp = buffer ""

@@ -6175,6 +6175,7 @@ algorithm
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       DAE.Expand crefExpand;
+      constant Boolean debug = false;
 
     // normal call
     case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand)::_, false) equation
@@ -6205,16 +6206,35 @@ algorithm
     then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
     // inverse algorithms
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
+    case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand)::_, _) equation
+      if debug then
+        print("createSingleAlgorithmCode -> \n");
+        BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)}, 0);
+      end if;
+
+      // get and expand the searched variables
       solvedVars = List.map(vars, BackendVariable.varCref);
+      solvedVars = List.unionList(List.map1(solvedVars, ComponentReference.expandCref, true));
+
+      // get and expand all other variables
       algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+      algOutVars = List.unionList(List.map1(algOutVars, ComponentReference.expandCref, true));
+
+      // the remaining quantity of all out vars to the solved vars
       knownOutputCrefs = List.setDifference(algOutVars, solvedVars);
 
+      //Why do we need to filter the discrete variables?
       //List.filterOnTrue(BackendVariable.varList(knVars),BackendVariable.isRecordVar);
       solvedVars = List.map(List.filterOnTrue(vars, BackendVariable.isVarNonDiscrete), BackendVariable.varCref);
-      solvedVars = List.setDifference(solvedVars, algOutVars);
 
-      true = intEq(listLength(solvedVars), listLength(knownOutputCrefs));
+      if debug then
+        BackendDump.debugStrCrefLstStr("algOutVars : ", algOutVars, ", ", "\n");
+        BackendDump.debugStrCrefLstStr("filtered solvedVars: ", solvedVars, ", ", "\n");
+        BackendDump.debugStrCrefLstStr("knownOutputCrefs : ", knownOutputCrefs, ", ", "\n");
+      end if;
+
+      //Why should we have the same amount of solved vars and know vars?
+      //true = intEq(listLength(solvedVars), listLength(knownOutputCrefs));
 
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs)}, solvedVars, 0, listLength(vars), NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);

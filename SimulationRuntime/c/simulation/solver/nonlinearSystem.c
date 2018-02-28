@@ -807,8 +807,6 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
       success = nonlinsys->strictTearingFunctionCall(data, threadData);
       if (success){
         success=2;
-        /* update iteration variables of the casual set*/
-        nonlinsys->getIterationVars(data, nonlinsys->nlsx);
       }
     }
 
@@ -816,6 +814,12 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
       nonlinsys->solverData = mixedSolverData->hybridData;
       success = solveHybrd(data, threadData, sysNumber);
     }
+
+    /* update iteration variables of nonlinsys->nlsx */
+    if (success){
+      nonlinsys->getIterationVars(data, nonlinsys->nlsx);
+    }
+
     nonlinsys->solverData = mixedSolverData;
     break;
 #endif
