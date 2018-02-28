@@ -1097,6 +1097,7 @@ algorithm
       Real r1;
       array<array<DAE.Exp>> marr;
       String name, s1, s2;
+      list<Integer> dims;
 
     // If the argument to min/max is an array, try to flatten it.
     case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.ARRAY()},
@@ -1378,7 +1379,8 @@ algorithm
 
     case DAE.CALL(path=Absyn.IDENT("cat"),expLst=DAE.ICONST(i)::es,attr=DAE.CALL_ATTR(ty=tp))
       algorithm
-        e := evalCat(i,es);
+        (es,dims) := evalCat(i, es, getArrayContents=Expression.getArrayOrMatrixContents, toString=ExpressionDump.printExpStr);
+        e := Expression.listToArray(es, list(DAE.DIM_INTEGER(d) for d in dims));
       then e;
 
     // promote n-dim to n-dim
@@ -1604,37 +1606,50 @@ algorithm
   end matchcontinue;
 end simplifyCat2;
 
-protected function evalCat
+public function evalCat<Exp>
   input Integer dim;
-  input list<DAE.Exp> exps;
-  output DAE.Exp outExp;
+  input list<Exp> exps;
+  input GetArrayContents getArrayContents;
+  input ToString toString;
+  output list<Exp> outExps;
+  output list<Integer> outDims;
+  partial function GetArrayContents
+    input Exp e;
+    output list<Exp> es;
+  end GetArrayContents;
+  partial function MakeArrayFromList
+    input list<Exp> es;
+    output Exp e;
+  end MakeArrayFromList;
+  partial function ToString
+    input Exp e;
+    output String s;
+  end ToString;
 protected
-  list<DAE.Exp> arr;
-  list<list<DAE.Exp>> arrs={};
+  list<Exp> arr;
+  list<list<Exp>> arrs={};
   list<Integer> dims, firstDims={}, lastDims, reverseDims;
   list<list<Integer>> dimsLst={};
-  DAE.Type tp;
   Integer j, k, l, thisDim, lastDim;
-  array<DAE.Exp> expArr;
+  array<Exp> expArr;
 algorithm
   true := dim >= 1;
   false := listEmpty(exps);
   if 1 == dim then
-    arr := listAppend(Expression.getArrayOrMatrixContents(e) for e in exps);
-    tp := Expression.typeof(listHead(arr));
-    outExp := Expression.makeArray(arr, tp, not Types.isArray(tp));
+    outExps := listAppend(getArrayContents(e) for e in exps);
+    outDims := {listLength(outExps)};
     return;
   end if;
   for e in listReverse(exps) loop
     // Here we get a linear representation of all expressions in the array
     // and the dimensions necessary to build up the array again
-    (arr,dims) := evalCatGetFlatArray(e,dim);
+    (arr,dims) := evalCatGetFlatArray(e, dim, getArrayContents=getArrayContents, toString=toString);
     arrs := arr::arrs;
     dimsLst := dims::dimsLst;
   end for;
   for i in 1:(dim-1) loop
     j := min(listHead(d) for d in dimsLst);
-    Error.assertion(j == max(listHead(d) for d in dimsLst), getInstanceName() + ": cat got uneven dimensions for dim=" + String(i) + " " + ExpressionDump.printExpStr(DAE.LIST(exps)), sourceInfo());
+    Error.assertion(j == max(listHead(d) for d in dimsLst), getInstanceName() + ": cat got uneven dimensions for dim=" + String(i) + " " + stringDelimitList(list(toString(e) for e in exps), ", "), sourceInfo());
     firstDims := j :: firstDims;
     dimsLst := list(listRest(d) for d in dimsLst);
   end for;
@@ -1658,33 +1673,42 @@ algorithm
   end for;
   // Convert the flat array structure to a tree array structure with the
   // correct dimensions
-  arr := arrayList(expArr);
-  outExp := Expression.listToArray(arr, listReverse(DAE.DIM_INTEGER(d) for d in reverseDims));
+  outExps := arrayList(expArr);
+  outDims := listReverse(reverseDims);
 end evalCat;
 
-protected function evalCatGetFlatArray
-  input DAE.Exp e;
+protected function evalCatGetFlatArray<Exp>
+  input Exp e;
   input Integer dim;
-  output list<DAE.Exp> outExps={};
+  input GetArrayContents getArrayContents;
+  input ToString toString;
+  output list<Exp> outExps={};
   output list<Integer> outDims={};
+  partial function GetArrayContents
+    input Exp e;
+    output list<Exp> es;
+  end GetArrayContents;
+  partial function ToString
+    input Exp e;
+    output String s;
+  end ToString;
 protected
-  list<DAE.Exp> arr;
+  list<Exp> arr;
   list<Integer> dims;
-  DAE.Type tp;
   Integer i;
 algorithm
   if dim == 1 then
-    outExps := Expression.getArrayOrMatrixContents(e);
+    outExps := getArrayContents(e);
     outDims := {listLength(outExps)};
     return;
   end if;
   i := 0;
-  for exp in listReverse(Expression.getArrayOrMatrixContents(e)) loop
-    (arr, dims) := evalCatGetFlatArray(exp, dim-1);
+  for exp in listReverse(getArrayContents(e)) loop
+    (arr, dims) := evalCatGetFlatArray(exp, dim-1, getArrayContents=getArrayContents, toString=toString);
     if listEmpty(outDims) then
       outDims := dims;
     else
-      Error.assertion(valueEq(dims, outDims), getInstanceName() + ": Got unbalanced array from " + ExpressionDump.printExpStr(e), sourceInfo());
+      Error.assertion(valueEq(dims, outDims), getInstanceName() + ": Got unbalanced array from " + toString(e), sourceInfo());
     end if;
     outExps := listAppend(arr, outExps);
     i := i+1;

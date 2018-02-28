@@ -43,6 +43,7 @@ import NFCall.Call;
 import Dimension = NFDimension;
 import Type = NFType;
 import NFTyping.ExpOrigin;
+import ExpressionSimplify;
 
 protected
 import NFFunction.Function;
@@ -344,7 +345,7 @@ algorithm
     case "asin" then evalBuiltinAsin(listHead(args), target);
     case "atan2" then evalBuiltinAtan2(args);
     case "atan" then evalBuiltinAtan(listHead(args));
-    //case "cat" then evalBuiltinCat(args, target);
+    case "cat" then evalBuiltinCat(listHead(args), listRest(args), target);
     case "ceil" then evalBuiltinCeil(listHead(args));
     case "cosh" then evalBuiltinCosh(listHead(args));
     case "cos" then evalBuiltinCos(listHead(args));
@@ -367,6 +368,7 @@ algorithm
     case "noEvent" then listHead(args); // No events during ceval, just return the argument.
     case "ones" then evalBuiltinOnes(args);
     case "product" then evalBuiltinProduct(listHead(args));
+    case "promote" then evalBuiltinPromote(listGet(args,1),listGet(args,2));
     case "rem" then evalBuiltinRem(args, target);
     case "scalar" then evalBuiltinScalar(args);
     case "sign" then evalBuiltinSign(listHead(args));
@@ -536,6 +538,30 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalBuiltinAtan;
+
+function evalBuiltinCat
+  input Expression argN;
+  input list<Expression> args;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Integer n, nd;
+  Type ty;
+  list<Expression> es;
+  list<Integer> dims;
+algorithm
+  Expression.INTEGER(n) := argN;
+  ty := Expression.typeOf(listHead(args));
+  nd := Type.dimensionCount(ty);
+  if n > nd or n < 1 then
+    if EvalTarget.hasInfo(target) then
+      Error.addSourceMessage(Error.ARGUMENT_OUT_OF_RANGE, {String(n), "cat", "1 <= x <= " + String(nd)}, EvalTarget.getInfo(target));
+    end if;
+    fail();
+  end if;
+  (es,dims) := ExpressionSimplify.evalCat(n, args, getArrayContents=Expression.arrayElements, toString=Expression.toString);
+  result := Expression.arrayFromList(es, Type.arrayElementType(ty), list(Dimension.INTEGER(d) for d in dims));
+end evalBuiltinCat;
 
 function evalBuiltinCeil
   input Expression arg;
@@ -930,6 +956,45 @@ algorithm
     else fail();
   end match;
 end evalBuiltinProductReal;
+
+function evalBuiltinPromote
+  input Expression arg, argN;
+  output Expression result;
+protected
+  Integer n, numToPromote;
+  Type ty;
+algorithm
+  Expression.INTEGER(n) := argN;
+  ty := Expression.typeOf(arg);
+  numToPromote := n - Type.dimensionCount(ty);
+  result := evalBuiltinPromoteWork(arg, n);
+end evalBuiltinPromote;
+
+function evalBuiltinPromoteWork
+  input Expression arg;
+  input Integer n;
+  output Expression result;
+protected
+  Expression exp;
+  list<Expression> exps;
+  Type ty;
+algorithm
+  Error.assertion(n >= 1, "Promote called with n<1", sourceInfo());
+  if n == 1 then
+    result := Expression.ARRAY(Type.liftArrayLeft(Expression.typeOf(arg),Dimension.INTEGER(1)), {arg});
+    return;
+  end if;
+  result := match arg
+    case Expression.ARRAY()
+      algorithm
+        (exps as (Expression.ARRAY(ty=ty)::_)) := list(evalBuiltinPromoteWork(e, n-1) for e in arg.elements);
+      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.INTEGER(listLength(arg.elements))), exps);
+    else
+      algorithm
+        (exp as Expression.ARRAY(ty=ty)) := evalBuiltinPromoteWork(arg, n-1);
+      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.INTEGER(1)), {exp});
+  end match;
+end evalBuiltinPromoteWork;
 
 function evalBuiltinRem
   input list<Expression> args;

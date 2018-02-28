@@ -3564,6 +3564,16 @@ algorithm
   outArray := DAE.ARRAY(inType, inScalar, inElements);
 end makeArray;
 
+public function makeArrayFromList
+  input list<DAE.Exp> inElements;
+  output DAE.Exp outArray;
+protected
+  DAE.Type ty;
+algorithm
+  ty := typeof(listHead(inElements));
+  outArray := DAE.ARRAY(ty, not Types.isArray(ty), inElements);
+end makeArrayFromList;
+
 public function makeScalarArray
   "Constructs an array of the given scalar type."
   input list<DAE.Exp> inExpLst;
