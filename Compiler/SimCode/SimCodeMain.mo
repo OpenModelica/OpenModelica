@@ -1085,7 +1085,7 @@ protected
   Option<SimCode.JacobianMatrix> daeModeSP;
   Option<SimCode.DaeModeData> daeModeData;
   SimCode.DaeModeConfig daeModeConf;
-  list<SimCode.SimEqSystem> daeEquations;
+  list<SimCode.SimEqSystem> daeEquations, removedEquations;
   list<SimCodeVar.SimVar> residualVars, algebraicStateVars, auxiliaryVars;
   list<SimCode.StateSet> stateSets;
 
@@ -1153,6 +1153,7 @@ algorithm
     parameterEquations := listReverse(parameterEquations);
     if debug then ExecStat.execStat("simCode: createParameterEquations"); end if;
 
+    (uniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(BackendDAEUtil.collapseRemovedEqs(inBackendDAE), SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     discreteModelVars := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.extractDiscreteModelVars, {});
 
     //prepare DAEmode stuff
@@ -1257,7 +1258,7 @@ algorithm
                               minValueEquations,
                               maxValueEquations,
                               parameterEquations,
-                              {},
+                              removedEquations,
                               {},
                               {},
                               jacobianEquations,

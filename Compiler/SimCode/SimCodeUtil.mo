@@ -5369,7 +5369,7 @@ algorithm
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
 
-protected function traversedlowEqToSimEqSystem
+public function traversedlowEqToSimEqSystem
   input BackendDAE.Equation inEq;
   input tuple<Integer, list<SimCode.SimEqSystem>> inTpl;
   output BackendDAE.Equation outEq;
