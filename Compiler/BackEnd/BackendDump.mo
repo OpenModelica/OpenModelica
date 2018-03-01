@@ -2783,6 +2783,8 @@ algorithm
     case BackendDAE.BINDING_EQUATION() then "binding";
     case BackendDAE.DYNAMIC_EQUATION() then "dynamic";
     case BackendDAE.INITIAL_EQUATION() then "initial";
+    case BackendDAE.AUX_EQUATION() then "auxiliary";
+    case BackendDAE.DISCRETE_EQUATION() then "discrete";
     case BackendDAE.UNKNOWN_EQUATION_KIND() then "unknown";
     case BackendDAE.CLOCKED_EQUATION(i)
       equation
