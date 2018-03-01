@@ -1222,6 +1222,11 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
 void MainWindow::showSearchBrowser()
 {
   mpSearchDockWidget->show();
+  // In case user has tabbed the dock widgets then make searchwidget active when ctrl+h is pressed.
+  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpSearchDockWidget);
+  if (tabifiedDockWidgetsList.size() > 0) {
+    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpSearchDockWidget);
+  }
   mpSearchWidget->getSearchStringComboBox()->lineEdit()->selectAll();
   mpSearchWidget->getSearchStringComboBox()->lineEdit()->setFocus(Qt::ActiveWindowFocusReason);
   mpSearchWidget->getSearchStackedWidget()->setCurrentIndex(0);

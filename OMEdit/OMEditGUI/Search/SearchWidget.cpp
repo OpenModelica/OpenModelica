@@ -196,6 +196,7 @@ void SearchWidget::searchInFiles()
   connect(mpSearch, SIGNAL(setProgressBarValue(int,int)), mpSearchResultWidget, SLOT(updateProgressBarValue(int,int)));
   connect(mpSearch, SIGNAL(setFoundFilesLabel(int)), mpSearchResultWidget, SLOT(updateFoundFilesLabel(int)));
   connect(mpSearch, SIGNAL(setProgressBarCancelValue(int,int)), mpSearchResultWidget, SLOT(updateProgressBarCancelValue(int,int)));
+  connect(mpSearch, SIGNAL(setProgressBarFinishedValue(int)), mpSearchResultWidget, SLOT(updateProgressBarFinishedValue(int)));
   connect(mpSearchResultWidget, SIGNAL(setCancelSearchResult()), mpSearch, SLOT(updateCancelSearch()));
   /*emit the signals to stop any ongoing search operation when mainwindow is closed*/
   connect(this, SIGNAL(setCancelSearch()), mpSearch, SLOT(updateCancelSearch()));
@@ -382,7 +383,7 @@ void SearchResultWidget::updateProgressBarRange(int size)
 void SearchResultWidget::updateProgressBarValue(int value, int size)
 {
   mpProgressBar->setValue(value+1);
-  mpProgressLabel->setText(tr("Searching <b>%1</b> of <b>%2</b> files. Please wait for a while").arg(QString::number(value+1)).arg(QString::number(size)));
+  mpProgressLabel->setText(tr("Searching <b>%1</b> of <b>%2</b> files. Please wait for a while.").arg(QString::number(value+1)).arg(QString::number(size)));
 }
 
 /*!
@@ -393,7 +394,20 @@ void SearchResultWidget::updateProgressBarValue(int value, int size)
 void SearchResultWidget::updateProgressBarCancelValue(int value, int size)
 {
   mpProgressBar->setValue(size);
-  mpProgressLabel->setText(tr("Searched <b>%1</b> of <b>%2</b> files. Search Cancelled").arg(QString::number(value+1)).arg(QString::number(size)));
+  mpProgressLabel->setText(tr("Searched <b>%1</b> of <b>%2</b> files. Search Cancelled.").arg(QString::number(value+1)).arg(QString::number(size)));
+  mpCancelButton->setEnabled(false);
+}
+
+/*!
+ * \brief SearchResultWidget::updateProgressBarFinishedValue
+ * SLOT to update the progressbarFinishedvalue in the GUI
+ * when the search is finished and update the results
+ */
+void SearchResultWidget::updateProgressBarFinishedValue(int value)
+{
+  mpProgressBar->setValue(value);
+  mpProgressLabel->setText(tr("Searched <b>%1</b> of <b>%2</b> files. Search Completed.").arg(QString::number(value)).arg(QString::number(value)));
+  mpCancelButton->setEnabled(false);
 }
 
 /*!
@@ -497,6 +511,7 @@ void Search::run()
         }
       }
     }
+    emit setProgressBarFinishedValue(filelist.size());
     if (count==1) {
       emit setFoundFilesLabel(0);
     }

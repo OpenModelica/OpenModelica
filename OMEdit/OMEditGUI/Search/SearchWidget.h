@@ -96,6 +96,7 @@ public slots:
   void updateProgressBarRange(int);
   void updateProgressBarValue(int,int);
   void updateProgressBarCancelValue(int,int);
+  void updateProgressBarFinishedValue(int);
   void updateFoundFilesLabel(int);
   void cancelSearch();
 private:
@@ -130,6 +131,7 @@ signals:
   void setProgressBarValue(int,int);
   void setFoundFilesLabel(int);
   void setProgressBarCancelValue(int,int);
+  void setProgressBarFinishedValue(int);
 public slots:
   void updateCancelSearch();
 private:
