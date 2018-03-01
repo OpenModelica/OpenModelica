@@ -55,6 +55,8 @@ class BOOST_EXTENSION_LOGGER_DECL Logger
       initialize(LogSettings());
     }
 
+    static void finalize();
+
     static inline void write(std::string msg, LogCategory cat, LogLevel lvl)
     {
       if (_instance && _instance->isSet(cat, lvl))

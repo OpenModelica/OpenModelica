@@ -36,6 +36,12 @@ void Logger::initialize(LogSettings settings)
   }
 }
 
+void Logger::finalize()
+{
+  if (_instance != NULL)
+    delete _instance;
+}
+
 void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
                            LogStructure ls)
 {
