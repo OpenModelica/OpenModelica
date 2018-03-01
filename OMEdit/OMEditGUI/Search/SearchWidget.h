@@ -42,41 +42,69 @@
 class Label;
 class SearchFileDetails;
 class Search;
+class SearchResultWidget;
 class SearchWidget : public QWidget
 {
   Q_OBJECT
 public:
   SearchWidget(QWidget *pParent = 0);
   ~SearchWidget();
-  QProgressBar *getProgressBar() {return mpProgressBar;}
   QComboBox *getSearchScopeComboBox() {return mpSearchScopeComboBox;}
   QComboBox *getSearchStringComboBox() {return mpSearchStringComboBox;}
   QComboBox *getSearchFilePatternComboBox() {return mpSearchFilePatternComboBox;}
+  QStackedWidget *getSearchStackedWidget() {return mpSearchStackedWidget;}
+  QComboBox * getSearchHistoryCombobox() {return mpSearchHistoryComboBox;}
   void updateComboBoxSearchStrings(QComboBox *pComboBox);
+  QList<SearchResultWidget*> mSearchResultWidgetobjects;
+  void deleteSearchResultWidgets();
 signals:
   void setCancelSearch();
 public slots:
   void searchInFiles();
   void cancelSearch();
-  void switchSearchPage();
-  void findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column);
-  void updateTreeWidgetItems(SearchFileDetails fileDetails);
-  void updateProgressBarRange(int);
-  void updateProgressBarValue(int,int);
-  void updateFoundFilesLabel(int);
+  void switchSearchPage(int);
+  void expandAll();
+  void collapseAll();
+  void clearAll();
+  void enableDisableExpandCollapseAction(int);
 private:
-  Label *mpSearchForLabel;
-  Label *mpProgressLabel;
-  Label *mpProgressLabelFoundFiles;
-  QPushButton *mpCancelButton;
   QPushButton *mpSearchButton;
   QComboBox *mpSearchScopeComboBox;
   QComboBox *mpSearchStringComboBox;
   QComboBox *mpSearchFilePatternComboBox;
-  QTreeWidget *mpSearchTreeWidget;
+  QComboBox *mpSearchHistoryComboBox;
   QStackedWidget *mpSearchStackedWidget;
-  QProgressBar *mpProgressBar;
+  QAction * mpClearAction;
+  QAction * mpExpandAction;
+  QAction * mpCollapseAction;
+  SearchResultWidget * mpSearchResultWidget;
   Search *mpSearch;
+};
+
+class SearchResultWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  SearchResultWidget(QWidget *pParent = 0);
+  QProgressBar *getProgressBar() {return mpProgressBar;}
+  QTreeWidget *getSearchTreeWidget() {return mpSearchTreeWidget;}
+signals:
+  void setCancelSearchResult();
+public slots:
+  void findAndOpenTreeWidgetItems(QTreeWidgetItem *item, int column);
+  void updateTreeWidgetItems(SearchFileDetails fileDetails);
+  void updateProgressBarRange(int);
+  void updateProgressBarValue(int,int);
+  void updateProgressBarCancelValue(int,int);
+  void updateProgressBarFinishedValue(int);
+  void updateFoundFilesLabel(int);
+  void cancelSearch();
+private:
+  Label *mpProgressLabel;
+  Label *mpProgressLabelFoundFiles;
+  QProgressBar *mpProgressBar;
+  QPushButton *mpCancelButton;
+  QTreeWidget *mpSearchTreeWidget;
 };
 
 class SearchFileDetails
@@ -102,6 +130,8 @@ signals:
   void setProgressBarRange(int);
   void setProgressBarValue(int,int);
   void setFoundFilesLabel(int);
+  void setProgressBarCancelValue(int,int);
+  void setProgressBarFinishedValue(int);
 public slots:
   void updateCancelSearch();
 private:

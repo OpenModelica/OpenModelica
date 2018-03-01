@@ -688,8 +688,6 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
     }
   }
   mpDefaultComponentRectangle->setLineColor(QColor(0, 0, 0));
-  mpDefaultComponentRectangle->setLineColor(QColor(0, 0, 0));
-  mpDefaultComponentRectangle->setFillPattern(StringHandler::FillSolid);
   mpDefaultComponentRectangle->setFillPattern(StringHandler::FillSolid);
   mpDefaultComponentRectangle->setVisible(true);
   mpDefaultComponentText->setFontSize(5);
@@ -2771,6 +2769,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     }
     pComponent->setSelected(true);
   }
+
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem) {
     QMenu menu(mpGraphicsView);
