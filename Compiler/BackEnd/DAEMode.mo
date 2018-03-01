@@ -136,6 +136,9 @@ algorithm
     // use preOpt instead
     simDAE := BackendDAEUtil.postOptimizeDAE(simDAE, postOptModules, matchingAlgorithm, daeHandler);
 
+    // sort the globalKnownVars
+    simDAE := BackendDAEUtil.sortGlobalKnownVarsInDAE(simDAE);
+
     // debug dump
     if Flags.isSet(Flags.DUMP_INDX_DAE) then
       BackendDump.dumpBackendDAE(simDAE, "dumpindxdae");

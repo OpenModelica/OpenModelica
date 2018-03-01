@@ -7380,7 +7380,7 @@ algorithm
   fail();
 end getOptimizesDAEModeSystem;
 
-protected function sortGlobalKnownVarsInDAE "
+public function sortGlobalKnownVarsInDAE "
 author: ptaeuber
 This function sorts the globalKnownVars"
   input output BackendDAE.BackendDAE backendDAE;

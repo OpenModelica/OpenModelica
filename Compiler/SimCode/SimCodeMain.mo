@@ -1070,6 +1070,7 @@ protected
   Integer nStates;
   Integer numberofEqns, numStateSets, numberofLinearSys, numberofNonLinearSys,
   numberofMixedSys, numberOfJacobians, numberofFixedParameters;
+  Boolean tmpB;
 
   list<DAE.ComponentRef> discreteModelVars;
   list<BackendDAE.TimeEvent> timeEvents;
@@ -1150,7 +1151,6 @@ algorithm
     ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createVarNominalAssertFromVars, (uniqueEqIndex, {}));
     if debug then ExecStat.execStat("simCode: createVarNominalAssertFromVars"); end if;
     (uniqueEqIndex, parameterEquations, _) := SimCodeUtil.createParameterEquations(uniqueEqIndex, parameterEquations, inBackendDAE.shared.globalKnownVars);
-    parameterEquations := listReverse(parameterEquations);
     if debug then ExecStat.execStat("simCode: createParameterEquations"); end if;
 
     (uniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(BackendDAEUtil.collapseRemovedEqs(inBackendDAE), SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
@@ -1173,9 +1173,11 @@ algorithm
     emptyBDAE := BackendDAE.DAE(BackendDAEUtil.createEqSystem(
                                   Util.getOption(inBackendDAE.shared.daeModeData.modelVars))::{},
                                 inBackendDAE.shared);
-    // disable start value calculation, since it fails for some reason
-    Flags.enableDebug(Flags.NO_START_CALC);
+    // disable start value calculation, it's only helpful in case of algebraic loops
+    // and they are not present in DAEmode
+    tmpB := Flags.set(Flags.NO_START_CALC, true);
     modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, numStateSets, fileDir, 0, tempVars);
+    Flags.set(Flags.NO_START_CALC, tmpB);
 
     //create hash table
     crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
