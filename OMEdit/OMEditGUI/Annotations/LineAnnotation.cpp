@@ -1022,6 +1022,41 @@ void LineAnnotation::setAligned(bool aligned)
   update();
 }
 
+/*!
+ * \brief LineAnnotation::updateOMSConnection
+ * Updates the OMSimulator model connection
+ */
+void LineAnnotation::updateOMSConnection()
+{
+  // connection geometry
+  ssd_connection_geometry_t* pConnectionGeometry = new ssd_connection_geometry_t;
+  pConnectionGeometry->n = mPoints.size();
+  pConnectionGeometry->pointsX = new double[mPoints.size()];
+  pConnectionGeometry->pointsY = new double[mPoints.size()];
+  for (int i = 0 ; i < mPoints.size() ; i++) {
+    pConnectionGeometry->pointsX[i] = mPoints.at(i).x();
+    pConnectionGeometry->pointsY[i] = mPoints.at(i).y();
+  }
+  // connection
+  oms_connection_t connection;
+  connection.type = oms_connection_fmi;
+  connection.parent = new char[mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure().toStdString().size() + 1];
+  strcpy(connection.parent, mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure().toStdString().c_str());
+  connection.conA = new char[getStartComponentName().toStdString().size() + 1];
+  strcpy(connection.conA, getStartComponentName().toStdString().c_str());
+  connection.conB = new char[getEndComponentName().toStdString().size() + 1];
+  strcpy(connection.conB, getEndComponentName().toStdString().c_str());
+  connection.geometry = pConnectionGeometry;
+  OMSProxy::instance()->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
+                                         getStartComponentName(), getEndComponentName(), &connection);
+  delete[] connection.parent;
+  delete[] connection.conA;
+  delete[] connection.conB;
+  delete[] pConnectionGeometry->pointsX;
+  delete[] pConnectionGeometry->pointsY;
+  delete pConnectionGeometry;
+}
+
 QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   ShapeAnnotation::itemChange(change, value);
@@ -1115,17 +1150,7 @@ void LineAnnotation::updateConnectionAnnotation()
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
     pCompositeModelEditor->updateConnection(this);
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    ssd_connection_geometry_t connectionGeometry;
-    connectionGeometry.n = mPoints.size();
-    connectionGeometry.pointsX = new double[mPoints.size()];
-    connectionGeometry.pointsY = new double[mPoints.size()];
-    for (int i = 0 ; i < mPoints.size() ; i++) {
-      connectionGeometry.pointsX[i] = mPoints.at(i).x();
-      connectionGeometry.pointsY[i] = mPoints.at(i).y();
-    }
-    OMSProxy::instance()->setConnectionGeometry(getStartComponentName(), getEndComponentName(), &connectionGeometry);
-    delete[] connectionGeometry.pointsX;
-    delete[] connectionGeometry.pointsY;
+    updateOMSConnection();
   } else {
     // get the connection line annotation.
     QString annotationString = QString("annotate=").append(getShapeAnnotation());

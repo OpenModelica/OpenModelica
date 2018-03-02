@@ -589,6 +589,12 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     if (pCompositeModelEditor) {
       pCompositeModelEditor->createConnection(pConnectionLineAnnotation);
     }
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    if (OMSProxy::instance()->addConnection(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                            pConnectionLineAnnotation->getStartComponentName(),
+                                            pConnectionLineAnnotation->getEndComponentName())) {
+      pConnectionLineAnnotation->updateOMSConnection();
+    }
   } else {
     MainWindow *pMainWindow = MainWindow::instance();
     if (pMainWindow->getOMCProxy()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
@@ -614,6 +620,10 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    OMSProxy::instance()->deleteConnection(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
+                                           pConnectionLineAnnotation->getStartComponentName(),
+                                           pConnectionLineAnnotation->getEndComponentName());
   } else {
     pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
                                                  pConnectionLineAnnotation->getEndComponentName(),
@@ -1332,6 +1342,8 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
               !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
               ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
                (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
+                pComponent->getComponentType() == Component::Port) ||
+               (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
                 pComponent->getComponentType() == Component::Port))) {
             return pComponent;
           }
@@ -1359,7 +1371,8 @@ Component* GraphicsView::stateComponentAtPosition(QPoint position)
         if (pRootComponent && !pRootComponent->isSelected()) {
           if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
               !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
-              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isState()))) {
+              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
+                pComponent->getLibraryTreeItem()->isState()))) {
             return pComponent;
           }
         }
@@ -1424,14 +1437,22 @@ void GraphicsView::addConnection(Component *pComponent)
           removeCurrentConnection();
         }
       } else {
+        QString startComponentNameTemplate, endComponentNameTemplate;
+        if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+          startComponentNameTemplate = QString("%1:%2");
+          endComponentNameTemplate = QString("%1:%2");
+        } else {
+          startComponentNameTemplate = QString("%1.%2");
+          endComponentNameTemplate = QString("%1.%2");
+        }
         QString startComponentName, endComponentName;
         if (pStartComponent->getParentComponent()) {
-          startComponentName = QString(pStartComponent->getRootParentComponent()->getName()).append(".").append(pStartComponent->getName());
+          startComponentName = startComponentNameTemplate.arg(pStartComponent->getRootParentComponent()->getName()).arg(pStartComponent->getName());
         } else {
           startComponentName = pStartComponent->getName();
         }
         if (pComponent->getParentComponent()) {
-          endComponentName = QString(pComponent->getRootParentComponent()->getName()).append(".").append(pComponent->getName());
+          endComponentName = endComponentNameTemplate.arg(pComponent->getRootParentComponent()->getName()).arg(pComponent->getName());
         } else {
           endComponentName = pComponent->getName();
         }
@@ -5395,7 +5416,7 @@ void ModelWidget::drawOMSModelConnections()
   if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
     for (int i = 0 ; pConnections[i] ; i++) {
       // get start submodel
-      QStringList startConnectionList = StringHandler::getLastWordAfterDot(pConnections[i]->from).split(':', QString::SkipEmptyParts);
+      QStringList startConnectionList = QString(pConnections[i]->conA).split(':', QString::SkipEmptyParts);
       if (startConnectionList.size() < 2) {
         continue;
       }
@@ -5403,7 +5424,7 @@ void ModelWidget::drawOMSModelConnections()
       if (!pStartSubModelComponent) {
         pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                    GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(startConnectionList.at(0)).arg(pConnections[i]->from),
+                                                   .arg(startConnectionList.at(0)).arg(pConnections[i]->conA),
                                                    Helper::scriptingKind, Helper::errorLevel));
         continue;
       }
@@ -5412,12 +5433,12 @@ void ModelWidget::drawOMSModelConnections()
       if (!pStartInterfacePointComponent) {
         pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                    GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(startConnectionList.at(1)).arg(pConnections[i]->from),
+                                                   .arg(startConnectionList.at(1)).arg(pConnections[i]->conA),
                                                    Helper::scriptingKind, Helper::errorLevel));
         continue;
       }
       // get end submodel
-      QStringList endConnectionList = StringHandler::getLastWordAfterDot(pConnections[i]->to).split(':', QString::SkipEmptyParts);
+      QStringList endConnectionList = QString(pConnections[i]->conB).split(':', QString::SkipEmptyParts);
       if (endConnectionList.size() < 2) {
         continue;
       }
@@ -5425,7 +5446,7 @@ void ModelWidget::drawOMSModelConnections()
       if (!pEndSubModelComponent) {
         pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                    GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(endConnectionList.at(0)).arg(pConnections[i]->to),
+                                                   .arg(endConnectionList.at(0)).arg(pConnections[i]->conB),
                                                    Helper::scriptingKind, Helper::errorLevel));
         continue;
       }
@@ -5434,19 +5455,18 @@ void ModelWidget::drawOMSModelConnections()
       if (!pEndInterfacePointComponent) {
         pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                    GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(endConnectionList.at(1)).arg(pConnections[i]->to),
+                                                   .arg(endConnectionList.at(1)).arg(pConnections[i]->conB),
                                                    Helper::scriptingKind, Helper::errorLevel));
         continue;
       }
       // default connection annotation
       QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
       QStringList shapesList;
-      const ssd_connection_geometry_t *pConnectionGeometry;
       QString point = QString("{%1,%2}");
       QStringList points;
-      if (OMSProxy::instance()->getConnectionGeometry(pConnections[i]->from, pConnections[i]->to, &pConnectionGeometry)) {
-        for (unsigned int i = 0 ; i < pConnectionGeometry->n ; i++) {
-          points.append(point.arg(pConnectionGeometry->pointsX[i]).arg(pConnectionGeometry->pointsY[i]));
+      if (pConnections[i]->geometry && pConnections[i]->geometry->n > 0) {
+        for (unsigned int j = 0 ; j < pConnections[i]->geometry->n ; j++) {
+          points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
         }
       } else {
         QPointF startPoint = pStartInterfacePointComponent->mapToScene(pStartInterfacePointComponent->boundingRect().center());
@@ -5467,8 +5487,8 @@ void ModelWidget::drawOMSModelConnections()
       }
       LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartInterfacePointComponent, pEndInterfacePointComponent,
                                                                      mpDiagramGraphicsView);
-      pConnectionLineAnnotation->setStartComponentName(pConnections[i]->from);
-      pConnectionLineAnnotation->setEndComponentName(pConnections[i]->to);
+      pConnectionLineAnnotation->setStartComponentName(pConnections[i]->conA);
+      pConnectionLineAnnotation->setEndComponentName(pConnections[i]->conB);
 
       mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
     }

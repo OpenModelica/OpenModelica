@@ -128,6 +128,7 @@ public:
   void setShapeFlags(bool enable);
   void updateShape(ShapeAnnotation *pShapeAnnotation);
   void setAligned(bool aligned);
+  void updateOMSConnection();
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value);
 

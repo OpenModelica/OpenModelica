@@ -203,7 +203,7 @@ bool OMSProxy::unloadModel(QString ident)
  */
 bool OMSProxy::renameModel(QString identOld, QString identNew)
 {
-  oms_status_enu_t status = oms2_renameModel(identOld.toStdString().c_str(), identNew.toStdString().c_str());
+  oms_status_enu_t status = oms2_rename(identOld.toStdString().c_str(), identNew.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -301,29 +301,45 @@ bool OMSProxy::getConnections(QString cref, oms_connection_t*** pConnections)
 }
 
 /*!
- * \brief OMSProxy::getConnectionGeometry
- * Gets the connection geometry
- * \param signalA
- * \param signalB
- * \param pGeometry
+ * \brief OMSProxy::addConnection
+ * Adds the connection
+ * \param cref
+ * \param conA
+ * \param conB
  * \return
  */
-bool OMSProxy::getConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t** pGeometry)
+bool OMSProxy::addConnection(QString cref, QString conA, QString conB)
 {
-  oms_status_enu_t status = oms2_getConnectionGeometry(signalA.toStdString().c_str(), signalB.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms2_addConnection(cref.toStdString().c_str(), conA.toStdString().c_str(), conB.toStdString().c_str());
   return statusToBool(status);
 }
 
 /*!
- * \brief OMSProxy::setConnectionGeometry
- * Sets the connection geometry
- * \param signalA
- * \param signalB
- * \param pGeometry
+ * \brief OMSProxy::deleteConnection
+ * Deletes the connection
+ * \param cref
+ * \param conA
+ * \param conB
  * \return
  */
-bool OMSProxy::setConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t* pGeometry)
+bool OMSProxy::deleteConnection(QString cref, QString conA, QString conB)
 {
-  oms_status_enu_t status = oms2_setConnectionGeometry(signalA.toStdString().c_str(), signalB.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms2_deleteConnection(cref.toStdString().c_str(), conA.toStdString().c_str(), conB.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::updateConnection
+ * Updates the connection
+ * \param cref
+ * \param conA
+ * \param conB
+ * \param connection
+ * \return
+ */
+bool OMSProxy::updateConnection(QString cref, QString conA, QString conB, const oms_connection_t *connection)
+{
+  oms_status_enu_t status = oms2_updateConnection(cref.toStdString().c_str(), conA.toStdString().c_str(),
+                                                  conB.toStdString().c_str(), connection);
   return statusToBool(status);
 }

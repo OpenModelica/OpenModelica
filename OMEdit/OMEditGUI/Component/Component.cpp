@@ -868,7 +868,8 @@ void Component::paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
   if (mTransformation.isValid()) {
     setVisible(mTransformation.getVisible());
     if (mpStateComponentRectangle) {
-      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && mpLibraryTreeItem->isState()) {
+      if (isVisible() && mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica &&
+          mpLibraryTreeItem->isState()) {
         if (mHasTransition && mIsInitialState) {
           mpStateComponentRectangle->setLinePattern(StringHandler::LineSolid);
           mpStateComponentRectangle->setLineThickness(0.5);

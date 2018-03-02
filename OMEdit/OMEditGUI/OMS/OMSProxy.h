@@ -68,8 +68,9 @@ public:
   bool getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
   bool getConnections(QString cref, oms_connection_t*** pConnections);
-  bool setConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t* pGeometry);
-  bool getConnectionGeometry(QString signalA, QString signalB, const ssd_connection_geometry_t** pGeometry);
+  bool addConnection(QString cref, QString conA, QString conB);
+  bool deleteConnection(QString cref, QString conA, QString conB);
+  bool updateConnection(QString cref, QString conA, QString conB, const oms_connection_t* connection);
 };
 
 #endif // OMSPROXY_H
