@@ -6,8 +6,7 @@
 loadModel(Modelica,{"3.2.1"});
 getErrorString();
 
-setCommandLineOptions("--daeMode=dynamic --postOptModules-=wrapFunctionCalls");
-//setCommandLineOptions("--daeMode=new");
+setCommandLineOptions("--daeMode=new");
 simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
 getErrorString();
 
@@ -15,17 +14,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
   getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat",
   "NPendulum_diff.csv",0.01,0.0001,
   { "evaporator.p", "evaporator.V_l", "controller.x", "temperature.T"});
-
-setCommandLineOptions("--daeMode=all");
-simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
-getErrorString();
-
-res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-  getEnvironmentVar("REFERENCEFILES")+"/msl32/Modelica.Fluid.Examples.DrumBoiler.DrumBoiler.mat",
-  "NPendulum_diff.csv",0.01,0.0001,
-  { "evaporator.p", "evaporator.V_l", "controller.x", "temperature.T"});
-
-
 
 // Result:
 // true
@@ -35,24 +23,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
 //     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 907.200000
-// |                 | |       | SteamValve.opening >= 0.0 and SteamValve.opening <= 1.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= SteamValve.opening <= 1.0, has value: 1
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
-// {"Files Equal!"}
-// true
-// record SimulationResult
-//     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 1080.000000
-// |                 | |       | SteamValve.opening >= 0.0 and SteamValve.opening <= 1.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= SteamValve.opening <= 1.0, has value: 1
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
