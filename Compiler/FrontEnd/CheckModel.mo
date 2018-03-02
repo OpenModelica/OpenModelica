@@ -329,6 +329,30 @@ algorithm
   end matchcontinue;
 end checkAndGetAlgorithmOutputs;
 
+public function isCrefListAlgorithmOutput
+"This function verfies if all crefs in crefList are outputs
+ of the passed algorithm"
+  input list<DAE.ComponentRef> crefList;
+  input DAE.Algorithm inAlgorithm;
+  input DAE.ElementSource inSource;
+  input DAE.Expand inCrefExpansionRule;
+  output Boolean outResult;
+protected
+  HashSet.HashSet ht = HashSet.emptyHashSet();
+  list<DAE.ComponentRef> algOutCrefs;
+algorithm
+  algOutCrefs := CheckModel.checkAndGetAlgorithmOutputs(inAlgorithm, inSource, inCrefExpansionRule);
+  ht := List.fold(algOutCrefs, BaseHashSet.add, ht);
+  try
+    for cr in crefList loop
+      BaseHashSet.get(cr, ht);
+    end for;
+    outResult := true;
+  else
+    outResult := false;
+  end try;
+end isCrefListAlgorithmOutput;
+
 protected function algorithmOutputs "This function finds the the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
   statement in the algorithm and an output is a variables belonging to the

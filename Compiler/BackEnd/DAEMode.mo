@@ -52,6 +52,7 @@ import BackendDAEFunc;
 import BackendDump;
 import BackendEquation;
 import BackendVariable;
+import CheckModel;
 import CommonSubExpression;
 import ComponentReference;
 import Config;
@@ -271,6 +272,10 @@ algorithm
       DAE.FunctionTree funcsTree;
       list<DAE.ComponentRef> crlst;
 
+      DAE.Algorithm alg;
+      DAE.ElementSource source;
+      DAE.Expand crefExpand;
+
       constant Boolean debug = false;
 
     case ({eq}, vars)
@@ -324,6 +329,21 @@ algorithm
         traverserArgs.auxEqns = listAppend({new_eq}, traverserArgs.auxEqns);
         if debug then print("[DAEmode] Create solved when equation. vars:\n" +
                       BackendDump.varListString({var}, "") + "eq:\n" +
+                      BackendDump.equationListString({new_eq}, "") + "\n"); end if;
+      then
+        (traverserArgs);
+
+    case ({eq as BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)}, vars)
+      guard (not listEmpty(varIdxs) // not inside of EQNS_SYSTEM possible solveable
+             and not Util.boolOrList(list(BackendVariable.isStateVar(v) for v in vars)))
+      equation
+        // check that all vars
+        true = CheckModel.isCrefListAlgorithmOutput(list(v.varName for v in vars), alg, source, crefExpand);
+        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
+        traverserArgs.auxVars = listAppend(vars, traverserArgs.auxVars);
+        traverserArgs.auxEqns = listAppend({new_eq}, traverserArgs.auxEqns);
+        if debug then print("[DAEmode] Create solved algorithms. vars:\n" +
+                      BackendDump.varListString(vars, "") + "eq:\n" +
                       BackendDump.equationListString({new_eq}, "") + "\n"); end if;
       then
         (traverserArgs);

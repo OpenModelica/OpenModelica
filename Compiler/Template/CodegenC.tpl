@@ -1178,8 +1178,10 @@ end simulationFile;
 template simulationFileHeader(String fileNamePrefix)
   "Generates header part of simulation file."
 ::=
+    let daeHeader = if intGt(Flags.getConfigEnum(Flags.DAE_MODE), 1) then '#include "<%fileNamePrefix%>_16dae.h"'
     <<
     #include "<%fileNamePrefix%>_model.h"
+    <%daeHeader%>
     >>
 end simulationFileHeader;
 

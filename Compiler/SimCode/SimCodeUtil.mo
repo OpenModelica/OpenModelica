@@ -6180,26 +6180,20 @@ algorithm
     // normal call
     case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand)::_, false) equation
       solvedVars = List.map(vars, BackendVariable.varCref);
-      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-      // The variables solved for musst all be part of the output variables of the algorithm.
-      List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
+      true = CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
     then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
     // remove discrete Vars
     case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, true) equation
       solvedVars = List.map(vars, BackendVariable.varCref);
-      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-      // The variables solved for musst all be part of the output variables of the algorithm.
-      List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare);
+      true = CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, BackendVariable.listVar1(vars));
     then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
 
     // inverse Algorithm for single variable.
     case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, false) equation
-      _ = List.map(vars, BackendVariable.varCref);
-      _ = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
       // We need to solve an inverse problem of an algorithm section.
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       algStatements = solveAlgorithmInverse(algStatements, vars);
@@ -6242,10 +6236,7 @@ algorithm
     // Error message, inverse algorithms cannot be solved for discrete variables
     case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
       solvedVars = List.map(vars, BackendVariable.varCref);
-      algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-
-      // The variables solved for must all be part of the output variables of the algorithm.
-      failure(List.map2AllValue(solvedVars, List.isMemberOnTrue, true, algOutVars, ComponentReference.crefEqualNoStringCompare));
+      false = CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
 
       crefsStr = ComponentReference.printComponentRefListStr(solvedVars);
       algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
