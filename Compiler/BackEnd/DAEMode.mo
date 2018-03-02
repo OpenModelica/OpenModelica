@@ -130,7 +130,7 @@ algorithm
 
     // Set updated globalKnownVars
     simDAE := BackendDAEUtil.setDAEGlobalKnownVars(simDAE, globalKnownVars);
-    simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
+    simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE, false);
     simDAE := Initialization.removeInitializationStuff(simDAE);
 
     // post-optimization phase

@@ -6862,7 +6862,10 @@ algorithm
   // Set updated globalKnownVars
   simDAE := setDAEGlobalKnownVars(simDAE, globalKnownVars);
 
-  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
+  // add initial assignmnents to all algorithms
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE, false);
+
+  // remove homotopy and initial calls
   simDAE := Initialization.removeInitializationStuff(simDAE);
 
   // generate inline solver
@@ -7330,7 +7333,7 @@ algorithm
   // Set updated globalKnownVars
   simDAE := setDAEGlobalKnownVars(simDAE, globalKnownVars);
 
-  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE);
+  simDAE := BackendDAEOptimize.addInitialStmtsToAlgorithms(simDAE, false);
   simDAE := Initialization.removeInitializationStuff(simDAE);
 
   // generate inline solver

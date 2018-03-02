@@ -3538,31 +3538,34 @@ public function addInitialStmtsToAlgorithms "
     - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute).
     - A discrete variable v is initialized with pre(v)."
   input BackendDAE.BackendDAE inDAE;
+  input Boolean isInitialSystem;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := BackendDAEUtil.mapEqSystem(inDAE, addInitialStmtsToAlgorithms1);
+  outDAE := BackendDAEUtil.mapEqSystem1(inDAE, addInitialStmtsToAlgorithms1, isInitialSystem);
 end addInitialStmtsToAlgorithms;
 
 protected function addInitialStmtsToAlgorithms1 "Helper function to addInitialStmtsToAlgorithms."
   input BackendDAE.EqSystem syst;
+  input Boolean isInitialSystem;
   input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst = syst;
   output BackendDAE.Shared oshared = shared;
 protected
-  BackendDAE.Variables ordvars;
+  BackendDAE.Variables ordvars, allVars;
   BackendDAE.EquationArray ordeqns;
+  BackendDAE.EquationArray initEqns;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=ordvars, orderedEqs=ordeqns) := osyst;
-  BackendEquation.traverseEquationArray_WithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, ordvars);
+  BackendEquation.traverseEquationArray_WithUpdate(ordeqns, eaddInitialStmtsToAlgorithms1Helper, (ordvars, isInitialSystem));
 end addInitialStmtsToAlgorithms1;
 
 protected function eaddInitialStmtsToAlgorithms1Helper "Helper function to addInitialStmtsToAlgorithms1."
   input BackendDAE.Equation inEq;
-  input BackendDAE.Variables inVars;
+  input tuple<BackendDAE.Variables, Boolean> inTpl;
   output BackendDAE.Equation outEq;
-  output BackendDAE.Variables outVars;
+  output tuple<BackendDAE.Variables, Boolean> outTpl = inTpl;
 algorithm
-  (outEq,outVars) := match (inEq,inVars)
+  (outEq) := match (inEq, inTpl)
     local
       DAE.Algorithm alg;
       list<DAE.Statement> statements;
@@ -3574,15 +3577,16 @@ algorithm
       list<DAE.ComponentRef> crlst;
       DAE.Expand crExpand;
       BackendDAE.EquationAttributes attr;
+      Boolean isInitialEquations;
 
-    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source, expand=crExpand, attr=attr), vars)
+    case (BackendDAE.ALGORITHM(size=size, alg=alg as DAE.ALGORITHM_STMTS(statements), source=source, expand=crExpand, attr=attr), (vars, isInitialEquations))
       equation
         crlst = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crExpand);
         outputs = List.map(crlst, Expression.crefExp);
-        statements = expandAlgorithmStmts(statements, outputs, vars);
-      then (BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statements), source, crExpand, attr), vars);
+        statements = expandAlgorithmStmts(statements, outputs, vars, isInitialEquations);
+      then BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statements), source, crExpand, attr);
 
-    else (inEq,inVars);
+    else inEq;
   end match;
 end eaddInitialStmtsToAlgorithms1Helper;
 
@@ -3590,6 +3594,7 @@ protected function expandAlgorithmStmts "Helper function to eaddInitialStmtsToAl
   input list<DAE.Statement> inAlg;
   input list<DAE.Exp> inOutputs;
   input BackendDAE.Variables inVars;
+  input Boolean isInitialEquation;
   output list<DAE.Statement> outAlg;
 algorithm
   outAlg := match(inAlg, inOutputs, inVars)
@@ -3597,7 +3602,7 @@ algorithm
       DAE.Exp out, initExp;
       list<DAE.Exp> rest;
       DAE.ComponentRef cref;
-      BackendDAE.Var var;
+      list<BackendDAE.Var> vars;
       DAE.Statement stmt;
       DAE.Type type_;
       list<DAE.Statement> statements;
@@ -3605,18 +3610,20 @@ algorithm
     case(statements, {}, _)
     then statements;
 
-    case(statements, out::rest, _) equation
-      cref = Expression.expCref(out);
-      type_ = Expression.typeof(out);
-      type_ = Expression.arrayEltType(type_);
-      (var::_, _) = BackendVariable.getVar(cref, inVars);
-      if BackendVariable.isVarDiscrete(var) then
-        initExp = Expression.makePureBuiltinCall("pre", {out}, type_);
-      else
-        initExp = Expression.crefExp(ComponentReference.crefPrefixStart(cref));
-      end if;
-      stmt = Algorithm.makeAssignment(DAE.CREF(cref, type_), DAE.PROP(type_, DAE.C_VAR()), initExp, DAE.PROP(type_, DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
-    then expandAlgorithmStmts(stmt::statements, rest, inVars);
+    case(statements, out::rest, _) algorithm
+      cref := Expression.expCref(out);
+      (vars, _) := BackendVariable.getVar(cref, inVars);
+      for v in vars loop
+        type_ := v.varType;
+        if BackendVariable.isVarDiscrete(v) and not isInitialEquation then
+          initExp := Expression.makePureBuiltinCall("pre", {Expression.crefExp(v.varName)}, type_);
+        else
+          initExp := Expression.crefExp(ComponentReference.crefPrefixStart(v.varName));
+        end if;
+        stmt := Algorithm.makeAssignment(DAE.CREF(v.varName, type_), DAE.PROP(type_, DAE.C_VAR()), initExp, DAE.PROP(type_, DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
+        statements := stmt::statements;
+      end for;
+    then expandAlgorithmStmts(statements, rest, inVars, isInitialEquation);
   end match;
 end expandAlgorithmStmts;
 

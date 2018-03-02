@@ -219,6 +219,9 @@ algorithm
     initdae := BackendDAEUtil.transformBackendDAE(initdae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
     execStat("matching and sorting (n="+String(BackendDAEUtil.daeSize(initdae))+") (initialization)");
 
+    // add initial assignmnents to all algorithms
+    initdae := BackendDAEOptimize.addInitialStmtsToAlgorithms(initdae, true);
+
     if useHomotopy then
       initdae0 := BackendDAEUtil.copyBackendDAE(initdae);
     end if;
