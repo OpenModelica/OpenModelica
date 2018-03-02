@@ -40,6 +40,7 @@ void Logger::finalize()
 {
   if (_instance != NULL)
     delete _instance;
+  _instance = NULL;
 }
 
 void Logger::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
