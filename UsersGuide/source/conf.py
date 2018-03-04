@@ -20,6 +20,8 @@ import shlex
 import subprocess
 from datetime import date
 
+sys.setrecursionlimit(2000)
+
 if not 'OPENMODELICAHOME' in os.environ:
   os.environ['OPENMODELICAHOME'] = os.path.abspath('../../../build')
 
