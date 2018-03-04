@@ -20,6 +20,7 @@ Generated on |date| at |time|
   introduction
   omedit
   plotting
+  solving
   debugger
   graphs
   fmi
