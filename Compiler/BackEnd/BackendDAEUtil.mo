@@ -9078,8 +9078,8 @@ algorithm
     end for;
   else
     (_, _, name) := System.dladdr(func);
-    Error.addInternalError("BackendDAEUtil.traverseEqSystemStrongComponents failed
-                            with function:\n" +  name + "\n", sourceInfo());
+    Error.addInternalError("BackendDAEUtil.traverseEqSystemStrongComponents failed " +
+                            "with function:\n" +  name + "\n", sourceInfo());
     fail();
   end try;
 end traverseEqSystemStrongComponents;
