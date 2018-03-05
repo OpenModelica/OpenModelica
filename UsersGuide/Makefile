@@ -226,7 +226,7 @@ source/media/systemoverview.pdf: source/media/systemoverview.svg
 	inkscape -f $< --export-pdf $@
 	FNAME=`echo $@ | sed "s/[.]/-/g" | sed "s/-pdf/.pdf/g"`; if test "$$FNAME" != "$@"; then cp -a "$@" "$$FNAME"; fi
 source/openmodelica.bib: resolve-crossref.py ../bibliography/openmodelica.bib
-	python resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
+	./resolve-crossref.py "../bibliography/openmodelica.bib" source/openmodelica.bib
 source/interface.inc: interface.mos
 	@mkdir -p tmp
 	$(OPENMODELICA_ROOT)/build/bin/omc -g=MetaModelica -d=nogen interface.mos
@@ -268,4 +268,4 @@ source/omchelptext.rst:
 	$(OPENMODELICA_ROOT)/build/bin/omc +help=omcall-sphinxoutput > "$@.tmp"
 	mv "$@.tmp" "$@"
 source/tracreleases.rst: source/tracreleases.py
-	cd source && python ./tracreleases.py
+	cd source && ./tracreleases.py
