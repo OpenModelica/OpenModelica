@@ -27,6 +27,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 // Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// [Modelica 3.1/Mechanics/MultiBody/Joints.mo:269:5-279:3:writable] Warning: Variable j1.phi has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

@@ -37,6 +37,9 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// [Modelica 3.2.1/Mechanics/MultiBody/Parts.mo:2674:5-2678:74:writable] Warning: Variable $DER.wheel1.der_angles[2] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [Modelica 3.2.1/Mechanics/MultiBody/Parts.mo:2674:5-2678:74:writable] Warning: Variable $DER.wheel1.der_angles[1] has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+//
 // "true
 // "
 // ""

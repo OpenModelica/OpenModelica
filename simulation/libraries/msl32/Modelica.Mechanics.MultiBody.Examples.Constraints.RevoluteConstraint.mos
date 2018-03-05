@@ -41,6 +41,7 @@ runScript(modelTesting);getErrorString();
 //
 // Files Equal!
 // Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// [Modelica 3.2.1/Mechanics/MultiBody/Joints.mo:260:5-270:3:writable] Warning: Variable joint.phi has attribute stateSelect=StateSelect.never, but was selected as a state
 //
 // "true
 // "
