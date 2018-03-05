@@ -1271,6 +1271,16 @@ algorithm
   end match;
 end isPreCref;
 
+public function isPreviousCref
+  input DAE.ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match(cr)
+    case(DAE.CREF_QUAL(ident=DAE.previousNamePrefix)) then true;
+    else false;
+  end match;
+end isPreviousCref;
+
 public function isStartCref
   input DAE.ComponentRef cr;
   output Boolean b;

@@ -935,9 +935,9 @@ public constant Message EQN_NO_SPACE_TO_SOLVE = MESSAGE(581, SYMBOLIC(), WARNING
   Util.gettext("Equation %s (size: %s) %s is not big enough to solve for enough variables.\n  Remaining unsolved variables are: %s\n  Already solved: %s\n  Equations used to solve those variables:%s"));
 public constant Message VAR_NO_REMAINING_EQN = MESSAGE(582, SYMBOLIC(), WARNING(),
   Util.gettext("Variable %s does not have any remaining equation to be solved in.\n  The original equations were:%s"));
-public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE(582, TRANSLATION(), NOTIFICATION(),
+public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE(583, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
-public constant Message MIXED_DETERMINED = MESSAGE(583, SYMBOLIC(), ERROR(),
+public constant Message MIXED_DETERMINED = MESSAGE(584, SYMBOLIC(), ERROR(),
   Util.gettext("The given system is mixed-determined.   [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\"."));
 public constant Message STACK_OVERFLOW_DETAILED = MESSAGE(584, SCRIPTING(), ERROR(),
   Util.gettext("Stack overflow occurred while evaluating %s:\n%s"));
@@ -953,6 +953,10 @@ public constant Message NF_CAT_FIRST_ARG_EVAL = MESSAGE(589, TRANSLATION(), ERRO
   Util.gettext("The first argument of cat must be possible to evaluate during compile-time. Expression %s has variability %s."));
 public constant Message COMMA_OPERATOR_DIFFERENT_SIZES = MESSAGE(590, TRANSLATION(), ERROR(),
   Util.gettext("Arguments of concatenation comma operator have different sizes for the first dimension: %s has dimension %s and %s has dimension %s."));
+public constant Message NON_STATE_STATESELECT_ALWAYS = MESSAGE(591, SYMBOLIC(), WARNING(),
+  Util.gettext("Variable %s has attribute stateSelect=StateSelect.always, but was selected as a continuous variable."));
+public constant Message STATE_STATESELECT_NEVER = MESSAGE(592, SYMBOLIC(), WARNING(),
+  Util.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

@@ -8292,19 +8292,19 @@ algorithm
     SimCode.SparsityPattern sparsityT;
   case(SOME(dmd)) algorithm
     print("\ndaeMode: \n" + UNDERLINE + "\n");
-	  str := "residual Equations:\n"+UNDERLINE+"\n";
-	  print(str);
-	  dumpSimEqSystemLst(List.flatten(dmd.daeEquations),"\n");
-	  dumpVarLst(dmd.residualVars,"residualVars("+intString(listLength(dmd.residualVars))+")");
-	  dumpVarLst(dmd.algebraicVars,"algebraicDAEVars("+intString(listLength(dmd.algebraicVars))+")");
-	  dumpVarLst(dmd.auxiliaryVars,"auxVars("+intString(listLength(dmd.auxiliaryVars))+")");
-	  if isSome(dmd.sparsityPattern) then
-	    str := "Sparsity Pattern:\n"+UNDERLINE+"\n";
-	    print(str);
-	    SimCode.JAC_MATRIX(sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
-	    dumpSparsePatternInt(sparsityT);
-	  end if;
-	then ();
+    str := "residual Equations:\n"+UNDERLINE+"\n";
+    print(str);
+    dumpSimEqSystemLst(List.flatten(dmd.daeEquations),"\n");
+    dumpVarLst(dmd.residualVars,"residualVars("+intString(listLength(dmd.residualVars))+")");
+    dumpVarLst(dmd.algebraicVars,"algebraicDAEVars("+intString(listLength(dmd.algebraicVars))+")");
+    dumpVarLst(dmd.auxiliaryVars,"auxVars("+intString(listLength(dmd.auxiliaryVars))+")");
+    if isSome(dmd.sparsityPattern) then
+      str := "Sparsity Pattern:\n"+UNDERLINE+"\n";
+      print(str);
+      SimCode.JAC_MATRIX(sparsityT=sparsityT) := Util.getOption(dmd.sparsityPattern);
+      dumpSparsePatternInt(sparsityT);
+    end if;
+  then ();
   case(NONE()) then ();
   end match;
 end dumpSimCodeDAEmodeDataString;
@@ -8941,6 +8941,13 @@ algorithm
       varType = tp,
       source = source)), _, vars)
       equation
+        _ = match BackendVariable.varStateSelect(dlowVar)
+          case DAE.NEVER()
+            algorithm
+              Error.addSourceMessage(Error.STATE_STATESELECT_NEVER, {ComponentReference.printComponentRefStr(cr)}, source.info);
+            then ();
+          else ();
+        end match;
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
@@ -8971,6 +8978,14 @@ algorithm
       varType = tp,
       source = source)), _, vars)
       equation
+        _ = match BackendVariable.varStateSelect(dlowVar)
+          case DAE.ALWAYS()
+            guard valueEq(kind, BackendDAE.VARIABLE()) and not ComponentReference.isPreviousCref(cr) /* TODO: Why are clocked variables continuous and not discrete? */
+            algorithm
+              Error.addSourceMessage(Error.NON_STATE_STATESELECT_ALWAYS, {ComponentReference.printComponentRefStr(cr)}, source.info);
+            then ();
+          else ();
+        end match;
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
