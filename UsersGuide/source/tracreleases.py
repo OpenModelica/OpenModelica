@@ -33,7 +33,7 @@ for rel in releases:
     (content,n) = re.subn(r'^([*]*) ( *[*])', r'*\1\2', content, flags=re.M)
   content = re.sub(r'^([*]*) [*]', r'\1*', content)
   content = re.sub(r'== Detailed Changes ==\s*\[\[TicketQuery[^]]*\]\]', '', content, re.MULTILINE)
-  open("tmp.wiki", "w").write(content.encode('utf-8'))
+  open("tmp.wiki", "w").write(content)
   call(["pandoc", "--base-header-level=2", "-o", "tmp.rst", "tmp.wiki"])
   contentrst = open("tmp.rst", "r").read()
   # Removes {{{#!div lines; easier on the rst since it's a 1-line pattern
