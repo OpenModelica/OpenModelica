@@ -117,8 +117,6 @@ static int continue_DASSL(int* idid, double* tolarence);
 
 /* function for calculating state values on residual form */
 static int functionODE_residual(double *t, double *x, double *xprime, double *cj, double *delta, int *ires, double *rpar, int* ipar);
-/* function for calculating state values on residual form */
-static int functionDAE_residual(double *t, double *x, double *xprime, double *cj, double *delta, int *ires, double *rpar, int* ipar);
 /* function for calculating zeroCrossings */
 static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
         int *ng, double *gout, double *rpar, int* ipar);
@@ -128,35 +126,18 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   TRACE_PUSH
   /* work arrays for DASSL */
   unsigned int i;
-  long N, NDAE;
+  long N;
   SIMULATION_DATA tmpSimData = {0};
 
-  dasslData->daeMode = 0;
   dasslData->residualFunction = functionODE_residual;
   N = data->modelData->nStates;
-  NDAE = 0;
 
-  /* change parameter for DAE mode */
-  if (omc_flag[FLAG_DAE_MODE])
-  {
-    if (compiledInDAEMode)
-    {
-      dasslData->daeMode = 1;
-      dasslData->residualFunction = functionDAE_residual;
-      N = data->modelData->nStates + data->simulationInfo->daeModeData->nAlgebraicDAEVars;
-      NDAE = N;
-    }
-    else
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "-daeMode flag is used, the model is not compiled in DAE mode. See compiler flag: +daeMode. Continue as usual.");
-    }
-  }
   dasslData->N = N;
 
   RHSFinalFlag = 0;
 
-  dasslData->liw = 40 + N + NDAE;
-  dasslData->lrw = 60 + ((maxOrder + 4) * N) + (N * N)  + (3*data->modelData->nZeroCrossings)  + NDAE;
+  dasslData->liw = 40 + N;
+  dasslData->lrw = 60 + ((maxOrder + 4) * N) + (N * N)  + (3*data->modelData->nZeroCrossings);
   dasslData->rwork = (double*) calloc(dasslData->lrw, sizeof(double));
   assertStreamPrint(threadData, 0 != dasslData->rwork,"out of memory");
   dasslData->iwork = (int*)  calloc(dasslData->liw, sizeof(int));
@@ -317,16 +298,7 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   }
   else
   {
-    /* in dae mode use for now internal Jacobian calculation */
-    if (dasslData->daeMode)
-    {
-      dasslData->dasslJacobian = NUMJAC;
-      warningStreamPrint(LOG_SOLVER, 0, "Running in DAE mode so currently no colored jacobian available!");
-    }
-    else
-    {
-      dasslData->dasslJacobian = COLOREDNUMJAC;
-    }
+    dasslData->dasslJacobian = COLOREDNUMJAC;
   }
 
   /* selects the calculation method of the jacobian */
@@ -397,16 +369,6 @@ int dassl_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
   }
   infoStreamPrint(LOG_SOLVER, 0, "dassl performs an restart after an event occurs %s", dasslData->dasslAvoidEventRestart?"NO":"YES");
 
-  /* configure algebraic variables as such */
-  if (dasslData->daeMode)
-  {
-    dasslData->info[15] = 1;
-
-    for(i=0; i<dasslData->N; ++i)
-    {
-      dasslData->iwork[40 + i] =  (i<data->modelData->nStates)? 1.0: -1.0;
-    }
-  }
   /* ### end configuration of dassl ### */
 
 
@@ -511,16 +473,13 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   SIMULATION_DATA *sData = data->localData[0];
   SIMULATION_DATA *sDataOld = data->localData[1];
 
-  modelica_real* states = (dasslData->daeMode)?dasslData->states:sData->realVars;
+  modelica_real* states = sData->realVars;
   modelica_real* stateDer = dasslData->stateDer;
 
 
   MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
 
-  if (!dasslData->daeMode)
-  {
-    memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
-  }
+  memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
   dasslData->rpar[0] = (double*) (void*) data;
   dasslData->rpar[1] = (double*) (void*) dasslData;
@@ -544,12 +503,6 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     dasslData->info[0] = 0;
     dasslData->idid = 0;
 
-    if (dasslData->daeMode)
-    {
-      memcpy(states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
-      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
-      memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
-    }
   }
 
   /* Calculate steps until TOUT is reached */
@@ -664,16 +617,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   } while(dasslData->idid == 1);
 
-  if (dasslData->daeMode)
-  {
-    memcpy(data->localData[0]->realVars, states, sizeof(double)*data->modelData->nStates);
-    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
-    memcpy(data->localData[0]->realVars + data->modelData->nStates, stateDer, sizeof(double)*data->modelData->nStates);
-  }
-  else
-  {
-    states = dasslData->states;
-  }
+  states = dasslData->states;
 
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -849,80 +793,6 @@ int functionODE_residual(double *t, double *y, double *yd, double* cj, double *d
   return 0;
 }
 
-int functionDAE_residual(double *t, double *y, double *yd, double* cj, double *delta,
-                    int *ires, double *rpar, int *ipar)
-{
-  TRACE_PUSH
-  DATA* data = (DATA*)((double**)rpar)[0];
-  DASSL_DATA* dasslData = (DASSL_DATA*)((double**)rpar)[1];
-  threadData_t *threadData = (threadData_t*)((double**)rpar)[2];
-
-  double timeBackup;
-  long i;
-  int saveJumpState;
-  int success = 0;
-
-  /* context */
-  if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
-  {
-    setContext(data, t, CONTEXT_ODE);
-  }
-
-  /* debug */
-  if (ACTIVE_STREAM(LOG_DASSL_STATES)){
-    printCurrentStatesVector(LOG_DASSL_STATES, y, data, *t);
-    printVector(LOG_DASSL_STATES, "yprime", yd, data->modelData->nStates, *t);
-  }
-
-  timeBackup = data->localData[0]->timeValue;
-  data->localData[0]->timeValue = *t;
-
-  memcpy(data->localData[0]->realVars, y, sizeof(double)*data->modelData->nStates);
-  memcpy(data->localData[0]->realVars + data->modelData->nStates, yd, sizeof(double)*data->modelData->nStates);
-  data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData,  y + data->modelData->nStates);
-
-  saveJumpState = threadData->currentErrorStage;
-  threadData->currentErrorStage = ERROR_INTEGRATOR;
-
-  /* try */
-#if !defined(OMC_EMCC)
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
-#endif
-
-  /* read input vars */
-  externalInputUpdate(data);
-  data->callback->input_function(data, threadData);
-
-  /* eval residual vars */
-  data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
-
-  /* get data->simulationInfo->residualVars  */
-  for(i=0; i < data->simulationInfo->daeModeData->nResidualVars; i++)
-  {
-    delta[i] = data->simulationInfo->daeModeData->residualVars[i];
-  }
-  printVector(LOG_DASSL_STATES, "residual", delta, data->simulationInfo->daeModeData->nResidualVars, *t);
-  success = 1;
-#if !defined(OMC_EMCC)
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
-#endif
-
-  if (!success) {
-    *ires = -1;
-  }
-
-  threadData->currentErrorStage = saveJumpState;
-
-  data->localData[0]->timeValue = timeBackup;
-
-  if (data->simulationInfo->currentContext == CONTEXT_ODE){
-    unsetContext(data);
-  }
-
-  TRACE_POP
-  return 0;
-}
-
 int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
         int *ng, double *gout, double *rpar, int* ipar)
 {
@@ -944,13 +814,6 @@ int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
 
   timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = *t;
-
-  if (dasslData->daeMode)
-  {
-    memcpy(data->localData[0]->realVars, y, sizeof(double)*data->modelData->nStates);
-    memcpy(data->localData[0]->realVars + data->modelData->nStates, yp, sizeof(double)*data->modelData->nStates);
-    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData,  y + data->modelData->nStates);
-  }
 
   /* read input vars */
   externalInputUpdate(data);
@@ -1097,10 +960,6 @@ int jacA_num(double *t, double *y, double *yprime, double *delta, double *matrix
     deltaInv = 1. / delta_hh;
     ysave = y[i];
     y[i] += delta_hh;
-    if (dasslData->daeMode){
-      ypsave = yprime[i];
-      yprime[i] += *cj * delta_hh;
-    }
 
     /* internal dassl numerical jacobian is
      * calculated by adding cj to yprime.
@@ -1117,9 +976,6 @@ int jacA_num(double *t, double *y, double *yprime, double *delta, double *matrix
       matrixA[i*dasslData->N+j] = (dasslData->newdelta[j] - delta[j]) * deltaInv;
     }
     y[i] = ysave;
-    if (dasslData->daeMode){
-      yprime[i] = ypsave;
-    }
   }
 
   TRACE_POP
@@ -1168,12 +1024,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta, double 
         ysave[ii] = y[ii];
         y[ii] += delta_hh[ii];
 
-        if (dasslData->daeMode){
-          ypsave[ii] = yprime[ii];
-          yprime[ii] += *cj * delta_hh[ii];
-        }
-
-
         delta_hh[ii] = 1. / delta_hh[ii];
       }
     }
@@ -1195,10 +1045,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta, double 
           j++;
         };
         y[ii] = ysave[ii];
-        if (dasslData->daeMode)
-        {
-          yprime[ii] = ypsave[ii];
-        }
       }
     }
   }
@@ -1242,15 +1088,11 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD, do
     _omc_destroyMatrix(dumpJac);
   }
 
-  /* add cj to diagonal elements and store in pd */
-  if (!dasslData->daeMode)
+  int i,j = 0;
+  for(i = 0; i < dasslData->N; i++)
   {
-    int i,j = 0;
-    for(i = 0; i < dasslData->N; i++)
-    {
-      pd[j] -= (double) *cj;
-      j += dasslData->N + 1;
-    }
+    pd[j] -= (double) *cj;
+    j += dasslData->N + 1;
   }
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);

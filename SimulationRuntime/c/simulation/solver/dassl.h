@@ -46,7 +46,6 @@ typedef struct DASSL_DATA{
   int dasslRootFinding;         /* if TRUE then the internal root finding is used */
   int dasslJacobian;            /* specifices the method to calculate the jacobian matrix */
   int dasslAvoidEventRestart;   /* if TRUE then no restart after an event is performed */
-  int daeMode;                  /* if TRUE then solve dae more with a reals residual function */
 
   long N;
   int* info;
