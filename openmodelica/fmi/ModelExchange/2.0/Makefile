@@ -14,6 +14,7 @@ testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
 testBug3902.mos \
+testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ZeroStates.mos \
