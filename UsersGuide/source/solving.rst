@@ -118,4 +118,4 @@ References
 .. rubric:: Footnotes
 .. [#f2] `Sundials Webpage <http://computation.llnl.gov/projects/sundials-suite-nonlinear-differential-algebraic-equation-solvers>`__
 .. [#f3] `DASPK Webpage <https://cse.cs.ucsb.edu/software>`__
-.. [#f4] 'Cdaskr source <https://github.com/wibraun/Cdaskr>`__
+.. [#f4] `Cdaskr source <https://github.com/wibraun/Cdaskr>`__
