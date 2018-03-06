@@ -1200,13 +1200,13 @@ algorithm
         if debug then execStat("generateSparsePattern -> do start "); end if;
         // prepare crefs
         depCompRefsLst := List.map(dependentVars, BackendVariable.varCref);
-        inDepCompRefsLst := List.map(independentVars, BackendVariable.varCref);
         depCompRefs := listArray(depCompRefsLst);
-        inDepCompRefs := listArray(inDepCompRefsLst);
-        // create jacobian vars
-        jacDiffVars := list(BackendVariable.createpDerVar(v) for v in independentVars);
-        sizeN := arrayLength(inDepCompRefs);
         sizeM := arrayLength(depCompRefs);
+
+        // create jacobian vars
+        (jacDiffVars,inDepCompRefsLst) := createInDepVars(independentVars);
+        inDepCompRefs := listArray(inDepCompRefsLst);
+        sizeN := arrayLength(inDepCompRefs);
 
         // generate adjacency matrix including diff vars
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) := BackendDAEUtil.addVarsToEqSystem(syst,jacDiffVars);
@@ -1646,6 +1646,33 @@ algorithm
   end if;
 end createBipartiteGraph;
 
+protected function createInDepVars
+"This function creates variables for the dependecy
+analysis, this needs to cosider different behavoir
+clock stated and continuous states.
+continuous states: der(x) > dependent and x > independent
+clocked states: previous(x) > independent and x > dependent
+"
+  input list<BackendDAE.Var> independentVars;
+  output list<BackendDAE.Var> outVars = {};
+  output list<DAE.ComponentRef> outCrefs = {};
+protected
+  BackendDAE.Var var;
+algorithm
+  for v in independentVars loop
+    if BackendVariable.isClockedStateVar(v) then
+      var :=  BackendVariable.createClockedState(v);
+      outVars := var::outVars;
+      outCrefs := var.varName::outCrefs;
+    else
+      outVars := BackendVariable.createpDerVar(v)::outVars;
+      outCrefs := v.varName::outCrefs;
+    end if;
+  end for;
+  outVars := listReverse(outVars);
+  outCrefs := listReverse(outCrefs);
+end createInDepVars;
+
 public function createFMIModelDerivatives
 "This function genererate the stucture output and the
  partial derivatives for FMI, which are basically the jacobian matrices.
@@ -1686,6 +1713,10 @@ try
   varlst := BackendVariable.varList(v);
   knvarlst := BackendVariable.varList(globalKnownVars);
   states := BackendVariable.getAllStateVarFromVariables(v);
+
+  if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+    states := listAppend(states, BackendVariable.getAllClockedStatesFromVariables(v));
+  end if;
 
   inputvars := List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
   outputvars := List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);

@@ -1492,6 +1492,18 @@ algorithm
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
 end createpDerVar;
 
+public function createClockedState
+"Creates a variable with $CLKPRE.v as cref for jacobian variables."
+  input BackendDAE.Var inVar;
+  output BackendDAE.Var outVar;
+protected
+  DAE.ComponentRef cr;
+algorithm
+  cr := ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, inVar.varName);
+  outVar := copyVarNewName(cr,inVar);
+  outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
+end createClockedState;
+
 public function createAliasDerVar
 "Creates an alias variable with the name $DER_inCref for a der-call."
   input DAE.ComponentRef inCref;
@@ -3485,6 +3497,13 @@ algorithm
   v_lst := traverseBackendDAEVars(inVariables,traversingisStateVarFinder,{});
 end getAllStateVarFromVariables;
 
+public function getAllClockedStatesFromVariables
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> v_lst;
+algorithm
+  v_lst := traverseBackendDAEVars(inVariables,traversingisClockedStateVarFinder,{});
+end getAllClockedStatesFromVariables;
+
 public function getNumStateVarFromVariables
   input BackendDAE.Variables inVariables;
   output Integer count;
@@ -3501,6 +3520,16 @@ algorithm
   v := inVar;
   v_lst := List.consOnTrue(isStateVar(v),v,inVars);
 end traversingisStateVarFinder;
+
+protected function traversingisClockedStateVarFinder
+  input BackendDAE.Var inVar;
+  input list<BackendDAE.Var> inVars;
+  output BackendDAE.Var v;
+  output list<BackendDAE.Var> v_lst;
+algorithm
+  v := inVar;
+  v_lst := List.consOnTrue(isClockedStateVar(v),v,inVars);
+end traversingisClockedStateVarFinder;
 
 protected function traversingisStateCount
   input output BackendDAE.Var v;

@@ -12742,7 +12742,7 @@ public function createFMIModelStructure
 protected
    list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spTA, spTB;
    list<tuple<Integer, list<Integer>>> sparseInts;
-   list<SimCode.FmiUnknown> derivatives, outputs, discreteStates;
+   list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates;
    list<SimCodeVar.SimVar> varsA, varsB, clockedStates;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
@@ -12757,6 +12757,7 @@ protected
    list<SimCodeVar.SimVar> tempvars;
    SimCodeVar.SimVars vars;
    SimCode.HashTableCrefToSimVar crefSimVarHT;
+   list<Integer> intLst;
 algorithm
   try
     //print("Start creating createFMIModelStructure\n");
@@ -12778,11 +12779,23 @@ algorithm
     //print("-- created vars for AB\n");
     sparseInts := sortSparsePattern(varsA, spTA, true);
     //print("-- sorted vars for AB\n");
+    allUnknowns := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 
-    derivatives := translateSparsePatterInts2FMIUnknown(sparseInts, {});
+    // get derivatives pattern
+    intLst := list(getVariableIndex(v) for v in inModelInfo.vars.derivativeVars);
+    derivatives := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
-    (derivatives, outputs) := List.split(derivatives, inModelInfo.varInfo.numStateVars);
+    // get output pattern
+    varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
+    intLst := list(getVariableIndex(v) for v in varsA);
+    outputs := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
 
+    // get discrete states pattern
+    clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
+    intLst := list(getVariableIndex(v) for v in clockedStates);
+    discreteStates := list(fmiUnknown for fmiUnknown guard(Util.boolOrList(list(isFmiUnknown(i, fmiUnknown) for i in intLst))) in allUnknowns);
+
+    // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
       contPartDer := {(optcontPartDer,spPattern,spColors)};
       ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
@@ -12793,10 +12806,6 @@ algorithm
     else
       contPartSimDer := NONE();
     end if;
-
-    //TODO: create DiscreteStates with dependencies, like derivatives
-    clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := List.map1(clockedStates, createFmiUnknownFromSimVar, 2*listLength(derivatives)+1);
 
     outFmiModelStructure :=
       SOME(
@@ -12813,7 +12822,7 @@ end try;
 end createFMIModelStructure;
 
 protected function isClockedStateSimVar
-"Returns true for state and der(state) variables, false otherwise."
+"Returns true for discrete state variable, false otherwise."
   input SimCodeVar.SimVar inVar;
   output Boolean outBoolean;
 algorithm
@@ -12822,6 +12831,30 @@ algorithm
     else false;
   end match;
 end isClockedStateSimVar;
+
+protected function isOutputSimVar
+"Returns true for output variable, false otherwise."
+  input SimCodeVar.SimVar inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (SimCodeVar.SIMVAR(causality = SimCodeVar.OUTPUT())) then true;
+    else false;
+  end match;
+end isOutputSimVar;
+
+protected function isFmiUnknown
+  input Integer index;
+  input SimCode.FmiUnknown inFMIUnknown;
+  output Boolean out;
+algorithm
+  out := match (inFMIUnknown)
+    local
+      Integer i;
+    case (SimCode.FMIUNKNOWN(index=i)) guard (intEq(i,index))  then true;
+    else false;
+  end match;
+end isFmiUnknown;
 
 protected function createFmiUnknownFromSimVar
 "create a basic FMIUNKNOWN without dependencies from a SimVar"

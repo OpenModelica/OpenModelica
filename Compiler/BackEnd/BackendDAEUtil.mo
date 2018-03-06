@@ -1729,6 +1729,9 @@ algorithm
     eqs  := system.orderedEqs;
     vars := system.orderedVars;
     states := BackendVariable.getAllStateVarFromVariables(vars);
+    if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+      states := listAppend(states, BackendVariable.getAllClockedStatesFromVariables(vars));
+    end if;
     for v in states loop
       if BackendVariable.isVarOnTopLevelAndOutput(v) then
         // generate new output var and add it
@@ -3047,10 +3050,16 @@ algorithm
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res));
+
+    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))
+      equation
+        cr = ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
+        (varslst,p) = BackendVariable.getVar(cr, vars);
+        res = incidenceRowExp1withInput(varslst,p,pa,1);
+      then (inExp,false,(vars,res));
+
     /* pre(v) is considered a known variable */
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
-    /* previous(v) is considered a known variable */
-    case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF()}),_) then (inExp,false,inTpl);
 
     else (inExp,true,inTpl);
   end matchcontinue;
@@ -3083,6 +3092,9 @@ algorithm
       guard not (diffindex==0 or AvlSetInt.hasKey(vars, i))
       then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())::rest,i::irest,_,_)
+      guard not AvlSetInt.hasKey(vars, i)
+      then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE())::rest,i::irest,_,_)
       guard not AvlSetInt.hasKey(vars, i)
       then incidenceRowExp1(rest,irest,AvlSetInt.add(vars, i),diffindex);
     case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())::rest,i::irest,_,_)
