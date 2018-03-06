@@ -1140,7 +1140,7 @@ algorithm
     ExecStat.execStat("simCode: created initialization part");
 
     // create parameter equations
-    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
+    ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(inInitDAE, SimCodeUtil.createStartValueEquations, (uniqueEqIndex, {}, inBackendDAE.shared.globalKnownVars));
     if debug then ExecStat.execStat("simCode: createStartValueEquations"); end if;
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.createNominalValueEquations, (uniqueEqIndex, {}));
     if debug then ExecStat.execStat("simCode: createNominalValueEquations"); end if;
