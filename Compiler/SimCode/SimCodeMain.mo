@@ -1153,7 +1153,6 @@ algorithm
     (uniqueEqIndex, parameterEquations, _) := SimCodeUtil.createParameterEquations(uniqueEqIndex, parameterEquations, inBackendDAE.shared.globalKnownVars);
     if debug then ExecStat.execStat("simCode: createParameterEquations"); end if;
 
-    (uniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(BackendDAEUtil.collapseRemovedEqs(inBackendDAE), SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     discreteModelVars := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.extractDiscreteModelVars, {});
 
     //prepare DAEmode stuff
@@ -1164,6 +1163,8 @@ algorithm
     // create SimCode residual equation
     (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromList(listReverse(eqnsLst), varsLst, false, uniqueEqIndex, tempVars, inBackendDAE.shared.info);
 
+    (uniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(BackendDAEUtil.collapseRemovedEqs(inBackendDAE), SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+    daeEquations := listAppend(daeEquations, removedEquations);
     // state set stuff
     (_, stateSets, uniqueEqIndex, tempVars, numStateSets) := SimCodeUtil.createStateSets(inBackendDAE, {}, uniqueEqIndex, tempVars);
     if debug then ExecStat.execStat("simCode: createStateSets"); end if;
@@ -1239,7 +1240,7 @@ algorithm
     daeModeData := SOME(SimCode.DAEMODEDATA({daeEquations}, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
 
     /* This is a *much* better estimate than the guessed number of equations */
-    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex);
+    modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex-listLength(jacobianEquations));
 
     // update hash table
     crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
@@ -1264,7 +1265,7 @@ algorithm
                               removedEquations,
                               {},
                               {},
-                              jacobianEquations,
+                              {},
                               stateSets,
                               {},
                               {},
