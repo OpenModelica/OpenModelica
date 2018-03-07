@@ -53,20 +53,23 @@ public import Prefix;
 public import InnerOuter;
 public import ClassInf;
 
-protected type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+protected
 
-protected import ComponentReference;
-protected import Config;
-protected import Debug;
-protected import Expression;
-protected import ExpressionDump;
-protected import Flags;
-protected import List;
-protected import Print;
-//protected import Util;
-protected import System;
-protected import Types;
-protected import MetaModelica.Dangerous;
+type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
+
+import ComponentReference;
+import Config;
+import Debug;
+import Error;
+import Expression;
+import ExpressionDump;
+import Flags;
+import List;
+import Print;
+//import Util;
+import System;
+import Types;
+import MetaModelica.Dangerous;
 
 public function printComponentPrefixStr "Prints a Prefix to a string. Rather slow..."
   input Prefix.ComponentPrefix pre;
@@ -587,15 +590,15 @@ algorithm
     case(cache,_,_,_,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
 
     case(cache,env,_,_,DAE.SLICE(exp)) equation
-      (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
+      (cache,exp) = prefixExpWork(cache,env,inIH,exp,pre);
     then (cache,DAE.SLICE(exp));
 
     case(cache,env,_,_,DAE.WHOLE_NONEXP(exp)) equation
-      (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
+      (cache,exp) = prefixExpWork(cache,env,inIH,exp,pre);
     then (cache,DAE.WHOLE_NONEXP(exp));
 
     case(cache,env,_,_,DAE.INDEX(exp)) equation
-      (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
+      (cache,exp) = prefixExpWork(cache,env,inIH,exp,pre);
     then (cache,DAE.INDEX(exp));
 
   end match;
@@ -682,20 +685,32 @@ algorithm
 end prefixCrefInnerOuter;
 
 public function prefixExp "Add the supplied prefix to all component references in an expression."
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input InnerOuter.InstHierarchy inIH;
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input InnerOuter.InstHierarchy ih;
+  input output DAE.Exp exp;
+  input Prefix.Prefix pre;
+algorithm
+  try
+    (cache, exp) := prefixExpWork(cache, env, ih, exp, pre);
+  else
+    Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionDump.printExpStr(exp) + " " + makePrefixString(pre), sourceInfo());
+    fail();
+  end try;
+end prefixExp;
+
+protected function prefixExpWork "Add the supplied prefix to all component references in an expression."
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input InnerOuter.InstHierarchy ih;
   input DAE.Exp inExp;
-  input Prefix.Prefix inPrefix;
-  output FCore.Cache outCache;
+  input Prefix.Prefix pre;
   output DAE.Exp outExp;
 algorithm
-  (outCache,outExp) := matchcontinue (inCache,inEnv,inIH,inExp,inPrefix)
+  (cache,outExp) := match (inExp,pre)
     local
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,exp,crefExp;
       DAE.ComponentRef cr,cr_1;
-      FCore.Graph env;
-      Prefix.Prefix pre;
       DAE.Operator o;
       list<DAE.Exp> es_1,es;
       Absyn.Path f;
@@ -703,9 +718,7 @@ algorithm
       list<DAE.Exp> x_1,x;
       list<list<DAE.Exp>> xs_1,xs;
       String s;
-      FCore.Cache cache;
       list<DAE.Exp> expl;
-      InstanceHierarchy ih;
       Prefix.Prefix p;
       Integer b,a;
       DAE.Type t,tp;
@@ -718,226 +731,233 @@ algorithm
       DAE.ClockKind clk;
 
     // no prefix, return the input expression
-    case (cache,_,_,e,Prefix.NOPRE())
-      equation
-         false = System.getHasInnerOuterDefinitions();
-      then
-        (cache,e);
+    case (e,Prefix.NOPRE())
+      guard not System.getHasInnerOuterDefinitions()
+      then (cache,e);
 
     // handle literal constants
-    case (cache,_,_,(e as DAE.ICONST()),_) then (cache,e);
-    case (cache,_,_,(e as DAE.RCONST()),_) then (cache,e);
-    case (cache,_,_,(e as DAE.SCONST()),_) then (cache,e);
-    case (cache,_,_,(e as DAE.BCONST()),_) then (cache,e);
-    case (cache,_,_,(e as DAE.ENUM_LITERAL()), _) then (cache, e);
+    case ((e as DAE.ICONST()),_) then (cache,e);
+    case ((e as DAE.RCONST()),_) then (cache,e);
+    case ((e as DAE.SCONST()),_) then (cache,e);
+    case ((e as DAE.BCONST()),_) then (cache,e);
+    case ((e as DAE.ENUM_LITERAL()), _) then (cache, e);
 
     // adrpo: handle prefixing of inner/outer variables
-    case (cache,env,ih,DAE.CREF(componentRef = cr,ty = t),pre)
-      equation
-        true = System.getHasInnerOuterDefinitions();
-        cr_1 = InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, cr, pre);
-        (cache, t) = prefixExpressionsInType(cache, env, ih, pre, t);
-        crefExp = Expression.makeCrefExp(cr_1, t);
-      then
-        (cache,crefExp);
-
-    case (cache, env, ih, DAE.CREF(), pre)
-      equation
-        (cache, crefExp) = prefixExpCref(cache, env, ih, inExp, pre);
-      then
-        (cache, crefExp);
+    case (DAE.CREF(componentRef = cr,ty = t),_)
+      algorithm
+        if System.getHasInnerOuterDefinitions() and not listEmpty(ih) then
+          try
+            cr_1 := InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, cr, pre);
+            (cache, t) := prefixExpressionsInType(cache, env, ih, pre, t);
+            outExp := Expression.makeCrefExp(cr_1, t);
+            return;
+          else
+          end try;
+        end if;
+        if valueEq(Prefix.NOPRE(), pre) then
+          crefExp := inExp;
+        else
+          (cache, crefExp) := prefixExpCref(cache, env, ih, inExp, pre);
+        end if;
+      then (cache,crefExp);
 
     // clocks
-    case (cache, env, ih, DAE.CLKCONST(clk), pre)
+    case (DAE.CLKCONST(clk), _)
       equation
         (cache, clk) = prefixClockKind(cache, env, ih, clk, pre);
       then
         (cache, DAE.CLKCONST(clk));
 
-    case (cache,env,ih,(DAE.ASUB(exp = e1, sub = expl)),pre)
+    case ((DAE.ASUB(exp = e1, sub = expl)),_)
       equation
         (cache, es_1) = prefixExpList(cache, env, ih, expl, pre);
-        (cache, e1) = prefixExp(cache, env, ih, e1, pre);
+        (cache, e1) = prefixExpWork(cache, env, ih, e1, pre);
         e2 = Expression.makeASUB(e1,es_1);
       then
         (cache, e2);
 
-    case (cache,env,ih,(DAE.TSUB(e1, index_, t)),pre)
+    case ((DAE.TSUB(e1, index_, t)),_)
       equation
-        (cache,e1) = prefixExp(cache, env, ih, e1, pre);
+        (cache,e1) = prefixExpWork(cache, env, ih, e1, pre);
         e2 = DAE.TSUB(e1, index_, t);
       then
         (cache,e2);
 
-    case (cache,env,ih,DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
+    case (DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),_)
       equation
-        (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
-        (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
+        (cache,e1_1) = prefixExpWork(cache, env, ih, e1, pre);
+        (cache,e2_1) = prefixExpWork(cache, env, ih, e2, pre);
       then
         (cache,DAE.BINARY(e1_1,o,e2_1));
 
-    case (cache,env,ih,DAE.UNARY(operator = o,exp = e1),p)
+    case (DAE.UNARY(operator = o,exp = e1),_)
       equation
-        (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
+        (cache,e1_1) = prefixExpWork(cache, env, ih, e1, pre);
       then
         (cache,DAE.UNARY(o,e1_1));
 
-    case (cache,env,ih,DAE.LBINARY(exp1 = e1,operator = o,exp2 = e2),p)
+    case (DAE.LBINARY(exp1 = e1,operator = o,exp2 = e2),_)
       equation
-        (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
-        (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
+        (cache,e1_1) = prefixExpWork(cache, env, ih, e1, pre);
+        (cache,e2_1) = prefixExpWork(cache, env, ih, e2, pre);
       then
         (cache,DAE.LBINARY(e1_1,o,e2_1));
 
-    case (cache,env,ih,DAE.LUNARY(operator = o,exp = e1),p)
+    case (DAE.LUNARY(operator = o,exp = e1),_)
       equation
-        (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
+        (cache,e1_1) = prefixExpWork(cache, env, ih, e1, pre);
       then
         (cache,DAE.LUNARY(o,e1_1));
 
-    case (cache,env,ih,DAE.RELATION(exp1 = e1,operator = o,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),p)
+    case (DAE.RELATION(exp1 = e1,operator = o,exp2 = e2, index=index_, optionExpisASUB= isExpisASUB),_)
       equation
-        (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
-        (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
+        (cache,e1_1) = prefixExpWork(cache, env, ih, e1, pre);
+        (cache,e2_1) = prefixExpWork(cache, env, ih, e2, pre);
       then
         (cache,DAE.RELATION(e1_1,o,e2_1,index_,isExpisASUB));
 
-    case (cache,env,ih,DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),p)
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),_)
       equation
-        (cache,e1_1) = prefixExp(cache, env, ih, e1, p);
-        (cache,e2_1) = prefixExp(cache, env, ih, e2, p);
-        (cache,e3_1) = prefixExp(cache, env, ih, e3, p);
+        (cache,e1_1) = prefixExpWork(cache, env, ih, e1, pre);
+        (cache,e2_1) = prefixExpWork(cache, env, ih, e2, pre);
+        (cache,e3_1) = prefixExpWork(cache, env, ih, e3, pre);
       then
         (cache,DAE.IFEXP(e1_1,e2_1,e3_1));
 
-    case (cache,env,ih,DAE.SIZE(exp = cref,sz = SOME(dim)),p)
+    case (DAE.SIZE(exp = cref,sz = SOME(dim)),_)
       equation
-        (cache,cref_1) = prefixExp(cache, env, ih, cref, p);
-        (cache,dim_1) = prefixExp(cache, env, ih, dim, p);
+        (cache,cref_1) = prefixExpWork(cache, env, ih, cref, pre);
+        (cache,dim_1) = prefixExpWork(cache, env, ih, dim, pre);
       then
         (cache,DAE.SIZE(cref_1,SOME(dim_1)));
 
-    case (cache,env,ih,DAE.SIZE(exp = cref,sz = NONE()),p)
+    case (DAE.SIZE(exp = cref,sz = NONE()),_)
       equation
-        (cache,cref_1) = prefixExp(cache, env, ih, cref, p);
+        (cache,cref_1) = prefixExpWork(cache, env, ih, cref, pre);
       then
         (cache,DAE.SIZE(cref_1,NONE()));
 
-    case (cache,env,ih,DAE.CALL(f,es,attr),p)
+    case (DAE.CALL(f,es,attr),_)
       equation
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+        (cache,es_1) = prefixExpList(cache, env, ih, es, pre);
       then
         (cache,DAE.CALL(f,es_1,attr));
 
-    case (cache,env,ih,DAE.RECORD(f,es,fieldNames,t),p)
+    case (e as DAE.PARTEVALFUNCTION(),_)
+      algorithm
+        (cache,es_1) := prefixExpList(cache, env, ih, e.expList, pre);
+        e.expList := es_1;
+      then (cache,e);
+
+    case (DAE.RECORD(f,es,fieldNames,t),_)
       equation
-        (cache,_) = prefixExpList(cache, env, ih, es, p);
+        (cache,_) = prefixExpList(cache, env, ih, es, pre);
       then
         (cache,DAE.RECORD(f,es,fieldNames,t));
 
-    case (cache,_,_,DAE.ARRAY(ty = t,scalar = sc,array = {}),_)
-      then
-        (cache,DAE.ARRAY(t,sc,{}));
+    case (DAE.ARRAY(ty = t,scalar = sc,array = {}),_)
+      then (cache, inExp);
 
-    case (cache,env,ih,DAE.ARRAY(ty = t,scalar = sc,array = es),p)
+    case (DAE.ARRAY(ty = t,scalar = sc,array = es),_)
       equation
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+        (cache,es_1) = prefixExpList(cache, env, ih, es, pre);
       then
         (cache,DAE.ARRAY(t,sc,es_1));
 
-    case (cache,env,ih,DAE.TUPLE(PR = es),p)
+    case (DAE.TUPLE(PR = es),_)
       equation
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+        (cache,es_1) = prefixExpList(cache, env, ih, es, pre);
       then
         (cache,DAE.TUPLE(es_1));
 
-    case (cache,_,_,DAE.MATRIX(ty = t,integer = a,matrix = {}),_)
-      then
-        (cache,DAE.MATRIX(t,a,{}));
+    case (DAE.MATRIX(ty = t,integer = a,matrix = {}),_)
+      then (cache,inExp);
 
-    case (cache,env,ih,DAE.MATRIX(ty = t,integer = a,matrix = (x :: xs)),p)
+    case (DAE.MATRIX(ty = t,integer = a,matrix = (x :: xs)),_)
       equation
-        (cache,x_1) = prefixExpList(cache, env, ih, x, p);
-        (cache,DAE.MATRIX(t,_,xs_1)) = prefixExp(cache, env, ih, DAE.MATRIX(t,a,xs), p);
+        (cache,x_1) = prefixExpList(cache, env, ih, x, pre);
+        (cache,DAE.MATRIX(t,_,xs_1)) = prefixExpWork(cache, env, ih, DAE.MATRIX(t,a,xs), pre);
       then
         (cache,DAE.MATRIX(t,a,(x_1 :: xs_1)));
 
-    case (cache,env,ih,DAE.RANGE(ty = t,start = start,step = NONE(),stop = stop),p)
+    case (DAE.RANGE(ty = t,start = start,step = NONE(),stop = stop),_)
       equation
-        (cache,start_1) = prefixExp(cache, env, ih, start, p);
-        (cache,stop_1) = prefixExp(cache, env, ih, stop, p);
+        (cache,start_1) = prefixExpWork(cache, env, ih, start, pre);
+        (cache,stop_1) = prefixExpWork(cache, env, ih, stop, pre);
       then
         (cache,DAE.RANGE(t,start_1,NONE(),stop_1));
 
-    case (cache,env,ih,DAE.RANGE(ty = t,start = start,step = SOME(step),stop = stop),p)
+    case (DAE.RANGE(ty = t,start = start,step = SOME(step),stop = stop),_)
       equation
-        (cache,start_1) = prefixExp(cache, env, ih, start, p);
-        (cache,step_1) = prefixExp(cache, env, ih, step, p);
-        (cache,stop_1) = prefixExp(cache, env, ih, stop, p);
+        (cache,start_1) = prefixExpWork(cache, env, ih, start, pre);
+        (cache,step_1) = prefixExpWork(cache, env, ih, step, pre);
+        (cache,stop_1) = prefixExpWork(cache, env, ih, stop, pre);
       then
         (cache,DAE.RANGE(t,start_1,SOME(step_1),stop_1));
 
-    case (cache,env,ih,DAE.CAST(ty = tp,exp = e),p)
+    case (DAE.CAST(ty = tp,exp = e),_)
       equation
-        (cache,e_1) = prefixExp(cache, env, ih, e, p);
+        (cache,e_1) = prefixExpWork(cache, env, ih, e, pre);
       then
         (cache,DAE.CAST(tp,e_1));
 
-    case (cache,env,ih,DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,iterators = riters),p)
+    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = exp,iterators = riters),_)
       equation
-        (cache,exp_1) = prefixExp(cache, env, ih, exp, p);
-        (cache,riters) = prefixIterators(cache, env, ih, riters, p);
+        (cache,exp_1) = prefixExpWork(cache, env, ih, exp, pre);
+        (cache,riters) = prefixIterators(cache, env, ih, riters, pre);
       then
         (cache,DAE.REDUCTION(reductionInfo,exp_1,riters));
 
     // MetaModelica extension. KS
-    case (cache,env,ih,DAE.LIST(es),p)
+    case (DAE.LIST(es),_)
       equation
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+        (cache,es_1) = prefixExpList(cache, env, ih, es, pre);
       then (cache,DAE.LIST(es_1));
 
-    case (cache,env,ih,DAE.CONS(e1,e2),p)
+    case (DAE.CONS(e1,e2),_)
       equation
-        (cache,e1) = prefixExp(cache, env, ih, e1, p);
-        (cache,e2) = prefixExp(cache, env, ih, e2, p);
+        (cache,e1) = prefixExpWork(cache, env, ih, e1, pre);
+        (cache,e2) = prefixExpWork(cache, env, ih, e2, pre);
       then (cache,DAE.CONS(e1,e2));
 
-    case (cache,env,ih,DAE.META_TUPLE(es),p)
+    case (DAE.META_TUPLE(es),_)
       equation
-        (cache,es_1) = prefixExpList(cache, env, ih, es, p);
+        (cache,es_1) = prefixExpList(cache, env, ih, es, pre);
       then (cache,DAE.META_TUPLE(es_1));
 
-    case (cache,env,ih,DAE.META_OPTION(SOME(e1)),p)
+    case (DAE.META_OPTION(SOME(e1)),_)
       equation
-        (cache,e1) = prefixExp(cache, env, ih, e1, p);
+        (cache,e1) = prefixExpWork(cache, env, ih, e1, pre);
       then (cache,DAE.META_OPTION(SOME(e1)));
 
-    case (cache,_,_,DAE.META_OPTION(NONE()),_)
+    case (DAE.META_OPTION(NONE()),_)
       equation
       then (cache,DAE.META_OPTION(NONE()));
 
-    case (cache,env,ih,e as DAE.UNBOX(e1),p)
+    case (e as DAE.UNBOX(e1),_)
       equation
-        (cache,e1) = prefixExp(cache, env, ih, e1, p);
+        (cache,e1) = prefixExpWork(cache, env, ih, e1, pre);
+        e.exp = e1;
+      then (cache,e);
+
+    case (e as DAE.BOX(e1),_)
+      equation
+        (cache,e1) = prefixExpWork(cache, env, ih, e1, pre);
         e.exp = e1;
       then (cache,e);
         // ------------------------
 
     // no prefix, return the input expression
-    case (cache,_,_,e,Prefix.NOPRE()) then (cache,e);
+    case (e,Prefix.NOPRE()) then (cache,e);
 
-    case (_,_,_,e as DAE.EMPTY(),_) then (inCache,e);
+    case (e as DAE.EMPTY(),_) then (cache,e);
 
-    case (_,_,_,e,_)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("-PrefixUtil.prefixExp failed on exp: ");
-        s = ExpressionDump.printExpStr(e);
-        Debug.traceln(s);
-      then
-        fail();
-  end matchcontinue;
-end prefixExp;
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " failed on exp: " + ExpressionDump.printExpStr(inExp) + " " + makePrefixString(pre), sourceInfo());
+      then fail();
+  end match;
+end prefixExpWork;
 
 protected function prefixExpCref
   "Helper function to prefixExp for prefixing a cref expression."
@@ -1022,14 +1042,14 @@ algorithm
     case (cache,_,_,{},_) then (cache,{});
     case (cache,env,_,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_)
       equation
-        (cache,exp) = prefixExp(cache,env,ih,exp,pre);
-        (cache,gexp) = prefixExp(cache,env,ih,gexp,pre);
+        (cache,exp) = prefixExpWork(cache,env,ih,exp,pre);
+        (cache,gexp) = prefixExpWork(cache,env,ih,gexp,pre);
         iter = DAE.REDUCTIONITER(id,exp,SOME(gexp),ty);
         (cache,iters) = prefixIterators(cache,env,ih,iters,pre);
       then (cache,iter::iters);
     case (cache,env,_,DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_)
       equation
-        (cache,exp) = prefixExp(cache,env,ih,exp,pre);
+        (cache,exp) = prefixExpWork(cache,env,ih,exp,pre);
         iter = DAE.REDUCTIONITER(id,exp,NONE(),ty);
         (cache,iters) = prefixIterators(cache,env,ih,iters,pre);
       then (cache,iter::iters);
@@ -1048,7 +1068,7 @@ protected
   DAE.Exp e_1;
 algorithm
   for e in inExpExpLst loop
-    (outCache,e_1) := prefixExp(outCache, inEnv, inIH, e, inPrefix);
+    (outCache,e_1) := prefixExpWork(outCache, inEnv, inIH, e, inPrefix);
     outExpExpLst := e_1::outExpExpLst;
   end for;
   outExpExpLst := Dangerous.listReverseInPlace(outExpExpLst);
@@ -1087,15 +1107,15 @@ algorithm
       Integer ix;
       case DAE.STMT_ASSIGN(t,e1,e,source)
         equation
-          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
-          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
+          (outCache,e) = prefixExpWork(outCache,env,inIH,e,p);
           elem = DAE.STMT_ASSIGN(t,e1,e,source);
           outStmts = elem::outStmts;
         then ();
 
       case DAE.STMT_TUPLE_ASSIGN(t,eLst,e,source)
         equation
-          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          (outCache,e) = prefixExpWork(outCache,env,inIH,e,p);
           (outCache,eLst) = prefixExpList(outCache,env,inIH,eLst,p);
           elem = DAE.STMT_TUPLE_ASSIGN(t,eLst,e,source);
           outStmts = elem::outStmts;
@@ -1103,15 +1123,15 @@ algorithm
 
       case DAE.STMT_ASSIGN_ARR(t,e1,e,source)
         equation
-          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
-          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
+          (outCache,e) = prefixExpWork(outCache,env,inIH,e,p);
           elem = DAE.STMT_ASSIGN_ARR(t,e1,e,source);
           outStmts = elem::outStmts;
         then ();
 
       case DAE.STMT_FOR(t,bool,id,ix,e,sList,source)
         equation
-          (outCache,e) = prefixExp(outCache,env,inIH,e,p);
+          (outCache,e) = prefixExpWork(outCache,env,inIH,e,p);
           (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
           elem = DAE.STMT_FOR(t,bool,id,ix,e,sList,source);
           outStmts = elem::outStmts;
@@ -1119,7 +1139,7 @@ algorithm
 
       case DAE.STMT_IF(e1,sList,elseBranch,source)
         equation
-          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
           (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
           (outCache,elseBranch) = prefixElse(outCache,env,inIH,elseBranch,p);
           elem = DAE.STMT_IF(e1,sList,elseBranch,source);
@@ -1128,7 +1148,7 @@ algorithm
 
       case DAE.STMT_WHILE(e1,sList,source)
         equation
-          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
+          (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
           (outCache,sList) = prefixStatements(outCache,env,inIH,sList,p);
           elem = DAE.STMT_WHILE(e1,sList,source);
           outStmts = elem::outStmts;
@@ -1136,9 +1156,9 @@ algorithm
 
       case DAE.STMT_ASSERT(e1,e2,e3,source)
         equation
-          (outCache,e1) = prefixExp(outCache,env,inIH,e1,p);
-          (outCache,e2) = prefixExp(outCache,env,inIH,e2,p);
-          (outCache,e3) = prefixExp(outCache,env,inIH,e3,p);
+          (outCache,e1) = prefixExpWork(outCache,env,inIH,e1,p);
+          (outCache,e2) = prefixExpWork(outCache,env,inIH,e2,p);
+          (outCache,e3) = prefixExpWork(outCache,env,inIH,e3,p);
           elem = DAE.STMT_ASSERT(e1,e2,e3,source);
           outStmts = elem::outStmts;
         then ();
@@ -1191,7 +1211,7 @@ algorithm
 
     case (localCache,localEnv,ih,DAE.ELSEIF(e,lStmt,el),pre)
       equation
-        (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
+        (localCache,e) = prefixExpWork(localCache,localEnv,ih,e,pre);
         (localCache,el) = prefixElse(localCache,localEnv,ih,el,pre);
         (localCache,lStmt) = prefixStatements(localCache,localEnv,ih,lStmt,pre);
         stmt = DAE.ELSEIF(e,lStmt,el);
@@ -1291,7 +1311,7 @@ algorithm
 
     case (_, _, _, _, DAE.DIM_EXP(exp=e)::rest)
       equation
-        (cache, e) = prefixExp(inCache, inEnv, inIH, e, inPre);
+        (cache, e) = prefixExpWork(inCache, inEnv, inIH, e, inPre);
         (cache, new) = prefixDimensions(cache, inEnv, inIH, inPre, rest);
       then
         (cache, DAE.DIM_EXP(e)::new);
@@ -1348,31 +1368,31 @@ algorithm
 
     case (cache, env, ih, DAE.INTEGER_CLOCK(e, resolution), p)
       equation
-        (cache, e) = prefixExp(cache, env, ih, e, p);
-        (cache, resolution) = prefixExp(cache, env, ih, resolution, p);
+        (cache, e) = prefixExpWork(cache, env, ih, e, p);
+        (cache, resolution) = prefixExpWork(cache, env, ih, resolution, p);
         clkKind = DAE.INTEGER_CLOCK(e, resolution);
       then
         (cache, clkKind);
 
     case (cache, env, ih, DAE.REAL_CLOCK(e), p)
       equation
-        (cache, e) = prefixExp(cache, env, ih, e, p);
+        (cache, e) = prefixExpWork(cache, env, ih, e, p);
         clkKind = DAE.REAL_CLOCK(e);
       then
         (cache, clkKind);
 
     case (cache, env, ih, DAE.BOOLEAN_CLOCK(e, interval), p)
       equation
-        (cache, e) = prefixExp(cache, env, ih, e, p);
-        (cache, interval) = prefixExp(cache, env, ih, interval, p);
+        (cache, e) = prefixExpWork(cache, env, ih, e, p);
+        (cache, interval) = prefixExpWork(cache, env, ih, interval, p);
         clkKind = DAE.BOOLEAN_CLOCK(e, interval);
       then
         (cache, clkKind);
 
     case (cache, env, ih, DAE.SOLVER_CLOCK(e, method), p)
       equation
-        (cache, e) = prefixExp(cache, env, ih, e, p);
-        (cache, method) = prefixExp(cache, env, ih, method, p);
+        (cache, e) = prefixExpWork(cache, env, ih, e, p);
+        (cache, method) = prefixExpWork(cache, env, ih, method, p);
         clkKind = DAE.SOLVER_CLOCK(e, method);
       then
         (cache, clkKind);
