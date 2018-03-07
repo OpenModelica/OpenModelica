@@ -171,14 +171,14 @@ class FMU2Wrapper
                                       fmi2Real dvUnknown[]);
 
  private:
-  FMU2GlobalSettings _global_settings;
+  FMU2GlobalSettings _globalSettings;
   Logger *_logger;
   MODEL_CLASS *_model;
-  std::vector<string> _string_buffer;
+  std::vector<string> _stringBuffer;
   bool *_clockTick;
   bool *_clockSubactive;
   int _nclockTick;
-  bool _need_update;
+  bool _needUpdate;
   bool _needJacUpdate;
   void updateModel();
 

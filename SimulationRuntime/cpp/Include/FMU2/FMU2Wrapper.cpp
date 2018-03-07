@@ -106,7 +106,7 @@ void FMU2Logger::writeInternal(string msg, LogCategory cat, LogLevel lvl,
 FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
                          const fmi2CallbackFunctions *functions,
                          fmi2Boolean loggingOn) :
-  _global_settings(),
+  _globalSettings(),
   _functions(*functions),
   callbackLogger(_functions.logger)
 {
@@ -122,11 +122,11 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   }
 
   // setup model
-  _model = createSystemFMU(&_global_settings);
+  _model = createSystemFMU(&_globalSettings);
   _model->initializeMemory();
   _model->initializeFreeVariables();
-  _need_update = true;
-  _string_buffer.resize(_model->getDimString());
+  _needUpdate = true;
+  _stringBuffer.resize(_model->getDimString());
   _clockTick = new bool[_model->getDimClock()];
   _clockSubactive = new bool[_model->getDimClock()];
   std::fill(_clockTick, _clockTick + _model->getDimClock(), false);
@@ -148,7 +148,7 @@ fmi2Status FMU2Wrapper::setDebugLogging(fmi2Boolean loggingOn,
   fmi2Status ret = fmi2OK;
 
   if (_logger == NULL) {
-    LogSettings logSettings = _global_settings.getLogSettings();
+    LogSettings logSettings = _globalSettings.getLogSettings();
     FMU2Logger::initialize(this, logSettings, loggingOn);
     _logger = Logger::getInstance();
   }
@@ -211,13 +211,13 @@ fmi2Status FMU2Wrapper::setupExperiment(fmi2Boolean toleranceDefined,
 fmi2Status FMU2Wrapper::enterInitializationMode()
 {
   _model->setInitial(true);
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::exitInitializationMode()
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   _model->saveAll();
   _model->setInitial(false);
@@ -233,7 +233,7 @@ fmi2Status FMU2Wrapper::terminate()
 fmi2Status FMU2Wrapper::reset()
 {
   _model->initializeFreeVariables();
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -244,7 +244,7 @@ void FMU2Wrapper::updateModel()
     _model->saveAll();
   }
   _model->evaluateAll();     // derivatives and algebraic variables
-  _need_update = false;
+  _needUpdate = false;
   _needJacUpdate = true;
 }
 
@@ -256,14 +256,14 @@ fmi2Status FMU2Wrapper::setTime(fmi2Real time)
     _nclockTick = 0;
   }
   _model->setTime(time);
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::setContinuousStates(const fmi2Real states[], size_t nx)
 {
   _model->setContinuousStates(states);
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -275,7 +275,7 @@ fmi2Status FMU2Wrapper::getContinuousStates(fmi2Real states[], size_t nx)
 
 fmi2Status FMU2Wrapper::getDerivatives(fmi2Real derivatives[], size_t nx)
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   _model->computeTimeEventConditions(_model->getTime());
   _model->getRHS(derivatives);
@@ -297,7 +297,7 @@ fmi2Status FMU2Wrapper::setReal(const fmi2ValueReference vr[], size_t nvr,
                                 const fmi2Real value[])
 {
   _model->setReal(vr, nvr, value);
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -305,7 +305,7 @@ fmi2Status FMU2Wrapper::setInteger(const fmi2ValueReference vr[], size_t nvr,
                                    const fmi2Integer value[])
 {
   _model->setInteger(vr, nvr, value);
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -313,23 +313,23 @@ fmi2Status FMU2Wrapper::setBoolean(const fmi2ValueReference vr[], size_t nvr,
                                    const fmi2Boolean value[])
 {
   _model->setBoolean(vr, nvr, value);
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::setString(const fmi2ValueReference vr[], size_t nvr,
                                   const fmi2String  value[])
 {
-  if (nvr > _string_buffer.size()) {
+  if (nvr > _stringBuffer.size()) {
     FMU2_LOG(this, fmi2Error, logStatusError,
              "Attempt to set %d fmi2String; FMU only has %d",
-             nvr, _string_buffer.size());
+             nvr, _stringBuffer.size());
     return fmi2Error;
   }
   for (size_t i = 0; i < nvr; i++)
-    _string_buffer[i] = string(value[i]); // convert to string
-  _model->setString(vr, nvr, &_string_buffer[0]);
-  _need_update = true;
+    _stringBuffer[i] = string(value[i]); // convert to string
+  _model->setString(vr, nvr, &_stringBuffer[0]);
+  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -346,7 +346,7 @@ fmi2Status FMU2Wrapper::setClock(const fmi2Integer clockIndex[],
   for (int i = 0; i < _model->getDimClock(); i++) {
     _nclockTick += _clockTick[i]? 1: 0;
   }
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -358,13 +358,13 @@ fmi2Status FMU2Wrapper::setInterval(const fmi2Integer clockIndex[],
     clockInterval[clockIndex[i] - 1] = interval[i];
     _model->setIntervalInTimEventData((clockIndex[i] - 1), interval[i]);
   }
-  _need_update = true;
+  _needUpdate = true;
   return fmi2OK;
 }
 
 fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni)
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   bool conditions[NUMBER_OF_EVENT_INDICATORS + 1];
   _model->getConditions(conditions);
@@ -378,7 +378,7 @@ fmi2Status FMU2Wrapper::getEventIndicators(fmi2Real eventIndicators[], size_t ni
 fmi2Status FMU2Wrapper::getReal(const fmi2ValueReference vr[], size_t nvr,
                                 fmi2Real value[])
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   _model->getReal(vr, nvr, value);
   return fmi2OK;
@@ -387,7 +387,7 @@ fmi2Status FMU2Wrapper::getReal(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::getInteger(const fmi2ValueReference vr[], size_t nvr,
                                    fmi2Integer value[])
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   _model->getInteger(vr, nvr, value);
   return fmi2OK;
@@ -396,7 +396,7 @@ fmi2Status FMU2Wrapper::getInteger(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::getBoolean(const fmi2ValueReference vr[], size_t nvr,
                                    fmi2Boolean value[])
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   _model->getBoolean(vr, nvr, value);
   return fmi2OK;
@@ -405,17 +405,17 @@ fmi2Status FMU2Wrapper::getBoolean(const fmi2ValueReference vr[], size_t nvr,
 fmi2Status FMU2Wrapper::getString(const fmi2ValueReference vr[], size_t nvr,
                                   fmi2String value[])
 {
-  if (nvr > _string_buffer.size()) {
+  if (nvr > _stringBuffer.size()) {
     FMU2_LOG(this, fmi2Error, logStatusError,
              "Attempt to get %d fmi2String; FMU only has %d",
-             nvr, _string_buffer.size());
+             nvr, _stringBuffer.size());
     return fmi2Error;
   }
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
-  _model->getString(vr, nvr, &_string_buffer[0]);
+  _model->getString(vr, nvr, &_stringBuffer[0]);
   for (size_t i = 0; i < nvr; i++)
-    value[i] = _string_buffer[i].c_str(); // convert to fmi2String
+    value[i] = _stringBuffer[i].c_str(); // convert to fmi2String
   return fmi2OK;
 }
 
@@ -440,7 +440,7 @@ fmi2Status FMU2Wrapper::getInterval(const fmi2Integer clockIndex[],
 
 fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
 {
-  if (_need_update) {
+  if (_needUpdate) {
     if (_nclockTick > 0)
       _model->setClock(_clockTick, _clockSubactive);
     updateModel();
@@ -487,7 +487,7 @@ fmi2Status FMU2Wrapper::getDirectionalDerivative(const fmi2ValueReference vrUnkn
                                                  const fmi2Real dvKnown[],
                                                  fmi2Real dvUnknown[])
 {
-  if (_need_update)
+  if (_needUpdate)
     updateModel();
   SystemLockFreeVariables slfv(_model, !_needJacUpdate);
   _model->getDirectionalDerivative(vrUnknown, nUnknown,
