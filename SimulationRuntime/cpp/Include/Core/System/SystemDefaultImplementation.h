@@ -124,6 +124,11 @@ public:
   void setTime(const double& t);
   double getTime();
 
+  /// Set modification status of independent variables
+  //  (exploited by linear equation systems in Jacobians)
+  void setFreeVariablesLock(bool freeVariablesLock);
+  bool getFreeVariablesLock();
+
   IGlobalSettings* getGlobalSettings();
 
   shared_ptr<ISimObjects> getSimObjects() const;
@@ -220,5 +225,24 @@ protected:
 
   bool _sparse;
   bool _useAnalyticalJacobian;
+
+  bool _freeVariablesLock; ///< modification status of independent variables
+};
+
+/// Mark free variables unchanged.
+/// Automatically release lock upon destruction, covering exceptions as well.
+class SystemLockFreeVariables {
+ public:
+  SystemLockFreeVariables(SystemDefaultImplementation *system, bool lock = true) {
+    system->setFreeVariablesLock(lock);
+    _system = system;
+  }
+
+  ~SystemLockFreeVariables() {
+    _system->setFreeVariablesLock(false);
+  }
+
+ private:
+  SystemDefaultImplementation *_system;
 };
 /** @} */ // end of coreSystem

@@ -125,6 +125,7 @@ FMU2Wrapper::FMU2Wrapper(fmi2String instanceName, fmi2String GUID,
   _model = createSystemFMU(&_global_settings);
   _model->initializeMemory();
   _model->initializeFreeVariables();
+  _need_update = true;
   _string_buffer.resize(_model->getDimString());
   _clockTick = new bool[_model->getDimClock()];
   _clockSubactive = new bool[_model->getDimClock()];
@@ -232,6 +233,7 @@ fmi2Status FMU2Wrapper::terminate()
 fmi2Status FMU2Wrapper::reset()
 {
   _model->initializeFreeVariables();
+  _need_update = true;
   return fmi2OK;
 }
 
@@ -243,6 +245,7 @@ void FMU2Wrapper::updateModel()
   }
   _model->evaluateAll();     // derivatives and algebraic variables
   _need_update = false;
+  _needJacUpdate = true;
 }
 
 fmi2Status FMU2Wrapper::setTime(fmi2Real time)
@@ -486,9 +489,11 @@ fmi2Status FMU2Wrapper::getDirectionalDerivative(const fmi2ValueReference vrUnkn
 {
   if (_need_update)
     updateModel();
+  SystemLockFreeVariables slfv(_model, !_needJacUpdate);
   _model->getDirectionalDerivative(vrUnknown, nUnknown,
                                    vrKnown, nKnown, dvKnown,
                                    dvUnknown);
+  _needJacUpdate = false;
   return fmi2OK;
 }
 

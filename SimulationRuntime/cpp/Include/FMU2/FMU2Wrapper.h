@@ -178,7 +178,8 @@ class FMU2Wrapper
   bool *_clockTick;
   bool *_clockSubactive;
   int _nclockTick;
-  double _need_update;
+  bool _need_update;
+  bool _needJacUpdate;
   void updateModel();
 
   typedef enum {

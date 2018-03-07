@@ -38,7 +38,9 @@ class DgesvSolver : public IAlgLoopSolver
     *_jHelp;              ///< Pivot indices for LAPACK routines
 
   bool
-    _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
+    _firstCall,           ///< Temp   - Denotes the first call to the solver, init() is called
+    _hasDgesvFactors,    ///< =true if previous dgesv was called
+    _hasDgetc2Factors;   ///< =true if previous dgetc2 was called
 
   const char*
     *_yNames;             ///< Names of variables

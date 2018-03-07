@@ -3818,6 +3818,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    }
 
+   bool <%modelname%>Algloop<%ls.index%>::getFreeVariablesLock()
+   {
+     return _system->getFreeVariablesLock();
+   }
+
    bool <%modelname%>Algloop<%ls.index%>::getUseSparseFormat()
    {
      return LinearAlgLoopDefaultImplementation::getUseSparseFormat();
@@ -7080,6 +7085,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual const matrix_t& getAMatrix() ;
     virtual sparsematrix_t& getSparseAMatrix() ;
 
+    bool getFreeVariablesLock();
     bool getUseSparseFormat();
 
     void setUseSparseFormat(bool value);

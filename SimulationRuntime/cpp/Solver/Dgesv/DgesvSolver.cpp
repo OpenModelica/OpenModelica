@@ -18,7 +18,6 @@
 DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
   : _algLoop            (algLoop)
   , _dimSys             (0)
-
   , _yNames             (NULL)
   , _yNominal           (NULL)
   , _y                  (NULL)
@@ -32,6 +31,8 @@ DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
   , _zeroVec            (NULL)
   , _iterationStatus    (CONTINUE)
   , _firstCall          (true)
+  , _hasDgesvFactors    (false)
+  , _hasDgetc2Factors   (false)
   , _fNominal           (NULL)
 {
 }
@@ -130,7 +131,8 @@ void DgesvSolver::solve()
 
   //use lapack
   long int dimRHS = 1; // Dimension of right hand side of linear system (=_b)
-  long int irtrn  = 0; // Return-flag of Fortran code
+  long int info = 0;   // Return flag of dgesv
+  double scale = 0.0;  // Scale factor of dgesc2
 
   if (_algLoop->isLinearTearing())
     _algLoop->setReal(_zeroVec); //if the system is linear Tearing it means that the system is of the form Ax-b=0, so plugging in x=0 yields -b for the left hand side
@@ -138,40 +140,57 @@ void DgesvSolver::solve()
   _algLoop->evaluate();
   _algLoop->getb(_b);
 
-  const matrix_t& A = _algLoop->getAMatrix();
-  const double* Atemp = A.data().begin();
+  if (!_algLoop->getFreeVariablesLock()) {
+    const matrix_t& A = _algLoop->getAMatrix();
+    const double* Atemp = A.data().begin();
 
-  memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
+    memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
+    _hasDgesvFactors = false;
+    _hasDgetc2Factors = false;
 
-  std::fill(_fNominal, _fNominal + _dimSys, 1e-6);
-  for (int j = 0, idx = 0; j < _dimSys; j++)
-    for (int i = 0; i < _dimSys; i++, idx++)
-      _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
+    std::fill(_fNominal, _fNominal + _dimSys, 1e-6);
+    for (int j = 0, idx = 0; j < _dimSys; j++)
+      for (int i = 0; i < _dimSys; i++, idx++)
+        _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
 
-  LOGGER_WRITE_VECTOR("fNominal", _fNominal, _dimSys, LC_LS, LL_DEBUG);
+    LOGGER_WRITE_VECTOR("fNominal", _fNominal, _dimSys, LC_LS, LL_DEBUG);
 
-  for (int j = 0, idx = 0; j < _dimSys; j++)
-    for (int i = 0; i < _dimSys; i++, idx++)
-      _A[idx] /= _fNominal[i];
+    for (int j = 0, idx = 0; j < _dimSys; j++)
+      for (int i = 0; i < _dimSys; i++, idx++)
+        _A[idx] /= _fNominal[i];
+  }
 
   for (int i = 0; i < _dimSys; i++)
     _b[i] /= _fNominal[i];
 
-  dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _iHelp, _b, &_dimSys, &irtrn);
-
-  if  (irtrn > 0) {
-    long int info = 0;
-    double scale = 0.0;
-    dgetc2_(&_dimSys, _A, &_dimSys, _iHelp, _jHelp, &info);
-    dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
-    LOGGER_WRITE("DgesvSolver: using complete pivoting (dgesv info: " + to_string(irtrn) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
+  if (!_hasDgesvFactors && !_hasDgetc2Factors) {
+    dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _iHelp, _b, &_dimSys, &info);
+    _hasDgesvFactors = true;
   }
-  else if (irtrn < 0) {
+  else if (_hasDgesvFactors) {
+    // solve using previously obtained dgesv factors
+    char trans = 'N';
+    dgetrs_(&trans, &_dimSys, &dimRHS, _A, &_dimSys, _iHelp, _b, &_dimSys, &info);
+  }
+  else {
+    // solve using previously obtained dgetc2 factors
+    dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
+    info = 0;
+  }
+
+  if (info > 0) {
+    long int info2 = 0;
+    dgetc2_(&_dimSys, _A, &_dimSys, _iHelp, _jHelp, &info2);
+    dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
+    _hasDgetc2Factors = true;
+    LOGGER_WRITE("DgesvSolver: using complete pivoting (dgesv info: " + to_string(info) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
+  }
+  else if (info < 0) {
     _iterationStatus = SOLVERERROR;
     if (_algLoop->isLinearTearing())
-      throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear tearing system (dgesv info: " + to_string(irtrn) + ")");
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
     else
-      throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear system (dgesv info: " + to_string(irtrn) + ")");
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear system (dgesv info: " + to_string(info) + ")");
   }
   _iterationStatus = DONE;
 

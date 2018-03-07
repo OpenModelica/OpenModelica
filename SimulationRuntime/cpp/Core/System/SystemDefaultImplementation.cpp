@@ -71,6 +71,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , _conditions0(NULL)
   , _event_system(NULL)
   , _modelName(modelName)
+  , _freeVariablesLock(false)
 {
 }
 
@@ -111,6 +112,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , _conditions0(NULL)
   , _event_system(NULL)
   , _modelName(instance.getModelName())
+  , _freeVariablesLock(false)
 {
 }
 
@@ -282,6 +284,18 @@ void SystemDefaultImplementation::setTime(const double& t)
 double SystemDefaultImplementation::getTime()
 {
   return _simTime;
+}
+
+/// Set status of independent variables
+void SystemDefaultImplementation::setFreeVariablesLock(bool freeVariablesLock)
+{
+  _freeVariablesLock = freeVariablesLock;
+}
+
+// Get status of independent variables
+bool SystemDefaultImplementation::getFreeVariablesLock()
+{
+  return _freeVariablesLock;
 }
 
 /// getter for variables of different types
