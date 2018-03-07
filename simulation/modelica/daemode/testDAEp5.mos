@@ -56,12 +56,12 @@ val(z,1.0);
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// 0.0
+// 1.0
 // 1.0
 // -3.0
-// 0.2519655434850686
-// 0.7318499548700694
-// -3.0
+// 1.101639932550942
+// 0.9681666462671545
+// 0.6710906523914417
 // true
 // record SimulationResult
 //     resultFile = "testDAE.p5_res.mat",
@@ -72,12 +72,12 @@ val(z,1.0);
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// 0.0
+// 1.0
 // 1.0
 // -3.0
-// 0.2519640877410129
-// 0.7318508809081514
-// -3.0
+// 1.101642418958887
+// 0.9681665892420518
+// 0.6710849791912964
 // true
 // record SimulationResult
 //     resultFile = "testDAE.p5_res.mat",
@@ -88,10 +88,10 @@ val(z,1.0);
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
-// 0.0
+// 1.0
 // 1.0
 // -3.0
-// 0.2519640877410129
-// 0.7318508809081514
-// -3.0
+// 1.101642418958887
+// 0.9681665892420518
+// 0.6710849791912964
 // endResult

@@ -46,10 +46,10 @@ package testDAE
 
   // problem5: simple dae with when equation
   model p5
-    Real v = cos(time)*x;
+    Real v = -cos(time)*x;
     Real w = der(x)+x*y;
     Real z(start=-3);
-    Real x,y(start=1);
+    Real x(start=1),y(start=1);
   equation
     when x > 1.2 then
       z = cos(y);
