@@ -453,6 +453,11 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
       infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
+  /* if daeMode is turned on than use also the ida solver */
+  if (omc_flag[FLAG_DAE_MODE] && std::string("ida") != data->simulationInfo->solverMethod) {
+    data->simulationInfo->solverMethod = std::string("ida").c_str();
+    infoStreamPrint(LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
+  }
 
   // Create a result file
   const char *result_file = omc_flagValue[FLAG_R];
@@ -901,6 +906,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   if(omc_flag[FLAG_STEADY_STATE_TOL]) {
     steadyStateTol = atof(omc_flagValue[FLAG_STEADY_STATE_TOL]);
     infoStreamPrint(LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);
+  }
+
+  /* if compiled with the new DAE mode the simulation
+   * works only in daeMode and the ida solver */
+  if (compiledInDAEMode == 3){
+    omc_flag[FLAG_DAE_MODE] = 1;
   }
 
   rt_tick(SIM_TIMER_INIT_XML);
