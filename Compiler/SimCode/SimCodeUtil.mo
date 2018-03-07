@@ -5604,7 +5604,7 @@ algorithm
     case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsLst, eqnsfalse=elseqns, source=source_), _,
           BackendDAE.SHARED(info = ei), _, _, _) equation
       (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditions, eqnsLst, inVars, shared, genDiscrete, iuniqueEqIndex, itempvars);
-      (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(elseqns, inVars, genDiscrete, uniqueEqIndex, tempvars, ei);
+      (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(elseqns, inVars, uniqueEqIndex, tempvars, ei, genDiscrete);
     then ({SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, equations_, source_)}, uniqueEqIndex+1, tempvars);
 
     else equation
@@ -5643,7 +5643,7 @@ algorithm
 
     case (condition::conditionList, eqns::eqnsLst, _,
           BackendDAE.SHARED(info = ei), _, _, _) equation
-      (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(eqns, inVars, genDiscrete, iuniqueEqIndex, itempvars, ei);
+      (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(eqns, inVars, iuniqueEqIndex, itempvars, ei, genDiscrete);
       ifbranch = ((condition, equations_));
       (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditionList, eqnsLst, inVars, shared, genDiscrete, uniqueEqIndex, tempvars);
       ifbranches = ifbranch::ifbranches;
@@ -5658,10 +5658,13 @@ end createEquationsIfBranch;
 public function createEquationsfromList
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Var> inVars;
-  input Boolean genDiscrete;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
   input BackendDAE.ExtraInfo iextra;
+  input Boolean genDiscrete = false;
+  input Boolean includeWhen = false;
+  input Boolean skipDiscInZc = false;
+  input Boolean skipDiscInAlgorithm = false;
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
@@ -5689,7 +5692,7 @@ algorithm
       (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared)) =
           BackendDAEUtil.transformBackendDAE( subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(),
                                               BackendDAE.ALLOW_UNDERCONSTRAINED())), NONE(), NONE() );
-      (equations_, _, uniqueEqIndex, tempvars) = createEquations(false, false, genDiscrete, false, syst, shared, comps, iuniqueEqIndex, itempvars);
+      (equations_, _, uniqueEqIndex, tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, shared, comps, iuniqueEqIndex, itempvars);
     then (equations_, uniqueEqIndex, tempvars);
 
     else equation
@@ -5963,7 +5966,7 @@ algorithm
         eqnLst = List.threadMap2(expl, expl1, BackendEquation.generateEquation, source, eqKind);
 
         // generate SimCode equations therefore
-        (eqSystlst, uniqueEqIndex, tempvars) = createEquationsfromList(eqnLst, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra);
+        (eqSystlst, uniqueEqIndex, tempvars) = createEquationsfromList(eqnLst, inVars, iuniqueEqIndex, itempvars, iextra, genDiscrete);
       then
         (eqSystlst, uniqueEqIndex, tempvars);
 
@@ -5983,7 +5986,7 @@ algorithm
         eqnLst = List.threadMap2(expl, expl1, BackendEquation.generateEquation, source, eqKind);
 
         // generate SimCode equations therefore
-        (eqSystlst, uniqueEqIndex,_) = createEquationsfromList(eqnLst, inVars, genDiscrete, iuniqueEqIndex, itempvars, iextra);
+        (eqSystlst, uniqueEqIndex,_) = createEquationsfromList(eqnLst, inVars, iuniqueEqIndex, itempvars, iextra, genDiscrete);
       then
         (eqSystlst, uniqueEqIndex, itempvars);
 

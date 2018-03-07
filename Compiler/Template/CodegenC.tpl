@@ -897,7 +897,6 @@ template simulationFile_dae(SimCode simCode)
      <<
      /* DAE residuals */
      <%simulationFileHeader(fileNamePrefix)%>
-     #include "<%fileNamePrefix%>_16dae.h"
 
      #ifdef __cplusplus
      extern "C" {

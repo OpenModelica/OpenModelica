@@ -1161,7 +1161,7 @@ algorithm
     daeVars := BackendVariable.listVar(varsLst);
     daeEqns := BackendEquation.listEquation(eqnsLst);
     // create SimCode residual equation
-    (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromList(listReverse(eqnsLst), varsLst, false, uniqueEqIndex, tempVars, inBackendDAE.shared.info);
+    (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromList(listReverse(eqnsLst), varsLst, uniqueEqIndex, tempVars, inBackendDAE.shared.info, true, true);
 
     (uniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(BackendDAEUtil.collapseRemovedEqs(inBackendDAE), SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
     daeEquations := listAppend(daeEquations, removedEquations);

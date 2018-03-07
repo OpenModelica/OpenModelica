@@ -723,6 +723,13 @@ ida_event_update(DATA* data, threadData_t *threadData)
 
       /* get initial step to provide a direction of the solution */
       IDAGetActualInitStep(idaData->ida_mem, &init_h);
+      /* provide a feasible step-size if it's too small */
+      if (init_h < DBL_EPSILON){
+        init_h = DBL_EPSILON;
+        IDASetInitStep(idaData->ida_mem, init_h);
+        infoStreamPrint(LOG_SOLVER, 0, "##IDA## corrected step-size at %.15g", init_h);
+      }
+
       /* increase limits of the non-linear solver */
       IDASetMaxNumStepsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
       IDASetMaxNumJacsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
@@ -738,7 +745,7 @@ ida_event_update(DATA* data, threadData_t *threadData)
       if (checkIDAflag(flag)){
         infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
         IDASetLineSearchOffIC(idaData->ida_mem, TRUE);
-        flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+1);
+        flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
         IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
         infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
         if (checkIDAflag(flag)){
@@ -757,6 +764,9 @@ ida_event_update(DATA* data, threadData_t *threadData)
       // and  also algebraic vars
       data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+
+      /* reset initial step size again to default */
+      IDASetInitStep(idaData->ida_mem, 0.0);
     }
   }
   else{
@@ -890,7 +900,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* Calculate steps until TOUT is reached */
   if (idaData->internalSteps)
   {
-    /* If dasslsteps is selected, the dassl run to stopTime or next sample event */
+    /* If internalSteps are selected, let IDA run to stopTime or next sample event */
     if (data->simulationInfo->nextSampleEvent < data->simulationInfo->stopTime)
     {
       tout = data->simulationInfo->nextSampleEvent;
