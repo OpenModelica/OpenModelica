@@ -42,7 +42,9 @@ private:
     _dimSys;              ///< Temp   - Number of unknowns (=dimension of system of equations)
 
   bool
-    _firstCall;           ///< Temp   - Denotes the first call to the solver, init() is called
+    _firstCall,           ///< Temp   - Denotes the first call to the solver, init() is called
+    _hasDgesvFactors,     ///< =true if dgesv was called previously
+    _hasDgetc2Factors;    ///< =true if dgetc2 was called previously
 
   long int *_ihelpArray,  //pivot indices for lapackroutine
     *_jhelpArray;       //pivot indices for lapackroutine

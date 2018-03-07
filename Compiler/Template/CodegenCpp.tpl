@@ -13052,11 +13052,12 @@ case _ then
   let jacvals = if stringEq(eqsCount, "0") then '' else
     (sparsepattern |> (index,indexes) hasindex index0 =>
       let jaccol = ( indexes |> i_index hasindex index1 =>
-        (match indexColumn case "1" then '_<%matrixName%>jacobian(0,<%index%>) = _<%matrixName%>jac_y(0);/*test1<%index0%>,<%index1%>*/'
-           else '_<%matrixName%>jacobian(<%i_index%>,<%index%>) = _<%matrixName%>jac_y(<%i_index%>);/*test2<%index0%>,<%index1%>*/'
+        (match indexColumn case "1" then '_<%matrixName%>jacobian(0,<%index%>) = _<%matrixName%>jac_y(0);'
+           else '_<%matrixName%>jacobian(<%i_index%>,<%index%>) = _<%matrixName%>jac_y(<%i_index%>);'
            )
         ;separator="\n")
     <<
+    <%if intEq(index0, 1) then 'SystemLockFreeVariables slfv(this);'%>
     _<%matrixName%>jac_x(<%index0%>) = 1;
     calc<%matrixName%>JacobianColumn();
     _<%matrixName%>jac_x.clear();

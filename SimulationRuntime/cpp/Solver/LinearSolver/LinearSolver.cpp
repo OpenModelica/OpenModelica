@@ -40,6 +40,8 @@ LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings
 
   , _iterationStatus    (CONTINUE)
   , _firstCall          (true)
+  , _hasDgesvFactors    (false)
+  , _hasDgetc2Factors   (false)
   , _scale              (NULL)
   , _generateoutput     (false)
   , _fNominal           (NULL)
@@ -198,27 +200,31 @@ void LinearSolver::solve()
   //if !_sparse, we use LAPACK routines, otherwise we use KLU to solve the linear system
   if (!_sparse) {
     //use lapack
-    long int dimRHS  = 1; // Dimension of right hand side of linear system (=_b)
-    long int irtrn  = 0; // Return-flag of Fortran code
+    long int dimRHS = 1; // Dimension of right hand side of linear system (=_b)
+    long int info = 0;   // Return-flag of Fortran code
 
-    const matrix_t& A = _algLoop->getAMatrix();
-    const double* Atemp = A.data().begin();
+    if (!_algLoop->getFreeVariablesLock()) {
+      const matrix_t& A = _algLoop->getAMatrix();
+      const double* Atemp = A.data().begin();
 
-    memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
+      memcpy(_A, Atemp, _dimSys*_dimSys*sizeof(double));
+      _hasDgesvFactors = false;
+      _hasDgetc2Factors = false;
 
-    // scale Jacobian
-    std::fill(_fNominal, _fNominal + _dimSys, 1e-6);
-    for (int j = 0, idx = 0; j < _dimSys; j++) {
-      for (int i = 0; i < _dimSys; i++, idx++) {
-        _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
+      // scale Jacobian
+      std::fill(_fNominal, _fNominal + _dimSys, 1e-6);
+      for (int j = 0, idx = 0; j < _dimSys; j++) {
+        for (int i = 0; i < _dimSys; i++, idx++) {
+          _fNominal[i] = std::max(std::abs(Atemp[idx]), _fNominal[i]);
+        }
       }
+
+      LOGGER_WRITE_VECTOR("fNominal", _fNominal, _dimSys, LC_LS, LL_DEBUG);
+
+      for (int j = 0, idx = 0; j < _dimSys; j++)
+        for (int i = 0; i < _dimSys; i++, idx++)
+          _A[idx] /= _fNominal[i];
     }
-
-    LOGGER_WRITE_VECTOR("fNominal", _fNominal, _dimSys, LC_LS, LL_DEBUG);
-
-    for (int j = 0, idx = 0; j < _dimSys; j++)
-      for (int i = 0; i < _dimSys; i++, idx++)
-        _A[idx] /= _fNominal[i];
 
     for (int i = 0; i < _dimSys; i++)
       _b[i] /= _fNominal[i];
@@ -228,7 +234,7 @@ void LinearSolver::solve()
       std::cout << "We solve a linear system with coefficient matrix" << std::endl;
       for (int i=0; i<_dimSys; i++) {
         for (int j=0; j<_dimSys; j++) {
-          std::cout << Atemp[i+j*_dimSys] << " ";
+          std::cout << _A[i+j*_dimSys] << " ";
         }
         std::cout << std::endl;
       }
@@ -239,11 +245,25 @@ void LinearSolver::solve()
       std::cout << std::endl;
     }
 
-    dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _ihelpArray, _b, &_dimSys, &irtrn);
-
-    if  (irtrn != 0) {
-      dgetc2_(&_dimSys, _A, &_dimSys, _ihelpArray, _jhelpArray, &irtrn);
+    if (!_hasDgesvFactors && !_hasDgetc2Factors) {
+      dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _ihelpArray, _b, &_dimSys, &info);
+     _hasDgesvFactors = true;
+    }
+    else if (_hasDgesvFactors) {
+      // solve using previously obtained dgesv factors
+      char trans = 'N';
+      dgetrs_(&trans, &_dimSys, &dimRHS, _A, &_dimSys, _ihelpArray, _b, &_dimSys, &info);
+    }
+    else {
+      // solve using previously obtained dgetc2 factors
       dgesc2_(&_dimSys, _A, &_dimSys, _b, _ihelpArray, _jhelpArray, _scale);
+      info = 0;
+    }
+
+    if  (info != 0) {
+      dgetc2_(&_dimSys, _A, &_dimSys, _ihelpArray, _jhelpArray, &info);
+      dgesc2_(&_dimSys, _A, &_dimSys, _b, _ihelpArray, _jhelpArray, _scale);
+      _hasDgetc2Factors = true;
       LOGGER_WRITE("LinearSolver: Linear system singular, using perturbed system matrix.", LC_LS, LL_DEBUG);
       _iterationStatus = DONE;
     }
