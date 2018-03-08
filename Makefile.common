@@ -193,15 +193,10 @@ breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
 
-all-runtimeCPPinstall:
-	$(MAKE) mkbuilddirs
-	$(MAKE) CMinpack
-	$(MAKE) sundials
+all-runtimeCPPinstall: mkbuilddirs CMinpack sundials
 	$(MAKE) all runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-omc-and-runtimeCPPinstall: mkbuilddirs
-	$(MAKE) CMinpack
-	$(MAKE) sundials
+omc-and-runtimeCPPinstall: mkbuilddirs CMinpack sundials
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
 runtimeCPP: CMinpack sundials $(MINGW_EXTRA_LIBS)
@@ -213,7 +208,7 @@ CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
 omcCAPIinstall:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) omcCAPIinstall CC="$(CC)" CXX="$(CXX)"  $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPinstall:
+runtimeCPPinstall: CMinpack sundials
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppCVode.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/cpp/libOMCppDataExchange.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppDataExchange.dylib
@@ -465,7 +460,9 @@ sqlite3: 3rdParty/sqlite3/Makefile
 clean-sqlite3:
 	rm -rf 3rdParty/sqlite3/build
 # build sundials
-sundials: 3rdParty/sundials/CMakeLists.txt umfpack
+sundials: umfpack
+	$(MAKE) $(builddir_lib_omc)/libsundials_ida.a
+$(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	mkdir -p 3rdParty/sundials/build
 	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX=`pwd` -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DLAPACK_ENABLE:Bool=ON
 	$(MAKE) -C 3rdParty/sundials/build install
@@ -483,10 +480,9 @@ sundials: 3rdParty/sundials/CMakeLists.txt umfpack
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
+	@touch "$@"
 clean-sundials:
-	if test -d 3rdParty/sundials/build ; then cd 3rdParty/sundials/build && make clean ; fi
-	rm -rf $(OMBUILDDIR)/include/omc/cpp/sundials
-	rm -f $(builddir_lib_omc)/libsundials*
+	rm -rf 3rdParty/sundials/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/c/sundials"
 
 # Build Nox
 nox: 3rdParty/trilinos-nox/CMakeLists.txt
