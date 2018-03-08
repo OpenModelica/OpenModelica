@@ -1358,7 +1358,8 @@ Component* GraphicsView::stateComponentAtPosition(QPoint position)
         if (pRootComponent && !pRootComponent->isSelected()) {
           if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
               !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
-              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isState()))) {
+              ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
+                pComponent->getLibraryTreeItem()->isState()))) {
             return pComponent;
           }
         }
