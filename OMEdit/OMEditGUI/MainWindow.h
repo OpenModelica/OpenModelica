@@ -404,6 +404,7 @@ private:
   QToolBar *mpTLMSimulationToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
+  void showMessagesBrowser();
   void showSearchBrowser();
   void createNewModelicaClass();
   void openModelicaFile();

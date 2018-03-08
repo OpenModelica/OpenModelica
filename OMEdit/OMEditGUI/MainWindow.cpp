@@ -141,7 +141,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpMessagesDockWidget->setWidget(MessagesWidget::instance());
   addDockWidget(Qt::BottomDockWidgetArea, mpMessagesDockWidget);
   mpMessagesDockWidget->hide();
-  connect(MessagesWidget::instance(), SIGNAL(MessageAdded()), mpMessagesDockWidget, SLOT(show()));
+  connect(MessagesWidget::instance(), SIGNAL(MessageAdded()), SLOT(showMessagesBrowser()));
   // Create the OMCProxy object.
   mpOMCProxy = new OMCProxy(threadData, this);
   if (getExitApplicationStatus()) {
@@ -366,7 +366,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLocalsWidget->getLocalsTreeView()->header()->restoreState(pSettings->value("localsTreeState").toByteArray());
     pSettings->endGroup();
     if (restoreMessagesWidget) {
-      mpMessagesDockWidget->show();
+      showMessagesBrowser();
     }
   }
   switchToWelcomePerspective();
@@ -1212,6 +1212,21 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       }
     }
     pVariablesTreeModel->blockSignals(state);
+  }
+}
+
+/*!
+ * \brief MainWindow::showMessagesBrowser
+ * Slot activated when MessagesWidget::MessageAdded signal is raised.\n
+ * Shows the Messages Browser.
+ */
+void MainWindow::showMessagesBrowser()
+{
+  mpMessagesDockWidget->show();
+  // In case user has tabbed the dock widgets then make Messages Browser active.
+  QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpMessagesDockWidget);
+  if (tabifiedDockWidgetsList.size() > 0) {
+    tabifyDockWidget(tabifiedDockWidgetsList.at(0), mpMessagesDockWidget);
   }
 }
 
