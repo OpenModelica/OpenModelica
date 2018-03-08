@@ -341,6 +341,8 @@ QString Helper::animationPause;
 QString Helper::animationPauseTip;
 QString Helper::simulationParams;
 QString Helper::simulationParamsTip;
+QString Helper::addFMU;
+QString Helper::addFMUTip;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -598,6 +600,8 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
+  Helper::addFMU = tr("Add FMU");
+  Helper::addFMUTip = tr("Adds the FMU");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");

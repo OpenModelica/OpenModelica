@@ -1879,8 +1879,8 @@ OMSSubModelAttributes::OMSSubModelAttributes(Component *pComponent, QWidget *pPa
   mParameterLabels.clear();
   mParameterLineEdits.clear();
   int index = 0;
-  if (mpComponent->getLibraryTreeItem()->getOMSComponent()) {
-    oms_signal_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSComponent()->interfaces;
+  if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
+    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->interfaces;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
         index++;

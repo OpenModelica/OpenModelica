@@ -470,6 +470,12 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     foreach (Component *pInterfaceComponent, pComponent->getComponentsList()) {
       pCompositeModelEditor->addInterface(pInterfaceComponent, pComponent->getName());
     }
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    QFileInfo fileInfo(mpModelWidget->getLibraryTreeItem()->getFileName());
+    OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+    OMSProxy::instance()->addFMU(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pComponent->getLibraryTreeItem()->getFileName(),
+                                 pComponent->getName());
+    OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
   }
 }
 
@@ -515,6 +521,11 @@ void GraphicsView::deleteComponentFromClass(Component *pComponent)
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteSubModel(pComponent->getName());
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    if (OMSProxy::instance()->deleteSubModel(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pComponent->getName())) {
+      //MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(pComponent->getLibraryTreeItem(), false);
+    }
+
   }
 }
 
@@ -2577,6 +2588,9 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addAction(mpRenameAction);
       menu.addSeparator();
       menu.addAction(mpSimulationParamsAction);
+    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      menu.addSeparator();
+      menu.addAction(MainWindow::instance()->getAddFMUAction());
     }
     menu.exec(event->globalPos());
     return;         // return from it because at a time we only want one context menu.
@@ -3545,7 +3559,7 @@ void ModelWidget::createModelWidgetComponents()
       }
       // only get the components and connectoi if the we are not creating a new class.
       if (!mpLibraryTreeItem->getFileName().isEmpty()) {
-        drawOMSModelComponents();
+        drawOMSModelElements();
         drawOMSModelConnections();
       }
       mpDiagramGraphicsScene->clearSelection();
@@ -5369,21 +5383,20 @@ void ModelWidget::getCompositeModelConnections()
 }
 
 /*!
- * \brief ModelWidget::drawOMSModelComponents
- * Draws the OMSimulator model components.
+ * \brief ModelWidget::drawOMSModelElements
+ * Draws the OMSimulator model elements.
  */
-void ModelWidget::drawOMSModelComponents()
+void ModelWidget::drawOMSModelElements()
 {
   for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
     LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-    const ssd_element_geometry_t *pElementGeometry;
-    if (OMSProxy::instance()->getElementGeometry(pChildLibraryTreeItem->getNameStructure(), &pElementGeometry)) {
+    if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
       // check if we have zero width and height
       double x1, y1, x2, y2;
-      x1 = pElementGeometry->x1;
-      y1 = pElementGeometry->y1;
-      x2 = pElementGeometry->x2;
-      y2 = pElementGeometry->y2;
+      x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
+      y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
+      x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
+      y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
       double width = x2 - x1;
       double height = y2 - y1;
       if (width <= 0 && height <= 0) {
@@ -5395,7 +5408,7 @@ void ModelWidget::drawOMSModelComponents()
       QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
                            .arg(x1).arg(y1)
                            .arg(x2).arg(y2)
-                           .arg(pElementGeometry->rotation);
+                           .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
       ComponentInfo *pComponentInfo = new ComponentInfo;
       pComponentInfo->setName(pChildLibraryTreeItem->getName());
       pComponentInfo->setClassName(pChildLibraryTreeItem->getNameStructure());
@@ -5754,6 +5767,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
+  connect(MainWindow::instance()->getAddFMUAction(), SIGNAL(triggered()), SLOT(addFMU()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
@@ -6231,6 +6245,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
+  MainWindow::instance()->getAddFMUAction()->setEnabled(enabled && oms);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -6397,5 +6412,18 @@ void ModelWidgetContainer::alignInterfaces()
   if (ModelWidget *pModelWidget = getCurrentModelWidget()) {
     AlignInterfacesDialog *pAlignInterfacesDialog = new AlignInterfacesDialog(pModelWidget);
     pAlignInterfacesDialog->exec();
+  }
+}
+
+/*!
+ * \brief ModelWidgetContainer::addFMU
+ * Opens the AddFMUDialog.
+ */
+void ModelWidgetContainer::addFMU()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    AddFMUDialog *pAddFMUDialog = new AddFMUDialog(pModelWidget->getDiagramGraphicsView());
+    pAddFMUDialog->exec();
   }
 }

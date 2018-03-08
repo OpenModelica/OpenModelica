@@ -352,4 +352,27 @@ private slots:
   void updateComponentName();
 };
 
+class AddFMUDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  AddFMUDialog(GraphicsView *pGraphicsView);
+private:
+  GraphicsView *mpGraphicsView;
+  LibraryTreeItem *mpLibraryTreeItem;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpPathLabel;
+  QLineEdit *mpPathTextBox;
+  QPushButton *mpBrowsePathButton;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void browseFMUPath();
+  void addFMU();
+};
+
 #endif // MODELICACLASSDIALOG_H

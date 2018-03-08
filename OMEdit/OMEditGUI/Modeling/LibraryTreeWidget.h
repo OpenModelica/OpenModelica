@@ -147,10 +147,8 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
-  void setOMSComponentType(oms_component_type_enu_t type) {mOMSComponentType = type;}
-  oms_component_type_enu_t getOMSComponentType() const {return mOMSComponentType;}
-  void setOMSComponent(oms_component_t *pOMSComponent) {mpOMSComponent = pOMSComponent;}
-  oms_component_t* getOMSComponent() const {return mpOMSComponent;}
+  void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
+  oms_element_t* getOMSElement() const {return mpOMSElement;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -198,8 +196,7 @@ private:
   QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
-  oms_component_type_enu_t mOMSComponentType;
-  oms_component_t *mpOMSComponent;
+  oms_element_t *mpOMSElement;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();

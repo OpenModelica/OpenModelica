@@ -376,8 +376,7 @@ LibraryTreeItem::LibraryTreeItem()
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(true);
-  setOMSComponentType(oms_component_none);
-  setOMSComponent(0);
+  setOMSElement(0);
 }
 
 /*!
@@ -423,6 +422,11 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
         setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       }
     }
+  } else if (type == LibraryTreeItem::OMS) {
+    if (!OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement)) {
+      setOMSElement(0);
+    }
+    setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   } else {
     setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   }
@@ -431,8 +435,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(false);
-  setOMSComponentType(oms_component_none);
-  setOMSComponent(0);
 }
 
 /*!
@@ -585,13 +587,17 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
   if (mLibraryType == LibraryTreeItem::CompositeModel) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::OMS) {
-    switch (getOMSComponentType()) {
-      case oms_component_fmu:
-        return QIcon(":/Resources/icons/fmu-icon.svg");
-      case oms_component_port:
-        return QIcon(":/Resources/icons/connect-mode.svg");
-      default:
-        return QIcon(":/Resources/icons/tlm-icon.svg");
+    if (mpOMSElement) {
+      switch (mpOMSElement->type) {
+        case oms_component_fmu:
+          return QIcon(":/Resources/icons/fmu-icon.svg");
+        case oms_component_port:
+          return QIcon(":/Resources/icons/connect-mode.svg");
+        default:
+          return QIcon(":/Resources/icons/tlm-icon.svg");
+      }
+    } else {
+      return QIcon(":/Resources/icons/tlm-icon.svg");
     }
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
@@ -1895,7 +1901,16 @@ bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool as
     }
   }
   // unload OMSimulator model
-  if (OMSProxy::instance()->unloadModel(pLibraryTreeItem->getNameStructure())) {
+  bool deleted = false;
+  if (pLibraryTreeItem->isTopLevel() && OMSProxy::instance()->unloadModel(pLibraryTreeItem->getNameStructure())) {
+    deleted = true;
+  } else if (!pLibraryTreeItem->isTopLevel()) {
+    deleted = true;
+  } else {
+    deleted = false;
+  }
+  // if deleted
+  if (deleted) {
     /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
      * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
      * The following code overcomes this issue. It stores the next index expand state and then apply it after deletion.
@@ -2425,26 +2440,23 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
       }
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    oms_component_t** pComponents = NULL;
-    if (OMSProxy::instance()->getComponents(pLibraryTreeItem->getNameStructure(), &pComponents)) {
-      for (int i = 0 ; pComponents[i] ; i++) {
-        QString name = StringHandler::getLastWordAfterDot(pComponents[i]->name);
+    oms_element_t** pElements = NULL;
+    if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmi &&
+        OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
+      for (int i = 0 ; pElements[i] ; i++) {
+        QString name = StringHandler::getLastWordAfterDot(pElements[i]->name);
+        QString path;
+        OMSProxy::instance()->getFMUPath(pElements[i]->name, &path);
         LibraryTreeItem *pComponentLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
                                                                                QString("%1.%2").arg(pLibraryTreeItem->getNameStructure())
-                                                                               .arg(name), pLibraryTreeItem->getFileName(),
-                                                                               pLibraryTreeItem->isSaved(), pLibraryTreeItem);
-        pComponentLibraryTreeItem->setOMSComponentType(pComponents[i]->type);
-        pComponentLibraryTreeItem->setOMSComponent(pComponents[i]);
-        for (int j = 0 ; pComponents[i]->interfaces[j] ; j++) {
-          QString name = StringHandler::getLastWordAfterDot(pComponents[i]->interfaces[j]->name);
+                                                                               .arg(name), path, pLibraryTreeItem->isSaved(),
+                                                                               pLibraryTreeItem);
+        for (int j = 0 ; pElements[i]->interfaces[j] ; j++) {
+          QString name = StringHandler::getLastWordAfterDot(pElements[i]->interfaces[j]->name);
           name = name.split(':', QString::SkipEmptyParts).last();
-          LibraryTreeItem *pInterfaceLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
-                                                                                 QString("%1.%2")
-                                                                                 .arg(pComponentLibraryTreeItem->getNameStructure())
-                                                                                 .arg(name), pComponentLibraryTreeItem->getFileName(),
-                                                                                 pLibraryTreeItem->isSaved(), pComponentLibraryTreeItem);
-          pInterfaceLibraryTreeItem->setOMSComponentType(oms_component_port);
-          pInterfaceLibraryTreeItem->setOMSComponent(0);
+          createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
+                                    QString("%1.%2").arg(pComponentLibraryTreeItem->getNameStructure()).arg(name),
+                                    pComponentLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pComponentLibraryTreeItem);
         }
       }
     }
@@ -4028,11 +4040,6 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
     LibraryTreeItem *pLibraryTreeItem = 0;
     pLibraryTreeItem = mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, modelName, modelName, fileInfo.absoluteFilePath(), true,
                                                                  mpLibraryTreeModel->getRootLibraryTreeItem());
-    // set the component type
-    oms_component_type_enu_t componentType = oms_component_none;
-    OMSProxy::instance()->getComponentType(pLibraryTreeItem->getNameStructure(), &componentType);
-    pLibraryTreeItem->setOMSComponentType(componentType);
-    pLibraryTreeItem->setOMSComponent(0);
     // add the item to recent files list
     if (pLibraryTreeItem) {
       MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);

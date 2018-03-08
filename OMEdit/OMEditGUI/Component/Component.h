@@ -124,6 +124,8 @@ public:
   QString getTLMCausality() const {return mTLMCausality;}
   void setOMSCausality(oms_causality_enu_t causality) {mOMSCausality = causality;}
   oms_causality_enu_t getOMSCausality() const {return mOMSCausality;}
+  void setOMSSignalType(oms_signal_type_enu_t signalType) {mOMSSignalType = signalType;}
+  oms_signal_type_enu_t getOMSSignalType() const {return mOMSSignalType;}
   void setDomain(QString domain) {mDomain = domain;}
   QString getDomain() const {return mDomain;}
   // operator overloading
@@ -161,6 +163,7 @@ private:
   QString mTLMCausality;
   QString mDomain;
   oms_causality_enu_t mOMSCausality;
+  oms_signal_type_enu_t mOMSSignalType;
 
   bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };
@@ -298,7 +301,7 @@ private:
   void createDefaultComponent();
   void createStateComponent();
   void drawInterfacePoints();
-  void drawSignals();
+  void drawOMSElementConnectors();
   void drawComponent();
   void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();

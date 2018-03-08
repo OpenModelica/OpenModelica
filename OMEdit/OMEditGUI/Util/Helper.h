@@ -343,6 +343,8 @@ public:
   static QString animationPauseTip;
   static QString simulationParams;
   static QString simulationParamsTip;
+  static QString addFMU;
+  static QString addFMUTip;
   static QString running;
   static QString finished;
   static QString newVariable;

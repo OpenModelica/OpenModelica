@@ -3251,6 +3251,10 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // Add FMU Action
+  mpAddFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addFMU, this);
+  mpAddFMUAction->setStatusTip(Helper::addFMUTip);
+
 }
 
 //! Creates the menus
@@ -3864,6 +3868,12 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
+  // OMSimulator Toolbar
+  mpOMSimulatorToobar = addToolBar(tr("OMSimulator Toolbar"));
+  mpOMSimulatorToobar->setObjectName("OMSimulator Toolbar");
+  mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to OMSimulator Toolbar
+  mpOMSimulatorToobar->addAction(mpAddFMUAction);
 }
 
 //! when the dragged object enters the main window

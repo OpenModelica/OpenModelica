@@ -88,6 +88,7 @@ ComponentInfo::ComponentInfo(QObject *pParent)
   mTLMCausality = StringHandler::getTLMCausality(StringHandler::TLMBidirectional);
   mDomain = StringHandler::getTLMDomain(StringHandler::Mechanical);
   mOMSCausality = oms_causality_undefined;
+  mOMSSignalType = oms_signal_type_real;
 }
 
 /*!
@@ -139,6 +140,7 @@ void ComponentInfo::updateComponentInfo(const ComponentInfo *pComponentInfo)
   mTLMCausality = pComponentInfo->getTLMCausality();
   mDomain = pComponentInfo->getDomain();
   mOMSCausality = pComponentInfo->getOMSCausality();
+  mOMSSignalType = pComponentInfo->getOMSSignalType();
 }
 
 /*!
@@ -378,7 +380,8 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getGeometryFile() == this->getGeometryFile()) &&
       (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321()) &&
       (componentInfo.getDimensions() == this->getDimensions()) && (componentInfo.getTLMCausality() == this->getTLMCausality()) &&
-      (componentInfo.getDomain() == this->getDomain()) && (componentInfo.getOMSCausality() == this->getOMSCausality());
+      (componentInfo.getDomain() == this->getDomain()) && (componentInfo.getOMSCausality() == this->getOMSCausality()) &&
+      (componentInfo.getOMSSignalType() == this->getOMSSignalType());
 }
 
 /*!
@@ -467,7 +470,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
-    drawSignals();
+    drawOMSElementConnectors();
   } else {
     drawComponent();
   }
@@ -722,9 +725,55 @@ Component::Component(ComponentInfo *pComponentInfo, LibraryTreeItem *pLibraryTre
   mpDefaultComponentText = 0;
   mpInputOutputComponentPolygon = new PolygonAnnotation(this);
   if (mpComponentInfo->getOMSCausality() == oms_causality_input) {
-    mpInputOutputComponentPolygon->setFillColor(QColor(0, 0, 127));
+    switch (mpComponentInfo->getOMSSignalType()) {
+      case oms_signal_type_integer:
+        mpInputOutputComponentPolygon->setLineColor(QColor(255,127,0));
+        mpInputOutputComponentPolygon->setFillColor(QColor(255,127,0));
+        break;
+      case oms_signal_type_boolean:
+        mpInputOutputComponentPolygon->setLineColor(QColor(255,0,255));
+        mpInputOutputComponentPolygon->setFillColor(QColor(255,0,255));
+        break;
+      case oms_signal_type_string:
+        qDebug() << "oms_signal_type_string not implemented yet.";
+        break;
+      case oms_signal_type_enum:
+        qDebug() << "oms_signal_type_enum not implemented yet.";
+        break;
+      case oms_signal_type_bus:
+        qDebug() << "oms_signal_type_bus not implemented yet.";
+        break;
+      case oms_signal_type_real:
+        default:
+        mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
+        mpInputOutputComponentPolygon->setFillColor(QColor(0, 0, 127));
+        break;
+    }
   } else if (mpComponentInfo->getOMSCausality() == oms_causality_output) {
-    mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
+    switch (mpComponentInfo->getOMSSignalType()) {
+      case oms_signal_type_integer:
+        mpInputOutputComponentPolygon->setLineColor(QColor(255,127,0));
+        mpInputOutputComponentPolygon->setFillColor(QColor(255,255,255));
+        break;
+      case oms_signal_type_boolean:
+        mpInputOutputComponentPolygon->setLineColor(QColor(255,0,255));
+        mpInputOutputComponentPolygon->setFillColor(QColor(255,255,255));
+        break;
+      case oms_signal_type_string:
+        qDebug() << "oms_signal_type_string not implemented yet.";
+        break;
+      case oms_signal_type_enum:
+        qDebug() << "oms_signal_type_enum not implemented yet.";
+        break;
+      case oms_signal_type_bus:
+        qDebug() << "oms_signal_type_bus not implemented yet.";
+        break;
+      case oms_signal_type_real:
+      default:
+        mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
+        mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
+        break;
+    }
   }
   mpStateComponentRectangle = 0;
   mHasTransition = false;
@@ -1598,30 +1647,37 @@ void Component::drawInterfacePoints()
   }
 }
 
-void Component::drawSignals()
+/*!
+ * \brief Component::drawOMSElementConnectors
+ * Draws the OMSimulator element connectors.
+ */
+void Component::drawOMSElementConnectors()
 {
-  oms_signal_t** pInterfaces = mpLibraryTreeItem->getOMSComponent()->interfaces;
-  ComponentInfo *pComponentInfo = 0;
-  QString name;
-  for (int i = 0 ; pInterfaces[i] ; i++) {
-    switch (pInterfaces[i]->causality) {
-      case oms_causality_input:
-      case oms_causality_output:
-        pComponentInfo = new ComponentInfo;
-        name = StringHandler::getLastWordAfterDot(pInterfaces[i]->name);
-        name = name.split(':', QString::SkipEmptyParts).last();
-        pComponentInfo->setName(name);
-        //pComponentInfo->setClassName(pInterfaces[i]->type);
-        pComponentInfo->setOMSCausality(pInterfaces[i]->causality);
-        mComponentsList.append(new Component(pComponentInfo, mpLibraryTreeItem, this));
-        break;
-      case oms_causality_parameter:
-      case oms_causality_undefined:
-      default:
-        break;
+  if (mpLibraryTreeItem->getOMSElement()) {
+    oms_connector_t** pInterfaces = mpLibraryTreeItem->getOMSElement()->interfaces;
+    ComponentInfo *pComponentInfo = 0;
+    QString name;
+    for (int i = 0 ; pInterfaces[i] ; i++) {
+      switch (pInterfaces[i]->causality) {
+        case oms_causality_input:
+        case oms_causality_output:
+          pComponentInfo = new ComponentInfo;
+          name = StringHandler::getLastWordAfterDot(pInterfaces[i]->name);
+          name = name.split(':', QString::SkipEmptyParts).last();
+          pComponentInfo->setName(name);
+          //pComponentInfo->setClassName(pInterfaces[i]->type);
+          pComponentInfo->setOMSCausality(pInterfaces[i]->causality);
+          pComponentInfo->setOMSSignalType(pInterfaces[i]->type);
+          mComponentsList.append(new Component(pComponentInfo, mpLibraryTreeItem, this));
+          break;
+        case oms_causality_parameter:
+        case oms_causality_undefined:
+        default:
+          break;
+      }
     }
+    adjustOMSSignals();
   }
-  adjustOMSSignals();
 }
 
 /*!

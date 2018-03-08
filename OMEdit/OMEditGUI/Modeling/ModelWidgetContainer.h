@@ -467,7 +467,7 @@ private:
   QString getCompositeModelName();
   void getCompositeModelSubModels();
   void getCompositeModelConnections();
-  void drawOMSModelComponents();
+  void drawOMSModelElements();
   void drawOMSModelConnections();
 private slots:
   void showIconView(bool checked);
@@ -522,6 +522,7 @@ public slots:
   void printModel();
   void showSimulationParams();
   void alignInterfaces();
+  void addFMU();
 };
 
 #endif // MODELWIDGETCONTAINER_H

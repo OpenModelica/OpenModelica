@@ -208,6 +208,33 @@ bool OMSProxy::renameModel(QString identOld, QString identNew)
 }
 
 /*!
+ * \brief OMSProxy::addFMU
+ * Adds the FMU to the model
+ * \param modelIdent
+ * \param fmuPath
+ * \param fmuIdent
+ * \return
+ */
+bool OMSProxy::addFMU(QString modelIdent, QString fmuPath, QString fmuIdent)
+{
+  oms_status_enu_t status = oms2_addFMU(modelIdent.toStdString().c_str(), fmuPath.toStdString().c_str(), fmuIdent.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::deleteSubModel
+ * Deletes the submodel from the model
+ * \param modelIdent
+ * \param subModelIdent
+ * \return
+ */
+bool OMSProxy::deleteSubModel(QString modelIdent, QString subModelIdent)
+{
+  oms_status_enu_t status = oms2_deleteSubModel(modelIdent.toStdString().c_str(), subModelIdent.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::loadModel
  * Loads the model.
  * \param filename
@@ -236,41 +263,15 @@ bool OMSProxy::saveModel(QString filename, QString ident)
 }
 
 /*!
- * \brief OMSProxy::getComponentType
- * Gets the component type.
- * \param ident
- * \param pType
- * \return
- */
-bool OMSProxy::getComponentType(QString ident, oms_component_type_enu_t* pType)
-{
-  oms_status_enu_t status = oms2_getComponentType(ident.toStdString().c_str(), pType);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getComponents
- * Get the model components
+ * \brief OMSProxy::getElement
+ * Gets the model element
  * \param cref
- * \param pComponents
+ * \param element
  * \return
  */
-bool OMSProxy::getComponents(QString cref, oms_component_t*** pComponents)
+bool OMSProxy::getElement(QString cref, oms_element_t** pElement)
 {
-  oms_status_enu_t status = oms2_getComponents(cref.toStdString().c_str(), pComponents);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getElementGeometry
- * Get the element geometry
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry)
-{
-  oms_status_enu_t status = oms2_getElementGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms2_getElement(cref.toStdString().c_str(), pElement);
   return statusToBool(status);
 }
 
@@ -284,6 +285,34 @@ bool OMSProxy::getElementGeometry(QString cref, const ssd_element_geometry_t** p
 bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
   oms_status_enu_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getElements
+ * Get the model elements
+ * \param cref
+ * \param pElements
+ * \return
+ */
+bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
+{
+  oms_status_enu_t status = oms2_getElements(cref.toStdString().c_str(), pElements);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getFMUPath
+ * Returns the FMU path.
+ * \param cref
+ * \param fmuPath
+ * \return
+ */
+bool OMSProxy::getFMUPath(QString cref, QString* fmuPath)
+{
+  char* path = NULL;
+  oms_status_enu_t status = oms2_getFMUPath(cref.toStdString().c_str(), &path);
+  *fmuPath = QString(path);
   return statusToBool(status);
 }
 

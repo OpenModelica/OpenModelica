@@ -182,6 +182,7 @@ public:
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
+  QAction* getAddFMUAction() {return mpAddFMUAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
   QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
@@ -390,6 +391,8 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
+  // OMSimulator Actions
+  QAction *mpAddFMUAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -405,6 +408,7 @@ private:
   QToolBar *mpReSimulationToolBar;
   QToolBar *mpPlotToolBar;
   QToolBar *mpTLMSimulationToolbar;
+  QToolBar *mpOMSimulatorToobar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void showSearchBrowser();

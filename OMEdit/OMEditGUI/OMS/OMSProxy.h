@@ -60,13 +60,15 @@ public:
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);
+  bool addFMU(QString modelIdent, QString fmuPath, QString fmuIdent);
+  bool deleteSubModel(QString modelIdent, QString subModelIdent);
   bool renameModel(QString identOld, QString identNew);
   bool loadModel(QString filename, QString* pModelName);
   bool saveModel(QString filename, QString ident);
-  bool getComponentType(QString ident, oms_component_type_enu_t* pType);
-  bool getComponents(QString cref, oms_component_t*** pComponents);
-  bool getElementGeometry(QString cref, const ssd_element_geometry_t** pGeometry);
+  bool getElement(QString cref, oms_element_t** pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
+  bool getElements(QString cref, oms_element_t*** pElements);
+  bool getFMUPath(QString cref, QString* fmuPath);
   bool getConnections(QString cref, oms_connection_t*** pConnections);
   bool addConnection(QString cref, QString conA, QString conB);
   bool deleteConnection(QString cref, QString conA, QString conB);

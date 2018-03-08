@@ -1973,3 +1973,118 @@ void ComponentNameDialog::updateComponentName()
   }
   accept();
 }
+
+/*!
+ * \class AddFMUDialog
+ * \brief Creates a dialog to allow users to add FMUs to OMSimulator model.
+ */
+/*!
+ * \brief AddFMUDialog::AddFMUDialog
+ * \param pGraphicsView
+ */
+AddFMUDialog::AddFMUDialog(GraphicsView *pGraphicsView)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addFMU));
+  setMinimumWidth(400);
+  mpGraphicsView = pGraphicsView;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::addFMU);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // name
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // path
+  mpPathLabel = new Label(Helper::path);
+  mpPathTextBox = new QLineEdit;
+  mpBrowsePathButton = new QPushButton(Helper::browse);
+  mpBrowsePathButton->setAutoDefault(false);
+  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseFMUPath()));
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addFMU()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 3);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpNameLabel, 2, 0);
+  pMainLayout->addWidget(mpNameTextBox, 2, 1, 1, 2);
+  pMainLayout->addWidget(mpPathLabel, 3, 0);
+  pMainLayout->addWidget(mpPathTextBox, 3, 1);
+  pMainLayout->addWidget(mpBrowsePathButton, 3, 2);
+  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief AddFMUDialog::browseFMUPath
+ * Slot activated when mpBrowsePathButton clicked signal is raised.\n
+ * Allows the user to select the FMU path.
+ */
+void AddFMUDialog::browseFMUPath()
+{
+  mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile),
+                                                        NULL, Helper::fmuFileTypes, NULL));
+}
+
+/*!
+ * \brief AddFMUDialog::addFMU
+ * Adds the FMU to the OMSimulator model.
+ */
+void AddFMUDialog::addFMU()
+{
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU")), Helper::ok);
+    return;
+  }
+  QFileInfo fileInfo(mpPathTextBox->text());
+  if (!fileInfo.exists()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Unable to find the FMU file."), Helper::ok);
+    return;
+  }
+  LibraryTreeItem *pParentLibraryTreeItem;
+  pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
+  for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
+                            .arg(tr("FMU"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+      return;
+    }
+  }
+  // Add FMU to OMSimulator
+  OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  bool fmuAdded = OMSProxy::instance()->addFMU(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
+                                               fileInfo.absoluteFilePath(), mpNameTextBox->text());
+  OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
+  // Create a LibraryTreeItem for FMU
+  if (fmuAdded) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pFMULibraryTreeItem;
+    pFMULibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mpNameTextBox->text(),
+                                                                   QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
+                                                                   .arg(mpNameTextBox->text()), mpPathTextBox->text(),
+                                                                   false, pParentLibraryTreeItem);
+    // add the FMU to view
+    QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
+    ComponentInfo *pComponentInfo = new ComponentInfo;
+    pComponentInfo->setName(pFMULibraryTreeItem->getName());
+    pComponentInfo->setClassName(pFMULibraryTreeItem->getNameStructure());
+    mpGraphicsView->addComponentToView(pComponentInfo->getName(), pFMULibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false);
+    accept();
+  }
+}
