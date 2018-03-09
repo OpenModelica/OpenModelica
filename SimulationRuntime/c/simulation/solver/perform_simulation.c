@@ -176,7 +176,7 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
   {
     const char* fullFileName;
     if (omc_flag[FLAG_OUTPUT_PATH]) { /* read the output path from the command line (if any) */
-      if (0 > GC_asprintf((char**)&fullFileName, "%s/%s", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix)) {
+      if (0 > GC_asprintf(&fullFileName, "%s/%s", omc_flagValue[FLAG_OUTPUT_PATH], data->modelData->modelFilePrefix)) {
         throwStreamPrint(NULL, "perform_simulation.c: Error: can not allocate memory.");
       }
     } else {
