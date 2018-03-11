@@ -2417,6 +2417,79 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
 }
 
 /*!
+ * \brief MainWindow::runDebugConfiguration
+ * Runs the
+ */
+void MainWindow::runDebugConfiguration()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  QToolButton *pToolButton = qobject_cast<QToolButton*>(sender());
+  if (pAction) {
+    pAction = pAction;
+  } else if (pToolButton) {
+    QList<QAction *> actions = mpDebugConfigurationMenu->actions();
+    // read the settings and add debug configurations
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+    if (debugConfigurations.size() > 0) {
+      pAction = actions[0];
+    } else {
+      showDebugConfigurationsDialog();
+      return;
+    }
+  }
+  if (pAction) {
+    DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
+    connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
+    DebuggerConfigurationPage* pDebuggerConfigurationPage = pDebuggerConfigurationsDialog->getDebuggerConfigurationPage(pAction->text());
+    if (pDebuggerConfigurationPage) {
+      pDebuggerConfigurationsDialog->runConfiguration(pDebuggerConfigurationPage);
+    }
+    pDebuggerConfigurationsDialog->deleteLater();
+  }
+}
+
+/*!
+ * \brief MainWindow::updateDebuggerToolBarMenu
+ * Updates the debugger toolbar menu.
+ */
+void MainWindow::updateDebuggerToolBarMenu()
+{
+  mpDebugConfigurationMenu->clear();
+  // read the settings and add debug configurations
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  /* If user doesn't have the key debuggerConfigurationList/configurations
+   * it means the debug configurations are save in old format.
+   * Makesure we update it to new list format here.
+   */
+  if (!pSettings->contains("debuggerConfigurationList/configurations")) {
+    pSettings->beginGroup("debuggerConfigurationList");
+    QStringList configurationKeys = pSettings->childKeys();
+    QList<QVariant> debugConfigurations;
+    foreach (QString configurationKey, configurationKeys) {
+      debugConfigurations.append(pSettings->value(configurationKey));
+    }
+    // Once all the debug configurations moved to new list format then clear the old ones.
+    pSettings->remove(""); // calling remove with empty string will remove all keys in the current group.
+    pSettings->setValue("configurations", debugConfigurations);
+    pSettings->endGroup();
+  }
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  foreach (QVariant configuration, debugConfigurations) {
+    DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
+    QAction *pAction = new QAction(mpDebugConfigurationMenu);
+    pAction->setText(debugConfiguration.name);
+    connect(pAction, SIGNAL(triggered()), SLOT(runDebugConfiguration()));
+    mpDebugConfigurationMenu->addAction(pAction);
+  }
+  if (debugConfigurations.size() > 0) {
+    mpDebugConfigurationMenu->addSeparator();
+  }
+  mpDebugConfigurationMenu->addAction(mpDebugConfigurationsAction);
+  mpDebugConfigurationMenu->addAction(mpAttachDebuggerToRunningProcessAction);
+}
+
+/*!
  * \brief MainWindow::toggleAutoSave
  * Start/Stop the auto save timer based on the settings.
  */
@@ -2599,11 +2672,11 @@ void MainWindow::switchToAlgorithmicDebuggingPerspectiveSlot()
 }
 
 /*!
- * \brief MainWindow::showConfigureDialog
+ * \brief MainWindow::showDebugConfigurationsDialog
  * Slot activated when mpDebugConfigurationsAction triggered signal is raised.\n
  * Shows the debugger configurations.
  */
-void MainWindow::showConfigureDialog()
+void MainWindow::showDebugConfigurationsDialog()
 {
   DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog = new DebuggerConfigurationsDialog(this);
   connect(pDebuggerConfigurationsDialog, SIGNAL(debuggerLaunched()), SLOT(switchToAlgorithmicDebuggingPerspectiveSlot()));
@@ -2948,7 +3021,7 @@ void MainWindow::createActions()
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
   mpDebugConfigurationsAction->setStatusTip(Helper::debugConfigurationsTip);
-  connect(mpDebugConfigurationsAction, SIGNAL(triggered()), SLOT(showConfigureDialog()));
+  connect(mpDebugConfigurationsAction, SIGNAL(triggered()), SLOT(showDebugConfigurationsDialog()));
   // attach debugger to process
   mpAttachDebuggerToRunningProcessAction = new QAction(Helper::attachToRunningProcess, this);
   mpAttachDebuggerToRunningProcessAction->setStatusTip(Helper::attachToRunningProcessTip);
@@ -3279,6 +3352,8 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpReSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpDebuggerToolBar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpTLMSimulationToolbar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
@@ -3783,6 +3858,21 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpClearPlotWindowAction);
+  // Debugger Toolbar
+  mpDebuggerToolBar = addToolBar(tr("Debugger Toolbar"));
+  mpDebuggerToolBar->setObjectName("Debugger Toolbar");
+  mpDebuggerToolBar->setAllowedAreas(Qt::TopToolBarArea);
+  // Debug Configuration Menu
+  mpDebugConfigurationMenu = new QMenu;
+  updateDebuggerToolBarMenu();
+  // Model Switcher ToolButton
+  mpDebugConfigurationToolButton = new QToolButton;
+  mpDebugConfigurationToolButton->setToolTip(tr("Run the debugger"));
+  mpDebugConfigurationToolButton->setMenu(mpDebugConfigurationMenu);
+  mpDebugConfigurationToolButton->setPopupMode(QToolButton::MenuButtonPopup);
+  mpDebugConfigurationToolButton->setIcon(QIcon(":/Resources/icons/debugger.svg"));
+  connect(mpDebugConfigurationToolButton, SIGNAL(clicked()), SLOT(runDebugConfiguration()));
+  mpDebuggerToolBar->addWidget(mpDebugConfigurationToolButton);
   // TLM Simulation Toolbar
   mpTLMSimulationToolbar = addToolBar(tr("TLM Simulation Toolbar"));
   mpTLMSimulationToolbar->setObjectName("TLM Simulation Toolbar");

@@ -37,6 +37,7 @@
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"
 #include "Options/OptionsDialog.h"
+#include "MainWindow.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -130,11 +131,10 @@ DebuggerConfigurationPage::DebuggerConfigurationPage(DebuggerConfiguration debug
 bool DebuggerConfigurationPage::configurationExists(QString configurationKeyToCheck)
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->beginGroup("debuggerConfigurationList");
-  QStringList configurationKeys = pSettings->childKeys();
-  pSettings->endGroup();
-  foreach (QString configurationKey, configurationKeys) {
-    if (configurationKey.compare(configurationKeyToCheck) == 0) {
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  foreach (QVariant configuration, debugConfigurations) {
+    DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
+    if (debugConfiguration.name.compare(configurationKeyToCheck) == 0) {
       return true;
     }
   }
@@ -190,18 +190,23 @@ void DebuggerConfigurationPage::browseGDBPath()
  */
 bool DebuggerConfigurationPage::saveDebugConfiguration()
 {
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->beginGroup("debuggerConfigurationList");
-  // remove the configuration setting if we have changed its name. But first check if there is no configuration with the new name.
+  // First check if there is no configuration with the new name.
   if (mDebuggerConfiguration.name.compare(mpNameTextBox->text()) != 0) {
     if (configurationExists(mpNameTextBox->text())) {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                             GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_EXISTS_MSG).arg(mpNameTextBox->text())
                             .arg(mDebuggerConfiguration.name), Helper::ok);
-      pSettings->endGroup();
       return false;
-    } else {
-      pSettings->remove(mDebuggerConfiguration.name);
+    }
+  }
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  // Remove the debug configuration
+  foreach (QVariant configuration, debugConfigurations) {
+    DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
+    if (debugConfiguration.name.compare(mDebuggerConfiguration.name) == 0) {
+      debugConfigurations.removeOne(debugConfiguration);
+      break;
     }
   }
   // create/update the configuration setting.
@@ -210,9 +215,11 @@ bool DebuggerConfigurationPage::saveDebugConfiguration()
   mDebuggerConfiguration.workingDirectory = mpWorkingDirectoryTextBox->text();
   mDebuggerConfiguration.GDBPath = mpGDBPathTextBox->text();
   mDebuggerConfiguration.arguments = mpArgumentsTextBox->toPlainText();
-  pSettings->setValue(mpNameTextBox->text(), QVariant::fromValue(mDebuggerConfiguration));
-  pSettings->endGroup();
+  debugConfigurations.append(QVariant::fromValue(mDebuggerConfiguration));
+  pSettings->setValue("debuggerConfigurationList/configurations", debugConfigurations);
   mpConfigurationListWidgetItem->setText(mpNameTextBox->text());
+  // update the debug configuration toolbar menu
+  MainWindow::instance()->updateDebuggerToolBarMenu();
   return true;
 }
 
@@ -322,11 +329,10 @@ QString DebuggerConfigurationsDialog::getUniqueName(QString name, int number)
   newName = name + QString::number(number);
 
   QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->beginGroup("debuggerConfigurationList");
-  QStringList configurationKeys = pSettings->childKeys();
-  pSettings->endGroup();
-  foreach (QString configurationKey, configurationKeys) {
-    if (configurationKey.compare(newName) == 0) {
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  foreach (QVariant configuration, debugConfigurations) {
+    DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
+    if (debugConfiguration.name.compare(newName) == 0) {
       newName = getUniqueName(name, ++number);
       break;
     }
@@ -342,21 +348,76 @@ void DebuggerConfigurationsDialog::readConfigurations()
 {
   // read the settings and add configurations
   QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->beginGroup("debuggerConfigurationList");
-  QStringList configurationKeys = pSettings->childKeys();
-  foreach (QString configurationKey, configurationKeys) {
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  foreach (QVariant configuration, debugConfigurations) {
+    DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
     QListWidgetItem *pListWidgetItem = new QListWidgetItem(mpConfigurationsListWidget);
     pListWidgetItem->setIcon(QIcon(":/Resources/icons/debugger.svg"));
-    pListWidgetItem->setText(configurationKey);
+    pListWidgetItem->setText(debugConfiguration.name);
     // create DebuggerConfigurationPage
-    DebuggerConfiguration debuggerConfiguration = qvariant_cast<DebuggerConfiguration>(pSettings->value(configurationKey));
-    mpConfigurationPagesWidget->addWidget(new DebuggerConfigurationPage(debuggerConfiguration, pListWidgetItem, this));
+    mpConfigurationPagesWidget->addWidget(new DebuggerConfigurationPage(debugConfiguration, pListWidgetItem, this));
   }
-  pSettings->endGroup();
   if (mpConfigurationsListWidget->count() > 0) {
     mpConfigurationsSplitter->setVisible(true);
     mpConfigurationsButtonBox->setVisible(true);
     mpConfigurationsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
+  }
+}
+
+/*!
+ * \brief DebuggerConfigurationsDialog::getDebuggerConfigurationPage
+ * Returns the DebuggerConfigurationPage
+ * \param configurationName
+ * \return
+ */
+DebuggerConfigurationPage* DebuggerConfigurationsDialog::getDebuggerConfigurationPage(QString configurationName)
+{
+  for (int i = 0 ; i < mpConfigurationPagesWidget->count() ; i++) {
+    DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->widget(i));
+    if (pDebuggerConfigurationPage && pDebuggerConfigurationPage->mDebuggerConfiguration.name.compare(configurationName) == 0) {
+      return pDebuggerConfigurationPage;
+    }
+  }
+  return 0;
+}
+
+/*!
+ * \brief DebuggerConfigurationsDialog::runConfiguration
+ * Runs the debug configuration.
+ * \param pDebuggerConfigurationPage
+ */
+void DebuggerConfigurationsDialog::runConfiguration(DebuggerConfigurationPage *pDebuggerConfigurationPage)
+{
+  if (GDBAdapter::instance()->isGDBRunning()) {
+    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+                             GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+  } else {
+    // Remove the debug configuration we are going to run and then add it as first item of debug configurations list.
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+    foreach (QVariant configuration, debugConfigurations) {
+      DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
+      if (debugConfiguration.name.compare(pDebuggerConfigurationPage->mDebuggerConfiguration.name) == 0) {
+        debugConfigurations.removeOne(debugConfiguration);
+        break;
+      }
+    }
+    debugConfigurations.prepend(pDebuggerConfigurationPage->mDebuggerConfiguration);
+    pSettings->setValue("debuggerConfigurationList/configurations", debugConfigurations);
+    // update the debug configuration toolbar menu
+    MainWindow::instance()->updateDebuggerToolBarMenu();
+    // Run the debug configuration now
+    QString gdbPath = "";
+    if (pDebuggerConfigurationPage->mDebuggerConfiguration.GDBPath.isEmpty()) {
+      gdbPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
+    } else {
+      gdbPath = pDebuggerConfigurationPage->mDebuggerConfiguration.GDBPath;
+    }
+    GDBAdapter::instance()->launch(pDebuggerConfigurationPage->mDebuggerConfiguration.program,
+                                   pDebuggerConfigurationPage->mDebuggerConfiguration.workingDirectory,
+                                   pDebuggerConfigurationPage->mDebuggerConfiguration.arguments.split(" "), gdbPath);
+    emit debuggerLaunched();
+
   }
 }
 
@@ -387,10 +448,8 @@ void DebuggerConfigurationsDialog::newConfiguration()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   // check if maximum limit for debug configurations is reached
-  pSettings->beginGroup("debuggerConfigurationList");
-  QStringList configurationKeys = pSettings->childKeys();
-  pSettings->endGroup();
-  if (configurationKeys.size() >= MaxDebugConfigurations) {
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  if (debugConfigurations.size() >= MaxDebugConfigurations) {
     QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
                              GUIMessages::getMessage(GUIMessages::DEBUG_CONFIGURATION_SIZE_EXCEED).arg(MaxDebugConfigurations), Helper::ok);
     return;
@@ -406,9 +465,8 @@ void DebuggerConfigurationsDialog::newConfiguration()
   mpConfigurationPagesWidget->addWidget(new DebuggerConfigurationPage(debuggerConfiguration, pListWidgetItem, this));
   mpConfigurationsListWidget->setCurrentItem(pListWidgetItem, QItemSelectionModel::ClearAndSelect);
   // add the debug configuration to settings
-  pSettings->beginGroup("debuggerConfigurationList");
-  pSettings->setValue(debuggerConfiguration.name, QVariant::fromValue(debuggerConfiguration));
-  pSettings->endGroup();
+  debugConfigurations.append(debuggerConfiguration);
+  pSettings->setValue("debuggerConfigurationList/configurations", debugConfigurations);
   // show the configurations and buttons.
   if (!mpConfigurationsSplitter->isVisible()) {
     mpConfigurationsSplitter->setVisible(true);
@@ -417,6 +475,8 @@ void DebuggerConfigurationsDialog::newConfiguration()
     mpConfigurationsButtonBox->setVisible(true);
     adjustSize();
   }
+  // update the debug configuration toolbar menu
+  MainWindow::instance()->updateDebuggerToolBarMenu();
 }
 
 /*!
@@ -431,17 +491,16 @@ void DebuggerConfigurationsDialog::removeConfiguration()
   }
 
   QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->beginGroup("debuggerConfigurationList");
-  QStringList configurationKeys = pSettings->childKeys();
-  pSettings->endGroup();
-  foreach (QString configurationKey, configurationKeys) {
-    if (configurationKey.compare(pListWidgetItem->text()) == 0) {
+  QList<QVariant> debugConfigurations = pSettings->value("debuggerConfigurationList/configurations").toList();
+  foreach (QVariant configuration, debugConfigurations) {
+    DebuggerConfiguration debugConfiguration = qvariant_cast<DebuggerConfiguration>(configuration);
+    if (debugConfiguration.name.compare(pListWidgetItem->text()) == 0) {
       // ask user if he is sure about removing the configuration
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
       pMessageBox->setIcon(QMessageBox::Question);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_DEBUG_CONFIGURATION_MSG).arg(configurationKey));
+      pMessageBox->setText(GUIMessages::getMessage(GUIMessages::DELETE_DEBUG_CONFIGURATION_MSG).arg(debugConfiguration.name));
       pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
       pMessageBox->setDefaultButton(QMessageBox::Yes);
       int answer = pMessageBox->exec();
@@ -452,9 +511,11 @@ void DebuggerConfigurationsDialog::removeConfiguration()
         default:
           return;
       }
-      pSettings->beginGroup("debuggerConfigurationList");
-      pSettings->remove(configurationKey);
-      pSettings->endGroup();
+      debugConfigurations.removeOne(debugConfiguration);
+      pSettings->setValue("debuggerConfigurationList/configurations", debugConfigurations);
+      // update the debug configuration toolbar menu
+      MainWindow::instance()->updateDebuggerToolBarMenu();
+
       bool state = mpConfigurationsListWidget->blockSignals(true);
       QWidget *pWidget = mpConfigurationPagesWidget->widget(mpConfigurationsListWidget->currentRow());
       mpConfigurationPagesWidget->removeWidget(pWidget);
@@ -505,21 +566,9 @@ void DebuggerConfigurationsDialog::saveAllConfigurationsAndDebugConfiguration()
   if (saveAllConfigurationsHelper()) {
     accept();
     // start the debugger
-    if (GDBAdapter::instance()->isGDBRunning()) {
-      QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
-    } else {
-      DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
-      DebuggerConfiguration debuggerConfiguration = pDebuggerConfigurationPage->getDebuggerConfiguration();
-      QString gdbPath = "";
-      if (debuggerConfiguration.GDBPath.isEmpty()) {
-        gdbPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
-      } else {
-        gdbPath = debuggerConfiguration.GDBPath;
-      }
-      GDBAdapter::instance()->launch(debuggerConfiguration.program, debuggerConfiguration.workingDirectory,
-                                                      debuggerConfiguration.arguments.split(" "), gdbPath);
-      emit debuggerLaunched();
+    DebuggerConfigurationPage *pDebuggerConfigurationPage = qobject_cast<DebuggerConfigurationPage*>(mpConfigurationPagesWidget->currentWidget());
+    if (pDebuggerConfigurationPage) {
+      runConfiguration(pDebuggerConfigurationPage);
     }
   }
 }

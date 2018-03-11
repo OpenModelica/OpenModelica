@@ -395,12 +395,15 @@ private:
   QToolBar *mpViewToolBar;
   QToolBar *mpShapesToolBar;
   QToolBar *mpModelSwitcherToolBar;
-  QToolButton *mpModelSwitcherToolButton;
   QMenu *mpModelSwitcherMenu;
+  QToolButton *mpModelSwitcherToolButton;
   QToolBar *mpCheckToolBar;
   QToolBar *mpSimulationToolBar;
   QToolBar *mpReSimulationToolBar;
   QToolBar *mpPlotToolBar;
+  QToolBar *mpDebuggerToolBar;
+  QMenu *mpDebugConfigurationMenu;
+  QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpTLMSimulationToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
@@ -472,6 +475,8 @@ public slots:
   void toggleShapesButton();
   void openRecentModelWidget();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
+  void runDebugConfiguration();
+  void updateDebuggerToolBarMenu();
   void toggleAutoSave();
   void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
@@ -484,7 +489,7 @@ private slots:
   void switchToModelingPerspectiveSlot();
   void switchToPlottingPerspectiveSlot();
   void switchToAlgorithmicDebuggingPerspectiveSlot();
-  void showConfigureDialog();
+  void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
   void logCurrentFile();

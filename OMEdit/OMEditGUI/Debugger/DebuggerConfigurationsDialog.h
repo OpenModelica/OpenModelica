@@ -49,7 +49,6 @@ class DebuggerConfigurationPage : public QWidget
 {
   Q_OBJECT
 private:
-  DebuggerConfiguration mDebuggerConfiguration;
   QListWidgetItem *mpConfigurationListWidgetItem;
   DebuggerConfigurationsDialog *mpDebuggerConfigurationsDialog;
   Label *mpNameLabel;
@@ -69,9 +68,10 @@ private:
   QPushButton *mpResetButton;
   QDialogButtonBox *mpButtonBox;
 public:
+  DebuggerConfiguration mDebuggerConfiguration;
+
   DebuggerConfigurationPage(DebuggerConfiguration debuggerConfiguration, QListWidgetItem *pListWidgetItem,
                             DebuggerConfigurationsDialog *pDebuggerConfigurationsDialog);
-  DebuggerConfiguration getDebuggerConfiguration() {return mDebuggerConfiguration;}
   bool configurationExists(QString configurationKeyToCheck);
 public slots:
   void browseProgramFile();
@@ -89,6 +89,8 @@ public:
   DebuggerConfigurationsDialog(QWidget *pParent = 0);
   QString getUniqueName(QString name = QString("New_configuration"), int number = 1);
   void readConfigurations();
+  DebuggerConfigurationPage* getDebuggerConfigurationPage(QString configurationName);
+  void runConfiguration(DebuggerConfigurationPage* pDebuggerConfigurationPage);
 private:
   QAction *mpNewConfigurationAction;
   QAction *mpRemoveConfigurationAction;
