@@ -478,6 +478,7 @@ void Search::run()
     emit setProgressBarRange(filelist.size());
     int count=1;
     for (int i = 0; i < filelist.size(); ++i) {
+      Sleep::msleep(10);
       // check for cancel operation
       if (mStop) {
         emit setProgressBarCancelValue(i,filelist.size());
