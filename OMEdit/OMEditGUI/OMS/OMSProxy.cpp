@@ -125,7 +125,7 @@ bool OMSProxy::statusToBool(oms_status_enu_t status)
  */
 void OMSProxy::setLogFile(QString filename)
 {
-  oms_setLogFile(filename.toStdString().c_str());
+  oms2_setLogFile(filename.toStdString().c_str());
 }
 
 /*!
@@ -135,7 +135,7 @@ void OMSProxy::setLogFile(QString filename)
  */
 void OMSProxy::setTempDirectory(QString path)
 {
-  oms_setTempDirectory(path.toStdString().c_str());
+  oms2_setTempDirectory(path.toStdString().c_str());
 }
 
 /*!
@@ -145,7 +145,7 @@ void OMSProxy::setTempDirectory(QString path)
  */
 void OMSProxy::setWorkingDirectory(QString path)
 {
-  oms_setWorkingDirectory(path.toStdString().c_str());
+  oms2_setWorkingDirectory(path.toStdString().c_str());
 }
 
 /*!
