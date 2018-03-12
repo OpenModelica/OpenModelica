@@ -250,5 +250,25 @@ public
     end match;
   end isEqual;
 
+  function toDAE
+    input Binding b;
+    output DAE.Binding outb;
+  algorithm
+    outb := match b
+      case UNBOUND() then DAE.UNBOUND();
+      case TYPED_BINDING()
+        then DAE.EQBOUND(Expression.toDAE(b.bindingExp)
+                         , NONE()
+                         , Variability.variabilityToDAEConst(b.variability)
+                         , DAE.BINDING_FROM_DEFAULT_VALUE() // TODO: revise this.
+                        );
+
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+        then fail();
+
+    end match;
+  end toDAE;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

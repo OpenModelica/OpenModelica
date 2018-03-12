@@ -57,7 +57,7 @@ import Util;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Sections = NFSections;
 import Function = NFFunction.Function;
-import ClassTree = NFClassTree;
+import NFClassTree.ClassTree;
 import NFPrefixes.Visibility;
 import NFPrefixes.Direction;
 import Variable = NFVariable;
@@ -452,6 +452,13 @@ algorithm
       DAE.ComponentRef cr1, cr2;
       list<DAE.Dimension> dims;
       list<DAE.Element> body;
+
+    case Equation.EQUALITY() guard Type.isComplex(eq.ty)
+      algorithm
+        e1 := Expression.toDAE(eq.lhs);
+        e2 := Expression.toDAE(eq.rhs);
+      then
+        DAE.Element.COMPLEX_EQUATION(e1, e2, eq.source) :: elements;
 
     case Equation.EQUALITY()
       algorithm
@@ -1026,6 +1033,47 @@ algorithm
     else DAE.ExtArg.NOEXTARG();
   end match;
 end convertExternalDeclOutput;
+
+public
+function makeTypesVars
+  input Type complex_ty;
+  output list<DAE.Var> type_vars;
+protected
+  InstNode cls_node;
+  Component comp;
+  DAE.Var type_var;
+algorithm
+  Type.COMPLEX(cls = cls_node) := complex_ty;
+  type_vars := {};
+
+  () := match cls as InstNode.getClass(cls_node)
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE()) algorithm
+
+      for c in ClassTree.getComponents(cls.elements) loop
+        if InstNode.isOnlyOuter(c) or InstNode.isEmpty(c) then
+          continue;
+        end if;
+        comp := InstNode.component(InstNode.resolveOuter(c));
+        InstNode.name(c);
+
+        type_var := DAE.TYPES_VAR(InstNode.name(c)
+                      , Component.Attributes.toDAE(Component.getAttributes(comp))
+                      , Type.toDAE(Component.getType(comp))
+                      , Binding.toDAE(Component.getBinding(comp))
+                      ,NONE()
+                     );
+        type_vars := type_var::type_vars;
+      end for;
+
+      type_vars := listReverse(type_vars);
+    then ();
+
+    else ();
+
+  end match;
+
+end makeTypesVars;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end NFConvertDAE;

@@ -95,6 +95,8 @@ constant Component.Attributes DISCRETE_ATTR =
 
 uniontype Component
   uniontype Attributes
+    import SCode;
+
     record ATTRIBUTES
       // adrpo: keep the order in DAE.ATTR
       ConnectorType connectorType;
@@ -103,6 +105,19 @@ uniontype Component
       Direction direction;
       InnerOuter innerOuter;
     end ATTRIBUTES;
+
+   function toDAE
+     input Attributes ina;
+     output DAE.Attributes outa;
+   algorithm
+     outa := DAE.ATTR(connectorTypeToDAE(ina.connectorType)
+                      , parallelismToSCode(ina.parallelism)
+                      , variabilityToSCode(ina.variability)
+                      , directionToAbsyn(ina.direction)
+                      , innerOuterToAbsyn(ina.innerOuter)
+                      , SCode.PUBLIC() // TODO: Use the actual visibility.
+                     );
+    end toDAE;
   end Attributes;
 
   record COMPONENT_DEF

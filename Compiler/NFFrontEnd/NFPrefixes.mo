@@ -131,6 +131,17 @@ algorithm
   end match;
 end parallelismFromSCode;
 
+function parallelismToSCode
+  input Parallelism par;
+  output SCode.Parallelism scodePar;
+algorithm
+  scodePar := match par
+    case Parallelism.GLOBAL then SCode.Parallelism.PARGLOBAL();
+    case Parallelism.LOCAL then SCode.Parallelism.PARLOCAL() ;
+    case Parallelism.NON_PARALLEL then SCode.Parallelism.NON_PARALLEL() ;
+  end match;
+end parallelismToSCode;
+
 function parallelismToDAE
   input Parallelism par;
   output DAE.VarParallelism dpar;
@@ -181,6 +192,18 @@ algorithm
     case SCode.VAR() then Variability.CONTINUOUS;
   end match;
 end variabilityFromSCode;
+
+function variabilityToSCode
+  input Variability var;
+  output SCode.Variability scodeVar;
+algorithm
+  scodeVar := match var
+    case Variability.CONSTANT then SCode.CONST();
+    case Variability.PARAMETER then SCode.PARAM();
+    case Variability.DISCRETE then SCode.DISCRETE();
+    case Variability.CONTINUOUS then SCode.VAR();
+  end match;
+end variabilityToSCode;
 
 function variabilityToDAE
   input Variability var;
@@ -317,6 +340,18 @@ algorithm
     case Absyn.INNER_OUTER() then InnerOuter.INNER_OUTER;
   end match;
 end innerOuterFromSCode;
+
+function innerOuterToAbsyn
+  input InnerOuter inIO;
+  output Absyn.InnerOuter outIO;
+algorithm
+  outIO := match inIO
+    case InnerOuter.NOT_INNER_OUTER then Absyn.NOT_INNER_OUTER();
+    case InnerOuter.INNER then Absyn.INNER();
+    case InnerOuter.OUTER then Absyn.OUTER();
+    case InnerOuter.INNER_OUTER then Absyn.INNER_OUTER();
+  end match;
+end innerOuterToAbsyn;
 
 function innerOuterString
   input InnerOuter io;

@@ -39,6 +39,7 @@ public
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
+  import ConvertDAE = NFConvertDAE;
 
   record INTEGER
   end INTEGER;
@@ -515,7 +516,7 @@ public
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX()
         // TODO: Use proper ClassInf.State here.
-        then DAE.Type.T_COMPLEX(ClassInf.MODEL(InstNode.scopePath(ty.cls)), {}, NONE());
+        then DAE.Type.T_COMPLEX(ClassInf.MODEL(InstNode.scopePath(ty.cls)), ConvertDAE.makeTypesVars(ty), NONE());
       case Type.POLYMORPHIC() then DAE.T_METAPOLYMORPHIC(ty.name);
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else
