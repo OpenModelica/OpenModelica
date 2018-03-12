@@ -1185,195 +1185,125 @@ public
   end mapSubscript;
 
   function mapShallow
-    input output Expression exp;
+    input Expression exp;
     input MapFunc func;
+    output Expression outExp;
 
     partial function MapFunc
       input output Expression e;
     end MapFunc;
   algorithm
-    () := match exp
+    outExp := match exp
       local
         Expression e1, e2, e3, e4;
 
-      case CREF()
-        algorithm
-          exp.cref := mapCrefShallow(exp.cref, func);
-        then
-          ();
-
-      case ARRAY()
-        algorithm
-          exp.elements := list(func(e) for e in exp.elements);
-        then
-          ();
+      case CREF() then CREF(exp.ty, mapCrefShallow(exp.cref, func));
+      case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements));
 
       case RANGE(step = SOME(e2))
         algorithm
           e1 := func(exp.start);
           e4 := func(e2);
           e3 := func(exp.stop);
-
-          if referenceEq(exp.start, e1) and referenceEq(e2, e4) and referenceEq(exp.stop, e3) then
-            exp := RANGE(exp.ty, e1, SOME(e4), e3);
-          end if;
         then
-          ();
+          if referenceEq(exp.start, e1) and referenceEq(e2, e4) and
+            referenceEq(exp.stop, e3) then exp else RANGE(exp.ty, e1, SOME(e4), e3);
 
       case RANGE()
         algorithm
           e1 := func(exp.start);
           e3 := func(exp.stop);
-
-          if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3) then
-            exp := RANGE(exp.ty, e1, NONE(), e3);
-          end if;
         then
-          ();
+          if referenceEq(exp.start, e1) and referenceEq(exp.stop, e3)
+            then exp else RANGE(exp.ty, e1, NONE(), e3);
 
-      case TUPLE()
-        algorithm
-          exp.elements := list(func(e) for e in exp.elements);
-        then
-          ();
+      case TUPLE() then TUPLE(exp.ty, list(func(e) for e in exp.elements));
 
       case RECORD()
-        algorithm
-          exp.elements := list(func(e) for e in exp.elements);
-        then
-          ();
+        then RECORD(exp.path, exp.ty, list(func(e) for e in exp.elements));
 
-      case CALL()
-        algorithm
-          exp.call := mapCallShallow(exp.call, func);
-        then
-          ();
+      case CALL() then CALL(mapCallShallow(exp.call, func));
 
       case SIZE(dimIndex = SOME(e2))
         algorithm
           e1 := func(exp.exp);
           e3 := func(e2);
-
-          if referenceEq(exp.exp, e1) and referenceEq(e2, e3) then
-            exp := SIZE(e1, SOME(e3));
-          end if;
         then
-          ();
+          if referenceEq(exp.exp, e1) and referenceEq(e2, e3) then exp else SIZE(e1, SOME(e3));
 
       case SIZE()
         algorithm
           e1 := func(exp.exp);
-
-          if referenceEq(exp.exp, e1) then
-            exp := SIZE(e1, NONE());
-          end if;
         then
-          ();
+          if referenceEq(exp.exp, e1) then exp else SIZE(e1, NONE());
 
       case BINARY()
         algorithm
           e1 := func(exp.exp1);
           e2 := func(exp.exp2);
-
-          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2) then
-            exp := BINARY(e1, exp.operator, e2);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else BINARY(e1, exp.operator, e2);
 
       case UNARY()
         algorithm
           e1 := func(exp.exp);
-
-          if referenceEq(exp.exp, e1) then
-            exp := UNARY(exp.operator, e1);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp, e1) then exp else UNARY(exp.operator, e1);
 
       case LBINARY()
         algorithm
           e1 := func(exp.exp1);
           e2 := func(exp.exp2);
-
-          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2) then
-            exp := LBINARY(e1, exp.operator, e2);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else LBINARY(e1, exp.operator, e2);
 
       case LUNARY()
         algorithm
           e1 := func(exp.exp);
-
-          if referenceEq(exp.exp, e1) then
-            exp := LUNARY(exp.operator, e1);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp, e1) then exp else LUNARY(exp.operator, e1);
 
       case RELATION()
         algorithm
           e1 := func(exp.exp1);
           e2 := func(exp.exp2);
-
-          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2) then
-            exp := RELATION(e1, exp.operator, e2);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
+            then exp else RELATION(e1, exp.operator, e2);
 
       case IF()
         algorithm
           e1 := func(exp.condition);
           e2 := func(exp.trueBranch);
           e3 := func(exp.falseBranch);
-
-          if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
-             referenceEq(exp.falseBranch, e3) then
-            exp := IF(e1, e2, e3);
-          end if;
         then
-          ();
+          if referenceEq(exp.condition, e1) and referenceEq(exp.trueBranch, e2) and
+             referenceEq(exp.falseBranch, e3) then exp else IF(e1, e2, e3);
 
       case CAST()
         algorithm
           e1 := func(exp.exp);
-
-          if referenceEq(exp.exp, e1) then
-            exp := CAST(exp.ty, e1);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp, e1) then exp else CAST(exp.ty, e1);
 
       case UNBOX()
         algorithm
           e1 := func(exp.exp);
-
-          if referenceEq(exp.exp, e1) then
-            exp := UNBOX(e1, exp.ty);
-          end if;
         then
-          ();
+          if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
 
       case SUBSCRIPTED_EXP()
-        algorithm
-          exp.exp := func(exp.exp);
-          exp.subscripts := list(func(e) for e in exp.subscripts);
-        then
-          ();
+        then SUBSCRIPTED_EXP(func(exp.exp), list(func(e) for e in exp.subscripts), exp.ty);
 
       case TUPLE_ELEMENT()
         algorithm
           e1 := func(exp.tupleExp);
-
-          if referenceEq(exp.tupleExp, e1) then
-            exp := TUPLE_ELEMENT(e1, exp.index, exp.ty);
-          end if;
         then
-          ();
+          if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
 
-      else ();
+      else exp;
     end match;
   end mapShallow;
 
