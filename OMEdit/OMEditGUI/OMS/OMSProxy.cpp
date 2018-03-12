@@ -398,3 +398,55 @@ bool OMSProxy::setRealParameter(const char* signal, double value)
   oms_status_enu_t status = oms2_setRealParameter(signal, value);
   return statusToBool(status);
 }
+
+/*!
+ * \brief OMSProxy::getIntegerParameter
+ * Gets the integer parameter value.
+ * \param signal
+ * \param pValue
+ * \return
+ */
+bool OMSProxy::getIntegerParameter(QString signal, int *pValue)
+{
+  oms_status_enu_t status = oms2_getIntegerParameter(signal.toStdString().c_str(), pValue);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setIntegerParameter
+ * Sets the integer parameter value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::setIntegerParameter(const char* signal, int value)
+{
+  oms_status_enu_t status = oms2_setIntegerParameter(signal, value);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getBooleanParameter
+ * Gets the boolean parameter value.
+ * \param signal
+ * \param pValue
+ * \return
+ */
+bool OMSProxy::getBooleanParameter(QString signal, int *pValue)
+{
+  oms_status_enu_t status = oms2_getBooleanParameter(signal.toStdString().c_str(), pValue);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setBooleanParameter
+ * Sets the boolean parameter value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::setBooleanParameter(const char* signal, int value)
+{
+  oms_status_enu_t status = oms2_setBooleanParameter(signal, value);
+  return statusToBool(status);
+}

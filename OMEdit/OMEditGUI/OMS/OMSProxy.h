@@ -76,6 +76,10 @@ public:
   void setWorkingDirectory(QString path);
   bool getRealParameter(QString signal, double *pValue);
   bool setRealParameter(const char* signal, double value);
+  bool getIntegerParameter(QString signal, int *pValue);
+  bool setIntegerParameter(const char* signal, int value);
+  bool getBooleanParameter(QString signal, int *pValue);
+  bool setBooleanParameter(const char* signal, int value);
 };
 
 #endif // OMSPROXY_H

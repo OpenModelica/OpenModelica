@@ -87,9 +87,15 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() oms_signal_type_integer not implemented yet.";
+          int value;
+          if (OMSProxy::instance()->getIntegerParameter(pInterfaces[i]->name, &value)) {
+            pParameterLineEdit->setText(QString::number(value));
+          }
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() oms_signal_type_boolean not implemented yet.";
+          int value;
+          if (OMSProxy::instance()->getBooleanParameter(pInterfaces[i]->name, &value)) {
+            pParameterLineEdit->setText(QString::number(value));
+          }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
