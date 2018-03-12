@@ -197,6 +197,7 @@ EncapsulatingInst1.mo \
 End1.mo \
 End2.mo \
 End3.mo \
+End4.mo \
 EndInvalid1.mo \
 EndInvalid2.mo \
 enum1.mo \
