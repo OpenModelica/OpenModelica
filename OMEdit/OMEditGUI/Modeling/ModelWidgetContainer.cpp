@@ -2338,7 +2338,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
           return;
         } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
           removeCurrentConnection();
-          pRootComponent->showOMSModelAttributes();
+          pRootComponent->showFMUPropertiesDialog();
           return;
         } else {
           removeCurrentConnection();

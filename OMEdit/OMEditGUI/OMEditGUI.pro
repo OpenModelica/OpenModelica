@@ -192,7 +192,8 @@ SOURCES += main.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   Simulation/OpcUaClient.cpp \
-  OMS/OMSProxy.cpp
+  OMS/OMSProxy.cpp \
+  Component/FMUProperties.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -270,7 +271,8 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityGraphViewWidget.h \
   Traceability/TraceabilityInformationURI.h \
   Simulation/OpcUaClient.h \
-  OMS/OMSProxy.h
+  OMS/OMSProxy.h \
+  Component/FMUProperties.h
 
 CONFIG(osg) {
 

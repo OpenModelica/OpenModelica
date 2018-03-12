@@ -35,6 +35,7 @@
 #define COMMANDS_H
 
 #include "Modeling/ModelWidgetContainer.h"
+#include "Component/FMUProperties.h"
 
 class AddShapeCommand : public QUndoCommand
 {
@@ -393,6 +394,18 @@ private:
   CompositeModelEditor *mpCompositeModelEditor;
   QString mOldCompositeModelName;
   QString mNewCompositeModelName;
+};
+
+class FMUPropertiesCommand : public QUndoCommand
+{
+public:
+  FMUPropertiesCommand(Component *pComponent, FMUProperties oldFMUProperties, FMUProperties newFMUProperties, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  FMUProperties mOldFMUProperties;
+  FMUProperties mNewFMUProperties;
 };
 
 #endif // COMMANDS_H

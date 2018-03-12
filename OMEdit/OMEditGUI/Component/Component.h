@@ -370,7 +370,7 @@ public slots:
   void openClass();
   void viewDocumentation();
   void showSubModelAttributes();
-  void showOMSModelAttributes();
+  void showFMUPropertiesDialog();
 protected:
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);

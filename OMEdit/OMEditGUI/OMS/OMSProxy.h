@@ -53,26 +53,29 @@ private:
 public:
   static OMSProxy* instance() {return mpInstance;}
   bool statusToBool(oms_status_enu_t status);
-  void setLogFile(QString filename);
-  void setTempDirectory(QString path);
-  void setWorkingDirectory(QString path);
-  void setLoggingLevel(int logLevel);
+
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);
   bool addFMU(QString modelIdent, QString fmuPath, QString fmuIdent);
   bool deleteSubModel(QString modelIdent, QString subModelIdent);
   bool renameModel(QString identOld, QString identNew);
-  bool loadModel(QString filename, QString* pModelName);
+  bool loadModel(QString filename, QString *pModelName);
   bool saveModel(QString filename, QString ident);
-  bool getElement(QString cref, oms_element_t** pElement);
-  bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
-  bool getElements(QString cref, oms_element_t*** pElements);
-  bool getFMUPath(QString cref, QString* fmuPath);
-  bool getConnections(QString cref, oms_connection_t*** pConnections);
+  bool getElement(QString cref, oms_element_t **pElement);
+  bool setElementGeometry(QString cref, const ssd_element_geometry_t *pGeometry);
+  bool getElements(QString cref, oms_element_t ***pElements);
+  bool getFMUPath(QString cref, QString *pFmuPath);
+  bool getConnections(QString cref, oms_connection_t ***pConnections);
   bool addConnection(QString cref, QString conA, QString conB);
   bool deleteConnection(QString cref, QString conA, QString conB);
-  bool updateConnection(QString cref, QString conA, QString conB, const oms_connection_t* connection);
+  bool updateConnection(QString cref, QString conA, QString conB, const oms_connection_t *pConnection);
+  void setLoggingLevel(int logLevel);
+  void setLogFile(QString filename);
+  void setTempDirectory(QString path);
+  void setWorkingDirectory(QString path);
+  bool getRealParameter(QString signal, double *pValue);
+  bool setRealParameter(const char* signal, double value);
 };
 
 #endif // OMSPROXY_H

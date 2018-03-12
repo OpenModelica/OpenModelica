@@ -35,6 +35,7 @@
 #include "MainWindow.h"
 #include "Component.h"
 #include "ComponentProperties.h"
+#include "FMUProperties.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 
@@ -735,13 +736,13 @@ Component::Component(ComponentInfo *pComponentInfo, LibraryTreeItem *pLibraryTre
         mpInputOutputComponentPolygon->setFillColor(QColor(255,0,255));
         break;
       case oms_signal_type_string:
-        qDebug() << "oms_signal_type_string not implemented yet.";
+        qDebug() << "Component::Component() oms_signal_type_string not implemented yet.";
         break;
       case oms_signal_type_enum:
-        qDebug() << "oms_signal_type_enum not implemented yet.";
+        qDebug() << "Component::Component() oms_signal_type_enum not implemented yet.";
         break;
       case oms_signal_type_bus:
-        qDebug() << "oms_signal_type_bus not implemented yet.";
+        qDebug() << "Component::Component() oms_signal_type_bus not implemented yet.";
         break;
       case oms_signal_type_real:
         default:
@@ -2799,13 +2800,13 @@ void Component::showSubModelAttributes()
 }
 
 /*!
- * \brief Component::showOMSModelAttributes
- * Slot that opens up the CompositeModelSubModelAttributes Dialog.
+ * \brief Component::showFMUPropertiesDialog
+ * Slot that opens up the FMUPropertiesDialog Dialog.
  */
-void Component::showOMSModelAttributes()
+void Component::showFMUPropertiesDialog()
 {
-  OMSSubModelAttributes *pOMSSubModelAttributes = new OMSSubModelAttributes(this, MainWindow::instance());
-  pOMSSubModelAttributes->exec();
+  FMUPropertiesDialog *pFMUPropertiesDialog = new FMUPropertiesDialog(this, MainWindow::instance());
+  pFMUPropertiesDialog->exec();
 }
 
 /*!

@@ -307,26 +307,4 @@ public slots:
   void createCompositeModelConnection();
 };
 
-class OMSSubModelAttributes : public QDialog
-{
-  Q_OBJECT
-public:
-  OMSSubModelAttributes(Component *pComponent, QWidget *pParent = 0);
-private:
-  Component *mpComponent;
-  Label *mpNameLabel;
-  QLineEdit *mpNameTextBox;
-  Label *mpParametersLabel;
-  QGridLayout *mpParametersLayout;
-  QWidget *mpParametersScrollWidget;
-  QScrollArea *mpParametersScrollArea;
-  QList<Label*> mParameterLabels;
-  QList<QLineEdit*> mParameterLineEdits;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-private slots:
-  void updateSubModelParameters();
-};
-
 #endif // COMPONENTPROPERTIES_H
