@@ -5,7 +5,7 @@
 //
 
 loadModel(Modelica);
-setCommandLineOptions("--std=3.3");
+setCommandLineOptions("--std=3.3 -d=-disableDirectionalDerivatives");
 loadString("
 model testDID
   parameter Real p = 1;
@@ -46,7 +46,8 @@ readFile("modelDescription.tmp.xml");
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"testDID\">
+//     modelIdentifier=\"testDID\"
+//     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <Clocks>
