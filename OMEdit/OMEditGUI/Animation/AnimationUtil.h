@@ -100,7 +100,6 @@ inline std::string assembleXMLFileName(const std::string& modelFile, const std::
 	  base.remove(base.length()-4,4);
   }
   // Construct XML file name
-  base.replace(".","_");
   std::string xmlFileName = path + base.toStdString() + "_visual.xml";
   return xmlFileName;
 }
