@@ -1336,10 +1336,17 @@ algorithm
 
       String s1, s2, serr, matrixName, name;
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous")), _, _, _, _) equation
-      tp = Expression.typeof(e);
-      zero = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-    then (zero, inFunctionTree);
+    /* with previous are the actaully states marked in synchronous */
+    case (e as DAE.CALL(path=Absyn.IDENT(name = "previous"), expLst = {DAE.CREF(componentRef=cr, ty=tp)}),
+           _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)),
+          BackendDAE.GENERIC_GRADIENT(), _) equation
+
+      cr = ComponentReference.makeCrefQual(DAE.previousNamePrefix, tp, {}, cr);
+      (_::_, _) = BackendVariable.getVar(cr, timevars);
+      cr = createSeedCrefName(cr, matrixName);
+
+      res = DAE.CREF(cr, tp);
+    then (res, inFunctionTree);
 
     case (DAE.CALL(path = path as Absyn.IDENT(name = "der"),expLst = {e},attr=attr), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
       then

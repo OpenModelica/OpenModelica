@@ -1654,6 +1654,7 @@ continuous states: der(x) > dependent and x > independent
 clocked states: previous(x) > independent and x > dependent
 "
   input list<BackendDAE.Var> independentVars;
+  input Boolean createpDerStates = true;
   output list<BackendDAE.Var> outVars = {};
   output list<DAE.ComponentRef> outCrefs = {};
 protected
@@ -1664,8 +1665,11 @@ algorithm
       var :=  BackendVariable.createClockedState(v);
       outVars := var::outVars;
       outCrefs := var.varName::outCrefs;
-    else
+    elseif createpDerStates then
       outVars := BackendVariable.createpDerVar(v)::outVars;
+      outCrefs := v.varName::outCrefs;
+    else
+      outVars := v::outVars;
       outCrefs := v.varName::outCrefs;
     end if;
   end for;
@@ -2000,7 +2004,7 @@ algorithm
 
       BackendDAE.Shared shared;
       BackendDAE.Variables  globalKnownVars, globalKnownVars1;
-      list<BackendDAE.Var> diffedVars "resVars", seedlst;
+      list<BackendDAE.Var> diffedVars "resVars", seedlst, indepVars;
 
       DAE.FunctionTree funcs;
 
@@ -2013,9 +2017,20 @@ algorithm
 
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
         seedlst = List.map1(comref_vars, createSeedVars, inName);
+        indepVars = createInDepVars(inDiffVars, false);
 
-        // Differentiate the ODE system w.r.t states for jacobian
-        (backendDAE as BackendDAE.DAE(shared=_), funcs) = generateSymbolicJacobian(reducedDAE, inDiffVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print("Crete symbolic Jacobianis from:\n");
+          print(BackendDump.varListString(indepVars, "Independent Variables"));
+          print(BackendDump.varListString(diffedVars, "Dependent Variables"));
+          print("Basic equation system:\n");
+          print(BackendDump.equationListString(BackendEquation.equationSystemsEqnsLst(reducedDAE.eqs), "differentiated equations"));
+          print(BackendDump.varListString(BackendVariable.equationSystemsVarsLst(reducedDAE.eqs), "related variables"));
+          print(BackendDump.varListString(BackendVariable.varList(reducedDAE.shared.globalKnownVars), "known variables"));
+        end if;
+
+        // Differentiate the eqns system in reducedDAE w.r.t. independents
+        (backendDAE as BackendDAE.DAE(shared=_), funcs) = generateSymbolicJacobian(reducedDAE, indepVars, inDifferentiatedVars, BackendVariable.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated equations for Jacobian " + inName + " time: " + realString(clock()) + "\n");
         end if;
