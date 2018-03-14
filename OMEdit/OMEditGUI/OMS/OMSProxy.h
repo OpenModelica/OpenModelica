@@ -52,6 +52,12 @@ private:
   static OMSProxy *mpInstance;
 public:
   static OMSProxy* instance() {return mpInstance;}
+
+  static QString getElementTypeString(oms_element_type_enu_t type);
+  static QString getFMUKindString(oms_fmi_kind_enu_t kind);
+  static QString getSignalTypeString(oms_signal_type_enu_t type);
+  static QString getCausalityString(oms_causality_enu_t causality);
+
   bool statusToBool(oms_status_enu_t status);
 
   bool newFMIModel(QString ident);
@@ -59,13 +65,14 @@ public:
   bool unloadModel(QString ident);
   bool addFMU(QString modelIdent, QString fmuPath, QString fmuIdent);
   bool deleteSubModel(QString modelIdent, QString subModelIdent);
-  bool renameModel(QString identOld, QString identNew);
+  bool rename(QString identOld, QString identNew);
   bool loadModel(QString filename, QString *pModelName);
   bool saveModel(QString filename, QString ident);
   bool getElement(QString cref, oms_element_t **pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t *pGeometry);
   bool getElements(QString cref, oms_element_t ***pElements);
   bool getFMUPath(QString cref, QString *pFmuPath);
+  bool getFMUInfo(QString cref, const oms_fmu_info_t **pFmuInfo);
   bool getConnections(QString cref, oms_connection_t ***pConnections);
   bool addConnection(QString cref, QString conA, QString conB);
   bool deleteConnection(QString cref, QString conA, QString conB);
@@ -78,8 +85,8 @@ public:
   bool setRealParameter(const char* signal, double value);
   bool getIntegerParameter(QString signal, int *pValue);
   bool setIntegerParameter(const char* signal, int value);
-  bool getBooleanParameter(QString signal, int *pValue);
-  bool setBooleanParameter(const char* signal, int value);
+  bool getBooleanParameter(QString signal, bool *pValue);
+  bool setBooleanParameter(const char* signal, bool value);
 };
 
 #endif // OMSPROXY_H

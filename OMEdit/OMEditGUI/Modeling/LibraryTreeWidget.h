@@ -102,7 +102,7 @@ public:
   LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
                   QString fileName, bool isSaved, LibraryTreeItem *pParent = 0);
   ~LibraryTreeItem();
-  bool isRootItem() {return mIsRootItem;}
+  bool isRootItem() const {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
   LibraryTreeItem* childAt(int index) const {return mChildren.at(index);}
   QList<LibraryTreeItem*> childrenItems() {return mChildren;}
@@ -149,6 +149,8 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms_element_t* getOMSElement() const {return mpOMSElement;}
+  void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
+  const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -163,8 +165,8 @@ public:
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
   void setParent(LibraryTreeItem *pParentLibraryTreeItem) {mpParentLibraryTreeItem = pParentLibraryTreeItem;}
-  LibraryTreeItem* parent() {return mpParentLibraryTreeItem;}
-  bool isTopLevel();
+  LibraryTreeItem* parent() const {return mpParentLibraryTreeItem;}
+  bool isTopLevel() const;
   bool isSimulationAllowed();
   void emitLoaded();
   void emitUnLoaded();
@@ -197,6 +199,7 @@ private:
   bool mExpanded;
   bool mNonExisting;
   oms_element_t *mpOMSElement;
+  const oms_fmu_info_t *mpFMUInfo;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();

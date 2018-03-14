@@ -1785,11 +1785,13 @@ void RenameCompositeModelCommand::undo()
   mpCompositeModelEditor->getModelWidget()->setWindowTitle(mOldCompositeModelName);
 }
 
-FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, FMUProperties oldFMUProperties, FMUProperties newFMUProperties,
-                                           QUndoCommand *pParent)
+FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString oldName, QString newName, FMUProperties oldFMUProperties,
+                                           FMUProperties newFMUProperties, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
+  mOldName = oldName;
+  mNewName = newName;
   mOldFMUProperties = oldFMUProperties;
   mNewFMUProperties = newFMUProperties;
   setText(QString("Update FMU %1 Parameters").arg(mpComponent->getName()));
@@ -1801,6 +1803,12 @@ FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, FMUProperties 
  */
 void FMUPropertiesCommand::redo()
 {
+  // Rename
+  if (OMSProxy::instance()->rename(mOldName, mNewName)) {
+    mpComponent->getComponentInfo()->setName(mNewName.split('.').last());
+    mpComponent->componentNameHasChanged();
+  }
+  // Parameters
   int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->interfaces;
@@ -1834,6 +1842,12 @@ void FMUPropertiesCommand::redo()
  */
 void FMUPropertiesCommand::undo()
 {
+  // Rename
+  if (OMSProxy::instance()->rename(mNewName, mOldName)) {
+    mpComponent->getComponentInfo()->setName(mOldName.split('.').last());
+    mpComponent->componentNameHasChanged();
+  }
+  // Parameters
   int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->interfaces;

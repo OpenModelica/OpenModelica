@@ -399,11 +399,14 @@ private:
 class FMUPropertiesCommand : public QUndoCommand
 {
 public:
-  FMUPropertiesCommand(Component *pComponent, FMUProperties oldFMUProperties, FMUProperties newFMUProperties, QUndoCommand *pParent = 0);
+  FMUPropertiesCommand(Component *pComponent, QString oldName, QString newName, FMUProperties oldFMUProperties,
+                       FMUProperties newFMUProperties, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   Component *mpComponent;
+  QString mOldName;
+  QString mNewName;
   FMUProperties mOldFMUProperties;
   FMUProperties mNewFMUProperties;
 };

@@ -377,6 +377,7 @@ LibraryTreeItem::LibraryTreeItem()
   setExpanded(false);
   setNonExisting(true);
   setOMSElement(0);
+  setFMUInfo(0);
 }
 
 /*!
@@ -423,8 +424,16 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
       }
     }
   } else if (type == LibraryTreeItem::OMS) {
-    if (!OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement)) {
+    if (OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement)) {
+      if (mpOMSElement->type == oms_component_fmu && OMSProxy::instance()->getFMUInfo(mNameStructure, &mpFMUInfo)) {
+        setFileName(mpFMUInfo->path);
+        setReadOnly(true);
+      } else {
+        setFMUInfo(0);
+      }
+    } else {
       setOMSElement(0);
+      setFMUInfo(0);
     }
     setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   } else {
@@ -562,18 +571,33 @@ QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
  * Returns the LibraryTreeItem tooltip.
  */
 QString LibraryTreeItem::getTooltip() const {
-  QString tooltip;
+  QString tooltip = "";
   if (mLibraryType == LibraryTreeItem::Modelica) {
     tooltip = QString("%1: %2<br />%3 %4<br />%5: %6<br />%7: %8<br />%9: %10")
-        .arg(Helper::type).arg(mClassInformation.restriction)
-        .arg(Helper::name).arg(mName)
-        .arg(Helper::description).arg(mClassInformation.comment)
-        .arg(Helper::fileLocation).arg(mFileName)
-        .arg(QObject::tr("Path")).arg(mNameStructure);
+              .arg(Helper::type).arg(mClassInformation.restriction)
+              .arg(Helper::name).arg(mName)
+              .arg(Helper::description).arg(mClassInformation.comment)
+              .arg(Helper::fileLocation).arg(mFileName)
+              .arg(QObject::tr("Path")).arg(mNameStructure);
+  } else if (mLibraryType == LibraryTreeItem::OMS) {
+    if (isTopLevel() && mpOMSElement) {
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
+                .arg(Helper::fileLocation).arg(mFileName);
+    } else if (mpOMSElement && mpOMSElement->type == oms_component_fmu) {
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
+                .arg(Helper::description).arg(QString(mpFMUInfo->description))
+                .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
+                .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
+                .arg(Helper::fileLocation).arg(mFileName);
+    }
   } else {
     tooltip = QString("%1 %2\n%3: %4")
-        .arg(Helper::name).arg(mName)
-        .arg(Helper::fileLocation).arg(mFileName);
+              .arg(Helper::name).arg(mName)
+              .arg(Helper::fileLocation).arg(mFileName);
   }
   return tooltip;
 }
@@ -798,7 +822,7 @@ int LibraryTreeItem::row() const
  * Checks whether the LibraryTreeItem is top level or not.
  * \return
  */
-bool LibraryTreeItem::isTopLevel()
+bool LibraryTreeItem::isTopLevel() const
 {
   if (parent()->isRootItem()) {
     return true;
@@ -2445,11 +2469,9 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
       for (int i = 0 ; pElements[i] ; i++) {
         QString name = StringHandler::getLastWordAfterDot(pElements[i]->name);
-        QString path;
-        OMSProxy::instance()->getFMUPath(pElements[i]->name, &path);
         LibraryTreeItem *pComponentLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
                                                                                QString("%1.%2").arg(pLibraryTreeItem->getNameStructure())
-                                                                               .arg(name), path, pLibraryTreeItem->isSaved(),
+                                                                               .arg(name), "", pLibraryTreeItem->isSaved(),
                                                                                pLibraryTreeItem);
         for (int j = 0 ; pElements[i]->interfaces[j] ; j++) {
           QString name = StringHandler::getLastWordAfterDot(pElements[i]->interfaces[j]->name);

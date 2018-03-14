@@ -2091,22 +2091,33 @@ bool Component::checkEnumerationDisplayString(QString &displayString, const QStr
  */
 void Component::updateToolTip()
 {
-  QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  comment = pOMCProxy->makeDocumentationUriToFileName(comment);
-  // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-#ifdef WIN32
-  comment.replace("src=\"file:///", "src=\"");
-#else
-  comment.replace("src=\"file://", "src=\"");
-#endif
-
-  if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent) {
-    setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
-               .arg(mpComponentInfo->getName()).arg(comment)
-               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    if (!mpParentComponent) { // root component
+      setToolTip(mpLibraryTreeItem->getTooltip());
+    } else {
+      setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
+                 .arg(Helper::name).arg(mpComponentInfo->getName())
+                 .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpComponentInfo->getOMSSignalType()))
+                 .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpComponentInfo->getOMSCausality())));
+    }
   } else {
-    setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(comment));
+    QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    comment = pOMCProxy->makeDocumentationUriToFileName(comment);
+    // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
+  #ifdef WIN32
+    comment.replace("src=\"file:///", "src=\"");
+  #else
+    comment.replace("src=\"file://", "src=\"");
+  #endif
+
+    if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent) {
+      setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
+                 .arg(mpComponentInfo->getName()).arg(comment)
+                 .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+    } else {
+      setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(comment));
+    }
   }
 }
 
@@ -2426,7 +2437,15 @@ void Component::componentCommentHasChanged()
 void Component::componentNameHasChanged()
 {
   updateToolTip();
-  displayTextChangedRecursive();
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    mpLibraryTreeItem->setName(mpComponentInfo->getName());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+    if (mpDefaultComponentText) {
+      mpDefaultComponentText->setTextString(mpComponentInfo->getName());
+    }
+  } else {
+    displayTextChangedRecursive();
+  }
   update();
 }
 

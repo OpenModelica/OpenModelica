@@ -102,6 +102,101 @@ OMSProxy::OMSProxy()
 }
 
 /*!
+ * \brief OMSProxy::getElementTypeString
+ * Returns the oms_element_type_enu_t as string.
+ * \param type
+ * \return
+ */
+QString OMSProxy::getElementTypeString(oms_element_type_enu_t type)
+{
+  switch (type) {
+    case oms_component_tlm:
+      return "TLM model";
+    case oms_component_fmi:
+      return "FMI model";
+    case oms_component_fmu:
+      return "FMU";
+    case oms_component_port:
+      return "Port";
+    case oms_component_none:
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+/*!
+ * \brief OMSProxy::getFMUKindString
+ * Returns the oms_fmi_kind_enu_t as string.
+ * \param kind
+ * \return
+ */
+QString OMSProxy::getFMUKindString(oms_fmi_kind_enu_t kind)
+{
+  switch (kind) {
+    case oms_fmi_kind_me:
+      return "ME";
+    case oms_fmi_kind_cs:
+      return "CS";
+    case oms_fmi_kind_me_and_cs:
+      return "ME & CS";
+    case oms_fmi_kind_unknown:
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+/*!
+ * \brief OMSProxy::getSignalTypeString
+ * Returns the oms_signal_type_integer as string.
+ * \param type
+ * \return
+ */
+QString OMSProxy::getSignalTypeString(oms_signal_type_enu_t type)
+{
+  switch (type) {
+    case oms_signal_type_real:
+      return "Real";
+    case oms_signal_type_integer:
+      return "Integer";
+    case oms_signal_type_boolean:
+      return "Boolean";
+    case oms_signal_type_string:
+      return "String";
+    case oms_signal_type_enum:
+      return "Enum";
+    case oms_signal_type_bus:
+      return "Bus";
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+/*!
+ * \brief OMSProxy::getCausalityString
+ * Returns the oms_causality_enu_t as string.
+ * \param causality
+ * \return
+ */
+QString OMSProxy::getCausalityString(oms_causality_enu_t causality)
+{
+  switch (causality) {
+    case oms_causality_input:
+      return "Input";
+    case oms_causality_output:
+      return "Output";
+    case oms_causality_parameter:
+      return "Parameter";
+    case oms_causality_undefined:
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+/*!
  * \brief OMSProxy::statusToBool
  * Converts the oms_status_enu_t to bool.
  * \param status
@@ -156,12 +251,12 @@ bool OMSProxy::unloadModel(QString ident)
 
 /*!
  * \brief OMSProxy::renameModel
- * Renames the model.
+ * Renames a model or a FMU.
  * \param identOld
  * \param identNew
  * \return
  */
-bool OMSProxy::renameModel(QString identOld, QString identNew)
+bool OMSProxy::rename(QString identOld, QString identNew)
 {
   oms_status_enu_t status = oms2_rename(identOld.toStdString().c_str(), identNew.toStdString().c_str());
   return statusToBool(status);
@@ -273,6 +368,19 @@ bool OMSProxy::getFMUPath(QString cref, QString *pFmuPath)
   char* path = NULL;
   oms_status_enu_t status = oms2_getFMUPath(cref.toStdString().c_str(), &path);
   *pFmuPath = QString(path);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getFMUInfo
+ * Gets the FMU info.
+ * \param cref
+ * \param pFmuInfo
+ * \return
+ */
+bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t **pFmuInfo)
+{
+  oms_status_enu_t status = oms2_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
   return statusToBool(status);
 }
 
@@ -432,7 +540,7 @@ bool OMSProxy::setIntegerParameter(const char* signal, int value)
  * \param pValue
  * \return
  */
-bool OMSProxy::getBooleanParameter(QString signal, int *pValue)
+bool OMSProxy::getBooleanParameter(QString signal, bool *pValue)
 {
   oms_status_enu_t status = oms2_getBooleanParameter(signal.toStdString().c_str(), pValue);
   return statusToBool(status);
@@ -445,7 +553,7 @@ bool OMSProxy::getBooleanParameter(QString signal, int *pValue)
  * \param value
  * \return
  */
-bool OMSProxy::setBooleanParameter(const char* signal, int value)
+bool OMSProxy::setBooleanParameter(const char* signal, bool value)
 {
   oms_status_enu_t status = oms2_setBooleanParameter(signal, value);
   return statusToBool(status);
