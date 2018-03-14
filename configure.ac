@@ -432,7 +432,7 @@ if test -z "$RUNTIMECFLAGS"; then
   AC_TRY_LINK([], [return 0;], [AC_MSG_RESULT($CC ok);],[AC_MSG_ERROR($CC failed)])
   CFLAGS="$FPIC"
   AC_MSG_CHECKING([runtime compiler CFLAGS])
-  for flag in -O0 -falign-functions -march=native -mfpmath=sse; do
+  for flag in -falign-functions -mfpmath=sse; do
     RUNTIMECFLAGS="$CFLAGS"
     CFLAGS="$RUNTIMECFLAGS $flag -Werror"
     AC_TRY_LINK([], [return 0;], [CFLAGS="$RUNTIMECFLAGS $flag"],[CFLAGS="$RUNTIMECFLAGS"])

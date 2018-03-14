@@ -3288,7 +3288,7 @@ protected
     dquote = if isWindows then "\"" else "'";
 algorithm
   CC := System.getCCompiler();
-  CFLAGS := System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
+  CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
                          "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
                          System.getLDFlags()+" ");
