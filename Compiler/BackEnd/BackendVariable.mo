@@ -2747,6 +2747,16 @@ algorithm
   outVariables := List.fold(inVars, addVar, inVariables);
 end addVars;
 
+public function addNewVars
+  "Adds a list of variables to the Variables structure. If any variable already
+   exists it's updated instead."
+  input list<BackendDAE.Var> inVars;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := List.fold(inVars, addNewVar, inVariables);
+end addNewVars;
+
 public function addNewVar
   "Add a new variable to the set, without checking if it already exists."
   input BackendDAE.Var inVar;
