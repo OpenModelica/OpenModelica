@@ -1354,14 +1354,12 @@ algorithm
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=attr)) equation
       exp = Expression.createResidualExp(e1, e2);
-      (e, _) = ExpressionSimplify.simplify(exp);
-    then {BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
+    then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=e2, source=source, attr=attr)) equation
       e1 = Expression.crefExp(cr);
       exp = Expression.createResidualExp(e1, e2);
-      (e, _) = ExpressionSimplify.simplify(exp);
-    then {BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
+    then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
 
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=attr)) equation
       exp = Expression.createResidualExp(e1, e2);
@@ -1405,8 +1403,7 @@ algorithm
 
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)) equation
       exp = Expression.createResidualExp(e1, e2);
-      (e, _) = ExpressionSimplify.simplify(exp);
-    then {BackendDAE.RESIDUAL_EQUATION(e, source, attr)};
+    then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
 
     case (backendEq as BackendDAE.RESIDUAL_EQUATION())
     then {backendEq};
