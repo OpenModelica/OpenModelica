@@ -786,6 +786,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   long int tmp;
   static unsigned int stepsOutputCounter = 1;
   int stepsMode;
+  int restartAfterLSFail = 0;
 
   IDA_SOLVER *idaData = (IDA_SOLVER*) solverInfo->solverData;
 
@@ -967,6 +968,15 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       else if (flag == IDA_TOO_MUCH_WORK)
       {
         warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      }
+      else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail )
+      {
+        flag = IDAReInit(idaData->ida_mem,
+            solverInfo->currentTime,
+            idaData->y,
+            idaData->yp);
+        restartAfterLSFail = 1;
+        warningStreamPrint(LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
       }
       else
       {
