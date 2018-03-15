@@ -142,6 +142,22 @@ end mainTop;
   end match
 end translateFunctions;
 
+template translateFunctionHeaderFiles(FunctionCode functionCode)
+::=
+  match functionCode
+  case fc as FUNCTIONCODE(__) then
+    let()= System.tmpTickResetIndex(0,2) /* auxFunction index */
+    let()= System.tmpTickResetIndex(0,20)  /*parfor index*/
+    let &staticPrototypes = buffer ""
+    let filePrefix = name
+    let _= (if mainFunction then textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile'))
+    let()= textFile(functionsHeaderFile(filePrefix, mainFunction, functions, extraRecordDecls, staticPrototypes), '<%filePrefix%>.h')
+    let()= textFile(externalFunctionIncludes(fc.externalFunctionIncludes), '<%filePrefix%>_includes.h')
+    let()= textFile(recordsFile(filePrefix, extraRecordDecls), '<%filePrefix%>_records.c')
+    "" // Return empty result since result written to files directly
+  end match
+end translateFunctionHeaderFiles;
+
 template functionsFile(String filePrefix,
                        Option<Function> mainFunction,
                        list<Function> functions,

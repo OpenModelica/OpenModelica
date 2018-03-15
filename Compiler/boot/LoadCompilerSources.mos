@@ -243,7 +243,13 @@ if true then /* Suppress output */
     "../Util/System.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
-    "../Util/ZeroMQ.mo"
+    "../Util/ZeroMQ.mo",
+
+  // "MidCode";
+    "../MidCode/MidCode.mo",
+    "../MidCode/DAEToMid.mo",
+    "../MidCode/MidToMid.mo",
+    "../MidCode/HashTableMidVar.mo"
   };
   backendfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")<>"" then
   {
@@ -365,6 +371,7 @@ if true then /* Suppress output */
     "../Template/CodegenFMUCppHpcom.mo",
     "../Template/CodegenJava.mo",
     "../Template/CodegenJS.mo",
+    "../Template/CodegenMidToC.mo",
     "../Template/CodegenModelica.mo",
     "../Template/CodegenSparseFMI.mo",
     "../Template/CodegenUtilSimulation.mo",

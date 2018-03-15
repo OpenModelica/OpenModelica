@@ -248,8 +248,11 @@ constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_CO
 protected
 import BaseHashTable;
 import CodegenCFunctions;
+import CodegenMidToC;
 import Global;
 import SimCodeFunctionUtil;
+import MidCode;
+import DAEToMid;
 
 public function translateFunctions "
   Entry point to translate Modelica/MetaModelica functions to C functions.
@@ -262,6 +265,7 @@ public function translateFunctions "
   input list<String> inIncludes;
 algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
+
   _ := match (program, name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
     local
       DAE.Function daeMainFunction;
@@ -273,7 +277,8 @@ algorithm
       list<RecordDeclaration> extraRecordDecls;
       list<DAE.Exp> literals;
       list<DAE.Function> daeElements;
-
+      Tpl.Text midCode;
+      list<MidCode.Function> midfuncs;
     case (_, _, SOME(daeMainFunction), daeElements, _, includes)
       equation
         // Create FunctionCode
@@ -282,8 +287,15 @@ algorithm
         SimCodeFunctionUtil.checkValidMainFunction(name, mainFunction);
         makefileParams = SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, true);
         fnCode = FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
-        // Generate code
-        _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+
+        if Config.simCodeTarget() == "MidC" then
+          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          midfuncs = DAEToMid.DAEFunctionsToMid(mainFunction::fns);
+          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          _ = Tpl.textFileConvertLines(midCode, name + ".c");
+        else
+          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+        end if;
       then
         ();
     case (_, _, NONE(), daeElements, _, includes)
@@ -295,12 +307,19 @@ algorithm
         // remove OpenModelica.threadData.ThreadData
         fns = removeThreadDataFunction(fns, {});
         extraRecordDecls = removeThreadDataRecord(extraRecordDecls, {});
-
         fnCode = FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
-        // Generate code
-        _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+
+        if Config.simCodeTarget() == "MidC" then
+          _ = Tpl.tplString(CodegenCFunctions.translateFunctionHeaderFiles, fnCode);
+          midfuncs = DAEToMid.DAEFunctionsToMid(fns);
+          midCode = Tpl.tplCallWithFailError(CodegenMidToC.genProgram, MidCode.PROGRAM(name, midfuncs));
+          _ = Tpl.textFileConvertLines(midCode, name + ".c");
+        else
+          _ = Tpl.tplString(CodegenCFunctions.translateFunctions, fnCode);
+        end if;
       then
         ();
+
   end match;
 end translateFunctions;
 

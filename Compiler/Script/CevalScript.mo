@@ -2420,7 +2420,9 @@ algorithm
         print_debug := Flags.isSet(Flags.DYN_LOAD);
         libHandle := System.loadLibrary(fileName, print_debug);
         funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        execStatReset();
         newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        execStat("executeFunction("+Absyn.pathString(funcpath)+")");
 
         System.freeLibrary(libHandle, print_debug);
         // update the build time in the class!
