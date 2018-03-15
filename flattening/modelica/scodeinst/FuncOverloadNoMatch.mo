@@ -25,8 +25,8 @@ end FuncOverloadNoMatch;
 // Error processing file: FuncOverloadNoMatch.mo
 // [flattening/modelica/scodeinst/FuncOverloadNoMatch.mo:21:3-21:23:writable] Error: No matching function found for OV(/*Boolean*/ true).
 // Candidates are:
-//   OV(Integer f1) => Integer
-//   OV(Real g1) => Integer
+//   F(Integer f1) => Integer
+//   G(Real g1) => Integer
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

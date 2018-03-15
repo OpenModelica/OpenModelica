@@ -329,6 +329,7 @@ FuncInteger.mo \
 FuncIntegerWrongType.mo \
 FuncLocals.mo \
 FuncMissingDefault1.mo \
+FuncMap1.mo \
 FuncOverloadAmbiguousDefault.mo \
 FuncOverloadExactPrefer.mo \
 FuncOverloadMulti.mo \
@@ -342,6 +343,10 @@ FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
+FuncVectorizatio1.mo \
+FuncVectorizatio2.mo \
+FuncVectorizatioBuiltin.mo \
+FuncVectorizatioMap1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
 FunctionExtends1.mo \
@@ -460,6 +465,13 @@ OperationSubEW1.mo \
 OperationUnary1.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \
+OperatorOverloadBinaryAmbiguous.mo \
+OperatorOverloadBinaryAmbiguousTwoRecords.mo \
+OperatorOverloadBinaryWithBuiltin.mo \
+OperatorOverloadComplex.mo \
+OperatorOverloadConstrutorHideDefault.mo \
+OperatorOverloadConstrutorSimple.mo \
+OperatorOverloadError1.mo \
 PackageConstant1.mo \
 ParameterBug.mos \
 PropagateExtends.mo \
