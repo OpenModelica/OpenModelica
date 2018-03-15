@@ -352,7 +352,7 @@ algorithm
 
         if binding_level > 0 then
           subs := List.flatten(ComponentRef.subscriptsN(prefix, InstNode.level(component) - binding_level));
-          binding.bindingExp := Expression.subscript(binding.bindingExp, subs);
+          binding.bindingExp := Expression.applySubscripts(binding.bindingExp, subs);
         end if;
       then
         ();

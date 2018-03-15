@@ -199,6 +199,23 @@ public
     end match;
   end isEqualKnown;
 
+  public function allEqualKnown
+    input list<Dimension> dims1;
+    input list<Dimension> dims2;
+    output Boolean allEqual;
+  algorithm
+    allEqual := match(dims1, dims2)
+      local
+        Dimension dim1, dim2;
+        list<Dimension> rest1, rest2;
+
+      case ({}, {}) then true;
+      case (dim1::rest1, dim2::rest2) guard isEqualKnown(dim1, dim2)
+        then allEqualKnown(rest1, rest2);
+      else false;
+    end match;
+  end allEqualKnown;
+
   function isKnown
     input Dimension dim;
     output Boolean known;
@@ -241,6 +258,12 @@ public
       case UNTYPED() then Expression.toString(dim.dimension);
     end match;
   end toString;
+
+  function toStringList
+    input list<Dimension> dims;
+    output String str = "[" + stringDelimitList(List.map(dims, toString), ", ") + "]";
+  algorithm
+  end toStringList;
 
   function sizeExp
     "Returns the size of a dimension as an expression."

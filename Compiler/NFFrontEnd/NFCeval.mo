@@ -136,7 +136,7 @@ algorithm
         binding := Component.getBinding(InstNode.component(c));
         exp1 := evalBinding(binding, exp, target);
       then
-        Expression.subscript(exp1, cref.subscripts);
+        Expression.applySubscripts(exp1, cref.subscripts);
 
     case Expression.TYPENAME()
       then evalTypename(exp.ty, exp, target);

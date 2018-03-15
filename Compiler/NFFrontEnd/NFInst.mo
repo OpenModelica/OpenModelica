@@ -1916,7 +1916,7 @@ algorithm
         binding := Binding.fromAbsyn(scodeEq.range, false, 0, scope, info);
         binding := instBinding(binding);
 
-        (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, info, scope);
+        (for_scope, iter) := addIteratorToScope(scodeEq.index, binding, scope);
         eql := instEEquations(scodeEq.eEquationLst, for_scope, eqScope);
       then
         Equation.FOR(iter, eql, makeSource(scodeEq.comment, info));
@@ -2063,7 +2063,7 @@ algorithm
         binding := Binding.fromAbsyn(scodeStmt.range, false, 0, scope, info);
         binding := instBinding(binding);
 
-        (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, info, scope);
+        (for_scope, iter) := addIteratorToScope(scodeStmt.index, binding, scope);
         stmtl := instStatements(scodeStmt.forBody, for_scope);
       then
         Statement.FOR(iter, stmtl, makeSource(scodeStmt.comment, info));
@@ -2152,14 +2152,14 @@ end instStatement;
 function addIteratorToScope
   input String name;
   input Binding binding;
-  input SourceInfo info;
   input output InstNode scope;
+  input Type iter_type = Type.UNKNOWN();
         output InstNode iterator;
 protected
   Component iter_comp;
 algorithm
   scope := InstNode.openImplicitScope(scope);
-  iter_comp := Component.ITERATOR(Type.UNKNOWN(), binding);
+  iter_comp := Component.ITERATOR(iter_type, binding);
   iterator := InstNode.fromComponent(name, iter_comp, scope);
   scope := InstNode.addIterator(iterator, scope);
 end addIteratorToScope;

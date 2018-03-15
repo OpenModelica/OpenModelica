@@ -447,12 +447,14 @@ function cardinality "Number of connectors in connection"
 </html>"),version="Deprecated");
 end cardinality;
 
+/*
 function array "Constructs an array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'array()'\">array()</a>
 </html>"));
 end array;
+*/
 
 function zeros "Returns a zero array"
   external "builtin";
@@ -1022,18 +1024,16 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer x;
     input Integer y;
     output Integer z;
-  algorithm
-    z := x - (div(x, y) * y);
-    annotation(preferredView="text", __OpenModelica_EarlyInline=true, __OpenModelica_builtin=true);
+  external "builtin" z=rem(x,y);
+  annotation(preferredView="text");
   end intRem;
 
   function realRem
     input Real x;
     input Real y;
     output Real z;
-  algorithm
-    z := x - (div(x, y) * y);
-    annotation(preferredView="text", __OpenModelica_EarlyInline=true, __OpenModelica_builtin=true);
+  external "builtin" z=rem(x,y);
+  annotation(preferredView="text");
   end realRem;
 
   /*
@@ -1106,14 +1106,14 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
   end intMin;
 
-	function realMin
-	  input Real r1;
-	  input Real r2;
-	  output Real r;
-	algorithm
+  function realMin
+    input Real r1;
+    input Real r2;
+    output Real r;
+  algorithm
     r := if r1 < r2 then r1 else r2;
-	  annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-	end realMin;
+    annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
+  end realMin;
 
   function boolMin
     input Boolean b1;
@@ -1148,13 +1148,13 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   end scalarMin;
 
   function arrayMin<ArrayType,ScalarBasicType> "Returns the smallest element of a multidimenstional array"
-	  input ArrayType a;
-	  output ScalarBasicType b;
-	  external "builtin" b = min(a);
-	  annotation(Documentation(info="<html>
-	  See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
-	</html>"));
-	end arrayMin;
+    input ArrayType a;
+    output ScalarBasicType b;
+    external "builtin" b = min(a);
+    annotation(Documentation(info="<html>
+    See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
+  </html>"));
+  end arrayMin;
 
   package Architecture
     function numBits

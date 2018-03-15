@@ -49,7 +49,6 @@ import Expression = NFExpression;
 import NFComponent.Component;
 import Prefixes = NFPrefixes;
 import NFClass.Class;
-import RangeIterator = NFRangeIterator;
 import DAEUtil;
 import Dimension = NFDimension;
 import List;
@@ -1054,7 +1053,6 @@ algorithm
           continue;
         end if;
         comp := InstNode.component(InstNode.resolveOuter(c));
-        InstNode.name(c);
 
         type_var := DAE.TYPES_VAR(InstNode.name(c)
                       , Component.Attributes.toDAE(Component.getAttributes(comp))

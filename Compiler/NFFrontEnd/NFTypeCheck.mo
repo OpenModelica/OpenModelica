@@ -67,6 +67,7 @@ import NFTyping.ExpOrigin;
 import NFFunction.Function;
 import NFFunction.TypedArg;
 import NFFunction.FunctionMatchKind;
+import NFFunction.MatchedFunction;
 import NFCall.Call;
 import NFCall.CallAttributes;
 import ComponentRef = NFComponentRef;
@@ -95,6 +96,11 @@ function isIncompatibleMatch
   input MatchKind kind;
   output Boolean isIncompatible = kind == MatchKind.NOT_COMPATIBLE;
 end isIncompatibleMatch;
+
+function isExactMatch
+  input MatchKind kind;
+  output Boolean isCompatible = kind == MatchKind.EXACT;
+end isExactMatch;
 
 function isCastMatch
   input MatchKind kind;
@@ -181,7 +187,8 @@ protected
   Boolean matched, oper_defined;
   list<TypedArg> args;
   FunctionMatchKind matchKind;
-  list<FunctionMatchKind.MatchedFunction> matchedFunctions = {}, exactMatches;
+  MatchedFunction matchedFunc;
+  list<MatchedFunction> matchedFunctions = {}, exactMatches;
 algorithm
 
   opstr := Operator.symbol(inOp,"'");
@@ -189,13 +196,10 @@ algorithm
   candidates := {};
   if Type.isComplex(inType1) then
     Type.COMPLEX(cls=node1) := inType1;
-    ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
     try
-        fn_ref := Function.lookupFunction(Absyn.CREF_IDENT(opstr,{}), node1, InstNode.info(node1));
-        ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
-        oper_defined := true;
+      fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT(opstr,{}), node1);
+      oper_defined := true;
     else
-      ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
       oper_defined := false;
     end try;
 
@@ -214,13 +218,10 @@ algorithm
     // If the other operand is complex, make sure the two are not of the same class before collecting
     // operators from this one.
     if not (Type.isComplex(inType1) and InstNode.isSame(node1, node2)) then
-        ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
         try
-          fn_ref := Function.lookupFunction(Absyn.CREF_IDENT(opstr,{}), node2, InstNode.info(node2));
-          ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
+          fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT(opstr,{}), node2);
           oper_defined := true;
         else
-          ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
           oper_defined := false;
         end try;
 
@@ -237,19 +238,20 @@ algorithm
 
   args := {(inExp1,inType1,Variability.CONSTANT),(inExp2,inType2,Variability.CONSTANT)};
 
-  ErrorExt.setCheckpoint("NFTypeCheck:checkBinaryOperationOperatorRecords");
-  matchedFunctions := Function.matchFunctions(candidates, args, {}, info);
-
+  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
   // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
-  exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
+  exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
+
   if listEmpty(exactMatches) then
     // TODO: new error mentioning overloaded operators.
     if not listEmpty(candidates) then
+      ErrorExt.setCheckpoint("NFTypeCheck:implicitConstruction");
       try
         (outExp, outType) := implicitConstructAndMatch(candidates, inExp1, inType1,inExp2, inType2);
-        ErrorExt.rollBack("NFTypeCheck:checkBinaryOperationOperatorRecords");
+        ErrorExt.delCheckpoint("NFTypeCheck:implicitConstruction");
         return;
       else
+        ErrorExt.rollBack("NFTypeCheck:implicitConstruction");
         printUnresolvableTypeError(Expression.BINARY(inExp1, inOp, inExp2), {inType1, inType2}, info);
         fail();
       end try;
@@ -259,11 +261,10 @@ algorithm
     end if;
   end if;
 
-  ErrorExt.rollBack("NFTypeCheck:checkBinaryOperationOperatorRecords");
   if listLength(exactMatches) == 1 then
-    (operfn,args,_) ::_ := exactMatches;
-    outType := Function.returnType(operfn);
-    outExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
+    matchedFunc ::_ := exactMatches;
+    outType := Function.returnType(matchedFunc.func);
+    outExp := Expression.CALL(Call.TYPED_CALL(matchedFunc.func, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in matchedFunc.args)
                                               , CallAttributes.CALL_ATTR(
                                                   outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
                                               )
@@ -271,8 +272,7 @@ algorithm
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
           {Expression.toString(Expression.BINARY(inExp1, inOp, inExp2))
-            , Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions)
-            ,NONE())}, info);
+            , Call.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
     fail();
   end if;
 
@@ -288,7 +288,7 @@ function implicitConstructAndMatch
   output Type outType;
 protected
   list<InstNode> inputs;
-  InstNode in1, in2;
+  InstNode in1, in2, scope;
   MatchKind mk1,mk2;
   ComponentRef fn_ref;
   Function operfn;
@@ -307,13 +307,17 @@ algorithm
     // If the first argument matched the expected one, then we try
     // to construct the second argument to the class of the second input.
     if mk1 == MatchKind.EXACT then
-      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),InstNode.classScope(in2),InstNode.info(in2));
-      exp2 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {}, {inExp2}, {}));
+      // We only want overloaded constructors when trying to implicitly construct. Default constructors are not considered.
+      scope := InstNode.classScope(in2);
+      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),scope,InstNode.info(in2));
+      exp2 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {inExp2}, {}, scope));
       (exp2, ty, var) := Call.typeCall(exp2, 0, InstNode.info(in1));
       matchedfuncs := (fn,{inExp1,exp2}, var)::matchedfuncs;
     elseif mk2 == MatchKind.EXACT then
-      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),InstNode.classScope(in1),InstNode.info(in1));
-      exp1 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {}, {inExp1}, {}));
+      // We only want overloaded constructors when trying to implicitly construct. Default constructors are not considered.
+      scope := InstNode.classScope(in1);
+      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),scope,InstNode.info(in1));
+      exp1 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {inExp1}, {}, scope));
       (exp1, ty, var) := Call.typeCall(exp1, 0, InstNode.info(in2));
       matchedfuncs := (fn,{exp1,inExp2},var)::matchedfuncs;
     end if;
@@ -331,12 +335,25 @@ algorithm
     else
     // TODO: FIX ME: Add proper error message.
     print("Ambiguous operator: " + "\nCandidates:\n  ");
-    print(Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs),NONE()));
+    print(Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs)));
     print("\n");
     fail();
   end if;
 
 end implicitConstructAndMatch;
+
+function checkValidBinaryOperatorOverload
+  input String oper_name;
+  input Function oper_func;
+  input InstNode rec_node;
+protected
+  SourceInfo info;
+algorithm
+  info := InstNode.info(oper_func.node);
+  checkOneOutput(oper_name, oper_func.outputs, rec_node, info);
+  checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, info);
+  checkTwoInputs(oper_name, oper_func.inputs, rec_node, info);
+end checkValidBinaryOperatorOverload;
 
 function checkValidOperatorOverload
   input String oper_name;
@@ -412,6 +429,22 @@ algorithm
           + intString(listLength(outputs))}, info);
   end if;
 end checkOneOutput;
+
+public
+function checkTwoInputs
+  input String oper_name;
+  input list<InstNode> inputs;
+  input InstNode rec_node;
+  input SourceInfo info;
+protected
+  InstNode out_class;
+algorithm
+  if listLength(inputs) < 2 then
+      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
+          {"Binary overloaded " + oper_name + " operator functions are required to have at least two inputs. Found "
+          + intString(listLength(inputs))}, info);
+  end if;
+end checkTwoInputs;
 
 function checkOutputType
   input String oper_name;
@@ -821,20 +854,14 @@ protected
   Boolean matched;
   list<TypedArg> args;
   FunctionMatchKind matchKind;
-  list<FunctionMatchKind.MatchedFunction> matchedFunctions = {}, exactMatches;
+  MatchedFunction matchedFunc;
+  list<MatchedFunction> matchedFunctions = {}, exactMatches;
 algorithm
 
   opstr := Operator.symbol(inOp,"'");
   Type.COMPLEX(cls=node1) := inType1;
-  ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
-  try
-    fn_ref := Function.lookupFunction(Absyn.CREF_IDENT(opstr,{}), node1, InstNode.info(node1));
-    ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
-  else
-    ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
-    fail();
-  end try;
 
+  fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT(opstr,{}), node1);
   fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
   candidates := Call.typeCachedFunctions(fn_ref);
   for fn in candidates loop
@@ -842,21 +869,19 @@ algorithm
   end for;
 
   args := {(inExp1,inType1,Variability.CONSTANT)};
-  ErrorExt.setCheckpoint("NFTypeCheck:checkUnaryOperationOperatorRecords");
-  matchedFunctions := Function.matchFunctions(candidates, args, {}, info);
-  ErrorExt.rollBack("NFTypeCheck:checkUnaryOperationOperatorRecords");
+  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
 
   // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
-  exactMatches := FunctionMatchKind.getExactMatches(matchedFunctions);
+  exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
   if listEmpty(exactMatches) then
     printUnresolvableTypeError(Expression.UNARY(inOp, inExp1), {inType1}, info);
     fail();
   end if;
 
   if listLength(exactMatches) == 1 then
-    (operfn,args,_) ::_ := exactMatches;
-    outType := Function.returnType(operfn);
-    outExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in args)
+    matchedFunc ::_ := exactMatches;
+    outType := Function.returnType(matchedFunc.func);
+    outExp := Expression.CALL(Call.TYPED_CALL(matchedFunc.func, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in matchedFunc.args)
                                               , CallAttributes.CALL_ATTR(
                                                   outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
                                               )
@@ -864,8 +889,7 @@ algorithm
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
           {Expression.toString(Expression.UNARY(inOp, inExp1))
-            , Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedFunctions)
-            ,NONE())}, info);
+            , Call.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
     fail();
   end if;
 
@@ -1507,7 +1531,9 @@ function matchTypes
   input Type actualType;
   input Type expectedType;
   input output Expression expression;
-  input Boolean allowUnknown = false;
+  input Boolean allowUnknown = false; // TODO: This allowUnknown is currently used for two different things.
+                                      // Allowing matches againest unknown types AND also allowing matching
+                                      // when dim sizes are unknown. These should be separated.
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm

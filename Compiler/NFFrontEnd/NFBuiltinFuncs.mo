@@ -169,5 +169,9 @@ constant Function CAT = Function.FUNCTION(Path.IDENT("cat"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
+constant Function ARRAY_FUNC = Function.FUNCTION(Path.IDENT("array"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

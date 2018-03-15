@@ -85,10 +85,74 @@ public
     end match;
   end toExp;
 
+  function toInteger
+    input Subscript subscript;
+    output Integer int;
+  algorithm
+    int := match subscript
+      case INDEX() then Expression.toInteger(subscript.index);
+    end match;
+  end toInteger;
+
+  protected function isValidIndexType
+    input Type ty;
+    output Boolean b = Type.isInteger(ty) or Type.isBoolean(ty) or Type.isEnumeration(ty);
+  end isValidIndexType;
+
+  public
   function makeIndex
     input Expression exp;
-    output Subscript subscript = INDEX(exp);
+    output Subscript subscript;
+  protected
+    Type ty;
+  algorithm
+    ty := Expression.typeOf(exp);
+    if isValidIndexType(ty) then
+      subscript := INDEX(exp);
+    else
+      Error.assertion(false, getInstanceName() + " got a non integer type exp to make an index sub", sourceInfo());
+      fail();
+    end if;
   end makeIndex;
+
+  function isIndex
+    input Subscript sub;
+    output Boolean isIndex;
+  algorithm
+    isIndex := match sub
+      case INDEX() then true;
+      else false;
+    end match;
+  end isIndex;
+
+  function isScalar
+    input Subscript sub;
+    output Boolean isScalar;
+  algorithm
+    isScalar := match sub
+      local
+        Type ty;
+
+      case INDEX() algorithm
+        ty := Expression.typeOf(sub.index);
+        then
+          isValidIndexType(ty);
+
+      else false;
+    end match;
+  end isScalar;
+
+  function isScalarConst
+    input Subscript sub;
+    output Boolean isScalarConst;
+  algorithm
+    isScalarConst := match sub
+      case INDEX(Expression.INTEGER()) then true;
+      case INDEX(Expression.BOOLEAN()) then true;
+      case INDEX(Expression.ENUM_LITERAL()) then true;
+      else false;
+    end match;
+  end isScalarConst;
 
   function isEqual
     input Subscript subscript1;
@@ -239,16 +303,6 @@ public
   algorithm
     string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
-
-  function isIndex
-    input Subscript subscript;
-    output Boolean isIndex;
-  algorithm
-    isIndex := match subscript
-      case INDEX() then true;
-      else false;
-    end match;
-  end isIndex;
 
   function simplify
     input output Subscript subscript;

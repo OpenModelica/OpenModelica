@@ -38,7 +38,6 @@ protected
   import Type = NFType;
   import NFInstNode.InstNode;
   import NFInstNode.InstNodeType;
-  import RangeIterator = NFRangeIterator;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFPrefixes.Variability;

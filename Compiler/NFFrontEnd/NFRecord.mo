@@ -82,14 +82,11 @@ function instConstructors
  algorithm
 
   // See if we have overloaded costructors.
-  ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
   try
-    con_ref := Function.lookupFunction(Absyn.CREF_IDENT("'constructor'",{}), node, info);
+    con_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT("'constructor'",{}), node, info);
     ctor_defined := true;
-    ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
   else
     ctor_defined := false;
-    ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
   end try;
 
   if ctor_defined then
@@ -101,15 +98,11 @@ function instConstructors
   end if;
 
   // See if we have '0' costructor.
-  ErrorExt.setCheckpoint("NFTypeCheck:operatorOverloadDefined");
   try
-    con_ref := Function.lookupFunction(Absyn.CREF_IDENT("'0'",{}), node, info);
+    con_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT("'0'",{}), node, info);
     ctor_defined := true;
-    ErrorExt.delCheckpoint("NFTypeCheck:operatorOverloadDefined");
-
   else
     ctor_defined := false;
-    ErrorExt.rollBack("NFTypeCheck:operatorOverloadDefined");
   end try;
 
   if ctor_defined then

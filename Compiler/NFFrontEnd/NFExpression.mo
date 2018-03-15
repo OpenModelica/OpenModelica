@@ -573,51 +573,82 @@ public
     end match;
   end realValue;
 
-  function subscript
+  function applySubscripts
     input output Expression exp;
     input list<Subscript> subscripts;
   algorithm
     for sub in subscripts loop
-      _ := match sub
-        case Subscript.INDEX()
-          algorithm
-            exp := arrayElement(exp, toInteger(sub.index));
-          then
-            ();
-
-        else
-          algorithm
-            Error.assertion(false, getInstanceName() + " got unknown subscript " + anyString(sub), sourceInfo());
-          then
-            fail();
-
-      end match;
+      exp := applySubscript(exp, sub);
     end for;
-  end subscript;
+  end applySubscripts;
 
-  function arrayElement
-    input Expression array;
-    input Integer index;
-    output Expression element;
+  function applySubscript
+    input output Expression exp;
+    input Subscript sub;
+  protected
+    Integer index;
+    Boolean is_scalar_const;
+    Expression texp;
+    Type exp_ty;
   algorithm
-    element := match array
+
+    if not Subscript.isScalar(sub) then
+      // We need to properly compute the resulting type. Just unlifting the type is not enough if sub is not scalar.
+      // Use Type.subscript to compute the type and make sure SUPSCRIPTED_EXP doesn't result in complicated types.
+      Error.assertion(false, getInstanceName() + ": Application of non-scalar subs on expressoins not implemented. "
+                      + "Exp: " + toString(exp)
+                      + ", Sub: "+ Subscript.toString(sub)
+                      , sourceInfo());
+      fail();
+    end if;
+    is_scalar_const := Subscript.isScalarConst(sub);
+
+    // check exp has array type. Don't apply subs to scalar exp.
+    exp_ty := typeOf(exp);
+    if not Type.isArray(exp_ty) then
+      Error.assertion(false, getInstanceName() + ": Application of subs on non-array expressoin not allowed. "
+                      + "Exp: " + toString(exp)
+                      + ", Exp type: " + Type.toString(exp_ty)
+                      + ", Sub: " + Subscript.toString(sub)
+                      , sourceInfo());
+      fail();
+    end if;
+
+    exp := match exp
       local
         ComponentRef cref;
 
-      case ARRAY() then listGet(array.elements, index);
+      case CREF() algorithm
+        cref := ComponentRef.addSubscript(sub, exp.cref);
+        texp := CREF(Type.unliftArray(exp.ty), cref);
+      then texp;
 
-      case CREF()
-        algorithm
-          cref := ComponentRef.addSubscript(Subscript.INDEX(INTEGER(index)), array.cref);
-        then
-          CREF(Type.unliftArray(array.ty), cref);
+      // We should probably try to evaluate all SUBSCRIPTED_EXP at some point before BackEnd.
+      // It causes all kinds of trouble in code generation. (like the old FrontEnd ASUB() )
+      // Probably at flatten.
+      case ARRAY() algorithm
+        // Do we want to create SUBSCRIPTED_EXP and go through the ASUB hell of the old FrontEnd?
+        // k = {1,i,2}[j];
+        if is_scalar_const then
+           index := Subscript.toInteger(sub);
+           texp := listGet(exp.elements, index);
+        else
+          texp := SUBSCRIPTED_EXP(exp, {Subscript.toExp(sub)}, Type.unliftArray(exp.ty));
+          // Error.assertion(false, getInstanceName() + " failed on " + Subscript.toString(sub), sourceInfo());
+          // fail();
+        end if;
+      then texp;
 
-      case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(array.exp, listAppend(array.subscripts, {INTEGER(index)}), Type.unliftArray(array.ty));
+      case SUBSCRIPTED_EXP() algorithm
+        texp := SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts,{Subscript.toExp(sub)}), Type.unliftArray(exp.ty));
+      then texp;
 
-      else SUBSCRIPTED_EXP(array, {INTEGER(index)}, Type.unliftArray(typeOf(array)));
+      else algorithm
+        texp := SUBSCRIPTED_EXP(exp, {Subscript.toExp(sub)}, Type.unliftArray(exp_ty));
+      then texp;
+
     end match;
-  end arrayElement;
+  end applySubscript;
 
   function arrayFromList
     input list<Expression> inExps;
@@ -694,6 +725,7 @@ public
       case INTEGER() then exp.value;
       case BOOLEAN() then if exp.value then 1 else 0;
       case ENUM_LITERAL() then exp.index;
+      else fail();
     end match;
   end toInteger;
 
@@ -1100,7 +1132,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, call.matchingFuncs, args, listReverse(nargs));
+          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
       case Call.ARG_TYPED_CALL()
         algorithm
@@ -1119,7 +1151,7 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
+          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
       case Call.TYPED_CALL()
         algorithm
@@ -1131,13 +1163,13 @@ public
         algorithm
           e := map(call.exp, func);
         then
-          Call.UNTYPED_MAP_CALL(call.ref, e, call.iters);
+          Call.UNTYPED_MAP_CALL(e, call.iters);
 
       case Call.TYPED_MAP_CALL()
         algorithm
           e := map(call.exp, func);
         then
-          Call.TYPED_MAP_CALL(call.fn, call.ty, e, call.iters);
+          Call.TYPED_MAP_CALL(call.ty, call.var, e, call.iters);
 
     end match;
   end mapCall;
@@ -1380,7 +1412,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, call.matchingFuncs, args, listReverse(nargs));
+          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
       case Call.ARG_TYPED_CALL()
         algorithm
@@ -1399,7 +1431,7 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
+          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
       case Call.TYPED_CALL()
         algorithm
@@ -1411,13 +1443,13 @@ public
         algorithm
           e := func(call.exp);
         then
-          Call.UNTYPED_MAP_CALL(call.ref, e, call.iters);
+          Call.UNTYPED_MAP_CALL(e, call.iters);
 
       case Call.TYPED_MAP_CALL()
         algorithm
           e := func(call.exp);
         then
-          Call.TYPED_MAP_CALL(call.fn, call.ty, e, call.iters);
+          Call.TYPED_MAP_CALL(call.ty, call.var, e, call.iters);
 
     end match;
   end mapCallShallow;
@@ -1855,7 +1887,7 @@ public
             nargs := (s, e) :: nargs;
           end for;
         then
-          Call.UNTYPED_CALL(call.ref, call.matchingFuncs, args, listReverse(nargs));
+          Call.UNTYPED_CALL(call.ref, args, listReverse(nargs), call.call_scope);
 
       case Call.ARG_TYPED_CALL()
         algorithm
@@ -1874,7 +1906,7 @@ public
             tnargs := (s, e, t, v) :: tnargs;
           end for;
         then
-          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs));
+          Call.ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
 
       case Call.TYPED_CALL()
         algorithm
@@ -1886,13 +1918,13 @@ public
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.UNTYPED_MAP_CALL(call.ref, e, call.iters);
+          Call.UNTYPED_MAP_CALL(e, call.iters);
 
       case Call.TYPED_MAP_CALL()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.TYPED_MAP_CALL(call.fn, call.ty, e, call.iters);
+          Call.TYPED_MAP_CALL(call.ty, call.var, e, call.iters);
 
     end match;
   end mapFoldCall;

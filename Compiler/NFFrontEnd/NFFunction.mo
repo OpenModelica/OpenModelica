@@ -37,8 +37,10 @@ import Pointer;
 import NFInstNode.InstNode;
 import Type = NFType;
 import NFPrefixes.*;
+import List;
 
 protected
+import ErrorExt;
 import Inst = NFInst;
 import Binding = NFBinding;
 import Config;
@@ -63,6 +65,8 @@ import NFTyping.ClassScope;
 import MatchKind = NFTypeCheck.MatchKind;
 import Restriction = NFRestriction;
 import NFTyping.ExpOrigin;
+import Dimension = NFDimension;
+
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -110,10 +114,7 @@ end Slot;
 public
 encapsulated
 uniontype FunctionMatchKind
-  import NFFunction.Function;
-  import NFFunction.TypedArg;
-
-  type MatchedFunction = tuple<Function,list<TypedArg>,FunctionMatchKind>;
+  import Dimension = NFDimension;
 
   record EXACT "Exact match." end EXACT;
 
@@ -123,31 +124,44 @@ uniontype FunctionMatchKind
   end GENERIC;
 
   record VECTORIZED "Matched by vectorization"
+    list<Dimension> vect_dims;
+    // When vectorizing a call exact argument matches are allowed to not be vectorized
+    // Instead they are added to each call as is.
+    // This list represents which args should be vectorized.
+    list<Boolean> is_vectorized;
   end VECTORIZED;
 
   record NOT_COMPATIBLE end NOT_COMPATIBLE;
 
-  function getExactMatches
-    input list<MatchedFunction> matchedFunctions;
-    output list<MatchedFunction> outFuncs = {};
-  algorithm
-    for mf in matchedFunctions loop
-      if isExactMatch(mf) then
-        outFuncs := mf::outFuncs;
-      end if;
-    end for;
-    outFuncs := listReverse(outFuncs);
-  end getExactMatches;
-
-  function isExactMatch
-    input MatchedFunction mf;
+  function isValid
+    input FunctionMatchKind mk;
     output Boolean b;
   algorithm
-    b := match mf
-      case (_,_,EXACT_MATCH) then true;
+    b := match mk
+      case NOT_COMPATIBLE() then false;
+      else true;
+    end match;
+  end isValid;
+
+  function isExact
+    input FunctionMatchKind mk;
+    output Boolean b;
+  algorithm
+    b := match mk
+      case EXACT() then true;
       else false;
     end match;
-  end isExactMatch;
+  end isExact;
+
+  function isVectorized
+    input FunctionMatchKind mk;
+    output Boolean b;
+  algorithm
+    b := match mk
+      case VECTORIZED() then true;
+      else false;
+    end match;
+  end isVectorized;
 
 end FunctionMatchKind;
 
@@ -155,6 +169,30 @@ constant FunctionMatchKind EXACT_MATCH = FunctionMatchKind.EXACT();
 constant FunctionMatchKind CAST_MATCH = FunctionMatchKind.CAST();
 constant FunctionMatchKind GENERIC_MATCH = FunctionMatchKind.GENERIC();
 constant FunctionMatchKind NO_MATCH = FunctionMatchKind.NOT_COMPATIBLE();
+
+encapsulated
+uniontype MatchedFunction
+  import NFFunction.Function;
+  import NFFunction.TypedArg;
+  import NFFunction.FunctionMatchKind;
+
+  record MATCHED_FUNC
+    Function func;
+    list<TypedArg> args;
+    FunctionMatchKind mk;
+  end MATCHED_FUNC;
+
+  function getExactMatches
+    input list<MatchedFunction> matchedFunctions;
+    output list<MatchedFunction> outFuncs = list(mf for mf guard(FunctionMatchKind.isExact(mf.mk)) in matchedFunctions);
+  end getExactMatches;
+
+  function isVectorized
+    input MatchedFunction mf;
+    output Boolean b = FunctionMatchKind.isVectorized(mf.mk);
+  end isVectorized;
+
+end MatchedFunction;
 
 uniontype Function
 
@@ -187,6 +225,22 @@ uniontype Function
     collected := Pointer.create(isBuiltinAttr(attr));
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
   end new;
+
+  function lookupFunctionSilent
+    input Absyn.ComponentRef ab_fn_cref;
+    input InstNode scope;
+    input SourceInfo info = InstNode.info(scope);
+    output ComponentRef fn_ref;
+  algorithm
+    ErrorExt.setCheckpoint("NFFunction:lookupFunctionSilent");
+    try
+      fn_ref := lookupFunction(ab_fn_cref, scope, info);
+      ErrorExt.delCheckpoint("NFFunction:lookupFunctionSilent");
+    else
+      ErrorExt.rollBack("NFFunction:lookupFunctionSilent");
+      fail();
+    end try;
+  end lookupFunctionSilent;
 
   function lookupFunction
     input Absyn.ComponentRef functionName;
@@ -396,7 +450,6 @@ uniontype Function
     "Constructs a signature string for a function, e.g. Real func(Real x, Real y)"
     input Function fn;
     input Boolean printTypes = true;
-    input Option<Absyn.Path> display_name;
     output String str;
   protected
     Absyn.Path fn_name;
@@ -441,7 +494,8 @@ uniontype Function
 
     input_str := stringDelimitList(listReverse(inputs_strl), ", ");
     output_str := if printTypes and isTyped(fn) then " => " + Type.toString(fn.returnType) else "";
-    fn_name := if isSome(display_name) then Util.getOption(display_name) else fn.path;
+    fn_name := nameConsiderBuiltin(fn);
+    // if isSome(display_name) then Util.getOption(display_name) else fn.path;
     str := Absyn.pathString(fn_name) + "(" + input_str + ")" + output_str;
   end signatureString;
 
@@ -553,7 +607,7 @@ uniontype Function
       end if;
     end for;
 
-    (args, matching) := collectArgsNew(slots_arr, info);
+    (args, matching) := collectArgs(slots_arr, info);
   end fillNamedArgs;
 
   function fillNamedArg
@@ -608,14 +662,15 @@ uniontype Function
           {argName, ""}, info);
         return;
       end if;
+
+      // No slot could be found, so it doesn't exist.
+      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+        {InstNode.name(instance(fn)), argName}, info);
     end for;
 
-    // No slot could be found, so it doesn't exist.
-    Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
-      {InstNode.name(instance(fn)), argName}, info);
   end fillNamedArg;
 
-  function collectArgsNew
+  function collectArgs
     "Collects the arguments from the given slots."
     input array<Slot> slots;
     input SourceInfo info;
@@ -645,7 +700,105 @@ uniontype Function
     end for;
 
     args := listReverse(args);
-  end collectArgsNew;
+  end collectArgs;
+
+  function matchArgsVectorize
+    input Function func;
+    input output list<TypedArg> args;
+    input SourceInfo info;
+          output Boolean correct;
+          output FunctionMatchKind funcMatchKind = EXACT_MATCH;
+  protected
+    Component comp;
+    InstNode inputnode;
+    list<InstNode> inputs;
+    Expression argexp, margexp;
+    Type argty, compty, tmpty, mty;
+    Variability var;
+    list<TypedArg> checked_args;
+    Integer idx;
+    TypeCheck.MatchKind matchKind;
+    list<Dimension> argdims, compdims, vectdims, tmpdims, outvectdims;
+    Boolean has_cast;
+    list<Boolean> vectorized;
+  algorithm
+
+    checked_args := {};
+    idx := 1;
+    inputs := func.inputs;
+    outvectdims := {};
+    vectorized := {};
+    has_cast := false;
+
+    for arg in args loop
+      (argexp,argty,var) := arg;
+      inputnode :: inputs := inputs;
+      comp := InstNode.component(inputnode);
+      compty := Component.getType(comp);
+      compdims := Type.arrayDims(compty);
+      argdims := Type.arrayDims(argty);
+
+      correct := false;
+      if listLength(argdims) == listLength(compdims) then
+        // We have unvectorized match. Keep it.
+        (margexp, mty, matchKind) := TypeCheck.matchTypes(argty, compty, argexp, false);
+        correct := TypeCheck.isValidArgumentMatch(matchKind);
+        vectorized := false::vectorized;
+
+      elseif listLength(argdims) > listLength(compdims) then
+        // Try vectorized matching since  we have more dims in the actual argument.
+        (vectdims, tmpdims) := List.split(argdims, listLength(argdims)-listLength(compdims));
+
+        // make sure the vectorization dims are consistent.
+        if listEmpty(outvectdims) then
+          outvectdims := vectdims;
+        elseif not Dimension.allEqualKnown(outvectdims, vectdims) then
+          // TODO: proper error message
+          Error.assertion(false, getInstanceName() + " vect dims not equal: " + Dimension.toStringList(outvectdims)
+            + " vs " + Dimension.toStringList(vectdims), sourceInfo());
+        end if;
+
+        tmpty := Type.arrayElementType(argty);
+        if not listEmpty(tmpdims) then
+          tmpty := Type.ARRAY(tmpty, tmpdims);
+        end if;
+
+        (margexp, mty, matchKind) := TypeCheck.matchTypes(tmpty, compty, argexp, false);
+        // Allow only exact matches for vectorization.
+        // No casting, generic... matches alllowed (which are allowed for non-vected function matching)
+        correct := TypeCheck.isExactMatch(matchKind);
+        vectorized := true::vectorized;
+      end if;
+
+      // Type mismatch, print an error.
+      if not correct then
+        Error.addSourceMessage(Error.ARG_TYPE_MISMATCH, {
+          intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
+          Type.toString(argty), Type.toString(compty)
+        }, info);
+        funcMatchKind := NO_MATCH;
+        return;
+      end if;
+
+      // Variability mismatch, print an error.
+      if var > Component.variability(comp) then
+        correct := false;
+        Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
+          InstNode.name(inputnode), Expression.toString(argexp),
+          Prefixes.variabilityString(Component.variability(comp))
+        }, info);
+        funcMatchKind := NO_MATCH;
+        return;
+      end if;
+
+      checked_args := (margexp,mty,var) :: checked_args;
+      idx := idx + 1;
+    end for;
+
+    correct := true;
+    args := listReverse(checked_args);
+    funcMatchKind := VECTORIZED(vectdims, listReverse(vectorized));
+  end matchArgsVectorize;
 
   function matchArgs
     input Function func;
@@ -676,6 +829,8 @@ uniontype Function
 
       (margexp, mty, matchKind) := TypeCheck.matchTypes(ty, Component.getType(comp), argexp, allowUnknown = true);
       correct := TypeCheck.isValidArgumentMatch(matchKind);
+      // TODO: This should be a running reduction of the matches. Not just based on the
+      // last match.
       if TypeCheck.isCastMatch(matchKind) then
         funcMatchKind := CAST_MATCH;
       elseif TypeCheck.isGenericMatch(matchKind) then
@@ -688,6 +843,7 @@ uniontype Function
           intString(idx), Absyn.pathString(func.path), InstNode.name(inputnode), Expression.toString(argexp),
           Type.toString(ty), Type.toString(Component.getType(comp))
         }, info);
+        funcMatchKind := NO_MATCH;
         return;
       end if;
 
@@ -698,6 +854,7 @@ uniontype Function
           InstNode.name(inputnode), Expression.toString(argexp),
           Prefixes.variabilityString(Component.variability(comp))
         }, info);
+        funcMatchKind := NO_MATCH;
         return;
       end if;
 
@@ -715,12 +872,19 @@ uniontype Function
     input list<TypedNamedArg> named_args;
     input SourceInfo info;
     output list<TypedArg> out_args;
-    output Boolean matched;
-    output FunctionMatchKind matchKind;
+    output FunctionMatchKind matchKind = NO_MATCH;
+  protected
+    Boolean slot_matched, matched;
   algorithm
-    (out_args, matched) := fillArgs(args, named_args, func, info);
-    if matched then
+    (out_args, slot_matched) := fillArgs(args, named_args, func, info);
+    if slot_matched then
       (out_args, matched, matchKind) := matchArgs(func, out_args, info);
+
+      // If we failed to match a function normally then we try to see if
+      // we can have a vectorized match.
+      if not matched then
+        (out_args, matched, matchKind) := matchArgsVectorize(func, out_args, info);
+      end if;
     end if;
   end matchFunction;
 
@@ -729,21 +893,34 @@ uniontype Function
     input list<TypedArg> args;
     input list<TypedNamedArg> named_args;
     input SourceInfo info;
-    output list<FunctionMatchKind.MatchedFunction> matchedFunctions;
+    output list<MatchedFunction> matchedFunctions;
   protected
-    list<TypedArg> out_args;
+    list<TypedArg> m_args;
     FunctionMatchKind matchKind;
     Boolean matched;
   algorithm
     matchedFunctions := {};
     for func in funcs loop
-      (out_args, matched, matchKind) := matchFunction(func, args, named_args, info);
+      (m_args, matchKind) := matchFunction(func, args, named_args, info);
 
-      if matched then
-        matchedFunctions := (func,out_args,matchKind)::matchedFunctions;
+      if FunctionMatchKind.isValid(matchKind) then
+        matchedFunctions := MatchedFunction.MATCHED_FUNC(func,m_args,matchKind)::matchedFunctions;
       end if;
     end for;
   end matchFunctions;
+
+  function matchFunctionsSilent
+    input list<Function> funcs;
+    input list<TypedArg> args;
+    input list<TypedNamedArg> named_args;
+    input SourceInfo info;
+    output list<MatchedFunction> matchedFunctions;
+  protected
+  algorithm
+    ErrorExt.setCheckpoint("NFFunction:matchFunctions");
+	  matchedFunctions := matchFunctions(funcs, args, named_args, info);
+	  ErrorExt.rollBack("NFFunction:matchFunctions");
+  end matchFunctionsSilent;
 
   function isTyped
     input Function fn;
