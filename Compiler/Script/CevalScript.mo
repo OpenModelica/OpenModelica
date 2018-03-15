@@ -303,59 +303,39 @@ protected function loadFile "load the file or the directory structure if the fil
   input Absyn.Program p;
   input Boolean checkUses;
   output Absyn.Program outProgram;
+protected
+  String dir,filename,cname,prio,mp;
+  list<String> rest;
 algorithm
-  outProgram := matchcontinue (name, encoding, p, checkUses)
-    local
-      String dir,filename,cname,prio,mp;
-      Absyn.Program p1;
-      list<String> rest;
-
-    case (_, _, _, _)
-      equation
-        true = System.regularFileExists(name);
-        (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
-        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
-        prio = stringDelimitList(rest, " ");
-        // send "" priority if that is it, don't send "default"
-        // see https://trac.openmodelica.org/OpenModelica/ticket/2422
-        // prio = if_(stringEq(prio,""), "default", prio);
-        mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
-        (p1,true) = loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, false);
-      then p1;
-
-    case (_, _, _, _)
-      equation
-        true = System.regularFileExists(name);
-        (dir,"package.moc") = Util.getAbsoluteDirectoryAndFile(name);
-        cname::rest = System.strtok(List.last(System.strtok(dir,"/"))," ");
-        prio = stringDelimitList(rest, " ");
-        // send "" priority if that is it, don't send "default"
-        // see https://trac.openmodelica.org/OpenModelica/ticket/2422
-        // prio = if_(stringEq(prio,""), "default", prio);
-        mp = System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
-        (p1,true) = loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, true);
-      then p1;
-
-    case (_, _, _, _)
-      equation
-        true = System.regularFileExists(name);
-        (_,filename) = Util.getAbsoluteDirectoryAndFile(name);
-        false = stringEq(filename,"package.mo");
-        p1 = Parser.parse(name,encoding);
-        ClassLoader.checkOnLoadMessage(p1);
-        p1 = Interactive.updateProgram(p1, p);
-      then p1;
-
-    // failing
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("ClassLoader.loadFile failed: "+name+"\n");
-      then
-        fail();
-  end matchcontinue;
+  true := System.regularFileExists(name);
+  (dir,filename) := Util.getAbsoluteDirectoryAndFile(name);
+  if filename == "package.mo" or filename == "package.moc" then
+    cname::rest := System.strtok(List.last(System.strtok(dir,"/"))," ");
+    prio := stringDelimitList(rest, " ");
+    // send "" priority if that is it, don't send "default"
+    // see https://trac.openmodelica.org/OpenModelica/ticket/2422
+    // prio = if_(stringEq(prio,""), "default", prio);
+    mp := System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
+    (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, false);
+    return;
+  end if;
+  outProgram := Parser.parse(name,encoding);
+  ClassLoader.checkOnLoadMessage(outProgram);
+  outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Config.getRunningTestsuite()));
 end loadFile;
 
+protected function checkUsesAndUpdateProgram
+  input Absyn.Program newp;
+  input output Absyn.Program p;
+  input Boolean checkUses;
+  input String modelicaPath;
+protected
+  list<tuple<Absyn.Path,list<String>,Boolean>> modelsToLoad;
+algorithm
+  modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion=true) else {};
+  p := Interactive.updateProgram(newp, p);
+  (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, true, true, true, false);
+end checkUsesAndUpdateProgram;
 
 protected type LoadModelFoldArg =
   tuple<String /*modelicaPath*/, Boolean /*forceLoad*/, Boolean /*notifyLoad*/, Boolean /*checkUses*/, Boolean /*requireExactVersion*/, Boolean /*encrypted*/>;
@@ -1374,7 +1354,7 @@ algorithm
       equation
         strs = List.mapMap(vals,ValuesUtil.extractValueString,Util.testsuiteFriendlyPath);
         newps = Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
-        newp = List.fold(newps, function Interactive.updateProgram(mergeAST = false), SymbolTable.getAbsyn());
+        newp = List.fold(newps, function checkUsesAndUpdateProgram(checkUses=false, modelicaPath=Settings.getModelicaPath(Config.getRunningTestsuite())), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(newp);
       then
         (FCore.emptyCache(),Values.BOOL(true));
@@ -1389,31 +1369,31 @@ algorithm
         b = false;
         if (System.regularFileExists(filename)) then
           if (Util.endsWith(filename, ".mol")) then
-	          workdir = if System.directoryExists(workdir) then workdir else System.pwd();
-	          b = false;
-	          if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
-	            b = true;
-	            s1 = System.basename(filename);
-	            s2 = Util.removeLast4Char(s1);
-	            s3 = System.dirname(filename);
-	            filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
-	            filename2 = s3 + "/" + s2 + "/package.moc";
-	            filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
-	            if (System.regularFileExists(filename_1)) then
-	              filename_1 = Util.testsuiteFriendlyPath(filename_1);
-	              p = SymbolTable.getAbsyn();
-	              newp = loadFile(filename_1, "UTF-8", p, true);
-	              execStat("loadFile("+filename_1+")");
-	              SymbolTable.setAbsyn(newp);
-	            else
-	              Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
-	            end if;
-	          else
-	            Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
-	          end if;
-	        else
-	          Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
-	        end if;
+            workdir = if System.directoryExists(workdir) then workdir else System.pwd();
+            b = false;
+            if (0 == System.systemCall("unzip -q -o -d \"" + workdir + "\" \"" +  filename + "\"")) then
+              b = true;
+              s1 = System.basename(filename);
+              s2 = Util.removeLast4Char(s1);
+              s3 = System.dirname(filename);
+              filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
+              filename2 = s3 + "/" + s2 + "/package.moc";
+              filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
+              if (System.regularFileExists(filename_1)) then
+                filename_1 = Util.testsuiteFriendlyPath(filename_1);
+                p = SymbolTable.getAbsyn();
+                newp = loadFile(filename_1, "UTF-8", p, true);
+                execStat("loadFile("+filename_1+")");
+                SymbolTable.setAbsyn(newp);
+              else
+                Error.addMessage(Error.ENCRYPTED_FILE_NOT_FOUND_ERROR, {filename1, filename2});
+              end if;
+            else
+              Error.addMessage(Error.UNABLE_TO_UNZIP_FILE, {filename});
+            end if;
+          else
+            Error.addMessage(Error.EXPECTED_ENCRYPTED_PACKAGE, {filename});
+          end if;
         else
           Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
         end if;
