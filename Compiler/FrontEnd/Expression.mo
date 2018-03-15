@@ -7931,13 +7931,15 @@ algorithm
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
 
-    case (DAE.ICONST()) then true;
-    case (DAE.RCONST()) then true;
-    case (DAE.BCONST()) then true;
-    case (DAE.SCONST()) then true;
-    case (DAE.ENUM_LITERAL()) then true;
-    case (DAE.ARRAY(array = ae)) then isConstValueWorkList(ae);
-    case (DAE.MATRIX(matrix = matrix)) then isConstValueWorkListList(matrix);
+    case DAE.ICONST() then true;
+    case DAE.RCONST() then true;
+    case DAE.BCONST() then true;
+    case DAE.SCONST() then true;
+    case DAE.ENUM_LITERAL() then true;
+    case DAE.ARRAY(array = ae) then isConstValueWorkList(ae);
+    case DAE.MATRIX(matrix = matrix) then isConstValueWorkListList(matrix);
+    case DAE.RECORD() then true;
+    case DAE.METARECORDCALL() then true;
     else false;
 
   end match;

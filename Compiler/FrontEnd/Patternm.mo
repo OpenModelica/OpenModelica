@@ -782,6 +782,7 @@ algorithm
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
         (elabMatchTy, elabCases) = optimizeMatchToSwitch(matchTy,elabCases,info);
+        checkConstantMatchInputs(elabExps, info);
         exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
       then (cache,exp,prop);
     else
@@ -792,6 +793,17 @@ algorithm
       then fail();
   end matchcontinue;
 end elabMatchExpression;
+
+protected function checkConstantMatchInputs
+  input list<DAE.Exp> inputs;
+  input SourceInfo info;
+algorithm
+  for i in inputs loop
+    if Expression.isConstValue(i) then
+      Error.addSourceMessage(Error.META_MATCH_CONSTANT, {ExpressionDump.printExpStr(i)}, info);
+    end if;
+  end for;
+end checkConstantMatchInputs;
 
 protected function optimizeMatchToSwitch
   "match str case 'str1' ... case 'str2' case 'str3' => switch hash(str)...
