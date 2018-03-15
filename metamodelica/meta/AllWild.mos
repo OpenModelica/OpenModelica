@@ -16,7 +16,7 @@ getErrorString();
 //       Real r1, r2, r3, r4, r5;
 //     end REC;
 //   end Union;
-// 
+//
 //   function fn
 //     output Real r;
 //   algorithm
@@ -24,20 +24,21 @@ getErrorString();
 //       case REC(__) then 6.0;
 //     end match;
 //   end fn;
-// 
+//
 //   constant Real r = fn();
 // end AllWild;"
 // "function AllWild.fn
 //   output Real r;
 // algorithm
 //   r := match (AllWild.Union.REC(#(1.0), #(2.0), #(3.0), #(4.0), #(5.0)))
-//     case (AllWild.Union.REC(_, _, _, _, _)) then 6.0;
-//   end match;
+//       case (AllWild.Union.REC(_, _, _, _, _)) then 6.0;
+//     end match;
 // end AllWild.fn;
-// 
+//
 // class AllWild
 //   constant Real r = 6.0;
 // end AllWild;
 // "
-// ""
+// "[metamodelica/meta/AllWild.mo:10:5-10:63:writable] Notification: Match input AllWild.Union.REC(#(1.0), #(2.0), #(3.0), #(4.0), #(5.0)) is a constant value.
+// "
 // endResult

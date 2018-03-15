@@ -23,13 +23,16 @@ MatchDotNotation.error5(0);getErrorString();
 // true
 // ""
 // 2.0
-// ""
+// "[metamodelica/meta/MatchDotNotation.mo:19:3-26:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(rx)) is a constant value.
+// "
 // 4.0
-// ""
+// "[metamodelica/meta/MatchDotNotation.mo:33:3-40:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(r)) is a constant value.
+// "
 // 6.0
 // ""
 // 8.0
-// ""
+// "[metamodelica/meta/MatchDotNotation.mo:59:3-61:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(r)) is a constant value.
+// "
 //
 // "[metamodelica/meta/MatchDotNotation.mo:74:9-74:24:writable] Error: Type mismatch in pattern x as REAL()
 // expression type:
@@ -38,7 +41,8 @@ MatchDotNotation.error5(0);getErrorString();
 //   MatchDotNotation.Union.REAL
 // "
 // fail()
-// ""
+// "[metamodelica/meta/MatchDotNotation.mo:83:3-90:12:writable] Notification: Match input MatchDotNotation.Union.REAL(#(r)) is a constant value.
+// "
 //
 // "[metamodelica/meta/MatchDotNotation.mo:102:9-102:24:writable] Error: Type mismatch in pattern x as _
 // expression type:
