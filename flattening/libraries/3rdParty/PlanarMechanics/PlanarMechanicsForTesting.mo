@@ -3741,8 +3741,8 @@ package PlanarMechanicsForTesting
               lineColor={0,0,0})}));
     end AbsoluteRotation;
   end Sensors;
-  annotation (uses(                         Visualization(version="1.1"),
-        Modelica(version="3.2")), Documentation(revisions="<html>
+  annotation (uses(
+        Modelica(version="3.1" /* Was 3.2 */)), Documentation(revisions="<html>
 <p>(c) Copyright by Dirk Zimmer</p>
 <p>The library was creates and is owned by Dr. Dirk Zimmer. </p>
 <p>dirk.zimmer@dlr.de</p>

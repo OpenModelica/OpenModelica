@@ -845,7 +845,7 @@ package TestModels
       end NandGate;
     end SystemTests;
   end AnalogModels;
-annotation(uses(Modelica(version="2.2")));
+annotation(uses(Modelica(version="2.2.2")));
 package Professional
   model WeakAxis
   annotation(Diagram(coordinateSystem(extent={{-148.5,-105},{148.5,105}})), Icon(coordinateSystem(extent={{-100,-100},{100,100}}), graphics={Rectangle(visible=true, fillColor={143,143,143}, fillPattern=FillPattern.HorizontalCylinder, extent={{-100,-25},{100,25}}),Text(visible=true, fillPattern=FillPattern.Solid, extent={{-100,-150},{100,-110}}, textString="%name")}));

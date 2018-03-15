@@ -125,5 +125,5 @@ connect(boxBody28.frame_b, revolute29.frame_a);
 connect(revolute29.frame_b, boxBody29.frame_a);
 connect(boxBody29.frame_b, revolute30.frame_a);
 connect(revolute30.frame_b, boxBody30.frame_a);
-  annotation (uses(Modelica(version="3.1")));
+  annotation (uses(Modelica(version="3.2.2")));
 end Tearing12;

@@ -401,5 +401,4 @@ package PartEvalFunc
       end if;
     end funcSimplify2b;
   end SimplifyIfBranches;
-  annotation (uses(Modelica(version="3.2")));
 end PartEvalFunc;

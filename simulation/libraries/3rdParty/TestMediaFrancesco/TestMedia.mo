@@ -796,5 +796,5 @@ package TestMedia
         redeclare package Medium = Medium, state=baseProperties.state);
     end CompleteBaseProperties_pTX;
   end CompleteModels;
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="3.2.1")));
 end TestMedia;

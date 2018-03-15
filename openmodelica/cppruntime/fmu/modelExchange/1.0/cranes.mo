@@ -170,6 +170,4 @@ package cranes
     annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{
               -100,-100},{100,100}}), graphics));
   end crane_input;
-  annotation (uses(Modelica(version="3.2.2"), Modelica_DeviceDrivers(version=
-            "1.2")));
 end cranes;

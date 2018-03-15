@@ -32,8 +32,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
-// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 89
 //  * Number of variables: 89
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").

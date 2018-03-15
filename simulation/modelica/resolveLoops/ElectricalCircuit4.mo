@@ -154,6 +154,5 @@ equation
       smooth=Smooth.None));
   annotation(experiment(StartTime = 0.0, StopTime = 2000.0, Tolerance = 0.000001),
     Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{
-            100,100}}), graphics),
-    uses(Modelica(version="3.2")));
+            100,100}}), graphics));
 end ElectricalCircuit4;

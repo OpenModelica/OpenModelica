@@ -3691,8 +3691,8 @@ package PlanarMechanicsStandard
 <p>dirk.zimmer@dlr.de</p>
 </html>"));
   end Examples;
-  annotation (uses(                         Visualization(version="1.1"),
-        Modelica(version="3.2")), Documentation(revisions="<html>
+  annotation (uses(
+        Modelica(version="3.2.1")), Documentation(revisions="<html>
 </html>", info="<html>
 <p>
 <b>Licensed by tDirk Zimmer under the Modelica License 2</b><br>

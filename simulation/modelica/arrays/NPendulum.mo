@@ -46,7 +46,7 @@ equation
       color={95,95,95},
       thickness=0.5,
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+  annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
     experiment(StopTime=10));
 end NPendulum;

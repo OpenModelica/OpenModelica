@@ -3,16 +3,16 @@
 // provided by Martin Otter
 //
 
-loadModel(Modelica, {"3.2"}); getErrorString();
 loadFile("2/Aufgabe2.mo"); getErrorString();
 
 simulate(Aufgabe2.Test1); getErrorString();
 
 // Result:
 // true
-// ""
-// true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // record SimulationResult
 //     resultFile = "Aufgabe2.Test1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Aufgabe2.Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

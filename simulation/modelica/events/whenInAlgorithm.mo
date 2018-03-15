@@ -18,5 +18,5 @@ equation
   if x>0.5 then b = true;
   else b = false;
   end if;
-  annotation (uses(Modelica(version="3.2.1")));
+  annotation(uses(Modelica(version="3.2.2")));
 end whenInAlgorithm;

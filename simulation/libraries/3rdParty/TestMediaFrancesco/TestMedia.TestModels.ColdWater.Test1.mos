@@ -3,11 +3,10 @@
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.ColdWater.Test1.* TestMedia.TestModels.ColdWater.Test1_* TestMedia.TestModels.ColdWater.Test1 TestMedia.TestModels.ColdWater.Test1.exe TestMedia.TestModels.ColdWater.Test1.cpp TestMedia.TestModels.ColdWater.Test1.makefile TestMedia.TestModels.ColdWater.Test1.libs TestMedia.TestModels.ColdWater.Test1.log TestMedia.TestModels.ColdWater.Test1.c TestMedia.TestModels.ColdWater.Test1.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
 loadFile("TestMedia.mo"); getErrorString();
 
 
@@ -19,9 +18,10 @@ res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.Col
 
 // Result:
 // true
-// ""
-// true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.ColdWater.Test1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.ColdWater.Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

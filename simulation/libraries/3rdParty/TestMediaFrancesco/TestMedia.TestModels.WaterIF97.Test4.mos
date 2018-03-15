@@ -3,29 +3,32 @@
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.WaterIF97.Test4.* TestMedia.TestModels.WaterIF97.Test4_* TestMedia.TestModels.WaterIF97.Test4 TestMedia.TestModels.WaterIF97.Test4.exe TestMedia.TestModels.WaterIF97.Test4.cpp TestMedia.TestModels.WaterIF97.Test4.makefile TestMedia.TestModels.WaterIF97.Test4.libs TestMedia.TestModels.WaterIF97.Test4.log TestMedia.TestModels.WaterIF97.Test4.c TestMedia.TestModels.WaterIF97.Test4.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+setCommandLineOptions("--std=3.1");
 loadFile("TestMedia.mo"); getErrorString();
-
 
 simulate(TestMedia.TestModels.WaterIF97.Test4, numberOfIntervals=200, stopTime=1.0); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.WaterIF97.Test4_res.mat",
   "ReferenceFiles/WaterIF97/WaterIF97_Test4_ref.mat","TestMedia.TestModels.WaterIF97.Test4_diff.csv",0.01,0.013,
   {"state1.T","state1.d","state2.h","state2.d","Ts","ps","sat1.Tsat","sat2.psat"});
-  
+
 // Result:
 // true
-// ""
 // true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.WaterIF97.Test4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test4', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {"Files Equal!"}

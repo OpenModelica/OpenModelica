@@ -260,5 +260,5 @@ package FourBar
       experiment(StopTime=5),
       experimentSetupOutput);
   end TestPlanarLoops;
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="3.2.2")));
 end FourBar;

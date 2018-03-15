@@ -68,5 +68,5 @@ equation
       points={{12,14},{-12,14},{-12,-6}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(graphics));
+  annotation (uses(Modelica(version="3.2.2")), Diagram(graphics));
 end Tearing10;

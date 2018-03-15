@@ -63,6 +63,6 @@ equation
       points={{-40,70},{-60,70}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+  annotation (Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end ElectricalCircuit3;

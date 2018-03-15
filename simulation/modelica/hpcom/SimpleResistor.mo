@@ -21,6 +21,4 @@ equation
       points={{42,16},{42,50},{20,50}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
-          preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end SimpleResistor;

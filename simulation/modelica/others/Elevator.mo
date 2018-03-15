@@ -186,5 +186,4 @@ Both inertia and gravitional force is modelled.
 </p>
 </html>"));
   end MassGravitation;
-  annotation (uses(Modelica(version="3.2.1")));
 end Elevator;

@@ -3,7 +3,6 @@
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml JuliansBib_Connector_Hebelarm_einfach.fmu JuliansBib_Connector_Hebelarm_einfach_* JuliansBib_Connector_Hebelarm_einfach_* JuliansBib_Connector_Hebelarm_einfach.libs JuliansBib_Connector_Hebelarm_einfach.lib JuliansBib_Connector_Hebelarm_einfach JuliansBib_Connector_Hebelarm_einfach.exe JuliansBib_Connector_Hebelarm_einfach.so JuliansBib_Connector_Hebelarm_einfach.dll JuliansBib_Connector_Hebelarm_einfach.c JuliansBib_Connector_Hebelarm_einfach.makefile JuliansBib.Connector_Hebelarm_einfach_*
 
-loadModel(Modelica); getErrorString();
 loadFile("PlanarMechanicsStandard.mo"); getErrorString();
 loadFile("JuliansBib.mo"); getErrorString();
 
@@ -34,9 +33,10 @@ val(s, 1);
 
 // Result:
 // true
-// ""
-// true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // true
 // ""
 // record SimulationResult

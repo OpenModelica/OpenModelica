@@ -50,7 +50,5 @@ equation
   when sample(0.8, 1.5) then
     b2 = 1.5*time;
   end when;
-  annotation (uses(Modelica(version="3.2.1")),
-    experiment(StopTime=5),
-    __Dymola_experimentSetupOutput);
+  annotation (experiment(StopTime=5));
 end boolSubClocks;

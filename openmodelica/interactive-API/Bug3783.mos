@@ -20,8 +20,6 @@ list(Bug3783); getErrorString();
 //   replaceable package liquid = Modelica.Media.Water.StandardWater;
 //   Modelica.Fluid.Sources.FixedBoundary boundary(redeclare package Medium = liquid, p = 100) annotation(
 //     Placement(visible = true, transformation(origin = {-26, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-//   annotation(
-//     uses(Modelica(version = \"3.2.1\")));
 // end Bug3783;"
 // ""
 // "remove modifiers except redeclares"
@@ -31,8 +29,6 @@ list(Bug3783); getErrorString();
 //   replaceable package liquid = Modelica.Media.Water.StandardWater;
 //   Modelica.Fluid.Sources.FixedBoundary boundary(redeclare package Medium = liquid) annotation(
 //     Placement(visible = true, transformation(origin = {-26, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-//   annotation(
-//     uses(Modelica(version = \"3.2.1\")));
 // end Bug3783;"
 // ""
 // Ok
@@ -45,8 +41,6 @@ list(Bug3783); getErrorString();
 //   replaceable package liquid = Modelica.Media.Water.StandardWater;
 //   Modelica.Fluid.Sources.FixedBoundary boundary(redeclare package Medium = liquid, p = 10e5) annotation(
 //     Placement(visible = true, transformation(origin = {-26, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-//   annotation(
-//     uses(Modelica(version = \"3.2.1\")));
 // end Bug3783;"
 // ""
 // endResult

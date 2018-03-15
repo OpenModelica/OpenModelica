@@ -176,6 +176,6 @@ equation
       points={{-40,-26},{-62,-26},{-62,10.2981},{-83.106,10.2981}},
       color={0,0,255},
       smooth=Smooth.None));
-  annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+  annotation (Diagram(coordinateSystem(
           preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
 end ElectricalCircuit6;

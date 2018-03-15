@@ -19,5 +19,4 @@ equation
   g = 5+f-time;
   h = 6*sin(g)*c;
   der(i) = h;
-  annotation (uses(Modelica(version="3.2")));
 end MergingExample;

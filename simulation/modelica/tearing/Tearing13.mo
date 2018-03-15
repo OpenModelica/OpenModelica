@@ -47,5 +47,4 @@ package Tearing13
     w :=k*sqrt(rho)*dp/(dp^2+dp_small^2)^0.25;
   end g;
 
-  annotation(uses(Modelica(version="3.1")));
 end Tearing13;

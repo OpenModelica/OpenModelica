@@ -30,8 +30,7 @@ val(R1.v,0.2); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
-// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 54
 //  * Number of variables: 54
 // Notification: Model statistics after passing the back-end for initialization:

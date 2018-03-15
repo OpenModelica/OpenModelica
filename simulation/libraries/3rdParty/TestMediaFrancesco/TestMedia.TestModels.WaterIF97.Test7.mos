@@ -3,30 +3,33 @@
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.WaterIF97.Test7.* TestMedia.TestModels.WaterIF97.Test7_* TestMedia.TestModels.WaterIF97.Test7 TestMedia.TestModels.WaterIF97.Test7.exe TestMedia.TestModels.WaterIF97.Test7.cpp TestMedia.TestModels.WaterIF97.Test7.makefile TestMedia.TestModels.WaterIF97.Test7.libs TestMedia.TestModels.WaterIF97.Test7.log TestMedia.TestModels.WaterIF97.Test7.c TestMedia.TestModels.WaterIF97.Test7.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+setCommandLineOptions("--std=3.1");
 loadFile("TestMedia.mo"); getErrorString();
-
-
 simulate(TestMedia.TestModels.WaterIF97.Test7, numberOfIntervals=200, stopTime=1.0); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.WaterIF97.Test7_res.mat",
   "ReferenceFiles/WaterIF97/WaterIF97_Test7_ref.mat","TestMedia.TestModels.WaterIF97.Test7_diff.csv",0.01,0.013,
   {"medium1.baseProperties.T","medium1.baseProperties.d","medium2.baseProperties.T","medium2.baseProperties.d"});
-  
+
 // Result:
 // true
-// ""
 // true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.WaterIF97.Test7_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test7', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// ""
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
 // {"Files Equal!"}
 // endResult

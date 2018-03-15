@@ -3,11 +3,10 @@
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.Nitrogen.Test1.* TestMedia.TestModels.Nitrogen.Test1_* TestMedia.TestModels.Nitrogen.Test1 TestMedia.TestModels.Nitrogen.Test1.exe TestMedia.TestModels.Nitrogen.Test1.cpp TestMedia.TestModels.Nitrogen.Test1.makefile TestMedia.TestModels.Nitrogen.Test1.libs TestMedia.TestModels.Nitrogen.Test1.log TestMedia.TestModels.Nitrogen.Test1.c TestMedia.TestModels.Nitrogen.Test1.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
 loadFile("TestMedia.mo"); getErrorString();
 
 
@@ -19,9 +18,10 @@ res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.Nit
 
 // Result:
 // true
-// ""
-// true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.Nitrogen.Test1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.Nitrogen.Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

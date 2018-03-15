@@ -3,8 +3,6 @@
 // status:    correct
 // cflags: 	 +d=backenddaeinfo
 
-
-loadModel(Modelica); getErrorString();
 loadFile("Tearing12.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
@@ -15,9 +13,10 @@ simulate(Tearing12); getErrorString();
 
 // Result:
 // true
-// ""
-// true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.2 due to uses annotation.
+// "
 // true
 // ""
 // true
@@ -31,8 +30,7 @@ simulate(Tearing12); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.1, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
-// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 9901
 //  * Number of variables: 9901
 // Notification: Model statistics after passing the back-end for initialization:

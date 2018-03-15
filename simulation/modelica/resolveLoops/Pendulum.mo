@@ -125,5 +125,4 @@ package Pendulum
             preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
       experiment(StopTime=10));
   end Pendulum3;
-  annotation (uses(Modelica(version="3.2.1")));
 end Pendulum;

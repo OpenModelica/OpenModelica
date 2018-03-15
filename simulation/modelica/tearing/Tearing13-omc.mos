@@ -1,7 +1,7 @@
 // name:      Tearing13-omc
 // keywords:  tearing
 // status:    correct
-// cflags: 	 +d=backenddaeinfo
+// cflags: -d=backenddaeinfo
 
 
 loadModel(Modelica); getErrorString();

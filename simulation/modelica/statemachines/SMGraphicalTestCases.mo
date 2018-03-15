@@ -1088,5 +1088,4 @@ Connector with one output signal of type Integer.
     annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(
           coordinateSystem(preserveAspectRatio=false)));
   end DeepHierarchy;
-  annotation (uses(Modelica(version="3.2.2")));
 end SMGraphicalTestCases;

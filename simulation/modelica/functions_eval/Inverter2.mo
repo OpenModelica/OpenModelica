@@ -62,5 +62,5 @@ equation
 <li><i>March 2009 </i>by Kristin Majetta initially implemented</li>
 </ul>
 </html>"),
-    uses(Modelica(version="3.2")));
+    uses(Modelica(version="3.2.1")));
 end Inverter2;

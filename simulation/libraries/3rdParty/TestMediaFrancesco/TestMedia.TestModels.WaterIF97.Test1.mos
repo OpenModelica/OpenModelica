@@ -3,11 +3,11 @@
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.WaterIF97.Test1.* TestMedia.TestModels.WaterIF97.Test1_* TestMedia.TestModels.WaterIF97.Test1 TestMedia.TestModels.WaterIF97.Test1.exe TestMedia.TestModels.WaterIF97.Test1.cpp TestMedia.TestModels.WaterIF97.Test1.makefile TestMedia.TestModels.WaterIF97.Test1.libs TestMedia.TestModels.WaterIF97.Test1.log TestMedia.TestModels.WaterIF97.Test1.c TestMedia.TestModels.WaterIF97.Test1.o output.log
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica,{"3.1"}); getErrorString();
+setCommandLineOptions("--std=3.1");
 loadFile("TestMedia.mo"); getErrorString();
 
 
@@ -16,12 +16,14 @@ simulate(TestMedia.TestModels.WaterIF97.Test1, numberOfIntervals=200, stopTime=1
 res := OpenModelica.Scripting.compareSimulationResults("TestMedia.TestModels.WaterIF97.Test1_res.mat",
   "ReferenceFiles/WaterIF97/WaterIF97_Test1_ref.mat","TestMedia.TestModels.WaterIF97.Test1_diff.csv",0.01,0.013,
   {"d","T"});
-  
+
 // Result:
 // true
-// ""
 // true
-// ""
+// "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
+// "
 // record SimulationResult
 //     resultFile = "TestMedia.TestModels.WaterIF97.Test1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestMedia.TestModels.WaterIF97.Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

@@ -27,7 +27,6 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum_res.mat",
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
-// "
+// ""
 // {"Files Equal!"}
 // endResult

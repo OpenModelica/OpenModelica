@@ -51,7 +51,7 @@ package JuliansBib
   reinit(Winkelgeschwindigkeit,0);
   end when;
 
-    annotation (uses(Modelica(version="3.2")), Icon(coordinateSystem(
+    annotation (uses(Modelica(version="3.2.1")), Icon(coordinateSystem(
             preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics={
           Ellipse(
             extent={{-60,60},{60,-60}},
@@ -336,7 +336,7 @@ package JuliansBib
         points={{30,0},{10,0},{10,-20},{30,-20}},
         color={0,0,0},
         smooth=Smooth.None));
-    annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+    annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
             preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics));
   end Test_Reibung;
 
@@ -690,7 +690,7 @@ package JuliansBib
         thickness=0.5,
         smooth=Smooth.None));
     annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
-              -100},{100,100}}), graphics), uses(Modelica(version="3.2")),
+              -100},{100,100}}), graphics), uses(Modelica(version="3.2.1")),
       Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,100}}),
           graphics={
           Ellipse(
@@ -1234,7 +1234,7 @@ package JuliansBib
         points={{-20,0},{20,0}},
         color={0,127,0},
         smooth=Smooth.None));
-    annotation (uses(Modelica(version="3.2")), Diagram(coordinateSystem(
+    annotation (uses(Modelica(version="3.2.1")), Diagram(coordinateSystem(
             preserveAspectRatio=false, extent={{-100,-100},{100,100}}),
           graphics));
   end DceMechInConnector;
@@ -1388,7 +1388,7 @@ package JuliansBib
         points={{90,72},{90,72}},
         color={0,0,127},
         smooth=Smooth.None),
-             uses(Modelica(version = "3.2")), Diagram(coordinateSystem(
+             uses(Modelica(version = "3.2.1")), Diagram(coordinateSystem(
             preserveAspectRatio=false, extent={{-100,-100},{100,100}}), graphics),
       Icon(coordinateSystem(preserveAspectRatio=false, extent={{-100,-100},{100,
               100}}), graphics));
@@ -2409,5 +2409,5 @@ package JuliansBib
     annotation (Diagram(coordinateSystem(preserveAspectRatio=false, extent={{-100,
               -100},{100,100}}),      graphics));
   end DceMechOutConnectorII;
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="3.2.1")));
 end JuliansBib;

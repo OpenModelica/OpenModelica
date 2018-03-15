@@ -1,25 +1,21 @@
 // name: Exercises.* [checkModel]
 // status: correct
-// provided by Martin Otter 
+// provided by Martin Otter
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 
-loadFile("1/Aufgabe1_1.mo"); getErrorString();
+loadFiles({"1/Aufgabe1_1.mo","1/Aufgabe1_2.mo","2/Aufgabe2.mo","3/ServoSystem1/package.mo","4/ServoSystem3/package.mo","5/FourBar.mo"}); getErrorString();
 checkModel(Aufgabe1_1); getErrorString();
 
-loadFile("1/Aufgabe1_2.mo"); getErrorString();
 checkModel(Aufgabe1_2); getErrorString();
 
-loadFile("2/Aufgabe2.mo"); getErrorString();
 checkModel(Aufgabe2.Test1); getErrorString();
 checkModel(Aufgabe2.Test2); getErrorString();
 
-loadFile("3/ServoSystem1/package.mo"); getErrorString();
 checkModel(ServoSystem1.Aufgabe3_2);  getErrorString();
 checkModel(ServoSystem1.Aufgabe3_3);  getErrorString();
 
-loadFile("4/ServoSystem3/package.mo"); getErrorString();
 checkModel(ServoSystem3.Aufgabe3_2);  getErrorString();
 checkModel(ServoSystem3.Aufgabe3_3);  getErrorString();
 checkModel(ServoSystem3.Aufgabe4_1);  getErrorString();
@@ -29,7 +25,6 @@ checkModel(ServoSystem3.Aufgabe4_3b);  getErrorString();
 checkModel(ServoSystem3.Aufgabe4_4a);  getErrorString();
 checkModel(ServoSystem3.Aufgabe4_4b);  getErrorString();
 
-loadFile("5/FourBar.mo"); getErrorString();
 checkModel(FourBar.TestPlanarLoops); getErrorString();
 
 
@@ -43,15 +38,11 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 // 39 of these are trivial equation(s)."
 // "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
 // "
-// true
-// ""
 // "Check of Aufgabe1_2 completed successfully.
 // Class Aufgabe1_2 has 89 equation(s) and 89 variable(s).
 // 61 of these are trivial equation(s)."
 // "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
 // "
-// true
-// ""
 // "Check of Aufgabe2.Test1 completed successfully.
 // Class Aufgabe2.Test1 has 22 equation(s) and 22 variable(s).
 // 14 of these are trivial equation(s)."
@@ -60,9 +51,6 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 // Class Aufgabe2.Test2 has 46 equation(s) and 46 variable(s).
 // 36 of these are trivial equation(s)."
 // ""
-// true
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
-// "
 // "Check of ServoSystem1.Aufgabe3_2 completed successfully.
 // Class ServoSystem1.Aufgabe3_2 has 547 equation(s) and 547 variable(s).
 // 395 of these are trivial equation(s)."
@@ -71,9 +59,6 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 // Class ServoSystem1.Aufgabe3_3 has 547 equation(s) and 547 variable(s).
 // 395 of these are trivial equation(s)."
 // ""
-// true
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
-// "
 // "Check of ServoSystem3.Aufgabe3_2 completed successfully.
 // Class ServoSystem3.Aufgabe3_2 has 547 equation(s) and 547 variable(s).
 // 395 of these are trivial equation(s)."
@@ -105,8 +90,6 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 // "Check of ServoSystem3.Aufgabe4_4b completed successfully.
 // Class ServoSystem3.Aufgabe4_4b has 1888 equation(s) and 1888 variable(s).
 // 1329 of these are trivial equation(s)."
-// ""
-// true
 // ""
 // "Check of FourBar.TestPlanarLoops completed successfully.
 // Class FourBar.TestPlanarLoops has 1912 equation(s) and 1912 variable(s).

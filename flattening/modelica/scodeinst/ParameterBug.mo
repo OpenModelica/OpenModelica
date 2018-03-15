@@ -6,7 +6,7 @@ package ParameterBug
   equation
 
   end A;
-  annotation (uses(Modelica(version="3.2")));
+
   model B
     parameter Real offset = 0;
     replaceable C c(final offset = offset);

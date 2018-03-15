@@ -28,8 +28,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit6_res.m
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.1. You might experience problems if these versions are incompatible.
-// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 171
 //  * Number of variables: 171
 // [Modelica 3.2.1/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter sineVoltage.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
