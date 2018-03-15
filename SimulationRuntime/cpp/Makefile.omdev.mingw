@@ -102,8 +102,6 @@ else
 	USE_KLU_COMMAND=-DUSE_KLU:BOOL=OFF
 endif
 
-
-
 getMSVCversion:
 	echo "Check for given VSVERSION (2010|2012|2013|2015) version: [VSVERSION=$(VSVERSION)]"
 ifeq ("$(VSVERSION)","")
@@ -125,6 +123,7 @@ else
 endif
 else
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
+	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 else
 ifeq ($(VSVERSION),2010)
@@ -138,6 +137,7 @@ ifeq ($(VSVERSION),2013)
 else
 ifeq ($(VSVERSION),2015)
 	$(eval VSCOMNTOOLS=$(VS140COMNTOOLS))
+	$(eval VCVARS_PARAMS='x86 8.1')
 endif
 endif
 endif
@@ -160,7 +160,7 @@ omcCAPImsvc: getMSVCversion
 	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
 	mkdir -p Build_CAPI_MSVC
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_CAPI_MSVC/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_CAPI_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_CAPI_MSVC/build.bat
 	echo echo using omc libraries from "$(OMBUILDDIR)" >> Build_CAPI_MSVC/build.bat
@@ -177,7 +177,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo 'Build the cppRuntime with MSVC' buildtype: $(BUILDTYPE)
 	#rm -rf Build_MSVC
 	mkdir -p Build_MSVC
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="dynamic" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC/build.bat
@@ -192,7 +192,7 @@ runtimeCPPmsvc: getMSVCversion
 	echo 'Build cppRuntime (static) with MSVC'
 	#rm -rf Build_MSVC_static
 	mkdir -p Build_MSVC_static
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat"' > Build_MSVC_static/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' > Build_MSVC_static/build.bat
 
 	echo echo Running CMake from '%OMDEV%\\bin\\cmake\\bin\\cmake' >> Build_MSVC_static/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DPLATFORM="static" $(CMAKE_FLAGS) -DIS_MINGW32=OFF -DIS_MINGW64=OFF -DCMAKE_INSTALL_PREFIX:PATH=./tmp ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> Build_MSVC_static/build.bat
