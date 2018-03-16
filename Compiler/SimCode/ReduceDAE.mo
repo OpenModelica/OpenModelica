@@ -2233,20 +2233,20 @@ protected  function StringDelimit2Int
 " splits the input string at the delimiter string in list of strings and converts to integer list"
     input String inString;
     input String inDelim;
-    output list<integer> outList;
-   algorithm outList:=matchcontinue(inString,inDelim)
-   local
-    list<String> lst;
-    list<Integer> lst2;
-    String v,delim;
-   case (v,delim)
-    equation
-       lst=Util.stringSplitAtChar(v,delim);
-       lst2=List.map(lst,stringInt);
+    output list<Integer> outList;
+algorithm
+  outList := matchcontinue (inString,inDelim)
+    local
+      list<String> lst;
+      list<Integer> lst2;
+      String v,delim;
+    case (v,delim)
+      equation
+        lst=Util.stringSplitAtChar(v,delim);
+        lst2=list(stringInt(s) for s in lst);
       then lst2;
-   case(_,delim)
-     then {};
-     end matchcontinue;
+    else {};
+  end matchcontinue;
 end StringDelimit2Int;
 
 public function createBackendLabelVars
