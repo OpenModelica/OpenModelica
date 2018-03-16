@@ -346,7 +346,6 @@ fmi2Status FMU2Wrapper::setClock(const fmi2Integer clockIndex[],
   for (int i = 0; i < _model->getDimClock(); i++) {
     _nclockTick += _clockTick[i]? 1: 0;
   }
-  _needUpdate = true;
   return fmi2OK;
 }
 
@@ -440,7 +439,7 @@ fmi2Status FMU2Wrapper::getInterval(const fmi2Integer clockIndex[],
 
 fmi2Status FMU2Wrapper::newDiscreteStates(fmi2EventInfo *eventInfo)
 {
-  if (_needUpdate) {
+  if (_needUpdate || _nclockTick > 0) {
     if (_nclockTick > 0)
       _model->setClock(_clockTick, _clockSubactive);
     updateModel();
@@ -490,9 +489,19 @@ fmi2Status FMU2Wrapper::getDirectionalDerivative(const fmi2ValueReference vrUnkn
   if (_needUpdate)
     updateModel();
   SystemLockFreeVariables slfv(_model, !_needJacUpdate);
+  if (_nclockTick > 0) {
+    // set clock for subactive evaluation
+    _model->setClock(_clockTick, _clockSubactive);
+  }
   _model->getDirectionalDerivative(vrUnknown, nUnknown,
                                    vrKnown, nKnown, dvKnown,
                                    dvUnknown);
+  if (_nclockTick > 0) {
+    // reset clocks
+    std::fill(_clockTick, _clockTick + _model->getDimClock(), false);
+    std::fill(_clockSubactive, _clockSubactive + _model->getDimClock(), false);
+    _nclockTick = 0;
+  }
   _needJacUpdate = false;
   return fmi2OK;
 }

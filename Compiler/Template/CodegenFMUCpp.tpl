@@ -195,7 +195,7 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
    protected:
     static unsigned int _inputRefs[];  ///< Value references of input variables
-    static unsigned int _outputRefs[]; ///< Value references of output variables
+    static unsigned int _outputRefs[]; ///< Value references of discrete states and outputs
   };
 
   /// create instance of <%modelShortName%>FMU
@@ -207,7 +207,7 @@ template fmuModelCppFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,T
  "Generates code for FMU target."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=outputVars))) then
+case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVars, outputVars=outputVars)), modelStructure=modelStructure) then
   let modelName = dotPath(modelInfo.name)
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
@@ -283,13 +283,12 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
     return new <%modelShortName%>FMU(globalSettings, simObjects);
   }
 
-  // value references of real inputs and outputs
+  // value references of real inputs
   unsigned int <%modelShortName%>FMU::_inputRefs[] = {<%inputVars |> var =>
     match var case SIMVAR(name=name, type_=T_REAL()) then
       intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
-  unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%outputVars |> var =>
-    match var case SIMVAR(name=name, type_=T_REAL()) then
-      intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
+  // value references of real discrete states and outputs
+  unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%DiscreteStateOutputRefs(modelStructure)%>};
 
   // constructor
   <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
@@ -319,6 +318,22 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
   // <%setStartValues(modelInfo)%>
   // <%setExternalFunction(modelInfo)%>
 end fmuModelCppFile;
+
+template DiscreteStateOutputRefs(Option<FmiModelStructure> fmiModelStructure)
+ "Generates list of value references of discrete states and outputs"
+::=
+match fmiModelStructure
+case SOME(modelStructure as FMIMODELSTRUCTURE(__)) then
+  let discreteStateRefs = match modelStructure.fmiDiscreteStates
+    case FMIDISCRETESTATES(fmiUnknownsList=fmiUnknownsList) then
+      '<%fmiUnknownsList |> fmiUnknown => match fmiUnknown
+         case FMIUNKNOWN(index=index) then intSub(index, 1) ;separator=", "%>'
+  let outputRefs = match modelStructure.fmiOutputs
+    case FMIOUTPUTS(fmiUnknownsList=fmiUnknownsList) then
+      '<%fmiUnknownsList |> fmiUnknown => match fmiUnknown
+         case FMIUNKNOWN(index=index) then intSub(index, 1) ;separator=", "%>'
+  '<%discreteStateRefs%><%if intGt(stringLength(discreteStateRefs), 0) then ", "%><%outputRefs%>'
+end DiscreteStateOutputRefs;
 
 template ModelDefineData(ModelInfo modelInfo)
  "Generates global data in simulation file."
@@ -604,8 +619,15 @@ template directionalDerivativeFunction(SimCode simCode)
  "Generates getDirectionalDerivative."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO()) then
+case SIMCODE(modelInfo=MODELINFO(), modelStructure=fmiModelStructure) then
   let modelShortName = lastIdentOfPath(modelInfo.name)
+  let dimDiscreteStates = match fmiModelStructure
+    case SOME(modelStructure as FMIMODELSTRUCTURE(__)) then
+      match modelStructure.fmiDiscreteStates
+      case FMIDISCRETESTATES(fmiUnknownsList=fmiUnknownsList) then
+        listLength(fmiUnknownsList)
+      else "0"
+    else "0"
   <<
   void <%modelShortName%>FMU::getDirectionalDerivative(
       const unsigned int vrUnknown[], size_t nUnknown,
@@ -615,18 +637,19 @@ case SIMCODE(modelInfo=MODELINFO()) then
   <% if CodegenFMUCommon.providesDirectionalDerivative(simCode) then
   <<
     unsigned int idx, *ref_p, ref_1;
+    int dimStates = _dimContinuousStates + <%dimDiscreteStates%>;
 
     _FMIDERjac_x.clear();
     ref_p = NULL;
     for (size_t j = 0; j < nKnown; j++) {
       idx = vrKnown[j];
-      if (idx >= _dimContinuousStates) {
+      if (idx >= dimStates) {
         // find input reference
         if (ref_p == NULL || idx < ref_1)
           ref_p = _inputRefs; // reset ref_p if vrKnown decreases
         ref_p = std::find(ref_p, _inputRefs + sizeof(_inputRefs)/sizeof(unsigned int), vrKnown[j]);
         ref_1 = idx;
-        idx = _dimContinuousStates + (ref_p - _inputRefs);
+        idx = dimStates + (ref_p - _inputRefs);
       }
       if (idx >= _FMIDERjac_x.size())
         throw std::invalid_argument("getDirectionalDerivative with wrong value reference of known " + omcpp::to_string(vrKnown[j]));
