@@ -1057,8 +1057,10 @@ algorithm
         type_var := DAE.TYPES_VAR(InstNode.name(c)
                       , Component.Attributes.toDAE(Component.getAttributes(comp))
                       , Type.toDAE(Component.getType(comp))
-                      , Binding.toDAE(Component.getBinding(comp))
-                      ,NONE()
+                      // Fix recursive bindings and update this
+                      // , Binding.toDAE(Component.getBinding(comp))
+                      , DAE.UNBOUND()
+                      , NONE()
                      );
         type_vars := type_var::type_vars;
       end for;
