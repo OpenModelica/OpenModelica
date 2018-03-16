@@ -12972,7 +12972,7 @@ template functionJac(list<SimEqSystem> jacEquations, String matrixName, Integer 
   <<
   void <%classname%>Jacobian::calc<%matrixName%>JacobianColumn()
   {
-    const int clockIndex = <%partIdx%>;
+    <%if intGt(partIdx, 0) then 'const int clockIndex = <%partIdx%>;'%>
     <%varDecls%>
     <%eqns_%>
   }

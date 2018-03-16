@@ -12805,7 +12805,8 @@ algorithm
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
-      symJacFMI := {contSimJac};
+      // set partition index to number of clocks (max index) for now
+      symJacFMI := {rewriteJacPartIdx(contSimJac, inModelInfo.nSubClocks)};
     else
       contPartSimDer := NONE();
     end if;
