@@ -2134,7 +2134,7 @@ algorithm
 
         (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
 
-        if not isCompatibleMatch(ty_match) then
+        if not isValidBindingMatch(ty_match) then
           Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
             {name, Binding.toString(binding), Type.toString(comp_ty),
              Type.toString(binding.bindingType)}, Binding.getInfo(binding));

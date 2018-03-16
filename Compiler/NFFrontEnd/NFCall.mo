@@ -1404,6 +1404,7 @@ protected
     if Type.isComplex(Type.arrayElementType(argty)) then
       Type.COMPLEX(cls=recopnode) := argty;
 
+      // This will fail if it can't find the function.
       fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT("'String'",{}), recopnode);
       fn_ref := Function.instFuncRef(fn_ref, InstNode.info(recopnode));
       candidates := Call.typeCachedFunctions(fn_ref);
@@ -1461,7 +1462,7 @@ protected
   algorithm
     argtycall := typeNormalCall(call, origin, info);
     argtycall := matchTypedNormalCall(argtycall, origin, info);
-    ty := getType(call);
+    ty := getType(argtycall);
     callExp := Expression.CALL(unboxArgs(argtycall));
   end typeDiscreteCall;
 
@@ -1679,7 +1680,7 @@ protected
 
     argtycall as ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := typeNormalCall(call, origin, info);
     argtycall := matchTypedNormalCall(argtycall, origin, info);
-    ty := getType(call);
+    ty := getType(argtycall);
     callExp := Expression.CALL(unboxArgs(argtycall));
 
     {arg} := args;
