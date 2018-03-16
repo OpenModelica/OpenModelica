@@ -5991,9 +5991,11 @@ template daeExpCallTuple(Exp call, Text additionalOutputs /* arguments 2..N */, 
       then
         let typeCast1 = generateTypeCast(attr.ty, expLst, true)
         let typeCast2 = generateTypeCast(attr.ty, expLst, false)
-        let name = '_<%underscorePath(path)%>'
-        let func = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%name%>), 1)))'
-        let closure = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%name%>), 2)))'
+        let n = match path
+          case IDENT(__) then contextCref(makeUntypedCrefIdent(name), context, &auxFunction)
+          else error(sourceInfo(), 'We only support function pointer calls where the pointer is a local variable (not inside any record). Got: <%underscorePath(path)%>')
+        let func = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%n%>), 1)))'
+        let closure = '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%n%>), 2)))'
         let argStrPointer = ('threadData, <%closure%>' + (expLst |> exp => (", " + daeExp(exp, context, &preExp, &varDecls, &auxFunction))))
         //'<%name%>(<%argStr%><%additionalOutputs%>)'
         '<%closure%> ? (<%typeCast1%> <%func%>) (<%argStrPointer%><%additionalOutputs%>) : (<%typeCast2%> <%func%>) (<%argStr%><%additionalOutputs%>)'
