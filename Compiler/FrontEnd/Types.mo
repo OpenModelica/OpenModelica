@@ -1564,12 +1564,6 @@ algorithm
         true = subtype(t1,t2,requireRecordNamesEqual);
       then true;
 
-    case (DAE.T_FUNCTION(funcResultType = t1),t2)
-      then subtype(t1,t2,requireRecordNamesEqual);
-
-    case (t1,DAE.T_FUNCTION(funcResultType = t2))
-      then subtype(t1,t2,requireRecordNamesEqual);
-
     case (DAE.T_FUNCTION_REFERENCE_VAR(functionType = t1),DAE.T_FUNCTION_REFERENCE_VAR(functionType = t2))
       then subtype(t1,t2);
 
