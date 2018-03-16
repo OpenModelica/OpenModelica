@@ -8566,6 +8566,7 @@ algorithm
       outDimensions := slotsVectorizable(outSlots, inInfo);
       outResultType := res_ty;
       outFunctionType := DAE.T_FUNCTION(params, outResultType, func_attr, path);
+      outFunctionType := Types.fixPolymorphicRestype(outFunctionType, pb, inInfo);
 
       // Only created when not checking types for error msg.
       outFunctionType := createActualFunctype(outFunctionType, outSlots, inCheckTypes);
