@@ -7,6 +7,7 @@ Crane_FMU2_CPP.mos \
 testFMU2MatrixIO.mos \
 testModelDescription.mos \
 testClockDescription.mos \
+testCSTR.mos \
 testDrumBoiler.mos
 
 FAILINGTESTFILES = \
