@@ -1221,6 +1221,9 @@ algorithm
   try
     column::{} := symjac.columns;
     (eqs, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfo(column.columnEqns, modelInfo);
+    // set partition index to number of clocks (max index) for now.
+    // TODO: use actual clock index to support multirate systems
+    tmpSymJacs := list(rewriteJacPartIdx(a, modelInfo.nSubClocks) for a in tmpSymJacs);
     outSymJacsInSymJacs := listAppend(tmpSymJacs, outSymJacsInSymJacs);
     column.columnEqns := eqs;
     symjac.columns := {column};
@@ -12806,6 +12809,7 @@ algorithm
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
       // set partition index to number of clocks (max index) for now
+      // TODO: use actual clock indices to support multirate systems
       symJacFMI := {rewriteJacPartIdx(contSimJac, inModelInfo.nSubClocks)};
     else
       contPartSimDer := NONE();

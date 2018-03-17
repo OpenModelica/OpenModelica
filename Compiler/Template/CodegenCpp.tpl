@@ -81,8 +81,8 @@ template translateModel(SimCode simCode)
         let()= textFile(simulationWriteOutputCppFile(simCode , &extraFuncs , &extraFuncsDecl, "", stateDerVectorName, false),'OMCpp<%fileNamePrefix%>WriteOutput.cpp')
         let()= textFile(simulationFactoryFile(simCode , &extraFuncs , &extraFuncsDecl, ""),'OMCpp<%fileNamePrefix%>FactoryExport.cpp')
         let()= textFile(simulationMainRunScript(simCode , &extraFuncs , &extraFuncsDecl, "", "", "", "exec"), '<%fileNamePrefix%><%simulationMainRunScriptSuffix(simCode , &extraFuncs , &extraFuncsDecl, "")%>')
-        let jac =  (jacobianMatrixes |> JAC_MATRIX(columns=mat) =>
-          (mat |> JAC_COLUMN(columnEqns=eqs) => algloopfiles(eqs, simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, 0, stateDerVectorName, false) ;separator="")
+        let jac =  (jacobianMatrixes |> JAC_MATRIX(columns=mat, partitionIndex=partIdx) =>
+          (mat |> JAC_COLUMN(columnEqns=eqs) => algloopfiles(eqs, simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloopJacobian, partIdx, stateDerVectorName, false) ;separator="")
          ;separator="")
         let alg = algloopfiles(listAppend(allEquations, initialEquations), simCode, &extraFuncs, &extraFuncsDecl, "", contextAlgloop, 0, stateDerVectorName, false)
         let clk = getSubPartitions(clockedPartitions) |> subPartition hasindex i fromindex 1 =>
