@@ -336,7 +336,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           match subPartition
           case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fsub, denom=fsuper), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
-          <Clock><Periodic
+          <Clock><Inferred
                   interval="<%realMul(bi, realDiv(intReal(fsub), intReal(fsuper)))%>"
                   <%if intGt(snom, 0) then 'shiftCounter="'+snom+'"'%>
                   <%if intGt(sres, 1) then 'resolution="'+sres+'"'%>
@@ -348,14 +348,16 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
           match subPartition
           case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fsub, denom=fsuper), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
-          <Clock><Periodic
+          <Clock><Inferred
                   intervalCounter="<%intMul(intMul(bic, fsub), sres)%>"
                   <%if intGt(snom, 0) then 'shiftCounter="'+intMul(intMul(snom, resi), fsuper)+'"'%>
                   resolution="<%intMul(intMul(resi, sres), fsuper)%>"
                   /></Clock>
           >>
         ; separator="\n")
-      case INFERRED_CLOCK(__) then
+      case REAL_CLOCK()
+      case INTEGER_CLOCK()
+      case INFERRED_CLOCK() then
         <<
         <Clock><Inferred/></Clock>
         >>
