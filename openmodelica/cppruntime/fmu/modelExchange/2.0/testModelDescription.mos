@@ -51,7 +51,7 @@ readFile("modelDescription.tmp.xml");
 //   </ModelExchange>
 //   <TypeDefinitions>
 //     <Clocks>
-//       <Clock><Periodic
+//       <Clock><Inferred
 //               interval=\"0.2\"
 //               shiftCounter=\"3\"
 //               /></Clock>
