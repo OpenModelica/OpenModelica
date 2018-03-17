@@ -207,7 +207,7 @@ template fmuModelCppFile(SimCode simCode,Text& extraFuncs,Text& extraFuncsDecl,T
  "Generates code for FMU target."
 ::=
 match simCode
-case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVars, outputVars=outputVars)), modelStructure=modelStructure) then
+case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVars)), modelStructure=modelStructure) then
   let modelName = dotPath(modelInfo.name)
   let modelShortName = lastIdentOfPath(modelInfo.name)
   let modelLongName = System.stringReplace(modelName, ".", "_")
@@ -288,7 +288,10 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
     match var case SIMVAR(name=name, type_=T_REAL()) then
       intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
   // value references of real discrete states and outputs
-  unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%DiscreteStateOutputRefs(modelStructure)%>};
+  unsigned int <%modelShortName%>FMU::_outputRefs[] = {<%algVars |> var =>
+    match var case SIMVAR(name=name, type_=T_REAL(), varKind=CLOCKED_STATE())
+      case SIMVAR(name=name, type_=T_REAL(), causality=OUTPUT()) then
+      intSub(getVariableIndex(cref2simvar(name, simCode)), 1) ;separator=", "%>};
 
   // constructor
   <%modelShortName%>FMU::<%modelShortName%>FMU(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> simObjects)
@@ -318,22 +321,6 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, algVars=algVa
   // <%setStartValues(modelInfo)%>
   // <%setExternalFunction(modelInfo)%>
 end fmuModelCppFile;
-
-template DiscreteStateOutputRefs(Option<FmiModelStructure> fmiModelStructure)
- "Generates list of value references of discrete states and outputs"
-::=
-match fmiModelStructure
-case SOME(modelStructure as FMIMODELSTRUCTURE(__)) then
-  let discreteStateRefs = match modelStructure.fmiDiscreteStates
-    case FMIDISCRETESTATES(fmiUnknownsList=fmiUnknownsList) then
-      '<%fmiUnknownsList |> fmiUnknown => match fmiUnknown
-         case FMIUNKNOWN(index=index) then intSub(index, 1) ;separator=", "%>'
-  let outputRefs = match modelStructure.fmiOutputs
-    case FMIOUTPUTS(fmiUnknownsList=fmiUnknownsList) then
-      '<%fmiUnknownsList |> fmiUnknown => match fmiUnknown
-         case FMIUNKNOWN(index=index) then intSub(index, 1) ;separator=", "%>'
-  '<%discreteStateRefs%><%if intGt(stringLength(discreteStateRefs), 0) then ", "%><%outputRefs%>'
-end DiscreteStateOutputRefs;
 
 template ModelDefineData(ModelInfo modelInfo)
  "Generates global data in simulation file."
