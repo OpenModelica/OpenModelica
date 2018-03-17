@@ -1677,6 +1677,7 @@ public
       case Subscript.UNTYPED() then fold(subscript.exp, func, arg);
       case Subscript.INDEX() then fold(subscript.index, func, arg);
       case Subscript.SLICE() then fold(subscript.slice, func, arg);
+      case Subscript.WHOLE() then arg;
     end match;
   end foldSubscript;
 
