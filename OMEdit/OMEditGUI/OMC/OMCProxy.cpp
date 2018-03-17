@@ -1336,7 +1336,7 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
           .arg(docElement.mid(startPos, endPos - startPos + strlen("</html>")))
           .arg(endNonHtml);
     } else {  // if we have just plain text
-      docElement = QString("<div class=\"textDoc\">JUST PLAINTEXT%1</div>").arg(Qt::convertFromPlainText(docElement));
+      docElement = QString("<div class=\"textDoc\">%1</div>").arg(Qt::convertFromPlainText(docElement));
     }
     docElement = docElement.trimmed();
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
