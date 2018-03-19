@@ -729,7 +729,8 @@ algorithm
           function instExtends(attributes = attributes, visibility = ExtendsVisibility.PUBLIC));
 
         // Instantiate local components.
-        ClassTree.applyLocalComponents(cls_tree, function instComponent(attributes = attributes));
+        ClassTree.applyLocalComponents(cls_tree,
+          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD()));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -999,7 +1000,8 @@ algorithm
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, visibility = vis));
 
-        ClassTree.applyLocalComponents(cls_tree, function instComponent(attributes = attributes));
+        ClassTree.applyLocalComponents(cls_tree,
+          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD()));
       then
         ();
 
@@ -1143,7 +1145,7 @@ protected
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFComponent.DEFAULT_ATTR);
+  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD());
   redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
@@ -1243,11 +1245,12 @@ end redeclareClass;
 function instComponent
   input InstNode node   "The component node to instantiate";
   input Component.Attributes attributes "Attributes to be propagated to the component.";
+  input Modifier innerMod;
 protected
   Component comp;
   SCode.Element def;
   InstNode comp_node, rdcl_node;
-  Modifier outer_mod, cc_mod = Modifier.NOMOD();
+  Modifier outer_mod, cc_mod = innerMod;
   SCode.Mod cc_smod;
   String name;
   Integer level;
@@ -1279,9 +1282,9 @@ algorithm
 
     Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
-    outer_mod := Modifier.merge(outer_mod, cc_mod);
+    //outer_mod := Modifier.merge(outer_mod, cc_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
-    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), Modifier.NOMOD(), attributes, node);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node);
   else
     instComponentDef(def, outer_mod, cc_mod, attributes, comp_node, level, parent, scope);
   end if;
@@ -1377,7 +1380,7 @@ algorithm
     fail();
   end if;
 
-  instComponent(redeclareNode, outerAttr);
+  instComponent(redeclareNode, outerAttr, constrainingMod);
   orig_comp := InstNode.component(originalNode);
   rdcl_comp := InstNode.component(redeclareNode);
 
@@ -2610,7 +2613,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, NFComponent.DEFAULT_ATTR);
+      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD());
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
