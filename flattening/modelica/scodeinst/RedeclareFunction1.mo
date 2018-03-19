@@ -29,7 +29,7 @@ end RedeclareFunction1;
 //   x := y;
 // end P.f;
 //
-// class M
+// class RedeclareFunction1
 //   Real x = P.f(4);
-// end M;
+// end RedeclareFunction1;
 // endResult

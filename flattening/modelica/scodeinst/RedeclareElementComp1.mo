@@ -1,4 +1,4 @@
-// name: RedeclareElementComp1.mo
+// name: RedeclareElementComp1
 // keywords:
 // status: correct
 // cflags: -d=newInst

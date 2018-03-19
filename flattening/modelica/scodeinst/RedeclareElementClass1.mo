@@ -18,10 +18,13 @@ model RedeclareElementClass1
   redeclare model B
     Real x = 2.0;
   end B;
+
+  B b2;
 end RedeclareElementClass1;
 
 // Result:
 // class RedeclareElementClass1
 //   Real b.x = 2.0;
+//   Real b2.x = 2.0;
 // end RedeclareElementClass1;
 // endResult

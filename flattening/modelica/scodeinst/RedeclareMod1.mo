@@ -3,28 +3,18 @@
 // status: correct
 // cflags: -d=newInst
 //
-// 
 
 model A
-  Real x;
+  Real x = 1.0;
 end A;
 
-model B
-  replaceable A a;
-end B;
-
-model C
-  Real x;
-  extends B(redeclare A a(x = x));
-end C;
-
 model RedeclareMod1
-  C c;
+  A a(redeclare Real x);
 end RedeclareMod1;
+
 
 // Result:
 // class RedeclareMod1
-//   Real c.x;
-//   Real c.a.x = c.x;
+//   Real a.x = 1.0;
 // end RedeclareMod1;
 // endResult

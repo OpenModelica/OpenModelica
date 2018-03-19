@@ -19,23 +19,11 @@ model B
 end B;
 
 // Result:
+// Error processing file: redeclare3.mo
+// [flattening/modelica/scodeinst/redeclare3.mo:17:20-17:43:writable] Error: time is not allowed in a function.
 //
-// EXPANDED FORM:
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
 //
-// class B
-//   Real x = f();
-// end B;
-//
-//
-// Found 1 components and 0 parameters.
-// function B.f
-//   Real x;
-//   output Real y = x;
-// end B.f;
-//
-// class B
-//   Real x = 6.9532112725263e-310;
-// end B;
-// [redeclare3.mo:9:5-9:29:writable] Warning: Invalid public variable x, function variables that are not input/output must be protected.
-//
+// Execution failed!
 // endResult

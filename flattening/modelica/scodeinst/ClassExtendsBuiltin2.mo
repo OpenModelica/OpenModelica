@@ -1,4 +1,4 @@
-// name: ClassExtendsBuiltin2.mo
+// name: ClassExtendsBuiltin2
 // keywords:
 // status: incorrect
 // cflags: -d=newInst
@@ -11,7 +11,7 @@ end A;
 model ClassExtendsBuiltin2
   extends A;
 
-  redeclare model extends MyReal
+  redeclare type extends MyReal
     Real y = 2.0;
   end MyReal;
 

@@ -93,8 +93,13 @@ ClassExtends1.mo \
 ClassExtends2.mo \
 ClassExtends3.mo \
 ClassExtends4.mo \
+ClassExtends5.mo \
+ClassExtends6.mo \
+ClassExtends7.mo \
 ClassExtendsBuiltin1.mo \
 ClassExtendsBuiltin2.mo \
+ClassExtendsBuiltin3.mo \
+ClassExtendsMod1.mo \
 ClassExtendsMissing1.mo \
 ClassMod1.mo \
 ClassMod2.mo \
@@ -222,6 +227,7 @@ Extends1.mo \
 Extends2.mo \
 Extends3.mo \
 Extends4.mo \
+ExtendConnector1.mo \
 ExtendImport1.mo \
 ExtendImport2.mo \
 ExtendInherited1.mo \
@@ -255,6 +261,11 @@ ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
 ExternalObjectStructorCall1.mo \
 ExternalObjectStructorCall2.mo \
+Final1.mo \
+Final2.mo \
+Final3.mo \
+Final4.mo \
+Final5.mo \
 ForConnect1.mo \
 ForEquation1.mo \
 ForEquation2.mo \
@@ -353,6 +364,7 @@ FunctionExtends1.mo \
 FunctionMultiOutput1.mo \
 FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
+FunctionMultiOutput4.mo \
 FunctionNoOutput1.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
@@ -422,6 +434,7 @@ lookup4.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
+MissingRedeclare1.mo \
 mod1.mo \
 mod10.mo \
 mod11.mo \
@@ -486,17 +499,31 @@ RedeclareClass1.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
 RedeclareElementClass1.mo \
+RedeclareElementClass2.mo \
 RedeclareElementComp1.mo \
+RedeclareElementComp2.mo \
+RedeclareElementComp3.mo \
+RedeclareElementComp4.mo \
+RedeclareElementComp5.mo \
+RedeclareElementCondition1.mo \
+RedeclareElementCondition2.mo \
+RedeclareElementCondition3.mo \
+RedeclareInvalidConnectorType1.mo \
+RedeclareInvalidVariability1.mo \
 RedeclareElementMissing1.mo \
 RedeclareElementMissing2.mo \
+RedeclareFunction1.mo \
 RedeclareMod1.mo \
+RedeclareMod2.mo \
+RedeclareMod3.mo \
+RedeclareMod4.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
 redeclare13.mo \
 redeclare2.mo \
+redeclare3.mo \
 redeclare4.mo \
-redeclare6.mo \
 redeclare7.mo \
 redeclare9.mo \
 Reinit1.mo \
@@ -541,6 +568,8 @@ TupleInvalid3.mo \
 type2.mo \
 TypeDim1.mo \
 TypeDim2.mo \
+TypeDim3.mo \
+TypeDim4.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
 TypenameInvalid3.mo \
@@ -562,6 +591,7 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+RedeclareConstant1.mo \
 BuiltinAttribute13.mo \
 CevalDer2.mo \
 ActualStream.mo \
@@ -623,14 +653,12 @@ InvalidExpandableConnector1.mo \
 InvalidVariability1.mo \
 InvalidVariability2.mo \
 loop4.mo \
-MissingRedeclare1.mo \
 PartialInst.mo \
 PropagateRedeclareMod1.mo \
 RecursiveExtends2.mo \
-redeclare3.mo \
 redeclare5.mo \
+redeclare6.mo \
 redeclare8.mo \
-RedeclaredFunction1.mo \
 type4.mo \
 type5.mo \
 PackageConstant2.mo \
