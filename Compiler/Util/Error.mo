@@ -239,7 +239,7 @@ public constant Message MODIFY_PROTECTED = MESSAGE(54, TRANSLATION(), WARNING(),
 public constant Message INVALID_TUPLE_CONTENT = MESSAGE(55, TRANSLATION(), ERROR(),
   Util.gettext("Tuple %s must contain component references only."));
 public constant Message MISSING_REDECLARE_IN_CLASS_MOD = MESSAGE(56, TRANSLATION(), ERROR(),
-  Util.gettext("Missing redeclare keyword on redeclaration of class %s."));
+  Util.gettext("Missing redeclare keyword on attempted redeclaration of class %s."));
 public constant Message IMPORT_SEVERAL_NAMES = MESSAGE(57, TRANSLATION(), ERROR(),
   Util.gettext("%s found in several unqualified import statements (import ABC.*)."));
 public constant Message LOOKUP_TYPE_FOUND_COMP = MESSAGE(58, TRANSLATION(), ERROR(),
@@ -777,6 +777,10 @@ public constant Message AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST = MESSAGE(3
   Util.gettext("Ambiguous matching overloaded operator functions found for %s.\nCandidates are:\n  %s"));
 public constant Message REDECLARE_CONDITION = MESSAGE(325, TRANSLATION(), ERROR(),
   Util.gettext("Invalid redeclaration of %s, a redeclare may not have a condition attribute."));
+public constant Message REDECLARE_OF_CONSTANT = MESSAGE(326, TRANSLATION(), ERROR(),
+  Util.gettext("%s is constant and may not be redeclared."));
+public constant Message REDECLARE_MISMATCHED_PREFIX = MESSAGE(327, TRANSLATION(), ERROR(),
+  Util.gettext("Invalid redeclaration '%s %s', original element is declared '%s'."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

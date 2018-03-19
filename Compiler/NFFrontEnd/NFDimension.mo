@@ -44,9 +44,11 @@ public
   import Type = NFType;
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
+  import Inst = NFInst;
 
   record RAW_DIM
     Absyn.Subscript dim;
+    InstNode scope;
   end RAW_DIM;
 
   record UNTYPED
@@ -167,23 +169,6 @@ public
     end match;
   end isEqual;
 
-  public function allEqual
-    input list<Dimension> dims1;
-    input list<Dimension> dims2;
-    output Boolean allEqual;
-  algorithm
-    allEqual := match(dims1, dims2)
-      local
-        Dimension dim1, dim2;
-        list<Dimension> rest1, rest2;
-
-      case ({}, {}) then true;
-      case (dim1::rest1, dim2::rest2) guard isEqual(dim1, dim2)
-        then allEqual(rest1, rest2);
-      else false;
-    end match;
-  end allEqual;
-
   function isEqualKnown
     input Dimension dim1;
     input Dimension dim2;
@@ -286,6 +271,17 @@ public
                              SOME(Expression.INTEGER(index)));
     end match;
   end sizeExp;
+
+  function setScope
+    input Dimension dim;
+    input InstNode scope;
+    output Dimension outDim;
+  algorithm
+    outDim := match dim
+      case RAW_DIM() then RAW_DIM(dim.dim, scope);
+      else dim;
+    end match;
+  end setScope;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;

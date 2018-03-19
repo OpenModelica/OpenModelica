@@ -333,13 +333,12 @@ function checkConnectorType
   input InstNode node;
   output Boolean isConnector;
 algorithm
-  isConnector := match node
-    case InstNode.COMPONENT_NODE()
-      then Class.isConnectorClass(InstNode.getClass(node)) or
-           checkConnectorType(node.parent);
-
-    else false;
-  end match;
+  if InstNode.isEmpty(node) then
+    isConnector := false;
+  else
+    isConnector := Class.isConnectorClass(InstNode.getClass(node)) or
+                   checkConnectorType(InstNode.parent(node));
+  end if;
 end checkConnectorType;
 
 function typeIterator

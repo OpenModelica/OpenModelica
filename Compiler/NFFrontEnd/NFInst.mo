@@ -188,7 +188,7 @@ algorithm
   topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
 
   // Create a new class from the elements, and update the inst node with it.
-  cls := Class.fromSCode(topClasses, false, topNode);
+  cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
@@ -219,14 +219,16 @@ function partialInstClass2
 protected
   SCode.ClassDef cdef, ce_cdef;
   Type ty;
+  Class.Prefixes prefs;
 algorithm
   Error.assertion(SCode.elementIsClass(definition), getInstanceName() + " got non-class element", sourceInfo());
   SCode.CLASS(classDef = cdef) := definition;
+  prefs := instClassPrefixes(definition);
 
   cls := match cdef
     // A long class definition, add its elements to a new scope.
     case SCode.PARTS()
-      then Class.fromSCode(cdef.elementLst, false, scope);
+      then Class.fromSCode(cdef.elementLst, false, scope, prefs);
 
     // A class extends, add its elements to a new scope.
     case SCode.CLASS_EXTENDS(composition = ce_cdef as SCode.PARTS())
@@ -239,7 +241,7 @@ algorithm
             {SCode.elementName(definition)}, SCode.elementInfo(definition));
         end if;
       then
-        Class.fromSCode(ce_cdef.elementLst, true, scope);
+        Class.fromSCode(ce_cdef.elementLst, true, scope, prefs);
 
     // An enumeration definition, add the literals to a new scope.
     case SCode.ENUMERATION()
@@ -248,7 +250,7 @@ algorithm
       then
         Class.fromEnumeration(cdef.enumLst, ty, scope);
 
-    else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD());
+    else Class.PARTIAL_CLASS(NFClassTree.EMPTY, Modifier.NOMOD(), prefs);
   end match;
 end partialInstClass2;
 
@@ -282,14 +284,14 @@ protected
   SourceInfo info;
   String name;
 algorithm
-  SCode.CLASS(name = name, classDef = cdef, info = info) := def;
+  SCode.CLASS(classDef = cdef, info = info) := def;
 
   node := match cdef
     local
       Absyn.TypeSpec ty;
       SCode.Mod der_mod;
       SCode.Element ext;
-      Class c;
+      Class cls;
       list<SCode.Element> exts;
       array<InstNode> comps;
       Modifier mod;
@@ -302,28 +304,8 @@ algorithm
       Component.Attributes attr;
       Restriction res;
 
-    case SCode.PARTS()
-      algorithm
-        c := InstNode.getClass(node);
-        // Change the class to an empty expanded class, to avoid instantiation loops.
-        c := Class.initExpandedClass(c);
-        node := InstNode.updateClass(c, node);
-
-        Class.EXPANDED_CLASS(elements = tree, modifier = mod) := c;
-        builtin_ext := ClassTree.mapFoldExtends(tree, expandExtends, NONE());
-
-        prefs := instClassPrefixes(def);
-
-        if isSome(builtin_ext) then
-          node := expandBuiltinExtends(builtin_ext, tree, prefs, node);
-        else
-          tree := ClassTree.expand(tree);
-          res := Restriction.fromSCode(SCode.getClassRestriction(def));
-          c := Class.EXPANDED_CLASS(tree, mod, prefs, res);
-          node := InstNode.updateClass(c, node);
-        end if;
-      then
-        node;
+    case SCode.PARTS() then expandClassParts(def, node, info);
+    case SCode.CLASS_EXTENDS() then expandClassParts(def, node, info);
 
     // A short class definition, e.g. class A = B.
     case SCode.DERIVED(typeSpec = ty, modifications = _)
@@ -333,46 +315,15 @@ algorithm
         ext_node := expand(ext_node);
 
         // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
-        prefs := instClassPrefixes(def);
+        cls := InstNode.getClass(node);
+        prefs := Class.getPrefixes(cls);
         attr := instDerivedAttributes(cdef.attributes);
-        dims := list(Dimension.RAW_DIM(d) for d in Absyn.typeSpecDimensions(ty));
-        mod := Class.getModifier(InstNode.getClass(node));
+        dims := list(Dimension.RAW_DIM(d, InstNode.EMPTY_NODE()) for d in Absyn.typeSpecDimensions(ty));
+        mod := Class.getModifier(cls);
 
         res := Restriction.fromSCode(SCode.getClassRestriction(def));
-        c := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, attr, res);
-        node := InstNode.updateClass(c, node);
-      then
-        node;
-
-    case SCode.CLASS_EXTENDS()
-      algorithm
-        tree := Class.classTree(InstNode.getClass(InstNode.parent(node)));
-        ext_node := ClassTree.getRedeclaredNode(name, tree);
-        ext_node := expand(ext_node);
-        ext_node := InstNode.setNodeType(InstNodeType.BASE_CLASS(node, def), ext_node);
-
-        c := InstNode.getClass(node);
-        c := Class.initExpandedClass(c);
-        node := InstNode.updateClass(c, node);
-
-        Class.EXPANDED_CLASS(elements = tree, modifier = mod) := c;
-        builtin_ext := ClassTree.mapFoldExtends(tree, expandExtends, NONE());
-        ClassTree.setClassExtends(ext_node, tree);
-        prefs := instClassPrefixes(def);
-
-        if isSome(builtin_ext) or Class.isBuiltin(InstNode.getClass(ext_node)) then
-          // A class extending from a base class may not have other base
-          // classes, and since this is a class extends it has at least one.
-          node := Util.getOptionOrDefault(builtin_ext, ext_node);
-          Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
-            {InstNode.name(node)}, InstNode.info(node));
-          fail();
-        else
-          tree := ClassTree.expand(tree);
-          res := Restriction.fromSCode(SCode.getClassRestriction(def));
-          c := Class.EXPANDED_CLASS(tree, mod, prefs, res);
-          node := InstNode.updateClass(c, node);
-        end if;
+        cls := Class.DERIVED_CLASS(ext_node, mod, dims, prefs, attr, res);
+        node := InstNode.updateClass(cls, node);
       then
         node;
 
@@ -384,6 +335,36 @@ algorithm
 
   end match;
 end expandClass2;
+
+function expandClassParts
+  input SCode.Element def;
+  input output InstNode node;
+  input SourceInfo info;
+protected
+  Class cls;
+  ClassTree cls_tree;
+  Modifier mod;
+  Option<InstNode> builtin_ext;
+  Class.Prefixes prefs;
+  Restriction res;
+algorithm
+  cls := InstNode.getClass(node);
+  // Change the class to an empty expanded class, to avoid instantiation loops.
+  cls := Class.initExpandedClass(cls);
+  node := InstNode.updateClass(cls, node);
+
+  Class.EXPANDED_CLASS(elements = cls_tree, modifier = mod, prefixes = prefs) := cls;
+  builtin_ext := ClassTree.mapFoldExtends(cls_tree, expandExtends, NONE());
+
+  if isSome(builtin_ext) then
+    node := expandBuiltinExtends(builtin_ext, cls_tree, node);
+  else
+    cls_tree := ClassTree.expand(cls_tree);
+    res := Restriction.fromSCode(SCode.getClassRestriction(def));
+    cls := Class.EXPANDED_CLASS(cls_tree, mod, prefs, res);
+    node := InstNode.updateClass(cls, node);
+  end if;
+end expandClassParts;
 
 function instClassPrefixes
   input SCode.Element cls;
@@ -434,7 +415,7 @@ algorithm
         dir := Prefixes.directionFromSCode(scodeAttr.direction);
       then
         Component.Attributes.ATTRIBUTES(cty, Parallelism.NON_PARALLEL,
-          var, dir, InnerOuter.NOT_INNER_OUTER);
+          var, dir, InnerOuter.NOT_INNER_OUTER, false, false, Replaceable.NOT_REPLACEABLE());
 
   end match;
 end instDerivedAttributes;
@@ -456,24 +437,32 @@ algorithm
     return;
   end if;
 
-  def as SCode.Element.EXTENDS(base_path, vis, smod, ann, info) := InstNode.definition(ext);
+  def := InstNode.definition(ext);
 
-  // Look up the base class and expand it.
-  scope := InstNode.parent(ext);
-  base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, info);
-  checkExtendsLoop(base_node, base_path, info);
-  checkReplaceableBaseClass(base_nodes, base_path, info);
-  base_node := expand(base_node);
+  () := match def
+    case SCode.Element.EXTENDS(base_path, vis, smod, ann, info)
+      algorithm
+        // Look up the base class and expand it.
+        scope := InstNode.parent(ext);
+        base_nodes as (base_node :: _) := Lookup.lookupBaseClassName(base_path, scope, info);
+        checkExtendsLoop(base_node, base_path, info);
+        checkReplaceableBaseClass(base_nodes, base_path, info);
+        base_node := expand(base_node);
 
-  ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def), base_node);
+        ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def), base_node);
 
-  // If the extended class is a builtin class, like Real or any type derived
-  // from Real, then return it so we can handle it properly in expandClass.
-  // We don't care if builtinExt is already SOME, since that's not legal and
-  // will be caught by expandBuiltinExtends.
-  if Class.isBuiltin(InstNode.getClass(base_node)) then
-    builtinExt := SOME(ext);
-  end if;
+        // If the extended class is a builtin class, like Real or any type derived
+        // from Real, then return it so we can handle it properly in expandClass.
+        // We don't care if builtinExt is already SOME, since that's not legal and
+        // will be caught by expandBuiltinExtends.
+        if Class.isBuiltin(InstNode.getClass(base_node)) then
+          builtinExt := SOME(ext);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
 end expandExtends;
 
 function checkExtendsLoop
@@ -546,7 +535,6 @@ function expandBuiltinExtends
    like Real or some type derived from Real."
   input Option<InstNode> builtinExtends;
   input ClassTree scope;
-  input Class.Prefixes prefixes;
   input output InstNode node;
 protected
   InstNode builtin_ext;
@@ -680,107 +668,127 @@ function instClass
   input output Component.Attributes attributes = NFComponent.DEFAULT_ATTR;
   input InstNode parent = InstNode.EMPTY_NODE();
 protected
-  InstNode par, redecl_node, base_node;
-  Class cls, inst_cls;
+  Class cls;
+  Modifier outer_mod;
+algorithm
+  cls := InstNode.getClass(node);
+  outer_mod := Class.getModifier(cls);
+
+  // Give an error for modifiers such as (A = B), i.e. attempting to replace a
+  // class without using redeclare.
+  if Modifier.hasBinding(outer_mod) then
+    Error.addSourceMessage(Error.MISSING_REDECLARE_IN_CLASS_MOD,
+      {InstNode.name(node)}, Binding.getInfo(Modifier.binding(outer_mod)));
+    fail();
+  end if;
+
+  outer_mod := Modifier.merge(modifier, outer_mod);
+  (attributes, node) := instClassDef(cls, outer_mod, attributes, node, parent);
+end instClass;
+
+function instClassDef
+  input Class cls;
+  input Modifier outerMod;
+  input output Component.Attributes attributes;
+  input output InstNode node;
+  input InstNode parent;
+protected
+  InstNode par, base_node;
+  Class inst_cls;
   ClassTree cls_tree;
-  Modifier cls_mod, mod;
+  Modifier mod;
   list<Modifier> type_attr;
   list<Dimension> dims;
 algorithm
-  cls := InstNode.getClass(node);
-  cls_mod := Class.getModifier(cls);
-  cls_mod := Modifier.merge(modifier, cls_mod);
-
-  () := match (cls, cls_mod)
-    case (_, Modifier.REDECLARE())
-      algorithm
-        if not InstNode.isClass(cls_mod.element) then
-          Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
-            {"class", InstNode.name(node), "component"},
-            {InstNode.info(cls_mod.element), InstNode.info(node)});
-        end if;
-
-        redecl_node := expand(cls_mod.element);
-        node := instClass(redecl_node, cls_mod.mod, attributes, parent);
-      then
-        ();
-
-    case (Class.EXPANDED_CLASS(), _)
+  () := match cls
+    case Class.EXPANDED_CLASS()
       algorithm
         (node, par) := ClassTree.instantiate(node, parent);
-        updateComponentClass(parent, node);
+        updateComponentType(parent, node);
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
-        // Fetch modification on the class definition.
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
+        // Fetch modification on the class definition (for class extends).
+        mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), parent);
         // Merge with any outer modifications.
-        mod := Modifier.merge(cls_mod, mod);
+        mod := Modifier.merge(outerMod, mod);
 
         // Apply the modifiers of extends nodes.
-        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par, parent = par));
+        ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
 
-        // Apply modifier in this scope.
+        // Apply the modifiers of this scope.
         applyModifier(mod, cls_tree, InstNode.name(node));
-
-        cls_tree := ClassTree.replaceDuplicates(cls_tree);
-        ClassTree.checkDuplicates(cls_tree);
-        InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
+        // Apply element redeclares.
+        ClassTree.mapRedeclareChains(cls_tree, redeclareElements);
+        // Redeclare classes with redeclare modifiers. Redeclared components could
+        // also be handled here, but since each component is only instantiated once
+        // it's more efficient to apply the redeclare when instantiating them instead.
+        redeclareClasses(cls_tree);
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, parent = par, visibility = ExtendsVisibility.PUBLIC));
+          function instExtends(attributes = attributes, visibility = ExtendsVisibility.PUBLIC));
 
         // Instantiate local components.
-        ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attributes, parent = par, scope = node));
+        ClassTree.applyLocalComponents(cls_tree, function instComponent(attributes = attributes));
+
+        // Remove duplicate elements.
+        cls_tree := ClassTree.replaceDuplicates(cls_tree);
+        ClassTree.checkDuplicates(cls_tree);
+        InstNode.updateClass(Class.setClassTree(cls_tree, inst_cls), node);
       then
         ();
 
-    case (Class.DERIVED_CLASS(), _)
+    case Class.DERIVED_CLASS()
       algorithm
+        // Merge outer modifiers and attributes.
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
-        mod := Modifier.merge(cls_mod, mod);
-
+        mod := Modifier.merge(outerMod, mod);
         attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
+
+        // Instantiate the base class and create a new instance node.
         (base_node, attributes) := instClass(cls.baseClass, mod, attributes, parent);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         node := InstNode.replaceClass(cls, node);
-        updateComponentClass(parent, node);
+
+        // Update the dimensions and the parent's type with the new class instance.
+        cls.dims := list(Dimension.setScope(dim, node) for dim in cls.dims);
+        node := InstNode.updateClass(cls, node);
+        updateComponentType(parent, node);
       then
         ();
 
-    case (Class.PARTIAL_BUILTIN(restriction = Restriction.EXTERNAL_OBJECT()), _)
+    case Class.PARTIAL_BUILTIN(restriction = Restriction.EXTERNAL_OBJECT())
       algorithm
         inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, {}, cls.restriction);
         node := InstNode.replaceClass(inst_cls, node);
-        updateComponentClass(parent, node);
+        updateComponentType(parent, node);
         instExternalObjectStructors(cls.ty, parent);
       then
         ();
 
-    case (Class.PARTIAL_BUILTIN(), _)
+    case Class.PARTIAL_BUILTIN()
       algorithm
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
-        mod := Modifier.merge(cls_mod, mod);
+        mod := Modifier.merge(outerMod, mod);
 
         type_attr := Modifier.toList(mod);
         inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, type_attr, cls.restriction);
 
         node := InstNode.replaceClass(inst_cls, node);
-        updateComponentClass(parent, node);
+        updateComponentType(parent, node);
       then
         ();
 
     // If a class has an instance of a encapsulating class, then the encapsulating
     // class will have been fully instantiated to allow lookup in it. This is a
     // rather uncommon case hopefully, so in that case just reinstantiate the class.
-    case (Class.INSTANCED_CLASS(), _)
+    case Class.INSTANCED_CLASS()
       algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := expand(node);
-        node := instClass(node, modifier, attributes, parent);
-        updateComponentClass(parent, node);
+        node := instClass(node, outerMod, attributes, parent);
+        updateComponentType(parent, node);
       then
         ();
 
@@ -791,9 +799,9 @@ algorithm
         ();
 
   end match;
-end instClass;
+end instClassDef;
 
-function updateComponentClass
+function updateComponentType
   "Sets the class instance of a component node."
   input output InstNode component;
   input InstNode cls;
@@ -801,7 +809,7 @@ algorithm
   if InstNode.isComponent(component) then
     component := InstNode.componentApply(component, Component.setClassInstance, cls);
   end if;
-end updateComponentClass;
+end updateComponentType;
 
 function instExternalObjectStructors
   "Instantiates the constructor and destructor for an ExternalObject class."
@@ -913,7 +921,6 @@ end instImport;
 function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
-  input InstNode parent;
 protected
   SCode.Element elem;
   Absyn.Path basepath;
@@ -924,15 +931,12 @@ protected
   ClassTree cls_tree;
 algorithm
   cls_tree := Class.classTree(InstNode.getClass(extendsNode));
-  ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode, parent = parent));
-
-  // Replace the node in the node type with the given scope, so that crefs found
-  // in this extends are prefixed correctly.
-  InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  extendsNode := InstNode.setNodeType(InstNodeType.BASE_CLASS(parent, elem), extendsNode);
+  ClassTree.mapExtends(cls_tree, function modifyExtends(scope = extendsNode));
 
   // Create a modifier from the extends.
+  InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
   ext_mod := Modifier.fromElement(elem, InstNode.level(scope) + 1, scope);
+  ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   () := match elem
     case SCode.EXTENDS()
@@ -964,7 +968,6 @@ type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
 function instExtends
   input output InstNode node;
   input Component.Attributes attributes;
-  input InstNode parent;
   input ExtendsVisibility visibility;
 protected
   Class cls;
@@ -994,10 +997,9 @@ algorithm
         end if;
 
         ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, parent = parent, visibility = vis));
+          function instExtends(attributes = attributes, visibility = vis));
 
-        ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attributes, parent = node, scope = node));
+        ClassTree.applyLocalComponents(cls_tree, function instComponent(attributes = attributes));
       then
         ();
 
@@ -1007,7 +1009,7 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        node := instExtends(cls.baseClass, attributes, parent, vis);
+        node := instExtends(cls.baseClass, attributes, vis);
       then
         ();
 
@@ -1016,15 +1018,18 @@ algorithm
 end instExtends;
 
 function applyModifier
+  "Applies a modifier in the given scope, by splitting the modifier and merging
+   each part with the relevant element in the scope."
   input Modifier modifier;
   input output ClassTree cls;
   input String clsName;
 protected
   list<Modifier> mods;
-  Mutable<InstNode> node_ptr;
+  list<Mutable<InstNode>> node_ptrs;
   InstNode node;
   Component comp;
 algorithm
+  // Split the modifier into a list of submodifiers.
   mods := Modifier.toList(modifier);
 
   if listEmpty(mods) then
@@ -1032,120 +1037,402 @@ algorithm
   end if;
 
   for mod in mods loop
+    // Look up the node(s) to modify. Might be several in case of duplicate inherited elements.
     try
-      node_ptr := ClassTree.lookupElementPtr(Modifier.name(mod), cls);
+      node_ptrs := ClassTree.lookupElementsPtr(Modifier.name(mod), cls);
     else
       Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
         {Modifier.name(mod), clsName}, Modifier.info(mod));
       fail();
     end try;
 
-    node := InstNode.resolveOuter(Mutable.access(node_ptr));
+    // Apply the modifier to each found node.
+    for node_ptr in node_ptrs loop
+      node := InstNode.resolveOuter(Mutable.access(node_ptr));
 
-    if InstNode.isComponent(node) then
-      InstNode.componentApply(node, Component.mergeModifier, mod);
-    else
-      if InstNode.isOnlyOuter(node) then
-        // Modifying an outer class is illegal. We can't check that in instClass
-        // since we get the inner class there, so we check it here instead.
-        Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
-          {Modifier.toString(mod, printName = false), Modifier.name(mod)},
-          Modifier.info(mod));
-        fail();
+      if InstNode.isComponent(node) then
+        InstNode.componentApply(node, Component.mergeModifier, mod);
+      else
+        if InstNode.isOnlyOuter(node) then
+          // Modifying an outer class is illegal. We can't check that in instClass
+          // since we get the inner class there, so we check it here instead.
+          Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
+            {Modifier.toString(mod, printName = false), Modifier.name(mod)},
+            Modifier.info(mod));
+          fail();
+        end if;
+
+        partialInstClass(node);
+        node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
+        node := InstNode.clearPackageCache(node);
+        Mutable.update(node_ptr, node);
       end if;
-
-      partialInstClass(node);
-      node := InstNode.replaceClass(Class.mergeModifier(mod, InstNode.getClass(node)), node);
-      node := InstNode.clearPackageCache(node);
-      Mutable.update(node_ptr, node);
-    end if;
+    end for;
   end for;
-
-  ClassTree.copyModifiersToDups(cls);
 end applyModifier;
 
-function instComponent
-  input InstNode node   "The component node to instantiate";
-  input Component.Attributes attributes "Attributes to be propagated to the component.";
-  input InstNode parent "The parent node of the component";
-  input InstNode scope  "The class scope containing the component";
+function redeclareClasses
+  input output ClassTree tree;
 protected
-  Component comp, inst_comp;
-  SCode.Element def;
-  InstNode scp, cls_node, comp_node;
+  InstNode cls_node, redecl_node;
   Class cls;
-  Modifier mod, comp_mod;
-  Binding binding, condition;
-  Component.Attributes attr, cls_attr;
-  list<Dimension> dims;
-  SourceInfo info;
+  Modifier mod;
 algorithm
-  comp_node := InstNode.resolveOuter(node);
-  comp := InstNode.component(comp_node);
-  mod := Component.getModifier(comp);
-
-  () := match (mod, comp)
-    case (Modifier.REDECLARE(), Component.COMPONENT_DEF(definition = def))
+  () := match tree
+    case ClassTree.INSTANTIATED_TREE()
       algorithm
-        if not InstNode.isComponent(mod.element) then
-          Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
-            {"component", InstNode.name(comp_node), "class"},
-            {InstNode.info(mod.element), InstNode.info(comp_node)});
-        end if;
+        for cls_ptr in tree.classes loop
+          cls_node := Mutable.access(cls_ptr);
+          cls := InstNode.getClass(InstNode.resolveOuter(cls_node));
+          mod := Class.getModifier(cls);
 
-        checkOuterComponentMod(mod, comp, comp_node);
-        // Create a modifier from the original declaration.
-        comp_mod := Modifier.fromElement(def, InstNode.level(node), parent);
-        // Merge it with any modifier from the redeclare.
-        comp_mod := Modifier.merge(comp_mod, mod.mod);
-        inst_comp := InstNode.component(mod.element);
-        inst_comp := Component.setModifier(comp_mod, inst_comp);
-        InstNode.updateComponent(inst_comp, comp_node);
-        instComponent(comp_node, attributes, parent, InstNode.parent(mod.element));
-      then
-        ();
-
-    case (_, Component.COMPONENT_DEF(definition = def as SCode.COMPONENT(info = info)))
-      algorithm
-        comp_mod := Modifier.fromElement(def, InstNode.level(node), parent);
-        comp_mod := Modifier.merge(comp.modifier, comp_mod);
-        checkOuterComponentMod(comp_mod, comp, comp_node);
-
-        dims := list(Dimension.RAW_DIM(d) for d in def.attributes.arrayDims);
-        binding := Modifier.binding(comp_mod);
-        condition := Binding.fromAbsyn(def.condition, false, InstNode.level(node), parent, info);
-
-        // Instantiate attributes and create the untyped components.
-        attr := instComponentAttributes(def.attributes, def.prefixes, attributes, comp_node);
-        inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
-          binding, condition, attr, SOME(def.comment), def.info);
-        InstNode.updateComponent(inst_comp, comp_node);
-
-        // Instantiate the type of the component.
-        (cls_node, cls_attr) := instTypeSpec(def.typeSpec, comp_mod, attr, scope, comp_node, def.info);
-        cls := InstNode.getClass(cls_node);
-
-        Modifier.checkEach(comp_mod, listEmpty(dims) and not Class.hasDimensions(cls), InstNode.name(comp_node));
-
-        cls_attr := updateComponentVariability(cls_attr, cls, cls_node);
-        if not referenceEq(attr, cls_attr) then
-          comp_node := InstNode.componentApply(comp_node, Component.setAttributes, cls_attr);
-        end if;
+          if Modifier.isRedeclare(mod) then
+            Modifier.REDECLARE(element = redecl_node, mod = mod) := mod;
+            cls_node := redeclareClass(redecl_node, cls_node, mod);
+            Mutable.update(cls_ptr, cls_node);
+          end if;
+        end for;
       then
         ();
 
     else ();
   end match;
+end redeclareClasses;
+
+function redeclareElements
+  input list<Mutable<InstNode>> chain;
+protected
+  InstNode node;
+  Mutable<InstNode> node_ptr;
+  list<Mutable<InstNode>> rest_chain;
+algorithm
+  node := Mutable.access(listHead(chain));
+
+  if InstNode.isClass(node) then
+    node_ptr := redeclareClassElement(cls_ptr for cls_ptr in chain);
+    node := Mutable.access(node_ptr);
+  else
+    node_ptr := redeclareComponentElement(comp_ptr for comp_ptr in chain);
+    node := Mutable.access(node_ptr);
+  end if;
+
+  for cls_ptr in chain loop
+    Mutable.update(cls_ptr, node);
+  end for;
+end redeclareElements;
+
+function redeclareClassElement
+  input Mutable<InstNode> redeclareCls;
+  input Mutable<InstNode> replaceableCls;
+  output Mutable<InstNode> outCls;
+protected
+  InstNode rdcl_node, repl_node;
+algorithm
+  rdcl_node := Mutable.access(redeclareCls);
+  repl_node := Mutable.access(replaceableCls);
+  rdcl_node := redeclareClass(rdcl_node, repl_node, Modifier.NOMOD());
+  outCls := Mutable.create(rdcl_node);
+end redeclareClassElement;
+
+function redeclareComponentElement
+  input Mutable<InstNode> redeclareComp;
+  input Mutable<InstNode> replaceableComp;
+  output Mutable<InstNode> outComp;
+protected
+  InstNode rdcl_node, repl_node;
+algorithm
+  rdcl_node := Mutable.access(redeclareComp);
+  repl_node := Mutable.access(replaceableComp);
+  instComponent(repl_node, NFComponent.DEFAULT_ATTR);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node);
+  outComp := Mutable.create(rdcl_node);
+end redeclareComponentElement;
+
+function redeclareClass
+  input InstNode redeclareNode;
+  input InstNode originalNode;
+  input Modifier outerMod;
+  output InstNode redeclaredNode;
+protected
+  InstNode orig_node, rdcl_node;
+  Class orig_cls, rdcl_cls, new_cls;
+  Class.Prefixes prefs;
+  InstNodeType node_ty;
+algorithm
+  // Check that the redeclare element is actually a class.
+  if not InstNode.isClass(redeclareNode) then
+    Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+      {InstNode.typeName(originalNode), InstNode.name(originalNode), InstNode.typeName(redeclareNode)},
+      {InstNode.info(redeclareNode), InstNode.info(originalNode)});
+    fail();
+  end if;
+
+  partialInstClass(originalNode);
+  orig_cls := InstNode.getClass(originalNode);
+  partialInstClass(redeclareNode);
+  rdcl_cls := InstNode.getClass(redeclareNode);
+
+  prefs := mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
+    Class.getPrefixes(rdcl_cls), rdcl_node);
+
+  if SCode.isClassExtends(InstNode.definition(redeclareNode)) then
+    orig_node := expand(originalNode);
+    orig_cls := InstNode.getClass(orig_node);
+
+    new_cls := match (orig_cls, rdcl_cls)
+      // Class extends of a builtin type. Not very useful, but technically allowed
+      // if the redeclaring class is empty.
+      case (_, Class.PARTIAL_CLASS()) guard Class.isBuiltin(orig_cls)
+        algorithm
+          if not SCode.isEmptyClassDef(SCode.getClassDef(InstNode.definition(redeclareNode))) then
+            // Class extends of a builtin type is only allowed if the extending class is empty,
+            // otherwise it violates the rules of extending a builtin type.
+            Error.addSourceMessage(Error.BUILTIN_EXTENDS_INVALID_ELEMENTS,
+            {InstNode.name(redeclareNode)}, InstNode.info(redeclareNode));
+            fail();
+          end if;
+        then
+          Class.setPrefixes(prefs, orig_cls);
+
+      // Class extends of a long class declaration.
+      case (Class.EXPANDED_CLASS(), Class.PARTIAL_CLASS())
+        algorithm
+          node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node));
+          orig_node := InstNode.setNodeType(node_ty, orig_node);
+          rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
+          rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
+          rdcl_cls.prefixes := prefs;
+          InstNode.updateClass(rdcl_cls, redeclareNode);
+          expand(redeclareNode);
+        then
+          InstNode.getClass(redeclareNode);
+
+      // Class extends of a short class declaration.
+      case (Class.DERIVED_CLASS(), Class.PARTIAL_CLASS())
+        algorithm
+          rdcl_cls.prefixes := prefs;
+        then
+          rdcl_cls;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown classes", sourceInfo());
+        then
+          fail();
+    end match;
+  else
+    new_cls := match rdcl_cls
+      case Class.PARTIAL_CLASS()
+        algorithm
+          rdcl_cls.prefixes := prefs;
+          rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
+        then
+          rdcl_cls;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown classes", sourceInfo());
+        then
+          fail();
+    end match;
+  end if;
+
+  redeclaredNode := InstNode.replaceClass(new_cls, redeclareNode);
+end redeclareClass;
+
+function instComponent
+  input InstNode node   "The component node to instantiate";
+  input Component.Attributes attributes "Attributes to be propagated to the component.";
+protected
+  Component comp;
+  SCode.Element def;
+  InstNode comp_node, rdcl_node;
+  Modifier outer_mod, cc_mod = Modifier.NOMOD();
+  SCode.Mod cc_smod;
+  String name;
+  Integer level;
+  InstNode parent, scope;
+algorithm
+  comp_node := InstNode.resolveOuter(node);
+  comp := InstNode.component(comp_node);
+
+  parent := InstNode.parent(comp_node);
+  scope := InstNode.classScope(parent);
+
+  // Skip already instantiated components.
+  if not Component.isDefinition(comp) then
+    return;
+  end if;
+
+  Component.COMPONENT_DEF(definition = def, modifier = outer_mod) := comp;
+  level := InstNode.level(node);
+
+  if Modifier.isRedeclare(outer_mod) then
+    checkOuterComponentMod(outer_mod, def, comp_node);
+    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, comp_node, level, parent, scope);
+
+    cc_smod := SCode.getConstrainingMod(def);
+    if not SCode.isEmptyMod(cc_smod) then
+      name := InstNode.name(node);
+      cc_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), level, scope);
+    end if;
+
+    Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
+    outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
+    outer_mod := Modifier.merge(outer_mod, cc_mod);
+    InstNode.setModifier(outer_mod, rdcl_node);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), Modifier.NOMOD(), attributes, node);
+  else
+    instComponentDef(def, outer_mod, cc_mod, attributes, comp_node, level, parent, scope);
+  end if;
 end instComponent;
+
+function instComponentDef
+  input SCode.Element component;
+  input Modifier outerMod;
+  input Modifier innerMod;
+  input Component.Attributes attributes;
+  input InstNode node;
+  input Integer level;
+  input InstNode parent;
+  input InstNode scope;
+algorithm
+  () := match component
+    local
+      SourceInfo info;
+      Modifier decl_mod, mod;
+      list<Dimension> dims, ty_dims;
+      Binding binding, condition;
+      Component.Attributes attr, ty_attr;
+      Component inst_comp;
+      InstNode ty_node;
+      Class ty;
+
+    case SCode.COMPONENT(info = info)
+      algorithm
+        decl_mod := Modifier.fromElement(component, level, parent);
+        mod := Modifier.merge(decl_mod, innerMod);
+        mod := Modifier.merge(outerMod, mod);
+        checkOuterComponentMod(mod, component, node);
+
+        dims := list(Dimension.RAW_DIM(d, scope) for d in component.attributes.arrayDims);
+        binding := Modifier.binding(mod);
+        condition := Binding.fromAbsyn(component.condition, false, level, parent, info);
+
+        // Instantiate the component's attributes, and merge them with the
+        // attributes of the component's parent (e.g. constant SomeComplexClass c).
+        attr := instComponentAttributes(component.attributes, component.prefixes);
+        attr := mergeComponentAttributes(attributes, attr, node);
+
+        // Create the untyped component and update the node with it. We need the
+        // untyped component in instClass to make sure everything is scoped
+        // correctly during lookup, but the class node the component should have
+        // is created by instClass. To break the circle we leave the class node
+        // empty here, and let instClass set it for us instead.
+        inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
+          binding, condition, attr, SOME(component.comment), info);
+        InstNode.updateComponent(inst_comp, node);
+
+        // Instantiate the type of the component.
+        (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr, scope, node, info);
+        ty := InstNode.getClass(ty_node);
+
+        // Add dimensions from the type, if any.
+        ty_dims := Class.getDimensions(ty);
+        if not listEmpty(ty_dims) then
+          InstNode.componentApply(node, Component.setDimensions, listAppend(dims, ty_dims));
+        end if;
+
+        Modifier.checkEach(mod, listEmpty(dims) and listEmpty(ty_dims), InstNode.name(node));
+
+        // Update the component's variability based on its type (e.g. Integer is discrete).
+        ty_attr := updateComponentVariability(ty_attr, ty, ty_node);
+        if not referenceEq(attr, ty_attr) then
+          InstNode.componentApply(node, Component.setAttributes, ty_attr);
+        end if;
+      then
+        ();
+  end match;
+end instComponentDef;
+
+function redeclareComponent
+  input InstNode redeclareNode;
+  input InstNode originalNode;
+  input Modifier outerMod;
+  input Modifier constrainingMod;
+  input Component.Attributes outerAttr;
+  input InstNode redeclaredNode;
+protected
+  Component orig_comp, rdcl_comp, new_comp;
+  Binding binding, condition;
+  Component.Attributes attr;
+  array<Dimension> dims;
+  Option<SCode.Comment> cmt;
+algorithm
+  // Check that the redeclare element actually is a component.
+  if not InstNode.isComponent(redeclareNode) then
+    Error.addMultiSourceMessage(Error.INVALID_REDECLARE_AS,
+      {InstNode.typeName(originalNode), InstNode.name(originalNode), InstNode.typeName(redeclareNode)},
+      {InstNode.info(redeclareNode), InstNode.info(originalNode)});
+    fail();
+  end if;
+
+  instComponent(redeclareNode, outerAttr);
+  orig_comp := InstNode.component(originalNode);
+  rdcl_comp := InstNode.component(redeclareNode);
+
+  new_comp := match (orig_comp, rdcl_comp)
+    case (Component.UNTYPED_COMPONENT(), Component.UNTYPED_COMPONENT())
+      algorithm
+        // Take the binding from the outer modifier, the redeclare, or the
+        // original component, in that order of priority.
+        binding := Modifier.binding(outerMod);
+        if Binding.isUnbound(binding) then
+          binding := if Binding.isBound(rdcl_comp.binding) then rdcl_comp.binding else orig_comp.binding;
+        end if;
+
+        // A redeclare is not allowed to have a condition expression.
+        if Binding.isBound(rdcl_comp.condition) then
+          Error.addSourceMessage(Error.REDECLARE_CONDITION,
+            {InstNode.name(redeclareNode)}, InstNode.info(redeclareNode));
+          fail();
+        end if;
+
+        condition := orig_comp.condition;
+
+        // Merge the attributes of the redeclare and the original element, and
+        // then with any outer attributes applied to the scope.
+        attr := mergeRedeclaredComponentAttributes(orig_comp.attributes, rdcl_comp.attributes, redeclareNode);
+        //attr := mergeComponentAttributes(outerAttr, attr, redeclareNode);
+
+        // Use the dimensions of the redeclare if any, otherwise take them from the original.
+        dims := if arrayEmpty(rdcl_comp.dimensions) then orig_comp.dimensions else rdcl_comp.dimensions;
+
+        // TODO: Use comment of redeclare if available?
+        cmt := orig_comp.comment;
+      then
+        Component.UNTYPED_COMPONENT(rdcl_comp.classInst, dims, binding, condition, attr, cmt, rdcl_comp.info);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown components", sourceInfo());
+      then
+        fail();
+
+  end match;
+
+  InstNode.updateComponent(new_comp, redeclaredNode);
+end redeclareComponent;
 
 function checkOuterComponentMod
   "Prints an error message and fails if it gets an outer component and a
    non-empty modifier."
   input Modifier mod;
-  input Component comp;
+  input SCode.Element component;
   input InstNode node;
 algorithm
-  if not Modifier.isEmpty(mod) and Component.isOnlyOuter(comp) then
+  if not Modifier.isEmpty(mod) and
+     Absyn.isOnlyOuter(SCode.prefixesInnerOuter(SCode.elementPrefixes(component))) then
     Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
       {Modifier.toString(mod, printName = false), InstNode.name(node)}, InstNode.info(node));
     fail();
@@ -1155,8 +1442,6 @@ end checkOuterComponentMod;
 function instComponentAttributes
   input SCode.Attributes compAttr;
   input SCode.Prefixes compPrefs;
-  input Component.Attributes outerAttributes;
-  input InstNode node;
   output Component.Attributes attributes;
 protected
   ConnectorType cty;
@@ -1164,6 +1449,8 @@ protected
   Variability var;
   Direction dir;
   InnerOuter io;
+  Boolean fin, redecl;
+  Replaceable repl;
 algorithm
   attributes := match (compAttr, compPrefs)
     case (SCode.Attributes.ATTR(
@@ -1172,7 +1459,10 @@ algorithm
             variability = SCode.Variability.VAR(),
             direction = Absyn.Direction.BIDIR()),
           SCode.Prefixes.PREFIXES(
-            innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER()))
+            redeclarePrefix = SCode.Redeclare.NOT_REDECLARE(),
+            finalPrefix = SCode.Final.NOT_FINAL(),
+            innerOuter = Absyn.InnerOuter.NOT_INNER_OUTER(),
+            replaceablePrefix = SCode.Replaceable.NOT_REPLACEABLE()))
       then NFComponent.DEFAULT_ATTR;
 
     else
@@ -1182,11 +1472,12 @@ algorithm
         var := Prefixes.variabilityFromSCode(compAttr.variability);
         dir := Prefixes.directionFromSCode(compAttr.direction);
         io  := Prefixes.innerOuterFromSCode(compPrefs.innerOuter);
+        fin := SCode.finalBool(compPrefs.finalPrefix);
+        redecl := SCode.redeclareBool(compPrefs.redeclarePrefix);
+        repl := Replaceable.NOT_REPLACEABLE();
       then
-        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io);
+        Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
   end match;
-
-  attributes := mergeComponentAttributes(outerAttributes, attributes, node);
 end instComponentAttributes;
 
 function mergeComponentAttributes
@@ -1200,6 +1491,8 @@ protected
   Variability var;
   Direction dir;
   InnerOuter io;
+  Boolean fin, redecl;
+  Replaceable repl;
 algorithm
   if referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) then
     attr := innerAttr;
@@ -1211,7 +1504,10 @@ algorithm
     par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
     var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
     dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
-    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter);
+    fin := outerAttr.isFinal or innerAttr.isFinal;
+    redecl := innerAttr.isRedeclare;
+    repl := innerAttr.isReplaceable;
+    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, innerAttr.innerOuter, fin, redecl, repl);
   end if;
 end mergeComponentAttributes;
 
@@ -1226,19 +1522,141 @@ protected
   Variability var;
   Direction dir;
   InnerOuter io;
+  Boolean fin, redecl;
+  Replaceable repl;
 algorithm
   if referenceEq(innerAttr, NFComponent.DEFAULT_ATTR) then
     attr := outerAttr;
   elseif referenceEq(outerAttr, NFComponent.DEFAULT_ATTR) then
     attr := innerAttr;
   else
-    Component.Attributes.ATTRIBUTES(cty, par, var, dir, io) := outerAttr;
+    Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl) := outerAttr;
     cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
     var := Prefixes.variabilityMin(var, innerAttr.variability);
     dir := Prefixes.mergeDirection(dir, innerAttr.direction, node);
-    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io);
+    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
   end if;
 end mergeDerivedAttributes;
+
+function mergeRedeclaredComponentAttributes
+  input Component.Attributes origAttr;
+  input Component.Attributes redeclAttr;
+  input InstNode node;
+  output Component.Attributes attr;
+protected
+  ConnectorType cty, rcty;
+  Parallelism par, rpar;
+  Variability var, rvar;
+  Direction dir, rdir;
+  InnerOuter io, rio;
+  Boolean fin;
+  Boolean redecl;
+  Replaceable repl;
+algorithm
+  if referenceEq(origAttr, NFComponent.DEFAULT_ATTR) then
+    attr := redeclAttr;
+  elseif referenceEq(redeclAttr, NFComponent.DEFAULT_ATTR) then
+    attr := origAttr;
+  else
+    Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, _, _, _) := origAttr;
+    Component.Attributes.ATTRIBUTES(rcty, rpar, rvar, rdir, rio, fin, redecl, repl) := redeclAttr;
+
+    // If no prefix is given for one of these attributes in the redeclaration,
+    // then the one from the original declaration is used. The redeclare is not
+    // allowed to change an existing prefix on the original declaration, except
+    // for the variability which can be lowered (e.g. parameter -> constant) and
+    // final which is always taken from the redeclare (since redeclaring a final
+    // element isn't allowed).
+
+    if rcty <> ConnectorType.POTENTIAL then
+      if cty <> ConnectorType.POTENTIAL and cty <> rcty then
+        printRedeclarePrefixError(node, Prefixes.connectorTypeString(rcty), Prefixes.connectorTypeString(cty));
+      end if;
+
+      cty := rcty;
+    end if;
+
+    if rpar <> Parallelism.NON_PARALLEL then
+      if par <> Parallelism.NON_PARALLEL and par <> rpar then
+        printRedeclarePrefixError(node, Prefixes.parallelismString(rpar), Prefixes.parallelismString(par));
+      end if;
+
+      par := rpar;
+    end if;
+
+    if rvar <> Variability.CONTINUOUS then
+      if rvar > var then
+        printRedeclarePrefixError(node, Prefixes.variabilityString(rvar), Prefixes.variabilityString(var));
+      end if;
+
+      var := rvar;
+    end if;
+
+    if rdir <> Direction.NONE then
+    if dir <> Direction.NONE and rdir <> dir then
+        printRedeclarePrefixError(node, Prefixes.directionString(rdir), Prefixes.directionString(dir));
+      end if;
+
+      dir := rdir;
+    end if;
+
+    if rio <> InnerOuter.NOT_INNER_OUTER then
+      if io <> InnerOuter.NOT_INNER_OUTER and rio <> io then
+        printRedeclarePrefixError(node, Prefixes.innerOuterString(rio), Prefixes.innerOuterString(io));
+      end if;
+
+      io := rio;
+    end if;
+
+    attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
+  end if;
+end mergeRedeclaredComponentAttributes;
+
+function mergeRedeclaredClassPrefixes
+  input Class.Prefixes origPrefs;
+  input Class.Prefixes redeclPrefs;
+  input InstNode node;
+  output Class.Prefixes prefs;
+protected
+  SCode.Encapsulated enc;
+  SCode.Partial par;
+  SCode.Final fin;
+  Absyn.InnerOuter io, rio;
+  SCode.Replaceable repl;
+algorithm
+  if referenceEq(origPrefs, NFClass.DEFAULT_PREFIXES) then
+    prefs := redeclPrefs;
+  else
+    Class.Prefixes.PREFIXES(innerOuter = io) := origPrefs;
+    Class.Prefixes.PREFIXES(enc, par, fin, rio, repl) := redeclPrefs;
+
+    io := match (io, rio)
+      case (Absyn.InnerOuter.NOT_INNER_OUTER(), _) then rio;
+      case (_, Absyn.InnerOuter.NOT_INNER_OUTER()) then io;
+      case (Absyn.InnerOuter.INNER(), Absyn.InnerOuter.INNER()) then io;
+      case (Absyn.InnerOuter.OUTER(), Absyn.InnerOuter.OUTER()) then io;
+      case (Absyn.InnerOuter.INNER_OUTER(), Absyn.InnerOuter.INNER_OUTER()) then io;
+      else
+        algorithm
+          printRedeclarePrefixError(node,
+            Prefixes.innerOuterString(Prefixes.innerOuterFromSCode(rio)),
+            Prefixes.innerOuterString(Prefixes.innerOuterFromSCode(io)));
+        then
+          fail();
+    end match;
+
+    prefs := Class.Prefixes.PREFIXES(enc, par, fin, io, repl);
+  end if;
+end mergeRedeclaredClassPrefixes;
+
+function printRedeclarePrefixError
+  input InstNode node;
+  input String prefix1;
+  input String prefix2;
+algorithm
+  Error.addSourceMessageAndFail(Error.REDECLARE_MISMATCHED_PREFIX,
+    {prefix1, InstNode.name(node), prefix2}, InstNode.info(node));
+end printRedeclarePrefixError;
 
 function updateComponentVariability
   input output Component.Attributes attr;
@@ -1286,7 +1704,6 @@ end instTypeSpec;
 
 function instDimension
   input output Dimension dimension;
-  input InstNode scope;
   input SourceInfo info;
 algorithm
   dimension := match dimension
@@ -1300,7 +1717,7 @@ algorithm
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
-              exp := instExp(dim.subscript, scope, info);
+              exp := instExp(dim.subscript, dimension.scope, info);
             then
               Dimension.UNTYPED(exp, false);
         end match;
@@ -1349,7 +1766,7 @@ algorithm
         sections := instExpressions(cls.baseClass, scope, sections);
 
         if not listEmpty(cls.dims) then
-          cls.dims := list(instDimension(d, InstNode.parent(node), InstNode.info(node))
+          cls.dims := list(instDimension(d, InstNode.info(node))
             for d in cls.dims);
           InstNode.updateClass(cls, node);
         end if;
@@ -1412,34 +1829,9 @@ algorithm
         c.condition := instBinding(c.condition);
         instExpressions(c.classInst, node);
 
-        cls_dims := Class.getDimensions(InstNode.getClass(c.classInst));
-        len := arrayLength(dims);
-
-        if listEmpty(cls_dims) then
-          // If we have no type dimensions, simply instantiate the component's dimensions.
-          for i in 1:len loop
-            dims[i] := instDimension(dims[i], scope, c.info);
-          end for;
-        else
-          // If we have type dimensions, allocate space for them and add them to
-          // the component's dimensions.
-          all_dims := Dangerous.arrayCreateNoInit(len + listLength(cls_dims), Dimension.UNKNOWN());
-
-          // Instantiate the component's dimensions.
-          for i in 1:len loop
-            all_dims[i] := instDimension(dims[i], scope, c.info);
-          end for;
-
-          // Add the already instantiated dimensions from the type.
-          len := len + 1;
-          for e in cls_dims loop
-            all_dims[len] := e;
-            len := len + 1;
-          end for;
-
-          // Update the dimensions in the component.
-          c.dimensions := all_dims;
-        end if;
+        for i in 1:arrayLength(dims) loop
+          dims[i] := instDimension(dims[i], c.info);
+        end for;
 
         InstNode.updateComponent(c, node);
       then
@@ -2218,7 +2610,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, NFComponent.DEFAULT_ATTR, node, node);
+      instComponent(n, NFComponent.DEFAULT_ATTR);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.

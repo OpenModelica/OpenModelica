@@ -458,7 +458,7 @@ algorithm
   if not InstNode.isSame(out_class, expected) then
     Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
       {"Wrong type for output of overloaded operator function '"+ oper_name +
-        "'. Expected '" + InstNode.toString(expected) + "' Found '"+ InstNode.toString(outc) + "'"}, info);
+        "'. Expected '" + InstNode.scopeName(expected) + "' Found '" + InstNode.scopeName(outc) + "'"}, info);
   end if;
 end checkOutputType;
 

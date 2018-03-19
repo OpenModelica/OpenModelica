@@ -41,6 +41,8 @@ import Pointer;
 import Error;
 import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
+import NFModifier.Modifier;
+import SCodeDump;
 
 protected
 import List;
@@ -48,7 +50,7 @@ import List;
 public
 uniontype InstNodeType
   record NORMAL_CLASS
-    "A normal class."
+    "An element with no specific characteristics."
   end NORMAL_CLASS;
 
   record BASE_CLASS
@@ -58,7 +60,7 @@ uniontype InstNodeType
   end BASE_CLASS;
 
   record BUILTIN_CLASS
-    "A builtin class."
+    "A builtin element."
   end BUILTIN_CLASS;
 
   record TOP_SCOPE
@@ -200,7 +202,7 @@ uniontype InstNode
     Visibility visibility;
     Pointer<Component> component;
     Integer level;
-    InstNode parent;
+    InstNode parent "The instance that this component is part of.";
   end COMPONENT_NODE;
 
   record INNER_OUTER_NODE
@@ -375,6 +377,13 @@ uniontype InstNode
     end match;
   end name;
 
+  function scopeName
+    "Returns the name of a scope, which in the case of a component is the name
+     of the component's type, and for a class simply the name of the class."
+    input InstNode node;
+    output String outName = name(classScope(node));
+  end scopeName;
+
   function typeName
     "Returns the type of node the given node is as a string."
     input InstNode node;
@@ -441,10 +450,9 @@ uniontype InstNode
     output InstNode scope;
   algorithm
     scope := match node
-      case CLASS_NODE()
-        then node;
       case COMPONENT_NODE()
         then Component.classInstance(Pointer.access(node.component));
+      else node;
     end match;
   end classScope;
 
@@ -605,6 +613,8 @@ uniontype InstNode
           node.nodeType := nodeType;
         then
           ();
+
+      else ();
     end match;
   end setNodeType;
 
@@ -1028,6 +1038,7 @@ uniontype InstNode
   algorithm
     name := match node
       case COMPONENT_NODE() then Component.toString(node.name, Pointer.access(node.component));
+      case CLASS_NODE() then SCodeDump.unparseElementStr(node.definition);
       else name(node);
     end match;
   end toString;
@@ -1136,6 +1147,59 @@ uniontype InstNode
       else 0;
     end match;
   end level;
+
+  function getModifier
+    input InstNode node;
+    output Modifier mod;
+  algorithm
+    mod := match node
+      case CLASS_NODE() then Class.getModifier(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Component.getModifier(Pointer.access(node.component));
+      else Modifier.NOMOD();
+    end match;
+  end getModifier;
+
+  function mergeModifier
+    input Modifier mod;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          Pointer.update(node.cls, Class.mergeModifier(mod, Pointer.access(node.cls)));
+        then
+          ();
+
+      case COMPONENT_NODE()
+        algorithm
+          Pointer.update(node.component, Component.mergeModifier(mod, Pointer.access(node.component)));
+        then
+          ();
+
+      else ();
+    end match;
+  end mergeModifier;
+
+  function setModifier
+    input Modifier mod;
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE()
+        algorithm
+          Pointer.update(node.cls, Class.setModifier(mod, Pointer.access(node.cls)));
+        then
+          ();
+
+      case COMPONENT_NODE()
+        algorithm
+          Pointer.update(node.component, Component.mergeModifier(mod, Pointer.access(node.component)));
+        then
+          ();
+
+      else ();
+    end match;
+  end setModifier;
 
 end InstNode;
 

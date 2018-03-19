@@ -351,7 +351,7 @@ uniontype Function
         InstNode sub_fnNode;
         list<Function> funcs;
 
-      case SCode.CLASS(classDef = cdef as SCode.PARTS()) guard SCode.isRecord(def)
+      case SCode.CLASS() guard SCode.isRecord(def)
         algorithm
           // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);

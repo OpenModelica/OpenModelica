@@ -78,6 +78,7 @@ uniontype Class
   record PARTIAL_CLASS
     ClassTree elements;
     Modifier modifier;
+    Class.Prefixes prefixes;
   end PARTIAL_CLASS;
 
   record EXPANDED_CLASS
@@ -121,12 +122,13 @@ uniontype Class
     input list<SCode.Element> elements;
     input Boolean isClassExtends;
     input InstNode scope;
+    input Prefixes prefixes;
     output Class cls;
   protected
     ClassTree tree;
   algorithm
     tree := ClassTree.fromSCode(elements, isClassExtends, scope);
-    cls := PARTIAL_CLASS(tree, Modifier.NOMOD());
+    cls := PARTIAL_CLASS(tree, Modifier.NOMOD(), prefixes);
   end fromSCode;
 
   function fromEnumeration
@@ -147,8 +149,7 @@ uniontype Class
   algorithm
     cls := match cls
       case PARTIAL_CLASS()
-        then EXPANDED_CLASS(cls.elements, cls.modifier, DEFAULT_PREFIXES,
-          Restriction.UNKNOWN());
+        then EXPANDED_CLASS(cls.elements, cls.modifier, cls.prefixes, Restriction.UNKNOWN());
     end match;
   end initExpandedClass;
 
@@ -260,6 +261,39 @@ uniontype Class
       else Modifier.NOMOD();
     end match;
   end getModifier;
+
+  function setModifier
+    input Modifier modifier;
+    input output Class cls;
+  algorithm
+    () := match cls
+      case PARTIAL_CLASS()
+        algorithm
+          cls.modifier := modifier;
+        then
+          ();
+      case EXPANDED_CLASS()
+        algorithm
+          cls.modifier := modifier;
+        then
+          ();
+      case DERIVED_CLASS()
+        algorithm
+          cls.modifier := modifier;
+        then
+          ();
+      case PARTIAL_BUILTIN()
+        algorithm
+          cls.modifier := modifier;
+        then
+          ();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got non-modifiable class", sourceInfo());
+        then
+          fail();
+    end match;
+  end setModifier;
 
   function mergeModifier
     input Modifier modifier;
@@ -422,6 +456,36 @@ uniontype Class
     output Boolean isFunction = Restriction.isFunction(restriction(cls));
   end isFunction;
 
+  function getPrefixes
+    input Class cls;
+    output Prefixes prefs;
+  algorithm
+    prefs := match cls
+      case PARTIAL_CLASS() then cls.prefixes;
+      case EXPANDED_CLASS() then cls.prefixes;
+      case DERIVED_CLASS() then cls.prefixes;
+    end match;
+  end getPrefixes;
+
+  function setPrefixes
+    input Prefixes prefs;
+    input output Class cls;
+  algorithm
+    () := match cls
+      case EXPANDED_CLASS()
+        algorithm
+          cls.prefixes := prefs;
+        then
+          ();
+
+      case DERIVED_CLASS()
+        algorithm
+          cls.prefixes := prefs;
+        then
+          ();
+
+    end match;
+  end setPrefixes;
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

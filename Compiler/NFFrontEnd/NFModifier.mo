@@ -46,11 +46,11 @@ import Binding = NFBinding;
 import NFComponent.Component;
 import NFInstNode.InstNode;
 import SCode;
+import Inst = NFInst;
 
 protected
 import Error;
 import List;
-import SCodeDump;
 
 constant Modifier EMPTY_MOD = NOMOD();
 
@@ -93,6 +93,17 @@ uniontype ModifierScope
   record EXTENDS
     Absyn.Path path;
   end EXTENDS;
+
+  function fromElement
+    input SCode.Element element;
+    output ModifierScope scope;
+  algorithm
+    scope := match element
+      case SCode.Element.COMPONENT() then COMPONENT(element.name);
+      case SCode.Element.CLASS() then CLASS(element.name);
+      case SCode.Element.EXTENDS() then EXTENDS(element.baseClassPath);
+    end match;
+  end fromElement;
 
   function name
     input ModifierScope scope;
@@ -166,6 +177,7 @@ public
         SCode.Mod smod;
         Integer lvl;
         Boolean is_each;
+        InstNode node;
 
       case SCode.NOMOD() then NOMOD();
 
@@ -184,8 +196,13 @@ public
       case SCode.REDECL(element = elem)
         algorithm
           (elem, smod) := stripSCodeMod(elem);
+          node := InstNode.new(elem, scope);
+
+          if InstNode.isClass(node) then
+            Inst.partialInstClass(node);
+          end if;
         then
-          REDECLARE(mod.finalPrefix, mod.eachPrefix, InstNode.new(elem, scope),
+          REDECLARE(mod.finalPrefix, mod.eachPrefix, node,
             create(smod, name, modScope, level, scope));
 
     end match;
@@ -199,23 +216,24 @@ public
       local
         SCode.ClassDef cdef;
 
-    case SCode.Element.CLASS(classDef = cdef as SCode.ClassDef.DERIVED(modifications = mod))
-      algorithm
-        if not SCode.isEmptyMod(mod) then
-          cdef.modifications := SCode.Mod.NOMOD();
-          elem.classDef := cdef;
-        end if;
-      then
-        mod;
+      case SCode.Element.CLASS(classDef = cdef as SCode.ClassDef.DERIVED(modifications = mod))
+        algorithm
+          if not SCode.isEmptyMod(mod) then
+            cdef.modifications := SCode.Mod.NOMOD();
+            elem.classDef := cdef;
+          end if;
+        then
+          mod;
 
-    case SCode.Element.COMPONENT(modifications = mod)
-      algorithm
-        if not SCode.isEmptyMod(mod) then
-          elem.modifications := SCode.Mod.NOMOD();
-        end if;
-      then
-        mod;
+      case SCode.Element.COMPONENT(modifications = mod)
+        algorithm
+          if not SCode.isEmptyMod(mod) then
+            elem.modifications := SCode.Mod.NOMOD();
+          end if;
+        then
+          mod;
 
+      else SCode.Mod.NOMOD();
     end match;
   end stripSCodeMod;
 
@@ -228,12 +246,16 @@ public
     mod := match element
       local
         SCode.ClassDef def;
+        SCode.Mod smod;
 
       case SCode.EXTENDS()
         then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), level, scope);
 
       case SCode.COMPONENT()
-        then create(element.modifications, element.name, ModifierScope.COMPONENT(element.name), level, scope);
+        algorithm
+          smod := patchElementModFinal(element.prefixes, element.info, element.modifications);
+        then
+          create(smod, element.name, ModifierScope.COMPONENT(element.name), level, scope);
 
       case SCode.CLASS(classDef = def as SCode.DERIVED())
         then create(def.modifications, element.name, ModifierScope.CLASS(element.name), level, scope);
@@ -244,6 +266,56 @@ public
       else NOMOD();
     end match;
   end fromElement;
+
+  function makeRedeclareMod
+    input InstNode node;
+    input Integer level;
+    input InstNode scope;
+    output Modifier mod;
+  protected
+    String name;
+    ModifierScope mod_scope;
+    SCode.Mod redecl_mod;
+    SCode.Element element;
+  algorithm
+    element := InstNode.definition(node);
+    mod_scope := ModifierScope.fromElement(element);
+    name := ModifierScope.name(mod_scope);
+    redecl_mod := SCode.Mod.REDECL(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), element);
+    redecl_mod := SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(),
+      {SCode.SubMod.NAMEMOD(name, redecl_mod)}, NONE(), SCode.elementInfo(element));
+    mod := create(redecl_mod, name, mod_scope, level, scope);
+  end makeRedeclareMod;
+
+  function patchElementModFinal
+    // TODO: This would be cheaper to do in SCodeUtil when creating the
+    //       modifiers, but it breaks the old instantiation.
+    "This function makes modifiers applied to final elements final, e.g. for
+     'final Real x(start = 1.0)' it will mark '(start = 1.0)' as final. This is
+     done so that we only need to check for final violations while merging
+     modifiers."
+    input SCode.Prefixes prefixes;
+    input SourceInfo info;
+    input output SCode.Mod mod;
+  algorithm
+    if SCode.finalBool(SCode.prefixesFinal(prefixes)) then
+      mod := match mod
+        case SCode.Mod.MOD()
+          algorithm
+            mod.finalPrefix := SCode.Final.FINAL();
+          then
+            mod;
+
+        case SCode.Mod.REDECL()
+          algorithm
+            mod.finalPrefix := SCode.Final.FINAL();
+          then
+            mod;
+
+        else SCode.Mod.MOD(SCode.Final.FINAL(), SCode.Each.NOT_EACH(), {}, NONE(), info);
+      end match;
+    end if;
+  end patchElementModFinal;
 
   function lookupModifier
     input String modName;
@@ -276,6 +348,16 @@ public
       else Absyn.dummyInfo;
     end match;
   end info;
+
+  function hasBinding
+    input Modifier modifier;
+    output Boolean hasBinding;
+  algorithm
+    hasBinding := match modifier
+      case MODIFIER() then Binding.isBound(modifier.binding);
+      else false;
+    end match;
+  end hasBinding;
 
   function binding
     input Modifier modifier;
@@ -318,8 +400,7 @@ public
       // Two modifiers, merge bindings and submodifiers.
       case (MODIFIER(), MODIFIER())
         algorithm
-          checkFinalOverride(innerMod.finalPrefix, outerMod.name, outerMod.binding,
-            outerMod.info, innerMod.info);
+          checkFinalOverride(innerMod.finalPrefix, outerMod, innerMod.info);
           binding := if Binding.isBound(outerMod.binding) then
             outerMod.binding else innerMod.binding;
           submods := ModTable.join(innerMod.subModifiers, outerMod.subModifiers, merge);
@@ -360,6 +441,16 @@ public
       else false;
     end match;
   end isEmpty;
+
+  function isRedeclare
+    input Modifier mod;
+    output Boolean isRedeclare;
+  algorithm
+    isRedeclare := match mod
+      case REDECLARE() then true;
+      else false;
+    end match;
+  end isRedeclare;
 
   function toList
     input Modifier mod;
@@ -425,7 +516,6 @@ public
         list<Modifier> submods;
         String subs_str, binding_str, binding_sep;
 
-      case NOMOD() then "";
       case MODIFIER()
         algorithm
           submods := ModTable.listValues(mod.subModifiers);
@@ -441,9 +531,8 @@ public
         then
           if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
 
-      case REDECLARE()
-        then SCodeDump.unparseElementStr(InstNode.definition(mod.element));
-
+      case REDECLARE() then InstNode.toString(mod.element);
+      else "";
     end match;
   end toString;
 
@@ -460,17 +549,15 @@ protected
     "Checks that a modifier is not trying to override a final modifier. In that
      case it prints an error and fails, otherwise it does nothing."
     input SCode.Final innerFinal;
-    input String name;
-    input Binding outerBinding;
-    input SourceInfo outerInfo;
+    input Modifier outerMod;
     input SourceInfo innerInfo;
   algorithm
     _ := match innerFinal
       case SCode.FINAL()
         algorithm
           Error.addMultiSourceMessage(Error.FINAL_COMPONENT_OVERRIDE,
-            {name, Binding.toString(outerBinding)},
-            {outerInfo, innerInfo});
+            {name(outerMod), Modifier.toString(outerMod, printName = false)},
+            {info(outerMod), innerInfo});
         then
           fail();
 

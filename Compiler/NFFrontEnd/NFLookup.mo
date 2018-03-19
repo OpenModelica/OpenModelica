@@ -81,7 +81,7 @@ algorithm
     (nodes, state) := lookupNames(name, scope);
   else
     Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
-      {Absyn.pathString(name), InstNode.name(scope)}, info);
+      {Absyn.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
   end try;
 
@@ -267,7 +267,7 @@ algorithm
 
   if match_ty <> MatchType.FOUND then
     Error.addSourceMessage(errMsg,
-      {Dump.printComponentRefStr(cref), InstNode.name(scope)}, info);
+      {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
     fail();
   end if;
 end lookupCref;
@@ -308,7 +308,7 @@ algorithm
     else
       algorithm
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-          {Dump.printComponentRefStr(cref), InstNode.name(scope)}, info);
+          {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
       then
         fail();
   end matchcontinue;
@@ -462,7 +462,7 @@ algorithm
   try
     (node, state) := lookupName(name, scope);
   else
-    Error.addSourceMessage(errorType, {Absyn.pathString(name), InstNode.name(scope)}, info);
+    Error.addSourceMessage(errorType, {Absyn.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
   end try;
 end lookupNameWithError;
@@ -693,7 +693,7 @@ algorithm
   end for;
 
   Error.addMessage(Error.RECURSION_DEPTH_REACHED,
-    {String(Global.recursionDepthLimit), InstNode.name(foundScope)});
+    {String(Global.recursionDepthLimit), InstNode.scopeName(foundScope)});
   fail();
 end lookupSimpleCref;
 

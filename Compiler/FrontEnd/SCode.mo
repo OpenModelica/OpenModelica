@@ -4113,6 +4113,16 @@ algorithm
   end match;
 end getModifierBinding;
 
+function getComponentCondition
+  input Element element;
+  output Option<Absyn.Exp> condition;
+algorithm
+  condition := match element
+    case COMPONENT() then element.condition;
+    else NONE();
+  end match;
+end getComponentCondition;
+
 public function removeComponentCondition
   input Element inElement;
   output Element outElement;
@@ -5762,6 +5772,40 @@ algorithm
     else false;
   end match;
 end isEmptyMod;
+
+function getConstrainingMod
+  input SCode.Element element;
+  output SCode.Mod mod;
+algorithm
+  mod := match element
+    case Element.CLASS(prefixes = Prefixes.PREFIXES(replaceablePrefix =
+      Replaceable.REPLACEABLE(cc = SOME(ConstrainClass.CONSTRAINCLASS(modifier = mod))))) then mod;
+    case Element.CLASS(classDef = ClassDef.DERIVED(modifications = mod)) then mod;
+    case Element.COMPONENT(prefixes = Prefixes.PREFIXES(replaceablePrefix =
+      Replaceable.REPLACEABLE(cc = SOME(ConstrainClass.CONSTRAINCLASS(modifier = mod))))) then mod;
+    case Element.COMPONENT(modifications = mod) then mod;
+    else Mod.NOMOD();
+  end match;
+end getConstrainingMod;
+
+function isEmptyClassDef
+  input SCode.ClassDef cdef;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := match cdef
+    case PARTS()
+      then listEmpty(cdef.elementLst) and
+           listEmpty(cdef.normalEquationLst) and
+           listEmpty(cdef.initialEquationLst) and
+           listEmpty(cdef.normalAlgorithmLst) and
+           listEmpty(cdef.initialAlgorithmLst) and
+           isNone(cdef.externalDecl);
+
+    case CLASS_EXTENDS() then isEmptyClassDef(cdef.composition);
+    case ENUMERATION() then listEmpty(cdef.enumLst);
+    else true;
+  end match;
+end isEmptyClassDef;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCode;

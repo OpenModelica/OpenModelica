@@ -109,7 +109,7 @@ protected
   Option<DAE.Exp> binding_exp;
 algorithm
   binding_exp := convertBinding(var.binding);
-  var_attr := convertVarAttributes(var.typeAttributes, var.ty);
+  var_attr := convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
     var.visibility, var_attr, var.comment, useLocalDir, false, var.info);
 end convertVariable;
@@ -202,25 +202,31 @@ end convertBinding;
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Type ty;
+  input Component.Attributes compAttrs;
   output Option<DAE.VariableAttributes> attributes;
+protected
+  Option<Boolean> is_final;
 algorithm
-  if listEmpty(attrs) then
+  if listEmpty(attrs) and not compAttrs.isFinal then
     attributes := NONE();
     return;
   end if;
 
+  is_final := SOME(compAttrs.isFinal);
+
   attributes := match ty
-    case Type.REAL() then convertRealVarAttributes(attrs);
-    case Type.INTEGER() then convertIntVarAttributes(attrs);
-    case Type.BOOLEAN() then convertBoolVarAttributes(attrs);
-    case Type.STRING() then convertStringVarAttributes(attrs);
-    case Type.ENUMERATION() then convertEnumVarAttributes(attrs);
+    case Type.REAL() then convertRealVarAttributes(attrs, is_final);
+    case Type.INTEGER() then convertIntVarAttributes(attrs, is_final);
+    case Type.BOOLEAN() then convertBoolVarAttributes(attrs, is_final);
+    case Type.STRING() then convertStringVarAttributes(attrs, is_final);
+    case Type.ENUMERATION() then convertEnumVarAttributes(attrs, is_final);
     else NONE();
   end match;
 end convertVarAttributes;
 
 function convertRealVarAttributes
   input list<tuple<String, Binding>> attrs;
+  input Option<Boolean> isFinal;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -257,11 +263,12 @@ algorithm
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_REAL(
     quantity, unit, displayUnit, min, max, start, fixed, nominal,
-    state_select, NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
+    state_select, NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
 end convertRealVarAttributes;
 
 function convertIntVarAttributes
   input list<tuple<String, Binding>> attrs;
+  input Option<Boolean> isFinal;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -291,11 +298,12 @@ algorithm
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_INT(
     quantity, min, max, start, fixed,
-    NONE(), NONE(), NONE(), NONE(), NONE(), NONE()));
+    NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
 end convertIntVarAttributes;
 
 function convertBoolVarAttributes
   input list<tuple<String, Binding>> attrs;
+  input Option<Boolean> isFinal;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -321,11 +329,12 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_BOOL(
-    quantity, start, fixed, NONE(), NONE(), NONE(), NONE()));
+    quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
 end convertBoolVarAttributes;
 
 function convertStringVarAttributes
   input list<tuple<String, Binding>> attrs;
+  input Option<Boolean> isFinal;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -351,11 +360,12 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_STRING(
-    quantity, start, fixed, NONE(), NONE(), NONE(), NONE()));
+    quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
 end convertStringVarAttributes;
 
 function convertEnumVarAttributes
   input list<tuple<String, Binding>> attrs;
+  input Option<Boolean> isFinal;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -384,7 +394,7 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_ENUMERATION(
-    quantity, min, max, start, fixed, NONE(), NONE(), NONE(), NONE()));
+    quantity, min, max, start, fixed, NONE(), NONE(), isFinal, NONE()));
 end convertEnumVarAttributes;
 
 function convertVarAttribute
@@ -957,8 +967,8 @@ algorithm
         binding := convertBinding(comp.binding);
         cls := InstNode.getClass(comp.classInst);
         ty_attr := list((Modifier.name(m), Modifier.binding(m)) for m in Class.getTypeAttributes(cls));
-        var_attr := convertVarAttributes(ty_attr, ty);
         attr := comp.attributes;
+        var_attr := convertVarAttributes(ty_attr, ty, attr);
       then
         makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr, comp.comment, true, true, info);
 

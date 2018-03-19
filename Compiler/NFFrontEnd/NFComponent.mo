@@ -55,7 +55,10 @@ constant Component.Attributes DEFAULT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER
+    InnerOuter.NOT_INNER_OUTER,
+    false,
+    false,
+    Replaceable.NOT_REPLACEABLE()
   );
 constant Component.Attributes INPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
@@ -63,7 +66,10 @@ constant Component.Attributes INPUT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.INPUT,
-    InnerOuter.NOT_INNER_OUTER
+    InnerOuter.NOT_INNER_OUTER,
+    false,
+    false,
+    Replaceable.NOT_REPLACEABLE()
   );
 
 constant Component.Attributes OUTPUT_ATTR =
@@ -72,7 +78,10 @@ constant Component.Attributes OUTPUT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.OUTPUT,
-    InnerOuter.NOT_INNER_OUTER
+    InnerOuter.NOT_INNER_OUTER,
+    false,
+    false,
+    Replaceable.NOT_REPLACEABLE()
   );
 
 constant Component.Attributes CONSTANT_ATTR =
@@ -81,7 +90,10 @@ constant Component.Attributes CONSTANT_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.CONSTANT,
     Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER
+    InnerOuter.NOT_INNER_OUTER,
+    false,
+    false,
+    Replaceable.NOT_REPLACEABLE()
   );
 
 constant Component.Attributes DISCRETE_ATTR =
@@ -90,7 +102,10 @@ constant Component.Attributes DISCRETE_ATTR =
     Parallelism.NON_PARALLEL,
     Variability.DISCRETE,
     Direction.NONE,
-    InnerOuter.NOT_INNER_OUTER
+    InnerOuter.NOT_INNER_OUTER,
+    false,
+    false,
+    Replaceable.NOT_REPLACEABLE()
   );
 
 uniontype Component
@@ -104,6 +119,9 @@ uniontype Component
       Variability variability;
       Direction direction;
       InnerOuter innerOuter;
+      Boolean isFinal;
+      Boolean isRedeclare;
+      Replaceable isReplaceable;
     end ATTRIBUTES;
 
    function toDAE
@@ -118,6 +136,22 @@ uniontype Component
                       , SCode.PUBLIC() // TODO: Use the actual visibility.
                      );
     end toDAE;
+
+    function toString
+      input Attributes attr;
+      input Type ty;
+      output String str;
+    algorithm
+      str := (if attr.isRedeclare then "redeclare " else "") +
+             (if attr.isFinal then "final " else "") +
+             Prefixes.unparseInnerOuter(attr.innerOuter) +
+             Prefixes.unparseConnectorType(attr.connectorType) +
+             Prefixes.unparseReplaceable(attr.isReplaceable) +
+             Prefixes.unparseParallelism(attr.parallelism) +
+             Prefixes.unparseVariability(attr.variability, ty) +
+             Prefixes.unparseDirection(attr.direction) +
+             Prefixes.unparseConnectorType(attr.connectorType);
+    end toString;
   end Attributes;
 
   record COMPONENT_DEF
@@ -176,6 +210,16 @@ uniontype Component
   algorithm
     COMPONENT_DEF(definition = definition) := component;
   end definition;
+
+  function isDefinition
+    input Component component;
+    output Boolean isDefinition;
+  algorithm
+    isDefinition := match component
+      case COMPONENT_DEF() then true;
+      else false;
+    end match;
+  end isDefinition;
 
   function info
     "This function shouldn't be used! Use InstNode.info instead, so that e.g.
@@ -468,6 +512,19 @@ uniontype Component
     end match;
   end isRedeclare;
 
+  function isFinal
+    input Component component;
+    output Boolean isFinal;
+  algorithm
+    isFinal := match component
+      case COMPONENT_DEF()
+        then SCode.finalBool(SCode.prefixesFinal(SCode.elementPrefixes(component.definition)));
+      case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
+      case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(isFinal = isFinal)) then isFinal;
+      else false;
+    end match;
+  end isFinal;
+
   function innerOuter
     input Component component;
     output InnerOuter io;
@@ -564,20 +621,42 @@ uniontype Component
         SCode.Element def;
 
       case COMPONENT_DEF(definition = def as SCode.Element.COMPONENT())
-        then Dump.unparseTypeSpec(def.typeSpec) + " " + name +
-             Modifier.toString(component.modifier);
+        then SCodeDump.unparseElementStr(def);
 
       case UNTYPED_COMPONENT()
-        then InstNode.name(component.classInst) + " " + name +
+        then Attributes.toString(component.attributes, Type.UNKNOWN()) +
+             InstNode.name(component.classInst) + " " + name +
              List.toString(arrayList(component.dimensions), Dimension.toString, "", "[", ", ", "]", false) +
              Binding.toString(component.binding, " = ");
 
       case TYPED_COMPONENT()
-        then Type.toString(component.ty) + " " + name +
+        then Attributes.toString(component.attributes, component.ty) +
+             Type.toString(component.ty) + " " + name +
              Binding.toString(component.binding, " = ");
 
     end match;
   end toString;
+
+  function setDimensions
+    input list<Dimension> dims;
+    input output Component component;
+  algorithm
+    () := match component
+      case UNTYPED_COMPONENT()
+        algorithm
+          component.dimensions := listArray(dims);
+        then
+          ();
+
+      case TYPED_COMPONENT()
+        algorithm
+          component.ty := Type.liftArrayLeftList(Type.arrayElementType(component.ty), dims);
+        then
+          ();
+
+      else ();
+    end match;
+  end setDimensions;
 
   function dimensionCount
     input Component component;
@@ -614,6 +693,7 @@ uniontype Component
       else false;
     end match;
   end isDeleted;
+
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

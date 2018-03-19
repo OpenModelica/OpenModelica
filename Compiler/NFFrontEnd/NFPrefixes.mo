@@ -72,6 +72,14 @@ type Visibility = enumeration(
   PROTECTED
 );
 
+uniontype Replaceable
+  record REPLACEABLE
+    Option<InstNode> constrainingClass;
+  end REPLACEABLE;
+
+  record NOT_REPLACEABLE end NOT_REPLACEABLE;
+end Replaceable;
+
 function connectorTypeFromSCode
   input SCode.ConnectorType scodeCty;
   output ConnectorType cty;
@@ -104,6 +112,17 @@ algorithm
     else "";
   end match;
 end connectorTypeString;
+
+function unparseConnectorType
+  input ConnectorType cty;
+  output String str;
+algorithm
+  str := match cty
+    case ConnectorType.FLOW then "flow ";
+    case ConnectorType.STREAM then "stream ";
+    else "";
+  end match;
+end unparseConnectorType;
 
 function mergeConnectorType
   input ConnectorType outerCty;
@@ -163,6 +182,17 @@ algorithm
     else "";
   end match;
 end parallelismString;
+
+function unparseParallelism
+  input Parallelism par;
+  output String str;
+algorithm
+   str := match par
+    case Parallelism.GLOBAL then "parglobal ";
+    case Parallelism.LOCAL then "parlocal ";
+    else "";
+  end match;
+end unparseParallelism;
 
 function mergeParallelism
   input Parallelism outerPar;
@@ -310,9 +340,20 @@ algorithm
   str := match dir
     case Direction.INPUT then "input";
     case Direction.OUTPUT then "output";
-    case Direction.NONE then "";
+    else "";
   end match;
 end directionString;
+
+function unparseDirection
+  input Direction dir;
+  output String str;
+algorithm
+  str := match dir
+    case Direction.INPUT then "input ";
+    case Direction.OUTPUT then "output ";
+    else "";
+  end match;
+end unparseDirection;
 
 function mergeDirection
   input Direction outerDir;
@@ -365,6 +406,18 @@ algorithm
   end match;
 end innerOuterString;
 
+function unparseInnerOuter
+  input InnerOuter io;
+  output String str;
+algorithm
+  str := match io
+    case InnerOuter.INNER then "inner ";
+    case InnerOuter.OUTER then "outer ";
+    case InnerOuter.INNER_OUTER then "inner outer ";
+    else "";
+  end match;
+end unparseInnerOuter;
+
 function visibilityFromSCode
   input SCode.Visibility scodeVis;
   output Visibility vis;
@@ -386,11 +439,26 @@ function visibilityString
   output String str = if vis == Visibility.PUBLIC then "public" else "protected";
 end visibilityString;
 
+function unparseVisibility
+  input Visibility vis;
+  output String str = if vis == Visibility.PROTECTED then "protected " else "";
+end unparseVisibility;
+
 function mergeVisibility
   input Visibility outerVis;
   input Visibility innerVis;
   output Visibility vis = if outerVis == Visibility.PROTECTED then outerVis else innerVis;
 end mergeVisibility;
+
+function unparseReplaceable
+  input Replaceable repl;
+  output String str;
+algorithm
+  str := match repl
+    case Replaceable.REPLACEABLE() then "replaceable ";
+    else "";
+  end match;
+end unparseReplaceable;
 
 function printPrefixError
   input String outerPrefix;

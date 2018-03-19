@@ -34,6 +34,7 @@ encapsulated package NFClassTree
   import SCode;
   import NFType.Type;
   import Mutable;
+  import NFModifier.Modifier;
 
 protected
   import Array;
@@ -45,6 +46,7 @@ protected
   import List;
   import Lookup = NFLookup;
   import SCodeDump;
+  import NFInstNode.InstNodeType;
 
 public
   encapsulated package LookupTree
@@ -439,8 +441,9 @@ public
        function to mean that the instance should be set to the cloned clsNode."
       input output InstNode clsNode;
       input output InstNode instance = InstNode.EMPTY_NODE();
-      output Integer classCount = 0;
-      output Integer compCount = 0;
+      input InstNode scope = InstNode.EMPTY_NODE();
+            output Integer classCount = 0;
+            output Integer compCount = 0;
     protected
       Class cls;
       ClassTree tree, ext_tree;
@@ -449,9 +452,10 @@ public
       array<Mutable<InstNode>> clss, comps, ext_clss;
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
-      InstNode node, parent_scope, inner_node;
+      InstNode node, parent_scope, inner_node, inst_scope;
       DuplicateTree.Tree dups;
       Component comp;
+      SCode.Element ext_def;
     algorithm
       // TODO: If we don't have any extends we could probably generate a flat
       // tree directly and skip a lot of this.
@@ -472,7 +476,10 @@ public
               parent_scope := InstNode.parent(clsNode);
             else
               parent_scope := instance;
+              inst_scope := scope;
             end if;
+
+            inst_scope := if InstNode.isEmpty(scope) then instance else scope;
 
             // Fetch the elements from the class tree.
             EXPANDED_TREE(ltree, old_clss, old_comps, exts, imps, dups) := cls.elements;
@@ -486,8 +493,14 @@ public
             // Make a new extends array, and recursively instantiate the extends nodes.
             exts := arrayCopy(exts);
             for i in 1:arrayLength(exts) loop
-              (node, _, cls_count, comp_count) := instantiate(exts[i], instance);
+              // Update the parent of the extends to be the new instance.
+              node := exts[i];
+              InstNodeType.BASE_CLASS(definition = ext_def) := InstNode.nodeType(node);
+              node := InstNode.setNodeType(InstNodeType.BASE_CLASS(instance, ext_def), node);
+              // Instantiate the class tree of the extends.
+              (node, _, cls_count, comp_count) := instantiate(node, InstNode.EMPTY_NODE(), inst_scope);
               exts[i] := node;
+
               // Add the inherited elements to the class/component counts.
               classCount := cls_count + classCount;
               compCount := comp_count + compCount;
@@ -540,7 +553,7 @@ public
                     // If the component is outer, link it with the corresponding
                     // inner component.
                     if Component.isOuter(comp) then
-                      node := linkInnerOuter(node, instance);
+                      node := linkInnerOuter(node, inst_scope);
                     end if;
 
                     // Add the node to the component array.
@@ -584,6 +597,26 @@ public
 
       InstNode.updateClass(cls, clsNode);
     end instantiate;
+
+    function mapRedeclareChains
+      input ClassTree tree;
+      input FuncT func;
+
+      partial function FuncT
+        input list<Mutable<InstNode>> chain;
+      end FuncT;
+    algorithm
+      () := match tree
+        case INSTANTIATED_TREE() guard not DuplicateTree.isEmpty(tree.duplicates)
+          algorithm
+            DuplicateTree.map(tree.duplicates,
+              function mapRedeclareChain(func = func, tree = tree));
+          then
+            ();
+
+        else ();
+      end match;
+    end mapRedeclareChains;
 
     function replaceDuplicates
       "This function replaces all duplicate elements with the element that is
@@ -697,6 +730,21 @@ public
       entry := LookupTree.get(lookupTree(tree), name);
       element := resolveEntryPtr(entry, tree);
     end lookupElementPtr;
+
+    function lookupElementsPtr
+      input String name;
+      input ClassTree tree;
+      output list<Mutable<InstNode>> elements;
+    protected
+      DuplicateTree.Entry dup_entry;
+    algorithm
+      try
+        dup_entry := DuplicateTree.get(getDuplicates(tree), name);
+        elements := resolveDuplicateEntriesPtr(dup_entry, tree);
+      else
+        elements := {lookupElementPtr(name, tree)};
+      end try;
+    end lookupElementsPtr;
 
     function foldClasses<ArgT>
       input ClassTree tree;
@@ -849,27 +897,6 @@ public
       output Integer count = arrayLength(getExtends(tree));
     end extendsCount;
 
-    function copyModifiersToDups
-      input ClassTree tree;
-    algorithm
-      () := match tree
-        case INSTANTIATED_TREE() guard not DuplicateTree.isEmpty(tree.duplicates)
-          algorithm
-            DuplicateTree.fold(tree.duplicates, copyModifiersToDup, tree);
-          then
-            ();
-
-        else ();
-      end match;
-    end copyModifiersToDups;
-
-    function copyModifiersToDup
-      input String name;
-      input DuplicateTree.Entry entry;
-      input output ClassTree tree;
-    algorithm
-    end copyModifiersToDup;
-
     function checkDuplicates
       input ClassTree tree;
     algorithm
@@ -894,19 +921,6 @@ public
       SOME(kept) := entry.node;
 
       () := match entry.ty
-        // A redeclare element without an element to replace.
-        case DuplicateTree.EntryType.REDECLARE guard listEmpty(entry.children)
-          algorithm
-            if SCode.isClassExtends(InstNode.definition(kept)) then
-              Error.addSourceMessage(Error.CLASS_EXTENDS_TARGET_NOT_FOUND,
-                {name}, InstNode.info(kept));
-            else
-              Error.addSourceMessage(Error.REDECLARE_NONEXISTING_ELEMENT,
-                {name}, InstNode.info(kept));
-            end if;
-          then
-            fail();
-
         case DuplicateTree.EntryType.REDECLARE
           algorithm
 
@@ -1249,6 +1263,21 @@ public
       end match;
     end resolveEntryPtr;
 
+    function resolveDuplicateEntriesPtr
+      input DuplicateTree.Entry entry;
+      input ClassTree tree;
+      input output list<Mutable<InstNode>> elements = {};
+    protected
+      Mutable<InstNode> node_ptr;
+    algorithm
+      node_ptr := resolveEntryPtr(entry.entry, tree);
+      elements := node_ptr :: elements;
+
+      for child in entry.children loop
+        elements := resolveDuplicateEntriesPtr(child, tree, elements);
+      end for;
+    end resolveDuplicateEntriesPtr;
+
     function resolveClass
       input Integer index;
       input ClassTree tree;
@@ -1353,7 +1382,7 @@ public
     protected
       ClassTree cls_tree;
       LookupTree.Tree ext_tree;
-      DuplicateTree.Tree dups;
+      DuplicateTree.Tree ext_dups, dups;
       LookupTree.ConflictFunc conf_func;
     algorithm
       // The extends node's lookup tree should at this point contain all the
@@ -1362,12 +1391,12 @@ public
       // lookup tree, add the class or component index as an offset, and then
       // add the entry to the given lookup tree.
       cls_tree := Class.classTree(InstNode.getClass(extendsNode));
-      EXPANDED_TREE(tree = ext_tree, duplicates = dups) := cls_tree;
+      EXPANDED_TREE(tree = ext_tree, duplicates = ext_dups) := cls_tree;
 
       // Copy entries from the extends node's duplicate tree if there are any.
-      if not DuplicateTree.isEmpty(dups) then
+      if not DuplicateTree.isEmpty(ext_dups) then
         // Offset the entries so they're correct for the inheriting class tree.
-        dups := DuplicateTree.map(dups,
+        dups := DuplicateTree.map(ext_dups,
           function offsetDuplicates(classOffset = classOffset, componentOffset = componentOffset));
         // Join the two duplicate trees together.
         dups := DuplicateTree.join(Mutable.access(duplicates), dups, joinDuplicates);
@@ -1376,7 +1405,7 @@ public
 
       conf_func := function addInheritedElementConflict(
         duplicates = duplicates,
-        extDuplicates = dups);
+        extDuplicates = ext_dups);
 
       // Copy entries from the extends node's lookup tree.
       tree := LookupTree.fold(ext_tree,
@@ -1458,7 +1487,7 @@ public
               // If the existing entry is for a redeclare, then the position of
               // the element doesn't matter and the new entry should be added as
               // a child to the redeclare.
-              entry := oldEntry;
+              entry := newEntry;
               dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
             then
               ();
@@ -1526,17 +1555,15 @@ public
       input DuplicateTree.Entry newEntry;
       input DuplicateTree.Entry oldEntry;
       input String name;
-      output DuplicateTree.Entry entry;
+      output DuplicateTree.Entry entry = oldEntry;
     algorithm
-      // The kept entry from the extends node is ignored, since it's already
-      // added when copying entries from the extends node's lookup tree.
-      entry := DuplicateTree.ENTRY(oldEntry.entry, NONE(),
-        listAppend(newEntry.children, oldEntry.children), oldEntry.ty);
+      // Add the new entry as a child of the old entry.
+      entry.children := newEntry :: entry.children;
     end joinDuplicates;
 
     function enumerateDuplicates
-      "Returns two sorted lists with the indices of the duplicate classes and
-       components."
+      "Returns the indices of the duplicate classes and components,
+       not including the ones that should be kept."
       input DuplicateTree.Tree duplicates;
       output list<Integer> classes;
       output list<Integer> components;
@@ -1546,8 +1573,6 @@ public
         components := {};
       else
         (classes, components) := DuplicateTree.fold_2(duplicates, enumerateDuplicates2, {}, {});
-        //classes := List.sort(classes, intGt);
-        //components := List.sort(components, intGt);
       end if;
     end enumerateDuplicates;
 
@@ -1582,7 +1607,7 @@ public
       () := match entry
         case LookupTree.Entry.CLASS()
           algorithm
-            classes := entry.index :: classes;
+            //classes := entry.index :: classes;
           then
             ();
 
@@ -1594,32 +1619,119 @@ public
       end match;
     end enumerateDuplicates4;
 
+    function mapRedeclareChain
+      input String name;
+      input output DuplicateTree.Entry entry;
+      input FuncT func;
+      input ClassTree tree;
+
+      partial function FuncT
+        input list<Mutable<InstNode>> chain;
+      end FuncT;
+    protected
+      list<Mutable<InstNode>> chain;
+    algorithm
+      chain := getRedeclareChain(entry, tree);
+
+      if not listEmpty(chain) then
+        func(chain);
+      end if;
+    end mapRedeclareChain;
+
+    function getRedeclareChain
+      input DuplicateTree.Entry entry;
+      input ClassTree tree;
+      input output list<Mutable<InstNode>> chain = {};
+    algorithm
+      chain := match entry.ty
+        local
+          Mutable<InstNode> node_ptr;
+          InstNode node;
+
+        case DuplicateTree.EntryType.REDECLARE
+          algorithm
+            node_ptr := resolveEntryPtr(entry.entry, tree);
+
+            if listEmpty(entry.children) then
+              node := Mutable.access(node_ptr);
+
+              if SCode.isClassExtends(InstNode.definition(node)) then
+                Error.addSourceMessage(Error.CLASS_EXTENDS_TARGET_NOT_FOUND,
+                  {InstNode.name(node)}, InstNode.info(node));
+              else
+                Error.addSourceMessage(Error.REDECLARE_NONEXISTING_ELEMENT,
+                  {InstNode.name(node)}, InstNode.info(node));
+              end if;
+
+              fail();
+            end if;
+          then
+            getRedeclareChain(listHead(entry.children), tree, node_ptr :: chain);
+
+        case DuplicateTree.EntryType.ENTRY
+          algorithm
+            node_ptr := resolveEntryPtr(entry.entry, tree);
+          then
+            node_ptr :: chain;
+
+        else chain;
+      end match;
+    end getRedeclareChain;
+
     function replaceDuplicates2
       input String name;
       input output DuplicateTree.Entry entry;
       input ClassTree tree;
     protected
-      InstNode parent;
+      InstNode kept;
+      Mutable<InstNode> node_ptr;
+      list<DuplicateTree.Entry> children;
+      DuplicateTree.Entry kept_entry;
     algorithm
-      parent := Mutable.access(resolveEntryPtr(entry.entry, tree));
-      entry.node := SOME(parent);
-      entry.children := list(replaceDuplicates3(c, parent, tree) for c in entry.children);
+      node_ptr := resolveEntryPtr(entry.entry, tree);
+
+      () := match entry.ty
+        case DuplicateTree.EntryType.REDECLARE
+          algorithm
+            kept := Mutable.access(resolveEntryPtr(entry.entry, tree));
+            entry := replaceDuplicates4(entry, kept);
+          then
+            ();
+
+        case DuplicateTree.EntryType.DUPLICATE
+          algorithm
+            kept := Mutable.access(node_ptr);
+            entry.node := SOME(kept);
+            entry.children := list(replaceDuplicates3(c, kept, tree) for c in entry.children);
+          then
+            ();
+
+        else ();
+      end match;
     end replaceDuplicates2;
 
     function replaceDuplicates3
       input output DuplicateTree.Entry entry;
-      input InstNode parent;
+      input InstNode kept;
       input ClassTree tree;
     protected
-      Mutable<InstNode> node_ptr, child_ptr;
-      InstNode node, child;
+      Mutable<InstNode> node_ptr;
+      InstNode node;
     algorithm
       node_ptr := resolveEntryPtr(entry.entry, tree);
       node := Mutable.access(node_ptr);
       entry.node := SOME(node);
-      Mutable.update(node_ptr, parent);
-      entry.children := list(replaceDuplicates3(c, parent, tree) for c in entry.children);
+      Mutable.update(node_ptr, kept);
+      entry.children := list(replaceDuplicates3(c, kept, tree) for c in entry.children);
     end replaceDuplicates3;
+
+    function replaceDuplicates4
+      input output DuplicateTree.Entry entry;
+      input InstNode node;
+    algorithm
+      entry.node := SOME(node);
+      entry.children := list(replaceDuplicates4(c, node) for c in entry.children);
+    end replaceDuplicates4;
 
     function linkInnerOuter
       "Looks up the corresponding inner node for the given outer node,
@@ -1677,7 +1789,6 @@ public
         end match;
       end if;
     end checkOuterClass;
-
   end ClassTree;
 
 annotation(__OpenModelica_Interface="frontend");
