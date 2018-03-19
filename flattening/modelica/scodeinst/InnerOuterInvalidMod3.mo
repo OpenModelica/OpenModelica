@@ -15,7 +15,7 @@ end InnerOuterInvalidMod3;
 
 // Result:
 // Error processing file: InnerOuterInvalidMod3.mo
-// [flattening/modelica/scodeinst/InnerOuterInvalidMod3.mo:8:3-8:27:writable] Error: Modifier 'redeclare Real x' found on outer element x.
+// [flattening/modelica/scodeinst/InnerOuterInvalidMod3.mo:8:3-8:27:writable] Error: Modifier 'redeclare Real x = 1.0' found on outer element x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

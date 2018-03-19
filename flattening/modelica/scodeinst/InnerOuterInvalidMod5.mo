@@ -20,7 +20,7 @@ end InnerOuterInvalidMod5;
 
 // Result:
 // Error processing file: InnerOuterInvalidMod5.mo
-// [flattening/modelica/scodeinst/InnerOuterInvalidMod5.mo:18:17-18:37:writable] Error: Modifier 'redeclare model M = B' found on outer element M.
+// [flattening/modelica/scodeinst/InnerOuterInvalidMod5.mo:18:17-18:37:writable] Error: Modifier 'redeclare model M = B(x = 1.0)' found on outer element M.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
