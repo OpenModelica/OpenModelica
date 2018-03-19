@@ -382,6 +382,11 @@ IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
 ih3.mo \
+ImportComponent1.mo \
+ImportConflict1.mo \
+ImportConflict2.mo \
+ImportConflict3.mo \
+ImportConflict4.mo \
 ImportNamed1.mo \
 ImportNamed2.mo \
 ImportNamedInvalid1.mo \
@@ -390,6 +395,8 @@ ImportNested2.mo \
 ImportQualified1.mo \
 ImportQualifiedInvalid1.mo \
 ImportQualifiedInvalid2.mo \
+ImportSubPackage1.mo \
+ImportSubPackage2.mo \
 ImportUnqualified1.mo \
 ImportUnqualified2.mo \
 ImportUnqualified3.mo \
@@ -631,7 +638,6 @@ FuncBuiltinCardinality.mo \
 FuncBuiltinEnumTypeName.mo \
 FuncBuiltinReduction.mo \
 FunctionRecordArg1.mo \
-ImportConflict1.mo \
 ImportShadowing1.mo \
 InnerOuterExtends1.mo \
 inst1.mo \
