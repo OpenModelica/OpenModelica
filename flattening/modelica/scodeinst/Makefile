@@ -266,6 +266,8 @@ Final2.mo \
 Final3.mo \
 Final4.mo \
 Final5.mo \
+Final6.mo \
+Final7.mo \
 ForConnect1.mo \
 ForEquation1.mo \
 ForEquation2.mo \
