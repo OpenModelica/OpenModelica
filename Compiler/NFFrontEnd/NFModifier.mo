@@ -195,15 +195,13 @@ public
 
       case SCode.REDECL(element = elem)
         algorithm
-          (elem, smod) := stripSCodeMod(elem);
           node := InstNode.new(elem, scope);
 
           if InstNode.isClass(node) then
             Inst.partialInstClass(node);
           end if;
         then
-          REDECLARE(mod.finalPrefix, mod.eachPrefix, node,
-            create(smod, name, modScope, level, scope));
+          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD());
 
     end match;
   end create;
