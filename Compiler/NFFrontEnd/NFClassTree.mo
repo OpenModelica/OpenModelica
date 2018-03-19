@@ -35,6 +35,7 @@ encapsulated package NFClassTree
   import NFType.Type;
   import Mutable;
   import NFModifier.Modifier;
+  import Import = NFImport;
 
 protected
   import Array;
@@ -165,7 +166,7 @@ public
       array<InstNode> classes;
       array<InstNode> components;
       array<InstNode> exts;
-      array<InstNode> imports;
+      array<Import> imports;
       DuplicateTree.Tree duplicates;
     end PARTIAL_TREE;
 
@@ -177,7 +178,7 @@ public
       array<InstNode> classes;
       array<InstNode> components;
       array<InstNode> exts;
-      array<InstNode> imports;
+      array<Import> imports;
       DuplicateTree.Tree duplicates;
     end EXPANDED_TREE;
 
@@ -188,7 +189,7 @@ public
       array<Mutable<InstNode>> components;
       list<Integer> localComponents;
       array<InstNode> exts;
-      array<InstNode> imports;
+      array<Import> imports;
       DuplicateTree.Tree duplicates;
     end INSTANTIATED_TREE;
 
@@ -197,7 +198,7 @@ public
       LookupTree.Tree tree;
       array<InstNode> classes;
       array<InstNode> components;
-      array<InstNode> imports;
+      array<Import> imports;
       DuplicateTree.Tree duplicates;
     end FLAT_TREE;
 
@@ -211,10 +212,12 @@ public
       LookupTree.Tree ltree;
       LookupTree.Entry lentry;
       Integer clsc, compc, extc, i;
-      array<InstNode> clss, comps, exts, imps;
+      array<InstNode> clss, comps, exts;
       Integer cls_idx = 0, ext_idx = 0, comp_idx = 0;
-      list<InstNode> imported_elems = {};
       DuplicateTree.Tree dups;
+      list<Import> imps = {};
+      array<Import> imps_arr;
+      SourceInfo info;
     algorithm
       ltree := LookupTree.new();
 
@@ -286,12 +289,22 @@ public
             then
               ();
 
-          // An import clause. Instantiate it to get the elements it points to
-          // (might be multiple elements if it's unqualified) and store them in
-          // the list for later.
+          // An unqualified import clause. We need to know which names are
+          // imported by the clause, so it needs to be instantiated.
+          case SCode.IMPORT(imp = Absyn.Import.UNQUAL_IMPORT(), info = info)
+            algorithm
+              imps := Import.instUnqualified(e.imp, parent, info, imps);
+            then
+              ();
+
+          // A qualified import clause. Since the import itself gives the name
+          // of the imported element we can delay resolving the path until we
+          // need it (i.e. when the name is used). Doing so avoids some
+          // dependency issues, like when a package is imported into one of it's
+          // enclosing scopes.
           case SCode.IMPORT()
             algorithm
-              imported_elems := Inst.instImport(e.imp, parent, e.info, imported_elems);
+              imps := Import.UNRESOLVED_IMPORT(e.imp, parent, e.info) :: imps;
             then
               ();
 
@@ -304,14 +317,16 @@ public
         end match;
       end for;
 
-      // Add all the imports to the tree.
+
+      // Add all the imported names to the lookup tree.
+      imps_arr := listArray(imps);
       i := 1;
-      for e in imported_elems loop
-        ltree := addImport(e, i, ltree);
+      for e in imps loop
+        ltree := addImport(e, i, ltree, imps_arr);
         i := i + 1;
       end for;
 
-      tree := PARTIAL_TREE(ltree, clss, comps, exts, listArray(imported_elems), dups);
+      tree := PARTIAL_TREE(ltree, clss, comps, exts, imps_arr, dups);
     end fromSCode;
 
     function fromEnumeration
@@ -360,7 +375,8 @@ public
     protected
       LookupTree.Tree ltree;
       LookupTree.Entry lentry;
-      array<InstNode> exts, clss, comps, imps;
+      array<InstNode> exts, clss, comps;
+      array<Import> imps;
       list<tuple<Integer, Integer>> ext_idxs = {};
       Integer ccount, cls_idx, comp_idx = 1;
       DuplicateTree.Tree dups;
@@ -448,7 +464,8 @@ public
       Class cls;
       ClassTree tree, ext_tree;
       LookupTree.Tree ltree;
-      array<InstNode> exts, old_clss, old_comps, imps;
+      array<InstNode> exts, old_clss, old_comps;
+      array<Import> imps;
       array<Mutable<InstNode>> clss, comps, ext_clss;
       list<Integer> local_comps = {};
       Integer cls_idx = 1, comp_idx = 1, cls_count, comp_count;
@@ -1182,25 +1199,59 @@ public
     end addEnumConflict;
 
     function addImport
-      input InstNode node;
+      input Import imp;
       input Integer index;
       input output LookupTree.Tree tree;
+      input array<Import> imports;
     algorithm
-      tree := LookupTree.add(tree, InstNode.name(node),
-        LookupTree.Entry.IMPORT(index), addImportConflict);
+      tree := LookupTree.add(tree, Import.name(imp), LookupTree.Entry.IMPORT(index),
+        function addImportConflict(imports = imports));
     end addImport;
 
     function addImportConflict
       input LookupTree.Entry newEntry;
       input LookupTree.Entry oldEntry;
       input String name;
+      input array<Import> imports;
       output LookupTree.Entry entry;
     algorithm
-      entry := oldEntry;
-      // TODO: We should probably give an error message here in some cases:
-      // * Named/qualified import conflicting with normal element: warning
-      // * Unqualified import conflicting with normal element: ignore import
-      // * Import conflicting with import: Error, but only if used
+      entry := match (newEntry, oldEntry)
+        local
+          Import imp1, imp2;
+
+        case (LookupTree.Entry.IMPORT(), LookupTree.Entry.IMPORT())
+          algorithm
+            imp1 := imports[newEntry.index];
+            imp2 := imports[oldEntry.index];
+
+            // Check what kind of imports we have. In case of an error we replace the import
+            // with the error information, and only print the error if the name is looked up.
+            entry := match (imp1, imp2)
+              // Two qualified imports of the same name gives an error.
+              case (Import.UNRESOLVED_IMPORT(), Import.UNRESOLVED_IMPORT())
+                algorithm
+                  arrayUpdate(imports, oldEntry.index, Import.CONFLICTING_IMPORT(imp1, imp2));
+                then
+                  oldEntry;
+
+              // A name imported from several unqualified imports gives an error.
+              case (Import.RESOLVED_IMPORT(), Import.RESOLVED_IMPORT())
+                algorithm
+                  arrayUpdate(imports, oldEntry.index, Import.CONFLICTING_IMPORT(imp1, imp2));
+                then
+                  oldEntry;
+
+              // Qualified import overwrites an unqualified.
+              case (Import.UNRESOLVED_IMPORT(), _) then newEntry;
+              // oldEntry is either qualified or a delayed error, keep it.
+              else oldEntry;
+            end match;
+          then
+            entry;
+
+        // Other elements overwrite an imported name.
+        else oldEntry;
+      end match;
     end addImportConflict;
 
     function addDuplicate
@@ -1307,7 +1358,9 @@ public
       input ClassTree tree;
       output InstNode element;
     protected
-      array<InstNode> imports;
+      array<Import> imports;
+      Import imp;
+      Boolean changed;
     algorithm
       imports := match tree
         case PARTIAL_TREE() then tree.imports;
@@ -1316,7 +1369,13 @@ public
         case FLAT_TREE() then tree.imports;
       end match;
 
-      element := imports[index];
+      // Imports are resolved on demand, i.e. here.
+      (element, changed, imp) := Import.resolve(imports[index]);
+
+      // Save the import if it wasn't already resolved.
+      if changed then
+        arrayUpdate(imports, index, imp);
+      end if;
     end resolveImport;
 
     function countElements

@@ -241,7 +241,7 @@ public constant Message INVALID_TUPLE_CONTENT = MESSAGE(55, TRANSLATION(), ERROR
 public constant Message MISSING_REDECLARE_IN_CLASS_MOD = MESSAGE(56, TRANSLATION(), ERROR(),
   Util.gettext("Missing redeclare keyword on attempted redeclaration of class %s."));
 public constant Message IMPORT_SEVERAL_NAMES = MESSAGE(57, TRANSLATION(), ERROR(),
-  Util.gettext("%s found in several unqualified import statements (import ABC.*)."));
+  Util.gettext("%s found in several unqualified import statements."));
 public constant Message LOOKUP_TYPE_FOUND_COMP = MESSAGE(58, TRANSLATION(), ERROR(),
   Util.gettext("Found a component with same name when looking for type %s."));
 public constant Message INHERITED_EXTENDS = MESSAGE(59, TRANSLATION(), ERROR(),

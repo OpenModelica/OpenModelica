@@ -116,6 +116,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFInst.mo",
     "../NFFrontEnd/NFClass.mo",
     "../NFFrontEnd/NFClassTree.mo",
+    "../NFFrontEnd/NFImport.mo",
     "../NFFrontEnd/NFInstNode.mo",
     "../NFFrontEnd/NFInstUtil.mo",
     "../NFFrontEnd/NFLookup.mo",

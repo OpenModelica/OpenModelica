@@ -869,56 +869,6 @@ algorithm
   end match;
 end instPackage;
 
-function instImport
-  input Absyn.Import imp;
-  input InstNode scope;
-  input SourceInfo info;
-  input output list<InstNode> elements = {};
-algorithm
-  elements := match imp
-    local
-      InstNode node;
-      ClassTree tree;
-
-    case Absyn.NAMED_IMPORT()
-      algorithm
-        node := Lookup.lookupImport(imp.path, scope, info);
-        node := InstNode.rename(imp.name, node);
-      then
-        node :: elements;
-
-    case Absyn.QUAL_IMPORT()
-      algorithm
-        node := Lookup.lookupImport(imp.path, scope, info);
-      then
-        node :: elements;
-
-    case Absyn.UNQUAL_IMPORT()
-      algorithm
-        node := Lookup.lookupImport(imp.path, scope, info);
-        node := instPackage(node);
-        tree := Class.classTree(InstNode.getClass(node));
-
-        () := match tree
-          case ClassTree.FLAT_TREE()
-            algorithm
-              elements := listAppend(arrayList(tree.classes), elements);
-              elements := listAppend(arrayList(tree.components), elements);
-            then
-              ();
-
-          else
-            algorithm
-              Error.assertion(false, getInstanceName() + " got invalid class tree", sourceInfo());
-            then
-              ();
-        end match;
-      then
-        elements;
-
-  end match;
-end instImport;
-
 function modifyExtends
   input output InstNode extendsNode;
   input InstNode scope;
