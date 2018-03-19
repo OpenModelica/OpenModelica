@@ -555,22 +555,21 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   /* configure algebraic variables as such */
   if (idaData->daeMode)
   {
-    if (!omc_flag[FLAG_NO_SUPPRESS_ALG])
+    if (omc_flag[FLAG_NO_SUPPRESS_ALG])
     {
       flag = IDASetSuppressAlg(idaData->ida_mem, TRUE);
       if (checkIDAflag(flag)){
         throwStreamPrint(threadData, "##IDA## Suppress algebraic variables in the local error test failed");
       }
+    }
+    for(i=0; i<idaData->N; ++i)
+    {
+      tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
+    }
 
-      for(i=0; i<idaData->N; ++i)
-      {
-        tmp[i] = (i<data->modelData->nStates)? 1.0: 0.0;
-      }
-
-      flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
-      if (checkIDAflag(flag)){
-        throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
-      }
+    flag = IDASetId(idaData->ida_mem, N_VMake_Serial(idaData->N,tmp));
+    if (checkIDAflag(flag)){
+      throwStreamPrint(threadData, "##IDA## Mark algebraic variables as such failed!");
     }
   }
 
@@ -703,6 +702,7 @@ ida_event_update(DATA* data, threadData_t *threadData)
   if (compiledInDAEMode == 3){
     if (initializedSolver){
 
+      data->simulationInfo->needToIterate = 0;
       /* get new values from data -> TODO: update all discrete */
       data->simulationInfo->discreteCall = 1;
 
@@ -731,9 +731,9 @@ ida_event_update(DATA* data, threadData_t *threadData)
       }
 
       /* increase limits of the non-linear solver */
-      IDASetMaxNumStepsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
-      IDASetMaxNumJacsIC(idaData->ida_mem, 2*data->modelData->nStates*10);
-      IDASetMaxNumItersIC(idaData->ida_mem, 2*data->modelData->nStates*10);
+      IDASetMaxNumStepsIC(idaData->ida_mem, 2*idaData->N*10);
+      IDASetMaxNumJacsIC(idaData->ida_mem, 2*idaData->N*10);
+      IDASetMaxNumItersIC(idaData->ida_mem, 2*idaData->N*10);
       /* Calc Consistent y_algebraic and y_prime with current y */
       flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+init_h);
 
@@ -1029,11 +1029,12 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* initialize states and der(states) */
   if (idaData->daeMode)
   {
-    idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, idaData->newdelta, idaData);
     memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
     data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+    sData->timeValue = solverInfo->currentTime;
+    idaData->residualFunction(sData->timeValue, idaData->y , idaData->yp, idaData->newdelta, idaData);
   }
 
   /* sensitivity mode */
@@ -1149,7 +1150,6 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   {
     setContext(data, &time, CONTEXT_ODE);
   }
-  timeBackup = data->localData[0]->timeValue;
   data->localData[0]->timeValue = time;
 
   saveJumpState = threadData->currentErrorStage;
@@ -1233,8 +1233,6 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
 
   threadData->currentErrorStage = saveJumpState;
 
-  data->localData[0]->timeValue = timeBackup;
-
   if (data->simulationInfo->currentContext == CONTEXT_ODE){
     unsetContext(data);
   }
@@ -1250,8 +1248,9 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->simData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)userData)->simData)->threadData);
+  double *states = N_VGetArrayPointer(yy);
+  double *statesDer = N_VGetArrayPointer(yp);
 
-  double timeBackup;
   int saveJumpState;
 
   infoStreamPrint(LOG_SOLVER_V, 1, "### eval rootsFunctionIDA ###");
@@ -1270,21 +1269,24 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_EVENTSEARCH;
 
-  timeBackup = data->localData[0]->timeValue;
-  data->localData[0]->timeValue = time;
-
   if (idaData->daeMode)
   {
-    memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
-    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
-    memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
+    memcpy(data->localData[0]->realVars, states, sizeof(double)*data->modelData->nStates);
+    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
+    memcpy(data->localData[0]->realVars + data->modelData->nStates, statesDer, sizeof(double)*data->modelData->nStates);
   }
+
+  data->localData[0]->timeValue = time;
 
   /* read input vars */
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   /* eval needed equations*/
   if (idaData->daeMode && compiledInDAEMode == 1){}
+  else if (idaData->daeMode && compiledInDAEMode == 3)
+  {
+   idaData->residualFunction(time, yy, yp, idaData->newdelta, idaData);
+  }
   else
   {
     data->callback->function_ZeroCrossingsEquations(data, threadData);
@@ -1293,7 +1295,6 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   data->callback->function_ZeroCrossings(data, threadData, gout);
 
   threadData->currentErrorStage = saveJumpState;
-  data->localData[0]->timeValue = timeBackup;
 
   /* scale data again */
   if (omc_flag[FLAG_IDA_SCALING])

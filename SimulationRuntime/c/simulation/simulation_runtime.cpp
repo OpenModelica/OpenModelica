@@ -455,7 +455,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
   }
   /* if daeMode is turned on than use also the ida solver */
   if (omc_flag[FLAG_DAE_MODE] && std::string("ida") != data->simulationInfo->solverMethod) {
-    data->simulationInfo->solverMethod = std::string("ida").c_str();
+    data->simulationInfo->solverMethod = GC_strdup(std::string("ida").c_str());
     infoStreamPrint(LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
   }
 
@@ -644,7 +644,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
-  if (simData->modelData->nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_SOLVER) {
+  if (simData->modelData->nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_SOLVER && !compiledInDAEMode) {
     solverID = S_EULER;
   }
 

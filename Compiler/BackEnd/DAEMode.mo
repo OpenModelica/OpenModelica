@@ -46,6 +46,7 @@ import BackendDAE;
 protected
 
 import Absyn;
+import Array;
 import BackendDAEOptimize;
 import BackendDAEUtil;
 import BackendDAEFunc;
@@ -67,6 +68,7 @@ import Flags;
 import Global;
 import Initialization;
 import List;
+import Matching;
 import StackOverflow;
 import Util;
 
@@ -196,6 +198,7 @@ uniontype TraverseEqnAryFold
     BackendDAE.Variables systemVars;
     DAE.FunctionTree functionTree;
     Boolean recursiveStrongComponentRun;
+    BackendDAE.Shared shared;
   end TRAVERSER_CREATE_DAE;
 end TraverseEqnAryFold;
 
@@ -221,7 +224,7 @@ algorithm
   systemSize := BackendDAEUtil.systemSize(syst);
   newDAEVars := BackendVariable.emptyVars();
   newDAEEquations := BackendEquation.emptyEqnsSized(systemSize);
-  travArgs := TRAVERSER_CREATE_DAE(globalDAEData, newDAEVars, newDAEEquations, syst.orderedVars, shared.functionTree, false);
+  travArgs := TRAVERSER_CREATE_DAE(globalDAEData, newDAEVars, newDAEEquations, syst.orderedVars, shared.functionTree, false, shared);
   if debug then BackendDump.printEqSystem(syst); end if;
   // for every equation create corresponding residiual variable(s)
   travArgs := BackendDAEUtil.traverseEqSystemStrongComponents(syst, traverserStrongComponents, travArgs);
@@ -269,8 +272,11 @@ algorithm
   (traverserArgs) :=
   matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvoled)
     local
+      BackendDAE.EqSystem syst;
+      BackendDAE.IncidenceMatrix adjMatrix;
+
       list<BackendDAE.Equation> newResEqns;
-      list<BackendDAE.Var> newResVars, newAuxVars;
+      list<BackendDAE.Var> newResVars, newAuxVars, discVars, contVars;
       BackendDAE.Var var;
       BackendDAE.Variables systemVars;
       BackendDAE.Var dummyVar;
@@ -282,6 +288,8 @@ algorithm
       DAE.FunctionTree funcsTree;
       list<DAE.ComponentRef> crlst;
       Boolean b1, b2;
+      list<BackendDAE.Equation> discEqns;
+      list<BackendDAE.Equation> contEqns;
 
       DAE.Algorithm alg;
       DAE.ElementSource source;
@@ -482,14 +490,26 @@ algorithm
 
     case(_, false, _)
       algorithm
-        vars := inVars;
-        for e in inEqns loop
+
+        (discVars, contVars) := List.splitOnTrue(inVars, BackendVariable.isVarDiscrete);
+        (discEqns, contEqns) := getDiscAndContEqns(inVars, inEqns, discVars, contVars, traverserArgs.shared.functionTree);
+
+        // create discrete
+        for e in discEqns loop
           size := BackendEquation.equationSize(e);
-          newAuxVars := List.firstN(vars, size);
+          newAuxVars := List.firstN(discVars, size);
+          traverserArgs := traverserStrongComponents({e}, newAuxVars, {}, {}, traverserArgs);
+          discVars := List.stripN(discVars, size);
+        end for;
+
+        // create continuous
+        for e in contEqns loop
+          size := BackendEquation.equationSize(e);
+          newAuxVars := List.firstN(contVars, size);
           traverserArgs.recursiveStrongComponentRun := true;
           traverserArgs := traverserStrongComponents({e}, newAuxVars, {}, {}, traverserArgs);
           traverserArgs.recursiveStrongComponentRun := false;
-          vars := List.stripN(vars, size);
+          contVars := List.stripN(contVars, size);
         end for;
       then
         (traverserArgs);
@@ -504,6 +524,54 @@ algorithm
   end matchcontinue;
 end traverserStrongComponents;
 
+function getDiscAndContEqns
+  input list<BackendDAE.Var> inAllVars;
+  input list<BackendDAE.Equation> inAllEqns;
+  input list<BackendDAE.Var> inDiscVars;
+  input list<BackendDAE.Var> inContVars;
+  input DAE.FunctionTree functionTree;
+  output list<BackendDAE.Equation> discEqns;
+  output list<BackendDAE.Equation> contEqns;
+protected
+  BackendDAE.EqSystem syst;
+  BackendDAE.IncidenceMatrix adjMatrix;
+
+  list<Integer> varsIndex, eqnIndex;
+  array<Integer> assignVarEqn "eqn := assignVarEqn[var]";
+  array<Integer> assignEqnVar "var := assignEqnVar[eqn]";
+
+  array<Integer> mapEqnScalarArray;
+  constant Boolean debug = false;
+algorithm
+  try
+    // create syst for a matching
+    syst := BackendDAEUtil.createEqSystem(BackendVariable.listVar1(inAllVars), BackendEquation.listEquation(inAllEqns) );
+    if debug then BackendDump.printEqSystem(syst); end if;
+    (adjMatrix, _, _, mapEqnScalarArray) := BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(), SOME(functionTree));
+    if debug then BackendDump.dumpIncidenceMatrix(adjMatrix); end if;
+    (assignVarEqn, assignEqnVar, true) := Matching.RegularMatching(adjMatrix, BackendDAEUtil.systemSize(syst), BackendDAEUtil.systemSize(syst));
+    if debug then BackendDump.dumpMatching(assignVarEqn); end if;
+
+    // get discrete vars indexes and then the equations
+    varsIndex := BackendVariable.getVarIndexFromVars(inDiscVars, syst.orderedVars);
+    if debug then print("discVarsIndex: "); BackendDump.dumpIncidenceRow(varsIndex);  end if;
+    eqnIndex := List.map1(varsIndex, Array.getIndexFirst, assignVarEqn);
+    if debug then print("discEqnIndex: "); BackendDump.dumpIncidenceRow(eqnIndex);  end if;
+    eqnIndex := List.unique(list(mapEqnScalarArray[i] for i in eqnIndex));
+    discEqns := BackendEquation.getList(eqnIndex, syst.orderedEqs);
+    if debug then BackendDump.equationListString(discEqns, "Discrete Equations");  end if;
+
+    // get continuous equations
+    varsIndex := BackendVariable.getVarIndexFromVars(inContVars, syst.orderedVars);
+    eqnIndex := List.map1(varsIndex, Array.getIndexFirst, assignVarEqn);
+    eqnIndex := List.unique(list(mapEqnScalarArray[i] for i in eqnIndex));
+    if debug then print("contEqnIndex: "); BackendDump.dumpIncidenceRow(eqnIndex);  end if;
+    contEqns := BackendEquation.getList(eqnIndex, syst.orderedEqs);
+    if debug then BackendDump.equationListString(contEqns, "Continuous Equations");  end if;
+  else
+    fail();
+  end try;
+end getDiscAndContEqns;
 
 function addVarsGlobalData
   input output BackendDAE.BackendDAEModeData globalDAEData;
@@ -513,8 +581,6 @@ protected
 algorithm
   // prepare algebraic states
   vars := List.filterOnTrue(inVars, BackendVariable.isNonStateVar);
-  // check for discrete vars
-  {} := List.filterOnTrue(vars, BackendVariable.isVarDiscrete);
   vars := list(BackendVariable.setVarKind(v, BackendDAE.ALG_STATE()) for v in vars);
   //print("Alg vars: " + BackendDump.varListString(vars, "") + "\n");
   globalDAEData.algStateVars := listAppend(vars, globalDAEData.algStateVars);

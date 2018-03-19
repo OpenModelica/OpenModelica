@@ -687,15 +687,19 @@ int solver_main(DATA* data, threadData_t *threadData, const char* init_initMetho
   externalInputallocate(data);
   /* set tolerance for ZeroCrossings */
   setZCtol(fmin(data->simulationInfo->stepSize, data->simulationInfo->tolerance));
-
   omc_alloc_interface.collect_a_little();
+
+  /* initialize solver data */
+  /* For the DAEmode we need to initialize solverData before the initialization,
+   * since the solver is used to obtain consistent values also via updateDiscreteSystem
+   */
+  retVal = initializeSolverData(data, threadData, &solverInfo);
+  initSolverInfo = 1;
+
   /* initialize all parts of the model */
-  retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
-  omc_alloc_interface.collect_a_little();
-
-  if(0 == retVal) {
-    retVal = initializeSolverData(data, threadData, &solverInfo);
-    initSolverInfo = 1;
+  if (0 == retVal){
+    retVal = initializeModel(data, threadData, init_initMethod, init_file, init_time);
+    omc_alloc_interface.collect_a_little();
   }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
