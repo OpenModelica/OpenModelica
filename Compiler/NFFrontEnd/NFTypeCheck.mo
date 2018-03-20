@@ -1979,7 +1979,7 @@ algorithm
       Integer step;
 
     case (Expression.INTEGER(), NONE(), Expression.INTEGER())
-      then Dimension.INTEGER(max(stopExp.value - startExp.value + 1, 0));
+      then Dimension.fromInteger(max(stopExp.value - startExp.value + 1, 0));
 
     case (Expression.INTEGER(), SOME(Expression.INTEGER(value = step)), Expression.INTEGER())
       algorithm
@@ -1988,7 +1988,7 @@ algorithm
           Error.addSourceMessageAndFail(Error.RANGE_ZERO_STEP, {}, info);
         end if;
       then
-        Dimension.INTEGER(max(intDiv(stopExp.value - startExp.value, step) + 1, 0));
+        Dimension.fromInteger(max(intDiv(stopExp.value - startExp.value, step) + 1, 0));
 
     else Dimension.UNKNOWN();
   end match;
@@ -2006,7 +2006,7 @@ algorithm
       Real step;
 
     case (Expression.REAL(), NONE(), Expression.REAL())
-      then Dimension.INTEGER(Util.realRangeSize(startExp.value, 1.0, stopExp.value));
+      then Dimension.fromInteger(Util.realRangeSize(startExp.value, 1.0, stopExp.value));
 
     case (Expression.REAL(), SOME(Expression.REAL(value = step)), Expression.REAL())
       algorithm
@@ -2017,7 +2017,7 @@ algorithm
           Error.addSourceMessageAndFail(Error.RANGE_ZERO_STEP, {}, info);
         end if;
       then
-        Dimension.INTEGER(Util.realRangeSize(startExp.value, step, stopExp.value));
+        Dimension.fromInteger(Util.realRangeSize(startExp.value, step, stopExp.value));
 
     else Dimension.UNKNOWN();
   end match;
@@ -2038,7 +2038,7 @@ algorithm
               elseif startExp.value < startExp.value then 2
               else 0;
       then
-        Dimension.INTEGER(sz);
+        Dimension.fromInteger(sz);
 
     else Dimension.UNKNOWN();
   end match;
@@ -2051,7 +2051,7 @@ function getRangeTypeEnum
 algorithm
   dim := match (startExp, stopExp)
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
-      then Dimension.INTEGER(max(stopExp.index - startExp.index + 1, 0));
+      then Dimension.fromInteger(max(stopExp.index - startExp.index + 1, 0));
 
     else Dimension.UNKNOWN();
   end match;

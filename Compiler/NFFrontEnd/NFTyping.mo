@@ -1778,7 +1778,9 @@ algorithm
             exp := Expression.SIZE(exp, SOME(index));
           end if;
 
-          variability := Variability.PARAMETER;
+          // Use the most variable of the index and the dimension as the variability
+          // of the size expression.
+          variability := Prefixes.variabilityMax(variability, Dimension.variability(dim));
         else
           // If the index is not a constant, type the whole expression.
           (exp, exp_ty) := typeExp(sizeExp.exp, origin, info);
@@ -1806,7 +1808,7 @@ algorithm
           fail();
         end if;
 
-        sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(Type.dimensionCount(exp_ty))});
+        sizeType := Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(Type.dimensionCount(exp_ty))});
       then
         (Expression.SIZE(exp, NONE()), sizeType, Variability.PARAMETER);
 

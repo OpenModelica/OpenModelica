@@ -58,6 +58,7 @@ public
 
   record INTEGER
     Integer size;
+    Variability var;
   end INTEGER;
 
   record BOOLEAN
@@ -86,7 +87,7 @@ public
         ComponentRef cref;
         Type ty;
 
-      case Expression.INTEGER() then INTEGER(exp.value);
+      case Expression.INTEGER() then INTEGER(exp.value, var);
 
       case Expression.TYPENAME(ty = Type.ARRAY(elementType = ty))
         then
@@ -104,9 +105,14 @@ public
     end match;
   end fromExp;
 
+  function fromInteger
+    input Integer n;
+    output Dimension dim = INTEGER(n, Variability.CONSTANT);
+  end fromInteger;
+
   function fromExpList
     input list<Expression> expl;
-    output Dimension dim = INTEGER(listLength(expl));
+    output Dimension dim = INTEGER(listLength(expl), Variability.CONSTANT);
   end fromExpList;
 
   function toDAE
@@ -133,7 +139,7 @@ public
     c := match (a, b)
       case (UNKNOWN(),_) then UNKNOWN();
       case (_,UNKNOWN()) then UNKNOWN();
-      case (INTEGER(),INTEGER()) then INTEGER(a.size+b.size);
+      case (INTEGER(),INTEGER()) then INTEGER(a.size+b.size, Prefixes.variabilityMax(a.var, b.var));
       case (INTEGER(),EXP()) then EXP(Expression.BINARY(b.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(a.size)), b.var);
       case (EXP(),INTEGER()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(b.size)), a.var);
       case (EXP(),EXP()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), b.exp), Prefixes.variabilityMax(a.var, b.var));
@@ -282,6 +288,19 @@ public
       else dim;
     end match;
   end setScope;
+
+  function variability
+    input Dimension dim;
+    output Variability var;
+  algorithm
+    var := match dim
+      case INTEGER() then dim.var;
+      case BOOLEAN() then Variability.CONSTANT;
+      case ENUM() then Variability.CONSTANT;
+      case EXP() then dim.var;
+      case UNKNOWN() then Variability.CONTINUOUS;
+    end match;
+  end variability;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;

@@ -330,7 +330,7 @@ public
     output Dimension dimension;
   algorithm
     dimension := match subscript
-      case INDEX() then Dimension.INTEGER(1);
+      case INDEX() then Dimension.fromInteger(1);
       case SLICE() then listHead(Type.arrayDims(Expression.typeOf(subscript.slice)));
       case WHOLE() then Dimension.UNKNOWN();
     end match;

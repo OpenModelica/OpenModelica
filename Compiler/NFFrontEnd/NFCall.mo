@@ -1064,7 +1064,7 @@ uniontype Call
     dims := Type.arrayDims(resTy);
     resTyToMatch := Type.ARRAY(Type.arrayElementType(resTy), List.set(dims, n, Dimension.UNKNOWN()));
     dims := list(listGet(lst, n) for lst in dimsLst);
-    sumDim := Dimension.INTEGER(0);
+    sumDim := Dimension.fromInteger(0);
     for d in dims loop
       // Create the concatenated dimension
       sumDim := Dimension.add(sumDim, d);
@@ -2019,7 +2019,7 @@ protected
       dim_size := 1;
     end if;
 
-    ty := Type.ARRAY(Type.arrayElementType(ty), {Dimension.INTEGER(dim_size)});
+    ty := Type.ARRAY(Type.arrayElementType(ty), {Dimension.fromInteger(dim_size)});
     {fn} := typeCachedFunctions(fn_ref);
     callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeVectorCall;
@@ -2058,8 +2058,8 @@ protected
     dims := Type.arrayDims(ty);
 
     dims := match listLength(dims)
-      case 0 then {Dimension.INTEGER(1), Dimension.INTEGER(1)};
-      case 1 then {listHead(dims), Dimension.INTEGER(1)};
+      case 0 then {Dimension.fromInteger(1), Dimension.fromInteger(1)};
+      case 1 then {listHead(dims), Dimension.fromInteger(1)};
       case 2 then dims;
       else
         algorithm

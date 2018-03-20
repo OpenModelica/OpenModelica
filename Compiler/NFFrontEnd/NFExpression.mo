@@ -2041,7 +2041,7 @@ public
           subs := expandCref2(crefExp.cref);
 
           if listEmpty(subs) then
-            arrayExp := ARRAY(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.INTEGER(0)}), {});
+            arrayExp := ARRAY(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.fromInteger(0)}), {});
           else
             arrayExp := expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
           end if;
@@ -2696,7 +2696,7 @@ public
   algorithm
     zero := makeZero(elementType);
     one := makeOne(elementType);
-    row_ty := Type.ARRAY(elementType, {Dimension.INTEGER(n)});
+    row_ty := Type.ARRAY(elementType, {Dimension.fromInteger(n)});
 
     for i in 1:n loop
       row := {};
@@ -2714,7 +2714,7 @@ public
       rows := Expression.ARRAY(row_ty, row) :: rows;
     end for;
 
-    matrix := ARRAY(Type.liftArrayLeft(row_ty, Dimension.INTEGER(n)), rows);
+    matrix := ARRAY(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows);
   end makeIdentityMatrix;
 
   function promote
@@ -2724,7 +2724,7 @@ public
   protected
     list<Dimension> dims;
   algorithm
-    dims := list(Dimension.INTEGER(1) for i in Type.dimensionCount(ty):n-1);
+    dims := list(Dimension.fromInteger(1) for i in Type.dimensionCount(ty):n-1);
     ty := Type.liftArrayRightList(ty, dims);
     e := CALL(Call.makeBuiltinCall2(NFBuiltinFuncs.PROMOTE, {e, INTEGER(n)}, ty));
   end promote;

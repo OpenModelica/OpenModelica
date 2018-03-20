@@ -44,6 +44,7 @@ import Dimension = NFDimension;
 import Type = NFType;
 import NFTyping.ExpOrigin;
 import ExpressionSimplify;
+import NFPrefixes.Variability;
 
 protected
 import NFFunction.Function;
@@ -177,8 +178,9 @@ algorithm
     case Expression.SIZE()
       algorithm
         expl := list(Expression.INTEGER(Dimension.size(d)) for d in Type.arrayDims(Expression.typeOf(exp.exp)));
+        dim := Dimension.INTEGER(listLength(expl), Variability.PARAMETER);
       then
-        Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.INTEGER(listLength(expl))}), expl);
+        Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {dim}), expl);
 
     case Expression.BINARY()
       algorithm
@@ -486,7 +488,7 @@ protected
   Type ty;
 algorithm
   ty := Expression.typeOf(listHead(args));
-  ty := Type.liftArrayLeft(ty, Dimension.INTEGER(listLength(args)));
+  ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(args)));
   result := Expression.ARRAY(ty, args);
 end evalBuiltinArray;
 
@@ -560,7 +562,7 @@ algorithm
     fail();
   end if;
   (es,dims) := ExpressionSimplify.evalCat(n, args, getArrayContents=Expression.arrayElements, toString=Expression.toString);
-  result := Expression.arrayFromList(es, Type.arrayElementType(ty), list(Dimension.INTEGER(d) for d in dims));
+  result := Expression.arrayFromList(es, Type.arrayElementType(ty), list(Dimension.fromInteger(d) for d in dims));
 end evalBuiltinCat;
 
 function evalBuiltinCeil
@@ -608,7 +610,7 @@ algorithm
         z2 := Expression.REAL(x3 * y1 - x1 * y3);
         z3 := Expression.REAL(x1 * y2 - x2 * y1);
       then
-        Expression.ARRAY(Type.ARRAY(Type.REAL(), {Dimension.INTEGER(3)}), {z1, z2, z3});
+        Expression.ARRAY(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(3)}), {z1, z2, z3});
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
@@ -636,7 +638,7 @@ algorithm
         n := listLength(elems);
 
         elem_ty := Expression.typeOf(listHead(elems));
-        row_ty := Type.liftArrayLeft(elem_ty, Dimension.INTEGER(n));
+        row_ty := Type.liftArrayLeft(elem_ty, Dimension.fromInteger(n));
         zero := Expression.makeZero(elem_ty);
 
         for e in listReverse(elems) loop
@@ -656,7 +658,7 @@ algorithm
           rows := Expression.ARRAY(row_ty, row) :: rows;
         end for;
       then
-        Expression.ARRAY(Type.liftArrayLeft(row_ty, Dimension.INTEGER(n)), rows);
+        Expression.ARRAY(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows);
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -736,7 +738,7 @@ algorithm
     end match;
 
     arr := list(result for e in 1:dim_size);
-    arr_ty := Type.liftArrayLeft(arr_ty, Dimension.INTEGER(dim_size));
+    arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
     result := Expression.ARRAY(arr_ty, arr);
   end for;
 end evalBuiltinFill2;
@@ -981,18 +983,18 @@ protected
 algorithm
   Error.assertion(n >= 1, "Promote called with n<1", sourceInfo());
   if n == 1 then
-    result := Expression.ARRAY(Type.liftArrayLeft(Expression.typeOf(arg),Dimension.INTEGER(1)), {arg});
+    result := Expression.ARRAY(Type.liftArrayLeft(Expression.typeOf(arg),Dimension.fromInteger(1)), {arg});
     return;
   end if;
   result := match arg
     case Expression.ARRAY()
       algorithm
         (exps as (Expression.ARRAY(ty=ty)::_)) := list(evalBuiltinPromoteWork(e, n-1) for e in arg.elements);
-      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.INTEGER(listLength(arg.elements))), exps);
+      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.fromInteger(listLength(arg.elements))), exps);
     else
       algorithm
         (exp as Expression.ARRAY(ty=ty)) := evalBuiltinPromoteWork(arg, n-1);
-      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.INTEGER(1)), {exp});
+      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.fromInteger(1)), {exp});
   end match;
 end evalBuiltinPromoteWork;
 
@@ -1096,7 +1098,7 @@ algorithm
         y1 := Expression.ARRAY(ty, {zero, Expression.negate(x3), x2});
         y2 := Expression.ARRAY(ty, {x3, zero, Expression.negate(x1)});
         y3 := Expression.ARRAY(ty, {Expression.negate(x2), x1, zero});
-        ty := Type.liftArrayLeft(ty, Dimension.INTEGER(3));
+        ty := Type.liftArrayLeft(ty, Dimension.fromInteger(3));
       then
         Expression.ARRAY(ty, {y1, y2, y3});
 
@@ -1203,7 +1205,7 @@ protected
 algorithm
   expl := Expression.fold(arg, evalBuiltinVector2, {});
   ty := Type.liftArrayLeft(Type.arrayElementType(Expression.typeOf(arg)),
-    Dimension.INTEGER(listLength(expl)));
+    Dimension.fromInteger(listLength(expl)));
   result := Expression.ARRAY(ty, listReverse(expl));
 end evalBuiltinVector;
 
