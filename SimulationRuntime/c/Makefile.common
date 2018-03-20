@@ -75,7 +75,8 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
 ./simulation/solver/events.h \
 ./simulation/solver/synchronous.h \
 ./simulation/solver/external_input.h\
-./simulation/solver/solver_main.h
+./simulation/solver/solver_main.h \
+./simulation/solver/dae_mode.h
 
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin_boxvar.h \

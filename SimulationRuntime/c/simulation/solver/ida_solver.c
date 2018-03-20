@@ -52,6 +52,7 @@
 #include "simulation/solver/omc_math.h"
 #include "simulation/solver/ida_solver.h"
 #include "simulation/solver/dassl.h"
+#include "simulation/solver/dae_mode.h"
 
 #ifdef WITH_SUNDIALS
 
@@ -703,17 +704,14 @@ ida_event_update(DATA* data, threadData_t *threadData)
     if (initializedSolver){
 
       data->simulationInfo->needToIterate = 0;
-      /* get new values from data -> TODO: update all discrete */
-      data->simulationInfo->discreteCall = 1;
 
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
       data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
       memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
       /* update inner algebraic get new values from data */
-      idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, idaData->newdelta, idaData);
+      evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
       data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
-      data->simulationInfo->discreteCall = 0;
 
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
       flag = IDAReInit(idaData->ida_mem,
@@ -756,9 +754,7 @@ ida_event_update(DATA* data, threadData_t *threadData)
       IDAGetConsistentIC(idaData->ida_mem, idaData->y, idaData->yp);
 
       /* update inner algebraic variables */
-      data->simulationInfo->discreteCall = 1;
-      idaData->residualFunction(data->localData[0]->timeValue, idaData->y, idaData->yp, idaData->newdelta, idaData);
-      data->simulationInfo->discreteCall = 0;
+      evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
 
       memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
       // and  also algebraic vars
@@ -1034,7 +1030,6 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
     sData->timeValue = solverInfo->currentTime;
-    idaData->residualFunction(sData->timeValue, idaData->y , idaData->yp, idaData->newdelta, idaData);
   }
 
   /* sensitivity mode */

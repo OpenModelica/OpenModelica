@@ -84,6 +84,7 @@
 #include "util/rtclock.h"
 #include "omc_config.h"
 #include "simulation/solver/initialization/initialization.h"
+#include "simulation/solver/dae_mode.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
@@ -644,8 +645,19 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   /* if no states are present, then we can
    * use euler method, since it does nothing.
    */
-  if (simData->modelData->nStates < 1 && solverID != S_OPTIMIZATION && solverID != S_SYM_SOLVER && !compiledInDAEMode) {
+  if ( (simData->modelData->nStates < 1 &&
+        solverID != S_OPTIMIZATION &&
+        solverID != S_SYM_SOLVER) ||
+       (compiledInDAEMode && (simData->simulationInfo->daeModeData->nResidualVars +
+                             simData->simulationInfo->daeModeData->nAlgebraicDAEVars < 1))
+      )
+  {
     solverID = S_EULER;
+    if (compiledInDAEMode == 3)
+    {
+      simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
+      simData->callback->function_ZeroCrossingsEquations = simData->simulationInfo->daeModeData->evaluateDAEResiduals;
+    }
   }
 
   if(S_UNKNOWN == solverID) {

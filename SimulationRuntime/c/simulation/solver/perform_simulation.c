@@ -76,6 +76,10 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
     {
       data->callback->functionAlgebraics(data, threadData);
     }
+    else if (compiledInDAEMode == 3)
+    {
+      data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
+    }
   }
   else /* ode mode */
   {
