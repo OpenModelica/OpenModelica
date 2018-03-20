@@ -312,6 +312,14 @@ algorithm
       algorithm
         // Look up the class that's being derived from and expand it.
         ext_node :: _ := Lookup.lookupBaseClassName(Absyn.typeSpecPath(ty), InstNode.parent(node), info);
+
+        // Check that the class isn't extending itself, i.e. class A = A.
+        if referenceEq(ext_node, node) then
+          Error.addSourceMessage(Error.RECURSIVE_SHORT_CLASS_DEFINITION,
+            {InstNode.name(node), Dump.unparseTypeSpec(ty)}, info);
+          fail();
+        end if;
+
         ext_node := expand(ext_node);
 
         // Fetch the needed information from the class definition and construct a DERIVED_CLASS.
@@ -1106,7 +1114,7 @@ function redeclareClass
   input Modifier outerMod;
   output InstNode redeclaredNode;
 protected
-  InstNode orig_node, rdcl_node;
+  InstNode orig_node;
   Class orig_cls, rdcl_cls, new_cls;
   Class.Prefixes prefs;
   InstNodeType node_ty;
@@ -1125,7 +1133,7 @@ algorithm
   rdcl_cls := InstNode.getClass(redeclareNode);
 
   prefs := mergeRedeclaredClassPrefixes(Class.getPrefixes(orig_cls),
-    Class.getPrefixes(rdcl_cls), rdcl_node);
+    Class.getPrefixes(rdcl_cls), redeclareNode);
 
   if SCode.isClassExtends(InstNode.definition(redeclareNode)) then
     orig_node := expand(originalNode);
@@ -1154,10 +1162,8 @@ algorithm
           rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
           rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
           rdcl_cls.prefixes := prefs;
-          InstNode.updateClass(rdcl_cls, redeclareNode);
-          expand(redeclareNode);
         then
-          InstNode.getClass(redeclareNode);
+          rdcl_cls;
 
       // Class extends of a short class declaration.
       case (Class.DERIVED_CLASS(), Class.PARTIAL_CLASS())
