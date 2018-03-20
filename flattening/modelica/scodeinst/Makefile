@@ -96,6 +96,7 @@ ClassExtends4.mo \
 ClassExtends5.mo \
 ClassExtends6.mo \
 ClassExtends7.mo \
+ClassExtends8.mo \
 ClassExtendsBuiltin1.mo \
 ClassExtendsBuiltin2.mo \
 ClassExtendsBuiltin3.mo \
@@ -504,6 +505,7 @@ RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
 RecursiveExtends1.mo \
+RecursiveExtends3.mo \
 RedeclareClass1.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
