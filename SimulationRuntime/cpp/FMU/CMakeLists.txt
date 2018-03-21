@@ -11,6 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${FMUName} ${ExtensionUtilitiesName}  ${ModelicaName})
 add_precompiled_header(${FMUName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${FMUName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/FMU/fmiModelFunctions.h

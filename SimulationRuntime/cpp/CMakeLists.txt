@@ -92,7 +92,11 @@ OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 
 #Set Variables
 IF(NOT FMU_TARGET)
+ IF(MSVC)
+  SET(LIBINSTALLEXT "lib/omc/cpp/msvc" CACHE STRING "library directory")
+ ELSE(MSVC)
   SET(LIBINSTALLEXT "lib/omc/cpp" CACHE STRING "library directory")
+ENDIF()
 ENDIF(NOT FMU_TARGET)
 SET(MODELICA_MODEL "ModelicaSystem")
 SET(LIBPREFIX "OMCpp")

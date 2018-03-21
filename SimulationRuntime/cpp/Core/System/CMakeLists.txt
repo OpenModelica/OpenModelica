@@ -19,6 +19,8 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${ExtensionUtilitiesName})
 add_precompiled_header(${SystemName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${SystemName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${SystemName} DESTINATION ${LIBINSTALLEXT})
 
 #IF (NOT ((${CMAKE_SYSTEM_NAME} MATCHES "Darwin") OR  MSVC))

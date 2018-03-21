@@ -26,6 +26,8 @@ set_target_properties(${PeerName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}"
 
 add_precompiled_header(${PeerName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${PeerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${PeerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Solver/Peer/Peer.h

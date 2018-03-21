@@ -14,6 +14,8 @@ endif(NOT BOOST_STATIC_LINKING)
 
 add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${DataExchangeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h

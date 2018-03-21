@@ -12,6 +12,8 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${ExtensionUtilitiesName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
+install(FILES $<TARGET_PDB_FILE:${ExtensionUtilitiesName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${ExtensionUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Core/Utils/extension/measure_time.hpp

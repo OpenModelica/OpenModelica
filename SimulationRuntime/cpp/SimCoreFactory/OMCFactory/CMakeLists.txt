@@ -15,6 +15,8 @@ target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${Ex
 ENDIF(WIN32)
 add_precompiled_header(${OMCFactoryName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${OMCFactoryName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${OMCFactoryName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/FactoryConfig.h

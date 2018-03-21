@@ -11,6 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries (${ModelicaUtilitiesName} ${Boost_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${ModelicaUtilitiesName} Include/Core/Modelica.h )
 
+install(FILES $<TARGET_PDB_FILE:${ModelicaUtilitiesName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${ModelicaUtilitiesName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Core/Utils/Modelica/FactoryExport.h

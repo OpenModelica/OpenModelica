@@ -204,29 +204,6 @@ runtimeCPPmsvc: getMSVCversion
 	cd ./Build_MSVC_static; echo "change to Build_MSVC_static";\
 	cmd /c build.bat
 
-	# move msvc libs into subfolder
-	mkdir -p Build_MSVC/tmp/lib/omc/cpp/msvc
-	mv Build_MSVC/tmp/lib/omc/cpp/*.dll Build_MSVC/tmp/lib/omc/cpp/msvc
-	mv Build_MSVC/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
-	mv Build_MSVC_static/tmp/lib/omc/cpp/*.lib Build_MSVC/tmp/lib/omc/cpp/msvc
-
-
-	# copy pdb files
-ifneq ($(BUILDTYPE),Release)
-	cp -u Build_MSVC*/Solver/Newton/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Solver/Euler/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Core/SimController/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC*/Core/Modelica/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC/Core/ModelicaExternalC/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Core/SimulationSettings/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Core/Solver/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Core/System/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC*/SimCoreFactory/OMCFactory/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	cp -u Build_MSVC*/Core/DataExchange/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-	#cp -u Build_MSVC*/Core/Math/*.pdb Build_MSVC/tmp/lib/omc/cpp/msvc
-endif
-
-
 	# move folder to build dir
 	cp -R Build_MSVC/tmp/* $(builddir_build)
 

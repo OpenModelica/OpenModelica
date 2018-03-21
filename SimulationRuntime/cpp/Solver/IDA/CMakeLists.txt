@@ -11,6 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${IDAName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
 add_precompiled_header(${IDAName} Include/Core/Modelica.h )
 
+install(FILES $<TARGET_PDB_FILE:${IDAName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${IDAName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Solver/IDA/IDA.h

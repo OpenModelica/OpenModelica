@@ -26,6 +26,8 @@ set_target_properties(${CppDASSLName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLA
 
 add_precompiled_header(${CppDASSLName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${CppDASSLName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${CppDASSLName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Solver/CppDASSL/CppDASSL.h

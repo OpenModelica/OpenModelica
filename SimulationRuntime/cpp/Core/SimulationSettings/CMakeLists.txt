@@ -11,6 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${SimulationSettings} ${OMCFactoryName} ${Boost_LIBRARIES}  ${ModelicaName})
 add_precompiled_header(${SimulationSettings} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${SimulationSettings}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${SimulationSettings} DESTINATION ${LIBINSTALLEXT})
 install(FILES "config/GlobalSettings.xml" DESTINATION share/omc/runtime/cpp/config)
 install(FILES

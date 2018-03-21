@@ -11,6 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 target_link_libraries(${MathName} ${Boost_LIBRARIES} ${UMFPACK_LIB} ${LAPACK_LIBRARIES} ${ModelicaName})
 add_precompiled_header(${MathName} Include/Core/Modelica.h )
 
+install(FILES $<TARGET_PDB_FILE:${MathName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${MathName} DESTINATION ${LIBINSTALLEXT})
 install(FILES ${CMAKE_SOURCE_DIR}/Include/Core/Math/Functions.h
   ${CMAKE_SOURCE_DIR}/Include/Core/Math/ArrayOperations.h

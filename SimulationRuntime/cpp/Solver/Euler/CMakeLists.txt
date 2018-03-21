@@ -11,5 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 add_precompiled_header(${EulerName} Include/Core/Modelica.h )
 target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 
+
+install(FILES $<TARGET_PDB_FILE:${EulerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${EulerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES "config/EulerSettings.xml" DESTINATION share/omc/runtime/cpp/config)

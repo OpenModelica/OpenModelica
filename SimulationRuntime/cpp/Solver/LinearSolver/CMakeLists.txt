@@ -11,6 +11,8 @@ endif(NOT BUILD_SHARED_LIBS)
 add_precompiled_header(${LinearSolverName} Include/Core/Modelica.h)
 target_link_libraries(${LinearSolverName}   ${KLU_LIBRARIES} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})  
 
+install(FILES $<TARGET_PDB_FILE:${LinearSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${LinearSolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Solver/LinearSolver/LinearSolver.h

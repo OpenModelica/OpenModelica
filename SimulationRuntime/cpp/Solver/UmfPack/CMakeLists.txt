@@ -10,6 +10,8 @@ endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${UmfPackName} ${MathName} ${SUITESPARSE_LIBRARIES} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} ${UMFPACK_LIB})
 
+install(FILES $<TARGET_PDB_FILE:${UmfPackName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${UmfPackName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPack.h

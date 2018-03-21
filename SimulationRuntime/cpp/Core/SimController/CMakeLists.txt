@@ -14,6 +14,8 @@ target_link_libraries(${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitie
 endif(REDUCE_DAE)
 add_precompiled_header(${SimControllerName} Include/Core/Modelica.h)
 
+install(FILES $<TARGET_PDB_FILE:${SimControllerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
 install(TARGETS ${SimControllerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
   ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h

@@ -268,7 +268,7 @@ install (FILES
   				DESTINATION include/omc/cpp)
 ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel" OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
 
-
+install(FILES $<TARGET_PDB_FILE:${ModelicaName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
 install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Modelica.h ${CMAKE_SOURCE_DIR}/Include/Core/ModelicaDefine.h DESTINATION include/omc/cpp/Core)
