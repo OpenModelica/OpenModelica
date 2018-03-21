@@ -781,6 +781,8 @@ public constant Message REDECLARE_OF_CONSTANT = MESSAGE(326, TRANSLATION(), ERRO
   Util.gettext("%s is constant and may not be redeclared."));
 public constant Message REDECLARE_MISMATCHED_PREFIX = MESSAGE(327, TRANSLATION(), ERROR(),
   Util.gettext("Invalid redeclaration '%s %s', original element is declared '%s'."));
+public constant Message EXTERNAL_ARG_NONCONSTANT_SIZE_INDEX = MESSAGE(328, TRANSLATION(), ERROR(),
+  Util.gettext("Invalid external argument '%s', the dimension index must be a constant expression."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

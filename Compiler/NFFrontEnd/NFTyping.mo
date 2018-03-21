@@ -1710,9 +1710,13 @@ algorithm
 end printRangeTypeError;
 
 function typeSize
+  "Types a size expression. If evaluate is true the size expression is also
+   evaluated if the dimension is known and the index is a parameter expression,
+   otherwise a typed size expression is returned."
   input output Expression sizeExp;
   input ExpOrigin.Type origin;
   input SourceInfo info;
+  input Boolean evaluate = true;
         output Type sizeType;
         output Variability variability;
 protected
@@ -1724,7 +1728,7 @@ protected
   TypingError ty_err;
 algorithm
   (sizeExp, sizeType, variability) := match sizeExp
-    case Expression.SIZE(dimIndex = SOME(index))
+    case Expression.SIZE(exp = exp, dimIndex = SOME(index))
       algorithm
         (index, index_ty, variability) := typeExp(index, origin, info);
 
@@ -1747,33 +1751,15 @@ algorithm
           Expression.INTEGER(iindex) := index;
 
           // Get the iindex'd dimension of the expression.
-          (dim, ty_err) := typeExpDim(sizeExp.exp, iindex, origin, info);
+          (dim, ty_err) := typeExpDim(exp, iindex, origin, info);
+          checkSizeTypingError(ty_err, exp, iindex, info);
 
-          () := match ty_err
-            case NO_ERROR() then ();
-
-            // The first argument wasn't an array.
-            case OUT_OF_BOUNDS(0)
-              algorithm
-                Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
-              then
-                fail();
-
-            // The index referred to an invalid dimension.
-            case OUT_OF_BOUNDS()
-              algorithm
-                Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
-                  {String(iindex), Expression.toString(sizeExp.exp), String(ty_err.upperBound)}, info);
-              then
-                fail();
-          end match;
-
-          if Dimension.isKnown(dim) then
-            // The dimension size is known, return its size.
+          if Dimension.isKnown(dim) and evaluate then
+            // If the dimension size is known, return its size.
             exp := Expression.INTEGER(Dimension.size(dim));
           else
-            // The dimension size is unknown, return a size expression. This can
-            // happen in functions where unknown dimensions are allowed.
+            // If the dimension size is unknown (e.g. in a function) or
+            // evaluation is disabled, return a size expression instead.
             exp := typeExp(sizeExp.exp, origin, info);
             exp := Expression.SIZE(exp, SOME(index));
           end if;
@@ -1814,6 +1800,32 @@ algorithm
 
   end match;
 end typeSize;
+
+function checkSizeTypingError
+  input TypingError typingError;
+  input Expression exp;
+  input Integer index;
+  input SourceInfo info;
+algorithm
+  () := match typingError
+    case NO_ERROR() then ();
+
+    // The first argument wasn't an array.
+    case OUT_OF_BOUNDS(0)
+      algorithm
+        Error.addSourceMessage(Error.INVALID_ARGUMENT_TYPE_FIRST_ARRAY, {"size"}, info);
+      then
+        fail();
+
+    // The index referred to an invalid dimension.
+    case OUT_OF_BOUNDS()
+      algorithm
+        Error.addSourceMessage(Error.INVALID_SIZE_INDEX,
+          {String(index), Expression.toString(exp), String(typingError.upperBound)}, info);
+      then
+        fail();
+  end match;
+end checkSizeTypingError;
 
 function evaluateEnd
   input Expression exp;
@@ -1912,30 +1924,44 @@ function typeExternalArg
 protected
   Type ty;
   Variability var;
+  Expression index;
 algorithm
-  (outArg, ty, var) := typeExp(arg, ExpOrigin.FUNCTION, info);
-
-  // Check that the external function argument is valid. The valid types of
-  // expressions are crefs, scalar constants and size expressions with constant
-  // index. The reason why we match on the untyped expression here is because
-  // size expressions might be evaluated during typing, but the variability
-  // would still be parameter in that case.
   outArg := match arg
-    case Expression.CREF() then outArg;
-    case Expression.SIZE() guard var <= Variability.PARAMETER then outArg;
-    else
+    case Expression.SIZE(dimIndex = SOME(_))
       algorithm
-        if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
-          outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
-          outArg := SimplifyExp.simplifyExp(arg);
-        else
-          Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
-            {Expression.toString(outArg)}, info);
+        outArg := typeSize(arg, ExpOrigin.FUNCTION, info, evaluate = false);
+        Expression.SIZE(dimIndex = SOME(index)) := outArg;
+
+        // Size expression must have a constant dimension index.
+        if not Expression.isInteger(index) then
+          Error.addSourceMessage(Error.EXTERNAL_ARG_NONCONSTANT_SIZE_INDEX,
+            {Expression.toString(arg)}, info);
           fail();
         end if;
       then
         outArg;
 
+    else
+      algorithm
+        (outArg, ty, var) := typeExp(arg, ExpOrigin.FUNCTION, info);
+      then
+        match arg
+          // All kinds of crefs are allowed.
+          case Expression.CREF() then outArg;
+          else
+            algorithm
+              // The only other kind of expression that's allowed is scalar constants.
+              if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
+                outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
+                outArg := SimplifyExp.simplifyExp(arg);
+              else
+                Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
+                  {Expression.toString(outArg)}, info);
+                fail();
+              end if;
+            then
+              outArg;
+        end match;
   end match;
 end typeExternalArg;
 

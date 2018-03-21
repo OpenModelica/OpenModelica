@@ -2570,6 +2570,16 @@ public
     end match;
   end isScalarConst;
 
+  function isInteger
+    input Expression exp;
+    output Boolean isInteger;
+  algorithm
+    isInteger := match exp
+      case INTEGER() then true;
+      else false;
+    end match;
+  end isInteger;
+
   function fillType
     input Type ty;
     input Expression fillExp;
