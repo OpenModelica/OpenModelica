@@ -1031,12 +1031,16 @@ algorithm
       FCore.Graph env;
       DAE.Exp lhs, rhs, condition;
       DAE.ComponentRef lhs_cref;
-      Values.Value rhs_val;
+      Values.Value rhs_val, v;
       list<DAE.Exp> exps;
       list<Values.Value> vals;
       list<DAE.Statement> statements;
       Absyn.Path path;
+      DAE.Type returnType;
       LoopControl loop_ctrl;
+      DAE.TailCall tailCall;
+      String var;
+      list<String> vars;
 
     case (DAE.STMT_ASSIGN(exp1 = lhs, exp = rhs), cache, env)
       equation
@@ -1100,12 +1104,29 @@ algorithm
       then
         (cache, inEnv, NEXT());
     // Special case for print, and other known calls for now; evaluated even when there is no ST
-    case (DAE.STMT_NORETCALL(exp = rhs as DAE.CALL(path = path, expLst = exps)), _, _)
+    case (DAE.STMT_NORETCALL(exp = rhs as DAE.CALL(path = path, expLst = exps, attr=DAE.CALL_ATTR(ty=returnType, tailCall=tailCall))), _, _)
       algorithm
         (cache, vals) := cevalExpList(exps, inCache, inEnv);
-        (cache, _) := cevalExp(rhs, cache, inEnv);
+        (cache, v) := cevalExp(rhs, cache, inEnv);
+        (cache, env, outLoopControl) := match tailCall
+          case DAE.NO_TAIL() then (cache, inEnv, NEXT());
+          // Handle tail recursion; same as a assigning all outputs followed by a return
+          case DAE.TAIL(outVars={}) then (cache, inEnv, RETURN());
+          case DAE.TAIL(outVars={var})
+            algorithm
+              (cache, env) := assignVariable(ComponentReference.makeUntypedCrefIdent(var), v, cache, inEnv);
+            then (cache, env, RETURN());
+          case DAE.TAIL(outVars=vars)
+            algorithm
+              Values.TUPLE(vals) := v;
+              for val in vals loop
+                var::vars := vars;
+                (cache, env) := assignVariable(ComponentReference.makeUntypedCrefIdent(var), val, cache, inEnv);
+              end for;
+            then (cache, env, RETURN());
+        end match;
       then
-        (cache, inEnv, NEXT());
+        (cache, env, NEXT());
 
     case (DAE.STMT_RETURN(), _, _)
       then

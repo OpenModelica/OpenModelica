@@ -1534,6 +1534,7 @@ public uniontype TailCall
   end NO_TAIL;
   record TAIL
     list<String> vars;
+    list<String> outVars;
   end TAIL;
 end TailCall;
 

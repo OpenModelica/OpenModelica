@@ -698,8 +698,11 @@ template dumpNoRetCall(DAE.Exp call_exp, DAE.ElementSource src)
 ::=
   let call_str = dumpExp(call_exp)
   let src_str = dumpSource(src)
+  let tail_str = match call_exp
+    case CALL(attr=CALL_ATTR(tailCall=TAIL(__))) then "return "
+    else ""
   <<
-  <%call_str%><%src_str%>;
+  <%tail_str%><%call_str%><%src_str%>;
   >>
 end dumpNoRetCall;
 

@@ -1462,8 +1462,15 @@ algorithm
         ();
 
     case (DAE.STMT_NORETCALL(exp = e1),i)
-      equation
+      algorithm
         indent(i);
+        _ := match e1
+          case DAE.CALL(attr=DAE.CALL_ATTR(tailCall=DAE.TAIL()))
+            algorithm
+              Print.printBuf("return ");
+            then ();
+          else ();
+        end match;
         ExpressionDump.printExp(e1);
         Print.printBuf(";\n");
       then
@@ -1716,8 +1723,12 @@ algorithm
     case (DAE.STMT_NORETCALL(exp = e),i)
       equation
         s1 = indentStr(i);
-        s2 = ExpressionDump.printExpStr(e);
-        str = stringAppendList({s1,s2,";\n"});
+        s2 = match e
+          case DAE.CALL(attr=DAE.CALL_ATTR(tailCall=DAE.TAIL())) then "return ";
+          else "";
+        end match;
+        s3 = ExpressionDump.printExpStr(e);
+        str = stringAppendList({s1,s2,s3,";\n"});
       then
         str;
 

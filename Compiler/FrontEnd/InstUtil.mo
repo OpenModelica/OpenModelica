@@ -7551,13 +7551,13 @@ protected function optimizeStatementTail2
   output DAE.Exp orhs;
 algorithm
   true:=valueEq(lhsVars,outvars);
-  (orhs,true) := optimizeStatementTail3(path,rhs,invars,source);
+  (orhs,true) := optimizeStatementTail3(path,rhs,invars,lhsVars,source);
 end optimizeStatementTail2;
 
 protected function optimizeStatementTail3
   input Absyn.Path path;
   input DAE.Exp rhs;
-  input list<String> vars;
+  input list<String> vars, lhsVars;
   input DAE.ElementSource source;
   output DAE.Exp orhs;
   output Boolean isTailRecursive;
@@ -7585,18 +7585,18 @@ algorithm
         if Flags.isSet(Flags.TAIL) then
           Error.addSourceMessage(Error.COMPILER_NOTIFICATION,{str},ElementSource.getElementSourceFileInfo(source));
         end if;
-        attr.tailCall = DAE.TAIL(vars);
+        attr.tailCall = DAE.TAIL(vars,lhsVars);
         call.attr = attr;
       then (call,true);
     case (_,DAE.IFEXP(e1,e2,e3),_,_)
       equation
-        (e2,b1) = optimizeStatementTail3(path,e2,vars,source);
-        (e3,b2) = optimizeStatementTail3(path,e3,vars,source);
+        (e2,b1) = optimizeStatementTail3(path,e2,vars,lhsVars,source);
+        (e3,b2) = optimizeStatementTail3(path,e3,vars,lhsVars,source);
         true = b1 or b2;
       then (DAE.IFEXP(e1,e2,e3),true);
     case (_,DAE.MATCHEXPRESSION(matchType as DAE.MATCH(_) /*TODO:matchcontinue*/,inputs,aliases,localDecls,cases,et),_,_)
       equation
-        cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,source);
+        cases = optimizeStatementTailMatchCases(path,cases,false,{},vars,lhsVars,source);
       then (DAE.MATCHEXPRESSION(matchType,inputs,aliases,localDecls,cases,et),true);
     else (rhs,false);
   end matchcontinue;
@@ -7607,7 +7607,7 @@ protected function optimizeStatementTailMatchCases
   input list<DAE.MatchCase> inCases;
   input Boolean changed;
   input list<DAE.MatchCase> inAcc;
-  input list<String> vars;
+  input list<String> vars, lhsVars;
   input DAE.ElementSource source;
   output list<DAE.MatchCase> ocases;
 algorithm
@@ -7627,18 +7627,18 @@ algorithm
     case (_,{},true,acc,_,_) then listReverse(acc);
     case (_,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info)::cases,_,acc,_,_)
       equation
-        (exp,true) = optimizeStatementTail3(path,exp,vars,source);
+        (exp,true) = optimizeStatementTail3(path,exp,vars,lhsVars,source);
         case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(exp),resultInfo,jump,info);
-      then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,source);
+      then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,lhsVars,source);
     case (_,DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info)::cases,_,acc,_,_)
       equation
         DAE.STMT_NORETCALL(exp,sourceStmt) = List.last(body);
-        (exp,true) = optimizeStatementTail3(path,exp,vars,source);
+        (exp,true) = optimizeStatementTail3(path,exp,vars,lhsVars,source);
         body = List.set(body,listLength(body),DAE.STMT_NORETCALL(exp,sourceStmt));
         case_ = DAE.CASE(patterns,patternGuard,localDecls,body,SOME(DAE.TUPLE({})),resultInfo,jump,info);
-      then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,source);
+      then optimizeStatementTailMatchCases(path,cases,true,case_::acc,vars,lhsVars,source);
     case (_,case_::cases,_,acc,_,_)
-      then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,source);
+      then optimizeStatementTailMatchCases(path,cases,changed,case_::acc,vars,lhsVars,source);
   end matchcontinue;
 end optimizeStatementTailMatchCases;
 

@@ -1391,6 +1391,20 @@ package DAE
   end SUM;
 
   end Exp;
+
+  uniontype CallAttributes
+    record CALL_ATTR
+      TailCall tailCall "Input variables of the function if the call is tail-recursive";
+    end CALL_ATTR;
+  end CallAttributes;
+
+  uniontype TailCall
+    record NO_TAIL
+    end NO_TAIL;
+    record TAIL
+    end TAIL;
+  end TailCall;
+
 end DAE;
 
 package SCodeDump
