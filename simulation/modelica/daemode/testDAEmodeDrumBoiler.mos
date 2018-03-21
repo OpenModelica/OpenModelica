@@ -7,7 +7,7 @@ loadModel(Modelica,{"3.2.1"});
 getErrorString();
 
 setCommandLineOptions("--daeMode=new");
-simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida", simflags="-daeMode");
+simulate(Modelica.Fluid.Examples.DrumBoiler.DrumBoiler, method="ida");
 getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
@@ -21,7 +21,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     simulationOptions = "startTime = 0.0, stopTime = 5400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Modelica.Fluid.Examples.DrumBoiler.DrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

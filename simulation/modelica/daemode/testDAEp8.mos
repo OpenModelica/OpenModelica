@@ -7,7 +7,7 @@ loadFile("./testDAEPackage.mo");
 getErrorString();
 
 setCommandLineOptions("+daeMode=new");
-simulate(testDAE.p8, simflags="-daeMode", method="ida");
+simulate(testDAE.p8);
 getErrorString();
 
 val(x,0.0);
@@ -15,28 +15,6 @@ val(y,0.0);
 
 val(x,1.0);
 val(y,1.0);
-
-setCommandLineOptions("+daeMode=dynamic");
-simulate(testDAE.p8, simflags="-daeMode", method="ida");
-getErrorString();
-
-val(x,0.0);
-val(y,0.0);
-
-val(x,1.0);
-val(y,1.0);
-
-setCommandLineOptions("+daeMode=all");
-simulate(testDAE.p8, simflags="-daeMode", method="ida");
-getErrorString();
-
-val(x,0.0);
-val(y,0.0);
-
-val(x,1.0);
-val(y,1.0);
-
-
 
 // Result:
 // true
@@ -44,7 +22,7 @@ val(y,1.0);
 // true
 // record SimulationResult
 //     resultFile = "testDAE.p8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -53,34 +31,6 @@ val(y,1.0);
 // "
 // 0.8
 // 1.0
-// 2.947495453811633
-// 4.020532953236094
-// true
-// record SimulationResult
-//     resultFile = "testDAE.p8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
-// 0.8
-// 1.0
-// 2.947498896852045
-// 4.020533199367776
-// true
-// record SimulationResult
-//     resultFile = "testDAE.p8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'testDAE.p8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-daeMode'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// "
-// end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// "
-// 0.8
-// 1.0
-// 2.947498896852045
-// 4.020533199367776
+// 2.94748938109823
+// 4.02053341588521
 // endResult
