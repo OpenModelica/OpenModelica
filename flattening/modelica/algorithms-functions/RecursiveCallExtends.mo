@@ -26,7 +26,7 @@ end RecursiveCallExtends;
 // function g
 //   input Real a;
 // algorithm
-//   g(a);
+//   return g(a);
 // end g;
 //
 // class RecursiveCallExtends

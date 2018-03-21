@@ -49,7 +49,7 @@ end TailRecursion;
 //   if x > 200000.0 then
 //     return;
 //   end if;
-//   TailRecursion.last(1.0 + x);
+//   return TailRecursion.last(1.0 + x);
 // end TailRecursion.last;
 //
 // function TailRecursion.match_
@@ -57,10 +57,10 @@ end TailRecursion;
 //   output Real y;
 // algorithm
 //   y := match (realString(x))
-//     case ("200000.5") then 200000.5;
-//     case ("200000.0") then 200000.0;
-//     case (_) then TailRecursion.match_(1.0 + x);
-//   end match;
+//       case ("200000.5") then 200000.5;
+//       case ("200000.0") then 200000.0;
+//       case (_) then TailRecursion.match_(1.0 + x);
+//     end match;
 // end TailRecursion.match_;
 //
 // class TailRecursion

@@ -99,6 +99,7 @@ SumVectorForIf.mo \
 TestGravityAcceleration.mo \
 Ticket4365.mos \
 Ticket4786.mo \
+Ticket4838.mo \
 TupleError.mo \
 TupleSingleAssign.mo \
 TupleAssignmentMismatch1.mo \
