@@ -634,8 +634,6 @@ algorithm
           c.binding := binding;
         end if;
 
-        typeBindings(c.classInst, component, origin);
-
         if Binding.isBound(c.condition) then
           c.condition := typeComponentCondition(c.condition, origin);
           dirty := true;
@@ -645,6 +643,8 @@ algorithm
         if dirty then
           InstNode.updateComponent(c, node);
         end if;
+
+        typeBindings(c.classInst, component, origin);
       then
         ();
 
