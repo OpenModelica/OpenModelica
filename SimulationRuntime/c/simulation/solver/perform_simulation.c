@@ -68,18 +68,9 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
 
-  if (omc_flag[FLAG_DAE_MODE]) /* dae mode */
+  if (compiledInDAEMode) /* dae mode */
   {
-    /* in all mode = 1 (all) nothing to do */
-    /* in mode = 2 (dynamic) we need to update the algebraic part */
-    if (compiledInDAEMode == 2)
-    {
-      data->callback->functionAlgebraics(data, threadData);
-    }
-    else if (compiledInDAEMode == 3)
-    {
-      data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
-    }
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
   }
   else /* ode mode */
   {
@@ -361,7 +352,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   fmtInit(data, &fmt);
 
   printAllVarsDebug(data, 0, LOG_DEBUG); /* ??? */
-  if (!omc_flag[FLAG_DAE_MODE])
+  if (!compiledInDAEMode)
   {
     printSparseStructure(&(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern),
         data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeRows,
@@ -428,7 +419,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         printAllVars(data, 0, LOG_SOLVER_V);
 
         clear_rt_step(data);
-        if (!omc_flag[FLAG_DAE_MODE]) /* do not use ringbuffer for daeMode */
+        if (!compiledInDAEMode) /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1, (void**) data->localData);
 
         modelica_boolean syncEventStep = solverInfo->didEventStep || syncStep;

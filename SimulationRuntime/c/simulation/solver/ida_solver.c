@@ -157,19 +157,14 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   idaData->residualFunction = residualFunctionIDA;
   idaData->N = (long int)data->modelData->nStates;
 
+
   /* change parameter for DAE mode */
-  if (omc_flag[FLAG_DAE_MODE])
+  if (compiledInDAEMode)
   {
-    if (compiledInDAEMode)
-    {
-      idaData->daeMode = 1;
-      idaData->N = data->modelData->nStates + data->simulationInfo->daeModeData->nAlgebraicDAEVars;
-    }
-    else
-    {
-      warningStreamPrint(LOG_STDOUT, 0, "-daeMode flag is used, the model is not compiled in DAE mode. See compiler flag: +daeMode. Continue as usual.");
-    }
+    idaData->daeMode = 1;
+    idaData->N = (long int) data->modelData->nStates + data->simulationInfo->daeModeData->nAlgebraicDAEVars;
   }
+  infoStreamPrint(LOG_SOLVER, 1, "## IDA ## Initializing solver of size %ld %s.", idaData->N, idaData->daeMode?"in DAE mode":"");
 
   /* initialize states and der(states) */
   if (idaData->daeMode)
@@ -645,11 +640,12 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       N_VSetArrayPointer_Serial((data->simulationInfo->sensitivityMatrix + i*idaData->N), idaData->ySResult[i]);
     }
   }
-  if (compiledInDAEMode == 3){
+  if (compiledInDAEMode){
     idaDataGlobal = idaData;
     initializedSolver = 1;
     data->callback->functionDAE = ida_event_update;
   }
+  messageClose(LOG_SOLVER);
 
   free(tmp);
   TRACE_POP
@@ -700,7 +696,7 @@ ida_event_update(DATA* data, threadData_t *threadData)
   int flag;
   long nonLinIters;
   double init_h;
-  if (compiledInDAEMode == 3){
+  if (compiledInDAEMode){
     if (initializedSolver){
 
       data->simulationInfo->needToIterate = 0;
@@ -1277,9 +1273,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   /* eval needed equations*/
-  if (idaData->daeMode && compiledInDAEMode == 1){}
-  else if (idaData->daeMode && compiledInDAEMode == 3)
-  {
+  if (idaData->daeMode){
    idaData->residualFunction(time, yy, yp, idaData->newdelta, idaData);
   }
   else

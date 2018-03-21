@@ -466,7 +466,11 @@ protected
 algorithm
   UseOtimica := Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM);
   GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
-  method := if UseOtimica then DAE.SCONST("optimization") else method;
+  if UseOtimica then
+    method := DAE.SCONST("optimization");
+  elseif  Flags.getConfigEnum(Flags.DAE_MODE) > 1 then
+    method := DAE.SCONST("ida");
+  end if;
   numberOfIntervals := if UseOtimica then DAE.ICONST(50) else numberOfIntervals;
   outSimOpt := GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, DAE.SCONST(inFileNamePrefix), options, outputFormat, variableFilter, cflags, simflags);
 end setFileNamePrefixInSimulationOptions;
@@ -3264,7 +3268,7 @@ protected function callTranslateModel
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  if Flags.getConfigEnum(Flags.DAE_MODE) > 3 then
+  if Flags.getConfigEnum(Flags.DAE_MODE) > 1 then
     (outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModelDAEMode(inCache,inEnv,className,inFileNamePrefix,
     inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));

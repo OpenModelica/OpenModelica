@@ -454,8 +454,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
       infoStreamPrint(LOG_SOLVER, 0, "overwrite solver method: %s [from command line]", data->simulationInfo->solverMethod);
     }
   }
-  /* if daeMode is turned on than use also the ida solver */
-  if (omc_flag[FLAG_DAE_MODE] && std::string("ida") != data->simulationInfo->solverMethod) {
+  /* if the model is compiled in daeMode then we have to use ida solver */
+  if (compiledInDAEMode && std::string("ida") != data->simulationInfo->solverMethod) {
     data->simulationInfo->solverMethod = GC_strdup(std::string("ida").c_str());
     infoStreamPrint(LOG_SIMULATION, 0, "overwrite solver method: %s [DAEmode works only with IDA solver]", data->simulationInfo->solverMethod);
   }
@@ -653,7 +653,7 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
       )
   {
     solverID = S_EULER;
-    if (compiledInDAEMode == 3)
+    if (compiledInDAEMode)
     {
       simData->callback->functionDAE = evaluateDAEResiduals_wrapperEventUpdate;
       simData->callback->function_ZeroCrossingsEquations = simData->simulationInfo->daeModeData->evaluateDAEResiduals;
@@ -920,10 +920,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     infoStreamPrint(LOG_STDOUT, 0, "Tolerance for steady state detection changed to %g", steadyStateTol);
   }
 
-  /* if compiled with the new DAE mode the simulation
-   * works only in daeMode and the ida solver */
-  if (compiledInDAEMode == 3){
-    omc_flag[FLAG_DAE_MODE] = 1;
+  if(omc_flag[FLAG_DAE_MODE]) {
+    warningStreamPrint(LOG_STDOUT, 0, "The daeMode flag is *deprecated*, because it is not needed any more.\n"
+      "If a model is compiled in \"DAEmode\" with compiler flag --daeMode, then it simulates automatically in DAE mode.");
   }
 
   rt_tick(SIM_TIMER_INIT_XML);

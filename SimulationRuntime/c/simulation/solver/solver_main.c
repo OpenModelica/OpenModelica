@@ -590,7 +590,7 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     }
 
     infoStreamPrint(LOG_STATS_V, 1, "function calls");
-    if (omc_flag[FLAG_DAE_MODE])
+    if (compiledInDAEMode)
     {
       infoStreamPrint(LOG_STATS_V, 0, "%5ld calls of functionDAE", data->simulationInfo->callStatistics.functionEvalDAE);
     }
