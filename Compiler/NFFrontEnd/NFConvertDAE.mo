@@ -1045,17 +1045,15 @@ end convertExternalDeclOutput;
 
 public
 function makeTypesVars
-  input Type complex_ty;
-  output list<DAE.Var> type_vars;
+  input InstNode complexCls;
+  output list<DAE.Var> typeVars;
 protected
-  InstNode cls_node;
   Component comp;
   DAE.Var type_var;
 algorithm
-  Type.COMPLEX(cls = cls_node) := complex_ty;
-  type_vars := {};
+  typeVars := {};
 
-  () := match cls as InstNode.getClass(cls_node)
+  () := match cls as InstNode.getClass(complexCls)
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE()) algorithm
 
       for c in ClassTree.getComponents(cls.elements) loop
@@ -1072,10 +1070,10 @@ algorithm
                       , DAE.UNBOUND()
                       , NONE()
                      );
-        type_vars := type_var::type_vars;
+        typeVars := type_var::typeVars;
       end for;
 
-      type_vars := listReverse(type_vars);
+      typeVars := listReverse(typeVars);
     then ();
 
     else ();

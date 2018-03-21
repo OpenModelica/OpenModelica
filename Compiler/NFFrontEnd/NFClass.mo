@@ -118,6 +118,10 @@ uniontype Class
     Restriction restriction;
   end INSTANCED_BUILTIN;
 
+  record DAE_TYPE
+    DAE.Type ty;
+  end DAE_TYPE;
+
   function fromSCode
     input list<SCode.Element> elements;
     input Boolean isClassExtends;

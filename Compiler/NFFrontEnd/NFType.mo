@@ -514,9 +514,7 @@ public
         then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType), ty.attributes, Absyn.IDENT("TODO:FIXME"));
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
-      case Type.COMPLEX()
-        // TODO: Use proper ClassInf.State here.
-        then DAE.Type.T_COMPLEX(ClassInf.MODEL(InstNode.scopePath(ty.cls)), ConvertDAE.makeTypesVars(ty), NONE());
+      case Type.COMPLEX() then InstNode.toDAEType(ty.cls);
       case Type.POLYMORPHIC() then DAE.T_METAPOLYMORPHIC(ty.name);
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else

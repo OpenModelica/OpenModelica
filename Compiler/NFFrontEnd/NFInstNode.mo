@@ -43,9 +43,11 @@ import Prefixes = NFPrefixes;
 import Visibility = NFPrefixes.Visibility;
 import NFModifier.Modifier;
 import SCodeDump;
+import DAE;
 
 protected
 import List;
+import ConvertDAE = NFConvertDAE;
 
 public
 uniontype InstNodeType
@@ -1200,6 +1202,33 @@ uniontype InstNode
       else ();
     end match;
   end setModifier;
+
+  function toDAEType
+    input InstNode clsNode;
+    output DAE.Type outType;
+  algorithm
+    outType := match clsNode
+      local
+        Class cls;
+
+      case CLASS_NODE()
+        algorithm
+          cls := Pointer.access(clsNode.cls);
+        then
+          match cls
+            case Class.DAE_TYPE() then cls.ty;
+            else
+              algorithm
+                // TODO: Use proper ClassInf.State here.
+                outType := DAE.Type.T_COMPLEX(ClassInf.MODEL(scopePath(clsNode)),
+                                              ConvertDAE.makeTypesVars(clsNode),
+                                              NONE());
+                Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
+              then
+                outType;
+          end match;
+    end match;
+  end toDAEType;
 
 end InstNode;
 
