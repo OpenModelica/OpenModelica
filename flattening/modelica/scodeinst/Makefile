@@ -247,11 +247,13 @@ ExtendsVisibility4.mo \
 ExtendsVisibility5.mo \
 ExternalFunctionExplicit1.mo \
 ExternalFunctionExplicit2.mo \
+ExternalFunctionExplicit3.mo \
 ExternalFunctionImplicit1.mo \
 ExternalFunctionImplicit2.mo \
 ExternalFunctionImplicit3.mo \
 ExternalFunctionImplicit4.mo \
 ExternalFunctionInvalidArg1.mo \
+ExternalFunctionInvalidArg2.mo \
 ExternalFunctionInvalidLang1.mo \
 ExternalFunctionInvalidSection1.mo \
 ExternalObject1.mo \
