@@ -296,6 +296,7 @@ uniontype SimEqSystem
     Integer index;
     DAE.Exp exp;
     DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_RESIDUAL;
 
   record SES_SIMPLE_ASSIGN
@@ -303,6 +304,7 @@ uniontype SimEqSystem
     DAE.ComponentRef cref;
     DAE.Exp exp;
     DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_SIMPLE_ASSIGN;
 
   record SES_SIMPLE_ASSIGN_CONSTRAINTS
@@ -312,6 +314,7 @@ uniontype SimEqSystem
     DAE.Exp exp;
     DAE.ElementSource source;
     BackendDAE.Constraints cons;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_SIMPLE_ASSIGN_CONSTRAINTS;
 
   record SES_ARRAY_CALL_ASSIGN
@@ -319,6 +322,7 @@ uniontype SimEqSystem
     DAE.Exp lhs;
     DAE.Exp exp;
     DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_ARRAY_CALL_ASSIGN;
 
   record SES_IFEQUATION
@@ -326,11 +330,13 @@ uniontype SimEqSystem
     list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
     list<SimEqSystem> elsebranch;
     DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_IFEQUATION;
 
   record SES_ALGORITHM
     Integer index;
     list<DAE.Statement> statements;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_ALGORITHM;
 
   record SES_INVERSE_ALGORITHM
@@ -338,16 +344,19 @@ uniontype SimEqSystem
     Integer index;
     list<DAE.Statement> statements;
     list<DAE.ComponentRef> knownOutputCrefs "this is a subset of output crefs of the original algorithm, which are already known";
+    BackendDAE.EquationAttributes eqAttr;
   end SES_INVERSE_ALGORITHM;
 
   record SES_LINEAR
     LinearSystem lSystem;
     Option<LinearSystem> alternativeTearing;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_LINEAR;
 
   record SES_NONLINEAR
     NonlinearSystem nlSystem;
     Option<NonlinearSystem> alternativeTearing;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_NONLINEAR;
 
   record SES_MIXED
@@ -356,6 +365,7 @@ uniontype SimEqSystem
     list<SimCodeVar.SimVar> discVars;
     list<SimEqSystem> discEqs;
     Integer indexMixedSystem;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_MIXED;
 
   record SES_WHEN
@@ -365,6 +375,7 @@ uniontype SimEqSystem
     list<BackendDAE.WhenOperator> whenStmtLst;
     Option<SimEqSystem> elseWhen;
     DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_WHEN;
 
   record SES_FOR_LOOP
@@ -375,6 +386,7 @@ uniontype SimEqSystem
     DAE.ComponentRef cref;//lhs
     DAE.Exp exp;//rhs
     DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
   end SES_FOR_LOOP;
 
 end SimEqSystem;

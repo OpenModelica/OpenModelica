@@ -341,11 +341,12 @@ protected function addLabelToEquations
       list<DAE.Statement> statements,statements2;
    list<SimCode.SimEqSystem> residual;
     Option<SimCode.JacobianMatrix> jacobianMatrix;
+      BackendDAE.EquationAttributes eqAttr;
 
     // nothing
     case ({},vars,idx,_,_) then ({},vars,idx,{});
     // residuals
-    case (((eq as SimCode.SES_RESIDUAL(i,e,source)) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_RESIDUAL(i,e,source, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -360,9 +361,9 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_RESIDUAL(i,e2,source) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_RESIDUAL(i,e2,source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // simple assignments
-    case (((eq as SimCode.SES_SIMPLE_ASSIGN(i,cr,e,source)) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_SIMPLE_ASSIGN(i,cr,e,source, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -376,9 +377,9 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_SIMPLE_ASSIGN(i,cr,e2,source) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_SIMPLE_ASSIGN(i,cr,e2,source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // algorithms
-    case (((eq as SimCode.SES_ALGORITHM(i,statements)) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_ALGORITHM(i,statements, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -393,9 +394,9 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_ALGORITHM(i,statements2) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_ALGORITHM(i,statements2, eqAttr) :: es_1,vars_2,idx3,labels3);
     // linear systems
-    case (((eq as SimCode.SES_LINEAR (SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS),NONE())) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_LINEAR (SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS),NONE(), eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -408,9 +409,9 @@ protected function addLabelToEquations
         labels3=listAppend(labels,labels2);
 
       then
-        (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A2,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS),NONE()) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A2,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
     // non-linear systems
-    case (((eq as SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix),NONE())) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix),NONE(), eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -422,9 +423,9 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false),NONE()) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
     // mixed systems
-    case (((eq as SimCode.SES_MIXED(i,cont,discVars,disc,indexSys)) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_MIXED(i,cont,discVars,disc,indexSys, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -436,9 +437,9 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_MIXED(i,cont_1,discVars,disc,indexSys) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_MIXED(i,cont_1,discVars,disc,indexSys, eqAttr) :: es_1,vars_2,idx3,labels3);
     // when without else
-  case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source)) :: es),vars,idx,_,_)
+  case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -447,10 +448,10 @@ protected function addLabelToEquations
         //label rest
         (es_1 ,vars_1,idx2,labels)= addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
       then
-        //(SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source) :: es_1,vars,idx2,labels);
-        (SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source) :: es_1,vars_1,idx2,labels);
+        //(SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source, eqAttr) :: es_1,vars,idx2,labels);
+        (SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source, eqAttr) :: es_1,vars_1,idx2,labels);
     // when with else
-    case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,SOME(elsePart),source)) :: es),vars,idx,_,_)
+    case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,SOME(elsePart),source, eqAttr)) :: es),vars,idx,_,_)
       equation
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
@@ -463,7 +464,7 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3=listAppend(labels,labels2);
       then
-        (SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,SOME(elsePart),source) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,SOME(elsePart),source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // add other types of equations
     // unknown equations
     case (eq::es,vars,idx,_,_)

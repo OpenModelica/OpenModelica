@@ -734,7 +734,7 @@ algorithm
         cr := simVar.name;
         simVar.name := ComponentReference.crefPrefixPrevious(cr);
         clockedVars := simVar::clockedVars;
-        simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource);
+        simEq := SimCode.SES_SIMPLE_ASSIGN(ouniqueEqIndex, simVar.name, DAE.CREF(cr, simVar.type_), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
          equations := simEq::equations;
         ouniqueEqIndex := ouniqueEqIndex + 1;
       end if;
@@ -987,34 +987,35 @@ algorithm
       list<DAE.ElementSource> sources,sources2;
       Boolean homotopySupport, homotopySupport2;
       Boolean mixedSystem, mixedSystem2, tornSystem, tornSystem2;
+      BackendDAE.EquationAttributes eqAttr;
 
     // no dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, _, nUnknowns), NONE()), _) equation
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, _, nUnknowns), NONE(), eqAttr), _) equation
       sysIndex = inSysIndexMap[index];
-    then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex, nUnknowns), NONE());
+    then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex, nUnknowns), NONE(), eqAttr);
 
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), NONE()), _) equation
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, _, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), NONE(), eqAttr), _) equation
       eqs = List.map1(eqs, setSystemIndexMap, inSysIndexMap);
       sysIndex = inSysIndexMap[index];
-    then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), NONE());
+    then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), NONE(), eqAttr);
 
     // dynamic tearing
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, _, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, _, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, _, nUnknowns2))), _) equation
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, _, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, _, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, _, nUnknowns2)), eqAttr), _) equation
       sysIndex = inSysIndexMap[index];
       sysIndex2 = inSysIndexMap[index2];
-    then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, sysIndex2, nUnknowns2)));
+    then SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, beqs, simJac, eqs, optSymJac, sources, sysIndex, nUnknowns), SOME(SimCode.LINEARSYSTEM(index2, partOfMixed2, tornSystem, vars2, beqs2, simJac2, eqs2, optSymJac2, sources2, sysIndex2, nUnknowns2)), eqAttr);
 
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=eqs, crefs=crefs, nUnknowns=nUnknowns, jacobianMatrix=optSymJac, homotopySupport=homotopySupport, mixedSystem=mixedSystem, tornSystem=tornSystem), SOME(SimCode.NONLINEARSYSTEM(index=index2, eqs=eqs2, crefs=crefs2, nUnknowns=nUnknowns2, jacobianMatrix=optSymJac2, homotopySupport=homotopySupport2, mixedSystem=mixedSystem2, tornSystem=tornSystem2))), _) equation
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=eqs, crefs=crefs, nUnknowns=nUnknowns, jacobianMatrix=optSymJac, homotopySupport=homotopySupport, mixedSystem=mixedSystem, tornSystem=tornSystem), SOME(SimCode.NONLINEARSYSTEM(index=index2, eqs=eqs2, crefs=crefs2, nUnknowns=nUnknowns2, jacobianMatrix=optSymJac2, homotopySupport=homotopySupport2, mixedSystem=mixedSystem2, tornSystem=tornSystem2)), eqAttr=eqAttr), _) equation
       eqs = List.map1(eqs, setSystemIndexMap, inSysIndexMap);
       sysIndex = inSysIndexMap[index];
       eqs2 = List.map1(eqs2, setSystemIndexMap, inSysIndexMap);
       sysIndex2 = inSysIndexMap[index2];
-    then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, sysIndex2, nUnknowns2, optSymJac2, homotopySupport2, mixedSystem2, tornSystem2)));
+    then SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, eqs, crefs, sysIndex, nUnknowns, optSymJac, homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index2, eqs2, crefs2, sysIndex2, nUnknowns2, optSymJac2, homotopySupport2, mixedSystem2, tornSystem2)), eqAttr);
 
-    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _), _) equation
+    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, _, eqAttr), _) equation
       sysIndex = inSysIndexMap[index];
       cont = setSystemIndexMap(cont, inSysIndexMap);
-    then SimCode.SES_MIXED(index, cont, discVars, discEqs, sysIndex);
+    then SimCode.SES_MIXED(index, cont, discVars, discEqs, sysIndex, eqAttr);
 
     else
     then inEqn;
@@ -1041,8 +1042,10 @@ algorithm
         list<SimCode.JacobianMatrix> tmpSymJacs, tmpAdditionalSymJacs;
         list<SimCode.SimEqSystem> eqs;
         SimCode.SimEqSystem system;
+        BackendDAE.EquationAttributes eqAttr;
+
       // nonlinear case
-      case SimCode.SES_NONLINEAR(nlSystem=nlSyst as SimCode.NONLINEARSYSTEM(), alternativeTearing=optNlSyst) equation
+      case SimCode.SES_NONLINEAR(nlSystem=nlSyst as SimCode.NONLINEARSYSTEM(), alternativeTearing=optNlSyst, eqAttr=eqAttr) equation
 
         (nlSyst, modelInfo, symJacs) = updateNonLinearSyst(nlSyst, modelInfo, symJacs);
 
@@ -1052,12 +1055,12 @@ algorithm
           (altNlSyst, modelInfo, symJacs) = updateNonLinearSyst(altNlSyst, modelInfo, symJacs);
           optNlSyst = SOME(altNlSyst);
         end if;
-        system = SimCode.SES_NONLINEAR(nlSyst, optNlSyst);
+        system = SimCode.SES_NONLINEAR(nlSyst, optNlSyst, eqAttr);
         modelInfo.nonLinearSystems = system::modelInfo.nonLinearSystems;
       then system;
 
       // linear case
-      case SimCode.SES_LINEAR(lSystem=linearSyst as SimCode.LINEARSYSTEM(), alternativeTearing=optLinearSyst) equation
+      case SimCode.SES_LINEAR(lSystem=linearSyst as SimCode.LINEARSYSTEM(), alternativeTearing=optLinearSyst, eqAttr=eqAttr) equation
 
         (linearSyst, modelInfo, symJacs) = updateLinearSyst(linearSyst, modelInfo, symJacs);
 
@@ -1067,7 +1070,7 @@ algorithm
           (altLinearSyst, modelInfo, symJacs) = updateLinearSyst(altLinearSyst, modelInfo, symJacs);
           optLinearSyst = SOME(altLinearSyst);
         end if;
-        system = SimCode.SES_LINEAR(linearSyst, optLinearSyst);
+        system = SimCode.SES_LINEAR(linearSyst, optLinearSyst, eqAttr);
         modelInfo.linearSystems = system::modelInfo.linearSystems;
       then system;
 
@@ -1869,7 +1872,6 @@ algorithm
   outSimVar := rewriteIndex(sorted, 0);
 end sortSimVarsAndWriteIndex;
 
-
 // =============================================================================
 // section for zeroCrossingsEquations
 //
@@ -1999,7 +2001,7 @@ algorithm
     then (iequations, iuniqueEqIndex);
 
     else
-    then (SimCode.SES_ALGORITHM(iuniqueEqIndex, asserts)::iequations, iuniqueEqIndex+1);
+    then (SimCode.SES_ALGORITHM(iuniqueEqIndex, asserts, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)::iequations, iuniqueEqIndex+1);
   end match;
 end addAssertEqn;
 
@@ -2047,25 +2049,26 @@ algorithm
       list<SimCode.SimEqSystem> eqSystlst;
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<SimCode.SimEqSystem> oelseWhenSimEq;
+      BackendDAE.EquationAttributes eqAttr;
 
     // solved equation
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        BackendDAE.SOLVED_EQUATION(exp=e2, source=source) = BackendEquation.get(eqns, eqNum);
+        BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
       then
-        ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source)}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
     // when eq
     case (_, _,  BackendDAE.EQSYSTEM(orderedEqs=eqns), BackendDAE.SHARED(), _, _, _)
       equation
-        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) = BackendEquation.get(eqns, eqNum);
+        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelseWhen) = whenEquation;
         if isSome(oelseWhen) then
           SOME(elseWhen) = oelseWhen;
-          (elseWhenEquation,uniqueEqIndex) = createElseWhenEquation(elseWhen, {}, iuniqueEqIndex+1, source);
+          (elseWhenEquation,uniqueEqIndex) = createElseWhenEquation(elseWhen, {}, iuniqueEqIndex+1, source, eqAttr);
           oelseWhenSimEq = SOME(elseWhenEquation);
         else
           uniqueEqIndex = iuniqueEqIndex+1;
@@ -2073,13 +2076,13 @@ algorithm
         end if;
         (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
       then
-        ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source)}, uniqueEqIndex+1, itempvars);
+        ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source, eqAttr)}, uniqueEqIndex+1, itempvars);
 
     // single equation
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
         eqn = BackendEquation.get(eqns, eqNum);
-        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source) = eqn;
+        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr) = eqn;
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2091,9 +2094,9 @@ algorithm
         source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
         if listEmpty(cons) then
-          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source)}, uniqueEqIndex+1);
+          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source, eqAttr)}, uniqueEqIndex+1);
         else
-          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex, cr, exp_, source, cons)}, uniqueEqIndex+1);
+          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex, cr, exp_, source, cons, eqAttr)}, uniqueEqIndex+1);
         end if;
         eqSystlst = listAppend(eqSystlst,resEqs);
         tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
@@ -2104,7 +2107,7 @@ algorithm
     // change branches without variable to var - pre(var)
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        BackendDAE.EQUATION(exp=e1 as DAE.RCONST(_), scalar=e2 as DAE.IFEXP(), source=source) = BackendEquation.get(eqns, eqNum);
+        BackendDAE.EQUATION(exp=e1 as DAE.RCONST(_), scalar=e2 as DAE.IFEXP(), source=source, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2117,12 +2120,12 @@ algorithm
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
       then
-        ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE())}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     // non-linear
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
       equation
-        (eqn as BackendDAE.EQUATION(exp=e1, scalar=e2)) = BackendEquation.get(eqns, eqNum);
+        (eqn as BackendDAE.EQUATION(exp=e1, scalar=e2, attr=eqAttr)) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2132,12 +2135,12 @@ algorithm
         cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
         (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
       then
-        ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE())}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     // Algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, true, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)  = BackendEquation.get(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
@@ -2147,12 +2150,12 @@ algorithm
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
         algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, vars);
       then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
     // algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _,false, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.get(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
@@ -2161,12 +2164,12 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
     // inverse Algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.get(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // We need to solve an inverse problem of an algorithm section.
@@ -2174,12 +2177,12 @@ algorithm
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
         algStatements = solveAlgorithmInverse(algStatements, {v});
       then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
     // inverse Algorithm for single variable failed
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
       equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand) = BackendEquation.get(eqns, eqNum);
+        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
         v = BackendVariable.getVarAt(vars, varNum);
         // We need to solve an inverse problem of an algorithm section.
@@ -2278,6 +2281,7 @@ protected function createNonlinearResidualEquationsComplex
   input DAE.Exp inExp;
   input DAE.Exp inExp1;
   input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
   output list<SimCode.SimEqSystem> equations_;
@@ -2305,12 +2309,12 @@ algorithm
 
     /* casts */
     case (DAE.CAST(_, e1), _) equation
-      (equations_, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(e1, inExp1, source, iuniqueEqIndex, itempvars);
+      (equations_, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(e1, inExp1, source, eqAttr, iuniqueEqIndex, itempvars);
     then (equations_, ouniqueEqIndex, otempvars);
 
     /* casts */
     case (_, DAE.CAST(_, e2)) equation
-      (equations_, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(inExp, e2, source, iuniqueEqIndex, itempvars);
+      (equations_, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(inExp, e2, source, eqAttr, iuniqueEqIndex, itempvars);
     then (equations_, ouniqueEqIndex, otempvars);
 
     /* a = f() */
@@ -2327,11 +2331,11 @@ algorithm
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
       e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
       exptl = List.threadTuple(e1lst, e2lst);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, iuniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, iuniqueEqIndex);
       // tmp = f(x, y)
       etmp = Expression.crefExp(crtmp);
       stms = DAE.STMT_ASSIGN(tp, etmp, e2_1, source);
-      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms})::eqSystlst;
+      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr)::eqSystlst;
     then (eqSystlst, uniqueEqIndex+1, tempvars);
 
     /* f() = a */
@@ -2348,11 +2352,11 @@ algorithm
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
       e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
       exptl = List.threadTuple(e1lst, e2lst);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, iuniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, iuniqueEqIndex);
       // tmp = f(x, y)
       etmp = Expression.crefExp(crtmp);
       stms = DAE.STMT_ASSIGN(tp, etmp, e1_1, source);
-      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms})::eqSystlst;
+      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr)::eqSystlst;
     then (eqSystlst, uniqueEqIndex+1, tempvars);
 
     /* Record() = f() */
@@ -2365,7 +2369,7 @@ algorithm
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       e1_1 = Expression.crefToExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
-      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
 
       // Record()-tmp = 0
@@ -2376,7 +2380,7 @@ algorithm
       /* pair each of the expanded expressions to coressponding one*/
       exptl = List.threadTuple(e1lst, e2lst);
       /* Create residual equations for each pair*/
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
       eqSystlst = simeqn_complex::eqSystlst;
 
       tempvars = createTempVars(varLst, cr, itempvars);
@@ -2392,12 +2396,12 @@ algorithm
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       e2_1 = Expression.crefExp(cr);
       stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
-      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
       // Record()-tmp = 0
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
       exptl = List.threadTuple(e1lst, e2lst);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
       eqSystlst = simeqn_complex::eqSystlst;
       tempvars = createTempVars(varLst, cr, itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
@@ -2411,7 +2415,7 @@ algorithm
       cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
       crexplst = List.map1(expl, Expression.generateCrefsExpFromExp, cr);
       stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, inExp1, source);
-      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
 
       // for creating makeSES_RESIDUAL1 all crefs needs to expanded
@@ -2431,7 +2435,7 @@ algorithm
 
       // Tuple() - tmp = 0
       exptl = List.threadTuple(expl, crexplst);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
       eqSystlst = simeqn_complex::eqSystlst;
 
       tempvars = createTempVarsforCrefs(listReverse(crexplst), itempvars);
@@ -2451,6 +2455,7 @@ protected function createNonlinearResidualEquationsSingleComplex
   input DAE.Exp inExp;
   input DAE.Exp inExp1;
   input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
   output list<SimCode.SimEqSystem> equations_;
@@ -2488,18 +2493,18 @@ algorithm
 
       // Create algorithm equation from complex equation with temporary variables
       stms = DAE.STMT_TUPLE_ASSIGN(tp, crexplst, inExp1, source);
-      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
 
       // Make simple assignments
       // var := tmp_var
       exptl = List.threadTuple(lhsExpLstAss, rhsExpLstAss);
-      (eqSystlst_simpAss, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
+      (eqSystlst_simpAss, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqAttr, uniqueEqIndex);
 
       // Make residual equations
       // tmp_var - var = 0
       exptl = List.threadTuple(rhsExpLstRes, lhsExpLstRes);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
 
       // Add simEqns to eqSystlst and temporary variables to tempvars
       eqSystlst = simeqn_complex :: listAppend(eqSystlst_simpAss, eqSystlst);
@@ -2788,21 +2793,22 @@ algorithm
           DAE.Type ty;
           DAE.Expand crefExpand;
           Integer uniqueEqIndex;
+          BackendDAE.EquationAttributes eqAttr;
 
-        case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source), uniqueEqIndex) equation
+        case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), uniqueEqIndex) equation
           res_exp = Expression.createResidualExp(e1, e2);
           res_exp = Expression.replaceDerOpInExp(res_exp);
           ouniqueEqIndex = uniqueEqIndex + 1;
-        then SimCode.SES_RESIDUAL(uniqueEqIndex, res_exp, source)::eqSystems;
+        then SimCode.SES_RESIDUAL(uniqueEqIndex, res_exp, source, eqAttr)::eqSystems;
 
-        case (BackendDAE.RESIDUAL_EQUATION(exp=e, source=source), uniqueEqIndex) equation
+        case (BackendDAE.RESIDUAL_EQUATION(exp=e, source=source, attr=eqAttr), uniqueEqIndex) equation
           (res_exp, _) = ExpressionSimplify.simplify(e);
           res_exp = Expression.replaceDerOpInExp(res_exp);
           ouniqueEqIndex = uniqueEqIndex + 1;
-        then SimCode.SES_RESIDUAL(uniqueEqIndex, res_exp, source) :: eqSystems;
+        then SimCode.SES_RESIDUAL(uniqueEqIndex, res_exp, source, eqAttr) :: eqSystems;
 
         // An array equation
-        case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source), uniqueEqIndex) equation
+        case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr), uniqueEqIndex) equation
           ty = Expression.typeof(e1);
           left = ComponentReference.makeCrefIdent("$TMP_" + intString(uniqueEqIndex), ty, {});
           lhse = DAE.CREF(left,ty);
@@ -2811,22 +2817,22 @@ algorithm
           res_exp = Expression.replaceDerOpInExp(res_exp);
           crefstmp = ComponentReference.expandCref(left, false);
           explst1 = List.map(crefstmp, Expression.crefExp);
-          (eqSystlst, uniqueEqIndex) = List.map1Fold(explst1, makeSES_RESIDUAL, source, uniqueEqIndex);
-          eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, res_exp, source)::eqSystlst;
+          (eqSystlst, uniqueEqIndex) = List.map2Fold(explst1, makeSES_RESIDUAL, source, eqAttr, uniqueEqIndex);
+          eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, res_exp, source, eqAttr)::eqSystlst;
           otempvars = createArrayTempVar(left, ds, explst1, otempvars);
           ouniqueEqIndex = uniqueEqIndex + 1;
         then listAppend(eqSystlst, eqSystems);
 
         // A complex equation
-        case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source), uniqueEqIndex) equation
+        case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), uniqueEqIndex) equation
           (e1, _) = ExpressionSimplify.simplify(e1);
           e1 = Expression.replaceDerOpInExp(e1);
           (e2, _) = ExpressionSimplify.simplify(e2);
           e2 = Expression.replaceDerOpInExp(e2);
-          (eqSystlst, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(e1, e2, source, uniqueEqIndex, otempvars);
+          (eqSystlst, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(e1, e2, source, eqAttr, uniqueEqIndex, otempvars);
         then listAppend(eqSystlst, eqSystems);
 
-        case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS()), _) equation
+        case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(), attr=eqAttr), _) equation
           // This following does not work. It does not take index or elseWhen into account.
           // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
           /*
@@ -2842,7 +2848,7 @@ algorithm
           Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"non-linear equations within when-equations", "Perform non-linear operations outside the when-equation (this is slower, but works)"}, BackendEquation.equationInfo(eq));
         then fail();
 
-        case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand), uniqueEqIndex) equation
+        case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand, attr=eqAttr), uniqueEqIndex) equation
           crefs = CheckModel.checkAndGetAlgorithmOutputs(DAE.ALGORITHM_STMTS(algStatements), source, crefExpand);
           // BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ", ", "\n"));
           (crefstmp, repl) = createTmpCrefs(crefs, uniqueEqIndex, {}, BackendVarTransform.emptyReplacements());
@@ -2860,9 +2866,9 @@ algorithm
 
           // 0 = a - tmp
           exptl = List.threadTuple(explst, explst1);
-          (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, uniqueEqIndex);
+          (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
 
-          eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, algStatements)::eqSystlst;
+          eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, algStatements, eqAttr)::eqSystlst;
           // Tpl.tplPrint(SimCodeDump.dumpEqs, eqSystlst);
 
           ouniqueEqIndex = uniqueEqIndex + 1;
@@ -2957,18 +2963,20 @@ end createTmpCrefs;
 protected function makeSES_RESIDUAL
   input DAE.Exp inExp;
   input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
   input Integer uniqueEqIndex;
   output SimCode.SimEqSystem outSimEqn;
   output Integer ouniqueEqIndex;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outSimEqn := SimCode.SES_RESIDUAL(uniqueEqIndex, inExp, source);
+  outSimEqn := SimCode.SES_RESIDUAL(uniqueEqIndex, inExp, source, eqAttr);
   ouniqueEqIndex := uniqueEqIndex+1;
 end makeSES_RESIDUAL;
 
 protected function makeSES_RESIDUAL1
   input tuple<DAE.Exp, DAE.Exp> inTpl;
   input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
   input Integer uniqueEqIndex;
   output SimCode.SimEqSystem outSimEqn;
   output Integer ouniqueEqIndex;
@@ -2977,13 +2985,14 @@ protected
 algorithm
   (e1, e2) := inTpl;
   e := Expression.createResidualExp(e1, e2);
-  outSimEqn := SimCode.SES_RESIDUAL(uniqueEqIndex, e, source);
+  outSimEqn := SimCode.SES_RESIDUAL(uniqueEqIndex, e, source, eqAttr);
   ouniqueEqIndex := uniqueEqIndex +1;
 end makeSES_RESIDUAL1;
 
 protected function makeSES_SIMPLE_ASSIGN
   input tuple<DAE.Exp, DAE.Exp> inTpl;
   input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
   input Integer iuniqueEqIndex;
   output SimCode.SimEqSystem outSimEqn;
   output Integer ouniqueEqIndex;
@@ -3005,7 +3014,7 @@ algorithm
         Error.addCompilerWarning(msg);
       then fail();
   end match;
-  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
+  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source, eqAttr);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSES_SIMPLE_ASSIGN;
 
@@ -3018,9 +3027,10 @@ protected
   DAE.Exp e;
   DAE.ComponentRef cr;
   DAE.ElementSource source;
+  BackendDAE.EquationAttributes eqAttr;
 algorithm
-  BackendDAE.SOLVED_EQUATION(componentRef= cr, exp=e, source=source) := inEqn;
-  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source);
+  BackendDAE.SOLVED_EQUATION(componentRef= cr, exp=e, source=source, attr=eqAttr) := inEqn;
+  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source, eqAttr);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSolved_SES_SIMPLE_ASSIGN;
 
@@ -3201,7 +3211,7 @@ algorithm
     simJac = List.sort(simJac,simJacCSRToCSC);
     end if;
 
-    then ({SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(iuniqueEqIndex, mixedEvent, false, simVars, beqs, simJac, {}, NONE(), sources, 0, inVars.numberOfVars), NONE())}, iuniqueEqIndex+1, itempvars);
+    then ({SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(iuniqueEqIndex, mixedEvent, false, simVars, beqs, simJac, {}, NONE(), sources, 0, inVars.numberOfVars), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, iuniqueEqIndex+1, itempvars);
 
     // Time varying nonlinear jacobian. Non-linear system of equations.
     case (_, BackendDAE.JAC_GENERIC()) equation
@@ -3214,7 +3224,7 @@ algorithm
       // create symbolic jacobian for simulation
       (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, false), NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, false), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars);
 
     // No analytic jacobian available. Generate non-linear system.
     case (_, _) equation
@@ -3225,7 +3235,7 @@ algorithm
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, mixedSystem, false), NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, mixedSystem, false), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars);
 
     // failure
     else equation
@@ -3280,7 +3290,7 @@ protected
   DAE.ComponentRef name;
 algorithm
   SimCodeVar.SIMVAR(name=name) := var;
-  eq := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, name, DAE.RCONST(val), source);
+  eq := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, name, DAE.RCONST(val), source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end generateSolvedEquation;
 
@@ -3369,7 +3379,7 @@ algorithm
        else
          alternativeTearingL = NONE();
        end if;
-     then ({SimCode.SES_LINEAR(lSystem, alternativeTearingL)}, uniqueEqIndex+1, tempvars2);
+     then ({SimCode.SES_LINEAR(lSystem, alternativeTearingL, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars2);
 
      // CASE: nonlinear
      case(false, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
@@ -3422,7 +3432,7 @@ algorithm
        else
          alternativeTearingNl = NONE();
        end if;
-     then ({SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl)}, uniqueEqIndex+1, tempvars2);
+     then ({SimCode.SES_NONLINEAR(nlSystem, alternativeTearingNl, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars2);
    end match;
 end createTornSystem;
 
@@ -4768,14 +4778,15 @@ algorithm
       Integer col;
       DAE.Exp e;
       DAE.ElementSource source;
+      BackendDAE.EquationAttributes eqAttr;
 
-    case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e, source=source)), _)
+    case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e, source=source, attr=eqAttr)), _)
       equation
         // rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v, NONE());
         // rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
         // then ((row - 1, col - 1, SimCode.SES_RESIDUAL(rhs_exp_1)));
       then
-        ((row - 1, col - 1, SimCode.SES_RESIDUAL(0, e, source)));
+        ((row - 1, col - 1, SimCode.SES_RESIDUAL(0, e, source, eqAttr)));
   end match;
 end jacToSimjac;
 
@@ -4820,10 +4831,11 @@ algorithm
       Option<BackendDAE.WhenEquation> oelseWhen;
       SimCode.SimEqSystem simElseWhenEq;
       Option<SimCode.SimEqSystem> osimElseWhenEq;
+      BackendDAE.EquationAttributes eqAttr;
 
 
     // when eq without else
-    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelseWhen), source=source), _, _, _, _)
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelseWhen), source=source, attr=eqAttr), _, _, _, _)
       algorithm
         for stmt in whenStmtLst loop
           _ :=  match stmt
@@ -4836,14 +4848,14 @@ algorithm
         end for;
         if isSome(oelseWhen) then
           SOME(elseWhen) := oelseWhen;
-          (simElseWhenEq, uniqueEqIndex) := createElseWhenEquation(elseWhen, inVars, iuniqueEqIndex+1, source);
+          (simElseWhenEq, uniqueEqIndex) := createElseWhenEquation(elseWhen, inVars, iuniqueEqIndex+1, source, eqAttr);
           osimElseWhenEq := SOME(simElseWhenEq);
         else
           uniqueEqIndex := iuniqueEqIndex+1;
           osimElseWhenEq := NONE();
         end if;
         (conditions, initialCall) := BackendDAEUtil.getConditionList(cond);
-      then ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, osimElseWhenEq, source)}, uniqueEqIndex, itempvars);
+      then ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, osimElseWhenEq, source, eqAttr)}, uniqueEqIndex, itempvars);
 
     // failure
     else
@@ -4858,6 +4870,7 @@ protected function createElseWhenEquation
   input list<BackendDAE.Var> inVars;
   input Integer iuniqueEqIndex;
   input DAE.ElementSource inElementSource;
+  input BackendDAE.EquationAttributes inEqAttr;
   output SimCode.SimEqSystem outSimEqSystem;
   output Integer ouniqueEqIndex;
 algorithm
@@ -4888,14 +4901,14 @@ algorithm
       end for;
       if isSome(oelseWhenEquation) then
         SOME(elseWhenEquation) := oelseWhenEquation;
-        (simElseWhenEq, uniqueEqIndex) := createElseWhenEquation(elseWhenEquation, inVars, iuniqueEqIndex+1, inElementSource);
+        (simElseWhenEq, uniqueEqIndex) := createElseWhenEquation(elseWhenEquation, inVars, iuniqueEqIndex+1, inElementSource, inEqAttr);
         osimElseWhenEq := SOME(simElseWhenEq);
       else
         uniqueEqIndex := iuniqueEqIndex+1;
         osimElseWhenEq := NONE();
       end if;
       (conditions, initialCall) := BackendDAEUtil.getConditionList(cond);
-    then (SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, osimElseWhenEq, inElementSource), uniqueEqIndex);
+    then (SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, osimElseWhenEq, inElementSource, inEqAttr), uniqueEqIndex);
   end match;
 end createElseWhenEquation;
 
@@ -4921,12 +4934,13 @@ algorithm
       list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> ifbranches;
       DAE.ElementSource source_;
       BackendDAE.ExtraInfo ei;
+      BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsLst, eqnsfalse=elseqns, source=source_), _,
+    case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsLst, eqnsfalse=elseqns, source=source_, attr=eqAttr), _,
           BackendDAE.SHARED(info = ei), _, _, _) equation
       (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditions, eqnsLst, inVars, shared, genDiscrete, iuniqueEqIndex, itempvars);
       (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(elseqns, inVars, uniqueEqIndex, tempvars, ei, genDiscrete);
-    then ({SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, equations_, source_)}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, equations_, source_, eqAttr)}, uniqueEqIndex+1, tempvars);
 
     else equation
       Error.addInternalError("SimCodeUtil.createSingleIfEqnCode failed.", sourceInfo());
@@ -5044,16 +5058,16 @@ algorithm
       list<SimCodeVar.SimVar> tempvars;
       String s, s1, s2, s3;
       Boolean homotopySupport;
-      BackendDAE.EquationAttributes attr;
+      BackendDAE.EquationAttributes eqAttr;
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr), _, _, _) equation
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
       e1 = Expression.replaceDerOpInExp(e1);
       e2 = Expression.replaceDerOpInExp(e2);
-      (equations_, uniqueEqIndex, tempvars) = createSingleComplexEqnCode2(crefs, e1, e2, iuniqueEqIndex, itempvars, source, attr, iextra, genDiscrete, inVars);
+      (equations_, uniqueEqIndex, tempvars) = createSingleComplexEqnCode2(crefs, e1, e2, iuniqueEqIndex, itempvars, source, eqAttr, iextra, genDiscrete, inVars);
     then (equations_, uniqueEqIndex, tempvars);
 
-    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source), _, _, _) equation
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=eqAttr), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
 
       // Check that all crefs are of Type Real
@@ -5067,11 +5081,11 @@ algorithm
       e2 = Expression.replaceDerOpInExp(e2);
 
       // Create nonlinear equation system from complex function
-      (resEqs, uniqueEqIndex, tempvars, crefs) = createNonlinearResidualEquationsSingleComplex(e1, e2, source, iuniqueEqIndex, itempvars, crefs);
+      (resEqs, uniqueEqIndex, tempvars, crefs) = createNonlinearResidualEquationsSingleComplex(e1, e2, source, eqAttr, iuniqueEqIndex, itempvars, crefs);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false), NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
-    case (BackendDAE.COMPLEX_EQUATION(), _, _, _) equation
+    case (BackendDAE.COMPLEX_EQUATION(attr=eqAttr), _, _, _) equation
       crefs = List.map(inVars, BackendVariable.varCref);
 
       // check that all crefs are of Type Real
@@ -5084,7 +5098,7 @@ algorithm
       //       considered yet there.
       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({inEquation}, iuniqueEqIndex, itempvars);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false), NONE())}, uniqueEqIndex+1, tempvars);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 
     // failure
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2), _, _, _) equation
@@ -5179,7 +5193,7 @@ algorithm
         tp = Expression.typeof(e1);
         stms = DAE.STMT_ASSIGN(tp, e1, e2_1, source);
       then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms})}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind)}, iuniqueEqIndex+1, itempvars);
 
     case (_, e1, e2 as DAE.CREF(componentRef = cr2), _, _, _)
       equation
@@ -5190,7 +5204,7 @@ algorithm
         tp = Expression.typeof(e2);
         stms = DAE.STMT_ASSIGN(tp, e2, e1_1, source);
       then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms})}, iuniqueEqIndex+1, itempvars);
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind)}, iuniqueEqIndex+1, itempvars);
 
     /* Record() = f()  */
     case (_, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), e2, _, _, _)
@@ -5209,7 +5223,7 @@ algorithm
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefToExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
-        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
         uniqueEqIndex = iuniqueEqIndex + 1;
 
         /* Expand the varLst. Each var might be an array or record. */
@@ -5217,7 +5231,7 @@ algorithm
         /* pair each of the expanded expressions to coressponding one*/
         exptl = List.threadTuple(expLst, crexplst);
         /* Create residual equations for each pair*/
-        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
+        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
         eqSystlst = simeqn_complex::eqSystlst;
 
         tempvars = createTempVars(varLst, cr1, itempvars);
@@ -5240,12 +5254,12 @@ algorithm
         cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
-        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms});
+        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()=tmp
         crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
         exptl = List.threadTuple(expLst, crexplst);
-        (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, uniqueEqIndex);
+        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
         eqSystlst = simeqn_complex::eqSystlst;
         tempvars = createTempVars(varLst, cr1, itempvars);
       then
@@ -5266,7 +5280,7 @@ algorithm
         false = Expression.expHasCrefsNoPreOrStart(e2,crefs);
         List.foldAllValue(expl, createSingleComplexEqnCode3, true, ht);
 
-        eqSystlst = {SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, e2, source)})};
+        eqSystlst = {SimCode.SES_ALGORITHM(iuniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, e2, source)}, eqKind)};
         uniqueEqIndex = iuniqueEqIndex + 1;
       then
         (eqSystlst, uniqueEqIndex, itempvars);
@@ -5407,7 +5421,7 @@ algorithm
       String str;
       list<DAE.Dimension> dims;
       list<SimCodeVar.SimVar> tempvars;
-      BackendDAE.EquationKind eqKind;
+      BackendDAE.EquationAttributes eqAttr;
       BackendDAE.Equation eq1;
       HashSet.HashSet ht;
       list<DAE.ComponentRef> crefs, crefstmp;
@@ -5419,7 +5433,7 @@ algorithm
     // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}
     // => tmp = rhsexp;
     // z1 = tmp[1]; z2 = tmp[2] ....
-    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source))::{}, _, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr))::{}, _, _, _, _)
     guard Expression.isMatrix(e1) or Expression.isArray(e1)
     equation
       // Flattne multi-dimensional ARRAY{ARRAY} expressions
@@ -5441,14 +5455,14 @@ algorithm
       tempvars = createArrayTempVar(left, ds, expLstTmp, itempvars);
       // Create the simple assignments for the lhs vars from the tmp rhs's
       exptl = List.threadTuple(expLst, expLstTmp);
-      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_SIMPLE_ASSIGN, source, iuniqueEqIndex);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqAttr, iuniqueEqIndex);
       // Create the array equation with the tmp var as lhs
-      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source)::eqSystlst;
+      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source, eqAttr)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
     // An array equation
     // cref = rhsexp
-    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
     guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
     equation
       e1 = Expression.replaceDerOpInExp(lhse);
@@ -5456,13 +5470,13 @@ algorithm
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
-      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e1, e2, source);
+      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e1, e2, source, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
     // An array equation
     // lhsexp = cref
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=rhse as DAE.CREF(cr_1, _), source=source))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=rhse as DAE.CREF(cr_1, _), source=source, attr=eqAttr))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
     guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
     equation
       e1 = Expression.replaceDerOpInExp(e1);
@@ -5470,7 +5484,7 @@ algorithm
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e2, e1) = solveTrivialArrayEquation(cr_1, e2, e1);
-      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e2, e1, source);
+      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e2, e1, source, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
@@ -5499,32 +5513,33 @@ algorithm
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       DAE.Expand crefExpand;
+      BackendDAE.EquationAttributes eqAttr;
       constant Boolean debug = false;
 
     // normal call
-    case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand)::_, false) equation
+    case (BackendDAE.ALGORITHM(alg=alg, source = source, expand=crefExpand, attr=eqAttr)::_, false) equation
       solvedVars = List.map(vars, BackendVariable.varCref);
       true = CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
+    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1);
 
     // remove discrete Vars
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, true) equation
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)::_, true) equation
       solvedVars = List.map(vars, BackendVariable.varCref);
       true = CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, BackendVariable.listVar1(vars));
-    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
+    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1);
 
     // inverse Algorithm for single variable.
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, false) equation
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)::_, false) equation
       // We need to solve an inverse problem of an algorithm section.
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       algStatements = solveAlgorithmInverse(algStatements, vars);
-    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1);
+    then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1);
 
     // inverse algorithms
-    case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand)::_, _) equation
+    case (BackendDAE.ALGORITHM(alg=alg as DAE.ALGORITHM_STMTS(algStatements), source=source, expand=crefExpand, attr=eqAttr)::_, _) equation
       if debug then
         print("createSingleAlgorithmCode -> \n");
         BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)}, 0);
@@ -5555,10 +5570,10 @@ algorithm
       //true = intEq(listLength(solvedVars), listLength(knownOutputCrefs));
 
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs)}, solvedVars, 0, listLength(vars), NONE(), false, false, false), NONE())}, iuniqueEqIndex+2);
+    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, eqAttr)}, solvedVars, 0, listLength(vars), NONE(), false, false, false), NONE(), eqAttr)}, iuniqueEqIndex+2);
 
     // Error message, inverse algorithms cannot be solved for discrete variables
-    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)::_, _) equation
+    case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)::_, _) equation
       solvedVars = List.map(vars, BackendVariable.varCref);
       false = CheckModel.isCrefListAlgorithmOutput(solvedVars, alg, source, crefExpand);
 
@@ -5666,7 +5681,7 @@ algorithm
         //false = BackendVariable.varFixed(v);
         false = BackendVariable.isVarOnTopLevelAndInput(v);
       then
-        (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns));
+        (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)::eqns));
     else (inVar,inTpl);
   end matchcontinue;
 end traverseKnVarsToSimEqSystem;
@@ -5688,7 +5703,7 @@ algorithm
       DAE.ElementSource source;
     case (v as BackendDAE.VAR(varName = cr, bindExp=SOME(exp), source=source), (uniqueEqIndex, eqns))
       then
-        (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source)::eqns));
+        (v, (uniqueEqIndex+1, SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)::eqns));
   end match;
 end traverseAliasVarsToSimEqSystem;
 
@@ -5713,23 +5728,24 @@ algorithm
       SimCode.SimEqSystem elseWhenEquation;
       Option<SimCode.SimEqSystem> oelseWhenSimEq;
       Integer uniqueEqIndex;
+      BackendDAE.EquationAttributes eqAttr;
 
-    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=exp_, source=source)
-    then (SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source), iuniqueEqIndex+1);
+    case BackendDAE.SOLVED_EQUATION(componentRef=cr, exp=exp_, source=source, attr=eqAttr)
+    then (SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, exp_, source, eqAttr), iuniqueEqIndex+1);
 
-    case BackendDAE.RESIDUAL_EQUATION(exp=exp_, source=source)
-    then (SimCode.SES_RESIDUAL(iuniqueEqIndex, exp_, source), iuniqueEqIndex+1);
+    case BackendDAE.RESIDUAL_EQUATION(exp=exp_, source=source, attr=eqAttr)
+    then (SimCode.SES_RESIDUAL(iuniqueEqIndex, exp_, source, eqAttr), iuniqueEqIndex+1);
 
-    case BackendDAE.ALGORITHM(alg=alg) equation
+    case BackendDAE.ALGORITHM(alg=alg, attr=eqAttr) equation
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-    then (SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements), iuniqueEqIndex+1);
+    then (SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr), iuniqueEqIndex+1);
 
     // when eq
-    case BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source) equation
+    case BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source, attr=eqAttr) equation
       BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelseWhen) = whenEquation;
       if isSome(oelseWhen) then
         SOME(elseWhen) = oelseWhen;
-        (elseWhenEquation,uniqueEqIndex)  = createElseWhenEquation(elseWhen, {}, iuniqueEqIndex+1, source);
+        (elseWhenEquation,uniqueEqIndex)  = createElseWhenEquation(elseWhen, {}, iuniqueEqIndex+1, source, eqAttr);
         oelseWhenSimEq = SOME(elseWhenEquation);
       else
         uniqueEqIndex = iuniqueEqIndex+1;
@@ -5737,7 +5753,7 @@ algorithm
       end if;
       (conditions, initialCall) = BackendDAEUtil.getConditionList(cond);
     then
-      (SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source), uniqueEqIndex);
+      (SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source, eqAttr), uniqueEqIndex);
 
     else equation
       if Flags.isSet(Flags.FAILTRACE) then
@@ -5756,7 +5772,7 @@ protected
   list<DAE.Statement> algStatements;
 algorithm
   DAE.ALGORITHM_STMTS(algStatements) := BackendDAEUtil.collateAlgorithm(inAlg, NONE());
-  outEquation := SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements);
+  outEquation := SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end dlowAlgToSimEqSystem;
 
@@ -5889,7 +5905,7 @@ algorithm
       ((maxValueEquationsTmp2, _)) = BackendVariable.traverseBackendDAEVars(vars, createInitialAssignmentsFromMax, ({}, av));
       maxValueEquationsTmp2 = listReverse(maxValueEquationsTmp2);
 
-      // kvars -> see createStartValueEquations
+      // kvars -> see createStartValueEquationseqAttr
 
       (simeqns1, uniqueEqIndex) = List.mapFold(maxValueEquationsTmp2, dlowEqToSimEqSystem, uniqueEqIndex);
     then ((uniqueEqIndex, listAppend(simeqns1, simeqns)));
@@ -5913,7 +5929,7 @@ algorithm
   cr := BackendVariable.varCref(inVar);
   e := BackendVariable.varBindExpStartValueNoFail(inVar);
   source := BackendVariable.getVarSource(inVar);
-  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source);
+  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   outUniqueEqIndex := inUniqueEqIndex+1;
 end makeSolved_SES_SIMPLE_ASSIGN_fromStartValue;
 
@@ -5994,7 +6010,7 @@ algorithm
             tp := Expression.typeof(tplExp);
             SOME(call) := globalKnownVar.bindExp;
             source := BackendVariable.getVarSource(globalKnownVar);
-            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, call, source)});
+            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_TUPLE_ASSIGN(tp, expl, call, source)}, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
             uniqueEqIndex := uniqueEqIndex+1;
             tplExpHT := BaseHashSet.add(tplExp, tplExpHT);
           end if;
@@ -6010,7 +6026,7 @@ algorithm
             tp := Expression.typeof(rec);
             SOME(call) := globalKnownVar.bindExp;
             source := BackendVariable.getVarSource(globalKnownVar);
-            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_ASSIGN(tp, rec, call, source)});
+            simEq := SimCode.SES_ALGORITHM(uniqueEqIndex, {DAE.STMT_ASSIGN(tp, rec, call, source)}, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
             uniqueEqIndex := uniqueEqIndex+1;
             tplExpHT := BaseHashSet.add(rec, tplExpHT);
           end if;
@@ -8536,30 +8552,31 @@ algorithm
       BackendDAE.WhenOperator whenOpNew;
       Option<SimCode.SimEqSystem> oelsewe;
       BackendDAE.Constraints cons;
+      BackendDAE.EquationAttributes eqAttr;
 
-    case SimCode.SES_RESIDUAL(index= index, exp = e, source = source)
+    case SimCode.SES_RESIDUAL(index= index, exp = e, source = source, eqAttr=eqAttr)
       equation
         e = addDivExpErrorMsgtoExp(e, source);
       then
-        SimCode.SES_RESIDUAL(index, e, source);
+        SimCode.SES_RESIDUAL(index, e, source, eqAttr);
 
-    case SimCode.SES_SIMPLE_ASSIGN(index= index, cref = cr, exp = e, source = source)
+    case SimCode.SES_SIMPLE_ASSIGN(index= index, cref = cr, exp = e, source = source, eqAttr=eqAttr)
       equation
         e_ = addDivExpErrorMsgtoExp(e, source);
       then
-        if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN(index, cr, e_, source);
+        if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN(index, cr, e_, source, eqAttr);
 
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index= index, cref = cr, exp = e, source = source, cons = cons)
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index= index, cref = cr, exp = e, source = source, cons = cons, eqAttr=eqAttr)
       equation
         e_ = addDivExpErrorMsgtoExp(e, source);
       then
-        if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, e_, source, cons);
+        if referenceEq(e,e_) then inSES else SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, e_, source, cons, eqAttr);
 
-    case SimCode.SES_ARRAY_CALL_ASSIGN(index = index, lhs = left, exp = e, source = source)
+    case SimCode.SES_ARRAY_CALL_ASSIGN(index = index, lhs = left, exp = e, source = source, eqAttr=eqAttr)
       equation
         e = addDivExpErrorMsgtoExp(e, source);
       then
-        SimCode.SES_ARRAY_CALL_ASSIGN(index, left, e, source);
+        SimCode.SES_ARRAY_CALL_ASSIGN(index, left, e, source, eqAttr);
         /*
          case (SimCode.SES_ALGORITHM(), inDlowMode)
          equation
@@ -8569,24 +8586,24 @@ algorithm
          */
 
     // no dynamic tearing
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst, simJac, discEqs, symJac, sources, indexSys, nUnknowns), NONE())
+    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst, simJac, discEqs, symJac, sources, indexSys, nUnknowns), NONE(), eqAttr=eqAttr)
       equation
         simJac1 = List.map(simJac, addDivExpErrorMsgtosimJac);
         symJac = addDivExpErrorMsgtosymJac(symJac);
         elst1 = List.map1(elst, addDivExpErrorMsgtoExp, DAE.emptyElementSource);
         discEqs1 =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
       then
-        SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst1, simJac1, discEqs1, symJac, sources, indexSys, nUnknowns), NONE());
+        SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst1, simJac1, discEqs1, symJac, sources, indexSys, nUnknowns), NONE(), eqAttr);
 
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, nUnknowns=nUnknowns, jacobianMatrix=symJac, homotopySupport=homotopySupport, mixedSystem=mixedSystem, tornSystem=tornSystem), NONE())
+    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, nUnknowns=nUnknowns, jacobianMatrix=symJac, homotopySupport=homotopySupport, mixedSystem=mixedSystem, tornSystem=tornSystem), NONE(), eqAttr=eqAttr)
       equation
         discEqs =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
         symJac = addDivExpErrorMsgtosymJac(symJac);
       then
-        SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, discEqs, crefs, indexSys, nUnknowns, symJac, homotopySupport, mixedSystem, tornSystem), NONE());
+        SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, discEqs, crefs, indexSys, nUnknowns, symJac, homotopySupport, mixedSystem, tornSystem), NONE(), eqAttr);
 
     // dynamic tearing
-    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst, simJac, discEqs, symJac, sources, indexSys, nUnknowns), SOME(SimCode.LINEARSYSTEM(index1, partOfMixed1, tornSystem1, vars1, elst1, simJac1, discEqs1, symJac1, sources1, indexSys1, nUnknowns1)))
+    case SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst, simJac, discEqs, symJac, sources, indexSys, nUnknowns), SOME(SimCode.LINEARSYSTEM(index1, partOfMixed1, tornSystem1, vars1, elst1, simJac1, discEqs1, symJac1, sources1, indexSys1, nUnknowns1)), eqAttr=eqAttr)
       equation
         simJac = List.map(simJac, addDivExpErrorMsgtosimJac);
         symJac = addDivExpErrorMsgtosymJac(symJac);
@@ -8597,25 +8614,25 @@ algorithm
         elst1 = List.map1(elst1, addDivExpErrorMsgtoExp, DAE.emptyElementSource);
         discEqs1 =  List.map(discEqs1, addDivExpErrorMsgtoSimEqSystem);
       then
-        SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst, simJac, discEqs, symJac, sources, indexSys, nUnknowns), SOME(SimCode.LINEARSYSTEM(index1, partOfMixed1, tornSystem1, vars1, elst1, simJac1, discEqs1, symJac1, sources1, indexSys1, nUnknowns1)));
+        SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(index, partOfMixed, tornSystem, vars, elst, simJac, discEqs, symJac, sources, indexSys, nUnknowns), SOME(SimCode.LINEARSYSTEM(index1, partOfMixed1, tornSystem1, vars1, elst1, simJac1, discEqs1, symJac1, sources1, indexSys1, nUnknowns1)), eqAttr);
 
-    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, nUnknowns=nUnknowns, jacobianMatrix=symJac, homotopySupport=homotopySupport, mixedSystem=mixedSystem, tornSystem=tornSystem), SOME(SimCode.NONLINEARSYSTEM(index=index1, eqs=discEqs1, crefs=crefs1, indexNonLinearSystem=indexSys1, nUnknowns=nUnknowns1, jacobianMatrix=symJac1, homotopySupport=homotopySupport1, mixedSystem=mixedSystem1, tornSystem=tornSystem1)))
+    case SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index, eqs=discEqs, crefs=crefs, indexNonLinearSystem=indexSys, nUnknowns=nUnknowns, jacobianMatrix=symJac, homotopySupport=homotopySupport, mixedSystem=mixedSystem, tornSystem=tornSystem), SOME(SimCode.NONLINEARSYSTEM(index=index1, eqs=discEqs1, crefs=crefs1, indexNonLinearSystem=indexSys1, nUnknowns=nUnknowns1, jacobianMatrix=symJac1, homotopySupport=homotopySupport1, mixedSystem=mixedSystem1, tornSystem=tornSystem1)), eqAttr=eqAttr)
       equation
         discEqs =  List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
         symJac = addDivExpErrorMsgtosymJac(symJac);
         discEqs1 =  List.map(discEqs1, addDivExpErrorMsgtoSimEqSystem);
         symJac1 = addDivExpErrorMsgtosymJac(symJac1);
       then
-        SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, discEqs, crefs, indexSys, nUnknowns, symJac, homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index1, discEqs1, crefs1, indexSys1, nUnknowns1, symJac1, homotopySupport1, mixedSystem1, tornSystem1)));
+        SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index, discEqs, crefs, indexSys, nUnknowns, symJac, homotopySupport, mixedSystem, tornSystem), SOME(SimCode.NONLINEARSYSTEM(index1, discEqs1, crefs1, indexSys1, nUnknowns1, symJac1, homotopySupport1, mixedSystem1, tornSystem1)), eqAttr);
 
-    case SimCode.SES_MIXED(index, cont, vars, discEqs, indexSys)
+    case SimCode.SES_MIXED(index, cont, vars, discEqs, indexSys, eqAttr=eqAttr)
       equation
         cont1 = addDivExpErrorMsgtoSimEqSystem(cont);
         discEqs1 = List.map(discEqs, addDivExpErrorMsgtoSimEqSystem);
       then
-        SimCode.SES_MIXED(index, cont1, vars, discEqs1, indexSys);
+        SimCode.SES_MIXED(index, cont1, vars, discEqs1, indexSys, eqAttr);
 
-    case SimCode.SES_WHEN(index=index, conditions=conditions, initialCall=initialCall, whenStmtLst=whenStmtLst, elseWhen=oelsewe, source=source)
+    case SimCode.SES_WHEN(index=index, conditions=conditions, initialCall=initialCall, whenStmtLst=whenStmtLst, elseWhen=oelsewe, source=source, eqAttr=eqAttr)
       algorithm
         whenOps := {};
         for whenOp in whenStmtLst loop
@@ -8633,7 +8650,7 @@ algorithm
           oelsewe := NONE();
         end if;
       then
-        SimCode.SES_WHEN(index, conditions, initialCall, whenOps, oelsewe, source);
+        SimCode.SES_WHEN(index, conditions, initialCall, whenOps, oelsewe, source, eqAttr);
     else inSES;
   end matchcontinue;
 end addDivExpErrorMsgtoSimEqSystem;
@@ -10274,64 +10291,65 @@ algorithm
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
       list<BackendDAE.WhenOperator> whenStmtLst;
       BackendDAE.Constraints cons;
+      BackendDAE.EquationAttributes eqAttr;
 
-    case (SimCode.SES_RESIDUAL(index, exp, source), _, a) equation
+    case (SimCode.SES_RESIDUAL(index, exp, source, eqAttr=eqAttr), _, a) equation
       (exp_, a) = func(exp, a);
       if referenceEq(exp,exp_) then
         eq_ = eq;
       else
-        eq_ = SimCode.SES_RESIDUAL(index, exp_, source);
+        eq_ = SimCode.SES_RESIDUAL(index, exp_, source, eqAttr);
       end if;
     then (eq_, a);
 
-    case (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source), _, a) equation
+    case (SimCode.SES_SIMPLE_ASSIGN(index, cr, exp, source, eqAttr=eqAttr), _, a) equation
       (exp_, a) = func(exp, a);
       if referenceEq(exp,exp_) then
         eq_ = eq;
       else
-        eq_ = SimCode.SES_SIMPLE_ASSIGN(index, cr, exp_, source);
+        eq_ = SimCode.SES_SIMPLE_ASSIGN(index, cr, exp_, source, eqAttr);
       end if;
     then (eq_, a);
 
-    case (SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp, source, cons), _, a) equation
+    case (SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp, source, cons, eqAttr=eqAttr), _, a) equation
       (exp_, a) = func(exp, a);
       if referenceEq(exp,exp_) then
         eq_ = eq;
       else
-        eq_ = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp_, source, cons);
+        eq_ = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(index, cr, exp_, source, cons, eqAttr);
       end if;
     then (eq_, a);
 
-    case (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source), _, a) equation
+    case (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source, eqAttr=eqAttr), _, a) equation
       (leftexp, a) = func(leftexp, a);
       (exp, a) = func(exp, a);
-    then (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source), a);
+    then (SimCode.SES_ARRAY_CALL_ASSIGN(index, leftexp, exp, source, eqAttr), a);
 
-    case (SimCode.SES_IFEQUATION(_, _, _, _), _, a)
+    case (SimCode.SES_IFEQUATION(), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_ALGORITHM(_, _), _, a)
+    case (SimCode.SES_ALGORITHM(), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_INVERSE_ALGORITHM(_, _, _), _, a)
+    case (SimCode.SES_INVERSE_ALGORITHM(), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_LINEAR(_, _), _, a)
+    case (SimCode.SES_LINEAR(), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_NONLINEAR(_, _), _, a)
+    case (SimCode.SES_NONLINEAR(), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_MIXED(_, _, _, _, _), _, a)
+    case (SimCode.SES_MIXED(), _, a)
       /* TODO: Me */
     then (eq, a);
 
-    case (SimCode.SES_WHEN(_, _, _, _, _, _), _, a)
+    case (SimCode.SES_WHEN(), _, a)
       /* TODO: Me */
     then (eq, a);
 
@@ -11723,47 +11741,48 @@ algorithm
       Boolean mixedSystem, tornSystem;
       list<BackendDAE.WhenOperator> whenStmtLst;
       BackendDAE.Constraints cons;
-    case(SimCode.SES_RESIDUAL(exp=exp,source=source),_)
+      BackendDAE.EquationAttributes eqAttr;
+    case(SimCode.SES_RESIDUAL(exp=exp,source=source,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_RESIDUAL(idx,exp,source);
+        simEqSys = SimCode.SES_RESIDUAL(idx,exp,source, eqAttr);
     then simEqSys;
-    case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source),_)
+    case(SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp,source=source,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source);
+        simEqSys = SimCode.SES_SIMPLE_ASSIGN(idx,cref,exp,source, eqAttr);
     then simEqSys;
-    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref,exp=exp,source=source,cons=cons),_)
+    case(SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref,exp=exp,source=source,cons=cons,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(idx,cref,exp,source,cons);
+        simEqSys = SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(idx,cref,exp,source,cons, eqAttr);
     then simEqSys;
-    case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs,exp=exp,source=source),_)
+    case(SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs,exp=exp,source=source,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,lhs,exp,source);
+        simEqSys = SimCode.SES_ARRAY_CALL_ASSIGN(idx,lhs,exp,source, eqAttr);
     then simEqSys;
-    case(SimCode.SES_IFEQUATION(ifbranches=ifbranches,elsebranch=elsebranch,source=source),_)
+    case(SimCode.SES_IFEQUATION(ifbranches=ifbranches,elsebranch=elsebranch,source=source,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_IFEQUATION(idx,ifbranches,elsebranch,source);
+        simEqSys = SimCode.SES_IFEQUATION(idx,ifbranches,elsebranch,source,eqAttr);
     then simEqSys;
-    case(SimCode.SES_ALGORITHM(statements=stmts), _) equation
-      simEqSys = SimCode.SES_ALGORITHM(idx,stmts);
+    case(SimCode.SES_ALGORITHM(statements=stmts,eqAttr=eqAttr), _) equation
+      simEqSys = SimCode.SES_ALGORITHM(idx,stmts, eqAttr);
     then simEqSys;
-    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, knownOutputCrefs=crefs), _) equation
-      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs);
+    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, knownOutputCrefs=crefs,eqAttr=eqAttr), _) equation
+      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs, eqAttr);
     then simEqSys;
-    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=pom,tornSystem=tornSystem,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS,nUnknowns=nUnknowns)),_)
+    case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=pom,tornSystem=tornSystem,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS,nUnknowns=nUnknowns),eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,tornSystem,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS,nUnknowns), NONE());
+        simEqSys = SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(idx,pom,tornSystem,simVars,expLst,simJac,simEqSysLst,jac,sources,idxLS,nUnknowns), NONE(),eqAttr);
     then simEqSys;
-    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknowns,jacobianMatrix=jac,homotopySupport=homotopySupport,mixedSystem=mixedSystem, tornSystem=tornSystem)),_)
+    case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(eqs=simEqSysLst,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknowns,jacobianMatrix=jac,homotopySupport=homotopySupport,mixedSystem=mixedSystem, tornSystem=tornSystem),eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,idxNLS,nUnknowns,jac,homotopySupport,mixedSystem,tornSystem), NONE());
+        simEqSys = SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(idx,simEqSysLst,crefs,idxNLS,nUnknowns,jac,homotopySupport,mixedSystem,tornSystem), NONE(),eqAttr);
     then simEqSys;
-    case(SimCode.SES_MIXED(cont=simEqSys,discVars=simVars,discEqs=simEqSysLst,indexMixedSystem=idxMX),_)
+    case(SimCode.SES_MIXED(cont=simEqSys,discVars=simVars,discEqs=simEqSysLst,indexMixedSystem=idxMX,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_MIXED(idx,simEqSys,simVars,simEqSysLst,idxMX);
+        simEqSys = SimCode.SES_MIXED(idx,simEqSys,simVars,simEqSysLst,idxMX,eqAttr);
     then simEqSys;
-    case(SimCode.SES_WHEN(conditions=crefs,initialCall=ic,whenStmtLst=whenStmtLst,elseWhen=elseWhen,source=source),_)
+    case(SimCode.SES_WHEN(conditions=crefs,initialCall=ic,whenStmtLst=whenStmtLst,elseWhen=elseWhen,source=source,eqAttr=eqAttr),_)
       equation
-        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,whenStmtLst,elseWhen,source);
+        simEqSys = SimCode.SES_WHEN(idx,crefs,ic,whenStmtLst,elseWhen,source,eqAttr);
     then simEqSys;
   end match;
 end replaceSimEqSysIndex;
