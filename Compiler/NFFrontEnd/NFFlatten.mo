@@ -215,7 +215,7 @@ algorithm
         (vars, sections) := match cls
           case Class.INSTANCED_BUILTIN()
             then flattenSimpleComponent(comp_node, c, vis, cls.attributes, prefix, vars, sections);
-          else flattenComplexComponent(comp_node, cls, ty, vis, prefix, vars, sections);
+          else flattenComplexComponent(comp_node, c, cls, ty, vis, prefix, vars, sections);
         end match;
       then
         ();
@@ -283,6 +283,7 @@ end flattenTypeAttribute;
 
 function flattenComplexComponent
   input InstNode node;
+  input Component comp;
   input Class cls;
   input Type ty;
   input Visibility visibility;
@@ -292,12 +293,30 @@ function flattenComplexComponent
 protected
   list<Dimension> dims;
   ComponentRef name;
+  Binding binding;
+  Expression binding_exp;
+  Equation eq;
 algorithm
   dims := Type.arrayDims(ty);
   name := ComponentRef.prefixCref(node, ty, {}, prefix);
 
   // Flatten the class directly if the component is a scalar, otherwise scalarize it.
   if listEmpty(dims) then
+    binding := Component.getBinding(comp);
+
+    if Binding.isBound(binding) then
+      binding_exp := Binding.getTypedExp(binding);
+
+      if not Expression.isRecord(binding_exp) then
+        eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
+          ElementSource.createElementSource(InstNode.info(node)));
+        sections := Sections.prependEquation(eq, sections);
+        binding := Binding.UNBOUND();
+      else
+        // TODO: Split record expressions and pass them to flattenClass.
+      end if;
+    end if;
+
     (vars, sections) := flattenClass(cls, name, visibility, vars, sections);
   else
     (vars, sections) := flattenArray(cls, dims, name, visibility, vars, sections);

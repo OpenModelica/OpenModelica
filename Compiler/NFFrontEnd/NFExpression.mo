@@ -2580,6 +2580,16 @@ public
     end match;
   end isInteger;
 
+  function isRecord
+    input Expression exp;
+    output Boolean isRecord;
+  algorithm
+    isRecord := match exp
+      case RECORD() then true;
+      else false;
+    end match;
+  end isRecord;
+
   function fillType
     input Type ty;
     input Expression fillExp;
