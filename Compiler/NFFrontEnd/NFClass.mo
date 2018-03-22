@@ -148,6 +148,18 @@ uniontype Class
       Restriction.ENUMERATION());
   end fromEnumeration;
 
+  function makeRecordConstructor
+    input list<InstNode> inputs;
+    input list<InstNode> locals;
+    input InstNode out;
+    output Class cls;
+  protected
+    ClassTree tree;
+  algorithm
+    tree := ClassTree.fromRecordConstructor(inputs, locals, out);
+    cls := EXPANDED_CLASS(tree, Modifier.NOMOD(), DEFAULT_PREFIXES, Restriction.FUNCTION());
+  end makeRecordConstructor;
+
   function initExpandedClass
     input output Class cls;
   algorithm

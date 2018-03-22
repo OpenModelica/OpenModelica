@@ -463,6 +463,30 @@ uniontype Component
     output Boolean isInput = direction(component) == Direction.INPUT;
   end isInput;
 
+  function makeInput
+    input output Component component;
+  protected
+    Attributes attr;
+  algorithm
+    () := match component
+      case UNTYPED_COMPONENT(attributes = attr)
+        algorithm
+          attr.direction := Direction.INPUT;
+          component.attributes := attr;
+        then
+          ();
+
+      case TYPED_COMPONENT(attributes = attr)
+        algorithm
+          attr.direction := Direction.INPUT;
+          component.attributes := attr;
+        then
+          ();
+
+      else ();
+    end match;
+  end makeInput;
+
   function isOutput
     input Component component;
     output Boolean isOutput = direction(component) == Direction.OUTPUT;

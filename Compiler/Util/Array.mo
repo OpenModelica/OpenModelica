@@ -913,5 +913,18 @@ algorithm
   exists := false;
 end exist;
 
+function insertList<T>
+  input output array<T> arr;
+  input list<T> lst;
+  input Integer startPos;
+protected
+  Integer i = startPos;
+algorithm
+  for e in lst loop
+    arr[i] := e;
+    i := i + 1;
+  end for;
+end insertList;
+
 annotation(__OpenModelica_Interface="util");
 end Array;

@@ -60,7 +60,7 @@ import NFInstUtil;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import NFFunction.Function;
-import ClassTree = NFClassTree.ClassTree;
+import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
@@ -71,16 +71,18 @@ function instConstructors
   input Absyn.Path path;
   input output InstNode node;
   input SourceInfo info;
- protected
-   Class cls;
-   list<InstNode> inputs, outputs, locals;
-  InstNode out_rec, ctor_over;
-   DAE.FunctionAttributes attr;
-   Pointer<Boolean> collected;
-   Absyn.Path con_path;
+protected
+  Class cls;
+  list<InstNode> inputs, outputs, locals, params;
+  InstNode out_rec, ctor_over, def_ctor_node;
+  DAE.FunctionAttributes attr;
+  Pointer<Boolean> collected;
+  Absyn.Path con_path;
   ComponentRef con_ref;
   Boolean ctor_defined;
- algorithm
+  Component out_comp;
+  Class def_ctor_cls;
+algorithm
 
   // See if we have overloaded costructors.
   try
@@ -122,25 +124,19 @@ function instConstructors
   collected := Pointer.create(false);
   con_path := Absyn.suffixPath(path,"'constructor'.'$default'");
 
-  // Create an output record element for the default constructor.
-  // create a TYPED_COMPONENT here since this output "default constructed" record is not part
-  // of the class node. So it will not be typed later by typeFunction. Instead of changing
-  // things there just handle it here.
-  out_rec := InstNode.COMPONENT_NODE("$out" + InstNode.name(node),
-    Visibility.PUBLIC,
-    Pointer.createImmutable(Component.TYPED_COMPONENT(
-      node,
-      Type.COMPLEX(node, ComplexType.CLASS()),
-      Binding.UNBOUND(),
-      Binding.UNBOUND(),
-      NFComponent.OUTPUT_ATTR,
-      NONE(),
-      Absyn.dummyInfo)),
-    0,
-    node);
+  // Create a new node for the default constructor.
+  def_ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
 
-  InstNode.cacheAddFunc(node, Function.FUNCTION(con_path, node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected), false);
+  // Create the output record element, using the node created above as parent.
+  out_comp := Component.UNTYPED_COMPONENT(node, listArray({}), Binding.UNBOUND(),
+    Binding.UNBOUND(), NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
+  out_rec := InstNode.fromComponent("$out" + InstNode.name(node), out_comp, def_ctor_node);
 
+  // Make a record constructor class and update the node with it.
+  def_ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
+  def_ctor_node := InstNode.updateClass(def_ctor_cls, def_ctor_node);
+
+  InstNode.cacheAddFunc(node, Function.FUNCTION(con_path, def_ctor_node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected), false);
 end instConstructors;
 
 
@@ -166,18 +162,12 @@ algorithm
           n := Mutable.access(components[i]);
           comp := InstNode.component(n);
 
-          if InstNode.isProtected(n) then
+          if InstNode.isProtected(n) or
+             Component.isConst(comp) and Component.hasBinding(comp) then
             locals := n :: locals;
           else
-            if Component.isConst(comp) then
-              if not Component.hasBinding(comp) then
-                inputs := n :: inputs;
-              else
-                locals := n :: locals;
-              end if;
-            else
-              inputs := n :: inputs;
-            end if;
+            n := InstNode.replaceComponent(Component.makeInput(comp), n);
+            inputs := n :: inputs;
           end if;
         end for;
       then
