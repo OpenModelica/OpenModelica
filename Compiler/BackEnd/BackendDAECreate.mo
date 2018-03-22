@@ -2339,38 +2339,33 @@ algorithm
     case ({}, _, _)
       then
         iHt;
-    case (DAE.EQUEQUATION(cr1=cr, cr2=cr2, source=source)::rest, _, _)
+    case (DAE.EQUEQUATION(cr1=cr, cr2=cr2, source=source)::rest, _, _) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         e = Expression.crefExp(cr2);
         false = Expression.expHasCrefNoPreorDer(e, cr);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
-    case (DAE.DEFINE(componentRef=cr, exp=e, source=source)::rest, _, _)
+    case (DAE.DEFINE(componentRef=cr, exp=e, source=source)::rest, _, _) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
-    case (DAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest, _, _)
+    case (DAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest, _, _) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
-    case (DAE.COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr), rhs=e, source=source)::rest, _, _)
+    case (DAE.COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr), rhs=e, source=source)::rest, _, _) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then
         lowerWhenIfEqnsElse(rest, functionTree, ht);
-    case (DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr), array=e, source=source)::rest, _, _)
+    case (DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr), array=e, source=source)::rest, _, _) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCrefNoPreorDer(e, cr);
         ht = BaseHashTable.add((cr, (e, source)), iHt);
       then

@@ -640,9 +640,7 @@ algorithm
       then (inExp, inTuple);
 
     // already there
-    case (DAE.CREF(componentRef = cr), (_, _, ht))
-      equation
-        _ = BaseHashTable.get(cr, ht);
+    case (DAE.CREF(componentRef = cr), (_, _, ht)) guard BaseHashTable.hasKey(cr, ht)
       then (inExp, inTuple);
 
     // known

@@ -417,7 +417,7 @@ starts to traverse."
   output HashTableStringToPath.HashTable outHt;
   output list<DAE.Type> outMetarecordTypes;
 algorithm
-  (outCache,outHt,outMetarecordTypes) := matchcontinue (inCache, inEnv, path, str, inHt, inAcc)
+  (outCache,outHt,outMetarecordTypes) := match (inCache, inEnv, path, str, inHt, inAcc)
     local
       FCore.Cache cache;
       FCore.Graph env;
@@ -427,9 +427,7 @@ algorithm
       list<DAE.Type> acc;
       HashTableStringToPath.HashTable ht;
 
-    case (cache, _, _, _, ht, acc)
-      equation
-        _ = BaseHashTable.get(str, ht);
+    case (cache, _, _, _, ht, acc) guard BaseHashTable.hasKey(str, ht)
       then (cache, ht, acc);
     case (cache, env, _, _, ht, acc)
       equation
@@ -440,7 +438,7 @@ algorithm
         uniontypePaths = List.flatten(List.map(uniontypeTypes, Types.getUniontypePaths));
         (cache, ht, acc) = lookupMetarecordsRecursive2(cache, env, uniontypePaths, ht, acc);
       then (cache,ht,acc);
-  end matchcontinue;
+  end match;
 end lookupMetarecordsRecursive3;
 
 public function lookupClass "Tries to find a specified class in an environment"

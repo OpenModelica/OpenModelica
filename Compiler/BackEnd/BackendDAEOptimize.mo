@@ -2394,16 +2394,14 @@ algorithm
     case ({},_)
       then
         iHt;
-    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCref(e, cr);
         ht = BaseHashTable.add((cr,e), iHt);
       then
         simplifySolvedIfEqnsElse(rest,ht);
-    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
+    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_) guard not BaseHashTable.hasKey(cr, iHt)
       equation
-        failure( _ = BaseHashTable.get(cr, iHt));
         false = Expression.expHasCref(e, cr);
         e = Expression.negate(e);
         ht = BaseHashTable.add((cr,e), iHt);
@@ -2986,16 +2984,7 @@ protected function semiLinearGetSA
   input list<DAE.Exp> iAcc;
   output list<DAE.Exp> oAcc;
 algorithm
-  oAcc := matchcontinue(key,iHt1,iAcc)
-    case (_,_,_)
-      equation
-        _ = BaseHashTable.get(key,iHt1);
-      then
-        iAcc;
-    case(_,_,_)
-      then
-        key::iAcc;
-  end matchcontinue;
+  oAcc := if BaseHashTable.hasKey(key, iHt1) then iAcc else key::iAcc;
 end semiLinearGetSA;
 
 protected function semiLinearOptimize1
