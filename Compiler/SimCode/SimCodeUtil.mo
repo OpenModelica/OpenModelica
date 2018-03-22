@@ -5346,16 +5346,15 @@ protected function createSingleComplexEqnCode3
   output Boolean outB;
   output HashSet.HashSet oht;
 algorithm
-  (outB, oht) := matchcontinue(inExp, iht)
+  (outB, oht) := match(inExp, iht)
     local
       DAE.ComponentRef cr;
       HashSet.HashSet ht;
       list<DAE.ComponentRef> crefs;
       list<DAE.Exp> expLst;
 
-    case (DAE.CREF(componentRef=cr), _)
+    case (DAE.CREF(componentRef=cr), _) guard BaseHashSet.has(cr, iht)
       equation
-        _ = BaseHashSet.get(cr, iht);
         ht = BaseHashSet.delete(cr, iht);
       then
         (true, ht);
@@ -5381,7 +5380,7 @@ algorithm
     then (true, iht);
     else
       (false, iht);
-  end matchcontinue;
+  end match;
 end createSingleComplexEqnCode3;
 
 protected function createSingleArrayEqnCode

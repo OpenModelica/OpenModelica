@@ -336,21 +336,19 @@ public function isCrefListAlgorithmOutput
   input DAE.Algorithm inAlgorithm;
   input DAE.ElementSource inSource;
   input DAE.Expand inCrefExpansionRule;
-  output Boolean outResult;
+  output Boolean outResult = false;
 protected
   HashSet.HashSet ht = HashSet.emptyHashSet();
   list<DAE.ComponentRef> algOutCrefs;
 algorithm
   algOutCrefs := CheckModel.checkAndGetAlgorithmOutputs(inAlgorithm, inSource, inCrefExpansionRule);
   ht := List.fold(algOutCrefs, BaseHashSet.add, ht);
-  try
-    for cr in crefList loop
-      BaseHashSet.get(cr, ht);
-    end for;
-    outResult := true;
-  else
-    outResult := false;
-  end try;
+  for cr in crefList loop
+    if not BaseHashSet.has(cr, ht) then
+      return;
+    end if;
+  end for;
+  outResult := true;
 end isCrefListAlgorithmOutput;
 
 protected function algorithmOutputs "This function finds the the outputs of an algorithm.
@@ -919,9 +917,8 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> rest, crlst;
     case ({}, _, _) then iAcc;
-    case(cr::rest, _, _)
+    case(cr::rest, _, _) guard BaseHashSet.has(cr, hs)
       equation
-        _ = BaseHashSet.get(cr, hs);
         crlst = List.unionEltOnTrue(cr, iAcc, ComponentReference.crefEqual);
       then
         getcr(rest, hs, crlst);

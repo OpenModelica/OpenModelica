@@ -122,37 +122,35 @@ public function add
   input HashSet hashSet;
   output HashSet outHashSet;
 algorithm
-  outHashSet := matchcontinue (entry,hashSet)
+  outHashSet := match (entry,hashSet)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
-      tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
+      Integer hval,indx,newpos,n,bsize;
+      tuple<Integer,Integer,array<Option<Key>>> varr;
       list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
+      array<list<tuple<Key,Integer>>> hashvec;
       Key key;
+      Option<Key> fkey;
       FuncsTuple fntpl;
       FuncHash hashFunc;
       FuncKeyString keystrFunc;
       String s;
 
     // Adding when not existing previously
-    case (key,((hashvec,varr,bsize,_,fntpl as (hashFunc,_,_))))
+    case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
       equation
-        failure((_) = get(key, hashSet));
-        indx = hashFunc(key, bsize);
-        newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, key);
-        indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
-      then ((hashvec_1,varr_1,bsize,n_1,fntpl));
-
-    // adding when already present => Updating value
-    case (key,((hashvec,varr,bsize,n,fntpl)))
-      equation
-        (_,indx) = get1(key, hashSet);
-        //print("adding when present, indx =" );print(intString(indx));print("\n");
-        varr_1 = valueArraySetnth(varr, indx, key);
-      then ((hashvec,varr_1,bsize,n,fntpl));
+        (fkey,indx) = get1(key, hashSet);
+        if isSome(fkey) then
+          //print("adding when present, indx =" );print(intString(indx));print("\n");
+          varr = valueArraySetnth(varr, indx, key);
+        else
+          indx = hashFunc(key, bsize);
+          newpos = valueArrayLength(varr);
+          varr = valueArrayAdd(varr, key);
+          indexes = hashvec[indx + 1];
+          hashvec = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+          n = valueArrayLength(varr);
+        end if;
+      then ((hashvec,varr,bsize,n,fntpl));
 
     case (key,((_,_,bsize,_,(hashFunc,_,keystrFunc))))
       equation
@@ -167,7 +165,7 @@ algorithm
         print("\n");
       then
         fail();
-  end matchcontinue;
+  end match;
 end add;
 
 public function addNoUpdCheck
@@ -225,9 +223,8 @@ algorithm
 
     // Adding when not existing previously
     case (_,
-        ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _))))
+        ((hashvec, varr, bsize, _, fntpl as (hashFunc, _, _)))) guard not has(key, hashSet)
       equation
-        failure(_ = get(key, hashSet));
         indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
         varr_1 = valueArrayAdd(varr, key);
@@ -261,7 +258,7 @@ algorithm
       /* adding when already present => Updating value */
     case (_,(hashvec,varr,bsize,n,fntpl))
       equation
-        (_,indx) = get1(key, hashSet);
+        (SOME(_),indx) = get1(key, hashSet);
         varr_1 = valueArrayClearnth(varr, indx);
       then ((hashvec,varr_1,bsize,n,fntpl));
     else
@@ -278,19 +275,19 @@ public function has
   input HashSet hashSet;
   output Boolean b;
 algorithm
-  b:= matchcontinue(key,hashSet)
+  b:= match(key,hashSet)
+    local
+      Option<Key> oKey;
     // empty set containg nothing
     case (_,(_,(0,_,_),_,_,_))
       then
         false;
-    case(_,_)
-      equation
-        get(key,hashSet);
-      then
-        true;
     else
-      false;
-  end matchcontinue;
+      equation
+        (oKey,_) = get1(key,hashSet);
+      then
+        isSome(oKey);
+  end match;
 end has;
 
 public function hasAll "Returns true if all keys are in the HashSet."
@@ -308,10 +305,10 @@ algorithm
 end hasAll;
 
 public function get
-"Returns Key from the HashSet. Fails if not present"
+"Returns Key from the HashSet. Returns NONE() if not present"
   input Key key;
   input HashSet hashSet;
-  output Key okey;
+  output Option<Key> okey;
 algorithm
   (okey,_):= get1(key,hashSet);
 end get;
@@ -319,7 +316,7 @@ end get;
 protected function get1 "help function to get"
   input Key key;
   input HashSet hashSet;
-  output Key okey;
+  output Option<Key> okey;
   output Integer indx;
 algorithm
   (okey,indx) := match (key,hashSet)
@@ -328,16 +325,17 @@ algorithm
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec;
       ValueArray varr;
-      Key k;
+      Option<Key> k;
       FuncEq keyEqual;
       FuncHash hashFunc;
+      Boolean b;
 
     case (_,(hashvec,varr,bsize,_,(hashFunc,keyEqual,_)))
       equation
         hashindx = hashFunc(key, bsize);
         indexes = hashvec[hashindx + 1];
-        indx = get2(key, indexes, keyEqual);
-        k = valueArrayNth(varr, indx);
+        (indx,b) = get2(key, indexes, keyEqual);
+        k = if b then valueArrayNthT(varr, indx) else NONE();
       then
         (k,indx);
 
@@ -350,6 +348,7 @@ protected function get2
   input list<tuple<Key,Integer>> keyIndices;
   input FuncEq keyEqual;
   output Integer index;
+  output Boolean found = true;
 protected
   Key key2;
 algorithm
@@ -359,7 +358,7 @@ algorithm
       return;
     end if;
   end for;
-  fail();
+  found := false;
 end get2;
 
 public function printHashSet ""
@@ -537,12 +536,31 @@ algorithm
       array<Option<Key>> arr;
     case ((n,_,arr),_)
       equation
-        (pos <= n) = true;
+        (pos <= n) = true; // should be pos<n
         SOME(k) = arr[pos + 1];
       then
         k;
   end match;
 end valueArrayNth;
+
+protected function valueArrayNthT
+"Retrieve the n:th Value from ValueArray, index from 0..n-1."
+  input ValueArray valueArray;
+  input Integer pos;
+  output Option<Key> key;
+algorithm
+  key := match (valueArray,pos)
+    local
+      Key k;
+      Integer n;
+      array<Option<Key>> arr;
+    case ((n,_,arr),_)
+      equation
+        (pos <= n) = true; // should be pos<n
+      then
+        arr[pos + 1];
+  end match;
+end valueArrayNthT;
 
 annotation(__OpenModelica_Interface="util");
 end BaseHashSet;
