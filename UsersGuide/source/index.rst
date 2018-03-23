@@ -35,6 +35,8 @@ Generated on |date| at |time|
   emscripten
   interop_c_python
   ompython
+  ommatlab
+  omjulia
   scripting_api
   omchelptext
   simulationflags
