@@ -41,6 +41,7 @@ protected
   import RangeIterator = NFRangeIterator;
   import NFPrefixes.Variability;
   import Prefixes = NFPrefixes;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   import Absyn.Path;
@@ -574,34 +575,42 @@ public
   end realValue;
 
   function applySubscripts
-    input output Expression exp;
     input list<Subscript> subscripts;
+    input output Expression exp;
   algorithm
     for sub in subscripts loop
-      exp := applySubscript(exp, sub);
+      exp := applySubscript(sub, exp);
     end for;
   end applySubscripts;
 
   function applySubscript
-    input output Expression exp;
     input Subscript sub;
+    input Expression exp;
+    output Expression subscriptedExp;
+  algorithm
+    subscriptedExp := match sub
+      case Subscript.INDEX() then applyIndexSubscript(sub.index, exp);
+      case Subscript.SLICE() then applySliceSubscript(sub.slice, exp);
+      case Subscript.WHOLE() then exp;
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got untyped subscript " +
+            Subscript.toString(sub), sourceInfo());
+        then
+          fail();
+    end match;
+  end applySubscript;
+
+  function applyIndexSubscript
+    input Expression indexExp;
+    input output Expression exp;
   protected
     Integer index;
     Boolean is_scalar_const;
     Expression texp;
     Type exp_ty;
   algorithm
-
-    if not Subscript.isScalar(sub) then
-      // We need to properly compute the resulting type. Just unlifting the type is not enough if sub is not scalar.
-      // Use Type.subscript to compute the type and make sure SUPSCRIPTED_EXP doesn't result in complicated types.
-      Error.assertion(false, getInstanceName() + ": Application of non-scalar subs on expressoins not implemented. "
-                      + "Exp: " + toString(exp)
-                      + ", Sub: "+ Subscript.toString(sub)
-                      , sourceInfo());
-      fail();
-    end if;
-    is_scalar_const := Subscript.isScalarConst(sub);
+    is_scalar_const := Expression.isScalarConst(indexExp);
 
     // check exp has array type. Don't apply subs to scalar exp.
     exp_ty := typeOf(exp);
@@ -609,7 +618,7 @@ public
       Error.assertion(false, getInstanceName() + ": Application of subs on non-array expressoin not allowed. "
                       + "Exp: " + toString(exp)
                       + ", Exp type: " + Type.toString(exp_ty)
-                      + ", Sub: " + Subscript.toString(sub)
+                      + ", Sub: " + toString(indexExp)
                       , sourceInfo());
       fail();
     end if;
@@ -619,7 +628,7 @@ public
         ComponentRef cref;
 
       case CREF() algorithm
-        cref := ComponentRef.addSubscript(sub, exp.cref);
+        cref := ComponentRef.addSubscript(Subscript.INDEX(indexExp), exp.cref);
         texp := CREF(Type.unliftArray(exp.ty), cref);
       then texp;
 
@@ -630,25 +639,70 @@ public
         // Do we want to create SUBSCRIPTED_EXP and go through the ASUB hell of the old FrontEnd?
         // k = {1,i,2}[j];
         if is_scalar_const then
-           index := Subscript.toInteger(sub);
+           index := Expression.toInteger(indexExp);
            texp := listGet(exp.elements, index);
         else
-          texp := SUBSCRIPTED_EXP(exp, {Subscript.toExp(sub)}, Type.unliftArray(exp.ty));
+          texp := SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp.ty));
           // Error.assertion(false, getInstanceName() + " failed on " + Subscript.toString(sub), sourceInfo());
           // fail();
         end if;
       then texp;
 
       case SUBSCRIPTED_EXP() algorithm
-        texp := SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts,{Subscript.toExp(sub)}), Type.unliftArray(exp.ty));
+        texp := SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts,{indexExp}), Type.unliftArray(exp.ty));
       then texp;
 
       else algorithm
-        texp := SUBSCRIPTED_EXP(exp, {Subscript.toExp(sub)}, Type.unliftArray(exp_ty));
+        texp := SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp_ty));
       then texp;
 
     end match;
-  end applySubscript;
+  end applyIndexSubscript;
+
+  function applySliceSubscript
+    input Expression slice;
+    input Expression exp;
+    output Expression subscriptedExp;
+  protected
+    list<Expression> expl;
+    RangeIterator iter;
+    Expression e;
+    Type ty;
+    ComponentRef cref;
+  algorithm
+    // Replace the last dimension of the expression type with the dimension of the slice type.
+    ty := Type.liftArrayLeft(Type.unliftArray(typeOf(exp)), Type.nthDimension(typeOf(slice), 1));
+    iter := RangeIterator.fromExp(slice);
+
+    if RangeIterator.isValid(iter) then
+      // If the slice is a range of known size, apply each subscript in the slice
+      // to the expression and create a new array from the resulting elements.
+      expl := {};
+
+      while RangeIterator.hasNext(iter) loop
+        (iter, e) := RangeIterator.next(iter);
+        e := applyIndexSubscript(e, exp);
+        expl := e :: expl;
+      end while;
+
+      ty := Type.liftArrayLeft(Type.unliftArray(typeOf(exp)), Dimension.fromInteger(listLength(expl)));
+      subscriptedExp := ARRAY(ty, listReverseInPlace(expl));
+    else
+      // If the slice can't be expanded, just add it to the expression as a slice subscript.
+      subscriptedExp := match exp
+        case CREF()
+          algorithm
+            cref := ComponentRef.addSubscript(Subscript.SLICE(slice), exp.cref);
+          then
+            CREF(ty, cref);
+
+        case SUBSCRIPTED_EXP()
+          then SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts, {slice}), ty);
+
+        else SUBSCRIPTED_EXP(exp, {slice}, ty);
+      end match;
+    end if;
+  end applySliceSubscript;
 
   function arrayFromList
     input list<Expression> inExps;

@@ -718,8 +718,8 @@ public constant Message INITIAL_CALL_WARNING = MESSAGE(294, TRANSLATION(), WARNI
   Util.gettext("The standard says that initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition %s."));
 public constant Message RANGE_TYPE_MISMATCH = MESSAGE(295, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in range: '%s' of type\n  %s\nis not type compatible with '%s' of type\n  %s"));
-public constant Message RANGE_ZERO_STEP = MESSAGE(296, TRANSLATION(), ERROR(),
-  Util.gettext("Range may not have a step size of 0."));
+public constant Message RANGE_TOO_SMALL_STEP = MESSAGE(296, TRANSLATION(), ERROR(),
+  Util.gettext("Step size %s in range is too small."));
 public constant Message RANGE_INVALID_STEP = MESSAGE(297, TRANSLATION(),
 ERROR(),
   Util.gettext("Range of type %s may not specify a step size."));

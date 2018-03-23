@@ -684,7 +684,7 @@ uniontype Call
             b::b_list := b_list;
             // If the argument is supposed to be vectorized
             if b then
-              vect_args := Expression.applySubscript(arg, Subscript.INDEX(exp))::vect_args;
+              vect_args := Expression.applyIndexSubscript(exp, arg)::vect_args;
             else
               vect_args := arg::vect_args;
             end if;

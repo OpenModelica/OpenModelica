@@ -47,14 +47,33 @@ public
   record REAL_RANGE
     Real start;
     Real stepsize;
-    Real stop;
+    Integer current;
+    Integer steps;
   end REAL_RANGE;
 
   record ARRAY_RANGE
     list<Expression> values;
   end ARRAY_RANGE;
 
+  record INVALID_RANGE
+    Expression exp;
+  end INVALID_RANGE;
+
+  function isValid
+    input RangeIterator iterator;
+    output Boolean isValid;
+  algorithm
+    isValid := match iterator
+      case INVALID_RANGE() then false;
+      else true;
+    end match;
+  end isValid;
+
   function fromExp
+    "Returns a RangeIterator created from the given expression. If the
+     expression isn't an expression that can be expanded into elements an
+     invalid range will be returned that will trigger an assertion when used.
+     The valididity of the returned iterator can be checked with isValid."
     input Expression exp;
     output RangeIterator iterator;
   algorithm
@@ -72,7 +91,8 @@ public
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = SOME(Expression.INTEGER(istep)),
                             stop = Expression.INTEGER(istop))
-        then INT_RANGE(istart, istep, istop);
+        then
+          INT_RANGE(istart, istep, istop);
 
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = NONE(),
@@ -82,12 +102,12 @@ public
       case Expression.RANGE(start = Expression.REAL(rstart),
                             step = SOME(Expression.REAL(rstep)),
                             stop = Expression.REAL(rstop))
-        then REAL_RANGE(rstart, rstep, rstop);
+        then REAL_RANGE(rstart, rstep, 0, Util.realRangeSize(rstart, rstep, rstop));
 
       case Expression.RANGE(start = Expression.REAL(rstart),
                             step = NONE(),
                             stop = Expression.REAL(rstop))
-        then REAL_RANGE(rstart, 1.0, rstop);
+        then REAL_RANGE(rstart, 1.0, 0, Util.realRangeSize(rstart, 1.0, rstop));
 
       case Expression.RANGE(start = Expression.ENUM_LITERAL(ty = ty, index = istart),
                             step = NONE(),
@@ -111,11 +131,7 @@ public
         then
           ARRAY_RANGE(values);
 
-      else
-        algorithm
-          Error.assertion(false, getInstanceName() + " got unknown range", sourceInfo());
-        then
-          fail();
+      else INVALID_RANGE(exp);
 
     end match;
   end fromExp;
@@ -160,6 +176,13 @@ public
         then
           nextExp;
 
+      case REAL_RANGE()
+        algorithm
+          nextExp := Expression.REAL(iterator.start + iterator.stepsize * iterator.current);
+          iterator.current := iterator.current + 1;
+        then
+          nextExp;
+
       case ARRAY_RANGE()
         algorithm
           nextExp := listHead(iterator.values);
@@ -167,6 +190,12 @@ public
         then
           nextExp;
 
+      case INVALID_RANGE()
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid range " +
+            Expression.toString(iterator.exp), sourceInfo());
+        then
+          fail();
     end match;
   end next;
 
@@ -176,7 +205,14 @@ public
   algorithm
     hasNext := match iterator
       case INT_RANGE() then iterator.current <= iterator.last;
+      case REAL_RANGE() then iterator.current < iterator.steps;
       case ARRAY_RANGE() then not listEmpty(iterator.values);
+      case INVALID_RANGE()
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid range " +
+            Expression.toString(iterator.exp), sourceInfo());
+        then
+          fail();
     end match;
   end hasNext;
 

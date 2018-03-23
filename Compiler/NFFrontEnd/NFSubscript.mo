@@ -38,6 +38,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
   import RangeIterator = NFRangeIterator;
+  import Dump;
 
 public
   import Expression = NFExpression;
@@ -147,9 +148,7 @@ public
     output Boolean isScalarConst;
   algorithm
     isScalarConst := match sub
-      case INDEX(Expression.INTEGER()) then true;
-      case INDEX(Expression.BOOLEAN()) then true;
-      case INDEX(Expression.ENUM_LITERAL()) then true;
+      case INDEX() then Expression.isScalarConst(sub.index);
       else false;
     end match;
   end isScalarConst;
@@ -290,6 +289,7 @@ public
     output String string;
   algorithm
     string := match subscript
+      case RAW_SUBSCRIPT() then Dump.printSubscriptStr(subscript.subscript);
       case UNTYPED() then Expression.toString(subscript.exp);
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);

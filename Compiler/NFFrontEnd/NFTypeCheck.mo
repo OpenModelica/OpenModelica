@@ -1985,7 +1985,7 @@ algorithm
       algorithm
         // Don't allow infinite ranges.
         if step == 0 then
-          Error.addSourceMessageAndFail(Error.RANGE_ZERO_STEP, {}, info);
+          Error.addSourceMessageAndFail(Error.RANGE_TOO_SMALL_STEP, {String(step)}, info);
         end if;
       then
         Dimension.fromInteger(max(intDiv(stopExp.value - startExp.value, step) + 1, 0));
@@ -2003,18 +2003,17 @@ function getRangeTypeReal
 algorithm
   dim := match (startExp, stepExp, stopExp)
     local
-      Real step;
+      Real start, step;
 
     case (Expression.REAL(), NONE(), Expression.REAL())
       then Dimension.fromInteger(Util.realRangeSize(startExp.value, 1.0, stopExp.value));
 
-    case (Expression.REAL(), SOME(Expression.REAL(value = step)), Expression.REAL())
+    case (Expression.REAL(value = start), SOME(Expression.REAL(value = step)), Expression.REAL())
       algorithm
-        // The old inst checked that step > 1e-14, but that's actually ok if
-        // start and stop are also small. We could maybe check that the range
-        // doesn't become too large, but then we'd have to define 'too large'.
-        if step == 0.0 then
-          Error.addSourceMessageAndFail(Error.RANGE_ZERO_STEP, {}, info);
+        // Check that adding step to start actually produces a different value,
+        // otherwise the step size is too small.
+        if start == start + step then
+          Error.addSourceMessageAndFail(Error.RANGE_TOO_SMALL_STEP, {String(step)}, info);
         end if;
       then
         Dimension.fromInteger(Util.realRangeSize(startExp.value, step, stopExp.value));
