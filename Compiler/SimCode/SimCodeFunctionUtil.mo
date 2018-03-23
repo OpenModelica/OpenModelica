@@ -2349,8 +2349,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
 
     case (_, _, ht, _)
-      equation
-        BaseHashTable.get(pathstr, ht);
+      guard BaseHashTable.hasKey(pathstr, ht)
       then ht;
 
     case (path, _, ht, _)

@@ -8173,8 +8173,8 @@ modifiers to prevent infinite recursion"
 algorithm
   (outMods,outCmod,outM) := matchcontinue(variability,updatedComps,cref,mods,cmod,m)
     case (_,_,_,_,_,_)
+      guard BaseHashTable.hasKey(cref,updatedComps)
       equation
-        _ = BaseHashTable.get(cref,updatedComps);
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 

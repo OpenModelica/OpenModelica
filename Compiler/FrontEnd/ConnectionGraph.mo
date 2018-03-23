@@ -858,7 +858,7 @@ algorithm
         setRootDistance(nextLevel,table,distance+1,{},irooted);
     case(cr::rest,_,_,_,_)
       equation
-        failure(_ = BaseHashTable.get(cr, irooted));
+        false = BaseHashTable.hasKey(cr, irooted);
         rooted = BaseHashTable.add((cr,distance),irooted);
         next = BaseHashTable.get(cr, table);
         //print("- ConnectionGraph.setRootDistance: Set Distance " +
@@ -870,7 +870,7 @@ algorithm
         setRootDistance(rest,table,distance,next,rooted);
     case(cr::rest,_,_,_,_)
       equation
-        failure(_ = BaseHashTable.get(cr, irooted));
+        false = BaseHashTable.hasKey(cr, irooted);
         rooted = BaseHashTable.add((cr,distance),irooted);
         //print("- ConnectionGraph.setRootDistance: Set Distance " +
         //   ComponentReference.printComponentRefStr(cr) + " , " + intString(distance) + "\n");

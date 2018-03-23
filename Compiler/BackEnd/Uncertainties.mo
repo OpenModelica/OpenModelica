@@ -1758,7 +1758,7 @@ protected function findArraysPartiallyIndexed2 "
   output HashTable.HashTable outHt;
 
 algorithm
-  outHt := matchcontinue(inRef,indubRef,inht)
+  outHt := match(inRef,indubRef,inht)
     local
       DAE.ComponentRef c1,c2;
       DAE.Exp e1;
@@ -1768,35 +1768,26 @@ algorithm
     case({}, _, ht) then ht;
 
     case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
-      equation
-        c2 = ComponentReference.crefStripLastSubs(c1);
-        failure(_ = BaseHashTable.get(c2,dubRef));
-        dubRef = BaseHashTable.add((c2,1),dubRef);
-        ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
+      algorithm
+        c2 := ComponentReference.crefStripLastSubs(c1);
+        if BaseHashTable.hasKey(c2,dubRef) then
+          if BaseHashTable.hasKey(c2,ht) then
+            // if we have one occurrence, most likely it will be more.
+          else
+            ht := BaseHashTable.add((c2,1),ht);
+          end if;
+        else
+          dubRef := BaseHashTable.add((c2,1),dubRef);
+        end if;
+        ht := findArraysPartiallyIndexed2(expl1,dubRef,ht);
       then ht;
 
-    case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
-      equation
-        c2 = ComponentReference.crefStripLastSubs(c1);
-        _ = BaseHashTable.get(c2,dubRef);
-        _ = BaseHashTable.get(c2,ht);// if we have one occurrence, most likely it will be more.
-        ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
-      then ht;
-
-    case(((DAE.CREF(c1,_))::expl1),dubRef,ht)
-      equation
-        c2 = ComponentReference.crefStripLastSubs(c1);
-        _ = BaseHashTable.get(c2,dubRef);
-        failure(_ = BaseHashTable.get(c2,ht));
-        ht = BaseHashTable.add((c2,1),ht);
-        ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
-      then ht;
     case(_::expl1,dubRef,ht)
       equation
         ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
         then
           ht;
-  end matchcontinue;
+  end match;
 end findArraysPartiallyIndexed2;
 
 
@@ -2228,7 +2219,7 @@ protected function moveVariables2 "
   output list<BackendDAE.Var> outVarLst2;
 algorithm
   (outVarLst1,outVarLst2):=
-  matchcontinue (inVarLst1,inVarLst2,hashTable)
+  match (inVarLst1,inVarLst2,hashTable)
     local
       list<BackendDAE.Var> globalKnownVars,vs_1,knvars_1,vs;
       BackendDAE.Var v;
@@ -2236,18 +2227,19 @@ algorithm
       HashTable.HashTable mvars;
     case ({},globalKnownVars,_) then ({},globalKnownVars);
     case (((v as BackendDAE.VAR(varName = cr)) :: vs),globalKnownVars,mvars)
-      equation
-        _ = BaseHashTable.get(cr,mvars) "alg var moved to known vars";
-        (vs_1,knvars_1) = moveVariables2(vs, globalKnownVars, mvars);
+      algorithm
+        if BaseHashTable.hasKey(cr,mvars) then
+          // alg var moved to known vars
+          (vs_1,knvars_1) := moveVariables2(vs, globalKnownVars, mvars);
+          knvars_1 := (v :: knvars_1);
+        else
+          // alg var not moved to known vars
+          (vs_1,knvars_1) := moveVariables2(vs, globalKnownVars, mvars);
+          vs_1 := (v :: vs_1);
+        end if;
       then
-        (vs_1,(v :: knvars_1));
-    case (((v as BackendDAE.VAR(varName = cr)) :: vs),globalKnownVars,mvars)
-      equation
-        failure(_ = BaseHashTable.get(cr,mvars)) "alg var not moved to known vars";
-        (vs_1,knvars_1) = moveVariables2(vs, globalKnownVars, mvars);
-      then
-        ((v :: vs_1),knvars_1);
-  end matchcontinue;
+        (vs_1,knvars_1);
+  end match;
 end moveVariables2;
 
 replaceable type ElementType subtypeof Any;

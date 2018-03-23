@@ -279,8 +279,8 @@ algorithm
       list<DAE.Ident> iv;
       Option<HashTable2.HashTable> derConst;
     case ((REPLACEMENTS(hashTable=ht)),src,_) /* source dest */
-      equation
-        _ = BaseHashTable.get(src,ht) "if rule a->b exists, fail";
+      guard
+        BaseHashTable.hasKey(src,ht) "if rule a->b exists, fail"
       then
         fail();
     case ((REPLACEMENTS(ht,invHt,eht,iv,derConst)),src,dst)
@@ -371,26 +371,18 @@ protected function addReplacementInv2 "
   input DAE.ComponentRef dst;
   input DAE.ComponentRef src;
   output HashTable3.HashTable outInvHt;
+protected
+  list<DAE.ComponentRef> srcs;
 algorithm
-  outInvHt:=
-  matchcontinue (invHt,dst,src)
-    local
-      HashTable3.HashTable invHt_1;
-      list<DAE.ComponentRef> srcs;
-    case (_,_,_)
-      equation
-        failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src";
-        invHt_1 = BaseHashTable.add((dst, {src}),invHt);
-      then
-        invHt_1;
-    case (_,_,_)
-      equation
-        srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append..";
-        srcs = src::srcs;
-        invHt_1 = BaseHashTable.add((dst, srcs),invHt);
-      then
-        invHt_1;
-  end matchcontinue;
+  if BaseHashTable.hasKey(dst,invHt) then
+    // previous elt for dst -> src, append..
+    srcs := BaseHashTable.get(dst,invHt);
+    srcs := src::srcs;
+    outInvHt := BaseHashTable.add((dst, srcs),invHt);
+  else
+    // No previous elt for dst -> src
+    outInvHt:= BaseHashTable.add((dst, {src}),invHt);
+  end if;
 end addReplacementInv2;
 
 protected function makeTransitive "
@@ -559,7 +551,7 @@ algorithm
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY()),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = BaseHashTable.get(precr,extendrepl));
+        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
@@ -567,14 +559,14 @@ algorithm
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = BaseHashTable.get(precr1,extendrepl));
+        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = BaseHashTable.get(precr,extendrepl));
+        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
         // Create a list of crefs from names
@@ -585,7 +577,7 @@ algorithm
       equation
         _ = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,cr);
-        failure(_ = BaseHashTable.get(precr1,extendrepl));
+        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
         // Create a list of crefs from names
@@ -595,7 +587,7 @@ algorithm
     case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = BaseHashTable.get(precr,extendrepl));
+        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
@@ -603,7 +595,7 @@ algorithm
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = BaseHashTable.get(precr1,extendrepl));
+        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
@@ -613,7 +605,7 @@ algorithm
     case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
-        failure(_ = BaseHashTable.get(precr,extendrepl));
+        false = BaseHashTable.hasKey(precr,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
@@ -623,7 +615,7 @@ algorithm
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
-        failure(_ = BaseHashTable.get(precr1,extendrepl));
+        false = BaseHashTable.hasKey(precr1,extendrepl);
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
@@ -793,18 +785,17 @@ public function hasReplacement "
   output Boolean bOut;
 algorithm
   bOut:=
-  matchcontinue (inVariableReplacements,inComponentRef)
+  match (inVariableReplacements,inComponentRef)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
       HashTable2.HashTable ht;
     case (REPLACEMENTS(hashTable=ht),src)
-      equation
-        _ = BaseHashTable.get(src,ht);
+      guard BaseHashTable.hasKey(src,ht)
       then
         true;
       else false;
-  end matchcontinue;
+  end match;
 end hasReplacement;
 
 public function hasReplacementCrefFirst "
@@ -815,18 +806,17 @@ public function hasReplacementCrefFirst "
   output Boolean bOut;
 algorithm
   bOut:=
-  matchcontinue (inComponentRef,inVariableReplacements)
+  match (inComponentRef,inVariableReplacements)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
       HashTable2.HashTable ht;
     case (src,REPLACEMENTS(hashTable=ht))
-      equation
-        _ = BaseHashTable.get(src,ht);
+      guard BaseHashTable.hasKey(src,ht)
       then
         true;
       else false;
-  end matchcontinue;
+  end match;
 end hasReplacementCrefFirst;
 
 public function hasNoReplacementCrefFirst "
@@ -837,18 +827,17 @@ public function hasNoReplacementCrefFirst "
   output Boolean bOut;
 algorithm
   bOut:=
-  matchcontinue (inComponentRef,inVariableReplacements)
+  match (inComponentRef,inVariableReplacements)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
       HashTable2.HashTable ht;
     case (src,REPLACEMENTS(hashTable=ht))
-      equation
-        _ = BaseHashTable.get(src,ht);
+      guard BaseHashTable.hasKey(src,ht)
       then
         false;
       else true;
-  end matchcontinue;
+  end match;
 end hasNoReplacementCrefFirst;
 
 public function varHasNoReplacement "
@@ -859,18 +848,17 @@ public function varHasNoReplacement "
   output Boolean bOut;
 algorithm
   bOut:=
-  matchcontinue (var,inVariableReplacements)
+  match (var,inVariableReplacements)
     local
       DAE.ComponentRef src;
       DAE.Exp dst;
       HashTable2.HashTable ht;
     case (BackendDAE.VAR(varName=src),REPLACEMENTS(hashTable=ht))
-      equation
-        _ = BaseHashTable.get(src,ht);
+      guard BaseHashTable.hasKey(src,ht)
       then
         false;
       else true;
-  end matchcontinue;
+  end match;
 end varHasNoReplacement;
 
 public function getReplacementVarArraySize

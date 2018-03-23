@@ -1649,7 +1649,7 @@ algorithm
     case ({},_,acc,unusedHt) then (listReverse(acc),unusedHt);
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name), source=DAE.SOURCE(info=info))::rest,_,acc,unusedHt)
       equation
-        failure(_ = BaseHashTable.get(name, ht));
+        false = BaseHashTable.hasKey(name, ht);
         unusedHt = BaseHashTable.add((name,Absyn.IDENT("")),unusedHt);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.META_UNUSED_DECL, {name}, info);
         (acc,unusedHt) = filterUnusedDecls(rest,ht,acc,unusedHt);

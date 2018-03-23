@@ -945,26 +945,18 @@ protected function addReplacementInv2 "
   input DAE.ComponentRef dst;
   input DAE.ComponentRef src;
   output HashTable3.HashTable outInvHt;
+protected
+  list<DAE.ComponentRef> srcs;
 algorithm
-  outInvHt:=
-  matchcontinue (invHt,dst,src)
-    local
-      HashTable3.HashTable invHt_1;
-      list<DAE.ComponentRef> srcs;
-    case (_,_,_)
-      equation
-        failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
-        invHt_1 = BaseHashTable.add((dst, {src}),invHt);
-      then
-        invHt_1;
-    case (_,_,_)
-      equation
-        srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        srcs = amortizeUnion(src::srcs);//List.union({},src::srcs);
-        invHt_1 = BaseHashTable.add((dst, srcs),invHt);
-      then
-        invHt_1;
-  end matchcontinue;
+  if BaseHashTable.hasKey(dst,invHt) then
+    // previous elt for dst -> src, append.
+    srcs := BaseHashTable.get(dst,invHt);
+    srcs := amortizeUnion(src::srcs);//List.union({},src::srcs);
+    outInvHt := BaseHashTable.add((dst, srcs),invHt);
+  else
+    // No previous elt for dst -> src
+    outInvHt := BaseHashTable.add((dst, {src}),invHt);
+  end if;
 end addReplacementInv2;
 
 protected function amortizeUnion "performs listUnion but in an 'amortized' way, by only doing it occasionally"
