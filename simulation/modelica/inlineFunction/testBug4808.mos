@@ -1,0 +1,45 @@
+// name: ticket4808
+// status: correct
+
+// test inlining of constructor
+
+loadModel(Modelica,{"3.2.2"});
+getErrorString();
+
+loadString("
+model foobar
+  Complex vAt;
+  Complex vA;
+  Complex k = Complex(r);
+  parameter Real r = 10;
+
+equation
+  vAt = k*vA;
+  vAt = Complex(time,2*time);
+end foobar;
+");
+getErrorString();
+
+simulate(foobar);
+getErrorString();
+val(vA.im,{0.0,1.0});
+val(vA.re,{0.0,1.0});
+
+getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "foobar_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foobar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,0.2}
+// {0.0,0.1}
+// ""
+// endResult
