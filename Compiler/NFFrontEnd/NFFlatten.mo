@@ -125,8 +125,8 @@ algorithm
   sections := Sections.EMPTY();
   cmt := SCode.getElementComment(InstNode.definition(classInst));
 
-  (vars, sections) :=
-    flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(), Visibility.PUBLIC, {}, sections);
+  (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
+    Visibility.PUBLIC, NONE(), {}, sections);
   vars := listReverseInPlace(vars);
 
   flatModel := match sections
@@ -152,17 +152,43 @@ function flattenClass
   input Class cls;
   input ComponentRef prefix;
   input Visibility visibility;
+  input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
 protected
-  ClassTree cls_tree;
+  array<InstNode> comps;
+  list<Binding> bindings;
+  Binding b;
 algorithm
   () := match cls
-    case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
       algorithm
-        for c in cls_tree.components loop
-          (vars, sections) := flattenComponent(c, prefix, visibility, vars, sections);
-        end for;
+        if isSome(binding) then
+          SOME(b) := binding;
+
+          if Binding.isBound(b) then
+            b := flattenBinding(b, ComponentRef.rest(prefix), ComponentRef.node(prefix));
+            bindings := getRecordBindings(b);
+
+            Error.assertion(listLength(bindings) == arrayLength(comps),
+              getInstanceName() + " got record binding with wrong number of elements for " +
+                ComponentRef.toString(prefix),
+              sourceInfo());
+
+            for c in comps loop
+              (vars, sections) := flattenComponent(c, prefix, visibility, SOME(listHead(bindings)), vars, sections);
+              bindings := listRest(bindings);
+            end for;
+          else
+            for c in comps loop
+              (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections);
+            end for;
+          end if;
+        else
+          for c in comps loop
+            (vars, sections) := flattenComponent(c, prefix, visibility, NONE(), vars, sections);
+          end for;
+        end if;
 
         sections := flattenSections(cls.sections, prefix, sections);
       then
@@ -183,6 +209,7 @@ function flattenComponent
   input InstNode component;
   input ComponentRef prefix;
   input Visibility visibility;
+  input Option<Binding> outerBinding;
   input output list<Variable> vars;
   input output Sections sections;
 protected
@@ -214,7 +241,7 @@ algorithm
 
         (vars, sections) := match cls
           case Class.INSTANCED_BUILTIN()
-            then flattenSimpleComponent(comp_node, c, vis, cls.attributes, prefix, vars, sections);
+            then flattenSimpleComponent(comp_node, c, vis, outerBinding, cls.attributes, prefix, vars, sections);
           else flattenComplexComponent(comp_node, c, cls, ty, vis, prefix, vars, sections);
         end match;
       then
@@ -233,6 +260,7 @@ function flattenSimpleComponent
   input InstNode node;
   input Component comp;
   input Visibility visibility;
+  input Option<Binding> outerBinding;
   input list<Modifier> typeAttrs;
   input ComponentRef prefix;
   input output list<Variable> vars;
@@ -252,7 +280,12 @@ algorithm
   Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
     comment = cmt, info = info) := comp;
 
-  binding := flattenBinding(binding, prefix, comp_node);
+  if isSome(outerBinding) then
+    SOME(binding) := outerBinding;
+  else
+    binding := flattenBinding(binding, prefix, comp_node);
+  end if;
+
   name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
 
   // If the component is an array component with a binding and at least discrete variability,
@@ -281,6 +314,26 @@ algorithm
   outAttr := (Modifier.name(attr), binding);
 end flattenTypeAttribute;
 
+function getRecordBindings
+  input Binding binding;
+  output list<Binding> recordBindings;
+protected
+  Expression binding_exp;
+  list<Expression> expl;
+algorithm
+  binding_exp := Binding.getTypedExp(binding);
+
+  recordBindings := match binding_exp
+    case Expression.RECORD() then list(Binding.FLAT_BINDING(e) for e in binding_exp.elements);
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got non-record binding " +
+          Expression.toString(binding_exp), sourceInfo());
+      then
+        fail();
+  end match;
+end getRecordBindings;
+
 function flattenComplexComponent
   input InstNode node;
   input Component comp;
@@ -294,32 +347,36 @@ protected
   list<Dimension> dims;
   ComponentRef name;
   Binding binding;
+  Option<Binding> opt_binding;
   Expression binding_exp;
   Equation eq;
+  list<Expression> bindings;
 algorithm
   dims := Type.arrayDims(ty);
   name := ComponentRef.prefixCref(node, ty, {}, prefix);
+  binding := Component.getBinding(comp);
+
+  // Create an equation if there's a binding on a complex component.
+  if Binding.isBound(binding) then
+    binding_exp := Binding.getTypedExp(binding);
+
+    if not Expression.isRecord(binding_exp) then
+      eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
+        ElementSource.createElementSource(InstNode.info(node)));
+      sections := Sections.prependEquation(eq, sections);
+      opt_binding := SOME(Binding.UNBOUND());
+    else
+      opt_binding := SOME(flattenBinding(binding, prefix, node));
+    end if;
+  else
+    opt_binding := NONE();
+  end if;
 
   // Flatten the class directly if the component is a scalar, otherwise scalarize it.
   if listEmpty(dims) then
-    binding := Component.getBinding(comp);
-
-    if Binding.isBound(binding) then
-      binding_exp := Binding.getTypedExp(binding);
-
-      if not Expression.isRecord(binding_exp) then
-        eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-          ElementSource.createElementSource(InstNode.info(node)));
-        sections := Sections.prependEquation(eq, sections);
-        binding := Binding.UNBOUND();
-      else
-        // TODO: Split record expressions and pass them to flattenClass.
-      end if;
-    end if;
-
-    (vars, sections) := flattenClass(cls, name, visibility, vars, sections);
+    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections);
   else
-    (vars, sections) := flattenArray(cls, dims, name, visibility, vars, sections);
+    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections);
   end if;
 end flattenComplexComponent;
 
@@ -328,6 +385,7 @@ function flattenArray
   input list<Dimension> dimensions;
   input ComponentRef prefix;
   input Visibility visibility;
+  input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
@@ -340,15 +398,15 @@ protected
 algorithm
   if listEmpty(dimensions) then
     sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
-    (vars, sections) := flattenClass(cls, sub_pre, visibility, vars, sections);
+    (vars, sections) := flattenClass(cls, sub_pre, visibility, binding, vars, sections);
   else
     dim :: rest_dims := dimensions;
     range_iter := RangeIterator.fromDim(dim);
 
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
-      (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility, vars, sections,
-        Subscript.INDEX(sub_exp) :: subscripts);
+      (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility,
+          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts);
     end while;
   end if;
 end flattenArray;

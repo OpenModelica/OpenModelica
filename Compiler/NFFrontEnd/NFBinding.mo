@@ -156,6 +156,16 @@ public
     end match;
   end setTypedExp;
 
+  function isRecordExp
+    input Binding binding;
+    output Boolean isRecordExp;
+  algorithm
+    isRecordExp := match binding
+      case TYPED_BINDING(bindingExp = Expression.RECORD()) then true;
+      else false;
+    end match;
+  end isRecordExp;
+
   function variability
     input Binding binding;
     output Variability var;

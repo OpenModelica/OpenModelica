@@ -427,48 +427,57 @@ uniontype Call
 
   public
   function typeCall
-    input output Expression callExp;
+    input Expression callExp;
     input ExpOrigin.Type origin;
     input SourceInfo info;
-          output Type ty;
-          output Variability variability;
+    output Expression outExp;
+    output Type ty;
+    output Variability variability;
   protected
     Call call;
+    list<Expression> args;
   algorithm
-    () := match callExp
+    outExp := match callExp
       case Expression.CALL(UNTYPED_CALL())
         algorithm
           if(builtinSpecialHandling(callExp.call)) then
-            (callExp, ty, variability) := typeSpecialBuiltinFunction(callExp.call, origin, info);
+            (outExp, ty, variability) := typeSpecialBuiltinFunction(callExp.call, origin, info);
           else
             call := typeMatchNormalCall(callExp.call, origin, info);
-            callExp := Expression.CALL(call);
             ty := getType(call);
             variability := getVariability(call);
+
+            if isRecordConstructor(call) then
+              outExp := toRecordExpression(call, ty);
+            else
+              outExp := Expression.CALL(call);
+            end if;
           end if;
         then
-          ();
+          outExp;
 
       case Expression.CALL(UNTYPED_MAP_CALL())
         algorithm
           call := typeMapIteratorCall(callExp.call, origin, info);
-          callExp := Expression.CALL(call);
           ty := getType(call);
           variability := getVariability(call);
         then
-          ();
+          Expression.CALL(call);
+
       case Expression.CALL(call as TYPED_CALL())
         algorithm
           ty := call.ty;
           variability := call.var;
         then
-          ();
+          callExp;
+
       case Expression.CALL(call as TYPED_MAP_CALL())
         algorithm
           ty := call.ty;
           variability := call.var;
         then
-          ();
+          callExp;
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + ": " + Expression.toString(callExp), sourceInfo());
@@ -2296,6 +2305,29 @@ protected
     output String s = stringDelimitList(list(Function.signatureString(fn, true) for fn in fns), "\n  ");
   end candidateFuncListString;
 
+  function isRecordConstructor
+    input Call call;
+    output Boolean isConstructor;
+  algorithm
+    isConstructor := match call
+      case UNTYPED_CALL()
+        then SCode.isRecord(InstNode.definition(ComponentRef.node(call.ref)));
+      case TYPED_CALL()
+        then SCode.isRecord(InstNode.definition(call.fn.node));
+      else false;
+    end match;
+  end isRecordConstructor;
+
+  function toRecordExpression
+    input Call call;
+    input Type ty;
+    output Expression exp;
+  algorithm
+    exp := match call
+      case TYPED_CALL()
+        then Expression.RECORD(Function.name(call.fn), ty, call.arguments);
+    end match;
+  end toRecordExpression;
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");

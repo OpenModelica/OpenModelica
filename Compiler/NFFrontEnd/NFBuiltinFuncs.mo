@@ -52,11 +52,16 @@ import Binding = NFBinding;
 import Pointer;
 import NFPrefixes.Visibility;
 
-// Dummy SCode component, since we usually don't need the definition for anything.
-constant SCode.Element DUMMY_ELEMENT = SCode.COMPONENT("dummy",
-  SCode.defaultPrefixes, SCode.defaultVarAttr,
-  TypeSpec.TPATH(Path.IDENT("$dummy"), NONE()), SCode.Mod.NOMOD(),
-  SCode.Comment.COMMENT(NONE(), NONE()), NONE(), Absyn.dummyInfo);
+constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
+  "$DummyFunction",
+  SCode.defaultPrefixes,
+  SCode.Encapsulated.ENCAPSULATED(),
+  SCode.Partial.NOT_PARTIAL(),
+  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(false)),
+  SCode.ClassDef.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
+  SCode.Comment.COMMENT(NONE(), NONE()),
+  Absyn.dummyInfo
+);
 
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
@@ -99,8 +104,13 @@ constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   Pointer.createImmutable(ENUM_COMPONENT), 0, InstNode.EMPTY_NODE());
 
 // Integer(e)
+constant InstNode INTEGER_NODE = NFInstNode.CLASS_NODE("Integer",
+  DUMMY_ELEMENT, Visibility.PUBLIC, Pointer.createImmutable(Class.NOT_INSTANTIATED()),
+  arrayCreate(NFInstNode.NUMBER_OF_CACHES, NFInstNode.CachedData.NO_CACHE()),
+  InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
 constant Function INTEGER = Function.FUNCTION(Path.IDENT("Integer"),
-  InstNode.EMPTY_NODE(), {ENUM_PARAM}, {}, {}, {
+  INTEGER_NODE, {ENUM_PARAM}, {}, {}, {
     Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE())
   }, Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
 
