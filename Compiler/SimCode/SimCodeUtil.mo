@@ -5346,7 +5346,7 @@ protected function createSingleComplexEqnCode3
   output Boolean outB;
   output HashSet.HashSet oht;
 algorithm
-  (outB, oht) := match(inExp, iht)
+  (outB, oht) := matchcontinue(inExp, iht)
     local
       DAE.ComponentRef cr;
       HashSet.HashSet ht;
@@ -5380,7 +5380,7 @@ algorithm
     then (true, iht);
     else
       (false, iht);
-  end match;
+  end matchcontinue;
 end createSingleComplexEqnCode3;
 
 protected function createSingleArrayEqnCode
