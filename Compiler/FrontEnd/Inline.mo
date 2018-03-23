@@ -860,8 +860,10 @@ algorithm
           // depend on detection of assert or not
           if (listEmpty(assrtStmts))
           then // no assert detected
+
             // output
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
+
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
             // input map cref again function args
@@ -1126,17 +1128,31 @@ algorithm
       Option<DAE.Exp> binding;
       DAE.Type tp;
       DAE.Element elt;
+      DAE.Exp exp;
     case ({},_,_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody,iRepl);
     case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
       equation
          (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody,iRepl);
       then
         (oInputs,oOutput,oBody,repl);
-    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT())::rest,_,_,_,_)
+
+    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=binding as SOME(exp))::rest,_,_,_,_)
+      equation
+        // use type of cref, since var type is different
+        // and has no hint on array or record type
+        tp = ComponentReference.crefTypeFull(cr);
+        st = listAppend(iBody, {DAE.STMT_ASSIGN(exp1 = Expression.crefExp(cr), exp = exp, source=DAE.emptyElementSource, type_=tp)});
+        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,st,iRepl);
+      then
+        (oInputs,oOutput,oBody,repl);
+
+
+    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=NONE())::rest,_,_,_,_)
       equation
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
       then
         (oInputs,oOutput,oBody,repl);
+
     case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=binding)::rest,_,_,_,_)
       equation
         // use type of cref, since var type is different
@@ -1729,6 +1745,7 @@ algorithm
         exps = List.map1r(crs, VarTransform.getReplacement, repl);
       then DAE.CALL(path,exps,DAE.CALL_ATTR(ty,false,false,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
   end matchcontinue;
+
 end getReplacementCheckComplex;
 
 protected function getInlineHashTableVarTransform
