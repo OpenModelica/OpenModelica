@@ -504,9 +504,11 @@ PropagateExtends.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
 RangeInvalidStep3.mo \
+RangeInvalidStep4.mo \
 RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
+RealRangeBinding1.mo \
 RecordBinding1.mo \
 RecordBinding2.mo \
 RecursiveExtends1.mo \
@@ -567,9 +569,13 @@ StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \
 StateSelect2.mo \
+Subscript1.mo \
+SubscriptCevalIndex1.mo \
+SubscriptCevalSlice1.mo \
+SubscriptCevalSlice2.mo \
+SubscriptCevalWhole1.mo \
 SubscriptEnum1.mo \
 SubscriptIterator1.mo \
-Subscript1.mo \
 SubscriptTooMany1.mo \
 SubscriptTypename1.mo \
 SubscriptWrongType1.mo \

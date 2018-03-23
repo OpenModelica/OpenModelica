@@ -3,8 +3,7 @@
 // status: incorrect
 // cflags: -d=newInst
 //
-// Check that a step size close to 0 isn't allowed, since that would give an
-// infinite range.
+// Checks that an enumeration range isn't allowed to have a step size.
 // 
 
 model RangeInvalidStep3
@@ -14,7 +13,7 @@ end RangeInvalidStep3;
 
 // Result:
 // Error processing file: RangeInvalidStep3.mo
-// [flattening/modelica/scodeinst/RangeInvalidStep3.mo:12:3-12:31:writable] Error: Range of type enumeration E(one, two, three) may not specify a step size.
+// [flattening/modelica/scodeinst/RangeInvalidStep3.mo:11:3-11:31:writable] Error: Range of type enumeration E(one, two, three) may not specify a step size.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

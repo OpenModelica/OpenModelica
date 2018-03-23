@@ -13,7 +13,7 @@ end RangeInvalidStep1;
 
 // Result:
 // Error processing file: RangeInvalidStep1.mo
-// [flattening/modelica/scodeinst/RangeInvalidStep1.mo:11:3-11:22:writable] Error: Range may not have a step size of 0.
+// [flattening/modelica/scodeinst/RangeInvalidStep1.mo:11:3-11:22:writable] Error: Step size 0 in range is too small.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
