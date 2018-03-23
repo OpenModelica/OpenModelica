@@ -1,17 +1,8 @@
-OpenModelica Matlab Interface
-=============================
-
-This chapter describes the OpenModelica Matlab integration facilities.
-
--  OMMatlab – the OpenModelica Matlab scripting interface, see :ref:`ommatlab`.
-
-.. _ommatlab:
-
 OMMatlab – OpenModelica Matlab Interface
-----------------------------------------
+========================================
 
-OMMatlab – OpenModelica Matlab API is a free, open source, highly
-portable matlab based interactive session handler for Modelica
+OMMatlab – the OpenModelica Matlab API is a free, open source, highly
+portable Matlab-based interactive session handler for Modelica
 scripting. It provides the modeler with components for creating a
 complete Modelica modeling, compilation and simulation environment based
 on the latest OpenModelica library standard available. OMPython is
@@ -29,19 +20,19 @@ messaging library and it supports the Modelica
 Standard Library version 3.2 that is included in starting with
 OpenModelica 1.9.2.
 
-The Development is in progress and will be soon available.At the moment 
-a prototype of OMMatlab is completed where the users will be able to import the 
+The Development is in progress and will be soon available.At the moment
+a prototype of OMMatlab is completed where the users will be able to import the
 OMMatlab package in Matlab and start to interact with omc through API calls
 
 Current Prototype
 ~~~~~~~~~~~~~~~~~
 The current version of the OMMatlab pacakge contains the following features:
 
-- import the OMMatlab package in Matlab
-- Connect with omc compiler through zmq sockets
-- Able to interact with omc compiler through list of APIS available from OpenModelicaScripting
-- All the API calls are communicated with the help of sendExpression method implemented in matlab pacakge
-- the results are returned as strings.
+- Import the OMMatlab package in Matlab
+- Connect with the OpenModelica compiler through zmq sockets
+- Able to interact with the OpenModelica compiler through the :ref:`available API <scripting-api>`
+- All the API calls are communicated with the help of the sendExpression method implemented in a Matlab pacakge
+- The results are returned as strings
 
 Test Commands
 ~~~~~~~~~~~~~
@@ -63,7 +54,7 @@ To get started, create a OMMatlab session object:
 .. figure :: media/sineplot.png
   :name: sineplot
 
-Currently this is an incomplete Beta release. In the final release the OMMatlab interface 
+Currently this is an incomplete Beta release. In the final release the OMMatlab interface
 is planned to implement the more advanced API calls below where the users will have the ability
 to perform interactive simulation and analysis similar to the enhanced OMPython features.
 
@@ -80,4 +71,4 @@ List of Planned API support
 - setParameters()
 - setSimulationOptions()
 
-With the above list of API calls implemented, the users can have more control over the result types, returned in Matlab format.
+With the above list of API calls implemented, the users can have more control over the result types, returned using Matlab data structures.
