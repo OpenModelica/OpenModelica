@@ -507,6 +507,8 @@ RangeInvalidStep3.mo \
 RangeTypeError1.mo \
 RangeTypeError2.mo \
 RangeTypeError3.mo \
+RecordBinding1.mo \
+RecordBinding2.mo \
 RecursiveExtends1.mo \
 RecursiveExtends3.mo \
 RedeclareClass1.mo \
