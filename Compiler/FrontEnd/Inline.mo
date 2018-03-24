@@ -854,7 +854,7 @@ algorithm
           (newExp1,assrtLst) = Expression.traverseExpBottomUp(newExp,function inlineCall(fns=fns),assrtLst);
         else // normal Modelica
           // get inputs, body and output
-          (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},repl);
+          (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn, repl);
           // merge statements to one line
           (repl,assrtStmts) = mergeFunctionBody(stmts,repl,{});
           // depend on detection of assert or not
@@ -986,7 +986,7 @@ algorithm
         (fn,comment) = getFunctionBody(p,fns);
         (checkcr,repl) = getInlineHashTableVarTransform();
         // get inputs, body and output
-        (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},repl);
+        (crefs,lst_cr,stmts,repl) = getFunctionInputsOutputBody(fn,repl);
         // merge statements to one line
         (repl,_) = mergeFunctionBody(stmts,repl,{});
         //newExp = VarTransform.getReplacement(repl,cr);
@@ -1110,71 +1110,71 @@ end addTplAssignToRepl;
 
 protected function getFunctionInputsOutputBody
   input list<DAE.Element> fn;
-  input list<DAE.ComponentRef> iInputs;
-  input list<DAE.ComponentRef> iOutput;
-  input list<DAE.Statement> iBody;
   input VarTransform.VariableReplacements iRepl;
-  output list<DAE.ComponentRef> oInputs;
-  output list<DAE.ComponentRef> oOutput;
-  output list<DAE.Statement> oBody;
-  output VarTransform.VariableReplacements oRepl;
-algorithm
-  (oInputs,oOutput,oBody,oRepl) := match(fn,iInputs,iOutput,iBody,iRepl)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.Statement> st;
-      list<DAE.Element> rest;
-      VarTransform.VariableReplacements repl;
-      Option<DAE.Exp> binding;
-      DAE.Type tp;
-      DAE.Element elt;
-      DAE.Exp exp;
-    case ({},_,_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody,iRepl);
-    case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
-      equation
-         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody,iRepl);
-      then
-        (oInputs,oOutput,oBody,repl);
+  output list<DAE.ComponentRef> oInputs = {};
+  output list<DAE.ComponentRef> oOutputs = {};
+  output list<DAE.Statement> oBody = {};
+  output VarTransform.VariableReplacements oRepl = iRepl;
+protected
+  DAE.Element elt;
+  DAE.ComponentRef cr;
+  Option<DAE.Exp> binding;
+  DAE.Type tp;
+  DAE.Exp exp;
+  list<DAE.Statement> st;
 
-    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=binding as SOME(exp))::rest,_,_,_,_)
+algorithm
+  for elt in fn loop
+   _ := match(elt)
+
+     case DAE.VAR(componentRef=cr,direction=DAE.INPUT())
+         equation
+           oInputs = cr::oInputs;
+         then ();
+
+    case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=binding as SOME(exp))
       equation
         // use type of cref, since var type is different
         // and has no hint on array or record type
         tp = ComponentReference.crefTypeFull(cr);
-        st = listAppend(iBody, {DAE.STMT_ASSIGN(exp1 = Expression.crefExp(cr), exp = exp, source=DAE.emptyElementSource, type_=tp)});
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,st,iRepl);
-      then
-        (oInputs,oOutput,oBody,repl);
+        oBody = listAppend(oBody, {DAE.STMT_ASSIGN(exp1 = Expression.crefExp(cr), exp = exp, source=DAE.emptyElementSource, type_=tp)});
+        oOutputs = cr :: oOutputs;
+       then ();
 
-
-    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=NONE())::rest,_,_,_,_)
+    case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=NONE())
       equation
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
-      then
-        (oInputs,oOutput,oBody,repl);
+        oOutputs = cr :: oOutputs;
+       then ();
 
-    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=binding)::rest,_,_,_,_)
+    case DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=binding)
       equation
         // use type of cref, since var type is different
         // and has no hint on array or record type
         tp = ComponentReference.crefTypeFull(cr);
         false = Expression.isArrayType(tp);
         false = Expression.isRecordType(tp);
-        repl = addOptBindingReplacements(cr,binding,iRepl);
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
+        oRepl = addOptBindingReplacements(cr,binding,oRepl);
       then
-        (oInputs,oOutput,oBody,repl);
-    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))::rest,_,_,_,_)
+        ();
+
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))
       equation
-        st = listAppend(iBody,st);
-        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st,iRepl);
+        oBody = listAppend(oBody,st);
       then
-        (oInputs,oOutput,oBody,repl);
-    case (elt::rest,_,_,_,_)
+        ();
+
+    case _
       algorithm
         Error.addInternalError("Unknown element: " + DAEDump.dumpElementsStr({elt}), sourceInfo());
       then fail();
-  end match;
+    end match;
+
+
+  end for;
+
+  oInputs := listReverse(oInputs);
+  oOutputs := listReverse(oOutputs);
+
 end getFunctionInputsOutputBody;
 
 protected function addOptBindingReplacements
