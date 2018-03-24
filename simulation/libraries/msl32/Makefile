@@ -277,11 +277,10 @@ Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityField.mos \
 Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine.mos \
 Modelica.Media.Examples.R134a.R134a1.mos \
 Modelica.Media.Examples.R134a.R134a2.mos \
-
+Modelica.Fluid.Examples.PumpingSystem.mos \
 
 # Run make failingtest
 FAILINGTESTFILES = \
-Modelica.Fluid.Examples.PumpingSystem.mos \
 Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPhase.mos \
 
 # Dependency files that are not .mo .mos or Makefile
