@@ -3034,6 +3034,7 @@ algorithm
       DAE.Exp e1,e2,e3,e;
       Type tp;
       list<DAE.Exp> pow_acc, pow_acc2;
+       Operator op;
 
     // (x*y)^n = x^n*y^n
     case DAE.BINARY(DAE.BINARY(e1,DAE.MUL(),e2), DAE.POW(), e3)
@@ -3074,6 +3075,14 @@ algorithm
     // abs(x*y) = abs(x)*abs(y)
     // abs(x/y) = abs(x)/abs(y);
 
+    // x/0 = x * 1/0
+    case DAE.BINARY(e1, op as DAE.DIV(tp), e2)
+      guard isZero(e2)
+      equation
+        e = DAE.BINARY(makeConstOne(tp), op, e2);
+        acc = expandFactorsWork(e1,acc,doInverseFactors);
+      then e::acc;
+
     // -(x) = -1*x
     case DAE.UNARY(DAE.UMINUS(tp),e1)
       equation
@@ -3090,12 +3099,51 @@ algorithm
 
    else
      equation
-       acc = factorsWork(inExp,acc,doInverseFactors);
+       acc = expandFactorsWork3(inExp,acc,doInverseFactors);
      then expandFactorsWork2(acc,doInverseFactors);
 
    end match;
 
 end expandFactorsWork;
+
+protected function expandFactorsWork3
+  input DAE.Exp inExp;
+  input output list<DAE.Exp> acc;
+  input Boolean doInverseFactors "Decides if a factor e should be 1/e instead";
+protected
+  DAE.Exp e1,e2, e;
+  Operator op;
+algorithm
+   acc := matchcontinue(inExp)
+            case _
+                then factorsWork(inExp,acc,doInverseFactors);
+            case DAE.BINARY(e1, DAE.MUL(), e2)
+              equation
+                 acc = expandFactorsWork(e1, acc, doInverseFactors);
+                 acc = expandFactorsWork(e2, acc, doInverseFactors);
+              then
+                 acc;
+            case DAE.BINARY(DAE.BINARY(e, op  as DAE.DIV(), e1),  DAE.DIV(), e2)
+               equation
+                  e = DAE.BINARY(e, op , expMul(e1, e2));
+                  acc = expandFactorsWork(e, acc, doInverseFactors);
+                then
+                  acc;
+            case DAE.BINARY(DAE.BINARY(e, DAE.MUL(), e1),  op as DAE.DIV(), e2)
+               equation
+                  acc = expandFactorsWork(e, acc, doInverseFactors);
+                  acc = expandFactorsWork(DAE.BINARY(e1, op, e2), acc, doInverseFactors);
+                then
+                  acc;
+            case _
+              //equation
+              //  print("\ninExp*: ");print(ExpressionDump.printExpStr(inExp));
+              then inExp :: acc;
+         end matchcontinue;
+
+
+end expandFactorsWork3;
+
 
 protected function expandFactorsWork2
   input list<DAE.Exp> inAcc;
