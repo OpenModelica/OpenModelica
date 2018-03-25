@@ -23,6 +23,8 @@ forceComplexEq4.mos \
 testBug3687.mos \
 testBug3997.mos \
 testComplexMath.mos \
+testBug4808.mos \
+testBug4841.mos \
 
 
 # test that currently fail. Move up when fixed.
