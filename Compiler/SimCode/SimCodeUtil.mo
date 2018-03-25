@@ -4990,6 +4990,39 @@ algorithm
   end matchcontinue;
 end createEquationsIfBranch;
 
+public function createEquationsfromBackendDAE
+  input BackendDAE.BackendDAE inBDAE;
+  input Integer iuniqueEqIndex;
+  input list<SimCodeVar.SimVar> itempvars;
+  input Boolean genDiscrete = false;
+  input Boolean includeWhen = false;
+  input Boolean skipDiscInZc = false;
+  input Boolean skipDiscInAlgorithm = false;
+  output list<list<SimCode.SimEqSystem>> outEquations = {};
+  output Integer uniqueEqIndex = iuniqueEqIndex;
+  output list<SimCodeVar.SimVar> tempvars = itempvars;
+protected
+  BackendDAE.StrongComponents comps;
+  list<SimCode.SimEqSystem> simEqs, zeroVarEquations;
+algorithm
+  for syst in inBDAE.eqs loop
+    // get components
+    comps := BackendDAEUtil.getCompsOfMatching(syst.matching);
+
+    // create SimCode equatinos
+    (simEqs, _, uniqueEqIndex, tempvars) := createEquations(includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, syst, inBDAE.shared, comps, uniqueEqIndex, tempvars);
+
+    // process also the zeroVariable equations
+    (uniqueEqIndex, zeroVarEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+
+    // add the zero variable equations
+    simEqs := listAppend(simEqs, zeroVarEquations);
+
+    // add equations
+    outEquations := listAppend(outEquations, {simEqs});
+  end for;
+end createEquationsfromBackendDAE;
+
 public function createEquationsfromList
   input list<BackendDAE.Equation> inEquations;
   input list<BackendDAE.Var> inVars;

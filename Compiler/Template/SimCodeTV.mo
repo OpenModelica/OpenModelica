@@ -830,6 +830,8 @@ package SimCodeFunction
     end OPTIMIZATION_CONTEXT;
     record FMI_CONTEXT
     end FMI_CONTEXT;
+    record DAE_MODE_CONTEXT
+    end DAE_MODE_CONTEXT;
   end Context;
 
   constant Context contextSimulationNonDiscrete;
@@ -844,6 +846,7 @@ package SimCodeFunction
   constant Context contextZeroCross;
   constant Context contextOptimization;
   constant Context contextFMI;
+  constant Context contextDAEmode;
   constant list<DAE.Exp> listExpLength1;
   constant list<SimCodeFunction.Variable> boxedRecordOutVars;
 end SimCodeFunction;
@@ -1321,6 +1324,30 @@ package BackendDAE
 
   type Constraints = list<DAE.Constraint> "Constraints on the solvability of the (casual) tearing set; needed for proper Dynamic Tearing";
 
+  uniontype EquationKind "equation kind"
+    record BINDING_EQUATION
+    end BINDING_EQUATION;
+    record DYNAMIC_EQUATION
+    end DYNAMIC_EQUATION;
+    record INITIAL_EQUATION
+    end INITIAL_EQUATION;
+    record CLOCKED_EQUATION
+      Integer clk;
+    end CLOCKED_EQUATION;
+    record DISCRETE_EQUATION
+    end DISCRETE_EQUATION;
+    record AUX_EQUATION
+    end AUX_EQUATION;
+    record UNKNOWN_EQUATION_KIND
+    end UNKNOWN_EQUATION_KIND;
+  end EquationKind;
+
+  uniontype EquationAttributes
+    record EQUATION_ATTRIBUTES
+      Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
+      EquationKind kind;
+    end EQUATION_ATTRIBUTES;
+  end EquationAttributes;
 end BackendDAE;
 
 package System

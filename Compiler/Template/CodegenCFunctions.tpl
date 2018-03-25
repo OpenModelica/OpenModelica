@@ -3184,6 +3184,7 @@ template algStmtWhen(DAE.Statement when, Context context, Text &varDecls, Text &
  "Generates a when algorithm statement."
 ::=
   match context
+    case DAE_MODE_CONTEXT(__)
     case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
@@ -5178,6 +5179,7 @@ template daeExpRelationSim(Exp exp, Context context, Text &preExp,
 match exp
 case rel as RELATION(__) then
   match context
+  case DAE_MODE_CONTEXT(__)
   case SIMULATION_CONTEXT(__) then
     match rel.optionExpisASUB
     case NONE() then

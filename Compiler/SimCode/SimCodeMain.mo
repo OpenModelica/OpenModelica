@@ -1068,7 +1068,7 @@ protected
   Integer maxDelayedExpIndex;
   Integer uniqueEqIndex = 1;
   Integer nStates;
-  Integer numberofEqns, numStateSets, numberofLinearSys, numberofNonLinearSys,
+  Integer numberofEqns, numberofLinearSys, numberofNonLinearSys,
   numberofMixedSys, numberOfJacobians, numberofFixedParameters;
   Boolean tmpB;
 
@@ -1086,9 +1086,9 @@ protected
   Option<SimCode.JacobianMatrix> daeModeSP;
   Option<SimCode.DaeModeData> daeModeData;
   SimCode.DaeModeConfig daeModeConf;
-  list<SimCode.SimEqSystem> daeEquations, removedEquations;
+
+  list<list<SimCode.SimEqSystem>> daeEquations;
   list<SimCodeVar.SimVar> residualVars, algebraicStateVars, auxiliaryVars;
-  list<SimCode.StateSet> stateSets;
 
   tuple<Option<BackendDAE.SymbolicJacobian>, BackendDAE.SparsePattern, BackendDAE.SparseColoring> daeModeJac;
   SimCode.JacobianMatrix symDAESparsPattern;
@@ -1155,19 +1155,8 @@ algorithm
 
     discreteModelVars := BackendDAEUtil.foldEqSystem(inBackendDAE, SimCodeUtil.extractDiscreteModelVars, {});
 
-    //prepare DAEmode stuff
-    eqnsLst := BackendEquation.equationSystemsEqnsLst(inBackendDAE.eqs);
-    varsLst := BackendVariable.equationSystemsVarsLst(inBackendDAE.eqs);
-    daeVars := BackendVariable.listVar(varsLst);
-    daeEqns := BackendEquation.listEquation(eqnsLst);
-    // create SimCode residual equation
-    (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromList(listReverse(eqnsLst), varsLst, uniqueEqIndex, tempVars, inBackendDAE.shared.info, true, true);
-
-    (uniqueEqIndex, removedEquations) := BackendEquation.traverseEquationArray(BackendDAEUtil.collapseRemovedEqs(inBackendDAE), SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-    daeEquations := listAppend(daeEquations, removedEquations);
-    // state set stuff
-    (_, stateSets, uniqueEqIndex, tempVars, numStateSets) := SimCodeUtil.createStateSets(inBackendDAE, {}, uniqueEqIndex, tempVars);
-    if debug then ExecStat.execStat("simCode: createStateSets"); end if;
+    // create DAEmode equations
+    (daeEquations, uniqueEqIndex, tempVars) := SimCodeUtil.createEquationsfromBackendDAE(inBackendDAE, uniqueEqIndex, tempVars, true, true);
 
     // create model info
     // create dummy system where all original variables are created
@@ -1177,14 +1166,12 @@ algorithm
     // disable start value calculation, it's only helpful in case of algebraic loops
     // and they are not present in DAEmode
     tmpB := Flags.set(Flags.NO_START_CALC, true);
-    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, numStateSets, fileDir, 0, tempVars);
+    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, fileDir, 0, tempVars);
     Flags.set(Flags.NO_START_CALC, tmpB);
 
     //create hash table
     crefToSimVarHT := SimCodeUtil.createCrefToSimVarHT(modelInfo);
 
-    // collect symbolic jacobians from state selection
-    (stateSets, modelInfo, SymbolicJacsStateSelect) :=  SimCodeUtil.addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
     // collect symbolic jacobians in initialization loops of the overall jacobians
     SymbolicJacsNLS := {};
     (initialEquations, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfo(initialEquations, modelInfo);
@@ -1193,7 +1180,7 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, {"A", "B", "C", "D"}, {});
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfoSymJacs(symJacs, modelInfo);
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
+
     // collect jacobian equation only for equantion info file
     jacobianEquations := SimCodeUtil.collectAllJacobianEquations(SymbolicJacs);
     if debug then ExecStat.execStat("simCode: create Jacobian linear code"); end if;
@@ -1205,8 +1192,10 @@ algorithm
     seedVars := SimCodeUtil.collectAllSeedVars(SymbolicJacs);
     modelInfo := SimCodeUtil.setSeedVars(seedVars, modelInfo);
 
-
     // create dae SimVars: residual and algebraic
+    varsLst := BackendVariable.equationSystemsVarsLst(inBackendDAE.eqs);
+    daeVars := BackendVariable.listVar(varsLst);
+
     // create residual variables, set index and push them SimCode HashTable
     ((_, resVars)) := BackendVariable.traverseBackendDAEVars(daeVars, BackendVariable.collectVarKindVarinVariables, (BackendVariable.isDAEmodeResVar, BackendVariable.emptyVars()));
     ((residualVars, _)) :=  BackendVariable.traverseBackendDAEVars(resVars, SimCodeUtil.traversingdlowvarToSimvar, ({}, BackendVariable.emptyVars()));
@@ -1237,7 +1226,7 @@ algorithm
     ({symDAESparsPattern}, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({daeModeJac}, crefToSimVarHT, uniqueEqIndex, {"daeMode"}, {});
     daeModeSP := SOME(symDAESparsPattern);
     daeModeConf := SimCode.ALL_EQUATIONS();
-    daeModeData := SOME(SimCode.DAEMODEDATA({daeEquations}, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
+    daeModeData := SOME(SimCode.DAEMODEDATA(daeEquations, daeModeSP, residualVars, algebraicStateVars, auxiliaryVars, daeModeConf));
 
     /* This is a *much* better estimate than the guessed number of equations */
     modelInfo := SimCodeUtil.addNumEqns(modelInfo, uniqueEqIndex-listLength(jacobianEquations));
@@ -1262,11 +1251,11 @@ algorithm
                               minValueEquations,
                               maxValueEquations,
                               parameterEquations,
-                              removedEquations,
                               {},
                               {},
                               {},
-                              stateSets,
+                              {},
+                              {},
                               {},
                               {},
                               zeroCrossings,

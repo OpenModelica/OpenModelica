@@ -3873,6 +3873,18 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     >>
 end functionXXX_systems;
 
+template createEquationsAndCalls(list<list<SimEqSystem>> systems, String name, Context context, String modelNamePrefixStr, Text eqCalls, Text eqFuncs)
+::=
+  let _ = (systems |> equations => (
+          equations |> eq => (
+            let &eqFuncs += equation_impl(-1, eq, context, modelNamePrefixStr)
+            let &eqCalls += equationNames_(eq, context, modelNamePrefixStr)
+            <<>>
+          )
+        )
+      )
+  <<>>
+end createEquationsAndCalls;
 
 template equationNamesArrayFormat(SimEqSystem eq, Context context, String name, Integer arrayIndex, Text &arrayEqs, Text &forwardEqs, String modelNamePrefixStr)
  "Generates an equation.
@@ -4017,30 +4029,21 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
   "Generates function in simulation file."
 ::=
   let &eqFuncs = buffer ""
-  let &nrfuncs = buffer ""
-  let &fncalls = buffer ""
+  let &eqCalls = buffer ""
 
-  let systems = if Flags.isSet(Flags.PARMODAUTO) then
-                    (functionXXX_systems_arrayFormat(resEquations, "DAERes", &fncalls, &nrfuncs, &eqFuncs, modelNamePrefix))
-                else
-                    (functionXXX_systems(resEquations, "DAERes", &fncalls, &eqFuncs, modelNamePrefix))
+  let systems = createEquationsAndCalls(resEquations, "DAERes", contextDAEmode, modelNamePrefix, &eqCalls, &eqFuncs)
   <<
   /*residual equations*/
   <%eqFuncs%>
-  <%(resEquations |> eqLst => (eqLst |> eq hasindex i0 =>
-                    equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix)
-                    ;separator="\n");separator="\n")%>
-  <%systems%>
+
   /* for residuals DAE variables */
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
     data->simulationInfo->callStatistics.functionEvalDAE++;
 
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAERes(<%nrfuncs%>, data, threadData, functionDAERes_systems);'
-    else fncalls %>
-
-    <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
+    <%eqCalls%>
 
     TRACE_POP
     return 0;
@@ -4075,6 +4078,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
 
   <<
   /* algebraic nominal values */
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"getAlgebraicDAEVarNominals")%>(DATA *data, threadData_t *threadData, double* algebraicNominal)
   {
     TRACE_PUSH
@@ -4085,6 +4089,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
   }
 
   /* forward algebraic variables */
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
   {
     TRACE_PUSH
@@ -4093,6 +4098,7 @@ template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
     return 0;
   }
   /* get algebraic variables */
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"getAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
   {
     TRACE_PUSH
@@ -4114,6 +4120,7 @@ template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, Integer nAuxV
   let maxColorStr = '<%maxColor%>'
   <<
   /* initialize the daeMode variables */
+  OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData)
   {
     TRACE_PUSH
@@ -5101,7 +5108,9 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   else
     equationIndex(eq)
   end match
+  let simEqAttr = match context case(DAE_MODE_CONTEXT()) then '/* eqAttr: <%simEqAttr(eq)%> */'
   <<
+  <%simEqAttr%>
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
   <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
@@ -5825,6 +5834,42 @@ template crefM(ComponentRef cr)
   case CREF_IDENT(ident = "time") then "time"
   else "P" + crefToMStr(cr)
 end crefM;
+
+template simEqAttr(SimEqSystem eq)
+::=
+  match eq
+  case SES_RESIDUAL(__)
+  case SES_SIMPLE_ASSIGN(__)
+  case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
+  case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_IFEQUATION(__)
+  case SES_ALGORITHM(__)
+  case SES_LINEAR(__)
+  case SES_NONLINEAR(__)
+  case SES_MIXED(__)
+  case SES_WHEN(__)
+  case SES_FOR_LOOP(__)
+    then eqAttributes(eqAttr)
+end simEqAttr;
+
+template eqAttributes(EquationAttributes eqAtt)
+::=
+  match eqAtt
+  case EQUATION_ATTRIBUTES(kind=kind) then '<%eqKind(kind)%>'
+  else ''
+end eqAttributes;
+
+template eqKind(EquationKind eqKind)
+::=
+  match eqKind
+  case DYNAMIC_EQUATION() then  'DYNAMIC_EQN_KIND'
+  case BINDING_EQUATION() then  'BINDING_EQN_KIND'
+  case INITIAL_EQUATION() then  'INITAL_EQN_KIND'
+  case CLOCKED_EQUATION() then  'CLOCKED_EQN_KIND'
+  case DISCRETE_EQUATION() then 'DISCRETE_EQN_KIND'
+  case AUX_EQUATION() then      'AUX_EQN_KIND'
+  case UNKNOWN_EQUATION_KIND() then 'UNKNOWN_EQN_KIND'
+end eqKind;
 
 /*****************************************************************************
  *         SECTION: GENERATE OPTIMIZATION IN SIMULATION FILE
