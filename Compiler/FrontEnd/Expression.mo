@@ -3078,9 +3078,13 @@ algorithm
     // x/0 = x * 1/0
     case DAE.BINARY(e1, op as DAE.DIV(tp), e2)
       guard isZero(e2)
-      equation
-        e = DAE.BINARY(makeConstOne(tp), op, e2);
-        acc = expandFactorsWork(e1,acc,doInverseFactors);
+      algorithm
+        if doInverseFactors then
+          e := e2;
+        else
+          e := DAE.BINARY(makeConstOne(tp), op, e2);
+        end if;
+        acc := expandFactorsWork(e1,acc,doInverseFactors);
       then e::acc;
 
     // -(x) = -1*x
