@@ -1136,8 +1136,7 @@ algorithm
       equation
         // use type of cref, since var type is different
         // and has no hint on array or record type
-        tp = ComponentReference.crefTypeFull(cr);
-        oBody = listAppend(oBody, {DAE.STMT_ASSIGN(exp1 = Expression.crefExp(cr), exp = exp, source=DAE.emptyElementSource, type_=tp)});
+        oRepl = addOptBindingReplacements(cr,binding,oRepl);
         oOutputs = cr :: oOutputs;
        then ();
 
