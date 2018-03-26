@@ -74,6 +74,7 @@ import PrefixUtil;
 import System;
 import Types;
 import Util;
+import Global;
 
 // Import some types from Connect.
 import Connect.Face;
@@ -1408,6 +1409,7 @@ protected
   Boolean has_stream, has_expandable, has_cardinality;
   ConnectionGraph.DaeEdges broken, connected;
 algorithm
+  setGlobalRoot(Global.isInStream, NONE());
   if not topScope then
     return;
   end if;
@@ -2321,7 +2323,7 @@ algorithm
   end if;
 
   positiveMaxCall :=
-    DAE.CALL(Absyn.IDENT("max"), {flowExp, flow_threshold},
+    DAE.CALL(Absyn.IDENT("$OMC$PositiveMax"), {flowExp, flow_threshold},
       DAE.CALL_ATTR(
         ty,
         false,
@@ -2330,6 +2332,8 @@ algorithm
         false,
         DAE.NO_INLINE(),
         DAE.NO_TAIL()));
+
+  setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
 
 protected function evaluateConnectionOperators

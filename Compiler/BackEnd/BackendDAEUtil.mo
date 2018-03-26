@@ -7495,6 +7495,7 @@ public function allPreOptimizationModules
     (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables"),
     (BackendDAEOptimize.residualForm, "residualForm"),
     (BackendDAEOptimize.simplifyAllExpressions, "simplifyAllExpressions"),
+    (BackendDAEOptimize.simplifyInStream, "simplifyInStream"),
     (BackendDump.dumpDAE, "dumpDAE"),
     (XMLDump.dumpDAEXML, "dumpDAEXML"),
     // This should indeed be at the end
@@ -7620,6 +7621,10 @@ protected
 algorithm
   preOptModules := getPreOptModulesString();
   preOptModules := Util.getOptionOrDefault(inPreOptModules, preOptModules);
+
+  if isSome(getGlobalRoot(Global.isInStream)) then
+     enabledModules := "simplifyInStream"::enabledModules;
+  end if;
 
   if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules

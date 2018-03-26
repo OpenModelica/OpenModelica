@@ -64,6 +64,7 @@ constant Integer currentInstVar = 22;
 constant Integer operatorOverloadingCache = 23;
 constant Integer optionSimCode = 24;
 constant Integer interactiveCache = 25;
+constant Integer isInStream = 26;
 
 // indexes in System.tick
 // ----------------------

@@ -111,6 +111,122 @@ algorithm
 end simplifyAllExpressions;
 
 // =============================================================================
+// simplifyInStream
+//
+// OM introduces $OMC$PosetiveMax which can simplified using min or max attribute
+// see Modelica spec for inStream
+// author: Vitalij Ruge
+// see. #3885, 4441
+// =============================================================================
+
+public function simplifyInStream
+  input output BackendDAE.BackendDAE dae;
+protected
+  BackendDAE.Shared shared = dae.shared;
+  BackendDAE.EqSystems eqs = dae.eqs;
+  list<BackendDAE.Variables> vars = list(eq.orderedVars for eq in eqs);
+algorithm
+  // from the description inputs are part of globalKnownVars and localKnownVars :(
+  vars := shared.globalKnownVars :: vars; // need inputs with min = 0 or max = 0
+  vars := shared.localKnownVars :: vars;
+  _ := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, simplifyInStreamWork, vars);
+end simplifyInStream;
+
+
+protected function simplifyInStreamWork
+  input DAE.Exp inExp;
+  input list<BackendDAE.Variables> inVars;
+  output DAE.Exp outExp;
+  output list<BackendDAE.Variables> outVars = inVars;
+algorithm
+  outExp := Expression.traverseExpBottomUp(inExp, simplifyInStreamWork2, outVars);
+end simplifyInStreamWork;
+
+protected function simplifyInStreamWork2
+  input DAE.Exp inExp;
+  input list<BackendDAE.Variables> inVars;
+  output DAE.Exp outExp;
+  output list<BackendDAE.Variables> outVars = inVars;
+algorithm
+  outExp := match(inExp)
+              local DAE.Type tp;
+              DAE.ComponentRef cr;
+              DAE.Exp e, expr;
+              Option<DAE.Exp> eMin;
+              Option<DAE.Exp> eMax;
+              Boolean isZero;
+
+
+            case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.CREF(componentRef=cr), expr})
+              algorithm
+               (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
+               isZero := simplifyInStreamWorkSimplify(eMin, false);
+               tp := ComponentReference.crefTypeFull(cr);
+               then
+                  if isZero then e else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+
+            case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef=cr)), expr})
+              algorithm
+               (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
+               isZero := simplifyInStreamWorkSimplify(eMax, true);
+               then
+                  if isZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+
+            case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr})
+               guard Expression.isZero(e)
+               then e;
+
+            case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr})
+               //algorithm
+                   //print("\nsimplifyInStreamWork: ");
+                   //print(ExpressionDump.printExpStr(inExp));
+                   //print(" <-> ");
+                   //print(ExpressionDump.printExpStr(e));
+
+               then Expression.makePureBuiltinCall("max", {e, expr}, Expression.typeof(e));
+
+            case _
+               then inExp;
+            end match;
+
+end simplifyInStreamWork2;
+
+protected function simplifyInStreamWorkExpresion
+  input DAE.ComponentRef cr;
+  input list<BackendDAE.Variables> inVars;
+  output Option<DAE.Exp> outMin = NONE();
+  output Option<DAE.Exp> outMax = NONE();
+protected
+  BackendDAE.Var v;
+algorithm
+   for vars in inVars loop
+      try
+         (v, _) := BackendVariable.getVarSingle(cr, vars);
+         (outMin, outMax) := BackendVariable.getMinMaxAttribute(v);
+         break;
+      else
+        // search
+      end try;
+   end for;
+
+end simplifyInStreamWorkExpresion;
+
+protected function simplifyInStreamWorkSimplify
+  input Option<DAE.Exp> bound;
+  input Boolean neg;
+  output Boolean isZero;
+algorithm
+   isZero := match bound
+              local Real r;
+            case SOME(DAE.RCONST(r))
+              then if neg then r<= 0.0 else r >= 0.0;
+            case _
+              then false;
+            end match;
+end simplifyInStreamWorkSimplify;
+
+
+// =============================================================================
 // simplify time independent function calls
 //
 // public functions:
