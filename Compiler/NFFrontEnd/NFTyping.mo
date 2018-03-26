@@ -439,13 +439,21 @@ algorithm
     // give different results depending on the declaration order of components.
     case Dimension.UNTYPED(isProcessing = true)
       algorithm
-        // TODO: Tell the user which variables are involved in the loop (can be
-        //       found with DFS on the dimension expression. Maybe have a limit
-        //       on the output in case there's a lot of dimensions involved.
-        Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
-          {String(index), InstNode.name(component), Expression.toString(dimension.dimension)}, info);
+        // Only give an error if we're not in a function.
+        if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+          // TODO: Tell the user which variables are involved in the loop (can be
+          //       found with DFS on the dimension expression. Maybe have a limit
+          //       on the output in case there's a lot of dimensions involved.
+          Error.addSourceMessage(Error.CYCLIC_DIMENSIONS,
+            {String(index), InstNode.name(component), Expression.toString(dimension.dimension)}, info);
+          fail();
+        end if;
+
+        // If we are in a functions we allow e.g. size expression of unknown dimensions.
+        dim := Dimension.UNKNOWN();
+        arrayUpdate(dimensions, index, dim);
       then
-        fail();
+        dim;
 
     // If the dimension is not typed, type it.
     case Dimension.UNTYPED()
@@ -1163,12 +1171,14 @@ function typeExpDim
   input Integer dimIndex;
   input ExpOrigin.Type origin;
   input SourceInfo info;
-        output Dimension dim;
-        output TypingError error;
+  output Dimension dim;
+  output Option<Expression> typedExp = NONE();
+  output TypingError error;
 algorithm
   (dim, error) := match exp
     local
       Type ty;
+      Expression e;
 
     // An untyped array, use typeArrayDim to get the dimension.
     case Expression.ARRAY(ty = Type.UNKNOWN())
@@ -1186,7 +1196,8 @@ algorithm
     // from the type.
     else
       algorithm
-        (_, ty, _) := typeExp(exp, origin, info);
+        (e, ty, _) := typeExp(exp, origin, info);
+        typedExp := SOME(e);
       then
         nthDimensionBoundsChecked(ty, dimIndex);
 
@@ -1726,6 +1737,7 @@ protected
   Integer iindex, dim_size;
   Dimension dim;
   TypingError ty_err;
+  Option<Expression> oexp;
 algorithm
   (sizeExp, sizeType, variability) := match sizeExp
     case Expression.SIZE(exp = exp, dimIndex = SOME(index))
@@ -1751,7 +1763,7 @@ algorithm
           Expression.INTEGER(iindex) := index;
 
           // Get the iindex'd dimension of the expression.
-          (dim, ty_err) := typeExpDim(exp, iindex, origin, info);
+          (dim, oexp, ty_err) := typeExpDim(exp, iindex, origin, info);
           checkSizeTypingError(ty_err, exp, iindex, info);
 
           if Dimension.isKnown(dim) and evaluate then
@@ -1760,7 +1772,12 @@ algorithm
           else
             // If the dimension size is unknown (e.g. in a function) or
             // evaluation is disabled, return a size expression instead.
-            exp := typeExp(sizeExp.exp, origin, info);
+            if isSome(oexp) then
+              SOME(exp) := oexp;
+            else
+              exp := typeExp(exp, origin, info);
+            end if;
+
             exp := Expression.SIZE(exp, SOME(index));
           end if;
 
