@@ -4,20 +4,22 @@
 // cflags: -d=newInst
 //
 
+function f
+  input Real x[:, size(x, 1)];
+end f;
+
 model DimSize3
-  Real x[size(x, 2), 3];
+algorithm
+  f({{1, 2}, {3, 4}});
 end DimSize3;
 
 // Result:
+// function f
+//   input Real[:, size(x, 1)] x;
+// end f;
+//
 // class DimSize3
-//   Real x[1,1];
-//   Real x[1,2];
-//   Real x[1,3];
-//   Real x[2,1];
-//   Real x[2,2];
-//   Real x[2,3];
-//   Real x[3,1];
-//   Real x[3,2];
-//   Real x[3,3];
+// algorithm
+//   f({{1.0, 2.0}, {3.0, 4.0}});
 // end DimSize3;
 // endResult
