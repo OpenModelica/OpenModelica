@@ -18,6 +18,7 @@ BindingArray3.mo \
 BindingArray4.mo \
 BindingArray5.mo \
 BindingArray6.mo \
+BindingArray7.mo \
 bindings1.mo \
 bindings4.mo \
 bindings7.mo \
