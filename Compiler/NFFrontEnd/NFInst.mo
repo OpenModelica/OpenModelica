@@ -749,16 +749,20 @@ algorithm
 
     case Class.DERIVED_CLASS()
       algorithm
+        node := InstNode.replaceClass(cls, node);
         // Merge outer modifiers and attributes.
         mod := Modifier.fromElement(InstNode.definition(node), InstNode.level(parent), InstNode.parent(node));
         mod := Modifier.merge(outerMod, mod);
         attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
 
-        // Instantiate the base class and create a new instance node.
-        (base_node, attributes) := instClass(cls.baseClass, mod, attributes, parent);
+        // Mark the base class node as a base class.
+        base_node := InstNode.setNodeType(
+          InstNodeType.BASE_CLASS(node, InstNode.definition(cls.baseClass)), cls.baseClass);
+
+        // Instantiate the base class and update the nodes.
+        (base_node, attributes) := instClass(base_node, mod, attributes);
         cls.baseClass := base_node;
         cls.attributes := attributes;
-        node := InstNode.replaceClass(cls, node);
 
         // Update the dimensions and the parent's type with the new class instance.
         cls.dims := list(Dimension.setScope(dim, node) for dim in cls.dims);
@@ -1722,7 +1726,7 @@ algorithm
 
     case Class.DERIVED_CLASS()
       algorithm
-        sections := instExpressions(cls.baseClass, scope, sections);
+        sections := instExpressions(cls.baseClass, cls.baseClass, sections);
 
         if not listEmpty(cls.dims) then
           cls.dims := list(instDimension(d, InstNode.info(node))
