@@ -242,6 +242,8 @@ ExtendSections.mo \
 ExtendSelf1.mo \
 ExtendSelf2.mo \
 ExtendSelf3.mo \
+ExtendsShort1.mo \
+ExtendsShort2.mo \
 ExtendsVisibility1.mo \
 ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
