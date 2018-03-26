@@ -36,6 +36,13 @@ import Operator = NFOperator;
 import Type = NFType;
 import NFCall.Call;
 
+protected
+
+import Dimension = NFDimension;
+import ExpressionSimplify;
+
+public
+
 function simplifyExp
   input output Expression exp;
 algorithm
@@ -274,6 +281,9 @@ algorithm
     case Expression.IF(condition=Expression.BOOLEAN(value=b1))
       then if b1 then exp.trueBranch else exp.falseBranch;
 
+    case Expression.RANGE()
+      then simplifyRange(exp.start, exp.step, exp.stop, exp.ty);
+
     case Expression.CAST()
       then simplifyCast(exp.ty, exp.exp);
 
@@ -300,11 +310,54 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " failed on " + Expression.toString(exp), sourceInfo());
+        Error.assertion(false, getInstanceName() + " failed on " + Expression.toString(exp) + " to type: " + Type.toString(ty), sourceInfo());
       then
         fail();
   end match;
 end simplifyCast;
+
+function simplifyRange
+  input Expression start;
+  input Option<Expression> optStep;
+  input Expression stop;
+  input Type ty;
+  output Expression exp;
+protected
+  Expression step;
+  Integer i1, i2, i3;
+  Real r1, r2, r3;
+  Boolean b1, b2;
+  list<Expression> exps;
+algorithm
+  step := match (optStep, ty)
+    case (SOME(step),_) then step;
+    case (_,Type.ARRAY(elementType=Type.INTEGER())) then Expression.INTEGER(1);
+    case (_,Type.ARRAY(elementType=Type.REAL())) then Expression.REAL(1.0);
+    case (_,Type.ARRAY(elementType=Type.BOOLEAN())) then Expression.INTEGER(1); // dummy
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " failed to type: " + Type.toString(ty), sourceInfo());
+      then fail();
+  end match;
+  exp := match (start, step, stop)
+    case (Expression.INTEGER(i1),Expression.INTEGER(i2),Expression.INTEGER(i3))
+      algorithm
+        exps := list(Expression.INTEGER(i) for i in ExpressionSimplify.simplifyRange(i1, i2, i3));
+      then Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(exps))}), exps);
+    case (Expression.REAL(r1),Expression.REAL(r2),Expression.REAL(r3))
+      algorithm
+        exps := list(Expression.REAL(r) for r in ExpressionSimplify.simplifyRangeReal(r1, r2, r3));
+      then Expression.ARRAY(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(exps))}), exps);
+    case (Expression.BOOLEAN(b1),_,Expression.BOOLEAN(b2))
+      algorithm
+        exps := list(Expression.BOOLEAN(b) for b in ExpressionSimplify.simplifyRangeBool(b1, b2));
+      then Expression.ARRAY(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(exps))}), exps);
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " failed to type: " + Type.toString(ty), sourceInfo());
+      then fail();
+  end match;
+end simplifyRange;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;
