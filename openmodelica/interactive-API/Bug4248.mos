@@ -31,6 +31,6 @@ val(imc.powerBalance.powerStator, 0.001);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 24972.6119156521
-// 24972.6119156521
+// 25149.45842709194
+// 25149.45842709194
 // endResult
