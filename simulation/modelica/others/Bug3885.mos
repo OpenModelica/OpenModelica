@@ -1,0 +1,48 @@
+// name: Bug3885.mos
+// keywords: delay
+// status: correct
+// 
+// refs ticket:3885, ticket:4441
+// 
+
+loadModel(Modelica,{"3.2"});
+getErrorString();
+
+loadString("
+model Base
+ parameter Boolean isZero = false annotation(Evaluate=true);
+extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs=false, evaporator.port_b.m_flow(min= if isZero  then 0 else -1));
+end Base;
+
+model compareDrumBoiler
+  Base A(isZero=true);
+  Base B(isZero=false);
+end compareDrumBoiler;
+
+"); getErrorString();
+
+simulate(compareDrumBoiler); getErrorString();
+// compare results which are no equal
+val(B.temperature.T,{0,1});
+val(A.temperature.T,{0,1});
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "compareDrumBoiler_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'compareDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// assert            | warning | The following assertion has been violated at time 0.002000
+// |                 | |       | A.qm_S >= -9.999999999999999e+59 and A.qm_S <= -0.0
+// assert            | warning | Variable violating min/max constraint: -9.999999999999999e+59 <= A.qm_S <= -0.0, has value: 2.22222e-06
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// {436.3297199023242,372.7702574038623}
+// {500.9498115061938,500.9498202400582}
+// endResult
