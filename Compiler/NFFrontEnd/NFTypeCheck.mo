@@ -2121,7 +2121,7 @@ algorithm
         comp_ty := componentType;
         binding_level := BindingOrigin.level(binding.origin);
 
-        if binding_level >= 0 then
+        if binding_level > 0 then
           parent := component;
 
           for i in 1:InstNode.level(component) - binding_level loop
