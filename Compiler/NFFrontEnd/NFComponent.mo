@@ -605,7 +605,7 @@ uniontype Component
   function isConnector
     input Component component;
     output Boolean isConnector =
-      Class.isConnectorClass(InstNode.getClass(classInstance(component)));
+      Class.isConnectorClass(InstNode.getDerivedClass(classInstance(component)));
   end isConnector;
 
   function isIdentical

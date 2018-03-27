@@ -537,6 +537,20 @@ uniontype InstNode
     end match;
   end getClass;
 
+  function getDerivedClass
+    input InstNode node;
+    output Class cls;
+  algorithm
+    cls := match node
+      local
+        InstNode parent;
+
+      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = parent)) then getDerivedClass(parent);
+      case CLASS_NODE() then Pointer.access(node.cls);
+      case COMPONENT_NODE() then getDerivedClass(Component.classInstance(Pointer.access(node.component)));
+    end match;
+  end getDerivedClass;
+
   function updateClass
     input Class cls;
     input output InstNode node;
