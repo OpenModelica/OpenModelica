@@ -128,6 +128,7 @@ ConnectAlgorithm.mo \
 ConnectArrays1.mo \
 ConnectArrays2.mo \
 ConnectArrays3.mo \
+ConnectComplexFlow1.mo \
 ConnectDiffOrder1.mo \
 ConnectDiffOrder2.mo \
 ConnectInitial.mo \
