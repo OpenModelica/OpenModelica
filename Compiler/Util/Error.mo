@@ -963,6 +963,8 @@ public constant Message NON_STATE_STATESELECT_ALWAYS = MESSAGE(591, SYMBOLIC(), 
   Util.gettext("Variable %s has attribute stateSelect=StateSelect.always, but was selected as a continuous variable."));
 public constant Message STATE_STATESELECT_NEVER = MESSAGE(592, SYMBOLIC(), WARNING(),
   Util.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
+public constant Message FUNCTION_HIGHER_VARIABILITY_BINDING = MESSAGE(593, TRANSLATION(), WARNING(),
+  Util.gettext("Component ‘%s’ of variability %s has binding %s of higher variability %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

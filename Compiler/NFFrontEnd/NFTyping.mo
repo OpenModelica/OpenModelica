@@ -621,11 +621,16 @@ algorithm
           comp_var := Component.variability(c);
 
           if Binding.variability(binding) > comp_var then
-            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-              {name, Prefixes.variabilityString(Component.variability(c)),
-               "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
-              Binding.getInfo(binding));
-            fail();
+            if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+              Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {name, Prefixes.variabilityString(Component.variability(c)),
+                 "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))}, Binding.getInfo(binding));
+            else
+              Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
+                {name, Prefixes.variabilityString(Component.variability(c)),
+                 "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+                Binding.getInfo(binding));
+              fail();
+            end if;
           end if;
 
           // Evaluate the binding if the component is a constant.
