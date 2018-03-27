@@ -7623,7 +7623,7 @@ algorithm
   preOptModules := Util.getOptionOrDefault(inPreOptModules, preOptModules);
 
   if isSome(getGlobalRoot(Global.isInStream)) then
-     enabledModules := "simplifyInStream"::enabledModules;
+    enabledModules := "simplifyInStream"::enabledModules;
   end if;
 
   if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
