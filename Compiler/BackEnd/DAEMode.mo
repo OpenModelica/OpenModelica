@@ -94,19 +94,19 @@ public function getEqSystemDAEmode "Run the equation system pipeline."
 algorithm
   numCheckpoints:=ErrorExt.getNumCheckpoints();
   try
-	  StackOverflow.clearStacktraceMessages();
-	  preOptModules := BackendDAEUtil.getPreOptModules(strPreOptModules);
-	  postOptModules := BackendDAEUtil.getPostOptModules(match strPostOptModules case (NONE()) then SOME(getPostOptModulesDAEString()); else strPostOptModules; end match);
-	  matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(strmatchingAlgorithm);
-	  Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
-	  daeHandler := BackendDAEUtil.getIndexReductionMethod(strdaeHandler);
+    StackOverflow.clearStacktraceMessages();
+    preOptModules := BackendDAEUtil.getPreOptModules(strPreOptModules);
+    postOptModules := BackendDAEUtil.getPostOptModules(match strPostOptModules case (NONE()) then SOME(getPostOptModulesDAEString()); else strPostOptModules; end match);
+    matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(strmatchingAlgorithm);
+    Flags.setConfigString(Flags.INDEX_REDUCTION_METHOD, "dummyDerivatives");
+    daeHandler := BackendDAEUtil.getIndexReductionMethod(strdaeHandler);
 
-	  if Flags.isSet(Flags.DUMP_DAE_LOW) then
-	    BackendDump.dumpBackendDAE(inDAE, "dumpdaelow");
-	    if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
-	      BackendDump.graphvizIncidenceMatrix(inDAE, "dumpdaelow");
-	    end if;
-	  end if;
+    if Flags.isSet(Flags.DUMP_DAE_LOW) then
+      BackendDump.dumpBackendDAE(inDAE, "dumpdaelow");
+      if Flags.isSet(Flags.ADDITIONAL_GRAPHVIZ_DUMP) then
+        BackendDump.graphvizIncidenceMatrix(inDAE, "dumpdaelow");
+      end if;
+    end if;
 
     // pre-optimization phase
     dae := BackendDAEUtil.preOptimizeDAE(inDAE, preOptModules);

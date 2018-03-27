@@ -918,8 +918,8 @@ uniontype Function
   protected
   algorithm
     ErrorExt.setCheckpoint("NFFunction:matchFunctions");
-	  matchedFunctions := matchFunctions(funcs, args, named_args, info);
-	  ErrorExt.rollBack("NFFunction:matchFunctions");
+    matchedFunctions := matchFunctions(funcs, args, named_args, info);
+    ErrorExt.rollBack("NFFunction:matchFunctions");
   end matchFunctionsSilent;
 
   function isTyped

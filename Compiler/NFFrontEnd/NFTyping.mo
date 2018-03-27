@@ -622,12 +622,13 @@ algorithm
 
           if Binding.variability(binding) > comp_var then
             if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
-              Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {name, Prefixes.variabilityString(Component.variability(c)),
-                 "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))}, Binding.getInfo(binding));
+              Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {
+                name, Prefixes.variabilityString(Component.variability(c)),
+                Binding.toString(c.binding), Prefixes.variabilityString(Binding.variability(binding))}, Binding.getInfo(binding));
             else
-              Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
-                {name, Prefixes.variabilityString(Component.variability(c)),
-                 "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+              Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
+                name, Prefixes.variabilityString(Component.variability(c)),
+                "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
                 Binding.getInfo(binding));
               fail();
             end if;
