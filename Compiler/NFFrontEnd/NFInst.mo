@@ -1859,7 +1859,7 @@ algorithm
 
     case Absyn.Exp.INTEGER() then Expression.INTEGER(absynExp.value);
     case Absyn.Exp.REAL() then Expression.REAL(stringReal(absynExp.value));
-    case Absyn.Exp.STRING() then Expression.STRING(absynExp.value);
+    case Absyn.Exp.STRING() then Expression.STRING(System.unescapedString(absynExp.value));
     case Absyn.Exp.BOOL() then Expression.BOOLEAN(absynExp.value);
 
     case Absyn.Exp.CREF()
@@ -2581,7 +2581,7 @@ algorithm
       try
         Absyn.STRING(str) := SCode.getElementNamedAnnotation(
           InstNode.definition(InstNode.classScope(n)), "missingInnerMessage");
-        Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {str}, InstNode.info(n));
+        Error.addSourceMessage(Error.MISSING_INNER_MESSAGE, {System.unescapedString(str)}, InstNode.info(n));
       else
       end try;
 
