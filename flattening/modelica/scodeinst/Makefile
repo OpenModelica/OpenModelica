@@ -39,6 +39,7 @@ BuiltinAttribute14.mo \
 BuiltinAttribute15.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
+BuiltinTimeSubscripted.mo \
 ceval1.mo \
 ceval2.mo \
 ceval3.mo \

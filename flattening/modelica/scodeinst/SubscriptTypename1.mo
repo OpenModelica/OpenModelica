@@ -14,7 +14,7 @@ end SubscriptTypename1;
 
 // Result:
 // Error processing file: SubscriptTypename1.mo
-// [flattening/modelica/scodeinst/SubscriptTypename1.mo:10:3-12:10:writable] Error: Variable Boolean[1] not found in scope SubscriptTypename1.
+// [flattening/modelica/scodeinst/SubscriptTypename1.mo:10:3-12:10:writable] Error: Wrong number of subscripts in Boolean[1] (1 subscripts for 0 dimensions).
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
