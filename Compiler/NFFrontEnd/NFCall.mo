@@ -2325,7 +2325,7 @@ protected
   algorithm
     exp := match call
       case TYPED_CALL()
-        then Expression.RECORD(Function.name(call.fn), ty, call.arguments);
+        then Expression.RECORD(Absyn.stripLast(Function.name(call.fn)), ty, call.arguments);
     end match;
   end toRecordExpression;
 end Call;
