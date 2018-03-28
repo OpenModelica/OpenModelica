@@ -368,6 +368,16 @@ public
     end match;
   end isTuple;
 
+  function firstTupleType
+    input Type ty;
+    output Type outTy;
+  algorithm
+    outTy := match ty
+      case TUPLE() then listHead(ty.types);
+      else ty;
+    end match;
+  end firstTupleType;
+
   function arrayElementType
     "Returns the common type of the elements in an array, or just the type
      itself if it's not an array type."

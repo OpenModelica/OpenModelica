@@ -133,6 +133,13 @@ package ExpOrigin
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
   constant Type VALID_TYPENAME_SCOPE = intBitOr(ITERATION_RANGE, DIMENSION);
   constant Type DISCRETE_SCOPE = intBitOr(WHEN, intBitOr(INITIAL, FUNCTION));
+
+  function isSingleExpression
+    "Returns true if the given origin indicates the expression is alone on
+     either side of an equality/assignment."
+    input Type origin;
+    output Boolean isSingle = origin < ITERATION_RANGE - 1;
+  end isSingleExpression;
 end ExpOrigin;
 
 public
@@ -1125,7 +1132,17 @@ algorithm
         TypeCheck.checkIfExpression(e1, ty1, var1, e2, ty2, var2, e3, ty3, var3, info);
 
     case Expression.CALL()
-      then Call.typeCall(exp, origin, info);
+      algorithm
+        (e1, ty, var1) := Call.typeCall(exp, origin, info);
+
+        // If the call has multiple outputs and isn't alone on either side of an
+        // equation/algorithm, select the first output.
+        if Type.isTuple(ty) and not ExpOrigin.isSingleExpression(origin) then
+          ty := Type.firstTupleType(ty);
+          e1 := Expression.TUPLE_ELEMENT(e1, 1, ty);
+        end if;
+      then
+        (e1, ty, var1);
 
     case Expression.CAST()
       algorithm
@@ -1410,7 +1427,7 @@ algorithm
 
   for s in subscripts loop
     dim :: dims := dims;
-    (sub, var) := typeSubscript(s, dim, cref, i, origin, info);
+    (sub, var) := typeSubscript(s, dim, cref, i, next_origin, info);
     typedSubs := sub :: typedSubs;
     variability := Prefixes.variabilityMax(variability, var);
     i := i + 1;
