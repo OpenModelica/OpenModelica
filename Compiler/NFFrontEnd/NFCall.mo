@@ -1414,7 +1414,7 @@ protected
       Type.COMPLEX(cls=recopnode) := argty;
 
       // This will fail if it can't find the function.
-      fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT("'String'",{}), recopnode);
+      fn_ref := Function.lookupFunctionSimple("'String'", recopnode);
       fn_ref := Function.instFuncRef(fn_ref, InstNode.info(recopnode));
       candidates := Call.typeCachedFunctions(fn_ref);
       for fn in candidates loop

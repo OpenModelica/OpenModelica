@@ -139,6 +139,19 @@ uniontype LookupState
     callable := SCode.isRecord(def) or SCode.isOperator(def);
   end isCallable;
 
+  function isFunction
+    input LookupState state;
+    input InstNode node;
+    output Boolean isFunction;
+  algorithm
+    isFunction := match state
+      case FUNC() then true;
+      case COMP_FUNC() then true;
+      case CLASS() then isCallable(node);
+      else false;
+    end match;
+  end isFunction;
+
   function isClass
     input LookupState state;
     output Boolean isClass;

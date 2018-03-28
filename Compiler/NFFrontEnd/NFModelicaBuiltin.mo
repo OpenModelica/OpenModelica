@@ -35,7 +35,11 @@ type StateSelect = enumeration(
   default "Use as state if appropriate, but only if variable appears differentiated.",
   prefer "Prefer it as state over those having the default value (also variables can be selected, which do not appear differentiated).",
   always "Do use it as a state."
-);
+) annotation(__OpenModelica_builtin = true);
+
+partial class ExternalObject
+  annotation(__OpenModelica_builtin=true);
+end ExternalObject;
 
 function der "Derivative of the input expression"
   input Real x(unit="'p");

@@ -197,7 +197,7 @@ algorithm
   if Type.isComplex(inType1) then
     Type.COMPLEX(cls=node1) := inType1;
     try
-      fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT(opstr,{}), node1);
+      fn_ref := Function.lookupFunctionSimple(opstr, node1);
       oper_defined := true;
     else
       oper_defined := false;
@@ -219,7 +219,7 @@ algorithm
     // operators from this one.
     if not (Type.isComplex(inType1) and InstNode.isSame(node1, node2)) then
         try
-          fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT(opstr,{}), node2);
+          fn_ref := Function.lookupFunctionSimple(opstr, node2);
           oper_defined := true;
         else
           oper_defined := false;
@@ -861,7 +861,7 @@ algorithm
   opstr := Operator.symbol(inOp,"'");
   Type.COMPLEX(cls=node1) := inType1;
 
-  fn_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT(opstr,{}), node1);
+  fn_ref := Function.lookupFunctionSimple(opstr, node1);
   fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
   candidates := Call.typeCachedFunctions(fn_ref);
   for fn in candidates loop

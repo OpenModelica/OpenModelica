@@ -86,7 +86,7 @@ algorithm
 
   // See if we have overloaded costructors.
   try
-    con_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT("'constructor'",{}), node, info);
+    con_ref := Function.lookupFunctionSimple("'constructor'", node);
     ctor_defined := true;
   else
     ctor_defined := false;
@@ -102,7 +102,7 @@ algorithm
 
   // See if we have '0' costructor.
   try
-    con_ref := Function.lookupFunctionSilent(Absyn.CREF_IDENT("'0'",{}), node, info);
+    con_ref := Function.lookupFunctionSimple("'0'", node);
     ctor_defined := true;
   else
     ctor_defined := false;

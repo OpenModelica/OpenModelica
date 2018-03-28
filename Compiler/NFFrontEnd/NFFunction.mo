@@ -226,21 +226,21 @@ uniontype Function
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
   end new;
 
-  function lookupFunctionSilent
-    input Absyn.ComponentRef ab_fn_cref;
+  function lookupFunctionSimple
+    input String functionName;
     input InstNode scope;
-    input SourceInfo info = InstNode.info(scope);
-    output ComponentRef fn_ref;
+    output ComponentRef functionRef;
+  protected
+    InstNode found_scope;
+    LookupState state;
+    Absyn.Path functionPath;
+    ComponentRef prefix;
   algorithm
-    ErrorExt.setCheckpoint("NFFunction:lookupFunctionSilent");
-    try
-      fn_ref := lookupFunction(ab_fn_cref, scope, info);
-      ErrorExt.delCheckpoint("NFFunction:lookupFunctionSilent");
-    else
-      ErrorExt.rollBack("NFFunction:lookupFunctionSilent");
-      fail();
-    end try;
-  end lookupFunctionSilent;
+    (functionRef, found_scope) :=
+      Lookup.lookupFunctionNameSilent(Absyn.CREF_IDENT(functionName, {}), scope);
+    prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
+    functionRef := ComponentRef.append(functionRef, prefix);
+  end lookupFunctionSimple;
 
   function lookupFunction
     input Absyn.ComponentRef functionName;

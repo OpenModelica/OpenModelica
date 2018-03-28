@@ -202,6 +202,9 @@ public
       DuplicateTree.Tree duplicates;
     end FLAT_TREE;
 
+    record EMPTY_TREE
+    end EMPTY_TREE;
+
     function fromSCode
       "Creates a new class tree from a list of SCode elements."
       input list<SCode.Element> elements;
@@ -794,6 +797,22 @@ public
         elements := {lookupElementPtr(name, tree)};
       end try;
     end lookupElementsPtr;
+
+    function mapClasses
+      input ClassTree tree;
+      input FuncT func;
+
+      partial function FuncT
+        input output InstNode extendsNode;
+      end FuncT;
+    protected
+      array<InstNode> clss = getClasses(tree);
+    algorithm
+      for i in 1:arrayLength(clss) loop
+        arrayUpdateNoBoundsChecking(clss, i,
+          func(arrayGetNoBoundsChecking(clss, i)));
+      end for;
+    end mapClasses;
 
     function foldClasses<ArgT>
       input ClassTree tree;

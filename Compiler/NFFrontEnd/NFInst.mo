@@ -176,6 +176,7 @@ function makeTopNode
 protected
   SCode.Element cls_elem;
   Class cls;
+  ClassTree elems;
 algorithm
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
@@ -192,8 +193,26 @@ algorithm
   // The class needs to be expanded to allow lookup in it. The top scope will
   // only contain classes, so we can do this instead of the whole expandClass.
   cls := Class.initExpandedClass(cls);
+
+  // Set the correct InstNodeType for classes with builtin annotation. This
+  // could also be done when creating InstNodes, but only top-level classes
+  // should have this annotation anyway.
+  elems := Class.classTree(cls);
+  ClassTree.mapClasses(elems, markBuiltinTypeNodes);
+  cls := Class.setClassTree(elems, cls);
+
   topNode := InstNode.updateClass(cls, topNode);
 end makeTopNode;
+
+function markBuiltinTypeNodes
+  input output InstNode node;
+protected
+  Class cls;
+algorithm
+  if SCode.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtin") then
+    node := InstNode.setNodeType(InstNodeType.BUILTIN_CLASS(), node);
+  end if;
+end markBuiltinTypeNodes;
 
 function partialInstClass
   input output InstNode node;
@@ -463,7 +482,7 @@ algorithm
         // from Real, then return it so we can handle it properly in expandClass.
         // We don't care if builtinExt is already SOME, since that's not legal and
         // will be caught by expandBuiltinExtends.
-        if Class.isBuiltin(InstNode.getClass(base_node)) then
+        if InstNode.isBuiltin(base_node) or Class.isBuiltin(InstNode.getClass(base_node)) then
           builtinExt := SOME(ext);
         end if;
       then
@@ -1985,16 +2004,10 @@ algorithm
 
           crefExp := match comp
             case Component.ITERATOR()
-              algorithm
-                checkUnsubscriptable(cref.subscripts, cref.node, info);
-              then
-                Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(cref.node, comp.ty));
+              then Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(cref.node, comp.ty));
 
             case Component.ENUM_LITERAL()
-              algorithm
-                checkUnsubscriptable(cref.subscripts, cref.node, info);
-              then
-                comp.literal;
+              then comp.literal;
 
             else
               algorithm
@@ -2029,19 +2042,6 @@ algorithm
   end match;
 end instCref;
 
-function checkUnsubscriptable
-  input list<Subscript> subscripts;
-  input InstNode node;
-  input SourceInfo info;
-algorithm
-  if not listEmpty(subscripts) then
-    Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
-      {InstNode.name(node) + Subscript.toStringList(subscripts),
-       String(listLength(subscripts)), "0"}, info);
-    fail();
-  end if;
-end checkUnsubscriptable;
-
 function instCrefSubscripts
   input output ComponentRef cref;
   input InstNode scope;
@@ -2050,10 +2050,19 @@ algorithm
   () := match cref
     local
       ComponentRef rest_cr;
+      Integer dims;
 
     case ComponentRef.CREF()
       algorithm
         if not listEmpty(cref.subscripts) then
+          dims := InstNode.countDimensions(cref.node, 1);
+
+          if listLength(cref.subscripts) > dims then
+            Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+              {ComponentRef.toString(cref), String(listLength(cref.subscripts)), String(dims)}, info);
+            fail();
+          end if;
+
           cref.subscripts := list(instSubscript(s, scope, info) for s in cref.subscripts);
         end if;
 

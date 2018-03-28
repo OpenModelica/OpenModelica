@@ -1244,6 +1244,15 @@ uniontype InstNode
     end match;
   end toDAEType;
 
+  function isBuiltin
+    input InstNode node;
+    output Boolean isBuiltin;
+  algorithm
+    isBuiltin := match node
+      case CLASS_NODE(nodeType = InstNodeType.BUILTIN_CLASS()) then true;
+      else false;
+    end match;
+  end isBuiltin;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

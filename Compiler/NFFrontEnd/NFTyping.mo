@@ -1404,14 +1404,6 @@ protected
   Variability var;
 algorithm
   dims := Type.arrayDims(crefType);
-
-  if listLength(subscripts) > listLength(dims) then
-    Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
-      {ComponentRef.toString(cref),
-       String(listLength(subscripts)), String(listLength(dims))}, info);
-    fail();
-  end if;
-
   typedSubs := {};
   next_origin := intBitOr(origin, ExpOrigin.SUBSCRIPT);
   i := 1;
