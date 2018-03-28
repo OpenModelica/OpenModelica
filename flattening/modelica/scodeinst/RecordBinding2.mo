@@ -23,7 +23,7 @@ end RecordBinding2;
 //   Real r[2].y;
 //   Real r[2].z;
 // equation
-//   r[1] = R.'constructor'.'$default'(4.0, 5.0, 3.0);
-//   r[2] = R.'constructor'.'$default'(6.0, 7.0, 3.0);
+//   r[1] = R(4.0, 5.0, 3.0);
+//   r[2] = R(6.0, 7.0, 3.0);
 // end RecordBinding2;
 // endResult
