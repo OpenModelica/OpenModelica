@@ -593,6 +593,9 @@ Time3.mo \
 TupleInvalid1.mo \
 TupleInvalid2.mo \
 TupleInvalid3.mo \
+TupleOperation1.mo \
+TupleOperation2.mo \
+TupleOperation4.mo \
 type2.mo \
 TypeDim1.mo \
 TypeDim2.mo \
@@ -619,6 +622,7 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+TupleOperation3.mo \
 RedeclareConstant1.mo \
 BuiltinAttribute13.mo \
 CevalDer2.mo \
