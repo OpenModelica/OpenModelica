@@ -13190,5 +13190,34 @@ algorithm
   end match;
 end isSimpleLiteralValue;
 
+public function consToListIgnoreSharedLiteral
+  input output DAE.Exp e;
+protected
+  DAE.Exp exp;
+algorithm
+  if match e
+    case DAE.SHARED_LITERAL() then true;
+    case DAE.LIST() then true;
+    case DAE.CONS() then true;
+    else false; end match then
+    try
+      e := consToListIgnoreSharedLiteralWork(e);
+    else
+    end try;
+  end if;
+end consToListIgnoreSharedLiteral;
+
+protected function consToListIgnoreSharedLiteralWork
+  input output DAE.Exp e;
+  input list<DAE.Exp> acc={};
+algorithm
+  e := match (e,acc)
+    case (DAE.SHARED_LITERAL(),_) then consToListIgnoreSharedLiteralWork(e.exp, acc);
+    case (DAE.LIST(),{}) then e;
+    case (DAE.LIST(),_) then DAE.LIST(List.append_reverse(acc, e.valList));
+    case (DAE.CONS(),_) then consToListIgnoreSharedLiteralWork(e.cdr, e.car::acc);
+  end match;
+end consToListIgnoreSharedLiteralWork;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

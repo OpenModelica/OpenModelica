@@ -926,7 +926,7 @@ algorithm
         typelist = List.map(vallist, Types.typeOfValue);
         vt = Types.boxIfUnboxedType(List.reduce(typelist,Types.superType));
         (explist,_) = Types.matchTypes(explist, typelist, vt, true);
-      then Expression.makeBuiltinCall("listArrayLiteral", explist, DAE.T_METAARRAY(vt), false);
+      then Expression.makeBuiltinCall("listArrayLiteral", {DAE.LIST(explist)}, DAE.T_METAARRAY(vt), false);
 
       /* MetaRecord */
     case (Values.RECORD(path,vallist,namelst,ix))

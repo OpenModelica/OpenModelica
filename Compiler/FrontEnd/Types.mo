@@ -1184,6 +1184,17 @@ algorithm
         ts = List.mapMap(vs, typeOfValue, boxIfUnboxedType);
       then DAE.T_METATUPLE(ts);
 
+    case Values.META_ARRAY(valueLst = (v :: vs))
+      equation
+        tp = boxIfUnboxedType(typeOfValue(v));
+        tp = DAE.T_METAARRAY(tp);
+      then tp;
+
+    case Values.META_ARRAY(valueLst = {})
+      equation
+        tp = DAE.T_METAARRAY(DAE.T_UNKNOWN_DEFAULT);
+      then tp;
+
     case Values.META_BOX(v)
       equation
         tp = typeOfValue(v);

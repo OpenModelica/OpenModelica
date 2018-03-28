@@ -3419,6 +3419,12 @@ package Expression
     input DAE.ClockKind inClk;
     output DAE.Exp outIntvl;
   end getClockInterval;
+
+  function consToListIgnoreSharedLiteral
+    input DAE.Exp e1;
+    output DAE.Exp ee;
+  end consToListIgnoreSharedLiteral;
+
 end Expression;
 
 package ExpressionDump
