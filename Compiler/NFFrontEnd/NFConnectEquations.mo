@@ -60,6 +60,7 @@ import NFInstNode.InstNode;
 import NFClass.Class;
 import Binding = NFBinding;
 import NFFunction.Function;
+import Global;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -78,6 +79,8 @@ protected
   potFunc potfunc;
   Expression flowThreshold;
 algorithm
+  setGlobalRoot(Global.isInStream, NONE());
+
   //potfunc := if Config.orderConnections() then
   //  generatePotentialEquationsOrdered else generatePotentialEquations;
   potfunc := generatePotentialEquations;
@@ -528,8 +531,10 @@ algorithm
     flow_threshold := flowThreshold;
   end if;
 
-  positiveMaxCall := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.MAX_REAL,
+  positiveMaxCall := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
     {flowExp, flow_threshold}));
+
+  setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
 
 function evaluateOperatorExp
