@@ -75,6 +75,7 @@ Simplify.mo \
 Simplify2.mo \
 SimplifyAbs.mo \
 SimplifyBinary.mo \
+SimplifyInteger1.mo \
 SimplifyRangeInCall.mo \
 SmallLinsys.mo \
 Splice.mo \
