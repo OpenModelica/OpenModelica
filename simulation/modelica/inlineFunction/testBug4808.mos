@@ -6,6 +6,9 @@
 loadModel(Modelica,{"3.2.2"});
 getErrorString();
 
+setCommandLineOptions("+d=dumpdaelow");
+getErrorString();
+
 loadString("
 model foobar
   Complex vAt;
@@ -31,6 +34,105 @@ getErrorString();
 // ""
 // true
 // ""
+// true
+// ""
+//
+// ########################################
+// dumpdaelow
+// ########################################
+//
+//
+// unknown partition
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: k.im:VARIABLE()  "Imaginary part of complex number" type: Real 
+// 2: k.re:VARIABLE()  "Real part of complex number" type: Real 
+// 3: vA.im:VARIABLE()  "Imaginary part of complex number" type: Real 
+// 4: vA.re:VARIABLE()  "Real part of complex number" type: Real 
+// 5: vAt.im:VARIABLE()  "Imaginary part of complex number" type: Real 
+// 6: vAt.re:VARIABLE()  "Real part of complex number" type: Real 
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (1): k.im = 0.0   [dynamic]
+// 2/2 (1): k.re = r   [dynamic]
+// 3/3 (1): vAt.im = k.re * vA.im + k.im * vA.re   [dynamic]
+// 4/4 (1): vAt.re = k.re * vA.re - k.im * vA.im   [dynamic]
+// 5/5 (1): vAt.re = time   [dynamic]
+// 6/6 (1): vAt.im = 2.0 * time   [dynamic]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (1)
+// ========================================
+// 1: r:PARAM()  = 10.0  type: Real 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Time Events (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
 // record SimulationResult
 //     resultFile = "foobar_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foobar', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
