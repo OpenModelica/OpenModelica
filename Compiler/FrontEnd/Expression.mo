@@ -4493,6 +4493,17 @@ algorithm
   end match;
 end makeConstZero;
 
+function makeConstNumber
+  input DAE.Type ty;
+  input Integer n;
+  output DAE.Exp exp;
+algorithm
+  exp := match ty
+    case DAE.T_INTEGER() then DAE.ICONST(n);
+    else DAE.RCONST(n);
+  end match;
+end makeConstNumber;
+
 public function makeConstZeroE
 "Generates a zero constant, using type from inExp"
   input DAE.Exp iExp;

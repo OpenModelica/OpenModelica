@@ -2115,7 +2115,16 @@ public function simplify2
   input Boolean simplifyAddOrSub = true;
   input Boolean simplifyMulOrDiv = true;
   output DAE.Exp outExp;
+protected
+  DAE.Type ty;
 algorithm
+  ty := Expression.typeof(inExp);
+
+  if not Expression.isIntegerOrReal(ty) then
+    outExp := inExp;
+    return;
+  end if;
+
   outExp := match(inExp)
     local
       DAE.Exp e1,e2,exp_2,exp_3, resConst;
@@ -2125,13 +2134,13 @@ algorithm
 
     // global simplify ADD and SUB
     case DAE.BINARY(operator = op) /* multiple terms simplifications */
-      guard  simplifyAddOrSub and Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isAddOrSub(op)
+      guard simplifyAddOrSub and Expression.isAddOrSub(op)
       equation
         /* Sorting constants, 1+a+2+b => 3+a+b */
         lstExp = Expression.terms(inExp);
         (lstConstExp, lstExp) = List.splitOnTrue(lstExp, Expression.isConstValue);
         hasConst =  not listEmpty(lstConstExp);
-        resConst =  if hasConst then  simplifyBinaryAddConstants(lstConstExp) else DAE.RCONST(0.0);
+        resConst =  if hasConst then simplifyBinaryAddConstants(lstConstExp) else Expression.makeConstZero(ty);
         exp_2 = if hasConst then Expression.makeSum1(lstExp) else inExp;
         /* Merging coefficients 2a+4b+3a+b => 5a+5b */
         exp_3 = simplifyBinaryCoeff(exp_2);
@@ -2142,7 +2151,7 @@ algorithm
     //locked global simplify ADD and SUB
     //unlocked global simplify MUL and DIV
      case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple factors simplifications */
-      guard  Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isAddOrSub(op)
+      guard Expression.isAddOrSub(op)
       equation
         e1 = simplify2(e1, false, true);
         e2 = simplify2(e2, false, true);
@@ -2151,7 +2160,7 @@ algorithm
 
     //global simplify MUL and DIV
      case DAE.BINARY(operator = op) /* multiple factors simplifications */
-      guard  simplifyMulOrDiv and Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isMulOrDiv(op)
+      guard simplifyMulOrDiv and Expression.isMulOrDiv(op)
       equation
         /* Sorting constants, 1+a+2+b => 3+a+b */
         lstExp = Expression.factors(inExp);
@@ -2176,7 +2185,7 @@ algorithm
     //unlocked global simplify ADD and SUB
     //locked global simplify MUL and DIV
      case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple terms simplifications */
-      guard  Expression.isIntegerOrReal(Expression.typeof(inExp)) and Expression.isMulOrDiv(op)
+      guard Expression.isMulOrDiv(op)
       equation
         e1 = simplify2(e1, true, false);
         e2 = simplify2(e2, true, false);
@@ -2185,7 +2194,6 @@ algorithm
 
     //others operators
     case DAE.BINARY(exp1 = e1,operator = op,exp2 = e2) /* multiple terms/factor simplifications */
-      guard  Expression.isIntegerOrReal(Expression.typeof(inExp))
       equation
         e1 = simplify2(e1);
         e2 = simplify2(e2);
@@ -2848,7 +2856,8 @@ algorithm
       DAE.Exp res,e,e1,e2;
       Type tp;
 
-    case ((e as DAE.BINARY(operator = DAE.MUL())))
+    case ((e as DAE.BINARY(operator = DAE.MUL(tp))))
+      guard Types.isScalarReal(tp)
       equation
         e_lst = Expression.factors(e);
         e_lst_1 = simplifyMul(e_lst);
@@ -4058,12 +4067,12 @@ algorithm
 
     // (e * e1) * e => e1*e^2
     case (DAE.MUL(),DAE.BINARY(e2,op1 as DAE.MUL(ty),e3),e1)
-      guard Expression.expEqual(e2,e1)
+      guard Types.isScalarReal(ty) and Expression.expEqual(e2,e1)
       then DAE.BINARY(e3,op1,DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0)));
 
     // e * (e1 * e) => e1*e^2
     case (DAE.MUL(),e1,DAE.BINARY(e2,op1 as DAE.MUL(ty),e3))
-      guard Expression.expEqual(e1,e3)
+      guard Types.isScalarReal(ty) and Expression.expEqual(e1,e3)
       then DAE.BINARY(e2,op1,DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0)));
 
     // r1 * (r2 * e) => (r1*r2)*e
@@ -4097,17 +4106,17 @@ algorithm
     //  then
     //    DAE.BINARY(e1,op2,DAE.BINARY(e2,op1,e3));
 
-    // e2 + (e*e2) = (1.0 + e)*e2
-    // e2 + (e2*e) = (1.0 + e)*e2;
-    case (op1 as DAE.ADD(), e1, DAE.BINARY(e2, op2 as DAE.MUL(),e3))
+    // e2 + (e*e2) = (1 + e)*e2
+    // e2 + (e2*e) = (1 + e)*e2;
+    case (op1 as DAE.ADD(ty), e1, DAE.BINARY(e2, op2 as DAE.MUL(),e3))
       guard not Expression.isConstValue(e1)
       equation
         if Expression.expEqual(e1,e3)
         then
-          exp = DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e2));
+          exp = DAE.BINARY(e1,op2,DAE.BINARY(Expression.makeConstOne(ty),op1,e2));
         else if Expression.expEqual(e1,e2)
              then
-               exp = DAE.BINARY(e1,op2,DAE.BINARY(DAE.RCONST(1.0),op1,e3));
+               exp = DAE.BINARY(e1,op2,DAE.BINARY(Expression.makeConstOne(ty),op1,e3));
              else
               fail();
              end if;
@@ -4376,7 +4385,7 @@ algorithm
       equation
         true = Types.isRealOrSubTypeReal(ty);
         true = Expression.expEqual(e1,e2);
-        e = DAE.RCONST(2.0);
+        e = Expression.makeConstNumber(ty, 2);
       then DAE.BINARY(e,DAE.MUL(ty),e1);
 
     // a-(-b) = a+b
@@ -4423,6 +4432,7 @@ algorithm
     case (_,DAE.MUL(ty = ty),e1,e2,_,_)
       equation
         false = Expression.isZero(e2);
+        true = Types.isRealOrSubTypeReal(ty);
         true = Expression.expEqual(e1,e2);
         res = DAE.BINARY(e1,DAE.POW(ty),DAE.RCONST(2.0));
       then res;
