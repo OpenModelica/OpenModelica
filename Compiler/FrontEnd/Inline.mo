@@ -1120,7 +1120,6 @@ protected
   DAE.ComponentRef cr;
   Option<DAE.Exp> binding;
   DAE.Type tp;
-  DAE.Exp exp;
   list<DAE.Statement> st;
 
 algorithm
@@ -1132,16 +1131,9 @@ algorithm
            oInputs = cr::oInputs;
          then ();
 
-    case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=binding as SOME(exp))
+    case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=binding)
       equation
-        // use type of cref, since var type is different
-        // and has no hint on array or record type
         oRepl = addOptBindingReplacements(cr,binding,oRepl);
-        oOutputs = cr :: oOutputs;
-       then ();
-
-    case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=NONE())
-      equation
         oOutputs = cr :: oOutputs;
        then ();
 
@@ -1200,8 +1192,6 @@ algorithm
     local
       DAE.Type tp;
     case (DAE.CREF_IDENT(identType=tp),_,_)
-      guard
-        not Expression.isArrayType(tp) and not Expression.isRecordType(tp)
       then VarTransform.addReplacement(iRepl, iCr, iExp);
     else fail();
   end match;
