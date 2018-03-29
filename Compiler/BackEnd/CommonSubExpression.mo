@@ -1278,6 +1278,7 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("sqrt")) then true;
     case DAE.CALL(path=Absyn.IDENT("String")) then true;
     case DAE.CALL(path=Absyn.IDENT("subSample")) then true;
+    case DAE.CALL(path=Absyn.IDENT("sum")) then true;
     case DAE.CALL(path=Absyn.IDENT("superSample")) then true;
     case DAE.CALL(path=Absyn.IDENT("terminal")) then true;
     case DAE.CALL() guard(Expression.isImpureCall(inCall) or isCallRecordConstructor(inCall, functionTree)) then true;
