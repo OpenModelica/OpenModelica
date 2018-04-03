@@ -6,7 +6,7 @@
 
 model IfEquation2
   Real x;
-  parameter Boolean b;
+  Boolean b;
 equation
   if b then
     x = 1.0;
@@ -18,7 +18,7 @@ end IfEquation2;
 // Result:
 // class IfEquation2
 //   Real x;
-//   parameter Boolean b;
+//   Boolean b;
 // equation
 //   if b then
 //     x = 1.0;

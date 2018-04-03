@@ -20,6 +20,6 @@ end A;
 //   parameter Real x[2,1];
 //   parameter Real x[2,2];
 //   parameter Real x[2,3];
-//   parameter Integer i = 3;
+//   parameter Integer i = size(x, n);
 // end A;
 // endResult

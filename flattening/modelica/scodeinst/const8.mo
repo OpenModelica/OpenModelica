@@ -25,7 +25,7 @@ end M2;
 //   parameter Real A[2,1];
 //   parameter Real A[2,2];
 //   parameter Real A[2,3];
-//   parameter Integer j = 3;
+//   parameter Integer j = size(A, i);
 //   parameter Integer i = 2;
 // end M2;
 // endResult

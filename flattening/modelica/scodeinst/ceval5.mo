@@ -10,7 +10,7 @@ end A;
 
 // Result:
 // Error processing file: ceval5.mo
-// [flattening/modelica/scodeinst/ceval5.mo:7:3-7:26:writable] Error: Type mismatch in binding m = n, expected subtype of Integer, got type Real.
+// [flattening/modelica/scodeinst/ceval5.mo:7:3-7:26:writable] Error: Type mismatch in binding m = 3.0, expected subtype of Integer, got type Real.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

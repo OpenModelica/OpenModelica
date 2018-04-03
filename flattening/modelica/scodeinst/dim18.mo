@@ -13,7 +13,7 @@ end A;
 // Result:
 // class A
 //   parameter Integer m = 2;
-//   parameter Integer n = m;
+//   parameter Integer n = 2;
 //   Real x[1];
 //   Real x[2];
 // end A;
