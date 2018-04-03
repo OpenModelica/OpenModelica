@@ -153,6 +153,11 @@ algorithm
        DAE.SCONST(string=s) = getConstCrefBinding(cr,varArray);
        s = getFullCADFilePath(s,program);
     then (SHAPE(ident, DAE.SCONST(s), T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
+  case(SHAPE(ident=ident, shapeType=DAE.SCONST(string=s), T=T, r=r, r_shape=r_shape, lengthDir=lengthDir, widthDir=widthDir,
+     length=length, width=width, height=height, extra=extra, color=color, specularCoeff=specularCoeff),_,_)
+     equation
+       s = getFullCADFilePath(s,program);
+    then (SHAPE(ident, DAE.SCONST(s), T, r, r_shape, lengthDir, widthDir, length, width, height, extra, color, specularCoeff));
   else
     then visIn;
   end matchcontinue;
