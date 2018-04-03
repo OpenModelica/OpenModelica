@@ -614,7 +614,9 @@ Visibility1.mo \
 Visibility2.mo \
 Visibility3.mo \
 Visibility4.mo \
-when1.mo \
+When1.mo \
+When2.mo \
+When3.mo \
 WhenInitial1.mo \
 WhenNested1.mo \
 Wild1.mo \

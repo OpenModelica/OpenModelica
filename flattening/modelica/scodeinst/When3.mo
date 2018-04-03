@@ -1,21 +1,21 @@
-// name: when1.mo
+// name: When3
 // keywords:
 // status: correct
 // cflags:   -d=newInst
 //
 //
 
-model A
+model When3
   Real x, y;
   Boolean b, b2;
 equation
   when {b, b2} then
     x = y;
   end when;
-end A;
+end When3;
 
 // Result:
-// class A
+// class When3
 //   Real x;
 //   Real y;
 //   Boolean b;
@@ -24,5 +24,5 @@ end A;
 //   when {b, b2} then
 //     x = y;
 //   end when;
-// end A;
+// end When3;
 // endResult
