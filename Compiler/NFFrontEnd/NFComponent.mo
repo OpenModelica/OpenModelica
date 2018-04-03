@@ -96,11 +96,11 @@ constant Component.Attributes CONSTANT_ATTR =
     Replaceable.NOT_REPLACEABLE()
   );
 
-constant Component.Attributes DISCRETE_ATTR =
+constant Component.Attributes IMPL_DISCRETE_ATTR =
   Component.Attributes.ATTRIBUTES(
     ConnectorType.POTENTIAL,
     Parallelism.NON_PARALLEL,
-    Variability.DISCRETE,
+    Variability.IMPLICITLY_DISCRETE,
     Direction.NONE,
     InnerOuter.NOT_INNER_OUTER,
     false,
@@ -515,6 +515,32 @@ uniontype Component
       else Variability.CONTINUOUS;
     end match;
   end variability;
+
+  function setVariability
+    input Variability variability;
+    input output Component component;
+  algorithm
+    () := match component
+      local
+        Attributes attr;
+
+      case UNTYPED_COMPONENT(attributes = attr)
+        algorithm
+          attr.variability := variability;
+          component.attributes := attr;
+        then
+          ();
+
+      case TYPED_COMPONENT(attributes = attr)
+        algorithm
+          attr.variability := variability;
+          component.attributes := attr;
+        then
+          ();
+
+      else ();
+    end match;
+  end setVariability;
 
   function isConst
     input Component component;

@@ -2804,5 +2804,82 @@ public
     e := CALL(Call.makeBuiltinCall2(NFBuiltinFuncs.PROMOTE, {e, INTEGER(n)}, ty));
   end promote;
 
+  function variability
+    input Expression exp;
+    output Variability var;
+  algorithm
+    var := match exp
+      case INTEGER() then Variability.CONSTANT;
+      case REAL() then Variability.CONSTANT;
+      case STRING() then Variability.CONSTANT;
+      case BOOLEAN() then Variability.CONSTANT;
+      case ENUM_LITERAL() then Variability.CONSTANT;
+      case CREF() then ComponentRef.variability(exp.cref);
+      case TYPENAME() then Variability.CONSTANT;
+      case ARRAY() then variabilityList(exp.elements);
+      case MATRIX() then List.fold(exp.elements, variabilityList, Variability.CONSTANT);
+
+      case RANGE()
+        algorithm
+          var := variability(exp.start);
+          var := Prefixes.variabilityMax(var, variability(exp.stop));
+
+          if isSome(exp.step) then
+            var := Prefixes.variabilityMax(var, variability(Util.getOption(exp.step)));
+          end if;
+        then
+          var;
+
+      case TUPLE() then variabilityList(exp.elements);
+      case RECORD() then variabilityList(exp.elements);
+      case CALL() then Call.variability(exp.call);
+      case SIZE()
+        algorithm
+          if isSome(exp.dimIndex) then
+            var := Prefixes.variabilityMax(Variability.PARAMETER,
+                                           variability(Util.getOption(exp.dimIndex)));
+          else
+            var := Variability.PARAMETER;
+          end if;
+        then
+          var;
+
+      case END() then Variability.PARAMETER;
+      case BINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
+      case UNARY() then variability(exp.exp);
+      case LBINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
+      case LUNARY() then variability(exp.exp);
+      case RELATION()
+        then Prefixes.variabilityMin(
+          Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2)),
+          Variability.DISCRETE);
+
+      case IF()
+        then Prefixes.variabilityMax(variability(exp.condition),
+          Prefixes.variabilityMax(variability(exp.trueBranch), variability(exp.falseBranch)));
+
+      case CAST() then variability(exp.exp);
+      case UNBOX() then variability(exp.exp);
+      case SUBSCRIPTED_EXP()
+        then Prefixes.variabilityMax(variability(exp.exp), variabilityList(exp.subscripts));
+      case TUPLE_ELEMENT() then variability(exp.tupleExp);
+      case BOX() then variability(exp.exp);
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+        then
+          fail();
+    end match;
+  end variability;
+
+  function variabilityList
+    input list<Expression> expl;
+    input output Variability var = Variability.CONSTANT;
+  algorithm
+    for e in expl loop
+      var := Prefixes.variabilityMax(var, variability(e));
+    end for;
+  end variabilityList;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

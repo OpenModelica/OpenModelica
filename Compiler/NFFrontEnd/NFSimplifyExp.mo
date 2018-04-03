@@ -184,6 +184,7 @@ algorithm
         case Op.SUB then Expression.INTEGER(i1 - i2);
         case Op.MUL then Expression.INTEGER(i1 * i2);
         case Op.DIV then Expression.REAL(i1 / i2);
+        else exp;
       end match;
 
     case Expression.BINARY(exp1=Expression.REAL(value=r1), exp2=Expression.REAL(value=r2))
@@ -192,6 +193,7 @@ algorithm
         case Op.SUB then Expression.REAL(r1 - r2);
         case Op.MUL then Expression.REAL(r1 * r2);
         case Op.DIV then Expression.REAL(r1 / r2);
+        else exp;
       end match;
 
     case Expression.UNARY(operator = Operator.OPERATOR(op = Op.UMINUS))

@@ -44,6 +44,7 @@ public
   import Expression = NFExpression;
   import Absyn;
   import Dimension = NFDimension;
+  import NFPrefixes.Variability;
 
   record RAW_SUBSCRIPT
     Absyn.Subscript subscript;
@@ -384,6 +385,18 @@ public
 
     outSubscripts := listReverse(outSubscripts);
   end expandList;
+
+  function variability
+    input Subscript subscript;
+    output Variability var;
+  algorithm
+    var := match subscript
+      case UNTYPED() then Expression.variability(subscript.exp);
+      case INDEX() then Expression.variability(subscript.index);
+      case SLICE() then Expression.variability(subscript.slice);
+      case WHOLE() then Variability.CONSTANT;
+    end match;
+  end variability;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

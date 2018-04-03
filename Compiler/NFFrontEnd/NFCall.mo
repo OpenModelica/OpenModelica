@@ -150,8 +150,8 @@ uniontype Call
     CallAttributes attributes;
   end TYPED_CALL;
 
-  // Right now this represnts only array() calls.
-  // Any other mapping call e.g. F(i for i in ...) is conveted to
+  // Right now this represents only array() calls.
+  // Any other mapping call e.g. F(i for i in ...) is converted to
   // array(F(i) for i in ...) at instIteratorCall().
   // So the fn is always NFBuiltinFuncs.ARRAY_FUNC.
 
@@ -432,7 +432,7 @@ uniontype Call
     input SourceInfo info;
     output Expression outExp;
     output Type ty;
-    output Variability variability;
+    output Variability var;
   protected
     Call call;
     list<Expression> args;
@@ -441,11 +441,11 @@ uniontype Call
       case Expression.CALL(UNTYPED_CALL())
         algorithm
           if(builtinSpecialHandling(callExp.call)) then
-            (outExp, ty, variability) := typeSpecialBuiltinFunction(callExp.call, origin, info);
+            (outExp, ty, var) := typeSpecialBuiltinFunction(callExp.call, origin, info);
           else
             call := typeMatchNormalCall(callExp.call, origin, info);
             ty := getType(call);
-            variability := getVariability(call);
+            var := variability(call);
 
             if isRecordConstructor(call) then
               outExp := toRecordExpression(call, ty);
@@ -460,21 +460,21 @@ uniontype Call
         algorithm
           call := typeMapIteratorCall(callExp.call, origin, info);
           ty := getType(call);
-          variability := getVariability(call);
+          var := variability(call);
         then
           Expression.CALL(call);
 
       case Expression.CALL(call as TYPED_CALL())
         algorithm
           ty := call.ty;
-          variability := call.var;
+          var := call.var;
         then
           callExp;
 
       case Expression.CALL(call as TYPED_MAP_CALL())
         algorithm
           ty := call.ty;
-          variability := call.var;
+          var := call.var;
         then
           callExp;
 
@@ -971,20 +971,47 @@ uniontype Call
     end match;
   end setType;
 
-  function variabilityOf
+  function variability
     input Call call;
     output Variability var;
   algorithm
     var := match call
+      local
+        Boolean var_set;
+
+      case UNTYPED_CALL()
+        algorithm
+          var_set := true;
+
+          if ComponentRef.isSimple(call.ref) then
+            var := match ComponentRef.firstName(call.ref)
+              case "change" then Variability.DISCRETE;
+              case "edge" then Variability.DISCRETE;
+              case "pre" then Variability.DISCRETE;
+              case "ndims" then Variability.PARAMETER;
+              case "cardinality" then Variability.PARAMETER;
+              else algorithm var_set := false; then Variability.CONTINUOUS;
+            end match;
+          end if;
+
+          if not var_set then
+            var := Expression.variabilityList(call.arguments);
+
+            for narg in call.named_args loop
+              var := Prefixes.variabilityMax(var, Expression.variability(Util.tuple22(narg)));
+            end for;
+          end if;
+        then
+          var;
+
+      case UNTYPED_MAP_CALL() then Expression.variability(call.exp);
       case TYPED_CALL() then call.var;
       case TYPED_MAP_CALL() then call.var;
       else algorithm
         Error.assertion(false, getInstanceName() + " got untyped call", sourceInfo());
         then fail();
     end match;
-  end variabilityOf;
-
-  function getVariability = variabilityOf;
+  end variability;
 
   function makeBuiltinCat
     input Integer n;
@@ -1040,7 +1067,7 @@ uniontype Call
       ty::tys2 := tys2;
       pos := pos-1;
       ty2 := Type.setArrayElementType(ty, resTy);
-      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg);
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg, allowUnknown = true);
       if TypeCheck.isIncompatibleMatch(mk) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(ty2)}, info);
       end if;
@@ -1449,7 +1476,7 @@ protected
 
     call := matchTypedNormalCall(call, origin, info);
     outType := getType(call);
-    var := getVariability(call);
+    var := variability(call);
     callExp := Expression.CALL(call);
   end typeStringCall;
 
@@ -1547,7 +1574,7 @@ protected
       fail();
     end if;
 
-    if var > Variability.DISCRETE then
+    if var == Variability.CONTINUOUS then
       Error.addSourceMessageAndFail(Error.INVALID_ARGUMENT_VARIABILITY,
         {"1", ComponentRef.toString(fn_ref), Prefixes.variabilityString(Variability.DISCRETE),
          Expression.toString(arg), Prefixes.variabilityString(var)}, info);
@@ -1717,7 +1744,7 @@ protected
     argtycall := matchTypedNormalCall(argtycall, origin, info);
     callExp := Expression.CALL(unboxArgs(argtycall));
     ty := Type.arrayElementType(Util.tuple32(listHead(args)));
-    var := getVariability(argtycall);
+    var := variability(argtycall);
     // TODO: check basic type in two argument overload.
     // check arrays of simple types in one argument overload.
     // fix return type.
@@ -1746,7 +1773,7 @@ protected
       then Type.arrayElementType(Expression.typeOf(arg));
     end match;
 
-    var := getVariability(argtycall);
+    var := variability(argtycall);
     callExp := Expression.CALL(setType(argtycall, ty));
   end typeSumProductCall;
 
@@ -1872,8 +1899,7 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
-      if arg_var <= Variability.PARAMETER then
-        arg := Ceval.evalExp(arg, Ceval.EvalTarget.IGNORE_ERRORS());
+      if arg_var <= Variability.STRUCTURAL_PARAMETER then
         arg := SimplifyExp.simplifyExp(arg);
         arg_ty := Expression.typeOf(arg);
       end if;
@@ -1896,7 +1922,7 @@ protected
     {fn} := typeCachedFunctions(fnRef);
     ty := Type.ARRAY(fillType, dims);
 
-    if variability <= Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+    if variability <= Variability.STRUCTURAL_PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
       callExp := Ceval.evalBuiltinCall(fn, ty_args, Ceval.EvalTarget.IGNORE_ERRORS());
     else
       callExp := Expression.CALL(makeBuiltinCall2(fn, ty_args, ty, variability));
@@ -2247,7 +2273,7 @@ protected
     argtycall := matchTypedNormalCall(argtycall, origin, info);
 
     ty := getType(argtycall);
-    var := getVariability(argtycall);
+    var := variability(argtycall);
     callExp := Expression.CALL(unboxArgs(argtycall));
     // TODO: Check cardinality restrictions, 3.7.2.3.
   end typeCardinalityCall;

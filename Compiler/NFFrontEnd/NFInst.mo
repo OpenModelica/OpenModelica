@@ -135,6 +135,9 @@ algorithm
   instExpressions(inst_cls);
   execStat("NFInst.instExpressions("+ name +")");
 
+  // Mark structural parameters.
+  markStructuralParams(inst_cls);
+
   // Type the class.
   Typing.typeClass(inst_cls, name);
 
@@ -1650,10 +1653,10 @@ protected
 algorithm
   if referenceEq(attr, NFComponent.DEFAULT_ATTR) and
      Type.isDiscrete(Class.getType(cls, clsNode)) then
-    attr := NFComponent.DISCRETE_ATTR;
+    attr := NFComponent.IMPL_DISCRETE_ATTR;
   elseif var == Variability.CONTINUOUS and
      Type.isDiscrete(Class.getType(cls, clsNode)) then
-    attr.variability := Variability.DISCRETE;
+    attr.variability := Variability.IMPLICITLY_DISCRETE;
   end if;
 end updateComponentVariability;
 
@@ -2606,6 +2609,183 @@ algorithm
     InstNode.updateClass(Class.setClassTree(cls_tree, cls), node);
   end if;
 end insertGeneratedInners;
+
+function markStructuralParams
+  input InstNode node;
+protected
+  Class cls = InstNode.getClass(node);
+  ClassTree cls_tree;
+  Sections sections;
+algorithm
+  () := match cls
+    case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE(),
+                               sections = sections)
+      algorithm
+        for c in cls_tree.components loop
+          if not InstNode.isEmpty(c) then
+            markStructuralParamsComp(c);
+          end if;
+        end for;
+
+        () := match sections
+          case Sections.SECTIONS()
+            algorithm
+              for eq in sections.equations loop
+                markStructuralParamsEq(eq);
+              end for;
+
+              for ieq in sections.initialEquations loop
+                markStructuralParamsEq(ieq);
+              end for;
+            then
+              ();
+
+          else ();
+        end match;
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParams;
+
+function markStructuralParamsComp
+  input InstNode component;
+protected
+  Component c = InstNode.component(InstNode.resolveOuter(component));
+algorithm
+  () := match c
+    case Component.UNTYPED_COMPONENT()
+      algorithm
+        for dim in c.dimensions loop
+          markStructuralParamsDim(dim);
+        end for;
+
+        markStructuralParams(c.classInst);
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParamsComp;
+
+function markStructuralParamsDim
+  input Dimension dimension;
+algorithm
+  () := match dimension
+    case Dimension.UNTYPED()
+      algorithm
+        markStructuralParamsExp(dimension.dimension);
+      then
+        ();
+
+    case Dimension.EXP()
+      algorithm
+        markStructuralParamsExp(dimension.exp);
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParamsDim;
+
+function markStructuralParamsExp
+  input Expression exp;
+  input output Integer dummy = 0;
+algorithm
+  Expression.fold(exp, markStructuralParamsExp_traverser, dummy);
+end markStructuralParamsExp;
+
+function markStructuralParamsExp_traverser
+  input Expression exp;
+  input output Integer dummy;
+algorithm
+  () := match exp
+    local
+      InstNode node;
+      Component comp;
+      Option<Expression> binding;
+
+    case Expression.CREF(cref = ComponentRef.CREF(node = node))
+      algorithm
+        if InstNode.isComponent(node) then
+          comp := InstNode.component(node);
+
+          if Component.variability(comp) == Variability.PARAMETER then
+            comp := Component.setVariability(Variability.STRUCTURAL_PARAMETER, comp);
+            InstNode.updateComponent(comp, node);
+
+            binding := Binding.untypedExp(Component.getBinding(comp));
+            if isSome(binding) then
+              markStructuralParamsExp(Util.getOption(binding));
+            end if;
+          end if;
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParamsExp_traverser;
+
+function markStructuralParamsEq
+  input Equation eq;
+algorithm
+  () := match eq
+    local
+      Expression exp;
+
+    case Equation.CONNECT()
+      algorithm
+        Expression.fold(eq.lhs, markStructuralParamsSubs, 0);
+        Expression.fold(eq.rhs, markStructuralParamsSubs, 0);
+      then
+        ();
+
+    case Equation.IF()
+      algorithm
+        for branch in eq.branches loop
+          (exp, _) := branch;
+
+          if Expression.variability(exp) == Variability.PARAMETER then
+            markStructuralParamsExp(exp);
+          else
+            return;
+          end if;
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParamsEq;
+
+function markStructuralParamsSubs
+  input Expression exp;
+  input output Integer dummy;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      algorithm
+        ComponentRef.foldSubscripts(exp.cref, markStructuralParamsSub, 0);
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParamsSubs;
+
+function markStructuralParamsSub
+  input Subscript sub;
+  input output Integer dummy;
+algorithm
+  () := match sub
+    case Subscript.UNTYPED() algorithm markStructuralParamsExp(sub.exp); then ();
+    case Subscript.INDEX() algorithm markStructuralParamsExp(sub.index); then ();
+    case Subscript.SLICE() algorithm markStructuralParamsExp(sub.slice); then ();
+    else ();
+  end match;
+end markStructuralParamsSub;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;

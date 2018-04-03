@@ -44,6 +44,7 @@ protected
   import System;
   import NFClass.Class;
   import List;
+  import Prefixes = NFPrefixes;
 
   import ComponentRef = NFComponentRef;
 
@@ -147,6 +148,16 @@ public
     end match;
   end isEmpty;
 
+  function isSimple
+    input ComponentRef cref;
+    output Boolean isSimple;
+  algorithm
+    isSimple := match cref
+      case CREF(restCref = EMPTY()) then true;
+      else false;
+    end match;
+  end isSimple;
+
   function node
     input ComponentRef cref;
     output InstNode node;
@@ -241,7 +252,8 @@ public
     end match;
   end getSubscriptedType2;
 
-  function getVariability
+  function nodeVariability
+    "Returns the variability of the component node the cref refers to."
     input ComponentRef cref;
     output Variability var;
   algorithm
@@ -249,7 +261,32 @@ public
       case CREF() then Component.variability(InstNode.component(cref.node));
       else Variability.CONTINUOUS;
     end match;
-  end getVariability;
+  end nodeVariability;
+
+  function subscriptsVariability
+    input ComponentRef cref;
+    input output Variability var = Variability.CONSTANT;
+  algorithm
+    () := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          for sub in cref.subscripts loop
+            var := Prefixes.variabilityMax(var, Subscript.variability(sub));
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end subscriptsVariability;
+
+  function variability
+    "Returns the variability of the cref, with the variability of the subscripts
+     taken into account."
+    input ComponentRef cref;
+    output Variability var = Prefixes.variabilityMax(nodeVariability(cref),
+                                                     subscriptsVariability(cref));
+  end variability;
 
   function addSubscript
     input Subscript subscript;
@@ -357,6 +394,29 @@ public
           fail();
     end match;
   end transferSubscripts;
+
+  function foldSubscripts<ArgT>
+    input ComponentRef cref;
+    input FuncT func;
+    input output ArgT arg;
+
+    partial function FuncT
+      input Subscript subscript;
+      input output ArgT arg;
+    end FuncT;
+  algorithm
+    arg := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          for sub in cref.subscripts loop
+            arg := func(sub, arg);
+          end for;
+        then
+          foldSubscripts(cref.restCref, func, arg);
+
+      else arg;
+    end match;
+  end foldSubscripts;
 
   function compare
     input ComponentRef cref1;

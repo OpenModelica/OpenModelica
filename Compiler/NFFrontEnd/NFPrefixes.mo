@@ -49,8 +49,10 @@ type Parallelism = enumeration(
 
 type Variability = enumeration(
   CONSTANT,
+  STRUCTURAL_PARAMETER,
   PARAMETER,
   DISCRETE,
+  IMPLICITLY_DISCRETE,
   CONTINUOUS
 );
 
@@ -216,10 +218,10 @@ function variabilityFromSCode
   output Variability var;
 algorithm
   var := match scodeVar
-    case SCode.CONST() then Variability.CONSTANT;
-    case SCode.PARAM() then Variability.PARAMETER;
-    case SCode.DISCRETE() then Variability.DISCRETE;
-    case SCode.VAR() then Variability.CONTINUOUS;
+    case SCode.Variability.CONST() then Variability.CONSTANT;
+    case SCode.Variability.PARAM() then Variability.PARAMETER;
+    case SCode.Variability.DISCRETE() then Variability.DISCRETE;
+    case SCode.Variability.VAR() then Variability.CONTINUOUS;
   end match;
 end variabilityFromSCode;
 
@@ -228,27 +230,24 @@ function variabilityToSCode
   output SCode.Variability scodeVar;
 algorithm
   scodeVar := match var
-    case Variability.CONSTANT then SCode.CONST();
-    case Variability.PARAMETER then SCode.PARAM();
-    case Variability.DISCRETE then SCode.DISCRETE();
-    case Variability.CONTINUOUS then SCode.VAR();
+    case Variability.CONSTANT then SCode.Variability.CONST();
+    case Variability.STRUCTURAL_PARAMETER then SCode.Variability.PARAM();
+    case Variability.PARAMETER then SCode.Variability.PARAM();
+    case Variability.DISCRETE then SCode.Variability.DISCRETE();
+    else SCode.Variability.VAR();
   end match;
 end variabilityToSCode;
 
 function variabilityToDAE
   input Variability var;
-  input Type ty;
   output DAE.VarKind varKind;
 algorithm
   varKind := match var
     case Variability.CONSTANT then DAE.VarKind.CONST();
+    case Variability.STRUCTURAL_PARAMETER then DAE.VarKind.PARAM();
     case Variability.PARAMETER then DAE.VarKind.PARAM();
-    // Hide discrete for implictly discrete types like Integer. This is done
-    // to mimic the old instantiation which doesn't treat such variables as
-    // discrete, and might not be strictly neccessary (but makes it easier to
-    // compare flat models against the old instantiation).
-    case Variability.DISCRETE then if Type.isDiscrete(ty) then DAE.VarKind.VARIABLE() else DAE.VarKind.DISCRETE();
-    case Variability.CONTINUOUS then DAE.VarKind.VARIABLE();
+    case Variability.DISCRETE then DAE.VarKind.DISCRETE();
+    else DAE.VarKind.VARIABLE();
   end match;
 end variabilityToDAE;
 
@@ -258,6 +257,7 @@ function variabilityToDAEConst
 algorithm
   const := match var
     case Variability.CONSTANT then DAE.Const.C_CONST();
+    case Variability.STRUCTURAL_PARAMETER then DAE.Const.C_PARAM();
     case Variability.PARAMETER then DAE.Const.C_PARAM();
     else DAE.Const.C_VAR();
   end match;
@@ -269,8 +269,10 @@ function variabilityString
 algorithm
   str := match var
     case Variability.CONSTANT then "constant";
+    case Variability.STRUCTURAL_PARAMETER then "parameter";
     case Variability.PARAMETER then "parameter";
     case Variability.DISCRETE then "discrete";
+    case Variability.IMPLICITLY_DISCRETE then "discrete";
     case Variability.CONTINUOUS then "continuous";
   end match;
 end variabilityString;
@@ -282,6 +284,7 @@ function unparseVariability
 algorithm
   str := match var
     case Variability.CONSTANT then "constant ";
+    case Variability.STRUCTURAL_PARAMETER then "parameter ";
     case Variability.PARAMETER then "parameter ";
     case Variability.DISCRETE then if Type.isDiscrete(ty) then "" else "discrete ";
     else "";
@@ -299,6 +302,19 @@ function variabilityMin
   input Variability var2;
   output Variability var = if var1 > var2 then var2 else var1;
 end variabilityMin;
+
+function effectiveVariability
+  input Variability inVar;
+  output Variability outVar;
+algorithm
+  if inVar == Variability.STRUCTURAL_PARAMETER then
+    outVar := Variability.PARAMETER;
+  elseif inVar == Variability.IMPLICITLY_DISCRETE then
+    outVar := Variability.DISCRETE;
+  else
+    outVar := inVar;
+  end if;
+end effectiveVariability;
 
 function directionFromSCode
   input Absyn.Direction scodeDir;

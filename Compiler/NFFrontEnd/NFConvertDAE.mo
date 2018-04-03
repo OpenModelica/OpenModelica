@@ -149,7 +149,7 @@ algorithm
       then
         DAE.VAR(
           dcref,
-          Prefixes.variabilityToDAE(attr.variability, ty),
+          Prefixes.variabilityToDAE(attr.variability),
           Prefixes.directionToDAE(dir),
           Prefixes.parallelismToDAE(attr.parallelism),
           Prefixes.visibilityToDAE(vis),

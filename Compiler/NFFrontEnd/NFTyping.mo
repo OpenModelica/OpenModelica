@@ -467,7 +467,10 @@ algorithm
       algorithm
         arrayUpdate(dimensions, index, Dimension.UNTYPED(dimension.dimension, true));
 
-        (exp, ty, var) := typeExp(dimension.dimension, intBitOr(origin, ExpOrigin.DIMENSION), info);
+        // Type the expressions without replacing constants, we want to ceval
+        // the expression ourselves to get better error messages.
+        (exp, ty, var) := typeExp(dimension.dimension, intBitOr(origin, ExpOrigin.DIMENSION),
+          info, replaceConstants = false);
         TypeCheck.checkDimensionType(exp, ty, info);
 
         if var <= Variability.PARAMETER then
@@ -610,7 +613,7 @@ algorithm
       MatchKind matchKind;
       Boolean dirty;
       String name;
-      Variability comp_var;
+      Variability comp_var, bind_var;
 
     // A component that's already been typed.
     case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
@@ -625,24 +628,26 @@ algorithm
         // binding which is now typed, and it needs to be type checked.
         if dirty then
           binding := TypeCheck.matchBinding(binding, c.ty, name, node);
-          comp_var := Component.variability(c);
+          comp_var := Prefixes.effectiveVariability(Component.variability(c));
+          bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
 
-          if Binding.variability(binding) > comp_var then
+          if bind_var > comp_var then
             if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
               Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {
-                name, Prefixes.variabilityString(Component.variability(c)),
-                Binding.toString(c.binding), Prefixes.variabilityString(Binding.variability(binding))}, Binding.getInfo(binding));
+                name, Prefixes.variabilityString(comp_var),
+                Binding.toString(c.binding), Prefixes.variabilityString(bind_var)},
+                Binding.getInfo(binding));
             else
               Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-                name, Prefixes.variabilityString(Component.variability(c)),
-                "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+                name, Prefixes.variabilityString(comp_var),
+                "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
                 Binding.getInfo(binding));
               fail();
             end if;
           end if;
 
           // Evaluate the binding if the component is a constant.
-          if comp_var == Variability.CONSTANT then
+          if comp_var <= Variability.STRUCTURAL_PARAMETER then
             // TODO: Allow this to fail for now. Once constant evaluation has
             // been improved we should print an error when a constant binding
             // couldn't be evaluated instead.
@@ -1042,8 +1047,9 @@ algorithm
         (cref, ty, variability) := typeCref(exp.cref, origin, info);
         e1 := Expression.CREF(ty, cref);
 
-        if replaceConstants and variability == Variability.CONSTANT then
+        if replaceConstants and variability <= Variability.STRUCTURAL_PARAMETER then
           e1 := Ceval.evalExp(e1, Ceval.EvalTarget.GENERIC(info));
+          e1 := SimplifyExp.simplifyExp(e1);
         end if;
       then
         (e1, ty, variability);
@@ -1371,7 +1377,7 @@ algorithm
 
   (cref, subs_var) := typeCref2(cref, origin, info);
   ty := ComponentRef.getSubscriptedType(cref);
-  variability := Prefixes.variabilityMax(ComponentRef.getVariability(cref), subs_var);
+  variability := Prefixes.variabilityMax(ComponentRef.nodeVariability(cref), subs_var);
 end typeCref;
 
 function typeCref2
@@ -1685,7 +1691,7 @@ algorithm
     ostep_ty := NONE();
   end if;
 
-  if variability <= Variability.PARAMETER then
+  if variability <= Variability.STRUCTURAL_PARAMETER then
     start_exp := SimplifyExp.simplifyExp(Ceval.evalExp(start_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
     ostep_exp := SimplifyExp.simplifyExpOpt(Ceval.evalExpOpt(ostep_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
     stop_exp := SimplifyExp.simplifyExp(Ceval.evalExp(stop_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
@@ -1769,7 +1775,7 @@ algorithm
           fail();
         end if;
 
-        if variability <= Variability.PARAMETER then
+        if variability <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate the index if it's a constant.
           index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
           index := SimplifyExp.simplifyExp(index);
@@ -1811,7 +1817,6 @@ algorithm
 
           // Since we don't know which dimension to take the size of, return a size expression.
           exp := Expression.SIZE(exp, SOME(index));
-          variability := Variability.CONTINUOUS;
         end if;
       then
         (exp, Type.INTEGER(), variability);
@@ -2551,10 +2556,10 @@ algorithm
   // The first argument must be a continuous time variable.
   // Check the variability of the cref instead of the variability returned by
   // typeExp, since expressions in when-equation count as discrete.
-  if ComponentRef.getVariability(cref) <> Variability.CONTINUOUS then
+  if ComponentRef.nodeVariability(cref) <> Variability.CONTINUOUS then
     Error.addSourceMessage(Error.REINIT_MUST_BE_VAR,
       {Expression.toString(crefExp),
-       Prefixes.variabilityString(ComponentRef.getVariability(cref))}, info);
+       Prefixes.variabilityString(ComponentRef.nodeVariability(cref))}, info);
     fail();
   end if;
 
