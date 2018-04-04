@@ -160,7 +160,7 @@ algorithm
       (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
       isZero := simplifyInStreamWorkSimplify(eMin, false);
       tp := ComponentReference.crefTypeFull(cr);
-    then if isZero then e else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+    then if isZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
 
     case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef=cr)), expr}) algorithm
       (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
