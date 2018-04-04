@@ -208,9 +208,24 @@ algorithm
   isZero := match bound
     local
       Real r;
+      Boolean b;
+      DAE.Exp expr;
 
     case SOME(DAE.RCONST(r))
-    then if neg then r<= 0.0 else r >= 0.0;
+      then if neg then r<= 0.0 else r >= 0.0;
+
+    case SOME(expr)
+      //guard Expression.isConst(expr)
+      algorithm
+       expr := ExpressionSimplify.simplify(expr);
+       b := match expr
+            case DAE.RCONST(r)
+              then if neg then r<= 0.0 else r >= 0.0;
+            else
+              false;
+            end match;
+      then
+        b;
 
     else false;
   end match;
