@@ -1411,6 +1411,13 @@ algorithm
   select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotation(inVar);
 end hasVarEvaluateAnnotationOrFinalOrProtected;
 
+public function hasVarEvaluateTrueAnnotationOrFinalOrProtected
+  input BackendDAE.Var inVar;
+  output Boolean select;
+algorithm
+  select := isFinalOrProtectedVar(inVar) or hasVarEvaluateAnnotationTrue(inVar);
+end hasVarEvaluateTrueAnnotationOrFinalOrProtected;
+
 public function hasVarEvaluateAnnotation
   input BackendDAE.Var inVar;
   output Boolean select;
@@ -1418,12 +1425,29 @@ algorithm
   select := match(inVar)
     local
       SCode.Annotation anno;
-    // Parameter with evaluate=true
+    // Parameter with evaluate annotation
     case BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(anno))))
       then SCode.hasBooleanNamedAnnotation(anno,"Evaluate");
     else false;
   end match;
 end hasVarEvaluateAnnotation;
+
+public function hasVarEvaluateAnnotationTrue
+  "Returns true if var has Evaluate=true annotation"
+  input BackendDAE.Var inVar;
+  output Boolean isTrue;
+protected
+  SCode.Annotation ann;
+  Absyn.Exp val;
+algorithm
+  try
+    BackendDAE.VAR(comment=SOME(SCode.COMMENT(annotation_ = SOME(ann)))) := inVar;
+    (val,_) := SCode.getNamedAnnotation(ann, "Evaluate");
+    isTrue := stringEqual(Dump.printExpStr(val), "true");
+  else
+    isTrue := false;
+  end try;
+end hasVarEvaluateAnnotationTrue;
 
 public function hasVarEvaluateAnnotationFalse
   "Returns true if var has Evaluate=false annotation
