@@ -177,6 +177,7 @@ protected
         Type t;
         ComplexType ct;
         Option<ComponentRef> aflow;
+        ClassTree tree;
 
       case Type.COMPLEX(complexTy = ct as ComplexType.CONNECTOR())
         algorithm
@@ -187,6 +188,14 @@ protected
             aflow := SOME(Connector.name(listHead(conns)));
             conns := splitImpl2(name, face, source, ct.streams, aflow, conns);
           end if;
+        then
+          conns;
+
+      case Type.COMPLEX()
+        algorithm
+          tree := Class.classTree(InstNode.getClass(ty.cls));
+          conns := splitImpl2(name, face, source,
+            arrayList(ClassTree.getComponents(tree)), associatedFlow, conns);
         then
           conns;
 
