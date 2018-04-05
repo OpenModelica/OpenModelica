@@ -1017,9 +1017,11 @@ function typeExp
   "Types an untyped expression, returning the typed expression itself along with
    its type and variability. The default behaviour is to replace any constants
    found with their bound values (giving an error if they have none), but this
-   can be turned off with the replaceConstants parameter. Note that replaceConstants
-   is not propagated when typing subexpressions, because this is so far only
-   used when we need the whole expression to be kept as a cref (like connectors)."
+   can be turned off with the replaceConstants parameter.
+
+   NOTE: replaceConstants is not propagated when typing subexpressions, because
+         this is so far only used when we need the whole expression to be kept
+         as a cref (like connectors)."
   input output Expression exp;
   input ExpOrigin.Type origin;
   input SourceInfo info;
@@ -1128,14 +1130,7 @@ algorithm
       then
         (exp, ty, variability);
 
-    case Expression.IF()
-      algorithm
-        next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
-        (e1, ty1, var1) := typeExp(exp.condition, next_origin, info);
-        (e2, ty2, var2) := typeExp(exp.trueBranch, next_origin, info);
-        (e3, ty3, var3) := typeExp(exp.falseBranch, next_origin, info);
-      then
-        TypeCheck.checkIfExpression(e1, ty1, var1, e2, ty2, var2, e3, ty3, var3, info);
+    case Expression.IF() then typeIfExpression(exp, origin, info);
 
     case Expression.CALL()
       algorithm
@@ -1891,6 +1886,88 @@ function evaluateEnd
 
   end match;
 end evaluateEnd;
+
+function typeIfExpression
+  input output Expression ifExp;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+        output Type ty;
+        output Variability var;
+protected
+  Expression cond, tb, fb, tb2, fb2;
+  ExpOrigin.Type next_origin;
+  Type cond_ty, tb_ty, fb_ty;
+  Variability cond_var, tb_var, fb_var;
+  MatchKind ty_match;
+algorithm
+  Expression.IF(condition = cond, trueBranch = tb, falseBranch = fb) := ifExp;
+  next_origin := intBitOr(origin, ExpOrigin.SUBEXPRESSION);
+
+  (cond, cond_ty, cond_var) := typeExp(cond, next_origin, info);
+
+  // The condition must be a scalar boolean.
+  (cond, _, ty_match) := TypeCheck.matchTypes(cond_ty, Type.BOOLEAN(), cond);
+
+  if TypeCheck.isIncompatibleMatch(ty_match) then
+    Error.addSourceMessage(Error.IF_CONDITION_TYPE_ERROR,
+      {Expression.toString(cond), Type.toString(cond_ty)}, info);
+    fail();
+  end if;
+
+  if cond_var <= Variability.STRUCTURAL_PARAMETER then
+    // If the condition is constant, always do branch selection.
+    if evaluateCondition(cond, info) then
+      (ifExp, ty, var) := typeExp(tb, next_origin, info);
+    else
+      (ifExp, ty, var) := typeExp(fb, next_origin, info);
+    end if;
+  else
+    // Otherwise type both of the branches.
+    (tb, tb_ty, tb_var) := typeExp(tb, next_origin, info);
+    (fb, fb_ty, fb_var) := typeExp(fb, next_origin, info);
+
+    (tb2, fb2, ty, ty_match) := TypeCheck.matchExpressions(tb, tb_ty, fb, fb_ty);
+
+    if TypeCheck.isIncompatibleMatch(ty_match) then
+      if cond_var <= Variability.PARAMETER then
+        // If the branches have different types but the condition is a parameter
+        // expression, do branch selection.
+        (ifExp, ty, var) := if evaluateCondition(cond, info) then (tb, tb_ty, tb_var) else (fb, fb_ty, fb_var);
+      else
+        // Otherwise give an type mismatch error.
+        Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
+          {"", Expression.toString(tb), Type.toString(tb_ty),
+               Expression.toString(fb), Type.toString(fb_ty)}, info);
+        fail();
+      end if;
+    else
+      // If the types match, return a typed if-expression.
+      ifExp := Expression.IF(cond, tb2, fb2);
+      var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
+    end if;
+  end if;
+end typeIfExpression;
+
+function evaluateCondition
+  input Expression condExp;
+  input SourceInfo info;
+  output Boolean condBool;
+protected
+  Expression cond_exp;
+algorithm
+  cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.GENERIC(info));
+  cond_exp := SimplifyExp.simplifyExp(cond_exp);
+
+  condBool := match cond_exp
+    case Expression.BOOLEAN() then cond_exp.value;
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " failed to evaluate condition `" +
+          Expression.toString(condExp) + "`", info);
+      then
+        fail();
+  end match;
+end evaluateCondition;
 
 function typeSections
   input InstNode classNode;

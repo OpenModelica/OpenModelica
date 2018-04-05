@@ -2056,51 +2056,6 @@ algorithm
   end match;
 end getRangeTypeEnum;
 
-function checkIfExpression
-  input Expression condExp;
-  input Type condType;
-  input Variability condVar;
-  input Expression thenExp;
-  input Type thenType;
-  input Variability thenVar;
-  input Expression elseExp;
-  input Type elseType;
-  input Variability elseVar;
-  input SourceInfo info;
-  output Expression outExp;
-  output Type outType;
-  output Variability outVar;
-protected
-   Expression ec, e1, e2;
-   String s1, s2, s3, s4;
-   MatchKind ty_match;
-algorithm
-  (ec, _, ty_match) := matchTypes(condType, Type.BOOLEAN(), condExp);
-
-  // The condition must be a boolean.
-  if isIncompatibleMatch(ty_match) then
-    s1 := Expression.toString(condExp);
-    s2 := Type.toString(condType);
-    Error.addSourceMessageAndFail(Error.IF_CONDITION_TYPE_ERROR, {s1, s2}, info);
-  end if;
-
-  (e1, e2, outType, ty_match) :=
-    matchExpressions(thenExp, thenType, elseExp, elseType);
-
-  // The types of the branches must be compatible.
-  if isIncompatibleMatch(ty_match) then
-    s1 := Expression.toString(thenExp);
-    s2 := Expression.toString(elseExp);
-    s3 := Type.toString(thenType);
-    s4 := Type.toString(elseType);
-    Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_IF_EXP,
-      {"", s1, s3, s2, s4}, info);
-  end if;
-
-  outExp := Expression.IF(ec, e1, e2);
-  outVar := Prefixes.variabilityMax(thenVar, elseVar);
-end checkIfExpression;
-
 function matchBinding
   input output Binding binding;
   input Type componentType;
