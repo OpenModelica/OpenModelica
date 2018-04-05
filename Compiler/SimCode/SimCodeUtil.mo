@@ -5546,6 +5546,8 @@ algorithm
       DAE.ElementSource source;
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes eqAttr;
+      list<SimCode.SimEqSystem> result;
+      list<DAE.Exp> discreteVarsExp;
       constant Boolean debug = false;
 
     // normal call
@@ -5580,6 +5582,7 @@ algorithm
       // get and expand the searched variables
       solvedVars = List.map(vars, BackendVariable.varCref);
       solvedVars = List.unionList(List.map1(solvedVars, ComponentReference.expandCref, true));
+      if debug then BackendDump.debugStrCrefLstStr("solvedVars : ", solvedVars, ", ", "\n"); end if;
 
       // get and expand all other variables
       algOutVars = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
@@ -5588,9 +5591,13 @@ algorithm
       // the remaining quantity of all out vars to the solved vars
       knownOutputCrefs = List.setDifference(algOutVars, solvedVars);
 
-      //Why do we need to filter the discrete variables?
-      //List.filterOnTrue(BackendVariable.varList(knVars),BackendVariable.isRecordVar);
+      // filter since are not solvable with non-linear solver
       solvedVars = List.map(List.filterOnTrue(vars, BackendVariable.isVarNonDiscrete), BackendVariable.varCref);
+
+      // discrete vars are added with there start value and by
+      // event iteration we ensure that all variable are consistent
+      discreteVarsExp = list(Expression.crefToExp(BackendVariable.varCref(v)) for v in List.filterOnTrue(vars, BackendVariable.isVarDiscrete));
+      algStatements = BackendDAEOptimize.expandAlgorithmStmts(algStatements, discreteVarsExp, BackendVariable.listVar(vars), true);
 
       if debug then
         BackendDump.debugStrCrefLstStr("algOutVars : ", algOutVars, ", ", "\n");
@@ -5601,8 +5608,20 @@ algorithm
       //Why should we have the same amount of solved vars and know vars?
       //true = intEq(listLength(solvedVars), listLength(knownOutputCrefs));
 
+      alg = DAE.ALGORITHM_STMTS(algStatements);
       DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-    then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1, {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, eqAttr)}, solvedVars, 0, listLength(vars), NONE(), false, false, false), NONE(), eqAttr)}, iuniqueEqIndex+2);
+
+      if not listEmpty(solvedVars) then
+        result = {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(iuniqueEqIndex+1,
+                      {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, true, eqAttr)},
+                   solvedVars, 0, listLength(vars), NONE(), false, false, false), NONE(), eqAttr)};
+        ouniqueEqIndex = iuniqueEqIndex+2;
+      else
+        result = {SimCode.SES_INVERSE_ALGORITHM(iuniqueEqIndex, algStatements, knownOutputCrefs, false, eqAttr)};
+        ouniqueEqIndex = iuniqueEqIndex+1;
+      end if;
+
+    then (result, ouniqueEqIndex);
 
     // Error message, inverse algorithms cannot be solved for discrete variables
     case (BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)::_, _) equation
@@ -11752,7 +11771,7 @@ author:Waurich TUD 2014-05"
 algorithm
     simEqSysOut := match(simEqSysIn,idx)
     local
-      Boolean pom,changed,ic;
+      Boolean pom,changed,ic, inls;
       Integer idxLS,idxNLS,idxMX,nUnknowns;
       list<Boolean> bLst;
       DAE.ComponentRef cref;
@@ -11797,8 +11816,8 @@ algorithm
     case(SimCode.SES_ALGORITHM(statements=stmts,eqAttr=eqAttr), _) equation
       simEqSys = SimCode.SES_ALGORITHM(idx,stmts, eqAttr);
     then simEqSys;
-    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, knownOutputCrefs=crefs,eqAttr=eqAttr), _) equation
-      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs, eqAttr);
+    case(SimCode.SES_INVERSE_ALGORITHM(statements=stmts, knownOutputCrefs=crefs,insideNonLinearSystem=inls,eqAttr=eqAttr), _) equation
+      simEqSys = SimCode.SES_INVERSE_ALGORITHM(idx, stmts, crefs, inls, eqAttr);
     then simEqSys;
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(partOfMixed=pom,tornSystem=tornSystem,vars=simVars,beqs=expLst,sources=sources,simJac=simJac,residual=simEqSysLst,jacobianMatrix=jac,indexLinearSystem=idxLS,nUnknowns=nUnknowns),eqAttr=eqAttr),_)
       equation

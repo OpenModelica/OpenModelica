@@ -3700,7 +3700,7 @@ algorithm
   end match;
 end eaddInitialStmtsToAlgorithms1Helper;
 
-protected function expandAlgorithmStmts "Helper function to eaddInitialStmtsToAlgorithms1Helper."
+public function expandAlgorithmStmts "Helper function to eaddInitialStmtsToAlgorithms1Helper."
   input list<DAE.Statement> inAlg;
   input list<DAE.Exp> inOutputs;
   input BackendDAE.Variables inVars;

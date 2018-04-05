@@ -464,10 +464,10 @@ package SimCode
     end SES_ALGORITHM;
 
     record SES_INVERSE_ALGORITHM
-      "this should only occur inside SES_NONLINEAR"
       Integer index;
       list<DAE.Statement> statements;
       list<DAE.ComponentRef> knownOutputCrefs "this is a subset of output crefs of the original algorithm, which are already known";
+      Boolean insideNonLinearSystem;
       BackendDAE.EquationAttributes eqAttr;
     end SES_INVERSE_ALGORITHM;
 

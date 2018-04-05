@@ -4855,7 +4855,6 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   case e as SES_IFEQUATION(__)
     then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix)
   case e as SES_ALGORITHM(__)
-    then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_INVERSE_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
@@ -4956,9 +4955,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
     then equationArrayCallAssign(e, context, &varD, &tempeqns)
   case e as SES_IFEQUATION(__)
     then equationIfEquationAssign(e, context, &varD, &tempeqns, modelNamePrefix)
-  case e as SES_ALGORITHM(__)
-    then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_INVERSE_ALGORITHM(__)
+  case e as SES_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD, &tempeqns)
   case e as SES_LINEAR(__)
     then equationLinear(e, context, &varD)
@@ -5211,11 +5209,32 @@ template equationAlgorithm(SimEqSystem eq, Context context, Text &varDecls, Text
  "Generates an equation that is an algorithm."
 ::=
 match eq
-case SES_ALGORITHM(__)
-case SES_INVERSE_ALGORITHM(__) then
+/* SES_INVERSE_ALGORITHM which is used by the non-linear solver */
+case alg as SES_INVERSE_ALGORITHM(insideNonLinearSystem=true)
+case SES_ALGORITHM(__) then
   (statements |> stmt =>
     algStatement(stmt, context, &varDecls, &auxFunction)
   ;separator="\n")
+/* Generates an equation that is an inverse algorithm
+  without continuous variables, discrete variables are
+  handled by the event iteration */
+case alg as SES_INVERSE_ALGORITHM(__) then
+  let backupKnown = (alg.knownOutputCrefs |> cr hasindex i0 =>
+    let &varDecls += '<%crefType(cr)%> OLD_<%i0%>;<%\n%>'
+       'OLD_<%i0%> = <%cref(cr)%>;'
+      ;separator="\n")
+  let stmts = (statements |> stmt =>
+    algStatement(stmt, context, &varDecls, &auxFunction)
+  ;separator="\n")
+  let restoreKnownVars = (alg.knownOutputCrefs |> cr hasindex i0 => '<%cref(cr)%> = OLD_<%i0%>;' ;separator="\n")
+  <<
+  /* backup outputs of the algorithm */
+  <%backupKnown%>
+  /* algrithm it self */
+  <%stmts%>
+  /* restore outputs of the algorithm */
+  <%restoreKnownVars%>
+  >>
 end equationAlgorithm;
 
 template equationLinear(SimEqSystem eq, Context context, Text &varDecls)
