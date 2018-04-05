@@ -7886,6 +7886,7 @@ algorithm
       Type t;
       list<DAE.Exp> ae;
       list<list<DAE.Exp>> matrix;
+      Absyn.Path path;
 
     case (DAE.ICONST()) then true;
     case (DAE.RCONST()) then true;
@@ -7966,6 +7967,10 @@ algorithm
         if res then isConstWork(e1) else false;
 
     case (DAE.CALL(expLst=ae, attr=DAE.CALL_ATTR(builtin=false, isImpure=false))) then isConstWorkList(ae);
+    case (DAE.CALL(path=path, expLst=ae, attr=DAE.CALL_ATTR(builtin=true))) then
+      if listMember(Absyn.pathFirstIdent(path),
+        {"initial","terminal","sample" /* der/edge/change/pre belongs to this list usually, but if we optimize the expression, we might end up with pre of a constant expression... */}
+        ) then false else isConstWorkList(ae);
 
     case (DAE.RECORD(exps=ae)) then isConstWorkList(ae);
 
