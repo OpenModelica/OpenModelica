@@ -28,6 +28,7 @@ Interpolation.mos \
 InverseAlgorithm1.mos \
 InverseAlgorithm2.mos \
 InverseAlgorithm3.mos \
+InverseAlgorithm4.mos \
 LocalVariableInit.mos \
 ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.mos \
 SimplePeriodicSampler.mos \
