@@ -387,6 +387,11 @@ IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \
 IfEquation4.mo \
+IfExpression1.mo \
+IfExpression2.mo \
+IfExpression3.mo \
+IfExpression4.mo \
+IfExpression5.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -624,6 +629,7 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+IfExpression6.mo \
 TupleOperation3.mo \
 RedeclareConstant1.mo \
 BuiltinAttribute13.mo \

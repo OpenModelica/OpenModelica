@@ -34,7 +34,7 @@ end A;
 //   parameter Boolean b9 = 1 == 0;
 //   parameter Boolean b10 = 1 <> 0;
 //   parameter Boolean b = false or false and not true or true and false and not false or true and not true and not false and true;
-//   parameter Integer n = if false then 2 else 3;
+//   parameter Integer n = 3;
 //   Real x[1];
 //   Real x[2];
 //   Real x[3];
