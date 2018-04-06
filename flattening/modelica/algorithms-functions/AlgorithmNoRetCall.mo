@@ -44,7 +44,7 @@ end AlgorithmNoRetCall;
 //
 // class AlgorithmNoRetCall
 // algorithm
-//   Modelica.Utilities.Streams.print(String(time, 0, true, 6) + "
-// ");
+//   Modelica.Utilities.Streams.print(String(time, 6, 0, true) + "
+//   ");
 // end AlgorithmNoRetCall;
 // endResult

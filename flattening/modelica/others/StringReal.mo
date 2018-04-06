@@ -27,6 +27,6 @@ end StringReal;
 //   s1 = "111.222";
 //   s2 = "3.142";
 //   r = 1234.5678;
-//   s3 = String(r, 0, true, 6);
+//   s3 = String(r, 6, 0, true);
 // end StringReal;
 // endResult

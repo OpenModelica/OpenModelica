@@ -664,7 +664,7 @@ simulate(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();
 //   PI_i_q.P.y = PI_i_q.P.k * PI_i_q.P.u;
 //   PI_i_q.gainPID.y = PI_i_q.gainPID.k * PI_i_q.gainPID.u;
 //   PI_i_q.addPID.y = PI_i_q.addPID.k1 * PI_i_q.addPID.u1 + PI_i_q.addPID.k2 * PI_i_q.addPID.u2 + PI_i_q.addPID.k3 * PI_i_q.addPID.u3;
-//   assert(PI_i_q.limiter.uMax >= PI_i_q.limiter.uMin, \"Limiter: Limits must be consistent. However, uMax (=\" + String(PI_i_q.limiter.uMax, 0, true, 6) + \") < uMin (=\" + String(PI_i_q.limiter.uMin, 0, true, 6) + \")\");
+//   assert(PI_i_q.limiter.uMax >= PI_i_q.limiter.uMin, \"Limiter: Limits must be consistent. However, uMax (=\" + String(PI_i_q.limiter.uMax, 6, 0, true) + \") < uMin (=\" + String(PI_i_q.limiter.uMin, 6, 0, true) + \")\");
 //   PI_i_q.limiter.y = homotopy(smooth(0, if PI_i_q.limiter.u > PI_i_q.limiter.uMax then PI_i_q.limiter.uMax else if PI_i_q.limiter.u < PI_i_q.limiter.uMin then PI_i_q.limiter.uMin else PI_i_q.limiter.u), PI_i_q.limiter.u);
 //   der(PI_i_q.I.y) = PI_i_q.I.k * PI_i_q.I.u;
 //   PI_i_q.addI.y = PI_i_q.addI.k1 * PI_i_q.addI.u1 + PI_i_q.addI.k2 * PI_i_q.addI.u2 + PI_i_q.addI.k3 * PI_i_q.addI.u3;

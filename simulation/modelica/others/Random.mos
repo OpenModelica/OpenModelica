@@ -131,7 +131,7 @@ simulate(testRandom2, stopTime=3); getErrorString();
 //   \", \"\");
 //   for i in 1:10 loop
 //     (x, seed) := random({seed[1], seed[2], seed[3]});
-//     Modelica.Utilities.Streams.print(\"x = \" + String(x, 0, true, 16) + \"
+//     Modelica.Utilities.Streams.print(\"x = \" + String(x, 16, 0, true) + \"
 //     \", \"\");
 //   end for;
 // end testRandom3;

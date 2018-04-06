@@ -6028,12 +6028,12 @@ end IntroductoryExamples_Systems_InvertedPendulum;
 //   controller.pulse.y = controller.pulse.offset + (if time < controller.pulse.startTime or time >= controller.pulse.T0 + controller.pulse.T_width then 0.0 else controller.pulse.amplitude);
 //   controller.switch1.y = if controller.switch1.u2 then controller.switch1.u1 else controller.switch1.u3;
 //   controller.ConstantQ.y = controller.ConstantQ.k;
-//   assert(controller.limiter.uMax >= controller.limiter.uMin, "Limiter: Limits must be consistent. However, uMax (=" + String(controller.limiter.uMax, 0, true, 6) + ") < uMin (=" + String(controller.limiter.uMin, 0, true, 6) + ")");
+//   assert(controller.limiter.uMax >= controller.limiter.uMin, "Limiter: Limits must be consistent. However, uMax (=" + String(controller.limiter.uMax, 6, 0, true) + ") < uMin (=" + String(controller.limiter.uMin, 6, 0, true) + ")");
 //   if initial() and not controller.limiter.limitsAtInit then
 //     controller.limiter.y = controller.limiter.u;
 //     assert(controller.limiter.u >= controller.limiter.uMin + (-0.01) * abs(controller.limiter.uMin) and controller.limiter.u <= controller.limiter.uMax + 0.01 * abs(controller.limiter.uMax), "Limiter: During initialization the limits have been ignored.
 //     However, the result is that the input u is not within the required limits:
-//       u = " + String(controller.limiter.u, 0, true, 6) + ", uMin = " + String(controller.limiter.uMin, 0, true, 6) + ", uMax = " + String(controller.limiter.uMax, 0, true, 6));
+//       u = " + String(controller.limiter.u, 6, 0, true) + ", uMin = " + String(controller.limiter.uMin, 6, 0, true) + ", uMax = " + String(controller.limiter.uMax, 6, 0, true));
 //   else
 //     controller.limiter.y = smooth(0, if controller.limiter.u > controller.limiter.uMax then controller.limiter.uMax else if controller.limiter.u < controller.limiter.uMin then controller.limiter.uMin else controller.limiter.u);
 //   end if;

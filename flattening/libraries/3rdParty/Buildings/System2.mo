@@ -7626,8 +7626,8 @@ end System2;
 // algorithm
 //   if n > 1 then
 //     assert(x[1] < x[n], "x must be strictly increasing.
-//                   Received x[1] = " + String(x[1], 0, true, 6) + "
-//                            x[" + String(n, 0, true) + "] = " + String(x[n], 0, true, 6));
+//                   Received x[1] = " + String(x[1], 6, 0, true) + "
+//                            x[" + String(n, 0, true) + "] = " + String(x[n], 6, 0, true));
 //     assert(Buildings.Utilities.Math.Functions.isMonotonic(x, true), "x-values must be strictly monontone increasing or decreasing.");
 //     if ensureMonotonicity then
 //       assert(Buildings.Utilities.Math.Functions.isMonotonic(y, false), "If ensureMonotonicity=true, y-values must be monontone increasing or decreasing.");
@@ -8023,18 +8023,18 @@ end System2;
 //   for i in 1:nX loop
 //     assert(X_boundary[i] >= 0.0, "
 //               Wrong boundary mass fractions in medium \"" + mediumName + "\" in model \"" + modelName + "\":
-//               The boundary value X_boundary(" + String(i, 0, true) + ") = " + String(X_boundary[i], 0, true, 6) + "
+//               The boundary value X_boundary(" + String(i, 0, true) + ") = " + String(X_boundary[i], 6, 0, true) + "
 //               is negative. It must be positive.
 //               ");
 //   end for;
 //   if nX > 0 and abs(-1.0 + sum(X_boundary)) > 1e-10 then
 //     X_str := "";
 //     for i in 1:nX loop
-//       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 0, true, 6) + " \"" + substanceNames[i] + "\"
+//       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 6, 0, true) + " \"" + substanceNames[i] + "\"
 //       ";
 //     end for;
 //     Modelica.Utilities.Streams.error("The boundary mass fractions in medium \"" + mediumName + "\" in model \"" + modelName + "\"
-//     " + "do not sum up to 1. Instead, sum(X_boundary) = " + String(sum(X_boundary), 0, true, 6) + ":
+//     " + "do not sum up to 1. Instead, sum(X_boundary) = " + String(sum(X_boundary), 6, 0, true) + ":
 //     " + X_str);
 //   end if;
 // end Modelica.Fluid.Utilities.checkBoundary;
@@ -9636,7 +9636,7 @@ end System2;
 // equation
 //   assert(vol.dynBal.medium.T >= 200.0 and vol.dynBal.medium.T <= 423.15, "
 //             Temperature T is not in the allowed range
-//             200.0 K <= (T =" + String(vol.dynBal.medium.T, 0, true, 6) + " K) <= 423.15 K
+//             200.0 K <= (T =" + String(vol.dynBal.medium.T, 6, 0, true) + " K) <= 423.15 K
 //             required from medium model \"" + "MoistAirPTDecoupledUnsaturated" + "\".");
 //   vol.dynBal.medium.MM = 1.0 / (vol.dynBal.medium.Xi[1] / <EMPTY(scope: Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.BaseProperties$vol$dynBal$medium, name: steam.MM, ty: Real(String quantity PARAM DAE.EQBOUND("MolarMass", SOME("MolarMass"), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND("kg/mol", SOME("kg/mol"), C_PARAM, [DEFAULT VALUE]), Real min PARAM DAE.EQBOUND(0.0, SOME(0.0), C_PARAM, [DEFAULT VALUE])))> + (1.0 - vol.dynBal.medium.Xi[1]) / <EMPTY(scope: Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.BaseProperties$vol$dynBal$medium, name: dryair.MM, ty: Real(String quantity PARAM DAE.EQBOUND("MolarMass", SOME("MolarMass"), C_PARAM, [DEFAULT VALUE]), String unit PARAM DAE.EQBOUND("kg/mol", SOME("kg/mol"), C_PARAM, [DEFAULT VALUE]), Real min PARAM DAE.EQBOUND(0.0, SOME(0.0), C_PARAM, [DEFAULT VALUE])))>);
 //   vol.dynBal.medium.p_steam_sat = min(Buildings.Fluid.Interfaces.ConservationEquation$vol$dynBal.Medium.saturationPressure(vol.dynBal.medium.T), 0.999 * vol.dynBal.medium.p);
@@ -9656,12 +9656,12 @@ end System2;
 //   vol.dynBal.medium.phi = vol.dynBal.medium.p * vol.dynBal.medium.Xi[1] / (vol.dynBal.medium.p_steam_sat * (vol.dynBal.medium.Xi[1] + steam.MM * vol.dynBal.medium.X_air / dryair.MM));
 //   vol.dynBal.medium.Xi[1] = vol.dynBal.medium.X[1];
 //   vol.dynBal.medium.X[2] = 1.0 - vol.dynBal.medium.Xi[1];
-//   assert(vol.dynBal.medium.X[1] >= -1e-05 and vol.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(vol.dynBal.medium.X[1], 0, true, 6) + "of substance " + "water" + "
+//   assert(vol.dynBal.medium.X[1] >= -1e-05 and vol.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(vol.dynBal.medium.X[1], 6, 0, true) + "of substance " + "water" + "
 //   of medium " + "MoistAirPTDecoupledUnsaturated" + " is not in the range 0..1");
-//   assert(vol.dynBal.medium.X[2] >= -1e-05 and vol.dynBal.medium.X[2] <= 1.00001, "Mass fraction X[2] = " + String(vol.dynBal.medium.X[2], 0, true, 6) + "of substance " + "air" + "
+//   assert(vol.dynBal.medium.X[2] >= -1e-05 and vol.dynBal.medium.X[2] <= 1.00001, "Mass fraction X[2] = " + String(vol.dynBal.medium.X[2], 6, 0, true) + "of substance " + "air" + "
 //   of medium " + "MoistAirPTDecoupledUnsaturated" + " is not in the range 0..1");
-//   assert(vol.dynBal.medium.p >= 0.0, "Pressure (= " + String(vol.dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "MoistAirPTDecoupledUnsaturated" + "\" is negative
-//   (Temperature = " + String(vol.dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(vol.dynBal.medium.p >= 0.0, "Pressure (= " + String(vol.dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "MoistAirPTDecoupledUnsaturated" + "\" is negative
+//   (Temperature = " + String(vol.dynBal.medium.T, 6, 0, true) + " K)");
 //   vol.dynBal.m = vol.dynBal.fluidVolume * vol.dynBal.medium.d;
 //   vol.dynBal.mXi[1] = vol.dynBal.medium.Xi[1] * vol.dynBal.m;
 //   vol.dynBal.U = vol.dynBal.m * vol.dynBal.medium.u;
@@ -9703,8 +9703,8 @@ end System2;
 //   rad.preHeaFloRad[4].port.Q_flow = -rad.preHeaFloRad[4].Q_flow;
 //   rad.preHeaFloRad[5].port.Q_flow = -rad.preHeaFloRad[5].Q_flow;
 //   assert(rad.vol[1].dynBal.medium.T >= 272.15 and rad.vol[1].dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(rad.vol[1].dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(rad.vol[1].dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   rad.vol[1].dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$rad$vol$dynBal.Medium.specificEnthalpy_pTX(rad.vol[1].dynBal.medium.p, rad.vol[1].dynBal.medium.T, {rad.vol[1].dynBal.medium.X[1]});
@@ -9715,10 +9715,10 @@ end System2;
 //   rad.vol[1].dynBal.medium.state.T = rad.vol[1].dynBal.medium.T;
 //   rad.vol[1].dynBal.medium.state.p = rad.vol[1].dynBal.medium.p;
 //   rad.vol[1].dynBal.medium.X[1] = 1.0;
-//   assert(rad.vol[1].dynBal.medium.X[1] >= -1e-05 and rad.vol[1].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[1].dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(rad.vol[1].dynBal.medium.X[1] >= -1e-05 and rad.vol[1].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[1].dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(rad.vol[1].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[1].dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(rad.vol[1].dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(rad.vol[1].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[1].dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(rad.vol[1].dynBal.medium.T, 6, 0, true) + " K)");
 //   rad.vol[1].dynBal.m = rad.vol[1].dynBal.fluidVolume * rad.vol[1].dynBal.medium.d;
 //   rad.vol[1].dynBal.U = rad.vol[1].dynBal.m * rad.vol[1].dynBal.medium.u;
 //   rad.vol[1].dynBal.hOut = rad.vol[1].dynBal.medium.h;
@@ -9737,8 +9737,8 @@ end System2;
 //   rad.vol[1].heatPort.T = rad.vol[1].T;
 //   rad.vol[1].heatPort.Q_flow = rad.vol[1].Q_flow;
 //   assert(rad.vol[2].dynBal.medium.T >= 272.15 and rad.vol[2].dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(rad.vol[2].dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(rad.vol[2].dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   rad.vol[2].dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$rad$vol$dynBal.Medium.specificEnthalpy_pTX(rad.vol[2].dynBal.medium.p, rad.vol[2].dynBal.medium.T, {rad.vol[2].dynBal.medium.X[1]});
@@ -9749,10 +9749,10 @@ end System2;
 //   rad.vol[2].dynBal.medium.state.T = rad.vol[2].dynBal.medium.T;
 //   rad.vol[2].dynBal.medium.state.p = rad.vol[2].dynBal.medium.p;
 //   rad.vol[2].dynBal.medium.X[1] = 1.0;
-//   assert(rad.vol[2].dynBal.medium.X[1] >= -1e-05 and rad.vol[2].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[2].dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(rad.vol[2].dynBal.medium.X[1] >= -1e-05 and rad.vol[2].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[2].dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(rad.vol[2].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[2].dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(rad.vol[2].dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(rad.vol[2].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[2].dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(rad.vol[2].dynBal.medium.T, 6, 0, true) + " K)");
 //   rad.vol[2].dynBal.m = rad.vol[2].dynBal.fluidVolume * rad.vol[2].dynBal.medium.d;
 //   rad.vol[2].dynBal.U = rad.vol[2].dynBal.m * rad.vol[2].dynBal.medium.u;
 //   rad.vol[2].dynBal.hOut = rad.vol[2].dynBal.medium.h;
@@ -9771,8 +9771,8 @@ end System2;
 //   rad.vol[2].heatPort.T = rad.vol[2].T;
 //   rad.vol[2].heatPort.Q_flow = rad.vol[2].Q_flow;
 //   assert(rad.vol[3].dynBal.medium.T >= 272.15 and rad.vol[3].dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(rad.vol[3].dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(rad.vol[3].dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   rad.vol[3].dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$rad$vol$dynBal.Medium.specificEnthalpy_pTX(rad.vol[3].dynBal.medium.p, rad.vol[3].dynBal.medium.T, {rad.vol[3].dynBal.medium.X[1]});
@@ -9783,10 +9783,10 @@ end System2;
 //   rad.vol[3].dynBal.medium.state.T = rad.vol[3].dynBal.medium.T;
 //   rad.vol[3].dynBal.medium.state.p = rad.vol[3].dynBal.medium.p;
 //   rad.vol[3].dynBal.medium.X[1] = 1.0;
-//   assert(rad.vol[3].dynBal.medium.X[1] >= -1e-05 and rad.vol[3].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[3].dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(rad.vol[3].dynBal.medium.X[1] >= -1e-05 and rad.vol[3].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[3].dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(rad.vol[3].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[3].dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(rad.vol[3].dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(rad.vol[3].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[3].dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(rad.vol[3].dynBal.medium.T, 6, 0, true) + " K)");
 //   rad.vol[3].dynBal.m = rad.vol[3].dynBal.fluidVolume * rad.vol[3].dynBal.medium.d;
 //   rad.vol[3].dynBal.U = rad.vol[3].dynBal.m * rad.vol[3].dynBal.medium.u;
 //   rad.vol[3].dynBal.hOut = rad.vol[3].dynBal.medium.h;
@@ -9805,8 +9805,8 @@ end System2;
 //   rad.vol[3].heatPort.T = rad.vol[3].T;
 //   rad.vol[3].heatPort.Q_flow = rad.vol[3].Q_flow;
 //   assert(rad.vol[4].dynBal.medium.T >= 272.15 and rad.vol[4].dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(rad.vol[4].dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(rad.vol[4].dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   rad.vol[4].dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$rad$vol$dynBal.Medium.specificEnthalpy_pTX(rad.vol[4].dynBal.medium.p, rad.vol[4].dynBal.medium.T, {rad.vol[4].dynBal.medium.X[1]});
@@ -9817,10 +9817,10 @@ end System2;
 //   rad.vol[4].dynBal.medium.state.T = rad.vol[4].dynBal.medium.T;
 //   rad.vol[4].dynBal.medium.state.p = rad.vol[4].dynBal.medium.p;
 //   rad.vol[4].dynBal.medium.X[1] = 1.0;
-//   assert(rad.vol[4].dynBal.medium.X[1] >= -1e-05 and rad.vol[4].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[4].dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(rad.vol[4].dynBal.medium.X[1] >= -1e-05 and rad.vol[4].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[4].dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(rad.vol[4].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[4].dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(rad.vol[4].dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(rad.vol[4].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[4].dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(rad.vol[4].dynBal.medium.T, 6, 0, true) + " K)");
 //   rad.vol[4].dynBal.m = rad.vol[4].dynBal.fluidVolume * rad.vol[4].dynBal.medium.d;
 //   rad.vol[4].dynBal.U = rad.vol[4].dynBal.m * rad.vol[4].dynBal.medium.u;
 //   rad.vol[4].dynBal.hOut = rad.vol[4].dynBal.medium.h;
@@ -9839,8 +9839,8 @@ end System2;
 //   rad.vol[4].heatPort.T = rad.vol[4].T;
 //   rad.vol[4].heatPort.Q_flow = rad.vol[4].Q_flow;
 //   assert(rad.vol[5].dynBal.medium.T >= 272.15 and rad.vol[5].dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(rad.vol[5].dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(rad.vol[5].dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   rad.vol[5].dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$rad$vol$dynBal.Medium.specificEnthalpy_pTX(rad.vol[5].dynBal.medium.p, rad.vol[5].dynBal.medium.T, {rad.vol[5].dynBal.medium.X[1]});
@@ -9851,10 +9851,10 @@ end System2;
 //   rad.vol[5].dynBal.medium.state.T = rad.vol[5].dynBal.medium.T;
 //   rad.vol[5].dynBal.medium.state.p = rad.vol[5].dynBal.medium.p;
 //   rad.vol[5].dynBal.medium.X[1] = 1.0;
-//   assert(rad.vol[5].dynBal.medium.X[1] >= -1e-05 and rad.vol[5].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[5].dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(rad.vol[5].dynBal.medium.X[1] >= -1e-05 and rad.vol[5].dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(rad.vol[5].dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(rad.vol[5].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[5].dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(rad.vol[5].dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(rad.vol[5].dynBal.medium.p >= 0.0, "Pressure (= " + String(rad.vol[5].dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(rad.vol[5].dynBal.medium.T, 6, 0, true) + " K)");
 //   rad.vol[5].dynBal.m = rad.vol[5].dynBal.fluidVolume * rad.vol[5].dynBal.medium.d;
 //   rad.vol[5].dynBal.U = rad.vol[5].dynBal.m * rad.vol[5].dynBal.medium.u;
 //   rad.vol[5].dynBal.hOut = rad.vol[5].dynBal.medium.h;
@@ -9916,8 +9916,8 @@ end System2;
 //   rad.heatPortRad.Q_flow = rad.QRad_flow;
 //   rad.dp = rad.port_a.p - rad.port_b.p;
 //   assert(sin.medium.T >= 272.15 and sin.medium.T <= 403.15, "
-//             Temperature T (= " + String(sin.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(sin.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   sin.medium.h = Buildings.Fluid.Sources.FixedBoundary$sin.Medium.specificEnthalpy_pTX(sin.medium.p, sin.medium.T, {sin.medium.X[1]});
@@ -9928,10 +9928,10 @@ end System2;
 //   sin.medium.state.T = sin.medium.T;
 //   sin.medium.state.p = sin.medium.p;
 //   sin.medium.X[1] = 1.0;
-//   assert(sin.medium.X[1] >= -1e-05 and sin.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(sin.medium.X[1] >= -1e-05 and sin.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(sin.medium.p >= 0.0, "Pressure (= " + String(sin.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(sin.medium.T, 0, true, 6) + " K)");
+//   assert(sin.medium.p >= 0.0, "Pressure (= " + String(sin.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(sin.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("SimpleLiquidWater", {"SimpleLiquidWater"}, true, sin.use_p, {sin.X[1]}, "FixedBoundary");
 //   sin.medium.p = sin.p;
 //   sin.medium.T = sin.T;
@@ -9950,8 +9950,8 @@ end System2;
 //   temRoo.T = temRoo.port.T;
 //   temRoo.port.Q_flow = 0.0;
 //   assert(pumRad.vol.dynBal.medium.T >= 272.15 and pumRad.vol.dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(pumRad.vol.dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(pumRad.vol.dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   pumRad.vol.dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$pumRad$vol$dynBal.Medium.specificEnthalpy_pTX(pumRad.vol.dynBal.medium.p, pumRad.vol.dynBal.medium.T, {pumRad.vol.dynBal.medium.X[1]});
@@ -9962,10 +9962,10 @@ end System2;
 //   pumRad.vol.dynBal.medium.state.T = pumRad.vol.dynBal.medium.T;
 //   pumRad.vol.dynBal.medium.state.p = pumRad.vol.dynBal.medium.p;
 //   pumRad.vol.dynBal.medium.X[1] = 1.0;
-//   assert(pumRad.vol.dynBal.medium.X[1] >= -1e-05 and pumRad.vol.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(pumRad.vol.dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(pumRad.vol.dynBal.medium.X[1] >= -1e-05 and pumRad.vol.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(pumRad.vol.dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(pumRad.vol.dynBal.medium.p >= 0.0, "Pressure (= " + String(pumRad.vol.dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(pumRad.vol.dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(pumRad.vol.dynBal.medium.p >= 0.0, "Pressure (= " + String(pumRad.vol.dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(pumRad.vol.dynBal.medium.T, 6, 0, true) + " K)");
 //   pumRad.vol.dynBal.m = pumRad.vol.dynBal.fluidVolume * pumRad.vol.dynBal.medium.d;
 //   pumRad.vol.dynBal.U = pumRad.vol.dynBal.m * pumRad.vol.dynBal.medium.u;
 //   pumRad.vol.dynBal.hOut = pumRad.vol.dynBal.medium.h;
@@ -10018,8 +10018,8 @@ end System2;
 //   pumRad.QThe_flow + pumRad.WFlo = if pumRad.motorCooledByFluid then pumRad.P else pumRad.WHyd;
 //   pumRad.Q_flow = homotopy(Buildings.Utilities.Math.Functions.spliceFunction(pumRad.QThe_flow, 0.0, abs(pumRad.VMachine_flow) + (-2.0) * pumRad.delta_V_flow, pumRad.delta_V_flow), 0.0);
 //   assert(sou.medium.T >= 272.15 and sou.medium.T <= 403.15, "
-//             Temperature T (= " + String(sou.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(sou.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   sou.medium.h = Buildings.Fluid.Sources.FixedBoundary$sou.Medium.specificEnthalpy_pTX(sou.medium.p, sou.medium.T, {sou.medium.X[1]});
@@ -10030,10 +10030,10 @@ end System2;
 //   sou.medium.state.T = sou.medium.T;
 //   sou.medium.state.p = sou.medium.p;
 //   sou.medium.X[1] = 1.0;
-//   assert(sou.medium.X[1] >= -1e-05 and sou.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(sou.medium.X[1] >= -1e-05 and sou.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(sou.medium.p >= 0.0, "Pressure (= " + String(sou.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(sou.medium.T, 0, true, 6) + " K)");
+//   assert(sou.medium.p >= 0.0, "Pressure (= " + String(sou.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(sou.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("SimpleLiquidWater", {"SimpleLiquidWater"}, true, sou.use_p, {sou.X[1]}, "FixedBoundary");
 //   sou.medium.p = sou.p;
 //   sou.medium.T = sou.T;

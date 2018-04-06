@@ -279,14 +279,14 @@ end Test;
 //   input Integer significantDigits = 6 "Number of significant digits that are shown";
 //   output String s = " ";
 // algorithm
-//   s := String(c.re, 0, true, significantDigits);
+//   s := String(c.re, significantDigits, 0, true);
 //   if c.im <> 0.0 then
 //     if c.im > 0.0 then
 //       s := s + " + ";
 //     else
 //       s := s + " - ";
 //     end if;
-//     s := s + String(abs(c.im), 0, true, significantDigits) + "*" + name;
+//     s := s + String(abs(c.im), significantDigits, 0, true) + "*" + name;
 //   end if;
 // end Complex.'String';
 //

@@ -465,9 +465,9 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pl := min(p, 22063999.0);
 //   assert(p > 611.657, \"IF97 medium function g1 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
-//   assert(p <= 100000000.0, \"IF97 medium function g1: the input pressure (= \" + String(p, 0, true, 6) + \" Pa) is higher than 100 Mpa\");
-//   assert(T >= 273.15, \"IF97 medium function g1: the temperature (= \" + String(T, 0, true, 6) + \" K)  is lower than 273.15 K!\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   assert(p <= 100000000.0, \"IF97 medium function g1: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 Mpa\");
+//   assert(T >= 273.15, \"IF97 medium function g1: the temperature (= \" + String(T, 6, 0, true) + \" K)  is lower than 273.15 K!\");
 //   g.p := p;
 //   g.T := T;
 //   g.R := 461.526;
@@ -539,10 +539,10 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   g.T := T;
 //   g.R := 461.526;
 //   assert(p > 0.0, \"IF97 medium function g2 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
-//   assert(p <= 100000000.0, \"IF97 medium function g2: the input pressure (= \" + String(p, 0, true, 6) + \" Pa) is higher than 100 Mpa\");
-//   assert(T >= 273.15, \"IF97 medium function g2: the temperature (= \" + String(T, 0, true, 6) + \" K) is lower than 273.15 K!\");
-//   assert(T <= 1073.15, \"IF97 medium function g2: the input temperature (= \" + String(T, 0, true, 6) + \" K) is higher than the limit of 1073.15 K\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   assert(p <= 100000000.0, \"IF97 medium function g2: the input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 100 Mpa\");
+//   assert(T >= 273.15, \"IF97 medium function g2: the temperature (= \" + String(T, 6, 0, true) + \" K) is lower than 273.15 K!\");
+//   assert(T <= 1073.15, \"IF97 medium function g2: the input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than the limit of 1073.15 K\");
 //   g.pi := 1e-06 * p;
 //   g.tau := 540.0 / T;
 //   tau2 := -0.5 + g.tau;
@@ -616,9 +616,9 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real[11] o \"vector of auxiliary variables\";
 // algorithm
 //   assert(p > 0.0, \"IF97 medium function g5 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
-//   assert(p <= 10000000.0, \"IF97 medium function g5: input pressure (= \" + String(p, 0, true, 6) + \" Pa) is higher than 10 Mpa in region 5\");
-//   assert(T <= 2273.15, \"IF97 medium function g5: input temperature (= \" + String(T, 0, true, 6) + \" K) is higher than limit of 2273.15K in region 5\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
+//   assert(p <= 10000000.0, \"IF97 medium function g5: input pressure (= \" + String(p, 6, 0, true) + \" Pa) is higher than 10 Mpa in region 5\");
+//   assert(T <= 2273.15, \"IF97 medium function g5: input temperature (= \" + String(T, 6, 0, true) + \" K) is higher than limit of 2273.15K in region 5\");
 //   g.p := p;
 //   g.T := T;
 //   g.R := 461.526;
@@ -692,7 +692,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real[3] o \"vector of auxiliary variables\";
 // algorithm
 //   assert(p > 611.657, \"IF97 medium function tph1 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   pi := 1e-06 * p;
 //   eta1 := 1.0 + 4e-07 * h;
 //   o[1] := eta1 ^ 2.0;
@@ -759,7 +759,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real[20] o \"vector of auxiliary variables\";
 // algorithm
 //   assert(p > 611.657, \"IF97 medium function tsat called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   pi := 1e-06 * min(p, 22064000.0);
 //   o[1] := pi ^ 0.25;
 //   o[2] := (-3232555.0322333) * o[1];
@@ -964,7 +964,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   tau := 1386.0 / T;
 //   pi1 := 7.1 + (-6.049606775559589e-08) * p;
 //   assert(p > 611.657, \"IF97 medium function hofpT1  called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   tau1 := -1.222 + tau;
 //   o[1] := tau1 ^ 2.0;
 //   o[2] := o[1] * tau1;
@@ -992,7 +992,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //   protected Real tau2 \"dimensionless temperature\";
 // algorithm
 //   assert(p > 611.657, \"IF97 medium function hofpT2 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   pi := 1e-06 * p;
 //   tau := 540.0 / T;
 //   tau2 := -0.5 + tau;
@@ -1162,7 +1162,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi1 := 7.1 + (-6.049606775559589e-08) * p;
 //   assert(p > 611.657, \"IF97 medium function hlowerofp1 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   o[1] := pi1 ^ 2.0;
 //   o[2] := o[1] ^ 2.0;
 //   o[3] := o[2] ^ 2.0;
@@ -1179,7 +1179,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi := 1e-06 * p;
 //   assert(p > 611.657, \"IF97 medium function hlowerofp2 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   q1 := 572.54459862746 + 31.3220101646784 * (-13.91883977887 + pi) ^ 0.5;
 //   q2 := -0.5 + 540.0 / q1;
 //   o[1] := q1 ^ 2.0;
@@ -1210,7 +1210,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi := 1e-06 * p;
 //   assert(p > 611.657, \"IF97 medium function hlowerofp5 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   h := 461526.0 * (9.01505286876203 + pi * (-0.009790434902460921 + (-2.03245575263501e-05 + 3.36540214679088e-07 * pi) * pi));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hlowerofp5;
 //
@@ -1222,7 +1222,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi1 := 7.1 + (-6.049606775559589e-08) * p;
 //   assert(p > 611.657, \"IF97 medium function hupperofp1 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   o[1] := pi1 ^ 2.0;
 //   o[2] := o[1] ^ 2.0;
 //   o[3] := o[2] ^ 2.0;
@@ -1237,7 +1237,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi := 1e-06 * p;
 //   assert(p > 611.657, \"IF97 medium function hupperofp2 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   o[1] := pi ^ 2.0;
 //   o[2] := o[1] ^ 3.0;
 //   h := 4160663.37647071 + pi * (-4518.48617188327 + pi * (-8.53409968320258 + pi * (0.109090430596056 + pi * (-0.000172486052272327 + pi * (4.2261295097284e-15 + pi * (-1.27295130636232e-10 + pi * (-3.79407294691742e-25 + pi * (7.56960433802525e-23 + pi * (7.16825117265975e-32 + pi * (3.37267475986401e-21 + (-7.5656940729795e-74 + o[1] * (-8.00969737237617e-134 + (1.6746290980312e-65 + pi * (-3.71600586812966e-69 + pi * (8.066305891708841e-129 + (-1.76117969553159e-103 + 1.88543121025106e-84 * pi) * pi))) * o[1])) * o[2]))))))))));
@@ -1250,7 +1250,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 // algorithm
 //   pi := 1e-06 * p;
 //   assert(p > 611.657, \"IF97 medium function hupperofp5 called with too low pressure
-//   p = \" + String(p, 0, true, 6) + \" Pa <= \" + String(611.657, 0, true, 6) + \" Pa (triple point pressure)\");
+//   p = \" + String(p, 6, 0, true) + \" Pa <= \" + String(611.657, 6, 0, true) + \" Pa (triple point pressure)\");
 //   h := 461526.0 * (15.9838891400332 + pi * (-0.000489898813722568 + (-5.01510211858761e-08 + 7.5006972718273e-08 * pi) * pi));
 // end Modelica.Media.Water.IF97_Utilities.BaseIF97.Regions.hupperofp5;
 //
@@ -1614,7 +1614,7 @@ simulate(TestMedia.TestModels.TestSteam); getErrorString();
 //     aux.cv := aux.R * ((g.gpi - g.tau * g.gtaupi) ^ 2.0 / g.gpipi - g.tau ^ 2.0 * g.gtautau);
 //     aux.dpT := (-aux.vt) / aux.vp;
 //   else
-//     assert(false, \"error in region computation of IF97 steam tables(p = \" + String(p, 0, true, 6) + \", h = \" + String(h, 0, true, 6) + \")\");
+//     assert(false, \"error in region computation of IF97 steam tables(p = \" + String(p, 6, 0, true) + \", h = \" + String(h, 6, 0, true) + \")\");
 //   end if;
 // end Modelica.Media.Water.IF97_Utilities.waterBaseProp_ph;
 //

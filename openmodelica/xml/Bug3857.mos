@@ -4883,9 +4883,9 @@ readFile("Bug3857.xml"); getErrorString();
 //                     <exp:QualifiedNamePart name=\"limiter\"/>
 //                     <exp:QualifiedNamePart name=\"uMax\"/>
 //                   </exp:Identifier>
+//                   <exp:IntegerLiteral>6</exp:IntegerLiteral>
 //                   <exp:IntegerLiteral>0</exp:IntegerLiteral>
 //                   <exp:BooleanLiteral>1</exp:BooleanLiteral>
-//                   <exp:IntegerLiteral>6</exp:IntegerLiteral>
 //                 </exp:String>
 //               </exp:Add>
 //               <exp:StringLiteral>\") &lt; uMin (=\"</exp:StringLiteral>
@@ -4896,9 +4896,9 @@ readFile("Bug3857.xml"); getErrorString();
 //                 <exp:QualifiedNamePart name=\"limiter\"/>
 //                 <exp:QualifiedNamePart name=\"uMin\"/>
 //               </exp:Identifier>
+//               <exp:IntegerLiteral>6</exp:IntegerLiteral>
 //               <exp:IntegerLiteral>0</exp:IntegerLiteral>
 //               <exp:BooleanLiteral>1</exp:BooleanLiteral>
-//               <exp:IntegerLiteral>6</exp:IntegerLiteral>
 //             </exp:String>
 //           </exp:Add>
 //           <exp:StringLiteral>\")\"</exp:StringLiteral>

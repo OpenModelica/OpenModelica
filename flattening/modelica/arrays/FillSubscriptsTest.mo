@@ -4997,18 +4997,18 @@ end Manifold;
 //   for i in 1:nX loop
 //     assert(X_boundary[i] >= 0.0, "
 //               Wrong boundary mass fractions in medium \"" + mediumName + "\" in model \"" + modelName + "\":
-//               The boundary value X_boundary(" + String(i, 0, true) + ") = " + String(X_boundary[i], 0, true, 6) + "
+//               The boundary value X_boundary(" + String(i, 0, true) + ") = " + String(X_boundary[i], 6, 0, true) + "
 //               is negative. It must be positive.
 //               ");
 //   end for;
 //   if nX > 0 and abs(-1.0 + sum(X_boundary)) > 1e-10 then
 //     X_str := "";
 //     for i in 1:nX loop
-//       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 0, true, 6) + " \"" + substanceNames[i] + "\"
+//       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 6, 0, true) + " \"" + substanceNames[i] + "\"
 //       ";
 //     end for;
 //     Modelica.Utilities.Streams.error("The boundary mass fractions in medium \"" + mediumName + "\" in model \"" + modelName + "\"
-//     " + "do not sum up to 1. Instead, sum(X_boundary) = " + String(sum(X_boundary), 0, true, 6) + ":
+//     " + "do not sum up to 1. Instead, sum(X_boundary) = " + String(sum(X_boundary), 6, 0, true) + ":
 //     " + X_str);
 //   end if;
 // end Modelica.Fluid.Utilities.checkBoundary;
@@ -6158,8 +6158,8 @@ end Manifold;
 //   assert(ducFixRes_2.fixRes.m_flow_nominal_pos > 0.0, "m_flow_nominal_pos must be non-zero. Check parameters.");
 // equation
 //   assert(sin_1.medium.T >= 272.15 and sin_1.medium.T <= 403.15, "
-//             Temperature T (= " + String(sin_1.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(sin_1.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   sin_1.medium.h = Buildings.Fluid.Sources.Boundary_pT$sin_1.Medium.specificEnthalpy_pTX(sin_1.medium.p, sin_1.medium.T, {sin_1.medium.X[1]});
@@ -6170,10 +6170,10 @@ end Manifold;
 //   sin_1.medium.state.T = sin_1.medium.T;
 //   sin_1.medium.state.p = sin_1.medium.p;
 //   sin_1.medium.X[1] = 1.0;
-//   assert(sin_1.medium.X[1] >= -1e-05 and sin_1.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_1.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(sin_1.medium.X[1] >= -1e-05 and sin_1.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_1.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(sin_1.medium.p >= 0.0, "Pressure (= " + String(sin_1.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(sin_1.medium.T, 0, true, 6) + " K)");
+//   assert(sin_1.medium.p >= 0.0, "Pressure (= " + String(sin_1.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(sin_1.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("SimpleLiquidWater", {"SimpleLiquidWater"}, true, true, {sin_1.X_in_internal[1]}, "Boundary_pT");
 //   sin_1.p_in_internal = sin_1.p;
 //   sin_1.T_in_internal = sin_1.T;
@@ -6183,8 +6183,8 @@ end Manifold;
 //   sin_1.ports[1].p = sin_1.medium.p;
 //   sin_1.ports[1].h_outflow = sin_1.medium.h;
 //   assert(sou_1.medium.T >= 272.15 and sou_1.medium.T <= 403.15, "
-//             Temperature T (= " + String(sou_1.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(sou_1.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   sou_1.medium.h = Buildings.Fluid.Sources.Boundary_pT$sou_1.Medium.specificEnthalpy_pTX(sou_1.medium.p, sou_1.medium.T, {sou_1.medium.X[1]});
@@ -6195,10 +6195,10 @@ end Manifold;
 //   sou_1.medium.state.T = sou_1.medium.T;
 //   sou_1.medium.state.p = sou_1.medium.p;
 //   sou_1.medium.X[1] = 1.0;
-//   assert(sou_1.medium.X[1] >= -1e-05 and sou_1.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_1.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(sou_1.medium.X[1] >= -1e-05 and sou_1.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_1.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(sou_1.medium.p >= 0.0, "Pressure (= " + String(sou_1.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(sou_1.medium.T, 0, true, 6) + " K)");
+//   assert(sou_1.medium.p >= 0.0, "Pressure (= " + String(sou_1.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(sou_1.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("SimpleLiquidWater", {"SimpleLiquidWater"}, true, true, {sou_1.X_in_internal[1]}, "Boundary_pT");
 //   sou_1.X_in_internal[1] = sou_1.X[1];
 //   sou_1.medium.p = sou_1.p_in_internal;
@@ -6387,7 +6387,7 @@ end Manifold;
 //   ducFixRes_2.floDis.port_a.Xi_outflow[1] = (sum(sum({ducFixRes_2.floDis.port_b[i,j].Xi_outflow[1]} for i in {1, 2, 3}) for j in {1, 2, 3, 4}) / /*Real*/(ducFixRes_2.floDis.nPipPar) / /*Real*/(ducFixRes_2.floDis.nPipSeg))[1];
 //   assert(sou_2.medium.T >= 200.0 and sou_2.medium.T <= 423.15, "
 //             Temperature T is not in the allowed range
-//             200.0 K <= (T =" + String(sou_2.medium.T, 0, true, 6) + " K) <= 423.15 K
+//             200.0 K <= (T =" + String(sou_2.medium.T, 6, 0, true) + " K) <= 423.15 K
 //             required from medium model \"" + "Moist air unsaturated perfect gas" + "\".");
 //   sou_2.medium.MM = 1.0 / (34.52428788658843 + 20.98414717520355 * sou_2.medium.Xi[1]);
 //   sou_2.medium.p_steam_sat = min(Buildings.Fluid.Sources.Boundary_pT$sou_2.Medium.saturationPressure(sou_2.medium.T), 0.999 * sou_2.medium.p);
@@ -6407,12 +6407,12 @@ end Manifold;
 //   sou_2.medium.phi = sou_2.medium.p * sou_2.medium.Xi[1] / (sou_2.medium.p_steam_sat * (sou_2.medium.Xi[1] + 0.6219647130774989 * sou_2.medium.X_air));
 //   sou_2.medium.Xi[1] = sou_2.medium.X[1];
 //   sou_2.medium.X[2] = 1.0 - sou_2.medium.Xi[1];
-//   assert(sou_2.medium.X[1] >= -1e-05 and sou_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_2.medium.X[1], 0, true, 6) + "of substance " + "water" + "
+//   assert(sou_2.medium.X[1] >= -1e-05 and sou_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_2.medium.X[1], 6, 0, true) + "of substance " + "water" + "
 //   of medium " + "Moist air unsaturated perfect gas" + " is not in the range 0..1");
-//   assert(sou_2.medium.X[2] >= -1e-05 and sou_2.medium.X[2] <= 1.00001, "Mass fraction X[2] = " + String(sou_2.medium.X[2], 0, true, 6) + "of substance " + "air" + "
+//   assert(sou_2.medium.X[2] >= -1e-05 and sou_2.medium.X[2] <= 1.00001, "Mass fraction X[2] = " + String(sou_2.medium.X[2], 6, 0, true) + "of substance " + "air" + "
 //   of medium " + "Moist air unsaturated perfect gas" + " is not in the range 0..1");
-//   assert(sou_2.medium.p >= 0.0, "Pressure (= " + String(sou_2.medium.p, 0, true, 6) + " Pa) of medium \"" + "Moist air unsaturated perfect gas" + "\" is negative
-//   (Temperature = " + String(sou_2.medium.T, 0, true, 6) + " K)");
+//   assert(sou_2.medium.p >= 0.0, "Pressure (= " + String(sou_2.medium.p, 6, 0, true) + " Pa) of medium \"" + "Moist air unsaturated perfect gas" + "\" is negative
+//   (Temperature = " + String(sou_2.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("Moist air unsaturated perfect gas", {"water", "air"}, false, true, {sou_2.X_in_internal[1], sou_2.X_in_internal[2]}, "Boundary_pT");
 //   sou_2.X_in_internal[1] = sou_2.X[1];
 //   sou_2.X_in_internal[2] = sou_2.X[2];
@@ -6424,7 +6424,7 @@ end Manifold;
 //   sou_2.ports[1].Xi_outflow[1] = sou_2.medium.Xi[1];
 //   assert(sin_2.medium.T >= 200.0 and sin_2.medium.T <= 423.15, "
 //             Temperature T is not in the allowed range
-//             200.0 K <= (T =" + String(sin_2.medium.T, 0, true, 6) + " K) <= 423.15 K
+//             200.0 K <= (T =" + String(sin_2.medium.T, 6, 0, true) + " K) <= 423.15 K
 //             required from medium model \"" + "Moist air unsaturated perfect gas" + "\".");
 //   sin_2.medium.MM = 1.0 / (34.52428788658843 + 20.98414717520355 * sin_2.medium.Xi[1]);
 //   sin_2.medium.p_steam_sat = min(Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.saturationPressure(sin_2.medium.T), 0.999 * sin_2.medium.p);
@@ -6444,12 +6444,12 @@ end Manifold;
 //   sin_2.medium.phi = sin_2.medium.p * sin_2.medium.Xi[1] / (sin_2.medium.p_steam_sat * (sin_2.medium.Xi[1] + 0.6219647130774989 * sin_2.medium.X_air));
 //   sin_2.medium.Xi[1] = sin_2.medium.X[1];
 //   sin_2.medium.X[2] = 1.0 - sin_2.medium.Xi[1];
-//   assert(sin_2.medium.X[1] >= -1e-05 and sin_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_2.medium.X[1], 0, true, 6) + "of substance " + "water" + "
+//   assert(sin_2.medium.X[1] >= -1e-05 and sin_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_2.medium.X[1], 6, 0, true) + "of substance " + "water" + "
 //   of medium " + "Moist air unsaturated perfect gas" + " is not in the range 0..1");
-//   assert(sin_2.medium.X[2] >= -1e-05 and sin_2.medium.X[2] <= 1.00001, "Mass fraction X[2] = " + String(sin_2.medium.X[2], 0, true, 6) + "of substance " + "air" + "
+//   assert(sin_2.medium.X[2] >= -1e-05 and sin_2.medium.X[2] <= 1.00001, "Mass fraction X[2] = " + String(sin_2.medium.X[2], 6, 0, true) + "of substance " + "air" + "
 //   of medium " + "Moist air unsaturated perfect gas" + " is not in the range 0..1");
-//   assert(sin_2.medium.p >= 0.0, "Pressure (= " + String(sin_2.medium.p, 0, true, 6) + " Pa) of medium \"" + "Moist air unsaturated perfect gas" + "\" is negative
-//   (Temperature = " + String(sin_2.medium.T, 0, true, 6) + " K)");
+//   assert(sin_2.medium.p >= 0.0, "Pressure (= " + String(sin_2.medium.p, 6, 0, true) + " Pa) of medium \"" + "Moist air unsaturated perfect gas" + "\" is negative
+//   (Temperature = " + String(sin_2.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("Moist air unsaturated perfect gas", {"water", "air"}, false, true, {sin_2.X_in_internal[1], sin_2.X_in_internal[2]}, "Boundary_pT");
 //   sin_2.p_in_internal = sin_2.p;
 //   sin_2.T_in_internal = sin_2.T;

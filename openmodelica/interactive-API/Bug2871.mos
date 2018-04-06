@@ -1178,10 +1178,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   protected Real aux02;
 //   protected Boolean useSingleCubicPolynomial = false \"Indicate to override further logic and use single cubic\";
 // algorithm
-//   assert(x0 < x1, \"regFun3(): Data points not sorted appropriately (x0 = \" + String(x0, 0, true, 6) + \" > x1 = \" + String(x1, 0, true, 6) + \"). Please flip arguments.\");
+//   assert(x0 < x1, \"regFun3(): Data points not sorted appropriately (x0 = \" + String(x0, 6, 0, true) + \" > x1 = \" + String(x1, 6, 0, true) + \"). Please flip arguments.\");
 //   if y0d * y1d >= 0.0 then
 //   else
-//     assert(abs(y0d) < 1e-15 or abs(y1d) < 1e-15, \"regFun3(): Derivatives at data points do not allow co-monotone interpolation, as both are non-zero, of opposite sign and have an absolute value larger than machine eps (y0d = \" + String(y0d, 0, true, 6) + \", y1d = \" + String(y1d, 0, true, 6) + \"). Please correct arguments.\");
+//     assert(abs(y0d) < 1e-15 or abs(y1d) < 1e-15, \"regFun3(): Derivatives at data points do not allow co-monotone interpolation, as both are non-zero, of opposite sign and have an absolute value larger than machine eps (y0d = \" + String(y0d, 6, 0, true) + \", y1d = \" + String(y1d, 6, 0, true) + \"). Please correct arguments.\");
 //   end if;
 //   h0 := x1 - x0;
 //   Delta0 := (y1 - y0) / h0;
@@ -2190,8 +2190,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   pipe3.flowModel.dp_small = system.dp_small;
 // equation
 //   assert(tank1.medium.T >= 272.15 and tank1.medium.T <= 403.15, \"
-//   Temperature T (= \" + String(tank1.medium.T, 0, true, 6) + \" K) is not
-//   in the allowed range (\" + String(272.15, 0, true, 6) + \" K <= T <= \" + String(403.15, 0, true, 6) + \" K)
+//   Temperature T (= \" + String(tank1.medium.T, 6, 0, true) + \" K) is not
+//   in the allowed range (\" + String(272.15, 6, 0, true) + \" K <= T <= \" + String(403.15, 6, 0, true) + \" K)
 //   required from medium model \\\"\" + \"SimpleLiquidWater\" + \"\\\".
 //   \");
 //   tank1.medium.h = Modelica.Fluid.Vessels.OpenTank$tank1.Medium.specificEnthalpy_pTX(tank1.medium.p, tank1.medium.T, {tank1.medium.X[1]});
@@ -2202,10 +2202,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank1.medium.state.T = tank1.medium.T;
 //   tank1.medium.state.p = tank1.medium.p;
 //   tank1.medium.X[1] = 1.0;
-//   assert(tank1.medium.X[1] >= -1e-05 and tank1.medium.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(tank1.medium.X[1], 0, true, 6) + \"of substance \" + \"SimpleLiquidWater\" + \"
+//   assert(tank1.medium.X[1] >= -1e-05 and tank1.medium.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(tank1.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
 //   of medium \" + \"SimpleLiquidWater\" + \" is not in the range 0..1\");
-//   assert(tank1.medium.p >= 0.0, \"Pressure (= \" + String(tank1.medium.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
-//   (Temperature = \" + String(tank1.medium.T, 0, true, 6) + \" K)\");
+//   assert(tank1.medium.p >= 0.0, \"Pressure (= \" + String(tank1.medium.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
+//   (Temperature = \" + String(tank1.medium.T, 6, 0, true) + \" K)\");
 //   tank1.heatTransfer.surfaceAreas = {tank1.crossArea + 3.544907701811032 * sqrt(tank1.crossArea) * tank1.level};
 //   tank1.heatTransfer.Ts = {Modelica.Fluid.Vessels.OpenTank$tank1.HeatTransfer$tank1$heatTransfer.Medium.temperature(tank1.heatTransfer.states[1])};
 //   tank1.heatTransfer.Ts[1] = tank1.heatTransfer.heatPorts[1].T;
@@ -2222,8 +2222,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank1.mb_flow = tank1.ports[1].m_flow;
 //   tank1.Hb_flow = tank1.ports_H_flow[1] + tank1.ports_E_flow[1];
 //   tank1.Qb_flow = tank1.heatTransfer.Q_flows[1];
-//   assert(tank1.fluidLevel <= tank1.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank1.fluidLevel, 0, true, 6) + \")\");
-//   assert(tank1.fluidLevel > (-1e-06) * tank1.fluidLevel_max, \"Fluid level (= \" + String(tank1.fluidLevel, 0, true, 6) + \") is below zero meaning that the solution failed.\");
+//   assert(tank1.fluidLevel <= tank1.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank1.fluidLevel, 6, 0, true) + \")\");
+//   assert(tank1.fluidLevel > (-1e-06) * tank1.fluidLevel_max, \"Fluid level (= \" + String(tank1.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
 //   tank1.portInDensities[1] = Modelica.Fluid.Vessels.OpenTank$tank1.Medium.density(Modelica.Fluid.Vessels.OpenTank$tank1.Medium.setState_phX(tank1.vessel_ps_static[1], pipe1.port_b.h_outflow, {}));
 //   tank1.portVelocities[1] = smooth(0, tank1.ports[1].m_flow / (Modelica.Fluid.Vessels.OpenTank$tank1.Medium.density(Modelica.Fluid.Vessels.OpenTank$tank1.Medium.setState_phX(tank1.vessel_ps_static[1], smooth(0, if tank1.ports[1].m_flow > 0.0 then pipe1.port_b.h_outflow else tank1.ports[1].h_outflow), {})) * tank1.portAreas[1]));
 //   tank1.ports_penetration[1] = Modelica.Fluid.Utilities.regStep(tank1.fluidLevel + (-0.1) * tank1.portsData_diameter[1] - tank1.portsData_height[1], 1.0, 0.001, 0.1 * tank1.portsData_diameter[1]);
@@ -2248,8 +2248,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   der(tank1.U) = tank1.Hb_flow + tank1.Qb_flow + tank1.Wb_flow;
 //   der(tank1.m) = tank1.mb_flow;
 //   assert(tank2.medium.T >= 272.15 and tank2.medium.T <= 403.15, \"
-//   Temperature T (= \" + String(tank2.medium.T, 0, true, 6) + \" K) is not
-//   in the allowed range (\" + String(272.15, 0, true, 6) + \" K <= T <= \" + String(403.15, 0, true, 6) + \" K)
+//   Temperature T (= \" + String(tank2.medium.T, 6, 0, true) + \" K) is not
+//   in the allowed range (\" + String(272.15, 6, 0, true) + \" K <= T <= \" + String(403.15, 6, 0, true) + \" K)
 //   required from medium model \\\"\" + \"SimpleLiquidWater\" + \"\\\".
 //   \");
 //   tank2.medium.h = Modelica.Fluid.Vessels.OpenTank$tank2.Medium.specificEnthalpy_pTX(tank2.medium.p, tank2.medium.T, {tank2.medium.X[1]});
@@ -2260,10 +2260,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank2.medium.state.T = tank2.medium.T;
 //   tank2.medium.state.p = tank2.medium.p;
 //   tank2.medium.X[1] = 1.0;
-//   assert(tank2.medium.X[1] >= -1e-05 and tank2.medium.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(tank2.medium.X[1], 0, true, 6) + \"of substance \" + \"SimpleLiquidWater\" + \"
+//   assert(tank2.medium.X[1] >= -1e-05 and tank2.medium.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(tank2.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
 //   of medium \" + \"SimpleLiquidWater\" + \" is not in the range 0..1\");
-//   assert(tank2.medium.p >= 0.0, \"Pressure (= \" + String(tank2.medium.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
-//   (Temperature = \" + String(tank2.medium.T, 0, true, 6) + \" K)\");
+//   assert(tank2.medium.p >= 0.0, \"Pressure (= \" + String(tank2.medium.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
+//   (Temperature = \" + String(tank2.medium.T, 6, 0, true) + \" K)\");
 //   tank2.heatTransfer.surfaceAreas = {tank2.crossArea + 3.544907701811032 * sqrt(tank2.crossArea) * tank2.level};
 //   tank2.heatTransfer.Ts = {Modelica.Fluid.Vessels.OpenTank$tank2.HeatTransfer$tank2$heatTransfer.Medium.temperature(tank2.heatTransfer.states[1])};
 //   tank2.heatTransfer.Ts[1] = tank2.heatTransfer.heatPorts[1].T;
@@ -2280,8 +2280,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank2.mb_flow = tank2.ports[1].m_flow;
 //   tank2.Hb_flow = tank2.ports_H_flow[1] + tank2.ports_E_flow[1];
 //   tank2.Qb_flow = tank2.heatTransfer.Q_flows[1];
-//   assert(tank2.fluidLevel <= tank2.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank2.fluidLevel, 0, true, 6) + \")\");
-//   assert(tank2.fluidLevel > (-1e-06) * tank2.fluidLevel_max, \"Fluid level (= \" + String(tank2.fluidLevel, 0, true, 6) + \") is below zero meaning that the solution failed.\");
+//   assert(tank2.fluidLevel <= tank2.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank2.fluidLevel, 6, 0, true) + \")\");
+//   assert(tank2.fluidLevel > (-1e-06) * tank2.fluidLevel_max, \"Fluid level (= \" + String(tank2.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
 //   tank2.portInDensities[1] = Modelica.Fluid.Vessels.OpenTank$tank2.Medium.density(Modelica.Fluid.Vessels.OpenTank$tank2.Medium.setState_phX(tank2.vessel_ps_static[1], pipe2.port_b.h_outflow, {}));
 //   tank2.portVelocities[1] = smooth(0, tank2.ports[1].m_flow / (Modelica.Fluid.Vessels.OpenTank$tank2.Medium.density(Modelica.Fluid.Vessels.OpenTank$tank2.Medium.setState_phX(tank2.vessel_ps_static[1], smooth(0, if tank2.ports[1].m_flow > 0.0 then pipe2.port_b.h_outflow else tank2.ports[1].h_outflow), {})) * tank2.portAreas[1]));
 //   tank2.ports_penetration[1] = Modelica.Fluid.Utilities.regStep(tank2.fluidLevel + (-0.1) * tank2.portsData_diameter[1] - tank2.portsData_height[1], 1.0, 0.001, 0.1 * tank2.portsData_diameter[1]);
@@ -2306,8 +2306,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   der(tank2.U) = tank2.Hb_flow + tank2.Qb_flow + tank2.Wb_flow;
 //   der(tank2.m) = tank2.mb_flow;
 //   assert(tank3.medium.T >= 272.15 and tank3.medium.T <= 403.15, \"
-//   Temperature T (= \" + String(tank3.medium.T, 0, true, 6) + \" K) is not
-//   in the allowed range (\" + String(272.15, 0, true, 6) + \" K <= T <= \" + String(403.15, 0, true, 6) + \" K)
+//   Temperature T (= \" + String(tank3.medium.T, 6, 0, true) + \" K) is not
+//   in the allowed range (\" + String(272.15, 6, 0, true) + \" K <= T <= \" + String(403.15, 6, 0, true) + \" K)
 //   required from medium model \\\"\" + \"SimpleLiquidWater\" + \"\\\".
 //   \");
 //   tank3.medium.h = Modelica.Fluid.Vessels.OpenTank$tank3.Medium.specificEnthalpy_pTX(tank3.medium.p, tank3.medium.T, {tank3.medium.X[1]});
@@ -2318,10 +2318,10 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank3.medium.state.T = tank3.medium.T;
 //   tank3.medium.state.p = tank3.medium.p;
 //   tank3.medium.X[1] = 1.0;
-//   assert(tank3.medium.X[1] >= -1e-05 and tank3.medium.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(tank3.medium.X[1], 0, true, 6) + \"of substance \" + \"SimpleLiquidWater\" + \"
+//   assert(tank3.medium.X[1] >= -1e-05 and tank3.medium.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(tank3.medium.X[1], 6, 0, true) + \"of substance \" + \"SimpleLiquidWater\" + \"
 //   of medium \" + \"SimpleLiquidWater\" + \" is not in the range 0..1\");
-//   assert(tank3.medium.p >= 0.0, \"Pressure (= \" + String(tank3.medium.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
-//   (Temperature = \" + String(tank3.medium.T, 0, true, 6) + \" K)\");
+//   assert(tank3.medium.p >= 0.0, \"Pressure (= \" + String(tank3.medium.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"SimpleLiquidWater\" + \"\\\" is negative
+//   (Temperature = \" + String(tank3.medium.T, 6, 0, true) + \" K)\");
 //   tank3.heatTransfer.surfaceAreas = {tank3.crossArea + 3.544907701811032 * sqrt(tank3.crossArea) * tank3.level};
 //   tank3.heatTransfer.Ts = {Modelica.Fluid.Vessels.OpenTank$tank3.HeatTransfer$tank3$heatTransfer.Medium.temperature(tank3.heatTransfer.states[1])};
 //   tank3.heatTransfer.Ts[1] = tank3.heatTransfer.heatPorts[1].T;
@@ -2338,8 +2338,8 @@ instantiateModel(Modelica.Fluid.Examples.Tanks.ThreeTanks); getErrorString();
 //   tank3.mb_flow = tank3.ports[1].m_flow;
 //   tank3.Hb_flow = tank3.ports_H_flow[1] + tank3.ports_E_flow[1];
 //   tank3.Qb_flow = tank3.heatTransfer.Q_flows[1];
-//   assert(tank3.fluidLevel <= tank3.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank3.fluidLevel, 0, true, 6) + \")\");
-//   assert(tank3.fluidLevel > (-1e-06) * tank3.fluidLevel_max, \"Fluid level (= \" + String(tank3.fluidLevel, 0, true, 6) + \") is below zero meaning that the solution failed.\");
+//   assert(tank3.fluidLevel <= tank3.fluidLevel_max, \"Vessel is overflowing (fluidLevel > fluidLevel_max = \" + String(tank3.fluidLevel, 6, 0, true) + \")\");
+//   assert(tank3.fluidLevel > (-1e-06) * tank3.fluidLevel_max, \"Fluid level (= \" + String(tank3.fluidLevel, 6, 0, true) + \") is below zero meaning that the solution failed.\");
 //   tank3.portInDensities[1] = Modelica.Fluid.Vessels.OpenTank$tank3.Medium.density(Modelica.Fluid.Vessels.OpenTank$tank3.Medium.setState_phX(tank3.vessel_ps_static[1], pipe3.port_b.h_outflow, {}));
 //   tank3.portVelocities[1] = smooth(0, tank3.ports[1].m_flow / (Modelica.Fluid.Vessels.OpenTank$tank3.Medium.density(Modelica.Fluid.Vessels.OpenTank$tank3.Medium.setState_phX(tank3.vessel_ps_static[1], smooth(0, if tank3.ports[1].m_flow > 0.0 then pipe3.port_b.h_outflow else tank3.ports[1].h_outflow), {})) * tank3.portAreas[1]));
 //   tank3.ports_penetration[1] = Modelica.Fluid.Utilities.regStep(tank3.fluidLevel + (-0.1) * tank3.portsData_diameter[1] - tank3.portsData_height[1], 1.0, 0.001, 0.1 * tank3.portsData_diameter[1]);

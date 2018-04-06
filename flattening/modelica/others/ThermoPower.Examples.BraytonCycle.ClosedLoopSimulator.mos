@@ -656,11 +656,11 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   if fa > 0.0 and fb > 0.0 or fa < 0.0 and fb < 0.0 then
 //     Modelica.Utilities.Streams.error(\"The arguments x_min and x_max to OneNonLinearEquation.solve(..)
 //     do not bracket the root of the single non-linear equation:
-//       x_min  = \" + String(x_min2, 0, true, 6) + \"
-//     \" + \"  x_max  = \" + String(x_max2, 0, true, 6) + \"
-//     \" + \"  y_zero = \" + String(y_zero, 0, true, 6) + \"
-//     \" + \"  fa = f(x_min) - y_zero = \" + String(fa, 0, true, 6) + \"
-//     \" + \"  fb = f(x_max) - y_zero = \" + String(fb, 0, true, 6) + \"
+//       x_min  = \" + String(x_min2, 6, 0, true) + \"
+//     \" + \"  x_max  = \" + String(x_max2, 6, 0, true) + \"
+//     \" + \"  y_zero = \" + String(y_zero, 6, 0, true) + \"
+//     \" + \"  fa = f(x_min) - y_zero = \" + String(fa, 6, 0, true) + \"
+//     \" + \"  fb = f(x_max) - y_zero = \" + String(fb, 6, 0, true) + \"
 //     \" + \"fa and fb must have opposite sign which is not the case\");
 //   end if;
 //   c := a;
@@ -1790,11 +1790,11 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   if fa > 0.0 and fb > 0.0 or fa < 0.0 and fb < 0.0 then
 //     Modelica.Utilities.Streams.error(\"The arguments x_min and x_max to OneNonLinearEquation.solve(..)
 //     do not bracket the root of the single non-linear equation:
-//       x_min  = \" + String(x_min2, 0, true, 6) + \"
-//     \" + \"  x_max  = \" + String(x_max2, 0, true, 6) + \"
-//     \" + \"  y_zero = \" + String(y_zero, 0, true, 6) + \"
-//     \" + \"  fa = f(x_min) - y_zero = \" + String(fa, 0, true, 6) + \"
-//     \" + \"  fb = f(x_max) - y_zero = \" + String(fb, 0, true, 6) + \"
+//       x_min  = \" + String(x_min2, 6, 0, true) + \"
+//     \" + \"  x_max  = \" + String(x_max2, 6, 0, true) + \"
+//     \" + \"  y_zero = \" + String(y_zero, 6, 0, true) + \"
+//     \" + \"  fa = f(x_min) - y_zero = \" + String(fa, 6, 0, true) + \"
+//     \" + \"  fb = f(x_max) - y_zero = \" + String(fb, 6, 0, true) + \"
 //     \" + \"fa and fb must have opposite sign which is not the case\");
 //   end if;
 //   c := a;
@@ -3288,7 +3288,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.network.closedInternal = true;
 //   plant.network.delta_out = plant.network.delta;
 //   assert(plant.compressor.gas_in.T >= 200.0 and plant.compressor.gas_in.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.compressor.gas_in.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.compressor.gas_in.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"Air\" + \"\\\".\");
 //   plant.compressor.gas_in.MM = ThermoPower.Gas.Compressor$plant$compressor.Medium.molarMass(plant.compressor.gas_in.state);
@@ -3306,18 +3306,18 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.compressor.gas_in.Xi[2] = plant.compressor.gas_in.X[2];
 //   plant.compressor.gas_in.Xi[3] = plant.compressor.gas_in.X[3];
 //   plant.compressor.gas_in.Xi[4] = plant.compressor.gas_in.X[4];
-//   assert(plant.compressor.gas_in.X[1] >= -1e-05 and plant.compressor.gas_in.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.compressor.gas_in.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.compressor.gas_in.X[1] >= -1e-05 and plant.compressor.gas_in.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.compressor.gas_in.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_in.X[2] >= -1e-05 and plant.compressor.gas_in.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.compressor.gas_in.X[2], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.compressor.gas_in.X[2] >= -1e-05 and plant.compressor.gas_in.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.compressor.gas_in.X[2], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_in.X[3] >= -1e-05 and plant.compressor.gas_in.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.compressor.gas_in.X[3], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.compressor.gas_in.X[3] >= -1e-05 and plant.compressor.gas_in.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.compressor.gas_in.X[3], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_in.X[4] >= -1e-05 and plant.compressor.gas_in.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.compressor.gas_in.X[4], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.compressor.gas_in.X[4] >= -1e-05 and plant.compressor.gas_in.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.compressor.gas_in.X[4], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_in.p >= 0.0, \"Pressure (= \" + String(plant.compressor.gas_in.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.compressor.gas_in.T, 0, true, 6) + \" K)\");
+//   assert(plant.compressor.gas_in.p >= 0.0, \"Pressure (= \" + String(plant.compressor.gas_in.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.compressor.gas_in.T, 6, 0, true) + \" K)\");
 //   assert(plant.compressor.gas_iso.T >= 200.0 and plant.compressor.gas_iso.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.compressor.gas_iso.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.compressor.gas_iso.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"Air\" + \"\\\".\");
 //   plant.compressor.gas_iso.MM = ThermoPower.Gas.Compressor$plant$compressor.Medium.molarMass(plant.compressor.gas_iso.state);
@@ -3335,16 +3335,16 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.compressor.gas_iso.Xi[2] = plant.compressor.gas_iso.X[2];
 //   plant.compressor.gas_iso.Xi[3] = plant.compressor.gas_iso.X[3];
 //   plant.compressor.gas_iso.Xi[4] = plant.compressor.gas_iso.X[4];
-//   assert(plant.compressor.gas_iso.X[1] >= -1e-05 and plant.compressor.gas_iso.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.compressor.gas_iso.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.compressor.gas_iso.X[1] >= -1e-05 and plant.compressor.gas_iso.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.compressor.gas_iso.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_iso.X[2] >= -1e-05 and plant.compressor.gas_iso.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.compressor.gas_iso.X[2], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.compressor.gas_iso.X[2] >= -1e-05 and plant.compressor.gas_iso.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.compressor.gas_iso.X[2], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_iso.X[3] >= -1e-05 and plant.compressor.gas_iso.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.compressor.gas_iso.X[3], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.compressor.gas_iso.X[3] >= -1e-05 and plant.compressor.gas_iso.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.compressor.gas_iso.X[3], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_iso.X[4] >= -1e-05 and plant.compressor.gas_iso.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.compressor.gas_iso.X[4], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.compressor.gas_iso.X[4] >= -1e-05 and plant.compressor.gas_iso.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.compressor.gas_iso.X[4], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.compressor.gas_iso.p >= 0.0, \"Pressure (= \" + String(plant.compressor.gas_iso.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.compressor.gas_iso.T, 0, true, 6) + \" K)\");
+//   assert(plant.compressor.gas_iso.p >= 0.0, \"Pressure (= \" + String(plant.compressor.gas_iso.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.compressor.gas_iso.T, 6, 0, true) + \" K)\");
 //   when initial() then
 //     plant.compressor.Eta.tableOnFileRead = 1.0;
 //   end when;
@@ -3408,7 +3408,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.compressor.shaft_a.tau + plant.compressor.shaft_b.tau = plant.compressor.tau;
 //   der(plant.compressor.phi) = plant.compressor.omega;
 //   assert(plant.turbine.gas_in.T >= 200.0 and plant.turbine.gas_in.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.turbine.gas_in.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.turbine.gas_in.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"FlueGas\" + \"\\\".\");
 //   plant.turbine.gas_in.MM = ThermoPower.Gas.Turbine$plant$turbine.Medium.molarMass(plant.turbine.gas_in.state);
@@ -3428,20 +3428,20 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.turbine.gas_in.Xi[3] = plant.turbine.gas_in.X[3];
 //   plant.turbine.gas_in.Xi[4] = plant.turbine.gas_in.X[4];
 //   plant.turbine.gas_in.Xi[5] = plant.turbine.gas_in.X[5];
-//   assert(plant.turbine.gas_in.X[1] >= -1e-05 and plant.turbine.gas_in.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.turbine.gas_in.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.turbine.gas_in.X[1] >= -1e-05 and plant.turbine.gas_in.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.turbine.gas_in.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_in.X[2] >= -1e-05 and plant.turbine.gas_in.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.turbine.gas_in.X[2], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.turbine.gas_in.X[2] >= -1e-05 and plant.turbine.gas_in.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.turbine.gas_in.X[2], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_in.X[3] >= -1e-05 and plant.turbine.gas_in.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.turbine.gas_in.X[3], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.turbine.gas_in.X[3] >= -1e-05 and plant.turbine.gas_in.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.turbine.gas_in.X[3], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_in.X[4] >= -1e-05 and plant.turbine.gas_in.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.turbine.gas_in.X[4], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.turbine.gas_in.X[4] >= -1e-05 and plant.turbine.gas_in.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.turbine.gas_in.X[4], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_in.X[5] >= -1e-05 and plant.turbine.gas_in.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.turbine.gas_in.X[5], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.turbine.gas_in.X[5] >= -1e-05 and plant.turbine.gas_in.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.turbine.gas_in.X[5], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_in.p >= 0.0, \"Pressure (= \" + String(plant.turbine.gas_in.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.turbine.gas_in.T, 0, true, 6) + \" K)\");
+//   assert(plant.turbine.gas_in.p >= 0.0, \"Pressure (= \" + String(plant.turbine.gas_in.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.turbine.gas_in.T, 6, 0, true) + \" K)\");
 //   assert(plant.turbine.gas_iso.T >= 200.0 and plant.turbine.gas_iso.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.turbine.gas_iso.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.turbine.gas_iso.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"FlueGas\" + \"\\\".\");
 //   plant.turbine.gas_iso.MM = ThermoPower.Gas.Turbine$plant$turbine.Medium.molarMass(plant.turbine.gas_iso.state);
@@ -3461,18 +3461,18 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.turbine.gas_iso.Xi[3] = plant.turbine.gas_iso.X[3];
 //   plant.turbine.gas_iso.Xi[4] = plant.turbine.gas_iso.X[4];
 //   plant.turbine.gas_iso.Xi[5] = plant.turbine.gas_iso.X[5];
-//   assert(plant.turbine.gas_iso.X[1] >= -1e-05 and plant.turbine.gas_iso.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.turbine.gas_iso.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.turbine.gas_iso.X[1] >= -1e-05 and plant.turbine.gas_iso.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.turbine.gas_iso.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_iso.X[2] >= -1e-05 and plant.turbine.gas_iso.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.turbine.gas_iso.X[2], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.turbine.gas_iso.X[2] >= -1e-05 and plant.turbine.gas_iso.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.turbine.gas_iso.X[2], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_iso.X[3] >= -1e-05 and plant.turbine.gas_iso.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.turbine.gas_iso.X[3], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.turbine.gas_iso.X[3] >= -1e-05 and plant.turbine.gas_iso.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.turbine.gas_iso.X[3], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_iso.X[4] >= -1e-05 and plant.turbine.gas_iso.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.turbine.gas_iso.X[4], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.turbine.gas_iso.X[4] >= -1e-05 and plant.turbine.gas_iso.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.turbine.gas_iso.X[4], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_iso.X[5] >= -1e-05 and plant.turbine.gas_iso.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.turbine.gas_iso.X[5], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.turbine.gas_iso.X[5] >= -1e-05 and plant.turbine.gas_iso.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.turbine.gas_iso.X[5], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.turbine.gas_iso.p >= 0.0, \"Pressure (= \" + String(plant.turbine.gas_iso.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.turbine.gas_iso.T, 0, true, 6) + \" K)\");
+//   assert(plant.turbine.gas_iso.p >= 0.0, \"Pressure (= \" + String(plant.turbine.gas_iso.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.turbine.gas_iso.T, 6, 0, true) + \" K)\");
 //   when initial() then
 //     plant.turbine.Phic.tableOnFileRead = 1.0;
 //   end when;
@@ -3532,7 +3532,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.turbine.shaft_a.tau + plant.turbine.shaft_b.tau = plant.turbine.tau;
 //   der(plant.turbine.phi) = plant.turbine.omega;
 //   assert(plant.CombustionChamber1.fluegas.T >= 200.0 and plant.CombustionChamber1.fluegas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.CombustionChamber1.fluegas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.CombustionChamber1.fluegas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"FlueGas\" + \"\\\".\");
 //   plant.CombustionChamber1.fluegas.MM = ThermoPower.Gas.CombustionChamber$plant$CombustionChamber1.Exhaust.molarMass(plant.CombustionChamber1.fluegas.state);
@@ -3552,18 +3552,18 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.CombustionChamber1.fluegas.Xi[3] = plant.CombustionChamber1.fluegas.X[3];
 //   plant.CombustionChamber1.fluegas.Xi[4] = plant.CombustionChamber1.fluegas.X[4];
 //   plant.CombustionChamber1.fluegas.Xi[5] = plant.CombustionChamber1.fluegas.X[5];
-//   assert(plant.CombustionChamber1.fluegas.X[1] >= -1e-05 and plant.CombustionChamber1.fluegas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.CombustionChamber1.fluegas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.CombustionChamber1.fluegas.X[1] >= -1e-05 and plant.CombustionChamber1.fluegas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.CombustionChamber1.fluegas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.CombustionChamber1.fluegas.X[2] >= -1e-05 and plant.CombustionChamber1.fluegas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.CombustionChamber1.fluegas.X[2], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.CombustionChamber1.fluegas.X[2] >= -1e-05 and plant.CombustionChamber1.fluegas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.CombustionChamber1.fluegas.X[2], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.CombustionChamber1.fluegas.X[3] >= -1e-05 and plant.CombustionChamber1.fluegas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.CombustionChamber1.fluegas.X[3], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.CombustionChamber1.fluegas.X[3] >= -1e-05 and plant.CombustionChamber1.fluegas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.CombustionChamber1.fluegas.X[3], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.CombustionChamber1.fluegas.X[4] >= -1e-05 and plant.CombustionChamber1.fluegas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.CombustionChamber1.fluegas.X[4], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.CombustionChamber1.fluegas.X[4] >= -1e-05 and plant.CombustionChamber1.fluegas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.CombustionChamber1.fluegas.X[4], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.CombustionChamber1.fluegas.X[5] >= -1e-05 and plant.CombustionChamber1.fluegas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.CombustionChamber1.fluegas.X[5], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.CombustionChamber1.fluegas.X[5] >= -1e-05 and plant.CombustionChamber1.fluegas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.CombustionChamber1.fluegas.X[5], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.CombustionChamber1.fluegas.p >= 0.0, \"Pressure (= \" + String(plant.CombustionChamber1.fluegas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.CombustionChamber1.fluegas.T, 0, true, 6) + \" K)\");
+//   assert(plant.CombustionChamber1.fluegas.p >= 0.0, \"Pressure (= \" + String(plant.CombustionChamber1.fluegas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.CombustionChamber1.fluegas.T, 6, 0, true) + \" K)\");
 //   plant.CombustionChamber1.ina_X = {plant.stateInletCC.outlet.Xi_outflow[1], plant.stateInletCC.outlet.Xi_outflow[2], plant.stateInletCC.outlet.Xi_outflow[3], plant.stateInletCC.outlet.Xi_outflow[4]};
 //   plant.CombustionChamber1.inf_X = {plant.SourceW1.flange.Xi_outflow[1], plant.SourceW1.flange.Xi_outflow[2], plant.SourceW1.flange.Xi_outflow[3]};
 //   plant.CombustionChamber1.wcomb = 62.33457960936165 * plant.CombustionChamber1.inf.m_flow * plant.CombustionChamber1.inf_X[3];
@@ -3611,7 +3611,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.CombustionChamber1.ho = plant.CombustionChamber1.fluegas.h;
 //   plant.CombustionChamber1.Tr = plant.CombustionChamber1.M / max(abs(plant.CombustionChamber1.out.m_flow), 1e-15);
 //   assert(plant.SourceP1.gas.T >= 200.0 and plant.SourceP1.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.SourceP1.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.SourceP1.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"Air\" + \"\\\".\");
 //   plant.SourceP1.gas.MM = ThermoPower.Gas.SourcePressure$plant$SourceP1.Medium.molarMass(plant.SourceP1.gas.state);
@@ -3629,16 +3629,16 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.SourceP1.gas.Xi[2] = plant.SourceP1.gas.X[2];
 //   plant.SourceP1.gas.Xi[3] = plant.SourceP1.gas.X[3];
 //   plant.SourceP1.gas.Xi[4] = plant.SourceP1.gas.X[4];
-//   assert(plant.SourceP1.gas.X[1] >= -1e-05 and plant.SourceP1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.SourceP1.gas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.SourceP1.gas.X[1] >= -1e-05 and plant.SourceP1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.SourceP1.gas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.SourceP1.gas.X[2] >= -1e-05 and plant.SourceP1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.SourceP1.gas.X[2], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.SourceP1.gas.X[2] >= -1e-05 and plant.SourceP1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.SourceP1.gas.X[2], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.SourceP1.gas.X[3] >= -1e-05 and plant.SourceP1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.SourceP1.gas.X[3], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.SourceP1.gas.X[3] >= -1e-05 and plant.SourceP1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.SourceP1.gas.X[3], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.SourceP1.gas.X[4] >= -1e-05 and plant.SourceP1.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.SourceP1.gas.X[4], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.SourceP1.gas.X[4] >= -1e-05 and plant.SourceP1.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.SourceP1.gas.X[4], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.SourceP1.gas.p >= 0.0, \"Pressure (= \" + String(plant.SourceP1.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.SourceP1.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.SourceP1.gas.p >= 0.0, \"Pressure (= \" + String(plant.SourceP1.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.SourceP1.gas.T, 6, 0, true) + \" K)\");
 //   plant.SourceP1.flange.p = plant.SourceP1.gas.p;
 //   plant.SourceP1.gas.p = plant.SourceP1.in_p0_internal;
 //   plant.SourceP1.in_p0_internal = plant.SourceP1.p0;
@@ -3658,7 +3658,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.SourceP1.flange.Xi_outflow[3] = plant.SourceP1.gas.Xi[3];
 //   plant.SourceP1.flange.Xi_outflow[4] = plant.SourceP1.gas.Xi[4];
 //   assert(plant.SinkP1.gas.T >= 200.0 and plant.SinkP1.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.SinkP1.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.SinkP1.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"FlueGas\" + \"\\\".\");
 //   plant.SinkP1.gas.MM = ThermoPower.Gas.SinkPressure$plant$SinkP1.Medium.molarMass(plant.SinkP1.gas.state);
@@ -3678,18 +3678,18 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.SinkP1.gas.Xi[3] = plant.SinkP1.gas.X[3];
 //   plant.SinkP1.gas.Xi[4] = plant.SinkP1.gas.X[4];
 //   plant.SinkP1.gas.Xi[5] = plant.SinkP1.gas.X[5];
-//   assert(plant.SinkP1.gas.X[1] >= -1e-05 and plant.SinkP1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.SinkP1.gas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.SinkP1.gas.X[1] >= -1e-05 and plant.SinkP1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.SinkP1.gas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.SinkP1.gas.X[2] >= -1e-05 and plant.SinkP1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.SinkP1.gas.X[2], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.SinkP1.gas.X[2] >= -1e-05 and plant.SinkP1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.SinkP1.gas.X[2], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.SinkP1.gas.X[3] >= -1e-05 and plant.SinkP1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.SinkP1.gas.X[3], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.SinkP1.gas.X[3] >= -1e-05 and plant.SinkP1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.SinkP1.gas.X[3], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.SinkP1.gas.X[4] >= -1e-05 and plant.SinkP1.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.SinkP1.gas.X[4], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.SinkP1.gas.X[4] >= -1e-05 and plant.SinkP1.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.SinkP1.gas.X[4], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.SinkP1.gas.X[5] >= -1e-05 and plant.SinkP1.gas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.SinkP1.gas.X[5], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.SinkP1.gas.X[5] >= -1e-05 and plant.SinkP1.gas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.SinkP1.gas.X[5], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.SinkP1.gas.p >= 0.0, \"Pressure (= \" + String(plant.SinkP1.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.SinkP1.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.SinkP1.gas.p >= 0.0, \"Pressure (= \" + String(plant.SinkP1.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.SinkP1.gas.T, 6, 0, true) + \" K)\");
 //   plant.SinkP1.flange.p = plant.SinkP1.gas.p;
 //   plant.SinkP1.gas.p = plant.SinkP1.in_p0_internal;
 //   plant.SinkP1.in_p0_internal = plant.SinkP1.p0;
@@ -3712,7 +3712,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.SinkP1.flange.Xi_outflow[4] = plant.SinkP1.gas.Xi[4];
 //   plant.SinkP1.flange.Xi_outflow[5] = plant.SinkP1.gas.Xi[5];
 //   assert(plant.SourceW1.gas.T >= 200.0 and plant.SourceW1.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.SourceW1.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.SourceW1.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"NaturalGas\" + \"\\\".\");
 //   plant.SourceW1.gas.MM = ThermoPower.Gas.SourceMassFlow$plant$SourceW1.Medium.molarMass(plant.SourceW1.gas.state);
@@ -3728,14 +3728,14 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.SourceW1.gas.Xi[1] = plant.SourceW1.gas.X[1];
 //   plant.SourceW1.gas.Xi[2] = plant.SourceW1.gas.X[2];
 //   plant.SourceW1.gas.Xi[3] = plant.SourceW1.gas.X[3];
-//   assert(plant.SourceW1.gas.X[1] >= -1e-05 and plant.SourceW1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.SourceW1.gas.X[1], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.SourceW1.gas.X[1] >= -1e-05 and plant.SourceW1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.SourceW1.gas.X[1], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"NaturalGas\" + \" is not in the range 0..1\");
-//   assert(plant.SourceW1.gas.X[2] >= -1e-05 and plant.SourceW1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.SourceW1.gas.X[2], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.SourceW1.gas.X[2] >= -1e-05 and plant.SourceW1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.SourceW1.gas.X[2], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"NaturalGas\" + \" is not in the range 0..1\");
-//   assert(plant.SourceW1.gas.X[3] >= -1e-05 and plant.SourceW1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.SourceW1.gas.X[3], 0, true, 6) + \"of substance \" + \"Methane\" + \"
+//   assert(plant.SourceW1.gas.X[3] >= -1e-05 and plant.SourceW1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.SourceW1.gas.X[3], 6, 0, true) + \"of substance \" + \"Methane\" + \"
 //   of medium \" + \"NaturalGas\" + \" is not in the range 0..1\");
-//   assert(plant.SourceW1.gas.p >= 0.0, \"Pressure (= \" + String(plant.SourceW1.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"NaturalGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.SourceW1.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.SourceW1.gas.p >= 0.0, \"Pressure (= \" + String(plant.SourceW1.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"NaturalGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.SourceW1.gas.T, 6, 0, true) + \" K)\");
 //   plant.SourceW1.flange.m_flow = -plant.SourceW1.w;
 //   plant.SourceW1.w = plant.SourceW1.in_w0_internal;
 //   plant.SourceW1.gas.T = plant.SourceW1.in_T_internal;
@@ -3752,7 +3752,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.SourceW1.flange.Xi_outflow[2] = plant.SourceW1.gas.Xi[2];
 //   plant.SourceW1.flange.Xi_outflow[3] = plant.SourceW1.gas.Xi[3];
 //   assert(plant.PressDrop1.gas.T >= 200.0 and plant.PressDrop1.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.PressDrop1.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.PressDrop1.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"FlueGas\" + \"\\\".\");
 //   plant.PressDrop1.gas.MM = ThermoPower.Gas.PressDrop$plant$PressDrop1.Medium.molarMass(plant.PressDrop1.gas.state);
@@ -3772,18 +3772,18 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.PressDrop1.gas.Xi[3] = plant.PressDrop1.gas.X[3];
 //   plant.PressDrop1.gas.Xi[4] = plant.PressDrop1.gas.X[4];
 //   plant.PressDrop1.gas.Xi[5] = plant.PressDrop1.gas.X[5];
-//   assert(plant.PressDrop1.gas.X[1] >= -1e-05 and plant.PressDrop1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.PressDrop1.gas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.PressDrop1.gas.X[1] >= -1e-05 and plant.PressDrop1.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.PressDrop1.gas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop1.gas.X[2] >= -1e-05 and plant.PressDrop1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.PressDrop1.gas.X[2], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.PressDrop1.gas.X[2] >= -1e-05 and plant.PressDrop1.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.PressDrop1.gas.X[2], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop1.gas.X[3] >= -1e-05 and plant.PressDrop1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.PressDrop1.gas.X[3], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.PressDrop1.gas.X[3] >= -1e-05 and plant.PressDrop1.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.PressDrop1.gas.X[3], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop1.gas.X[4] >= -1e-05 and plant.PressDrop1.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.PressDrop1.gas.X[4], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.PressDrop1.gas.X[4] >= -1e-05 and plant.PressDrop1.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.PressDrop1.gas.X[4], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop1.gas.X[5] >= -1e-05 and plant.PressDrop1.gas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.PressDrop1.gas.X[5], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.PressDrop1.gas.X[5] >= -1e-05 and plant.PressDrop1.gas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.PressDrop1.gas.X[5], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop1.gas.p >= 0.0, \"Pressure (= \" + String(plant.PressDrop1.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.PressDrop1.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.PressDrop1.gas.p >= 0.0, \"Pressure (= \" + String(plant.PressDrop1.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.PressDrop1.gas.T, 6, 0, true) + \" K)\");
 //   assert(plant.PressDrop1.dpnom > 0.0, \"dpnom=0 not supported, it is also used in the homotopy trasformation during the inizialization\");
 //   plant.PressDrop1.gas.p = homotopy(if not plant.PressDrop1.allowFlowReversal then plant.PressDrop1.pin else if plant.PressDrop1.inlet.m_flow >= 0.0 then plant.PressDrop1.pin else plant.PressDrop1.pout, plant.PressDrop1.pin);
 //   plant.PressDrop1.gas.h = homotopy(if not plant.PressDrop1.allowFlowReversal then plant.stateOutletCC.outlet.h_outflow else smooth(0, plant.stateOutletCC.outlet.h_outflow), plant.stateOutletCC.outlet.h_outflow);
@@ -3811,7 +3811,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.stateOutletCC.outlet.Xi_outflow[4] = plant.PressDrop1.outlet.Xi_outflow[4];
 //   plant.stateOutletCC.outlet.Xi_outflow[5] = plant.PressDrop1.outlet.Xi_outflow[5];
 //   assert(plant.PressDrop2.gas.T >= 200.0 and plant.PressDrop2.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.PressDrop2.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.PressDrop2.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"Air\" + \"\\\".\");
 //   plant.PressDrop2.gas.MM = ThermoPower.Gas.PressDrop$plant$PressDrop2.Medium.molarMass(plant.PressDrop2.gas.state);
@@ -3829,16 +3829,16 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.PressDrop2.gas.Xi[2] = plant.PressDrop2.gas.X[2];
 //   plant.PressDrop2.gas.Xi[3] = plant.PressDrop2.gas.X[3];
 //   plant.PressDrop2.gas.Xi[4] = plant.PressDrop2.gas.X[4];
-//   assert(plant.PressDrop2.gas.X[1] >= -1e-05 and plant.PressDrop2.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.PressDrop2.gas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.PressDrop2.gas.X[1] >= -1e-05 and plant.PressDrop2.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.PressDrop2.gas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop2.gas.X[2] >= -1e-05 and plant.PressDrop2.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.PressDrop2.gas.X[2], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.PressDrop2.gas.X[2] >= -1e-05 and plant.PressDrop2.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.PressDrop2.gas.X[2], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop2.gas.X[3] >= -1e-05 and plant.PressDrop2.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.PressDrop2.gas.X[3], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.PressDrop2.gas.X[3] >= -1e-05 and plant.PressDrop2.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.PressDrop2.gas.X[3], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop2.gas.X[4] >= -1e-05 and plant.PressDrop2.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.PressDrop2.gas.X[4], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.PressDrop2.gas.X[4] >= -1e-05 and plant.PressDrop2.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.PressDrop2.gas.X[4], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.PressDrop2.gas.p >= 0.0, \"Pressure (= \" + String(plant.PressDrop2.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.PressDrop2.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.PressDrop2.gas.p >= 0.0, \"Pressure (= \" + String(plant.PressDrop2.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.PressDrop2.gas.T, 6, 0, true) + \" K)\");
 //   assert(plant.PressDrop2.dpnom > 0.0, \"dpnom=0 not supported, it is also used in the homotopy trasformation during the inizialization\");
 //   plant.PressDrop2.gas.p = homotopy(if not plant.PressDrop2.allowFlowReversal then plant.PressDrop2.pin else if plant.PressDrop2.inlet.m_flow >= 0.0 then plant.PressDrop2.pin else plant.PressDrop2.pout, plant.PressDrop2.pin);
 //   plant.PressDrop2.gas.h = homotopy(if not plant.PressDrop2.allowFlowReversal then plant.compressor.outlet.h_outflow else smooth(0, plant.compressor.outlet.h_outflow), plant.compressor.outlet.h_outflow);
@@ -3868,7 +3868,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   der(plant.gasFlowActuator.y) = (plant.gasFlowActuator.k * plant.gasFlowActuator.u - plant.gasFlowActuator.y) / plant.gasFlowActuator.T;
 //   der(plant.powerSensor1.y) = (plant.powerSensor1.k * plant.powerSensor1.u - plant.powerSensor1.y) / plant.powerSensor1.T;
 //   assert(plant.stateInletCC.gas.T >= 200.0 and plant.stateInletCC.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.stateInletCC.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.stateInletCC.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"Air\" + \"\\\".\");
 //   plant.stateInletCC.gas.MM = ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateInletCC.Medium.molarMass(plant.stateInletCC.gas.state);
@@ -3886,16 +3886,16 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.stateInletCC.gas.Xi[2] = plant.stateInletCC.gas.X[2];
 //   plant.stateInletCC.gas.Xi[3] = plant.stateInletCC.gas.X[3];
 //   plant.stateInletCC.gas.Xi[4] = plant.stateInletCC.gas.X[4];
-//   assert(plant.stateInletCC.gas.X[1] >= -1e-05 and plant.stateInletCC.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.stateInletCC.gas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.stateInletCC.gas.X[1] >= -1e-05 and plant.stateInletCC.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.stateInletCC.gas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.stateInletCC.gas.X[2] >= -1e-05 and plant.stateInletCC.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.stateInletCC.gas.X[2], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.stateInletCC.gas.X[2] >= -1e-05 and plant.stateInletCC.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.stateInletCC.gas.X[2], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.stateInletCC.gas.X[3] >= -1e-05 and plant.stateInletCC.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.stateInletCC.gas.X[3], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.stateInletCC.gas.X[3] >= -1e-05 and plant.stateInletCC.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.stateInletCC.gas.X[3], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.stateInletCC.gas.X[4] >= -1e-05 and plant.stateInletCC.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.stateInletCC.gas.X[4], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.stateInletCC.gas.X[4] >= -1e-05 and plant.stateInletCC.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.stateInletCC.gas.X[4], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"Air\" + \" is not in the range 0..1\");
-//   assert(plant.stateInletCC.gas.p >= 0.0, \"Pressure (= \" + String(plant.stateInletCC.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.stateInletCC.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.stateInletCC.gas.p >= 0.0, \"Pressure (= \" + String(plant.stateInletCC.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"Air\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.stateInletCC.gas.T, 6, 0, true) + \" K)\");
 //   plant.stateInletCC.inlet.p = plant.stateInletCC.gas.p;
 //   plant.stateInletCC.gas.h = homotopy(if not plant.stateInletCC.allowFlowReversal then plant.PressDrop2.outlet.h_outflow else smooth(0, plant.PressDrop2.outlet.h_outflow), plant.PressDrop2.outlet.h_outflow);
 //   plant.stateInletCC.gas.Xi[1] = homotopy(if not plant.stateInletCC.allowFlowReversal then plant.PressDrop2.outlet.Xi_outflow[1] else smooth(0, plant.PressDrop2.outlet.Xi_outflow[1]), plant.PressDrop2.outlet.Xi_outflow[1]);
@@ -3919,7 +3919,7 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.PressDrop2.outlet.Xi_outflow[3] = plant.stateInletCC.outlet.Xi_outflow[3];
 //   plant.PressDrop2.outlet.Xi_outflow[4] = plant.stateInletCC.outlet.Xi_outflow[4];
 //   assert(plant.stateOutletCC.gas.T >= 200.0 and plant.stateOutletCC.gas.T <= 6000.0, \"
-//               Temperature T (=\" + String(plant.stateOutletCC.gas.T, 0, true, 6) + \" K = 200 K) is not in the allowed range
+//               Temperature T (=\" + String(plant.stateOutletCC.gas.T, 6, 0, true) + \" K = 200 K) is not in the allowed range
 //               200 K <= T <= 6000 K
 //               required from medium model \\\"\" + \"FlueGas\" + \"\\\".\");
 //   plant.stateOutletCC.gas.MM = ThermoPower.PowerPlants.HRSG.Components.StateReader_gas$plant$stateOutletCC.Medium.molarMass(plant.stateOutletCC.gas.state);
@@ -3939,18 +3939,18 @@ instantiateModel(ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator); getErro
 //   plant.stateOutletCC.gas.Xi[3] = plant.stateOutletCC.gas.X[3];
 //   plant.stateOutletCC.gas.Xi[4] = plant.stateOutletCC.gas.X[4];
 //   plant.stateOutletCC.gas.Xi[5] = plant.stateOutletCC.gas.X[5];
-//   assert(plant.stateOutletCC.gas.X[1] >= -1e-05 and plant.stateOutletCC.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.stateOutletCC.gas.X[1], 0, true, 6) + \"of substance \" + \"Oxygen\" + \"
+//   assert(plant.stateOutletCC.gas.X[1] >= -1e-05 and plant.stateOutletCC.gas.X[1] <= 1.00001, \"Mass fraction X[1] = \" + String(plant.stateOutletCC.gas.X[1], 6, 0, true) + \"of substance \" + \"Oxygen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.stateOutletCC.gas.X[2] >= -1e-05 and plant.stateOutletCC.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.stateOutletCC.gas.X[2], 0, true, 6) + \"of substance \" + \"Argon\" + \"
+//   assert(plant.stateOutletCC.gas.X[2] >= -1e-05 and plant.stateOutletCC.gas.X[2] <= 1.00001, \"Mass fraction X[2] = \" + String(plant.stateOutletCC.gas.X[2], 6, 0, true) + \"of substance \" + \"Argon\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.stateOutletCC.gas.X[3] >= -1e-05 and plant.stateOutletCC.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.stateOutletCC.gas.X[3], 0, true, 6) + \"of substance \" + \"Water\" + \"
+//   assert(plant.stateOutletCC.gas.X[3] >= -1e-05 and plant.stateOutletCC.gas.X[3] <= 1.00001, \"Mass fraction X[3] = \" + String(plant.stateOutletCC.gas.X[3], 6, 0, true) + \"of substance \" + \"Water\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.stateOutletCC.gas.X[4] >= -1e-05 and plant.stateOutletCC.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.stateOutletCC.gas.X[4], 0, true, 6) + \"of substance \" + \"Carbondioxide\" + \"
+//   assert(plant.stateOutletCC.gas.X[4] >= -1e-05 and plant.stateOutletCC.gas.X[4] <= 1.00001, \"Mass fraction X[4] = \" + String(plant.stateOutletCC.gas.X[4], 6, 0, true) + \"of substance \" + \"Carbondioxide\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.stateOutletCC.gas.X[5] >= -1e-05 and plant.stateOutletCC.gas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.stateOutletCC.gas.X[5], 0, true, 6) + \"of substance \" + \"Nitrogen\" + \"
+//   assert(plant.stateOutletCC.gas.X[5] >= -1e-05 and plant.stateOutletCC.gas.X[5] <= 1.00001, \"Mass fraction X[5] = \" + String(plant.stateOutletCC.gas.X[5], 6, 0, true) + \"of substance \" + \"Nitrogen\" + \"
 //   of medium \" + \"FlueGas\" + \" is not in the range 0..1\");
-//   assert(plant.stateOutletCC.gas.p >= 0.0, \"Pressure (= \" + String(plant.stateOutletCC.gas.p, 0, true, 6) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
-//   (Temperature = \" + String(plant.stateOutletCC.gas.T, 0, true, 6) + \" K)\");
+//   assert(plant.stateOutletCC.gas.p >= 0.0, \"Pressure (= \" + String(plant.stateOutletCC.gas.p, 6, 0, true) + \" Pa) of medium \\\"\" + \"FlueGas\" + \"\\\" is negative
+//   (Temperature = \" + String(plant.stateOutletCC.gas.T, 6, 0, true) + \" K)\");
 //   plant.stateOutletCC.inlet.p = plant.stateOutletCC.gas.p;
 //   plant.stateOutletCC.gas.h = homotopy(if not plant.stateOutletCC.allowFlowReversal then plant.CombustionChamber1.out.h_outflow else smooth(0, plant.CombustionChamber1.out.h_outflow), plant.CombustionChamber1.out.h_outflow);
 //   plant.stateOutletCC.gas.Xi[1] = homotopy(if not plant.stateOutletCC.allowFlowReversal then plant.CombustionChamber1.out.Xi_outflow[1] else smooth(0, plant.CombustionChamber1.out.Xi_outflow[1]), plant.CombustionChamber1.out.Xi_outflow[1]);

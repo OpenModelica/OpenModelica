@@ -3037,17 +3037,17 @@ end BoreholeSegment;
 //                 Input to the function
 //                 Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.singleUTubeResistances
 //                 is
-//                          hSeg = " + String(hSeg, 0, true, 6) + " m
-//                          rBor = " + String(rBor, 0, true, 6) + " m
-//                          rTub = " + String(rTub, 0, true, 6) + " m
-//                          eTub = " + String(eTub, 0, true, 6) + " m
-//                          xC   = " + String(xC, 0, true, 6) + " m
-//                          kSoi = " + String(kSoi, 0, true, 6) + " W/m/K
-//                          kFil = " + String(kFil, 0, true, 6) + " W/m/K
-//                          kTub = " + String(kTub, 0, true, 6) + " W/m/K
-//                 Computed x    = " + String(x, 0, true, 6) + " K/W
-//                          Rgb  = " + String(Rgb, 0, true, 6) + " K/W
-//                          Rgg  = " + String(Rgg, 0, true, 6) + " K/W");
+//                          hSeg = " + String(hSeg, 6, 0, true) + " m
+//                          rBor = " + String(rBor, 6, 0, true) + " m
+//                          rTub = " + String(rTub, 6, 0, true) + " m
+//                          eTub = " + String(eTub, 6, 0, true) + " m
+//                          xC   = " + String(xC, 6, 0, true) + " m
+//                          kSoi = " + String(kSoi, 6, 0, true) + " W/m/K
+//                          kFil = " + String(kFil, 6, 0, true) + " W/m/K
+//                          kTub = " + String(kTub, 6, 0, true) + " W/m/K
+//                 Computed x    = " + String(x, 6, 0, true) + " K/W
+//                          Rgb  = " + String(Rgb, 6, 0, true) + " K/W
+//                          Rgg  = " + String(Rgg, 6, 0, true) + " K/W");
 //   RCondGro := x * Rg + RCondPipe;
 // end Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.singleUTubeResistances;
 //
@@ -3066,8 +3066,8 @@ end BoreholeSegment;
 //   protected Real QU_flow(quantity = "Power", unit = "W");
 //   protected Real minSamplePeriod(quantity = "Time", unit = "s") = 0.06578947368421052 * rExt ^ 2.0 * d * c / k;
 // algorithm
-//   assert(0.25 * rExt ^ 2.0 * d * c / (samplePeriod * k) <= 3.8, "The samplePeriod has to be bigger than " + String(minSamplePeriod, 0, true, 6) + " for convergence purpose.
-//                 samplePeriod = " + String(samplePeriod, 0, true, 6));
+//   assert(0.25 * rExt ^ 2.0 * d * c / (samplePeriod * k) <= 3.8, "The samplePeriod has to be bigger than " + String(minSamplePeriod, 6, 0, true) + " for convergence purpose.
+//                 samplePeriod = " + String(samplePeriod, 6, 0, true));
 //   if iSam == 1 then
 //     dT := 0.0;
 //     QL_flow := Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.exchangeValues(table, iSam, Q_flow, iSam);
@@ -3654,18 +3654,18 @@ end BoreholeSegment;
 //   for i in 1:nX loop
 //     assert(X_boundary[i] >= 0.0, "
 //               Wrong boundary mass fractions in medium \"" + mediumName + "\" in model \"" + modelName + "\":
-//               The boundary value X_boundary(" + String(i, 0, true) + ") = " + String(X_boundary[i], 0, true, 6) + "
+//               The boundary value X_boundary(" + String(i, 0, true) + ") = " + String(X_boundary[i], 6, 0, true) + "
 //               is negative. It must be positive.
 //               ");
 //   end for;
 //   if nX > 0 and abs(-1.0 + sum(X_boundary)) > 1e-10 then
 //     X_str := "";
 //     for i in 1:nX loop
-//       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 0, true, 6) + " \"" + substanceNames[i] + "\"
+//       X_str := X_str + "   X_boundary[" + String(i, 0, true) + "] = " + String(X_boundary[i], 6, 0, true) + " \"" + substanceNames[i] + "\"
 //       ";
 //     end for;
 //     Modelica.Utilities.Streams.error("The boundary mass fractions in medium \"" + mediumName + "\" in model \"" + modelName + "\"
-//     " + "do not sum up to 1. Instead, sum(X_boundary) = " + String(sum(X_boundary), 0, true, 6) + ":
+//     " + "do not sum up to 1. Instead, sum(X_boundary) = " + String(sum(X_boundary), 6, 0, true) + ":
 //     " + X_str);
 //   end if;
 // end Modelica.Fluid.Utilities.checkBoundary;
@@ -4546,7 +4546,7 @@ end BoreholeSegment;
 //   seg.soi.r[8] = seg.soi.r[7] + (seg.soi.r_b - seg.soi.r_a) * (1.0 - seg.soi.griFac) * seg.soi.griFac ^ 6.0 / (1.0 - seg.soi.griFac ^ /*Real*/(seg.soi.nSta));
 //   seg.soi.r[9] = seg.soi.r[8] + (seg.soi.r_b - seg.soi.r_a) * (1.0 - seg.soi.griFac) * seg.soi.griFac ^ 7.0 / (1.0 - seg.soi.griFac ^ /*Real*/(seg.soi.nSta));
 //   seg.soi.r[10] = seg.soi.r[9] + (seg.soi.r_b - seg.soi.r_a) * (1.0 - seg.soi.griFac) * seg.soi.griFac ^ 8.0 / (1.0 - seg.soi.griFac ^ /*Real*/(seg.soi.nSta));
-//   assert(abs(seg.soi.r[10] - seg.soi.r_b) < 1e-10, "Error: Wrong computation of radius. r[nSta+1]=" + String(seg.soi.r[10], 0, true, 6));
+//   assert(abs(seg.soi.r[10] - seg.soi.r_b) < 1e-10, "Error: Wrong computation of radius. r[nSta+1]=" + String(seg.soi.r[10], 6, 0, true));
 //   seg.soi.rC[1] = 0.5 * (seg.soi.r[1] + seg.soi.r[2]);
 //   seg.soi.rC[2] = 0.5 * (seg.soi.r[2] + seg.soi.r[3]);
 //   seg.soi.rC[3] = 0.5 * (seg.soi.r[3] + seg.soi.r[4]);
@@ -4587,19 +4587,19 @@ end BoreholeSegment;
 // initial algorithm
 //   assert(seg.pipFil.energyDynamics == Modelica.Fluid.Types.Dynamics.SteadyState or seg.pipFil.tau1 > 1e-15, "The parameter tau1, or the volume of the model from which tau may be derived, is unreasonably small.
 //            You need to set energyDynamics == Modelica.Fluid.Types.Dynamics.SteadyState to model steady-state.
-//            Received tau1 = " + String(seg.pipFil.tau1, 0, true, 6) + "
+//            Received tau1 = " + String(seg.pipFil.tau1, 6, 0, true) + "
 //   ");
 //   assert(seg.pipFil.massDynamics == Modelica.Fluid.Types.Dynamics.SteadyState or seg.pipFil.tau1 > 1e-15, "The parameter tau1, or the volume of the model from which tau may be derived, is unreasonably small.
 //            You need to set massDynamics == Modelica.Fluid.Types.Dynamics.SteadyState to model steady-state.
-//            Received tau1 = " + String(seg.pipFil.tau1, 0, true, 6) + "
+//            Received tau1 = " + String(seg.pipFil.tau1, 6, 0, true) + "
 //   ");
 //   assert(seg.pipFil.energyDynamics == Modelica.Fluid.Types.Dynamics.SteadyState or seg.pipFil.tau2 > 1e-15, "The parameter tau2, or the volume of the model from which tau may be derived, is unreasonably small.
 //            You need to set energyDynamics == Modelica.Fluid.Types.Dynamics.SteadyState to model steady-state.
-//            Received tau2 = " + String(seg.pipFil.tau2, 0, true, 6) + "
+//            Received tau2 = " + String(seg.pipFil.tau2, 6, 0, true) + "
 //   ");
 //   assert(seg.pipFil.massDynamics == Modelica.Fluid.Types.Dynamics.SteadyState or seg.pipFil.tau2 > 1e-15, "The parameter tau2, or the volume of the model from which tau may be derived, is unreasonably small.
 //            You need to set massDynamics == Modelica.Fluid.Types.Dynamics.SteadyState to model steady-state.
-//            Received tau2 = " + String(seg.pipFil.tau2, 0, true, 6) + "
+//            Received tau2 = " + String(seg.pipFil.tau2, 6, 0, true) + "
 //   ");
 // initial algorithm
 //   seg.TBouCon.U := 0.0;
@@ -4617,8 +4617,8 @@ end BoreholeSegment;
 //   seg.pipFil.state_b2_inflow = Buildings.Fluid.HeatExchangers.Boreholes.BaseClasses.HexInternalElement$seg$pipFil.Medium2.setState_phX(seg.pipFil.port_b2.p, sin_2.ports[1].h_outflow, {});
 //   seg.pipFil.vol1.masExc.y = seg.pipFil.vol1.masExc.k;
 //   assert(seg.pipFil.vol1.dynBal.medium.T >= 272.15 and seg.pipFil.vol1.dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(seg.pipFil.vol1.dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(seg.pipFil.vol1.dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   seg.pipFil.vol1.dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$seg$pipFil$vol1$dynBal.Medium.specificEnthalpy_pTX(seg.pipFil.vol1.dynBal.medium.p, seg.pipFil.vol1.dynBal.medium.T, {seg.pipFil.vol1.dynBal.medium.X[1]});
@@ -4629,10 +4629,10 @@ end BoreholeSegment;
 //   seg.pipFil.vol1.dynBal.medium.state.T = seg.pipFil.vol1.dynBal.medium.T;
 //   seg.pipFil.vol1.dynBal.medium.state.p = seg.pipFil.vol1.dynBal.medium.p;
 //   seg.pipFil.vol1.dynBal.medium.X[1] = 1.0;
-//   assert(seg.pipFil.vol1.dynBal.medium.X[1] >= -1e-05 and seg.pipFil.vol1.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(seg.pipFil.vol1.dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(seg.pipFil.vol1.dynBal.medium.X[1] >= -1e-05 and seg.pipFil.vol1.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(seg.pipFil.vol1.dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(seg.pipFil.vol1.dynBal.medium.p >= 0.0, "Pressure (= " + String(seg.pipFil.vol1.dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(seg.pipFil.vol1.dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(seg.pipFil.vol1.dynBal.medium.p >= 0.0, "Pressure (= " + String(seg.pipFil.vol1.dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(seg.pipFil.vol1.dynBal.medium.T, 6, 0, true) + " K)");
 //   seg.pipFil.vol1.dynBal.m = seg.pipFil.vol1.dynBal.fluidVolume * seg.pipFil.vol1.dynBal.medium.d;
 //   seg.pipFil.vol1.dynBal.U = seg.pipFil.vol1.dynBal.m * seg.pipFil.vol1.dynBal.medium.u;
 //   seg.pipFil.vol1.dynBal.hOut = seg.pipFil.vol1.dynBal.medium.h;
@@ -4651,8 +4651,8 @@ end BoreholeSegment;
 //   seg.pipFil.vol1.heatPort.T = seg.pipFil.vol1.T;
 //   seg.pipFil.vol2.masExc.y = seg.pipFil.vol2.masExc.k;
 //   assert(seg.pipFil.vol2.dynBal.medium.T >= 272.15 and seg.pipFil.vol2.dynBal.medium.T <= 403.15, "
-//             Temperature T (= " + String(seg.pipFil.vol2.dynBal.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(seg.pipFil.vol2.dynBal.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   seg.pipFil.vol2.dynBal.medium.h = Buildings.Fluid.Interfaces.ConservationEquation$seg$pipFil$vol2$dynBal.Medium.specificEnthalpy_pTX(seg.pipFil.vol2.dynBal.medium.p, seg.pipFil.vol2.dynBal.medium.T, {seg.pipFil.vol2.dynBal.medium.X[1]});
@@ -4663,10 +4663,10 @@ end BoreholeSegment;
 //   seg.pipFil.vol2.dynBal.medium.state.T = seg.pipFil.vol2.dynBal.medium.T;
 //   seg.pipFil.vol2.dynBal.medium.state.p = seg.pipFil.vol2.dynBal.medium.p;
 //   seg.pipFil.vol2.dynBal.medium.X[1] = 1.0;
-//   assert(seg.pipFil.vol2.dynBal.medium.X[1] >= -1e-05 and seg.pipFil.vol2.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(seg.pipFil.vol2.dynBal.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(seg.pipFil.vol2.dynBal.medium.X[1] >= -1e-05 and seg.pipFil.vol2.dynBal.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(seg.pipFil.vol2.dynBal.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(seg.pipFil.vol2.dynBal.medium.p >= 0.0, "Pressure (= " + String(seg.pipFil.vol2.dynBal.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(seg.pipFil.vol2.dynBal.medium.T, 0, true, 6) + " K)");
+//   assert(seg.pipFil.vol2.dynBal.medium.p >= 0.0, "Pressure (= " + String(seg.pipFil.vol2.dynBal.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(seg.pipFil.vol2.dynBal.medium.T, 6, 0, true) + " K)");
 //   seg.pipFil.vol2.dynBal.m = seg.pipFil.vol2.dynBal.fluidVolume * seg.pipFil.vol2.dynBal.medium.d;
 //   seg.pipFil.vol2.dynBal.U = seg.pipFil.vol2.dynBal.m * seg.pipFil.vol2.dynBal.medium.u;
 //   seg.pipFil.vol2.dynBal.hOut = seg.pipFil.vol2.dynBal.medium.h;
@@ -4758,8 +4758,8 @@ end BoreholeSegment;
 //   seg.dp1 = seg.port_a1.p - seg.port_b1.p;
 //   seg.dp2 = seg.port_a2.p - seg.port_b2.p;
 //   assert(sou_1.medium.T >= 272.15 and sou_1.medium.T <= 403.15, "
-//             Temperature T (= " + String(sou_1.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(sou_1.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   sou_1.medium.h = Buildings.Fluid.Sources.Boundary_pT$sou_1.Medium.specificEnthalpy_pTX(sou_1.medium.p, sou_1.medium.T, {sou_1.medium.X[1]});
@@ -4770,10 +4770,10 @@ end BoreholeSegment;
 //   sou_1.medium.state.T = sou_1.medium.T;
 //   sou_1.medium.state.p = sou_1.medium.p;
 //   sou_1.medium.X[1] = 1.0;
-//   assert(sou_1.medium.X[1] >= -1e-05 and sou_1.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_1.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(sou_1.medium.X[1] >= -1e-05 and sou_1.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sou_1.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(sou_1.medium.p >= 0.0, "Pressure (= " + String(sou_1.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(sou_1.medium.T, 0, true, 6) + " K)");
+//   assert(sou_1.medium.p >= 0.0, "Pressure (= " + String(sou_1.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(sou_1.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("SimpleLiquidWater", {"SimpleLiquidWater"}, true, true, {sou_1.X_in_internal[1]}, "Boundary_pT");
 //   sou_1.p_in_internal = sou_1.p;
 //   sou_1.T_in_internal = sou_1.T;
@@ -4783,8 +4783,8 @@ end BoreholeSegment;
 //   sou_1.ports[1].p = sou_1.medium.p;
 //   sou_1.ports[1].h_outflow = sou_1.medium.h;
 //   assert(sin_2.medium.T >= 272.15 and sin_2.medium.T <= 403.15, "
-//             Temperature T (= " + String(sin_2.medium.T, 0, true, 6) + " K) is not
-//             in the allowed range (" + String(272.15, 0, true, 6) + " K <= T <= " + String(403.15, 0, true, 6) + " K)
+//             Temperature T (= " + String(sin_2.medium.T, 6, 0, true) + " K) is not
+//             in the allowed range (" + String(272.15, 6, 0, true) + " K <= T <= " + String(403.15, 6, 0, true) + " K)
 //             required from medium model \"" + "SimpleLiquidWater" + "\".
 //             ");
 //   sin_2.medium.h = Buildings.Fluid.Sources.Boundary_pT$sin_2.Medium.specificEnthalpy_pTX(sin_2.medium.p, sin_2.medium.T, {sin_2.medium.X[1]});
@@ -4795,10 +4795,10 @@ end BoreholeSegment;
 //   sin_2.medium.state.T = sin_2.medium.T;
 //   sin_2.medium.state.p = sin_2.medium.p;
 //   sin_2.medium.X[1] = 1.0;
-//   assert(sin_2.medium.X[1] >= -1e-05 and sin_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_2.medium.X[1], 0, true, 6) + "of substance " + "SimpleLiquidWater" + "
+//   assert(sin_2.medium.X[1] >= -1e-05 and sin_2.medium.X[1] <= 1.00001, "Mass fraction X[1] = " + String(sin_2.medium.X[1], 6, 0, true) + "of substance " + "SimpleLiquidWater" + "
 //   of medium " + "SimpleLiquidWater" + " is not in the range 0..1");
-//   assert(sin_2.medium.p >= 0.0, "Pressure (= " + String(sin_2.medium.p, 0, true, 6) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
-//   (Temperature = " + String(sin_2.medium.T, 0, true, 6) + " K)");
+//   assert(sin_2.medium.p >= 0.0, "Pressure (= " + String(sin_2.medium.p, 6, 0, true) + " Pa) of medium \"" + "SimpleLiquidWater" + "\" is negative
+//   (Temperature = " + String(sin_2.medium.T, 6, 0, true) + " K)");
 //   Modelica.Fluid.Utilities.checkBoundary("SimpleLiquidWater", {"SimpleLiquidWater"}, true, true, {sin_2.X_in_internal[1]}, "Boundary_pT");
 //   sin_2.p_in_internal = sin_2.p;
 //   sin_2.T_in_internal = sin_2.T;
