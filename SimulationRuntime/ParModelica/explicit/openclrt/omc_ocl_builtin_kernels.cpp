@@ -81,7 +81,7 @@ void ocl_real_arr_arr_arr(const char* kernel_name, modelica_real* src_1, modelic
     ocl_error_check(OCL_SET_KER_ARGS, err);
 
 
-    size_t WorkSize[1] = {size_}; // one dimensional Range
+    size_t WorkSize[1] = {static_cast<size_t>(size_)}; // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
         WorkSize, NULL, 0, NULL, NULL);
@@ -111,7 +111,7 @@ void ocl_real_arr_arr_sca(const char* kernel_name, modelica_real* src_1, modelic
     inc1=1;
     inc2=1;
 
-    size_t WorkSize[1] = {size_};
+    size_t WorkSize[1] = {static_cast<size_t>(size_)};
     size_t localWorkSize[1] = {32};    // one dimensional Range
 
     if (!device_comm_queue)
@@ -187,7 +187,7 @@ void ocl_real_arr_sca_arr(const char* kernel_name, modelica_real* src_1, modelic
     err |= clSetKernelArg(OpenCLfunction, 2, sizeof(cl_mem), (void*)&device_array_output);
     ocl_error_check(OCL_SET_KER_ARGS, err);
 
-    size_t WorkSize[1] = {size_};
+    size_t WorkSize[1] = {static_cast<size_t>(size_)};
     //size_t localWorkSize[1] = {32};    // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
@@ -236,7 +236,7 @@ void ocl_real_arr_arr(const char* kernel_name, modelica_real* src_1, modelica_re
     err |= clSetKernelArg(OpenCLfunction, 1, sizeof(cl_mem), (void*)&device_array_output);
 
 
-    size_t WorkSize[1] = {size_};
+    size_t WorkSize[1] = {static_cast<size_t>(size_)};
     //size_t localWorkSize[1] = {32};    // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
@@ -286,7 +286,7 @@ void ocl_real_arr_sca(const char* kernel_name, modelica_real* src_1, modelica_re
     err |= clSetKernelArg(OpenCLfunction, 3, sizeof(cl_int), (void*)&size_);
     ocl_error_check(OCL_SET_KER_ARGS, err);
 
-    size_t WorkSize[1] = {size_};
+    size_t WorkSize[1] = {static_cast<size_t>(size_)};
     //size_t localWorkSize[1] = {32};    // one dimensional Range
     c0 = clock();
     err = clEnqueueNDRangeKernel(device_comm_queue, OpenCLfunction, 1, NULL,
@@ -313,7 +313,7 @@ void ocl_real_matrix_matrix_matrix(const char* kernel_name, modelica_real* src_1
     cl_int err;
 
 
-    size_t WorkSize[2] = {M, N};
+    size_t WorkSize[2] = {static_cast<size_t>(M), static_cast<size_t>(N)};
     size_t localWorkSize[2] = {16,16};
 
     if (!device_comm_queue){
@@ -369,7 +369,7 @@ void ocl_real_matrix_matrix_matrix2(const char* kernel_name, modelica_real* src_
     if (!device_comm_queue)
         ocl_initialize();
 
-    size_t WorkSize[2] = {M/4, N/4};
+    size_t WorkSize[2] = {static_cast<size_t>(M/4), static_cast<size_t>(N/4)};
     size_t localWorkSize[2] = {16,16};
 
     //This can be moved out. left here hoping that similar ops will be called
@@ -419,8 +419,8 @@ void ocl_real_matrix_matrix(const char* kernel_name, modelica_real* src_1, int M
     cl_int err;
     cl_int block_size = 16;
 
-    size_t WorkSize[2] = {M, N};
-    size_t localWorkSize[2] = {block_size,block_size};
+    size_t WorkSize[2] = {static_cast<size_t>(M), static_cast<size_t>(N)};
+    size_t localWorkSize[2] = {static_cast<size_t>(block_size), static_cast<size_t>(block_size)};
 
     if (!device_comm_queue)
         ocl_initialize();
