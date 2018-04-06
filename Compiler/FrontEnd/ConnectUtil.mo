@@ -2487,7 +2487,7 @@ algorithm
     local
       DAE.ComponentRef c;
       Face f1, f2;
-      DAE.Exp e;
+      DAE.Exp e, expr;
       list<ConnectorElement>  inside, outside;
 
     // Unconnected stream connector:
@@ -2524,6 +2524,10 @@ algorithm
         (outside, inside) := List.splitOnTrue(reducedStreams, isOutsideElement);
         inside := removeStreamSetElement(streamCref, inside);
         e := streamSumEquationExp(outside, inside, flowThreshold);
+        if not listEmpty(inside) then
+          expr := streamFlowExp(List.first(inside));
+          e := Expression.makePureBuiltinCall("$OMC$inStreamDiv", {e, expr}, Expression.typeof(e));
+        end if;
         // Evaluate any inStream calls that were generated.
         e := evaluateConnectionOperators2(e, sets, setArray, false, flowThreshold);
       then

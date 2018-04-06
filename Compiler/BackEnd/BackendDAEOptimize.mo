@@ -152,7 +152,7 @@ algorithm
     local
       DAE.Type tp;
       DAE.ComponentRef cr;
-      DAE.Exp e, expr;
+      DAE.Exp e, expr, a, b;
       Option<DAE.Exp> eMin, eMax;
       Boolean isZero;
 
@@ -176,6 +176,20 @@ algorithm
       //print(" <-> ");
       //print(ExpressionDump.printExpStr(e));
     then Expression.makePureBuiltinCall("max", {e, expr}, Expression.typeof(e));
+
+    case DAE.CALL(path=Absyn.IDENT("$OMC$inStreamDiv"),expLst={e, expr})
+      algorithm
+          e := ExpressionSimplify.simplify(e);
+          expr := match(e)
+                      case DAE.BINARY(a, DAE.DIV(), b)
+                        guard Expression.isZero(a) and Expression.isZero(b)
+                      then
+                        expr;
+                      else
+                        e;
+                 end match;
+      then
+         expr;
 
     else inExp;
   end match;
