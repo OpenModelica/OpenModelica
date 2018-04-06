@@ -3257,13 +3257,13 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = <%typeStr%>_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     '<%tvar%>'
 
-  case CALL(path=IDENT(name="String"), expLst={s, minlen, leftjust, signdig}) then
+  case CALL(path=IDENT(name="String"), expLst={s, signdig, minlen, leftjust}) then
     let tvar = tempDeclXml("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExpXml(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let minlenExp = daeExpXml(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let leftjustExp = daeExpXml(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let signdigExp = daeExpXml(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%signdigExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     '<%tvar%>'
 */
 

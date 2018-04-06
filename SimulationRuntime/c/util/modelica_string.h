@@ -51,8 +51,8 @@ extern modelica_string modelica_real_to_modelica_string_format(modelica_real r, 
 extern modelica_string modelica_integer_to_modelica_string_format(modelica_integer i, modelica_string format);
 extern modelica_string modelica_stringo_modelica_string_format(modelica_string s, modelica_string format);
 
-extern modelica_string modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,
-                                   modelica_boolean leftJustified,modelica_integer signDigits);
+extern modelica_string modelica_real_to_modelica_string(modelica_real r, modelica_integer signDigits,
+                                   modelica_integer minLen, modelica_boolean leftJustified);
 
 extern modelica_string modelica_string_to_modelica_string(modelica_string s);
 extern modelica_string modelica_integer_to_modelica_string(modelica_integer i,

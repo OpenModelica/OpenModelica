@@ -1936,7 +1936,7 @@ algorithm
       then
         (cache,Values.STRING(str));
 
-    case (cache,env,{exp, len_exp, justified_exp, sig_dig},impl,msg,_)
+    case (cache,env,{exp, sig_dig, len_exp, justified_exp},impl,msg,_)
       equation
         (cache,Values.REAL(r)) = ceval(cache,env, exp, impl, msg,numIter+1);
         (cache,Values.INTEGER(len)) = ceval(cache,env, len_exp, impl, msg,numIter+1);

@@ -218,7 +218,7 @@ modelica_string modelica_integer_to_modelica_string(modelica_integer i, modelica
 
 /* Convert a modelica_real to a modelica_string, used in String(r) */
 
-modelica_string modelica_real_to_modelica_string(modelica_real r,modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
+modelica_string modelica_real_to_modelica_string(modelica_real r, modelica_integer signDigits, modelica_integer minLen, modelica_boolean leftJustified)
 {
   size_t sz = snprintf(NULL, 0, leftJustified ? "%-*.*g" : "%*.*g", (int) minLen, (int) signDigits, r);
   void *res = alloc_modelica_string(sz);

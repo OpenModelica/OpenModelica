@@ -738,13 +738,13 @@ end daeExpIf;
 
   // case CALL(
             // path=IDENT(name="String"),
-            // expLst={s, minlen, leftjust, signdig}) then
+            // expLst={s, signdig, minlen, leftjust}) then
     // let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     // let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     // let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    // let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    // let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%signdigExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     // '<%tvar%>'
 
   // case CALL(

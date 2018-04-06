@@ -5891,13 +5891,13 @@ simple_alloc_1d_base_array(&<%tvar%>, <%nElts%>, <%tvardata%>);
     tvar
     end match
 
-  case CALL(path=IDENT(name="String"), expLst={s, minlen, leftjust, signdig}) then
+  case CALL(path=IDENT(name="String"), expLst={s, signdig, minlen, leftjust}) then
     let tvar = tempDecl("modelica_string", &varDecls)
     let sExp = daeExp(s, context, &preExp, &varDecls, &auxFunction)
     let minlenExp = daeExp(minlen, context, &preExp, &varDecls, &auxFunction)
     let leftjustExp = daeExp(leftjust, context, &preExp, &varDecls, &auxFunction)
     let signdigExp = daeExp(signdig, context, &preExp, &varDecls, &auxFunction)
-    let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    let &preExp += '<%tvar%> = modelica_real_to_modelica_string(<%sExp%>, <%signdigExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
     tvar
 
   case CALL(path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
