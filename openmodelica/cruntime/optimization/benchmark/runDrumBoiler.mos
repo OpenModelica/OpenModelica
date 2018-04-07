@@ -5,8 +5,6 @@
 loadModel(Modelica,{"3.2"});
 getErrorString();
 
-setCommandLineOptions("+demoMode --postOptModules-=wrapFunctionCalls");
-getErrorString();
 loadFile("DrumBoiler.mo");
 getErrorString();
 
@@ -27,8 +25,6 @@ res := OpenModelica.Scripting.compareSimulationResults("drumBoiler.optDrumBoiler
 getErrorString();
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true
@@ -74,12 +70,15 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 1.48405e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.49979e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.49983e-06 for the constraint $con$conSigma_con(time = 216)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 576)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 360)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "Warning: The model contains alias variables with conflicting start and/or nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
 // {"Files Equal!"}
-// ""
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

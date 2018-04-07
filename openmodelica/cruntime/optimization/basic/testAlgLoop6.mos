@@ -1,7 +1,7 @@
 // name: testAlgLoop6
 // status: correct
 
-setCommandLineOptions("+gDynOpt --tearingStrictness=casual +loop2con=all --postOptModules-=wrapFunctionCalls"); //wrapFunctionCalls is deactivated, Ticket: 3710
+setCommandLineOptions("+gDynOpt --tearingStrictness=casual +loop2con=all");
 //setCommandLineOptions("+gDynOpt");
 getErrorString();
 
@@ -393,27 +393,27 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0286712 for the constraint $EqCon$x2(time = 0.214286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.00619124 for the constraint $EqCon$x2(time = 0.214286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0462015 for the constraint $EqCon$x2(time = 0.214286)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.00191801 for the constraint $EqCon$x2(time = 0.214286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00191802 for the constraint $EqCon$x2(time = 0.214286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.00731684 for the constraint $EqCon$x2(time = 3.07143)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.00190648 for the constraint $EqCon$x2(time = 3.07143)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0204588 for the constraint $EqCon$x2(time = 0.142857)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.00324755 for the constraint $EqCon$x2(time = 0.142857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0204587 for the constraint $EqCon$x2(time = 0.142857)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00324754 for the constraint $EqCon$x2(time = 0.142857)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.060957 for the constraint $EqCon$x2(time = 0.142857)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0581662 for the constraint $EqCon$x2(time = 0.142857)
-// LOG_IPOPT_ERROR   | info    | max violation is 9.21575e-05 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 9.21574e-05 for the constraint $EqCon$x2(time = 0.0714286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0153965 for the constraint $EqCon$x2(time = 0.0714286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.00433548 for the constraint $EqCon$x2(time = 0.0714286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.199116 for the constraint $EqCon$x2(time = 0.0714286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.0583938 for the constraint $EqCon$x2(time = 0.0714286)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0950214 for the constraint $EqCon$x2(time = 0.0714286)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0950215 for the constraint $EqCon$x2(time = 0.0714286)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.29268e-05 for the constraint $EqCon$x2(time = 0.0714286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.000431219 for the constraint $EqCon$x2(time = 3.14286)
 // LOG_IPOPT_ERROR   | info    | max violation is 0.000509342 for the constraint $EqCon$x2(time = 3.14286)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.208e-06 for the constraint $EqCon$x2(time = 3.14286)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.93971e-08 for the constraint $EqCon$x2(time = 3.14286)
-// LOG_IPOPT_ERROR   | info    | max violation is 5.31349e-11 for the constraint $EqCon$x2(time = 3.14286)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.06026e-12 for the constraint $EqCon$x2(time = 1.71429)
-// LOG_IPOPT_ERROR   | info    | max violation is 2.22045e-16 for the constraint $EqCon$x2(time = 0.642857)
+// LOG_IPOPT_ERROR   | info    | max violation is 5.31347e-11 for the constraint $EqCon$x2(time = 3.14286)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.06015e-12 for the constraint $EqCon$x2(time = 1.71429)
+// LOG_IPOPT_ERROR   | info    | max violation is 2.22045e-16 for the constraint $EqCon$x2(time = 0.5)
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
