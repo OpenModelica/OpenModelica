@@ -33,16 +33,18 @@ val(x2,{0,1});
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 2
 //  * Number of variables: 2
 // Notification: Model statistics after passing the back-end for initialization:
 //  * Number of independent subsystems: 1
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (2):
 //  * Single equations (assignments): 2
@@ -56,12 +58,12 @@ val(x2,{0,1});
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
-//  * Number of states: 0 ('+d=stateselection' for list of states)
-//  * Number of discrete variables: 0 ('+d=discreteinfo' for list of discrete vars)
-//  * Number of discrete states: 0 ('+d=discreteinfo' for list of discrete states)
+//  * Number of states: 0 ('-d=stateselection' for list of states)
+//  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (2):
-//  * Single equations (assignments): 2
+// Notification: Strong component statistics for simulation (3):
+//  * Single equations (assignments): 3
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0

@@ -36,7 +36,9 @@ val(y,{0,0.5,1.0});
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {0.0,0.5,1.0}
@@ -46,7 +48,9 @@ val(y,{0,0.5,1.0});
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
 // ""
 // {0.5,0.5,0.5}

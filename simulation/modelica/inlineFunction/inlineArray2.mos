@@ -84,9 +84,11 @@ val(y,{0,0.5,1.0}); // 1, 1.823
 // record SimulationResult
 //     resultFile = "foo_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// "Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {-1.0,-0.9862025310764797,-0.9859173056116497}
 // {1.0,1.464675331140519,1.826435278620429}
