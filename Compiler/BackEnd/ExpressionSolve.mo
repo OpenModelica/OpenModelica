@@ -1923,7 +1923,7 @@ protected
   BackendDAE.Equation eqn;
 algorithm
   (oExp,_) := ExpressionSimplify.simplify1(iExp);
-  if need or not (Expression.isCref(oExp) or Expression.isConstValue(oExp)) then
+  if need or not (Expression.isCref(oExp) or Expression.isConst(oExp)) then
     eqn := BackendDAE.SOLVED_EQUATION(cr, oExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
     oExp := Expression.crefExp(cr);
     oeqnForNewVars := eqn::ieqnForNewVars;
