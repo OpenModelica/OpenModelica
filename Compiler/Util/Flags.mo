@@ -1442,13 +1442,13 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
     //"replaceDerCalls",
     "simplifysemiLinear",
     "simplifyComplexFunction",
-    "calculateStateSetsJacobians",
     "removeConstants",
     "simplifyTimeIndepFuncCalls",
     "simplifyAllExpressions",
     "findZeroCrossings",
     "createDAEmodeBDAE",
-    "detectDAEmodeSparsePattern"
+    "detectDAEmodeSparsePattern",
+    "setEvaluationStage"
     }),NONE(),
     Util.gettext("Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."));
 

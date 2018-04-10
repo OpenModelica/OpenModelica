@@ -39,6 +39,7 @@
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
 #include "meta/meta_modelica.h"
+#include "dae_mode.h"
 
 #include "util/omc_error.h"
 #include "simulation/solver/external_input.h"
@@ -70,7 +71,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
   if (compiledInDAEMode) /* dae mode */
   {
-    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ALGEBRAIC);
   }
   else /* ode mode */
   {

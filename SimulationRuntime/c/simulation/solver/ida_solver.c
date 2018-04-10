@@ -1184,7 +1184,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
   if (idaData->daeMode)
   {
     /* eval residual vars */
-    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
+    data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_DYNAMIC);
     /* get residual variables */
     for(i=0; i < idaData->N; i++)
     {
@@ -1274,7 +1274,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   data->callback->input_function(data, threadData);
   /* eval needed equations*/
   if (idaData->daeMode){
-   idaData->residualFunction(time, yy, yp, idaData->newdelta, idaData);
+   data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_ZEROCROSS);
   }
   else
   {

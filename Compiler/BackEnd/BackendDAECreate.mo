@@ -709,7 +709,7 @@ algorithm
         // Add the binding as an equation and remove the binding from the variable.
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
         e1 := Expression.crefExp(cr);
-        attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.BINDING_EQUATION());
+        attr := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
         outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
       then
         ();
@@ -1255,14 +1255,14 @@ algorithm
     case DAE.EQUATION(e1 as DAE.TUPLE(_),e2 as DAE.CALL(),source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.DYNAMIC_EQUATION(),functionTree,inEquations);
+        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inEquations);
       then
         (eqns,inREquations,inIEquations);
 
     case DAE.EQUATION(e2 as DAE.CALL(),e1 as DAE.TUPLE(_),source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.DYNAMIC_EQUATION(),functionTree,inEquations);
+        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inEquations);
       then
         (eqns,inREquations,inIEquations);
 
@@ -1270,14 +1270,14 @@ algorithm
     case DAE.INITIALEQUATION(e1 as DAE.TUPLE(_),e2 as DAE.CALL(),source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.INITIAL_EQUATION(),functionTree,inIEquations);
+        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL,functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
 
     case DAE.INITIALEQUATION(e2 as DAE.CALL(), e1 as DAE.TUPLE(_),source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.INITIAL_EQUATION(),functionTree,inIEquations);
+        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_INITIAL,functionTree,inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -1297,7 +1297,7 @@ algorithm
       equation
         e1 = Expression.crefExp(cr1);
         e2 = Expression.crefExp(cr2);
-        eqns = lowerExtendedRecordEqn(e1,e2,source,BackendDAE.DYNAMIC_EQUATION(),functionTree,inEquations);
+        eqns = lowerExtendedRecordEqn(e1,e2,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inEquations);
       then
        (eqns,inREquations,inIEquations);
 
@@ -1319,7 +1319,7 @@ algorithm
       equation
          //TODO: remove inline
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.DYNAMIC_EQUATION(),functionTree,inEquations);
+        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inEquations);
       then
         (eqns,inREquations,inIEquations);
 
@@ -1337,7 +1337,7 @@ algorithm
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
         b1 = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
         eqns = if b1 then inREquations else inEquations;
-        eqns = lowerArrayEqn(dims,e1_1, e2_1,source,BackendDAE.DYNAMIC_EQUATION(),eqns);
+        eqns = lowerArrayEqn(dims,e1_1, e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,eqns);
         ((eqns,_)) = if b1 then (inEquations,eqns) else (eqns,inREquations);
       then
         (eqns,inREquations,inIEquations);
@@ -1345,14 +1345,14 @@ algorithm
     case DAE.ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns = lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.DYNAMIC_EQUATION(),inEquations);
+        eqns = lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,inEquations);
       then
         (eqns,inREquations,inIEquations);
 
     case DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source)
       equation
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(e1,e2),source);
-        eqns = lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.DYNAMIC_EQUATION(),inIEquations);
+        eqns = lowerArrayEqn(dims,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,inIEquations);
       then
         (inEquations,inREquations,eqns);
 
@@ -1680,12 +1680,12 @@ protected function lowerExtendedRecordEqns "author: Frenkel TUD 2012-06"
   input list<DAE.Exp> explst1;
   input list<DAE.Exp> explst2;
   input DAE.ElementSource source;
-  input BackendDAE.EquationKind inEqKind;
+  input BackendDAE.EquationAttributes inEqAttributes;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := match(explst1, explst2, source, inEqKind, functionTree, inEqns)
+  outEqns := match(explst1, explst2, source, inEqAttributes, functionTree, inEqns)
     local
       DAE.Exp e1, e2;
       list<DAE.Exp> elst1, elst2;
@@ -1693,9 +1693,9 @@ algorithm
     case({}, {}, _, _, _, _) then inEqns;
     case(e1::elst1, e2::elst2, _, _, _, _)
       equation
-        eqns = lowerExtendedRecordEqn(e1, e2, source, inEqKind, functionTree, inEqns);
+        eqns = lowerExtendedRecordEqn(e1, e2, source, inEqAttributes, functionTree, inEqns);
       then
-        lowerExtendedRecordEqns(elst1, elst2, source, inEqKind, functionTree, eqns);
+        lowerExtendedRecordEqns(elst1, elst2, source, inEqAttributes, functionTree, eqns);
   end match;
 end lowerExtendedRecordEqns;
 
@@ -1703,12 +1703,12 @@ protected function lowerExtendedRecordEqn "author: Frenkel TUD 2012-06"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.ElementSource source;
-  input BackendDAE.EquationKind inEqKind;
+  input BackendDAE.EquationAttributes inEqAttributes;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(inExp1, inExp2, source, inEqKind, functionTree, inEqns)
+  outEqns := matchcontinue(inExp1, inExp2, source, inEqAttributes, functionTree, inEqns)
     local
       DAE.Type tp;
       Integer size;
@@ -1723,7 +1723,7 @@ algorithm
         explst1 = Expression.splitRecord(inExp1, Expression.typeof(inExp1));
         explst2 = Expression.splitRecord(inExp2, Expression.typeof(inExp2));
       then
-        lowerExtendedRecordEqns(explst1, explst2, source, inEqKind, functionTree, inEqns);
+        lowerExtendedRecordEqns(explst1, explst2, source, inEqAttributes, functionTree, inEqns);
 
     // complex types to complex equations
     case (_, _, _, _, _, _)
@@ -1732,7 +1732,7 @@ algorithm
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, inEqAttributes)::inEqns;
 
     // array types to array equations
     case (_, _, _, _, _, _)
@@ -1741,7 +1741,7 @@ algorithm
         true = DAEUtil.expTypeArray(tp);
         dims = Expression.arrayDimension(tp);
       then
-        lowerArrayEqn(dims, inExp1, inExp2, source, inEqKind, inEqns);
+        lowerArrayEqn(dims, inExp1, inExp2, source, inEqAttributes, inEqns);
 
     // tuple types to complex equations
     case (_, _, _, _, _, _)
@@ -1750,7 +1750,7 @@ algorithm
         true = Types.isTuple(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size, inExp1, inExp2, source, inEqAttributes)::inEqns;
 
     // other types
     case (_, _, _, _, _, _)
@@ -1762,7 +1762,7 @@ algorithm
         false = b1 or b2 or b3;
         //Error.assertionOrAddSourceMessage(not b1, Error.INTERNAL_ERROR, {str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(inExp1, inExp2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::inEqns;
+        BackendDAE.EQUATION(inExp1, inExp2, source, inEqAttributes)::inEqns;
     else
       equation
         // show only on failtrace!
@@ -1778,11 +1778,11 @@ protected function lowerArrayEqn "author: Frenkel TUD 2012-06"
   input DAE.Exp e1;
   input DAE.Exp e2;
   input DAE.ElementSource source;
-  input BackendDAE.EquationKind inEqKind;
+  input BackendDAE.EquationAttributes inEqAttributes;
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> outEqsLst;
 algorithm
-  outEqsLst := matchcontinue (dims, e1, e2, source, inEqKind, iAcc)
+  outEqsLst := matchcontinue (dims, e1, e2, source, inEqAttributes, iAcc)
     local
       list<DAE.Exp> ea1, ea2;
       list<Integer> ds;
@@ -1795,7 +1795,7 @@ algorithm
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2);
-      then generateEquations(ea1, ea2, source, inEqKind, iAcc);
+      then generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
 
     // array type with record
     case (_, _, _, _, _, _)
@@ -1808,12 +1808,12 @@ algorithm
         ds = List.map1(ds, intMul, i);
         //For COMPLEX_EQUATION
         //i = List.fold(ds, intMul, 1);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, inEqAttributes)::iAcc;
 
     case (_, _, _, _, _, _)
       equation
         ds = Expression.dimensionsSizes(dims);
-      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::iAcc;
+      then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, inEqAttributes)::iAcc;
   end matchcontinue;
 end lowerArrayEqn;
 
@@ -1821,17 +1821,17 @@ protected function generateEquations "author: Frenkel TUD 2012-06"
   input list<DAE.Exp> iE1lst;
   input list<DAE.Exp> iE2lst;
   input DAE.ElementSource source;
-  input BackendDAE.EquationKind inEqKind;
+  input BackendDAE.EquationAttributes inEqAttributes;
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  oEqns := match(iE1lst, iE2lst, source, inEqKind, iAcc)
+  oEqns := match(iE1lst, iE2lst, source, inEqAttributes, iAcc)
     local
       DAE.Exp e1, e2;
       list<DAE.Exp> e1lst, e2lst;
     case ({}, {}, _, _, _) then iAcc;
     case (e1::e1lst, e2::e2lst, _, _, _)
-      then generateEquations(e1lst, e2lst, source, inEqKind, BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))::iAcc);
+      then generateEquations(e1lst, e2lst, source, inEqAttributes, BackendDAE.EQUATION(e1, e2, source, inEqAttributes)::iAcc);
   end match;
 end generateEquations;
 
@@ -1861,7 +1861,7 @@ algorithm
   outEqs := BackendDAE.EQUATION( exp = DAE.CREF(componentRef = cr, ty = DAE.T_CLOCK_DEFAULT),
                                 scalar = e,  source = DAE.emptyElementSource,
                                 attr = BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC ) :: inEqs;
-  outEqAttrs := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(whenClkCnt));
+  outEqAttrs := BackendEquation.defaultClockedEqAttr(whenClkCnt);
 end createWhenClock;
 
 
@@ -2527,7 +2527,7 @@ algorithm
     case (target::rest_targets, source::rest_sources, _, _, _)
       equation
         (DAE.EQUALITY_EXPS(target,source), eq_source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.EQUALITY_EXPS(target,source),inEq_source);
-        eqns = lowerExtendedRecordEqn(target, source, inEq_source, BackendDAE.UNKNOWN_EQUATION_KIND(), funcs, iEqns);
+        eqns = lowerExtendedRecordEqn(target, source, inEq_source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN, funcs, iEqns);
       then
         lowerTupleAssignment(rest_targets, rest_sources, eq_source, funcs, eqns);
   end match;

@@ -1342,10 +1342,20 @@ package BackendDAE
     end UNKNOWN_EQUATION_KIND;
   end EquationKind;
 
+  uniontype EvaluationStages "evaluation stages"
+    record EVALUATION_STAGES
+      Boolean dynamicEval;
+      Boolean algebraicEval;
+      Boolean zerocrossEval;
+      Boolean discreteEval;
+    end EVALUATION_STAGES;
+  end EvaluationStages;
+
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES
       Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
       EquationKind kind;
+      EvaluationStages evalStages;
     end EQUATION_ATTRIBUTES;
   end EquationAttributes;
 end BackendDAE;

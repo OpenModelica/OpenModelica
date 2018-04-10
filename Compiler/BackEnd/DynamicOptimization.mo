@@ -228,7 +228,7 @@ algorithm
   (cr, v) := makeVar(name);
   annoObj := findObj(varlst);
   annoObj := mergeObjectVars(annoObj, optimicaExp);
-  e := BackendEquation.generateSolvedEqnsfromOption(cr, annoObj, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
+  e := BackendEquation.generateSolvedEqnsfromOption(cr, annoObj, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   outTpl := (v, e, annoObj);
 end makeObject;
 

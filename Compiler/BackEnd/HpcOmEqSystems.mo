@@ -1913,7 +1913,7 @@ algorithm
       varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
-      eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
+      eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
           //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
   case(LINSYS(dim=dim,matrixA=matrixA, vectorX=vectorX))
@@ -1929,7 +1929,7 @@ algorithm
       varExp = List.map(arrayList(vectorX),BackendVariable.varExp);
       detLst = List.map1(detLst,function Expression.makeBinaryExp(inOp = DAE.DIV(ty=DAE.T_ANYTYPE_DEFAULT)),detA);
       (detLst,_) = List.map_2(detLst,ExpressionSimplify.simplify);
-      eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEQUATION, DAE.emptyElementSource, BackendDAE.UNKNOWN_EQUATION_KIND());
+      eqLst = List.threadMap2(varExp, detLst, BackendEquation.generateEquation, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
           //BackendDump.dumpEquationList(eqLst,"new residual eqs");
     then (eqLst,{},{});
   case(LINSYS(dim=dim))

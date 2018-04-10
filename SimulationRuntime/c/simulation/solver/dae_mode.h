@@ -33,6 +33,17 @@
 
 #include "simulation_data.h"
 
+/* EVAL_DYNAMIC = 1000 */
+extern const int EVAL_DYNAMIC;
+/* EVAL_ALGEBRAIC = 0100 */
+extern const int EVAL_ALGEBRAIC;
+/* EVAL_ZEROCROSS = 0010 */
+extern const int EVAL_ZEROCROSS;
+/* EVAL_DISCRETE = 0001 */
+extern const int EVAL_DISCRETE;
+/* EVAL_ALL = 1111 */
+extern const int EVAL_ALL;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

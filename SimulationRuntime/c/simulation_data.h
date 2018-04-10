@@ -435,7 +435,7 @@ typedef struct DAEMODE_DATA
   SPARSE_PATTERN* sparsePattern;
 
   /* function to evaluate dynamic equations for DAE solver*/
-  int (*evaluateDAEResiduals)(struct DATA*, threadData_t*);
+  int (*evaluateDAEResiduals)(struct DATA*, threadData_t*, int);
 
   /* function to set algebraic DAE Variable form solver*/
   int (*setAlgebraicDAEVars)(struct DATA*, threadData_t*, double*);

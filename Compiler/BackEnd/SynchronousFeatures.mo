@@ -1329,7 +1329,7 @@ algorithm
         (e1,(newEqs, newVars, suffixIdx)) := Expression.traverseExpTopDown(e1, replaceSampledClocks2, (newEqs, newVars, suffixIdx0));
         (e2,(newEqs, newVars, suffixIdx)) := Expression.traverseExpTopDown(e2, replaceSampledClocks2, (newEqs, newVars, suffixIdx));
         if intEq(suffixIdx-suffixIdx0, 1) then
-          attr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(suffixIdx0));
+          attr := BackendEquation.defaultClockedEqAttr(suffixIdx0);
         else
           attr := BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC;
         end if;
@@ -2217,15 +2217,15 @@ algorithm
       eqAttr := match eqAttr
         local
           Integer whenIdx;
-          Boolean diff;
           list<Integer> partitionsWhenClocksLst;
-        case BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.CLOCKED_EQUATION(whenIdx))
+        case BackendDAE.EQUATION_ATTRIBUTES(kind=BackendDAE.CLOCKED_EQUATION(whenIdx))
           algorithm
             partitionsWhenClocksLst := partitionsWhenClocks[partitionIdx];
             if whenIdx <> 0 and List.notMember(whenIdx, partitionsWhenClocksLst) then
               arrayUpdate(partitionsWhenClocks, partitionIdx, whenIdx::partitionsWhenClocksLst);
             end if;
-          then BackendDAE.EQUATION_ATTRIBUTES(diff, BackendDAE.DYNAMIC_EQUATION());
+            eqAttr.kind := BackendDAE.DYNAMIC_EQUATION();
+          then eqAttr;
         else eqAttr;
       end match;
       eq := BackendEquation.setEquationAttributes(eq, eqAttr);

@@ -1700,6 +1700,64 @@ algorithm
   end match;
 end isInitialEqKind;
 
+public function isDynamicEquation
+  input BackendDAE.Equation inEquation;
+  output Boolean outBool;
+algorithm
+  outBool := isDynamicEqKind(equationKind(inEquation));
+end isDynamicEquation;
+
+public function isDynamicEqKind
+  input BackendDAE.EquationKind inEqKind;
+  output Boolean outBool;
+algorithm
+  outBool := match (inEqKind)
+    case (BackendDAE.DYNAMIC_EQUATION()) then true;
+    else false;
+  end match;
+end isDynamicEqKind;
+
+public function isDiscreteEquation
+  input BackendDAE.Equation inEquation;
+  output Boolean outBool;
+algorithm
+  outBool := isDiscreteEqKind(equationKind(inEquation));
+end isDiscreteEquation;
+
+public function isDiscreteEqKind
+  input BackendDAE.EquationKind inEqKind;
+  output Boolean outBool;
+algorithm
+  outBool := match (inEqKind)
+    case (BackendDAE.DISCRETE_EQUATION()) then true;
+    else false;
+  end match;
+end isDiscreteEqKind;
+
+public function isAuxEquation
+  input BackendDAE.Equation inEquation;
+  output Boolean outBool;
+algorithm
+  outBool := isAuxEqKind(equationKind(inEquation));
+end isAuxEquation;
+
+public function isAuxEqKind
+  input BackendDAE.EquationKind inEqKind;
+  output Boolean outBool;
+algorithm
+  outBool := match (inEqKind)
+    case (BackendDAE.AUX_EQUATION()) then true;
+    else false;
+  end match;
+end isAuxEqKind;
+
+public function defaultClockedEqAttr
+  input Integer clockIndex;
+  output BackendDAE.EquationAttributes outEqAttr;
+algorithm
+   outEqAttr := BackendDAE.EQUATION_ATTRIBUTES(false, BackendDAE.CLOCKED_EQUATION(clockIndex), BackendDAE.defaultEvalStages);
+end defaultClockedEqAttr;
+
 public function equationKind "Retrieve the kind from a BackendDAE.BackendDAEequation"
   input BackendDAE.Equation inEquation;
   output BackendDAE.EquationKind outEqKind;
@@ -1721,6 +1779,69 @@ algorithm
     then fail();
   end match;
 end equationKind;
+
+public function setEvalStageDynamic
+  input output BackendDAE.EvaluationStages evalStage;
+algorithm
+  evalStage.dynamicEval := true;
+end setEvalStageDynamic;
+
+public function setEvalStageAlgebraic
+  input output BackendDAE.EvaluationStages evalStage;
+algorithm
+  evalStage.algebraicEval := true;
+end setEvalStageAlgebraic;
+
+public function setEvalStageZeroCross
+  input output BackendDAE.EvaluationStages evalStage;
+algorithm
+  evalStage.zerocrossEval := true;
+end setEvalStageZeroCross;
+
+public function setEvalStageDiscrete
+  input output BackendDAE.EvaluationStages evalStage;
+algorithm
+  evalStage.discreteEval := true;
+end setEvalStageDiscrete;
+
+public function setEvalStageOnlyDiscrete
+  input output BackendDAE.EvaluationStages evalStage;
+algorithm
+  evalStage := setEvalStage(evalStage, discreteEval=true);
+end setEvalStageOnlyDiscrete;
+
+public function setEvalStageAll
+  input output BackendDAE.EvaluationStages evalStage;
+algorithm
+  evalStage := setEvalStage(evalStage, dynamicEval=true, algebraicEval=true, zerocrossEval=true, discreteEval=true);
+end setEvalStageAll;
+
+public function setEvalStage
+  input output BackendDAE.EvaluationStages evalStage;
+  input Boolean dynamicEval = false;
+  input Boolean algebraicEval = false;
+  input Boolean zerocrossEval = false;
+  input Boolean discreteEval = false;
+algorithm
+  evalStage.dynamicEval := dynamicEval;
+  evalStage.algebraicEval := algebraicEval;
+  evalStage.zerocrossEval := zerocrossEval;
+  evalStage.discreteEval := discreteEval;
+end setEvalStage;
+
+public function setEquationEvalStage
+  input output BackendDAE.Equation eqn;
+  input setEvalStage func;
+  partial function setEvalStage
+    input output BackendDAE.EvaluationStages evalStage;
+  end setEvalStage;
+protected
+  BackendDAE.EquationAttributes attr;
+algorithm
+  attr := getEquationAttributes(eqn);
+  attr.evalStages := func(attr.evalStages);
+  eqn := setEquationAttributes(eqn, attr);
+end setEquationEvalStage;
 
 public function equationLstSize
   input list<BackendDAE.Equation> inEqns;
@@ -1789,16 +1910,6 @@ algorithm
     then fail();
   end match;
 end generateEquation;
-
-public function generateEQUATION "author: Frenkel TUD 2010-05"
-  input DAE.Exp iLhs;
-  input DAE.Exp iRhs;
-  input DAE.ElementSource Source;
-  input BackendDAE.EquationKind inEqKind;
-  output BackendDAE.Equation outEqn;
-algorithm
-  outEqn := BackendDAE.EQUATION(iLhs, iRhs, Source, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind));
-end generateEQUATION;
 
 public function getEquationAttributes
   input BackendDAE.Equation inEqn;
@@ -1954,15 +2065,15 @@ public function generateSolvedEqnsfromOption "author: Frenkel TUD 2010-05"
   input DAE.ComponentRef inLhs;
   input Option<DAE.Exp> inRhs;
   input DAE.ElementSource inSource;
-  input BackendDAE.EquationKind inEqKind;
+  input BackendDAE.EquationAttributes inEqAttr;
   output list<BackendDAE.Equation> outEqn;
 algorithm
-  outEqn :=  match (inLhs, inRhs, inSource, inEqKind)
+  outEqn :=  match (inLhs, inRhs, inSource, inEqAttr)
   local
     DAE.Exp rhs;
 
     case (_, SOME(rhs), _, _)
-    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, BackendDAE.EQUATION_ATTRIBUTES(false, inEqKind))};
+    then {BackendDAE.SOLVED_EQUATION(inLhs, rhs, inSource, inEqAttr)};
 
     else {};
   end match;

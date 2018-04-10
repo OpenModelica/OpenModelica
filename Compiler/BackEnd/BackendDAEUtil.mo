@@ -1488,6 +1488,148 @@ algorithm
   end matchcontinue;
 end varsInEqn;
 
+protected type TraverseIndicesTuple = tuple<list<Integer>, list<Integer>, list<Integer>>;
+
+public function setEvaluationStage
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  //BackendDAE.SparsePattern sp;
+  list<tuple<DAE.ComponentRef, list<DAE.ComponentRef>>> spCrefs, spCrefsT;
+  BackendDAE.Variables vars;
+  list<BackendDAE.Var> varLst;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Matching matching;
+  list<Integer> indicesDynamic, indicesDiscrete, indicesAlgebraic, indicesZC;
+  list<DAE.ComponentRef> eqnCrefs;
+  TraverseIndicesTuple traverseArgs;
+  array<Integer> assigndEqn, assigndVar, markedEqns;
+  BackendDAE.EqSystems newEqs = {};
+  array<Integer> zceqnsmarks;
+
+  BackendDAE.IncidenceMatrix adjMatrix, adjMatrixT;
+
+  BackendDAE.ZeroCrossingSet zeroCrossingsSet;
+  list<BackendDAE.ZeroCrossing> zeroCrossings;
+
+  constant Boolean debug = false;
+algorithm
+
+  // get zeroCrossings
+  zeroCrossings := ZeroCrossings.toList(inBackendDAE.shared.eventInfo.zeroCrossings);
+
+  // walk once through all comps and get of dependends of dynamic, algebraic, zeroCrossings,
+  for eqSystem in inBackendDAE.eqs loop
+    if debug then
+      BackendDump.printEqSystem(eqSystem);
+    end if;
+
+    vars := eqSystem.orderedVars;
+    eqns := eqSystem.orderedEqs;
+
+    try
+      (matching as BackendDAE.MATCHING(ass2=assigndEqn,ass1=assigndVar)) := eqSystem.matching;
+      (eqSystem, adjMatrix, adjMatrixT) := getIncidenceMatrixfromOption(eqSystem, BackendDAE.ABSOLUTE(), SOME(inBackendDAE.shared.functionTree));
+
+      // collect all dynamic, discrete, algebraic equations
+      traverseArgs := ({}, {}, {});
+      traverseArgs := BackendDAEUtil.traverseEqSystemStrongComponents(eqSystem, collectEqnsIndexByKind, traverseArgs);
+      ((indicesDynamic, indicesDiscrete, indicesAlgebraic)) := traverseArgs;
+
+      if debug then
+        print("Dynamic equation indicies:\n");
+        print(stringDelimitList(list(intString(i) for i in indicesDynamic), ", "));
+        print("\n");
+      end if;
+
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
+      markedEqns := markStateEquationsWork(indicesDynamic, adjMatrix, assigndVar, markedEqns);
+      eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageDynamic);
+
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
+      markedEqns := markZeroCrossingEquations(eqSystem, zeroCrossings, markedEqns, assigndVar);
+      eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageZeroCross);
+
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
+      markedEqns := markStateEquationsWork(indicesAlgebraic, adjMatrix, assigndVar, markedEqns);
+      eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageAlgebraic);
+
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
+      markedEqns := markStateEquationsWork(indicesDiscrete, adjMatrix, assigndVar, markedEqns);
+      markedEqns := markStateEquationsWork(indicesDiscrete, adjMatrixT, assigndVar, markedEqns);
+      eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageDiscrete);
+    else
+      /* in case something goes wrong above mark all equation to be evaluated always */
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 1);
+      eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageAll);
+    end try;
+
+    if debug then
+      BackendDump.dumpEquationArray(eqns, "Updated equations");
+    end if;
+
+    // update EvaluationState in EquationArray
+    newEqs := eqSystem::newEqs;
+  end for;
+
+  // update BackendDAE.DAE
+  outBackendDAE := BackendDAE.DAE(newEqs, inBackendDAE.shared);
+
+end setEvaluationStage;
+
+protected function setMarkedEqnsEvalStage
+  input output BackendDAE.EquationArray eqns;
+  input array<Integer> markEqns;
+  input setEvalStage func;
+  partial function setEvalStage
+    input output BackendDAE.EvaluationStages evalStage;
+  end setEvalStage;
+protected
+  BackendDAE.Equation eqn;
+  Integer eqnIndex;
+algorithm
+  for i in 1:arrayLength(markEqns) loop
+    if markEqns[i]>0 then
+      eqn := BackendEquation.get(eqns, i);
+      eqn := BackendEquation.setEquationEvalStage(eqn, func);
+      eqns := BackendEquation.setAtIndex(eqns, i, eqn);
+    end if;
+  end for;
+end setMarkedEqnsEvalStage;
+
+protected function collectEqnsIndexByKind
+"This function collects equation indices by kind.
+ "
+  input list<BackendDAE.Equation> inEqns;
+  input list<BackendDAE.Var> inVars;
+  input list<Integer> varIdxs;
+  input list<Integer> eqnIdxs;
+  input output TraverseIndicesTuple traverserArgs;
+protected
+  list<Integer> indicesDynamic, indicesDiscrete, indicesAlgebraic;
+algorithm
+  (indicesDynamic, indicesDiscrete, indicesAlgebraic) := traverserArgs;
+  for v in inVars loop
+    // discrete equations are detected by the corresponding variables
+    if BackendVariable.isVarDiscrete(v) then
+      indicesDiscrete := listAppend(eqnIdxs, indicesDiscrete);
+    end if;
+  end for;
+
+  for eq in inEqns loop
+    // dynamic
+    if BackendEquation.isDynamicEquation(eq) then
+      indicesDynamic := listAppend(eqnIdxs, indicesDynamic);
+    end if;
+    // select also continuos equation
+    if BackendEquation.isAuxEquation(eq) then
+      indicesAlgebraic := listAppend(eqnIdxs, indicesAlgebraic);
+    end if;
+  end for;
+
+  traverserArgs := (indicesDynamic, indicesDiscrete, indicesAlgebraic);
+end collectEqnsIndexByKind;
+
 public function subscript2dCombinations
 "This function takes two lists of list of subscripts and combines them in
   all possible combinations. This is used when finding all indexes of a 2d
@@ -7551,7 +7693,8 @@ public function allPostOptimizationModules
     (BackendDAETransform.collapseArrayExpressions, "collapseArrayExpressions"),
     // DAEmode modules
     (DAEMode.createDAEmodeBDAE, "createDAEmodeBDAE"),
-    (SymbolicJacobian.detectSparsePatternDAE, "detectDAEmodeSparsePattern")
+    (SymbolicJacobian.detectSparsePatternDAE, "detectDAEmodeSparsePattern"),
+    (BackendDAEUtil.setEvaluationStage, "setEvaluationStage")
   };
 end allPostOptimizationModules;
 

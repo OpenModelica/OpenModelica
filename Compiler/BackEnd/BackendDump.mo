@@ -2766,10 +2766,10 @@ protected function equationAttrString
   output String outString;
 protected
   BackendDAE.EquationKind kind;
+  BackendDAE.EvaluationStages evalStages;
 algorithm
-  BackendDAE.EQUATION_ATTRIBUTES(kind=kind) := inEqAttr;
-  outString := "[" + equationKindString(kind);
-  outString := outString + "]";
+  BackendDAE.EQUATION_ATTRIBUTES(kind=kind,evalStages=evalStages) := inEqAttr;
+  outString := "[" + equationKindString(kind) +  " " + equationEvaluationStageString(evalStages) + "]";
 end equationAttrString;
 
 protected function equationKindString
@@ -2796,6 +2796,16 @@ algorithm
       then fail();
   end match;
 end equationKindString;
+
+protected function equationEvaluationStageString
+  input BackendDAE.EvaluationStages inEqEvalStage;
+  output String outString = "|";
+algorithm
+  outString := outString + (if inEqEvalStage.dynamicEval then   "1|" else "0|");
+  outString := outString + (if inEqEvalStage.algebraicEval then "1|" else "0|");
+  outString := outString + (if inEqEvalStage.zerocrossEval then "1|" else "0|");
+  outString := outString + (if inEqEvalStage.discreteEval then  "1|" else "0|");
+end equationEvaluationStageString;
 
 protected function optExpressionString
 "Helper function to dump."

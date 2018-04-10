@@ -897,6 +897,7 @@ template simulationFile_dae(SimCode simCode)
      <<
      /* DAE residuals */
      <%simulationFileHeader(fileNamePrefix)%>
+     #include "simulation/solver/dae_mode.h"
 
      #ifdef __cplusplus
      extern "C" {
@@ -4038,9 +4039,10 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
 
   /* for residuals DAE variables */
   OMC_DISABLE_OPT
-  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData)
+  int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData, int currentEvalStage)
   {
     TRACE_PUSH
+    int evalStages;
     data->simulationInfo->callStatistics.functionEvalDAE++;
 
     <%eqCalls%>
@@ -5106,11 +5108,13 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   else
     equationIndex(eq)
   end match
-  let simEqAttr = match context case(DAE_MODE_CONTEXT()) then '/* eqAttr: <%simEqAttr(eq)%> */'
+  let simEqAttrEval = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrEval(eq)%>'
+  let simEqAttrIsDiscreteKind = match context case(DAE_MODE_CONTEXT()) then '<%simEqAttrIsDiscreteKind(eq)%>'
   <<
-  <%simEqAttr%>
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
-  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
+  <% match simEqAttrEval case "" then '' else '<%simEqAttrEval%>' %>
+  <% match simEqAttrEval case "" then '' else 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind%>):0))' %>
+    <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
   <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
   >>
 end equationNames_;
@@ -5854,7 +5858,7 @@ template crefM(ComponentRef cr)
   else "P" + crefToMStr(cr)
 end crefM;
 
-template simEqAttr(SimEqSystem eq)
+template simEqAttrIsDiscreteKind(SimEqSystem eq)
 ::=
   match eq
   case SES_RESIDUAL(__)
@@ -5868,27 +5872,57 @@ template simEqAttr(SimEqSystem eq)
   case SES_MIXED(__)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
-    then eqAttributes(eqAttr)
-end simEqAttr;
+    then eqAttributeIsDiscreteKind(eqAttr)
+end simEqAttrIsDiscreteKind;
 
-template eqAttributes(EquationAttributes eqAtt)
+template eqAttributeIsDiscreteKind(EquationAttributes eqAtt)
 ::=
   match eqAtt
-  case EQUATION_ATTRIBUTES(kind=kind) then '<%eqKind(kind)%>'
+  case EQUATION_ATTRIBUTES(kind=kind) then '<%eqIsDiscreteKind(kind)%>'
   else ''
-end eqAttributes;
+end eqAttributeIsDiscreteKind;
 
-template eqKind(EquationKind eqKind)
+template eqIsDiscreteKind(EquationKind eqKind)
 ::=
   match eqKind
-  case DYNAMIC_EQUATION() then  'DYNAMIC_EQN_KIND'
-  case BINDING_EQUATION() then  'BINDING_EQN_KIND'
-  case INITIAL_EQUATION() then  'INITAL_EQN_KIND'
-  case CLOCKED_EQUATION() then  'CLOCKED_EQN_KIND'
-  case DISCRETE_EQUATION() then 'DISCRETE_EQN_KIND'
-  case AUX_EQUATION() then      'AUX_EQN_KIND'
-  case UNKNOWN_EQUATION_KIND() then 'UNKNOWN_EQN_KIND'
-end eqKind;
+  case DISCRETE_EQUATION() then '1'
+  else  '0'
+end eqIsDiscreteKind;
+
+template simEqAttrEval(SimEqSystem eq)
+::=
+  match eq
+  case SES_RESIDUAL(__)
+  case SES_SIMPLE_ASSIGN(__)
+  case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
+  case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_IFEQUATION(__)
+  case SES_ALGORITHM(__)
+  case SES_LINEAR(__)
+  case SES_NONLINEAR(__)
+  case SES_MIXED(__)
+  case SES_WHEN(__)
+  case SES_FOR_LOOP(__)
+    then eqAttributesEval(eqAttr)
+end simEqAttrEval;
+
+template eqAttributesEval(EquationAttributes eqAtt)
+::=
+  match eqAtt
+  case EQUATION_ATTRIBUTES(evalStages=evalStages) then '<%eqEval(evalStages)%>'
+  else ''
+end eqAttributesEval;
+
+template eqEval(EvaluationStages eqEval)
+::=
+  match eqEval
+  case EVALUATION_STAGES(__) then
+    let dy = if dynamicEval then '+1' else ''
+    let al = if algebraicEval then '+2' else ''
+    let zc = if zerocrossEval then '+4' else ''
+    let di = if discreteEval then '+8' else ''
+  <<evalStages = 0<%dy%><%al%><%zc%><%di%>;>>
+end eqEval;
 
 /*****************************************************************************
  *         SECTION: GENERATE OPTIMIZATION IN SIMULATION FILE

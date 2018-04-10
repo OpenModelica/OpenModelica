@@ -34,6 +34,18 @@
 extern "C" {
 #endif
 
+/* EVAL_DYNAMIC = 1000 */
+const int EVAL_DYNAMIC = 1;
+/* EVAL_ALGEBRAIC = 0100 */
+const int EVAL_ALGEBRAIC = 2;
+/* EVAL_ZEROCROSS = 0010 */
+const int EVAL_ZEROCROSS = 4;
+/* EVAL_DISCRETE = 0001 */
+const int EVAL_DISCRETE = 8;
+/* EVAL_ALL = 1111 */
+const int EVAL_ALL = 15;
+
+
 /*! \fn void evaluateDAEResiduals_wrapperEventUpdate
  *
  * wrapper function of the main evaluation function for DAE mode
@@ -43,7 +55,7 @@ int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData
   int retVal;
 
   data->simulationInfo->discreteCall = 1;
-  retVal = data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData);
+  retVal = data->simulationInfo->daeModeData->evaluateDAEResiduals(data, threadData, EVAL_DISCRETE);
   data->simulationInfo->discreteCall = 0;
 
   return retVal;
