@@ -47,11 +47,11 @@ package testDAE
   // problem5: simple dae with when equation
   model p5
     Real v = -cos(time)*x;
-    Real w = der(x)+x*y;
+    Real w = der(x)+x*v;
     Real z(start=-3);
     Real x(start=1),y(start=1);
   equation
-    when x > 1.2 then
+    when v < -1.2 then
       z = cos(y);
     end when;
     der(x) = sin(time)+v*z;
