@@ -60,9 +60,9 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 //
 // ########### Updated Equation List (simulation) (3, 7)
 // ========================================
-// 1/1 (3): CSE.R({y.r1[1], y.r1[2], y.r1[3]}) = $cse1   [dynamic]
-// 2/4 (1): $cse2 = sin(time)   [unknown]
-// 3/5 (3): $cse1 = CSE.f3(time, $cse2)   [unknown]
+// 1/1 (3): CSE.R({y.r1[1], y.r1[2], y.r1[3]}) = $cse1   [dynamic |0|0|0|0|]
+// 2/4 (1): $cse2 = sin(time)   [unknown |0|0|0|0|]
+// 3/5 (3): $cse1 = CSE.f3(time, $cse2)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

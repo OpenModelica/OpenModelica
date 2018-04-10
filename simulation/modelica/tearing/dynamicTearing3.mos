@@ -69,10 +69,10 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // 1/1 (1): algorithm
 //   a := $START.a;
 //   a := 2.0 * x;
-//    [dynamic]
-// 2/2 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic]
-// 3/3 (1): a + 2.0 * y - k * z = 0.0   [dynamic]
-// 4/4 (1): g * a + x * z - y = 0.0   [dynamic]
+//    [dynamic |0|0|0|0|]
+// 2/2 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): a + 2.0 * y - k * z = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): g * a + x * z - y = 0.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -209,13 +209,13 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic]
+// 1/1 (1): g * a * x + time - y ^ 2.0 = 0.0   [dynamic |0|0|0|0|]
 // 2/2 (1): algorithm
 //   a := $START.a;
 //   a := 2.0 * x;
-//    [dynamic]
-// 3/3 (1): g * a + x * z - y = 0.0   [dynamic]
-// 4/4 (1): a + 2.0 * y - k * z = 0.0   [dynamic]
+//    [dynamic |0|0|0|0|]
+// 3/3 (1): g * a + x * z - y = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): a + 2.0 * y - k * z = 0.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

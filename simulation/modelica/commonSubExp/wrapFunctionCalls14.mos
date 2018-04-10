@@ -39,8 +39,8 @@ simulate(CSE.wrapFunctionCalls14); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 2)
 // ========================================
-// 1/1 (1): x = $cse1 + time   [dynamic]
-// 2/2 (1): $cse1 = sin(p2)   [unknown]
+// 1/1 (1): x = $cse1 + time   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse1 = sin(p2)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (2)

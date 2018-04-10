@@ -52,8 +52,8 @@ simulate(CSE.TestCall3); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 2)
 // ========================================
-// 1/1 (1): a.x = 5.0 + time   [dynamic]
-// 2/2 (1): b = CSE.TestCall3.f(a)   [unknown]
+// 1/1 (1): a.x = 5.0 + time   [dynamic |0|0|0|0|]
+// 2/2 (1): b = CSE.TestCall3.f(a)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

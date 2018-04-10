@@ -57,11 +57,11 @@ simulate(CSE.wrapFunctionCalls4); getErrorString();
 //
 // ########### Updated Equation List (simulation) (5, 6)
 // ========================================
-// 1/1 (1): c = 5.0 + $cse2   [dynamic]
-// 2/2 (1): $cse2 = sin($cse3)   [unknown]
-// 3/3 (2): ($cse3, b, _) = CSE.wrapFunctionCalls4.f1(x, x)   [unknown]
-// 4/5 (1): $cse1 = cos(time)   [unknown]
-// 5/6 (1): x = sin($cse1)   [unknown]
+// 1/1 (1): c = 5.0 + $cse2   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse2 = sin($cse3)   [unknown |0|0|0|0|]
+// 3/3 (2): ($cse3, b, _) = CSE.wrapFunctionCalls4.f1(x, x)   [unknown |0|0|0|0|]
+// 4/5 (1): $cse1 = cos(time)   [unknown |0|0|0|0|]
+// 5/6 (1): x = sin($cse1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

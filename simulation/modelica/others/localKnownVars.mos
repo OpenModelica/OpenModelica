@@ -48,7 +48,7 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): c = b + a   [binding]
+// 1/1 (1): c = b + a   [binding |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -80,7 +80,7 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): der(x) = a   [dynamic]
+// 1/1 (1): der(x) = a   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -112,7 +112,7 @@ val(c, {0.0, 0.3, 0.6}); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): der(y) = b   [dynamic]
+// 1/1 (1): der(y) = b   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

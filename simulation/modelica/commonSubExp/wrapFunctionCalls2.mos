@@ -37,8 +37,8 @@ simulate(CSE.wrapFunctionCalls2); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 2)
 // ========================================
-// 1/1 (1): a = if time > 0.5 then b else 0.0   [dynamic]
-// 2/2 (1): b = sin(time)   [unknown]
+// 1/1 (1): a = if time > 0.5 then b else 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): b = sin(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

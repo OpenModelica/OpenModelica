@@ -60,8 +60,8 @@ simulate(CSE.TestCall6); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 3)
 // ========================================
-// 1/1 (2): $cse1 = CSE.TestCall6.f(time)   [unknown]
-// 2/3 (1): a = CSE.TestCall6.f2($cse1)   [unknown]
+// 1/1 (2): $cse1 = CSE.TestCall6.f(time)   [unknown |0|0|0|0|]
+// 2/3 (1): a = CSE.TestCall6.f2($cse1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

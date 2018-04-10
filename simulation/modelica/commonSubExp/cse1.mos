@@ -56,12 +56,12 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
-// 1/1 (1): $res2.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.$pDERNLSJac0.dummyVarNLSJac0 - v3.SeedNLSJac0   [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3.SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic]
-// 3/3 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 + (-v3.SeedNLSJac0) * source - v7.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic]
-// 4/4 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic]
-// 5/5 (1): $cse2 = sin(v1)   [unknown]
-// 6/6 (1): $cse1 = cos(v1)   [unknown]
+// 1/1 (1): $res2.$pDERNLSJac0.dummyVarNLSJac0 = 2.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + v2.$pDERNLSJac0.dummyVarNLSJac0 + v7.$pDERNLSJac0.dummyVarNLSJac0 - v3.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $res1.$pDERNLSJac0.dummyVarNLSJac0 = 3.0 * (v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2) + (-7.0) * v2.$pDERNLSJac0.dummyVarNLSJac0 + (-2.0) * v3.SeedNLSJac0 + 3.0 * source * v7.$pDERNLSJac0.dummyVarNLSJac0   [dynamic |0|0|0|0|]
+// 3/3 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 + (-v3.SeedNLSJac0) * source - v7.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): v1 * $cse1 * v1.SeedNLSJac0 + v1.SeedNLSJac0 * $cse2 + v2.$pDERNLSJac0.dummyVarNLSJac0 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): $cse2 = sin(v1)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse1 = cos(v1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (7)
@@ -96,10 +96,10 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = v5.$pDERNLSJac1.dummyVarNLSJac1 + v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source   [dynamic]
-// 2/2 (1): 3.0 * v5.$pDERNLSJac1.dummyVarNLSJac1 + (-v6) * $cse3 * v6.SeedNLSJac1 - v6.SeedNLSJac1 * $cse4 = 0.0   [dynamic]
-// 3/3 (1): $cse4 = sin(v6)   [unknown]
-// 4/4 (1): $cse3 = cos(v6)   [unknown]
+// 1/1 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = v5.$pDERNLSJac1.dummyVarNLSJac1 + v6 * $cse3 * v6.SeedNLSJac1 * source + v6.SeedNLSJac1 * $cse4 * source   [dynamic |0|0|0|0|]
+// 2/2 (1): 3.0 * v5.$pDERNLSJac1.dummyVarNLSJac1 + (-v6) * $cse3 * v6.SeedNLSJac1 - v6.SeedNLSJac1 * $cse4 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse4 = sin(v6)   [unknown |0|0|0|0|]
+// 4/4 (1): $cse3 = cos(v6)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (5)
@@ -138,16 +138,16 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (simulation) (10, 10)
 // ========================================
-// 1/1 (1): -4.0 + v1 * $cse5 + v2 + source = 0.0   [dynamic]
-// 2/2 (1): 2.0 * v1 * $cse5 + v2 + v7 + (-source) - v3 = 0.0   [dynamic]
-// 3/3 (1): 3.0 * v1 * $cse5 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * source * v7 = 0.0   [dynamic]
-// 4/4 (1): v1 * $cse5 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic]
-// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * source * v7 + (-v5) - v4 = 0.0   [dynamic]
-// 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic]
-// 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic]
-// 8/8 (1): $cse6 = sin(v6)   [unknown]
-// 9/9 (1): $cse5 = sin(v1)   [unknown]
-// 10/10 (1): source = sin(time)   [unknown]
+// 1/1 (1): -4.0 + v1 * $cse5 + v2 + source = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): 2.0 * v1 * $cse5 + v2 + v7 + (-source) - v3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): 3.0 * v1 * $cse5 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * source * v7 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): v1 * $cse5 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * source * v7 + (-v5) - v4 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic |0|0|0|0|]
+// 8/8 (1): $cse6 = sin(v6)   [unknown |0|0|0|0|]
+// 9/9 (1): $cse5 = sin(v1)   [unknown |0|0|0|0|]
+// 10/10 (1): source = sin(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)
@@ -178,18 +178,18 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List ########### (12, 12)
 // ========================================
-// 1/1 (1): -4.0 + $cseb3 + v2 + source = 0.0   [dynamic]
-// 2/2 (1): 2.0 * $cseb3 + v2 + v7 + (-source) - v3 = 0.0   [dynamic]
-// 3/3 (1): 3.0 * $cseb3 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * $cseb17 = 0.0   [dynamic]
-// 4/4 (1): $cseb3 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic]
-// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * $cseb17 + (-v5) - v4 = 0.0   [dynamic]
-// 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic]
-// 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic]
-// 8/8 (1): $cse6 = sin(v6)   [unknown]
-// 9/9 (1): $cse5 = sin(v1)   [unknown]
-// 10/10 (1): source = sin(time)   [unknown]
-// 11/11 (1): $cseb17 = source * v7   [binding]
-// 12/12 (1): $cseb3 = v1 * $cse5   [binding]
+// 1/1 (1): -4.0 + $cseb3 + v2 + source = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): 2.0 * $cseb3 + v2 + v7 + (-source) - v3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): 3.0 * $cseb3 + (-7.0) * v2 + (-2.0) * v3 + 3.0 * $cseb17 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): $cseb3 + v2 + source + (-v3) * source - v7 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): 2.0 + 3.0 * v2 + (-0.5) * $cseb17 + (-v5) - v4 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): v5 + v6 * $cse6 * source + v3 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): 3.0 * v5 + (-v6) * $cse6 - source = 0.0   [dynamic |0|0|0|0|]
+// 8/8 (1): $cse6 = sin(v6)   [unknown |0|0|0|0|]
+// 9/9 (1): $cse5 = sin(v1)   [unknown |0|0|0|0|]
+// 10/10 (1): source = sin(time)   [unknown |0|0|0|0|]
+// 11/11 (1): $cseb17 = source * v7   [binding |0|0|0|0|]
+// 12/12 (1): $cseb3 = v1 * $cse5   [binding |0|0|0|0|]
 //
 //
 //
@@ -207,9 +207,9 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (3, 3)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac3.dummyVarNLSJac3 = v1 * $cse5.$pDERNLSJac3.dummyVarNLSJac3 + v1.SeedNLSJac3 * $cse5   [binding]
-// 2/2 (1): $cse5.$pDERNLSJac3.dummyVarNLSJac3 = $cse7 * v1.SeedNLSJac3   [unknown]
-// 3/3 (1): $cse7 = cos(v1)   [unknown]
+// 1/1 (1): $res1.$pDERNLSJac3.dummyVarNLSJac3 = v1 * $cse5.$pDERNLSJac3.dummyVarNLSJac3 + v1.SeedNLSJac3 * $cse5   [binding |0|0|0|0|]
+// 2/2 (1): $cse5.$pDERNLSJac3.dummyVarNLSJac3 = $cse7 * v1.SeedNLSJac3   [unknown |0|0|0|0|]
+// 3/3 (1): $cse7 = cos(v1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (4)
@@ -240,10 +240,10 @@ simulate(Tearing15); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (4, 4)
 // ========================================
-// 1/1 (1): $res1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic]
-// 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6.SeedNLSJac4 * $cse6 = 0.0   [dynamic]
-// 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6.SeedNLSJac4   [unknown]
-// 4/4 (1): $cse8 = cos(v6)   [unknown]
+// 1/1 (1): $res1.$pDERNLSJac4.dummyVarNLSJac4 = v5.$pDERNLSJac4.dummyVarNLSJac4 + v6 * $cse6.$pDERNLSJac4.dummyVarNLSJac4 * source + v6.SeedNLSJac4 * $cse6 * source   [dynamic |0|0|0|0|]
+// 2/2 (1): 3.0 * v5.$pDERNLSJac4.dummyVarNLSJac4 + (-v6) * $cse6.$pDERNLSJac4.dummyVarNLSJac4 - v6.SeedNLSJac4 * $cse6 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse6.$pDERNLSJac4.dummyVarNLSJac4 = $cse8 * v6.SeedNLSJac4   [unknown |0|0|0|0|]
+// 4/4 (1): $cse8 = cos(v6)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (6)

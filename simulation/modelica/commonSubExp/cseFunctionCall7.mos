@@ -93,13 +93,13 @@ simulate(CSE.FunctionCallTest7); getErrorString();
 //
 // ########### Updated Equation List (simulation) (7, 12)
 // ========================================
-// 1/1 (1): x = $cse1 * r.r1   [dynamic]
-// 2/2 (3): (z, b) = (y, a)   [dynamic]
-// 3/5 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [unknown]
-// 4/6 (2): $cse3 = CSE.functions.f6(time, x)   [unknown]
-// 5/8 (3): (y, a) = CSE.functions.f5(time, x, $cse3)   [unknown]
-// 6/11 (1): $cse2 = cos(time)   [unknown]
-// 7/12 (1): $cse1 = sin(time * $cse2)   [unknown]
+// 1/1 (1): x = $cse1 * r.r1   [dynamic |0|0|0|0|]
+// 2/2 (3): (z, b) = (y, a)   [dynamic |0|0|0|0|]
+// 3/5 (1): r.r1 = CSE.functions.f6_eval4(time, time)   [unknown |0|0|0|0|]
+// 4/6 (2): $cse3 = CSE.functions.f6(time, x)   [unknown |0|0|0|0|]
+// 5/8 (3): (y, a) = CSE.functions.f5(time, x, $cse3)   [unknown |0|0|0|0|]
+// 6/11 (1): $cse2 = cos(time)   [unknown |0|0|0|0|]
+// 7/12 (1): $cse1 = sin(time * $cse2)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (1)

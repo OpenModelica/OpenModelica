@@ -51,11 +51,11 @@ simulate(wrapFunctionCalls7); getErrorString();
 //
 // ########### Updated Equation List (simulation) (5, 6)
 // ========================================
-// 1/1 (1): a = 5.0 + $cse3   [dynamic]
-// 2/2 (2): ($cse4, b, _) = wrapFunctionCalls7.foo(x, x)   [unknown]
-// 3/4 (1): $cse3 = sin($cse4)   [unknown]
-// 4/5 (1): $cse2 = cos(time)   [unknown]
-// 5/6 (1): x = sin($cse2)   [unknown]
+// 1/1 (1): a = 5.0 + $cse3   [dynamic |0|0|0|0|]
+// 2/2 (2): ($cse4, b, _) = wrapFunctionCalls7.foo(x, x)   [unknown |0|0|0|0|]
+// 3/4 (1): $cse3 = sin($cse4)   [unknown |0|0|0|0|]
+// 4/5 (1): $cse2 = cos(time)   [unknown |0|0|0|0|]
+// 5/6 (1): x = sin($cse2)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

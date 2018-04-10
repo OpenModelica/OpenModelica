@@ -57,12 +57,12 @@ getErrorString();
 //
 // Equations (6, 6)
 // ========================================
-// 1/1 (1): k.im = 0.0   [dynamic]
-// 2/2 (1): k.re = r   [dynamic]
-// 3/3 (1): vAt.im = k.re * vA.im + k.im * vA.re   [dynamic]
-// 4/4 (1): vAt.re = k.re * vA.re - k.im * vA.im   [dynamic]
-// 5/5 (1): vAt.re = time   [dynamic]
-// 6/6 (1): vAt.im = 2.0 * time   [dynamic]
+// 1/1 (1): k.im = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): k.re = r   [dynamic |0|0|0|0|]
+// 3/3 (1): vAt.im = k.re * vA.im + k.im * vA.re   [dynamic |0|0|0|0|]
+// 4/4 (1): vAt.re = k.re * vA.re - k.im * vA.im   [dynamic |0|0|0|0|]
+// 5/5 (1): vAt.re = time   [dynamic |0|0|0|0|]
+// 6/6 (1): vAt.im = 2.0 * time   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

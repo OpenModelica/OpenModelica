@@ -57,7 +57,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): y = $getPart(time)   [dynamic]
+// 1/1 (1): y = $getPart(time)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -81,7 +81,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = $getPart(time)   [dynamic]
+// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -105,7 +105,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): w = $getPart(x)   [dynamic]
+// 1/1 (1): w = $getPart(x)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -129,7 +129,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): z = $getPart(x)   [dynamic]
+// 1/1 (1): z = $getPart(x)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -175,7 +175,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): y = $getPart(time)   [dynamic]
+// 1/1 (1): y = $getPart(time)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -199,7 +199,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = $getPart(time)   [dynamic]
+// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -223,7 +223,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): w = $getPart(x)   [dynamic]
+// 1/1 (1): w = $getPart(x)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -247,7 +247,7 @@ translateModel(SamplingWithClocks); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): z = $getPart(x)   [dynamic]
+// 1/1 (1): z = $getPart(x)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

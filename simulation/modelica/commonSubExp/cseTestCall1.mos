@@ -56,7 +56,7 @@ simulate(CSE.TestCall1); getErrorString();
 //
 // ########### Updated Equation List (simulation) (1, 2)
 // ========================================
-// 1/1 (2): (x, y) = CSE.TestCall1.f(time)   [unknown]
+// 1/1 (2): (x, y) = CSE.TestCall1.f(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (1)
@@ -86,12 +86,12 @@ simulate(CSE.TestCall1); getErrorString();
 //
 // ########### Updated Equation List (simulation) (6, 6)
 // ========================================
-// 1/1 (1): E = A + $cse1   [dynamic]
-// 2/2 (1): A = 4.0 * C   [dynamic]
-// 3/3 (1): C = 1.0 + time   [binding]
-// 4/4 (1): D = log(A)   [unknown]
-// 5/5 (1): $cse2 = log(D)   [unknown]
-// 6/6 (1): $cse1 = log($cse2)   [unknown]
+// 1/1 (1): E = A + $cse1   [dynamic |0|0|0|0|]
+// 2/2 (1): A = 4.0 * C   [dynamic |0|0|0|0|]
+// 3/3 (1): C = 1.0 + time   [binding |0|0|0|0|]
+// 4/4 (1): D = log(A)   [unknown |0|0|0|0|]
+// 5/5 (1): $cse2 = log(D)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse1 = log($cse2)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (1)

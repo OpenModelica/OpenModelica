@@ -67,11 +67,11 @@ simulate(foo,stopTime=0);
 //
 // Equations (5, 5)
 // ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic]
-// 3/3 (1): der(x) = $cse1   [dynamic]
-// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown]
-// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic]
+// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -187,11 +187,11 @@ simulate(foo,stopTime=0);
 //
 // Equations (5, 5)
 // ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic]
-// 3/3 (1): der(x) = $cse1   [dynamic]
-// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown]
-// 5/5 (1): u__OMC$scaled_input = 0.05 * u   [dynamic]
+// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 5/5 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -308,12 +308,12 @@ simulate(foo,stopTime=0);
 //
 // Equations (6, 6)
 // ========================================
-// 1/1 (1): x_norm = 0.01 * x   [binding]
-// 2/2 (1): u_norm = 0.05 * u   [dynamic]
-// 3/3 (1): der(x) = $cse1   [dynamic]
-// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown]
-// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic]
-// 6/6 (1): u__OMC$scaled_input = 0.05 * u   [dynamic]
+// 1/1 (1): x_norm = 0.01 * x   [binding |0|0|0|0|]
+// 2/2 (1): u_norm = 0.05 * u   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = $cse1   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse1 = sin(10.0 * time * u_norm)   [unknown |0|0|0|0|]
+// 5/5 (1): x__OMC$scaled_state = 0.01 * x   [dynamic |0|0|0|0|]
+// 6/6 (1): u__OMC$scaled_input = 0.05 * u   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

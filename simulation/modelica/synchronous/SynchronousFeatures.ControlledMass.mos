@@ -71,9 +71,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = $getPart(uInner)   [dynamic]
-// 2/2 (1): der(x) = v   [dynamic]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic]
+// 1/1 (1): f = $getPart(uInner)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -98,8 +98,8 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): xdFast = $getPart(x)   [dynamic]
-// 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic]
+// 1/1 (1): xdFast = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -125,9 +125,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): vd = $getPart($var2)   [dynamic]
-// 2/2 (1): vref = $getPart($var3)   [dynamic]
-// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic]
+// 1/1 (1): vd = $getPart($var2)   [dynamic |0|0|0|0|]
+// 2/2 (1): vref = $getPart($var3)   [dynamic |0|0|0|0|]
+// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -154,10 +154,10 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): xd = $getPart(x)   [dynamic]
-// 2/2 (1): eOuter = xref - xd   [dynamic]
-// 3/3 (1): intE = previous(intE) + eOuter   [dynamic]
-// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic]
+// 1/1 (1): xd = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): eOuter = xref - xd   [dynamic |0|0|0|0|]
+// 3/3 (1): intE = previous(intE) + eOuter   [dynamic |0|0|0|0|]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -181,7 +181,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic]
+// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -228,9 +228,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = $getPart(uInner)   [dynamic]
-// 2/2 (1): der(x) = v   [dynamic]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic]
+// 1/1 (1): f = $getPart(uInner)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -267,8 +267,8 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): xdFast = $getPart(x)   [dynamic]
-// 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic]
+// 1/1 (1): xdFast = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): $var2 = (xdFast - previous(xdFast)) / interval()   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -294,9 +294,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): vd = $getPart($var2)   [dynamic]
-// 2/2 (1): vref = $getPart($var3)   [dynamic]
-// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic]
+// 1/1 (1): vd = $getPart($var2)   [dynamic |0|0|0|0|]
+// 2/2 (1): vref = $getPart($var3)   [dynamic |0|0|0|0|]
+// 3/3 (1): uInner = KInner * (vref - vd)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -323,10 +323,10 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): xd = $getPart(x)   [dynamic]
-// 2/2 (1): eOuter = xref - xd   [dynamic]
-// 3/3 (1): intE = previous(intE) + eOuter   [dynamic]
-// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic]
+// 1/1 (1): xd = $getPart(x)   [dynamic |0|0|0|0|]
+// 2/2 (1): eOuter = xref - xd   [dynamic |0|0|0|0|]
+// 3/3 (1): intE = previous(intE) + eOuter   [dynamic |0|0|0|0|]
+// 4/4 (1): uOuter = KOuter * (eOuter + intE / Ti)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -350,7 +350,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic]
+// 1/1 (1): $var3 = $getPart(uOuter)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

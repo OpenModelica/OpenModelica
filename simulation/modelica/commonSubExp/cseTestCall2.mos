@@ -50,7 +50,7 @@ simulate(CSE.TestCall2); getErrorString();
 //
 // ########### Updated Equation List (simulation) (1, 2)
 // ========================================
-// 1/1 (2): (f.x, f.y) = CSE.TestCall2.func(time)   [unknown]
+// 1/1 (2): (f.x, f.y) = CSE.TestCall2.func(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

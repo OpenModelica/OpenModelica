@@ -22,20 +22,20 @@ getErrorString();
 // ========================================
 // SingleEquation: 3
 // 1: a:VARIABLE()  type: Real 
-// 1/1 (1): a = time   [dynamic]
+// 1/1 (1): a = time   [dynamic |0|0|0|0|]
 //
 // ComplexEquation:
 // 1: r2.z:VARIABLE()  type: Real 
 // 2: r2.y:VARIABLE()  type: Real 
-// 1/1 (2): (r2.y, r2.z) = PartEvalFunc.recfunc2_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [unknown]
+// 1/1 (2): (r2.y, r2.z) = PartEvalFunc.recfunc2_eval1(PartEvalFunc.record2(2.0, a, 3.0), a)   [unknown |0|0|0|0|]
 //
 // SingleEquation: 2
 // 1: c:VARIABLE()  type: Real 
-// 1/1 (1): c = r2.y + a   [dynamic]
+// 1/1 (1): c = r2.y + a   [dynamic |0|0|0|0|]
 //
 // SingleEquation: 1
 // 1: d:STATE(1,c)(start = 0.0 fixed = true )  type: Real 
-// 1/1 (1): der(d) = c   [dynamic]
+// 1/1 (1): der(d) = c   [dynamic |0|0|0|0|]
 //
 //
 // record SimulationResult

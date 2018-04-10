@@ -49,10 +49,10 @@ translateModel(SynchronousFeatures.VaryingClock); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): d = interval()   [binding]
-// 2/2 (1): d0 = 0.01 * /*Real*/(previous(nextInterval))   [binding]
-// 3/3 (1): v = 1.0 + previous(v)   [dynamic]
-// 4/4 (1): nextInterval = 1 + previous(nextInterval)   [dynamic]
+// 1/1 (1): d = interval()   [binding |0|0|0|0|]
+// 2/2 (1): d0 = 0.01 * /*Real*/(previous(nextInterval))   [binding |0|0|0|0|]
+// 3/3 (1): v = 1.0 + previous(v)   [dynamic |0|0|0|0|]
+// 4/4 (1): nextInterval = 1 + previous(nextInterval)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -97,10 +97,10 @@ translateModel(SynchronousFeatures.VaryingClock); getErrorString();
 //
 // Equations (4, 4)
 // ========================================
-// 1/1 (1): d = interval()   [binding]
-// 2/2 (1): d0 = 0.01 * /*Real*/(previous(nextInterval))   [binding]
-// 3/3 (1): v = 1.0 + previous(v)   [dynamic]
-// 4/4 (1): nextInterval = 1 + previous(nextInterval)   [dynamic]
+// 1/1 (1): d = interval()   [binding |0|0|0|0|]
+// 2/2 (1): d0 = 0.01 * /*Real*/(previous(nextInterval))   [binding |0|0|0|0|]
+// 3/3 (1): v = 1.0 + previous(v)   [dynamic |0|0|0|0|]
+// 4/4 (1): nextInterval = 1 + previous(nextInterval)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

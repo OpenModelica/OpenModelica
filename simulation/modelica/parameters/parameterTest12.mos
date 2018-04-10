@@ -60,9 +60,9 @@ simulate(ParameterTest12.parameterTest12); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): obj.x[1] = 1.0   [dynamic]
-// 2/2 (1): obj.x[2] = 1.0   [dynamic]
-// 3/3 (1): obj.x[3] = 1.0   [dynamic]
+// 1/1 (1): obj.x[1] = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): obj.x[2] = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): obj.x[3] = 1.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -288,9 +288,9 @@ simulate(ParameterTest12.parameterTest12); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): obj.x[1] = 1.0   [dynamic]
-// 2/2 (1): obj.x[2] = 1.0   [dynamic]
-// 3/3 (1): obj.x[3] = 1.0   [dynamic]
+// 1/1 (1): obj.x[1] = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): obj.x[2] = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): obj.x[3] = 1.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

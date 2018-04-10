@@ -59,9 +59,9 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = if b2 then e1 - p3 else f1 - p3   [dynamic]
-// 2/2 (1): y = f1 + p1 + p2 + p4 + p5 + f2   [dynamic]
-// 3/3 (1): z = a[1] + a[2] + a[3] + s   [dynamic]
+// 1/1 (1): x = if b2 then e1 - p3 else f1 - p3   [dynamic |0|0|0|0|]
+// 2/2 (1): y = f1 + p1 + p2 + p4 + p5 + f2   [dynamic |0|0|0|0|]
+// 3/3 (1): z = a[1] + a[2] + a[3] + s   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -407,9 +407,9 @@ system("./parameterTest6 -override s=5,f2=100 -output=p1,p2,p3,p4,p5,f1,f2,b1,b2
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): x = -1   [dynamic]
-// 2/2 (1): y = 15 + p5   [dynamic]
-// 3/3 (1): z = 6   [dynamic]
+// 1/1 (1): x = -1   [dynamic |0|0|0|0|]
+// 2/2 (1): y = 15 + p5   [dynamic |0|0|0|0|]
+// 3/3 (1): z = 6   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

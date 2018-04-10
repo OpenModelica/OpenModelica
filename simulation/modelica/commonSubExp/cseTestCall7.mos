@@ -53,8 +53,8 @@ simulate(CSE.TestCall7); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 4)
 // ========================================
-// 1/1 (2): CSE.TestCall7.foo(a, b) = $cse1   [dynamic]
-// 2/3 (2): $cse1 = CSE.TestCall7.func(time)   [unknown]
+// 1/1 (2): CSE.TestCall7.foo(a, b) = $cse1   [dynamic |0|0|0|0|]
+// 2/3 (2): $cse1 = CSE.TestCall7.func(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

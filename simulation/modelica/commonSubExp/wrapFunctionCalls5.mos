@@ -58,8 +58,8 @@ simulate(CSE.wrapFunctionCalls5); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 6)
 // ========================================
-// 1/1 (3): (x, y, z) = (a, b, c)   [dynamic]
-// 2/4 (3): (a, b, c) = CSE.wrapFunctionCalls5.f1(time, 1.0 + time)   [unknown]
+// 1/1 (3): (x, y, z) = (a, b, c)   [dynamic |0|0|0|0|]
+// 2/4 (3): (a, b, c) = CSE.wrapFunctionCalls5.f1(time, 1.0 + time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

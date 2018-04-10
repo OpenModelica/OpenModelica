@@ -48,8 +48,8 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): der(v) = 1.0   [dynamic]
-// 2/2 (1): der(r) = 2.0   [dynamic]
+// 1/1 (1): der(v) = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): der(r) = 2.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -227,8 +227,8 @@ system("./parameterTest8 -override state=false -output=state,v,r"); getErrorStri
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): der(v) = 1.0   [dynamic]
-// 2/2 (1): der(r) = 2.0   [dynamic]
+// 1/1 (1): der(v) = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): der(r) = 2.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

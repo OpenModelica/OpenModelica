@@ -85,7 +85,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 //
 // ########### Updated Equation List (simulation) (1, 1)
 // ========================================
-// 1/1 (1): z2 = CSE.wrapFunctionCalls10.f1($cse1, time)   [unknown]
+// 1/1 (1): z2 = CSE.wrapFunctionCalls10.f1($cse1, time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (6)

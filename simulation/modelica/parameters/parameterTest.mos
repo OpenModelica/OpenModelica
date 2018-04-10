@@ -92,7 +92,7 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic]
+// 1/1 (1): x = parameterTest.sub(p3, p1, p5, b2)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -327,7 +327,7 @@ simulate(parameterTest, simflags="-output=p1,p2,p3,p4,p5,b1,b2"); getErrorString
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = parameterTest.sub(3.0, 1.0, p5, true)   [dynamic]
+// 1/1 (1): x = parameterTest.sub(3.0, 1.0, p5, true)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

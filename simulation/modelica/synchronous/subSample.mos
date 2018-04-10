@@ -64,9 +64,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = $getPart(u)   [dynamic]
-// 2/2 (1): der(x) = v   [dynamic]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic]
+// 1/1 (1): f = $getPart(u)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -91,8 +91,8 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): vd = $getPart(v)   [dynamic]
-// 2/2 (1): u = K * (vref - vd)   [dynamic]
+// 1/1 (1): vd = $getPart(v)   [dynamic |0|0|0|0|]
+// 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -116,7 +116,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): u2 = $getPart(u)   [dynamic]
+// 1/1 (1): u2 = $getPart(u)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -140,7 +140,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): u3 = $getPart(u2)   [dynamic]
+// 1/1 (1): u3 = $getPart(u2)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -186,9 +186,9 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (3, 3)
 // ========================================
-// 1/1 (1): f = $getPart(u)   [dynamic]
-// 2/2 (1): der(x) = v   [dynamic]
-// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic]
+// 1/1 (1): f = $getPart(u)   [dynamic |0|0|0|0|]
+// 2/2 (1): der(x) = v   [dynamic |0|0|0|0|]
+// 3/3 (1): m * der(v) = f + (-k) * x - d * v   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -225,8 +225,8 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (2, 2)
 // ========================================
-// 1/1 (1): vd = $getPart(v)   [dynamic]
-// 2/2 (1): u = K * (vref - vd)   [dynamic]
+// 1/1 (1): vd = $getPart(v)   [dynamic |0|0|0|0|]
+// 2/2 (1): u = K * (vref - vd)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -250,7 +250,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): u2 = $getPart(u)   [dynamic]
+// 1/1 (1): u2 = $getPart(u)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -274,7 +274,7 @@ translateModel(test_subSample); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): u3 = $getPart(u2)   [dynamic]
+// 1/1 (1): u3 = $getPart(u2)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

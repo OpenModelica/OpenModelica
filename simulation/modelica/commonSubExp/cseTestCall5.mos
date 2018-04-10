@@ -49,7 +49,7 @@ simulate(CSE.TestCall5); getErrorString();
 //
 // ########### Updated Equation List (simulation) (1, 1)
 // ========================================
-// 1/1 (1): a = CSE.TestCall5.f(time)   [unknown]
+// 1/1 (1): a = CSE.TestCall5.f(time)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

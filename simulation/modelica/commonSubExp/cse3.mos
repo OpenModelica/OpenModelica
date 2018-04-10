@@ -112,15 +112,15 @@ simulate(testCSE); getErrorString();
 //
 // ########### Updated Equation List (simulation) (9, 9)
 // ========================================
-// 1/1 (1): $cse1 * y + 1.1 * $cse2 * $cse3 = 2.0   [dynamic]
-// 2/2 (1): $cse4 * $cse5 + 1.1 * $cse4 * z = 1.0   [dynamic]
-// 3/3 (1): der(x) = y * z   [dynamic]
-// 4/4 (1): $cse5 = sinh(y)   [unknown]
-// 5/5 (1): $cse4 = testCSE.f4(x, n)   [unknown]
-// 6/6 (1): $cse3 = sinh(z)   [unknown]
-// 7/7 (1): $cse2 = testCSE.f2(x, n)   [unknown]
-// 8/8 (1): $cse1 = testCSE.f1(x, n)   [unknown]
-// 9/9 (1): w = testCSE.f3(x, n)   [unknown]
+// 1/1 (1): $cse1 * y + 1.1 * $cse2 * $cse3 = 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): $cse4 * $cse5 + 1.1 * $cse4 * z = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): der(x) = y * z   [dynamic |0|0|0|0|]
+// 4/4 (1): $cse5 = sinh(y)   [unknown |0|0|0|0|]
+// 5/5 (1): $cse4 = testCSE.f4(x, n)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse3 = sinh(z)   [unknown |0|0|0|0|]
+// 7/7 (1): $cse2 = testCSE.f2(x, n)   [unknown |0|0|0|0|]
+// 8/8 (1): $cse1 = testCSE.f1(x, n)   [unknown |0|0|0|0|]
+// 9/9 (1): w = testCSE.f3(x, n)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (1)
@@ -155,12 +155,12 @@ simulate(testCSE); getErrorString();
 //
 // ########### Updated Equation List (jacobian) (6, 6)
 // ========================================
-// 1/1 (1): $res2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * y.SeedNLSJac1   [dynamic]
-// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * z.SeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic]
-// 3/3 (1): $cse5.$pDERNLSJac1.dummyVarNLSJac1 = y.SeedNLSJac1 * $cse6   [unknown]
-// 4/4 (1): $cse3.$pDERNLSJac1.dummyVarNLSJac1 = z.SeedNLSJac1 * $cse7   [unknown]
-// 5/5 (1): $cse7 = cosh(z)   [unknown]
-// 6/6 (1): $cse6 = cosh(y)   [unknown]
+// 1/1 (1): $res2.$pDERNLSJac1.dummyVarNLSJac1 = 1.1 * $cse2 * $cse3.$pDERNLSJac1.dummyVarNLSJac1 + $cse1 * y.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 2/2 (1): $res1.$pDERNLSJac1.dummyVarNLSJac1 = (-$cse4) * (1.1 * z.SeedNLSJac1 + $cse5.$pDERNLSJac1.dummyVarNLSJac1)   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse5.$pDERNLSJac1.dummyVarNLSJac1 = y.SeedNLSJac1 * $cse6   [unknown |0|0|0|0|]
+// 4/4 (1): $cse3.$pDERNLSJac1.dummyVarNLSJac1 = z.SeedNLSJac1 * $cse7   [unknown |0|0|0|0|]
+// 5/5 (1): $cse7 = cosh(z)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse6 = cosh(y)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (jacobian) (9)

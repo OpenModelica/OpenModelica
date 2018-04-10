@@ -64,7 +64,7 @@ translateModel(WhenClocks); getErrorString();
 // ========================================
 // 1/1 (0): algorithm
 //   Modelica.Utilities.Streams.print("Clocked at " + String(time, 6, 0, true), "");
-//    [dynamic]
+//    [dynamic |0|0|0|0|]
 //
 //
 // State Sets
@@ -107,7 +107,7 @@ translateModel(WhenClocks); getErrorString();
 // ========================================
 // 1/1 (0): algorithm
 //   Modelica.Utilities.Streams.print("Clocked at " + String(time, 6, 0, true), "");
-//    [dynamic]
+//    [dynamic |0|0|0|0|]
 //
 //
 // State Sets

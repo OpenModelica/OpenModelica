@@ -46,7 +46,7 @@ simulate(parameterTest13); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = /*Real*/(p1 + p2 + p3)   [dynamic]
+// 1/1 (1): x = /*Real*/(p1 + p2 + p3)   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -287,7 +287,7 @@ simulate(parameterTest13); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): x = 15.0   [dynamic]
+// 1/1 (1): x = 15.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)

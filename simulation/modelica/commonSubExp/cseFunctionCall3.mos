@@ -69,12 +69,12 @@ simulate(CSE.FunctionCallTest3); getErrorString();
 //
 // ########### Updated Equation List (simulation) (6, 8)
 // ========================================
-// 1/1 (1): der(y) = 2.0 + a   [dynamic]
-// 2/2 (1): der(z) = 2.0 + a   [dynamic]
-// 3/3 (2): (c, d) = (a, b)   [dynamic]
-// 4/5 (2): (a, b) = CSE.functions.f2(time, x)   [unknown]
-// 5/7 (1): $cse1 = cos(time)   [unknown]
-// 6/8 (1): x = sin(time * $cse1)   [unknown]
+// 1/1 (1): der(y) = 2.0 + a   [dynamic |0|0|0|0|]
+// 2/2 (1): der(z) = 2.0 + a   [dynamic |0|0|0|0|]
+// 3/3 (2): (c, d) = (a, b)   [dynamic |0|0|0|0|]
+// 4/5 (2): (a, b) = CSE.functions.f2(time, x)   [unknown |0|0|0|0|]
+// 5/7 (1): $cse1 = cos(time)   [unknown |0|0|0|0|]
+// 6/8 (1): x = sin(time * $cse1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

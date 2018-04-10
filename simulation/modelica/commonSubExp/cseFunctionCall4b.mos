@@ -55,8 +55,8 @@ simulate(CSE.FunctionCallTest4); getErrorString();
 //
 // ########### Updated Equation List (simulation) (2, 4)
 // ========================================
-// 1/1 (1): $cse1 = sin(time)   [unknown]
-// 2/2 (3): y = CSE.f3(time, $cse1)   [unknown]
+// 1/1 (1): $cse1 = sin(time)   [unknown |0|0|0|0|]
+// 2/2 (3): y = CSE.f3(time, $cse1)   [unknown |0|0|0|0|]
 //
 //
 // ########### Updated globalKnownVars (simulation) (0)

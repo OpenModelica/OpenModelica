@@ -51,7 +51,7 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): bar.x = 1.0   [dynamic]
+// 1/1 (1): bar.x = 1.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -235,7 +235,7 @@ simulate(ParameterTest16.parameterTest16); getErrorString();
 //
 // Equations (1, 1)
 // ========================================
-// 1/1 (1): bar.x = 1.0   [dynamic]
+// 1/1 (1): bar.x = 1.0   [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
