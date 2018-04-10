@@ -50,7 +50,7 @@ dataInfo
     The index is 1-based and may contain several variables pointing to the same row (alias variables).
     A negative value means that the variable is a negated alias variable.
   - ``dataInfo(i,3)`` is 0 to signify linear interpolation. In other tools the value is the number of times differentiable this variable is, which may improve plotting.
-  - ``dataInfo(i,4)`` is ``-1`` in OpenModelica to signify that the value is not defined outside the time range. ``0` keeps the first/last value when going outside the time range and ``1`` performs linear interpolation on the first/last two points.
+  - ``dataInfo(i,4)`` is ``-1`` in OpenModelica to signify that the value is not defined outside the time range. ``0`` keeps the first/last value when going outside the time range and ``1`` performs linear interpolation on the first/last two points.
 
 data_1
   If it is an n x 1 matrix it contains the values of parameters.
