@@ -139,6 +139,7 @@ public
   function toDAE
     input Operator op;
     output DAE.Operator daeOp;
+    output Boolean swapArguments=false "The DAE structure only has array*scalar, not scalar*array, etc";
   protected
     DAE.Type ty;
   algorithm
@@ -150,18 +151,18 @@ public
       case Op.MUL               then DAE.MUL(ty);
       case Op.DIV               then DAE.DIV(ty);
       case Op.POW               then DAE.POW(ty);
-      case Op.ADD_SCALAR_ARRAY  then DAE.ADD(ty);
-      case Op.ADD_ARRAY_SCALAR  then DAE.ADD(ty);
-      case Op.SUB_SCALAR_ARRAY  then DAE.SUB(ty);
-      case Op.SUB_ARRAY_SCALAR  then DAE.SUB(ty);
-      case Op.MUL_SCALAR_ARRAY  then DAE.MUL(ty);
-      case Op.MUL_ARRAY_SCALAR  then DAE.MUL(ty);
-      case Op.MUL_VECTOR_MATRIX then DAE.MUL(ty);
-      case Op.MUL_MATRIX_VECTOR then DAE.MUL(ty);
+      case Op.ADD_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.ADD_ARRAY_SCALAR(ty);
+      case Op.ADD_ARRAY_SCALAR  then DAE.ADD_ARRAY_SCALAR(ty);
+      case Op.SUB_SCALAR_ARRAY  then DAE.SUB_SCALAR_ARRAY(ty);
+      case Op.SUB_ARRAY_SCALAR  algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.SUB(ty);
+      case Op.MUL_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.MUL_ARRAY_SCALAR(ty);
+      case Op.MUL_ARRAY_SCALAR  then DAE.MUL_ARRAY_SCALAR(ty);
+      case Op.MUL_VECTOR_MATRIX algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.MUL(ty);
+      case Op.MUL_MATRIX_VECTOR algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.MUL(ty);
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
-      case Op.DIV_SCALAR_ARRAY  then DAE.DIV(ty);
-      case Op.DIV_ARRAY_SCALAR  then DAE.DIV(ty);
+      case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
+      case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
       case Op.POW_SCALAR_ARRAY  then DAE.POW_SCALAR_ARRAY(ty);
       case Op.POW_ARRAY_SCALAR  then DAE.POW_ARRAY_SCALAR(ty);
       case Op.POW_MATRIX        then DAE.POW_ARR(ty);
