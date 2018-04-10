@@ -40,6 +40,7 @@ Generated on |date| at |time|
   scripting_api
   omchelptext
   simulationflags
+  technical_details
   faq
 
 .. toctree::
