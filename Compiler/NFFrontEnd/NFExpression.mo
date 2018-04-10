@@ -574,6 +574,13 @@ public
     end match;
   end realValue;
 
+  function integerValue
+    input Expression exp;
+    output Integer value;
+  algorithm
+    INTEGER(value=value) := exp;
+  end integerValue;
+
   function applySubscripts
     input list<Subscript> subscripts;
     input output Expression exp;

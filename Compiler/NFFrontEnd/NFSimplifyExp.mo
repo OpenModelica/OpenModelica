@@ -155,7 +155,8 @@ protected
   Integer i1, i2;
   Real r1, r2;
   Boolean b1, b2;
-  list<Expression> expl = {};
+  list<Expression> expl = {}, expl1, expl2;
+  Type ty;
 
   import NFOperator.Op;
 algorithm
@@ -193,6 +194,28 @@ algorithm
         case Op.SUB then Expression.REAL(r1 - r2);
         case Op.MUL then Expression.REAL(r1 * r2);
         case Op.DIV then Expression.REAL(r1 / r2);
+        case Op.POW then Expression.REAL(r1 ^ r2);
+        else exp;
+      end match;
+
+    case Expression.BINARY(exp1=Expression.ARRAY(ty=ty, elements=expl1), exp2=Expression.ARRAY(elements=expl2))
+      then match (exp.operator.op, Type.elementType(ty))
+        case (Op.SCALAR_PRODUCT, Type.REAL())
+          algorithm
+            try
+              exp1 := Expression.REAL(sum(Expression.realValue(e1)*Expression.realValue(e2) threaded for e1 in expl1, e2 in expl2));
+            else
+              exp1 := exp;
+            end try;
+          then exp1;
+        case (Op.SCALAR_PRODUCT, Type.INTEGER())
+          algorithm
+            try
+              exp1 := Expression.INTEGER(sum(Expression.integerValue(e1)*Expression.integerValue(e2) threaded for e1 in expl1, e2 in expl2));
+            else
+              exp1 := exp;
+            end try;
+          then exp1;
         else exp;
       end match;
 
