@@ -18,7 +18,7 @@ The variables stored in the MAT-file are (in the order required by OpenModelica)
 
 Aclass
   - ``Aclass(1,:)`` is always ``Atrajectory``
-  - ``Aclass(2,:)`` is ``1.1` in OpenModelica
+  - ``Aclass(2,:)`` is ``1.1`` in OpenModelica
   - ``Aclass(3,:)`` is empty
   - ``Aclass(4,:)`` is either ``binTrans`` or ``binNormal``
   The most important part of the variable is ``Aclass(4,:)`` since there are
