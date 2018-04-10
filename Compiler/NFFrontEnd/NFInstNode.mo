@@ -48,6 +48,7 @@ import DAE;
 protected
 import List;
 import ConvertDAE = NFConvertDAE;
+import Restriction = NFRestriction;
 
 public
 uniontype InstNodeType
@@ -1233,10 +1234,10 @@ uniontype InstNode
             case Class.DAE_TYPE() then cls.ty;
             else
               algorithm
-                // TODO: Use proper ClassInf.State here.
-                outType := DAE.Type.T_COMPLEX(ClassInf.MODEL(scopePath(clsNode)),
-                                              ConvertDAE.makeTypesVars(clsNode),
-                                              NONE());
+                outType := DAE.Type.T_COMPLEX(
+                  Restriction.toDAE(Class.restriction(cls), scopePath(clsNode)),
+                  ConvertDAE.makeTypesVars(clsNode),
+                  NONE());
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
                 outType;

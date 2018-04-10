@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFRestriction
   import NFInstNode.InstNode;
+  import ClassInf;
 
 protected
   import Restriction = NFRestriction;
@@ -67,6 +68,25 @@ public
       else MODEL();
     end match;
   end fromSCode;
+
+  function toDAE
+    input Restriction res;
+    input Absyn.Path path;
+    output ClassInf.State state;
+  algorithm
+    state := match res
+      case CLASS() then ClassInf.State.UNKNOWN(path);
+      case CONNECTOR() then ClassInf.State.CONNECTOR(path, res.isExpandable);
+      case ENUMERATION() then ClassInf.State.ENUMERATION(path);
+      case EXTERNAL_OBJECT() then ClassInf.State.EXTERNAL_OBJ(path);
+      case FUNCTION() then ClassInf.State.FUNCTION(path, false);
+      case MODEL() then ClassInf.State.MODEL(path);
+      case OPERATOR() then ClassInf.State.FUNCTION(path, false);
+      case RECORD() then ClassInf.State.RECORD(path);
+      case TYPE() then ClassInf.State.TYPE(path);
+      else ClassInf.State.UNKNOWN(path);
+    end match;
+  end toDAE;
 
   function isConnector
     input Restriction res;

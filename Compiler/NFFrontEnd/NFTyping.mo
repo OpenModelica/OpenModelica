@@ -1390,9 +1390,6 @@ algorithm
       list<Subscript> subs;
       Variability subs_var, rest_var;
 
-    case ComponentRef.CREF(origin = Origin.SCOPE)
-      then (cref, Variability.CONSTANT);
-
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
         node_ty := typeComponent(cref.node, origin);
@@ -1401,6 +1398,12 @@ algorithm
         subsVariability := Prefixes.variabilityMax(subs_var, rest_var);
       then
         (ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr), subsVariability);
+
+    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
+      algorithm
+        cref.ty := InstNode.getType(cref.node);
+      then
+        (cref, Variability.CONSTANT);
 
     else (cref, Variability.CONSTANT);
   end match;
