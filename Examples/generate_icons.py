@@ -387,8 +387,10 @@ def getGraphicsWithPortsForClass(modelicaClass):
             g['transformation'] = {}
             g['transformation']['origin'] = [origin_x, origin_y]
             g['transformation']['extent'] = [[x0, y0], [x1, y1]]
-            g['transformation']['rotation'] = rotation
-
+            if isinstance(rotation,dict):
+              g['transformation']['rotation'] = 0.0
+            else:
+              g['transformation']['rotation'] = rotation
             graphics['ports'].append(g)
 
     return graphics
