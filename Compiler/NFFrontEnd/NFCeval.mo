@@ -969,7 +969,7 @@ algorithm
   Expression.INTEGER(n) := argN;
   ty := Expression.typeOf(arg);
   numToPromote := n - Type.dimensionCount(ty);
-  result := evalBuiltinPromoteWork(arg, n);
+  result := evalBuiltinPromoteWork(arg, numToPromote);
 end evalBuiltinPromote;
 
 function evalBuiltinPromoteWork
@@ -981,7 +981,11 @@ protected
   list<Expression> exps;
   Type ty;
 algorithm
-  Error.assertion(n >= 1, "Promote called with n<1", sourceInfo());
+  Error.assertion(n >= 0, "Promote called with n<number of dimensions", sourceInfo());
+  if n == 0 then
+    result := arg;
+    return;
+  end if;
   if n == 1 then
     result := Expression.ARRAY(Type.liftArrayLeft(Expression.typeOf(arg),Dimension.fromInteger(1)), {arg});
     return;
