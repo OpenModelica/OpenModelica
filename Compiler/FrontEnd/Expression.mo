@@ -3623,7 +3623,7 @@ protected
   DAE.Type ty;
 algorithm
   ty := typeof(listHead(inElements));
-  outArray := DAE.ARRAY(ty, not Types.isArray(ty), inElements);
+  outArray := DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(listLength(inElements))}), not Types.isArray(ty), inElements);
 end makeArrayFromList;
 
 public function makeScalarArray
@@ -4696,8 +4696,7 @@ algorithm
     equation
       i = dimensionSize(d);
       true = i == listLength(inList);
-    then
-      DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)}),false,inList);
+    then makeArrayFromList(inList);
 
   case(_, {d}, _)
     equation
@@ -4743,7 +4742,7 @@ algorithm
           fail();
         else
           (explst, restexps) = List.split(inList,i);
-          arrexp = DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)}),false,explst);
+          arrexp = makeArrayFromList(explst);
           restarr = listToArray3(restexps,d,inType);
         end if;
       then
