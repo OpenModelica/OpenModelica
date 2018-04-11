@@ -1554,9 +1554,12 @@ algorithm
       markedEqns := markStateEquationsWork(indicesAlgebraic, adjMatrix, assigndVar, markedEqns);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageAlgebraic);
 
-      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 0);
-      markedEqns := markStateEquationsWork(indicesDiscrete, adjMatrix, assigndVar, markedEqns);
-      markedEqns := markStateEquationsWork(indicesDiscrete, adjMatrixT, assigndVar, markedEqns);
+      /* For now avoid this and evaluate all the event update breaks right now
+         quite a lot models.
+      */
+      markedEqns := arrayCreate(BackendEquation.getNumberOfEquations(eqns), 1);
+      //markedEqns := markStateEquationsWork(indicesDiscrete, adjMatrix, assigndVar, markedEqns);
+      //markedEqns := markStateEquationsWork(indicesDiscrete, adjMatrixT, assigndVar, markedEqns);
       eqns := setMarkedEqnsEvalStage(eqns, markedEqns, BackendEquation.setEvalStageDiscrete);
     else
       /* in case something goes wrong above mark all equation to be evaluated always */
