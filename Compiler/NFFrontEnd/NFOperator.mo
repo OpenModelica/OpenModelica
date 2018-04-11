@@ -144,11 +144,10 @@ public
     DAE.Type ty;
   algorithm
     ty := Type.toDAE(op.ty);
-
     daeOp := match op.op
-      case Op.ADD               then DAE.ADD(ty);
-      case Op.SUB               then DAE.SUB(ty);
-      case Op.MUL               then DAE.MUL(ty);
+      case Op.ADD               then if Type.isArray(op.ty) then DAE.ADD_ARR(ty) else DAE.ADD(ty);
+      case Op.SUB               then if Type.isArray(op.ty) then DAE.SUB_ARR(ty) else DAE.SUB(ty);
+      case Op.MUL               then if Type.isArray(op.ty) then DAE.MUL_ARR(ty) else DAE.MUL(ty);
       case Op.DIV               then DAE.DIV(ty);
       case Op.POW               then DAE.POW(ty);
       case Op.ADD_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.ADD_ARRAY_SCALAR(ty);
@@ -157,8 +156,8 @@ public
       case Op.SUB_ARRAY_SCALAR  algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.SUB(ty);
       case Op.MUL_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.MUL_ARRAY_SCALAR(ty);
       case Op.MUL_ARRAY_SCALAR  then DAE.MUL_ARRAY_SCALAR(ty);
-      case Op.MUL_VECTOR_MATRIX algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.MUL(ty);
-      case Op.MUL_MATRIX_VECTOR algorithm Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo()); then DAE.MUL(ty);
+      case Op.MUL_VECTOR_MATRIX then DAE.MUL_MATRIX_PRODUCT(ty);
+      case Op.MUL_MATRIX_VECTOR then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
