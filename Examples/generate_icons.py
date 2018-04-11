@@ -1086,7 +1086,7 @@ def generateSvg(filename, iconGraphics, includeInvisibleText):
             group.add(port_info)
 
             dwg.add(group)
-    hashName = hashlib.sha1(dwg.tostring()).hexdigest() + ".svg"
+    hashName = hashlib.sha1(dwg.tostring().encode("utf-8")).hexdigest() + ".svg"
     hashPath = os.path.join(os.path.dirname(filename),hashName)
     if not os.path.exists(hashPath):
       dwg.saveas(hashPath)
@@ -1227,7 +1227,10 @@ def main():
           f_p.write('<body>\n')
 
           for dwg in dwgs:
-              dwg.write(f_p)
+              try:
+                dwg.write(f_p)
+              except UnicodeEncodeError:
+                f_p.write(dwg.tostring().encode("utf-8"))
 
           f_p.write('</body>\n')
           f_p.write('</html>\n')
