@@ -315,7 +315,7 @@ algorithm
         if Function.isBuiltin(call.fn) then
           evalBuiltinCall(call.fn, args, target)
         else
-          evalNormalCall(call.fn, args);
+          evalNormalCall(call.fn, args, call);
 
     case Call.UNTYPED_MAP_CALL()
       algorithm
@@ -430,9 +430,10 @@ end printUnboundError;
 function evalNormalCall
   input Function fn;
   input list<Expression> args;
+  input Call call;
   output Expression result;
 algorithm
-  Error.addInternalError(getInstanceName() + ": IMPLEMENT ME", sourceInfo());
+  Error.addInternalError(getInstanceName() + ": IMPLEMENT ME: " + Call.toString(call), sourceInfo());
   fail();
 end evalNormalCall;
 

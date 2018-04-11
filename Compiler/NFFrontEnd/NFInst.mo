@@ -1973,7 +1973,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown expression", sourceInfo());
+        Error.assertion(false, getInstanceName() + " got unknown expression: " + Dump.printExpStr(absynExp), sourceInfo());
       then
         fail();
 
