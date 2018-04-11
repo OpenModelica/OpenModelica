@@ -753,7 +753,7 @@ public
     end for;
 
     newlst := listReverse(newlst);
-    outExp := arrayFromList(newlst, ty, restdims);
+    outExp := arrayFromList_impl(newlst, ty, restdims);
   end arrayFromList_impl;
 
   function makeEnumLiteral
@@ -2220,12 +2220,11 @@ public
     expl1 := arrayElements(expand(exp1));
     expl2 := arrayElements(expand(exp2));
     ty := Operator.typeOf(op);
-
+    eop := Operator.setType(Type.unliftArray(ty), op);
     if Type.dimensionCount(ty) > 1 then
-      eop := Operator.setType(Type.unliftArray(ty), op);
       expl := list(expandBinaryElementWise(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
     else
-      expl := list(BINARY(e1, op, e2) threaded for e1 in expl1, e2 in expl2);
+      expl := list(BINARY(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
     end if;
 
     exp := ARRAY(Operator.typeOf(op), expl);
@@ -2336,20 +2335,20 @@ public
     output Expression exp;
   protected
     list<Expression> expl1, expl2;
-    Type ty;
+    Type ty, tyUnlift;
     Operator mul_op, add_op;
   algorithm
     ARRAY(ty, expl1) := exp1;
     ARRAY( _, expl2) := exp2;
+    tyUnlift := Type.unliftArray(ty);
 
     if listEmpty(expl1) then
       // Scalar product of two empty arrays. The result is defined in the spec
       // by sum, so we return 0 since that's the default value of sum.
-      exp := makeZero(ty);
+      exp := makeZero(tyUnlift);
     end if;
-
-    mul_op := Operator.makeMul(ty);
-    add_op := Operator.makeAdd(ty);
+    mul_op := Operator.makeMul(tyUnlift);
+    add_op := Operator.makeAdd(tyUnlift);
     expl1 := list(BINARY(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
     exp := List.reduce(expl1, function makeBinaryOp(op = add_op));
   end makeScalarProduct;
