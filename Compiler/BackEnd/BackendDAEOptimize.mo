@@ -1229,7 +1229,7 @@ end checkUnusedParameterExp;
 // =============================================================================
 public function removeUnusedVariables
 "author: Frenkel TUD 2011-04
-  This function remove unused variables
+  This function removes unused variables
   from BackendDAE.BackendDAE to get speed up for compilation of
   target code"
   input BackendDAE.BackendDAE inDlow;
@@ -1240,16 +1240,17 @@ algorithm
       BackendDAE.Variables globalKnownVars, globalKnownVars1;
       BackendDAE.EqSystems eqs;
       BackendDAE.Shared shared;
+      tuple<BackendDAE.Variables,BackendDAE.Variables> tpl;
 
     case BackendDAE.DAE(eqs, shared)
       algorithm
         globalKnownVars1 := BackendVariable.emptyVars();
         globalKnownVars := shared.globalKnownVars;
-        ((_, globalKnownVars1)) := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
-        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(globalKnownVars, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
-        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
-        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
-        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedVariables, (globalKnownVars,globalKnownVars1));
+        tpl := List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem, checkUnusedVariables, (globalKnownVars, globalKnownVars1));
+        tpl := BackendDAEUtil.traverseBackendDAEExpsVars(globalKnownVars, checkUnusedVariables, tpl);
+        tpl := BackendDAEUtil.traverseBackendDAEExpsVars(shared.aliasVars, checkUnusedVariables, tpl);
+        tpl := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, checkUnusedVariables, tpl);
+        ((_, globalKnownVars1)) := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, checkUnusedVariables, tpl);
         shared.globalKnownVars := globalKnownVars1;
       then
         BackendDAE.DAE(eqs, shared);
@@ -1265,11 +1266,11 @@ algorithm
   (outExp,outTpl) := matchcontinue (inExp,inTpl)
     local
       DAE.Exp exp;
-      BackendDAE.Variables vars,vars1;
-    case (exp,(vars,_))
+      tuple<BackendDAE.Variables,BackendDAE.Variables> tpl;
+    case (exp,_)
       equation
-         (_,(_,vars1)) = Expression.traverseExpBottomUp(exp,checkUnusedVariablesExp,inTpl);
-       then (exp,(vars,vars1));
+         (_,tpl) = Expression.traverseExpBottomUp(exp,checkUnusedVariablesExp,inTpl);
+       then (exp,tpl);
     else (inExp,inTpl);
   end matchcontinue;
 end checkUnusedVariables;
@@ -2014,24 +2015,20 @@ algorithm
       (_,tpl) = Expression.traverseExpList(expLst,function countOperationsExp(shared=shared),inTuple);
       then (e, tpl);
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
-      true = stringEq(opName,"sin") or stringEq(opName,"cos") or stringEq(opName,"tan");
+    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8))
+      guard stringEq(opName,"sin") or stringEq(opName,"cos") or stringEq(opName,"tan")
       then (e, (i1,i2,i3,i4+1,i5,i6,i7,i8));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
-      true = stringEq(opName,"der");
+    case (e as DAE.CALL(path=Absyn.IDENT(name="der")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
-      true = stringEq(opName,"exp");
+    case (e as DAE.CALL(path=Absyn.IDENT(name="exp")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7+1,i8));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
-      true = stringEq(opName,"pre");
+    case (e as DAE.CALL(path=Absyn.IDENT(name="pre")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
 
-    case (e as DAE.CALL(path=Absyn.IDENT(name=opName)),_,(i1,i2,i3,i4,i5,i6,i7,i8)) equation
-      true = stringEq(opName,"previous");
+    case (e as DAE.CALL(path=Absyn.IDENT(name="previous")),_,(i1,i2,i3,i4,i5,i6,i7,i8))
       then (e, (i1,i2,i3,i4,i5,i6,i7,i8+1));
 
     case (e as DAE.CALL(path=path),_,_) equation

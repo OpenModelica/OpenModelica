@@ -2448,7 +2448,7 @@ algorithm
     local
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e1, e2;
-      DAE.Type ty;
+      DAE.Operator op;
       list<DAE.Exp> elst1, elst2;
       list<list<DAE.Exp>> elstlst1, elstlst2;
       list<DAE.Var> varLst1, varLst2;
@@ -2459,18 +2459,18 @@ algorithm
     then (cr1, cr2, lhs, rhs, false)::inTpls;
 
     // a = -b;
-    case (DAE.CREF(componentRef = cr1), DAE.UNARY(DAE.UMINUS(ty), DAE.CREF(componentRef = cr2)), _)
-    then (cr1, cr2, DAE.UNARY(DAE.UMINUS(ty), lhs), rhs, true)::inTpls;
+    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)), _)
+    then (cr1, cr2, DAE.UNARY(op, lhs), rhs, true)::inTpls;
 
-    case (DAE.CREF(componentRef = cr1), DAE.UNARY(DAE.UMINUS_ARR(ty), DAE.CREF(componentRef = cr2)), _)
-    then (cr1, cr2, DAE.UNARY(DAE.UMINUS_ARR(ty), lhs), rhs, true)::inTpls;
+    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)), _)
+    then (cr1, cr2, DAE.UNARY(op, lhs), rhs, true)::inTpls;
 
     // -a = b;
-    case (DAE.UNARY(DAE.UMINUS(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
-    then (cr1, cr2, lhs, DAE.UNARY(DAE.UMINUS(ty), rhs), true)::inTpls;
+    case (DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
+    then (cr1, cr2, lhs, DAE.UNARY(op, rhs), true)::inTpls;
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
-    then (cr1, cr2, lhs, DAE.UNARY(DAE.UMINUS_ARR(ty), rhs), true)::inTpls;
+    case (DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
+    then (cr1, cr2, lhs, DAE.UNARY(op, rhs), true)::inTpls;
 
     // -a = -b;
     case (DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.UNARY(DAE.UMINUS(_), e2 as DAE.CREF(componentRef = cr2)), _)
@@ -2480,12 +2480,12 @@ algorithm
     then (cr1, cr2, e1, e2, false)::inTpls;
 
     // a = not b;
-    case (DAE.CREF(componentRef = cr1), DAE.LUNARY(DAE.NOT(ty), DAE.CREF(componentRef = cr2)), _)
-    then (cr1, cr2, DAE.LUNARY(DAE.NOT(ty), lhs), rhs, true)::inTpls;
+    case (DAE.CREF(componentRef = cr1), DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)), _)
+    then (cr1, cr2, DAE.LUNARY(op, lhs), rhs, true)::inTpls;
 
     // not a = b;
-    case (DAE.LUNARY(DAE.NOT(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
-    then (cr1, cr2, lhs, DAE.LUNARY(DAE.NOT(ty), rhs), true)::inTpls;
+    case (DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _)
+    then (cr1, cr2, lhs, DAE.LUNARY(op, rhs), true)::inTpls;
 
     // not a = not b;
     case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF(componentRef = cr1)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = cr2)), _)
@@ -2543,20 +2543,19 @@ algorithm
     //case (DAE.LUNARY(DAE.NOT(_), DAE.ARRAY(array = elst1, ty=ty)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = cr2)), _)
 
     // a = Record(b1, b2, b3, ..)
-    case (DAE.CREF(componentRef = cr1), DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2, complexClassType=ClassInf.RECORD(pathb1)))), _) equation
-      true = Absyn.pathEqual(pathb, pathb1);
+    case (DAE.CREF(componentRef = cr1), DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2, complexClassType=ClassInf.RECORD(pathb1)))), _)
+      guard Absyn.pathEqual(pathb, pathb1)
     then aliasRecord(cr1, varLst2, elst2, inTpls);
 
     // Record(a1, a2, a3, ..) = b
-    case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1, complexClassType=ClassInf.RECORD(patha1)))), DAE.CREF(componentRef = cr2), _) equation
-      true = Absyn.pathEqual(patha, patha1);
+    case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1, complexClassType=ClassInf.RECORD(patha1)))), DAE.CREF(componentRef = cr2), _)
+      guard Absyn.pathEqual(patha, patha1)
     then aliasRecord(cr2, varLst1, elst1, inTpls);
 
     // Record(a1, a2, a3, ..) = Record(b1, b2, b3, ..)
     case (DAE.CALL(path=patha, expLst=elst1, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
-      DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))), _) equation
-      true = Absyn.pathEqual(patha, patha1);
-      true = Absyn.pathEqual(pathb, pathb1);
+      DAE.CALL(path=pathb, expLst=elst2, attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))), _)
+      guard  Absyn.pathEqual(patha, patha1) and Absyn.pathEqual(pathb, pathb1)
     then List.threadFold(elst1, elst2, aliasEquation1, inTpls);
 
     // matchcontinue part
@@ -2620,6 +2619,7 @@ algorithm
       DAE.ComponentRef cr1, cr2;
       DAE.Exp e1, e2;
       DAE.Type ty, ty1;
+      DAE.Operator op;
       list<DAE.Exp> elst;
       list<DAE.Var> vlst;
       DAE.Ident ident;
@@ -2634,20 +2634,20 @@ algorithm
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, false)::inTpls);
 
     // a = -b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(DAE.UMINUS(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
+    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
       cr1 = ComponentReference.crefPrependIdent(cr, ident, {}, ty);
-      e1 = DAE.UNARY(DAE.UMINUS(ty1), DAE.CREF(cr1, ty));
+      e1 = DAE.UNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(DAE.UMINUS_ARR(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
+    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.UNARY(op as DAE.UMINUS_ARR(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
       cr1 = ComponentReference.crefPrependIdent(cr, ident, {}, ty);
-      e1 = DAE.UNARY(DAE.UMINUS_ARR(ty1), DAE.CREF(cr1, ty));
+      e1 = DAE.UNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
     // a = not b
-    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.LUNARY(DAE.NOT(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
+    case (_, DAE.TYPES_VAR(name=ident, ty=ty)::vlst, (e2 as DAE.LUNARY(op as DAE.NOT(ty1), DAE.CREF(componentRef = cr2)))::elst, _) equation
       cr1 = ComponentReference.crefPrependIdent(cr, ident, {}, ty);
-      e1 = DAE.LUNARY(DAE.NOT(ty1), DAE.CREF(cr1, ty));
+      e1 = DAE.LUNARY(op, DAE.CREF(cr1, ty));
     then aliasRecord(cr, vlst, elst, (cr1, cr2, e1, e2, true)::inTpls);
 
     // a = {b1, b2, b3}

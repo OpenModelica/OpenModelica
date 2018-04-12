@@ -675,7 +675,7 @@ _omc_matrix* _omc_subtractMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
   return mat1;
 }
 
-/*! \fn _omc_scalar* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
+/*! \fn _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
  *
  *  _omc_matrix multiplication of two matrixes into matrix one
  *

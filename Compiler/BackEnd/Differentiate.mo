@@ -2839,8 +2839,8 @@ algorithm
 
     // check conditions, order=1
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),_,_)
+      guard intEq(1,derivativeOrder)
       equation
-         true = intEq(1,derivativeOrder);
          tplst = List.map(funcArg,Types.funcArgType);
          ba = Array.mapList(tplst, diffableTypes);
          bl = checkDerFunctionConds(ba,cr,expl,inDiffArgs);
@@ -2848,8 +2848,8 @@ algorithm
         (inDFuncName,bl);
     // check conditions, order>1
     case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,_,(_,_,_,functions))
+      guard not intEq(1,derivativeOrder)
       equation
-         failure(true = intEq(1,derivativeOrder));
          // get n-1 func name
          fname = getlowerOrderDerivative(inFuncName,functions);
          // get mapper

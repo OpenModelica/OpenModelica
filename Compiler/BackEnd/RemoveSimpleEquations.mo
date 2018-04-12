@@ -1025,24 +1025,25 @@ algorithm
       DAE.Type ty;
       list<DAE.Exp> elst1, elst2;
       list<list<DAE.Exp>> elstlst1, elstlst2;
+      DAE.Operator op;
 
     // a = b;
     case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2), _, _, _)
       then addSimpleEquationAcausal(cr1, lhs, false, cr2, rhs, false, eqnAttributes, selfCalled, inTpl);
 
     // a = -b;
-    case (DAE.CREF(componentRef = cr1), DAE.UNARY(DAE.UMINUS(ty), DAE.CREF(componentRef = cr2)), _, _, _)
-      then addSimpleEquationAcausal(cr1, DAE.UNARY(DAE.UMINUS(ty), lhs), false, cr2, rhs, true, eqnAttributes, selfCalled, inTpl);
+    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr2)), _, _, _)
+      then addSimpleEquationAcausal(cr1, DAE.UNARY(op, lhs), false, cr2, rhs, true, eqnAttributes, selfCalled, inTpl);
 
-    case (DAE.CREF(componentRef = cr1), DAE.UNARY(DAE.UMINUS_ARR(ty), DAE.CREF(componentRef = cr2)), _, _, _)
-      then addSimpleEquationAcausal(cr1, DAE.UNARY(DAE.UMINUS_ARR(ty), lhs), false, cr2, rhs, true, eqnAttributes, selfCalled, inTpl);
+    case (DAE.CREF(componentRef = cr1), DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr2)), _, _, _)
+      then addSimpleEquationAcausal(cr1, DAE.UNARY(op, lhs), false, cr2, rhs, true, eqnAttributes, selfCalled, inTpl);
 
     // -a = b;
-    case (DAE.UNARY(DAE.UMINUS(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
-      then addSimpleEquationAcausal(cr1, lhs, true, cr2,  DAE.UNARY(DAE.UMINUS(ty), rhs), false, eqnAttributes, selfCalled, inTpl);
+    case (DAE.UNARY(op as DAE.UMINUS(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
+      then addSimpleEquationAcausal(cr1, lhs, true, cr2,  DAE.UNARY(op, rhs), false, eqnAttributes, selfCalled, inTpl);
 
-    case (DAE.UNARY(DAE.UMINUS_ARR(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
-      then addSimpleEquationAcausal(cr1, lhs, true, cr2,  DAE.UNARY(DAE.UMINUS_ARR(ty), rhs), false, eqnAttributes, selfCalled, inTpl);
+    case (DAE.UNARY(op as DAE.UMINUS_ARR(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
+      then addSimpleEquationAcausal(cr1, lhs, true, cr2,  DAE.UNARY(op, rhs), false, eqnAttributes, selfCalled, inTpl);
 
     // -a = -b;
     case (DAE.UNARY(DAE.UMINUS(_), e1 as DAE.CREF(componentRef = cr1)), DAE.UNARY(DAE.UMINUS(_), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
@@ -1052,12 +1053,12 @@ algorithm
       then addSimpleEquationAcausal(cr1, e1, false, cr2, e2, false, eqnAttributes, selfCalled, inTpl);
 
     // a = not b;
-    case (DAE.CREF(componentRef = cr1), DAE.LUNARY(DAE.NOT(ty), DAE.CREF(componentRef = cr2)), _, _, _)
-      then addSimpleEquationAcausal(cr1, DAE.LUNARY(DAE.NOT(ty), lhs), false, cr2, rhs, true, eqnAttributes, selfCalled, inTpl);
+    case (DAE.CREF(componentRef = cr1), DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr2)), _, _, _)
+      then addSimpleEquationAcausal(cr1, DAE.LUNARY(op, lhs), false, cr2, rhs, true, eqnAttributes, selfCalled, inTpl);
 
     // not a = b;
-    case (DAE.LUNARY(DAE.NOT(ty), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
-      then addSimpleEquationAcausal(cr1, lhs, true, cr2, DAE.LUNARY(DAE.NOT(ty), lhs), false, eqnAttributes, selfCalled, inTpl);
+    case (DAE.LUNARY(op as DAE.NOT(_), DAE.CREF(componentRef = cr1)), DAE.CREF(componentRef = cr2), _, _, _)
+      then addSimpleEquationAcausal(cr1, lhs, true, cr2, DAE.LUNARY(op, lhs), false, eqnAttributes, selfCalled, inTpl);
 
     // not a = not b;
     case (DAE.LUNARY(DAE.NOT(_), e1 as DAE.CREF(componentRef = cr1)), DAE.LUNARY(DAE.NOT(_), e2 as DAE.CREF(componentRef = cr2)), _, _, _)
