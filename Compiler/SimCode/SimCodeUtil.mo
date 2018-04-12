@@ -2017,16 +2017,19 @@ protected function createEquation
   output list<SimCode.SimEqSystem> equation_;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Equation eqn;
 algorithm
-  (equation_, ouniqueEqIndex, otempvars) := matchcontinue (eqNum, varNum, syst, shared, skipDiscInAlgorithm, iuniqueEqIndex, itempvars)
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
+  eqn := BackendEquation.get(eqns, eqNum);
+  (equation_, ouniqueEqIndex, otempvars) := match eqn
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> values;
       BackendDAE.Var v;
-      BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
-      BackendDAE.Equation eqn;
       Integer    uniqueEqIndex;
       list<DAE.Statement> algStatements;
       list<DAE.ComponentRef> conditions, solveCr;
@@ -2050,11 +2053,11 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<SimCode.SimEqSystem> oelseWhenSimEq;
       BackendDAE.EquationAttributes eqAttr;
+      Boolean b;
 
     // solved equation
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
+    case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
       equation
-        BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
         varexp = Expression.crefExp(cr);
         varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
@@ -2062,9 +2065,8 @@ algorithm
         ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
     // when eq
-    case (_, _,  BackendDAE.EQSYSTEM(orderedEqs=eqns), BackendDAE.SHARED(), _, _, _)
+    case BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source, attr=eqAttr)
       equation
-        BackendDAE.WHEN_EQUATION(whenEquation=whenEquation, source=source, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
         BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelseWhen) = whenEquation;
         if isSome(oelseWhen) then
           SOME(elseWhen) = oelseWhen;
@@ -2079,120 +2081,90 @@ algorithm
         ({SimCode.SES_WHEN(iuniqueEqIndex, conditions, initialCall, whenStmtLst, oelseWhenSimEq, source, eqAttr)}, uniqueEqIndex+1, itempvars);
 
     // single equation
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
-      equation
-        eqn = BackendEquation.get(eqns, eqNum);
-        BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr) = eqn;
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
-        varexp = Expression.crefExp(cr);
-        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        BackendDAE.SHARED(functionTree = funcs) = shared;
-        (exp_, asserts, solveEqns, solveCr) = ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
-        solveEqns = listReverse(solveEqns);
-        solveCr = listReverse(solveCr);
-        cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-        source = ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-        (eqSystlst, uniqueEqIndex) = List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
-        if listEmpty(cons) then
-          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source, eqAttr)}, uniqueEqIndex+1);
+    case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)
+      algorithm
+        (v as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, varNum);
+        varexp := Expression.crefExp(cr);
+        varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
+        BackendDAE.SHARED(functionTree = funcs) := shared;
+        b := true;
+        try
+          (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, varexp, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
         else
-          (resEqs, uniqueEqIndex) = addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex, cr, exp_, source, cons, eqAttr)}, uniqueEqIndex+1);
+          b := false;
+        end try;
+        if b then
+          solveEqns := listReverse(solveEqns);
+          solveCr := listReverse(solveCr);
+          cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
+          source := ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
+          (eqSystlst, uniqueEqIndex) := List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+          if listEmpty(cons) then
+            (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source, eqAttr)}, uniqueEqIndex+1);
+          else
+            (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex, cr, exp_, source, cons, eqAttr)}, uniqueEqIndex+1);
+          end if;
+          eqSystlst := listAppend(eqSystlst,resEqs);
+          tempvars := createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
+        else
+          if match (e1,e2) case (DAE.RCONST(),DAE.IFEXP()) then true; else false; end match then
+            try
+              // single equation from if-equation -> 0.0 = if .. then bla else lbu and var is not in all branches
+              // change branches without variable to var - pre(var)
+              prevarexp := Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
+              prevarexp := Expression.expSub(varexp, prevarexp);
+              (e2, _) := Expression.traverseExpBottomUp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
+              eqn := BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+              (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
+              cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
+              (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
+              eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)};
+              uniqueEqIndex := uniqueEqIndex + 1;
+            else
+              b := false;
+            end try;
+          else
+            b := false;
+          end if;
+          if not b then
+            // non-linear
+            (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
+            cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
+            (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
+            eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)};
+            uniqueEqIndex := uniqueEqIndex+1;
+          end if;
         end if;
-        eqSystlst = listAppend(eqSystlst,resEqs);
-        tempvars = createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
-      then
-        (eqSystlst, uniqueEqIndex,tempvars);
-
-    // single equation from if-equation -> 0.0 = if .. then bla else lbu and var is not in all branches
-    // change branches without variable to var - pre(var)
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
-      equation
-        BackendDAE.EQUATION(exp=e1 as DAE.RCONST(_), scalar=e2 as DAE.IFEXP(), source=source, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
-        varexp = Expression.crefExp(cr);
-        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        failure((_, _) = ExpressionSolve.solve(e1, e2, varexp));
-        prevarexp = Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
-        prevarexp = Expression.expSub(varexp, prevarexp);
-        (e2, _) = Expression.traverseExpBottomUp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
-        eqn = BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
-        cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-        (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-      then
-        ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
-
-    // non-linear
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, _, _)
-      equation
-        (eqn as BackendDAE.EQUATION(exp=e1, scalar=e2, attr=eqAttr)) = BackendEquation.get(eqns, eqNum);
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
-        varexp = Expression.crefExp(cr);
-        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
-        failure((_, _) = ExpressionSolve.solve(e1, e2, varexp));
-        // index = System.tmpTick();
-        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
-        cr = if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-        (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-      then
-        ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
+      then (eqSystlst, uniqueEqIndex,tempvars);
 
     // Algorithm for single variable.
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, true, _, _)
-      equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
-        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        v = BackendVariable.getVarAt(vars, varNum);
+    case BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)
+      algorithm
+        varOutput::{} := CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
+        v := BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
-        true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-        algStatements = BackendDAEUtil.removeDiscreteAssignments(algStatements, vars);
+        DAE.ALGORITHM_STMTS(algStatements) := BackendDAEUtil.collateAlgorithm(alg, NONE());
+        if ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput) then
+          if skipDiscInAlgorithm then
+            algStatements := BackendDAEUtil.removeDiscreteAssignments(algStatements, vars);
+          end if;
+        else
+          try
+            algStatements := solveAlgorithmInverse(algStatements, {v});
+          else
+            algStr :=  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
+            message := ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
+            message := stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
+            Error.addInternalError(message, sourceInfo());
+            fail();
+          end try;
+        end if;
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
-    // algorithm for single variable
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _,false, _, _)
-      equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
-        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        v = BackendVariable.getVarAt(vars, varNum);
-        // The output variable of the algorithm must be the variable solved
-        // for, otherwise we need to solve an inverse problem of an algorithm
-        // section.
-        true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
-
-    // inverse Algorithm for single variable
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
-      equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
-        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        v = BackendVariable.getVarAt(vars, varNum);
-        // We need to solve an inverse problem of an algorithm section.
-        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
-        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-        algStatements = solveAlgorithmInverse(algStatements, {v});
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements, eqAttr)}, iuniqueEqIndex+1, itempvars);
-
-    // inverse Algorithm for single variable failed
-    case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, _, _)
-      equation
-        BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr) = BackendEquation.get(eqns, eqNum);
-        varOutput::{} = CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        v = BackendVariable.getVarAt(vars, varNum);
-        // We need to solve an inverse problem of an algorithm section.
-        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
-        algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
-        message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
-        message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in \n", algStr, "This has not been implemented yet.\n"});
-        Error.addInternalError(message, sourceInfo());
-      then fail();
-  end matchcontinue;
+  end match;
 end createEquation;
 
 protected function replaceIFBrancheswithoutVar
