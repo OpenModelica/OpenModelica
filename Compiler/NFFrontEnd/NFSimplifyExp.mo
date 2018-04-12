@@ -328,12 +328,15 @@ protected
   Real r1, r2, r3;
   Boolean b1, b2;
   list<Expression> exps;
+  list<String> literals;
+  Type enumType;
 algorithm
   step := match (optStep, ty)
     case (SOME(step),_) then step;
     case (_,Type.ARRAY(elementType=Type.INTEGER())) then Expression.INTEGER(1);
     case (_,Type.ARRAY(elementType=Type.REAL())) then Expression.REAL(1.0);
     case (_,Type.ARRAY(elementType=Type.BOOLEAN())) then Expression.INTEGER(1); // dummy
+    case (_,Type.ARRAY(elementType=Type.ENUMERATION())) then Expression.INTEGER(1); // dummy
     else
       algorithm
         Error.assertion(false, getInstanceName() + " failed to type: " + Type.toString(ty), sourceInfo());
@@ -352,6 +355,10 @@ algorithm
       algorithm
         exps := list(Expression.BOOLEAN(b) for b in ExpressionSimplify.simplifyRangeBool(b1, b2));
       then Expression.ARRAY(Type.ARRAY(Type.BOOLEAN(), {Dimension.fromInteger(listLength(exps))}), exps);
+    case (Expression.ENUM_LITERAL(ty=enumType as Type.ENUMERATION(literals=literals), index=i1),_,Expression.ENUM_LITERAL(index=i2))
+      algorithm
+        exps := list(Expression.ENUM_LITERAL(enumType, listGet(literals, i), i) for i in i1:i2);
+      then Expression.ARRAY(Type.ARRAY(enumType, {Dimension.fromInteger(listLength(exps))}), exps);
     else
       algorithm
         Error.assertion(false, getInstanceName() + " failed to type: " + Type.toString(ty), sourceInfo());
