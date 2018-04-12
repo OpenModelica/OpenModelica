@@ -4134,6 +4134,16 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
+template crefToIndex(ComponentRef cr)
+ "Helper function to cref."
+::=
+  match cref2simvar(cr, getSimCode())
+    case SIMVAR(index=index)
+    then
+      '<%index%>'
+    else "CREF_NOT_FOUND"
+end crefToIndex;
+
 template crefToCStrDefine(ComponentRef cr)
  "Helper function to cref."
 ::=

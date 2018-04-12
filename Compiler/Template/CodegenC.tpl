@@ -890,7 +890,7 @@ template simulationFile_dae(SimCode simCode)
      let initDAEmode =
        match sparsityPattern
        case SOME(JAC_MATRIX(sparsity=sparse, coloredCols=colorList, maxColorCols=maxColor)) then
-         '<%initializeDAEmodeData(listLength(residualVars), listLength(algebraicVars), listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
+         '<%initializeDAEmodeData(listLength(residualVars), algebraicVars, listLength(auxiliaryVars), sparse, colorList, maxColor, modelNamePrefixStr)%>'
        case NONE() then
          'int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *inData, DAEMODE_DATA* daeModeData){ return -1; }'
        end match
@@ -904,8 +904,6 @@ template simulationFile_dae(SimCode simCode)
      #endif
 
      <%evaluateDAEResiduals(daeEquations, modelNamePrefixStr)%>
-
-     <%algebraicDAEVar(algebraicVars, modelNamePrefixStr)%>
 
      <%initDAEmode%>
 
@@ -4053,73 +4051,33 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String model
   >>
 end evaluateDAEResiduals;
 
-template algebraicDAEVar(list<SimVar> algVars, String modelNamePrefix)
-  "Generates function in simulation file."
+template genVarIndexes(list<SimVar> vars, String arrayName)
+"This template generates array with indexes of given variables."
 ::=
-  let forwardVars = (algVars |> var hasindex i fromindex 0 =>
+  let size = listLength(vars)
+  let varIndexes = ( vars |> var =>
     (match var
     case SIMVAR(__) then
-      '<%cref(name)%> = algebraic[<%i%>];'
+      '<%crefToIndex(name)%>'
     end match)
-  ;separator="\n")
-  let getVars = (algVars |> var hasindex i fromindex 0 =>
-    (match var
-    case SIMVAR(__) then
-      'algebraic[<%i%>] = <%cref(name)%>;'
-    end match)
-  ;separator="\n")
-  let nominalVars = (algVars |> var hasindex i fromindex 0 =>
-    (match var
-    case SIMVAR(__) then
-      <<
-      algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal;
-      infoStreamPrint(LOG_SOLVER, 0, "%ld. %s -> %g", ++i, <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
-      >>
-    end match)
-  ;separator="\n")
-
+   ;separator=",")
   <<
-  /* algebraic nominal values */
-  OMC_DISABLE_OPT
-  int <%symbolName(modelNamePrefix,"getAlgebraicDAEVarNominals")%>(DATA *data, threadData_t *threadData, double* algebraicNominal)
-  {
-    TRACE_PUSH
-    long i = data->modelData->nStates;
-    <%nominalVars%>
-    TRACE_POP
-    return 0;
-  }
-
-  /* forward algebraic variables */
-  OMC_DISABLE_OPT
-  int <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
-  {
-    TRACE_PUSH
-    <%forwardVars%>
-    TRACE_POP
-    return 0;
-  }
-  /* get algebraic variables */
-  OMC_DISABLE_OPT
-  int <%symbolName(modelNamePrefix,"getAlgebraicDAEVars")%>(DATA *data, threadData_t *threadData, double* algebraic)
-  {
-    TRACE_PUSH
-    <%getVars%>
-    TRACE_POP
-    return 0;
-  }
+  const int <%arrayName%>[<%size%>] = {<%varIndexes%>};
   >>
-end algebraicDAEVar;
+end genVarIndexes;
 
-template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, Integer nAuxVars, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
+
+template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer nAuxVars, list<tuple<Integer,list<Integer>>> sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix)
   "Generates initialization function for daeMode."
 ::=
+  let nAlgVars = listLength(algVars)
   let sizeCols = listLength(sparsepattern)
   let sizeNNZ = lengthListElements(unzipSecond(sparsepattern))
   let colPtr = genSPCRSPtr(listLength(sparsepattern), sparsepattern, "colPtrIndex")
   let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
   let colorString = genSPColors(colorList, "daeModeData->sparsePattern->colorCols")
   let maxColorStr = '<%maxColor%>'
+  let algIndexes = genVarIndexes(algVars, "algIndexes")
   <<
   /* initialize the daeMode variables */
   OMC_DISABLE_OPT
@@ -4130,6 +4088,7 @@ template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, Integer nAuxV
     /* sparse patterns */
     <%colPtr%>
     <%rowIndex%>
+    <%algIndexes%>
     int i = 0;
 
     daeModeData->nResidualVars = <%nResVars%>;
@@ -4141,10 +4100,10 @@ template initializeDAEmodeData(Integer nResVars, Integer nAlgVars, Integer nAuxV
 
     /* set the function pointer */
     daeModeData->evaluateDAEResiduals = <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>;
-    daeModeData->setAlgebraicDAEVars = <%symbolName(modelNamePrefix,"setAlgebraicDAEVars")%>;
-    daeModeData->getAlgebraicDAEVars = <%symbolName(modelNamePrefix,"getAlgebraicDAEVars")%>;
-    daeModeData->getAlgebraicDAEVarNominals = <%symbolName(modelNamePrefix,"getAlgebraicDAEVarNominals")%>;
 
+    /* prepare algebraic indexes */
+    daeModeData->algIndexes = (int*) malloc(sizeof(int)*<%nAlgVars%>);
+    memcpy(daeModeData->algIndexes, algIndexes, <%nAlgVars%>*sizeof(int));
     /* intialize sparse pattern */
     daeModeData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
 

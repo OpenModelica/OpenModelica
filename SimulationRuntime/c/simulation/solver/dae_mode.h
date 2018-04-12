@@ -50,6 +50,11 @@ extern "C" {
 
 int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData);
 
+void getAlgebraicDAEVarNominals(DATA*, double*);
+void getAlgebraicDAEVars(DATA*, double*);
+void setAlgebraicDAEVars(DATA*, double*);
+
+
 #ifdef __cplusplus
 }
 #endif

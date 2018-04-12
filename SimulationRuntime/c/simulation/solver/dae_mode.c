@@ -61,6 +61,46 @@ int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData
   return retVal;
 }
 
+/*! \fn void getAlgebraicDAEVarNominals
+ *
+ *  collects DAE mode algebraic nominal values from modelData
+ */
+void getAlgebraicDAEVarNominals(DATA* data, double *algebraicNominals)
+{
+  int i;
+
+  DAEMODE_DATA* daeModeData = data->simulationInfo->daeModeData;
+  for(i=0; i < daeModeData->nAlgebraicDAEVars; i++){
+    algebraicNominals[i] = data->modelData->realVarsData[daeModeData->algIndexes[i]].attribute.nominal;
+  }
+}
+
+/*! \fn getAlgebraicVars
+ *
+ *  function obtains algebraic variable values for DAEmode
+ */
+void getAlgebraicDAEVars(DATA *data, double* algebraic)
+{
+  int i;
+  DAEMODE_DATA* daeModeData = data->simulationInfo->daeModeData;
+  for(i=0; i < daeModeData->nAlgebraicDAEVars; i++){
+    algebraic[i] = data->localData[0]->realVars[daeModeData->algIndexes[i]];
+  }
+}
+
+/*! \fn setAlgebraicVars
+ *
+ *  function set algebraic variable values for DAEmode
+ */
+void setAlgebraicDAEVars(DATA *data, double* algebraic)
+{
+  int i;
+  DAEMODE_DATA* daeModeData = data->simulationInfo->daeModeData;
+  for(i=0; i < daeModeData->nAlgebraicDAEVars; i++){
+    data->localData[0]->realVars[daeModeData->algIndexes[i]] = algebraic[i];
+  }
+}
+
 #ifdef __cplusplus
 }
 #endif

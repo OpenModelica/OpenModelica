@@ -174,7 +174,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
 
     memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
-    data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
     memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
     idaData->y = N_VMake_Serial(idaData->N, idaData->states);
@@ -230,7 +230,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
   /* daeMode: set nominal values for algebraic variables */
   if (idaData->daeMode)
   {
-    data->simulationInfo->daeModeData->getAlgebraicDAEVarNominals(data, threadData, tmp + data->modelData->nStates);
+    getAlgebraicDAEVarNominals(data, tmp + data->modelData->nStates);
   }
   /* multiply by tolerance to obtain a relative tolerace */
   for(i=0; i < idaData->N; ++i)
@@ -262,7 +262,7 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
     /* daeMode: set nominal values for algebraic variables */
     if (idaData->daeMode)
     {
-     data->simulationInfo->daeModeData->getAlgebraicDAEVarNominals(data, threadData, idaData->yScale + data->modelData->nStates);
+     getAlgebraicDAEVarNominals(data, idaData->yScale + data->modelData->nStates);
      for(i=data->modelData->nStates; i < idaData->N; ++i)
      {
        idaData->ypScale[i] = 1.0;
@@ -702,12 +702,12 @@ ida_event_update(DATA* data, threadData_t *threadData)
       data->simulationInfo->needToIterate = 0;
 
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
-      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
       memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
       /* update inner algebraic get new values from data */
       evaluateDAEResiduals_wrapperEventUpdate(data, threadData);
-      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
 
       infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
       flag = IDAReInit(idaData->ida_mem,
@@ -754,7 +754,7 @@ ida_event_update(DATA* data, threadData_t *threadData)
 
       memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
       // and  also algebraic vars
-      data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
       memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
 
       /* reset initial step size again to default */
@@ -809,7 +809,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     {
       memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
       /* and  also algebraic vars */
-      data->simulationInfo->daeModeData->getAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+      getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
       memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
     }
 
@@ -1023,7 +1023,7 @@ ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   {
     memcpy(data->localData[0]->realVars, idaData->states, sizeof(double)*data->modelData->nStates);
     // and  also algebraic vars
-    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, idaData->states + data->modelData->nStates);
+    setAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, idaData->statesDer, sizeof(double)*data->modelData->nStates);
     sData->timeValue = solverInfo->currentTime;
   }
@@ -1164,7 +1164,7 @@ int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector res, voi
     */
     memcpy(data->localData[0]->realVars, states, sizeof(double)*data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, statesDer, sizeof(double)*data->modelData->nStates);
-    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
+    setAlgebraicDAEVars(data, states + data->modelData->nStates);
   }
 
   /* debug */
@@ -1263,7 +1263,7 @@ int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* 
   if (idaData->daeMode)
   {
     memcpy(data->localData[0]->realVars, states, sizeof(double)*data->modelData->nStates);
-    data->simulationInfo->daeModeData->setAlgebraicDAEVars(data, threadData, states + data->modelData->nStates);
+    setAlgebraicDAEVars(data, states + data->modelData->nStates);
     memcpy(data->localData[0]->realVars + data->modelData->nStates, statesDer, sizeof(double)*data->modelData->nStates);
   }
 
