@@ -389,6 +389,11 @@ uniontype SimEqSystem
     BackendDAE.EquationAttributes eqAttr;
   end SES_FOR_LOOP;
 
+  record SES_ALIAS
+    Integer index;
+    Integer aliasOf;
+  end SES_ALIAS;
+
 end SimEqSystem;
 
 public

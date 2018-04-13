@@ -1020,6 +1020,16 @@ algorithm
       File.write(file, "}");
     then true;
 
+    case SimCode.SES_ALIAS() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      File.write(file, ",\"tag\":\"alias\",\"equation\":[");
+      File.writeInt(file, eq.aliasOf);
+      File.write(file, "],\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\"}");
+    then true;
+
     else equation
       Error.addInternalError("serializeEquation failed: " + anyString(eq), sourceInfo());
     then fail();

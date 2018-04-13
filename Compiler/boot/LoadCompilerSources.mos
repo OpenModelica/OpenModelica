@@ -407,6 +407,7 @@ if true then /* Suppress output */
     "../Util/HashTableCrToExpSourceTpl.mo",
     "../Util/HashTableCrToCrEqLst.mo",
     "../Util/HashTableCrToUnit.mo",
+    "../Util/HashTableSimCodeEqCache.mo",
     "../Util/HashTableStringToUnit.mo",
     "../Util/HashTableUnitToString.mo",
     "../Util/PriorityQueue.mo",

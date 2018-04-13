@@ -3010,7 +3010,7 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   <%simulationFileHeader(fileNamePrefix)%>
                   #if defined(__cplusplus)
                   extern "C" {
-                  #endif
+                  #endif<%\n%>
                   >>)) +
                   (eqs |> eq => equation_impl_options(-1, eq, contextSimulationDiscrete, modelNamePrefix, static, noOpt) ; separator="\n") +
                   <<
@@ -4839,7 +4839,7 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
   case e as SES_MIXED(__)
     then equationMixed(e, context, &eqfuncs, modelNamePrefix)
   else
-    "NOT IMPLEMENTED EQUATION equation_"
+    error(sourceInfo(), "NOT IMPLEMENTED EQUATION equation_")
 
   let &eqArray += '<%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>, <%\n%>'
   let &varD += addRootsTempArray()
@@ -4889,7 +4889,8 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
 ::=
   let OMC_NO_OPT = if noOpt then 'OMC_DISABLE_OPT<%\n%>' else (match eq case SES_LINEAR(__) then 'OMC_DISABLE_OPT<%\n%>')
   match eq
-  case e as SES_ALGORITHM(statements={})
+  case SES_ALIAS(__) then 'extern void <%symbolName(modelNamePrefix,"eqFunction")%>_<%aliasOf%>(DATA *data, threadData_t *threadData);<%\n%>'
+  case SES_ALGORITHM(statements={})
   then ""
   else
   (
@@ -4936,7 +4937,7 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
   case e as SES_FOR_LOOP(__)
     then equationForLoop(e, context, &varD, &tempeqns)
   else
-    "NOT IMPLEMENTED EQUATION equation_"
+    error(sourceInfo(), "NOT IMPLEMENTED EQUATION equation_")
   let x2 = match eq
   case e as SES_LINEAR(lSystem=ls as LINEARSYSTEM(__), alternativeTearing = SOME(at as LINEARSYSTEM(__))) then
     equationLinearAlternativeTearing(e, context, &varD)

@@ -6898,7 +6898,11 @@ algorithm
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=index), SOME(SimCode.NONLINEARSYSTEM(index=index2)))) then (index,index2);
     case(SimCode.SES_MIXED(index=index)) then (index,0);
     case(SimCode.SES_WHEN(index=index)) then (index,0);
-    else fail();
+    case(SimCode.SES_ALIAS(aliasOf=index)) then (index,0);
+    else
+      algorithm
+        Error.addInternalError(getInstanceName()+" failed", sourceInfo());
+      then fail();
   end match;
 end getIndexBySimCodeEq;
 

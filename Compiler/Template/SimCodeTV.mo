@@ -512,6 +512,10 @@ package SimCode
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
     end SES_FOR_LOOP;
+
+    record SES_ALIAS
+      Integer aliasOf;
+    end SES_ALIAS;
   end SimEqSystem;
 
   uniontype LinearSystem

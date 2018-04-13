@@ -722,6 +722,8 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
     then  equationNonlinearXml(e, context, &varD /*BUFD*/)
   case e as SES_WHEN(__)
     then " "
+  case e as SES_ALIAS(__)
+    then " "
   else
     "NOT IMPLEMENTED EQUATION"
   let &eqs +=

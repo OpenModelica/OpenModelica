@@ -84,6 +84,9 @@ template equationIndex(SimEqSystem eq)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
     then index
+  case SES_ALIAS(__)
+    then aliasOf
+  else error(sourceInfo(), "equationIndex failed")
 end equationIndex;
 
 template equationIndexAlternativeTearing(SimEqSystem eq)

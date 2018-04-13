@@ -94,6 +94,7 @@ import Global;
 import Graph;
 import HashSet;
 import HashSetExp;
+import HashTableSimCodeEqCache;
 import HpcOmSimCode;
 import Inline;
 import List;
@@ -141,6 +142,42 @@ algorithm
   // ((i, ht, literals)) := BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate(dae, findLiteralsHelper, (i, ht, literals));
 end simulationFindLiterals;
 
+public function hashEqSystemMod
+  input SimCode.SimEqSystem eq;
+  input Integer mod;
+  output Integer hash;
+algorithm
+  hash := match eq
+    local
+      DAE.Statement stmt;
+    case SimCode.SES_RESIDUAL() then Expression.hashExpMod(eq.exp, mod);
+    case SimCode.SES_SIMPLE_ASSIGN() then intMod(ComponentReference.hashComponentRefMod(eq.cref,mod)+7*Expression.hashExpMod(eq.exp, mod), mod);
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() then intMod(ComponentReference.hashComponentRefMod(eq.cref,mod)+7*Expression.hashExpMod(eq.exp, mod), mod);
+    case SimCode.SES_ARRAY_CALL_ASSIGN() then intMod(Expression.hashExpMod(eq.lhs, mod)+7*Expression.hashExpMod(eq.exp, mod), mod);
+    case SimCode.SES_ALGORITHM(statements={stmt as DAE.STMT_ASSERT()}) then intMod(Expression.hashExpMod(stmt.cond, mod)+7*Expression.hashExpMod(stmt.msg, mod)+49*Expression.hashExpMod(stmt.level, mod), mod);
+    // Whatever; we're not caching these values anyway
+    else intMod(valueConstructor(eq), mod);
+  end match;
+end hashEqSystemMod;
+
+public function compareEqSystemsEquality "Is true if the equations are the same except the index. If false they might still be the same."
+  input SimCode.SimEqSystem eq1;
+  input SimCode.SimEqSystem eq2;
+  output Boolean b;
+algorithm
+  b := match (eq1,eq2)
+    local
+      DAE.Statement stmt1,stmt2;
+    case (SimCode.SES_SIMPLE_ASSIGN(),SimCode.SES_SIMPLE_ASSIGN())
+      then if 0==ComponentReference.crefCompareGeneric(eq1.cref, eq2.cref) then Expression.expEqual(eq1.exp, eq2.exp) else false;
+    case (SimCode.SES_ARRAY_CALL_ASSIGN(),SimCode.SES_ARRAY_CALL_ASSIGN())
+      then if Expression.expEqual(eq1.lhs, eq2.lhs) then Expression.expEqual(eq1.exp, eq2.exp) else false;
+    case (SimCode.SES_ALGORITHM(statements={stmt1 as DAE.STMT_ASSERT()}),SimCode.SES_ALGORITHM(statements={stmt2 as DAE.STMT_ASSERT()}))
+      then if Expression.expEqual(stmt1.cond, stmt2.cond) then (if Expression.expEqual(stmt1.msg, stmt2.msg) then Expression.expEqual(stmt1.level, stmt2.level) else false) else false;
+    else false;
+  end match;
+end compareEqSystemsEquality;
+
 // =============================================================================
 // section to create SimCode from BackendDAE
 //
@@ -182,7 +219,7 @@ protected
   HashTableCrIListArray.HashTable varToArrayIndexMapping "maps each array-variable to a array of positions";
   HashTableCrILst.HashTable varToIndexMapping "maps each variable to an array position";
   Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
-  Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberofFixedParameters;
+  Integer numberofLinearSys, numberofNonLinearSys, numberofMixedSys, numberofFixedParameters, reasonableSize;
   Option<SimCode.FmiModelStructure> modelStructure = NONE();
   SimCode.BackendMapping backendMapping;
   SimCode.ExtObjInfo extObjInfo;
@@ -237,6 +274,7 @@ protected
   Integer SymEuler_help = 0;
   SimCodeVar.SimVar dtSimVar;
   BackendDAE.Var dtVar;
+  HashTableSimCodeEqCache.HashTable eqCache;
 
   constant Boolean debug = false;
 algorithm
@@ -490,7 +528,6 @@ algorithm
     if Flags.isSet(Flags.EXEC_HASH) then
       print("*** SimCode -> generate cref2simVar hashtable done!: " + realString(clock()) + "\n");
     end if;
-
     // add known inline vars to simVarHT
     if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
       SOME(inlineData) := inInlineData;
@@ -525,6 +562,20 @@ algorithm
     //print("END MAPPING\n\n");
 
     (crefToClockIndexHT, _) := List.fold(listReverse(inBackendDAE.eqs), collectClockedVars, (HashTable.emptyHashTable(), 1));
+
+    reasonableSize := Util.nextPrime(10+2*listLength(allEquations));
+    eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
+
+    (allEquations, eqCache) := aliasSimEqs(allEquations, eqCache);
+    (odeEquations, eqCache) := aliasSimEqSystems(odeEquations, eqCache);
+    (algebraicEquations, eqCache) := aliasSimEqSystems(algebraicEquations, eqCache);
+    (initialEquations, eqCache) := aliasSimEqs(initialEquations, eqCache);
+    (initialEquations_lambda0, eqCache) := aliasSimEqs(initialEquations_lambda0, eqCache);
+    (removedEquations, eqCache) := aliasSimEqs(removedEquations, eqCache);
+    (removedInitialEquations, eqCache) := aliasSimEqs(removedInitialEquations, eqCache);
+    (algorithmAndEquationAsserts, eqCache) := aliasSimEqs(algorithmAndEquationAsserts, eqCache);
+    (jacobianEquations, eqCache) := aliasSimEqs(jacobianEquations, eqCache);
+    (parameterEquations, eqCache) := aliasSimEqs(parameterEquations, eqCache);
 
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
@@ -1503,7 +1554,6 @@ algorithm
     BackendDump.dumpEquationList(eqnlst,"Equations:");
     BackendDump.dumpVarList(varlst,"Variables:");
   end if;
-
   // skip is when equations
   skip := List.mapBoolAnd(eqnlst, BackendEquation.isWhenEquation);
   // skip is discrete
@@ -1694,7 +1744,7 @@ protected function appendSccIdxRange
   input Integer iCurrentIdxStop;
   input Integer iSccIdx;
   input list<tuple<Integer,Integer>> iSccIdc;
-  output list<tuple<Integer,Integer>> oSccIdc;
+  output list<tuple<Integer,Integer>> oSccIdc = iSccIdc;
 algorithm
     for i in iCurrentIdxStop:-1:iCurrentIdxStart loop
       oSccIdc := ((i,iSccIdx))::iSccIdc;
@@ -2021,16 +2071,24 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
   BackendDAE.Equation eqn;
+  BackendDAE.Var v;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := syst;
   eqn := BackendEquation.get(eqns, eqNum);
+  _ := match eqn
+    case BackendDAE.WHEN_EQUATION() then ();
+    else
+      algorithm
+        v := BackendVariable.getVarAt(vars, varNum);
+      then ();
+  end match;
+
   (equation_, ouniqueEqIndex, otempvars) := match eqn
     local
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
       Option<DAE.VariableAttributes> values;
-      BackendDAE.Var v;
-      Integer    uniqueEqIndex;
+      Integer uniqueEqIndex1, uniqueEqIndex;
       list<DAE.Statement> algStatements;
       list<DAE.ComponentRef> conditions, solveCr;
       list<SimCode.SimEqSystem> resEqs;
@@ -2057,10 +2115,10 @@ algorithm
 
     // solved equation
     case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
-      equation
-        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars, varNum);
-        varexp = Expression.crefExp(cr);
-        varexp = if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
+      algorithm
+        cr := v.varName;
+        varexp := Expression.crefExp(cr);
+        varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
       then
         ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex+1, itempvars);
 
@@ -2083,7 +2141,7 @@ algorithm
     // single equation
     case BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)
       algorithm
-        (v as BackendDAE.VAR(varName = cr)) := BackendVariable.getVarAt(vars, varNum);
+        cr := v.varName;
         varexp := Expression.crefExp(cr);
         varexp := if BackendVariable.isStateVar(v) then Expression.expDer(varexp) else varexp;
         BackendDAE.SHARED(functionTree = funcs) := shared;
@@ -2098,11 +2156,11 @@ algorithm
           solveCr := listReverse(solveCr);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
           source := ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-          (eqSystlst, uniqueEqIndex) := List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+          (eqSystlst, uniqueEqIndex1) := List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
           if listEmpty(cons) then
-            (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, exp_, source, eqAttr)}, uniqueEqIndex+1);
+            (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex1, cr, exp_, source, eqAttr)}, uniqueEqIndex1+1);
           else
-            (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex, cr, exp_, source, cons, eqAttr)}, uniqueEqIndex+1);
+            (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex1, cr, exp_, source, cons, eqAttr)}, uniqueEqIndex1+1);
           end if;
           eqSystlst := listAppend(eqSystlst,resEqs);
           tempvars := createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
@@ -2141,7 +2199,6 @@ algorithm
     case BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand, attr=eqAttr)
       algorithm
         varOutput::{} := CheckModel.checkAndGetAlgorithmOutputs(alg, source, crefExpand);
-        v := BackendVariable.getVarAt(vars, varNum);
         // The output variable of the algorithm must be the variable solved
         // for, otherwise we need to solve an inverse problem of an algorithm
         // section.
@@ -7290,7 +7347,7 @@ algorithm
 end dumpSimEqSystemLst;
 
 
-protected function simEqSystemString
+public function simEqSystemString
 "outputs a string representation of the given SimEqSystem.
 author:Waurich TUD 2016-04"
   input SimCode.SimEqSystem eqSysIn;
@@ -7420,6 +7477,11 @@ algorithm
         s = intString(idx) +" FOR-LOOP: "+" for "+ExpressionDump.printExpStr(iterator)+" in ("+ExpressionDump.printExpStr(startIt)+":"+ExpressionDump.printExpStr(endIt)+") loop\n";
         s = s+ComponentReference.printComponentRefStr(cref) + "=" + ExpressionDump.printExpStr(exp)+"[" +DAEDump.daeTypeStr(Expression.typeof(exp))+ "]\n";
         s = s+"end for;";
+    then s;
+
+    case SimCode.SES_ALIAS()
+      equation
+        s = String(eqSysIn.index) +": alias of "+ String(eqSysIn.aliasOf);
     then s;
 
     else
@@ -8889,6 +8951,7 @@ algorithm
     case SimCode.SES_MIXED(index=index) then index;
     case SimCode.SES_WHEN(index=index) then index;
     case SimCode.SES_FOR_LOOP(index=index) then index;
+    case SimCode.SES_ALIAS(index=index) then index;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.simEqSystemIndex failed"});
@@ -10379,6 +10442,14 @@ algorithm
     case (SimCode.SES_FOR_LOOP(), _, a)
       /* TODO: Me */
     then (eq, a);
+
+    case (SimCode.SES_ALIAS(), _, a)
+    then (eq, a);
+
+    else
+      algorithm
+        Error.addInternalError(getInstanceName() + " got unknown equation", sourceInfo());
+      then fail();
   end match;
 end traverseExpsEqSystem;
 
@@ -13060,6 +13131,45 @@ algorithm
     else tree;
   end match;
 end findResources;
+
+function aliasSimEqSystems
+  input output list<list<SimCode.SimEqSystem>> eqs;
+  input output HashTableSimCodeEqCache.HashTable cache;
+algorithm
+  (eqs, cache) := List.mapFold(eqs, aliasSimEqs, cache);
+end aliasSimEqSystems;
+
+function aliasSimEqs
+  input output list<SimCode.SimEqSystem> eqs;
+  input output HashTableSimCodeEqCache.HashTable cache;
+algorithm
+  (eqs, cache) := List.mapFold(eqs, aliasSimEq, cache);
+end aliasSimEqs;
+
+function aliasSimEq
+  input output SimCode.SimEqSystem eq;
+  input output HashTableSimCodeEqCache.HashTable cache;
+protected
+  Integer ix, aliasOf;
+algorithm
+  ix := simEqSystemIndex(eq);
+  if BaseHashTable.hasKey(eq,cache) then
+    aliasOf := BaseHashTable.get(eq,cache);
+    if aliasOf <> ix then
+      eq := SimCode.SES_ALIAS(ix, BaseHashTable.get(eq,cache));
+    end if;
+    return;
+  end if;
+  if match eq
+    case SimCode.SES_SIMPLE_ASSIGN() then true;
+    case SimCode.SES_ARRAY_CALL_ASSIGN() then true;
+    case SimCode.SES_ALGORITHM(statements={DAE.STMT_NORETCALL()}) then true;
+    // TODO: Check if LS / NLS are equal and alias the whole systems?
+    else false;
+  end match then
+    cache := BaseHashTable.add((eq,ix), cache);
+  end if;
+end aliasSimEq;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
