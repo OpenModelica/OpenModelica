@@ -83,7 +83,7 @@ val(h_i[5], 1.0); getErrorString();
 // 10:  (NONLINEAR) index:1 jacobian: false
 // crefs: p
 // 	8:   ($TMP_pureComponentProperties__pTnc8.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
-// 	
+//
 // 	9: $TMP_pureComponentProperties__pTnc8.p_s - p_s (RESIDUAL)
 //
 // ========================================
@@ -103,7 +103,7 @@ val(h_i[5], 1.0); getErrorString();
 // 10:  (NONLINEAR) index:1 jacobian: false
 // crefs: p
 // 	8:   ($TMP_pureComponentProperties__pTnc8.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
-// 	
+//
 // 	9: $TMP_pureComponentProperties__pTnc8.p_s - p_s (RESIDUAL)
 //
 // ========================================
@@ -117,12 +117,12 @@ val(h_i[5], 1.0); getErrorString();
 //
 // initialEquations: (3)
 // ========================================
-// 1: p_s=4000000.0 * time [Real ]
-// 2: T=273.15 + 10.0 * time [Real ]
+// 1: alias of 7
+// 2: alias of 6
 // 5:  (NONLINEAR) index:0 jacobian: false
 // crefs: p
 // 	3:   ($TMP_pureComponentProperties__pTnc3.p_s, delta_hv, delta_hd, h_i) := pureComponentProperties_pTnc(p, T, 5);
-// 	
+//
 // 	4: $TMP_pureComponentProperties__pTnc3.p_s - p_s (RESIDUAL)
 //
 // ========================================
@@ -157,9 +157,9 @@ val(h_i[5], 1.0); getErrorString();
 // algorithmAndEquationAsserts: 
 // ========================================
 // 12:   assert(T >= 0.0, "Variable violating min constraint: 0.0 <= T, has value: " + String(T, "g"));
-// 	
+//
 // 13:   assert(p_s >= 0.0, "Variable violating min constraint: 0.0 <= p_s, has value: " + String(p_s, "g"));
-// 	
+//
 //
 // equationsForZeroCrossings: 
 // ========================================
@@ -217,7 +217,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 7.673716940501573e-317
+// 1.791562663333761e-316
 // ""
 // 0.0
 // ""
@@ -233,7 +233,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 7.698554608649304e-317
+// 1.794046430148534e-316
 // ""
 // 0.0
 // ""
