@@ -9823,7 +9823,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
     IF EQUATIONS ARE NOT IMPLEMENTED
     >>
   else
-    "NOT IMPLEMENTED EQUATION 2"
+    error(sourceInfo(),"NOT IMPLEMENTED EQUATION 2")
 end equationString;
 
 template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text method)
@@ -9879,7 +9879,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       then
         equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     else
-      "NOT IMPLEMENTED EQUATION"
+      error(sourceInfo(),"NOT IMPLEMENTED EQUATION")
   end match
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
   let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", '(*measureTimeProfileBlocksArray)[<%ix_str_array%>]', 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""

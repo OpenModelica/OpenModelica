@@ -563,19 +563,26 @@ algorithm
 
     (crefToClockIndexHT, _) := List.fold(listReverse(inBackendDAE.eqs), collectClockedVars, (HashTable.emptyHashTable(), 1));
 
+    execStat("simCode: some other stuff during SimCode phase");
+
     reasonableSize := Util.nextPrime(10+2*listLength(allEquations));
     eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
 
-    (allEquations, eqCache) := aliasSimEqs(allEquations, eqCache);
-    (odeEquations, eqCache) := aliasSimEqSystems(odeEquations, eqCache);
-    (algebraicEquations, eqCache) := aliasSimEqSystems(algebraicEquations, eqCache);
-    (initialEquations, eqCache) := aliasSimEqs(initialEquations, eqCache);
-    (initialEquations_lambda0, eqCache) := aliasSimEqs(initialEquations_lambda0, eqCache);
-    (removedEquations, eqCache) := aliasSimEqs(removedEquations, eqCache);
-    (removedInitialEquations, eqCache) := aliasSimEqs(removedInitialEquations, eqCache);
-    (algorithmAndEquationAsserts, eqCache) := aliasSimEqs(algorithmAndEquationAsserts, eqCache);
-    (jacobianEquations, eqCache) := aliasSimEqs(jacobianEquations, eqCache);
-    (parameterEquations, eqCache) := aliasSimEqs(parameterEquations, eqCache);
+    if Config.simCodeTarget() <> "Cpp" then
+      // Alias equations to other equations.
+      // The C++ codegen does things differently and will not handle this
+      (allEquations, eqCache) := aliasSimEqs(allEquations, eqCache);
+      (odeEquations, eqCache) := aliasSimEqSystems(odeEquations, eqCache);
+      (algebraicEquations, eqCache) := aliasSimEqSystems(algebraicEquations, eqCache);
+      (initialEquations, eqCache) := aliasSimEqs(initialEquations, eqCache);
+      (initialEquations_lambda0, eqCache) := aliasSimEqs(initialEquations_lambda0, eqCache);
+      (removedEquations, eqCache) := aliasSimEqs(removedEquations, eqCache);
+      (removedInitialEquations, eqCache) := aliasSimEqs(removedInitialEquations, eqCache);
+      (algorithmAndEquationAsserts, eqCache) := aliasSimEqs(algorithmAndEquationAsserts, eqCache);
+      (jacobianEquations, eqCache) := aliasSimEqs(jacobianEquations, eqCache);
+      (parameterEquations, eqCache) := aliasSimEqs(parameterEquations, eqCache);
+      execStat("simCode: alias equations");
+    end if;
 
     simCode := SimCode.SIMCODE(modelInfo,
                               {}, // Set by the traversal below...
