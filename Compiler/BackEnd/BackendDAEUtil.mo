@@ -7447,6 +7447,7 @@ algorithm
   end for;
 
   backendDAE := setDAEGlobalKnownVars(backendDAE, globalKnownVars_sorted);
+  ExecStat.execStat("sorting global known variables");
 end sortGlobalKnownVarsInDAE;
 
 protected function createGlobalKnownVarsEquations
