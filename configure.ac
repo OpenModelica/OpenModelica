@@ -841,7 +841,6 @@ SimulationRuntime/cpp/Makefile.env \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/opc/ua/Makefile \
 SimulationRuntime/fmi/export/buildproject/Makefile \
-SimulationRuntime/java_interface/Makefile \
 SimulationRuntime/ParModelica/Makefile \
 SimulationRuntime/ParModelica/auto/Makefile \
 SimulationRuntime/ParModelica/explicit/openclrt/Makefile \

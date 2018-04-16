@@ -257,10 +257,6 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) so
 	   ../fmi/export/fmi1/fmu1_model_interface.c $(builddir_inc)/c/fmi1
 	cp -p ../fmi/export/fmi2/*.h \
 	   ../fmi/export/fmi2/fmu2_model_interface.c $(builddir_inc)/c/fmi2
-	# copy java interface stuff
-	@$(MAKE) -C ../java_interface -f $(LIBMAKEFILE) && \
-	$(MAKE) -C ../java_interface -f $(LIBMAKEFILE) install || \
-	$(MAKE) -C ../java_interface -f $(LIBMAKEFILE) install-nomodelica
 
 clean:
 	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o
