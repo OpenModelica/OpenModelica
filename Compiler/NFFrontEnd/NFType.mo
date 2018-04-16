@@ -368,6 +368,16 @@ public
     end match;
   end isTuple;
 
+  function isUnknown
+    input Type ty;
+    output Boolean isUnknown;
+  algorithm
+    isUnknown := match ty
+      case UNKNOWN() then true;
+      else false;
+    end match;
+  end isUnknown;
+
   function firstTupleType
     input Type ty;
     output Type outTy;

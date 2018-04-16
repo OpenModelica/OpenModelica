@@ -2060,15 +2060,15 @@ function matchBinding
   input output Binding binding;
   input Type componentType;
   input String name;
-  input InstNode component;
+  input InstNode parent;
 algorithm
   () := match binding
     local
       MatchKind ty_match;
       Expression exp;
       Type ty, comp_ty;
-      InstNode parent;
-      list<Dimension> dims;
+      InstNode next_parent;
+      list<list<Dimension>> dims;
       Integer binding_level;
 
     case Binding.TYPED_BINDING()
@@ -2076,14 +2076,16 @@ algorithm
         comp_ty := componentType;
         binding_level := BindingOrigin.level(binding.origin);
 
-        if binding_level > 0 then
-          parent := component;
+        if not binding.isEach and binding_level > 0 then
+          next_parent := parent;
+          dims := {};
 
-          for i in 1:InstNode.level(component) - binding_level loop
-            parent := InstNode.parent(parent);
-            dims := Type.arrayDims(InstNode.getType(parent));
-            comp_ty := Type.liftArrayLeftList(comp_ty, dims);
+          for i in 1:binding_level loop
+            dims := Type.arrayDims(InstNode.getType(next_parent)) :: dims;
+            next_parent := InstNode.derivedParent(next_parent);
           end for;
+
+          comp_ty := Type.liftArrayLeftList(comp_ty, List.flatten(dims));
         end if;
 
         (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
@@ -2094,7 +2096,7 @@ algorithm
              Type.toString(binding.bindingType)}, Binding.getInfo(binding));
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.origin);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.origin, binding.isEach);
         end if;
       then
         ();

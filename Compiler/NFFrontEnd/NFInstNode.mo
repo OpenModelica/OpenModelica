@@ -204,7 +204,6 @@ uniontype InstNode
     String name;
     Visibility visibility;
     Pointer<Component> component;
-    Integer level;
     InstNode parent "The instance that this component is part of.";
   end COMPONENT_NODE;
 
@@ -264,7 +263,7 @@ uniontype InstNode
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := COMPONENT_NODE(name, Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Component.new(definition)), 0, parent);
+      Pointer.create(Component.new(definition)), parent);
   end newComponent;
 
   function newExtends
@@ -289,7 +288,7 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component), 0, parent);
+    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component), parent);
   end fromComponent;
 
   function isClass
@@ -434,6 +433,18 @@ uniontype InstNode
     end match;
   end parent;
 
+  function derivedParent
+    input InstNode node;
+    output InstNode parent;
+  algorithm
+    parent := match node
+      case CLASS_NODE() then getDerivedNode(node.parentScope);
+      case COMPONENT_NODE() then getDerivedNode(node.parent);
+      case IMPLICIT_SCOPE() then getDerivedNode(node.parentScope);
+      else EMPTY_NODE();
+    end match;
+  end derivedParent;
+
   function parentScope
     "Returns the parent scope of a node. In the case of a class this is simply
      the enclosing class. In the case of a component it is the enclosing class of
@@ -493,7 +504,6 @@ uniontype InstNode
       case COMPONENT_NODE()
         algorithm
           node.parent := parent;
-          node.level := level(parent) + 1;
         then
           ();
 
@@ -543,14 +553,22 @@ uniontype InstNode
     output Class cls;
   algorithm
     cls := match node
-      local
-        InstNode parent;
-
-      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = parent)) then getDerivedClass(parent);
-      case CLASS_NODE() then Pointer.access(node.cls);
-      case COMPONENT_NODE() then getDerivedClass(Component.classInstance(Pointer.access(node.component)));
+      case CLASS_NODE() then getClass(getDerivedNode(node));
+      case COMPONENT_NODE()
+        then getClass(getDerivedNode(Component.classInstance(Pointer.access(node.component))));
     end match;
   end getDerivedClass;
+
+  function getDerivedNode
+    input InstNode node;
+    output InstNode derived;
+  algorithm
+    derived := match node
+      case CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(parent = derived))
+        then getDerivedNode(derived);
+      else node;
+    end match;
+  end getDerivedNode;
 
   function updateClass
     input Class cls;
@@ -1154,16 +1172,6 @@ uniontype InstNode
       else ();
     end match;
   end protectComponent;
-
-  function level
-    input InstNode node;
-    output Integer level;
-  algorithm
-    level := match node
-      case COMPONENT_NODE() then node.level;
-      else 0;
-    end match;
-  end level;
 
   function getModifier
     input InstNode node;

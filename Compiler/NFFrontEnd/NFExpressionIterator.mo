@@ -109,7 +109,7 @@ public
   algorithm
     iterator := match binding
       case Binding.TYPED_BINDING()
-        then if BindingOrigin.isEach(binding.origin) or BindingOrigin.isFromClass(binding.origin) then
+        then if Binding.isEach(binding) or BindingOrigin.isFromClass(binding.origin) then
           EACH_ITERATOR(binding.bindingExp) else fromExp(binding.bindingExp);
 
       case Binding.FLAT_BINDING()

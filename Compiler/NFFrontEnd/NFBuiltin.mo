@@ -44,7 +44,7 @@ public
 import Absyn;
 import SCode;
 import Binding = NFBinding;
-import BindingOrigin = NFBindingOrigin;
+import NFBindingOrigin;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import NFComponent.Component;
@@ -175,12 +175,11 @@ constant InstNode TIME =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       REAL_NODE,
       Type.REAL(),
-      Binding.UNBOUND(),
-      Binding.UNBOUND(),
+      Binding.UNBOUND(NONE()),
+      Binding.UNBOUND(NONE()),
       NFComponent.INPUT_ATTR,
       NONE(),
       Absyn.dummyInfo)),
-    0,
     InstNode.EMPTY_NODE());
 
 constant ComponentRef TIME_CREF = ComponentRef.CREF(TIME, {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY());

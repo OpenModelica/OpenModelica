@@ -668,8 +668,8 @@ uniontype Call
           // Create a range binding on which we will iterate to vectorize.
           ty := Type.ARRAY(Type.INTEGER(), {dim});
           exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Expression.INTEGER(Dimension.size(dim)));
-          origin := BindingOrigin.create(false, 0, NFBindingOrigin.ElementType.COMPONENT, info);
-          bind := Binding.TYPED_BINDING(exp, ty, Variability.CONSTANT, origin);
+          origin := BindingOrigin.create(0, NFBindingOrigin.ElementType.COMPONENT, info);
+          bind := Binding.TYPED_BINDING(exp, ty, Variability.CONSTANT, origin, false);
 
           // Add an iterator to the call scope.
           (iter_scope, iter) := Inst.addIteratorToScope("$i" + intString(i), bind, iter_scope, Type.INTEGER());

@@ -118,5 +118,32 @@ public
     end match;
   end isFunction;
 
+  function isType
+    input Restriction res;
+    output Boolean isType;
+  algorithm
+    isType := match res
+      case TYPE() then true;
+      else false;
+    end match;
+  end isType;
+
+  function toString
+    input Restriction res;
+    output String str;
+  algorithm
+    str := match res
+      case CLASS() then "class";
+      case ENUMERATION() then "enumeration";
+      case EXTERNAL_OBJECT() then "ExternalObject";
+      case FUNCTION() then "function";
+      case MODEL() then "model";
+      case OPERATOR() then "operator";
+      case RECORD() then "record";
+      case TYPE() then "type";
+      else "unknown";
+    end match;
+  end toString;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFRestriction;

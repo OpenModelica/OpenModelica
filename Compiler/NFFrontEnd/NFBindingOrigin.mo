@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFBindingOrigin
   import NFModifier.ModifierScope;
+  import NFInstNode.InstNode;
 
 protected
   import BindingOrigin = NFBindingOrigin;
@@ -41,28 +42,23 @@ public
   record ORIGIN
     Integer level;
     ElementType ty;
+    Option<InstNode> node;
     SourceInfo info;
   end ORIGIN;
 
   function create
-    input Boolean eachPrefix;
     input Integer level;
     input ElementType ty;
     input SourceInfo info;
     output BindingOrigin origin;
   algorithm
-    origin := ORIGIN(if eachPrefix then -level else level, ty, info);
+    origin := ORIGIN(level, ty, NONE(), info);
   end create;
 
   function level
     input BindingOrigin origin;
     output Integer level = origin.level;
   end level;
-
-  function isEach
-    input BindingOrigin origin;
-    output Boolean isEach = origin.level < 0;
-  end isEach;
 
   function info
     input BindingOrigin origin;
@@ -77,6 +73,13 @@ public
   algorithm
     fromClass := ty == ElementType.CLASS;
   end isFromClass;
+
+  function setNode
+    input InstNode node;
+    input output BindingOrigin origin;
+  algorithm
+    origin.node := SOME(node);
+  end setNode;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFBindingOrigin;

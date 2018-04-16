@@ -75,43 +75,43 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
 
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.INTEGER(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
+  Type.INTEGER(), Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   Visibility.PUBLIC,
-  Pointer.createImmutable(INT_COMPONENT), 0, InstNode.EMPTY_NODE());
+  Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.REAL(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
+  Type.REAL(), Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   Visibility.PUBLIC,
-  Pointer.createImmutable(REAL_COMPONENT), 0, InstNode.EMPTY_NODE());
+  Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.BOOLEAN(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
+  Type.BOOLEAN(), Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   Visibility.PUBLIC,
-  Pointer.createImmutable(BOOL_COMPONENT), 0, InstNode.EMPTY_NODE());
+  Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.STRING(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
+  Type.STRING(), Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   Visibility.PUBLIC,
-  Pointer.createImmutable(STRING_COMPONENT), 0, InstNode.EMPTY_NODE());
+  Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE());
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
-  Type.ENUMERATION_ANY(), Binding.UNBOUND(), Binding.UNBOUND(), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
+  Type.ENUMERATION_ANY(), Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()), NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   Visibility.PUBLIC,
-  Pointer.createImmutable(ENUM_COMPONENT), 0, InstNode.EMPTY_NODE());
+  Pointer.createImmutable(ENUM_COMPONENT), InstNode.EMPTY_NODE());
 
 // Integer(e)
 constant array<NFInstNode.CachedData> EMPTY_NODE_CACHE = listArrayLiteral({

@@ -106,7 +106,7 @@ algorithm
     ty := Type.arrayElementType(ty);
     (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
 
-    if Binding.isBound(binding) and not Binding.isEach(binding) then
+    if Binding.isBound(binding) then
       binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
 
       for cr in crefs loop

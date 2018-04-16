@@ -164,8 +164,8 @@ public
     input SCode.Mod mod;
     input String name;
     input ModifierScope modScope;
-    input Integer level;
     input InstNode scope;
+    input Integer level = 0;
     output Modifier newMod;
   algorithm
     newMod := match mod
@@ -186,8 +186,8 @@ public
           is_each := SCode.eachBool(mod.eachPrefix);
           binding := Binding.fromAbsyn(mod.binding, is_each, level,
              scope, mod.info, ModifierScope.toElementType(modScope));
-          lvl := if is_each then level + 1 else level;
-          submod_lst := list((m.ident, createSubMod(m, modScope, lvl, scope)) for m in mod.subModLst);
+          lvl := if is_each then 1 else level + 1;
+          submod_lst := list((m.ident, createSubMod(m, modScope, scope, lvl)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -237,7 +237,6 @@ public
 
   function fromElement
     input SCode.Element element;
-    input Integer level;
     input InstNode scope;
     output Modifier mod;
   algorithm
@@ -247,19 +246,19 @@ public
         SCode.Mod smod;
 
       case SCode.EXTENDS()
-        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), level, scope);
+        then create(element.modifications, "", ModifierScope.EXTENDS(element.baseClassPath), scope, -1);
 
       case SCode.COMPONENT()
         algorithm
           smod := patchElementModFinal(element.prefixes, element.info, element.modifications);
         then
-          create(smod, element.name, ModifierScope.COMPONENT(element.name), level, scope);
+          create(smod, element.name, ModifierScope.COMPONENT(element.name), scope);
 
       case SCode.CLASS(classDef = def as SCode.DERIVED())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), level, scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
 
       case SCode.CLASS(classDef = def as SCode.CLASS_EXTENDS())
-        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), level, scope);
+        then create(def.modifications, element.name, ModifierScope.CLASS(element.name), scope);
 
       else NOMOD();
     end match;
@@ -282,7 +281,7 @@ public
     redecl_mod := SCode.Mod.REDECL(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), element);
     redecl_mod := SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(),
       {SCode.SubMod.NAMEMOD(name, redecl_mod)}, NONE(), SCode.elementInfo(element));
-    mod := create(redecl_mod, name, mod_scope, level, scope);
+    mod := create(redecl_mod, name, mod_scope, scope);
   end makeRedeclareMod;
 
   function patchElementModFinal
@@ -363,7 +362,7 @@ public
   algorithm
     binding := match modifier
       case MODIFIER() then modifier.binding;
-      else Binding.UNBOUND();
+      else Binding.UNBOUND(NONE());
     end match;
   end binding;
 
@@ -470,39 +469,41 @@ public
     end match;
   end isEach;
 
-  function checkEach
-    input Modifier mod;
-    input Boolean isScalar;
-    input String elementName;
+  function map
+    input output Modifier mod;
+    input FuncT func;
+
+    partial function FuncT
+      input String name;
+      input output Modifier submod;
+    end FuncT;
   algorithm
-    _ := match mod
-      case MODIFIER() guard isScalar
+    () := match mod
+      case MODIFIER()
         algorithm
-          _ := ModTable.forEach(mod.subModifiers,
-           function checkEachBinding(elementName = elementName));
+          mod.subModifiers := ModTable.map(mod.subModifiers, func);
         then
           ();
 
       else ();
     end match;
-  end checkEach;
+  end map;
 
-  function checkEachBinding
-    input String modName;
-    input Modifier mod;
-    input String elementName;
+  function setBindingOriginNode
+    input InstNode node;
+    input String name;
+    input output Modifier mod;
   algorithm
     _ := match mod
-      case MODIFIER() guard Binding.isEach(mod.binding)
+      case MODIFIER() guard Binding.isBound(mod.binding)
         algorithm
-          Error.addSourceMessage(Error.EACH_ON_NON_ARRAY,
-            {elementName}, mod.info);
+          mod.binding := Binding.setOriginNode(node, mod.binding);
         then
           ();
 
       else ();
     end match;
-  end checkEachBinding;
+  end setBindingOriginNode;
 
   function toString
     input Modifier mod;
@@ -538,9 +539,9 @@ protected
   function createSubMod
     input SCode.SubMod subMod;
     input ModifierScope modScope;
-    input Integer level;
     input InstNode scope;
-    output Modifier mod = create(subMod.mod, subMod.ident, modScope, level, scope);
+    input Integer level;
+    output Modifier mod = create(subMod.mod, subMod.ident, modScope, scope, level);
   end createSubMod;
 
   function checkFinalOverride

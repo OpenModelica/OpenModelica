@@ -295,10 +295,10 @@ algorithm
     eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
       ElementSource.createElementSource(info));
     sections := Sections.prependEquation(eq, sections);
-    binding := Binding.UNBOUND();
+    binding := Binding.UNBOUND(NONE());
   end if;
 
-  ty_attrs := list(flattenTypeAttribute(m, prefix, node) for m in typeAttrs);
+  ty_attrs := list(flattenTypeAttribute(m, name, node) for m in typeAttrs);
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info) :: vars;
 end flattenSimpleComponent;
 
@@ -364,7 +364,7 @@ algorithm
       eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
         ElementSource.createElementSource(InstNode.info(node)));
       sections := Sections.prependEquation(eq, sections);
-      opt_binding := SOME(Binding.UNBOUND());
+      opt_binding := SOME(Binding.UNBOUND(NONE()));
     else
       opt_binding := SOME(flattenBinding(binding, prefix, node));
     end if;
@@ -427,8 +427,8 @@ algorithm
       algorithm
         binding_level := BindingOrigin.level(binding.origin);
 
-        if binding_level > 0 then
-          subs := List.flatten(ComponentRef.subscriptsN(prefix, InstNode.level(component) - binding_level));
+        if not binding.isEach and binding_level > 0 then
+          subs := List.flatten(ComponentRef.subscriptsN(prefix, binding_level));
           binding.bindingExp := Expression.applySubscripts(subs, binding.bindingExp);
         end if;
       then

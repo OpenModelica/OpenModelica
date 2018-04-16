@@ -529,8 +529,8 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              prop_dims := InstNode.countDimensions(InstNode.parent(component),
-                InstNode.level(component) - BindingOrigin.level(b.origin));
+              prop_dims := if b.isEach then 0 else BindingOrigin.level(b.origin);
+              prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
               dim := typeExpDim(b.bindingExp, index + prop_dims,
                 intBitOr(origin, ExpOrigin.DIMENSION), info);
             then
@@ -539,8 +539,8 @@ algorithm
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
             algorithm
-              prop_dims := InstNode.countDimensions(InstNode.parent(component),
-                InstNode.level(component) - BindingOrigin.level(b.origin));
+              prop_dims := if b.isEach then 0 else BindingOrigin.level(b.origin);
+              prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
               dim := nthDimensionBoundsChecked(b.bindingType, index + prop_dims);
             then
               dim;
@@ -621,13 +621,14 @@ algorithm
     case Component.TYPED_COMPONENT()
       algorithm
         name := InstNode.name(component);
+        checkBindingEach(c.binding, not Type.isArray(c.ty), InstNode.parent(component));
         binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.BINDING));
         dirty := not referenceEq(binding, c.binding);
 
         // If the binding changed during typing it means it was an untyped
         // binding which is now typed, and it needs to be type checked.
         if dirty then
-          binding := TypeCheck.matchBinding(binding, c.ty, name, node);
+          binding := TypeCheck.matchBinding(binding, c.ty, name, InstNode.derivedParent(node));
           comp_var := Prefixes.effectiveVariability(Component.variability(c));
           bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
 
@@ -699,7 +700,7 @@ algorithm
         info := Binding.getInfo(binding);
         (exp, ty, var) := typeExp(exp, origin, info);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.origin);
+        Binding.TYPED_BINDING(exp, ty, var, binding.origin, binding.isEach);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -712,6 +713,30 @@ algorithm
 
   end match;
 end typeBinding;
+
+function checkBindingEach
+  input Binding binding;
+  input Boolean isScalar;
+  input InstNode element;
+protected
+  BindingOrigin origin;
+  InstNode parent = InstNode.getDerivedNode(element);
+algorithm
+  if Binding.isEach(binding) then
+    origin := Binding.getOrigin(binding);
+
+    for i in 1:origin.level loop
+      if Type.isArray(InstNode.getType(parent)) then
+        return;
+      end if;
+
+      parent := InstNode.derivedParent(parent);
+    end for;
+
+    Error.addSourceMessage(Error.EACH_ON_NON_ARRAY,
+      {InstNode.name(InstNode.getDerivedNode(element))}, Binding.getInfo(binding));
+  end if;
+end checkBindingEach;
 
 function typeComponentCondition
   input output Binding condition;
@@ -796,6 +821,7 @@ protected
   Binding binding;
   BindingOrigin binding_origin;
   Type expected_ty, comp_ty;
+  InstNode mod_parent;
 algorithm
   () := match attribute
     // Normal modifier with no submodifiers.
@@ -805,19 +831,16 @@ algorithm
         expected_ty := attrTyFn(name, ty, Modifier.info(attribute));
         binding_origin := Binding.getOrigin(binding);
 
-        // Add the component's dimensions to the expected type, unless the
-        // binding is declared 'each'.
-        if not (BindingOrigin.isEach(binding_origin) or BindingOrigin.isFromClass(binding_origin)) then
-          comp_ty := InstNode.getType(component);
-
-          if Type.isArray(comp_ty) then
-            expected_ty := Type.ARRAY(expected_ty, Type.arrayDims(comp_ty));
-          end if;
+        if isSome(binding_origin.node) then
+          SOME(mod_parent) := binding_origin.node;
+        else
+          mod_parent := component;
         end if;
 
         // Type and type check the attribute.
+        checkBindingEach(binding, true, mod_parent);
         binding := typeBinding(binding, origin);
-        binding := TypeCheck.matchBinding(binding, expected_ty, name, component);
+        binding := TypeCheck.matchBinding(binding, expected_ty, name, mod_parent);
 
         // Check the variability. All builtin attributes have parameter variability.
         if Binding.variability(binding) > Variability.PARAMETER then
@@ -865,7 +888,7 @@ algorithm
         exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
         exp := SimplifyExp.simplifyExp(exp);
       then
-        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.origin);
+        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.origin, binding.isEach);
 
     else
       algorithm
@@ -1389,6 +1412,12 @@ algorithm
       Type node_ty;
       list<Subscript> subs;
       Variability subs_var, rest_var;
+
+    case ComponentRef.CREF(origin = Origin.SCOPE)
+      algorithm
+        cref.ty := InstNode.getType(cref.node);
+      then
+        (cref, Variability.CONSTANT);
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm

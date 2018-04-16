@@ -418,7 +418,10 @@ uniontype Class
     output Type ty;
   algorithm
     ty := match cls
-      case DERIVED_CLASS() then getType(InstNode.getClass(cls.baseClass), clsNode);
+      case DERIVED_CLASS()
+        then Type.liftArrayLeftList(
+               getType(InstNode.getClass(cls.baseClass), clsNode),
+               cls.dims);
       case INSTANCED_CLASS() then cls.ty;
       case PARTIAL_BUILTIN() then cls.ty;
       case INSTANCED_BUILTIN()

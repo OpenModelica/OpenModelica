@@ -490,10 +490,19 @@ public
     output DAE.ComponentRef dcref;
   algorithm
     dcref := match cref
+      local
+        Type ty;
+
       case EMPTY() then accumCref;
       case CREF()
         algorithm
-          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(cref.node), Type.toDAE(cref.ty),
+          // If the type is unknown here it's likely because the cref part is
+          // from a scope prefix, which the typing doesn't bother typing since
+          // that introduces cycles in the typing. We could patch the crefs
+          // after the typing, but the new frontend doesn't use these types anyway.
+          // So instead we just fetch the type of the node if the type is unknown.
+          ty := if Type.isUnknown(cref.ty) then InstNode.getType(cref.node) else cref.ty;
+          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(cref.node), Type.toDAE(ty),
             list(Subscript.toDAE(s) for s in cref.subscripts), accumCref);
         then
           toDAE_impl(cref.restCref, dcref);
@@ -566,7 +575,7 @@ public
         list<Dimension> dims;
         list<list<Subscript>> subs;
 
-      case CREF()
+      case CREF(ty = Type.ARRAY())
         algorithm
           dims := Type.arrayDims(cref.ty);
           subs := Subscript.expandList(cref.subscripts, dims);

@@ -128,8 +128,8 @@ algorithm
   def_ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
 
   // Create the output record element, using the node created above as parent.
-  out_comp := Component.UNTYPED_COMPONENT(node, listArray({}), Binding.UNBOUND(),
-    Binding.UNBOUND(), NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
+  out_comp := Component.UNTYPED_COMPONENT(node, listArray({}), Binding.UNBOUND(NONE()),
+    Binding.UNBOUND(NONE()), NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(node), out_comp, def_ctor_node);
 
   // Make a record constructor class and update the node with it.
