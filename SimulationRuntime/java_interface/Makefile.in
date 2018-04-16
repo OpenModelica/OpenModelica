@@ -6,7 +6,7 @@ include Makefile.common
 modelica_java.jar: $(java_sources)
 	@echo "* Compiling modelica_java.jar"
 	@rm -rf bin-jar; mkdir bin-jar
-	@"$(JAVAC)" -source 6 -cp "$(antlr)" -d bin-jar $(java_sources)
+	@"$(JAVAC)" -encoding utf8 -source 6 -cp "$(antlr)" -d bin-jar $(java_sources)
 	@$(JAR) cf modelica_java.jar $(java_sources:src/%=-C src %) $(resources:src/%=-C src %) -C bin-jar . || (rm $@ && false)
 test: $(java_sources)
 	rm -rf bin-test; mkdir bin-test
