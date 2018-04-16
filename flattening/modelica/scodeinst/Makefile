@@ -37,6 +37,7 @@ BuiltinAttribute11.mo \
 BuiltinAttribute12.mo \
 BuiltinAttribute14.mo \
 BuiltinAttribute15.mo \
+BuiltinAttribute16.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -203,6 +204,9 @@ DuplicateMod4.mo \
 DuplicateMod5.mo \
 Each1.mo \
 Each2.mo \
+Each3.mo \
+Each4.mo \
+Each5.mo \
 EmptyArray1.mo \
 EncapsulatingInst1.mo \
 End1.mo \
@@ -245,6 +249,7 @@ ExtendSections.mo \
 ExtendSelf1.mo \
 ExtendSelf2.mo \
 ExtendSelf3.mo \
+ExtendsMod1.mo \
 ExtendsShort1.mo \
 ExtendsShort2.mo \
 ExtendsVisibility1.mo \
@@ -474,7 +479,6 @@ ModClass2.mo \
 ModClass3.mo \
 ModClass4.mo \
 ModClass5.mo \
-ModClass6.mo \
 ModScope1.mo \
 MultiInheritanceRedeclare1.mo \
 MultiInheritanceRedeclare2.mo \
@@ -607,6 +611,7 @@ TypeDim1.mo \
 TypeDim2.mo \
 TypeDim3.mo \
 TypeDim4.mo \
+TypeDimNonType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
 TypenameInvalid3.mo \
@@ -630,6 +635,7 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+ModClass6.mo \
 IfExpression6.mo \
 TupleOperation3.mo \
 RedeclareConstant1.mo \

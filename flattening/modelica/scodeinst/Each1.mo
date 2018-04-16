@@ -16,6 +16,6 @@ end Each1;
 // class Each1
 //   Real n.r = 1.0;
 // end Each1;
-// [flattening/modelica/scodeinst/Each1.mo:12:12-12:19:writable] Error: 'each' used when modifying non-array element n.
+// [flattening/modelica/scodeinst/Each1.mo:12:12-12:19:writable] Warning: 'each' used when modifying non-array element n.
 //
 // endResult
