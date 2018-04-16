@@ -565,10 +565,10 @@ algorithm
 
     execStat("simCode: some other stuff during SimCode phase");
 
-    reasonableSize := Util.nextPrime(10+2*listLength(allEquations));
-    eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
-
     if Config.simCodeTarget() <> "Cpp" then
+      reasonableSize := Util.nextPrime(10+integer(1.4*(BackendDAEUtil.equationArraySizeBDAE(inBackendDAE)+BackendDAEUtil.equationArraySizeBDAE(inInitDAE)+listLength(parameterEquations))));
+      eqCache := HashTableSimCodeEqCache.emptyHashTableSized(reasonableSize);
+
       // Alias equations to other equations.
       // The C++ codegen does things differently and will not handle this
       (allEquations, eqCache) := aliasSimEqs(allEquations, eqCache);
