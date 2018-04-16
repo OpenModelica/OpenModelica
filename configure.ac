@@ -417,7 +417,7 @@ else
 fi
 
 AC_ARG_VAR(RUNTIMECC, [Selects a compiler to be used to compile generated code. It is more important to compile fast than to generate fast code for the runtime compiler.])
-AC_ARG_VAR(RUNTIMECFLAGS, [CFLAGS for the selected runtime compiler (defaults to -O0 -falign-functions -march=native -mfpmath=sse -fPIC as long as neither gives warnings to the CC). Note that heavy optimisations may cause the run-time to be faster while increasing compile-time. -O0 is often best.])
+AC_ARG_VAR(RUNTIMECFLAGS, [CFLAGS for the selected runtime compiler (defaults to -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -fPIC as long as neither gives warnings to the CC). Note that heavy optimisations may cause the run-time to be faster while increasing compile-time. -O0 is often best.])
 
 CC_OLD="$CC"
 CFLAGS_OLD="$CFLAGS"
@@ -432,7 +432,7 @@ if test -z "$RUNTIMECFLAGS"; then
   AC_TRY_LINK([], [return 0;], [AC_MSG_RESULT($CC ok);],[AC_MSG_ERROR($CC failed)])
   CFLAGS="$FPIC"
   AC_MSG_CHECKING([runtime compiler CFLAGS])
-  for flag in -falign-functions -mfpmath=sse; do
+  for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers; do
     RUNTIMECFLAGS="$CFLAGS"
     CFLAGS="$RUNTIMECFLAGS $flag -Werror"
     AC_TRY_LINK([], [return 0;], [CFLAGS="$RUNTIMECFLAGS $flag"],[CFLAGS="$RUNTIMECFLAGS"])
