@@ -20,7 +20,7 @@ end FuncUnknownDim2;
 //   input Integer n;
 //   output Real[:] x;
 // algorithm
-//   x := /*Real[n]*/(ones(n));
+//   x := /*Real[n]*/(fill(1, n));
 // end f;
 //
 // class FuncUnknownDim2
