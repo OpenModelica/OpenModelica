@@ -614,6 +614,12 @@ uniontype Call
     end for;
 
     ty := Function.returnType(func);
+
+    // Hack to fix return type of some builtin functions.
+    if Type.isPolymorphic(ty) then
+      ty := getSpecialReturnType(func, args);
+    end if;
+
     if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
       ty := evaluateCallType(ty, func, args);
     end if;
@@ -702,7 +708,6 @@ uniontype Call
      end match;
 
   end vectorizeCall;
-
 
   function evaluateCallType
     input output Type ty;
@@ -801,6 +806,29 @@ uniontype Call
       else exp;
     end match;
   end evaluateCallTypeDimExp;
+
+  function getSpecialReturnType
+    input Function fn;
+    input list<Expression> args;
+    output Type ty;
+  algorithm
+    ty := match fn.path
+      case Absyn.IDENT("min")
+        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
+      case Absyn.IDENT("max")
+        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
+      case Absyn.IDENT("sum")
+        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
+      case Absyn.IDENT("product")
+        then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + ": unhandled case for " +
+            Absyn.pathString(fn.path), sourceInfo());
+        then
+          fail();
+    end match;
+  end getSpecialReturnType;
 
   function typeArgs
     input output Call call;
@@ -1736,15 +1764,13 @@ protected
     output Variability var;
   protected
     Call argtycall;
-    Function fn;
-    list<TypedArg> args;
-    TypedArg start,interval;
   algorithm
-    argtycall as ARG_TYPED_CALL(_, args, _) := typeNormalCall(call, origin, info);
+    argtycall := typeNormalCall(call, origin, info);
     argtycall := matchTypedNormalCall(argtycall, origin, info);
-    callExp := Expression.CALL(unboxArgs(argtycall));
-    ty := Type.arrayElementType(Util.tuple32(listHead(args)));
+    argtycall := unboxArgs(argtycall);
+    ty := getType(argtycall);
     var := variability(argtycall);
+    callExp := Expression.CALL(argtycall);
     // TODO: check basic type in two argument overload.
     // check arrays of simple types in one argument overload.
     // fix return type.
@@ -1759,22 +1785,14 @@ protected
     output Variability var;
   protected
     Call argtycall;
-    Function fn;
-    Expression arg;
   algorithm
     // TODO: Rewrite this whole thing.
     argtycall := typeNormalCall(call, origin, info);
     argtycall := matchTypedNormalCall(argtycall, origin, info);
     argtycall := unboxArgs(argtycall);
-
-    ty := match argtycall
-      case TYPED_CALL() algorithm
-        {arg} := argtycall.arguments;
-      then Type.arrayElementType(Expression.typeOf(arg));
-    end match;
-
+    ty := getType(argtycall);
     var := variability(argtycall);
-    callExp := Expression.CALL(setType(argtycall, ty));
+    callExp := Expression.CALL(argtycall);
   end typeSumProductCall;
 
   function typeSmoothCall

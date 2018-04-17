@@ -378,6 +378,16 @@ public
     end match;
   end isUnknown;
 
+  function isPolymorphic
+    input Type ty;
+    output Boolean isPolymorphic;
+  algorithm
+    isPolymorphic := match ty
+      case POLYMORPHIC() then true;
+      else false;
+    end match;
+  end isPolymorphic;
+
   function firstTupleType
     input Type ty;
     output Type outTy;
@@ -484,16 +494,17 @@ public
       case Type.REAL() then "Real";
       case Type.STRING() then "String";
       case Type.BOOLEAN() then "Boolean";
+      case Type.CLOCK() then "Clock";
       case Type.ENUMERATION() then "enumeration " + Absyn.pathString(ty.typePath) +
         "(" + stringDelimitList(ty.literals, ", ") + ")";
       case Type.ENUMERATION_ANY() then "enumeration(:)";
-      case Type.CLOCK() then "Clock";
       case Type.ARRAY() then toString(ty.elementType) + "[" + stringDelimitList(List.map(ty.dimensions, Dimension.toString), ", ") + "]";
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, toString), ", ") + ")";
-      case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";
       case Type.COMPLEX() then InstNode.name(ty.cls);
+      case Type.FUNCTION() then "function( output " + toString(ty.resultType) + " )";
+      case Type.METABOXED() then "#" + toString(ty.ty);
       case Type.POLYMORPHIC() then "<" + ty.name + ">";
       case Type.ANY() then "$ANY$";
       else
