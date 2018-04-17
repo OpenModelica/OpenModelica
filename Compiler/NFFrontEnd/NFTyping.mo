@@ -215,12 +215,14 @@ algorithm
   CachedData.FUNCTION({fn}, typed, special) := InstNode.getFuncCache(constructor);
   if not typed then
     fn := Function.typeFunction(fn);
+    fn := Function.typeFunctionBody(fn);
     InstNode.setFuncCache(constructor, CachedData.FUNCTION({fn}, true, special));
   end if;
 
   CachedData.FUNCTION({fn}, typed, special) := InstNode.getFuncCache(destructor);
   if not typed then
     fn := Function.typeFunction(fn);
+    fn := Function.typeFunctionBody(fn);
     InstNode.setFuncCache(destructor, CachedData.FUNCTION({fn}, true, special));
   end if;
 end typeExternalObjectStructors;

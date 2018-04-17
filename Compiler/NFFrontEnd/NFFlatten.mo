@@ -843,16 +843,7 @@ algorithm
       algorithm
         // TODO: Collect functions from the component's type attributes.
 
-        // Collect external object structors.
-        () := match ty
-          case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
-            algorithm
-              funcs := collectExternalObjectStructors(ty.complexTy, funcs);
-            then
-              ();
-
-          else ();
-        end match;
+        funcs := collectTypeFuncs(ty, funcs);
 
         // Collect functions used in the component's binding, if it has one.
         if Binding.isBound(binding) then
@@ -863,6 +854,22 @@ algorithm
 
   end match;
 end collectComponentFuncs;
+
+function collectTypeFuncs
+  input Type ty;
+  input output FunctionTree funcs;
+algorithm
+  () := match ty
+    // Collect external object structors.
+    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+      algorithm
+        funcs := collectExternalObjectStructors(ty.complexTy, funcs);
+      then
+        ();
+
+    else ();
+  end match;
+end collectTypeFuncs;
 
 function collectExternalObjectStructors
   input ComplexType ty;
@@ -1079,6 +1086,7 @@ algorithm
       algorithm
         for c in cls_tree.components loop
           comp := InstNode.component(c);
+          funcs := collectTypeFuncs(Component.getType(comp), funcs);
           binding := Component.getBinding(comp);
 
           if Binding.isBound(binding) then

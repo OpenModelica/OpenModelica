@@ -118,6 +118,16 @@ public
     end match;
   end isFunction;
 
+  function isRecord
+    input Restriction res;
+    output Boolean isFunction;
+  algorithm
+    isFunction := match res
+      case RECORD() then true;
+      else false;
+    end match;
+  end isRecord;
+
   function isType
     input Restriction res;
     output Boolean isType;
