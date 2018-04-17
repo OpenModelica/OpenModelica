@@ -25,7 +25,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS)
+.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS) antlr-copy
 
 ifeq ($(OMENCRYPTION),yes)
 .PHONY : semla semla-clean
@@ -72,10 +72,13 @@ mkbuilddirs:
 
 release: omc
 
-bootstrap-dependencies: graphstream $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS) interactive-short libzmq
+bootstrap-dependencies: graphstream antlr-copy $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS) interactive-short libzmq
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/runtime install_bootstrapping BOOTSTRAPPING=1 OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
+
+antlr-copy: mkbuilddirs
+	cp ./3rdParty/antlr/3.2/tool/antlr-3.2.jar ./3rdParty/antlr/3.2/tool/antlr-2.7.7.jar ${builddir_java}/
 
 sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc
 
@@ -87,12 +90,12 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs libzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) $(MINGW_EXTRA_LIBS)
+interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs libzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 opc: .testvariables mkbuilddirs boehm-gc
@@ -199,7 +202,7 @@ all-runtimeCPPinstall: mkbuilddirs CMinpack sundials
 omc-and-runtimeCPPinstall: mkbuilddirs CMinpack sundials
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPP: CMinpack sundials $(MINGW_EXTRA_LIBS)
+runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 CMAKE_ARGS=$(filter CMAKE_%, $(MAKEFLAGS))
