@@ -772,7 +772,12 @@ algorithm
     dty := Type.toDAE(ty);
     dlhs := Expression.toDAE(lhs);
     drhs := Expression.toDAE(rhs);
-    daeStmt := DAE.Statement.STMT_ASSIGN(dty, dlhs, drhs, src);
+
+    if Type.isArray(ty) then
+      daeStmt := DAE.Statement.STMT_ASSIGN_ARR(dty, dlhs, drhs, src);
+    else
+      daeStmt := DAE.Statement.STMT_ASSIGN(dty, dlhs, drhs, src);
+    end if;
   end if;
 end convertAssignment;
 
