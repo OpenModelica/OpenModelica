@@ -1827,21 +1827,21 @@ function matchDimensions
   input Boolean allowUnknown;
   output Dimension compatibleDim;
   output Boolean compatible;
-protected
-  Boolean known1, known2;
 algorithm
-  known1 := Dimension.isKnown(dim1);
-  known2 := Dimension.isKnown(dim2);
-
-  if known1 and known2 then
+  if Dimension.isEqual(dim1, dim2) then
     compatibleDim := dim1;
-    compatible := Dimension.isEqual(dim1, dim2);
-  elseif allowUnknown then
-    compatibleDim := if known1 then dim1 else dim2;
     compatible := true;
   else
-    compatibleDim := dim1;
-    compatible := false;
+    if not Dimension.isKnown(dim1) then
+      compatibleDim := dim2;
+      compatible := true;
+    elseif not Dimension.isKnown(dim2) then
+      compatibleDim := dim1;
+      compatible := true;
+    else
+      compatibleDim := dim1;
+      compatible := false;
+    end if;
   end if;
 end matchDimensions;
 

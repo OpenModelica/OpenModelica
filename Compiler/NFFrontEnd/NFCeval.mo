@@ -716,6 +716,7 @@ algorithm
   end match;
 end evalBuiltinExp;
 
+public
 function evalBuiltinFill
   input list<Expression> args;
   output Expression result;
@@ -744,6 +745,7 @@ algorithm
   end for;
 end evalBuiltinFill2;
 
+protected
 function evalBuiltinFloor
   input Expression arg;
   output Expression result;

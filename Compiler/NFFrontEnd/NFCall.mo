@@ -1889,13 +1889,13 @@ protected
 
     // Type the first argument, which is the fill value.
     (fill_arg, ty, _) := Typing.typeExp(fill_arg, origin, info);
-    (callExp, ty, variability) := typeFillCall2(fn_ref, ty, {fill_arg}, args, origin, info);
+    (callExp, ty, variability) := typeFillCall2(fn_ref, ty, fill_arg, args, origin, info);
   end typeFillCall;
 
   function typeFillCall2
     input ComponentRef fnRef;
     input Type fillType;
-    input list<Expression> fillArgs;
+    input Expression fillArg;
     input list<Expression> dimensionArgs;
     input ExpOrigin.Type origin;
     input SourceInfo info;
@@ -1910,7 +1910,7 @@ protected
     Function fn;
     list<Dimension> dims;
   algorithm
-    ty_args := fillArgs;
+    ty_args := {fillArg};
     dims := {};
 
     // Type the dimension arguments.
@@ -1941,9 +1941,9 @@ protected
     ty := Type.ARRAY(fillType, dims);
 
     if variability <= Variability.STRUCTURAL_PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
-      callExp := Ceval.evalBuiltinCall(fn, ty_args, Ceval.EvalTarget.IGNORE_ERRORS());
+      callExp := Ceval.evalBuiltinFill(ty_args);
     else
-      callExp := Expression.CALL(makeBuiltinCall2(fn, ty_args, ty, variability));
+      callExp := Expression.CALL(makeBuiltinCall2(NFBuiltinFuncs.FILL_FUNC, ty_args, ty, variability));
     end if;
   end typeFillCall2;
 
@@ -1974,7 +1974,13 @@ protected
         {toString(call), ComponentRef.toString(fn_ref) + "(Integer, ...) => Integer[:, ...]"}, info);
     end if;
 
-    (callExp, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), {}, args, origin, info);
+    if ComponentRef.firstName(fn_ref) == "ones" then
+      fill_arg := Expression.INTEGER(1);
+    else
+      fill_arg := Expression.INTEGER(0);
+    end if;
+
+    (callExp, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), fill_arg, args, origin, info);
   end typeZerosOnesCall;
 
   function typeScalarCall

@@ -169,6 +169,7 @@ public
     isEqual := match (dim1, dim2)
       case (UNKNOWN(), _) then true;
       case (_, UNKNOWN()) then true;
+      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
       case (EXP(), _) then true;
       case (_, EXP()) then true;
       else Dimension.size(dim1) == Dimension.size(dim2);
