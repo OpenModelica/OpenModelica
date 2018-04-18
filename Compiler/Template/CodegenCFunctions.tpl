@@ -4899,13 +4899,21 @@ case BINARY(__) then
       else '<%e1%> - (<%e2%>)'
   case MUL(__) then '(<%e1%>) * (<%e2%>)'
   case DIV(ty = ty) then
-    let tvar = tempDecl(expTypeModelica(ty),&varDecls)
-    let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
-    let &preExp +=
-      if acceptMetaModelicaGrammar()
-        then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
-        else 'if (<%tvar%> == 0) {throwStreamPrint(threadData, "Division by zero %s", "<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp,"\""))%>");}<%\n%>'
-    '(<%e1%>) / <%tvar%>'
+    (match context
+      case FUNCTION_CONTEXT(__)
+      case PARALLEL_FUNCTION_CONTEXT(__) then
+        let tvar = tempDecl(expTypeModelica(ty),&varDecls)
+        let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
+        let &preExp += if acceptMetaModelicaGrammar() then 'if (<%tvar%> == 0) {<%generateThrow()%>;}<%\n%>'
+        '(<%e1%>) / <%tvar%>'
+      case SIMULATION_CONTEXT() then
+        let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+        'DIVISION_SIM(<%e1%>,<%e2%>,"<%e2str%>",equationIndexes)'
+      else
+        let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+        'DIVISION(<%e1%>,<%e2%>,"<%e2str%>")'
+    )
+
   case POW(__) then
     if isHalf(exp2) then
       let tmp = tempDecl(expTypeFromExpModelica(exp1),&varDecls)
@@ -5054,7 +5062,15 @@ case BINARY(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
-    'div_alloc_<%type%>_scalar(<%e1%>, <%e2%>)'
+    let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+    (match context
+      case FUNCTION_CONTEXT(__)
+      case PARALLEL_FUNCTION_CONTEXT(__) then
+        'div_alloc_<%type%>_scalar(<%e1%>, <%e2%>)'
+      else
+        'division_alloc_<%type%>_scalar(threadData,<%e1%>,<%e2%>,"<%e2str%>")'
+    )
+
   case DIV_SCALAR_ARRAY(__) then
     let type = match ty case T_ARRAY(ty = T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty = T_ENUMERATION(__)) then "integer_array"
@@ -5500,33 +5516,6 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
     var2
-
-  case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2}) then
-    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
-    let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
-    (match context
-      case FUNCTION_CONTEXT(__)
-      case PARALLEL_FUNCTION_CONTEXT(__) then
-        'DIVISION(<%var1%>,<%var2%>,"<%var3%>")'
-      else
-        'DIVISION_SIM(<%var1%>,<%var2%>,"<%var3%>",equationIndexes)'
-    )
-
-  case CALL(attr=CALL_ATTR(ty=ty),
-            path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2}) then
-    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
-                        else "real_array"
-    let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
-    let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
-    let var3 = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(e2,"\""))
-    'division_alloc_<%type%>_scalar(threadData,<%var1%>,<%var2%>,"<%var3%>")'
-
-  case exp as CALL(attr=CALL_ATTR(ty=ty), path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
-    error(sourceInfo(),'Code generation does not support <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     cref(crefPrefixDer(arg.componentRef))

@@ -44,6 +44,7 @@ int runOptimizer(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
   OptData *optData, optData_;
 
   solverInfo->solverData = &optData_;
+  data->simulationInfo->noThrowDivZero = 1;
 
   pickUpModelData(data, threadData, solverInfo);
   optData =  (OptData*) solverInfo->solverData;
