@@ -1319,21 +1319,21 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
      * Otherwise we use monospaced font and put the text inside a div with special style.
      */
     int startPos = docElement.indexOf("<html>", 0, Qt::CaseInsensitive);
-    int endPos = docElement.indexOf("</html>", startPos, Qt::CaseInsensitive);
-    QString startNonHtml, endNonHtml = "";
-    if (startPos > -1 || endPos > -1) {
-      if (endPos > -1) {
-        endPos += 7;  // include </html>
-      }
+    int endPos = -1;
+    if (startPos > -1) {
+      endPos = docElement.indexOf("</html>", startPos + 6, Qt::CaseInsensitive);
+    }
+    if (startPos > -1 && endPos > -1) {
+      QString startNonHtml = "", endNonHtml = "";
       if (startPos < docElement.length()) {
-        startNonHtml = Qt::convertFromPlainText(docElement.left(startPos));
+        startNonHtml = Qt::convertFromPlainText(docElement.left(startPos)); // First startPos number of characters
       }
       if (endPos < docElement.length()) {
-        endNonHtml = Qt::convertFromPlainText(docElement.right(endPos));
+        endNonHtml = Qt::convertFromPlainText(docElement.mid(endPos+7)); // All characters after the position of </html>
       }
       docElement = QString("<div class=\"textDoc\">%1</div><div class=\"htmlDoc\">%2</div><div class=\"textDoc\">%3</div>")
           .arg(startNonHtml)
-          .arg(docElement.mid(startPos, endPos - startPos))
+          .arg(docElement.mid(startPos, endPos - startPos + strlen("</html>")))
           .arg(endNonHtml);
     } else {  // if we have just plain text
       docElement = QString("<div class=\"textDoc\">%1</div>").arg(Qt::convertFromPlainText(docElement));
