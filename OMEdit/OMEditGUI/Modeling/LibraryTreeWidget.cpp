@@ -2473,8 +2473,8 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
                                                                                QString("%1.%2").arg(pLibraryTreeItem->getNameStructure())
                                                                                .arg(name), "", pLibraryTreeItem->isSaved(),
                                                                                pLibraryTreeItem);
-        for (int j = 0 ; pElements[i]->interfaces[j] ; j++) {
-          QString name = StringHandler::getLastWordAfterDot(pElements[i]->interfaces[j]->name);
+        for (int j = 0 ; pElements[i]->connectors[j] ; j++) {
+          QString name = StringHandler::getLastWordAfterDot(pElements[i]->connectors[j]->name);
           name = name.split(':', QString::SkipEmptyParts).last();
           createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
                                     QString("%1.%2").arg(pComponentLibraryTreeItem->getNameStructure()).arg(name),
@@ -2955,10 +2955,12 @@ void LibraryTreeView::createActions()
   // simulate OMSimulator model action
   mpSimulateOMSModelAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
   mpSimulateOMSModelAction->setStatusTip(Helper::simulateOMSModelTip);
+  mpSimulateOMSModelAction->setEnabled(false);
   connect(mpSimulateOMSModelAction, SIGNAL(triggered(bool)), SLOT(simulateOMSModel()));
   // rename OMSimulator model Action
   mpRenameOMSModelAction = new QAction(Helper::rename, this);
   mpRenameOMSModelAction->setStatusTip(Helper::renameOMSModelTip);
+  mpRenameOMSModelAction->setEnabled(false);
   connect(mpRenameOMSModelAction, SIGNAL(triggered()), SLOT(renameOMSModel()));
   // unload OMSimulator model Action
   mpUnloadOMSModelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);

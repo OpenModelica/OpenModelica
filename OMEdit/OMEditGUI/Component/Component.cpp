@@ -1655,7 +1655,7 @@ void Component::drawInterfacePoints()
 void Component::drawOMSElementConnectors()
 {
   if (mpLibraryTreeItem->getOMSElement()) {
-    oms_connector_t** pInterfaces = mpLibraryTreeItem->getOMSElement()->interfaces;
+    oms_connector_t** pInterfaces = mpLibraryTreeItem->getOMSElement()->connectors;
     ComponentInfo *pComponentInfo = 0;
     QString name;
     for (int i = 0 ; pInterfaces[i] ; i++) {

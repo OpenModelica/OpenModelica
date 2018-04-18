@@ -1811,7 +1811,7 @@ void FMUPropertiesCommand::redo()
   // Parameters
   int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
-    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->interfaces;
+    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
         QString parameterValue = mNewFMUProperties.mParameterValues.at(index);
@@ -1850,7 +1850,7 @@ void FMUPropertiesCommand::undo()
   // Parameters
   int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
-    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->interfaces;
+    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
         QString parameterValue = mOldFMUProperties.mParameterValues.at(index);
