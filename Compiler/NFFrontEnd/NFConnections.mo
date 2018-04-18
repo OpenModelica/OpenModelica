@@ -76,9 +76,9 @@ public
     Component comp;
     ComponentRef cr, lhs, rhs;
     Connector c1, c2;
-    Type ty1, ty2;
     DAE.ElementSource source;
     list<Equation> eql = {};
+    list<Connector> cl1, cl2;
   algorithm
     // Collect all flow variables.
     for var in flatModel.variables loop
@@ -94,13 +94,17 @@ public
     // Collect all connects.
     for eq in flatModel.equations loop
       eql := match eq
-        case Equation.CONNECT(lhs = Expression.CREF(cref = lhs, ty = ty1),
-                              rhs = Expression.CREF(cref = rhs, ty = ty2), source = source)
+        case Equation.CONNECT(lhs = Expression.CREF(cref = lhs),
+                              rhs = Expression.CREF(cref = rhs), source = source)
           algorithm
             if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
-              c1 := Connector.fromCref(lhs, ty1, source);
-              c2 := Connector.fromCref(rhs, ty2, source);
-              conns := addConnection(Connection.CONNECTION(c1, c2), conns);
+              cl1 := Connector.fromExp(Expression.expand(eq.lhs), source);
+              cl2 := Connector.fromExp(Expression.expand(eq.rhs), source);
+
+              for c1 in cl1 loop
+                c2 :: cl2 := cl2;
+                conns := addConnection(Connection.CONNECTION(c1, c2), conns);
+              end for;
             end if;
           then
             eql;

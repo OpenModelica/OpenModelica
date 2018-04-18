@@ -2136,7 +2136,8 @@ public
           dims := Type.arrayDims(cref.ty);
           cr_subs := Subscript.expandList(cref.subscripts, dims);
         then
-          if listEmpty(cr_subs) then {} else expandCref2(cref.restCref, cr_subs :: subs);
+          if listEmpty(cr_subs) and not listEmpty(dims) then
+            {} else expandCref2(cref.restCref, cr_subs :: subs);
 
       else subs;
     end match;

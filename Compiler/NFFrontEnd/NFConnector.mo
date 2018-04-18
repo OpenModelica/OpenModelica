@@ -81,6 +81,31 @@ public
       Component.connectorType(InstNode.component(node)), NONE(), source);
   end fromFacedCref;
 
+  function fromExp
+    "Constructs a list of Connectors from a cref or an array of crefs."
+    input Expression exp;
+    input DAE.ElementSource source;
+    input output list<Connector> conns = {};
+  algorithm
+    conns := match exp
+      case Expression.CREF() then fromCref(exp.cref, exp.ty, source) :: conns;
+      case Expression.ARRAY()
+        algorithm
+          for e in listReverse(exp.elements) loop
+            conns := fromExp(e, source, conns);
+          end for;
+        then
+          conns;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown expression " +
+            Expression.toString(exp), sourceInfo());
+        then
+          fail();
+    end match;
+  end fromExp;
+
   function getType
     input Connector conn;
     output Type ty = conn.ty;

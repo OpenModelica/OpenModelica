@@ -328,7 +328,7 @@ public
         algorithm
           rest_cref := setSubscriptsList(rest_subs, cref.restCref);
         then
-          CREF(cref.node, subs, Type.arrayElementType(cref.ty), cref.origin, rest_cref);
+          CREF(cref.node, subs, cref.ty, cref.origin, rest_cref);
 
       case ({}, _) then cref;
     end match;
