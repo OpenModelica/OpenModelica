@@ -76,12 +76,10 @@ val(res,1);
 // LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
 // LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | debug   | division leads to inf or nan at time 1, (a=0) / (b=0), where divisor b is: __OMC__1$QR$R$3
-// stdout            | warning | Integrator attempt to handle a problem with a called assert.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // 0.0
-// 6.831674848011322e-14
+// 6.8309976119663e-14
 // endResult

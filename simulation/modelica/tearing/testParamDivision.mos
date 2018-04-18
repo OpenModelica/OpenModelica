@@ -44,7 +44,9 @@ simulate(testParamDivision2, simflags="-ls=lapack -override b=0"); getErrorStrin
 //     messages = "Simulation execution failed for model: testParamDivision1
 // stdout            | warning | You are overriding b with a small value or zero.
 // |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
-// assert            | debug   | division leads to inf or nan at time 0, (a=-1) / (b=0), where divisor b is: b
+// stdout            | warning | Solving linear system 10 fails at time 0. For more information use -lv LOG_LS.
+// assert            | debug   | Solving linear system 10 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_LS.
 // assert            | info    | simulation terminated by an assertion at initialization
 // "
 // end SimulationResult;
