@@ -3955,6 +3955,38 @@ annotation(
 </html>"));
 end GC_expand_hp;
 
+function GC_set_max_heap_size
+  input Integer size;
+  output Boolean success;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Forces the GC to limit the maximum heap size.</p>
+</html>"));
+end GC_set_max_heap_size;
+
+record GC_PROFSTATS
+  Integer heapsize_full;
+  Integer free_bytes_full;
+  Integer unmapped_bytes;
+  Integer bytes_allocd_since_gc;
+  Integer allocd_bytes_before_gc;
+  Integer non_gc_bytes;
+  Integer gc_no;
+  Integer markers_m1;
+  Integer bytes_reclaimed_since_gc;
+  Integer reclaimed_bytes_before_gc;
+end GC_PROFSTATS;
+
+function GC_get_prof_stats
+  output GC_PROFSTATS gcStats;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<p>Returns a record with the GC statistics.</p>
+</html>"));
+end GC_get_prof_stats;
+
 function checkInterfaceOfPackages
   input TypeName cl;
   input String dependencyMatrix[:,:];

@@ -549,7 +549,7 @@ algorithm
       Absyn.Exp aexp;
       DAE.DAElist dae;
       array<list<Integer>> m,mt;
-      Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3;
+      Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3,gcStatRec;
       Absyn.ComponentRef cr,cr_1;
       Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status;
       list<Integer> is;
@@ -589,6 +589,7 @@ algorithm
       list<list<Values.Value>> valsLst;
       Boolean new_inst;
       SymbolTable interactiveSymbolTable, interactiveSymbolTable2;
+      GC.ProfStats gcStats;
 
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},_)
       equation
@@ -675,6 +676,42 @@ algorithm
       equation
         GC.setMaxHeapSize(i);
       then (cache,Values.BOOL(true));
+
+    case (cache,_,"GC_get_prof_stats",{},_)
+      equation
+        gcStats = GC.getProfStats();
+        gcStatRec = match gcStats
+         case GC.PROFSTATS() then
+           Values.RECORD(Absyn.IDENT("GC_PROFSTATS"),
+            {
+              Values.INTEGER(gcStats.heapsize_full),
+              Values.INTEGER(gcStats.free_bytes_full),
+              Values.INTEGER(gcStats.unmapped_bytes),
+              Values.INTEGER(gcStats.bytes_allocd_since_gc),
+              Values.INTEGER(gcStats.allocd_bytes_before_gc),
+              Values.INTEGER(gcStats.bytes_allocd_since_gc+gcStats.allocd_bytes_before_gc),
+              Values.INTEGER(gcStats.non_gc_bytes),
+              Values.INTEGER(gcStats.gc_no),
+              Values.INTEGER(gcStats.markers_m1),
+              Values.INTEGER(gcStats.bytes_reclaimed_since_gc),
+              Values.INTEGER(gcStats.reclaimed_bytes_before_gc)
+            },
+            {
+              "heapsize_full",
+              "free_bytes_full",
+              "unmapped_bytes: ",
+              "bytes_allocd_since_gc",
+              "allocd_bytes_before_gc",
+              "total_allocd_bytes",
+              "non_gc_bytes",
+              "gc_no",
+              "markers_m1",
+              "bytes_reclaimed_since_gc",
+              "reclaimed_bytes_before_gc"
+            },
+            -1);
+       end match;
+      then (cache, gcStatRec);
 
     case (cache,_,"clear",{},_)
       algorithm
