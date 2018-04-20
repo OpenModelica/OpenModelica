@@ -1734,15 +1734,16 @@ algorithm
     matchKind := MatchKind.NOT_COMPATIBLE;
   else
     for c1 in comps1 loop
-      c2 :: rest_c2 := comps2;
+      c2 :: rest_c2 := rest_c2;
       (_, _, matchKind) := matchTypes(InstNode.getType(c1), InstNode.getType(c2), dummy, allowUnknown);
 
-      if matchKind <> MatchKind.EXACT then
-        matchKind := MatchKind.NOT_COMPATIBLE;
+      if matchKind == MatchKind.NOT_COMPATIBLE then
         return;
       end if;
     end for;
   end if;
+
+  matchKind := MatchKind.PLUG_COMPATIBLE;
 end matchComponentList;
 
 function matchArrayTypes

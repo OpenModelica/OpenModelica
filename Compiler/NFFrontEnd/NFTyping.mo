@@ -161,9 +161,11 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
-  list<Dimension> dims;
+  InstNode ext_node;
 algorithm
   () := match c
+    case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
+
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
@@ -174,16 +176,21 @@ algorithm
       then
         ();
 
-    case Class.DERIVED_CLASS()
+    // For derived types with dimensions we keep them as they are, because we
+    // need to preserve the dimensions.
+    case Class.TYPED_DERIVED(ty = Type.ARRAY())
       algorithm
-        // At this stage most of the information in the derived class has been
-        // transferred to the component instance it belongs to, so we can
-        // collapse the extends hierarchy by replacing it with the base class.
+        typeComponents(c.baseClass, origin);
+      then
+        ();
+
+    // Derived types without dimensions can be collapsed.
+    case Class.TYPED_DERIVED()
+      algorithm
+        typeComponents(c.baseClass, origin);
         c2 := InstNode.getClass(c.baseClass);
-        // But keep the restriction.
         c2 := Class.setRestriction(c.restriction, c2);
         InstNode.updateClass(c2, cls);
-        typeComponents(cls, origin);
       then
         ();
 
@@ -227,22 +234,59 @@ algorithm
   end if;
 end typeExternalObjectStructors;
 
-function makeClassType
+function typeClassType
   input InstNode clsNode;
+  input Binding componentBinding;
+  input ExpOrigin.Type origin;
   output Type ty;
 protected
-  Class cls;
-  Restriction res;
+  Class cls, ty_cls;
+  InstNode ty_node;
 algorithm
   cls := InstNode.getClass(clsNode);
 
   ty := match cls
     case Class.INSTANCED_CLASS(restriction = Restriction.CONNECTOR())
-      then Type.COMPLEX(clsNode, makeConnectorType(cls.elements));
+      algorithm
+        ty := Type.COMPLEX(clsNode, makeConnectorType(cls.elements));
+        cls.ty := ty;
+        InstNode.updateClass(cls, clsNode);
+      then
+        ty;
 
-    else Class.getType(cls, clsNode);
+    // A long class declaration of a type extending from a type has the type of the base class.
+    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = ComplexType.EXTENDS_TYPE(ty_node)))
+      algorithm
+        ty := typeClassType(ty_node, componentBinding, origin);
+        cls.ty := ty;
+        InstNode.updateClass(cls, clsNode);
+      then
+        ty;
+
+    case Class.INSTANCED_CLASS() then cls.ty;
+
+    case Class.EXPANDED_DERIVED()
+      algorithm
+        typeDimensions(cls.dims, clsNode, componentBinding, origin, InstNode.info(clsNode));
+        ty := typeClassType(cls.baseClass, componentBinding, origin);
+        ty := Type.liftArrayLeftList(ty, arrayList(cls.dims));
+        ty_cls := Class.TYPED_DERIVED(ty, cls.baseClass, cls.restriction);
+        InstNode.updateClass(ty_cls, clsNode);
+      then
+        ty;
+
+    case Class.INSTANCED_BUILTIN() then cls.ty;
+    case Class.TYPED_DERIVED() then cls.ty;
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got noninstantiated class " +
+          InstNode.name(clsNode), sourceInfo());
+      then
+        fail();
+
   end match;
-end makeClassType;
+end typeClassType;
 
 function makeConnectorType
   input ClassTree ctree;
@@ -282,7 +326,8 @@ algorithm
         typeDimensions(c.dimensions, node, c.binding, origin, c.info);
 
         // Construct the type of the component and update the node with it.
-        ty := Type.liftArrayLeftList(makeClassType(c.classInst), arrayList(c.dimensions));
+        ty := typeClassType(c.classInst, c.binding, origin);
+        ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
         InstNode.updateComponent(Component.setType(ty, c), node);
 
         // Check that the component's attributes are valid.
@@ -301,7 +346,7 @@ algorithm
     // Any other type of component shouldn't show up here.
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
+        Error.assertion(false, getInstanceName() + " got noninstantiated component " + InstNode.name(component), sourceInfo());
       then
         fail();
 
@@ -514,7 +559,7 @@ algorithm
         // If the component doesn't have a binding, try to use the start attribute instead.
         b := match binding
           case Binding.UNBOUND()
-            then Modifier.binding(Class.lookupAttribute("start", InstNode.getClass(component)));
+            then Class.lookupAttributeBinding("start", InstNode.getClass(component));
           else binding;
         end match;
 
@@ -579,10 +624,19 @@ algorithm
       then
         ();
 
-    case Class.INSTANCED_BUILTIN()
+    case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
-        c.attributes := typeTypeAttributes(c.attributes, c.ty, component, origin);
-        InstNode.updateClass(c, cls);
+        for c in cls_tree.components loop
+          typeComponentBinding(c, origin);
+        end for;
+      then
+        ();
+
+    case Class.INSTANCED_BUILTIN() then ();
+
+    case Class.TYPED_DERIVED()
+      algorithm
+        typeBindings(c.baseClass, component, origin);
       then
         ();
 
@@ -674,6 +728,16 @@ algorithm
         end if;
 
         typeBindings(c.classInst, component, origin);
+      then
+        ();
+
+    case Component.ENUM_LITERAL() then ();
+    case Component.TYPE_ATTRIBUTE(modifier = Modifier.NOMOD()) then ();
+
+    case Component.TYPE_ATTRIBUTE()
+      algorithm
+        c.modifier := typeTypeAttribute(c.modifier, c.ty, InstNode.parent(component), origin);
+        InstNode.updateComponent(c, node);
       then
         ();
 
@@ -778,59 +842,21 @@ algorithm
   end match;
 end typeComponentCondition;
 
-function typeTypeAttributes
-  input output list<Modifier> attributes;
-  input Type ty;
-  input InstNode component;
-  input ExpOrigin.Type origin;
-protected
-  partial function attrTypeFn
-    input String name;
-    input Type ty;
-    input SourceInfo info;
-    output Type attrTy;
-  end attrTypeFn;
-
-  attrTypeFn ty_fn;
-algorithm
-  ty_fn := match ty
-    case Type.REAL() then getRealAttributeType;
-    case Type.INTEGER() then getIntAttributeType;
-    case Type.BOOLEAN() then getBoolAttributeType;
-    case Type.STRING() then getStringAttributeType;
-    case Type.ENUMERATION() then getEnumAttributeType;
-    else getAnyAttributeType;
-  end match;
-
-  attributes := list(typeTypeAttribute(a, ty_fn, ty, component, origin) for a in attributes);
-end typeTypeAttributes;
-
 function typeTypeAttribute
   input output Modifier attribute;
-  input attrTypeFn attrTyFn;
   input Type ty;
   input InstNode component;
   input ExpOrigin.Type origin;
-
-  partial function attrTypeFn
-    input String name;
-    input Type ty;
-    input SourceInfo info;
-    output Type attrTy;
-  end attrTypeFn;
 protected
   String name;
   Binding binding;
   BindingOrigin binding_origin;
-  Type expected_ty, comp_ty;
   InstNode mod_parent;
 algorithm
   () := match attribute
     // Normal modifier with no submodifiers.
     case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
       algorithm
-        // Use the given function to get the expected type of the attribute.
-        expected_ty := attrTyFn(name, ty, Modifier.info(attribute));
         binding_origin := Binding.getOrigin(binding);
 
         if isSome(binding_origin.node) then
@@ -842,7 +868,7 @@ algorithm
         // Type and type check the attribute.
         checkBindingEach(binding, true, mod_parent);
         binding := typeBinding(binding, origin);
-        binding := TypeCheck.matchBinding(binding, expected_ty, name, mod_parent);
+        binding := TypeCheck.matchBinding(binding, ty, name, mod_parent);
 
         // Check the variability. All builtin attributes have parameter variability.
         if Binding.variability(binding) > Variability.PARAMETER then
@@ -899,144 +925,6 @@ algorithm
         fail();
   end match;
 end evalBinding;
-
-function getAttributeNameBinding
-  input Modifier attr;
-  input String typeName;
-  output String name;
-  output Binding binding;
-algorithm
-  (name, binding) := match attr
-    case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
-      then (name, binding);
-
-    case Modifier.MODIFIER()
-      algorithm
-        name := attr.name + "." + Util.tuple21(listHead(ModTable.toList(attr.subModifiers)));
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, typeName}, attr.info);
-      then
-        fail();
-
-  end match;
-end getAttributeNameBinding;
-
-function getRealAttributeType
-  input String name;
-  input Type ty;
-  input SourceInfo info;
-  output Type attrTy;
-algorithm
-  attrTy := match name
-    case "quantity" then Type.STRING();
-    case "unit" then Type.STRING();
-    case "displayUnit" then Type.STRING();
-    case "min" then ty;
-    case "max" then ty;
-    case "start" then ty;
-    case "fixed" then Type.BOOLEAN();
-    case "nominal" then ty;
-    case "unbounded" then Type.BOOLEAN();
-    case "stateSelect" then NFBuiltin.STATESELECT_TYPE;
-    else
-      algorithm
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, Type.toString(ty)}, info);
-      then
-        fail();
-  end match;
-end getRealAttributeType;
-
-function getIntAttributeType
-  input String name;
-  input Type ty;
-  input SourceInfo info;
-  output Type attrTy;
-algorithm
-  attrTy := match name
-    case "quantity" then Type.STRING();
-    case "min" then ty;
-    case "max" then ty;
-    case "start" then ty;
-    case "fixed" then Type.BOOLEAN();
-    else
-      algorithm
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, Type.toString(ty)}, info);
-      then
-        fail();
-  end match;
-end getIntAttributeType;
-
-function getBoolAttributeType
-  input String name;
-  input Type ty;
-  input SourceInfo info;
-  output Type attrTy;
-algorithm
-  attrTy := match name
-    case "quantity" then Type.STRING();
-    case "start" then ty;
-    case "fixed" then Type.BOOLEAN();
-    else
-      algorithm
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, Type.toString(ty)}, info);
-      then
-        fail();
-  end match;
-end getBoolAttributeType;
-
-function getStringAttributeType
-  input String name;
-  input Type ty;
-  input SourceInfo info;
-  output Type attrTy;
-algorithm
-  attrTy := match name
-    case "quantity" then Type.STRING();
-    case "start" then ty;
-    case "fixed" then Type.BOOLEAN();
-    else
-      algorithm
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, Type.toString(ty)}, info);
-      then
-        fail();
-  end match;
-end getStringAttributeType;
-
-function getEnumAttributeType
-  input String name;
-  input Type ty;
-  input SourceInfo info;
-  output Type attrTy;
-algorithm
-  attrTy := match name
-    case "quantity" then Type.STRING();
-    case "min" then ty;
-    case "max" then ty;
-    case "start" then ty;
-    case "fixed" then Type.BOOLEAN();
-    else
-      algorithm
-        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-          {name, Type.toString(ty)}, info);
-      then
-        fail();
-  end match;
-end getEnumAttributeType;
-
-function getAnyAttributeType
-  input String name;
-  input Type ty;
-  input SourceInfo info;
-  output Type attrTy;
-algorithm
-  Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
-    {name, Type.toString(ty)}, info);
-  fail();
-end getAnyAttributeType;
 
 function typeExp
   "Types an untyped expression, returning the typed expression itself along with
@@ -2016,6 +1904,8 @@ algorithm
   cls := InstNode.getClass(classNode);
 
   _ := match cls
+    case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
+
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components),
         sections = sections)
       algorithm
@@ -2055,6 +1945,12 @@ algorithm
         ();
 
     case Class.INSTANCED_BUILTIN() then ();
+
+    case Class.TYPED_DERIVED()
+      algorithm
+        typeSections(cls.baseClass, origin);
+      then
+        ();
 
     else
       algorithm

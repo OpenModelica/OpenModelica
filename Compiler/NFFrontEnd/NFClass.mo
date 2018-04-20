@@ -45,6 +45,7 @@ import Expression = NFExpression;
 
 protected
 import Binding = NFBinding;
+import ComplexType = NFComplexType;
 
 public
 
@@ -81,22 +82,6 @@ uniontype Class
     Class.Prefixes prefixes;
   end PARTIAL_CLASS;
 
-  record EXPANDED_CLASS
-    ClassTree elements;
-    Modifier modifier;
-    Class.Prefixes prefixes;
-    Restriction restriction;
-  end EXPANDED_CLASS;
-
-  record DERIVED_CLASS
-    InstNode baseClass;
-    Modifier modifier;
-    list<Dimension> dims;
-    Class.Prefixes prefixes;
-    Component.Attributes attributes;
-    Restriction restriction;
-  end DERIVED_CLASS;
-
   record PARTIAL_BUILTIN
     Type ty;
     ClassTree elements;
@@ -104,19 +89,40 @@ uniontype Class
     Restriction restriction;
   end PARTIAL_BUILTIN;
 
+  record EXPANDED_CLASS
+    ClassTree elements;
+    Modifier modifier;
+    Class.Prefixes prefixes;
+    Restriction restriction;
+  end EXPANDED_CLASS;
+
+  record EXPANDED_DERIVED
+    InstNode baseClass;
+    Modifier modifier;
+    array<Dimension> dims;
+    Class.Prefixes prefixes;
+    Component.Attributes attributes;
+    Restriction restriction;
+  end EXPANDED_DERIVED;
+
   record INSTANCED_CLASS
+    Type ty;
     ClassTree elements;
     Sections sections;
-    Type ty;
     Restriction restriction;
   end INSTANCED_CLASS;
 
   record INSTANCED_BUILTIN
     Type ty;
     ClassTree elements;
-    list<Modifier> attributes;
     Restriction restriction;
   end INSTANCED_BUILTIN;
+
+  record TYPED_DERIVED
+    Type ty;
+    InstNode baseClass;
+    Restriction restriction;
+  end TYPED_DERIVED;
 
   record DAE_TYPE
     DAE.Type ty;
@@ -175,7 +181,7 @@ uniontype Class
   algorithm
     cls := match cls
       case INSTANCED_CLASS()
-        then INSTANCED_CLASS(cls.elements, sections, cls.ty, cls.restriction);
+        then INSTANCED_CLASS(cls.ty, cls.elements, sections, cls.restriction);
     end match;
   end setSections;
 
@@ -188,42 +194,25 @@ uniontype Class
     (node, isImport) := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
 
-  function lookupAttribute
+  function lookupAttributeBinding
     input String name;
     input Class cls;
-    output Modifier attribute = Modifier.NOMOD();
+    output Binding binding;
+  protected
+    InstNode attr_node;
   algorithm
-    () := match cls
-      case PARTIAL_BUILTIN()
-        algorithm
-          attribute := Modifier.lookupModifier(name, cls.modifier);
-        then
-          ();
-
-      case INSTANCED_BUILTIN()
-        algorithm
-          for attr in cls.attributes loop
-            if Modifier.name(attr) == name then
-              attribute := attr;
-              break;
-            end if;
-          end for;
-        then
-          ();
-
-      else ();
-    end match;
-  end lookupAttribute;
+    try
+      attr_node := ClassTree.lookupElement(name, classTree(cls));
+      binding := Modifier.binding(Component.getModifier(InstNode.component(attr_node)));
+    else
+      binding := Binding.UNBOUND(NONE());
+    end try;
+  end lookupAttributeBinding;
 
   function lookupAttributeValue
     input String name;
     input Class cls;
-    output Option<Expression> value;
-  protected
-    Modifier attr;
-  algorithm
-    attr := lookupAttribute(name, cls);
-    value := Binding.typedExp(Modifier.binding(attr));
+    output Option<Expression> value = Binding.typedExp(lookupAttributeBinding(name, cls));
   end lookupAttributeValue;
 
   function isBuiltin
@@ -233,7 +222,8 @@ uniontype Class
     isBuiltin := match cls
       case PARTIAL_BUILTIN() then true;
       case INSTANCED_BUILTIN() then true;
-      case DERIVED_CLASS() then isBuiltin(InstNode.getClass(cls.baseClass));
+      case EXPANDED_DERIVED() then isBuiltin(InstNode.getClass(cls.baseClass));
+      case TYPED_DERIVED() then isBuiltin(InstNode.getClass(cls.baseClass));
       else false;
     end match;
   end isBuiltin;
@@ -244,11 +234,12 @@ uniontype Class
   algorithm
     tree := match cls
       case Class.PARTIAL_CLASS() then cls.elements;
-      case Class.EXPANDED_CLASS() then cls.elements;
-      case Class.DERIVED_CLASS() then classTree(InstNode.getClass(cls.baseClass));
       case Class.PARTIAL_BUILTIN() then cls.elements;
+      case Class.EXPANDED_CLASS() then cls.elements;
+      case Class.EXPANDED_DERIVED() then classTree(InstNode.getClass(cls.baseClass));
       case Class.INSTANCED_CLASS() then cls.elements;
       case Class.INSTANCED_BUILTIN() then cls.elements;
+      case Class.TYPED_DERIVED() then classTree(InstNode.getClass(cls.baseClass));
     end match;
   end classTree;
 
@@ -272,7 +263,7 @@ uniontype Class
     modifier := match cls
       case PARTIAL_CLASS() then cls.modifier;
       case EXPANDED_CLASS() then cls.modifier;
-      case DERIVED_CLASS() then cls.modifier;
+      case EXPANDED_DERIVED() then cls.modifier;
       case PARTIAL_BUILTIN() then cls.modifier;
       else Modifier.NOMOD();
     end match;
@@ -293,7 +284,7 @@ uniontype Class
           cls.modifier := modifier;
         then
           ();
-      case DERIVED_CLASS()
+      case EXPANDED_DERIVED()
         algorithm
           cls.modifier := modifier;
         then
@@ -326,7 +317,7 @@ uniontype Class
           cls.modifier := Modifier.merge(modifier, cls.modifier);
         then
           ();
-      case DERIVED_CLASS()
+      case EXPANDED_DERIVED()
         algorithm
           cls.modifier := Modifier.merge(modifier, cls.modifier);
         then
@@ -375,41 +366,42 @@ uniontype Class
     output list<Dimension> dims;
   algorithm
     dims := match cls
-      case DERIVED_CLASS()
-        then listAppend(cls.dims, getDimensions(InstNode.getClass(cls.baseClass)));
+      case INSTANCED_CLASS() then Type.arrayDims(cls.ty);
+      case INSTANCED_BUILTIN() then Type.arrayDims(cls.ty);
+      case TYPED_DERIVED() then Type.arrayDims(cls.ty);
       else {};
     end match;
   end getDimensions;
-
-  function hasDimensions
-    input Class cls;
-    output Boolean hasDims;
-  algorithm
-    hasDims := match cls
-      case DERIVED_CLASS()
-        then not listEmpty(cls.dims) or hasDimensions(InstNode.getClass(cls.baseClass));
-      else false;
-    end match;
-  end hasDimensions;
 
   function getAttributes
     input Class cls;
     output Component.Attributes attr;
   algorithm
     attr := match cls
-      case DERIVED_CLASS() then cls.attributes;
+      case EXPANDED_DERIVED() then cls.attributes;
       else NFComponent.DEFAULT_ATTR;
     end match;
   end getAttributes;
 
   function getTypeAttributes
     input Class cls;
-    output list<Modifier> attributes;
+    output list<Modifier> attributes = {};
+  protected
+    array<InstNode> comps;
+    Modifier mod;
   algorithm
-    attributes := match cls
-      case INSTANCED_BUILTIN() then cls.attributes;
-      else {};
-    end match;
+    try
+      comps := ClassTree.getComponents(classTree(cls));
+
+      for c in comps loop
+        mod := Component.getModifier(InstNode.component(c));
+
+        if not Modifier.isEmpty(mod) then
+          attributes := mod :: attributes;
+        end if;
+      end for;
+    else
+    end try;
   end getTypeAttributes;
 
   function getType
@@ -418,17 +410,15 @@ uniontype Class
     output Type ty;
   algorithm
     ty := match cls
-      case DERIVED_CLASS()
-        then Type.liftArrayLeftList(
-               getType(InstNode.getClass(cls.baseClass), clsNode),
-               cls.dims);
-      case INSTANCED_CLASS() then cls.ty;
       case PARTIAL_BUILTIN() then cls.ty;
+      case EXPANDED_DERIVED() then getType(InstNode.getClass(cls.baseClass), cls.baseClass);
+      case INSTANCED_CLASS() then cls.ty;
       case INSTANCED_BUILTIN()
         then match cls.ty
           case Type.POLYMORPHIC("") then Type.POLYMORPHIC(InstNode.name(clsNode));
           else cls.ty;
         end match;
+      case TYPED_DERIVED() then cls.ty;
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -438,11 +428,12 @@ uniontype Class
     output Restriction res;
   algorithm
     res := match cls
+      case PARTIAL_BUILTIN() then cls.restriction;
+      case EXPANDED_CLASS() then cls.restriction;
+      case EXPANDED_DERIVED() then cls.restriction;
       case INSTANCED_CLASS() then cls.restriction;
       case INSTANCED_BUILTIN() then cls.restriction;
-      case EXPANDED_CLASS() then cls.restriction;
-      case PARTIAL_BUILTIN() then cls.restriction;
-      case DERIVED_CLASS() then cls.restriction;
+      case TYPED_DERIVED() then cls.restriction;
       else Restriction.UNKNOWN();
     end match;
   end restriction;
@@ -452,11 +443,12 @@ uniontype Class
     input output Class cls;
   algorithm
     () := match cls
+      // PARTIAL_BUILTIN is only used for predefined builtin types and not needed here.
+      case EXPANDED_CLASS()    algorithm cls.restriction := res; then ();
+      case EXPANDED_DERIVED()  algorithm cls.restriction := res; then ();
       case INSTANCED_CLASS()   algorithm cls.restriction := res; then ();
       case INSTANCED_BUILTIN() algorithm cls.restriction := res; then ();
-      case EXPANDED_CLASS()    algorithm cls.restriction := res; then ();
-      // PARTIAL_BUILTIN is only used for predefined builtin types and not needed here.
-      case DERIVED_CLASS()     algorithm cls.restriction := res; then ();
+      case TYPED_DERIVED()     algorithm cls.restriction := res; then ();
     end match;
   end setRestriction;
 
@@ -482,7 +474,7 @@ uniontype Class
     prefs := match cls
       case PARTIAL_CLASS() then cls.prefixes;
       case EXPANDED_CLASS() then cls.prefixes;
-      case DERIVED_CLASS() then cls.prefixes;
+      case EXPANDED_DERIVED() then cls.prefixes;
     end match;
   end getPrefixes;
 
@@ -497,7 +489,7 @@ uniontype Class
         then
           ();
 
-      case DERIVED_CLASS()
+      case EXPANDED_DERIVED()
         algorithm
           cls.prefixes := prefs;
         then
@@ -505,6 +497,18 @@ uniontype Class
 
     end match;
   end setPrefixes;
+
+  function lastBaseClass
+    input output InstNode node;
+  protected
+    Class cls = InstNode.getClass(node);
+  algorithm
+    node := match cls
+      case EXPANDED_DERIVED() then lastBaseClass(cls.baseClass);
+      case TYPED_DERIVED() then lastBaseClass(cls.baseClass);
+      else node;
+    end match;
+  end lastBaseClass;
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

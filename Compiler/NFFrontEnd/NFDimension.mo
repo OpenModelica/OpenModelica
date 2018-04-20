@@ -48,7 +48,6 @@ public
 
   record RAW_DIM
     Absyn.Subscript dim;
-    InstNode scope;
   end RAW_DIM;
 
   record UNTYPED
@@ -278,17 +277,6 @@ public
                              SOME(Expression.INTEGER(index)));
     end match;
   end sizeExp;
-
-  function setScope
-    input Dimension dim;
-    input InstNode scope;
-    output Dimension outDim;
-  algorithm
-    outDim := match dim
-      case RAW_DIM() then RAW_DIM(dim.dim, scope);
-      else dim;
-    end match;
-  end setScope;
 
   function variability
     input Dimension dim;

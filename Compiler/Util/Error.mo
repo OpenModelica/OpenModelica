@@ -785,6 +785,8 @@ public constant Message EXTERNAL_ARG_NONCONSTANT_SIZE_INDEX = MESSAGE(328, TRANS
   Util.gettext("Invalid external argument '%s', the dimension index must be a constant expression."));
 public constant Message NON_TYPE_DIMENSIONS = MESSAGE(329, TRANSLATION(), ERROR(),
   Util.gettext("Invalid dimensions on ‘%s %s‘, only types may have dimensions."));
+public constant Message MISSING_TYPE_BASETYPE = MESSAGE(330, TRANSLATION(), ERROR(),
+  Util.gettext("Type ‘%s‘ does not extend a basic type."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

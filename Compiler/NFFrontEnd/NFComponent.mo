@@ -188,6 +188,11 @@ uniontype Component
     Expression literal;
   end ENUM_LITERAL;
 
+  record TYPE_ATTRIBUTE
+    Type ty;
+    Modifier modifier;
+  end TYPE_ATTRIBUTE;
+
   function new
     input SCode.Element definition;
     output Component component;
@@ -270,6 +275,7 @@ uniontype Component
   algorithm
     modifier := match component
       case COMPONENT_DEF() then component.modifier;
+      case TYPE_ATTRIBUTE() then component.modifier;
       else Modifier.NOMOD();
     end match;
   end getModifier;
@@ -284,6 +290,11 @@ uniontype Component
           component.modifier := modifier;
         then
           ();
+      case TYPE_ATTRIBUTE()
+        algorithm
+          component.modifier := modifier;
+        then
+          ();
     end match;
   end setModifier;
 
@@ -291,12 +302,15 @@ uniontype Component
     input Modifier modifier;
     input output Component component;
   algorithm
-    () := match component
+    component := match component
       case COMPONENT_DEF()
         algorithm
           component.modifier := Modifier.merge(modifier, component.modifier);
         then
-          ();
+          component;
+
+      case TYPE_ATTRIBUTE()
+        then TYPE_ATTRIBUTE(component.ty, Modifier.merge(modifier, component.modifier));
     end match;
   end mergeModifier;
 
@@ -308,6 +322,7 @@ uniontype Component
       case TYPED_COMPONENT() then component.ty;
       case UNTYPED_COMPONENT() then InstNode.getType(component.classInst);
       case ITERATOR() then component.ty;
+      case TYPE_ATTRIBUTE() then component.ty;
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -344,6 +359,7 @@ uniontype Component
       case TYPED_COMPONENT() then true;
       case ITERATOR(ty = Type.UNKNOWN()) then false;
       case ITERATOR() then true;
+      case TYPE_ATTRIBUTE() then true;
       else false;
     end match;
   end isTyped;
@@ -684,6 +700,8 @@ uniontype Component
              Type.toString(component.ty) + " " + name +
              Binding.toString(component.binding, " = ");
 
+      case TYPE_ATTRIBUTE()
+        then name + Modifier.toString(component.modifier, printName = false);
     end match;
   end toString;
 
@@ -727,6 +745,7 @@ uniontype Component
       case COMPONENT_DEF() then SCode.getElementComment(component.definition);
       case UNTYPED_COMPONENT() then component.comment;
       case TYPED_COMPONENT() then component.comment;
+      else NONE();
     end match;
   end comment;
 

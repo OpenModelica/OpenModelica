@@ -941,6 +941,7 @@ uniontype Function
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
+      Typing.typeClassType(node, Binding.UNBOUND(NONE()), ExpOrigin.FUNCTION);
       Typing.typeComponents(node, ExpOrigin.FUNCTION);
 
       // Type the binding of the inputs only. This is done because they are
@@ -1165,7 +1166,7 @@ protected
         then
           ();
 
-      case Class.DERIVED_CLASS()
+      case Class.EXPANDED_DERIVED()
         algorithm
           (inputs, outputs, locals) := collectParams(cls.baseClass);
         then

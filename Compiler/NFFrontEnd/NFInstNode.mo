@@ -62,6 +62,9 @@ uniontype InstNodeType
     SCode.Element definition;
   end BASE_CLASS;
 
+  record DERIVED_CLASS
+  end DERIVED_CLASS;
+
   record BUILTIN_CLASS
     "A builtin element."
   end BUILTIN_CLASS;
@@ -453,6 +456,8 @@ uniontype InstNode
     output InstNode scope;
   algorithm
     scope := match node
+      case CLASS_NODE(nodeType = InstNodeType.DERIVED_CLASS())
+        then parentScope(Class.lastBaseClass(node));
       case CLASS_NODE() then node.parentScope;
       case COMPONENT_NODE() then parentScope(Component.classInstance(Pointer.access(node.component)));
       case IMPLICIT_SCOPE() then node.parentScope;

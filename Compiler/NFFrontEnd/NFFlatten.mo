@@ -194,6 +194,13 @@ algorithm
       then
         ();
 
+    case Class.TYPED_DERIVED()
+      algorithm
+        (vars, sections) :=
+          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections);
+      then
+        ();
+
     case Class.INSTANCED_BUILTIN() then ();
 
     else
@@ -239,11 +246,12 @@ algorithm
         cls := InstNode.getClass(c.classInst);
         vis := if InstNode.isProtected(component) then Visibility.PROTECTED else visibility;
 
-        (vars, sections) := match cls
-          case Class.INSTANCED_BUILTIN()
-            then flattenSimpleComponent(comp_node, c, vis, outerBinding, cls.attributes, prefix, vars, sections);
-          else flattenComplexComponent(comp_node, c, cls, ty, vis, prefix, vars, sections);
-        end match;
+        if isComplexComponent(ty) then
+          (vars, sections) := flattenComplexComponent(comp_node, c, cls, ty, vis, prefix, vars, sections);
+        else
+          (vars, sections) := flattenSimpleComponent(comp_node, c, vis, outerBinding,
+            Class.getTypeAttributes(cls), prefix, vars, sections);
+        end if;
       then
         ();
 
@@ -255,6 +263,18 @@ algorithm
 
   end match;
 end flattenComponent;
+
+function isComplexComponent
+  input Type ty;
+  output Boolean isComplex;
+algorithm
+  isComplex := match ty
+    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then false;
+    case Type.COMPLEX() then true;
+    case Type.ARRAY() then isComplexComponent(ty.elementType);
+    else false;
+  end match;
+end isComplexComponent;
 
 function flattenSimpleComponent
   input InstNode node;
@@ -1103,6 +1123,12 @@ algorithm
 
           else ();
         end match;
+      then
+        ();
+
+    case Class.TYPED_DERIVED()
+      algorithm
+        funcs := collectClassFunctions(cls.baseClass, funcs);
       then
         ();
 
