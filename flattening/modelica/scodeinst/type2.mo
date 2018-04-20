@@ -6,11 +6,11 @@
 
 
 type MyReal
-  extends Real;
+  extends Real(max = 1.0);
 end MyReal;
 
 type MyReal2
-  extends MyReal;
+  extends MyReal(min = 1.0);
 end MyReal2;
 
 model M
@@ -19,6 +19,6 @@ end M;
 
 // Result:
 // class M
-//   Real m(start = 1.0);
+//   Real m(min = 1.0, max = 1.0, start = 1.0);
 // end M;
 // endResult

@@ -4,7 +4,7 @@
 // cflags: -d=newInst
 //
 
-model MyReal
+type MyReal
   extends Real;
   Real y;
 end MyReal;

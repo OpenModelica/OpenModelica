@@ -222,6 +222,7 @@ enum4.mo \
 enum5.mo \
 enum7.mo \
 enum8.mo \
+EnumInvalidLiteralName1.mo \
 EnumRangeBinding1.mo \
 eq1.mo \
 eq2.mo \
@@ -232,6 +233,7 @@ eq6.mo \
 eq7.mo \
 eq8.mo \
 eq10.mo \
+EqualityConstraint1.mo \
 EquationInvalidType1.mo \
 Extends1.mo \
 Extends2.mo \
@@ -612,6 +614,8 @@ TypeDim2.mo \
 TypeDim3.mo \
 TypeDim4.mo \
 TypeDimNonType1.mo \
+TypeExtends1.mo \
+TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
 TypenameInvalid3.mo \
