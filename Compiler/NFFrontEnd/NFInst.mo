@@ -2711,6 +2711,16 @@ algorithm
       then
         ();
 
+    case Class.EXPANDED_DERIVED()
+      algorithm
+        for dim in cls.dims loop
+          markStructuralParamsDim(dim);
+        end for;
+
+        markStructuralParams(cls.baseClass);
+      then
+        ();
+
     else ();
   end match;
 end markStructuralParams;
