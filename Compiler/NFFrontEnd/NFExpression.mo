@@ -2733,6 +2733,30 @@ public
     Expression.ARRAY(elements = elements) := array;
   end arrayElements;
 
+  function arrayScalarElements
+    input Expression exp;
+    output list<Expression> elements;
+  algorithm
+    elements := listReverseInPlace(arrayScalarElements_impl(exp, {}));
+  end arrayScalarElements;
+
+  function arrayScalarElements_impl
+    input Expression exp;
+    input output list<Expression> elements;
+  algorithm
+    elements := match exp
+      case ARRAY()
+        algorithm
+          for e in exp.elements loop
+            elements := arrayScalarElements_impl(e, elements);
+          end for;
+        then
+          elements;
+
+      else exp :: elements;
+    end match;
+  end arrayScalarElements_impl;
+
   function hasArrayCall
     "Returns true if the given expression contains a function call that returns
      an array, otherwise false."

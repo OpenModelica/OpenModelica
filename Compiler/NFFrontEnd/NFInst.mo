@@ -2056,10 +2056,16 @@ algorithm
 
           crefExp := match comp
             case Component.ITERATOR()
-              then Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(cref.node, comp.ty));
+              algorithm
+                checkUnsubscriptableCref(cref, cref.subscripts, info);
+              then
+                Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(cref.node, comp.ty));
 
             case Component.ENUM_LITERAL()
-              then comp.literal;
+              algorithm
+                checkUnsubscriptableCref(cref, cref.subscripts, info);
+              then
+                comp.literal;
 
             case Component.TYPE_ATTRIBUTE()
               algorithm
@@ -2078,6 +2084,7 @@ algorithm
 
           end match;
         else
+          checkUnsubscriptableCref(cref, cref.subscripts, info);
           ty := InstNode.getType(cref.node);
 
           ty := match ty
@@ -2101,6 +2108,18 @@ algorithm
   end match;
 end instCref;
 
+function checkUnsubscriptableCref
+  input ComponentRef cref;
+  input list<Subscript> subscripts;
+  input SourceInfo info;
+algorithm
+  if not listEmpty(subscripts) then
+    Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+      {ComponentRef.toString(cref), String(listLength(subscripts)), "0"}, info);
+    fail();
+  end if;
+end checkUnsubscriptableCref;
+
 function instCrefSubscripts
   input output ComponentRef cref;
   input InstNode scope;
@@ -2109,19 +2128,10 @@ algorithm
   () := match cref
     local
       ComponentRef rest_cr;
-      Integer dims;
 
     case ComponentRef.CREF()
       algorithm
         if not listEmpty(cref.subscripts) then
-          dims := InstNode.countDimensions(cref.node, 1);
-
-          if listLength(cref.subscripts) > dims then
-            Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
-              {ComponentRef.toString(cref), String(listLength(cref.subscripts)), String(dims)}, info);
-            fail();
-          end if;
-
           cref.subscripts := list(instSubscript(s, scope, info) for s in cref.subscripts);
         end if;
 

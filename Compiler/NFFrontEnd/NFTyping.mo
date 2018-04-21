@@ -862,7 +862,7 @@ algorithm
         if isSome(binding_origin.node) then
           SOME(mod_parent) := binding_origin.node;
         else
-          mod_parent := component;
+          mod_parent := InstNode.getDerivedNode(component);
         end if;
 
         // Type and type check the attribute.
@@ -1347,6 +1347,12 @@ algorithm
   typedSubs := {};
   next_origin := intBitOr(origin, ExpOrigin.SUBSCRIPT);
   i := 1;
+
+  if listLength(subscripts) > listLength(dims) then
+    Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
+      {ComponentRef.toString(cref), String(listLength(subscripts)), String(listLength(dims))}, info);
+    fail();
+  end if;
 
   for s in subscripts loop
     dim :: dims := dims;

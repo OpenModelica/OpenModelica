@@ -34,6 +34,7 @@ protected
   import ExpressionIterator = NFExpressionIterator;
   import ComponentRef = NFComponentRef;
   import BindingOrigin = NFBindingOrigin;
+  import NFInstNode.InstNode;
 
 public
   import Expression = NFExpression;
@@ -54,6 +55,11 @@ public
 
   record NONE_ITERATOR
   end NONE_ITERATOR;
+
+  record REPEAT_ITERATOR
+    list<Expression> current;
+    list<Expression> all;
+  end REPEAT_ITERATOR;
 
   function fromExp
     input Expression exp;
@@ -108,9 +114,17 @@ public
     output ExpressionIterator iterator;
   algorithm
     iterator := match binding
+      local
+        list<Expression> expl;
+
+      case Binding.TYPED_BINDING() guard BindingOrigin.isFromClass(binding.origin)
+        algorithm
+          expl := Expression.arrayScalarElements(binding.bindingExp);
+        then
+          if listLength(expl) == 1 then EACH_ITERATOR(listHead(expl)) else REPEAT_ITERATOR(expl, expl);
+
       case Binding.TYPED_BINDING()
-        then if Binding.isEach(binding) or BindingOrigin.isFromClass(binding.origin) then
-          EACH_ITERATOR(binding.bindingExp) else fromExp(binding.bindingExp);
+        then if binding.isEach then EACH_ITERATOR(binding.bindingExp) else fromExp(binding.bindingExp);
 
       case Binding.FLAT_BINDING()
         then SCALAR_ITERATOR(binding.bindingExp);
@@ -126,6 +140,7 @@ public
       case SCALAR_ITERATOR() then true;
       case EACH_ITERATOR() then true;
       case NONE_ITERATOR() then false;
+      case REPEAT_ITERATOR() then true;
     end match;
   end hasNext;
 
@@ -155,6 +170,17 @@ public
         then (NONE_ITERATOR(), iterator.exp);
 
       case EACH_ITERATOR() then (iterator, iterator.exp);
+
+      case REPEAT_ITERATOR(rest, arr)
+        algorithm
+          if not listEmpty(rest) then
+            next :: rest := rest;
+          else
+            next :: rest := arr;
+          end if;
+        then
+          (REPEAT_ITERATOR(rest, arr), next);
+
     end match;
   end next;
 

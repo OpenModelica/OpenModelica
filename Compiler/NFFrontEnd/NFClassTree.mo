@@ -613,9 +613,11 @@ public
           then
             ();
 
-        case Class.EXPANDED_DERIVED()
+        case Class.EXPANDED_DERIVED(baseClass = node)
           algorithm
-            (node, _, classCount, compCount) := instantiate(cls.baseClass);
+            node := InstNode.setNodeType(
+              InstNodeType.BASE_CLASS(clsNode, InstNode.definition(node)), node);
+            (node, _, classCount, compCount) := instantiate(node);
             cls.baseClass := node;
           then
             ();
