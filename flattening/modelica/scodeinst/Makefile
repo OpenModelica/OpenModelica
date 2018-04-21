@@ -35,9 +35,12 @@ BuiltinAttribute9.mo \
 BuiltinAttribute10.mo \
 BuiltinAttribute11.mo \
 BuiltinAttribute12.mo \
+BuiltinAttribute13.mo \
 BuiltinAttribute14.mo \
 BuiltinAttribute15.mo \
 BuiltinAttribute16.mo \
+BuiltinAttribute17.mo \
+BuiltinAttribute18.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -587,6 +590,9 @@ StateSelectVariability1.mo \
 StateSelect1.mo \
 StateSelect2.mo \
 Subscript1.mo \
+Subscript2.mo \
+Subscript3.mo \
+Subscript4.mo \
 SubscriptCevalIndex1.mo \
 SubscriptCevalSlice1.mo \
 SubscriptCevalSlice2.mo \
@@ -643,7 +649,6 @@ ModClass6.mo \
 IfExpression6.mo \
 TupleOperation3.mo \
 RedeclareConstant1.mo \
-BuiltinAttribute13.mo \
 CevalDer2.mo \
 ActualStream.mo \
 ActualStreamMinMax.mo \

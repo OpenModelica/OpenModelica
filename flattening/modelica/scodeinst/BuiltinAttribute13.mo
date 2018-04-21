@@ -10,7 +10,9 @@ model BuiltinAttribute13
 end BuiltinAttribute13;
 
 // Result:
-// class BuiltinAttribute12
-//   Real x(start = 1.0);
-// end BuiltinAttribute12;
+// class BuiltinAttribute13
+//   Real x[1](start = 1.0);
+//   Real x[2](start = 2.0);
+//   Real x[3](start = 3.0);
+// end BuiltinAttribute13;
 // endResult
