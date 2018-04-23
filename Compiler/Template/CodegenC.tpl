@@ -5774,10 +5774,11 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
-  LDFLAGS=<%dirExtra%> <%
+  LDFLAGS=<%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%getTriple()%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
   else <<-L"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<% if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then "--stack,16777216,"%>-rpath,"<%makefileParams.omhome%>/lib/<%getTriple()%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%ParModelicaAutoLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
   %>
+  DIREXTRA=<%stringReplace(dirExtra,"#","\\#") /* make strips everything after # */%>
   MAINFILE=<%fileNamePrefix%>.c
   MAINOBJ=<%fileNamePrefix%>.o
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
@@ -5794,7 +5795,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   .PHONY: $(CFILES)
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
-  <%\t%>$(CC) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+  <%\t%>$(CC) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>_node.js <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>_node.js'%>
