@@ -424,16 +424,16 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
       }
     }
   } else if (type == LibraryTreeItem::OMS) {
-    if (OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement)) {
+    setOMSElement(0);
+    setFMUInfo(0);
+    if ((mpParentLibraryTreeItem && mpParentLibraryTreeItem->isRootItem() && OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement))
+        || (mpParentLibraryTreeItem && mpParentLibraryTreeItem->getOMSElement() &&
+            mpParentLibraryTreeItem->getOMSElement()->type < oms_component_fmu &&
+            OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement))) {
       if (mpOMSElement->type == oms_component_fmu && OMSProxy::instance()->getFMUInfo(mNameStructure, &mpFMUInfo)) {
         setFileName(mpFMUInfo->path);
         setReadOnly(true);
-      } else {
-        setFMUInfo(0);
       }
-    } else {
-      setOMSElement(0);
-      setFMUInfo(0);
     }
     setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   } else {
@@ -3717,7 +3717,8 @@ void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
         setExpandsOnDoubleClick(false);
         return;
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && !pLibraryTreeItem->isTopLevel()) {
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && !pLibraryTreeItem->getOMSElement()) {
+      // FMU inputs & outputs are oms_connector_t and not a oms_element_t
       return;
     }
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);

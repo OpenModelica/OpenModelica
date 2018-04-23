@@ -1910,9 +1910,10 @@ void GraphicsView::cancelTransition()
  */
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
-  // check if the class is system library
+  // check if the class is system library or a package or a OMSimulator model
   if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() ||
-      mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package) {
+      mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package ||
+      mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     event->ignore();
     return;
   }
@@ -3557,10 +3558,13 @@ void ModelWidget::createModelWidgetComponents()
       if (MainWindow::instance()->isDebug()) {
         mpUndoView = new QUndoView(mpUndoStack);
       }
-      // only get the components and connectoi if the we are not creating a new class.
-      if (!mpLibraryTreeItem->getFileName().isEmpty()) {
+      // only get the components and connectoins if the we are not creating a new class.
+      if (mpLibraryTreeItem->getOMSElement()->type < oms_component_fmu && !mpLibraryTreeItem->getFileName().isEmpty()) {
         drawOMSModelElements();
         drawOMSModelConnections();
+      } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
+        drawOMSElement();
+//        drawOMSElementConnectors();
       }
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -5506,6 +5510,22 @@ void ModelWidget::drawOMSModelConnections()
       mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
     }
   }
+}
+
+void ModelWidget::drawOMSElement()
+{
+//  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->geometry
+//      && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
+//    // Draw bitmap with icon
+//  } else {
+//    RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", pGraphicsView);
+//    pRectangleAnnotation->initializeTransformation();
+//    pRectangleAnnotation->drawCornerItems();
+//    pRectangleAnnotation->setCornerItemsActiveOrPassive();
+//    pRectangleAnnotation->isInheritedShape();
+//    pGraphicsView->addShapeToList(pRectangleAnnotation);
+//    pGraphicsView->addItem(pRectangleAnnotation);
+//  }
 }
 
 /*!
