@@ -139,7 +139,7 @@ static void nlsKinsolJacSumDense(DlsMat mat);
 
 int checkReturnFlag(int flag)
 {
-  int retVal;
+  int retVal = flag;
   switch(flag)
   {
   case KIN_SUCCESS:
@@ -599,7 +599,8 @@ void nlsKinsolJacSumDense(DlsMat mat)
   int i,j;
   double sum;
 
-  for(i=0; i<mat->M; ++i,sum=0.0){
+  for(i=0; i<mat->M; ++i){
+    sum = 0.0;
     for(j=0; j<mat->N;++j){
       sum += fabs(DENSE_ELEM(mat,j,i));
     }
@@ -787,7 +788,7 @@ void nlsKinsolFScaling(DATA* data, NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM
 }
 
 static
-int nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nlsData)
+void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nlsData)
 {
   int retValue;
   double fNorm;
@@ -816,8 +817,6 @@ int nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nls
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL linear solver %d", kinsolData->linearSolverMethod);
 
   messageClose(LOG_NLS_V);
-
-  return retValue;
 }
 
 static
