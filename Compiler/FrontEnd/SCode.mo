@@ -5807,5 +5807,386 @@ algorithm
   end match;
 end isEmptyClassDef;
 
+function stripCommentsFromProgram
+  "Strips all annotations and/or comments from a program."
+  input output Program program;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+algorithm
+  program := list(stripCommentsFromElement(e, stripAnnotations, stripComments) for e in program);
+end stripCommentsFromProgram;
+
+function stripCommentsFromElement
+  input output Element element;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  () := match element
+    case Element.EXTENDS()
+      algorithm
+        if stripAnn then
+          element.ann := NONE();
+        end if;
+
+        element.modifications := stripCommentsFromMod(element.modifications, stripAnn, stripCmt);
+      then
+        ();
+
+    case Element.CLASS()
+      algorithm
+        element.classDef := stripCommentsFromClassDef(element.classDef, stripAnn, stripCmt);
+        element.cmt := stripCommentsFromComment(element.cmt, stripAnn, stripCmt);
+      then
+        ();
+
+    case Element.COMPONENT()
+      algorithm
+        element.modifications := stripCommentsFromMod(element.modifications, stripAnn, stripCmt);
+        element.comment := stripCommentsFromComment(element.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    else ();
+  end match;
+end stripCommentsFromElement;
+
+function stripCommentsFromMod
+  input output Mod mod;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  () := match mod
+    case Mod.MOD()
+      algorithm
+        mod.subModLst := list(stripCommentsFromSubMod(m, stripAnn, stripCmt) for m in mod.subModLst);
+      then
+        ();
+
+    case Mod.REDECL()
+      algorithm
+        mod.element := stripCommentsFromElement(mod.element, stripAnn, stripCmt);
+      then
+        ();
+
+    else ();
+  end match;
+end stripCommentsFromMod;
+
+function stripCommentsFromSubMod
+  input output SubMod submod;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  submod.mod := stripCommentsFromMod(submod.mod, stripAnn, stripCmt);
+end stripCommentsFromSubMod;
+
+function stripCommentsFromClassDef
+  input output ClassDef cdef;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  cdef := match cdef
+    local
+      list<Element> el;
+      list<Equation> eql, ieql;
+      list<AlgorithmSection> alg, ialg;
+      Option<ExternalDecl> ext;
+
+    case ClassDef.PARTS()
+      algorithm
+        el := list(stripCommentsFromElement(e, stripAnn, stripCmt) for e in cdef.elementLst);
+        eql := list(stripCommentsFromEquation(eq, stripAnn, stripCmt) for eq in cdef.normalEquationLst);
+        ieql := list(stripCommentsFromEquation(ieq, stripAnn, stripCmt) for ieq in cdef.initialEquationLst);
+        alg := list(stripCommentsFromAlgorithm(a, stripAnn, stripCmt) for a in cdef.normalAlgorithmLst);
+        ialg := list(stripCommentsFromAlgorithm(ia, stripAnn, stripCmt) for ia in cdef.initialAlgorithmLst);
+        ext := stripCommentsFromExternalDecl(cdef.externalDecl, stripAnn, stripCmt);
+      then
+        ClassDef.PARTS(el, eql, ieql, alg, ialg, cdef.constraintLst, cdef.clsattrs, ext);
+
+    case ClassDef.CLASS_EXTENDS()
+      algorithm
+        cdef.modifications := stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt);
+        cdef.composition := stripCommentsFromClassDef(cdef.composition, stripAnn, stripCmt);
+      then
+        cdef;
+
+    case ClassDef.DERIVED()
+      algorithm
+        cdef.modifications := stripCommentsFromMod(cdef.modifications, stripAnn, stripCmt);
+      then
+        cdef;
+
+    case ClassDef.ENUMERATION()
+      algorithm
+        cdef.enumLst := list(stripCommentsFromEnum(e, stripAnn, stripCmt) for e in cdef.enumLst);
+      then
+        cdef;
+
+    else cdef;
+  end match;
+end stripCommentsFromClassDef;
+
+function stripCommentsFromEnum
+  input output Enum enum;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  enum.comment := stripCommentsFromComment(enum.comment, stripAnn, stripCmt);
+end stripCommentsFromEnum;
+
+function stripCommentsFromComment
+  input output Comment cmt;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  if stripAnn then
+    cmt.annotation_ := NONE();
+  end if;
+
+  if stripCmt then
+    cmt.comment := NONE();
+  end if;
+end stripCommentsFromComment;
+
+function stripCommentsFromExternalDecl
+  input output Option<ExternalDecl> extDecl;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+protected
+  ExternalDecl ext_decl;
+algorithm
+  if isSome(extDecl) and stripAnn then
+    SOME(ext_decl) := extDecl;
+    ext_decl.annotation_ := NONE();
+    extDecl := SOME(ext_decl);
+  end if;
+end stripCommentsFromExternalDecl;
+
+function stripCommentsFromEquation
+  input output Equation eq;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  eq.eEquation := stripCommentsFromEEquation(eq.eEquation, stripAnn, stripCmt);
+end stripCommentsFromEquation;
+
+function stripCommentsFromEEquation
+  input output EEquation eq;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  () := match eq
+    case EEquation.EQ_IF()
+      algorithm
+        eq.thenBranch := list(
+            list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in branch)
+          for branch in eq.thenBranch);
+        eq.elseBranch := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.elseBranch);
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_EQUALS()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_PDE()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_CONNECT()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_FOR()
+      algorithm
+        eq.eEquationLst := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_WHEN()
+      algorithm
+        eq.eEquationLst := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in eq.eEquationLst);
+        eq.elseBranches := list(stripCommentsFromWhenEqBranch(b, stripAnn, stripCmt) for b in eq.elseBranches);
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_ASSERT()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_TERMINATE()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_REINIT()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case EEquation.EQ_NORETCALL()
+      algorithm
+        eq.comment := stripCommentsFromComment(eq.comment, stripAnn, stripCmt);
+      then
+        ();
+
+  end match;
+end stripCommentsFromEEquation;
+
+function stripCommentsFromWhenEqBranch
+  input output tuple<Absyn.Exp, list<EEquation>> branch;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+protected
+  Absyn.Exp cond;
+  list<EEquation> body;
+algorithm
+  (cond, body) := branch;
+  body := list(stripCommentsFromEEquation(e, stripAnn, stripCmt) for e in body);
+  branch := (cond, body);
+end stripCommentsFromWhenEqBranch;
+
+function stripCommentsFromAlgorithm
+  input output AlgorithmSection alg;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  alg.statements := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in alg.statements);
+end stripCommentsFromAlgorithm;
+
+function stripCommentsFromStatement
+  input output Statement stmt;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+algorithm
+  () := match stmt
+    case Statement.ALG_ASSIGN()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_IF()
+      algorithm
+        stmt.trueBranch := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.trueBranch);
+        stmt.elseIfBranch := list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.elseIfBranch);
+        stmt.elseBranch := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBranch);
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_FOR()
+      algorithm
+        stmt.forBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.forBody);
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_PARFOR()
+      algorithm
+        stmt.parforBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.parforBody);
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_WHILE()
+      algorithm
+        stmt.whileBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.whileBody);
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_WHEN_A()
+      algorithm
+        stmt.branches := list(stripCommentsFromStatementBranch(b, stripAnn, stripCmt) for b in stmt.branches);
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_ASSERT()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_TERMINATE()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_REINIT()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_NORETCALL()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_RETURN()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_BREAK()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_FAILURE()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_TRY()
+      algorithm
+        stmt.body := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.body);
+        stmt.elseBody := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in stmt.elseBody);
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+    case Statement.ALG_CONTINUE()
+      algorithm
+        stmt.comment := stripCommentsFromComment(stmt.comment, stripAnn, stripCmt);
+      then
+        ();
+
+  end match;
+end stripCommentsFromStatement;
+
+function stripCommentsFromStatementBranch
+  input output tuple<Absyn.Exp, list<Statement>> branch;
+  input Boolean stripAnn;
+  input Boolean stripCmt;
+protected
+  Absyn.Exp cond;
+  list<Statement> body;
+algorithm
+  (cond, body) := branch;
+  body := list(stripCommentsFromStatement(s, stripAnn, stripCmt) for s in body);
+  branch := (cond, body);
+end stripCommentsFromStatementBranch;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCode;

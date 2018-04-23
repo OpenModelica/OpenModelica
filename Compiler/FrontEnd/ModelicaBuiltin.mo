@@ -2110,6 +2110,8 @@ end saveModel;
 function saveTotalModel
   input String fileName;
   input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");

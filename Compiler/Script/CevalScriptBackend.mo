@@ -1882,13 +1882,15 @@ algorithm
       then
         (cache,Values.BOOL(false));
 
-    case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},_)
+    case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
+                                    Values.BOOL(b1), Values.BOOL(b2)},_)
       equation
-        saveTotalModel(filename,classpath);
+        saveTotalModel(filename, classpath, b1, b2);
       then
         (cache, Values.BOOL(true));
 
-    case (cache,_,"saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_))},_)
+    case (cache,_,"saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
+                                    Values.BOOL(_), Values.BOOL(_)},_)
       then (cache, Values.BOOL(false));
 
     case (cache,_,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
@@ -6931,6 +6933,8 @@ end makeUsesArray;
 protected function saveTotalModel
   input String filename;
   input Absyn.Path classpath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
 protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
@@ -6941,11 +6945,16 @@ algorithm
   (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, Absyn.dummyInfo);
   scodeP := SCode.removeBuiltinsFromTopScope(scodeP);
+
+  if stripAnnotations or stripComments then
+    scodeP := SCode.stripCommentsFromProgram(scodeP, stripAnnotations, stripComments);
+  end if;
+
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
   str1 := Absyn.pathLastIdent(classpath) + "_total";
-  str2 := SCodeDump.printCommentStr(cmt);
+  str2 := if stripComments then "" else SCodeDump.printCommentStr(cmt);
   str2 := if stringEq(str2,"") then "" else (" " + str2);
-  str3 := SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
+  str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
   str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
   str1 := "\nmodel " + str1 + str2 + "\n  extends " + Absyn.pathString(classpath) + ";\n" + str3 + "end " + str1 + ";\n";
   System.writeFile(filename, str + str1);
