@@ -947,7 +947,7 @@ public
 
       case RANGE()
         then DAE.RANGE(
-               Type.toDAE(exp.ty),
+               Type.toDAE(Type.arrayElementType(exp.ty)),
                toDAE(exp.start),
                if isSome(exp.step)
                then SOME(toDAE(Util.getOption(exp.step)))
