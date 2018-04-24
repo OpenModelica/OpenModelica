@@ -209,8 +209,17 @@ static void* mmc_mk_rcon(double d)
 #endif
     return MMC_TAGPTR(p);
 }
+static void* mmc_mk_modelica_array(base_array_t arr)
+{
+  base_array_t *cpy = mmc_alloc_words(sizeof(arr)/sizeof(void*) + 1);
+  memcpy(cpy, &arr, sizeof(base_array_t));
+  clone_base_array_spec(&arr, cpy);
+  /* Note: The data is hopefully not stack-allocated and can be passed this way */
+  return cpy;
+}
 #else
 void* mmc_mk_rcon(double d);
+void* mmc_mk_modelica_array(base_array_t);
 #endif
 
 #include "openmodelica.h"

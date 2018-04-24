@@ -229,7 +229,6 @@ typedef int mmc_switch_type;
 #define mmc_mk_integer mmc_mk_icon
 #define mmc_mk_boolean mmc_mk_bcon
 #define mmc_mk_real mmc_mk_rcon
-void* mmc_mk_modelica_array(base_array_t);
 
 void mmc_catch_dummy_fn();
 
