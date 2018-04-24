@@ -599,6 +599,7 @@ SubscriptCevalSlice2.mo \
 SubscriptCevalWhole1.mo \
 SubscriptEnum1.mo \
 SubscriptIterator1.mo \
+SubscriptReduction1.mo \
 SubscriptTooMany1.mo \
 SubscriptTypename1.mo \
 SubscriptWrongType1.mo \
