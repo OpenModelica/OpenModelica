@@ -644,10 +644,6 @@ fmi2Status fmi2Terminate(fmi2Component c)
   /* free linear system data */
   freeLinearSystems(comp->fmuData, comp->threadData);
 #endif
-#if !defined(OMC_NO_STATESELECTION)
-  /* free stateset data */
-  freeStateSetData(comp->fmuData);
-#endif
   /* free data struct */
   deInitializeDataStruc(comp->fmuData);
 

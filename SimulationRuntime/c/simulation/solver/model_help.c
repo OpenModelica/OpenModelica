@@ -1189,11 +1189,6 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->booleanParameter);
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringParameter);
 
-  if (data->modelData->nStateSets) {
-    /* free buffer for state sets */
-    omc_alloc_interface.free_uncollectable(data->simulationInfo->stateSetData);
-  }
-
   if (data->modelData->nMixedSystems) {
     /* free buffer of mixed systems */
     omc_alloc_interface.free_uncollectable(data->simulationInfo->mixedSystemData);
@@ -1237,6 +1232,10 @@ void deInitializeDataStruc(DATA *data)
   /* free stateset data */
   freeStateSetData(data);
 #endif
+  if (data->modelData->nStateSets) {
+    /* free buffer for state sets */
+    omc_alloc_interface.free_uncollectable(data->simulationInfo->stateSetData);
+  }
 
   /* free parameter sensitivities */
   if (omc_flag[FLAG_IDAS])
