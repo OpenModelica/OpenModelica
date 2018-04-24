@@ -2938,11 +2938,69 @@ public
     input Integer n;
   protected
     list<Dimension> dims;
+    Type ety;
+    list<Type> tys = {};
+    Boolean is_array;
   algorithm
+    // Construct the dimensions that needs to be added.
     dims := list(Dimension.fromInteger(1) for i in Type.dimensionCount(ty):n-1);
-    ty := Type.liftArrayRightList(ty, dims);
-    e := CALL(Call.makeBuiltinCall2(NFBuiltinFuncs.PROMOTE, {e, INTEGER(n)}, ty));
+
+    if not listEmpty(dims) then
+      // Concatenate the existing dimensions and the added ones.
+      dims := listAppend(Type.arrayDims(ty), dims);
+
+      // Construct the result type.
+      is_array := Type.isArray(ty);
+      ety := Type.arrayElementType(ty);
+      ty := Type.liftArrayLeftList(ety, dims);
+
+      // Construct the expression types, to avoid having to create a new type
+      // for each subexpression that will be created.
+      while not listEmpty(dims) loop
+        tys := Type.liftArrayLeftList(ety, dims) :: tys;
+        dims := listRest(dims);
+      end while;
+
+      e := promote2(e, is_array, n, listReverse(tys));
+    end if;
   end promote;
+
+  function promote2
+    input Expression exp;
+    input Boolean isArray;
+    input Integer dims;
+    input list<Type> types;
+    output Expression outExp;
+  algorithm
+    outExp := match (exp, types)
+      local
+        Type ty;
+        list<Type> rest_ty;
+
+      // No types left, we're done!
+      case (_, {}) then exp;
+
+      // An array, promote each element in the array.
+      case (ARRAY(), ty :: rest_ty)
+        then ARRAY(ty, list(promote2(e, false, dims, rest_ty) for e in exp.elements));
+
+      // An expression with array type, but which is not an array expression.
+      // Such an expression can't be promoted here, so we create a promote call instead.
+      case (_, _) guard isArray
+        then CALL(Call.makeBuiltinCall2(NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, listHead(types)));
+
+      // A scalar expression, promote it as many times as the number of types given.
+      else
+        algorithm
+          outExp := exp;
+          for ty in listReverse(types) loop
+            outExp := ARRAY(ty, {outExp});
+          end for;
+        then
+          outExp;
+
+    end match;
+  end promote2;
 
   function variability
     input Expression exp;

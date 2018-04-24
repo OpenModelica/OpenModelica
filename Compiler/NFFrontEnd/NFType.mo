@@ -227,6 +227,16 @@ public
     end match;
   end isString;
 
+  function isScalar
+    input Type ty;
+    output Boolean isScalar;
+  algorithm
+    isScalar := match ty
+      case ARRAY() then false;
+      else true;
+    end match;
+  end isScalar;
+
   function isArray
     input Type ty;
     output Boolean isArray;
