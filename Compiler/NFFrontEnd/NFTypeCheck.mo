@@ -2034,8 +2034,8 @@ algorithm
 
     case (Expression.BOOLEAN(), Expression.BOOLEAN())
       algorithm
-        sz := if startExp.value == startExp.value then 1
-              elseif startExp.value < startExp.value then 2
+        sz := if startExp.value == stopExp.value then 1
+              elseif startExp.value < stopExp.value then 2
               else 0;
       then
         Dimension.fromInteger(sz);

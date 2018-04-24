@@ -53,6 +53,8 @@ public
   import Type = NFType;
   import ComponentRef = NFComponentRef;
   import NFCall.Call;
+  import Binding = NFBinding;
+  import NFComponent.Component;
 
   record INTEGER
     Integer value;
@@ -612,59 +614,151 @@ public
     input Expression indexExp;
     input output Expression exp;
   protected
-    Integer index;
     Boolean is_scalar_const;
     Expression texp;
     Type exp_ty;
+    ComponentRef cref;
   algorithm
-    is_scalar_const := Expression.isScalarConst(indexExp);
+    is_scalar_const := isScalarConst(indexExp);
 
     // check exp has array type. Don't apply subs to scalar exp.
     exp_ty := typeOf(exp);
     if not Type.isArray(exp_ty) then
-      Error.assertion(false, getInstanceName() + ": Application of subs on non-array expressoin not allowed. "
-                      + "Exp: " + toString(exp)
-                      + ", Exp type: " + Type.toString(exp_ty)
-                      + ", Sub: " + toString(indexExp)
-                      , sourceInfo());
+      Error.assertion(false, getInstanceName() + ": Application of subs on non-array expression not allowed. " +
+        "Exp: " + toString(exp) + ", Exp type: " + Type.toString(exp_ty) + ", Sub: " + toString(indexExp), sourceInfo());
       fail();
     end if;
 
     exp := match exp
-      local
-        ComponentRef cref;
+      case CREF()
+        algorithm
+          cref := ComponentRef.addSubscript(Subscript.INDEX(indexExp), exp.cref);
+        then
+          CREF(Type.unliftArray(exp.ty), cref);
 
-      case CREF() algorithm
-        cref := ComponentRef.addSubscript(Subscript.INDEX(indexExp), exp.cref);
-        texp := CREF(Type.unliftArray(exp.ty), cref);
-      then texp;
+      case TYPENAME() guard is_scalar_const
+        then applyIndexSubscriptTypename(exp.ty, toInteger(indexExp));
 
-      // We should probably try to evaluate all SUBSCRIPTED_EXP at some point before BackEnd.
-      // It causes all kinds of trouble in code generation. (like the old FrontEnd ASUB() )
-      // Probably at flatten.
-      case ARRAY() algorithm
-        // Do we want to create SUBSCRIPTED_EXP and go through the ASUB hell of the old FrontEnd?
-        // k = {1,i,2}[j];
-        if is_scalar_const then
-           index := Expression.toInteger(indexExp);
-           texp := listGet(exp.elements, index);
-        else
-          texp := SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp.ty));
-          // Error.assertion(false, getInstanceName() + " failed on " + Subscript.toString(sub), sourceInfo());
-          // fail();
-        end if;
-      then texp;
+      case ARRAY()
+        algorithm
+          if is_scalar_const then
+            texp := listGet(exp.elements, toInteger(indexExp));
+          else
+            texp := SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp.ty));
+          end if;
+        then
+          texp;
 
-      case SUBSCRIPTED_EXP() algorithm
-        texp := SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts,{indexExp}), Type.unliftArray(exp.ty));
-      then texp;
+      case RANGE() guard is_scalar_const
+        then applyIndexSubscriptRange(exp.start, exp.step, exp.stop, toInteger(indexExp));
 
-      else algorithm
-        texp := SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp_ty));
-      then texp;
+      case CALL(call = Call.TYPED_MAP_CALL())
+        then applyIndexSubscriptReduction(exp.call, indexExp);
 
+      case SUBSCRIPTED_EXP()
+        then SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts,{indexExp}), Type.unliftArray(exp.ty));
+
+      else SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp_ty));
     end match;
   end applyIndexSubscript;
+
+  function applyIndexSubscriptTypename
+    input Type ty;
+    input Integer index;
+    output Expression subscriptedExp;
+  algorithm
+    subscriptedExp := match ty
+      case Type.BOOLEAN() guard index <= 2
+        then if index == 1 then Expression.BOOLEAN(false) else Expression.BOOLEAN(true);
+
+      case Type.ENUMERATION()
+        then Expression.ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, index), index);
+    end match;
+  end applyIndexSubscriptTypename;
+
+  function applyIndexSubscriptRange
+    input Expression startExp;
+    input Option<Expression> stepExp;
+    input Expression stopExp;
+    input Integer index;
+    output Expression subscriptedExp;
+  protected
+    Integer iidx;
+    Real ridx;
+  algorithm
+    subscriptedExp := match (startExp, stepExp)
+      case (Expression.INTEGER(), SOME(Expression.INTEGER(iidx)))
+        then Expression.INTEGER(startExp.value + index * iidx - 1);
+
+      case (Expression.INTEGER(), _)
+        then Expression.INTEGER(startExp.value + index - 1);
+
+      case (Expression.REAL(), SOME(Expression.REAL(ridx)))
+        then Expression.REAL(startExp.value + index * ridx - 1);
+
+      case (Expression.REAL(), _)
+        then Expression.REAL(startExp.value + index - 1.0);
+
+      case (Expression.BOOLEAN(), _)
+        then if index == 1 then startExp else stopExp;
+
+      case (Expression.ENUM_LITERAL(index = iidx), _)
+        algorithm
+          iidx := iidx + index - 1;
+        then
+          ENUM_LITERAL(startExp.ty, Type.nthEnumLiteral(startExp.ty, iidx), iidx);
+
+    end match;
+  end applyIndexSubscriptRange;
+
+  function applyIndexSubscriptReduction
+    input Call call;
+    input Expression indexExp;
+    output Expression subscriptedExp;
+  protected
+    Type ty;
+    Variability var;
+    Expression exp, iter_exp;
+    list<InstNode> iters;
+    InstNode iter;
+  algorithm
+    Call.TYPED_MAP_CALL(ty, var, exp, iters) := call;
+    iter :: iters := iters;
+    iter_exp := Binding.getTypedExp(Component.getBinding(InstNode.component(iter)));
+    iter_exp := applyIndexSubscript(indexExp, iter_exp);
+    subscriptedExp := replaceIterator(exp, InstNode.name(iter), iter_exp);
+
+    if not listEmpty(iters) then
+      subscriptedExp := CALL(Call.TYPED_MAP_CALL(Type.unliftArray(ty), var, subscriptedExp, iters));
+    end if;
+  end applyIndexSubscriptReduction;
+
+  function replaceIterator
+    input output Expression exp;
+    input String iteratorName;
+    input Expression iteratorValue;
+  algorithm
+    exp := map(exp, function replaceIterator2(iteratorName = iteratorName, iteratorValue = iteratorValue));
+  end replaceIterator;
+
+  function replaceIterator2
+    input output Expression exp;
+    input String iteratorName;
+    input Expression iteratorValue;
+
+    import Origin = NFComponentRef.Origin;
+  algorithm
+    exp := match exp
+      local
+        String name;
+
+      case CREF(cref = ComponentRef.CREF(
+          node = InstNode.COMPONENT_NODE(name = name), origin = Origin.ITERATOR))
+        then if name == iteratorName then iteratorValue else exp;
+
+      else exp;
+    end match;
+  end replaceIterator2;
 
   function applySliceSubscript
     input Expression slice;
@@ -2557,7 +2651,15 @@ public
         then
           ARRAY(ty, expl);
 
-      case {} then SUBSCRIPTED_EXP(exp, listReverse(accum), ty);
+      case {}
+        algorithm
+          outExp := exp;
+          for s in listReverse(accum) loop
+            outExp := applyIndexSubscript(s, outExp);
+          end for;
+        then
+          outExp;
+
     end match;
   end expandGeneric2;
 

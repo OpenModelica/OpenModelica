@@ -658,38 +658,10 @@ algorithm
   while RangeIterator.hasNext(range_iter) loop
     (range_iter, val) := RangeIterator.next(range_iter);
     unrolled_body := list(Equation.mapExp(eq,
-      function replaceForIterator(iteratorName = iter_name, iteratorValue = val)) for eq in body);
+      function Expression.replaceIterator(iteratorName = iter_name, iteratorValue = val)) for eq in body);
     equations := listAppend(unrolled_body, equations);
   end while;
 end unrollForLoop;
-
-function replaceForIterator
-  input output Expression exp;
-  input String iteratorName;
-  input Expression iteratorValue;
-algorithm
-  exp := Expression.map(exp,
-    function replaceForIterator2(iteratorName = iteratorName, iteratorValue = iteratorValue));
-end replaceForIterator;
-
-function replaceForIterator2
-  input output Expression exp;
-  input String iteratorName;
-  input Expression iteratorValue;
-
-  import Origin = NFComponentRef.Origin;
-algorithm
-  exp := match exp
-    local
-      String name;
-
-    case Expression.CREF(cref = ComponentRef.CREF(
-        node = InstNode.COMPONENT_NODE(name = name), origin = Origin.ITERATOR))
-      then if name == iteratorName then iteratorValue else exp;
-
-    else exp;
-  end match;
-end replaceForIterator2;
 
 function flattenAlgorithms
   input output list<list<Statement>> algorithms;

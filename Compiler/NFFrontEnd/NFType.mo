@@ -485,6 +485,17 @@ public
     end match;
   end dimensionCount;
 
+  function nthEnumLiteral
+    input Type ty;
+    input Integer index;
+    output String literal;
+  protected
+    list<String> literals;
+  algorithm
+    ENUMERATION(literals = literals) := ty;
+    literal := listGet(literals, index);
+  end nthEnumLiteral;
+
   function toString
     input Type ty;
     output String str;

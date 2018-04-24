@@ -439,6 +439,9 @@ algorithm
       then
         ();
 
+    case Component.ITERATOR(binding = Binding.TYPED_BINDING())
+      then ();
+
     case Component.ITERATOR(binding = Binding.UNBOUND())
       algorithm
         Error.assertion(false, getInstanceName() + ": Implicit iteration ranges not yet implement", sourceInfo());
