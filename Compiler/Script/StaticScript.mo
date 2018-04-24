@@ -351,25 +351,6 @@ algorithm
         (cache,Expression.makePureBuiltinCall("translateModelCPP",
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModelFMU"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
-      equation
-        className = Absyn.crefToPath(cr);
-        cname_str = Absyn.pathString(className);
-        (cache,fmuversion) = Static.getOptionalNamedArg(cache,env, impl, "version",
-                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST("1.0"),pre,info);
-        (cache,fmuType) = Static.getOptionalNamedArg(cache,env, impl, "fmuType",
-                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST("me"),pre,info);
-        (cache, filenameprefix) = Static.getOptionalNamedArg(cache,env, impl, "fileNamePrefix",
-                                                     DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str),pre,info);
-        recordtype =
-          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
-          {DAE.TYPES_VAR("flatClass",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-           DAE.TYPES_VAR("exeFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())},
-           NONE());
-      then
-        (cache,Expression.makePureBuiltinCall("translateModelFMU",
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),fmuversion,fmuType,filenameprefix},DAE.T_STRING_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
-
     case (cache,env,Absyn.CREF_IDENT(name = "translateModelXML"),{Absyn.CREF(componentRef = cr)},args,impl,pre,_)
       equation
         className = Absyn.crefToPath(cr);
