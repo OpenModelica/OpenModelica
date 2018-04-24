@@ -383,7 +383,7 @@ constant list<DAE.Type> realtypes = {
   DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT
 };
 constant list<DAE.Type> stringtypes = {
-  DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT
+  DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT
 };
 
 function deoverloadBinaryUserdefNoConstructor
@@ -902,7 +902,10 @@ protected
       // ADD_EW
       addIntArrayScalars = list((DAE.ADD_ARRAY_SCALAR(int_vector), {at,rhs},at) threaded for at in intarrtypes, rhs in inttypes),
       addRealArrayScalars = list((DAE.ADD_ARRAY_SCALAR(real_vector), {at,rhs},at) threaded for at in realarrtypes, rhs in realtypes),
-      addStringArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()})), {at,rhs},at) threaded for at in stringarrtypes, rhs in stringtypes),
+      // TODO: This will give the wrong result since String concatenation isn't
+      //       commutative, an ADD_SCALAR_ARRAY would need to be added to fix it.
+      //addStringArrayScalars = list((DAE.ADD_ARRAY_SCALAR(DAE.T_ARRAY(DAE.T_STRING_DEFAULT, {DAE.DIM_UNKNOWN()})), {at,rhs},at) threaded for at in stringarrtypes, rhs in stringtypes),
+      addStringArrayScalars = {},
       addEwTypes = listAppend(addIntArrayScalars, listAppend(addRealArrayScalars, listAppend(addStringArrayScalars, addTypes))),
       // SUB
       subIntArrays = list((DAE.SUB_ARR(int_vector), {at,at},at) for at in intarrtypes),
