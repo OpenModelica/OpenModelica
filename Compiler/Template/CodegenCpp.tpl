@@ -9648,7 +9648,7 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as SES_ARRAY_CALL_ASSIGN(__)
-    then equationArrayCallAssign(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    then equationArrayCallAssign(e, context, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
   case e as SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))
     then
       let i = ls.index
@@ -9865,7 +9865,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
       equationWhen(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     case e as SES_ARRAY_CALL_ASSIGN(__)
       then
-      equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
     case e as SES_LINEAR(__)
     case e as SES_NONLINEAR(__)
       then
@@ -10955,13 +10955,16 @@ end algloopcppfilenames2;
 
 
 template equationArrayCallAssign(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs,
-                                 Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+                                 Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Boolean assignToStartValues)
  "Generates equation on form 'cref_array = call(...)'."
 ::=
 let &varDeclsCref = buffer "" /*BUFD*/
 match eq
 
 case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
+  let startFixedExp = match cref2simvar(lhs.componentRef, simCode)
+    case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = isStartFixed)) then
+      'if (<%if isStartFixed then "_clockStart[clockIndex - 1] || "%>_clockSubactive[clockIndex - 1]) return;'
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
     let &helpInits = buffer "" /*BUFD*/
@@ -10974,11 +10977,13 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   case "boolean"
   case "int" then
     <<
+    <%if not assignToStartValues then '<%startFixedExp%>'%>
     <%preExp%>
     <%cref1(lhs.componentRef,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>=<%expPart%>;
     >>
   case "double" then
     <<
+    <%if not assignToStartValues then '<%startFixedExp%>'%>
     <%preExp%>
     <%assignDerArray(context, expPart, lhs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     >>
@@ -11271,10 +11276,10 @@ template equationSimpleAssign(SimEqSystem eq, Context context,Text &varDecls, Si
 ::=
 match eq
 case SES_SIMPLE_ASSIGN(__) then
-  let &preExp = buffer "" /*BUFD*/
   let startFixedExp = match cref2simvar(cref, simCode)
     case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = isStartFixed)) then
       'if (<%if isStartFixed then "_clockStart[clockIndex - 1] || "%>_clockSubactive[clockIndex - 1]) return;'
+  let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 
   match cref
