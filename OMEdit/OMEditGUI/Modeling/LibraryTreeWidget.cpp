@@ -3593,7 +3593,6 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 LibraryWidget::LibraryWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-  setMinimumWidth(175);
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
