@@ -8,7 +8,9 @@
 NEED_DGESV=1
 include Makefile.objs
 
+LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
+BUILDPATH=build/c
 
 CPPFLAGS = -I. -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -I$(builddir_inc)/c
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
@@ -132,7 +134,7 @@ RUNTIMEINITIALIZATION_HEADERS = \
 # ./simulation/solver/solver_main.h \
 # ./util/list.h \
 
-.PHONY : clean all emcc emcc-clean emcc/libSimulationRuntimeC.so
+.PHONY : clean all emcc emcc-clean emcc/libSimulationRuntimeC.so fmi-runtime mkbuilddir
 
 all : install
 
@@ -187,44 +189,61 @@ libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) Makefile.o
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
-$(GCOBJSPATH):%$(OBJ_EXT): %.c $(GCHFILESPATH) $(COMMON_HEADERS)
+MKBUILDDIR=@(mkdir -p "$(BUILDPATH)" && cd "$(BUILDPATH)" && mkdir -p $(GCPATH) $(METAPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(RESULTSPATH) $(SIMPATH) $(OPTIMIZATIONPATH)/DataManagement $(OPTIMIZATIONPATH)/eval_all $(FMIPATH) $(OPTIMIZATIONPATH) linearization external_solvers)
+$(GCOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(GCHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(METAOBJSPATH):%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS)
+$(METAOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
+$(BUILDPATH)/./meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $< -g
 
-$(UTILOBJSPATH):%$(OBJ_EXT): %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
+$(UTILOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(MATHOBJSPATH):%$(OBJ_EXT): %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
+$(MATHOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) $(FPMATHFORTRAN) -o $@ $<
 
-$(SOLVEROBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
+$(SOLVEROBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(RESULTSHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(INITIALIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
+$(INITIALIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(RESULTSOBJSPATH):%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
+$(RESULTSOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-$(SIMOBJSPATH):%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
+$(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CXX) -c -Ilinearization/ $(CXXFLAGS) -o $@ $<
 
-$(SIMOBJSPATHC):%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
+$(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(OPTIMIZATIONOBJSPATH):%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
+$(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(FMIOBJSPATH):%$(OBJ_EXT): %.c $(COMMON_HEADERS)
+$(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
+	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
+$(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
+	$(MKBUILDDIR)
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(BUILDPATH)/util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
 
 bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(LIBRUNTIME) $(builddir_lib)
@@ -240,9 +259,17 @@ bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/gc/
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 
-install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) sourcedist
+fmi-runtime: sourcedist
+	$(MAKE) "$(LIBSIMULATIONFMI)" OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 BUILDPATH=build/fmi OMC_NUM_NONLINEAR_SYSTEMS=1 OMC_NUM_LINEAR_SYSTEMS=1 OMC_NUM_MIXED_SYSTEMS=1
+libSimulationRuntimeFMI.a: $(FMI_ME_OBJS_BUILDPATH)
+	@# You have to remove the old archive first or it may contain old objects
+	@rm -f $@
+	$(AR) $@ $(FMI_ME_OBJS_BUILDPATH)
+	ranlib $@
+
+install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fmi-runtime
 	# copy libraries
-	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(builddir_lib)
+	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
 	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.0.dylib @rpath/libsundials_idas.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
@@ -259,7 +286,7 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) so
 	   ../fmi/export/fmi2/fmu2_model_interface.c $(builddir_inc)/c/fmi2
 
 clean:
-	rm -f $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o
+	rm -rf $(ALL_PATHS_CLEAN_OBJS) fmi/*.o *.a *.so optimization/*/*.o build/
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) clean
 	(! test -f $(EXTERNALCBUILDDIR)/Makefile) || make -C $(EXTERNALCBUILDDIR) distclean
 
@@ -269,21 +296,23 @@ sourcedist1:
 sourcedist2:
 	$(MAKE) -C ../fmi/export/buildproject -f $(defaultMakefileTarget)
 
+# Copied files need to preserve the time-stamp or the external solvers builds
+# over and over again
 sourcedist_internal:
 	mkdir -p $(builddir_inc)/c/external_solvers external_solvers
-	cp \
+	cp -p \
 	 $(CMINPACK_OBJS:%=$(CMINPACKDIR)/%.c) \
 	 $(LAPACK_OBJS:%=$(LAPACKDIR)/lapack/%.c) \
 	 $(BLAS_OBJS:%=$(LAPACKDIR)/blas/%.c) \
 	 $(LIBF2C_OBJS:%=$(LAPACKDIR)/libf2c/%.c) \
 	 "./external_solvers/"
-	cp \
+	cp -p \
 	 "$(CMINPACKDIR)/minpack.h" "$(CMINPACKDIR)/cminpack.h" \
 	 "$(LAPACKDIR)/include/blaswrap.h" \
 	 "$(LAPACKDIR)/include/clapack.h" \
 	 "$(LAPACKDIR)/include/f2c.h" \
 	 "$(builddir_inc)/c/external_solvers"
-	cd $(builddir_inc)/c/ && mkdir -p $(ALL_PATHS)
-	(D=`pwd` && cd $(builddir_inc)/c/ $(FMI_ME_OBJS:%.o= && (OMCFILE=% && cp $$D/$$OMCFILE.c $$OMCFILE.c)))
+	@cd $(builddir_inc)/c/ && mkdir -p $(ALL_PATHS)
+	@(D=`pwd` && cd $(builddir_inc)/c/ $(FMI_ME_OBJS:%.o= && (OMCFILE=% && cp -p $$D/$$OMCFILE.c $$OMCFILE.c)))
 	cp Makefile.objs $(builddir_inc)/c/
 	rm -r ./external_solvers

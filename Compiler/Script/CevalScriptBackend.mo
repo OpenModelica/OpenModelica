@@ -3327,10 +3327,10 @@ algorithm
         // replace @XX@ variables in the Makefile
         makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
         makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+System.getRTLibsFMU());
+        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+" -lSimulationRuntimeFMI "+System.getRTLibsFMU());
         makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", System.getDllExt());
-        makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "1");
+        makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
         makefileStr := System.stringReplace(makefileStr, "@NEED_DGESV@", "");
         makefileStr := System.stringReplace(makefileStr, "@FMIPLATFORM@", System.modelicaPlatform());
         makefileStr := System.stringReplace(makefileStr, "@CPPFLAGS@", "-DOMC_MINIMAL_RUNTIME=1 -DCMINPACK_NO_DLL=1");
@@ -3368,7 +3368,7 @@ protected function buildModelFMU " author: Frenkel TUD
   input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
-  input list<String> platforms = {"dynamic"};
+  input list<String> platforms = {"static"};
   output FCore.Cache cache;
   output Values.Value outValue;
 protected
