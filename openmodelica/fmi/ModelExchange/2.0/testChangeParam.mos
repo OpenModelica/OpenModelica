@@ -17,7 +17,7 @@ model test_ChangeParam
 equation
   der(x) = x*a+u;
   y = if b then der(x)-x-i else der(x)+x+i;
-  when time>1 then 
+  when time>1 then
       terminate(\"Simulation done by \" + s);
   end when;
   annotation(experiment(StopTime=2));
@@ -41,7 +41,7 @@ val(y, 1);
 getErrorString();
 
 system("./test_ChangeParam_me_FMU -override a=-2,i=-10,b=false,s=\"bar\" -r test_ChangeParam.mat");
-readSimulationResult("test_ChangeParam.mat", {x,a,y}, 6);
+readSimulationResult("test_ChangeParam.mat", {x,a,y}, 7);
 getErrorString();
 
 
@@ -59,22 +59,16 @@ getErrorString();
 //     resultFile = "test_ChangeParam_me_FMU_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 1, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test_ChangeParam_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// [<interactive>:14:7-14:43:writable]
-// stdout            | info    | Simulation call terminate() at time 1.000000
-// |                 | |       | Message : Simulation done by foo
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// 7.389089930122227
+// 7.3890899286445
 // 2.0
-// 6.389089930122228
+// 6.3890899286445
 // ""
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// [<interactive>:14:7-14:43:writable]
-// stdout            | info    | Simulation call terminate() at time 1.000000
-// |                 | |       | Message : Simulation done by bar
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
-// {{1.0,1.0,1.0,0.1353363211567342,0.1353363211567342,0.1353363211567342},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.13533632115673,-10.13533632115673,-10.13533632115673}}
+// {{1.0,1.0,1.0,0.1353363211838032,0.1353363211838032,0.01831624751345867,0.01831624751345867},{-2.0,-2.0,-2.0,-2.0,-2.0,-2.0,-2.0},{-11.0,-11.0,-11.0,-10.1353363211838,-10.1353363211838,-10.01831624751346,-10.01831624751346}}
 // ""
 // endResult
