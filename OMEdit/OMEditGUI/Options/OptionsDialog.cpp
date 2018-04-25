@@ -3462,7 +3462,7 @@ MessagesPage::MessagesPage(OptionsDialog *pOptionsDialog)
   mpWarningColorButton = new QPushButton(Helper::pickColor);
   mpWarningColorButton->setAutoDefault(false);
   connect(mpWarningColorButton, SIGNAL(clicked()), SLOT(pickWarningColor()));
-  setWarningColor(Qt::black);
+  setWarningColor(QColor(255, 170, 0));
   setWarningPickColorButtonIcon();
   // Error Color
   mpErrorColorLabel = new Label(tr("Error Color:"));
