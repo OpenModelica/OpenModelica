@@ -1189,6 +1189,50 @@ TLM
 
   -  TLM Monitor Process - path to TLM monitor process.
 
+__OpenModelica_commandLineOptions Annotation
+--------------------------------------------
+
+OpenModelica specific annotation to define the command line options needed to simulate the model.
+For example if you always want to simulate the model with a specific matching algorithm and index
+reduction method instead of the default ones then you can write the following code,
+
+.. code-block :: modelica
+
+  model Test
+    annotation(__OpenModelica_commandLineOptions = "--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection");
+  end Test;
+
+The annotation is a space separated list of options where each option is either just a command line
+flag or a flag with a value.
+
+In OMEdit right click inside the icon/diagram view of the model and choose `Properties`.
+Then `OMC Flags` and in the text field write `--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection`.
+
+If you want to ignore this annotation then use `setCommandLineOptions("--ignoreCommandLineOptionsAnnotation=true")`.
+In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_commandLineOptions annotation`.
+
+__OpenModelica_simulationFlags Annotation
+-----------------------------------------
+
+OpenModelica specific annotation to define the simulation options needed to simulate the model.
+For example if you always want to simulate the model with a specific solver instead of the
+default DASSL and would also like to see the cpu time then you can write the following code,
+
+.. code-block :: modelica
+
+  model Test
+    annotation(__OpenModelica_simulationFlags(s = "heun", cpu = "()"));
+  end Test;
+
+The annotation is a comma separated list of options where each option is a simulation flag
+with a value. For flags that doesn't have any value use `()` (See the above code example).
+
+In OMEdit open the Simulation Setup and set the Simulation Flags then
+in the bottom check `Save __OpenModelica_simulationFlags annotation inside model` and click on OK.
+
+If you want to ignore this annotation then use `setCommandLineOptions("--ignoreSimulationFlagsAnnotation=true")`.
+In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_simulationFlags annotation`.
+
 Debugger
 --------
 
