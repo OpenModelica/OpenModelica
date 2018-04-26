@@ -260,7 +260,7 @@ bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
 
 fmi-runtime: sourcedist
-	$(MAKE) "$(LIBSIMULATIONFMI)" OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 BUILDPATH=build/fmi OMC_NUM_NONLINEAR_SYSTEMS=1 OMC_NUM_LINEAR_SYSTEMS=1 OMC_NUM_MIXED_SYSTEMS=1
+	$(MAKE) -f $(LIBMAKEFILE) "$(LIBSIMULATIONFMI)" OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 BUILDPATH=build/fmi OMC_NUM_NONLINEAR_SYSTEMS=1 OMC_NUM_LINEAR_SYSTEMS=1 OMC_NUM_MIXED_SYSTEMS=1
 libSimulationRuntimeFMI.a: $(FMI_ME_OBJS_BUILDPATH)
 	@# You have to remove the old archive first or it may contain old objects
 	@rm -f $@
