@@ -48,12 +48,12 @@ end OperationSub1;
 //   Real r3[3,3];
 // equation
 //   i1 = 1 - 2;
-//   i2[1] = 1 - 3;
-//   i2[2] = 2 - 4;
+//   i2[1] = -2;
+//   i2[2] = -2;
 //   i3 = identity(3) - identity(3);
-//   r1 = 1.0 - 2;
-//   r2[1] = 1 - 3.0;
-//   r2[2] = 2.0 - 4;
+//   r1 = 1.0 - 2.0;
+//   r2[1] = -2.0;
+//   r2[2] = -2.0;
 //   r3 = /*Real[3, 3]*/(identity(3) - identity(3));
 // end OperationSub1;
 // endResult
