@@ -777,6 +777,26 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
   return buf;
 }
 
+extern const char* System_sprintff(const char *fmt, double d)
+{
+  char *buf;
+  const int buf_size = 20;
+  buf = ModelicaAllocateString(buf_size);
+
+  int len = snprintf(buf, buf_size, fmt, d);
+
+  if (len < 0) {
+    MMC_THROW();
+  }
+
+  if (len >= buf_size) {
+    buf = ModelicaAllocateString(len + 1);
+    snprintf(buf, len, fmt, d);
+  }
+
+  return buf;
+}
+
 extern const char* System_realpath(const char *path)
 {
   char buf[PATH_MAX];

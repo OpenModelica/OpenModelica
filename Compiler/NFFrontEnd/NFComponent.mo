@@ -182,6 +182,8 @@ uniontype Component
   record ITERATOR
     Type ty;
     Binding binding;
+    Variability variability;
+    SourceInfo info;
   end ITERATOR;
 
   record ENUM_LITERAL
@@ -526,7 +528,7 @@ uniontype Component
     variability := match component
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(variability = variability)) then variability;
-      case ITERATOR() then Variability.CONSTANT;
+      case ITERATOR() then component.variability;
       case ENUM_LITERAL() then Variability.CONSTANT;
       else Variability.CONTINUOUS;
     end match;

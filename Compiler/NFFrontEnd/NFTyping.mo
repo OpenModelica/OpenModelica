@@ -68,7 +68,6 @@ import Lookup = NFLookup;
 import MatchKind = NFTypeCheck.MatchKind;
 import NFCall.Call;
 import NFClass.ClassTree;
-import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Types;
@@ -119,15 +118,16 @@ package ExpOrigin
   constant Type LHS             = 16;    // On left hand side of equality/assignment.
   constant Type RHS             = 32;    // On right hand side of equality/assignment.
   constant Type WHEN            = 64;    // In when equation/statement.
-  constant Type NONEXPANDABLE   = 128;   // In non-parameter if/for.
-  constant Type ITERATION_RANGE = 256;   // In range used for iteration.
-  constant Type DIMENSION       = 512;   // In dimension.
-  constant Type BINDING         = 1024;  // In binding.
-  constant Type CONDITION       = 2048;  // In conditional expression.
-  constant Type SUBSCRIPT       = 4096;  // In subscript.
-  constant Type SUBEXPRESSION   = 8192;  // Part of a larger expression.
-  constant Type CONNECT         = 16384; // Part of connect argument.
-  constant Type NOEVENT         = 32768; // Part of noEvent argument.
+  constant Type FOR_LOOP        = 128;   // In a for loop.
+  constant Type NONEXPANDABLE   = 256;   // In non-parameter if/for.
+  constant Type ITERATION_RANGE = 512;   // In range used for iteration.
+  constant Type DIMENSION       = 1024;  // In dimension.
+  constant Type BINDING         = 2048;  // In binding.
+  constant Type CONDITION       = 4096;  // In conditional expression.
+  constant Type SUBSCRIPT       = 8192;  // In subscript.
+  constant Type SUBEXPRESSION   = 16384; // Part of a larger expression.
+  constant Type CONNECT         = 32768; // Part of connect argument.
+  constant Type NOEVENT         = 65536; // Part of noEvent argument.
 
   // Combined flags:
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
@@ -397,7 +397,6 @@ end checkConnectorType;
 
 function typeIterator
   input InstNode iterator;
-  input SourceInfo info;
   input ExpOrigin.Type origin;
   input Boolean structural "If the iteration range must be a parameter expression or not.";
 protected
@@ -405,9 +404,10 @@ protected
   Binding binding;
   Type ty;
   Expression exp;
+  SourceInfo info;
 algorithm
   () := match c
-    case Component.ITERATOR(binding = Binding.UNTYPED_BINDING())
+    case Component.ITERATOR(binding = Binding.UNTYPED_BINDING(), info = info)
       algorithm
         binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.ITERATION_RANGE));
 
@@ -419,7 +419,6 @@ algorithm
           else
             SOME(exp) := Binding.typedExp(binding);
             exp := Ceval.evalExp(exp, Ceval.EvalTarget.RANGE(info));
-            exp := SimplifyExp.simplifyExp(exp);
             binding := Binding.setTypedExp(exp, binding);
           end if;
         end if;
@@ -434,7 +433,7 @@ algorithm
 
         // The type of the iterator is the element type of the range expression.
         ty := Type.arrayElementType(ty);
-        c := Component.ITERATOR(ty, binding);
+        c := Component.ITERATOR(ty, binding, Binding.variability(binding), info);
         InstNode.updateComponent(c, iterator);
       then
         ();
@@ -526,7 +525,6 @@ algorithm
         if var <= Variability.PARAMETER then
           // Evaluate the dimension if it's a parameter expression.
           exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
-          exp := SimplifyExp.simplifyExp(exp);
         else
           // Dimensions must be parameter expressions, unless we're in a function.
           if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
@@ -672,7 +670,7 @@ algorithm
       MatchKind matchKind;
       Boolean dirty;
       String name;
-      Variability comp_var, bind_var;
+      Variability comp_var, comp_eff_var, bind_var;
 
     // A component that's already been typed.
     case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
@@ -688,18 +686,19 @@ algorithm
         // binding which is now typed, and it needs to be type checked.
         if dirty then
           binding := TypeCheck.matchBinding(binding, c.ty, name, InstNode.derivedParent(node));
-          comp_var := Prefixes.effectiveVariability(Component.variability(c));
+          comp_var := Component.variability(c);
+          comp_eff_var := Prefixes.effectiveVariability(comp_var);
           bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
 
-          if bind_var > comp_var then
+          if bind_var > comp_eff_var then
             if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
               Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {
-                name, Prefixes.variabilityString(comp_var),
+                name, Prefixes.variabilityString(comp_eff_var),
                 Binding.toString(c.binding), Prefixes.variabilityString(bind_var)},
                 Binding.getInfo(binding));
             else
               Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-                name, Prefixes.variabilityString(comp_var),
+                name, Prefixes.variabilityString(comp_eff_var),
                 "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
                 Binding.getInfo(binding));
               fail();
@@ -731,6 +730,12 @@ algorithm
         end if;
 
         typeBindings(c.classInst, component, origin);
+      then
+        ();
+
+    case Component.ITERATOR()
+      algorithm
+        typeIterator(node, origin, true);
       then
         ();
 
@@ -838,7 +843,6 @@ algorithm
         end if;
 
         exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
-        exp := SimplifyExp.simplifyExp(exp);
       then
         Binding.FLAT_BINDING(exp);
 
@@ -917,7 +921,6 @@ algorithm
     case Binding.TYPED_BINDING()
       algorithm
         exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
-        exp := SimplifyExp.simplifyExp(exp);
       then
         Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.origin, binding.isEach);
 
@@ -967,7 +970,6 @@ algorithm
 
         if replaceConstants and variability <= Variability.STRUCTURAL_PARAMETER then
           e1 := Ceval.evalExp(e1, Ceval.EvalTarget.GENERIC(info));
-          e1 := SimplifyExp.simplifyExp(e1);
         end if;
       then
         (e1, ty, variability);
@@ -1618,9 +1620,9 @@ algorithm
   end if;
 
   if variability <= Variability.STRUCTURAL_PARAMETER then
-    start_exp := SimplifyExp.simplifyExp(Ceval.evalExp(start_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
-    ostep_exp := SimplifyExp.simplifyExpOpt(Ceval.evalExpOpt(ostep_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
-    stop_exp := SimplifyExp.simplifyExp(Ceval.evalExp(stop_exp, Ceval.EvalTarget.IGNORE_ERRORS()));
+    start_exp := Ceval.evalExp(start_exp, Ceval.EvalTarget.IGNORE_ERRORS());
+    ostep_exp := Ceval.evalExpOpt(ostep_exp, Ceval.EvalTarget.IGNORE_ERRORS());
+    stop_exp := Ceval.evalExp(stop_exp, Ceval.EvalTarget.IGNORE_ERRORS());
   end if;
 
   rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);
@@ -1704,7 +1706,6 @@ algorithm
         if variability <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate the index if it's a constant.
           index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
-          index := SimplifyExp.simplifyExp(index);
 
           // TODO: Print an error if the index couldn't be evaluated to an int.
           Expression.INTEGER(iindex) := index;
@@ -1865,7 +1866,7 @@ algorithm
         // expression, do branch selection.
         (ifExp, ty, var) := if evaluateCondition(cond, info) then (tb, tb_ty, tb_var) else (fb, fb_ty, fb_var);
       else
-        // Otherwise give an type mismatch error.
+        // Otherwise give a type mismatch error.
         Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
           {"", Expression.toString(tb), Type.toString(tb_ty),
                Expression.toString(fb), Type.toString(fb_ty)}, info);
@@ -1887,7 +1888,6 @@ protected
   Expression cond_exp;
 algorithm
   cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.GENERIC(info));
-  cond_exp := SimplifyExp.simplifyExp(cond_exp);
 
   condBool := match cond_exp
     case Expression.BOOLEAN() then cond_exp.value;
@@ -2006,7 +2006,6 @@ algorithm
               // The only other kind of expression that's allowed is scalar constants.
               if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
                 outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
-                outArg := SimplifyExp.simplifyExp(arg);
               else
                 Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
                   {Expression.toString(outArg)}, info);
@@ -2171,8 +2170,9 @@ algorithm
     case Equation.FOR()
       algorithm
         info := ElementSource.getInfo(eq.source);
-        typeIterator(eq.iterator, info, origin, structural = true);
-        body := list(typeEquation(e, origin) for e in eq.body);
+        typeIterator(eq.iterator, origin, structural = true);
+        next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
+        body := list(typeEquation(e, next_origin) for e in eq.body);
       then
         Equation.FOR(eq.iterator, body, eq.source);
 
@@ -2381,8 +2381,9 @@ algorithm
     case Statement.FOR()
       algorithm
         info := ElementSource.getInfo(st.source);
-        typeIterator(st.iterator, info, origin, structural = false);
-        body := typeAlgorithm(st.body, origin);
+        typeIterator(st.iterator, origin, structural = false);
+        next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
+        body := typeAlgorithm(st.body, next_origin);
       then
         Statement.FOR(st.iterator, body, st.source);
 
@@ -2498,11 +2499,12 @@ algorithm
     (cond, var) := typeCondition(cond, next_origin, source, Error.IF_CONDITION_TYPE_ERROR);
     accum_var := Prefixes.variabilityMax(accum_var, var);
 
-    if var <= Variability.PARAMETER then
+    if var <= Variability.PARAMETER and
+       (intBitAnd(origin, ExpOrigin.FOR_LOOP) == 0 or
+        not Expression.contains(cond, Expression.isIterator)) then
       // If the condition is a parameter expression, evaluate it so we can do
       // branch selection later on.
       cond := Ceval.evalExp(cond, Ceval.EvalTarget.IGNORE_ERRORS());
-      cond := SimplifyExp.simplifyExp(cond);
     else
       // Otherwise, set the non-expandable bit in the origin, so we can check
       // that e.g. connect isn't used in any branches from here on.
@@ -2512,6 +2514,10 @@ algorithm
     if not Expression.isFalse(cond) then
       eql := list(typeEquation(e, next_origin) for e in eql);
       bl := (cond, eql) :: bl;
+
+      if Expression.isTrue(cond) then
+        break;
+      end if;
     end if;
   end for;
 

@@ -247,12 +247,6 @@ public
     symbol := spacing + symbol + spacing;
   end symbol;
 
-  function toString
-    input Operator op;
-  algorithm
-    symbol(op);
-  end toString;
-
   function priority
     input Operator op;
     input Boolean lhs;
@@ -349,15 +343,50 @@ public
     output Operator op = OPERATOR(ty, Op.UMINUS);
   end makeUMinus;
 
+  function makeAnd
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.AND);
+  end makeAnd;
+
+  function makeOr
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.OR);
+  end makeOr;
+
+  function makeNot
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.NOT);
+  end makeNot;
+
+  function makeLess
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.LESS);
+  end makeLess;
+
   function makeLessEq
     input Type ty;
     output Operator op = OPERATOR(ty, Op.LESSEQ);
   end makeLessEq;
 
+  function makeGreater
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.GREATER);
+  end makeGreater;
+
+  function makeGreaterEq
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.GREATEREQ);
+  end makeGreaterEq;
+
   function makeEqual
     input Type ty;
     output Operator op = OPERATOR(ty, Op.EQUAL);
   end makeEqual;
+
+  function makeNotEqual
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.NEQUAL);
+  end makeNotEqual;
 
   function makeScalarArray
     input Type ty;

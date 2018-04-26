@@ -39,6 +39,8 @@ encapsulated uniontype NFEquation
 
 protected
   import Equation = NFEquation;
+  import NFComponent.Component;
+  import Binding = NFBinding;
 
 public
   record EQUALITY
@@ -108,24 +110,21 @@ public
     DAE.ElementSource source;
   end NORETCALL;
 
+
+  partial function MapExpFn
+    input output Expression MapExpFn;
+  end MapExpFn;
+
   function mapExpList
     input output list<Equation> eql;
-    input MapFn func;
-
-    partial function MapFn
-      input output Expression exp;
-    end MapFn;
+    input MapExpFn func;
   algorithm
     eql := list(mapExp(eq, func) for eq in eql);
   end mapExpList;
 
   function mapExp
     input output Equation eq;
-    input MapFn func;
-
-    partial function MapFn
-      input output Expression exp;
-    end MapFn;
+    input MapExpFn func;
   algorithm
     eq := match eq
       local
@@ -158,6 +157,9 @@ public
       case FOR()
         algorithm
           eq.body := list(mapExp(e, func) for e in eq.body);
+          // TODO: Not sure if this is a good idea or not, since it has to
+          //       replace the component in the InstNode to change the binding.
+          //eq.iterator := mapExpIterator(eq.iterator, func);
         then
           eq;
 
@@ -208,11 +210,7 @@ public
 
   function mapExpBranch
     input output tuple<Expression, list<Equation>> branch;
-    input MapFn func;
-
-    partial function MapFn
-      input output Expression exp;
-    end MapFn;
+    input MapExpFn func;
   protected
     Expression cond;
     list<Equation> eql;
@@ -222,6 +220,34 @@ public
     eql := list(mapExp(e, func) for e in eql);
     branch := (cond, eql);
   end mapExpBranch;
+
+  function mapExpIterator
+    input output InstNode node;
+    input MapExpFn func;
+  protected
+    Component comp;
+    Expression exp, new_exp;
+    Binding binding;
+  algorithm
+    comp := InstNode.component(node);
+
+    () := match comp
+      case Component.ITERATOR(binding = binding)
+        algorithm
+          if Binding.isBound(binding) then
+            exp := Binding.getExp(binding);
+            new_exp := func(exp);
+
+            if not referenceEq(exp, new_exp) then
+              binding := Binding.setExp(new_exp, binding);
+              comp.binding := binding;
+              InstNode.replaceComponent(comp, node);
+            end if;
+          end if;
+        then
+          ();
+    end match;
+  end mapExpIterator;
 
   function foldExpList<ArgT>
     input list<Equation> eq;

@@ -1035,6 +1035,20 @@ function snprintff "sprintf format string that takes one double as argument"
 external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcruntime"});
 end snprintff;
 
+function sprintff
+  "sprintf format string that takes one double as argument, but unlike snprintff
+   it takes no buffer size as argument.
+
+   NOTE: This function doesn't actually call sprintf, since that would be unsafe.
+         It instead calls snprintf with a fixed buffer size that should be enough
+         for most cases, and if that fails it resizes the buffer to the size
+         snprintf said it needed and calls snprintf again."
+  input String format;
+  input Real val;
+  output String str;
+external "C" str = System_sprintff(format, val) annotation(Library = {"omcruntime"});
+end sprintff;
+
 public function realRand
   "Returns a value in the intervals (0,1]"
   output Real r;

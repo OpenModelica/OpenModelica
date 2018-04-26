@@ -41,6 +41,7 @@ protected
   import RangeIterator = NFRangeIterator;
   import NFPrefixes.Variability;
   import Prefixes = NFPrefixes;
+  import Ceval = NFCeval;
   import MetaModelica.Dangerous.listReverseInPlace;
 
 public
@@ -206,6 +207,27 @@ public
       else false;
     end match;
   end isTrue;
+
+  function isAllTrue
+    input Expression exp;
+    output Boolean isTrue;
+  algorithm
+    isTrue := match exp
+      case BOOLEAN(true) then true;
+      case ARRAY()
+        algorithm
+          for e in exp.elements loop
+            if not isAllTrue(e) then
+              isTrue := false;
+              return;
+            end if;
+          end for;
+        then
+          true;
+
+      else false;
+    end match;
+  end isAllTrue;
 
   function isFalse
     input Expression exp;
@@ -723,10 +745,10 @@ public
     InstNode iter;
   algorithm
     Call.TYPED_MAP_CALL(ty, var, exp, iters) := call;
-    iter :: iters := iters;
+    (iter, iters) := List.splitLast(iters);
     iter_exp := Binding.getTypedExp(Component.getBinding(InstNode.component(iter)));
     iter_exp := applyIndexSubscript(indexExp, iter_exp);
-    subscriptedExp := replaceIterator(exp, InstNode.name(iter), iter_exp);
+    subscriptedExp := replaceIterator(exp, iter, iter_exp);
 
     if not listEmpty(iters) then
       subscriptedExp := CALL(Call.TYPED_MAP_CALL(Type.unliftArray(ty), var, subscriptedExp, iters));
@@ -735,26 +757,25 @@ public
 
   function replaceIterator
     input output Expression exp;
-    input String iteratorName;
+    input InstNode iterator;
     input Expression iteratorValue;
   algorithm
-    exp := map(exp, function replaceIterator2(iteratorName = iteratorName, iteratorValue = iteratorValue));
+    exp := map(exp, function replaceIterator2(iterator = iterator, iteratorValue = iteratorValue));
   end replaceIterator;
 
   function replaceIterator2
     input output Expression exp;
-    input String iteratorName;
+    input InstNode iterator;
     input Expression iteratorValue;
 
     import Origin = NFComponentRef.Origin;
   algorithm
     exp := match exp
       local
-        String name;
+        InstNode node;
 
-      case CREF(cref = ComponentRef.CREF(
-          node = InstNode.COMPONENT_NODE(name = name), origin = Origin.ITERATOR))
-        then if name == iteratorName then iteratorValue else exp;
+      case CREF(cref = ComponentRef.CREF(node = node))
+        then if InstNode.refEqual(iterator, node) then iteratorValue else exp;
 
       else exp;
     end match;
@@ -933,14 +954,14 @@ public
                          Operator.symbol(exp.operator) +
                          operandString(exp.exp2, exp, false);
 
-      case UNARY() then Operator.symbol(exp.operator) +
+      case UNARY() then Operator.symbol(exp.operator, "") +
                         operandString(exp.exp, exp, false);
 
       case LBINARY() then operandString(exp.exp1, exp, true) +
                           Operator.symbol(exp.operator) +
                           operandString(exp.exp2, exp, false);
 
-      case LUNARY() then Operator.symbol(exp.operator) + " " +
+      case LUNARY() then Operator.symbol(exp.operator, "") + " " +
                          operandString(exp.exp, exp, false);
 
       case RELATION() then operandString(exp.exp1, exp, true) +
@@ -1137,6 +1158,7 @@ public
 
       case CREF() then CREF(exp.ty, mapCref(exp.cref, func));
       case ARRAY() then ARRAY(exp.ty, list(map(e, func) for e in exp.elements));
+      case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -1240,6 +1262,12 @@ public
           e1 := map(exp.tupleExp, func);
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
+
+      case BOX()
+        algorithm
+          e1 := map(exp.exp, func);
+        then
+          if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
       else exp;
     end match;
@@ -1394,6 +1422,7 @@ public
 
       case CREF() then CREF(exp.ty, mapCrefShallow(exp.cref, func));
       case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements));
+      case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -1497,6 +1526,12 @@ public
           e1 := func(exp.tupleExp);
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
+
+      case BOX()
+        algorithm
+          e1 := func(exp.exp);
+        then
+          if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
       else exp;
     end match;
@@ -1672,6 +1707,15 @@ public
       case CREF() then foldCref(exp.cref, func, arg);
       case ARRAY() then foldList(exp.elements, func, arg);
 
+      case MATRIX()
+        algorithm
+          result := arg;
+          for row in exp.elements loop
+            result := foldList(row, func, result);
+          end for;
+        then
+          result;
+
       case RANGE(step = SOME(e))
         algorithm
           result := fold(exp.start, func, arg);
@@ -1736,7 +1780,7 @@ public
           foldList(exp.subscripts, func, result);
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
-
+      case BOX() then fold(exp.exp, func, arg);
       else arg;
     end match;
 
@@ -1746,7 +1790,7 @@ public
   function foldCall<ArgT>
     input Call call;
     input FoldFunc func;
-    input output ArgT arg;
+    input output ArgT foldArg;
 
     partial function FoldFunc
       input Expression exp;
@@ -1759,11 +1803,11 @@ public
 
       case Call.UNTYPED_CALL()
         algorithm
-          arg := foldList(call.arguments, func, arg);
+          foldArg := foldList(call.arguments, func, foldArg);
 
           for arg in call.named_args loop
             (_, e) := arg;
-            arg := fold(e, func, arg);
+            foldArg := fold(e, func, foldArg);
           end for;
         then
           ();
@@ -1772,31 +1816,31 @@ public
         algorithm
           for arg in call.arguments loop
             (e, _, _) := arg;
-            arg := fold(e, func, arg);
+            foldArg := fold(e, func, foldArg);
           end for;
 
           for arg in call.named_args loop
             (_, e, _, _) := arg;
-            arg := fold(e, func, arg);
+            foldArg := fold(e, func, foldArg);
           end for;
         then
           ();
 
       case Call.TYPED_CALL()
         algorithm
-          arg := foldList(call.arguments, func, arg);
+          foldArg := foldList(call.arguments, func, foldArg);
         then
           ();
 
       case Call.UNTYPED_MAP_CALL()
         algorithm
-          arg := fold(call.exp, func, arg);
+          foldArg := fold(call.exp, func, foldArg);
         then
           ();
 
       case Call.TYPED_MAP_CALL()
         algorithm
-          arg := fold(call.exp, func, arg);
+          foldArg := fold(call.exp, func, foldArg);
         then
           ();
 
@@ -2157,6 +2201,194 @@ public
     end match;
   end mapFoldSubscript;
 
+  partial function ContainsPred
+    input Expression exp;
+    output Boolean res;
+  end ContainsPred;
+
+  function containsOpt
+    input Option<Expression> exp;
+    input ContainsPred func;
+    output Boolean res;
+  protected
+    Expression e;
+  algorithm
+    res := match exp
+      case SOME(e) then contains(e, func);
+      else false;
+    end match;
+  end containsOpt;
+
+  function contains
+    input Expression exp;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    if func(exp) then
+      res := true;
+      return;
+    end if;
+
+    res := match exp
+      local
+        Expression e;
+
+      case CREF() then crefContains(exp.cref, func);
+      case ARRAY() then listContains(exp.elements, func);
+
+      case MATRIX()
+        algorithm
+          res := false;
+
+          for row in exp.elements loop
+            if listContains(row, func) then
+              res := true;
+              break;
+            end if;
+          end for;
+        then
+          res;
+
+      case RANGE()
+        then contains(exp.start, func) or
+             containsOpt(exp.step, func) or
+             contains(exp.stop, func);
+
+      case TUPLE() then listContains(exp.elements, func);
+      case RECORD() then listContains(exp.elements, func);
+      case CALL() then callContains(exp.call, func);
+
+      case SIZE()
+        then containsOpt(exp.dimIndex, func) or
+             contains(exp.exp, func);
+
+      case BINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
+      case UNARY() then contains(exp.exp, func);
+      case LBINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
+      case LUNARY() then contains(exp.exp, func);
+      case RELATION() then contains(exp.exp1, func) or contains(exp.exp2, func);
+
+      case IF()
+        then contains(exp.condition, func) or
+             contains(exp.trueBranch, func) or
+             contains(exp.falseBranch, func);
+
+      case CAST() then contains(exp.exp, func);
+      case UNBOX() then contains(exp.exp, func);
+
+      case SUBSCRIPTED_EXP()
+        then contains(exp.exp, func) or listContains(exp.subscripts, func);
+
+      case TUPLE_ELEMENT()
+        then contains(exp.tupleExp, func);
+
+      case BOX() then contains(exp.exp, func);
+      else false;
+    end match;
+  end contains;
+
+  function crefContains
+    input ComponentRef cref;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case ComponentRef.CREF()
+        then subscriptsContains(cref.subscripts, func) or
+             crefContains(cref.restCref, func);
+
+      else false;
+    end match;
+  end crefContains;
+
+  function subscriptsContains
+    input list<Subscript> subs;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    for s in subs loop
+      res := match s
+        case Subscript.UNTYPED() then contains(s.exp, func);
+        case Subscript.INDEX() then contains(s.index, func);
+        case Subscript.SLICE() then contains(s.slice, func);
+        else false;
+      end match;
+
+      if res then
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end subscriptsContains;
+
+  function listContains
+    input list<Expression> expl;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    for e in expl loop
+      if contains(e, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end listContains;
+
+  function callContains
+    input Call call;
+    input ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match call
+      local
+        Expression e;
+
+      case Call.UNTYPED_CALL()
+        algorithm
+          res := listContains(call.arguments, func);
+
+          if not res then
+            for arg in call.named_args loop
+              (_, e) := arg;
+
+              if contains(e, func) then
+                res := true;
+                break;
+              end if;
+            end for;
+          end if;
+        then
+          res;
+
+      case Call.ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            if contains(e, func) then
+              res := true;
+              return;
+            end if;
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            if contains(e, func) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case Call.TYPED_CALL() then listContains(call.arguments, func);
+      case Call.UNTYPED_MAP_CALL() then contains(call.exp, func);
+      case Call.TYPED_MAP_CALL() then contains(call.exp, func);
+    end match;
+  end callContains;
+
   function expand
     input output Expression exp;
   algorithm
@@ -2319,7 +2551,7 @@ public
     if Type.dimensionCount(ty) > 1 then
       expl := list(expandBinaryElementWise(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
     else
-      expl := list(BINARY(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
+      expl := list(makeBinaryOp(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
     end if;
 
     exp := ARRAY(Operator.typeOf(op), expl);
@@ -2348,7 +2580,7 @@ public
   algorithm
     exp := match exp2
       case ARRAY() then exp2;
-      else BINARY(exp1, op, exp2);
+      else makeBinaryOp(exp1, op, exp2);
     end match;
   end makeScalarArrayBinary_traverser;
 
@@ -2378,7 +2610,7 @@ public
     Type ty;
     Dimension m;
   algorithm
-    ARRAY(Type.ARRAY(ty, {m, _}), expl) := expand(exp2);
+    ARRAY(Type.ARRAY(ty, {m, _}), expl) := transposeArray(expand(exp2));
     ty := Type.ARRAY(ty, {m});
 
     if listEmpty(expl) then
@@ -2444,7 +2676,7 @@ public
     end if;
     mul_op := Operator.makeMul(tyUnlift);
     add_op := Operator.makeAdd(tyUnlift);
-    expl1 := list(BINARY(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
+    expl1 := list(makeBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
     exp := List.reduce(expl1, function makeBinaryOp(op = add_op));
   end makeScalarProduct;
 
@@ -2463,7 +2695,6 @@ public
     output Expression exp;
   protected
     list<Expression> expl1, expl2;
-    list<list<Expression>> matrix;
     Type ty, row_ty, mat_ty;
     Dimension n, p;
   algorithm
@@ -2473,9 +2704,10 @@ public
     ARRAY(Type.ARRAY(dimensions = {p, _}), expl2) := transposeArray(exp2);
     mat_ty := Type.ARRAY(ty, {n, p});
 
-    if listEmpty(expl1) then
+    if listEmpty(expl2) then
       // If any of the matrices' dimensions are zero, the result will be a matrix
-      // of zeroes (the default value of sum).
+      // of zeroes (the default value of sum). Only expl2 needs to be checked here,
+      // the normal case can handle expl1 being empty.
       exp := makeZero(mat_ty);
     else
       // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p.
@@ -2514,7 +2746,7 @@ public
       case INTEGER(n) then expandBinaryPowMatrix2(expand(exp1), n);
 
       // a ^ n where n is unknown, subscript the whole expression.
-      else expandGeneric(BINARY(exp1, op, exp2));
+      else expandGeneric(makeBinaryOp(exp1, op, exp2));
     end match;
   end expandBinaryPowMatrix;
 
@@ -2550,7 +2782,13 @@ public
     input Expression exp1;
     input Operator op;
     input Expression exp2;
-    output Expression exp = BINARY(exp1, op, exp2);
+    output Expression exp;
+  algorithm
+    if isScalarConst(exp1) and isScalarConst(exp2) then
+      exp := Ceval.evalBinaryOp(exp1, op, exp2);
+    else
+      exp := BINARY(exp1, op, exp2);
+    end if;
   end makeBinaryOp;
 
   function expandUnary
@@ -2713,6 +2951,16 @@ public
   algorithm
     Expression.CREF(cref = cref) := exp;
   end toCref;
+
+  function isIterator
+    input Expression exp;
+    output Boolean isIterator;
+  algorithm
+    isIterator := match exp
+      case Expression.CREF() then ComponentRef.isIterator(exp.cref);
+      else false;
+    end match;
+  end isIterator;
 
   function isZero
     input Expression exp;

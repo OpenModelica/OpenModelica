@@ -339,24 +339,21 @@ uniontype Call
     input list<Absyn.ForIterator> inIters;
     input InstNode scope;
     input SourceInfo info;
-    output InstNode iter_scope;
-    output list<InstNode> outIters;
+    output InstNode outScope = scope;
+    output list<InstNode> outIters = {};
   protected
     Binding binding;
     InstNode iter;
   algorithm
-    outIters := {};
-    iter_scope := scope;
-    for Absiter in inIters loop
-      binding := Binding.fromAbsyn(Absiter.range, false, 0, iter_scope, info);
+    for i in inIters loop
+      binding := Binding.fromAbsyn(i.range, false, 0, outScope, info);
       binding := Inst.instBinding(binding);
-      (iter_scope, iter) := Inst.addIteratorToScope(Absiter.name, binding, iter_scope);
-      outIters := iter::outIters;
+      (outScope, iter) := Inst.addIteratorToScope(i.name, binding, outScope, info);
+      outIters := iter :: outIters;
     end for;
 
     outIters := listReverse(outIters);
   end instIterators;
-
 
   function builtinSpecialHandling
     input Call call;
@@ -503,7 +500,7 @@ uniontype Call
       case UNTYPED_MAP_CALL()  algorithm
 
         for iter in call.iters loop
-          Typing.typeIterator(iter, info, ExpOrigin.FUNCTION, structural = false);
+          Typing.typeIterator(iter, ExpOrigin.FUNCTION, structural = false);
         end for;
         (arg, arg_ty, arg_var) := Typing.typeExp(call.exp, origin, info);
 
@@ -678,7 +675,7 @@ uniontype Call
           bind := Binding.TYPED_BINDING(exp, ty, Variability.CONSTANT, origin, false);
 
           // Add an iterator to the call scope.
-          (iter_scope, iter) := Inst.addIteratorToScope("$i" + intString(i), bind, iter_scope, Type.INTEGER());
+          (iter_scope, iter) := Inst.addIteratorToScope("$i" + intString(i), bind, iter_scope, info, Type.INTEGER());
           iters := iter::iters;
 
           // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
@@ -2181,8 +2178,7 @@ protected
     if variability > Variability.PARAMETER then
       Error.addSourceMessageAndFail(Error.NF_CAT_FIRST_ARG_EVAL, {Expression.toString(arg), Prefixes.variabilityString(variability)}, info);
     end if;
-    arg := Ceval.evalExp(arg, Ceval.EvalTarget.GENERIC(info));
-    Expression.INTEGER(n) := SimplifyExp.simplifyExp(arg);
+    Expression.INTEGER(n) := Ceval.evalExp(arg, Ceval.EvalTarget.GENERIC(info));
 
     res := {};
     tys := {};

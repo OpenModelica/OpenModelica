@@ -158,6 +158,16 @@ public
     end match;
   end isSimple;
 
+  function isIterator
+    input ComponentRef cref;
+    output Boolean isIterator;
+  algorithm
+    isIterator := match cref
+      case CREF(origin = Origin.ITERATOR) then true;
+      else false;
+    end match;
+  end isIterator;
+
   function node
     input ComponentRef cref;
     output InstNode node;

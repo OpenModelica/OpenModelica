@@ -159,6 +159,43 @@ public
     end match;
   end setTypedExp;
 
+  function getExp
+    input Binding binding;
+    output Expression exp;
+  algorithm
+    exp := match binding
+      case UNTYPED_BINDING() then binding.bindingExp;
+      case TYPED_BINDING() then binding.bindingExp;
+      case FLAT_BINDING() then binding.bindingExp;
+    end match;
+  end getExp;
+
+  function setExp
+    input Expression exp;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING()
+        algorithm
+          binding.bindingExp := exp;
+        then
+          ();
+
+      case TYPED_BINDING()
+        algorithm
+          binding.bindingExp := exp;
+        then
+          ();
+
+      case FLAT_BINDING()
+        algorithm
+          binding.bindingExp := exp;
+        then
+          ();
+
+    end match;
+  end setExp;
+
   function isRecordExp
     input Binding binding;
     output Boolean isRecordExp;

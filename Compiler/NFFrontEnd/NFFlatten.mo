@@ -536,10 +536,7 @@ algorithm
         Equation.EQUALITY(e1, e2, eq.ty, eq.source) :: equations;
 
     case Equation.FOR()
-      algorithm
-        eq.body := flattenEquations(eq.body, prefix);
-      then
-        unrollForLoop(eq, equations);
+      then unrollForLoop(eq, prefix, equations);
 
     case Equation.CONNECT()
       algorithm
@@ -636,6 +633,7 @@ end flattenEqBranch;
 
 function unrollForLoop
   input Equation forLoop;
+  input ComponentRef prefix;
   input output list<Equation> equations;
 protected
   InstNode iter;
@@ -658,7 +656,8 @@ algorithm
   while RangeIterator.hasNext(range_iter) loop
     (range_iter, val) := RangeIterator.next(range_iter);
     unrolled_body := list(Equation.mapExp(eq,
-      function Expression.replaceIterator(iteratorName = iter_name, iteratorValue = val)) for eq in body);
+      function Expression.replaceIterator(iterator = iter, iteratorValue = val)) for eq in body);
+    unrolled_body := flattenEquations(unrolled_body, prefix);
     equations := listAppend(unrolled_body, equations);
   end while;
 end unrollForLoop;
