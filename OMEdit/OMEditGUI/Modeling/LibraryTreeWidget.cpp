@@ -4027,6 +4027,11 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
     result = false;
   }
+  /* Ticket #4788. Add the file to the recent files list. */
+  if (result) {
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+  }
   MainWindow::instance()->getStatusBar()->clearMessage();
   MainWindow::instance()->hideProgressBar();
   return result;
