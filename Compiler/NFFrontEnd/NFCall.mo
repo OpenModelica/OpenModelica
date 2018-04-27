@@ -589,26 +589,31 @@ uniontype Call
   protected
     Function func;
     list<Expression> args;
-    list<Type> arg_ty;
-    list<Variability> arg_var;
     CallAttributes ca;
     list<TypedArg> typed_args;
     MatchedFunction matchedFunc;
     InstNode scope;
-    Variability var;
+    Variability var, arg_var;
     Type ty;
+    Expression arg_exp;
   algorithm
     ARG_TYPED_CALL(call_scope = scope) := call;
     matchedFunc := checkMatchingFunctions(call,info);
 
     func := matchedFunc.func;
+    // Don't evaluate structural parameters for external functions, the code generation can't handle it in
+    // some cases (see bug #4904). For constants we'll get issues no matter if we evaluate them or not,
+    // but evaluating them will probably cause the last amount of issues.
     typed_args := matchedFunc.args;
-    args := list(Util.tuple31(a) for a in typed_args);
 
+    args := {};
     var := Variability.CONSTANT;
     for a in typed_args loop
-      var := Prefixes.variabilityMax(var, Util.tuple33(a));
+      (arg_exp, _, arg_var) := a;
+      args := arg_exp :: args;
+      var := Prefixes.variabilityMax(var, arg_var);
     end for;
+    args := listReverseInPlace(args);
 
     ty := Function.returnType(func);
 
@@ -845,7 +850,7 @@ uniontype Call
         algorithm
           typedArgs := {};
           for arg in call.arguments loop
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = false);
             typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
           end for;
 
@@ -854,7 +859,7 @@ uniontype Call
           typedNamedArgs := {};
           for narg in call.named_args loop
             (name,arg) := narg;
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = false);
             typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
           end for;
 
@@ -1521,8 +1526,7 @@ protected
     list<TypedArg> args;
     TypedArg start,interval;
   algorithm
-    argtycall := typeNormalCall(call, origin, info);
-    argtycall := matchTypedNormalCall(argtycall, origin, info);
+    argtycall := typeMatchNormalCall(call, origin, info);
     ty := getType(argtycall);
     callExp := Expression.CALL(unboxArgs(argtycall));
   end typeDiscreteCall;
@@ -1762,8 +1766,7 @@ protected
   protected
     Call argtycall;
   algorithm
-    argtycall := typeNormalCall(call, origin, info);
-    argtycall := matchTypedNormalCall(argtycall, origin, info);
+    argtycall := typeMatchNormalCall(call, origin, info);
     argtycall := unboxArgs(argtycall);
     ty := getType(argtycall);
     var := variability(argtycall);
@@ -1784,8 +1787,7 @@ protected
     Call argtycall;
   algorithm
     // TODO: Rewrite this whole thing.
-    argtycall := typeNormalCall(call, origin, info);
-    argtycall := matchTypedNormalCall(argtycall, origin, info);
+    argtycall := typeMatchNormalCall(call, origin, info);
     argtycall := unboxArgs(argtycall);
     ty := getType(argtycall);
     var := variability(argtycall);
@@ -2289,8 +2291,7 @@ protected
   protected
     Call argtycall;
   algorithm
-    argtycall := typeNormalCall(call, origin, info);
-    argtycall := matchTypedNormalCall(argtycall, origin, info);
+    argtycall := typeMatchNormalCall(call, origin, info);
 
     ty := getType(argtycall);
     var := variability(argtycall);

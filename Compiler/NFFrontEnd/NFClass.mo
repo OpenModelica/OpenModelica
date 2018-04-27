@@ -467,6 +467,18 @@ uniontype Class
     output Boolean isFunction = Restriction.isFunction(restriction(cls));
   end isFunction;
 
+  function isExternalFunction
+    input Class cls;
+    output Boolean isExtFunc;
+  algorithm
+    isExtFunc := match cls
+      case EXPANDED_DERIVED() then isExternalFunction(InstNode.getClass(cls.baseClass));
+      case INSTANCED_CLASS(sections = Sections.EXTERNAL()) then true;
+      case TYPED_DERIVED() then isExternalFunction(InstNode.getClass(cls.baseClass));
+      else false;
+    end match;
+  end isExternalFunction;
+
   function getPrefixes
     input Class cls;
     output Prefixes prefs;

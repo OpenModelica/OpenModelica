@@ -149,16 +149,14 @@ algorithm
       then
         exp;
 
-    // Ranges could be evaluated into arrays, but that's less efficient in some
-    // cases. So here we just evaluate the range's expressions, and let the
-    // caller worry about vectorization.
     case Expression.RANGE()
       algorithm
         exp1 := evalExp(exp.start, target);
         oexp := evalExpOpt(exp.step, target);
         exp3 := evalExp(exp.stop, target);
       then
-        Expression.RANGE(exp.ty, exp1, oexp, exp3);
+        if EvalTarget.isRange(target) then
+          Expression.RANGE(exp.ty, exp1, oexp, exp3) else evalRange(exp1, oexp, exp3);
 
     case Expression.RECORD()
       algorithm
@@ -294,6 +292,78 @@ algorithm
     end match;
   end if;
 end evalTypename;
+
+function evalRange
+  input Expression start;
+  input Option<Expression> optStep;
+  input Expression stop;
+  output Expression exp;
+protected
+  Expression step;
+  list<Expression> expl;
+  Type ty;
+  list<String> literals;
+  Integer istep;
+algorithm
+  if isSome(optStep) then
+    SOME(step) := optStep;
+
+    (ty, expl) := match (start, step, stop)
+      case (Expression.INTEGER(), Expression.INTEGER(istep), Expression.INTEGER())
+        algorithm
+          // The compiler decided to randomly dislike using step.value here, hence istep.
+          expl := list(Expression.INTEGER(i) for i in start.value:istep:stop.value);
+        then
+          (Type.INTEGER(), expl);
+
+      case (Expression.REAL(), Expression.REAL(), Expression.REAL())
+        algorithm
+          expl := list(Expression.REAL(r) for r in start.value:step.value:stop.value);
+        then
+          (Type.REAL(), expl);
+
+      else
+        algorithm
+          printWrongArgsError(getInstanceName(), {start, step, stop}, sourceInfo());
+        then
+          fail();
+    end match;
+  else
+    (ty, expl) := match (start, stop)
+      case (Expression.INTEGER(), Expression.INTEGER())
+        algorithm
+          expl := list(Expression.INTEGER(i) for i in start.value:stop.value);
+        then
+          (Type.INTEGER(), expl);
+
+      case (Expression.REAL(), Expression.REAL())
+        algorithm
+          expl := list(Expression.REAL(r) for r in start.value:stop.value);
+        then
+          (Type.REAL(), expl);
+
+      case (Expression.BOOLEAN(), Expression.BOOLEAN())
+        algorithm
+          expl := list(Expression.BOOLEAN(b) for b in start.value:stop.value);
+        then
+          (Type.BOOLEAN(), expl);
+
+      case (Expression.ENUM_LITERAL(ty = ty as Type.ENUMERATION()), Expression.ENUM_LITERAL())
+        algorithm
+          expl := list(Expression.ENUM_LITERAL(ty, listGet(ty.literals, i), i) for i in start.index:stop.index);
+        then
+          (ty, expl);
+
+      else
+        algorithm
+          printWrongArgsError(getInstanceName(), {start, stop}, sourceInfo());
+        then
+          fail();
+    end match;
+  end if;
+
+  exp := Expression.ARRAY(Type.ARRAY(ty, {Dimension.fromInteger(listLength(expl))}), expl);
+end evalRange;
 
 function printFailedEvalError
   input String name;

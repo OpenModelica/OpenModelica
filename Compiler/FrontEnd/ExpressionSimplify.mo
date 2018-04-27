@@ -1636,7 +1636,7 @@ algorithm
   true := dim >= 1;
   false := listEmpty(exps);
   if 1 == dim then
-    outExps := listAppend(getArrayContents(e) for e in exps);
+    outExps := listAppend(getArrayContents(e) for e in listReverse(exps));
     outDims := {listLength(outExps)};
     return;
   end if;

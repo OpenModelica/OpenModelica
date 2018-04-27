@@ -1079,6 +1079,11 @@ uniontype Function
     output Boolean isPointer = fn.attributes.isFunctionPointer;
   end isFunctionPointer;
 
+  function isExternal
+    input Function fn;
+    output Boolean isExternal = Class.isExternalFunction(InstNode.getClass(fn.node));
+  end isExternal;
+
   function inlineBuiltin
     input Function fn;
     output DAE.InlineType inlineType;

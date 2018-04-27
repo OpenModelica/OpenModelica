@@ -409,7 +409,7 @@ algorithm
   () := match c
     case Component.ITERATOR(binding = Binding.UNTYPED_BINDING(), info = info)
       algorithm
-        binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.ITERATION_RANGE));
+        binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.ITERATION_RANGE), replaceConstants = false);
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural then
@@ -761,6 +761,7 @@ end typeComponentBinding;
 function typeBinding
   input output Binding binding;
   input ExpOrigin.Type origin;
+  input Boolean replaceConstants = true;
 algorithm
   binding := match binding
     local
@@ -772,7 +773,7 @@ algorithm
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
         info := Binding.getInfo(binding);
-        (exp, ty, var) := typeExp(exp, origin, info);
+        (exp, ty, var) := typeExp(exp, origin, info, replaceConstants);
       then
         Binding.TYPED_BINDING(exp, ty, var, binding.origin, binding.isEach);
 
