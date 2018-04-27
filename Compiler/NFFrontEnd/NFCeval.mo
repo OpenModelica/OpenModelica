@@ -1176,6 +1176,7 @@ algorithm
     case "floor" then evalBuiltinFloor(listHead(args));
     case "identity" then evalBuiltinIdentity(listHead(args));
     case "integer" then evalBuiltinInteger(listHead(args));
+    case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
     case "log" then evalBuiltinLog(listHead(args), target);
     //case "matrix" then evalBuiltinMatrix(args);
@@ -1594,6 +1595,16 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalBuiltinInteger;
+
+function evalBuiltinIntegerEnum
+  input Expression arg;
+  output Expression result;
+algorithm
+  result := match arg
+    case Expression.ENUM_LITERAL() then Expression.INTEGER(arg.index);
+    else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+  end match;
+end evalBuiltinIntegerEnum;
 
 function evalBuiltinLog10
   input Expression arg;
