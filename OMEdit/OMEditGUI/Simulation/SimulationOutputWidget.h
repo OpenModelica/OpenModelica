@@ -112,6 +112,7 @@ private:
   QDateTime mResultFileLastModifiedDateTime;
 
   void deleteIntermediateCompilationFiles();
+  void removeSimulationDirectory(const QString &path);
 public slots:
   void createSimulationProgressSocket();
   void readSimulationProgress();

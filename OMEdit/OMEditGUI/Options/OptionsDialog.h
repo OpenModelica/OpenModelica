@@ -574,6 +574,7 @@ public:
   QCheckBox* getSwitchToPlottingPerspectiveCheckBox() {return mpSwitchToPlottingPerspectiveCheckBox;}
   QCheckBox* getCloseSimulationOutputWidgetsBeforeSimulationCheckBox() {return mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;}
   QCheckBox* getDeleteIntermediateCompilationFilesCheckBox() {return mpDeleteIntermediateCompilationFilesCheckBox;}
+  QCheckBox* getDeleteEntireSimulationDirectoryCheckBox() {return mpDeleteEntireSimulationDirectoryCheckBox;}
   void setOutputMode(QString value);
   QString getOutputMode();
 private:
@@ -596,6 +597,7 @@ private:
   QCheckBox *mpSwitchToPlottingPerspectiveCheckBox;
   QCheckBox *mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;
   QCheckBox *mpDeleteIntermediateCompilationFilesCheckBox;
+  QCheckBox *mpDeleteEntireSimulationDirectoryCheckBox;
   QGroupBox *mpOutputGroupBox;
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;

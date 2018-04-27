@@ -536,6 +536,9 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/deleteIntermediateCompilationFiles")) {
     mpSimulationPage->getDeleteIntermediateCompilationFilesCheckBox()->setChecked(mpSettings->value("simulation/deleteIntermediateCompilationFiles").toBool());
   }
+  if (mpSettings->contains("simulation/deleteEntireSimulationDirectory")) {
+    mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->setChecked(mpSettings->value("simulation/deleteEntireSimulationDirectory").toBool());
+  }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
   }
@@ -1070,6 +1073,7 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/switchToPlottingPerspectiveAfterSimulation", mpSimulationPage->getSwitchToPlottingPerspectiveCheckBox()->isChecked());
   mpSettings->setValue("simulation/closeSimulationOutputWidgetsBeforeSimulation", mpSimulationPage->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked());
   mpSettings->setValue("simulation/deleteIntermediateCompilationFiles", mpSimulationPage->getDeleteIntermediateCompilationFilesCheckBox()->isChecked());
+  mpSettings->setValue("simulation/deleteEntireSimulationDirectory", mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
 }
 
@@ -3299,6 +3303,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   /* Delete intermediate compilation files checkbox */
   mpDeleteIntermediateCompilationFilesCheckBox = new QCheckBox(tr("Delete intermediate compilation files"));
   mpDeleteIntermediateCompilationFilesCheckBox->setChecked(true);
+  /* Delete entire simulation directory checkbox */
+  mpDeleteEntireSimulationDirectoryCheckBox = new QCheckBox(tr("Delete entire simulation directory of the model when OMEdit is closed"));
   // simulation output format
   mpOutputGroupBox = new QGroupBox(Helper::output);
   mpStructuredRadioButton = new QRadioButton(tr("Structured"));
@@ -3338,7 +3344,8 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, 8, 0, 1, 3);
   pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, 9, 0, 1, 3);
   pSimulationLayout->addWidget(mpDeleteIntermediateCompilationFilesCheckBox, 10, 0, 1, 3);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 11, 0, 1, 3);
+  pSimulationLayout->addWidget(mpDeleteEntireSimulationDirectoryCheckBox, 11, 0, 1, 3);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 12, 0, 1, 3);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
