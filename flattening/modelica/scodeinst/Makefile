@@ -70,6 +70,7 @@ CevalFloor1.mo \
 CevalIdentity1.mo \
 CevalIf1.mo \
 CevalInteger1.mo \
+CevalIntegerEnum1.mo \
 CevalLog101.mo \
 CevalLog102.mo \
 CevalLog1.mo \
