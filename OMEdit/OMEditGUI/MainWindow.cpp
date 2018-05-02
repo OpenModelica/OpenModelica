@@ -1516,27 +1516,28 @@ void MainWindow::loadSystemLibrary()
   QAction *pAction = qobject_cast<QAction*>(sender());
   if (pAction) {
     /* check if library is already loaded. */
+    QString library = pAction->data().toString();
     LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-    if (pLibraryTreeModel->findLibraryTreeItemOneLevel(pAction->text())) {
+    if (pLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
       QMessageBox *pMessageBox = new QMessageBox(this);
       pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
       pMessageBox->setIcon(QMessageBox::Information);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(pAction->text())));
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
       pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
-                                      .arg(pAction->text()).append("\n")
-                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(pAction->text())));
+                                      .arg(library).append("\n")
+                                      .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     } else {  /* if library is not loaded then load it. */
       mpProgressBar->setRange(0, 0);
       showProgressBar();
-      mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(pAction->text()));
+      mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(library));
 
-      if (pAction->text().compare("OpenModelica") == 0) {
-        pLibraryTreeModel->createLibraryTreeItem(pAction->text(), pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
+      if (library.compare("OpenModelica") == 0) {
+        pLibraryTreeModel->createLibraryTreeItem(library, pLibraryTreeModel->getRootLibraryTreeItem(), true, true, true);
         pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
-      } else if (mpOMCProxy->loadModel(pAction->text())) {
+      } else if (mpOMCProxy->loadModel(library)) {
         mpLibraryWidget->getLibraryTreeModel()->loadDependentLibraries(mpOMCProxy->getClassNames());
       }
       mpStatusBar->clearMessage();
@@ -3385,6 +3386,7 @@ void MainWindow::createMenus()
   libraries.sort();
   for (int i = 0; i < libraries.size(); ++i) {
     QAction *pAction = new QAction(libraries[i], this);
+    pAction->setData(libraries[i]);
     if (libraries[i].compare("Modelica") == 0) {
       pAction->setShortcut(QKeySequence("Ctrl+m"));
     }

@@ -65,7 +65,6 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   setObjectName("DocumentationWidget");
-  setMinimumWidth(175);
   mDocumentationFile.setFileName(Utilities::tempDirectory() + "/DocumentationWidget.html");
   // documentation toolbar
   QToolBar *pDocumentationToolBar = new QToolBar;

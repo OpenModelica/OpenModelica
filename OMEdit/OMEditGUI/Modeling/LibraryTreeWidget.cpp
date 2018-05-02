@@ -3811,7 +3811,6 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
 LibraryWidget::LibraryWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-  setMinimumWidth(175);
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterClasses);
@@ -4301,6 +4300,11 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
     result = false;
+  }
+  /* Ticket #4788. Add the file to the recent files list. */
+  if (result) {
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
   }
   MainWindow::instance()->getStatusBar()->clearMessage();
   MainWindow::instance()->hideProgressBar();

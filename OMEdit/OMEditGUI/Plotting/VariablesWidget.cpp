@@ -985,7 +985,6 @@ void VariablesTreeView::keyPressEvent(QKeyEvent *event)
 VariablesWidget::VariablesWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-  setMinimumWidth(175);
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
