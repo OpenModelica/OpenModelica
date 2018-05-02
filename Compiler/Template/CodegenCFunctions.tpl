@@ -6407,7 +6407,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
   let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
-  let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
+  let foundFirst = match ri.path case IDENT(name="array") then "" else (if not ri.defaultValue then tempDecl("int",&tmpVarDecls))
   let resType = expTypeArrayIf(typeof(exp))
   let res = contextCref(makeUntypedCrefIdent(ri.resultName), context, &auxFunction)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
@@ -6449,7 +6449,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
-      if not ri.defaultValue then
+      if foundFirst then
       <<
       if(<%foundFirst%>)
       {
@@ -6607,15 +6607,17 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         else
           'simple_alloc_1d_<%arrayTypeResult%>(&<%res%>,<%length%>);'%>
        >>
-     else if ri.defaultValue then
-     <<
-     <%&preDefault%>
-     <%res%> = <%defaultValue%>; /* defaultValue */
-     >>
      else
-     <<
-     <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
-     >>)
+       (if foundFirst then
+       <<
+       <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
+       >>
+       else
+       <<
+       <%&preDefault%>
+       <%res%> = <%defaultValue%>; /* defaultValue */
+       >>)
+     )
   let loop =
     <<
     while(1) {
@@ -6641,7 +6643,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     <%firstValue%>
     <% if resTail then '<%resTail%> = &<%res%>;' %>
     <%loop%>
-    <% if not ri.defaultValue then 'if (!<%foundFirst%>) <%generateThrow()%>;' %>
+    <% if foundFirst then 'if (!<%foundFirst%>) <%generateThrow()%>;' %>
     <% if resTail then '*<%resTail%> = mmc_mk_nil();' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
