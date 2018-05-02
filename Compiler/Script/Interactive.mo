@@ -178,41 +178,23 @@ public function evaluateToStdOut
   The resulting string after evaluation is printed.
   If an error has occurred, this string will be empty.
   The error messages can be retrieved by calling print_messages_str() in Error.mo."
-  input GlobalScript.Statements inStatements;
-  input Boolean inBoolean;
+  input GlobalScript.Statements statements;
+  input Boolean verbose;
+protected
+  GlobalScript.Statement x;
+  list<GlobalScript.Statement> xs;
+  Boolean semicolon;
+  String res;
 algorithm
-  _ := match (inStatements,inBoolean)
-    local
-      String res,res_1;
-      Boolean echo,semicolon,verbose;
-      GlobalScript.Statement x;
-      GlobalScript.Statements new;
-      list<GlobalScript.Statement> xs;
-
-    case (GlobalScript.ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),verbose)
-      equation
-        showStatement(x, semicolon, true);
-        new = GlobalScript.ISTMTS({x},verbose);
-        res = evaluate2(new);
-        echo = getEcho();
-        res_1 = selectResultstr(res, semicolon, verbose, echo);
-        print(res_1);
-        showStatement(x, semicolon, false);
-      then ();
-
-    case (GlobalScript.ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),verbose)
-      equation
-        showStatement(x, semicolon, true);
-        new = GlobalScript.ISTMTS({x},semicolon);
-        res = evaluate2(new);
-        echo = getEcho();
-        res_1 = selectResultstr(res, semicolon, verbose, echo);
-        print(res_1);
-        showStatement(x, semicolon, false);
-
-        evaluateToStdOut(GlobalScript.ISTMTS(xs,semicolon), verbose);
-      then ();
-  end match;
+  xs := statements.interactiveStmtLst;
+  semicolon := statements.semicolon;
+  while not listEmpty(xs) loop
+    x::xs := xs;
+    showStatement(x, semicolon, true);
+    res := evaluate2(GlobalScript.ISTMTS({x},if listEmpty(xs) then verbose else semicolon));
+    print(selectResultstr(res, semicolon, verbose, getEcho()));
+    showStatement(x, semicolon, false);
+  end while;
 end evaluateToStdOut;
 
 public function evaluateFork

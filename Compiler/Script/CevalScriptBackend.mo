@@ -1702,10 +1702,17 @@ algorithm
 
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},_)
       equation
-        (cache,env,odae) = runFrontEnd(cache,env,className,true);
         ExecStat.execStatReset();
-        str = if isNone(odae) then "" else DAEDump.dumpStr(Util.getOption(odae),FCore.getFunctionTree(cache));
-        ExecStat.execStat("DAEDump.dumpStr(" + Absyn.pathString(className) + ")");
+        (cache,env,odae) = runFrontEnd(cache,env,className,true);
+        ExecStat.execStat("runFrontEnd");
+        if isNone(odae) then
+          str = "";
+        elseif Config.silent() then
+          str = "model " + Absyn.pathString(className) + "\n  /* Silent mode */\nend" + Absyn.pathString(className) + ";\n"; // Not the empty string, so we can
+        else
+          str = DAEDump.dumpStr(Util.getOption(odae),FCore.getFunctionTree(cache));
+          ExecStat.execStat("DAEDump.dumpStr");
+        end if;
       then
         (cache,Values.STRING(str));
 
