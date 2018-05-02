@@ -5513,7 +5513,7 @@ end initInstHashTable;
 
 public function releaseInstHashTable
 algorithm
-  setGlobalRoot(Global.instHashIndex, emptyInstHashTableSized(1));
+  setGlobalRoot(Global.instHashIndex, emptyInstHashTable());
   OperatorOverloading.initCache();
 end releaseInstHashTable;
 
