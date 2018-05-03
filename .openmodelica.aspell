@@ -64,3 +64,5 @@ aliasConflicts
 mol
 StateSelect
 stateSelect
+evalLoopLimit
+evalRecursionLimit
