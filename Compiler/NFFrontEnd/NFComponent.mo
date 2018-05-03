@@ -181,7 +181,6 @@ uniontype Component
 
   record ITERATOR
     Type ty;
-    Binding binding;
     Variability variability;
     SourceInfo info;
   end ITERATOR;
@@ -426,7 +425,6 @@ uniontype Component
     b := match component
       case UNTYPED_COMPONENT() then component.binding;
       case TYPED_COMPONENT() then component.binding;
-      case ITERATOR() then component.binding;
     end match;
   end getBinding;
 
@@ -447,11 +445,6 @@ uniontype Component
         then
           ();
 
-      case ITERATOR()
-        algorithm
-          component.binding := binding;
-        then
-          ();
     end match;
   end setBinding;
 

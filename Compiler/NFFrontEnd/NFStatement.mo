@@ -39,6 +39,7 @@ encapsulated uniontype NFStatement
 protected
   import Statement = NFStatement;
   import ElementSource;
+  import Util;
 
 public
   record ASSIGNMENT
@@ -55,6 +56,7 @@ public
 
   record FOR
     InstNode iterator;
+    Option<Expression> range;
     list<Statement> body "The body of the for loop.";
     DAE.ElementSource source;
   end FOR;
@@ -177,6 +179,7 @@ public
       case FOR()
         algorithm
           stmt.body := mapExpList(stmt.body, func);
+          stmt.range := Util.applyOption(stmt.range, func);
         then
           stmt;
 
@@ -273,6 +276,10 @@ public
       case Statement.FOR()
         algorithm
           arg := foldExpList(stmt.body, func, arg);
+
+          if isSome(stmt.range) then
+            arg := func(Util.getOption(stmt.range), arg);
+          end if;
         then
           ();
 

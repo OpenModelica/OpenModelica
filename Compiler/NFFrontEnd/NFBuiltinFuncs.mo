@@ -128,7 +128,7 @@ constant InstNode INTEGER_DUMMY_NODE = NFInstNode.CLASS_NODE("Integer",
 constant Function INTEGER_FUNCTION = Function.FUNCTION(Path.IDENT("Integer"),
   INTEGER_DUMMY_NODE, {ENUM_PARAM}, {}, {}, {
     Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE())
-  }, Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+  }, Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("IntegerFunc",
   DUMMY_ELEMENT, Visibility.PUBLIC,
@@ -153,14 +153,16 @@ constant Function STRING_REAL = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("significantDigits", SlotType.NAMED, SOME(Expression.INTEGER(6)), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(r, format="-0.6g")
 constant Function STRING_REAL_FORMAT = Function.FUNCTION(Path.IDENT("String"),
   STRING_DUMMY_NODE, {REAL_PARAM, STRING_PARAM}, {STRING_PARAM}, {}, {
     Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("format", SlotType.NAMED, NONE(), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(i, minimumLength=0, leftJustified=true)
 constant Function STRING_INT = Function.FUNCTION(Path.IDENT("String"),
@@ -168,7 +170,8 @@ constant Function STRING_INT = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("i", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(b, minimumLength=0, leftJustified=true)
 constant Function STRING_BOOL = Function.FUNCTION(Path.IDENT("String"),
@@ -176,7 +179,8 @@ constant Function STRING_BOOL = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("b", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(e, minimumLength=0, leftJustified=true)
 constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
@@ -184,7 +188,8 @@ constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
     Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE()),
     Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
     Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
-  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+  }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant InstNode STRING_NODE = InstNode.CLASS_NODE("String",
   DUMMY_ELEMENT, Visibility.PUBLIC,
@@ -208,35 +213,43 @@ constant ComponentRef STRING_CREF =
 
 constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function MAX_REAL = Function.FUNCTION(Path.IDENT("max"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function POSITIVE_MAX_REAL = Function.FUNCTION(Path.IDENT("$OMC$PositiveMax"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function IN_STREAM = Function.FUNCTION(Path.IDENT("inStream"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function PROMOTE = Function.FUNCTION(Path.IDENT("promote"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
-    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function CAT = Function.FUNCTION(Path.IDENT("cat"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
-    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function ARRAY_FUNC = Function.FUNCTION(Path.IDENT("array"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
-    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function FILL_FUNC = Function.FUNCTION(Path.IDENT("fill"),
   InstNode.EMPTY_NODE(), {}, {}, {}, {},
-    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, Pointer.createImmutable(true));
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

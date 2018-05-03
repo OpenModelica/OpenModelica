@@ -40,7 +40,7 @@ encapsulated uniontype NFEquation
 protected
   import Equation = NFEquation;
   import NFComponent.Component;
-  import Binding = NFBinding;
+  import Util;
 
 public
   record EQUALITY
@@ -71,6 +71,7 @@ public
 
   record FOR
     InstNode iterator;
+    Option<Expression> range;
     list<Equation> body   "The body of the for loop.";
     DAE.ElementSource source;
   end FOR;
@@ -157,9 +158,7 @@ public
       case FOR()
         algorithm
           eq.body := list(mapExp(e, func) for e in eq.body);
-          // TODO: Not sure if this is a good idea or not, since it has to
-          //       replace the component in the InstNode to change the binding.
-          //eq.iterator := mapExpIterator(eq.iterator, func);
+          eq.range := Util.applyOption(eq.range, func);
         then
           eq;
 
@@ -221,34 +220,6 @@ public
     branch := (cond, eql);
   end mapExpBranch;
 
-  function mapExpIterator
-    input output InstNode node;
-    input MapExpFn func;
-  protected
-    Component comp;
-    Expression exp, new_exp;
-    Binding binding;
-  algorithm
-    comp := InstNode.component(node);
-
-    () := match comp
-      case Component.ITERATOR(binding = binding)
-        algorithm
-          if Binding.isBound(binding) then
-            exp := Binding.getExp(binding);
-            new_exp := func(exp);
-
-            if not referenceEq(exp, new_exp) then
-              binding := Binding.setExp(new_exp, binding);
-              comp.binding := binding;
-              InstNode.replaceComponent(comp, node);
-            end if;
-          end if;
-        then
-          ();
-    end match;
-  end mapExpIterator;
-
   function foldExpList<ArgT>
     input list<Equation> eq;
     input FoldFunc func;
@@ -299,6 +270,10 @@ public
       case Equation.FOR()
         algorithm
           arg := foldExpList(eq.body, func, arg);
+
+          if isSome(eq.range) then
+            arg := func(Util.getOption(eq.range), arg);
+          end if;
         then
           ();
 

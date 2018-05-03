@@ -136,7 +136,8 @@ algorithm
   def_ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
   def_ctor_node := InstNode.updateClass(def_ctor_cls, def_ctor_node);
 
-  InstNode.cacheAddFunc(node, Function.FUNCTION(con_path, def_ctor_node, inputs, {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected), false);
+  InstNode.cacheAddFunc(node, Function.FUNCTION(con_path, def_ctor_node, inputs,
+    {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected, Pointer.create(0)), false);
 end instConstructors;
 
 

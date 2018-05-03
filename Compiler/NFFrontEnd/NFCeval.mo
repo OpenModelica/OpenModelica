@@ -49,6 +49,7 @@ import NFPrefixes.Variability;
 
 protected
 import NFFunction.Function;
+import EvalFunction = NFEvalFunction;
 import List;
 import System;
 
@@ -117,7 +118,7 @@ end EvalTarget;
 
 function evalExp
   input output Expression exp;
-  input EvalTarget target;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
 algorithm
   exp := match exp
     local
@@ -221,6 +222,12 @@ algorithm
       algorithm
         exp1 := evalExp(exp.exp, target);
       then Expression.UNBOX(exp1, exp.ty);
+
+    case Expression.MUTABLE()
+      algorithm
+        exp1 := evalExp(Mutable.access(exp.exp), target);
+      then
+        exp1;
 
     else exp;
   end match;
@@ -1248,10 +1255,7 @@ function evalNormalCall
   input Function fn;
   input list<Expression> args;
   input Call call;
-  output Expression result;
-algorithm
-  Error.addInternalError(getInstanceName() + ": IMPLEMENT ME: " + Call.toString(call), sourceInfo());
-  fail();
+  output Expression result = EvalFunction.evaluate(fn, args);
 end evalNormalCall;
 
 function printWrongArgsError

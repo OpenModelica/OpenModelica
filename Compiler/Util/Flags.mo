@@ -1452,6 +1452,15 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
     }),NONE(),
     Util.gettext("Sets the optimization modules for the DAEmode in the back end. See --help=optmodules for more info."));
 
+  constant ConfigFlag EVAL_LOOP_LIMIT = CONFIG_FLAG(125,
+    "evalLoopLimit", NONE(), EXTERNAL(), INT_FLAG(100000), NONE(),
+    Util.gettext("The loop iteration limit used when evaluating constant function calls."));
+
+  constant ConfigFlag EVAL_RECURSION_LIMIT = CONFIG_FLAG(126,
+    "evalRecursionLimit", NONE(), EXTERNAL(), INT_FLAG(256), NONE(),
+    Util.gettext("The recursion limit used when evaluating constant function calls."));
+
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1580,7 +1589,9 @@ constant list<ConfigFlag> allConfigFlags = {
   Load_PACKAGE_FILE,
   BUILDING_FMU,
   BUILDING_MODEL,
-  POST_OPT_MODULES_DAE
+  POST_OPT_MODULES_DAE,
+  EVAL_LOOP_LIMIT,
+  EVAL_RECURSION_LIMIT
 };
 
 public function new

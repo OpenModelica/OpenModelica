@@ -288,7 +288,7 @@ function scalarizeStatement
 algorithm
   statements := match stmt
     case Statement.FOR()
-      then Statement.FOR(stmt.iterator, scalarizeAlgorithm(stmt.body), stmt.source) :: statements;
+      then Statement.FOR(stmt.iterator, stmt.range, scalarizeAlgorithm(stmt.body), stmt.source) :: statements;
 
     case Statement.IF()
       then scalarizeIfStatement(stmt.branches, stmt.source, statements);

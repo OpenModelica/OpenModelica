@@ -305,7 +305,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFConnector.mo",
     "../NFFrontEnd/NFDimension.mo",
     "../NFFrontEnd/NFEquation.mo",
-    //"../NFFrontEnd/NFEvalFunction.mo",
+    "../NFFrontEnd/NFEvalFunction.mo",
     "../NFFrontEnd/NFExpression.mo",
     "../NFFrontEnd/NFExpressionIterator.mo",
     "../NFFrontEnd/NFExpOrigin.mo",

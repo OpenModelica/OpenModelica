@@ -397,55 +397,43 @@ end checkConnectorType;
 
 function typeIterator
   input InstNode iterator;
+  input Expression range;
   input ExpOrigin.Type origin;
   input Boolean structural "If the iteration range must be a parameter expression or not.";
+  output Expression outRange;
+  output Type ty;
+  output Variability var;
 protected
   Component c = InstNode.component(iterator);
-  Binding binding;
-  Type ty;
   Expression exp;
   SourceInfo info;
 algorithm
-  () := match c
-    case Component.ITERATOR(binding = Binding.UNTYPED_BINDING(), info = info)
+  (outRange, ty, var) := match c
+    case Component.ITERATOR(info = info)
       algorithm
-        binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.ITERATION_RANGE), replaceConstants = false);
+        (exp, ty, var) := typeExp(range, intBitOr(origin, ExpOrigin.ITERATION_RANGE), info, replaceConstants = false);
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural then
-          if Binding.variability(binding) > Variability.PARAMETER then
+          if var > Variability.PARAMETER then
             Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
-              {Binding.toString(binding)}, info);
+              {Expression.toString(exp)}, info);
           else
-            SOME(exp) := Binding.typedExp(binding);
             exp := Ceval.evalExp(exp, Ceval.EvalTarget.RANGE(info));
-            binding := Binding.setTypedExp(exp, binding);
           end if;
         end if;
-
-        ty := Binding.getType(binding);
 
         // The iteration range must be a vector expression.
         if not Type.isVector(ty) then
           Error.addSourceMessageAndFail(Error.FOR_EXPRESSION_TYPE_ERROR,
-            {Binding.toString(binding), Type.toString(ty)}, info);
+            {Expression.toString(exp), Type.toString(ty)}, info);
         end if;
 
         // The type of the iterator is the element type of the range expression.
-        ty := Type.arrayElementType(ty);
-        c := Component.ITERATOR(ty, binding, Binding.variability(binding), info);
+        c := Component.ITERATOR(Type.arrayElementType(ty), var, info);
         InstNode.updateComponent(c, iterator);
       then
-        ();
-
-    case Component.ITERATOR(binding = Binding.TYPED_BINDING())
-      then ();
-
-    case Component.ITERATOR(binding = Binding.UNBOUND())
-      algorithm
-        Error.assertion(false, getInstanceName() + ": Implicit iteration ranges not yet implement", sourceInfo());
-      then
-        fail();
+        (exp, ty, var);
 
     else
       algorithm
@@ -730,12 +718,6 @@ algorithm
         end if;
 
         typeBindings(c.classInst, component, origin);
-      then
-        ();
-
-    case Component.ITERATOR()
-      algorithm
-        typeIterator(node, origin, true);
       then
         ();
 
@@ -2171,11 +2153,19 @@ algorithm
     case Equation.FOR()
       algorithm
         info := ElementSource.getInfo(eq.source);
-        typeIterator(eq.iterator, origin, structural = true);
+
+        if isSome(eq.range) then
+          SOME(e1) := eq.range;
+          e1 := typeIterator(eq.iterator, e1, origin, structural = true);
+        else
+          Error.assertion(false, getInstanceName() + ": missing support for implicit iteration range", sourceInfo());
+          fail();
+        end if;
+
         next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
         body := list(typeEquation(e, next_origin) for e in eq.body);
       then
-        Equation.FOR(eq.iterator, body, eq.source);
+        Equation.FOR(eq.iterator, SOME(e1), body, eq.source);
 
     case Equation.IF() then typeIfEquation(eq.branches, origin, eq.source);
 
@@ -2382,11 +2372,19 @@ algorithm
     case Statement.FOR()
       algorithm
         info := ElementSource.getInfo(st.source);
-        typeIterator(st.iterator, origin, structural = false);
+
+        if isSome(st.range) then
+          SOME(e1) := st.range;
+          e1 := typeIterator(st.iterator, e1, origin, structural = false);
+        else
+          Error.assertion(false, getInstanceName() + ": missing support for implicit iteration range", sourceInfo());
+          fail();
+        end if;
+
         next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
         body := typeAlgorithm(st.body, next_origin);
       then
-        Statement.FOR(st.iterator, body, st.source);
+        Statement.FOR(st.iterator, SOME(e1), body, st.source);
 
     case Statement.IF()
       algorithm

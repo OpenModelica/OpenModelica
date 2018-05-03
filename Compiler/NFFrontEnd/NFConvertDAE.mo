@@ -787,17 +787,14 @@ function convertForStatement
 protected
   InstNode iterator;
   Type ty;
-  Binding binding;
   Expression range;
   list<Statement> body;
   list<DAE.Statement> dbody;
   DAE.ElementSource source;
 algorithm
-  Statement.FOR(iterator = iterator, body = body, source = source) := forStmt;
+  Statement.FOR(iterator = iterator, range = SOME(range), body = body, source = source) := forStmt;
   dbody := convertStatements(body);
-
-  Component.ITERATOR(ty = ty, binding = binding) := InstNode.component(iterator);
-  SOME(range) := Binding.typedExp(binding);
+  Component.ITERATOR(ty = ty) := InstNode.component(iterator);
 
   forDAE := DAE.Statement.STMT_FOR(Type.toDAE(ty), Type.isArray(ty),
     InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);

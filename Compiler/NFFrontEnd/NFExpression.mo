@@ -188,6 +188,10 @@ public
     Expression exp;
   end BOX;
 
+  record MUTABLE
+    Mutable<Expression> exp;
+  end MUTABLE;
+
   function isCref
     input Expression exp;
     output Boolean isTrue;
@@ -741,12 +745,11 @@ public
     Type ty;
     Variability var;
     Expression exp, iter_exp;
-    list<InstNode> iters;
+    list<tuple<InstNode, Expression>> iters;
     InstNode iter;
   algorithm
     Call.TYPED_MAP_CALL(ty, var, exp, iters) := call;
-    (iter, iters) := List.splitLast(iters);
-    iter_exp := Binding.getTypedExp(Component.getBinding(InstNode.component(iter)));
+    ((iter, iter_exp), iters) := List.splitLast(iters);
     iter_exp := applyIndexSubscript(indexExp, iter_exp);
     subscriptedExp := replaceIterator(exp, iter, iter_exp);
 
@@ -974,6 +977,7 @@ public
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then toString(exp.exp) + "[" + stringDelimitList(list(toString(e) for e in exp.subscripts), ", ") + "]";
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
+      case MUTABLE() then toString(Mutable.access(exp.exp));
 
       else anyString(exp);
     end match;
@@ -3326,6 +3330,23 @@ public
       var := Prefixes.variabilityMax(var, variability(e));
     end for;
   end variabilityList;
+
+  function makeMutable
+    input Expression exp;
+    output Expression outExp;
+  algorithm
+    outExp := MUTABLE(Mutable.create(exp));
+  end makeMutable;
+
+  function makeImmutable
+    input Expression exp;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case MUTABLE() then Mutable.access(exp.exp);
+      else exp;
+    end match;
+  end makeImmutable;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

@@ -206,6 +206,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     Pointer<Boolean> collected "Whether this function has already been added to the function tree or not.";
+    Pointer<Integer> callCounter "Used during function evaluation to avoid infinite loops.";
   end FUNCTION;
 
   function new
@@ -223,7 +224,8 @@ uniontype Function
     attr := makeAttributes(node, inputs, outputs);
     // Make sure builtin functions aren't added to the function tree.
     collected := Pointer.create(isBuiltinAttr(attr));
-    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(), attr, collected);
+    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
+      attr, collected, Pointer.create(0));
   end new;
 
   function lookupFunctionSimple

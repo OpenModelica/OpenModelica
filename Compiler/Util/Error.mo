@@ -338,8 +338,8 @@ public constant Message ILLEGAL_SUBSCRIPT = MESSAGE(104, TRANSLATION(), ERROR(),
   Util.gettext("Illegal subscript %s for dimensions %s in component %s."));
 public constant Message ILLEGAL_EQUATION_TYPE = MESSAGE(105, TRANSLATION(), ERROR(),
   Util.gettext("Illegal type in equation %s, only builtin types (Real, String, Integer, Boolean or enumeration) or record type allowed in equation."));
-public constant Message ASSERT_FAILED = MESSAGE(106, TRANSLATION(), ERROR(),
-  Util.gettext("Assertion failed in function, message: %s"));
+public constant Message EVAL_LOOP_LIMIT_REACHED = MESSAGE(106, TRANSLATION(), ERROR(),
+  Util.gettext("The loop iteration limit (--evalLoopLimit=%s) was exceeded during evaluation."));
 public constant Message LOOKUP_IN_PARTIAL_CLASS = MESSAGE(107, TRANSLATION(), ERROR(),
   Util.gettext("%s is partial, name lookup is not allowed in partial classes."));
 public constant Message MISSING_INNER_PREFIX = MESSAGE(108, TRANSLATION(), WARNING(),
@@ -787,6 +787,14 @@ public constant Message NON_TYPE_DIMENSIONS = MESSAGE(329, TRANSLATION(), ERROR(
   Util.gettext("Invalid dimensions on ‘%s %s‘, only types may have dimensions."));
 public constant Message MISSING_TYPE_BASETYPE = MESSAGE(330, TRANSLATION(), ERROR(),
   Util.gettext("Type ‘%s‘ does not extend a basic type."));
+public constant Message ASSERT_TRIGGERED_WARNING = MESSAGE(331, TRANSLATION(), WARNING(),
+  Util.gettext("assert triggered: %s"));
+public constant Message ASSERT_TRIGGERED_ERROR = MESSAGE(332, TRANSLATION(), ERROR(),
+  Util.gettext("assert triggered: %s"));
+public constant Message TERMINATE_TRIGGERED = MESSAGE(333, TRANSLATION(), ERROR(),
+  Util.gettext("terminate triggered: %s"));
+public constant Message EVAL_RECURSION_LIMIT_REACHED = MESSAGE(334, TRANSLATION(), ERROR(),
+  Util.gettext("The recursion limit (--evalRecursionLimit=%s) was exceeded during evaluation of %s."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

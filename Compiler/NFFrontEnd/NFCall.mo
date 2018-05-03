@@ -165,7 +165,7 @@ uniontype Call
   record UNTYPED_MAP_CALL
     // Function fn;
     Expression exp;
-    list<InstNode> iters;
+    list<tuple<InstNode, Expression>> iters;
   end UNTYPED_MAP_CALL;
 
   record TYPED_MAP_CALL
@@ -173,7 +173,7 @@ uniontype Call
     Type ty;
     Variability var;
     Expression exp;
-    list<InstNode> iters;
+    list<tuple<InstNode, Expression>> iters;
   end TYPED_MAP_CALL;
 
   function instantiate
@@ -271,7 +271,7 @@ uniontype Call
   protected
     ComponentRef fn_ref, arr_fn_ref;
     Expression exp;
-    list<InstNode> iters;
+    list<tuple<InstNode, Expression>> iters;
     Call call;
     Boolean is_builtin_reduction, is_array;
   algorithm
@@ -320,7 +320,7 @@ uniontype Call
     input InstNode scope;
     input SourceInfo info;
     output Expression exp;
-    output list<InstNode> iters;
+    output list<tuple<InstNode, Expression>> iters;
   algorithm
     _ := match args
       local
@@ -340,16 +340,15 @@ uniontype Call
     input InstNode scope;
     input SourceInfo info;
     output InstNode outScope = scope;
-    output list<InstNode> outIters = {};
+    output list<tuple<InstNode, Expression>> outIters = {};
   protected
-    Binding binding;
+    Expression range;
     InstNode iter;
   algorithm
     for i in inIters loop
-      binding := Binding.fromAbsyn(i.range, false, 0, outScope, info);
-      binding := Inst.instBinding(binding);
-      (outScope, iter) := Inst.addIteratorToScope(i.name, binding, outScope, info);
-      outIters := iter :: outIters;
+      range := Inst.instExp(Util.getOption(i.range), outScope, info);
+      (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info);
+      outIters := (iter, range) :: outIters;
     end for;
 
     outIters := listReverse(outIters);
@@ -489,35 +488,40 @@ uniontype Call
           output Type ty;
           output Variability variability;
   protected
-    Expression arg;
-    Type arg_ty;
+    Expression arg, range;
+    Type iter_ty;
     Binding binding;
-    Variability arg_var;
+    Variability iter_var;
+    InstNode iter;
+    list<Dimension> dims = {};
+    list<tuple<InstNode, Expression>> iters = {};
   algorithm
     (call, ty, variability) := match call
       // This is always a call to the function array()/$array(). See instIteratorCall.
       // Other mapping function calls are already wrapped by array() at this point.
-      case UNTYPED_MAP_CALL()  algorithm
+      case UNTYPED_MAP_CALL()
+        algorithm
+          variability := Variability.CONSTANT;
 
-        for iter in call.iters loop
-          Typing.typeIterator(iter, ExpOrigin.FUNCTION, structural = false);
-        end for;
-        (arg, arg_ty, arg_var) := Typing.typeExp(call.exp, origin, info);
+          for i in call.iters loop
+            (iter, range) := i;
+            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, ExpOrigin.FUNCTION, structural = false);
+            dims := listAppend(Type.arrayDims(iter_ty), dims);
+            variability := Variability.variabilityMax(variability, iter_var);
+            iters := (iter, range) :: iters;
+          end for;
+          iters := listReverseInPlace(iters);
 
-        ty := arg_ty;
-        variability := Variability.CONSTANT;
-        for iter in call.iters loop
-          binding := Component.getBinding(InstNode.component(iter));
-          ty := Type.liftArrayLeftList(ty,Type.arrayDims(Binding.getType(binding)));
-          variability := Variability.variabilityMax(variability,Binding.variability(binding));
-        end for;
-      then
-        (TYPED_MAP_CALL(ty, variability, arg, call.iters), ty, variability);
+          (arg, ty) := Typing.typeExp(call.exp, origin, info);
+          ty := Type.liftArrayLeftList(ty, dims);
+        then
+          (TYPED_MAP_CALL(ty, variability, arg, iters), ty, variability);
 
-      else algorithm
-        Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
-      then
-        fail();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+        then
+          fail();
     end match;
   end typeMapIteratorCall;
 
@@ -646,15 +650,15 @@ uniontype Call
   function vectorizeCall
     input Call base_call;
     input FunctionMatchKind mk;
-    input InstNode call_scope;
+    input InstNode scope;
     input SourceInfo info;
     output Call vectorized_call;
   protected
     Type ty, vect_ty;
     Expression exp;
     Binding bind;
-    list<InstNode> iters;
-    InstNode iter, iter_scope;
+    list<tuple<InstNode, Expression>> iters;
+    InstNode iter;
     BindingOrigin origin;
     Integer i;
     list<Dimension> vect_dims;
@@ -662,53 +666,44 @@ uniontype Call
     Boolean b;
     list<Expression> vect_args;
   algorithm
-
     vectorized_call := match base_call
-      case TYPED_CALL() algorithm
+      case TYPED_CALL()
+        algorithm
+          FunctionMatchKind.VECTORIZED(vect_dims, arg_is_vected) := mk;
+          iters := {};
+          i := 1;
 
-        FunctionMatchKind.VECTORIZED(vect_dims, arg_is_vected) := mk;
-        iters := {};
-        iter_scope := call_scope;
-        i := 1;
+          for dim in vect_dims loop
+            // Create the range on which we will iterate to vectorize.
+            ty := Type.ARRAY(Type.INTEGER(), {dim});
+            exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Expression.INTEGER(Dimension.size(dim)));
 
-        for dim in vect_dims loop
+            // Create the iterator.
+            iter := InstNode.fromComponent("$i" + intString(i),
+              Component.ITERATOR(Type.INTEGER(), Variability.CONSTANT, info), scope);
 
-          // Create a range binding on which we will iterate to vectorize.
-          ty := Type.ARRAY(Type.INTEGER(), {dim});
-          exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Expression.INTEGER(Dimension.size(dim)));
-          origin := BindingOrigin.create(0, NFBindingOrigin.ElementType.COMPONENT, info);
-          bind := Binding.TYPED_BINDING(exp, ty, Variability.CONSTANT, origin, false);
+            iters := (iter, exp) :: iters;
 
-          // Add an iterator to the call scope.
-          (iter_scope, iter) := Inst.addIteratorToScope("$i" + intString(i), bind, iter_scope, info, Type.INTEGER());
-          iters := iter::iters;
+            // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
+            // Make a cref expression from the iterator
+            exp := Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER()));
+            vect_args := {};
+            b_list := arg_is_vected;
+            for arg in base_call.arguments loop
+              // If the argument is supposed to be vectorized
+              b :: b_list := b_list;
+              vect_args := (if b then Expression.applyIndexSubscript(exp, arg) else arg) :: vect_args;
+            end for;
 
-          // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
-          // Make a cref expression from the iterator
-          exp := Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER()));
-          vect_args := {};
-          b_list := arg_is_vected;
-          for arg in base_call.arguments loop
-            b::b_list := b_list;
-            // If the argument is supposed to be vectorized
-            if b then
-              vect_args := Expression.applyIndexSubscript(exp, arg)::vect_args;
-            else
-              vect_args := arg::vect_args;
-            end if;
+            base_call.arguments := listReverse(vect_args);
+            i := i + 1;
           end for;
-          base_call.arguments := listReverse(vect_args);
 
-          i := i + 1;
-        end for;
-        // iters := listReverse(iters);
-
-        vect_ty := Type.liftArrayLeftList(base_call.ty, vect_dims);
-
-      then TYPED_MAP_CALL(vect_ty, base_call.var, Expression.CALL(base_call), iters);
+          vect_ty := Type.liftArrayLeftList(base_call.ty, vect_dims);
+        then
+          TYPED_MAP_CALL(vect_ty, base_call.var, Expression.CALL(base_call), iters);
 
      end match;
-
   end vectorizeCall;
 
   function evaluateCallType
@@ -1235,19 +1230,17 @@ protected
   end toDAE;
 
   function iteratorToDAE
-    input InstNode iter;
+    input tuple<InstNode, Expression> iter;
     output DAE.ReductionIterator diter;
   protected
+    InstNode iter_node;
+    Expression iter_range;
     Component c;
     Binding b;
   algorithm
-    c := InstNode.component(iter);
-    diter := match c
-      case Component.ITERATOR() algorithm
-        b := Component.getBinding(c);
-      then
-        DAE.REDUCTIONITER(InstNode.name(iter), Expression.toDAE(Binding.getTypedExp(b)), NONE(), Type.toDAE(Binding.getType(b)));
-    end match;
+    (iter_node, iter_range) := iter;
+    diter := DAE.REDUCTIONITER(InstNode.name(iter_node), Expression.toDAE(iter_range), NONE(),
+      Type.toDAE(Expression.typeOf(iter_range)));
   end iteratorToDAE;
 
   function toString
@@ -1295,10 +1288,8 @@ protected
         algorithm
           name := Absyn.pathString(Function.name(NFBuiltinFuncs.ARRAY_FUNC));
           arg_str := Expression.toString(call.exp);
-          c := stringDelimitList(list(
-                                  InstNode.name(iter) + " in "+ Binding.toString(Component.getBinding(InstNode.component(iter)))
-                                 for iter in call.iters)
-                                , ", ");
+          c := stringDelimitList(list(InstNode.name(Util.tuple21(iter)) + " in " +
+            Expression.toString(Util.tuple22(iter)) for iter in call.iters), ", ");
         then
           name + "(" + arg_str + " for " + c + ")";
 
