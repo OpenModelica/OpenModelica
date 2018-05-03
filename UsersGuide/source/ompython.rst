@@ -178,7 +178,9 @@ The object constructor requires a minimum of 2 input arguments which are strings
 -  The second input argument must be a string with the name of the Modelica model
    including the namespace if the model is wrapped within a Modelica package.
 
--  A third input argument is used if the Modelica model builds on other Modelica code, e.g. the Modelica Standard Library.
+-  The third input argument is used to specify the list of dependent libraries e.g.,
+
+>>> mod=ModelicaSystem("BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics"])
 
 -  By default ModelicaSystem uses OMCSessionZMQ but if you want to use OMCSession
    then pass the argument `useCorba=True` to the constructor.
