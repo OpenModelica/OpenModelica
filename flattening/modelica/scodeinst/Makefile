@@ -67,6 +67,17 @@ CevalDiv1.mo \
 CevalExp1.mo \
 CevalFill1.mo \
 CevalFloor1.mo \
+CevalFunc1.mo \
+CevalFuncAssert1.mo \
+CevalFuncAssert2.mo \
+CevalFuncFor1.mo \
+CevalFuncFor2.mo \
+CevalFuncIf1.mo \
+CevalFuncRecursive1.mo \
+CevalFuncRecursive2.mo \
+CevalFuncTerminate1.mo \
+CevalFuncWhile1.mo \
+CevalFuncWhile2.mo \
 CevalIdentity1.mo \
 CevalIf1.mo \
 CevalInteger1.mo \
