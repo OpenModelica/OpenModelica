@@ -33,6 +33,7 @@ LIBSIMULATION=libSimulationRuntimeC.a
 LIBRUNTIME=libOpenModelicaRuntimeC.a
 LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
 OBJ_EXT=.o
+CMINPACK_NO_DLL=-DCMINPACK_NO_DLL
 
 defaultMakefileTarget = Makefile.omdev.mingw
 

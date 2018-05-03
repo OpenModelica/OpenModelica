@@ -241,7 +241,7 @@ $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 
 $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 	$(MKBUILDDIR)
-	$(CC) -c $(CFLAGS) -o $@ $<
+	$(CC) -c $(CFLAGS) $(CMINPACK_NO_DLL) -o $@ $<
 
 $(BUILDPATH)/util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
 
