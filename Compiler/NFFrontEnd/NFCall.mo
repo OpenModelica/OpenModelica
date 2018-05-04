@@ -674,6 +674,9 @@ uniontype Call
           i := 1;
 
           for dim in vect_dims loop
+            Error.assertion(Dimension.isKnown(dim), getInstanceName() +
+              " got unknown dimension for vectorized call", info);
+
             // Create the range on which we will iterate to vectorize.
             ty := Type.ARRAY(Type.INTEGER(), {dim});
             exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Expression.INTEGER(Dimension.size(dim)));
