@@ -175,6 +175,17 @@ uniontype Class
     end match;
   end initExpandedClass;
 
+  function getSections
+    input Class cls;
+    output Sections sections;
+  algorithm
+    sections := match cls
+      case INSTANCED_CLASS() then cls.sections;
+      case TYPED_DERIVED() then getSections(InstNode.getClass(cls.baseClass));
+      else Sections.EMPTY();
+    end match;
+  end getSections;
+
   function setSections
     input Sections sections;
     input output Class cls;

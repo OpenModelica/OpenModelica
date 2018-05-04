@@ -41,12 +41,15 @@ import ComponentRef = NFComponentRef;
 import Binding = NFBinding;
 import NFComponent.Component;
 import Type = NFType;
+import Dimension = NFDimension;
 
 protected
 import Ceval = NFCeval;
 import MetaModelica.Dangerous.*;
 import RangeIterator = NFRangeIterator;
 import ElementSource;
+import ModelicaExternalC;
+import System;
 
 encapsulated package ReplTree
   import BaseAvlTree;
@@ -77,6 +80,18 @@ type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, FAIL);
 
 public
 function evaluate
+  input Function fn;
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  if Function.isExternal(fn) then
+    result := evaluateExternal(fn, args);
+  else
+    result := evaluateNormal(fn, args);
+  end if;
+end evaluate;
+
+function evaluateNormal
   input Function fn;
   input list<Expression> args;
   output Expression result;
@@ -119,7 +134,33 @@ algorithm
   end try;
 
   Pointer.update(call_counter, call_count - 1);
-end evaluate;
+end evaluateNormal;
+
+function evaluateExternal
+  input Function fn;
+  input list<Expression> args;
+  output Expression result;
+protected
+  String name, lang;
+  ComponentRef output_ref;
+  Option<SCode.Annotation> ann;
+algorithm
+  Sections.EXTERNAL(name = name, outputRef = output_ref, language = lang, ann = ann) :=
+    Class.getSections(InstNode.getClass(fn.node));
+
+  if lang == "builtin" then
+    // Functions defined as 'external "builtin"', delegate to Ceval.
+    result := Ceval.evalBuiltinCall(fn, args, NFCeval.EvalTarget.IGNORE_ERRORS());
+  elseif isKnownExternalFunc(name, ann) then
+    // External functions that we know how to evaluate without generating code.
+    result := evaluateKnownExternal(name, args);
+  else
+    // External functions that we would need to generate code for and execute.
+    Error.assertion(false, getInstanceName() +
+      ": evaluation of userdefined external functions not yet implemented", sourceInfo());
+    fail();
+  end if;
+end evaluateExternal;
 
 protected
 
@@ -488,6 +529,183 @@ algorithm
     end if;
   end while;
 end evaluateWhile;
+
+function isKnownExternalFunc
+  input String name;
+  input Option<SCode.Annotation> ann;
+  output Boolean isKnown;
+algorithm
+  if isKnownLibrary(ann) then
+    isKnown := true;
+  else
+    isKnown := match name
+      case "OpenModelica_regex" then true;
+      else false;
+    end match;
+  end if;
+end isKnownExternalFunc;
+
+function isKnownLibrary
+  input Option<SCode.Annotation> extAnnotation;
+  output Boolean isKnown;
+protected
+  SCode.Annotation ann;
+  Absyn.Exp exp;
+algorithm
+  if isSome(extAnnotation) then
+    SOME(ann) := extAnnotation;
+
+    try
+      isKnown := isKnownLibraryExp(SCode.getNamedAnnotation(ann, "Library"));
+    else
+      isKnown := false;
+    end try;
+  else
+    isKnown := false;
+  end if;
+end isKnownLibrary;
+
+function isKnownLibraryExp
+  input Absyn.Exp exp;
+  output Boolean isKnown;
+algorithm
+  isKnown := match exp
+    case Absyn.STRING("ModelicaExternalC") then true;
+    case Absyn.ARRAY() then List.exist(exp.arrayExp, isKnownLibraryExp);
+    else false;
+  end match;
+end isKnownLibraryExp;
+
+constant list<String> FILE_TYPE_NAMES = {"NoFile", "RegularFile", "Directory", "SpecialFile"};
+constant Absyn.Path FILE_TYPE_PATH = Absyn.Path.QUALIFIED("Modelica",
+  Absyn.Path.QUALIFIED("Utilities", Absyn.Path.QUALIFIED("Types", Absyn.Path.IDENT("FileType"))));
+constant Type FILE_TYPE_TYPE = Type.ENUMERATION(FILE_TYPE_PATH, FILE_TYPE_NAMES);
+
+constant list<Expression> FILE_TYPE_LITERALS = {
+  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "NoFile", 1),
+  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "RegularFile", 2),
+  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "Directory", 3),
+  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "SpecialFile", 4)
+};
+
+constant list<String> COMPARE_NAMES = {"Less", "Equal", "Greater"};
+constant Absyn.Path COMPARE_PATH = Absyn.Path.QUALIFIED("Modelica",
+  Absyn.Path.QUALIFIED("Utilities", Absyn.Path.QUALIFIED("Types", Absyn.Path.IDENT("Compare"))));
+constant Type COMPARE_TYPE = Type.ENUMERATION(COMPARE_PATH, COMPARE_NAMES);
+
+constant list<Expression> COMPARE_LITERALS = {
+  Expression.ENUM_LITERAL(COMPARE_TYPE, "Less", 1),
+  Expression.ENUM_LITERAL(COMPARE_TYPE, "Equal", 2),
+  Expression.ENUM_LITERAL(COMPARE_TYPE, "Greater", 3)
+};
+
+function evaluateKnownExternal
+  input String name;
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  result := match (name, args)
+    local
+      String s1, s2;
+      Integer i, i2;
+      Boolean b;
+      Real r;
+
+    case ("ModelicaInternal_countLines", {Expression.STRING(s1)})
+      then Expression.INTEGER(ModelicaExternalC.Streams_countLines(s1));
+
+    case ("ModelicaInternal_fullPathName", {Expression.STRING(s1)})
+      then Expression.STRING(ModelicaExternalC.File_fullPathName(s1));
+
+    case ("ModelicaInternal_print", {Expression.STRING(s1), Expression.STRING(s2)})
+      algorithm
+        ModelicaExternalC.Streams_print(s1, s2);
+      then
+        Expression.INTEGER(0);
+
+    case ("ModelicaInternal_readLine", {Expression.STRING(s1), Expression.INTEGER(i)})
+      algorithm
+        (s1, b) := ModelicaExternalC.Streams_readLine(s1, i);
+      then
+        Expression.TUPLE(Type.TUPLE({Type.STRING(), Type.BOOLEAN()}, NONE()),
+                        {Expression.STRING(s1), Expression.BOOLEAN(b)});
+
+    case ("ModelicaInternal_stat", {Expression.STRING(s1)})
+      algorithm
+        i := ModelicaExternalC.File_stat(s1);
+      then
+        listGet(FILE_TYPE_LITERALS, i);
+
+    case ("ModelicaStreams_closeFile", {Expression.STRING(s1)})
+      algorithm
+        ModelicaExternalC.Streams_close(s1);
+      then
+        Expression.INTEGER(0);
+
+    case ("ModelicaString_compare", {Expression.STRING(s1), Expression.STRING(s2), Expression.BOOLEAN(b)})
+      algorithm
+        i := ModelicaExternalC.Strings_compare(s1, s2, b);
+      then
+        listGet(COMPARE_LITERALS, i);
+
+    case ("ModelicaStrings_length", {Expression.STRING(s1)})
+      then Expression.INTEGER(stringLength(s1));
+
+    case ("ModelicaStrings_scanReal", {Expression.STRING(s1), Expression.INTEGER(i), Expression.BOOLEAN(b)})
+      algorithm
+        (i, r) := ModelicaExternalC.Strings_advanced_scanReal(s1, i, b);
+      then
+        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.BOOLEAN()}, NONE()),
+                         {Expression.INTEGER(i), Expression.REAL(r)});
+
+    case ("ModelicaStrings_skipWhiteSpace", {Expression.STRING(s1), Expression.INTEGER(i)})
+      then Expression.INTEGER(ModelicaExternalC.Strings_advanced_skipWhiteSpace(s1, i));
+
+    case ("ModelicaStrings_substring", {Expression.STRING(s1), Expression.INTEGER(i), Expression.INTEGER(i2)})
+      then Expression.STRING(System.substring(s1, i, i2));
+
+    case ("OpenModelica_regex", _) then evaluateOpenModelicaRegex(args);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + ": failed to evaluate " + name, sourceInfo());
+      then
+        fail();
+  end match;
+end evaluateKnownExternal;
+
+function evaluateOpenModelicaRegex
+  input list<Expression> args;
+  output Expression result;
+protected
+  Integer n, i;
+  String str, re;
+  Boolean extended, insensitive;
+  list<String> strs;
+  list<Expression> expl;
+  Type strs_ty;
+  Expression strs_exp;
+algorithm
+  result := match args
+    case {Expression.STRING(str), Expression.STRING(re), Expression.INTEGER(i),
+          Expression.BOOLEAN(extended), Expression.BOOLEAN(insensitive)}
+      algorithm
+        (n, strs) := System.regex(str, re, i, extended, insensitive);
+        expl := list(Expression.STRING(s) for s in strs);
+        strs_ty := Type.ARRAY(Type.STRING(), {Dimension.fromInteger(i)});
+        strs_exp := Expression.ARRAY(strs_ty, expl);
+      then
+        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), strs_ty}, NONE()),
+                         {Expression.INTEGER(n), strs_exp});
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " failed on OpenModelica_regex" +
+          List.toString(args, Expression.toString, "", "(", ", ", ")", true), sourceInfo());
+      then
+        fail();
+  end match;
+end evaluateOpenModelicaRegex;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEvalFunction;
