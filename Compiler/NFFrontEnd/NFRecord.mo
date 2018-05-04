@@ -148,7 +148,7 @@ function collectRecordParams
 protected
 
   Class cls;
-  array<Mutable<InstNode>> components;
+  array<InstNode> components;
   InstNode n;
   Component comp;
 algorithm
@@ -157,10 +157,15 @@ algorithm
   cls := InstNode.getClass(recNode);
 
   () := match cls
-    case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE(components = components))
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = components))
       algorithm
         for i in arrayLength(components):-1:1 loop
-          n := Mutable.access(components[i]);
+          n := components[i];
+
+          if InstNode.isEmpty(n) then
+            continue;
+          end if;
+
           comp := InstNode.component(n);
 
           if InstNode.isProtected(n) or
@@ -187,7 +192,7 @@ function instOperatorFunctions
   input SourceInfo info;
 protected
   Class cls;
-  array<Mutable<InstNode>> mclss;
+  array<InstNode> mclss;
   InstNode op;
   Absyn.Path path;
   list<Function> allfuncs = {}, funcs;
@@ -196,9 +201,9 @@ algorithm
   cls := InstNode.getClass(node);
 
     () := match cls
-      case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE(classes = mclss))  algorithm
+      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(classes = mclss))  algorithm
         for i in arrayLength(mclss):-1:1 loop
-          op := Mutable.access(mclss[i]);
+          op := mclss[i];
           path := InstNode.scopePath(op);
           Function.instFunc2(path, op, info);
           funcs := Function.getCachedFuncs(op);

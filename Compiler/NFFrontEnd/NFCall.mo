@@ -1911,7 +1911,7 @@ protected
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
       if arg_var <= Variability.STRUCTURAL_PARAMETER then
-        arg := SimplifyExp.simplifyExp(arg);
+        arg := Ceval.evalExp(arg);
         arg_ty := Expression.typeOf(arg);
       end if;
 

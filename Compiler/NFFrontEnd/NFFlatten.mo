@@ -1069,6 +1069,10 @@ algorithm
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE(), sections = sections)
       algorithm
         for c in cls_tree.components loop
+          if InstNode.isEmpty(c) then
+            continue;
+          end if;
+
           comp := InstNode.component(c);
           funcs := collectTypeFuncs(Component.getType(comp), funcs);
           binding := Component.getBinding(comp);

@@ -178,8 +178,10 @@ public
                                  sections = sections)
         algorithm
           for c in comps loop
-            constants := collectBindingConstants(
-              Component.getBinding(InstNode.component(c)), constants);
+            if not InstNode.isEmpty(c) then
+              constants := collectBindingConstants(
+                Component.getBinding(InstNode.component(c)), constants);
+            end if;
           end for;
 
           () := match sections

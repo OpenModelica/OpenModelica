@@ -129,6 +129,20 @@ uniontype CachedData
     output array<CachedData> cache = arrayCreate(NUMBER_OF_CACHES, NO_CACHE());
   end empty;
 
+  function initFunc
+    input array<CachedData> caches;
+  protected
+    CachedData func_cache;
+  algorithm
+    func_cache := getFuncCache(caches);
+    func_cache := match func_cache
+      case NO_CACHE() then FUNCTION({}, false, false);
+      case FUNCTION() then func_cache;
+    end match;
+
+    setFuncCache(caches, func_cache);
+  end initFunc;
+
   function addFunc
     input Function fn;
     input Boolean specialBuiltin;
@@ -912,6 +926,15 @@ uniontype InstNode
       else node;
     end match;
   end resolveOuter;
+
+  function cacheInitFunc
+    input output InstNode node;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm CachedData.initFunc(node.caches); then ();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+    end match;
+  end cacheInitFunc;
 
   function cacheAddFunc
     input output InstNode node;

@@ -660,28 +660,26 @@ public
     protected
       LookupTree.Tree ltree = LookupTree.new();
       Integer i = 1;
-      array<Mutable<InstNode>> comps;
+      array<InstNode> comps;
     algorithm
-      comps := arrayCreateNoInit(listLength(inputs) + listLength(locals) + 1,
-        Mutable.create(InstNode.EMPTY_NODE()));
+      comps := arrayCreateNoInit(listLength(inputs) + listLength(locals) + 1, InstNode.EMPTY_NODE());
 
       for ci in inputs loop
-        comps[i] := Mutable.create(ci);
+        comps[i] := ci;
         ltree := addLocalElement(InstNode.name(ci), LookupTree.Entry.COMPONENT(i), tree, ltree);
         i := i + 1;
       end for;
 
       for cl in locals loop
-        comps[i] := Mutable.create(cl);
+        comps[i] := cl;
         ltree := addLocalElement(InstNode.name(cl), LookupTree.Entry.COMPONENT(i), tree, ltree);
         i := i + 1;
       end for;
 
-      comps[i] := Mutable.create(out);
+      comps[i] := out;
       ltree := addLocalElement(InstNode.name(out), LookupTree.Entry.COMPONENT(i), tree, ltree);
 
-      tree := INSTANTIATED_TREE(ltree, listArray({}), comps, List.intRange(i),
-        listArray({}), listArray({}), DuplicateTree.new());
+      tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), DuplicateTree.new());
     end fromRecordConstructor;
 
     function mapRedeclareChains

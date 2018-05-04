@@ -300,7 +300,7 @@ uniontype Function
       case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
       else algorithm
         (fn_node, specialBuiltin) := instFunc2(ComponentRef.toPath(fn_ref), fn_node, info);
-        instFuncExpressions(fn_node);
+        //instFuncExpressions(fn_node);
       then (fn_node, specialBuiltin);
     end match;
   end instFuncRef;
@@ -357,6 +357,8 @@ uniontype Function
         algorithm
           // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);
+          InstNode.cacheInitFunc(fnNode);
+          Inst.instExpressions(fnNode);
           fnNode := Record.instConstructors(fnPath, fnNode, info);
         then
           (fnNode, false);
@@ -365,6 +367,8 @@ uniontype Function
         algorithm
           // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);
+          InstNode.cacheInitFunc(fnNode);
+          Inst.instExpressions(fnNode);
           fnNode := Record.instOperatorFunctions(fnNode, info);
         then
           (fnNode, false);
@@ -385,6 +389,10 @@ uniontype Function
         algorithm
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := Inst.instantiate(fnNode);
+          // Set up an empty function cache to signal that this function is
+          // currently being instantiated, so recursive functions can be handled.
+          InstNode.cacheInitFunc(fnNode);
+          Inst.instExpressions(fnNode);
           fn := Function.new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
@@ -1151,17 +1159,21 @@ protected
     input output list<InstNode> locals = {};
   protected
     Class cls;
-    array<Mutable<InstNode>> comps;
+    array<InstNode> comps;
     InstNode n;
   algorithm
     Error.assertion(InstNode.isClass(node), getInstanceName() + " got non-class node", sourceInfo());
     cls := InstNode.getClass(node);
 
     () := match cls
-      case Class.EXPANDED_CLASS(elements = ClassTree.INSTANTIATED_TREE(components = comps))
+      case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
         algorithm
           for i in arrayLength(comps):-1:1 loop
-            n := Mutable.access(comps[i]);
+            n := comps[i];
+
+            if InstNode.isEmpty(n) then
+              continue;
+            end if;
 
             // Sort the components based on their direction.
             () := match paramDirection(n)

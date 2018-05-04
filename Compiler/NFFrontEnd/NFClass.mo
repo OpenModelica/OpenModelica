@@ -163,7 +163,7 @@ uniontype Class
     ClassTree tree;
   algorithm
     tree := ClassTree.fromRecordConstructor(inputs, locals, out);
-    cls := EXPANDED_CLASS(tree, Modifier.NOMOD(), DEFAULT_PREFIXES, Restriction.FUNCTION());
+    cls := INSTANCED_CLASS(Type.UNKNOWN(), tree, Sections.EMPTY(), Restriction.FUNCTION());
   end makeRecordConstructor;
 
   function initExpandedClass
