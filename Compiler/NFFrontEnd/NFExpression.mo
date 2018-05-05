@@ -658,7 +658,7 @@ public
     exp := match exp
       case CREF()
         algorithm
-          cref := ComponentRef.addSubscript(Subscript.INDEX(indexExp), exp.cref);
+          cref := ComponentRef.applyIndexSubscript(Subscript.INDEX(indexExp), exp.cref);
         then
           CREF(Type.unliftArray(exp.ty), cref);
 

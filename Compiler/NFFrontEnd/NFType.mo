@@ -33,6 +33,8 @@ encapsulated uniontype NFType
 protected
   import Type = NFType;
   import List;
+  import Restriction = NFRestriction;
+  import NFClass.Class;
 
 public
   import Dimension = NFDimension;
@@ -301,6 +303,26 @@ public
       else false;
     end match;
   end isComplex;
+
+  function isConnector
+    input Type ty;
+    output Boolean isConnector;
+  algorithm
+    isConnector := match ty
+      case COMPLEX(complexTy = ComplexType.CONNECTOR()) then true;
+      else false;
+    end match;
+  end isConnector;
+
+  function isRecord
+    input Type ty;
+    output Boolean isRecord;
+  algorithm
+    isRecord := match ty
+      case COMPLEX() then Restriction.isRecord(Class.restriction(InstNode.getClass(ty.cls)));
+      else false;
+    end match;
+  end isRecord;
 
   function isScalarArray
     input Type ty;

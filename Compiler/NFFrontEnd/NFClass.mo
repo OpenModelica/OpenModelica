@@ -490,6 +490,18 @@ uniontype Class
     end match;
   end isExternalFunction;
 
+  function isOverdetermined
+    input Class cls;
+    output Boolean isOverdetermined;
+  algorithm
+    try
+      lookupElement("equalityConstraint", cls);
+      isOverdetermined := true;
+    else
+      isOverdetermined := false;
+    end try;
+  end isOverdetermined;
+
   function getPrefixes
     input Class cls;
     output Prefixes prefs;

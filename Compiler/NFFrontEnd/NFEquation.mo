@@ -41,6 +41,7 @@ protected
   import Equation = NFEquation;
   import NFComponent.Component;
   import Util;
+  import ElementSource;
 
 public
   record EQUALITY
@@ -111,6 +112,29 @@ public
     DAE.ElementSource source;
   end NORETCALL;
 
+  function source
+    input Equation eq;
+    output DAE.ElementSource source;
+  algorithm
+    source := match eq
+      case EQUALITY() then eq.source;
+      case CREF_EQUALITY() then eq.source;
+      case ARRAY_EQUALITY() then eq.source;
+      case CONNECT() then eq.source;
+      case FOR() then eq.source;
+      case IF() then eq.source;
+      case WHEN() then eq.source;
+      case ASSERT() then eq.source;
+      case TERMINATE() then eq.source;
+      case REINIT() then eq.source;
+      case NORETCALL() then eq.source;
+    end match;
+  end source;
+
+  function info
+    input Equation eq;
+    output SourceInfo info = ElementSource.getInfo(source(eq));
+  end info;
 
   partial function MapExpFn
     input output Expression MapExpFn;

@@ -151,8 +151,8 @@ algorithm
   execStat("NFTyping.typeComponents(" + name + ")");
   typeBindings(cls, cls, ExpOrigin.CLASS);
   execStat("NFTyping.typeBindings(" + name + ")");
-  typeSections(cls, ExpOrigin.CLASS);
-  execStat("NFTyping.typeSections(" + name + ")");
+  typeClassSections(cls, ExpOrigin.CLASS);
+  execStat("NFTyping.typeClassSections(" + name + ")");
 end typeClass;
 
 function typeComponents
@@ -1883,7 +1883,7 @@ algorithm
   end match;
 end evaluateCondition;
 
-function typeSections
+function typeClassSections
   input InstNode classNode;
   input ExpOrigin.Type origin;
 protected
@@ -1912,16 +1912,13 @@ algorithm
                 function typeEquation(origin = intBitOr(initial_origin, ExpOrigin.EQUATION)),
                 function typeAlgorithm(origin = intBitOr(initial_origin, ExpOrigin.ALGORITHM)));
 
-          case Sections.EXTERNAL(explicit = true)
-            algorithm
-              info := InstNode.info(classNode);
-              sections.args := list(typeExternalArg(arg, info, classNode) for arg in sections.args);
-              sections.outputRef := typeCref(sections.outputRef, origin, info);
-            then
-              sections;
-
           case Sections.EXTERNAL()
-            then makeDefaultExternalCall(sections, classNode);
+            algorithm
+              Error.addSourceMessage(Error.TRANS_VIOLATION,
+                {InstNode.name(classNode), Restriction.toString(cls.restriction), "external declaration"},
+                InstNode.info(classNode));
+            then
+              fail();
 
           else sections;
         end match;
@@ -1940,7 +1937,7 @@ algorithm
 
     case Class.TYPED_DERIVED()
       algorithm
-        typeSections(cls.baseClass, origin);
+        typeClassSections(cls.baseClass, origin);
       then
         ();
 
@@ -1950,7 +1947,73 @@ algorithm
       then
         fail();
   end match;
-end typeSections;
+end typeClassSections;
+
+function typeFunctionSections
+  input InstNode classNode;
+  input ExpOrigin.Type origin;
+protected
+  Class cls, typed_cls;
+  Sections sections;
+  SourceInfo info;
+  list<Statement> alg;
+algorithm
+  cls := InstNode.getClass(classNode);
+
+  _ := match cls
+    case Class.INSTANCED_CLASS(sections = sections)
+      algorithm
+        sections := match sections
+          case Sections.SECTIONS({}, {}, {alg}, {})
+            algorithm
+              sections.algorithms := {typeAlgorithm(alg, intBitOr(origin, ExpOrigin.ALGORITHM))};
+            then
+              sections;
+
+          case Sections.SECTIONS()
+            algorithm
+              if listLength(sections.equations) > 0 or listLength(sections.initialEquations) > 0 then
+                Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE,
+                  {"function"}, InstNode.info(classNode));
+              else
+                Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+                  {InstNode.name(classNode)}, InstNode.info(classNode));
+              end if;
+            then
+              fail();
+
+          case Sections.EXTERNAL(explicit = true)
+            algorithm
+              info := InstNode.info(classNode);
+              sections.args := list(typeExternalArg(arg, info, classNode) for arg in sections.args);
+              sections.outputRef := typeCref(sections.outputRef, origin, info);
+            then
+              sections;
+
+          case Sections.EXTERNAL()
+            then makeDefaultExternalCall(sections, classNode);
+
+          else sections;
+        end match;
+
+        typed_cls := Class.setSections(sections, cls);
+        InstNode.updateClass(typed_cls, classNode);
+      then
+        ();
+
+    case Class.TYPED_DERIVED()
+      algorithm
+        typeFunctionSections(cls.baseClass, origin);
+      then
+        ();
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got uninstantiated class " + InstNode.name(classNode), sourceInfo());
+      then
+        fail();
+  end match;
+end typeFunctionSections;
 
 function typeExternalArg
   input Expression arg;
@@ -2094,7 +2157,7 @@ algorithm
   () := match comp
     case Component.TYPED_COMPONENT()
       algorithm
-        typeSections(comp.classInst, origin);
+        typeClassSections(comp.classInst, origin);
       then
         ();
 
@@ -2499,8 +2562,7 @@ algorithm
     accum_var := Prefixes.variabilityMax(accum_var, var);
 
     if var <= Variability.PARAMETER and
-       (intBitAnd(origin, ExpOrigin.FOR_LOOP) == 0 or
-        not Expression.contains(cond, Expression.isIterator)) then
+      not Expression.contains(cond, isNonConstantIfCondition) then
       // If the condition is a parameter expression, evaluate it so we can do
       // branch selection later on.
       cond := Ceval.evalExp(cond, Ceval.EvalTarget.IGNORE_ERRORS());
@@ -2524,6 +2586,25 @@ algorithm
   //       of equations.
   ifEq := Equation.IF(listReverseInPlace(bl), source);
 end typeIfEquation;
+
+function isNonConstantIfCondition
+  input Expression exp;
+  output Boolean isConstant;
+algorithm
+  isConstant := match exp
+    local
+      Function fn;
+
+    case Expression.CREF() then ComponentRef.isIterator(exp.cref);
+    case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
+      then match Absyn.pathFirstIdent(fn.path)
+        case "Connections" then true;
+        case "cardinality" then true;
+        else false;
+      end match;
+    else false;
+  end match;
+end isNonConstantIfCondition;
 
 function typeOperatorArg
   input output Expression arg;

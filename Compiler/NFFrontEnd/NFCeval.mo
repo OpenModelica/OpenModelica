@@ -1209,6 +1209,7 @@ algorithm
     case "transpose" then evalBuiltinTranspose(listHead(args));
     case "vector" then evalBuiltinVector(listHead(args));
     case "zeros" then evalBuiltinZeros(args);
+    case "OpenModelica_uriToFilename" then evalUriToFilename(listHead(args));
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2113,6 +2114,18 @@ function evalBuiltinZeros
 algorithm
   result := evalBuiltinFill2(Expression.INTEGER(0), args);
 end evalBuiltinZeros;
+
+function evalUriToFilename
+  input Expression arg;
+  output Expression result;
+algorithm
+  result := match arg
+    case Expression.STRING()
+      then Expression.STRING(OpenModelica.Scripting.uriToFilename(arg.value));
+
+    else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+  end match;
+end evalUriToFilename;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;

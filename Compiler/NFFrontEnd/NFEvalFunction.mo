@@ -157,7 +157,8 @@ algorithm
   else
     // External functions that we would need to generate code for and execute.
     Error.assertion(false, getInstanceName() +
-      ": evaluation of userdefined external functions not yet implemented", sourceInfo());
+      " failed on " + Absyn.pathString(fn.path) +
+      ", evaluation of userdefined external functions not yet implemented", sourceInfo());
     fail();
   end if;
 end evaluateExternal;

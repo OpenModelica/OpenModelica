@@ -984,7 +984,7 @@ uniontype Function
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeSections(fn.node, ExpOrigin.FUNCTION);
+    Typing.typeFunctionSections(fn.node, ExpOrigin.FUNCTION);
   end typeFunctionBody;
 
   function isBuiltin
@@ -1019,6 +1019,7 @@ uniontype Function
         special := match Absyn.pathFirstIdent(path)
           // Can have variable number of arguments.
           case "array" then true;
+          case "branch" then true;
           case "cardinality" then true;
           case "cat" then true;
           // Function should not be used in function context.
@@ -1032,6 +1033,7 @@ uniontype Function
           case "fill" then true;
           // Always discrete.
           case "initial" then true;
+          case "isRoot" then true;
           // Arguments can be scalar, vector, matrix, 3d array .... basically anything
           // We need to make sure size(Arg,i) = 1 for 2 < i <= ndims(Arg).
           // return type should always be Matrix.
@@ -1048,11 +1050,14 @@ uniontype Function
           case "noEvent" then true;
           // can have variable number of arguments
           case "ones" then true;
+          case "potentialRoot" then true;
           // Function should not be used in function context.
           // argument should be a cref?
           case "pre" then true;
           // needs unboxing and return type fix.
           case "product" then true;
+          case "root" then true;
+          case "rooted" then true;
           // We need to make sure size(Arg,i) = 1 for 0 <= i <= ndims(Arg).
           // return type should always be scalar.
           case "scalar" then true;

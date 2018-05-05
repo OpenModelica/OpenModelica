@@ -389,6 +389,7 @@ uniontype Call
 
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
       case "String" then typeStringCall(call, origin, info);
+      case "branch" then typeBranchCall(call, origin, info);
       case "cardinality" then typeCardinalityCall(call, origin, info);
       case "cat" then typeCatCall(call, origin, info);
       case "change" then typeChangeCall(call, origin, info);
@@ -397,14 +398,18 @@ uniontype Call
       case "edge" then typeEdgeCall(call, origin, info);
       case "fill" then typeFillCall(call, origin, info);
       case "initial" then typeDiscreteCall(call, origin, info);
+      case "isRoot" then typeIsRootCall(call, origin, info);
       case "matrix" then typeMatrixCall(call, origin, info);
       case "max" then typeMinMaxCall(call, origin, info);
       case "min" then typeMinMaxCall(call, origin, info);
       case "ndims" then typeNdimsCall(call, origin, info);
       case "noEvent" then typeNoEventCall(call, origin, info);
       case "ones" then typeZerosOnesCall(call, origin, info);
+      case "potentialRoot" then typePotentialRootCall(call, origin, info);
       case "pre" then typePreCall(call, origin, info);
       case "product" then typeSumProductCall(call, origin, info);
+      case "root" then typeRootCall(call, origin, info);
+      case "rooted" then typeRootedCall(call, origin, info);
       case "scalar" then typeScalarCall(call, origin, info);
       case "smooth" then typeSmoothCall(call, origin, info);
       case "sum" then typeSumProductCall(call, origin, info);
@@ -432,9 +437,10 @@ uniontype Call
   protected
     Call call;
     list<Expression> args;
+    ComponentRef cref;
   algorithm
     outExp := match callExp
-      case Expression.CALL(UNTYPED_CALL())
+      case Expression.CALL(UNTYPED_CALL(ref = cref))
         algorithm
           if(builtinSpecialHandling(callExp.call)) then
             (outExp, ty, var) := typeSpecialBuiltinFunction(callExp.call, origin, info);
@@ -1931,7 +1937,7 @@ protected
     dims := listReverseInPlace(dims);
 
     {fn} := typeCachedFunctions(fnRef);
-    ty := Type.ARRAY(fillType, dims);
+    ty := Type.liftArrayLeftList(fillType, dims);
 
     if variability <= Variability.STRUCTURAL_PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
       callExp := Ceval.evalBuiltinFill(ty_args);
@@ -2283,15 +2289,316 @@ protected
     output Type ty;
     output Variability var = Variability.PARAMETER;
   protected
-    Call argtycall;
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
   algorithm
-    argtycall := typeMatchNormalCall(call, origin, info);
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
 
-    ty := getType(argtycall);
-    var := variability(argtycall);
-    callExp := Expression.CALL(unboxArgs(argtycall));
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {ComponentRef.toString(fn_ref), Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) <> 1 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), ComponentRef.toString(fn_ref) + "(Connector) => Integer"}, info);
+    end if;
+
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+
+    if not Expression.isCref(arg) then
+      Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_VARIABLE,
+        {"First", ComponentRef.toString(fn_ref), "<REMOVE ME>"}, info);
+    end if;
+
+    if not Type.isConnector(ty) then
+      Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+        {"1", ComponentRef.toString(fn_ref), "",
+         Expression.toString(arg), Type.toString(ty), "connector"}, info);
+    end if;
+
+    {fn} := typeCachedFunctions(fn_ref);
+    ty := Type.INTEGER();
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, var));
     // TODO: Check cardinality restrictions, 3.7.2.3.
   end typeCardinalityCall;
+
+  function typeBranchCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg1, arg2;
+    Function fn;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {ComponentRef.toString(fn_ref), Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) <> 2 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector)"}, info);
+    end if;
+
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    {arg1, arg2} := args;
+
+    (arg1, ty) := Typing.typeExp(arg1, origin, info);
+    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+    (arg2, ty) := Typing.typeExp(arg2, origin, info);
+    checkConnectionsArgument(arg2, ty, fn_ref, 2, info);
+
+    {fn} := typeCachedFunctions(fn_ref);
+    ty := Type.NORETCALL();
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg1, arg2}, ty, var));
+  end typeBranchCall;
+
+  function typeIsRootCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {ComponentRef.toString(fn_ref), Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) <> 1 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
+    end if;
+
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
+
+    {fn} := typeCachedFunctions(fn_ref);
+    ty := Type.BOOLEAN();
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, var));
+  end typeIsRootCall;
+
+  function typePotentialRootCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg1, arg2;
+    Function fn;
+    Integer args_len;
+    String name;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    for narg in named_args loop
+      (name, arg2) := narg;
+
+      if name == "priority" then
+        args := listAppend(args, {arg2});
+      else
+        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+          {ComponentRef.toString(fn_ref), name}, info);
+      end if;
+    end for;
+
+    args_len := listLength(args);
+    if args_len < 1 or args_len > 2 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), ComponentRef.toString(fn_ref) + "(Connector, Integer = 0)"}, info);
+    end if;
+
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    arg1 :: args := args;
+
+    (arg1, ty) := Typing.typeExp(arg1, origin, info);
+    checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
+
+    if args_len == 2 then
+      arg2 := listHead(args);
+      (arg2, ty) := Typing.typeExp(arg2, origin, info);
+
+      if not Type.isInteger(ty) then
+        Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+          {"2", ComponentRef.toString(fn_ref), "", Expression.toString(arg2),
+           Type.toString(ty), "Integer"}, info);
+      end if;
+    else
+      arg2 := Expression.INTEGER(0);
+    end if;
+
+    {fn} := typeCachedFunctions(fn_ref);
+    ty := Type.NORETCALL();
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg1, arg2}, ty, var));
+  end typePotentialRootCall;
+
+  function typeRootCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {ComponentRef.toString(fn_ref), Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) <> 1 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
+    end if;
+
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
+
+    {fn} := typeCachedFunctions(fn_ref);
+    ty := Type.NORETCALL();
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, var));
+  end typeRootCall;
+
+  function typeRootedCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type ty;
+    output Variability var = Variability.PARAMETER;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
+  algorithm
+    UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+
+    if not listEmpty(named_args) then
+      Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        {ComponentRef.toString(fn_ref), Util.tuple21(listHead(named_args))}, info);
+    end if;
+
+    if listLength(args) <> 1 then
+      Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+        {toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
+    end if;
+
+    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+      Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
+        {ComponentRef.toString(fn_ref)}, info);
+    end if;
+
+    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    checkConnectionsArgument(arg, ty, fn_ref, 1, info);
+
+    {fn} := typeCachedFunctions(fn_ref);
+    ty := Type.BOOLEAN();
+    callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, var));
+  end typeRootedCall;
+
+  function checkConnectionsArgument
+    input Expression arg;
+    input Type ty;
+    input ComponentRef fnRef;
+    input Integer argIndex;
+    input SourceInfo info;
+  algorithm
+    () := match arg
+      local
+        Type ty2;
+        InstNode node;
+        Boolean valid_cref;
+        ComponentRef rest_cref;
+
+      case Expression.CREF()
+        algorithm
+          valid_cref := match arg.cref
+            case ComponentRef.CREF(node = node, origin = NFComponentRef.Origin.CREF,
+                restCref = ComponentRef.CREF(ty = ty2, origin = NFComponentRef.Origin.CREF,
+                restCref = rest_cref))
+              then Class.isOverdetermined(InstNode.getClass(node)) and
+                   Type.isConnector(ty2) and
+                   not ComponentRef.isFromCref(rest_cref);
+
+            else false;
+          end match;
+
+          if not valid_cref then
+            Error.addSourceMessageAndFail(
+              if argIndex == 1 then Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST else
+                                    Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND,
+              {ComponentRef.toString(fnRef)}, info);
+          end if;
+        then
+          ();
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.ARG_TYPE_MISMATCH,
+            {String(argIndex), ComponentRef.toString(fnRef), "",
+             Expression.toString(arg), Type.toString(ty), "overconstrained type/record"}, info);
+        then
+          fail();
+    end match;
+  end checkConnectionsArgument;
 
   function typeNoEventCall
     input Call call;

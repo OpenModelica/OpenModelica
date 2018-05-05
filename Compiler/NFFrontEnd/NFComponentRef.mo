@@ -302,12 +302,60 @@ public
     input Subscript subscript;
     input output ComponentRef cref;
   algorithm
-    cref := match cref
+    () := match cref
       case CREF()
-        then CREF(cref.node, listAppend(cref.subscripts, {subscript}),
-            Type.unliftArray(cref.ty), cref.origin, cref.restCref);
+        algorithm
+          cref.subscripts := listAppend(cref.subscripts, {subscript});
+        then
+          ();
     end match;
   end addSubscript;
+
+  function applyIndexSubscript
+    input Subscript subscript;
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      local
+        Boolean success;
+        list<Subscript> subs;
+
+      case CREF()
+        algorithm
+          // First check if there's any space left for another subscript.
+          if Type.dimensionCount(cref.ty) - listLength(cref.subscripts) > 0 then
+            // If so, just append the subscript.
+            cref.subscripts := listAppend(cref.subscripts, {subscript});
+          else
+            // Otherwise, check if there are any slice subscripts that can be subscripted.
+            (subs, success) := List.findMap(cref.subscripts,
+              function applySubscript2(indexSub = subscript));
+
+            if success then
+              cref.subscripts := subs;
+            else
+              // If the subscript couldn't be added to this cref part, push it down.
+              cref.restCref := applyIndexSubscript(subscript, cref.restCref);
+            end if;
+          end if;
+        then
+          ();
+
+    end match;
+  end applyIndexSubscript;
+
+  function applySubscript2
+    input output Subscript existingSub;
+    input Subscript indexSub;
+          output Boolean success;
+  algorithm
+    (existingSub, success) := match existingSub
+      case Subscript.SLICE()
+        then (Subscript.INDEX(Expression.applySubscript(indexSub, existingSub.slice)), true);
+      case Subscript.WHOLE() then (indexSub, true);
+      else (existingSub, false);
+    end match;
+  end applySubscript2;
 
   function setSubscripts
     "Sets the subscripts of the first part of a cref."
@@ -668,6 +716,17 @@ public
       else false;
     end match;
   end isDeleted;
+
+  function isFromCref
+    input ComponentRef cref;
+    output Boolean fromCref;
+  algorithm
+    fromCref := match cref
+      case CREF(origin = Origin.CREF) then true;
+      case WILD() then true;
+      else false;
+    end match;
+  end isFromCref;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;
