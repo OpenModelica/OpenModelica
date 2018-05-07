@@ -18,6 +18,6 @@ end FuncBuiltinLinspace;
 //   Real x[4];
 //   Real x[5];
 // equation
-//   x = linspace(2.0, 4.0, 5);
+//   x = array(2.0 + (4.0 - 2.0) * /*Real*/(i - 1) / /*Real*/(5 - 1) for i in 1:5);
 // end FuncBuiltinLinspace;
 // endResult
