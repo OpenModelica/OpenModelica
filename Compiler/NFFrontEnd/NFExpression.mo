@@ -770,8 +770,6 @@ public
     input output Expression exp;
     input InstNode iterator;
     input Expression iteratorValue;
-
-    import Origin = NFComponentRef.Origin;
   algorithm
     exp := match exp
       local
@@ -1315,6 +1313,7 @@ public
         Expression e;
         Type t;
         Variability v;
+        list<tuple<InstNode, Expression>> iters;
 
       case Call.UNTYPED_CALL()
         algorithm
@@ -1357,17 +1356,40 @@ public
       case Call.UNTYPED_MAP_CALL()
         algorithm
           e := map(call.exp, func);
+          iters := mapCallIterators(call.iters, func);
         then
-          Call.UNTYPED_MAP_CALL(e, call.iters);
+          Call.UNTYPED_MAP_CALL(e, iters);
 
       case Call.TYPED_MAP_CALL()
         algorithm
           e := map(call.exp, func);
+          iters := mapCallIterators(call.iters, func);
         then
-          Call.TYPED_MAP_CALL(call.ty, call.var, e, call.iters);
+          Call.TYPED_MAP_CALL(call.ty, call.var, e, iters);
 
     end match;
   end mapCall;
+
+  function mapCallIterators
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+    output list<tuple<InstNode, Expression>> outIters = {};
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      new_exp := map(exp, func);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapCallIterators;
 
   function mapCref
     input ComponentRef cref;
@@ -1656,6 +1678,27 @@ public
     end match;
   end mapCallShallow;
 
+  function mapCallShallowIterators
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+    output list<tuple<InstNode, Expression>> outIters = {};
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      new_exp := func(exp);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapCallShallowIterators;
+
   function mapArrayElements
     "Applies the given function to each scalar elements of an array."
     input Expression exp;
@@ -1839,12 +1882,20 @@ public
       case Call.UNTYPED_MAP_CALL()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := fold(Util.tuple22(i), func, foldArg);
+          end for;
         then
           ();
 
       case Call.TYPED_MAP_CALL()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := fold(Util.tuple22(i), func, foldArg);
+          end for;
         then
           ();
 
@@ -2140,6 +2191,29 @@ public
 
     end match;
   end mapFoldCall;
+
+  function mapFoldCallIterators<ArgT>
+    input list<tuple<InstNode, Expression>> iters;
+    input MapFunc func;
+          output list<tuple<InstNode, Expression>> outIters = {};
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  protected
+    InstNode node;
+    Expression exp, new_exp;
+  algorithm
+    for i in iters loop
+      (node, exp) := i;
+      (new_exp, arg) := mapFold(exp, func, arg);
+      outIters := (if referenceEq(new_exp, exp) then i else (node, new_exp)) :: outIters;
+    end for;
+
+    outIters := listReverseInPlace(outIters);
+  end mapFoldCallIterators;
 
   function mapFoldCref<ArgT>
     input ComponentRef cref;

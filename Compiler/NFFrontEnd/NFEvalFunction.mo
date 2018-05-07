@@ -119,7 +119,7 @@ algorithm
   Pointer.update(call_counter, call_count);
 
   try
-    fn_body := getFunctionBody(fn.node);
+    fn_body := Function.getBody(fn);
     repl := createReplacements(fn, args);
     // TODO: Also apply replacements to the replacements themselves, i.e. the
     //       bindings of the function parameters. But the probably need to be
@@ -164,32 +164,6 @@ algorithm
 end evaluateExternal;
 
 protected
-
-function getFunctionBody
-  input InstNode node;
-  output list<Statement> body;
-protected
-  Class cls = InstNode.getClass(node);
-algorithm
-  body := match cls
-    case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = {body})) then body;
-
-    case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = _ :: _))
-      algorithm
-        Error.assertion(false, getInstanceName() + " got function with multiple algorithm sections", sourceInfo());
-      then
-        fail();
-
-    case Class.TYPED_DERIVED() then getFunctionBody(cls.baseClass);
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got unknown function", sourceInfo());
-      then
-        fail();
-
-  end match;
-end getFunctionBody;
 
 function createReplacements
   input Function fn;

@@ -348,12 +348,9 @@ function cross "Cross product of two 3-vectors"
   input Real[3] x;
   input Real[3] y;
   output Real[3] z;
-/* Not working due to problems with non-builtin overloaded functions? Maybe it works now. Maybe it's bad to inline due to evaluating the same element many times?
 algorithm
   z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
-*/
-external "builtin" cross(x,y,z);
-  annotation(__OpenModelica_EarlyInline = true, preferredView="text",Documentation(info="<html>
+annotation(__OpenModelica_EarlyInline = true, preferredView="text",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cross()'\">cross()</a>
 </html>"));
 end cross;

@@ -67,6 +67,7 @@ import NFFunction.MatchedFunction;
 import Ceval = NFCeval;
 import SimplifyExp = NFSimplifyExp;
 import Subscript = NFSubscript;
+import Inline = NFInline;
 
 public
 uniontype CallAttributes
@@ -453,6 +454,7 @@ uniontype Call
               outExp := toRecordExpression(call, ty);
             else
               outExp := Expression.CALL(call);
+              outExp := Inline.inlineCallExp(outExp);
             end if;
           end if;
         then
@@ -2676,6 +2678,17 @@ protected
         then Expression.RECORD(Absyn.stripLast(Function.name(call.fn)), ty, call.arguments);
     end match;
   end toRecordExpression;
+
+  function inlineType
+    input Call call;
+    output DAE.InlineType inlineTy;
+  algorithm
+    inlineTy := match call
+      case TYPED_CALL(attributes = CallAttributes.CALL_ATTR(inlineType = inlineTy))
+        then inlineTy;
+      else DAE.InlineType.NO_INLINE();
+    end match;
+  end inlineType;
 end Call;
 
 annotation(__OpenModelica_Interface="frontend");

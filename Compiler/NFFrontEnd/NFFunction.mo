@@ -66,6 +66,8 @@ import MatchKind = NFTypeCheck.MatchKind;
 import Restriction = NFRestriction;
 import NFTyping.ExpOrigin;
 import Dimension = NFDimension;
+import Statement = NFStatement;
+import Sections = NFSections;
 
 
 public
@@ -1155,6 +1157,11 @@ uniontype Function
     ty := DAE.T_FUNCTION(params, Type.toDAE(fn.returnType), fn.attributes, fn.path);
   end makeDAEType;
 
+  function getBody
+    input Function fn;
+    output list<Statement> body = getBody2(fn.node);
+  end getBody;
+
 protected
   function collectParams
     "Sorts all the function parameters as inputs, outputs and locals."
@@ -1453,6 +1460,33 @@ protected
       else Type.TUPLE(ret_tyl, NONE());
     end match;
   end makeReturnType;
+
+  function getBody2
+    input InstNode node;
+    output list<Statement> body;
+  protected
+    Class cls = InstNode.getClass(node);
+  algorithm
+    body := match cls
+      case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = {body})) then body;
+      case Class.INSTANCED_CLASS(sections = Sections.EMPTY()) then {};
+
+      case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = _ :: _))
+        algorithm
+          Error.assertion(false, getInstanceName() + " got function with multiple algorithm sections", sourceInfo());
+        then
+          fail();
+
+      case Class.TYPED_DERIVED() then getBody2(cls.baseClass);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown function", sourceInfo());
+        then
+          fail();
+
+    end match;
+  end getBody2;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

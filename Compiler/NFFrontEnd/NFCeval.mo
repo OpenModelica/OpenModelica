@@ -1139,7 +1139,7 @@ algorithm
         else
           evalNormalCall(call.fn, args, call);
 
-    case Call.UNTYPED_MAP_CALL()
+    case Call.TYPED_MAP_CALL()
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for mapcall", sourceInfo());
       then
@@ -1173,7 +1173,6 @@ algorithm
     case "ceil" then evalBuiltinCeil(listHead(args));
     case "cosh" then evalBuiltinCosh(listHead(args));
     case "cos" then evalBuiltinCos(listHead(args));
-    case "cross" then evalBuiltinCross(args);
     case "der" then evalBuiltinDer(listHead(args));
     // TODO: Fix typing of diagonal so the argument isn't boxed.
     case "diagonal" then evalBuiltinDiagonal(Expression.unbox(listHead(args)));
@@ -1417,27 +1416,6 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalBuiltinCos;
-
-function evalBuiltinCross
-  input list<Expression> args;
-  output Expression result;
-protected
-  Real x1, x2, x3, y1, y2, y3;
-  Expression z1, z2, z3;
-algorithm
-  result := match args
-    case {Expression.ARRAY(elements = {Expression.REAL(x1), Expression.REAL(x2), Expression.REAL(x3)}),
-          Expression.ARRAY(elements = {Expression.REAL(y1), Expression.REAL(y2), Expression.REAL(y3)})}
-      algorithm
-        z1 := Expression.REAL(x2 * y3 - x3 * y2);
-        z2 := Expression.REAL(x3 * y1 - x1 * y3);
-        z3 := Expression.REAL(x1 * y2 - x2 * y1);
-      then
-        Expression.ARRAY(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(3)}), {z1, z2, z3});
-
-    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
-  end match;
-end evalBuiltinCross;
 
 function evalBuiltinDer
   input Expression arg;
