@@ -82,6 +82,7 @@ CevalIdentity1.mo \
 CevalIf1.mo \
 CevalInteger1.mo \
 CevalIntegerEnum1.mo \
+CevalLinspace1.mo \
 CevalLog101.mo \
 CevalLog102.mo \
 CevalLog1.mo \
@@ -99,6 +100,8 @@ CevalMul1.mo \
 CevalNoEvent1.mo \
 CevalOnes1.mo \
 CevalProduct1.mo \
+CevalReduction1.mo \
+CevalReduction2.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
