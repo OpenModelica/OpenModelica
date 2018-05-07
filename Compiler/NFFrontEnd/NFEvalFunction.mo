@@ -42,6 +42,7 @@ import Binding = NFBinding;
 import NFComponent.Component;
 import Type = NFType;
 import Dimension = NFDimension;
+import NFClassTree.ClassTree;
 
 protected
 import Ceval = NFCeval;
@@ -192,19 +193,53 @@ protected
   Binding binding;
   Expression repl_exp;
 algorithm
-  binding := Component.getBinding(InstNode.component(node));
-
-  // TODO: Handle records.
-  if Binding.isBound(binding) then
-    repl_exp := Binding.getExp(binding);
-  else
-    // TODO: Replace with something more suitable, Expression.EMPTY?
-    repl_exp := Expression.INTEGER(0);
-  end if;
-
+  repl_exp := getBindingExp(node);
+  repl_exp := Expression.map(repl_exp, function applyReplacements2(repl = repl));
   repl_exp := Expression.makeMutable(repl_exp);
   repl := ReplTree.add(repl, prefix + InstNode.name(node), repl_exp);
 end addMutableReplacement;
+
+function getBindingExp
+  input InstNode node;
+  output Expression bindingExp;
+protected
+  Binding binding;
+algorithm
+  binding := Component.getBinding(InstNode.component(node));
+
+  if Binding.isBound(binding) then
+    bindingExp := Binding.getExp(binding);
+  else
+    bindingExp := buildRecordBinding(node);
+  end if;
+end getBindingExp;
+
+function buildRecordBinding
+  input InstNode node;
+  output Expression result;
+protected
+  InstNode cls_node = InstNode.classScope(node);
+  Class cls = InstNode.getClass(cls_node);
+  array<InstNode> comps;
+  list<Expression> bindings;
+  Component comp;
+  Expression exp;
+algorithm
+  result := match cls
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
+      algorithm
+        bindings := {};
+
+        for i in arrayLength(comps):-1:1 loop
+          bindings := getBindingExp(comps[i]) :: bindings;
+        end for;
+      then
+        Expression.RECORD(InstNode.scopePath(cls_node), cls.ty, bindings);
+
+    case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass);
+    else Expression.EMPTY();
+  end match;
+end buildRecordBinding;
 
 function addInputReplacement
   input InstNode node;
@@ -255,15 +290,19 @@ function createResult
 protected
   list<Expression> expl;
   list<Type> types;
+  Expression e;
 algorithm
   if listLength(outputs) == 1 then
     exp := Expression.makeImmutable(ReplTree.get(repl, InstNode.name(listHead(outputs))));
+    assertAssignedOutput(listHead(outputs), exp);
   else
     expl := {};
     types := {};
 
     for o in outputs loop
-      expl := Expression.makeImmutable(ReplTree.get(repl, InstNode.name(o))) :: expl;
+      e := Expression.makeImmutable(ReplTree.get(repl, InstNode.name(o)));
+      assertAssignedOutput(o, e);
+      expl := e :: expl;
     end for;
 
     expl := listReverseInPlace(expl);
@@ -271,6 +310,22 @@ algorithm
     exp := Expression.TUPLE(Type.TUPLE(types, NONE()), expl);
   end if;
 end createResult;
+
+function assertAssignedOutput
+  input InstNode outputNode;
+  input Expression value;
+algorithm
+  () := match value
+    case Expression.EMPTY()
+      algorithm
+        Error.addSourceMessage(Error.UNASSIGNED_FUNCTION_OUTPUT,
+          {InstNode.name(outputNode)}, InstNode.info(outputNode));
+      then
+        fail();
+
+    else ();
+  end match;
+end assertAssignedOutput;
 
 function evaluateStatements
   input list<Statement> stmts;

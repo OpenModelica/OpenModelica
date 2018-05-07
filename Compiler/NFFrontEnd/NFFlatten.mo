@@ -79,6 +79,7 @@ import NFPrefixes.Variability;
 import Variable = NFVariable;
 import BindingOrigin = NFBindingOrigin;
 import ElementSource;
+import Ceval = NFCeval;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -378,7 +379,12 @@ algorithm
 
   // Create an equation if there's a binding on a complex component.
   if Binding.isBound(binding) then
+    binding := flattenBinding(binding, prefix, node);
     binding_exp := Binding.getTypedExp(binding);
+
+    if Component.variability(comp) <= Variability.PARAMETER then
+      binding_exp := Ceval.evalExp(binding_exp);
+    end if;
 
     if not Expression.isRecord(binding_exp) then
       eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
@@ -386,7 +392,8 @@ algorithm
       sections := Sections.prependEquation(eq, sections);
       opt_binding := SOME(Binding.UNBOUND(NONE()));
     else
-      opt_binding := SOME(flattenBinding(binding, prefix, node));
+      binding := Binding.setTypedExp(binding_exp, binding);
+      opt_binding := SOME(binding);
     end if;
   else
     opt_binding := NONE();

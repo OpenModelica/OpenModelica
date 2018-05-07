@@ -156,6 +156,12 @@ public
           binding.bindingExp := exp;
         then
           ();
+
+      case FLAT_BINDING()
+        algorithm
+          binding.bindingExp := exp;
+        then
+          ();
     end match;
   end setTypedExp;
 

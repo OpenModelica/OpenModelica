@@ -192,6 +192,9 @@ public
     Mutable<Expression> exp;
   end MUTABLE;
 
+  record EMPTY
+  end EMPTY;
+
   function isCref
     input Expression exp;
     output Boolean isTrue;
@@ -976,6 +979,7 @@ public
       case SUBSCRIPTED_EXP() then toString(exp.exp) + "[" + stringDelimitList(list(toString(e) for e in exp.subscripts), ", ") + "]";
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
+      case EMPTY() then "#EMPTY#";
 
       else anyString(exp);
     end match;

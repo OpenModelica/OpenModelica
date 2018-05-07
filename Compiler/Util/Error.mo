@@ -795,6 +795,8 @@ public constant Message TERMINATE_TRIGGERED = MESSAGE(333, TRANSLATION(), ERROR(
   Util.gettext("terminate triggered: %s"));
 public constant Message EVAL_RECURSION_LIMIT_REACHED = MESSAGE(334, TRANSLATION(), ERROR(),
   Util.gettext("The recursion limit (--evalRecursionLimit=%s) was exceeded during evaluation of %s."));
+public constant Message UNASSIGNED_FUNCTION_OUTPUT = MESSAGE(335, TRANSLATION(), ERROR(),
+  Util.gettext("Output parameter %s was not assigned a value"));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
