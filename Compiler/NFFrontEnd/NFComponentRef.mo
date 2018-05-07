@@ -728,5 +728,17 @@ public
     end match;
   end isFromCref;
 
+  function toListReverse
+    input ComponentRef cref;
+    input list<ComponentRef> accum = {};
+    output list<ComponentRef> crefs;
+  algorithm
+    crefs := match cref
+      case CREF(origin = Origin.CREF)
+        then toListReverse(cref.restCref, cref :: accum);
+      else accum;
+    end match;
+  end toListReverse;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

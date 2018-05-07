@@ -237,7 +237,7 @@ algorithm
         Expression.RECORD(InstNode.scopePath(cls_node), cls.ty, bindings);
 
     case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass);
-    else Expression.EMPTY();
+    else Expression.makeMutable(Expression.EMPTY());
   end match;
 end buildRecordBinding;
 
@@ -272,16 +272,55 @@ algorithm
       then
         fail();
 
-    case Expression.CREF() guard not ComponentRef.isIterator(exp.cref)
-      algorithm
-        // TODO: Handle subscripting.
-        repl_exp := ReplTree.getOpt(repl, ComponentRef.toString(exp.cref));
-      then
-        if isSome(repl_exp) then Util.getOption(repl_exp) else exp;
-
+    case Expression.CREF() then applyReplacementCref(repl, exp.cref, exp);
     else exp;
   end match;
 end applyReplacements2;
+
+function applyReplacementCref
+  input ReplTree.Tree repl;
+  input ComponentRef cref;
+  input Expression exp;
+  output Expression outExp;
+protected
+  list<ComponentRef> cref_parts;
+  Option<Expression> repl_exp;
+  InstNode parent, node;
+algorithm
+  // Explode the cref into a list of parts in reverse order.
+  cref_parts := ComponentRef.toListReverse(cref);
+
+  // If the list is empty it's probably an iterator or _, which shouldn't be replaced.
+  if listEmpty(cref_parts) then
+    outExp := exp;
+  else
+    // Look up the replacement for the first part in the replacement tree.
+    parent := ComponentRef.node(listHead(cref_parts));
+    repl_exp := ReplTree.getOpt(repl, InstNode.name(parent));
+
+    if isSome(repl_exp) then
+      SOME(outExp) := repl_exp;
+    else
+      outExp := exp;
+      return;
+    end if;
+
+    if not listEmpty(cref_parts) then
+      try
+        // If the cref consists of more than one identifier we need to look up
+        // the corresponding record field in the expression.
+        for cr in listRest(cref_parts) loop
+          node := ComponentRef.node(cr);
+          outExp := Expression.makeImmutable(outExp);
+          outExp := Expression.lookupRecordField(InstNode.name(node), outExp);
+        end for;
+      else
+        Error.assertion(false, getInstanceName() + " could not find replacement for " +
+          ComponentRef.toString(cref), sourceInfo());
+      end try;
+    end if;
+  end if;
+end applyReplacementCref;
 
 function createResult
   input ReplTree.Tree repl;
@@ -293,14 +332,14 @@ protected
   Expression e;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Expression.makeImmutable(ReplTree.get(repl, InstNode.name(listHead(outputs))));
+    exp := Ceval.evalExp(ReplTree.get(repl, InstNode.name(listHead(outputs))));
     assertAssignedOutput(listHead(outputs), exp);
   else
     expl := {};
     types := {};
 
     for o in outputs loop
-      e := Expression.makeImmutable(ReplTree.get(repl, InstNode.name(o)));
+      e := Ceval.evalExp(ReplTree.get(repl, InstNode.name(o)));
       assertAssignedOutput(o, e);
       expl := e :: expl;
     end for;
@@ -371,27 +410,103 @@ function evaluateAssignment
   input Expression lhsExp;
   input Expression rhsExp;
   output FlowControl ctrl = FlowControl.NEXT;
-protected
-  Expression rhs;
 algorithm
-  rhs := Ceval.evalExp(rhsExp);
+  assignVariable(lhsExp, Ceval.evalExp(rhsExp));
+end evaluateAssignment;
 
-  () := match lhsExp
-    case Expression.MUTABLE()
+function assignVariable
+  input Expression variable;
+  input Expression value;
+algorithm
+  () := match (variable, value)
+    local
+      Expression val;
+      list<Expression> vals;
+
+    case (Expression.MUTABLE(), _)
       algorithm
-        Mutable.update(lhsExp.exp, rhs);
+        Mutable.update(variable.exp, assignExp(Mutable.access(variable.exp), value));
+      then
+        ();
+
+    case (Expression.TUPLE(), Expression.TUPLE(elements = vals))
+      algorithm
+        for var in variable.elements loop
+          val :: vals := vals;
+          assignVariable(var, val);
+        end for;
       then
         ();
 
     else
       algorithm
         Error.assertion(false, getInstanceName() + " failed on " +
-          Expression.toString(lhsExp) + " := " + Expression.toString(rhsExp), sourceInfo());
+          Expression.toString(variable) + " := " + Expression.toString(value), sourceInfo());
       then
         fail();
 
   end match;
-end evaluateAssignment;
+end assignVariable;
+
+function assignExp
+  input Expression lhs;
+  input Expression rhs;
+  output Expression result;
+algorithm
+  result := match lhs
+    case Expression.RECORD()
+      then assignRecord(lhs, rhs);
+
+    // TODO: Handle arrays.
+
+    else rhs;
+  end match;
+end assignExp;
+
+function assignRecord
+  input Expression lhs;
+  input Expression rhs;
+  output Expression result;
+algorithm
+  result := match rhs
+    local
+      list<Expression> elems;
+      Expression e, val;
+      ClassTree cls_tree;
+      array<InstNode> comps;
+      Option<Expression> binding_exp;
+      Type ty;
+
+    case Expression.RECORD()
+      algorithm
+        Expression.RECORD(elements = elems) := lhs;
+
+        for v in rhs.elements loop
+          e :: elems := elems;
+          assignVariable(e, v);
+        end for;
+      then
+        lhs;
+
+    case Expression.CREF()
+      algorithm
+        Expression.RECORD(elements = elems) := lhs;
+        cls_tree := Class.classTree(InstNode.getClass(ComponentRef.node(rhs.cref)));
+        comps := ClassTree.getComponents(cls_tree);
+
+        for c in comps loop
+          e :: elems := elems;
+          ty := InstNode.getType(c);
+          val := Expression.CREF(Type.liftArrayLeftList(ty, Type.arrayDims(rhs.ty)),
+                                 ComponentRef.prefixCref(c, ty, {}, rhs.cref));
+          assignVariable(e, val);
+        end for;
+      then
+        lhs;
+
+    else rhs;
+  end match;
+end assignRecord;
 
 function evaluateFor
   input InstNode iterator;

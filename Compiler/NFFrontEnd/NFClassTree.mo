@@ -830,6 +830,15 @@ public
       end try;
     end lookupElementsPtr;
 
+    function lookupComponentIndex
+      input String name;
+      input ClassTree tree;
+      output Integer index;
+    algorithm
+      LookupTree.Entry.COMPONENT(index = index) :=
+        LookupTree.get(lookupTree(tree), name);
+    end lookupComponentIndex;
+
     function mapClasses
       input ClassTree tree;
       input FuncT func;

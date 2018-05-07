@@ -56,6 +56,8 @@ public
   import NFCall.Call;
   import Binding = NFBinding;
   import NFComponent.Component;
+  import NFClassTree.ClassTree;
+  import NFClass.Class;
 
   record INTEGER
     Integer value;
@@ -1275,6 +1277,12 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
+      case MUTABLE()
+        algorithm
+          Mutable.update(exp.exp, map(Mutable.access(exp.exp), func));
+        then
+          exp;
+
       else exp;
     end match;
 
@@ -1563,6 +1571,12 @@ public
         then
           if referenceEq(exp.exp, e1) then exp else BOX(e1);
 
+      case MUTABLE()
+        algorithm
+          Mutable.update(exp.exp, func(Mutable.access(exp.exp)));
+        then
+          exp;
+
       else exp;
     end match;
   end mapShallow;
@@ -1832,6 +1846,7 @@ public
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
       case BOX() then fold(exp.exp, func, arg);
+      case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
       else arg;
     end match;
 
@@ -2094,6 +2109,13 @@ public
           (e1, arg) := mapFold(exp.tupleExp, func, arg);
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
+
+      case MUTABLE()
+        algorithm
+          (e1, arg) := mapFold(Mutable.access(exp.exp), func, arg);
+          Mutable.update(exp.exp, e1);
+        then
+          exp;
 
       else exp;
     end match;
@@ -3425,6 +3447,49 @@ public
       else exp;
     end match;
   end makeImmutable;
+
+  function isMutable
+    input Expression exp;
+    output Boolean isMutable;
+  algorithm
+    isMutable := match exp
+      case MUTABLE() then true;
+      else false;
+    end match;
+  end isMutable;
+
+  function lookupRecordField
+    input String name;
+    input Expression exp;
+    output Expression fieldExp;
+  algorithm
+    fieldExp := match exp
+      local
+        InstNode node;
+        Integer index;
+        ClassTree cls_tree;
+        ComponentRef cref;
+        Type ty;
+
+      case RECORD(ty = Type.COMPLEX(cls = node))
+        algorithm
+          cls_tree := Class.classTree(InstNode.getClass(node));
+          index := ClassTree.lookupComponentIndex(name, cls_tree);
+        then
+          listGet(exp.elements, index);
+
+      case CREF(ty = Type.COMPLEX(cls = node))
+        algorithm
+          cls_tree := Class.classTree(InstNode.getClass(node));
+          (node, false) := ClassTree.lookupElement(name, cls_tree);
+          ty := InstNode.getType(node);
+          cref := ComponentRef.prefixCref(node, ty, {}, exp.cref);
+          ty := Type.liftArrayLeftList(ty, Type.arrayDims(exp.ty));
+        then
+          CREF(ty, cref);
+
+    end match;
+  end lookupRecordField;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
