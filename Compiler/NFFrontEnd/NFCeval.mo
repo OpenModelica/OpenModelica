@@ -52,6 +52,8 @@ import NFFunction.Function;
 import EvalFunction = NFEvalFunction;
 import List;
 import System;
+import ExpressionIterator = NFExpressionIterator;
+import MetaModelica.Dangerous.*;
 
 public
 uniontype EvalTarget
@@ -226,6 +228,17 @@ algorithm
     case Expression.MUTABLE()
       algorithm
         exp1 := evalExp(Mutable.access(exp.exp), target);
+      then
+        exp1;
+
+    case Expression.SUBSCRIPTED_EXP()
+      algorithm
+        exp1 := evalExp(exp.exp, target);
+
+        for s in exp.subscripts loop
+          exp2 := evalExp(s, target);
+          exp1 := Expression.applyIndexSubscript(exp2, exp1);
+        end for;
       then
         exp1;
 
@@ -1140,10 +1153,7 @@ algorithm
           evalNormalCall(call.fn, args, call);
 
     case Call.TYPED_MAP_CALL()
-      algorithm
-        Error.addInternalError(getInstanceName() + ": unimplemented case for mapcall", sourceInfo());
-      then
-        fail();
+      then evalReduction(call.exp, call.ty, call.iters);
 
     else
       algorithm
@@ -2104,6 +2114,62 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalUriToFilename;
+
+function evalReduction
+  input Expression exp;
+  input Type ty;
+  input list<tuple<InstNode, Expression>> iterators;
+  output Expression result;
+protected
+  Expression e = exp, range;
+  InstNode node;
+  list<Expression> ranges = {}, expl;
+  Mutable<Expression> iter;
+  list<Mutable<Expression>> iters = {};
+algorithm
+  for i in iterators loop
+    (node, range) := i;
+    iter := Mutable.create(Expression.INTEGER(0));
+    e := Expression.replaceIterator(e, node, Expression.MUTABLE(iter));
+    iters := iter :: iters;
+    ranges := evalExp(range) :: ranges;
+  end for;
+
+  result := evalReduction2(e, ty, ranges, iters);
+end evalReduction;
+
+function evalReduction2
+  input Expression exp;
+  input Type ty;
+  input list<Expression> ranges;
+  input list<Mutable<Expression>> iterators;
+  output Expression result;
+protected
+  Expression range;
+  list<Expression> ranges_rest, expl = {};
+  Mutable<Expression> iter;
+  list<Mutable<Expression>> iters_rest;
+  ExpressionIterator range_iter;
+  Expression value;
+  Type el_ty;
+algorithm
+  if listEmpty(ranges) then
+    result := evalExp(exp);
+  else
+    range :: ranges_rest := ranges;
+    iter :: iters_rest := iterators;
+    range_iter := ExpressionIterator.fromExp(range);
+    el_ty := Type.unliftArray(ty);
+
+    while ExpressionIterator.hasNext(range_iter) loop
+      (range_iter, value) := ExpressionIterator.next(range_iter);
+      Mutable.update(iter, value);
+      expl := evalReduction2(exp, el_ty, ranges_rest, iters_rest) :: expl;
+    end while;
+
+    result := Expression.ARRAY(el_ty, listReverseInPlace(expl));
+  end if;
+end evalReduction2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;
