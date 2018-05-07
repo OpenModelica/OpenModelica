@@ -73,6 +73,7 @@ CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
 CevalFuncFor2.mo \
 CevalFuncIf1.mo \
+CevalFuncRecord1.mo \
 CevalFuncRecursive1.mo \
 CevalFuncRecursive2.mo \
 CevalFuncTerminate1.mo \
