@@ -2500,7 +2500,8 @@ QString OMCProxy::makeDocumentationUriToFileName(QString documentation)
   }
   // go through the list of links and convert them if needed.
   foreach (QString attribute, attributeMatches) {
-    if (attribute.startsWith("modelica://")) {
+    // ticket:4923 Modelica specification allows both modelica:// and Modelica://
+    if (attribute.startsWith("modelica://") || attribute.startsWith("Modelica://")) {
       QString fileName = uriToFilename(attribute);
 #ifdef WIN32
       documentation = documentation.replace(attribute, "file:///" + fileName);
