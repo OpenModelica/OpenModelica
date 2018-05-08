@@ -441,9 +441,9 @@ CompositeModelSimulationParamsDialog::CompositeModelSimulationParamsDialog(Graph
     mOldStopTime = pCompositeModelEditor->getSimulationStopTime();
   }
   // CoSimulation Interval
-  mpStartTimeLabel = new Label(tr("Start Time:"));
+  mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
   mpStartTimeTextBox = new QLineEdit(mOldStartTime);
-  mpStopTimeLabel = new Label(tr("Stop Time:"));
+  mpStopTimeLabel = new Label(QString("%1:").arg(Helper::stopTime));
   mpStopTimeTextBox = new QLineEdit(mOldStopTime);
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);

@@ -2954,7 +2954,7 @@ void LibraryTreeView::createActions()
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
   // simulate OMSimulator model action
   mpSimulateOMSModelAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
-  mpSimulateOMSModelAction->setStatusTip(Helper::simulateOMSModelTip);
+  mpSimulateOMSModelAction->setStatusTip(Helper::OMSSimulationSetupTip);
   mpSimulateOMSModelAction->setEnabled(false);
   connect(mpSimulateOMSModelAction, SIGNAL(triggered(bool)), SLOT(simulateOMSModel()));
   // rename OMSimulator model Action

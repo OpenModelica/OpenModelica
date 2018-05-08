@@ -55,6 +55,7 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "TLM/TLMCoSimulationOutputWidget.h"
+#include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
 #include "Debugger/Attach/AttachToProcessDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
@@ -313,6 +314,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpSimulationDialog = 0;
   // Create TLM co-simulation dialog when needed
   mpTLMCoSimulationDialog = 0;
+  // Create the OMSimulator simulation dialog when needed
+  mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
   // Create an object of WelcomePageWidget
@@ -539,6 +542,9 @@ void MainWindow::beforeClosingMainWindow()
   if (mpTLMCoSimulationDialog) {
     delete mpTLMCoSimulationDialog;
   }
+  if (mpOMSSimulationDialog) {
+    delete mpOMSSimulationDialog;
+  }
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
   QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
@@ -712,6 +718,19 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
+}
+
+/*!
+ * \brief MainWindow::OMSSimulationSetup
+ * Opens the OMSimulator simulation setup
+ * \param pLibraryTreeItem
+ */
+void MainWindow::OMSSimulationSetup(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (!mpOMSSimulationDialog) {
+    mpOMSSimulationDialog = new OMSSimulationDialog(this);
+  }
+  mpOMSSimulationDialog->show(pLibraryTreeItem);
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -2244,6 +2263,19 @@ void MainWindow::TLMSimulate()
 }
 
 /*!
+ * \brief MainWindow::openOMSSimulationDialog
+ * Slot activated when mpOMSSimulationSetupAction triggered signal is raised.
+ * Opens the OMSimulator Simulation Dialog
+ */
+void MainWindow::openOMSSimulationDialog()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    OMSSimulationSetup(pModelWidget->getLibraryTreeItem());
+  }
+}
+
+/*!
  * \brief MainWindow::openWorkingDirectory
  * Opens the current working directory.
  */
@@ -3343,7 +3375,10 @@ void MainWindow::createActions()
   // Add FMU Action
   mpAddFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addFMU, this);
   mpAddFMUAction->setStatusTip(Helper::addFMUTip);
-
+  // OMSimulator simulation setup action
+  mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
+  mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
+  connect(mpOMSSimulationSetupAction, SIGNAL(triggered()), SLOT(openOMSSimulationDialog()));
 }
 
 //! Creates the menus
@@ -3445,6 +3480,7 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpDebuggerToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpTLMSimulationToolbar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpOMSimulatorToobar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
@@ -3985,6 +4021,7 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to OMSimulator Toolbar
   mpOMSimulatorToobar->addAction(mpAddFMUAction);
+  mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);
 }
 
 //! when the dragged object enters the main window

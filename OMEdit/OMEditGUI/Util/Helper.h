@@ -367,7 +367,12 @@ public:
   static QString priority;
   static QString secs;
   static QString saveContentsInOneFile;
-  static QString simulateOMSModelTip;
+  static QString OMSSimulationSetup;
+  static QString OMSSimulationSetupTip;
+  static QString dateTime;
+  static QString startTime;
+  static QString stopTime;
+  static QString status;
 };
 
 class GUIMessages : public QObject

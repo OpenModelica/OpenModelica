@@ -76,6 +76,7 @@ class ThreeDViewer;
 class BreakpointsWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
+class OMSSimulationDialog;
 class ModelWidgetContainer;
 class WelcomePageWidget;
 class InfoBar;
@@ -125,6 +126,7 @@ public:
 #endif
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
+  OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   GitCommands* getGitCommands() {return mpGitCommands;}
@@ -203,6 +205,7 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void OMSSimulationSetup(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -254,6 +257,7 @@ private:
 #endif
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
+  OMSSimulationDialog *mpOMSSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   GitCommands *mpGitCommands;
@@ -393,6 +397,7 @@ private:
   QAction *mpTLMCoSimulationAction;
   // OMSimulator Actions
   QAction *mpAddFMUAction;
+  QAction *mpOMSSimulationSetupAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -468,6 +473,7 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
+  void openOMSSimulationDialog();
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();

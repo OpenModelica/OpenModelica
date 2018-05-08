@@ -34,6 +34,9 @@
 #include "OMSProxy.h"
 #include "Util/Helper.h"
 #include "Modeling/MessagesWidget.h"
+#include "MainWindow.h"
+#include "OMSSimulationDialog.h"
+#include "OMSSimulationOutputWidget.h"
 #include "Util/Utilities.h"
 
 /*!
@@ -62,6 +65,20 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                         QString(message), Helper::scriptingKind, level));
 //  qDebug() << type << message;
+}
+
+void simulateCallback(const char* ident, double time, oms_status_enu_t status)
+{
+  //qDebug() << "simulateCallback" << ident << time << status;
+  QList<OMSSimulationOutputWidget*> OMSSimulationOutputWidgetList;
+  OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
+  foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
+    if (pOMSSimulationOutputWidget->isSimulationRunning()
+        && pOMSSimulationOutputWidget->getOMSSimulationOptions().getCompositeModelName().compare(QString(ident)) == 0) {
+      pOMSSimulationOutputWidget->simulateCallback(ident, time, status);
+      break;
+    }
+  }
 }
 
 /*!
@@ -442,6 +459,48 @@ bool OMSProxy::updateConnection(QString cref, QString conA, QString conB, const 
 }
 
 /*!
+ * \brief OMSProxy::initialize
+ * Initializes a composite model (works for both FMI and TLM).
+ * \param ident
+ * \return
+ */
+bool OMSProxy::initialize(QString ident)
+{
+  oms_status_enu_t status = oms2_initialize(ident.toStdString().c_str());
+  return statusToBool(status);
+}
+
+bool OMSProxy::simulate_asynchronous(QString ident)
+{
+  oms_status_enu_t status = oms2_simulate_asynchronous(ident.toStdString().c_str(), simulateCallback);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::reset
+ * Reset the composite model after a simulation run.
+ * \param ident
+ * \return
+ */
+bool OMSProxy::reset(QString ident)
+{
+  oms_status_enu_t status = oms2_reset(ident.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::terminate
+ * Terminates a composite model (works for both FMI and TLM).
+ * \param ident
+ * \return
+ */
+bool OMSProxy::terminate(QString ident)
+{
+  oms_status_enu_t status = oms2_terminate(ident.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::setDebugLogging
  * Sets the logging level.
  * \param logLevel
@@ -556,5 +615,75 @@ bool OMSProxy::getBooleanParameter(QString signal, bool *pValue)
 bool OMSProxy::setBooleanParameter(const char* signal, bool value)
 {
   oms_status_enu_t status = oms2_setBooleanParameter(signal, value);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStartTime
+ * Set the start time of the simulation.
+ * \param cref
+ * \param startTime
+ * \return
+ */
+bool OMSProxy::setStartTime(QString cref, double startTime)
+{
+  oms_status_enu_t status = oms2_setStartTime(cref.toStdString().c_str(), startTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStopTime
+ * Set the stop time of the simulation.
+ * \param cref
+ * \param stopTime
+ * \return
+ */
+bool OMSProxy::setStopTime(QString cref, double stopTime)
+{
+  oms_status_enu_t status = oms2_setStopTime(cref.toStdString().c_str(), stopTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setCommunicationInterval
+ * Set the communication interval of the simulation.
+ * \param cref
+ * \param communicationInterval
+ * \return
+ */
+bool OMSProxy::setCommunicationInterval(QString cref, double communicationInterval)
+{
+  oms_status_enu_t status = oms2_setCommunicationInterval(cref.toStdString().c_str(), communicationInterval);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setResultFile
+ * Set the result file of the simulation.
+ * \param cref
+ * \param filename
+ * \return
+ */
+bool OMSProxy::setResultFile(QString cref, QString filename)
+{
+  oms_status_enu_t status = oms2_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setMasterAlgorithm
+ * Set master algorithm variant that shall be used (default: "standard").
+ *
+ * Supported master algorithms: "standard"
+ *
+ * Experimental master algorithms (no stable API!): "pctpl", "pmrchannela", "pmrchannelcv", "pmrchannelm"
+ *
+ * \param cref
+ * \param masterAlgorithm
+ * \return
+ */
+bool OMSProxy::setMasterAlgorithm(QString cref, QString masterAlgorithm)
+{
+  oms_status_enu_t status = oms2_setMasterAlgorithm(cref.toStdString().c_str(), masterAlgorithm.toStdString().c_str());
   return statusToBool(status);
 }

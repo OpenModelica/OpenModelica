@@ -77,6 +77,10 @@ public:
   bool addConnection(QString cref, QString conA, QString conB);
   bool deleteConnection(QString cref, QString conA, QString conB);
   bool updateConnection(QString cref, QString conA, QString conB, const oms_connection_t *pConnection);
+  bool initialize(QString ident);
+  bool simulate_asynchronous(QString ident);
+  bool reset(QString ident);
+  bool terminate(QString ident);
   void setLoggingLevel(int logLevel);
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
@@ -87,6 +91,11 @@ public:
   bool setIntegerParameter(const char* signal, int value);
   bool getBooleanParameter(QString signal, bool *pValue);
   bool setBooleanParameter(const char* signal, bool value);
+  bool setStartTime(QString cref, double startTime);
+  bool setStopTime(QString cref, double stopTime);
+  bool setCommunicationInterval(QString cref, double communicationInterval);
+  bool setResultFile(QString cref, QString filename);
+  bool setMasterAlgorithm(QString cref, QString masterAlgorithm);
 };
 
 #endif // OMSPROXY_H

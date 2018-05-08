@@ -365,7 +365,12 @@ QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
-QString Helper::simulateOMSModelTip;
+QString Helper::OMSSimulationSetup;
+QString Helper::OMSSimulationSetupTip;
+QString Helper::dateTime;
+QString Helper::startTime;
+QString Helper::stopTime;
+QString Helper::status;
 
 void Helper::initHelperVariables()
 {
@@ -624,7 +629,12 @@ void Helper::initHelperVariables()
   Helper::priority = tr("Priority:");
   Helper::secs = tr("secs");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
-  Helper::simulateOMSModelTip = tr("Simulates the OMSimulator model");
+  Helper::OMSSimulationSetup = tr("OMSimulator Simulation Setup");
+  Helper::OMSSimulationSetupTip = tr("Opens the OMSimulator simulation setup");
+  Helper::dateTime = tr("DateTime");
+  Helper::startTime = tr("Start Time");
+  Helper::stopTime = tr("Stop Time");
+  Helper::status = tr("Status");
 }
 
 QString GUIMessages::getMessage(int type)
