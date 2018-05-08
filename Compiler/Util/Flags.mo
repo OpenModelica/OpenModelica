@@ -812,7 +812,6 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("simplifyAllExpressions", Util.notrans("Does simplifications on all expressions.")),
     ("simplifyIfEquations", Util.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("sortEqnsVars", Util.notrans("Heuristic sorting for equations and variables.")),
-    ("stateMachineElab", Util.gettext("Does the elaboration of state machines.")),
     ("unitChecking", Util.gettext("Does advanced unit checking which consists of two parts: 1. calculation of unspecified unit information for variables; 2. consistency check for all equations based on unit information. Please note: This module is still experimental.")),
     ("wrapFunctionCalls", Util.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
