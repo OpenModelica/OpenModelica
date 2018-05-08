@@ -517,6 +517,43 @@ public
     end match;
   end dimensionCount;
 
+  function mapDims
+    input output Type ty;
+    input FuncT func;
+
+    partial function FuncT
+      input output Dimension dim;
+    end FuncT;
+  algorithm
+    () := match ty
+      case ARRAY()
+        algorithm
+          ty.dimensions := list(func(d) for d in ty.dimensions);
+        then
+          ();
+
+      case TUPLE()
+        algorithm
+          ty.types := list(mapDims(t, func) for t in ty.types);
+        then
+          ();
+
+      case FUNCTION()
+        algorithm
+          ty.resultType := mapDims(ty.resultType, func);
+        then
+          ();
+
+      case METABOXED()
+        algorithm
+          ty.ty := mapDims(ty.ty, func);
+        then
+          ();
+
+      else ();
+    end match;
+  end mapDims;
+
   function nthEnumLiteral
     input Type ty;
     input Integer index;

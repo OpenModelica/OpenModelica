@@ -39,6 +39,8 @@ import DAE.InlineType;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Subscript = NFSubscript;
+import Dimension = NFDimension;
+import Type = NFType;
 
 function inlineCallExp
   input Expression callExp;
@@ -95,6 +97,9 @@ algorithm
 
         stmt := listHead(body);
 
+        // TODO: Instead of repeating this for each input we should probably
+        //       just build a lookup tree or hash table and go through the
+        //       statement once.
         for i in inputs loop
           arg :: args := args;
           stmt := Statement.mapExp(stmt,
@@ -112,12 +117,13 @@ function replaceCrefNode
   input output Expression exp;
   input InstNode node;
   input Expression value;
+protected
+  InstNode cr_node;
+  ComponentRef rest_cr;
+  list<Subscript> subs;
+  Type ty, repl_ty;
 algorithm
   exp := match exp
-    local
-      InstNode cr_node;
-      ComponentRef rest_cr;
-      list<Subscript> subs;
 
     // TODO: This only works for simple crefs, for complex crefs (i.e. records)
     //       we need to somehow replace the rest of the cref with nodes from the
@@ -128,7 +134,34 @@ algorithm
 
     else exp;
   end match;
+
+  // Replace expressions in dimensions too.
+  ty := Expression.typeOf(exp);
+  repl_ty := Type.mapDims(ty, function replaceDimExp(node = node, value = value));
+
+  if not referenceEq(ty, repl_ty) then
+    exp := Expression.setType(repl_ty, exp);
+  end if;
 end replaceCrefNode;
+
+function replaceDimExp
+  input output Dimension dim;
+  input InstNode node;
+  input Expression value;
+algorithm
+  dim := match dim
+    local
+      Expression exp;
+
+    case Dimension.EXP()
+      algorithm
+        exp := Expression.map(dim.exp, function replaceCrefNode(node = node, value = value));
+      then
+        Dimension.fromExp(exp, dim.var);
+
+    else dim;
+  end match;
+end replaceDimExp;
 
 function getOutputExp
   input Statement stmt;

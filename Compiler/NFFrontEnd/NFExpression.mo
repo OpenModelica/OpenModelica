@@ -528,34 +528,60 @@ public
     output Type ty;
   algorithm
     ty := match exp
-      case INTEGER() then Type.INTEGER();
-      case REAL() then Type.REAL();
-      case STRING() then Type.STRING();
-      case BOOLEAN() then Type.BOOLEAN();
-      case ENUM_LITERAL() then exp.ty;
-      case CREF() then exp.ty;
-      case ARRAY() then exp.ty;
-      case RANGE() then exp.ty;
-      case TUPLE() then exp.ty;
-      case RECORD() then exp.ty;
-      case CALL() then Call.typeOf(exp.call);
-      case SIZE(dimIndex = SOME(_)) then Type.INTEGER();
-      case SIZE() then typeOf(exp.exp);
-      case END() then Type.INTEGER();
-      case BINARY() then Operator.typeOf(exp.operator);
-      case UNARY() then Operator.typeOf(exp.operator);
-      case LBINARY() then Operator.typeOf(exp.operator);
-      case LUNARY() then Operator.typeOf(exp.operator);
-      case RELATION() then Operator.typeOf(exp.operator);
-      case IF() then typeOf(exp.trueBranch);
-      case CAST() then exp.ty;
-      case UNBOX() then exp.ty;
+      case INTEGER()         then Type.INTEGER();
+      case REAL()            then Type.REAL();
+      case STRING()          then Type.STRING();
+      case BOOLEAN()         then Type.BOOLEAN();
+      case ENUM_LITERAL()    then exp.ty;
+      case CREF()            then exp.ty;
+      case ARRAY()           then exp.ty;
+      case RANGE()           then exp.ty;
+      case TUPLE()           then exp.ty;
+      case RECORD()          then exp.ty;
+      case CALL()            then Call.typeOf(exp.call);
+      case SIZE()            then if isSome(exp.dimIndex) then
+                                    Type.INTEGER() else typeOf(exp.exp);
+      case END()             then Type.INTEGER();
+      case BINARY()          then Operator.typeOf(exp.operator);
+      case UNARY()           then Operator.typeOf(exp.operator);
+      case LBINARY()         then Operator.typeOf(exp.operator);
+      case LUNARY()          then Operator.typeOf(exp.operator);
+      case RELATION()        then Operator.typeOf(exp.operator);
+      case IF()              then typeOf(exp.trueBranch);
+      case CAST()            then exp.ty;
+      case UNBOX()           then exp.ty;
       case SUBSCRIPTED_EXP() then exp.ty;
-      case TUPLE_ELEMENT() then exp.ty;
-      case BOX() then Type.METABOXED(typeOf(exp.exp));
+      case TUPLE_ELEMENT()   then exp.ty;
+      case BOX()             then Type.METABOXED(typeOf(exp.exp));
       else Type.UNKNOWN();
     end match;
   end typeOf;
+
+  function setType
+    input Type ty;
+    input output Expression exp;
+  algorithm
+    () := match exp
+      case ENUM_LITERAL()    algorithm exp.ty := ty; then ();
+      case CREF()            algorithm exp.ty := ty; then ();
+      case TYPENAME()        algorithm exp.ty := ty; then ();
+      case ARRAY()           algorithm exp.ty := ty; then ();
+      case RANGE()           algorithm exp.ty := ty; then ();
+      case TUPLE()           algorithm exp.ty := ty; then ();
+      case RECORD()          algorithm exp.ty := ty; then ();
+      case CALL()            algorithm exp.call := Call.setType(exp.call, ty); then ();
+      case BINARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
+      case UNARY()           algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
+      case LBINARY()         algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
+      case LUNARY()          algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
+      case RELATION()        algorithm exp.operator := Operator.setType(ty, exp.operator); then ();
+      case CAST()            algorithm exp.ty := ty; then ();
+      case UNBOX()           algorithm exp.ty := ty; then ();
+      case SUBSCRIPTED_EXP() algorithm exp.ty := ty; then ();
+      case TUPLE_ELEMENT()   algorithm exp.ty := ty; then ();
+      else ();
+    end match;
+  end setType;
 
   function typeCast
     input Expression exp;
@@ -3490,6 +3516,17 @@ public
 
     end match;
   end lookupRecordField;
+
+  function enumIndexExp
+    input Expression enumExp;
+    output Expression indexExp;
+  algorithm
+    indexExp := match enumExp
+      case ENUM_LITERAL() then INTEGER(enumExp.index);
+      else CALL(Call.makeBuiltinCall(
+        NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp)));
+    end match;
+  end enumIndexExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

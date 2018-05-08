@@ -550,15 +550,25 @@ uniontype Call
     input SourceInfo info;
   algorithm
     call := match call
-      case UNTYPED_CALL() algorithm
-        typeCachedFunctions(call.ref);
-      then
-        typeArgs(call, origin, info);
+      local
+        list<Function> fnl;
+        Boolean is_external;
 
-      else algorithm
-        Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
-      then
-        fail();
+      case UNTYPED_CALL()
+        algorithm
+          fnl := typeCachedFunctions(call.ref);
+          // Don't evaluate constants or structural parameters for external functions,
+          // the code generation can't handle it in some cases (see bug #4904).
+          // TODO: Remove this when #4904 is fixed.
+          is_external := if listEmpty(fnl) then false else Function.isExternal(listHead(fnl));
+        then
+          typeArgs(call, not is_external, origin, info);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+        then
+          fail();
     end match;
   end typeNormalCall;
 
@@ -576,6 +586,7 @@ uniontype Call
       case ComponentRef.CREF(node = fn_node)
         algorithm
           CachedData.FUNCTION(functions, typed, special) := InstNode.getFuncCache(fn_node);
+
           // Type the function(s) if not already done.
           if not typed then
             functions := list(Function.typeFunction(f) for f in functions);
@@ -613,9 +624,6 @@ uniontype Call
     matchedFunc := checkMatchingFunctions(call,info);
 
     func := matchedFunc.func;
-    // Don't evaluate structural parameters for external functions, the code generation can't handle it in
-    // some cases (see bug #4904). For constants we'll get issues no matter if we evaluate them or not,
-    // but evaluating them will probably cause the last amount of issues.
     typed_args := matchedFunc.args;
 
     args := {};
@@ -840,6 +848,7 @@ uniontype Call
 
   function typeArgs
     input output Call call;
+    input Boolean replaceConstants;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
@@ -856,7 +865,7 @@ uniontype Call
         algorithm
           typedArgs := {};
           for arg in call.arguments loop
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = false);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = replaceConstants);
             typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
           end for;
 
@@ -865,7 +874,7 @@ uniontype Call
           typedNamedArgs := {};
           for narg in call.named_args loop
             (name,arg) := narg;
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = false);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = replaceConstants);
             typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
           end for;
 
@@ -1511,6 +1520,18 @@ protected
     var := variability(call);
     callExp := Expression.CALL(call);
   end typeStringCall;
+
+  function isExternal
+    input Call call;
+    output Boolean isExternal;
+  algorithm
+    isExternal := match call
+      case UNTYPED_CALL() then Class.isExternalFunction(InstNode.getClass(ComponentRef.node(call.ref)));
+      case ARG_TYPED_CALL() then Class.isExternalFunction(InstNode.getClass(ComponentRef.node(call.ref)));
+      case TYPED_CALL() then Function.isExternal(call.fn);
+      else false;
+    end match;
+  end isExternal;
 
 protected
   function typeDiscreteCall

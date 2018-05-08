@@ -216,9 +216,34 @@ constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
     Pointer.createImmutable(true), Pointer.createImmutable(0));
 
+constant Function MAX_INT = Function.FUNCTION(Path.IDENT("max"),
+  InstNode.EMPTY_NODE(), {INT_PARAM, INT_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
+
 constant Function MAX_REAL = Function.FUNCTION(Path.IDENT("max"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+constant Function DIV_INT = Function.FUNCTION(Path.IDENT("div"),
+  InstNode.EMPTY_NODE(), {INT_PARAM, INT_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+constant Function FLOOR = Function.FUNCTION(Path.IDENT("floor"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+constant Function INTEGER_REAL = Function.FUNCTION(Path.IDENT("integer"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+constant Function INTEGER_ENUM = Function.FUNCTION(Path.IDENT("Integer"),
+  InstNode.EMPTY_NODE(), {ENUM_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN,
     Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant Function POSITIVE_MAX_REAL = Function.FUNCTION(Path.IDENT("$OMC$PositiveMax"),

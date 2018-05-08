@@ -1929,41 +1929,35 @@ protected
   Expression step_exp;
   Dimension dim;
 algorithm
-  if isSome(stepExp) then
-    SOME(step_exp) := stepExp;
+  dim := match rangeElemType
+    case Type.INTEGER() then getRangeTypeInt(startExp, stepExp, stopExp, info);
+    case Type.REAL() then getRangeTypeReal(startExp, stepExp, stopExp, info);
 
-    dim := match rangeElemType
-      case Type.INTEGER() then getRangeTypeInt(startExp, stepExp, stopExp, info);
-      case Type.REAL() then getRangeTypeReal(startExp, stepExp, stopExp, info);
-      else // Only Integer and Real ranges may have a step size.
-        algorithm
-          if Type.isBoolean(rangeElemType) or Type.isEnumeration(rangeElemType) then
-            // If the range is Boolean or enumeration, tell the user that the
-            // step size is not allowed to be specified.
-            Error.addSourceMessage(Error.RANGE_INVALID_STEP,
-              {Type.toString(rangeElemType)}, info);
-          else
-            // Other types are not allowed regardless of step size or not.
-            Error.addSourceMessage(Error.RANGE_INVALID_TYPE,
-              {Type.toString(rangeElemType)}, info);
-          end if;
-        then
-          fail();
-    end match;
-  else
-    dim := match rangeElemType
-      case Type.INTEGER() then getRangeTypeInt(startExp, stepExp, stopExp, info);
-      case Type.REAL() then getRangeTypeReal(startExp, stepExp, stopExp, info);
-      case Type.BOOLEAN() then getRangeTypeBool(startExp, stopExp);
-      case Type.ENUMERATION() then getRangeTypeEnum(startExp, stopExp);
-      else
-        algorithm
-          Error.addSourceMessage(Error.RANGE_INVALID_TYPE,
+    case Type.BOOLEAN()
+      algorithm
+        if isSome(stepExp) then
+          Error.addSourceMessageAndFail(Error.RANGE_INVALID_STEP,
             {Type.toString(rangeElemType)}, info);
-        then
-          fail();
-    end match;
-  end if;
+        end if;
+      then
+        getRangeTypeBool(startExp, stopExp);
+
+    case Type.ENUMERATION()
+      algorithm
+        if isSome(stepExp) then
+          Error.addSourceMessageAndFail(Error.RANGE_INVALID_STEP,
+            {Type.toString(rangeElemType)}, info);
+        end if;
+      then
+        getRangeTypeEnum(startExp, stopExp);
+
+    else
+      algorithm
+        Error.addSourceMessage(Error.RANGE_INVALID_TYPE,
+          {Type.toString(rangeElemType)}, info);
+      then
+        fail();
+  end match;
 
   rangeType := Type.ARRAY(rangeElemType, {dim});
 end getRangeType;
@@ -1978,6 +1972,8 @@ algorithm
   dim := match (startExp, stepExp, stopExp)
     local
       Integer step;
+      Expression step_exp, dim_exp;
+      Variability var;
 
     case (Expression.INTEGER(), NONE(), Expression.INTEGER())
       then Dimension.fromInteger(max(stopExp.value - startExp.value + 1, 0));
@@ -1991,7 +1987,34 @@ algorithm
       then
         Dimension.fromInteger(max(intDiv(stopExp.value - startExp.value, step) + 1, 0));
 
-    else Dimension.UNKNOWN();
+    // Ranges like 1:n have size n.
+    case (Expression.INTEGER(1), NONE(), _)
+      then Dimension.fromExp(stopExp, Expression.variability(stopExp));
+
+    // Ranges like n:n have size 1.
+    case (_, NONE(), _)
+      guard Expression.isEqual(startExp, stopExp)
+      then Dimension.fromInteger(1);
+
+    // For other ranges, create the appropriate expression as dimension.
+    // max(stop - start + 1, 0) or max(((stop - start) / step) + 1, 0)
+    else
+      algorithm
+        dim_exp := Expression.BINARY(stopExp, Operator.makeSub(Type.INTEGER()), startExp);
+        var := Prefixes.variabilityMax(Expression.variability(stopExp),
+                                       Expression.variability(startExp));
+
+        if isSome(stepExp) then
+          SOME(step_exp) := stepExp;
+          var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
+          dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
+        end if;
+
+        dim_exp := Expression.BINARY(dim_exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(1));
+        dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.MAX_INT, {dim_exp}, var));
+      then
+        Dimension.fromExp(dim_exp, var);
+
   end match;
 end getRangeTypeInt;
 
@@ -2005,6 +2028,8 @@ algorithm
   dim := match (startExp, stepExp, stopExp)
     local
       Real start, step;
+      Expression dim_exp, step_exp;
+      Variability var;
 
     case (Expression.REAL(), NONE(), Expression.REAL())
       then Dimension.fromInteger(Util.realRangeSize(startExp.value, 1.0, stopExp.value));
@@ -2019,7 +2044,29 @@ algorithm
       then
         Dimension.fromInteger(Util.realRangeSize(startExp.value, step, stopExp.value));
 
-    else Dimension.UNKNOWN();
+    case (_, NONE(), _)
+      guard Expression.isEqual(startExp, stopExp)
+      then Dimension.fromInteger(1);
+
+    else
+      algorithm
+        dim_exp := Expression.BINARY(stopExp, Operator.makeSub(Type.REAL()), startExp);
+        var := Prefixes.variabilityMax(Expression.variability(stopExp),
+                                       Expression.variability(startExp));
+
+        if isSome(stepExp) then
+          SOME(step_exp) := stepExp;
+          var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
+          dim_exp := Expression.BINARY(dim_exp, Operator.makeDiv(Type.REAL()), startExp);
+          dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.REAL()), Expression.REAL(5e-15));
+        end if;
+
+        dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
+        dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
+      then
+        Dimension.fromExp(dim_exp, var);
+
   end match;
 end getRangeTypeReal;
 
@@ -2031,6 +2078,8 @@ algorithm
   dim := match (startExp, stopExp)
     local
       Integer sz;
+      Expression dim_exp;
+      Variability var;
 
     case (Expression.BOOLEAN(), Expression.BOOLEAN())
       algorithm
@@ -2040,7 +2089,26 @@ algorithm
       then
         Dimension.fromInteger(sz);
 
-    else Dimension.UNKNOWN();
+    else
+      algorithm
+        if Expression.isEqual(startExp, stopExp) then
+          dim := Dimension.fromInteger(1);
+        else
+          var := Prefixes.variabilityMax(Expression.variability(startExp),
+                                         Expression.variability(stopExp));
+          dim_exp := Expression.IF(
+            Expression.RELATION(startExp, Operator.makeEqual(Type.BOOLEAN()), stopExp),
+            Expression.INTEGER(1),
+            Expression.IF(
+              Expression.RELATION(startExp, Operator.makeLess(Type.BOOLEAN()), stopExp),
+              Expression.INTEGER(2),
+              Expression.INTEGER(0)));
+
+          dim := Dimension.fromExp(dim_exp, var);
+        end if;
+      then
+        dim;
+
   end match;
 end getRangeTypeBool;
 
@@ -2050,10 +2118,39 @@ function getRangeTypeEnum
   output Dimension dim;
 algorithm
   dim := match (startExp, stopExp)
+    local
+      Expression dim_exp;
+      Variability var;
+
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then Dimension.fromInteger(max(stopExp.index - startExp.index + 1, 0));
 
-    else Dimension.UNKNOWN();
+    case (Expression.ENUM_LITERAL(index = 1), _)
+      then Dimension.fromExp(stopExp, Expression.variability(stopExp));
+
+    else
+      algorithm
+        if Expression.isEqual(startExp, stopExp) then
+          dim := Dimension.fromInteger(1);
+        else
+          var := Prefixes.variabilityMax(Expression.variability(startExp),
+                                         Expression.variability(stopExp));
+
+          dim_exp := Expression.BINARY(
+            Expression.enumIndexExp(startExp),
+            Operator.makeSub(Type.INTEGER()),
+            Expression.enumIndexExp(stopExp));
+
+          dim_exp := Expression.BINARY(
+            dim_exp,
+            Operator.makeAdd( Type.INTEGER()),
+            Expression.INTEGER(1));
+
+          dim := Dimension.fromExp(dim_exp, var);
+        end if;
+      then
+        dim;
+
   end match;
 end getRangeTypeEnum;
 
