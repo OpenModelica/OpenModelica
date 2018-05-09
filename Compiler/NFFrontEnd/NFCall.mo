@@ -767,7 +767,7 @@ uniontype Call
         algorithm
           ptree := buildParameterTree(fnArgs, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
-          exp := Ceval.evalExp(exp, ExpOrigin.FUNCTION, Ceval.EvalTarget.IGNORE_ERRORS());
+          exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
         then
           Dimension.fromExp(exp, dim.var);
 
@@ -1940,7 +1940,7 @@ protected
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
       if arg_var <= Variability.STRUCTURAL_PARAMETER then
-        arg := Ceval.evalExp(arg, origin);
+        arg := Ceval.evalExp(arg);
         arg_ty := Expression.typeOf(arg);
       end if;
 
@@ -2203,7 +2203,7 @@ protected
     if variability > Variability.PARAMETER then
       Error.addSourceMessageAndFail(Error.NF_CAT_FIRST_ARG_EVAL, {Expression.toString(arg), Prefixes.variabilityString(variability)}, info);
     end if;
-    Expression.INTEGER(n) := Ceval.evalExp(arg, origin, Ceval.EvalTarget.GENERIC(info));
+    Expression.INTEGER(n) := Ceval.evalExp(arg, Ceval.EvalTarget.GENERIC(info));
 
     res := {};
     tys := {};

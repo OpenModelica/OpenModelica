@@ -384,7 +384,7 @@ algorithm
     binding_exp := Binding.getTypedExp(binding);
 
     if Component.variability(comp) <= Variability.PARAMETER then
-      binding_exp := Ceval.evalExp(binding_exp, ExpOrigin.CLASS);
+      binding_exp := Ceval.evalExp(binding_exp);
     end if;
 
     if not Expression.isRecord(binding_exp) then

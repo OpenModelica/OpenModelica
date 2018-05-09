@@ -54,6 +54,7 @@ import List;
 import System;
 import ExpressionIterator = NFExpressionIterator;
 import MetaModelica.Dangerous.*;
+import NFClass.Class;
 
 public
 uniontype EvalTarget
@@ -120,7 +121,6 @@ end EvalTarget;
 
 function evalExp
   input output Expression exp;
-  input ExpOrigin.Type origin;
   input EvalTarget target = EvalTarget.IGNORE_ERRORS();
 algorithm
   exp := match exp
@@ -134,13 +134,16 @@ algorithm
       Option<Expression> oexp;
       ComponentRef cref;
       Dimension dim;
+      ExpOrigin.Type exp_origin;
 
     case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
                                                           origin = NFComponentRef.Origin.CREF))
       algorithm
-        Typing.typeComponentBinding(c, origin);
+        exp_origin := if Class.isFunction(InstNode.getClass(InstNode.parent(c)))
+          then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
+        Typing.typeComponentBinding(c, exp_origin);
         binding := Component.getBinding(InstNode.component(c));
-        exp1 := evalBinding(binding, exp, origin, target);
+        exp1 := evalBinding(binding, exp, target);
       then
         Expression.applySubscripts(cref.subscripts, exp1);
 
@@ -149,31 +152,31 @@ algorithm
 
     case Expression.ARRAY()
       algorithm
-        exp.elements := list(evalExp(e, origin, target) for e in exp.elements);
+        exp.elements := list(evalExp(e, target) for e in exp.elements);
       then
         exp;
 
     case Expression.RANGE()
       algorithm
-        exp1 := evalExp(exp.start, origin, target);
-        oexp := evalExpOpt(exp.step, origin, target);
-        exp3 := evalExp(exp.stop, origin, target);
+        exp1 := evalExp(exp.start, target);
+        oexp := evalExpOpt(exp.step, target);
+        exp3 := evalExp(exp.stop, target);
       then
         if EvalTarget.isRange(target) then
           Expression.RANGE(exp.ty, exp1, oexp, exp3) else evalRange(exp1, oexp, exp3);
 
     case Expression.RECORD()
       algorithm
-        exp.elements := list(evalExp(e, origin, target) for e in exp.elements);
+        exp.elements := list(evalExp(e, target) for e in exp.elements);
       then
         exp;
 
     case Expression.CALL()
-      then evalCall(exp.call, origin, target);
+      then evalCall(exp.call, target);
 
     case Expression.SIZE(dimIndex = SOME(exp1))
       algorithm
-        dim := listGet(Type.arrayDims(Expression.typeOf(exp.exp)), Expression.toInteger(evalExp(exp1, origin, target)));
+        dim := listGet(Type.arrayDims(Expression.typeOf(exp.exp)), Expression.toInteger(evalExp(exp1, target)));
       then
         if Dimension.isKnown(dim) then Expression.INTEGER(Dimension.size(dim)) else exp;
 
@@ -186,58 +189,58 @@ algorithm
 
     case Expression.BINARY()
       algorithm
-        exp1 := evalExp(exp.exp1, origin, target);
-        exp2 := evalExp(exp.exp2, origin, target);
+        exp1 := evalExp(exp.exp1, target);
+        exp2 := evalExp(exp.exp2, target);
       then
         evalBinaryOp(exp1, exp.operator, exp2);
 
     case Expression.UNARY()
       algorithm
-        exp1 := evalExp(exp.exp, origin, target);
+        exp1 := evalExp(exp.exp, target);
       then
         evalUnaryOp(exp1, exp.operator);
 
     case Expression.LBINARY()
-      then evalLogicBinaryOp(exp.exp1, exp.operator, exp.exp2, origin, target);
+      then evalLogicBinaryOp(exp.exp1, exp.operator, exp.exp2, target);
 
     case Expression.LUNARY()
       algorithm
-        exp1 := evalExp(exp.exp, origin, target);
+        exp1 := evalExp(exp.exp, target);
       then
         evalLogicUnaryOp(exp1, exp.operator);
 
     case Expression.RELATION()
       algorithm
-        exp1 := evalExp(exp.exp1, origin, target);
-        exp2 := evalExp(exp.exp2, origin, target);
+        exp1 := evalExp(exp.exp1, target);
+        exp2 := evalExp(exp.exp2, target);
       then
         evalRelationOp(exp1, exp.operator, exp2);
 
-    case Expression.IF() then evalIfExp(exp.condition, exp.trueBranch, exp.falseBranch, origin, target);
+    case Expression.IF() then evalIfExp(exp.condition, exp.trueBranch, exp.falseBranch, target);
 
     case Expression.CAST()
       algorithm
-        exp1 := evalExp(exp.exp, origin, target);
+        exp1 := evalExp(exp.exp, target);
       then
         evalCast(exp1, exp.ty);
 
     case Expression.UNBOX()
       algorithm
-        exp1 := evalExp(exp.exp, origin, target);
+        exp1 := evalExp(exp.exp, target);
       then Expression.UNBOX(exp1, exp.ty);
 
     case Expression.MUTABLE()
       algorithm
-        exp1 := evalExp(Mutable.access(exp.exp), origin, target);
+        exp1 := evalExp(Mutable.access(exp.exp), target);
       then
         exp1;
 
     case Expression.SUBSCRIPTED_EXP()
       algorithm
-        exp1 := evalExp(exp.exp, origin, target);
+        exp1 := evalExp(exp.exp, target);
 
         for s in exp.subscripts loop
-          exp2 := evalExp(s, origin, target);
+          exp2 := evalExp(s, target);
           exp1 := Expression.applyIndexSubscript(exp2, exp1);
         end for;
       then
@@ -249,14 +252,13 @@ end evalExp;
 
 function evalExpOpt
   input output Option<Expression> oexp;
-  input ExpOrigin.Type origin;
   input EvalTarget target;
 algorithm
   oexp := match oexp
     local
       Expression e;
 
-    case SOME(e) then SOME(evalExp(e, origin, target));
+    case SOME(e) then SOME(evalExp(e, target));
     else oexp;
   end match;
 end evalExpOpt;
@@ -264,12 +266,11 @@ end evalExpOpt;
 function evalBinding
   input Binding binding;
   input Expression originExp "The expression the binding came from, e.g. a cref.";
-  input ExpOrigin.Type origin;
   input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match binding
-    case Binding.TYPED_BINDING() then evalExp(binding.bindingExp, origin, target);
+    case Binding.TYPED_BINDING() then evalExp(binding.bindingExp, target);
     case Binding.UNBOUND()
       algorithm
         printUnboundError(target, originExp);
@@ -818,13 +819,12 @@ function evalLogicBinaryOp
   input Expression exp1;
   input Operator op;
   input Expression exp2;
-  input ExpOrigin.Type origin;
   input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match op.op
-    case Op.AND then evalLogicBinaryAnd(exp1, exp2, origin, target);
-    case Op.OR then evalLogicBinaryOr(exp1, exp2, origin, target);
+    case Op.AND then evalLogicBinaryAnd(exp1, exp2, target);
+    case Op.OR then evalLogicBinaryOr(exp1, exp2, target);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -837,17 +837,16 @@ end evalLogicBinaryOp;
 function evalLogicBinaryAnd
   input Expression exp1;
   input Expression exp2;
-  input ExpOrigin.Type origin;
   input EvalTarget target;
   output Expression exp;
 protected
   Expression e;
 algorithm
-  e := evalExp(exp1, origin, target);
+  e := evalExp(exp1, target);
 
   exp := match e
     case Expression.BOOLEAN()
-      then if e.value then evalExp(exp2, origin, target) else e;
+      then if e.value then evalExp(exp2, target) else e;
 
     else
       algorithm
@@ -861,17 +860,16 @@ end evalLogicBinaryAnd;
 function evalLogicBinaryOr
   input Expression exp1;
   input Expression exp2;
-  input ExpOrigin.Type origin;
   input EvalTarget target;
   output Expression exp;
 protected
   Expression e;
 algorithm
-  e := evalExp(exp1, origin, target);
+  e := evalExp(exp1, target);
 
   exp := match e
     case Expression.BOOLEAN()
-      then if e.value then e else evalExp(exp2, origin, target);
+      then if e.value then e else evalExp(exp2, target);
 
     else
       algorithm
@@ -1099,17 +1097,16 @@ function evalIfExp
   input Expression condition;
   input Expression trueBranch;
   input Expression falseBranch;
-  input ExpOrigin.Type origin;
   input EvalTarget target;
   output Expression exp;
 protected
   Expression cond;
 algorithm
-  cond := evalExp(condition, origin, target);
+  cond := evalExp(condition, target);
 
   exp := match cond
     case Expression.BOOLEAN()
-      then evalExp(if cond.value then trueBranch else falseBranch, origin, target);
+      then evalExp(if cond.value then trueBranch else falseBranch, target);
 
     else
       algorithm
@@ -1143,7 +1140,6 @@ end evalCast;
 
 function evalCall
   input Call call;
-  input ExpOrigin.Type origin;
   input EvalTarget target;
   output Expression exp;
 algorithm
@@ -1153,7 +1149,7 @@ algorithm
 
     case Call.TYPED_CALL()
       algorithm
-        args := list(evalExp(arg, origin, target) for arg in call.arguments);
+        args := list(evalExp(arg, target) for arg in call.arguments);
       then
         if Function.isBuiltin(call.fn) then
           evalBuiltinCall(call.fn, args, target)
@@ -1161,7 +1157,7 @@ algorithm
           evalNormalCall(call.fn, args, call);
 
     case Call.TYPED_MAP_CALL()
-      then evalReduction(call.exp, call.ty, call.iters, origin);
+      then evalReduction(call.exp, call.ty, call.iters);
 
     else
       algorithm
@@ -2127,7 +2123,6 @@ function evalReduction
   input Expression exp;
   input Type ty;
   input list<tuple<InstNode, Expression>> iterators;
-  input ExpOrigin.Type origin;
   output Expression result;
 protected
   Expression e = exp, range;
@@ -2141,10 +2136,10 @@ algorithm
     iter := Mutable.create(Expression.INTEGER(0));
     e := Expression.replaceIterator(e, node, Expression.MUTABLE(iter));
     iters := iter :: iters;
-    ranges := evalExp(range, origin) :: ranges;
+    ranges := evalExp(range) :: ranges;
   end for;
 
-  result := evalReduction2(e, ty, ranges, iters, origin);
+  result := evalReduction2(e, ty, ranges, iters);
 end evalReduction;
 
 function evalReduction2
@@ -2152,7 +2147,6 @@ function evalReduction2
   input Type ty;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
-  input ExpOrigin.Type origin;
   output Expression result;
 protected
   Expression range;
@@ -2164,7 +2158,7 @@ protected
   Type el_ty;
 algorithm
   if listEmpty(ranges) then
-    result := evalExp(exp, origin);
+    result := evalExp(exp);
   else
     range :: ranges_rest := ranges;
     iter :: iters_rest := iterators;
@@ -2174,7 +2168,7 @@ algorithm
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      expl := evalReduction2(exp, el_ty, ranges_rest, iters_rest, origin) :: expl;
+      expl := evalReduction2(exp, el_ty, ranges_rest, iters_rest) :: expl;
     end while;
 
     result := Expression.ARRAY(ty, listReverseInPlace(expl));

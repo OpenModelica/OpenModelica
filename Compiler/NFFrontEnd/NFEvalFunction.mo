@@ -167,11 +167,6 @@ end evaluateExternal;
 
 protected
 
-function evalExp
-  input Expression exp;
-  output Expression outExp = Ceval.evalExp(exp, ExpOrigin.FUNCTION);
-end evalExp;
-
 function createReplacements
   input Function fn;
   input list<Expression> args;
@@ -348,14 +343,14 @@ protected
   Expression e;
 algorithm
   if listLength(outputs) == 1 then
-    exp := evalExp(ReplTree.get(repl, InstNode.name(listHead(outputs))));
+    exp := Ceval.evalExp(ReplTree.get(repl, InstNode.name(listHead(outputs))));
     assertAssignedOutput(listHead(outputs), exp);
   else
     expl := {};
     types := {};
 
     for o in outputs loop
-      e := evalExp(ReplTree.get(repl, InstNode.name(o)));
+      e := Ceval.evalExp(ReplTree.get(repl, InstNode.name(o)));
       assertAssignedOutput(o, e);
       expl := e :: expl;
     end for;
@@ -427,7 +422,7 @@ function evaluateAssignment
   input Expression rhsExp;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  assignVariable(lhsExp, evalExp(rhsExp));
+  assignVariable(lhsExp, Ceval.evalExp(rhsExp));
 end evaluateAssignment;
 
 function assignVariable
@@ -545,7 +540,7 @@ protected
   list<Statement> body = forBody;
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
 algorithm
-  range_exp := evalExp(Util.getOption(range));
+  range_exp := Ceval.evalExp(Util.getOption(range));
   range_iter := RangeIterator.fromExp(range_exp);
 
   if RangeIterator.hasNext(range_iter) then
@@ -593,7 +588,7 @@ algorithm
   for branch in branches loop
     (cond, body) := branch;
 
-    if Expression.isTrue(evalExp(cond)) then
+    if Expression.isTrue(Ceval.evalExp(cond)) then
       ctrl := evaluateStatements(body);
       return;
     end if;
@@ -610,10 +605,10 @@ protected
   Expression msg, lvl;
   DAE.ElementSource source;
 algorithm
-  if Expression.isFalse(evalExp(condition)) then
+  if Expression.isFalse(Ceval.evalExp(condition)) then
     Statement.ASSERT(message = msg, level = lvl, source = source) := assertStmt;
-    msg := evalExp(msg);
-    lvl := evalExp(lvl);
+    msg := Ceval.evalExp(msg);
+    lvl := Ceval.evalExp(lvl);
 
     () := match (msg, lvl)
       case (Expression.STRING(), Expression.ENUM_LITERAL(name = "warning"))
@@ -645,7 +640,7 @@ function evaluateTerminate
 protected
   Expression msg;
 algorithm
-  msg := evalExp(message);
+  msg := Ceval.evalExp(message);
 
   _ := match msg
     case Expression.STRING()
@@ -668,7 +663,7 @@ function evaluateNoRetCall
   input Expression callExp;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  evalExp(callExp);
+  Ceval.evalExp(callExp);
 end evaluateNoRetCall;
 
 function evaluateWhile
@@ -679,7 +674,7 @@ function evaluateWhile
 protected
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
 algorithm
-  while Expression.isTrue(evalExp(condition)) loop
+  while Expression.isTrue(Ceval.evalExp(condition)) loop
     ctrl := evaluateStatements(body);
 
     if ctrl <> FlowControl.NEXT then

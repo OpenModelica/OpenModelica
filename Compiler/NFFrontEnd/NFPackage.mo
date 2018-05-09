@@ -249,7 +249,7 @@ public
     exp := match exp
       case Expression.CREF(cref = cref as ComponentRef.CREF())
         then if ComponentRef.isPackageConstant(cref) then
-          Ceval.evalExp(exp, ExpOrigin.CLASS, Ceval.EvalTarget.IGNORE_ERRORS()) else exp;
+          Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS()) else exp;
 
       else exp;
     end match;
