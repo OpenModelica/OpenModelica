@@ -510,15 +510,19 @@ algorithm
           info, replaceConstants = false);
         TypeCheck.checkDimensionType(exp, ty, info);
 
-        if var <= Variability.PARAMETER then
-          // Evaluate the dimension if it's a parameter expression.
-          exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
-        else
-          // Dimensions must be parameter expressions, unless we're in a function.
-          if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+        if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+          // Dimensions must be parameter expressions in a non-function class.
+          if var <= Variability.PARAMETER then
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+          else
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN,
               {Expression.toString(exp)}, info);
-            fail();
+              fail();
+          end if;
+        else
+          // For functions, only evaluate constant and structural parameter expressions.
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
           end if;
         end if;
 
