@@ -433,6 +433,13 @@ package DAE
       ElementSource source "the origin of the component/equation/algorithm";
     end NORETCALL;
 
+    record INITIAL_NORETCALL "call with no return value, i.e. no equation.
+      Typically sideeffect call of external function but also
+      Connections.* i.e. Connections.root(...) functions."
+      Exp exp;
+      ElementSource source "the origin of the component/equation/algorithm" ;
+    end INITIAL_NORETCALL;
+
     record CONSTRAINT " constraint section"
       Constraint constraints;
       ElementSource source "the origin of the component/equation/algorithm";

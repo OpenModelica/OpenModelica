@@ -626,6 +626,7 @@ match lst
   case INITIAL_TERMINATE(__) then dumpTerminate(message, source)
   case REINIT(__) then dumpReinit(componentRef, exp, source)
   case NORETCALL(__) then dumpNoRetCall(exp, source)
+  case INITIAL_NORETCALL(__) then dumpNoRetCall(exp, source)
   case INITIALDEFINE(__) then dumpDefine(componentRef, exp, source)
   case INITIAL_ARRAY_EQUATION(__) then dumpEquation(exp, array, source)
   case INITIAL_COMPLEX_EQUATION(__) then dumpEquation(lhs, rhs, source)
