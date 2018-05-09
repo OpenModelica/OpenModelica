@@ -208,7 +208,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     Pointer<Boolean> collected "Whether this function has already been added to the function tree or not.";
-    Pointer<Integer> callCounter "Used during function evaluation to avoid infinite loops.";
+    Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
   end FUNCTION;
 
   function new

@@ -210,19 +210,32 @@ algorithm
   if Binding.isBound(binding) then
     bindingExp := Binding.getExp(binding);
   else
-    bindingExp := buildRecordBinding(node);
+    bindingExp := buildBinding(node);
   end if;
 end getBindingExp;
 
-function buildRecordBinding
+function buildBinding
   input InstNode node;
   output Expression result;
 protected
-  InstNode cls_node = InstNode.classScope(node);
-  Class cls = InstNode.getClass(cls_node);
+  Type ty;
+algorithm
+  ty := InstNode.getType(node);
+
+  result := match ty
+    case Type.ARRAY() guard Type.hasKnownSize(ty) then Expression.fillType(ty, Expression.EMPTY());
+    case Type.COMPLEX() then buildRecordBinding(ty.cls);
+    else Expression.EMPTY();
+  end match;
+end buildBinding;
+
+function buildRecordBinding
+  input InstNode recordNode;
+  output Expression result;
+protected
+  Class cls = InstNode.getClass(recordNode);
   array<InstNode> comps;
   list<Expression> bindings;
-  Component comp;
   Expression exp;
 algorithm
   result := match cls
@@ -231,13 +244,12 @@ algorithm
         bindings := {};
 
         for i in arrayLength(comps):-1:1 loop
-          bindings := getBindingExp(comps[i]) :: bindings;
+          bindings := Expression.makeMutable(getBindingExp(comps[i])) :: bindings;
         end for;
       then
-        Expression.RECORD(InstNode.scopePath(cls_node), cls.ty, bindings);
+        Expression.RECORD(InstNode.scopePath(recordNode), cls.ty, bindings);
 
     case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass);
-    else Expression.makeMutable(Expression.EMPTY());
   end match;
 end buildRecordBinding;
 
@@ -265,12 +277,6 @@ algorithm
   exp := match exp
     local
       Option<Expression> repl_exp;
-
-    case Expression.CREF(cref = ComponentRef.CREF(subscripts = _ :: _))
-      algorithm
-        Error.assertion(false, getInstanceName() + ": missing handling of subscripts", sourceInfo());
-      then
-        fail();
 
     case Expression.CREF() then applyReplacementCref(repl, exp.cref, exp);
     else exp;
@@ -305,14 +311,18 @@ algorithm
       return;
     end if;
 
+    outExp := Expression.applySubscripts(ComponentRef.getSubscripts(listHead(cref_parts)), outExp);
+    cref_parts := listRest(cref_parts);
+
     if not listEmpty(cref_parts) then
       try
         // If the cref consists of more than one identifier we need to look up
         // the corresponding record field in the expression.
-        for cr in listRest(cref_parts) loop
+        for cr in cref_parts loop
           node := ComponentRef.node(cr);
           outExp := Expression.makeImmutable(outExp);
           outExp := Expression.lookupRecordField(InstNode.name(node), outExp);
+          outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
         end for;
       else
         Error.assertion(false, getInstanceName() + " could not find replacement for " +
@@ -420,12 +430,13 @@ function assignVariable
 algorithm
   () := match (variable, value)
     local
-      Expression val;
+      Expression var, val;
       list<Expression> vals;
+      Mutable<Expression> var_ptr;
 
-    case (Expression.MUTABLE(), _)
+    case (Expression.MUTABLE(exp = var_ptr), _)
       algorithm
-        Mutable.update(variable.exp, assignExp(Mutable.access(variable.exp), value));
+        Mutable.update(var_ptr, assignExp(Mutable.access(var_ptr), value));
       then
         ();
 
@@ -435,6 +446,13 @@ algorithm
           val :: vals := vals;
           assignVariable(var, val);
         end for;
+      then
+        ();
+
+    case (Expression.SUBSCRIPTED_EXP(exp = Expression.MUTABLE(exp = var_ptr)), _)
+      algorithm
+        Error.assertion(false, getInstanceName() +
+          ": missing handling of subscripted assignment", sourceInfo());
       then
         ();
 

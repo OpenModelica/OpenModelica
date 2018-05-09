@@ -357,6 +357,16 @@ public
     end match;
   end applySubscript2;
 
+  function getSubscripts
+    input ComponentRef cref;
+    output list<Subscript> subscripts;
+  algorithm
+    subscripts := match cref
+      case CREF() then cref.subscripts;
+      else {};
+    end match;
+  end getSubscripts;
+
   function setSubscripts
     "Sets the subscripts of the first part of a cref."
     input list<Subscript> subscripts;

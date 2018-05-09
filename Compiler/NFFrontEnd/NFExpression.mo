@@ -553,6 +553,7 @@ public
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
+      case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       else Type.UNKNOWN();
     end match;
   end typeOf;

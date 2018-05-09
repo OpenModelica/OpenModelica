@@ -1394,7 +1394,7 @@ algorithm
     fail();
   end if;
   (es,dims) := ExpressionSimplify.evalCat(n, args, getArrayContents=Expression.arrayElements, toString=Expression.toString);
-  result := Expression.arrayFromList(es, Type.arrayElementType(ty), list(Dimension.fromInteger(d) for d in dims));
+  result := Expression.arrayFromList(es, Expression.typeOf(listHead(es)), list(Dimension.fromInteger(d) for d in dims));
 end evalBuiltinCat;
 
 function evalBuiltinCeil

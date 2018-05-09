@@ -517,6 +517,17 @@ public
     end match;
   end dimensionCount;
 
+  function hasKnownSize
+    input Type ty;
+    output Boolean isKnown;
+  algorithm
+    isKnown := match ty
+      case ARRAY() then List.all(ty.dimensions, function Dimension.isKnown(allowExp = false));
+      case FUNCTION() then hasKnownSize(ty.resultType);
+      else true;
+    end match;
+  end hasKnownSize;
+
   function mapDims
     input output Type ty;
     input FuncT func;
