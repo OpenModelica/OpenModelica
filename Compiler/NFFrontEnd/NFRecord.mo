@@ -178,6 +178,13 @@ algorithm
         end for;
       then
         ();
+
+    case Class.EXPANDED_DERIVED()
+      algorithm
+        (inputs, locals) := collectRecordParams(cls.baseClass);
+      then
+        ();
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
