@@ -1500,7 +1500,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           }
         }
       }
-    } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {  // if plottype is PLOTPARAMETRIC then
+    } else if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {  // if plottype is PLOTPARAMETRIC or PLOTARRAYPARAMETRIC then
       // check the item checkstate
       if (pVariablesTreeItem->isChecked()) {
         VariablesTreeItem *pVariablesTreeRootItem = pVariablesTreeItem;
@@ -1534,7 +1534,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setVariablesList(QStringList() << mPlotParametricVariables.last().at(0) << mPlotParametricVariables.last().at(2));
             if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)
                 pPlotWindow->plotParametric(pPlotCurve);
-            else/* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/{
+            else /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/{
               double timePercent = mpSimulationTimeSlider->value();
               pPlotWindow->plotArrayParametric(timePercent,pPlotCurve);
             }
@@ -1771,27 +1771,24 @@ void VariablesWidget::simulationTimeChanged(int timePercent)
 {
   PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
   if (pPlotWindow) {
-    //PLOT, PLOTALL, PLOTPARAMETRIC, PLOTARRAY, PLOTARRAYPARAMETRIC}
     PlotWindow::PlotType plotType = pPlotWindow->getPlotType();
-    if (plotType == PlotWindow::PLOT ||
-        plotType == PlotWindow::PLOTALL ||
-        plotType == PlotWindow::PLOTPARAMETRIC) {
-      return;
-    }
-    QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
     if (plotType == PlotWindow::PLOTARRAY) {
+      QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
       foreach (PlotCurve* curve, curves) {
         QString varName = curve->getYVariable();
         pPlotWindow->setVariablesList(QStringList(varName));
         pPlotWindow->plotArray(timePercent, curve);
       }
     } else if (plotType == PlotWindow::PLOTARRAYPARAMETRIC) {
+      QList<PlotCurve*> curves = pPlotWindow->getPlot()->getPlotCurvesList();
       foreach (PlotCurve* curve, curves) {
         QString xVarName = curve->getXVariable();
         QString yVarName = curve->getYVariable();
         pPlotWindow->setVariablesList({xVarName,yVarName});
         pPlotWindow->plotArrayParametric(timePercent, curve);
       }
+    } else {
+      return;
     }
   }
 }
