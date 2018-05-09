@@ -690,12 +690,12 @@ uniontype Call
           i := 1;
 
           for dim in vect_dims loop
-            Error.assertion(Dimension.isKnown(dim), getInstanceName() +
+            Error.assertion(Dimension.isKnown(dim, allowExp = true), getInstanceName() +
               " got unknown dimension for vectorized call", info);
 
             // Create the range on which we will iterate to vectorize.
             ty := Type.ARRAY(Type.INTEGER(), {dim});
-            exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Expression.INTEGER(Dimension.size(dim)));
+            exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
 
             // Create the iterator.
             iter := InstNode.fromComponent("$i" + intString(i),

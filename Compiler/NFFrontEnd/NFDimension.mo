@@ -209,12 +209,14 @@ public
 
   function isKnown
     input Dimension dim;
+    input Boolean allowExp = false;
     output Boolean known;
   algorithm
     known := match dim
       case INTEGER() then true;
       case BOOLEAN() then true;
       case ENUM() then true;
+      case EXP() then allowExp;
       else false;
     end match;
   end isKnown;
@@ -256,8 +258,8 @@ public
   algorithm
   end toStringList;
 
-  function sizeExp
-    "Returns the size of a dimension as an expression."
+  function endExp
+    "Returns an expression for the last index in a dimension."
     input Dimension dim;
     input ComponentRef cref;
     input Integer index;
@@ -275,6 +277,23 @@ public
       case UNKNOWN()
         then Expression.SIZE(Expression.CREF(Type.INTEGER(), ComponentRef.stripSubscripts(cref)),
                              SOME(Expression.INTEGER(index)));
+    end match;
+  end endExp;
+
+  function sizeExp
+    "Returns the size of a dimension as an Expression."
+    input Dimension dim;
+    output Expression sizeExp;
+  algorithm
+    sizeExp := match dim
+      local
+        Type ty;
+
+      case INTEGER() then Expression.INTEGER(dim.size);
+      case BOOLEAN() then Expression.INTEGER(2);
+      case ENUM(enumType = ty as Type.ENUMERATION())
+        then Expression.INTEGER(listLength(ty.literals));
+      case EXP() then dim.exp;
     end match;
   end sizeExp;
 

@@ -1788,7 +1788,7 @@ function evaluateEnd
       Type ty;
       ComponentRef cr;
 
-    case Expression.END() then Dimension.sizeExp(dim, cref, index);
+    case Expression.END() then Dimension.endExp(dim, cref, index);
 
     case Expression.CREF()
       algorithm
