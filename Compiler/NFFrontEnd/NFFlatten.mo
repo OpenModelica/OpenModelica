@@ -80,6 +80,7 @@ import Variable = NFVariable;
 import BindingOrigin = NFBindingOrigin;
 import ElementSource;
 import Ceval = NFCeval;
+import NFTyping.ExpOrigin;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -383,7 +384,7 @@ algorithm
     binding_exp := Binding.getTypedExp(binding);
 
     if Component.variability(comp) <= Variability.PARAMETER then
-      binding_exp := Ceval.evalExp(binding_exp);
+      binding_exp := Ceval.evalExp(binding_exp, ExpOrigin.CLASS);
     end if;
 
     if not Expression.isRecord(binding_exp) then

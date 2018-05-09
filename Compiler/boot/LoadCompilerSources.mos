@@ -308,7 +308,6 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFEvalFunction.mo",
     "../NFFrontEnd/NFExpression.mo",
     "../NFFrontEnd/NFExpressionIterator.mo",
-    "../NFFrontEnd/NFExpOrigin.mo",
     "../NFFrontEnd/NFFlatModel.mo",
     "../NFFrontEnd/NFFlatten.mo",
     "../NFFrontEnd/NFFunction.mo",

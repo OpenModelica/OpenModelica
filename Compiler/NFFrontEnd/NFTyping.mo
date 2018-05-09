@@ -419,7 +419,7 @@ algorithm
             Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
               {Expression.toString(exp)}, info);
           else
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.RANGE(info));
+            exp := Ceval.evalExp(exp, origin, Ceval.EvalTarget.RANGE(info));
           end if;
         end if;
 
@@ -512,7 +512,7 @@ algorithm
 
         if var <= Variability.PARAMETER then
           // Evaluate the dimension if it's a parameter expression.
-          exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+          exp := Ceval.evalExp(exp, origin, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
         else
           // Dimensions must be parameter expressions, unless we're in a function.
           if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
@@ -699,7 +699,7 @@ algorithm
             // been improved we should print an error when a constant binding
             // couldn't be evaluated instead.
             try
-              binding := evalBinding(binding);
+              binding := evalBinding(binding, origin);
             else
             end try;
           end if;
@@ -825,7 +825,7 @@ algorithm
           fail();
         end if;
 
-        exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
+        exp := Ceval.evalExp(exp, origin, Ceval.EvalTarget.CONDITION(info));
       then
         Binding.FLAT_BINDING(exp);
 
@@ -870,8 +870,8 @@ algorithm
         end if;
 
         binding := match name
-          case "fixed" then evalBinding(binding);
-          case "stateSelect" then evalBinding(binding);
+          case "fixed" then evalBinding(binding, origin);
+          case "stateSelect" then evalBinding(binding, origin);
           else Package.replaceBindingConstants(binding);
         end match;
 
@@ -896,6 +896,7 @@ end typeTypeAttribute;
 
 function evalBinding
   input output Binding binding;
+  input ExpOrigin.Type origin;
 algorithm
   binding := match binding
     local
@@ -903,7 +904,7 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
-        exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
+        exp := Ceval.evalExp(binding.bindingExp, origin, Ceval.EvalTarget.ATTRIBUTE(binding));
       then
         Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.origin, binding.isEach);
 
@@ -952,7 +953,7 @@ algorithm
         e1 := Expression.CREF(ty, cref);
 
         if replaceConstants and variability <= Variability.STRUCTURAL_PARAMETER then
-          e1 := Ceval.evalExp(e1, Ceval.EvalTarget.GENERIC(info));
+          e1 := Ceval.evalExp(e1, origin, Ceval.EvalTarget.GENERIC(info));
         end if;
       then
         (e1, ty, variability);
@@ -1603,9 +1604,9 @@ algorithm
   end if;
 
   if variability <= Variability.STRUCTURAL_PARAMETER then
-    start_exp := Ceval.evalExp(start_exp, Ceval.EvalTarget.IGNORE_ERRORS());
-    ostep_exp := Ceval.evalExpOpt(ostep_exp, Ceval.EvalTarget.IGNORE_ERRORS());
-    stop_exp := Ceval.evalExp(stop_exp, Ceval.EvalTarget.IGNORE_ERRORS());
+    start_exp := Ceval.evalExp(start_exp, origin, Ceval.EvalTarget.IGNORE_ERRORS());
+    ostep_exp := Ceval.evalExpOpt(ostep_exp, origin, Ceval.EvalTarget.IGNORE_ERRORS());
+    stop_exp := Ceval.evalExp(stop_exp, origin, Ceval.EvalTarget.IGNORE_ERRORS());
   end if;
 
   rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);
@@ -1688,7 +1689,7 @@ algorithm
 
         if variability <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate the index if it's a constant.
-          index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
+          index := Ceval.evalExp(index, origin, Ceval.EvalTarget.IGNORE_ERRORS());
 
           // TODO: Print an error if the index couldn't be evaluated to an int.
           Expression.INTEGER(iindex) := index;
@@ -1699,7 +1700,7 @@ algorithm
 
           if Dimension.isKnown(dim) and evaluate then
             // If the dimension size is known, return its size.
-            exp := Expression.INTEGER(Dimension.size(dim));
+            exp := Dimension.sizeExp(dim);
           else
             // If the dimension size is unknown (e.g. in a function) or
             // evaluation is disabled, return a size expression instead.
@@ -1715,6 +1716,13 @@ algorithm
           // Use the most variable of the index and the dimension as the variability
           // of the size expression.
           variability := Prefixes.variabilityMax(variability, Dimension.variability(dim));
+
+          // Hack to make size work properly in functions. The size of an input
+          // parameter should really be based on the variability of the input
+          // argument, but we don't have that information while typing functions.
+          if variability > Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+            variability := Variability.PARAMETER;
+          end if;
         else
           // If the index is not a constant, type the whole expression.
           (exp, exp_ty) := typeExp(sizeExp.exp, origin, info);
@@ -1831,7 +1839,7 @@ algorithm
 
   if cond_var <= Variability.STRUCTURAL_PARAMETER then
     // If the condition is constant, always do branch selection.
-    if evaluateCondition(cond, info) then
+    if evaluateCondition(cond, origin, info) then
       (ifExp, ty, var) := typeExp(tb, next_origin, info);
     else
       (ifExp, ty, var) := typeExp(fb, next_origin, info);
@@ -1847,7 +1855,7 @@ algorithm
       if cond_var <= Variability.PARAMETER then
         // If the branches have different types but the condition is a parameter
         // expression, do branch selection.
-        (ifExp, ty, var) := if evaluateCondition(cond, info) then (tb, tb_ty, tb_var) else (fb, fb_ty, fb_var);
+        (ifExp, ty, var) := if evaluateCondition(cond, origin, info) then (tb, tb_ty, tb_var) else (fb, fb_ty, fb_var);
       else
         // Otherwise give a type mismatch error.
         Error.addSourceMessage(Error.TYPE_MISMATCH_IF_EXP,
@@ -1865,12 +1873,13 @@ end typeIfExpression;
 
 function evaluateCondition
   input Expression condExp;
+  input ExpOrigin.Type origin;
   input SourceInfo info;
   output Boolean condBool;
 protected
   Expression cond_exp;
 algorithm
-  cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.GENERIC(info));
+  cond_exp := Ceval.evalExp(condExp, origin, Ceval.EvalTarget.GENERIC(info));
 
   condBool := match cond_exp
     case Expression.BOOLEAN() then cond_exp.value;
@@ -2051,7 +2060,7 @@ algorithm
             algorithm
               // The only other kind of expression that's allowed is scalar constants.
               if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
-                outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
+                outArg := Ceval.evalExp(outArg, ExpOrigin.FUNCTION, Ceval.EvalTarget.GENERIC(info));
               else
                 Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
                   {Expression.toString(outArg)}, info);
@@ -2565,7 +2574,7 @@ algorithm
       not Expression.contains(cond, isNonConstantIfCondition) then
       // If the condition is a parameter expression, evaluate it so we can do
       // branch selection later on.
-      cond := Ceval.evalExp(cond, Ceval.EvalTarget.IGNORE_ERRORS());
+      cond := Ceval.evalExp(cond, origin, Ceval.EvalTarget.IGNORE_ERRORS());
     else
       // Otherwise, set the non-expandable bit in the origin, so we can check
       // that e.g. connect isn't used in any branches from here on.

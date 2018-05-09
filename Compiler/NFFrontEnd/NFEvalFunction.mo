@@ -51,6 +51,7 @@ import RangeIterator = NFRangeIterator;
 import ElementSource;
 import ModelicaExternalC;
 import System;
+import NFTyping.ExpOrigin;
 
 encapsulated package ReplTree
   import BaseAvlTree;
@@ -165,6 +166,11 @@ algorithm
 end evaluateExternal;
 
 protected
+
+function evalExp
+  input Expression exp;
+  output Expression outExp = Ceval.evalExp(exp, ExpOrigin.FUNCTION);
+end evalExp;
 
 function createReplacements
   input Function fn;
@@ -342,14 +348,14 @@ protected
   Expression e;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(ReplTree.get(repl, InstNode.name(listHead(outputs))));
+    exp := evalExp(ReplTree.get(repl, InstNode.name(listHead(outputs))));
     assertAssignedOutput(listHead(outputs), exp);
   else
     expl := {};
     types := {};
 
     for o in outputs loop
-      e := Ceval.evalExp(ReplTree.get(repl, InstNode.name(o)));
+      e := evalExp(ReplTree.get(repl, InstNode.name(o)));
       assertAssignedOutput(o, e);
       expl := e :: expl;
     end for;
@@ -421,7 +427,7 @@ function evaluateAssignment
   input Expression rhsExp;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  assignVariable(lhsExp, Ceval.evalExp(rhsExp));
+  assignVariable(lhsExp, evalExp(rhsExp));
 end evaluateAssignment;
 
 function assignVariable
@@ -539,7 +545,7 @@ protected
   list<Statement> body = forBody;
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
 algorithm
-  range_exp := Ceval.evalExp(Util.getOption(range));
+  range_exp := evalExp(Util.getOption(range));
   range_iter := RangeIterator.fromExp(range_exp);
 
   if RangeIterator.hasNext(range_iter) then
@@ -587,7 +593,7 @@ algorithm
   for branch in branches loop
     (cond, body) := branch;
 
-    if Expression.isTrue(Ceval.evalExp(cond)) then
+    if Expression.isTrue(evalExp(cond)) then
       ctrl := evaluateStatements(body);
       return;
     end if;
@@ -604,10 +610,10 @@ protected
   Expression msg, lvl;
   DAE.ElementSource source;
 algorithm
-  if Expression.isFalse(Ceval.evalExp(condition)) then
+  if Expression.isFalse(evalExp(condition)) then
     Statement.ASSERT(message = msg, level = lvl, source = source) := assertStmt;
-    msg := Ceval.evalExp(msg);
-    lvl := Ceval.evalExp(lvl);
+    msg := evalExp(msg);
+    lvl := evalExp(lvl);
 
     () := match (msg, lvl)
       case (Expression.STRING(), Expression.ENUM_LITERAL(name = "warning"))
@@ -639,7 +645,7 @@ function evaluateTerminate
 protected
   Expression msg;
 algorithm
-  msg := Ceval.evalExp(message);
+  msg := evalExp(message);
 
   _ := match msg
     case Expression.STRING()
@@ -662,7 +668,7 @@ function evaluateNoRetCall
   input Expression callExp;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  Ceval.evalExp(callExp);
+  evalExp(callExp);
 end evaluateNoRetCall;
 
 function evaluateWhile
@@ -673,7 +679,7 @@ function evaluateWhile
 protected
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
 algorithm
-  while Expression.isTrue(Ceval.evalExp(condition)) loop
+  while Expression.isTrue(evalExp(condition)) loop
     ctrl := evaluateStatements(body);
 
     if ctrl <> FlowControl.NEXT then
