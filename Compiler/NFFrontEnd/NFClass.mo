@@ -487,8 +487,7 @@ uniontype Class
         String lang;
 
       case EXPANDED_DERIVED() then isExternalFunction(InstNode.getClass(cls.baseClass));
-      case INSTANCED_CLASS(sections = Sections.EXTERNAL(language = lang))
-        guard lang <> "builtin" then true;
+      case INSTANCED_CLASS(sections = Sections.EXTERNAL(language = lang)) then lang <> "builtin";
       case TYPED_DERIVED() then isExternalFunction(InstNode.getClass(cls.baseClass));
       else false;
     end match;
