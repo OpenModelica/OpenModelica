@@ -221,6 +221,16 @@ public
     end match;
   end isKnown;
 
+  function isZero
+    input Dimension dim;
+    output Boolean isZero;
+  algorithm
+    isZero := match dim
+      case INTEGER() then dim.size == 0;
+      else false;
+    end match;
+  end isZero;
+
   function subscriptType
     "Returns the expected type of a subscript for the given dimension."
     input Dimension dim;

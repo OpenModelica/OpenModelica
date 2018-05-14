@@ -327,6 +327,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFRestriction.mo",
     "../NFFrontEnd/NFScalarize.mo",
     "../NFFrontEnd/NFSimplifyExp.mo",
+    "../NFFrontEnd/NFSimplifyModel.mo",
     "../NFFrontEnd/NFSections.mo",
     "../NFFrontEnd/NFStatement.mo",
     "../NFFrontEnd/NFSubscript.mo",

@@ -133,7 +133,7 @@ protected
   Direction dir;
 algorithm
   dcref := ComponentRef.toDAE(cref);
-  dty := Type.toDAE(ty);
+  dty := Type.toDAE(if isFunctionParam then Type.arrayElementType(ty) else ty);
   source := ElementSource.createElementSource(info);
 
   var := match attr
@@ -155,7 +155,7 @@ algorithm
           Prefixes.visibilityToDAE(vis),
           dty,
           binding,
-          if isFunctionParam then {} else ComponentReference.crefDims(dcref),
+          ComponentReference.crefDims(dcref),
           Prefixes.connectorTypeToDAE(attr.connectorType),
           source,
           vattr,

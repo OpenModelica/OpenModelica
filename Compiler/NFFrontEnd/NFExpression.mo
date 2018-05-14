@@ -199,13 +199,23 @@ public
 
   function isCref
     input Expression exp;
-    output Boolean isTrue;
+    output Boolean isCref;
   algorithm
-    isTrue := match exp
+    isCref := match exp
       case CREF() then true;
       else false;
     end match;
   end isCref;
+
+  function isCall
+    input Expression exp;
+    output Boolean isCall;
+  algorithm
+    isCall := match exp
+      case CALL() then true;
+      else false;
+    end match;
+  end isCall;
 
   function isTrue
     input Expression exp;

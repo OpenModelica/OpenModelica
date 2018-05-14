@@ -94,6 +94,7 @@ import NFFunction.Function;
 import FlatModel = NFFlatModel;
 import BindingOrigin = NFBindingOrigin;
 import ElementSource;
+import SimplifyModel = NFSimplifyModel;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -139,15 +140,18 @@ algorithm
   // Type the class.
   Typing.typeClass(inst_cls, name);
 
-  // Flatten and convert the class into a DAE.
+  // Flatten and simplify the model.
   (flat_model, funcs) := Flatten.flatten(inst_cls, name);
+  (flat_model, funcs) := SimplifyModel.simplify(flat_model, funcs);
 
   // Collect package constants that couldn't be substituted with their values
-  // (e.g. because they where used with non-constants subscripts), and add them
+  // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
   flat_model := Package.collectConstants(flat_model, funcs);
 
+  // Scalarize array components in the flat model.
   flat_model := Scalarize.scalarize(flat_model, name);
+  // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
 
   // Do unit checking

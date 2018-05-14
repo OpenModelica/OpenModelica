@@ -283,6 +283,16 @@ public
     end match;
   end isSquareMatrix;
 
+  function isEmptyArray
+    input Type ty;
+    output Boolean isEmpty;
+  algorithm
+    isEmpty := match ty
+      case ARRAY() then List.exist(ty.dimensions, Dimension.isZero);
+      else false;
+    end match;
+  end isEmptyArray;
+
   function isEnumeration
     input Type ty;
     output Boolean isEnum;

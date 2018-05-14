@@ -544,7 +544,7 @@ function evalBinaryPow
 algorithm
   exp := match (exp1, exp2)
     case (Expression.REAL(), Expression.REAL())
-      then Expression.REAL(exp1.value / exp2.value);
+      then Expression.REAL(exp1.value ^ exp2.value);
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
@@ -553,7 +553,7 @@ algorithm
 
     else
       algorithm
-        exp := Expression.BINARY(exp1, Operator.makeMul(Type.UNKNOWN()), exp2);
+        exp := Expression.BINARY(exp1, Operator.makePow(Type.UNKNOWN()), exp2);
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
