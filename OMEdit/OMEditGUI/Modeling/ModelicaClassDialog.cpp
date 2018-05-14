@@ -748,16 +748,6 @@ DuplicateClassDialog::DuplicateClassDialog(bool saveAs, LibraryTreeItem *pLibrar
   connect(mpPathBrowseButton, SIGNAL(clicked()), SLOT(browsePath()));
   // save contents in one file
   mpSaveContentsInOneFileCheckBox = new QCheckBox(Helper::saveContentsInOneFile);
-  if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
-    mpSaveContentsInOneFileCheckBox->setVisible(true);
-    if (mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-      mpSaveContentsInOneFileCheckBox->setChecked(true);
-    } else {
-      mpSaveContentsInOneFileCheckBox->setChecked(false);
-    }
-  } else {
-    mpSaveContentsInOneFileCheckBox->setVisible(false);
-  }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -796,6 +786,26 @@ void DuplicateClassDialog::setSaveContentsTypeAsFolderStructure(LibraryTreeItem 
     }
     setSaveContentsTypeAsFolderStructure(pChildLibraryTreeItem);
   }
+}
+
+/*!
+ * \brief DuplicateClassDialog::exec
+ * Reimplementation of QDialog::exec
+ * \return
+ */
+int DuplicateClassDialog::exec()
+{
+  if (mpLibraryTreeItem->getRestriction() == StringHandler::Package) {
+    mpSaveContentsInOneFileCheckBox->setVisible(true);
+    if (mpLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
+      mpSaveContentsInOneFileCheckBox->setChecked(true);
+    } else {
+      mpSaveContentsInOneFileCheckBox->setChecked(false);
+    }
+  } else {
+    mpSaveContentsInOneFileCheckBox->setVisible(false);
+  }
+  return QDialog::exec();
 }
 
 void DuplicateClassDialog::browsePath()
