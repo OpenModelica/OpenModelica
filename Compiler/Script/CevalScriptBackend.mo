@@ -2272,10 +2272,10 @@ algorithm
     case (cache,_,"compareSimulationResults",_,_)
       then (cache,Values.STRING("Error in compareSimulationResults"));
 
-    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals)},_)
+    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals),Values.BOOL(b)},_)
       equation
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals);
+        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals,b);
       then
         (cache,Values.BOOL(b));
 

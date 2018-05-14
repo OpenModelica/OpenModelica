@@ -392,11 +392,17 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
   }
 }
 
-static inline int failedToWriteToFile(const char *file)
+static inline int failedToWriteToFileImpl(const char *file, const char *sourceFile, const char *line)
 {
-  c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to write to file %s."), &file, 1);
+  const char *msg[3] = {file,line,sourceFile};
+  c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("%s:%s: Failed to write to file %s."), msg, 3);
   return 0;
 }
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+#define failedToWriteToFile(file) failedToWriteToFileImpl(file, __FILE__, STR(__LINE__))
+
 
 static inline int intMax(int a, int b)
 {
@@ -412,7 +418,7 @@ static int endsWith(const char *s, const char *suffix)
     return 0;
   }
 }
-int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals)
+int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals, int removeDescription)
 {
   const char *msg[5] = {"","","","",""};
   void *tmp;
@@ -545,21 +551,27 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     }
     GC_free(tmp);
 
-    if (writeMatVer4MatrixHeader(fout, "description", numToFilter, longestDesc, sizeof(int8_t))) {
-      return failedToWriteToFile(outFile);
-    }
-
-    tmp = omc_alloc_interface.malloc(numToFilter*longestDesc);
-    for (i=0; i<numToFilter; i++) {
-      int len = strlen(mat_var[i]->descr);
-      for (j=0; j<len; j++) {
-        tmp[numToFilter*j+i] = mat_var[i]->descr[j];
+    if (removeDescription) {
+      if (writeMatVer4MatrixHeader(fout, "description", numToFilter, 0, sizeof(int8_t))) {
+        return failedToWriteToFile(outFile);
       }
+    } else {
+      if (writeMatVer4MatrixHeader(fout, "description", numToFilter, longestDesc, sizeof(int8_t))) {
+        return failedToWriteToFile(outFile);
+      }
+
+      tmp = omc_alloc_interface.malloc(numToFilter*longestDesc);
+      for (i=0; i<numToFilter; i++) {
+        int len = strlen(mat_var[i]->descr);
+        for (j=0; j<len; j++) {
+          tmp[numToFilter*j+i] = mat_var[i]->descr[j];
+        }
+      }
+      if (1 != fwrite(tmp, numToFilter*longestDesc, 1, fout)) {
+        return failedToWriteToFile(outFile);
+      }
+      GC_free(tmp);
     }
-    if (1 != fwrite(tmp, numToFilter*longestDesc, 1, fout)) {
-      return failedToWriteToFile(outFile);
-    }
-    GC_free(tmp);
 
     if (writeMatVer4MatrixHeader(fout, "dataInfo", numToFilter, 4, sizeof(int32_t))) {
       return failedToWriteToFile(outFile);
@@ -660,8 +672,11 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
         vals = omc_matlab4_read_vals(&simresglob.matReader, indexesToOutput[i]);
         nrows = simresglob.matReader.nrows;
       }
-      if (1!=fwrite(vals, sizeof(double)*nrows, 1, fout)) {
-        return failedToWriteToFile(outFile);
+      if (nrows > 0) {
+        if (1!=fwrite(vals, sizeof(double)*nrows, 1, fout)) {
+          fprintf(stderr, "nrows=%d\n", nrows);
+          return failedToWriteToFile(outFile);
+        }
       }
       if (numberOfIntervals) {
         GC_free(vals);

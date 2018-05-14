@@ -149,8 +149,9 @@ public function filterSimulationResults
   input String outFile;
   input list<String> vars;
   input Integer numberOfIntervals=0;
+  input Boolean removeDescription;
   output Boolean result;
-  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals) annotation(Library = "omcruntime");
+  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals,removeDescription) annotation(Library = "omcruntime");
 end filterSimulationResults;
 
 annotation(__OpenModelica_Interface="frontend");

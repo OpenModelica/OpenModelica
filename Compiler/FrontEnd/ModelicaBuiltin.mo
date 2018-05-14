@@ -2869,11 +2869,18 @@ public function filterSimulationResults
   input String outFile;
   input String[:] vars;
   input Integer numberOfIntervals = 0 "0=Do not resample";
+  input Boolean removeDescription = false;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>
 <p>If numberOfIntervals<>0, re-sample to that number of intervals, ignoring event points (might be changed in the future).</p>
+<p>if removeDescription=true, the description matrix will contain 0-length strings, making the file smaller.</p>
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>1.13.0</td><td>sjoelund.se</td><td>Introduced removeDescription.</td></tr>
+</table>
 </html>"),preferredView="text");
 end filterSimulationResults;
 
