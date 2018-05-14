@@ -2171,6 +2171,19 @@ bool OMCProxy::translateModel(QString className, QString simualtionParameters)
 }
 
 /*!
+ * \brief OMCProxy::readSimulationResultSize
+ * Reads the simulation result size.
+ * \param fileName
+ * \return
+ */
+int OMCProxy::readSimulationResultSize(QString fileName)
+{
+  int size = mpOMCInterface->readSimulationResultSize(fileName);
+  getErrorString();
+  return size;
+}
+
+/*!
  * \brief OMCProxy::readSimulationResultVars
  * Reads the simulation result variables from the result file.
  * \param fileName - the result file name
