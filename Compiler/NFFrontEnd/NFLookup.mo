@@ -336,7 +336,7 @@ algorithm
     else
       // Continue looking in the instance parent's scope.
       prev_scope := cur_scope;
-      cur_scope := InstNode.parent(cur_scope);
+      cur_scope := InstNode.derivedParent(cur_scope);
     end try;
   end while;
 
