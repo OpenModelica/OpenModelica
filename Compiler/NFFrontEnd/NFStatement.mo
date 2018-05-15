@@ -109,6 +109,15 @@ public
     DAE.ElementSource source;
   end FAILURE;
 
+  function makeIf
+    input list<tuple<Expression, list<Statement>>> branches;
+    input DAE.ElementSource src;
+    output Statement stmt;
+  algorithm
+    stmt := IF(branches, src);
+    annotation(__OpenModelica_EarlyInline=true);
+  end makeIf;
+
   function source
     input Statement stmt;
     output DAE.ElementSource source;

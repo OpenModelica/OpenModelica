@@ -112,6 +112,15 @@ public
     DAE.ElementSource source;
   end NORETCALL;
 
+  function makeIf
+    input list<tuple<Expression, list<Equation>>> branches;
+    input DAE.ElementSource src;
+    output Equation eq;
+  algorithm
+    eq := IF(branches, src);
+    annotation(__OpenModelica_EarlyInline=true);
+  end makeIf;
+
   function source
     input Equation eq;
     output DAE.ElementSource source;

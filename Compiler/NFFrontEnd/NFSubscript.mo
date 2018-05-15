@@ -144,15 +144,15 @@ public
     end match;
   end isScalar;
 
-  function isScalarConst
+  function isScalarLiteral
     input Subscript sub;
-    output Boolean isScalarConst;
+    output Boolean isScalarLiteral;
   algorithm
-    isScalarConst := match sub
-      case INDEX() then Expression.isScalarConst(sub.index);
+    isScalarLiteral := match sub
+      case INDEX() then Expression.isScalarLiteral(sub.index);
       else false;
     end match;
-  end isScalarConst;
+  end isScalarLiteral;
 
   function isEqual
     input Subscript subscript1;
@@ -311,13 +311,13 @@ public
     () := match subscript
       case INDEX()
         algorithm
-          subscript.index := SimplifyExp.simplifyExp(subscript.index);
+          subscript.index := SimplifyExp.simplify(subscript.index);
         then
           ();
 
       case SLICE()
         algorithm
-          subscript.slice := SimplifyExp.simplifyExp(subscript.slice);
+          subscript.slice := SimplifyExp.simplify(subscript.slice);
         then
           ();
 

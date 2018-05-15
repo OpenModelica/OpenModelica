@@ -658,7 +658,6 @@ function evalBinaryScalarProduct
   input Expression exp1;
   input Expression exp2;
   output Expression exp;
-protected
 algorithm
   exp := match (exp1, exp2)
     local
@@ -1154,7 +1153,7 @@ algorithm
         if Function.isBuiltin(call.fn) then
           evalBuiltinCall(call.fn, args, target)
         else
-          evalNormalCall(call.fn, args, call);
+          evalNormalCall(call.fn, args);
 
     case Call.TYPED_MAP_CALL()
       then evalReduction(call.exp, call.ty, call.iters);
@@ -1199,7 +1198,7 @@ algorithm
     case "Integer" then evalBuiltinIntegerEnum(listHead(args));
     case "log10" then evalBuiltinLog10(listHead(args), target);
     case "log" then evalBuiltinLog(listHead(args), target);
-    //case "matrix" then evalBuiltinMatrix(args);
+    case "matrix" then evalBuiltinMatrix(listHead(args));
     case "max" then evalBuiltinMax(args);
     case "min" then evalBuiltinMin(args);
     case "mod" then evalBuiltinMod(args);
@@ -1216,7 +1215,7 @@ algorithm
     case "sqrt" then evalBuiltinSqrt(listHead(args));
     case "String" then evalBuiltinString(args);
     case "sum" then evalBuiltinSum(listHead(args));
-    //case "symmetric" then evalBuiltinSymmetric(args);
+    case "symmetric" then evalBuiltinSymmetric(listHead(args));
     case "tanh" then evalBuiltinTanh(listHead(args));
     case "tan" then evalBuiltinTan(listHead(args));
     case "transpose" then evalBuiltinTranspose(listHead(args));
@@ -1231,6 +1230,12 @@ algorithm
         fail();
   end match;
 end evalBuiltinCall;
+
+function evalNormalCall
+  input Function fn;
+  input list<Expression> args;
+  output Expression result = EvalFunction.evaluate(fn, args);
+end evalNormalCall;
 
 protected
 
@@ -1264,13 +1269,6 @@ algorithm
     else ();
   end match;
 end printUnboundError;
-
-function evalNormalCall
-  input Function fn;
-  input list<Expression> args;
-  input Call call;
-  output Expression result = EvalFunction.evaluate(fn, args);
-end evalNormalCall;
 
 function printWrongArgsError
   input String evalFunc;
@@ -1653,6 +1651,55 @@ algorithm
   end match;
 end evalBuiltinLog;
 
+function evalBuiltinMatrix
+  input Expression arg;
+  output Expression result;
+algorithm
+  result := match arg
+    local
+      Integer dim_count;
+      list<Expression> expl;
+      Dimension dim1, dim2;
+      Type ty;
+
+    case Expression.ARRAY(ty = ty)
+      algorithm
+        dim_count := Type.dimensionCount(ty);
+
+        if dim_count < 2 then
+          result := evalBuiltinPromoteWork(arg, 2);
+        elseif dim_count == 2 then
+          result := arg;
+        else
+          dim1 :: dim2 :: _ := Type.arrayDims(ty);
+          ty := Type.liftArrayLeft(Type.arrayElementType(ty), dim2);
+          expl := list(evalBuiltinMatrix2(e, ty) for e in arg.elements);
+          ty := Type.liftArrayLeft(ty, dim1);
+          result := Expression.ARRAY(ty, expl);
+        end if;
+      then
+        result;
+
+    case _ guard Type.isScalar(Expression.typeOf(arg))
+      then evalBuiltinPromoteWork(arg, 2);
+
+    else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+  end match;
+end evalBuiltinMatrix;
+
+function evalBuiltinMatrix2
+  input Expression arg;
+  input Type ty;
+  output Expression result;
+algorithm
+  result := match arg
+    case Expression.ARRAY()
+      then Expression.ARRAY(ty, list(Expression.toScalar(e) for e in arg.elements));
+
+    else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+  end match;
+end evalBuiltinMatrix2;
+
 function evalBuiltinMax
   input list<Expression> args;
   output Expression result;
@@ -2029,6 +2076,38 @@ algorithm
     else fail();
   end match;
 end evalBuiltinSumReal;
+
+function evalBuiltinSymmetric
+  input Expression arg;
+  output Expression result;
+protected
+  array<array<Expression>> mat;
+  Integer n;
+  Type row_ty;
+  list<Expression> expl, accum = {};
+algorithm
+  result := match arg
+    case Expression.ARRAY() guard Type.isMatrix(arg.ty)
+      algorithm
+        mat := listArray(list(listArray(Expression.arrayElements(row))
+                           for row in Expression.arrayElements(arg)));
+        n := arrayLength(mat);
+        row_ty := Type.unliftArray(arg.ty);
+
+        for i in n:-1:1 loop
+          expl := {};
+          for j in n:-1:1 loop
+            expl := (if i > j then arrayGet(mat[j], i) else arrayGet(mat[i], j)) :: expl;
+          end for;
+
+          accum := Expression.ARRAY(row_ty, expl) :: accum;
+        end for;
+      then
+        Expression.ARRAY(arg.ty, accum);
+
+    else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+  end match;
+end evalBuiltinSymmetric;
 
 function evalBuiltinTanh
   input Expression arg;

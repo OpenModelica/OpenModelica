@@ -697,13 +697,13 @@ public
       local
         list<Subscript> subs;
 
-      case CREF(subscripts = {})
+      case CREF(subscripts = {}, origin = Origin.CREF)
         algorithm
           cref.restCref := simplifySubscripts(cref.restCref);
         then
           cref;
 
-      case CREF()
+      case CREF(origin = Origin.CREF)
         algorithm
           subs := list(Subscript.simplify(s) for s in cref.subscripts);
         then

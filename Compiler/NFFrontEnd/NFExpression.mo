@@ -687,7 +687,7 @@ public
     Type exp_ty;
     ComponentRef cref;
   algorithm
-    is_scalar_const := isScalarConst(indexExp);
+    is_scalar_const := isScalarLiteral(indexExp);
 
     // check exp has array type. Don't apply subs to scalar exp.
     exp_ty := typeOf(exp);
@@ -2925,7 +2925,7 @@ public
     input Expression exp2;
     output Expression exp;
   algorithm
-    if isScalarConst(exp1) and isScalarConst(exp2) then
+    if isScalarLiteral(exp1) and isScalarLiteral(exp2) then
       exp := Ceval.evalBinaryOp(exp1, op, exp2);
     else
       exp := BINARY(exp1, op, exp2);
@@ -3116,11 +3116,11 @@ public
     end match;
   end isZero;
 
-  function isScalarConst
+  function isScalarLiteral
     input Expression exp;
-    output Boolean isScalar;
+    output Boolean literal;
   algorithm
-    isScalar := match exp
+    literal := match exp
       case INTEGER() then true;
       case REAL() then true;
       case STRING() then true;
@@ -3128,7 +3128,23 @@ public
       case ENUM_LITERAL() then true;
       else false;
     end match;
-  end isScalarConst;
+  end isScalarLiteral;
+
+  function isLiteral
+    input Expression exp;
+    output Boolean literal;
+  algorithm
+    literal := match exp
+      case INTEGER() then true;
+      case REAL() then true;
+      case STRING() then true;
+      case BOOLEAN() then true;
+      case ENUM_LITERAL() then true;
+      case ARRAY() then List.all(exp.elements, isLiteral);
+      case RECORD() then List.all(exp.elements, isLiteral);
+      else false;
+    end match;
+  end isLiteral;
 
   function isInteger
     input Expression exp;
@@ -3538,6 +3554,16 @@ public
         NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp)));
     end match;
   end enumIndexExp;
+
+  function toScalar
+    input Expression exp;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case ARRAY(elements = {outExp}) then toScalar(outExp);
+      else exp;
+    end match;
+  end toScalar;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

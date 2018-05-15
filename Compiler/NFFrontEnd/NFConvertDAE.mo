@@ -805,23 +805,30 @@ function convertIfStatement
   input DAE.ElementSource source;
   output DAE.Statement ifStatement;
 protected
-  DAE.Exp cond1, cond2;
-  list<DAE.Statement> stmts1, stmts2;
-  tuple<Expression, list<Statement>> head;
-  list<tuple<Expression, list<Statement>>> rest;
-  DAE.Else elseStatement = DAE.Else.NOELSE();
+  Expression cond;
+  DAE.Exp dcond;
+  list<Statement> stmts;
+  list<DAE.Statement> dstmts;
+  Boolean first = true;
+  DAE.Else else_stmt = DAE.Else.NOELSE();
 algorithm
-  head :: rest := ifBranches;
-  cond1 := Expression.toDAE(Util.tuple21(head));
-  stmts1 := convertStatements(Util.tuple22(head));
+  for b in listReverse(ifBranches) loop
+    (cond, stmts) := b;
+    dcond := Expression.toDAE(cond);
+    dstmts := convertStatements(stmts);
 
-  for b in listReverse(rest) loop
-    cond2 := Expression.toDAE(Util.tuple21(b));
-    stmts2 := convertStatements(Util.tuple22(b));
-    elseStatement := DAE.Else.ELSEIF(cond2, stmts2, elseStatement);
+    if first and Expression.isTrue(cond) then
+      else_stmt := DAE.Else.ELSE(dstmts);
+    else
+      else_stmt := DAE.Else.ELSEIF(dcond, dstmts, else_stmt);
+    end if;
+
+    first := false;
   end for;
 
-  ifStatement := DAE.Statement.STMT_IF(cond1, stmts1,  elseStatement, source);
+  // This should always be an ELSEIF due to branch selection in earlier phases.
+  DAE.Else.ELSEIF(dcond, dstmts, else_stmt) := else_stmt;
+  ifStatement := DAE.Statement.STMT_IF(dcond, dstmts, else_stmt, source);
 end convertIfStatement;
 
 function convertWhenStatement

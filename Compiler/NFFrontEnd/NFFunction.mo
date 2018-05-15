@@ -1098,7 +1098,8 @@ uniontype Function
 
   function isExternal
     input Function fn;
-    output Boolean isExternal = Class.isExternalFunction(InstNode.getClass(fn.node));
+    output Boolean isExternal = not InstNode.isEmpty(fn.node) and
+                                Class.isExternalFunction(InstNode.getClass(fn.node));
   end isExternal;
 
   function inlineBuiltin

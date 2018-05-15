@@ -2242,15 +2242,15 @@ protected
 
     if listLength(args) <> 1 then
       Error.addSourceMessageAndFail(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {toString(call), "symmetric(Any[n, m]) => Any[n, m]"}, info);
+        {toString(call), "symmetric(Any[n, n]) => Any[n, n]"}, info);
     end if;
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
 
-    if not Type.isMatrix(ty) then
+    if not Type.isSquareMatrix(ty) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"1", ComponentRef.toString(fn_ref), "", Expression.toString(arg),
-         Type.toString(ty), "Any[:, :]"}, info);
+         Type.toString(ty), "Any[n, n]"}, info);
     end if;
 
     {fn} := typeCachedFunctions(fn_ref);
