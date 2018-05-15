@@ -22,6 +22,6 @@ end FuncBuiltinOuterProduct;
 //   Real x[3,2];
 //   Real x[3,3];
 // equation
-//   x = matrix({1.0, 2.0, 3.0}) * transpose(matrix({4.0, 5.0, 6.0}));
+//   x = {{4.0, 5.0, 6.0}, {8.0, 10.0, 12.0}, {12.0, 15.0, 18.0}};
 // end FuncBuiltinOuterProduct;
 // endResult

@@ -16,6 +16,6 @@ end FuncBuiltinCross;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x = {2.0 * 6.0 - 3.0 * 5.0, 3.0 * 4.0 - 1.0 * 6.0, 1.0 * 5.0 - 2.0 * 4.0};
+//   x = {-3.0, 6.0, -3.0};
 // end FuncBuiltinCross;
 // endResult

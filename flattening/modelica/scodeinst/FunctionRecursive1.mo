@@ -26,7 +26,7 @@ end FunctionRecursive1;
 // algorithm
 //   if n <= 1 then
 //     o := 1;
-//   elseif true then
+//   else
 //     o := n * fac(n - 1);
 //   end if;
 // end fac;

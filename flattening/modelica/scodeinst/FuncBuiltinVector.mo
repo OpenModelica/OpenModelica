@@ -22,8 +22,8 @@ end FuncBuiltinVector;
 //   Real z[2];
 //   Real z[3];
 // equation
-//   x = /*Real[1]*/(vector(1));
-//   y = /*Real[3]*/(vector({{1}, {2}, {3}}));
-//   z = /*Real[3]*/(vector({1, 2, 3}));
+//   x = {1.0};
+//   y = {1.0, 2.0, 3.0};
+//   z = {1.0, 2.0, 3.0};
 // end FuncBuiltinVector;
 // endResult

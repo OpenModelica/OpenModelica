@@ -6,12 +6,12 @@
 
 model Assert1
 equation
-  assert(false, "test");
+  assert(time > 1, "test");
 end Assert1;
 
 // Result:
 // class Assert1
 // equation
-//   assert(false, "test");
+//   assert(time > 1, "test");
 // end Assert1;
 // endResult

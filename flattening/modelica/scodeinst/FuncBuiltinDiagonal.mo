@@ -22,6 +22,6 @@ end FuncBuiltinDiagonal;
 //   Real x[3,2];
 //   Real x[3,3];
 // equation
-//   x = /*Real[3, 3]*/(diagonal({1, 2, 3}));
+//   x = {{1.0, 0.0, 0.0}, {0.0, 2.0, 0.0}, {0.0, 0.0, 3.0}};
 // end FuncBuiltinDiagonal;
 // endResult

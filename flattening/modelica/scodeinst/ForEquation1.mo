@@ -21,10 +21,10 @@ end ForEquation1;
 //   Real x[4];
 //   Real x[5];
 // equation
-//   x[1] = /*Real*/(1);
-//   x[2] = /*Real*/(2);
-//   x[3] = /*Real*/(3);
-//   x[4] = /*Real*/(4);
-//   x[5] = /*Real*/(5);
+//   x[1] = 1.0;
+//   x[2] = 2.0;
+//   x[3] = 3.0;
+//   x[4] = 4.0;
+//   x[5] = 5.0;
 // end ForEquation1;
 // endResult

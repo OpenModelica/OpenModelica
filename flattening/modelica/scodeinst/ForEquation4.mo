@@ -22,9 +22,9 @@ end ForEquation4;
 //   Real x[3];
 //   Real x[4];
 // equation
-//   x[1] = /*Real*/(1);
-//   x[2] = /*Real*/(2);
-//   x[3] = /*Real*/(3);
-//   x[4] = /*Real*/(4);
+//   x[1] = 1.0;
+//   x[2] = 2.0;
+//   x[3] = 3.0;
+//   x[4] = 4.0;
 // end ForEquation4;
 // endResult

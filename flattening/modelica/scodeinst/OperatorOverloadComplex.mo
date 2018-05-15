@@ -256,7 +256,7 @@ end Test;
 //   if c.im <> 0.0 then
 //     if c.im > 0.0 then
 //       s := s + " + ";
-//     elseif true then
+//     else
 //       s := s + " - ";
 //     end if;
 //     s := s + String(abs(c.im), significantDigits, 0, true) + "*" + name;
