@@ -1694,8 +1694,12 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
   // read the result file
   QFileInfo resultFileInfo(QString(workingDirectory).append("/").append(simulationOptions.getResultFileName()));
   QRegExp regExp("\\b(mat|plt|csv)\\b");
+  /* ticket:4935 Check the simulation result size via readSimulationResultSize
+   * If the result size is zero then don't switch to the plotting view.
+   */
   if (regExp.indexIn(simulationOptions.getResultFileName()) != -1 &&
-      resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
+      resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified() &&
+      MainWindow::instance()->getOMCProxy()->readSimulationResultSize(resultFileInfo.absoluteFilePath()) > 0) {
     VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());

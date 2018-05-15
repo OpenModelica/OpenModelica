@@ -199,6 +199,7 @@ public:
   bool simulate(QString className, QString simualtionParameters);
   bool buildModel(QString className, QString simualtionParameters);
   bool translateModel(QString className, QString simualtionParameters);
+  int readSimulationResultSize(QString fileName);
   QStringList readSimulationResultVars(QString fileName);
   bool closeSimulationResultFile();
   QString checkModel(QString className);

@@ -172,6 +172,7 @@ private:
 
   void setSaveContentsTypeAsFolderStructure(LibraryTreeItem *pLibraryTreeItem);
 public slots:
+  int exec();
   void browsePath();
   void duplicateClass();
 };
