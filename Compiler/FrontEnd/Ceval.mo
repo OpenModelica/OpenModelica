@@ -3263,101 +3263,48 @@ protected function cevalBuiltinMod "author: LP
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<DAE.Exp> inExpExpLst;
-  input Boolean inBoolean;
-  input Absyn.Msg inMsg;
+  input Boolean impl;
+  input Absyn.Msg msg;
   input Integer numIter;
-  output FCore.Cache outCache;
+  output FCore.Cache cache = inCache;
   output Values.Value outValue;
+protected
+  Values.Value v1, v2;
+  DAE.Exp exp1,exp2;
 algorithm
-  (outCache,outValue):=
-  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inMsg,numIter)
+  {exp1,exp2} := inExpExpLst;
+  (cache,v1) := ceval(cache,inEnv, exp1, impl, msg,numIter+1);
+  (cache,v2) := ceval(cache,inEnv, exp2, impl, msg,numIter+1);
+  outValue := match (v1,v2,msg)
     local
-      Real rv1,rv2,rva,rvb,rvc,rvd;
-      FCore.Graph env;
-      DAE.Exp exp1,exp2;
-      Boolean impl;
-      Absyn.Msg msg;
-      Integer ri,ri1,ri2,ri_1;
+      Real rv1,rv2;
+      Integer ri,ri1,ri2;
       String lhs_str,rhs_str;
-      FCore.Cache cache;
       SourceInfo info;
 
-    case (cache,env,{exp1,exp2},impl,msg,_)
+    case (Values.REAL(rv1),Values.REAL(rv2),_)
+      then (Values.REAL(mod(rv1,rv2)));
+    case (Values.INTEGER(ri),Values.REAL(rv2),_)
+      then (Values.REAL(mod(ri,rv2)));
+    case (Values.REAL(rv1),Values.INTEGER(ri),_)
+      then (Values.REAL(mod(rv1,ri)));
+    case (Values.INTEGER(ri1),Values.INTEGER(ri2),_)
+      then (Values.INTEGER(mod(ri1,ri2)));
+    case (_,Values.REAL(rv2),Absyn.MSG(info = info))
+      guard rv2 == 0.0
       equation
-        (cache,Values.REAL(rv1)) = ceval(cache,env, exp1, impl, msg,numIter+1);
-        (cache,Values.REAL(rv2)) = ceval(cache,env, exp2, impl, msg,numIter+1);
-        rva = rv1 / rv2;
-        rvb = floor(rva);
-        rvc = rvb * rv2;
-        rvd = rv1 - rvc;
-      then
-        (cache,Values.REAL(rvd));
-    case (cache,env,{exp1,exp2},impl,msg,_)
+        lhs_str = ExpressionDump.printExpStr(exp1);
+        rhs_str = ExpressionDump.printExpStr(exp2);
+        Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
+      then fail();
+    case (_,Values.INTEGER(0),Absyn.MSG(info = info))
       equation
-        (cache,Values.INTEGER(ri)) = ceval(cache,env, exp1, impl, msg,numIter+1);
-        rv1 = intReal(ri);
-        (cache,Values.REAL(rv2)) = ceval(cache,env, exp2, impl, msg,numIter+1);
-        rva = rv1 / rv2;
-        rvb = floor(rva);
-        rvc = rvb * rv2;
-        rvd = rv1 - rvc;
-      then
-        (cache,Values.REAL(rvd));
-    case (cache,env,{exp1,exp2},impl,msg,_)
-      equation
-        (cache,Values.REAL(rv1)) = ceval(cache,env, exp1, impl, msg,numIter+1);
-        (cache,Values.INTEGER(ri)) = ceval(cache,env, exp2, impl, msg,numIter+1);
-        rv2 = intReal(ri);
-        rva = rv1 / rv2;
-        rvb = floor(rva);
-        rvc = rvb * rv2;
-        rvd = rv1 - rvc;
-      then
-        (cache,Values.REAL(rvd));
-    case (cache,env,{exp1,exp2},impl,msg,_)
-      equation
-        (cache,Values.INTEGER(ri1)) = ceval(cache,env, exp1, impl, msg,numIter+1);
-        (cache,Values.INTEGER(ri2)) = ceval(cache,env, exp2, impl, msg,numIter+1);
-        rv1 = intReal(ri1);
-        rv2 = intReal(ri2);
-        rva = rv1 / rv2;
-        rvb = floor(rva);
-        rvc = rvb * rv2;
-        rvd = rv1 - rvc;
-        ri_1 = integer(rvd);
-      then
-        (cache,Values.INTEGER(ri_1));
-    case (cache,env,{exp1,exp2},impl,Absyn.MSG(info = info),_)
-      equation
-        (_,Values.REAL(rv2)) = ceval(cache,env, exp2, impl, inMsg,numIter+1);
-        (rv2 == 0.0) = true;
         lhs_str = ExpressionDump.printExpStr(exp1);
         rhs_str = ExpressionDump.printExpStr(exp2);
         Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
       then
         fail();
-    case (cache,env,{_,exp2},impl,Absyn.NO_MSG(),_)
-      equation
-        (_,Values.REAL(rv2)) = ceval(cache,env, exp2, impl, Absyn.NO_MSG(),numIter+1);
-        (rv2 == 0.0) = true;
-      then
-        fail();
-    case (cache,env,{exp1,exp2},impl,Absyn.MSG(info = info),_)
-      equation
-        (_,Values.INTEGER(ri2)) = ceval(cache,env, exp2, impl, inMsg,numIter+1);
-        (ri2 == 0) = true;
-        lhs_str = ExpressionDump.printExpStr(exp1);
-        rhs_str = ExpressionDump.printExpStr(exp2);
-        Error.addSourceMessage(Error.MODULO_BY_ZERO, {lhs_str,rhs_str}, info);
-      then
-        fail();
-    case (cache,env,{_,exp2},impl,Absyn.NO_MSG(),_)
-      equation
-        (_,Values.INTEGER(ri2)) = ceval(cache,env, exp2, impl, Absyn.NO_MSG(),numIter+1);
-        (ri2 == 0) = true;
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end cevalBuiltinMod;
 
 protected function cevalBuiltinSum "Evaluates the builtin sum function."

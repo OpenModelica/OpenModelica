@@ -90,20 +90,6 @@ static inline modelica_real modelica_div(modelica_real x, modelica_real y)
   return (modelica_real)((modelica_integer)(x/y));
 }
 
-
-/* fmod in math.h does not work in the same way as mod defined by modelica, so
- * we need to define our own mod. */
-static inline modelica_real modelica_mod_real(modelica_real x, modelica_real y)
-{
-  return (x - (floor(x/y) * y));
-}
-
-static inline modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y)
-{
-  return x % y;
-}
-
-
 static inline modelica_integer modelica_integer_min(modelica_integer x,modelica_integer y)
 {
   return (x < y) ? x : y;
@@ -142,5 +128,24 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
 #define OpenModelica_uriToFilename(URI) OpenModelica_uriToFilename_impl(threadData, URI, NULL)
 #define OpenModelica__uriToFilename(URI) OpenModelica_uriToFilename(URI)
 extern void OpenModelica_updateUriMapping(threadData_t *threadData, void *namesAndDirs);
+
+static inline modelica_real modelica_real_mod(modelica_real x, modelica_real y)
+{
+  return x-floor(x/y)*y;
+}
+
+static inline modelica_integer modelica_integer_mod(modelica_integer x, modelica_integer y)
+{
+  modelica_integer res = x%y;
+  return res < 0 ? res+y : res /* % returns the remainder, which might be negative */;
+}
+
+#if defined(OMC_BOOTSTRAPPING_STAGE_1) || defined(OMC_BOOTSTRAPPING_STAGE_2)
+#define modelica_mod_real modelica_real_mod
+static inline modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y)
+{
+  return x%y;
+}
+#endif
 
 #endif

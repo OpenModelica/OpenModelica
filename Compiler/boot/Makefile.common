@@ -76,7 +76,7 @@ bootstrap-from-tarball:
 	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2" BOOTSTRAP_OMHOME=1
 	@echo "Bootstrapping phase 2/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC="$(BOOTSTRAP_OMC)"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMC="$(BOOTSTRAP_OMC)" clean
