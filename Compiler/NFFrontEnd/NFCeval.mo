@@ -139,11 +139,7 @@ algorithm
     case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
                                                           origin = NFComponentRef.Origin.CREF))
       algorithm
-        exp_origin := if Class.isFunction(InstNode.getClass(InstNode.parent(c)))
-          then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
-        Typing.typeComponentBinding(c, exp_origin);
-        binding := Component.getBinding(InstNode.component(c));
-        exp1 := evalBinding(binding, exp, target);
+        exp1 := evalComponentBinding(c, exp, target);
       then
         Expression.applySubscripts(cref.subscripts, exp1);
 
@@ -236,15 +232,7 @@ algorithm
         exp1;
 
     case Expression.SUBSCRIPTED_EXP()
-      algorithm
-        exp1 := evalExp(exp.exp, target);
-
-        for s in exp.subscripts loop
-          exp2 := evalExp(s, target);
-          exp1 := Expression.applyIndexSubscript(exp2, exp1);
-        end for;
-      then
-        exp1;
+      then evalSubscriptedExp(exp.exp, exp.subscripts, target);
 
     else exp;
   end match;
@@ -263,26 +251,49 @@ algorithm
   end match;
 end evalExpOpt;
 
-function evalBinding
-  input Binding binding;
+function evalComponentBinding
+  input InstNode node;
   input Expression originExp "The expression the binding came from, e.g. a cref.";
   input EvalTarget target;
   output Expression exp;
+protected
+  ExpOrigin.Type exp_origin;
+  Component comp;
+  Binding binding;
 algorithm
+  exp_origin := if Class.isFunction(InstNode.getClass(InstNode.parent(node)))
+    then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
+
+  Typing.typeComponentBinding(node, exp_origin);
+  comp := InstNode.component(node);
+  binding := Component.getBinding(comp);
+
   exp := match binding
-    case Binding.TYPED_BINDING() then evalExp(binding.bindingExp, target);
+    case Binding.TYPED_BINDING()
+      algorithm
+        exp := evalExp(binding.bindingExp, target);
+
+        if not referenceEq(exp, binding.bindingExp) then
+          binding.bindingExp := exp;
+          comp := Component.setBinding(binding, comp);
+          InstNode.updateComponent(comp, node);
+        end if;
+      then
+        exp;
+
     case Binding.UNBOUND()
       algorithm
         printUnboundError(target, originExp);
       then
         originExp;
+
     else
       algorithm
         Error.addInternalError(getInstanceName() + " failed on untyped binding", sourceInfo());
       then
         fail();
   end match;
-end evalBinding;
+end evalComponentBinding;
 
 function evalTypename
   input Type ty;
@@ -2254,6 +2265,27 @@ algorithm
     result := Expression.ARRAY(ty, listReverseInPlace(expl));
   end if;
 end evalReduction2;
+
+function evalSubscriptedExp
+  input Expression exp;
+  input list<Expression> subs;
+  input EvalTarget target;
+  output Expression result;
+algorithm
+  result := match exp
+    case Expression.RANGE()
+      then Expression.RANGE(exp.ty,
+                            evalExp(exp.start, target),
+                            evalExpOpt(exp.step, target),
+                            evalExp(exp.stop, target));
+
+    else evalExp(exp, target);
+  end match;
+
+  for s in subs loop
+    result := Expression.applyIndexSubscript(evalExp(s, target), result);
+  end for;
+end evalSubscriptedExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;

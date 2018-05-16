@@ -605,8 +605,15 @@ public
             end for;
 
             // Sanity check.
-            Error.assertion(comp_idx == compCount + 1, getInstanceName() + " miscounted components in " + InstNode.name(clsNode), sourceInfo());
-            Error.assertion(cls_idx == classCount + 1, getInstanceName() + " miscounted classes in " + InstNode.name(clsNode), sourceInfo());
+            if comp_idx <> compCount + 1 then
+              Error.assertion(false, getInstanceName() + " miscounted components in " +
+                InstNode.name(clsNode), sourceInfo());
+            end if;
+
+            if cls_idx <> classCount + 1 then
+              Error.assertion(false, getInstanceName() + " miscounted classes in " +
+                InstNode.name(clsNode), sourceInfo());
+            end if;
 
             // Create a new class tree and update the class in the node.
             cls.elements := INSTANTIATED_TREE(ltree, clss, comps, local_comps, exts, imps, dups);

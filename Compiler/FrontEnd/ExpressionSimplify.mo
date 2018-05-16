@@ -1649,7 +1649,11 @@ algorithm
   end for;
   for i in 1:(dim-1) loop
     j := min(listHead(d) for d in dimsLst);
-    Error.assertion(j == max(listHead(d) for d in dimsLst), getInstanceName() + ": cat got uneven dimensions for dim=" + String(i) + " " + stringDelimitList(list(toString(e) for e in exps), ", "), sourceInfo());
+
+    if j <> max(listHead(d) for d in dimsLst) then
+      Error.assertion(false, getInstanceName() + ": cat got uneven dimensions for dim=" + String(i) + " " + stringDelimitList(list(toString(e) for e in exps), ", "), sourceInfo());
+    end if;
+
     firstDims := j :: firstDims;
     dimsLst := list(listRest(d) for d in dimsLst);
   end for;
@@ -1707,8 +1711,8 @@ algorithm
     (arr, dims) := evalCatGetFlatArray(exp, dim-1, getArrayContents=getArrayContents, toString=toString);
     if listEmpty(outDims) then
       outDims := dims;
-    else
-      Error.assertion(valueEq(dims, outDims), getInstanceName() + ": Got unbalanced array from " + toString(e), sourceInfo());
+    elseif not valueEq(dims, outDims) then
+      Error.assertion(false, getInstanceName() + ": Got unbalanced array from " + toString(e), sourceInfo());
     end if;
     outExps := listAppend(arr, outExps);
     i := i+1;
