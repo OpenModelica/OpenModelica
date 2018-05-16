@@ -38,6 +38,12 @@ model ClassExtends4
 end ClassExtends4;
 
 // Result:
+// function SingleGasNasa.ThermodynamicState "Automatically generated record constructor for SingleGasNasa.ThermodynamicState"
+//   input Real p;
+//   input Real T;
+//   output ThermodynamicState res;
+// end SingleGasNasa.ThermodynamicState;
+//
 // function SingleGasNasa.specificEnthalpy
 //   input SingleGasNasa.ThermodynamicState state;
 //   output Real h;

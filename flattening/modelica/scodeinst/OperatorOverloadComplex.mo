@@ -193,6 +193,12 @@ end Test;
 
 
 // Result:
+// function Complex "Automatically generated record constructor for Complex"
+//   input Real re;
+//   input Real im;
+//   output Complex res;
+// end Complex;
+//
 // function Complex.'*'.multiply "Multiply two complex numbers"
 //   input Complex c1 "Complex number 1";
 //   input Complex c2 "Complex number 2";

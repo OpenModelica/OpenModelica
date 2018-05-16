@@ -42,6 +42,11 @@ end T;
 
 
 // Result:
+// function C "Automatically generated record constructor for C"
+//   input Real r;
+//   output C res;
+// end C;
+//
 // function C.'+'.leftInt
 //   input Integer j;
 //   input C i;
