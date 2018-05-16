@@ -194,9 +194,6 @@ uniontype Call
         then
           fail();
     end match;
-
-    // callExp := Expression.CALL(call);
-
   end instantiate;
 
   protected
@@ -589,7 +586,7 @@ uniontype Call
 
           // Type the function(s) if not already done.
           if not typed then
-            functions := list(Function.typeFunction(f) for f in functions);
+            functions := list(Function.typeFunctionSignature(f) for f in functions);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
             functions := list(Function.typeFunctionBody(f) for f in functions);
             InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
@@ -979,18 +976,11 @@ uniontype Call
     input list<MatchedFunction> matchedFunctions;
     output list<MatchedFunction> outMatches;
   algorithm
-    outMatches := {};
     // We have at least two exact matches. find the default constructor (if there is one) and remove it from the list
     // so that it
     // - doesn't cause ambiguities if there is only one other match left OR
     // - it doesn't appear in the error messages in the case of more than one overloaded constructor matches.
-    for mt_fn in matchedFunctions loop
-      if not stringEqual(Absyn.pathLastIdent(mt_fn.func.path), "'constructor'.'$default'") then
-        outMatches := mt_fn::outMatches;
-      end if;
-    end for;
-
-    outMatches := listReverse(outMatches);
+    outMatches := list(m for m guard not Function.isDefaultRecordConstructor(m.func) in matchedFunctions);
   end resolveOverloadedVsDefaultConstructorAmbigutiy;
 
   function typeOf
@@ -2696,7 +2686,7 @@ protected
   algorithm
     exp := match call
       case TYPED_CALL()
-        then Expression.RECORD(Absyn.stripLast(Function.name(call.fn)), ty, call.arguments);
+        then Expression.RECORD(Function.name(call.fn), ty, call.arguments);
     end match;
   end toRecordExpression;
 

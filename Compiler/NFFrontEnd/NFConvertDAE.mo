@@ -38,6 +38,7 @@ import FlatModel = NFFlatModel;
 import NFFlatten.FunctionTree;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
+import Restriction = NFRestriction;
 
 protected
 import ExecStat.execStat;
@@ -911,7 +912,7 @@ algorithm
   cls := InstNode.getClass(Function.instance(func));
 
   dfunc := match cls
-    case Class.INSTANCED_CLASS(sections = sections)
+    case Class.INSTANCED_CLASS(sections = sections, restriction = Restriction.FUNCTION())
       algorithm
         elems := convertFunctionParams(func.inputs, {});
         elems := convertFunctionParams(func.outputs, elems);
@@ -934,6 +935,11 @@ algorithm
         end match;
       then
         Function.toDAE(func, {def});
+
+    case Class.INSTANCED_CLASS(restriction = Restriction.RECORD_CONSTRUCTOR())
+      then DAE.Function.RECORD_CONSTRUCTOR(Function.name(func),
+                                           Function.makeDAEType(func),
+                                           DAE.emptyElementSource);
 
     else
       algorithm

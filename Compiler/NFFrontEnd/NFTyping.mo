@@ -161,7 +161,7 @@ function typeComponents
 protected
   Class c = InstNode.getClass(cls), c2;
   ClassTree cls_tree;
-  InstNode ext_node;
+  InstNode ext_node, con, de;
 algorithm
   () := match c
     case Class.INSTANCED_CLASS(restriction = Restriction.TYPE()) then ();
@@ -173,6 +173,16 @@ algorithm
             typeComponent(c, origin);
           end if;
         end for;
+
+        () := match c.ty
+          case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+            algorithm
+              typeStructor(con);
+            then
+              ();
+
+          else ();
+        end match;
       then
         ();
 
@@ -194,9 +204,11 @@ algorithm
       then
         ();
 
-    case Class.INSTANCED_BUILTIN(restriction = Restriction.EXTERNAL_OBJECT())
+    case Class.INSTANCED_BUILTIN(ty = Type.COMPLEX(complexTy =
+        ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de)))
       algorithm
-        typeExternalObjectStructors(c.ty);
+        typeStructor(con);
+        typeStructor(de);
       then
         ();
 
@@ -211,28 +223,25 @@ algorithm
   end match;
 end typeComponents;
 
-function typeExternalObjectStructors
-  input Type ty;
+function typeStructor
+  input InstNode node;
 protected
-  InstNode constructor, destructor;
-  Function fn;
-  Boolean typed, special;
+  CachedData cache;
+  list<Function> fnl;
 algorithm
-  Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
-  CachedData.FUNCTION({fn}, typed, special) := InstNode.getFuncCache(constructor);
-  if not typed then
-    fn := Function.typeFunction(fn);
-    fn := Function.typeFunctionBody(fn);
-    InstNode.setFuncCache(constructor, CachedData.FUNCTION({fn}, true, special));
-  end if;
+  cache := InstNode.getFuncCache(node);
 
-  CachedData.FUNCTION({fn}, typed, special) := InstNode.getFuncCache(destructor);
-  if not typed then
-    fn := Function.typeFunction(fn);
-    fn := Function.typeFunctionBody(fn);
-    InstNode.setFuncCache(destructor, CachedData.FUNCTION({fn}, true, special));
-  end if;
-end typeExternalObjectStructors;
+  () := match cache
+    case CachedData.FUNCTION(funcs = fnl, typed = false)
+      algorithm
+        fnl := list(Function.typeFunction(fn) for fn in fnl);
+        InstNode.setFuncCache(node, CachedData.FUNCTION(fnl, true, cache.specialBuiltin));
+      then
+        ();
+
+    else ();
+  end match;
+end typeStructor;
 
 function typeClassType
   input InstNode clsNode;
@@ -241,7 +250,7 @@ function typeClassType
   output Type ty;
 protected
   Class cls, ty_cls;
-  InstNode ty_node;
+  InstNode node;
 algorithm
   cls := InstNode.getClass(clsNode);
 
@@ -255,9 +264,9 @@ algorithm
         ty;
 
     // A long class declaration of a type extending from a type has the type of the base class.
-    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = ComplexType.EXTENDS_TYPE(ty_node)))
+    case Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = ComplexType.EXTENDS_TYPE(node)))
       algorithm
-        ty := typeClassType(ty_node, componentBinding, origin);
+        ty := typeClassType(node, componentBinding, origin);
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then

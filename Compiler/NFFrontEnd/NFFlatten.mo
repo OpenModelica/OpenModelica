@@ -852,10 +852,21 @@ function collectTypeFuncs
   input output FunctionTree funcs;
 algorithm
   () := match ty
+    local
+      InstNode con, de;
+
     // Collect external object structors.
-    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de))
       algorithm
-        funcs := collectExternalObjectStructors(ty.complexTy, funcs);
+        funcs := collectStructor(con, funcs);
+        funcs := collectStructor(de, funcs);
+      then
+        ();
+
+    // Collect record constructors.
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
+      algorithm
+        funcs := collectStructor(con, funcs);
       then
         ();
 
@@ -863,19 +874,27 @@ algorithm
   end match;
 end collectTypeFuncs;
 
-function collectExternalObjectStructors
-  input ComplexType ty;
+function collectStructor
+  input InstNode node;
   input output FunctionTree funcs;
 protected
-  InstNode constructor, destructor;
-  Function fn;
+  CachedData cache;
+  list<Function> fn;
 algorithm
-  ComplexType.EXTERNAL_OBJECT(constructor, destructor) := ty;
-  CachedData.FUNCTION(funcs = {fn}) := InstNode.getFuncCache(constructor);
-  funcs := flattenFunction(fn, funcs);
-  CachedData.FUNCTION(funcs = {fn}) := InstNode.getFuncCache(destructor);
-  funcs := flattenFunction(fn, funcs);
-end collectExternalObjectStructors;
+  cache := InstNode.getFuncCache(node);
+
+  () := match cache
+    case CachedData.FUNCTION()
+      algorithm
+        for fn in cache.funcs loop
+          funcs := flattenFunction(fn, funcs);
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end collectStructor;
 
 function collectEquationFuncs
   input Equation eq;

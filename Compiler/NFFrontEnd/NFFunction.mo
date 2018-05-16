@@ -293,17 +293,14 @@ uniontype Function
   protected
     CachedData cache;
   algorithm
-    // Look up the the function.
+    // Look up the function.
     fn_node := ComponentRef.node(fn_ref);
     cache := InstNode.getFuncCache(fn_node);
 
     // Check if a cached instantiation of this function already exists.
     (fn_node, specialBuiltin) := match cache
       case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
-      else algorithm
-        (fn_node, specialBuiltin) := instFunc2(ComponentRef.toPath(fn_ref), fn_node, info);
-        //instFuncExpressions(fn_node);
-      then (fn_node, specialBuiltin);
+      else instFunc2(ComponentRef.toPath(fn_ref), fn_node, info);
     end match;
   end instFuncRef;
 
@@ -945,6 +942,13 @@ uniontype Function
   end isTyped;
 
   function typeFunction
+    input output Function fn;
+  algorithm
+    fn := typeFunctionSignature(fn);
+    fn := typeFunctionBody(fn);
+  end typeFunction;
+
+  function typeFunctionSignature
     "Types a function's parameters, local components and default arguments."
     input output Function fn;
   protected
@@ -969,7 +973,7 @@ uniontype Function
       checkParamTypes(fn);
       fn.returnType := makeReturnType(fn);
     end if;
-  end typeFunction;
+  end typeFunctionSignature;
 
   function typeFunctionBody
     "Types the body of a function, along with any bindings of local variables
@@ -1112,6 +1116,16 @@ uniontype Function
       else fn.attributes.inline;
     end match;
   end inlineBuiltin;
+
+  function isDefaultRecordConstructor
+    input Function fn;
+    output Boolean isConstructor;
+  algorithm
+    isConstructor := match Class.restriction(InstNode.getClass(fn.node))
+      case Restriction.RECORD_CONSTRUCTOR() then true;
+      else false;
+    end match;
+  end isDefaultRecordConstructor;
 
   function toDAE
     input Function fn;

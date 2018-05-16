@@ -49,6 +49,7 @@ public
   record MODEL end MODEL;
   record OPERATOR end OPERATOR;
   record RECORD end RECORD;
+  record RECORD_CONSTRUCTOR end RECORD_CONSTRUCTOR;
   record TYPE end TYPE;
   record UNKNOWN end UNKNOWN;
 

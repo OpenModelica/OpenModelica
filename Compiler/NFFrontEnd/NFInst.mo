@@ -95,6 +95,7 @@ import FlatModel = NFFlatModel;
 import BindingOrigin = NFBindingOrigin;
 import ElementSource;
 import SimplifyModel = NFSimplifyModel;
+import Record = NFRecord;
 
 type EquationScope = enumeration(NORMAL, INITIAL, WHEN);
 
@@ -1784,9 +1785,11 @@ algorithm
         // Instantiate local equation/algorithm sections.
         sections := instSections(node, scope, sections);
 
-        ty := Type.COMPLEX(node, ComplexType.CLASS());
+        ty := makeComplexType(cls.restriction, node);
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.restriction);
         InstNode.updateClass(inst_cls, node);
+
+        instComplexType(ty);
       then
         ();
 
@@ -1822,6 +1825,50 @@ algorithm
 
   end match;
 end instExpressions;
+
+function makeComplexType
+  input Restriction restriction;
+  input InstNode node;
+  output Type ty;
+protected
+  ComplexType cty;
+algorithm
+  cty := match restriction
+    case Restriction.RECORD() then ComplexType.RECORD(node);
+    else ComplexType.CLASS();
+  end match;
+
+  ty := Type.COMPLEX(node, cty);
+end makeComplexType;
+
+function instComplexType
+  input Type ty;
+algorithm
+  () := match ty
+    local
+      InstNode node;
+      CachedData cache;
+
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
+      algorithm
+        cache := InstNode.getFuncCache(node);
+
+        () := match cache
+          case CachedData.FUNCTION() then ();
+          else
+            algorithm
+              InstNode.cacheInitFunc(node);
+              Record.instConstructors(InstNode.scopePath(node), node, InstNode.info(node));
+            then
+              ();
+
+        end match;
+      then
+        ();
+
+    else ();
+  end match;
+end instComplexType;
 
 function instBuiltinAttribute
   input output Modifier attribute;

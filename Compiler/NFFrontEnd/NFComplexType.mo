@@ -53,6 +53,10 @@ public
     Boolean isExpandable;
   end CONNECTOR;
 
+  record RECORD
+    InstNode constructor;
+  end RECORD;
+
   record EXTERNAL_OBJECT
     InstNode constructor;
     InstNode destructor;
