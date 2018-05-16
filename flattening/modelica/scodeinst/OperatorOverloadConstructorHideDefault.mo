@@ -1,4 +1,4 @@
-// name: OperatorOverloadConstrutorHideDefault
+// name: OperatorOverloadConstructorHideDefault
 // keywords: operator overload constructor
 // status: correct
 // cflags: -d=newInst
@@ -18,11 +18,11 @@ operator record C
   end 'constructor';
 end C;
 
-model T
+model OperatorOverloadConstructorHideDefault
   C c;
 equation
   c = C(1.0);
-end T;
+end OperatorOverloadConstructorHideDefault;
 
 
 // Result:
@@ -33,9 +33,9 @@ end T;
 //   o.r := r;
 // end C.'constructor'.fromReal;
 //
-// class T
+// class OperatorOverloadConstructorHideDefault
 //   Real c.r;
 // equation
 //   c = C.'constructor'.fromReal(1.0);
-// end T;
+// end OperatorOverloadConstructorHideDefault;
 // endResult

@@ -1,4 +1,4 @@
-// name: OperatorOverloadConstrutorSimple
+// name: OperatorOverloadConstructorSimple
 // keywords: operator constructor overload
 // status: correct
 // cflags: -d=newInst
@@ -19,11 +19,11 @@ operator record C
   end 'constructor';
 end C;
 
-model T
+model OperatorOverloadConstructorSimple
   C c;
 equation
   c = C();
-end T;
+end OperatorOverloadConstructorSimple;
 
 
 // Result:
@@ -33,9 +33,9 @@ end T;
 //   o.r := 1.0;
 // end C.'constructor'.fromNone;
 //
-// class T
+// class OperatorOverloadConstructorSimple
 //   Real c.r;
 // equation
 //   c = C.'constructor'.fromNone();
-// end T;
+// end OperatorOverloadConstructorSimple;
 // endResult

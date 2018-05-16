@@ -550,8 +550,8 @@ OperatorOverloadBinaryAmbiguous.mo \
 OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
 OperatorOverloadComplex.mo \
-OperatorOverloadConstrutorHideDefault.mo \
-OperatorOverloadConstrutorSimple.mo \
+OperatorOverloadConstructorHideDefault.mo \
+OperatorOverloadConstructorSimple.mo \
 OperatorOverloadError1.mo \
 PackageConstant1.mo \
 ParameterBug.mos \
