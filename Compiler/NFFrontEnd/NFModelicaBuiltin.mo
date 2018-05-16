@@ -158,7 +158,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end semiLinear;
 
-function edge "Indicate rising edge"
+impure function edge "Indicate rising edge"
   input Boolean b;
   output Boolean edgeEvent;
   // TODO: Ceval parameters? Needed to remove the builtin handler
@@ -485,7 +485,7 @@ function noEvent "Turn off event triggering"
 </html>"));
 end noEvent;
 
-function pre<PodCref> "Refer to left limit"
+impure function pre<PodCref> "Refer to left limit"
   discrete input PodCref y;
   output PodCref p;
   external "builtin";
@@ -494,7 +494,7 @@ function pre<PodCref> "Refer to left limit"
 </html>"));
 end pre;
 
-function change<PodCref> "Indicate discrete variable changing"
+impure function change<PodCref> "Indicate discrete variable changing"
   discrete input PodCref y;
   output Boolean p;
   external "builtin";
@@ -512,7 +512,7 @@ function reinit<RealOrArrayCref, RealOrArrayExpr> "Reinitialize state variable"
 </html>"));
 end reinit;
 
-function sample "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
+impure function sample "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
   parameter input Real start;
   parameter input Real interval;
   output Boolean b;

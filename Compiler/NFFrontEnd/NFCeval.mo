@@ -1212,6 +1212,7 @@ algorithm
     case "sinh" then evalBuiltinSinh(listHead(args));
     case "sin" then evalBuiltinSin(listHead(args));
     case "skew" then evalBuiltinSkew(listHead(args));
+    case "smooth" then listGet(args, 2);
     case "sqrt" then evalBuiltinSqrt(listHead(args));
     case "String" then evalBuiltinString(args);
     case "sum" then evalBuiltinSum(listHead(args));
