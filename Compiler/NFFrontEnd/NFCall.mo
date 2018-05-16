@@ -395,6 +395,7 @@ uniontype Call
       case "diagonal" then typeDiagonalCall(call, origin, info);
       case "edge" then typeEdgeCall(call, origin, info);
       case "fill" then typeFillCall(call, origin, info);
+      case "getInstanceName" then typeGetInstanceName(call);
       case "initial" then typeDiscreteCall(call, origin, info);
       case "isRoot" then typeIsRootCall(call, origin, info);
       case "matrix" then typeMatrixCall(call, origin, info);
@@ -2647,6 +2648,18 @@ protected
     {fn} := typeCachedFunctions(fn_ref);
     callExp := Expression.CALL(makeBuiltinCall2(fn, {arg}, ty, variability));
   end typeNoEventCall;
+
+  function typeGetInstanceName
+    input Call call;
+    output Expression result;
+    output Type ty = Type.STRING();
+    output Variability var = Variability.CONSTANT;
+  protected
+    InstNode scope;
+  algorithm
+    Call.UNTYPED_CALL(call_scope = scope) := call;
+    result := Expression.STRING(Absyn.pathString(InstNode.scopePath(scope, includeRoot = true)));
+  end typeGetInstanceName;
 
   function unboxArgs
     input output Call call;

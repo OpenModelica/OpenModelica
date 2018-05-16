@@ -1037,6 +1037,7 @@ uniontype Function
           case "edge" then true;
           // can have variable number of arguments
           case "fill" then true;
+          case "getInstanceName" then true;
           // Always discrete.
           case "initial" then true;
           case "isRoot" then true;

@@ -789,6 +789,7 @@ uniontype InstNode
 
   function scopePath
     input InstNode node;
+    input Boolean includeRoot = false "Whether to include the root class name or not.";
     output Absyn.Path path;
   algorithm
     path := match node
@@ -798,12 +799,12 @@ uniontype InstNode
       case CLASS_NODE(nodeType = it)
         then
           match it
-            case InstNodeType.BASE_CLASS() then scopePath(it.parent);
-            else scopePath2(node.parentScope, Absyn.IDENT(node.name));
+            case InstNodeType.BASE_CLASS() then scopePath(it.parent, includeRoot);
+            else scopePath2(node.parentScope, includeRoot, Absyn.IDENT(node.name));
           end match;
 
-      case COMPONENT_NODE() then scopePath2(node.parent, Absyn.IDENT(node.name));
-      case IMPLICIT_SCOPE() then scopePath(node.parentScope);
+      case COMPONENT_NODE() then scopePath2(node.parent, includeRoot, Absyn.IDENT(node.name));
+      case IMPLICIT_SCOPE() then scopePath(node.parentScope, includeRoot);
 
       // For debugging.
       else Absyn.IDENT(name(node));
@@ -812,6 +813,7 @@ uniontype InstNode
 
   function scopePath2
     input InstNode node;
+    input Boolean includeRoot;
     input Absyn.Path accumPath;
     output Absyn.Path path;
   algorithm
@@ -823,16 +825,18 @@ uniontype InstNode
         then
           match it
             case InstNodeType.NORMAL_CLASS()
-              then scopePath2(node.parentScope, Absyn.QUALIFIED(node.name, accumPath));
+              then scopePath2(node.parentScope, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
             case InstNodeType.BASE_CLASS()
-              then scopePath2(it.parent, accumPath);
+              then scopePath2(it.parent, includeRoot, accumPath);
             case InstNodeType.BUILTIN_CLASS()
               then Absyn.QUALIFIED(node.name, accumPath);
+            case InstNodeType.ROOT_CLASS()
+              then if includeRoot then Absyn.QUALIFIED(node.name, accumPath) else accumPath;
             else accumPath;
           end match;
 
       case COMPONENT_NODE()
-        then scopePath2(node.parent, Absyn.QUALIFIED(node.name, accumPath));
+        then scopePath2(node.parent, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
 
       else accumPath;
     end match;
