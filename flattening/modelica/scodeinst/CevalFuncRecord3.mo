@@ -1,4 +1,4 @@
-// name: CevalFuncRecord2
+// name: CevalFuncRecord3
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -18,16 +18,16 @@ algorithm
   outR.y := inR.y;
 end f;
 
-model CevalFuncRecord2
+model CevalFuncRecord3
   parameter R r1;
   parameter R r2 = f(r1);
-end CevalFuncRecord2;
+end CevalFuncRecord3;
 
 // Result:
-// class CevalFuncRecord2
+// class CevalFuncRecord3
 //   parameter Real r1.x;
 //   parameter Real r1.y;
 //   parameter Real r2.x = r1.x;
 //   parameter Real r2.y = r1.y;
-// end CevalFuncRecord2;
+// end CevalFuncRecord3;
 // endResult

@@ -106,6 +106,10 @@ CevalMul1.mo \
 CevalNoEvent1.mo \
 CevalOnes1.mo \
 CevalProduct1.mo \
+CevalRecord1.mo \
+CevalRecord2.mo \
+CevalRecord3.mo \
+CevalRecord4.mo \
 CevalReduction1.mo \
 CevalReduction2.mo \
 CevalRelation1.mo \
