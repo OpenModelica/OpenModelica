@@ -694,7 +694,7 @@ algorithm
         binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.BINDING));
         checkBindingEach(binding, not Type.isArray(c.ty), InstNode.parent(component));
 
-        binding := TypeCheck.matchBinding(binding, c.ty, name, InstNode.derivedParent(node));
+        binding := TypeCheck.matchBinding(binding, c.ty, name, node, InstNode.derivedParent(node));
         comp_var := Component.variability(c);
         comp_eff_var := Prefixes.effectiveVariability(comp_var);
         bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
@@ -873,7 +873,7 @@ algorithm
         // Type and type check the attribute.
         checkBindingEach(binding, true, mod_parent);
         binding := typeBinding(binding, origin);
-        binding := TypeCheck.matchBinding(binding, ty, name, mod_parent);
+        binding := TypeCheck.matchBinding(binding, ty, name, component, mod_parent);
 
         // Check the variability. All builtin attributes have parameter variability.
         if Binding.variability(binding) > Variability.PARAMETER then

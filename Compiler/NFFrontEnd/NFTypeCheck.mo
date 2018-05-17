@@ -2153,6 +2153,7 @@ function matchBinding
   input output Binding binding;
   input Type componentType;
   input String name;
+  input InstNode component;
   input InstNode parent;
 algorithm
   () := match binding
@@ -2184,9 +2185,9 @@ algorithm
         (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
 
         if not isValidAssignmentMatch(ty_match) then
-          Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+          Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
             {name, Binding.toString(binding), Type.toString(comp_ty),
-             Type.toString(binding.bindingType)}, Binding.getInfo(binding));
+             Type.toString(binding.bindingType)}, {Binding.getInfo(binding), InstNode.info(component)});
           fail();
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.origin, binding.isEach);
