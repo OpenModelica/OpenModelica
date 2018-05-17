@@ -125,24 +125,30 @@ protected
   InstNode ctor_node, out_rec;
   Component out_comp;
   Class ctor_cls;
+  InstNode ty_node;
 algorithm
+  // The node we get is usually a record instance, with applied modifiers and so on.
+  // So the first thing we do is to create a "pure" instance of the record.
+  node := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.parentScope(node));
+  node := Inst.instantiate(node);
+  Inst.instExpressions(node);
+
+  // Collect the record fields.
   (inputs, locals) := collectRecordParams(node);
+
+  // Create the output record element, using the instance created above as both parent and type.
+  out_comp := Component.TYPED_COMPONENT(node, Type.COMPLEX(node, ComplexType.RECORD(node)),
+                Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()),
+                NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
+  out_rec := InstNode.fromComponent("$out" + InstNode.name(node), out_comp, node);
+
+  // Make a record constructor class and create a node for the constructor.
+  ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
+  ctor_node := InstNode.replaceClass(ctor_cls, node);
+
+  // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   collected := Pointer.create(false);
-
-  // Create a new node for the default constructor.
-  ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
-
-  // Create the output record element, using the node created above as parent.
-  out_comp := Component.UNTYPED_COMPONENT(node, listArray({}), Binding.UNBOUND(NONE()),
-    Binding.UNBOUND(NONE()), NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
-  out_rec := InstNode.fromComponent("$out" + InstNode.name(node), out_comp, ctor_node);
-
-  // Make a record constructor class and update the node with it.
-  ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
-  ctor_node := InstNode.updateClass(ctor_cls, ctor_node);
-
-  // Add the constructor to the function cache.
   InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
     {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected, Pointer.create(0)), false);
 end instDefaultConstructor;
@@ -177,7 +183,7 @@ algorithm
              Component.isConst(comp) and Component.hasBinding(comp) then
             locals := n :: locals;
           else
-            n := InstNode.replaceComponent(Component.makeInput(comp), n);
+            n := InstNode.updateComponent(Component.makeInput(comp), n);
             inputs := n :: inputs;
           end if;
         end for;
