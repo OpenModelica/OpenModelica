@@ -329,7 +329,7 @@ public
     output Boolean isRecord;
   algorithm
     isRecord := match ty
-      case COMPLEX() then Restriction.isRecord(Class.restriction(InstNode.getClass(ty.cls)));
+      case COMPLEX(complexTy = ComplexType.RECORD()) then true;
       else false;
     end match;
   end isRecord;

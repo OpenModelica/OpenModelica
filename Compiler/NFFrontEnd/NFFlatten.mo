@@ -379,7 +379,7 @@ algorithm
   binding := Component.getBinding(comp);
 
   // Create an equation if there's a binding on a complex component.
-  if Binding.isBound(binding) then
+  if Binding.isExplicitlyBound(binding) then
     binding := flattenBinding(binding, prefix, node);
     binding_exp := Binding.getTypedExp(binding);
 
@@ -444,12 +444,12 @@ function flattenBinding
   input ComponentRef prefix;
   input InstNode component;
 algorithm
-  () := match binding
+  binding := match binding
     local
       list<Subscript> subs;
       Integer binding_level;
 
-    case Binding.UNBOUND() then ();
+    case Binding.UNBOUND() then binding;
 
     case Binding.TYPED_BINDING()
       algorithm
@@ -460,7 +460,9 @@ algorithm
           binding.bindingExp := Expression.applySubscripts(subs, binding.bindingExp);
         end if;
       then
-        ();
+        binding;
+
+    case Binding.CEVAL_BINDING() then Binding.UNBOUND(NONE());
 
     else
       algorithm
@@ -838,7 +840,7 @@ algorithm
         funcs := collectTypeFuncs(ty, funcs);
 
         // Collect functions used in the component's binding, if it has one.
-        if Binding.isBound(binding) then
+        if Binding.isExplicitlyBound(binding) then
           funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
         end if;
       then
@@ -1104,7 +1106,7 @@ algorithm
           funcs := collectTypeFuncs(Component.getType(comp), funcs);
           binding := Component.getBinding(comp);
 
-          if Binding.isBound(binding) then
+          if Binding.isExplicitlyBound(binding) then
             funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
           end if;
         end for;

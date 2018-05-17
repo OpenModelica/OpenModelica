@@ -74,6 +74,13 @@ public
     Expression bindingExp;
   end FLAT_BINDING;
 
+  record CEVAL_BINDING
+    "Used by the constant evaluation for generated bindings (e.g. record
+     bindings constructed from the record fields) that should be discarded
+     during flattening."
+    Expression bindingExp;
+  end CEVAL_BINDING;
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
@@ -104,6 +111,17 @@ public
       else true;
     end match;
   end isBound;
+
+  function isExplicitlyBound
+    input Binding binding;
+    output Boolean isBound;
+  algorithm
+    isBound := match binding
+      case UNBOUND() then false;
+      case CEVAL_BINDING() then false;
+      else true;
+    end match;
+  end isExplicitlyBound;
 
   function isUnbound
     input Binding binding;

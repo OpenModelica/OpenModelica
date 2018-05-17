@@ -46,6 +46,8 @@ import Type = NFType;
 import NFTyping.ExpOrigin;
 import ExpressionSimplify;
 import NFPrefixes.Variability;
+import NFClassTree.ClassTree;
+import ComplexType = NFComplexType;
 
 protected
 import NFFunction.Function;
@@ -268,6 +270,10 @@ algorithm
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
 
+  if not Binding.isBound(binding) then
+    binding := makeComponentBinding(comp, node, originExp, target);
+  end if;
+
   exp := match binding
     case Binding.TYPED_BINDING()
       algorithm
@@ -280,6 +286,8 @@ algorithm
         end if;
       then
         exp;
+
+    case Binding.CEVAL_BINDING() then binding.bindingExp;
 
     case Binding.UNBOUND()
       algorithm
@@ -294,6 +302,59 @@ algorithm
         fail();
   end match;
 end evalComponentBinding;
+
+function makeComponentBinding
+  input Component component;
+  input InstNode node;
+  input Expression originExp;
+  input EvalTarget target;
+  output Binding binding;
+protected
+  ClassTree tree;
+  array<InstNode> comps;
+  list<Expression> fields;
+  Type ty;
+  InstNode rec_node;
+  Expression exp;
+  ComponentRef cr;
+algorithm
+  binding := matchcontinue (component, originExp, node)
+    // A record component without an explicit binding, create one from its children.
+    case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))),
+          Expression.CREF(cref = cr), _)
+      algorithm
+        tree := Class.classTree(InstNode.getClass(component.classInst));
+        comps := ClassTree.getComponents(tree);
+        fields := {};
+
+        for i in arrayLength(comps):-1:1 loop
+          ty := InstNode.getType(comps[i]);
+          fields := Expression.CREF(ty,
+            ComponentRef.CREF(comps[i], {}, ty, NFComponentRef.Origin.CREF, cr)) :: fields;
+        end for;
+
+        exp := Expression.RECORD(InstNode.scopePath(rec_node), component.ty, fields);
+        exp := evalExp(exp);
+        binding := Binding.CEVAL_BINDING(exp);
+        InstNode.updateComponent(Component.setBinding(binding, component), node);
+      then
+        binding;
+
+    // A record field without an explicit binding, evaluate the parent's binding
+    // if it as one and fetch the binding from it instead.
+    case (_, _, InstNode.COMPONENT_NODE(parent = rec_node as InstNode.COMPONENT_NODE()))
+      guard Type.isRecord(InstNode.getType(rec_node))
+      algorithm
+        exp := evalComponentBinding(rec_node, Expression.EMPTY(), target);
+        exp := Expression.lookupRecordField(InstNode.name(node), exp);
+        binding := Binding.CEVAL_BINDING(exp);
+        InstNode.updateComponent(Component.setBinding(binding, component), node);
+      then
+        binding;
+
+    else Binding.UNBOUND(NONE());
+  end matchcontinue;
+end makeComponentBinding;
 
 function evalTypename
   input Type ty;

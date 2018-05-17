@@ -84,6 +84,7 @@ import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
 import BindingOrigin = NFBindingOrigin;
 import ElementSource;
+import StringUtil;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -657,6 +658,11 @@ function typeComponentBinding
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c;
+  Binding binding;
+  InstNode cls;
+  MatchKind matchKind;
+  String name;
+  Variability comp_var, comp_eff_var, bind_var;
 algorithm
   if InstNode.isEmpty(component) then
     return;
@@ -665,71 +671,67 @@ algorithm
   c := InstNode.component(node);
 
   () := match c
-    local
-      Binding binding;
-      InstNode cls;
-      MatchKind matchKind;
-      Boolean dirty;
-      String name;
-      Variability comp_var, comp_eff_var, bind_var;
-
-    // A component that's already been typed.
+    // A component with a binding that's already been typed.
     case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
+    case Component.TYPED_COMPONENT(binding = Binding.CEVAL_BINDING()) then ();
 
-    case Component.TYPED_COMPONENT()
+    case Component.TYPED_COMPONENT(binding = Binding.UNBOUND())
       algorithm
-        name := InstNode.name(component);
         checkBindingEach(c.binding, not Type.isArray(c.ty), InstNode.parent(component));
-        binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.BINDING));
-        dirty := not referenceEq(binding, c.binding);
-
-        // If the binding changed during typing it means it was an untyped
-        // binding which is now typed, and it needs to be type checked.
-        if dirty then
-          binding := TypeCheck.matchBinding(binding, c.ty, name, InstNode.derivedParent(node));
-          comp_var := Component.variability(c);
-          comp_eff_var := Prefixes.effectiveVariability(comp_var);
-          bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
-
-          if bind_var > comp_eff_var then
-            if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
-              Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {
-                name, Prefixes.variabilityString(comp_eff_var),
-                Binding.toString(c.binding), Prefixes.variabilityString(bind_var)},
-                Binding.getInfo(binding));
-            else
-              Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-                name, Prefixes.variabilityString(comp_eff_var),
-                "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
-                Binding.getInfo(binding));
-              fail();
-            end if;
-          end if;
-
-          // Evaluate the binding if the component is a constant.
-          if comp_var <= Variability.STRUCTURAL_PARAMETER then
-            // TODO: Allow this to fail for now. Once constant evaluation has
-            // been improved we should print an error when a constant binding
-            // couldn't be evaluated instead.
-            try
-              binding := evalBinding(binding, origin);
-            else
-            end try;
-          end if;
-
-          c.binding := binding;
-        end if;
 
         if Binding.isBound(c.condition) then
           c.condition := typeComponentCondition(c.condition, origin);
-          dirty := true;
-        end if;
-
-        // Update the node if the component changed.
-        if dirty then
           InstNode.updateComponent(c, node);
         end if;
 
+        typeBindings(c.classInst, component, origin);
+      then
+        ();
+
+    case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING())
+      algorithm
+        name := InstNode.name(component);
+        binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.BINDING));
+        checkBindingEach(binding, not Type.isArray(c.ty), InstNode.parent(component));
+
+        binding := TypeCheck.matchBinding(binding, c.ty, name, InstNode.derivedParent(node));
+        comp_var := Component.variability(c);
+        comp_eff_var := Prefixes.effectiveVariability(comp_var);
+        bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
+
+        if bind_var > comp_eff_var then
+          if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+            Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {
+              name, Prefixes.variabilityString(comp_eff_var),
+              Binding.toString(c.binding), Prefixes.variabilityString(bind_var)},
+              Binding.getInfo(binding));
+          else
+            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
+              name, Prefixes.variabilityString(comp_eff_var),
+              "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
+              Binding.getInfo(binding));
+            fail();
+          end if;
+        end if;
+
+        // Evaluate the binding if the component is a constant.
+        if comp_var <= Variability.STRUCTURAL_PARAMETER then
+          // TODO: Allow this to fail for now. Once constant evaluation has
+          // been improved we should print an error when a constant binding
+          // couldn't be evaluated instead.
+          try
+            binding := evalBinding(binding, origin);
+          else
+          end try;
+        end if;
+
+        c.binding := binding;
+
+        if Binding.isBound(c.condition) then
+          c.condition := typeComponentCondition(c.condition, origin);
+        end if;
+
+        InstNode.updateComponent(c, node);
         typeBindings(c.classInst, component, origin);
       then
         ();

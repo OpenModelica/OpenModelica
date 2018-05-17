@@ -124,7 +124,7 @@ function isValidArgumentMatch
   output Boolean v = kind == MatchKind.EXACT
                      or kind == MatchKind.CAST
                      or kind == MatchKind.GENERIC
-                     ;
+                     or kind == MatchKind.PLUG_COMPATIBLE;
 end isValidArgumentMatch;
 
 function isValidPlugCompatibleMatch
