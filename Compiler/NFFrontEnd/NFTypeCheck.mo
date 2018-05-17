@@ -116,13 +116,8 @@ function isValidAssignmentMatch
   input MatchKind kind;
   output Boolean v = kind == MatchKind.EXACT
                      or kind == MatchKind.CAST
-                     ;
+                     or kind == MatchKind.PLUG_COMPATIBLE;
 end isValidAssignmentMatch;
-
-function isValidBindingMatch
-  input MatchKind kind;
-  output Boolean v = isValidAssignmentMatch(kind);
-end isValidBindingMatch;
 
 function isValidArgumentMatch
   input MatchKind kind;
@@ -2188,7 +2183,7 @@ algorithm
 
         (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
 
-        if not isValidBindingMatch(ty_match) then
+        if not isValidAssignmentMatch(ty_match) then
           Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
             {name, Binding.toString(binding), Type.toString(comp_ty),
              Type.toString(binding.bindingType)}, Binding.getInfo(binding));
