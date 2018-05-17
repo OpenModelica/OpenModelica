@@ -129,7 +129,7 @@ protected
 algorithm
   // The node we get is usually a record instance, with applied modifiers and so on.
   // So the first thing we do is to create a "pure" instance of the record.
-  node := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.parentScope(node));
+  node := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.classScope(InstNode.parent(node)));
   node := Inst.instantiate(node);
   Inst.instExpressions(node);
 
@@ -137,7 +137,7 @@ algorithm
   (inputs, locals) := collectRecordParams(node);
 
   // Create the output record element, using the instance created above as both parent and type.
-  out_comp := Component.TYPED_COMPONENT(node, Type.COMPLEX(node, ComplexType.RECORD(node)),
+  out_comp := Component.UNTYPED_COMPONENT(node, listArray({}),
                 Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()),
                 NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(node), out_comp, node);
