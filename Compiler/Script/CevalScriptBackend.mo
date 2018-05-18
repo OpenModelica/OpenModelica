@@ -6948,6 +6948,7 @@ protected
   NFSCodeEnv.Env env;
   SCode.Comment cmt;
 algorithm
+  runFrontEndLoadProgram(classpath);
   scodeP := SymbolTable.getSCode();
   (scodeP, env) := NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
   (NFSCodeEnv.CLASS(cls=SCode.CLASS(cmt=cmt)),_,_) := NFSCodeLookup.lookupClassName(classpath, env, Absyn.dummyInfo);
