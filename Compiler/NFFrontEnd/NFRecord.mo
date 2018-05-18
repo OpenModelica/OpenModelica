@@ -129,22 +129,35 @@ protected
 algorithm
   // The node we get is usually a record instance, with applied modifiers and so on.
   // So the first thing we do is to create a "pure" instance of the record.
-  node := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.classScope(InstNode.parent(node)));
-  node := Inst.instantiate(node);
-  Inst.instExpressions(node);
+
+  // TODO: The lookup will fail for records declared in redeclare modifiers,
+  //       since the parent will be the class scope of the modifier instead of
+  //       the element being modified. In that case we just reinstantiate the
+  //       record completely, but this probably isn't entirely correct. We
+  //       should make the expanded but not fully instantiated class available
+  //       here somehow.
+  try
+    ctor_node := Lookup.lookupLocalSimpleName(InstNode.name(node), InstNode.classScope(InstNode.parent(node)));
+    true := referenceEq(InstNode.definition(node), InstNode.definition(ctor_node));
+  else
+    ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
+  end try;
+
+  ctor_node := Inst.instantiate(ctor_node);
+  Inst.instExpressions(ctor_node);
 
   // Collect the record fields.
-  (inputs, locals) := collectRecordParams(node);
+  (inputs, locals) := collectRecordParams(ctor_node);
 
   // Create the output record element, using the instance created above as both parent and type.
-  out_comp := Component.UNTYPED_COMPONENT(node, listArray({}),
+  out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
                 Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()),
                 NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
-  out_rec := InstNode.fromComponent("$out" + InstNode.name(node), out_comp, node);
+  out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.
   ctor_cls := Class.makeRecordConstructor(inputs, locals, out_rec);
-  ctor_node := InstNode.replaceClass(ctor_cls, node);
+  ctor_node := InstNode.replaceClass(ctor_cls, ctor_node);
 
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
