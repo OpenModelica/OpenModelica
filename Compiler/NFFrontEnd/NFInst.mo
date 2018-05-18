@@ -732,7 +732,7 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := Modifier.fromElement(InstNode.definition(node), parent);
+        mod := Modifier.fromElement(InstNode.definition(node), par);
         // Merge with any outer modifications.
         mod := Modifier.merge(outerMod, mod);
 
