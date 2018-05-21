@@ -110,6 +110,8 @@ CevalRecord1.mo \
 CevalRecord2.mo \
 CevalRecord3.mo \
 CevalRecord4.mo \
+CevalRecord5.mo \
+CevalRecord6.mo \
 CevalReduction1.mo \
 CevalReduction2.mo \
 CevalRelation1.mo \
