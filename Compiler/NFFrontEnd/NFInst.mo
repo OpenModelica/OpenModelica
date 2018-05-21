@@ -165,7 +165,7 @@ function instantiate
 algorithm
   node := partialInstClass(node);
   node := expandClass(node);
-  node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, parent);
+  node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, parent);
 end instantiate;
 
 function expand
@@ -690,6 +690,7 @@ function instClass
   input output InstNode node;
   input Modifier modifier;
   input output Component.Attributes attributes = NFComponent.DEFAULT_ATTR;
+  input Boolean useBinding;
   input InstNode parent = InstNode.EMPTY_NODE();
 protected
   Class cls;
@@ -707,13 +708,14 @@ algorithm
   end if;
 
   outer_mod := Modifier.merge(modifier, outer_mod);
-  (attributes, node) := instClassDef(cls, outer_mod, attributes, node, parent);
+  (attributes, node) := instClassDef(cls, outer_mod, attributes, useBinding, node, parent);
 end instClass;
 
 function instClassDef
   input Class cls;
   input Modifier outerMod;
   input output Component.Attributes attributes;
+  input Boolean useBinding;
   input output InstNode node;
   input InstNode parent;
 protected
@@ -751,11 +753,13 @@ algorithm
 
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, visibility = ExtendsVisibility.PUBLIC));
+          function instExtends(attributes = attributes, useBinding = useBinding,
+                               visibility = ExtendsVisibility.PUBLIC));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD()));
+          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
+                                 useBinding = useBinding));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -779,7 +783,7 @@ algorithm
           InstNodeType.BASE_CLASS(node, InstNode.definition(cls.baseClass)), cls.baseClass);
 
         // Instantiate the base class and update the nodes.
-        (base_node, attributes) := instClass(base_node, mod, attributes, parent);
+        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, parent);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         cls.dims := arrayCopy(cls.dims);
@@ -821,7 +825,7 @@ algorithm
       algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := expand(node);
-        node := instClass(node, outerMod, attributes, parent);
+        node := instClass(node, outerMod, attributes, useBinding, parent);
         updateComponentType(parent, node);
       then
         ();
@@ -955,6 +959,7 @@ type ExtendsVisibility = enumeration(PUBLIC, DERIVED_PROTECTED, PROTECTED);
 function instExtends
   input output InstNode node;
   input Component.Attributes attributes;
+  input Boolean useBinding;
   input ExtendsVisibility visibility;
 protected
   Class cls, inst_cls;
@@ -984,10 +989,10 @@ algorithm
         end if;
 
         ClassTree.mapExtends(cls_tree,
-          function instExtends(attributes = attributes, visibility = vis));
+          function instExtends(attributes = attributes, useBinding = useBinding, visibility = vis));
 
         ClassTree.applyLocalComponents(cls_tree,
-          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD()));
+          function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(), useBinding = useBinding));
       then
         ();
 
@@ -997,7 +1002,7 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        cls.baseClass := instExtends(cls.baseClass, attributes, vis);
+        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis);
         node := InstNode.updateClass(cls, node);
       then
         ();
@@ -1161,7 +1166,7 @@ protected
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD());
+  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true);
   redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
@@ -1260,6 +1265,7 @@ function instComponent
   input InstNode node   "The component node to instantiate";
   input Component.Attributes attributes "Attributes to be propagated to the component.";
   input Modifier innerMod;
+  input Boolean useBinding "Ignore the component's binding if false.";
 protected
   Component comp;
   SCode.Element def;
@@ -1282,7 +1288,7 @@ algorithm
 
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
-    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, comp_node, parent);
+    instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, useBinding, comp_node, parent);
 
     cc_smod := SCode.getConstrainingMod(def);
     if not SCode.isEmptyMod(cc_smod) then
@@ -1296,7 +1302,7 @@ algorithm
     InstNode.setModifier(outer_mod, rdcl_node);
     redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, comp_node, parent);
+    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent);
   end if;
 end instComponent;
 
@@ -1305,6 +1311,7 @@ function instComponentDef
   input Modifier outerMod;
   input Modifier innerMod;
   input Component.Attributes attributes;
+  input Boolean useBinding;
   input InstNode node;
   input InstNode parent;
 algorithm
@@ -1318,6 +1325,7 @@ algorithm
       Component inst_comp;
       InstNode ty_node;
       Class ty;
+      Boolean use_binding;
 
     case SCode.COMPONENT(info = info)
       algorithm
@@ -1327,8 +1335,13 @@ algorithm
         checkOuterComponentMod(mod, component, node);
 
         dims := list(Dimension.RAW_DIM(d) for d in component.attributes.arrayDims);
-        binding := Modifier.binding(mod);
+        binding := if useBinding then Modifier.binding(mod) else Binding.UNBOUND(NONE());
         condition := Binding.fromAbsyn(component.condition, false, 0, parent, info);
+
+        // This is used to ignore the bindings of a component's children when the
+        // component iself has a binding that overrides those. This is to ensure
+        // that constant evaluation of e.g. a record field uses the correct binding.
+        use_binding := useBinding and not Binding.isBound(binding);
 
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
@@ -1345,7 +1358,8 @@ algorithm
         InstNode.updateComponent(inst_comp, node);
 
         // Instantiate the type of the component.
-        (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr, parent, node, info);
+        (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
+          useBinding and not Binding.isBound(binding), parent, node, info);
         ty := InstNode.getClass(ty_node);
 
         // Update the component's variability based on its type (e.g. Integer is discrete).
@@ -1380,7 +1394,7 @@ algorithm
     fail();
   end if;
 
-  instComponent(redeclareNode, outerAttr, constrainingMod);
+  instComponent(redeclareNode, outerAttr, constrainingMod, true);
   orig_comp := InstNode.component(originalNode);
   rdcl_comp := InstNode.component(redeclareNode);
 
@@ -1680,6 +1694,7 @@ function instTypeSpec
   input Absyn.TypeSpec typeSpec;
   input Modifier modifier;
   input Component.Attributes attributes;
+  input Boolean useBinding;
   input InstNode scope;
   input InstNode parent;
   input SourceInfo info;
@@ -1691,7 +1706,7 @@ algorithm
       algorithm
         node := Lookup.lookupClassName(typeSpec.path, scope, info);
         node := expand(node);
-        (node, outAttributes) := instClass(node, modifier, attributes, parent);
+        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, parent);
       then
         node;
 
@@ -2698,7 +2713,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD());
+      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
