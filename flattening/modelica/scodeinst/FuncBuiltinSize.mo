@@ -31,6 +31,6 @@ end FuncBuiltinSize;
 //   Integer i5[2];
 //   Integer i5[3];
 // equation
-//   i5 = size(x);
+//   i5 = {1, 2, 3};
 // end FuncBuiltinSize;
 // endResult

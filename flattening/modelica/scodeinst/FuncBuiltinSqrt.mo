@@ -14,8 +14,8 @@ end FuncBuiltinSqrt;
 
 // Result:
 // class FuncBuiltinSqrt
-//   Real r1 = sqrt(25.0);
-//   Real r2 = sqrt(15.4);
+//   Real r1 = 5.0;
+//   Real r2 = 3.924283374069717;
 //   Real r3 = sqrt(r1 + r2);
 // end FuncBuiltinSqrt;
 // endResult

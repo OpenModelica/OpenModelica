@@ -17,7 +17,7 @@ end FuncInteger;
 // Result:
 // class FuncInteger
 //   enumeration(one, two, three) e = E.two;
-//   Integer i = Integer(E.one);
+//   Integer i = 1;
 //   Integer j = Integer(e);
 // end FuncInteger;
 // endResult

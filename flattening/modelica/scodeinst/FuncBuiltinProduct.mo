@@ -15,9 +15,9 @@ end FuncBuiltinProduct;
 
 // Result:
 // class FuncBuiltinProduct
-//   Real r1 = /*Real*/(product({1, 2, 3}));
-//   Real r2 = /*Real*/(product({{1}, {2}, {3}}));
-//   Real r3 = /*Real*/(product({{1, 2, 3}, {4, 5, 6}, {7, 8, 9}}));
+//   Real r1 = 6.0;
+//   Real r2 = 6.0;
+//   Real r3 = 362880.0;
 //   Real r4 = /*Real*/(product(1:0));
 // end FuncBuiltinProduct;
 // endResult
