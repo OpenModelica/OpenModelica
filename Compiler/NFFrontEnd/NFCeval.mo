@@ -48,6 +48,7 @@ import ExpressionSimplify;
 import NFPrefixes.Variability;
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
+import Subscript = NFSubscript;
 
 protected
 import NFFunction.Function;
@@ -143,7 +144,7 @@ algorithm
       algorithm
         exp1 := evalComponentBinding(c, exp, target);
       then
-        Expression.applySubscripts(cref.subscripts, exp1);
+        Expression.applySubscripts(list(evalSubscript(s, target) for s in cref.subscripts), exp1);
 
     case Expression.TYPENAME()
       then evalTypename(exp.ty, exp, target);
@@ -180,7 +181,7 @@ algorithm
 
     case Expression.SIZE()
       algorithm
-        expl := list(Expression.INTEGER(Dimension.size(d)) for d in Type.arrayDims(Expression.typeOf(exp.exp)));
+        expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(Expression.typeOf(exp.exp)));
         dim := Dimension.INTEGER(listLength(expl), Variability.PARAMETER);
       then
         Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {dim}), expl);
@@ -2348,6 +2349,18 @@ algorithm
     result := Expression.applyIndexSubscript(evalExp(s, target), result);
   end for;
 end evalSubscriptedExp;
+
+function evalSubscript
+  input Subscript subscript;
+  input EvalTarget target;
+  output Subscript outSubscript;
+algorithm
+  outSubscript := match subscript
+    case Subscript.INDEX() then Subscript.INDEX(evalExp(subscript.index, target));
+    case Subscript.SLICE() then Subscript.SLICE(evalExp(subscript.slice, target));
+    else subscript;
+  end match;
+end evalSubscript;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;

@@ -70,6 +70,7 @@ algorithm
         exp;
 
     case Expression.CALL() then simplifyCall(exp);
+    case Expression.SIZE() then simplifySize(exp);
     case Expression.BINARY() then simplifyBinary(exp);
     case Expression.UNARY() then simplifyUnary(exp);
     case Expression.LBINARY() then simplifyLogicBinary(exp);
@@ -121,6 +122,49 @@ algorithm
     else callExp;
   end match;
 end simplifyCall;
+
+function simplifySize
+  input output Expression sizeExp;
+algorithm
+  sizeExp := match sizeExp
+    local
+      Expression exp, index;
+      Dimension dim;
+      list<Dimension> dims;
+
+    case Expression.SIZE(exp, dimIndex = SOME(index))
+      algorithm
+        index := simplify(index);
+
+        if Expression.isLiteral(index) then
+          dim := listGet(Type.arrayDims(Expression.typeOf(exp)), Expression.toInteger(index));
+
+          if Dimension.isKnown(dim) then
+            exp := Expression.INTEGER(Dimension.size(dim));
+          else
+            exp := Expression.SIZE(exp, SOME(index));
+          end if;
+        else
+          exp := Expression.SIZE(exp, SOME(index));
+        end if;
+      then
+        exp;
+
+    case Expression.SIZE()
+      algorithm
+        dims := Type.arrayDims(Expression.typeOf(sizeExp.exp));
+
+        if List.all(dims, function Dimension.isKnown(allowExp = true)) then
+          exp := Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(dims))}),
+                                  list(Dimension.sizeExp(d) for d in dims));
+        else
+          exp := sizeExp;
+        end if;
+      then
+        exp;
+
+  end match;
+end simplifySize;
 
 function simplifyBinary
   input output Expression binaryExp;

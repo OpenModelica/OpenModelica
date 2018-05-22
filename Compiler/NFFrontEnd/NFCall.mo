@@ -510,7 +510,7 @@ uniontype Call
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, ExpOrigin.FUNCTION, structural = false);
+            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, origin, structural = false);
             dims := listAppend(Type.arrayDims(iter_ty), dims);
             variability := Variability.variabilityMax(variability, iter_var);
             iters := (iter, range) :: iters;

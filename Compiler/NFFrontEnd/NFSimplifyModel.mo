@@ -42,6 +42,8 @@ import NFClass.Class;
 import NFInstNode.InstNode;
 import NFFunction.Function;
 import Sections = NFSections;
+import NFBinding.Binding;
+import Variable = NFVariable;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -53,6 +55,7 @@ function simplify
   input output FlatModel flatModel;
   input output FunctionTree functions;
 algorithm
+  flatModel.variables := list(simplifyVariable(v) for v in flatModel.variables);
   flatModel.equations := simplifyEquations(flatModel.equations);
   flatModel.initialEquations := simplifyEquations(flatModel.initialEquations);
 
@@ -60,6 +63,42 @@ algorithm
 
   execStat(getInstanceName());
 end simplify;
+
+function simplifyVariable
+  input output Variable var;
+algorithm
+  var.binding := simplifyBinding(var.binding);
+  var.typeAttributes := list(simplifyTypeAttribute(a) for a in var.typeAttributes);
+end simplifyVariable;
+
+function simplifyBinding
+  input output Binding binding;
+protected
+  Expression exp, sexp;
+algorithm
+  if Binding.isBound(binding) then
+    exp := Binding.getTypedExp(binding);
+    sexp := SimplifyExp.simplify(exp);
+
+    if not referenceEq(exp, sexp) then
+      binding := Binding.setTypedExp(sexp, binding);
+    end if;
+  end if;
+end simplifyBinding;
+
+function simplifyTypeAttribute
+  input output tuple<String, Binding> attribute;
+protected
+  String name;
+  Binding binding, sbinding;
+algorithm
+  (name, binding) := attribute;
+  sbinding := simplifyBinding(binding);
+
+  if not referenceEq(binding, sbinding) then
+    attribute := (name, sbinding);
+  end if;
+end simplifyTypeAttribute;
 
 function simplifyEquations
   input list<Equation> eql;
