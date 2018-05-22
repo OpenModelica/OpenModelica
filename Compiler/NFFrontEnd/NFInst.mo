@@ -726,7 +726,7 @@ algorithm
         // Fetch modification on the class definition (for class extends).
         mod := Modifier.fromElement(InstNode.definition(node), {}, par);
         // Merge with any outer modifications.
-        outer_mod := Modifier.merge(cls.modifier, outerMod);
+        outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
@@ -765,7 +765,7 @@ algorithm
 
         // Merge outer modifiers and attributes.
         mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
-        outer_mod := Modifier.merge(Modifier.addParent(node, cls.modifier), outerMod);
+        outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
         mod := Modifier.merge(outer_mod, mod);
         attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
 
@@ -801,7 +801,7 @@ algorithm
         cls_tree := Class.classTree(InstNode.getClass(node));
 
         mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
-        outer_mod := Modifier.merge(Modifier.addParent(node, cls.modifier), outerMod);
+        outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
         mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, InstNode.name(node));
 

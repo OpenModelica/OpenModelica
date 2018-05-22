@@ -330,7 +330,7 @@ function flattenTypeAttribute
 protected
   Binding binding;
 algorithm
-  binding := flattenBinding(Modifier.binding(attr), prefix);
+  binding := flattenBinding(Modifier.binding(attr), prefix, isTypeAttribute = true);
   outAttr := (Modifier.name(attr), binding);
 end flattenTypeAttribute;
 
@@ -440,6 +440,7 @@ end flattenArray;
 function flattenBinding
   input output Binding binding;
   input ComponentRef prefix;
+  input Boolean isTypeAttribute = false;
 algorithm
   binding := match binding
     local
@@ -457,6 +458,14 @@ algorithm
         //       when only a few are needed is unnecessary.
         if not binding.isEach then
           pars := listRest(binding.parents);
+
+          if listEmpty(pars) then
+            return;
+          end if;
+
+          if isTypeAttribute then
+            pars := listRest(pars);
+          end if;
 
           binding_level := 0;
           for parent in pars loop
