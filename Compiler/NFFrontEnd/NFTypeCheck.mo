@@ -2163,10 +2163,9 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
-        comp_ty := Type.elementType(componentType);
-
+        comp_ty := componentType;
         if not binding.isEach then
-          dims := list(Type.arrayDims(InstNode.getType(p)) for p in binding.parents);
+          dims := list(Type.arrayDims(InstNode.getType(p)) for p in listRest(binding.parents));
           comp_ty := Type.liftArrayLeftList(comp_ty, List.flattenReverse(dims));
         end if;
 

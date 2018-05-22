@@ -480,7 +480,6 @@ algorithm
       Variability var;
       Dimension dim;
       Binding b;
-      TypingError ty_err;
       Type ty;
       Integer prop_dims;
 
@@ -576,7 +575,7 @@ algorithm
 
           // An untyped binding, type the expression only as much as is needed
           // to get the dimension we're looking for.
-          case Binding.UNTYPED_BINDING(isEach = false)
+          case Binding.UNTYPED_BINDING()
             algorithm
               prop_dims := listLength(b.parents) - 1;
               prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
@@ -586,7 +585,7 @@ algorithm
               dim;
 
           // A typed binding, get the dimension from the binding's type.
-          case Binding.TYPED_BINDING(isEach = false)
+          case Binding.TYPED_BINDING()
             algorithm
               prop_dims := listLength(b.parents) - 1;
               prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
@@ -594,12 +593,6 @@ algorithm
             then
               dim;
 
-          else
-            algorithm
-              Error.addMultiSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_EACH,
-                {String(index), InstNode.name(component)}, {Binding.getInfo(b), info});
-            then
-              fail();
         end match;
 
         arrayUpdate(dimensions, index, dim);
