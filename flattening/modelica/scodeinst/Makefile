@@ -150,6 +150,10 @@ ClassExtendsMod1.mo \
 ClassExtendsMissing1.mo \
 ClassMod1.mo \
 ClassMod2.mo \
+ClassMod3.mo \
+ClassMod4.mo \
+ClassMod5.mo \
+ClassMod6.mo \
 Comment1.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \

@@ -1,6 +1,6 @@
 // name: TypeDimNonType1
 // keywords:
-// status: incorrect
+// status: correct
 // cflags: -d=newInst
 //
 
@@ -14,11 +14,9 @@ model TypeDimNonType1
 end TypeDimNonType1;
 
 // Result:
-// Error processing file: TypeDimNonType1.mo
-// [flattening/modelica/scodeinst/TypeDimNonType1.mo:12:3-12:17:writable] Error: Invalid dimensions on ‘model B‘, only types may have dimensions.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class TypeDimNonType1
+//   Real b[1].a;
+//   Real b[2].a;
+//   Real b[3].a;
+// end TypeDimNonType1;
 // endResult

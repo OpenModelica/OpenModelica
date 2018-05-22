@@ -1,4 +1,4 @@
-// name: ClassMod2.mo
+// name: ClassMod2
 // status: correct
 // cflags: -d=newInst
 

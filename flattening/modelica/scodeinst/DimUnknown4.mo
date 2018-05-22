@@ -20,7 +20,7 @@ end DimUnknown4;
 // Result:
 // Error processing file: DimUnknown4.mo
 // [flattening/modelica/scodeinst/DimUnknown4.mo:17:22-17:29:writable] Notification: From here:
-// [flattening/modelica/scodeinst/DimUnknown4.mo:9:3-9:15:writable] Error: Type mismatch in binding x = 3.0, expected subtype of Real[:, :], got type Real.
+// [flattening/modelica/scodeinst/DimUnknown4.mo:9:3-9:15:writable] Error: Failed to deduce dimension 1 of ‘x‘ due to ‘each‘ prefix on binding equation.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
