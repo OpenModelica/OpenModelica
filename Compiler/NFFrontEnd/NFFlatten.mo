@@ -454,15 +454,12 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
+        bind_exp := binding.bindingExp;
+        pars := listRest(binding.parents);
+
         // TODO: Optimize this, making a list of all subscripts in the prefix
         //       when only a few are needed is unnecessary.
-        if not binding.isEach then
-          pars := listRest(binding.parents);
-
-          if listEmpty(pars) then
-            return;
-          end if;
-
+        if not (binding.isEach or listEmpty(pars)) then
           if isTypeAttribute then
             pars := listRest(pars);
           end if;
@@ -473,7 +470,6 @@ algorithm
           end for;
 
           if binding_level > 0 then
-            bind_exp := binding.bindingExp;
             subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(prefix));
             accum_subs := {};
 
@@ -487,9 +483,10 @@ algorithm
             end for;
 
             bind_exp := Expression.applySubscripts(accum_subs, bind_exp);
-            binding.bindingExp := bind_exp;
           end if;
         end if;
+
+        binding.bindingExp := flattenExp(bind_exp, prefix);
       then
         binding;
 
