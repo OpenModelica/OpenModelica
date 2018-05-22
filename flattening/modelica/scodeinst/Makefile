@@ -569,6 +569,7 @@ OperatorOverloadError1.mo \
 PackageConstant1.mo \
 ParameterBug.mos \
 Prefix1.mo \
+Prefix2.mo \
 PropagateExtends.mo \
 RangeInvalidStep1.mo \
 RangeInvalidStep2.mo \
