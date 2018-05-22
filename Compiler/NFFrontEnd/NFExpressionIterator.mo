@@ -71,7 +71,8 @@ public
 
       case Expression.ARRAY()
         algorithm
-          (arr, slice) := nextArraySlice(exp.elements);
+          Expression.ARRAY(elements = arr) := Expression.expand(exp);
+          (arr, slice) := nextArraySlice(arr);
         then
           ARRAY_ITERATOR(arr, slice);
 
