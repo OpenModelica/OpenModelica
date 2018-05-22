@@ -42,7 +42,7 @@ import SCode;
 import DAE;
 
 import Builtin = NFBuiltin;
-import Binding = NFBinding;
+import NFBinding.Binding;
 import NFComponent.Component;
 import ComponentRef = NFComponentRef;
 import Dimension = NFDimension;
@@ -92,7 +92,6 @@ import ComplexType = NFComplexType;
 import Package = NFPackage;
 import NFFunction.Function;
 import FlatModel = NFFlatModel;
-import BindingOrigin = NFBindingOrigin;
 import ElementSource;
 import SimplifyModel = NFSimplifyModel;
 import Record = NFRecord;
@@ -646,14 +645,6 @@ algorithm
   mod := Class.getModifier(cls);
 
   res := Restriction.fromSCode(SCode.getClassRestriction(element));
-
-  // Only types may have dimensions.
-  if not listEmpty(dims) and not Restriction.isType(res) then
-    Error.addSourceMessage(Error.NON_TYPE_DIMENSIONS,
-      {Restriction.toString(res), InstNode.name(node)}, InstNode.info(node));
-    fail();
-  end if;
-
   cls := Class.EXPANDED_DERIVED(ext_node, mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
   node := InstNode.setNodeType(InstNodeType.DERIVED_CLASS(), node);
@@ -707,8 +698,7 @@ algorithm
     fail();
   end if;
 
-  outer_mod := Modifier.merge(modifier, outer_mod);
-  (attributes, node) := instClassDef(cls, outer_mod, attributes, useBinding, node, parent);
+  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent);
 end instClass;
 
 function instClassDef
@@ -722,7 +712,7 @@ protected
   InstNode par, base_node;
   Class inst_cls;
   ClassTree cls_tree;
-  Modifier mod;
+  Modifier mod, outer_mod;
   Restriction res;
   Type ty;
 algorithm
@@ -734,9 +724,10 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := Modifier.fromElement(InstNode.definition(node), par);
+        mod := Modifier.fromElement(InstNode.definition(node), {}, par);
         // Merge with any outer modifications.
-        mod := Modifier.merge(outerMod, mod);
+        outer_mod := Modifier.merge(cls.modifier, outerMod);
+        mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
         ClassTree.mapExtends(cls_tree, function modifyExtends(scope = par));
@@ -773,9 +764,9 @@ algorithm
         node := InstNode.replaceClass(cls, node);
 
         // Merge outer modifiers and attributes.
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
-        mod := Modifier.map(mod, function Modifier.setBindingOriginNode(node = node));
-        mod := Modifier.merge(outerMod, mod);
+        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
+        outer_mod := Modifier.merge(Modifier.addParent(node, cls.modifier), outerMod);
+        mod := Modifier.merge(outer_mod, mod);
         attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
 
         // Mark the base class node as a base class.
@@ -809,8 +800,9 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
-        mod := Modifier.merge(outerMod, mod);
+        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
+        outer_mod := Modifier.merge(Modifier.addParent(node, cls.modifier), outerMod);
+        mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, InstNode.name(node));
 
         inst_cls := Class.INSTANCED_BUILTIN(ty, cls_tree, res);
@@ -922,7 +914,7 @@ algorithm
 
   // Create a modifier from the extends.
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  ext_mod := Modifier.fromElement(elem, scope);
+  ext_mod := Modifier.fromElement(elem, {}, scope);
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   if not Class.isBuiltin(cls) then
@@ -1290,13 +1282,13 @@ algorithm
     checkOuterComponentMod(outer_mod, def, comp_node);
     instComponentDef(def, Modifier.NOMOD(), cc_mod, NFComponent.DEFAULT_ATTR, useBinding, comp_node, parent);
 
+    Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
     cc_smod := SCode.getConstrainingMod(def);
     if not SCode.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
-      cc_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), parent);
+      cc_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
     end if;
 
-    Modifier.REDECLARE(element = rdcl_node, mod = outer_mod) := outer_mod;
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     //outer_mod := Modifier.merge(outer_mod, cc_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
@@ -1329,14 +1321,15 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
-        decl_mod := Modifier.fromElement(component, parent);
+        decl_mod := Modifier.fromElement(component, {}, parent);
         mod := Modifier.merge(decl_mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
+        mod := Modifier.addParent(node, mod);
         checkOuterComponentMod(mod, component, node);
 
         dims := list(Dimension.RAW_DIM(d) for d in component.attributes.arrayDims);
-        binding := if useBinding then Modifier.binding(mod) else Binding.UNBOUND(NONE());
-        condition := Binding.fromAbsyn(component.condition, false, 0, parent, info);
+        binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
+        condition := Binding.fromAbsyn(component.condition, false, {node}, parent, info);
 
         // This is used to ignore the bindings of a component's children when the
         // component iself has a binding that overrides those. This is to ensure
@@ -1354,7 +1347,7 @@ algorithm
         // is created by instClass. To break the circle we leave the class node
         // empty here, and let instClass set it for us instead.
         inst_comp := Component.UNTYPED_COMPONENT(InstNode.EMPTY_NODE(), listArray(dims),
-          binding, condition, attr, SOME(component.comment), info);
+          binding, condition, attr, SOME(component.comment), false, info);
         InstNode.updateComponent(inst_comp, node);
 
         // Instantiate the type of the component.
@@ -1428,7 +1421,7 @@ algorithm
         // TODO: Use comment of redeclare if available?
         cmt := orig_comp.comment;
       then
-        Component.UNTYPED_COMPONENT(rdcl_comp.classInst, dims, binding, condition, attr, cmt, rdcl_comp.info);
+        Component.UNTYPED_COMPONENT(rdcl_comp.classInst, dims, binding, condition, attr, cmt, false, rdcl_comp.info);
 
     else
       algorithm
@@ -1888,11 +1881,18 @@ end instComplexType;
 
 function instBuiltinAttribute
   input output Modifier attribute;
+  input InstNode node;
 algorithm
   () := match attribute
-    case Modifier.MODIFIER()
+    local
+      Binding binding;
+
+    case Modifier.MODIFIER(binding = Binding.UNBOUND()) then ();
+
+    case Modifier.MODIFIER(binding = binding)
       algorithm
-        attribute.binding := instBinding(attribute.binding);
+        binding := Binding.addParent(node, binding);
+        attribute.binding := instBinding(binding);
       then
         ();
 
@@ -1915,7 +1915,7 @@ protected
   array<Dimension> dims;
 algorithm
   () := match c
-    case Component.UNTYPED_COMPONENT(dimensions = dims)
+    case Component.UNTYPED_COMPONENT(dimensions = dims, instantiated = false)
       algorithm
         c.binding := instBinding(c.binding);
         c.condition := instBinding(c.condition);
@@ -1925,16 +1925,21 @@ algorithm
           dims[i] := instDimension(dims[i], InstNode.parent(component), c.info);
         end for;
 
+        // This is to avoid instantiating the same component multiple times,
+        // which can otherwise happen with duplicate components at this stage.
+        c.instantiated := true;
+
         InstNode.updateComponent(c, node);
       then
         ();
 
+    case Component.UNTYPED_COMPONENT() then ();
     case Component.ENUM_LITERAL() then ();
     case Component.TYPE_ATTRIBUTE(modifier = Modifier.NOMOD()) then ();
 
     case Component.TYPE_ATTRIBUTE()
       algorithm
-        c.modifier := instBuiltinAttribute(c.modifier);
+        c.modifier := instBuiltinAttribute(c.modifier, component);
         InstNode.updateComponent(c, node);
       then
         ();
@@ -1957,9 +1962,9 @@ algorithm
 
     case Binding.RAW_BINDING()
       algorithm
-        bind_exp := instExp(binding.bindingExp, binding.scope, BindingOrigin.info(binding.origin));
+        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.origin, binding.isEach);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.parents, binding.isEach, binding.info);
 
     else binding;
   end match;

@@ -54,7 +54,7 @@ public
   import Type = NFType;
   import ComponentRef = NFComponentRef;
   import NFCall.Call;
-  import Binding = NFBinding;
+  import NFBinding.Binding;
   import NFComponent.Component;
   import NFClassTree.ClassTree;
   import NFClass.Class;

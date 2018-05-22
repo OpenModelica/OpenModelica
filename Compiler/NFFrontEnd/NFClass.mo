@@ -44,7 +44,7 @@ import Restriction = NFRestriction;
 import Expression = NFExpression;
 
 protected
-import Binding = NFBinding;
+import NFBinding.Binding;
 import ComplexType = NFComplexType;
 
 public
@@ -216,7 +216,7 @@ uniontype Class
       attr_node := ClassTree.lookupElement(name, classTree(cls));
       binding := Modifier.binding(Component.getModifier(InstNode.component(attr_node)));
     else
-      binding := Binding.UNBOUND(NONE());
+      binding := NFBinding.EMPTY_BINDING;
     end try;
   end lookupAttributeBinding;
 

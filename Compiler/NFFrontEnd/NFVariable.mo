@@ -30,7 +30,7 @@
  */
 
 encapsulated uniontype NFVariable
-  import Binding = NFBinding;
+  import NFBinding.Binding;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;

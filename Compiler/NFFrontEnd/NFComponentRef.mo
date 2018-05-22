@@ -417,7 +417,7 @@ public
 
   function subscriptsN
     "Returns the subscripts of the N first parts of a cref in reverse order.
-     Fails if the cref is fewer than N parts."
+     Fails if the cref has fewer than N parts."
     input ComponentRef cref;
     input Integer n;
     output list<list<Subscript>> subscripts = {};

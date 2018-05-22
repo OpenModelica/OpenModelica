@@ -38,7 +38,7 @@ encapsulated package NFRecord
   Functions used by NFInst for handling records.
 "
 
-import Binding = NFBinding;
+import NFBinding.Binding;
 import NFClass.Class;
 import NFComponent.Component;
 import Dimension = NFDimension;
@@ -151,8 +151,8 @@ algorithm
 
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
-                Binding.UNBOUND(NONE()), Binding.UNBOUND(NONE()),
-                NFComponent.OUTPUT_ATTR, NONE(), Absyn.dummyInfo);
+                NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
+                NFComponent.OUTPUT_ATTR, NONE(), false, Absyn.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
   // Make a record constructor class and create a node for the constructor.

@@ -32,7 +32,7 @@
 encapsulated package NFComponent
 
 import DAE;
-import Binding = NFBinding;
+import NFBinding.Binding;
 import NFClass.Class;
 import Dimension = NFDimension;
 import NFInstNode.InstNode;
@@ -166,6 +166,7 @@ uniontype Component
     Binding condition;
     Component.Attributes attributes;
     Option<SCode.Comment> comment;
+    Boolean instantiated;
     SourceInfo info;
   end UNTYPED_COMPONENT;
 
@@ -452,10 +453,7 @@ uniontype Component
     input Component component;
     output Boolean b;
   algorithm
-    b := match getBinding(component)
-      case UNBOUND() then false;
-      else true;
-    end match;
+    b := Binding.isBound(getBinding(component));
   end hasBinding;
 
   function direction

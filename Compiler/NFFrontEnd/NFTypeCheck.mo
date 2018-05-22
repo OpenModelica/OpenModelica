@@ -61,7 +61,6 @@ import DAEUtil;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
-import BindingOrigin = NFBindingOrigin;
 import NFOperator.Op;
 import NFTyping.ExpOrigin;
 import NFFunction.Function;
@@ -2154,32 +2153,21 @@ function matchBinding
   input Type componentType;
   input String name;
   input InstNode component;
-  input InstNode parent;
 algorithm
   () := match binding
     local
       MatchKind ty_match;
       Expression exp;
       Type ty, comp_ty;
-      InstNode next_parent;
       list<list<Dimension>> dims;
-      Integer binding_level;
 
     case Binding.TYPED_BINDING()
       algorithm
-        comp_ty := componentType;
-        binding_level := BindingOrigin.level(binding.origin);
+        comp_ty := Type.elementType(componentType);
 
-        if not binding.isEach and binding_level > 0 then
-          next_parent := parent;
-          dims := {};
-
-          for i in 1:binding_level loop
-            dims := Type.arrayDims(InstNode.getType(next_parent)) :: dims;
-            next_parent := InstNode.derivedParent(next_parent);
-          end for;
-
-          comp_ty := Type.liftArrayLeftList(comp_ty, List.flatten(dims));
+        if not binding.isEach then
+          dims := list(Type.arrayDims(InstNode.getType(p)) for p in binding.parents);
+          comp_ty := Type.liftArrayLeftList(comp_ty, List.flattenReverse(dims));
         end if;
 
         (exp, ty, ty_match) := matchTypes(binding.bindingType, comp_ty, binding.bindingExp, true);
@@ -2190,7 +2178,7 @@ algorithm
              Type.toString(binding.bindingType)}, {Binding.getInfo(binding), InstNode.info(component)});
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.origin, binding.isEach);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.parents, binding.isEach, binding.info);
         end if;
       then
         ();

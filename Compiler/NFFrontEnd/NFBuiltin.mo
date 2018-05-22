@@ -43,8 +43,7 @@ encapsulated package NFBuiltin
 public
 import Absyn;
 import SCode;
-import Binding = NFBinding;
-import NFBindingOrigin;
+import NFBinding;
 import NFClass.Class;
 import NFClassTree.ClassTree;
 import NFComponent.Component;
@@ -322,8 +321,8 @@ constant InstNode TIME =
     Pointer.createImmutable(Component.TYPED_COMPONENT(
       REAL_NODE,
       Type.REAL(),
-      Binding.UNBOUND(NONE()),
-      Binding.UNBOUND(NONE()),
+      NFBinding.EMPTY_BINDING,
+      NFBinding.EMPTY_BINDING,
       NFComponent.INPUT_ATTR,
       NONE(),
       Absyn.dummyInfo)),

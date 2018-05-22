@@ -39,7 +39,7 @@ import ExecStat.execStat;
 import ComponentRef = NFComponentRef;
 import Type = NFType;
 import Expression = NFExpression;
-import Binding = NFBinding;
+import NFBinding.Binding;
 import Equation = NFEquation;
 import ExpressionIterator = NFExpressionIterator;
 import Dimension = NFDimension;

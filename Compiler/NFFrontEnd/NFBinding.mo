@@ -29,45 +29,56 @@
  *
  */
 
-encapsulated uniontype NFBinding
+encapsulated package NFBinding
+
 public
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import SCode;
   import Type = NFType;
   import NFPrefixes.Variability;
-  import BindingOrigin = NFBindingOrigin;
 
 protected
   import Dump;
-  import Binding = NFBinding;
 
 public
+  constant Binding EMPTY_BINDING = Binding.UNBOUND({}, false, Absyn.dummyInfo);
+
+uniontype Binding
   record UNBOUND
-    Option<NFBindingOrigin> origin;
+    // NOTE: Use the EMPTY_BINDING constant above when a default unbound binding
+    //       is needed, to save memory. UNBOUND contains this information to be
+    //       able to check that 'each' is used correctly, so parents and info
+    //       are only needed when isEach is true.
+    list<InstNode> parents;
+    Boolean isEach;
+    SourceInfo info;
   end UNBOUND;
 
   record RAW_BINDING
     Absyn.Exp bindingExp;
     InstNode scope;
-    BindingOrigin origin;
+    list<InstNode> parents;
     Boolean isEach;
+    SourceInfo info;
   end RAW_BINDING;
 
   record UNTYPED_BINDING
     Expression bindingExp;
     Boolean isProcessing;
     InstNode scope;
-    BindingOrigin origin;
+    list<InstNode> parents;
     Boolean isEach;
+    SourceInfo info;
   end UNTYPED_BINDING;
 
   record TYPED_BINDING
     Expression bindingExp;
     Type bindingType;
     Variability variability;
-    BindingOrigin origin;
+    list<InstNode> parents;
     Boolean isEach;
+    SourceInfo info;
   end TYPED_BINDING;
 
   record FLAT_BINDING
@@ -81,14 +92,14 @@ public
     Expression bindingExp;
   end CEVAL_BINDING;
 
+
 public
   function fromAbsyn
     input Option<Absyn.Exp> bindingExp;
     input Boolean eachPrefix;
-    input Integer level;
+    input list<InstNode> parents;
     input InstNode scope;
     input SourceInfo info;
-    input BindingOrigin.ElementType ty = NFBindingOrigin.ElementType.COMPONENT;
     output Binding binding;
   algorithm
     binding := match bindingExp
@@ -96,9 +107,9 @@ public
         Absyn.Exp exp;
 
       case SOME(exp)
-        then RAW_BINDING(exp, scope, BindingOrigin.create(level, ty, info), eachPrefix);
+        then RAW_BINDING(exp, scope, parents, eachPrefix, info);
 
-      else UNBOUND(if eachPrefix then SOME(BindingOrigin.create(level, ty, info)) else NONE());
+      else if eachPrefix then UNBOUND(parents, true, info) else NFBinding.EMPTY_BINDING;
     end match;
   end fromAbsyn;
 
@@ -242,44 +253,13 @@ public
     output SourceInfo info;
   algorithm
     info := match binding
-      case UNBOUND(origin = SOME(BindingOrigin.ORIGIN(info = info))) then info;
-      case RAW_BINDING() then binding.origin.info;
-      case UNTYPED_BINDING() then binding.origin.info;
-      case TYPED_BINDING() then binding.origin.info;
+      case UNBOUND() then binding.info;
+      case RAW_BINDING() then binding.info;
+      case UNTYPED_BINDING() then binding.info;
+      case TYPED_BINDING() then binding.info;
       else Absyn.dummyInfo;
     end match;
   end getInfo;
-
-  function getOrigin
-    input Binding binding;
-    output BindingOrigin origin;
-  algorithm
-    origin := match binding
-      case UNBOUND(origin = SOME(origin)) then origin;
-      case RAW_BINDING() then binding.origin;
-      case UNTYPED_BINDING() then binding.origin;
-      case TYPED_BINDING() then binding.origin;
-    end match;
-  end getOrigin;
-
-  function setOrigin
-    input BindingOrigin origin;
-    input output Binding binding;
-  algorithm
-    () := match binding
-      case RAW_BINDING()     algorithm binding.origin := origin; then ();
-      case UNTYPED_BINDING() algorithm binding.origin := origin; then ();
-      case TYPED_BINDING()   algorithm binding.origin := origin; then ();
-      else ();
-    end match;
-  end setOrigin;
-
-  function setOriginNode
-    input InstNode node;
-    input output Binding binding;
-  algorithm
-    binding := setOrigin(BindingOrigin.setNode(node, getOrigin(binding)), binding);
-  end setOriginNode;
 
   function getType
     input Binding binding;
@@ -293,7 +273,7 @@ public
     output Boolean isEach;
   algorithm
     isEach := match binding
-      case UNBOUND(origin = SOME(_)) then true;
+      case UNBOUND() then binding.isEach;
       case RAW_BINDING() then binding.isEach;
       case UNTYPED_BINDING() then binding.isEach;
       case TYPED_BINDING() then binding.isEach;
@@ -310,6 +290,66 @@ public
       else false;
     end match;
   end isTyped;
+
+  function parents
+    input Binding binding;
+    output list<InstNode> parents;
+  algorithm
+    parents := match binding
+      case UNBOUND() then binding.parents;
+      case RAW_BINDING() then binding.parents;
+      case UNTYPED_BINDING() then binding.parents;
+      case TYPED_BINDING() then binding.parents;
+      else {};
+    end match;
+  end parents;
+
+  function addParent
+    input InstNode parent;
+    input output Binding binding;
+  algorithm
+    () := match binding
+      case UNBOUND(isEach = true)
+        algorithm
+          binding.parents := parent :: binding.parents;
+        then
+          ();
+
+      case RAW_BINDING()
+        algorithm
+          binding.parents := parent :: binding.parents;
+        then
+          ();
+
+      case UNTYPED_BINDING()
+        algorithm
+          binding.parents := parent :: binding.parents;
+        then
+          ();
+
+      case TYPED_BINDING()
+        algorithm
+          binding.parents := parent :: binding.parents;
+        then
+          ();
+
+      else ();
+    end match;
+  end addParent;
+
+  function isClassBinding
+    input Binding binding;
+    output Boolean isClass;
+  algorithm
+    for parent in parents(binding) loop
+      if InstNode.isClass(parent) then
+        isClass := true;
+        return;
+      end if;
+    end for;
+
+    isClass := false;
+  end isClassBinding;
 
   function toString
     input Binding binding;
@@ -347,24 +387,27 @@ public
   end isEqual;
 
   function toDAE
-    input Binding b;
-    output DAE.Binding outb;
+    input Binding binding;
+    output DAE.Binding outBinding;
   algorithm
-    outb := match b
+    outBinding := match binding
       case UNBOUND() then DAE.UNBOUND();
       case TYPED_BINDING()
-        then DAE.EQBOUND(Expression.toDAE(b.bindingExp)
-                         , NONE()
-                         , Variability.variabilityToDAEConst(b.variability)
-                         , DAE.BINDING_FROM_DEFAULT_VALUE() // TODO: revise this.
-                        );
+        then DAE.EQBOUND(
+            Expression.toDAE(binding.bindingExp),
+            NONE(),
+            Variability.variabilityToDAEConst(binding.variability),
+            DAE.BINDING_FROM_DEFAULT_VALUE() // TODO: revise this.
+          );
 
-      else algorithm
-        Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
-        then fail();
-
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+        then
+          fail();
     end match;
   end toDAE;
+end Binding;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

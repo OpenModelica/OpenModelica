@@ -39,8 +39,7 @@ import Type = NFType;
 import NFPrefixes.Variability;
 
 protected
-import Binding = NFBinding;
-import BindingOrigin = NFBindingOrigin;
+import NFBinding.Binding;
 import NFComponent.Component;
 import NFInstNode.CachedData;
 import ComponentRef = NFComponentRef;
@@ -670,10 +669,8 @@ uniontype Call
   protected
     Type ty, vect_ty;
     Expression exp;
-    Binding bind;
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
-    BindingOrigin origin;
     Integer i;
     list<Dimension> vect_dims;
     list<Boolean> arg_is_vected, b_list;

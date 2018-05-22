@@ -783,8 +783,8 @@ public constant Message REDECLARE_MISMATCHED_PREFIX = MESSAGE(327, TRANSLATION()
   Util.gettext("Invalid redeclaration '%s %s', original element is declared '%s'."));
 public constant Message EXTERNAL_ARG_NONCONSTANT_SIZE_INDEX = MESSAGE(328, TRANSLATION(), ERROR(),
   Util.gettext("Invalid external argument '%s', the dimension index must be a constant expression."));
-public constant Message NON_TYPE_DIMENSIONS = MESSAGE(329, TRANSLATION(), ERROR(),
-  Util.gettext("Invalid dimensions on ‘%s %s‘, only types may have dimensions."));
+public constant Message FAILURE_TO_DEDUCE_DIMS_EACH = MESSAGE(329, TRANSLATION(), ERROR(),
+  Util.gettext("Failed to deduce dimension %s of ‘%s‘ due to ‘each‘ prefix on binding equation."));
 public constant Message MISSING_TYPE_BASETYPE = MESSAGE(330, TRANSLATION(), ERROR(),
   Util.gettext("Type ‘%s‘ does not extend a basic type."));
 public constant Message ASSERT_TRIGGERED_WARNING = MESSAGE(331, TRANSLATION(), WARNING(),

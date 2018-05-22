@@ -37,7 +37,7 @@ protected
   import ExecStat.execStat;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import Binding = NFBinding;
+  import NFBinding.Binding;
   import Equation = NFEquation;
   import Statement = NFStatement;
   import List;

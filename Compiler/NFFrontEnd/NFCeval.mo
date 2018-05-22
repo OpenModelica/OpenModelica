@@ -31,7 +31,7 @@
 
 encapsulated package NFCeval
 
-import Binding = NFBinding;
+import NFBinding.Binding;
 import ComponentRef = NFComponentRef;
 import Error;
 import NFComponent.Component;
@@ -300,6 +300,7 @@ algorithm
         Error.addInternalError(getInstanceName() + " failed on untyped binding", sourceInfo());
       then
         fail();
+
   end match;
 end evalComponentBinding;
 
@@ -352,7 +353,7 @@ algorithm
       then
         binding;
 
-    else Binding.UNBOUND(NONE());
+    else NFBinding.EMPTY_BINDING;
   end matchcontinue;
 end makeComponentBinding;
 

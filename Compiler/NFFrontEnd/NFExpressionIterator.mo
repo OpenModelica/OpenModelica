@@ -33,12 +33,11 @@ encapsulated uniontype NFExpressionIterator
 protected
   import ExpressionIterator = NFExpressionIterator;
   import ComponentRef = NFComponentRef;
-  import BindingOrigin = NFBindingOrigin;
   import NFInstNode.InstNode;
 
 public
   import Expression = NFExpression;
-  import Binding = NFBinding;
+  import NFBinding.Binding;
 
   record ARRAY_ITERATOR
     list<Expression> array;
@@ -117,7 +116,7 @@ public
       local
         list<Expression> expl;
 
-      case Binding.TYPED_BINDING() guard BindingOrigin.isFromClass(binding.origin)
+      case Binding.TYPED_BINDING() guard Binding.isClassBinding(binding)
         algorithm
           expl := Expression.arrayScalarElements(binding.bindingExp);
         then

@@ -38,7 +38,7 @@ encapsulated package NFTyping
   Functions used by NFInst for typing.
 "
 
-import Binding = NFBinding;
+import NFBinding.Binding;
 import NFComponent.Component;
 import Dimension = NFDimension;
 import Equation = NFEquation;
@@ -82,7 +82,6 @@ import Package = NFPackage;
 import NFFunction.Function;
 import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
-import BindingOrigin = NFBindingOrigin;
 import ElementSource;
 import StringUtil;
 
@@ -560,11 +559,11 @@ algorithm
     case Dimension.UNKNOWN()
       algorithm
         // If the component doesn't have a binding, try to use the start attribute instead.
-        b := match binding
-          case Binding.UNBOUND()
-            then Class.lookupAttributeBinding("start", InstNode.getClass(component));
-          else binding;
-        end match;
+        // TODO: Any attribute should actually be fine to use here.
+        b := if Binding.isUnbound(binding) then
+          Class.lookupAttributeBinding("start", InstNode.getClass(component))
+        else
+          binding;
 
         dim := match b
           // Print an error if there's no binding.
@@ -577,9 +576,9 @@ algorithm
 
           // An untyped binding, type the expression only as much as is needed
           // to get the dimension we're looking for.
-          case Binding.UNTYPED_BINDING()
+          case Binding.UNTYPED_BINDING(isEach = false)
             algorithm
-              prop_dims := if b.isEach then 0 else BindingOrigin.level(b.origin);
+              prop_dims := listLength(b.parents) - 1;
               prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
               dim := typeExpDim(b.bindingExp, index + prop_dims,
                 intBitOr(origin, ExpOrigin.DIMENSION), info);
@@ -587,15 +586,20 @@ algorithm
               dim;
 
           // A typed binding, get the dimension from the binding's type.
-          case Binding.TYPED_BINDING()
+          case Binding.TYPED_BINDING(isEach = false)
             algorithm
-              prop_dims := if b.isEach then 0 else BindingOrigin.level(b.origin);
+              prop_dims := listLength(b.parents) - 1;
               prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
               dim := nthDimensionBoundsChecked(b.bindingType, index + prop_dims);
             then
               dim;
 
-          else Dimension.UNKNOWN();
+          else
+            algorithm
+              Error.addMultiSourceMessage(Error.FAILURE_TO_DEDUCE_DIMS_EACH,
+                {String(index), InstNode.name(component)}, {Binding.getInfo(b), info});
+            then
+              fail();
         end match;
 
         arrayUpdate(dimensions, index, dim);
@@ -677,7 +681,7 @@ algorithm
 
     case Component.TYPED_COMPONENT(binding = Binding.UNBOUND())
       algorithm
-        checkBindingEach(c.binding, not Type.isArray(c.ty), InstNode.parent(component));
+        checkBindingEach(c.binding);
 
         if Binding.isBound(c.condition) then
           c.condition := typeComponentCondition(c.condition, origin);
@@ -691,10 +695,10 @@ algorithm
     case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING())
       algorithm
         name := InstNode.name(component);
+        checkBindingEach(c.binding);
         binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.BINDING));
-        checkBindingEach(binding, not Type.isArray(c.ty), InstNode.parent(component));
 
-        binding := TypeCheck.matchBinding(binding, c.ty, name, node, InstNode.derivedParent(node));
+        binding := TypeCheck.matchBinding(binding, c.ty, name, node);
         comp_var := Component.variability(c);
         comp_eff_var := Prefixes.effectiveVariability(comp_var);
         bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
@@ -772,7 +776,7 @@ algorithm
         info := Binding.getInfo(binding);
         (exp, ty, var) := typeExp(exp, origin, info, replaceConstants);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.origin, binding.isEach);
+        Binding.TYPED_BINDING(exp, ty, var, binding.parents, binding.isEach, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -788,25 +792,20 @@ end typeBinding;
 
 function checkBindingEach
   input Binding binding;
-  input Boolean isScalar;
-  input InstNode element;
 protected
-  BindingOrigin origin;
-  InstNode parent = InstNode.getDerivedNode(element);
+  list<InstNode> parents;
 algorithm
   if Binding.isEach(binding) then
-    origin := Binding.getOrigin(binding);
+    parents := listRest(Binding.parents(binding));
 
-    for i in 1:origin.level loop
+    for parent in parents loop
       if Type.isArray(InstNode.getType(parent)) then
         return;
       end if;
-
-      parent := InstNode.derivedParent(parent);
     end for;
 
     Error.addSourceMessage(Error.EACH_ON_NON_ARRAY,
-      {InstNode.name(InstNode.getDerivedNode(element))}, Binding.getInfo(binding));
+      {InstNode.name(listHead(parents))}, Binding.getInfo(binding));
   end if;
 end checkBindingEach;
 
@@ -855,32 +854,23 @@ function typeTypeAttribute
 protected
   String name;
   Binding binding;
-  BindingOrigin binding_origin;
   InstNode mod_parent;
 algorithm
   () := match attribute
     // Normal modifier with no submodifiers.
     case Modifier.MODIFIER(name = name, binding = binding, subModifiers = ModTable.EMPTY())
       algorithm
-        binding_origin := Binding.getOrigin(binding);
-
-        if isSome(binding_origin.node) then
-          SOME(mod_parent) := binding_origin.node;
-        else
-          mod_parent := InstNode.getDerivedNode(component);
-        end if;
-
         // Type and type check the attribute.
-        checkBindingEach(binding, true, mod_parent);
+        checkBindingEach(binding);
         binding := typeBinding(binding, origin);
-        binding := TypeCheck.matchBinding(binding, ty, name, component, mod_parent);
+        binding := TypeCheck.matchBinding(binding, ty, name, component);
 
         // Check the variability. All builtin attributes have parameter variability.
         if Binding.variability(binding) > Variability.PARAMETER then
           Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
             {name, Prefixes.variabilityString(Variability.PARAMETER),
-            "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
-            BindingOrigin.info(binding_origin));
+             "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
+            Binding.getInfo(binding));
           fail();
         end if;
 
@@ -913,15 +903,12 @@ function evalBinding
   input output Binding binding;
   input ExpOrigin.Type origin;
 algorithm
-  binding := match binding
-    local
-      Expression exp;
-
+  () := match binding
     case Binding.TYPED_BINDING()
       algorithm
-        exp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
+        binding.bindingExp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
       then
-        Binding.TYPED_BINDING(exp, binding.bindingType, binding.variability, binding.origin, binding.isEach);
+        ();
 
     else
       algorithm

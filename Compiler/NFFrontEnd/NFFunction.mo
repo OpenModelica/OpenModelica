@@ -42,7 +42,7 @@ import List;
 protected
 import ErrorExt;
 import Inst = NFInst;
-import Binding = NFBinding;
+import NFBinding.Binding;
 import Config;
 import DAE;
 import DAEDump;
@@ -957,7 +957,7 @@ uniontype Function
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
-      Typing.typeClassType(node, Binding.UNBOUND(NONE()), ExpOrigin.FUNCTION);
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, ExpOrigin.FUNCTION);
       Typing.typeComponents(node, ExpOrigin.FUNCTION);
 
       // Type the binding of the inputs only. This is done because they are
