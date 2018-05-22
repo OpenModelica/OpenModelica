@@ -351,6 +351,25 @@ public
     isClass := false;
   end isClassBinding;
 
+  function countPropagatedDims
+    "Returns the number of dimensions that the binding was propagated through to
+     get to the element it belongs to."
+    input Binding binding;
+    output Integer count = 0;
+  protected
+    list<InstNode> pars;
+  algorithm
+    pars := match binding
+      case UNTYPED_BINDING(isEach = false) then listRest(binding.parents);
+      case TYPED_BINDING(isEach = false) then listRest(binding.parents);
+      else {};
+    end match;
+
+    for parent in pars loop
+      count := count + Type.dimensionCount(InstNode.getType(parent));
+    end for;
+  end countPropagatedDims;
+
   function toString
     input Binding binding;
     input String prefix = "";

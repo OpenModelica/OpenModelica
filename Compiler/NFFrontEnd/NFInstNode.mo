@@ -1121,24 +1121,6 @@ uniontype InstNode
     end match;
   end isRedeclare;
 
-  function countDimensions
-    input InstNode node;
-    input Integer levels;
-    input Integer accumCount = 0;
-    output Integer dimCount;
-  algorithm
-    if levels <= 0 then
-      dimCount := accumCount;
-    else
-      dimCount := match node
-        case COMPONENT_NODE()
-          then countDimensions(node.parent, levels - 1,
-            Component.dimensionCount(Pointer.access(node.component)));
-        else accumCount;
-      end match;
-    end if;
-  end countDimensions;
-
   function isProtectedBaseClass
     input InstNode node;
     output Boolean isProtected;

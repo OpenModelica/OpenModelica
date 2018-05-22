@@ -481,7 +481,6 @@ algorithm
       Dimension dim;
       Binding b;
       Type ty;
-      Integer prop_dims;
 
     // Print an error when a dimension that's currently being processed is
     // found, which indicates a dependency loop. Another way of handling this
@@ -577,9 +576,7 @@ algorithm
           // to get the dimension we're looking for.
           case Binding.UNTYPED_BINDING()
             algorithm
-              prop_dims := listLength(b.parents) - 1;
-              prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
-              dim := typeExpDim(b.bindingExp, index + prop_dims,
+              dim := typeExpDim(b.bindingExp, index + Binding.countPropagatedDims(b),
                 intBitOr(origin, ExpOrigin.DIMENSION), info);
             then
               dim;
@@ -587,9 +584,7 @@ algorithm
           // A typed binding, get the dimension from the binding's type.
           case Binding.TYPED_BINDING()
             algorithm
-              prop_dims := listLength(b.parents) - 1;
-              prop_dims := InstNode.countDimensions(InstNode.parent(component), prop_dims);
-              dim := nthDimensionBoundsChecked(b.bindingType, index + prop_dims);
+              dim := nthDimensionBoundsChecked(b.bindingType, index + Binding.countPropagatedDims(b));
             then
               dim;
 
