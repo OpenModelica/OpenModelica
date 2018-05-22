@@ -232,6 +232,7 @@ DimUnknown4.mo \
 DimUnknown5.mo \
 DimUnknown6.mo \
 DimUnknown7.mo \
+DimUnknown8.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
