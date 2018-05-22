@@ -676,7 +676,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename;
+             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename, tmpDir, tmpFile;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -1777,12 +1777,16 @@ algorithm
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
         workdir = if System.directoryExists(workdir) then workdir else System.pwd();
-        modeldescriptionfilename="modelDescription.fmu";
-        System.systemCall("zip -j " +  modeldescriptionfilename + " " + filename);
+        // create a temporary directory
+        tmpDir = System.createTemporaryDirectory(Settings.getTempDirectoryPath() + "/" + "fmuTmp" + intString(System.intRand(1000)));
+        tmpFile = tmpDir + "/" + "modelDescription.xml";
+        System.systemCall("cp -f " + filename + " " + tmpFile);
+        modeldescriptionfilename = tmpDir + "/modelDescription.fmu";
+        System.systemCall("zip -j " +  modeldescriptionfilename + " " + tmpFile);
         true = System.regularFileExists(modeldescriptionfilename);
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) =
-          FMIExt.initializeFMIImport(modeldescriptionfilename, workdir, fmiLogLevel, inputConnectors, outputConnectors, true);
+          FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true = b; /* if something goes wrong while initializing */
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
@@ -1796,6 +1800,7 @@ algorithm
         System.writeFile(outputFile, str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext, str3);
+        System.removeDirectory(tmpDir);
       then
         (cache,Values.STRING(filename_1));
 
