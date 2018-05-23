@@ -807,8 +807,6 @@ _omc_scalar _omc_euclideanVectorNorm(const _omc_vector* vec)
 /*! \fn _omc_scalar _omc_maximumVectorNorm(_omc_vector* vec)
  *
  *  calculates the maximum vector norm
- *
- *  \param [ref] [vec] !TODO: DESCRIBE ME!
  */
 _omc_scalar _omc_maximumVectorNorm(const _omc_vector* vec)
 {
@@ -820,7 +818,7 @@ _omc_scalar _omc_maximumVectorNorm(const _omc_vector* vec)
   for (i = 1; i < vec->size; ++i)
   {
     tmp = fabs(vec->data[i]);
-    if (result > tmp)
+    if (result < tmp)
     {
       result = tmp;
     }
