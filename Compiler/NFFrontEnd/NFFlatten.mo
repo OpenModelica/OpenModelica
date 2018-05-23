@@ -668,7 +668,7 @@ algorithm
   (exp, eql) := branch;
   exp := flattenExp(exp, prefix);
   eql := flattenEquations(eql, prefix);
-  branch := (exp, eql);
+  branch := (exp, listReverseInPlace(eql));
 end flattenEqBranch;
 
 function unrollForLoop

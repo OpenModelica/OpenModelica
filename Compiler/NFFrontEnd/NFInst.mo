@@ -1764,6 +1764,8 @@ algorithm
         // A type must extend a basic type.
         if arrayLength(exts) == 1 then
           ty := Type.COMPLEX(node, ComplexType.EXTENDS_TYPE(exts[1]));
+        elseif SCode.hasBooleanNamedAnnotationInClass(InstNode.definition(node), "__OpenModelica_builtinType") then
+          ty := Type.COMPLEX(node, ComplexType.CLASS());
         else
           Error.addSourceMessage(Error.MISSING_TYPE_BASETYPE,
             {InstNode.name(node)}, InstNode.info(node));

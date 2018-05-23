@@ -854,19 +854,34 @@ record SimulationResult
 end SimulationResult; */
 encapsulated package OpenModelica "OpenModelica internal defintions and scripting functions"
 
-// TODO: $Code was declared as a type in the old frontend, and the types in it were empty.
-//       That's not legal Modelica, because types must extend from a basic type.
-//       Making $Code a package and making the types extend from Integer makes the code legal,
-//       but depending on how we want to use these it might need to be changed.
-package $Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
-Besides, it has special semantics."
+package $Code
+  "Code quoting is not a uniontype yet because that would require enabling MetaModelica
+   extensions in the regular compiler. Besides, it has special semantics."
 
-type Expression = Integer "An expression of some kind";
-type ExpressionOrModification = Integer "An expression or modification of some kind";
-type TypeName = Integer "A path, for example the name of a class, e.g. A.B.C or .A.B";
-type VariableName  = Integer "A variable name, e.g. a.b or a[1].b[3].c";
-type VariableNames = Integer "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a single VariableName";
+  type Expression
+    "An expression of some kind"
+    annotation(__OpenModelica_builtinType=true);
+  end Expression;
 
+  type ExpressionOrModification
+    "An expression or modification of some kind"
+    annotation(__OpenModelica_builtinType=true);
+  end ExpressionOrModification;
+
+  type TypeName
+    "A path, for example the name of a class, e.g. A.B.C or .A.B"
+    annotation(__OpenModelica_builtinType=true);
+  end TypeName;
+
+  type VariableName
+    "A variable name, e.g. a.b or a[1].b[3].c"
+    annotation(__OpenModelica_builtinType=true);
+  end VariableName;
+
+  type VariableNames
+    "An array of variable names, e.g. {a.b,a[1].b[3].c}, or a single VariableName"
+    annotation(__OpenModelica_builtinType=true);
+  end VariableNames;
 end $Code;
 
 function threadData
