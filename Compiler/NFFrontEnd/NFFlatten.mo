@@ -44,6 +44,8 @@ import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
 import FlatModel = NFFlatModel;
+import Prefix;
+import Algorithm = NFAlgorithm;
 
 protected
 import ComponentRef = NFComponentRef;
@@ -120,7 +122,7 @@ protected
   Sections sections;
   list<Variable> vars;
   list<Equation> eql, ieql;
-  list<list<Statement>> alg, ialg;
+  list<Algorithm> alg, ialg;
   Option<SCode.Comment> cmt;
 algorithm
   sections := Sections.EMPTY();
@@ -307,17 +309,19 @@ algorithm
     binding := flattenBinding(binding, prefix);
   end if;
 
-  name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
   if Type.isArray(ty) and Binding.isBound(binding) and
      Component.variability(comp) >= Variability.DISCRETE then
+    name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
     eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
       ElementSource.createElementSource(info));
     sections := Sections.prependEquation(eq, sections);
     binding := NFBinding.EMPTY_BINDING;
   end if;
+
+  name := ComponentRef.prefixScope(comp_node, ty, {}, prefix);
 
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info) :: vars;
@@ -373,7 +377,6 @@ protected
   list<Expression> bindings;
 algorithm
   dims := Type.arrayDims(ty);
-  name := ComponentRef.prefixCref(node, ty, {}, prefix);
   binding := Component.getBinding(comp);
 
   // Create an equation if there's a binding on a complex component.
@@ -386,6 +389,7 @@ algorithm
     end if;
 
     if not Expression.isRecord(binding_exp) then
+      name := ComponentRef.prefixCref(node, ty, {}, prefix);
       eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
         ElementSource.createElementSource(InstNode.info(node)));
       sections := Sections.prependEquation(eq, sections);
@@ -397,6 +401,8 @@ algorithm
   else
     opt_binding := NONE();
   end if;
+
+  name := ComponentRef.prefixScope(node, ty, {}, prefix);
 
   // Flatten the class directly if the component is a scalar, otherwise scalarize it.
   if listEmpty(dims) then
@@ -533,7 +539,7 @@ algorithm
   () := match sections
     local
       list<Equation> eq, ieq;
-      list<list<Statement>> alg, ialg;
+      list<Algorithm> alg, ialg;
 
     case Sections.SECTIONS()
       algorithm
@@ -696,12 +702,43 @@ algorithm
 end unrollForLoop;
 
 function flattenAlgorithms
-  input output list<list<Statement>> algorithms;
+  input list<Algorithm> algorithms;
   input ComponentRef prefix;
+  output list<Algorithm> outAlgorithms = {};
 algorithm
-  algorithms := listReverse(
-    Statement.mapExpList(alg, function flattenExp(prefix = prefix)) for alg in algorithms);
+  for alg in algorithms loop
+    alg.statements := Statement.mapExpList(alg.statements, function flattenExp(prefix = prefix));
+
+    // CheckModel relies on the ElementSource to know whether a certain algorithm comes from
+    // an array component, otherwise is will miscount the number of equations.
+    if ComponentRef.hasSubscripts(prefix) then
+      alg.source := addElementSourceArrayPrefix(alg.source, prefix);
+    end if;
+
+    outAlgorithms := alg :: outAlgorithms;
+  end for;
 end flattenAlgorithms;
+
+function addElementSourceArrayPrefix
+  input output DAE.ElementSource source;
+  input ComponentRef prefix;
+protected
+  Prefix.ComponentPrefix comp_pre;
+algorithm
+  // It seems the backend doesn't really care about the ComponentPrefix, and
+  // creating a proper prefix here could be rather expensive. So we just create
+  // a dummy prefix here with one subscript to keep CheckModel happy.
+  comp_pre := Prefix.ComponentPrefix.PRE(
+    ComponentRef.firstName(prefix),
+    {},
+    {DAE.Subscript.INDEX(DAE.Exp.ICONST(-1))},
+    Prefix.ComponentPrefix.NOCOMPPRE(),
+    ClassInf.State.UNKNOWN(Absyn.IDENT("?")),
+    Absyn.dummyInfo
+  );
+
+  source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);
+end addElementSourceArrayPrefix;
 
 function resolveConnections
   input output FlatModel flatModel;
@@ -1004,10 +1041,10 @@ algorithm
 end collectEqBranchFuncs;
 
 function collectAlgorithmFuncs
-  input list<Statement> alg;
+  input Algorithm alg;
   input output FunctionTree funcs;
 algorithm
-  funcs := List.fold(alg, collectStatementFuncs, funcs);
+  funcs := List.fold(alg.statements, collectStatementFuncs, funcs);
 end collectAlgorithmFuncs;
 
 function collectStatementFuncs

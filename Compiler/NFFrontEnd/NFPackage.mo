@@ -51,6 +51,7 @@ protected
   import ClassTree = NFClassTree;
   import NFTyping.ExpOrigin;
   import Variable = NFVariable;
+  import Algorithm = NFAlgorithm;
 
 public
   type Constants = ConstantsSetImpl.Tree;
@@ -86,8 +87,8 @@ public
     constants := List.fold(flatModel.variables, collectVariableConstants, constants);
     constants := Equation.foldExpList(flatModel.equations, collectExpConstants, constants);
     constants := Equation.foldExpList(flatModel.initialEquations, collectExpConstants, constants);
-    constants := Statement.foldExpListList(flatModel.algorithms, collectExpConstants, constants);
-    constants := Statement.foldExpListList(flatModel.initialAlgorithms, collectExpConstants, constants);
+    constants := Algorithm.foldExpList(flatModel.algorithms, collectExpConstants, constants);
+    constants := Algorithm.foldExpList(flatModel.initialAlgorithms, collectExpConstants, constants);
     constants := FunctionTree.fold(functions, collectFuncConstants, constants);
 
     vars := listReverse(Variable.fromCref(c) for c in Constants.listKeys(constants));
@@ -103,8 +104,8 @@ public
     flatModel.variables := list(replaceVariableConstants(c) for c in flatModel.variables);
     flatModel.equations := Equation.mapExpList(flatModel.equations, replaceExpConstants);
     flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, replaceExpConstants);
-    flatModel.algorithms := Statement.mapExpListList(flatModel.algorithms, replaceExpConstants);
-    flatModel.initialAlgorithms := Statement.mapExpListList(flatModel.initialAlgorithms, replaceExpConstants);
+    flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, replaceExpConstants);
+    flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, replaceExpConstants);
     functions := FunctionTree.map(functions, replaceFuncConstants);
     execStat(getInstanceName());
   end replaceConstants;
@@ -187,7 +188,7 @@ public
           () := match sections
             case Sections.SECTIONS()
               algorithm
-                constants := Statement.foldExpListList(sections.algorithms, collectExpConstants, constants);
+                constants := Algorithm.foldExpList(sections.algorithms, collectExpConstants, constants);
               then
                 ();
 
@@ -285,7 +286,7 @@ public
           () := match sections
             case Sections.SECTIONS()
               algorithm
-                sections.algorithms := Statement.mapExpListList(sections.algorithms, replaceExpConstants);
+                sections.algorithms := list(Algorithm.mapExp(a, replaceExpConstants) for a in sections.algorithms);
                 cls.sections := sections;
                 InstNode.updateClass(cls, func.node);
               then

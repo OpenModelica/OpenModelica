@@ -288,6 +288,7 @@ if true then /* Suppress output */
     "../MidCode/HashTableMidVar.mo",
 
   // "NFFrontEnd";
+    "../NFFrontEnd/NFAlgorithm.mo",
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltin.mo",
     "../NFFrontEnd/NFBuiltinFuncs.mo",

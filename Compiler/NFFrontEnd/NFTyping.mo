@@ -54,6 +54,7 @@ import NFPrefixes.ConnectorType;
 import Prefixes = NFPrefixes;
 import Connector = NFConnector;
 import Connection = NFConnection;
+import Algorithm = NFAlgorithm;
 
 protected
 import Builtin = NFBuiltin;
@@ -1956,7 +1957,7 @@ protected
   Class cls, typed_cls;
   Sections sections;
   SourceInfo info;
-  list<Statement> alg;
+  Algorithm alg;
 algorithm
   cls := InstNode.getClass(classNode);
 
@@ -2393,11 +2394,18 @@ algorithm
 end checkConnectorForm;
 
 function typeAlgorithm
+  input output Algorithm alg;
+  input ExpOrigin.Type origin;
+algorithm
+  alg.statements := list(typeStatement(s, origin) for s in alg.statements);
+end typeAlgorithm;
+
+function typeStatements
   input output list<Statement> alg;
   input ExpOrigin.Type origin;
 algorithm
   alg := list(typeStatement(stmt, origin) for stmt in alg);
-end typeAlgorithm;
+end typeStatements;
 
 function typeStatement
   input output Statement st;
@@ -2445,7 +2453,7 @@ algorithm
         end if;
 
         next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
-        body := typeAlgorithm(st.body, next_origin);
+        body := typeStatements(st.body, next_origin);
       then
         Statement.FOR(st.iterator, SOME(e1), body, st.source);
 

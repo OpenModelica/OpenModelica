@@ -31,15 +31,15 @@
 
 encapsulated uniontype NFFlatModel
   import Equation = NFEquation;
-  import Statement = NFStatement;
+  import Algorithm = NFAlgorithm;
   import Variable = NFVariable;
 
   record FLAT_MODEL
     list<Variable> variables;
     list<Equation> equations;
     list<Equation> initialEquations;
-    list<list<Statement>> algorithms;
-    list<list<Statement>> initialAlgorithms;
+    list<Algorithm> algorithms;
+    list<Algorithm> initialAlgorithms;
     Option<SCode.Comment> comment;
   end FLAT_MODEL;
 

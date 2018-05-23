@@ -59,6 +59,7 @@ import Type = NFType;
 import Subscript = NFSubscript;
 import Connector = NFConnector;
 import Connection = NFConnection;
+import Algorithm = NFAlgorithm;
 
 protected
 import Array;
@@ -2268,7 +2269,7 @@ algorithm
   sections := match (parts, sections)
     local
       list<Equation> eq, ieq;
-      list<list<Statement>> alg, ialg;
+      list<Algorithm> alg, ialg;
       SCode.ExternalDecl ext_decl;
 
     case (_, Sections.EXTERNAL())
@@ -2520,17 +2521,18 @@ end makeSource;
 function instAlgorithmSections
   input list<SCode.AlgorithmSection> algorithmSections;
   input InstNode scope;
-  output list<list<Statement>> statements;
+  output list<Algorithm> algs;
 algorithm
-  statements := list(instAlgorithmSection(alg, scope) for alg in algorithmSections);
+  algs := list(instAlgorithmSection(alg, scope) for alg in algorithmSections);
 end instAlgorithmSections;
 
 function instAlgorithmSection
   input SCode.AlgorithmSection algorithmSection;
   input InstNode scope;
-  output list<Statement> statements;
+  output Algorithm alg;
 algorithm
-  statements := instStatements(algorithmSection.statements, scope);
+  alg := Algorithm.ALGORITHM(instStatements(algorithmSection.statements, scope),
+                             DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

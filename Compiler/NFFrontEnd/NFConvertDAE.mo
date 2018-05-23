@@ -62,6 +62,7 @@ import NFPrefixes.Visibility;
 import NFPrefixes.Direction;
 import Variable = NFVariable;
 import ComponentReference;
+import Algorithm = NFAlgorithm;
 
 public
 function convert
@@ -643,7 +644,7 @@ algorithm
 end convertInitialEquation;
 
 function convertAlgorithms
-  input list<list<Statement>> algorithms;
+  input list<Algorithm> algorithms;
   input output list<DAE.Element> elements;
 algorithm
   for alg in listReverse(algorithms) loop
@@ -652,15 +653,16 @@ algorithm
 end convertAlgorithms;
 
 function convertAlgorithm
-  input list<Statement> statements;
+  input Algorithm alg;
   input output list<DAE.Element> elements;
 protected
   list<DAE.Statement> stmts;
-  DAE.Algorithm alg;
+  DAE.Algorithm dalg;
+  DAE.ElementSource src;
 algorithm
-  stmts := convertStatements(statements);
-  alg := DAE.ALGORITHM_STMTS(stmts);
-  elements := DAE.ALGORITHM(alg, DAE.emptyElementSource) :: elements;
+  stmts := convertStatements(alg.statements);
+  dalg := DAE.ALGORITHM_STMTS(stmts);
+  elements := DAE.ALGORITHM(dalg, alg.source) :: elements;
 end convertAlgorithm;
 
 function convertStatements
@@ -851,7 +853,7 @@ algorithm
 end convertWhenStatement;
 
 function convertInitialAlgorithms
-  input list<list<Statement>> algorithms;
+  input list<Algorithm> algorithms;
   input output list<DAE.Element> elements;
 algorithm
   for alg in algorithms loop
@@ -860,15 +862,15 @@ algorithm
 end convertInitialAlgorithms;
 
 function convertInitialAlgorithm
-  input list<Statement> statements;
+  input Algorithm alg;
   input output list<DAE.Element> elements;
 protected
   list<DAE.Statement> stmts;
-  DAE.Algorithm alg;
+  DAE.Algorithm dalg;
 algorithm
-  stmts := convertStatements(statements);
-  alg := DAE.ALGORITHM_STMTS(stmts);
-  elements := DAE.INITIALALGORITHM(alg, DAE.emptyElementSource) :: elements;
+  stmts := convertStatements(alg.statements);
+  dalg := DAE.ALGORITHM_STMTS(stmts);
+  elements := DAE.INITIALALGORITHM(dalg, alg.source) :: elements;
 end convertInitialAlgorithm;
 
 function convertFunctionTree

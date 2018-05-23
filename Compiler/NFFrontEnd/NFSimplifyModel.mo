@@ -44,6 +44,7 @@ import NFFunction.Function;
 import Sections = NFSections;
 import NFBinding.Binding;
 import Variable = NFVariable;
+import Algorithm = NFAlgorithm;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -316,7 +317,7 @@ function simplifyFunction
   input output Function func;
 protected
   Class cls;
-  list<Statement> fn_body;
+  Algorithm fn_body;
   Sections sections;
 algorithm
   cls := InstNode.getClass(func.node);
@@ -327,7 +328,7 @@ algorithm
         () := match sections
           case Sections.SECTIONS(algorithms = {fn_body})
             algorithm
-              fn_body := simplifyStatements(fn_body);
+              fn_body.statements := simplifyStatements(fn_body.statements);
               sections.algorithms := {fn_body};
               cls.sections := sections;
               InstNode.updateClass(cls, func.node);

@@ -357,6 +357,18 @@ public
     end match;
   end applySubscript2;
 
+  function hasSubscripts
+    input ComponentRef cref;
+    output Boolean hasSubscripts;
+  algorithm
+    hasSubscripts := match cref
+      case CREF()
+        then not listEmpty(cref.subscripts) or hasSubscripts(cref.restCref);
+
+      else false;
+    end match;
+  end hasSubscripts;
+
   function getSubscripts
     input ComponentRef cref;
     output list<Subscript> subscripts;

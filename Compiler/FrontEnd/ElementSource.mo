@@ -538,28 +538,19 @@ algorithm
   end match;
 end addElementSourceType;
 
-protected
-
 function addElementSourceInstanceOpt
-  input DAE.ElementSource inSource;
+  input output DAE.ElementSource source;
   input Prefix.ComponentPrefix instanceOpt;
-  output DAE.ElementSource outSource;
 algorithm
-  outSource := match(inSource, instanceOpt)
-    local
-      SourceInfo info "the line and column numbers of the equations and algorithms this element came from";
-      list<Absyn.Within> partOfLst "the models this element came from" ;
-      list<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOptLst "this element came from this connect" ;
-      list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
-      list<DAE.SymbolicOperation> operations;
-      list<SCode.Comment> comment;
-      DAE.ComponentRef cr;
-
+  () := match (source, instanceOpt)
     // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (_, Prefix.NOCOMPPRE())
-      then inSource;
-    case (DAE.SOURCE(info,partOfLst,_,connectEquationOptLst,typeLst,operations,comment), _)
-      then DAE.SOURCE(info,partOfLst,instanceOpt,connectEquationOptLst,typeLst,operations,comment);
+    case (_, Prefix.NOCOMPPRE()) then ();
+
+    case (DAE.SOURCE(), _)
+      algorithm
+        source.instance := instanceOpt;
+      then
+        ();
   end match;
 end addElementSourceInstanceOpt;
 

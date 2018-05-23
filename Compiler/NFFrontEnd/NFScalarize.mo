@@ -52,6 +52,7 @@ import List;
 import ElementSource;
 import DAE;
 import Statement = NFStatement;
+import Algorithm = NFAlgorithm;
 
 public
 function scalarize
@@ -60,7 +61,7 @@ function scalarize
 protected
   list<Variable> vars = {};
   list<Equation> eql = {}, ieql = {};
-  list<list<Statement>> alg = {}, ialg = {};
+  list<Algorithm> alg = {}, ialg = {};
 algorithm
   for c in flatModel.variables loop
     vars := scalarizeVariable(c, vars);
@@ -272,6 +273,12 @@ algorithm
 end scalarizeWhenEquation;
 
 function scalarizeAlgorithm
+  input output Algorithm alg;
+algorithm
+  alg.statements := scalarizeStatements(alg.statements);
+end scalarizeAlgorithm;
+
+function scalarizeStatements
   input list<Statement> stmts;
   output list<Statement> statements = {};
 algorithm
@@ -280,7 +287,7 @@ algorithm
   end for;
 
   statements := listReverseInPlace(statements);
-end scalarizeAlgorithm;
+end scalarizeStatements;
 
 function scalarizeStatement
   input Statement stmt;
@@ -288,7 +295,7 @@ function scalarizeStatement
 algorithm
   statements := match stmt
     case Statement.FOR()
-      then Statement.FOR(stmt.iterator, stmt.range, scalarizeAlgorithm(stmt.body), stmt.source) :: statements;
+      then Statement.FOR(stmt.iterator, stmt.range, scalarizeStatements(stmt.body), stmt.source) :: statements;
 
     case Statement.IF()
       then scalarizeIfStatement(stmt.branches, stmt.source, statements);
@@ -297,7 +304,7 @@ algorithm
       then scalarizeWhenStatement(stmt.branches, stmt.source, statements);
 
     case Statement.WHILE()
-      then Statement.WHILE(stmt.condition, scalarizeAlgorithm(stmt.body), stmt.source) :: statements;
+      then Statement.WHILE(stmt.condition, scalarizeStatements(stmt.body), stmt.source) :: statements;
 
     else stmt :: statements;
   end match;
@@ -314,7 +321,7 @@ protected
 algorithm
   for b in branches loop
     (cond, body) := b;
-    body := scalarizeAlgorithm(body);
+    body := scalarizeStatements(body);
 
     // Remove branches with no statements after scalarization.
     if not listEmpty(body) then
@@ -340,7 +347,7 @@ protected
 algorithm
   for b in branches loop
     (cond, body) := b;
-    body := scalarizeAlgorithm(body);
+    body := scalarizeStatements(body);
 
     if Type.isArray(Expression.typeOf(cond)) then
       cond := Expression.expand(cond);

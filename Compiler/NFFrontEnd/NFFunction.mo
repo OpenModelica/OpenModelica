@@ -68,6 +68,7 @@ import NFTyping.ExpOrigin;
 import Dimension = NFDimension;
 import Statement = NFStatement;
 import Sections = NFSections;
+import Algorithm = NFAlgorithm;
 
 
 public
@@ -1482,9 +1483,10 @@ protected
     output list<Statement> body;
   protected
     Class cls = InstNode.getClass(node);
+    Algorithm fn_body;
   algorithm
     body := match cls
-      case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = {body})) then body;
+      case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = {fn_body})) then fn_body.statements;
       case Class.INSTANCED_CLASS(sections = Sections.EMPTY()) then {};
 
       case Class.INSTANCED_CLASS(sections = Sections.SECTIONS(algorithms = _ :: _))

@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFSections
   import Equation = NFEquation;
+  import Algorithm = NFAlgorithm;
   import Statement = NFStatement;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -43,8 +44,8 @@ public
   record SECTIONS
     list<Equation> equations;
     list<Equation> initialEquations;
-    list<list<Statement>> algorithms;
-    list<list<Statement>> initialAlgorithms;
+    list<Algorithm> algorithms;
+    list<Algorithm> initialAlgorithms;
   end SECTIONS;
 
   record EXTERNAL
@@ -61,8 +62,8 @@ public
   function new
     input list<Equation> equations;
     input list<Equation> initialEquations;
-    input list<list<Statement>> algorithms;
-    input list<list<Statement>> initialAlgorithms;
+    input list<Algorithm> algorithms;
+    input list<Algorithm> initialAlgorithms;
     output Sections sections;
   algorithm
     if listEmpty(equations) and listEmpty(initialEquations) and
@@ -76,8 +77,8 @@ public
   function prepend
     input list<Equation> equations;
     input list<Equation> initialEquations;
-    input list<list<Statement>> algorithms;
-    input list<list<Statement>> initialAlgorithms;
+    input list<Algorithm> algorithms;
+    input list<Algorithm> initialAlgorithms;
     input output Sections sections;
   algorithm
     sections := match sections
@@ -110,8 +111,8 @@ public
   function append
     input list<Equation> equations;
     input list<Equation> initialEquations;
-    input list<list<Statement>> algorithms;
-    input list<list<Statement>> initialAlgorithms;
+    input list<Algorithm> algorithms;
+    input list<Algorithm> initialAlgorithms;
     input output Sections sections;
   algorithm
     sections := match sections
@@ -157,11 +158,11 @@ public
     end EquationFn;
 
     partial function AlgorithmFn
-      input output list<Statement> alg;
+      input output Algorithm alg;
     end AlgorithmFn;
   protected
     list<Equation> eq, ieq;
-    list<list<Statement>> alg, ialg;
+    list<Algorithm> alg, ialg;
   algorithm
     () := match sections
       case SECTIONS()
@@ -192,12 +193,12 @@ public
     end EquationFn;
 
     partial function AlgorithmFn
-      input output list<Statement> alg;
+      input output Algorithm alg;
       input ArgT arg;
     end AlgorithmFn;
   protected
     list<Equation> eq, ieq;
-    list<list<Statement>> alg, ialg;
+    list<Algorithm> alg, ialg;
   algorithm
     () := match sections
       case SECTIONS()
