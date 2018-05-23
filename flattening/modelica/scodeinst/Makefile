@@ -340,6 +340,7 @@ ForEquation2.mo \
 ForEquation3.mo \
 ForEquation4.mo \
 ForEquation5.mo \
+ForEquation6.mo \
 ForEquationEnum1.mo \
 ForEquationEnum2.mo \
 ForEquationNonParam.mo \
@@ -690,6 +691,7 @@ Visibility4.mo \
 When1.mo \
 When2.mo \
 When3.mo \
+When4.mo \
 WhenInitial1.mo \
 WhenNested1.mo \
 Wild1.mo \
