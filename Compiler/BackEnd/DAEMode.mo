@@ -298,7 +298,7 @@ algorithm
       constant Boolean debug = false;
 
     case ({eq}, false, false)
-      guard(Util.boolAndList(list(CommonSubExpression.isCSECref(v.varName) for v in vars)))
+      guard(Util.boolAndList(list(BackendVariable.isCSEVar(v) for v in vars)))
       equation
         newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in vars);
         new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
@@ -492,6 +492,8 @@ algorithm
       algorithm
 
         (discVars, contVars) := List.splitOnTrue(inVars, BackendVariable.isVarDiscrete);
+        (newAuxVars, contVars) := List.splitOnTrue(contVars, BackendVariable.BackendVariable.isCSEVar);
+        discVars := listAppend(newAuxVars,discVars);
         (discEqns, contEqns) := getDiscAndContEqns(inVars, inEqns, discVars, contVars, traverserArgs.shared.functionTree);
 
         // create discrete
