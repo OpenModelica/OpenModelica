@@ -162,6 +162,7 @@ ComponentAsTypeError.mo \
 ComponentAttributes1.mo \
 ComponentAttributes2.mo \
 Concatenation.mo \
+Concatenation2.mo \
 cond4.mo \
 Condition1.mo \
 Condition2.mo \
