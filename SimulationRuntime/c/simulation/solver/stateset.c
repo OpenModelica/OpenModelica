@@ -329,7 +329,7 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
       {
         if (Adump[k*set->nCandidates+l] == 1)
         {
-          infoStreamPrint(LOG_DSS, 0, "[%ld] %s", k+1, set->statescandidates[k]->name);
+          infoStreamPrint(LOG_DSS, 0, "[%ld] %s", l+1, set->statescandidates[l]->name);
         }
       }
     }
