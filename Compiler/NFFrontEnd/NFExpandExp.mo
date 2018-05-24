@@ -34,6 +34,7 @@ encapsulated uniontype NFExpandExp
 
 protected
   import RangeIterator = NFRangeIterator;
+  import ExpressionIterator = NFExpressionIterator;
   import Subscript = NFSubscript;
   import Type = NFType;
   import NFCall.Call;
@@ -42,6 +43,9 @@ protected
   import NFFunction.Function;
   import Operator = NFOperator;
   import Ceval = NFCeval;
+  import NFInstNode.InstNode;
+  import SimplifyExp = NFSimplifyExp;
+  import MetaModelica.Dangerous.*;
 
 public
   function expand
@@ -173,6 +177,9 @@ protected
         guard Function.isBuiltin(call.fn) and not Function.isImpure(call.fn)
         then expandBuiltinCall(call.fn, call.arguments);
 
+      case Call.TYPED_MAP_CALL()
+        then expandReduction(call.exp, call.ty, call.iters);
+
       else expandGeneric(exp);
     end matchcontinue;
   end expandCall;
@@ -213,6 +220,67 @@ protected
     eexp := expand(eexp);
     exp := Expression.promote(eexp, Expression.typeOf(eexp), n);
   end expandBuiltinPromote;
+
+  function expandReduction
+    input Expression exp;
+    input Type ty;
+    input list<tuple<InstNode, Expression>> iterators;
+    output Expression result;
+  protected
+    Expression e = exp, range;
+    InstNode node;
+    list<Expression> ranges = {}, expl;
+    Mutable<Expression> iter;
+    list<Mutable<Expression>> iters = {};
+  algorithm
+    for i in iterators loop
+      (node, range) := i;
+      iter := Mutable.create(Expression.INTEGER(0));
+      e := Expression.replaceIterator(e, node, Expression.MUTABLE(iter));
+      iters := iter :: iters;
+      ranges := expand(range) :: ranges;
+    end for;
+
+    result := expandReduction2(e, ty, ranges, iters);
+  end expandReduction;
+
+  function expandReduction2
+    input Expression exp;
+    input Type ty;
+    input list<Expression> ranges;
+    input list<Mutable<Expression>> iterators;
+    output Expression result;
+  protected
+    Expression range;
+    list<Expression> ranges_rest, expl = {};
+    Mutable<Expression> iter;
+    list<Mutable<Expression>> iters_rest;
+    ExpressionIterator range_iter;
+    Expression value;
+    Type el_ty;
+  algorithm
+    if listEmpty(ranges) then
+      // Normally it wouldn't be the expansion's task to simplify expressions,
+      // but we make an exception here since the generated expressions contain
+      // MUTABLE expressions that we need to get rid of. Also, expansion of
+      // reductions is often done during the scalarization phase, after the
+      // simplification phase, so they wouldn't otherwise be simplified.
+      result := expand(SimplifyExp.simplify(exp));
+    else
+      range :: ranges_rest := ranges;
+      iter :: iters_rest := iterators;
+      range_iter := ExpressionIterator.fromExp(range);
+      el_ty := Type.unliftArray(ty);
+
+      while ExpressionIterator.hasNext(range_iter) loop
+        (range_iter, value) := ExpressionIterator.next(range_iter);
+        Mutable.update(iter, value);
+        expl := expandReduction2(exp, el_ty, ranges_rest, iters_rest) :: expl;
+      end while;
+
+      result := Expression.ARRAY(ty, listReverseInPlace(expl));
+    end if;
+  end expandReduction2;
 
   function expandBinary
     input Expression exp1;

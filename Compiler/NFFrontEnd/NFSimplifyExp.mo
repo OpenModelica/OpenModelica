@@ -63,6 +63,9 @@ algorithm
       then
         exp;
 
+    case Expression.RANGE()
+      then Expression.RANGE(exp.ty, simplify(exp.start), simplifyOpt(exp.step), simplify(exp.stop));
+
     case Expression.RECORD()
       algorithm
         exp.elements := list(simplify(e) for e in exp.elements);
@@ -78,7 +81,11 @@ algorithm
     case Expression.RELATION() then simplifyRelation(exp);
     case Expression.IF() then simplifyIf(exp);
     case Expression.CAST() then simplifyCast(simplify(exp.exp), exp.ty);
+    case Expression.UNBOX() then Expression.UNBOX(simplify(exp.exp), exp.ty);
     case Expression.SUBSCRIPTED_EXP() then simplifySubscriptedExp(exp);
+    case Expression.TUPLE_ELEMENT() then simplifyTupleElement(exp);
+    case Expression.BOX() then Expression.BOX(simplify(exp.exp));
+    case Expression.MUTABLE() then simplify(Mutable.access(exp.exp));
     else exp;
   end match;
 end simplify;
@@ -118,6 +125,13 @@ algorithm
         end if;
       then
         callExp;
+
+    case Call.TYPED_MAP_CALL()
+      algorithm
+        call.exp := simplify(call.exp);
+        call.iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);
+      then
+        Expression.CALL(call);
 
     else callExp;
   end match;
@@ -289,12 +303,28 @@ protected
   Type ty;
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty) := subscriptedExp;
-  e := simplify(e);
+  subscriptedExp := simplify(e);
 
   for s in subs loop
-    e := Expression.applyIndexSubscript(simplify(s), e);
+    subscriptedExp := Expression.applyIndexSubscript(simplify(s), subscriptedExp);
   end for;
 end simplifySubscriptedExp;
+
+function simplifyTupleElement
+  input output Expression tupleExp;
+protected
+  Expression e;
+  Integer index;
+  Type ty;
+algorithm
+  Expression.TUPLE_ELEMENT(e, index, ty) := tupleExp;
+  e := simplify(e);
+
+  tupleExp := match e
+    case Expression.TUPLE() then listGet(e.elements, index);
+    else Expression.TUPLE_ELEMENT(e, index, ty);
+  end match;
+end simplifyTupleElement;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;
