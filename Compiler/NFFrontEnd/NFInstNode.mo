@@ -828,6 +828,8 @@ uniontype InstNode
               then scopePath2(node.parentScope, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
             case InstNodeType.BASE_CLASS()
               then scopePath2(it.parent, includeRoot, accumPath);
+            case InstNodeType.DERIVED_CLASS()
+              then scopePath2(node.parentScope, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
             case InstNodeType.BUILTIN_CLASS()
               then Absyn.QUALIFIED(node.name, accumPath);
             case InstNodeType.ROOT_CLASS()
