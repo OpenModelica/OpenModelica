@@ -34,6 +34,7 @@ protected
   import ExpressionIterator = NFExpressionIterator;
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
+  import ExpandExp = NFExpandExp;
 
 public
   import Expression = NFExpression;
@@ -71,14 +72,14 @@ public
 
       case Expression.ARRAY()
         algorithm
-          Expression.ARRAY(elements = arr) := Expression.expand(exp);
+          Expression.ARRAY(elements = arr) := ExpandExp.expand(exp);
           (arr, slice) := nextArraySlice(arr);
         then
           ARRAY_ITERATOR(arr, slice);
 
       case Expression.CREF()
         algorithm
-          e := Expression.expandCref(exp);
+          e := ExpandExp.expandCref(exp);
 
           iterator := match e
             case Expression.ARRAY() then fromExp(e);
@@ -89,7 +90,7 @@ public
 
       else
         algorithm
-          e := Expression.expand(exp);
+          e := ExpandExp.expand(exp);
         then
           if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e);
 

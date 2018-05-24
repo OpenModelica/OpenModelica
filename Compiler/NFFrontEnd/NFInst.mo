@@ -768,7 +768,7 @@ algorithm
         mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
         mod := Modifier.merge(outer_mod, mod);
-        attributes := mergeDerivedAttributes(attributes, cls.attributes, node);
+        attributes := mergeDerivedAttributes(attributes, cls.attributes, parent);
 
         // Mark the base class node as a base class.
         base_node := InstNode.setNodeType(

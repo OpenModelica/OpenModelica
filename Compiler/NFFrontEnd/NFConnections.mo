@@ -44,6 +44,7 @@ protected
   import Type = NFType;
   import MetaModelica.Dangerous.listReverseInPlace;
   import ElementSource;
+  import ExpandExp = NFExpandExp;
 
 public
   record CONNECTIONS
@@ -98,8 +99,8 @@ public
                               rhs = Expression.CREF(cref = rhs), source = source)
           algorithm
             if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
-              cl1 := Connector.fromExp(Expression.expand(eq.lhs), source);
-              cl2 := Connector.fromExp(Expression.expand(eq.rhs), source);
+              cl1 := Connector.fromExp(ExpandExp.expand(eq.lhs), source);
+              cl2 := Connector.fromExp(ExpandExp.expand(eq.rhs), source);
 
               for c1 in cl1 loop
                 c2 :: cl2 := cl2;

@@ -39,6 +39,7 @@ protected
   import Type = NFType;
   import RangeIterator = NFRangeIterator;
   import Dump;
+  import ExpandExp = NFExpandExp;
 
 public
   import Expression = NFExpression;
@@ -345,7 +346,7 @@ public
     subscripts := match subscript
       case INDEX() then {subscript};
       case SLICE()
-        then list(INDEX(e) for e in Expression.arrayElements(Expression.expand(subscript.slice)));
+        then list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice)));
       case WHOLE()
         then RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex);
     end match;

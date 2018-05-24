@@ -1312,48 +1312,6 @@ function evalNormalCall
   output Expression result = EvalFunction.evaluate(fn, args);
 end evalNormalCall;
 
-protected
-
-function printUnboundError
-  input EvalTarget target;
-  input Expression exp;
-algorithm
-  () := match target
-    case EvalTarget.DIMENSION()
-      algorithm
-        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
-          {Expression.toString(exp), InstNode.name(target.component)}, target.info);
-      then
-        fail();
-
-    case EvalTarget.CONDITION()
-      algorithm
-        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
-          {Expression.toString(exp)}, target.info);
-      then
-        fail();
-
-    case EvalTarget.GENERIC()
-      algorithm
-        Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
-          {Expression.toString(exp)},
-          {InstNode.info(ComponentRef.node(Expression.toCref(exp))), target.info});
-      then
-        fail();
-
-    else ();
-  end match;
-end printUnboundError;
-
-function printWrongArgsError
-  input String evalFunc;
-  input list<Expression> args;
-  input SourceInfo info;
-algorithm
-  Error.addInternalError(evalFunc + " got invalid arguments " +
-    List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
-end printWrongArgsError;
-
 function evalBuiltinAbs
   input Expression arg;
   output Expression result;
@@ -2361,6 +2319,48 @@ algorithm
     else subscript;
   end match;
 end evalSubscript;
+
+protected
+
+function printUnboundError
+  input EvalTarget target;
+  input Expression exp;
+algorithm
+  () := match target
+    case EvalTarget.DIMENSION()
+      algorithm
+        Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
+          {Expression.toString(exp), InstNode.name(target.component)}, target.info);
+      then
+        fail();
+
+    case EvalTarget.CONDITION()
+      algorithm
+        Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
+          {Expression.toString(exp)}, target.info);
+      then
+        fail();
+
+    case EvalTarget.GENERIC()
+      algorithm
+        Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
+          {Expression.toString(exp)},
+          {InstNode.info(ComponentRef.node(Expression.toCref(exp))), target.info});
+      then
+        fail();
+
+    else ();
+  end match;
+end printUnboundError;
+
+function printWrongArgsError
+  input String evalFunc;
+  input list<Expression> args;
+  input SourceInfo info;
+algorithm
+  Error.addInternalError(evalFunc + " got invalid arguments " +
+    List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
+end printWrongArgsError;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFCeval;

@@ -53,6 +53,7 @@ import ElementSource;
 import DAE;
 import Statement = NFStatement;
 import Algorithm = NFAlgorithm;
+import ExpandExp = NFExpandExp;
 
 public
 function scalarize
@@ -263,7 +264,7 @@ algorithm
     body := scalarizeEquations(body);
 
     if Type.isArray(Expression.typeOf(cond)) then
-      cond := Expression.expand(cond);
+      cond := ExpandExp.expand(cond);
     end if;
 
     bl := (cond, body) :: bl;
@@ -350,7 +351,7 @@ algorithm
     body := scalarizeStatements(body);
 
     if Type.isArray(Expression.typeOf(cond)) then
-      cond := Expression.expand(cond);
+      cond := ExpandExp.expand(cond);
     end if;
 
     bl := (cond, body) :: bl;
