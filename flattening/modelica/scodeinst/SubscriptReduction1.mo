@@ -11,14 +11,14 @@ end SubscriptReduction1;
 
 // Result:
 // class SubscriptReduction1
-//   parameter String s1[1] = String(1, 0, true);
-//   parameter String s1[2] = String(2, 0, true);
-//   parameter String s1[3] = String(3, 0, true);
-//   parameter String s2[1,1] = String(1 + 1, 0, true);
-//   parameter String s2[1,2] = String(2 + 1, 0, true);
-//   parameter String s2[1,3] = String(3 + 1, 0, true);
-//   parameter String s2[2,1] = String(1 + 2, 0, true);
-//   parameter String s2[2,2] = String(2 + 2, 0, true);
-//   parameter String s2[2,3] = String(3 + 2, 0, true);
+//   parameter String s1[1] = "1";
+//   parameter String s1[2] = "2";
+//   parameter String s1[3] = "3";
+//   parameter String s2[1,1] = "2";
+//   parameter String s2[1,2] = "3";
+//   parameter String s2[1,3] = "4";
+//   parameter String s2[2,1] = "3";
+//   parameter String s2[2,2] = "4";
+//   parameter String s2[2,3] = "5";
 // end SubscriptReduction1;
 // endResult
