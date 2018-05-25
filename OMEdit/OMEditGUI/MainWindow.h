@@ -185,6 +185,8 @@ public:
   QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   QAction* getAddFMUAction() {return mpAddFMUAction;}
+  QAction* getAddOrEditSubModelIconAction() {return mpAddOrEditSubModelIconAction;}
+  QAction* getOMSSimulationSetupAction() {return mpOMSSimulationSetupAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
   QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
@@ -397,6 +399,7 @@ private:
   QAction *mpTLMCoSimulationAction;
   // OMSimulator Actions
   QAction *mpAddFMUAction;
+  QAction *mpAddOrEditSubModelIconAction;
   QAction *mpOMSSimulationSetupAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;

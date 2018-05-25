@@ -91,6 +91,31 @@ RectangleAnnotation::RectangleAnnotation(Component *pParent)
   setRotation(mRotation);
 }
 
+/*!
+ * \brief RectangleAnnotation::RectangleAnnotation
+ * Used by OMSimulator FMU ModelWidget\n
+ * We always make this shape as inherited shape since its not allowed to be modified.
+ * \param pGraphicsView
+ */
+RectangleAnnotation::RectangleAnnotation(GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // create a grey rectangle
+  setLineColor(QColor(0, 0, 0));
+  setFillColor(QColor(240, 240, 240));
+  setFillPattern(StringHandler::FillSolid);
+  QList<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  setExtents(extents);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  setShapeFlags(true);
+}
+
 void RectangleAnnotation::parseShapeAnnotation(QString annotation)
 {
   GraphicItem::parseShapeAnnotation(annotation);

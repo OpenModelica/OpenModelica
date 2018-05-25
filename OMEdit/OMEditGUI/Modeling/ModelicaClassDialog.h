@@ -360,7 +360,6 @@ public:
   AddFMUDialog(GraphicsView *pGraphicsView);
 private:
   GraphicsView *mpGraphicsView;
-  LibraryTreeItem *mpLibraryTreeItem;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   Label *mpNameLabel;

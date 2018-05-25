@@ -613,6 +613,7 @@ void MainWindow::openDroppedFile(QDropEvent *event)
   showProgressBar();
   //retrieves the filenames of all the dragged files in list and opens the valid files.
   foreach (QUrl fileUrl, event->mimeData()->urls()) {
+    qDebug() << fileUrl.toLocalFile() << fileUrl.toDisplayString();
     QFileInfo fileInfo(fileUrl.toLocalFile());
     // show file loading message
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
@@ -3375,6 +3376,9 @@ void MainWindow::createActions()
   // Add FMU Action
   mpAddFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addFMU, this);
   mpAddFMUAction->setStatusTip(Helper::addFMUTip);
+  // Add or Edit submodel icon Action
+  mpAddOrEditSubModelIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit SubModel Icon"), this);
+  mpAddOrEditSubModelIconAction->setStatusTip(tr("Adds/Edits an icon for submodel"));
   // OMSimulator simulation setup action
   mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
   mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
@@ -4021,6 +4025,8 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to OMSimulator Toolbar
   mpOMSimulatorToobar->addAction(mpAddFMUAction);
+  mpOMSimulatorToobar->addAction(mpAddOrEditSubModelIconAction);
+  mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);
 }
 
@@ -4110,7 +4116,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
           Helper::applicationIntroText,
           GIT_SHA,
           Helper::OpenModelicaVersion,
-          oms_getVersion());
+          oms2_getVersion());
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

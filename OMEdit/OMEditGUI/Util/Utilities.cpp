@@ -1004,3 +1004,19 @@ QList<QPointF> Utilities::liangBarskyClipper(float xmin, float ymin, float xmax,
 //  qDebug() << x1 << y1 << xn1 << yn1 << x2 << y2 << xn2 << yn2;
   return QList<QPointF>() << QPointF(xn1, yn1) << QPointF(xn2, yn2);
 }
+
+/*!
+ * \brief Utilities::mapToCoOrdinateSystem
+ * If you have numbers x in the range [a,b] and you want to transform them to numbers y in the range [c,d].\n
+ * y = ((x−a) * ((d−c)/(b−a))) + c
+ * \param value
+ * \param startA
+ * \param endA
+ * \param startB
+ * \param endB
+ * \return
+ */
+qreal Utilities::mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB)
+{
+  return ((value - startA) * ((endB - startB) / (endA - startA))) + startB;
+}

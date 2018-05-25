@@ -2076,25 +2076,9 @@ void AddFMUDialog::addFMU()
       return;
     }
   }
-  // Add FMU to OMSimulator
-  OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  bool fmuAdded = OMSProxy::instance()->addFMU(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
-                                               fileInfo.absoluteFilePath(), mpNameTextBox->text());
-  OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
-  // Create a LibraryTreeItem for FMU
-  if (fmuAdded) {
-    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pFMULibraryTreeItem;
-    pFMULibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mpNameTextBox->text(),
-                                                                   QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
-                                                                   .arg(mpNameTextBox->text()), mpPathTextBox->text(),
-                                                                   false, pParentLibraryTreeItem);
-    // add the FMU to view
-    QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
-    ComponentInfo *pComponentInfo = new ComponentInfo;
-    pComponentInfo->setName(pFMULibraryTreeItem->getName());
-    pComponentInfo->setClassName(pFMULibraryTreeItem->getNameStructure());
-    mpGraphicsView->addComponentToView(pComponentInfo->getName(), pFMULibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo, false);
-    accept();
-  }
+  QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
+  AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(mpNameTextBox->text(), mpPathTextBox->text(), 0,
+                                                                   annotation, false, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSubModelCommand);
+  accept();
 }

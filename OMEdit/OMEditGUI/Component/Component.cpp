@@ -469,9 +469,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     mpDefaultComponentText->setVisible(true);
     drawInterfacePoints();
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    mpDefaultComponentRectangle->setVisible(true);
-    mpDefaultComponentText->setVisible(true);
-    drawOMSElementConnectors();
+    drawOMSComponent();
   } else {
     drawComponent();
   }
@@ -1649,35 +1647,40 @@ void Component::drawInterfacePoints()
 }
 
 /*!
- * \brief Component::drawOMSElementConnectors
- * Draws the OMSimulator element connectors.
+ * \brief Component::drawOMSComponent
+ * Draws the OMSimulator component.
  */
-void Component::drawOMSElementConnectors()
+void Component::drawOMSComponent()
 {
-  if (mpLibraryTreeItem->getOMSElement()) {
-    oms_connector_t** pInterfaces = mpLibraryTreeItem->getOMSElement()->connectors;
-    ComponentInfo *pComponentInfo = 0;
-    QString name;
-    for (int i = 0 ; pInterfaces[i] ; i++) {
-      switch (pInterfaces[i]->causality) {
-        case oms_causality_input:
-        case oms_causality_output:
-          pComponentInfo = new ComponentInfo;
-          name = StringHandler::getLastWordAfterDot(pInterfaces[i]->name);
-          name = name.split(':', QString::SkipEmptyParts).last();
-          pComponentInfo->setName(name);
-          //pComponentInfo->setClassName(pInterfaces[i]->type);
-          pComponentInfo->setOMSCausality(pInterfaces[i]->causality);
-          pComponentInfo->setOMSSignalType(pInterfaces[i]->type);
-          mComponentsList.append(new Component(pComponentInfo, mpLibraryTreeItem, this));
-          break;
-        case oms_causality_parameter:
-        case oms_causality_undefined:
-        default:
-          break;
+  if (mpLibraryTreeItem->getOMSElement()) { // if component is fmu
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    }
+    // draw shapes first
+    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
+      if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+      } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
+      } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
       }
     }
-    adjustOMSSignals();
+    // draw components now
+    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
+      mComponentsList.append(pNewComponent);
+    }
+    //adjustOMSSignals();
+  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is signal i.e., input/output
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    }
+    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
+      if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
+      }
+    }
   }
 }
 
@@ -1778,16 +1781,26 @@ void Component::createClassShapes()
       MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
-    GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    /* ticket:4505
-     * Only use the diagram annotation when connector is inside the component instance.
-     */
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
-      mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-      if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
-        pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+
+    GraphicsView *pGraphicsView = 0;
+    if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+      pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+      /* ticket:4505
+       * Only use the diagram annotation when connector is inside the component instance.
+       */
+      if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+        mpLibraryTreeItem->getModelWidget()->loadDiagramView();
+        if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
+          pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+        }
       }
+    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      qDebug() << "Component::createClassShapes() unknonw library type.";
+      return;
     }
+
     foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
       if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
         mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
@@ -1838,6 +1851,9 @@ void Component::createActions()
 void Component::createResizerItems()
 {
   bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
+  bool isOMSConnector = (mpLibraryTreeItem
+                         && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+                         && mpLibraryTreeItem->getOMSConnector());
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -1848,7 +1864,7 @@ void Component::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
   mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
@@ -1857,7 +1873,7 @@ void Component::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
   mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
@@ -1866,7 +1882,7 @@ void Component::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
   mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
@@ -1875,7 +1891,7 @@ void Component::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
 }
 
 void Component::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2)
@@ -2092,14 +2108,7 @@ bool Component::checkEnumerationDisplayString(QString &displayString, const QStr
 void Component::updateToolTip()
 {
   if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    if (!mpParentComponent) { // root component
-      setToolTip(mpLibraryTreeItem->getTooltip());
-    } else {
-      setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
-                 .arg(Helper::name).arg(mpComponentInfo->getName())
-                 .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpComponentInfo->getOMSSignalType()))
-                 .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpComponentInfo->getOMSCausality())));
-    }
+    setToolTip(mpLibraryTreeItem->getTooltip());
   } else {
     QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
@@ -2824,8 +2833,10 @@ void Component::showSubModelAttributes()
  */
 void Component::showFMUPropertiesDialog()
 {
-  FMUPropertiesDialog *pFMUPropertiesDialog = new FMUPropertiesDialog(this, MainWindow::instance());
-  pFMUPropertiesDialog->exec();
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getFMUInfo()) {
+    FMUPropertiesDialog *pFMUPropertiesDialog = new FMUPropertiesDialog(this, MainWindow::instance());
+    pFMUPropertiesDialog->exec();
+  }
 }
 
 /*!
@@ -2845,6 +2856,11 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
       pItem->setSelected(false);
     }
     pComponent->setSelected(true);
+  }
+
+  // No context menu for component of type OMS connector i.e., input/output signal of fmu.
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getOMSConnector()) {
+    return;
   }
 
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();

@@ -36,6 +36,7 @@
 #define BITMAPANNOTATION_H
 
 #include "ShapeAnnotation.h"
+#include "Util/Utilities.h"
 
 class Component;
 class BitmapAnnotation : public ShapeAnnotation
@@ -48,6 +49,8 @@ public:
   BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
   // Used for icon/diagram inherited shape
   BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for OMSimulator FMU
+  BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;
@@ -60,6 +63,27 @@ private:
   Component *mpComponent;
 public slots:
   void duplicate();
+};
+
+class AddOrEditSubModelIconDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  AddOrEditSubModelIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent = 0);
+private:
+  ShapeAnnotation *mpShapeAnnotation;
+  GraphicsView *mpGraphicsView;
+  Label *mpFileLabel;
+  QLineEdit *mpFileTextBox;
+  QPushButton *mpBrowseFileButton;
+  QScrollArea *mpPreviewImageScrollArea;
+  Label *mpPreviewImageLabel;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+public slots:
+  void browseImageFile();
+  void addOrEditIcon();
 };
 
 #endif // BITMAPANNOTATION_H

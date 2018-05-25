@@ -975,11 +975,13 @@ void ShapeAnnotation::adjustGeometries()
   */
 void ShapeAnnotation::setShapeFlags(bool enable)
 {
-  /*
-    Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
-    AND shape is not an inherited shape.
-    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
+  /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
+   * AND shape is not an inherited shape.
+   * AND shape is not a OMS connector i.e., input/output signals of fmu.
+   */
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()
+      && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+           && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector())) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -1640,7 +1642,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 
     menu.addSeparator();
     menu.addAction(mpGraphicsView->getDeleteAction());
-  } else {
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     menu.addAction(mpShapePropertiesAction);
     menu.addSeparator();
     if (isInheritedShape()) {
@@ -1677,6 +1679,8 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
       menu.addSeparator();
       menu.addAction(mpEditTransitionAction);
     }
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    return;
   }
   menu.exec(pEvent->screenPos());
 }

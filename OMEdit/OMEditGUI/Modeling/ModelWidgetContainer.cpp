@@ -470,12 +470,6 @@ void GraphicsView::addComponentToClass(Component *pComponent)
     foreach (Component *pInterfaceComponent, pComponent->getComponentsList()) {
       pCompositeModelEditor->addInterface(pInterfaceComponent, pComponent->getName());
     }
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    QFileInfo fileInfo(mpModelWidget->getLibraryTreeItem()->getFileName());
-    OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-    OMSProxy::instance()->addFMU(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pComponent->getLibraryTreeItem()->getFileName(),
-                                 pComponent->getName());
-    OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
   }
 }
 
@@ -504,7 +498,12 @@ void GraphicsView::deleteComponent(Component *pComponent)
     }
   }
   pComponent->setSelected(false);
-  mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    mpModelWidget->getUndoStack()->push(new DeleteSubModelCommand(pComponent, this));
+  } else {
+    mpModelWidget->getUndoStack()->push(new DeleteComponentCommand(pComponent, this));
+  }
+
 }
 
 /*!
@@ -521,11 +520,6 @@ void GraphicsView::deleteComponentFromClass(Component *pComponent)
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteSubModel(pComponent->getName());
-  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    if (OMSProxy::instance()->deleteSubModel(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pComponent->getName())) {
-      //MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(pComponent->getLibraryTreeItem(), false);
-    }
-
   }
 }
 
@@ -1177,6 +1171,30 @@ void GraphicsView::fitInViewInternal()
 }
 
 /*!
+ * \brief GraphicsView::addFMU
+ * Adds the FMU as submodel to the OMS model.
+ * \param name
+ * \param path
+ */
+void GraphicsView::addFMU(QString name, QString path)
+{
+  QFileInfo fileInfo(path);
+  OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  OMSProxy::instance()->addFMU(mpModelWidget->getLibraryTreeItem()->getNameStructure(), fileInfo.absoluteFilePath(), name);
+  OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
+}
+
+/*!
+ * \brief GraphicsView::deleteSubModel
+ * Deletes the submodel from OMS model.
+ * \param name
+ */
+void GraphicsView::deleteSubModel(QString name)
+{
+  OMSProxy::instance()->deleteSubModel(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name);
+}
+
+/*!
  * \brief GraphicsView::createActions
  * Creates the actions for the GraphicsView.
  */
@@ -1296,7 +1314,9 @@ bool GraphicsView::isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem)
  */
 bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()
+      || (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+          && mpModelWidget->getLibraryTreeItem()->getOMSConnector())) {
     return false;
   }
   bool selectedAndEditable = false;
@@ -2591,7 +2611,13 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addAction(mpSimulationParamsAction);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
       menu.addSeparator();
-      menu.addAction(MainWindow::instance()->getAddFMUAction());
+      if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
+        if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmi) {
+          menu.addAction(MainWindow::instance()->getAddFMUAction());
+        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+          menu.addAction(MainWindow::instance()->getAddOrEditSubModelIconAction());
+        }
+      }
     }
     menu.exec(event->globalPos());
     return;         // return from it because at a time we only want one context menu.
@@ -2945,6 +2971,27 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     //    getModelComponents();
     //    drawModelIconComponents();
     mpEditor = 0;
+  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    // icon graphics framework
+    mpIconGraphicsScene = 0;
+    mpIconGraphicsView = 0;
+    // diagram graphics framework
+    mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
+    mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
+    mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
+    mpDiagramGraphicsView->hide();
+    // Undo stack for model
+    mpUndoStack = new QUndoStack;
+    connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
+    connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
+    if (MainWindow::instance()->isDebug()) {
+      mpUndoView = new QUndoView(mpUndoStack);
+    }
+    mpEditor = 0;
+    if ((mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu)
+        || mpLibraryTreeItem->getOMSConnector()) {
+      drawOMSModelElements();
+    }
   } else {
     // icon graphics framework
     mpIconGraphicsScene = 0;
@@ -3546,25 +3593,11 @@ void ModelWidget::createModelWidgetComponents()
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
-      // diagram graphics framework
-      mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
-      mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
-      mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
-      mpDiagramGraphicsView->hide();
-      // Undo stack for model
-      mpUndoStack = new QUndoStack;
-      connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
-      connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
-      if (MainWindow::instance()->isDebug()) {
-        mpUndoView = new QUndoView(mpUndoStack);
-      }
       // only get the components and connectoins if the we are not creating a new class.
-      if (mpLibraryTreeItem->getOMSElement()->type < oms_component_fmu && !mpLibraryTreeItem->getFileName().isEmpty()) {
+      if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi &&
+          !mpLibraryTreeItem->getFileName().isEmpty()) {
         drawOMSModelElements();
         drawOMSModelConnections();
-      } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
-        drawOMSElement();
-//        drawOMSElementConnectors();
       }
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -3910,8 +3943,18 @@ void ModelWidget::updateClassAnnotationIfNeeded()
  */
 void ModelWidget::updateModelText(bool updateText)
 {
-  setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  // Don't allow updating the child LibraryTreeItems of OMS model
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+      && mpLibraryTreeItem->parent() != pLibraryTreeModel->getRootLibraryTreeItem()) {
+    if (mpLibraryTreeItem->parent()->getModelWidget()) {
+      mpLibraryTreeItem->parent()->getModelWidget()->updateModelText(updateText);
+    } else {
+      pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem->parent());
+    }
+    return;
+  }
+  setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
   if (updateText) {
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   } else {
@@ -5392,32 +5435,156 @@ void ModelWidget::getCompositeModelConnections()
  */
 void ModelWidget::drawOMSModelElements()
 {
-  for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
-    LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-    if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
-      // check if we have zero width and height
-      double x1, y1, x2, y2;
-      x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
-      y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
-      x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
-      y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
-      double width = x2 - x1;
-      double height = y2 - y1;
-      if (width <= 0 && height <= 0) {
-        x1 = -10.0;
-        y1 = -10.0;
-        x2 = 10.0;
-        y2 = 10.0;
+  if (mpLibraryTreeItem->getOMSElement()) {
+    if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi) {
+      for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+        LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+        if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
+          // check if we have zero width and height
+          double x1, y1, x2, y2;
+          x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
+          y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
+          x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
+          y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
+          double width = x2 - x1;
+          double height = y2 - y1;
+          if (width <= 0 && height <= 0) {
+            x1 = -10.0;
+            y1 = -10.0;
+            x2 = 10.0;
+            y2 = 10.0;
+          }
+          // Load the ModelWidget if not loaded already
+          if (!pChildLibraryTreeItem->getModelWidget()) {
+            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
+          }
+
+          QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
+                               .arg(x1).arg(y1)
+                               .arg(x2).arg(y2)
+                               .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
+          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", pChildLibraryTreeItem,
+                                                                           annotation, true, mpDiagramGraphicsView);
+          mpUndoStack->push(pAddSubModelCommand);
+        }
       }
-      QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
-                           .arg(x1).arg(y1)
-                           .arg(x2).arg(y2)
-                           .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
-      ComponentInfo *pComponentInfo = new ComponentInfo;
-      pComponentInfo->setName(pChildLibraryTreeItem->getName());
-      pComponentInfo->setClassName(pChildLibraryTreeItem->getNameStructure());
-      mpDiagramGraphicsView->addComponentToView(pComponentInfo->getName(), pChildLibraryTreeItem, annotation, QPointF(0, 0), pComponentInfo,
-                                                false, true);
+    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
+      if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
+        // Draw bitmap with icon source
+        QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
+        QFileInfo fileInfo(url.toLocalFile());
+        BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpDiagramGraphicsView);
+        pBitmapAnnotation->initializeTransformation();
+        pBitmapAnnotation->drawCornerItems();
+        pBitmapAnnotation->setCornerItemsActiveOrPassive();
+        mpDiagramGraphicsView->addShapeToList(pBitmapAnnotation);
+        mpDiagramGraphicsView->addItem(pBitmapAnnotation);
+      } else {
+        // Rectangle shape as base
+        RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpDiagramGraphicsView);
+        pRectangleAnnotation->initializeTransformation();
+        pRectangleAnnotation->drawCornerItems();
+        pRectangleAnnotation->setCornerItemsActiveOrPassive();
+        mpDiagramGraphicsView->addShapeToList(pRectangleAnnotation);
+        mpDiagramGraphicsView->addItem(pRectangleAnnotation);
+        // Text for name
+        TextAnnotation *pTextAnnotation = new TextAnnotation(mpDiagramGraphicsView);
+        pTextAnnotation->initializeTransformation();
+        pTextAnnotation->drawCornerItems();
+        pTextAnnotation->setCornerItemsActiveOrPassive();
+        mpDiagramGraphicsView->addShapeToList(pTextAnnotation);
+        mpDiagramGraphicsView->addItem(pTextAnnotation);
+      }
+      for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+        LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+        if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
+          // Load the ModelWidget if not loaded already
+          if (!pChildLibraryTreeItem->getModelWidget()) {
+            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
+          }
+
+          QString annotation = QString("Placement(true,%1,%2,-10,-10,10,10,-,-,-,-,-,-,-,)")
+                               .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->x, 0, 1, -100, 100))
+                               .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->y, 0, 1, -100, 100));
+          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", pChildLibraryTreeItem,
+                                                                           annotation, true, mpDiagramGraphicsView);
+          mpUndoStack->push(pAddSubModelCommand);
+        }
+      }
+    }
+  } else if (mpLibraryTreeItem->getOMSConnector()) {
+    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
+      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
+      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+        case oms_signal_type_integer:
+          pPolygonAnnotation->setLineColor(QColor(255,127,0));
+          pPolygonAnnotation->setFillColor(QColor(255,127,0));
+          break;
+        case oms_signal_type_boolean:
+          pPolygonAnnotation->setLineColor(QColor(255,0,255));
+          pPolygonAnnotation->setFillColor(QColor(255,0,255));
+          break;
+        case oms_signal_type_string:
+          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
+          break;
+        case oms_signal_type_enum:
+          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
+          break;
+        case oms_signal_type_bus:
+          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
+          break;
+        case oms_signal_type_real:
+        default:
+          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+          pPolygonAnnotation->setFillColor(QColor(0, 0, 127));
+          break;
+      }
+      pPolygonAnnotation->initializeTransformation();
+      pPolygonAnnotation->drawCornerItems();
+      pPolygonAnnotation->setCornerItemsActiveOrPassive();
+      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
+                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
+                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
+                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
+      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
+      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
+    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
+      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
+      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+        case oms_signal_type_integer:
+          pPolygonAnnotation->setLineColor(QColor(255,127,0));
+          pPolygonAnnotation->setFillColor(QColor(255,255,255));
+          break;
+        case oms_signal_type_boolean:
+          pPolygonAnnotation->setLineColor(QColor(255,0,255));
+          pPolygonAnnotation->setFillColor(QColor(255,255,255));
+          break;
+        case oms_signal_type_string:
+          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
+          break;
+        case oms_signal_type_enum:
+          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
+          break;
+        case oms_signal_type_bus:
+          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
+          break;
+        case oms_signal_type_real:
+        default:
+          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+          pPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+          break;
+      }
+      pPolygonAnnotation->initializeTransformation();
+      pPolygonAnnotation->drawCornerItems();
+      pPolygonAnnotation->setCornerItemsActiveOrPassive();
+      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
+                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
+                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
+                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
+      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
+      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
     }
   }
 }
@@ -5428,104 +5595,90 @@ void ModelWidget::drawOMSModelElements()
  */
 void ModelWidget::drawOMSModelConnections()
 {
-  MessagesWidget *pMessagesWidget = MessagesWidget::instance();
-  oms_connection_t** pConnections = NULL;
-  if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
-    for (int i = 0 ; pConnections[i] ; i++) {
-      // get start submodel
-      QStringList startConnectionList = QString(pConnections[i]->conA).split(':', QString::SkipEmptyParts);
-      if (startConnectionList.size() < 2) {
-        continue;
-      }
-      Component *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
-      if (!pStartSubModelComponent) {
-        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(startConnectionList.at(0)).arg(pConnections[i]->conA),
-                                                   Helper::scriptingKind, Helper::errorLevel));
-        continue;
-      }
-      // get start interface point
-      Component *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
-      if (!pStartInterfacePointComponent) {
-        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(startConnectionList.at(1)).arg(pConnections[i]->conA),
-                                                   Helper::scriptingKind, Helper::errorLevel));
-        continue;
-      }
-      // get end submodel
-      QStringList endConnectionList = QString(pConnections[i]->conB).split(':', QString::SkipEmptyParts);
-      if (endConnectionList.size() < 2) {
-        continue;
-      }
-      Component *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
-      if (!pEndSubModelComponent) {
-        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(endConnectionList.at(0)).arg(pConnections[i]->conB),
-                                                   Helper::scriptingKind, Helper::errorLevel));
-        continue;
-      }
-      // get end interface point
-      Component *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
-      if (!pEndInterfacePointComponent) {
-        pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                   GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                   .arg(endConnectionList.at(1)).arg(pConnections[i]->conB),
-                                                   Helper::scriptingKind, Helper::errorLevel));
-        continue;
-      }
-      // default connection annotation
-      QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
-      QStringList shapesList;
-      QString point = QString("{%1,%2}");
-      QStringList points;
-      if (pConnections[i]->geometry && pConnections[i]->geometry->n > 0) {
-        for (unsigned int j = 0 ; j < pConnections[i]->geometry->n ; j++) {
-          points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
+  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi) {
+    MessagesWidget *pMessagesWidget = MessagesWidget::instance();
+    oms_connection_t** pConnections = NULL;
+    if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
+      for (int i = 0 ; pConnections[i] ; i++) {
+        // get start submodel
+        QStringList startConnectionList = QString(pConnections[i]->conA).split(':', QString::SkipEmptyParts);
+        if (startConnectionList.size() < 2) {
+          continue;
         }
-      } else {
-        QPointF startPoint = pStartInterfacePointComponent->mapToScene(pStartInterfacePointComponent->boundingRect().center());
-        points.append(point.arg(startPoint.x()).arg(startPoint.y()));
-        QPointF endPoint = pEndInterfacePointComponent->mapToScene(pEndInterfacePointComponent->boundingRect().center());
-        points.append(point.arg(endPoint.x()).arg(endPoint.y()));
-      }
-      QString pointsString = QString("{%1}").arg(points.join(","));
-      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
-      // Now parse the shapes available in list
-      QString lineShape = "";
-      foreach (QString shape, shapesList) {
-        if (shape.startsWith("Line")) {
-          lineShape = shape.mid(QString("Line").length());
-          lineShape = StringHandler::removeFirstLastParentheses(lineShape);
-          break;  // break the loop once we have got the line annotation.
+        Component *pStartSubModelComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
+        if (!pStartSubModelComponent) {
+          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                     GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                     .arg(startConnectionList.at(0)).arg(pConnections[i]->conA),
+                                                     Helper::scriptingKind, Helper::errorLevel));
+          continue;
         }
-      }
-      LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartInterfacePointComponent, pEndInterfacePointComponent,
-                                                                     mpDiagramGraphicsView);
-      pConnectionLineAnnotation->setStartComponentName(pConnections[i]->conA);
-      pConnectionLineAnnotation->setEndComponentName(pConnections[i]->conB);
+        // get start interface point
+        Component *pStartInterfacePointComponent = getConnectorComponent(pStartSubModelComponent, startConnectionList.at(1));
+        if (!pStartInterfacePointComponent) {
+          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                     GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                     .arg(startConnectionList.at(1)).arg(pConnections[i]->conA),
+                                                     Helper::scriptingKind, Helper::errorLevel));
+          continue;
+        }
+        // get end submodel
+        QStringList endConnectionList = QString(pConnections[i]->conB).split(':', QString::SkipEmptyParts);
+        if (endConnectionList.size() < 2) {
+          continue;
+        }
+        Component *pEndSubModelComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
+        if (!pEndSubModelComponent) {
+          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                     GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                     .arg(endConnectionList.at(0)).arg(pConnections[i]->conB),
+                                                     Helper::scriptingKind, Helper::errorLevel));
+          continue;
+        }
+        // get end interface point
+        Component *pEndInterfacePointComponent = getConnectorComponent(pEndSubModelComponent, endConnectionList.at(1));
+        if (!pEndInterfacePointComponent) {
+          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                     GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                     .arg(endConnectionList.at(1)).arg(pConnections[i]->conB),
+                                                     Helper::scriptingKind, Helper::errorLevel));
+          continue;
+        }
+        // default connection annotation
+        QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
+        QStringList shapesList;
+        QString point = QString("{%1,%2}");
+        QStringList points;
+        if (pConnections[i]->geometry && pConnections[i]->geometry->n > 0) {
+          for (unsigned int j = 0 ; j < pConnections[i]->geometry->n ; j++) {
+            points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
+          }
+        } else {
+          QPointF startPoint = pStartInterfacePointComponent->mapToScene(pStartInterfacePointComponent->boundingRect().center());
+          points.append(point.arg(startPoint.x()).arg(startPoint.y()));
+          QPointF endPoint = pEndInterfacePointComponent->mapToScene(pEndInterfacePointComponent->boundingRect().center());
+          points.append(point.arg(endPoint.x()).arg(endPoint.y()));
+        }
+        QString pointsString = QString("{%1}").arg(points.join(","));
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+        // Now parse the shapes available in list
+        QString lineShape = "";
+        foreach (QString shape, shapesList) {
+          if (shape.startsWith("Line")) {
+            lineShape = shape.mid(QString("Line").length());
+            lineShape = StringHandler::removeFirstLastParentheses(lineShape);
+            break;  // break the loop once we have got the line annotation.
+          }
+        }
+        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartInterfacePointComponent, pEndInterfacePointComponent,
+                                                                       mpDiagramGraphicsView);
+        pConnectionLineAnnotation->setStartComponentName(pConnections[i]->conA);
+        pConnectionLineAnnotation->setEndComponentName(pConnections[i]->conB);
 
-      mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
+        mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
+      }
     }
   }
-}
-
-void ModelWidget::drawOMSElement()
-{
-//  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->geometry
-//      && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
-//    // Draw bitmap with icon
-//  } else {
-//    RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation("", pGraphicsView);
-//    pRectangleAnnotation->initializeTransformation();
-//    pRectangleAnnotation->drawCornerItems();
-//    pRectangleAnnotation->setCornerItemsActiveOrPassive();
-//    pRectangleAnnotation->isInheritedShape();
-//    pGraphicsView->addShapeToList(pRectangleAnnotation);
-//    pGraphicsView->addItem(pRectangleAnnotation);
-//  }
 }
 
 /*!
@@ -5788,6 +5941,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
   connect(MainWindow::instance()->getAddFMUAction(), SIGNAL(triggered()), SLOT(addFMU()));
+  connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
@@ -6189,7 +6343,7 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, compositeModel, oms, gitWorkingDirectory;
+  bool enabled, modelica, compositeModel, oms, oms_submodel, oms_connector, gitWorkingDirectory;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
@@ -6202,28 +6356,46 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       modelica = true;
       compositeModel = false;
       oms = false;
+      oms_submodel = false;
+      oms_connector = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
       modelica = false;
       compositeModel = false;
       oms = false;
+      oms_submodel = false;
+      oms_connector = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
       modelica = false;
       compositeModel = true;
       oms = false;
+      oms_submodel = false;
+      oms_connector = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       modelica = false;
       compositeModel = false;
       oms = true;
+      oms_submodel = false;
+      oms_connector = false;
+      if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
+        oms_submodel = true;
+      }
+      if (pLibraryTreeItem->getOMSConnector()) {
+        oms_connector = true;
+      }
     } else {
       modelica = false;
       compositeModel = false;
       oms = false;
+      oms_submodel = false;
+      oms_connector = false;
     }
   } else {
     enabled = false;
     modelica = false;
     compositeModel = false;
     oms = false;
+    oms_submodel = false;
+    oms_connector = false;
     pModelWidget = 0;
     pLibraryTreeItem = 0;
   }
@@ -6242,7 +6414,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getEllipseShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel || (oms && !(oms_submodel || oms_connector))) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getTransitionModeAction()->setEnabled(enabled && (modelica) && !pModelWidget->getTextViewToolButton()->isChecked());
   MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
@@ -6265,7 +6437,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getAddFMUAction()->setEnabled(enabled && oms);
+  MainWindow::instance()->getAddFMUAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
+  MainWindow::instance()->getAddOrEditSubModelIconAction()->setEnabled(enabled && oms_submodel);
+  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -6445,5 +6619,27 @@ void ModelWidgetContainer::addFMU()
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     AddFMUDialog *pAddFMUDialog = new AddFMUDialog(pModelWidget->getDiagramGraphicsView());
     pAddFMUDialog->exec();
+  }
+}
+
+/*!
+ * \brief ModelWidgetContainer::addOrEditSubModelIcon
+ * Opens the AddOrEditSubModelIconDialog.
+ */
+void ModelWidgetContainer::addOrEditSubModelIcon()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    if (pModelWidget->getDiagramGraphicsView()->getShapesList().size() > 0) {
+      ShapeAnnotation *pShapeAnnotation = pModelWidget->getDiagramGraphicsView()->getShapesList().at(0);
+      if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) { // edit case
+        AddOrEditSubModelIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditSubModelIconDialog(pShapeAnnotation,
+                                                                                                    pModelWidget->getDiagramGraphicsView());
+        pAddOrEditSubModelIconDialog->exec();
+      } else { // add case
+        AddOrEditSubModelIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditSubModelIconDialog(0, pModelWidget->getDiagramGraphicsView());
+        pAddOrEditSubModelIconDialog->exec();
+      }
+    }
   }
 }

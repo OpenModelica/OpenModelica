@@ -149,6 +149,8 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms_element_t* getOMSElement() const {return mpOMSElement;}
+  void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
+  oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
   void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
   const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
   QString getTooltip() const;
@@ -199,6 +201,7 @@ private:
   bool mExpanded;
   bool mNonExisting;
   oms_element_t *mpOMSElement;
+  oms_connector_t *mpOMSConnector;
   const oms_fmu_info_t *mpFMUInfo;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
@@ -305,6 +308,10 @@ private:
   void createLibraryTreeItemsImpl(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
+  LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
+                                                LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
+                                                oms_connector_t *pOMSConnector = 0, int row = -1);
+  void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);

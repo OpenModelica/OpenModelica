@@ -301,7 +301,7 @@ private:
   void createDefaultComponent();
   void createStateComponent();
   void drawInterfacePoints();
-  void drawOMSElementConnectors();
+  void drawOMSComponent();
   void drawComponent();
   void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();

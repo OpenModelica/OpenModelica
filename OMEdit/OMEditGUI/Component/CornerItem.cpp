@@ -55,12 +55,19 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   setFlags(QGraphicsItem::ItemIgnoresTransformations | QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable
            | QGraphicsItem::ItemSendsGeometryChanges);
   mRectangle = QRectF (-3, -3, 6, 6);
-  if (mpShapeAnnotation->isInheritedShape()) {
+  if (mpShapeAnnotation->isInheritedShape()
+      || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+          && mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector())) {
     setFlag(QGraphicsItem::ItemIsMovable, false);
   }
-  /* Only shapes manipulation via CornerItem's if the class is not a system library class OR not an inherited shape. */
+  /* Only shapes manipulation via CornerItem's if the class is not a system library class
+   * AND not an inherited shape
+   * AND not a OMS connector i.e., input/output signals of fmu
+   */
   if (!mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() &&
-      !mpShapeAnnotation->isInheritedShape()) {
+      !mpShapeAnnotation->isInheritedShape() &&
+      !(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
+        mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector())) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));
     connect(this, SIGNAL(cornerItemRelease()), mpShapeAnnotation, SLOT(cornerItemReleased()));
@@ -100,7 +107,9 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
     return;
   }
   QPen pen;
-  if (mpShapeAnnotation->isInheritedShape()) {
+  if (mpShapeAnnotation->isInheritedShape()
+      || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+          && mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector())) {
     pen.setColor(Qt::darkRed);
   } else {
     pen.setColor(Qt::red);

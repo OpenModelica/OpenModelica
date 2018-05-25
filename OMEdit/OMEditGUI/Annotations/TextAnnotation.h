@@ -53,6 +53,8 @@ public:
   TextAnnotation(Component *pParent);
   // Used for transition text
   TextAnnotation(QString annotation, LineAnnotation *pLineAnnotation);
+  // Used for OMSimulator FMU
+  TextAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

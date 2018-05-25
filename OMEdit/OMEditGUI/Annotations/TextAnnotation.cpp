@@ -126,6 +126,30 @@ TextAnnotation::TextAnnotation(QString annotation, LineAnnotation *pLineAnnotati
 }
 
 /*!
+ * \brief TextAnnotation::TextAnnotation
+ * Used by OMSimulator FMU ModelWidget\n
+ * We always make this shape as inherited shape since its not allowed to be modified.
+ * \param pGraphicsView
+ */
+TextAnnotation::TextAnnotation(GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  mpComponent = 0;
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // give a reasonable size
+  mExtents.replace(0, QPointF(-100, 20));
+  mExtents.replace(1, QPointF(100, -20));
+  setTextString("%name");
+  initUpdateTextString();
+  setPos(mOrigin);
+  setRotation(mRotation);
+  setShapeFlags(true);
+}
+
+/*!
  * \brief TextAnnotation::parseShapeAnnotation
  * Parses the text annotation string
  * \param annotation - text annotation string.

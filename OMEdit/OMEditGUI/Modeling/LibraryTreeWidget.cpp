@@ -377,6 +377,7 @@ LibraryTreeItem::LibraryTreeItem()
   setExpanded(false);
   setNonExisting(true);
   setOMSElement(0);
+  setOMSConnector(0);
   setFMUInfo(0);
 }
 
@@ -423,19 +424,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
         setSaveContentsType(LibraryTreeItem::SaveInOneFile);
       }
     }
-  } else if (type == LibraryTreeItem::OMS) {
-    setOMSElement(0);
-    setFMUInfo(0);
-    if ((mpParentLibraryTreeItem && mpParentLibraryTreeItem->isRootItem() && OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement))
-        || (mpParentLibraryTreeItem && mpParentLibraryTreeItem->getOMSElement() &&
-            mpParentLibraryTreeItem->getOMSElement()->type < oms_component_fmu &&
-            OMSProxy::instance()->getElement(mNameStructure, &mpOMSElement))) {
-      if (mpOMSElement->type == oms_component_fmu && OMSProxy::instance()->getFMUInfo(mNameStructure, &mpFMUInfo)) {
-        setFileName(mpFMUInfo->path);
-        setReadOnly(true);
-      }
-    }
-    setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   } else {
     setSaveContentsType(LibraryTreeItem::SaveInOneFile);
   }
@@ -444,6 +432,9 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setClassTextAfter("");
   setExpanded(false);
   setNonExisting(false);
+  setOMSElement(0);
+  setOMSConnector(0);
+  setFMUInfo(0);
 }
 
 /*!
@@ -592,6 +583,12 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::description).arg(QString(mpFMUInfo->description))
                 .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
                 .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
+                .arg(Helper::fileLocation).arg(mFileName);
+    } else if (mpOMSConnector) {
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpOMSConnector->type))
+                .arg(QObject::tr("Causality")).arg(OMSProxy::getCausalityString(mpOMSConnector->causality))
                 .arg(Helper::fileLocation).arg(mFileName);
     }
   } else {
@@ -1437,7 +1434,12 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
   }
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
-  LibraryTreeItem *pLibraryTreeItem = createLibraryTreeItemImpl(type, name, nameStructure, path, isSaved, pParentLibraryTreeItem, row);
+  LibraryTreeItem *pLibraryTreeItem;
+  if (type == LibraryTreeItem::OMS) {
+    pLibraryTreeItem = createOMSLibraryTreeItemImpl(name, nameStructure, path, isSaved, pParentLibraryTreeItem, 0, 0, row);
+  } else {
+    pLibraryTreeItem = createLibraryTreeItemImpl(type, name, nameStructure, path, isSaved, pParentLibraryTreeItem, row);
+  }
   endInsertRows();
   return pLibraryTreeItem;
 }
@@ -1496,6 +1498,12 @@ void LibraryTreeModel::updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
+  // Don't allow updating the child LibraryTreeItems of OMS model
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+      && pLibraryTreeItem->parent() != mpRootLibraryTreeItem) {
+    updateLibraryTreeItemClassText(pLibraryTreeItem->parent());
+    return;
+  }
   // set the library node not saved.
   pLibraryTreeItem->setIsSaved(false);
   updateLibraryTreeItem(pLibraryTreeItem);
@@ -1623,8 +1631,16 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
   if (!pLibraryTreeItem->getModelWidget()) {
     showModelWidget(pLibraryTreeItem, false);
   }
-  if (pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->hasAnnotation()) {
-    GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+  GraphicsView *pGraphicsView = 0;
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+    pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+  } else {
+    qDebug() << "LibraryTreeModel::loadLibraryTreeItemPixmap() unknonw library type.";
+    return;
+  }
+  if (pGraphicsView->hasAnnotation()) {
     qreal left = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
     qreal bottom = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
     qreal right = pGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
@@ -1654,12 +1670,12 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     dragPainter.setRenderHint(QPainter::SmoothPixmapTransform);
     dragPainter.setWindow(rectangle.toRect());
     dragPainter.scale(1.0, -1.0);
-    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->setRenderingLibraryPixmap(true);
+    pGraphicsView->setRenderingLibraryPixmap(true);
     // render library pixmap
-    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->scene()->render(&libraryPainter, rectangle, rectangle);
+    pGraphicsView->scene()->render(&libraryPainter, rectangle, rectangle);
     // render drag pixmap
-    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->scene()->render(&dragPainter, rectangle, rectangle);
-    pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->setRenderingLibraryPixmap(false);
+    pGraphicsView->scene()->render(&dragPainter, rectangle, rectangle);
+    pGraphicsView->setRenderingLibraryPixmap(false);
     libraryPainter.end();
     dragPainter.end();
     pLibraryTreeItem->setPixmap(libraryPixmap);
@@ -2469,18 +2485,11 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
       for (int i = 0 ; pElements[i] ; i++) {
         QString name = StringHandler::getLastWordAfterDot(pElements[i]->name);
-        LibraryTreeItem *pComponentLibraryTreeItem = createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
-                                                                               QString("%1.%2").arg(pLibraryTreeItem->getNameStructure())
-                                                                               .arg(name), "", pLibraryTreeItem->isSaved(),
-                                                                               pLibraryTreeItem);
-        for (int j = 0 ; pElements[i]->connectors[j] ; j++) {
-          QString name = StringHandler::getLastWordAfterDot(pElements[i]->connectors[j]->name);
-          name = name.split(':', QString::SkipEmptyParts).last();
-          createLibraryTreeItemImpl(LibraryTreeItem::OMS, name,
-                                    QString("%1.%2").arg(pComponentLibraryTreeItem->getNameStructure()).arg(name),
-                                    pComponentLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pComponentLibraryTreeItem);
-        }
+        createOMSLibraryTreeItemImpl(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                     "", pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
       }
+    } else if (pLibraryTreeItem->getOMSElement()) {
+      createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
     }
   } else {
     qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
@@ -2601,11 +2610,75 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
     row = pParentLibraryTreeItem->childrenSize();
   }
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
+  return pLibraryTreeItem;
+}
+
+/*!
+ * \brief LibraryTreeModel::createOMSLibraryTreeItemImpl
+ * Creates the OMS LibraryTreeItem\n
+ * \param name
+ * \param nameStructure
+ * \param path
+ * \param isSaved
+ * \param pParentLibraryTreeItem
+ * \param pOMSElement
+ * \param pOMSConnector
+ * \param row
+ * \return
+ */
+LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
+                                                                LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
+                                                                oms_connector_t *pOMSConnector, int row)
+{
+  OMCInterface::getClassInformation_res classInformation;
+  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);
+  /* We don't have the OMS element for root item so fetch it.
+   * pOMSElement and pOMSConnector will be 0 for newly added FMUs so fetch in that case as well.
+   */
+  if (!pOMSElement && !pOMSConnector) {
+    OMSProxy::instance()->getElement(pLibraryTreeItem->getNameStructure(), &pOMSElement);
+  }
+  pLibraryTreeItem->setOMSElement(pOMSElement);
+  pLibraryTreeItem->setOMSConnector(pOMSConnector);
+  if (pParentLibraryTreeItem && pParentLibraryTreeItem->getOMSElement() &&
+      pParentLibraryTreeItem->getOMSElement()->type < oms_component_fmu) {
+    const oms_fmu_info_t *pFMUInfo;
+    if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
+      pLibraryTreeItem->setFMUInfo(pFMUInfo);
+      QFileInfo fmuFileInfo(pFMUInfo->path);
+      if (fmuFileInfo.isRelative()) {
+        QFileInfo fileInfo(pParentLibraryTreeItem->getFileName());
+        pLibraryTreeItem->setFileName(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath(), pFMUInfo->path));
+      }
+    }
+  }
+  if (row == -1) {
+    row = pParentLibraryTreeItem->childrenSize();
+  }
+  pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // create library tree items
     createLibraryTreeItems(pLibraryTreeItem);
   }
   return pLibraryTreeItem;
+}
+
+/*!
+ * \brief LibraryTreeModel::createOMSConnectorLibraryTreeItems
+ * Creates the OMS connector LibraryTreeItems
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem->getOMSElement()) {
+    for (int j = 0 ; pLibraryTreeItem->getOMSElement()->connectors[j] ; j++) {
+      QString name = StringHandler::getLastWordAfterDot(pLibraryTreeItem->getOMSElement()->connectors[j]->name);
+      name = name.split(':', QString::SkipEmptyParts).last();
+      createOMSLibraryTreeItemImpl(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                   pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0,
+                                   pLibraryTreeItem->getOMSElement()->connectors[j]);
+    }
+  }
 }
 
 /*!
@@ -3020,7 +3093,7 @@ void LibraryTreeView::libraryTreeItemExpanded(QModelIndex index)
   collapse(index);
   QModelIndex sourceIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapToSource(index);
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica || pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     libraryTreeItemExpanded(pLibraryTreeItem);
   }
   bool state = blockSignals(true);
@@ -3717,9 +3790,6 @@ void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
         setExpandsOnDoubleClick(false);
         return;
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && !pLibraryTreeItem->getOMSElement()) {
-      // FMU inputs & outputs are oms_connector_t and not a oms_element_t
-      return;
     }
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   }
