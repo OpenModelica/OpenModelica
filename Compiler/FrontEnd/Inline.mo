@@ -1133,6 +1133,7 @@ algorithm
 
     case DAE.VAR(componentRef=cr,direction=DAE.OUTPUT(), binding=binding)
       equation
+        binding = makeComplexBinding(binding, elt.ty);
         oRepl = addOptBindingReplacements(cr,binding,oRepl);
         oOutputs = cr :: oOutputs;
        then ();
@@ -1167,6 +1168,46 @@ algorithm
   oOutputs := listReverse(oOutputs);
 
 end getFunctionInputsOutputBody;
+
+function makeComplexBinding
+  "Creates a record binding from the given type if the given binding is empty."
+  input output Option<DAE.Exp> binding;
+  input DAE.Type ty;
+algorithm
+  binding := match (binding, ty)
+    local
+      list<DAE.Exp> expl;
+      list<String> strl;
+      DAE.Exp exp;
+
+    case (NONE(), DAE.Type.T_COMPLEX())
+      algorithm
+        expl := {};
+        strl := {};
+
+        for var in listReverse(ty.varLst) loop
+          () := match var
+            case DAE.Var.TYPES_VAR(binding = DAE.Binding.EQBOUND(exp = exp))
+              algorithm
+                expl := exp :: expl;
+                strl := var.name :: strl;
+              then
+                ();
+
+            else
+              algorithm
+                return;
+              then
+                ();
+          end match;
+        end for;
+
+      then
+        SOME(DAE.Exp.RECORD(ClassInf.getStateName(ty.complexClassType), expl, strl, ty));
+
+    else binding;
+  end match;
+end makeComplexBinding;
 
 protected function addOptBindingReplacements
   input DAE.ComponentRef cr;
