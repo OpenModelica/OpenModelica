@@ -1323,6 +1323,11 @@ protected
   Subscript sub;
   Variability var;
 algorithm
+  if listEmpty(subscripts) then
+    typedSubs := subscripts;
+    return;
+  end if;
+
   dims := Type.arrayDims(crefType);
   typedSubs := {};
   next_origin := intBitOr(origin, ExpOrigin.SUBSCRIPT);
