@@ -437,6 +437,8 @@ FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
 FunctionMultiOutput4.mo \
 FunctionNoOutput1.mo \
+FunctionRecordArg1.mo \
+FunctionRecordArg2.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionStreamPrefix.mo \
@@ -739,7 +741,6 @@ func1.mo \
 FuncBuiltinCardinality.mo \
 FuncBuiltinEnumTypeName.mo \
 FuncBuiltinReduction.mo \
-FunctionRecordArg1.mo \
 ImportShadowing1.mo \
 InnerOuterExtends1.mo \
 inst1.mo \
