@@ -609,7 +609,6 @@ uniontype Call
   protected
     Function func;
     list<Expression> args;
-    CallAttributes ca;
     list<TypedArg> typed_args;
     MatchedFunction matchedFunc;
     InstNode scope;
@@ -643,13 +642,7 @@ uniontype Call
       ty := evaluateCallType(ty, func, args);
     end if;
 
-    ca := CallAttributes.CALL_ATTR(
-            ty, Type.isTuple(ty), Function.isBuiltin(func)
-            , Function.isImpure(func), Function.isFunctionPointer(func)
-            , Function.inlineBuiltin(func), DAE.NO_TAIL()
-          );
-
-    call := TYPED_CALL(func, ty, var, args, ca);
+    call := makeTypedCall(func, args, ty, var);
 
     // If the matching was a vectorized one then create a map call
     // using the vectorization dim. This means going through each argument
@@ -659,6 +652,28 @@ uniontype Call
     end if;
 
   end matchTypedNormalCall;
+
+  function makeTypedCall
+    input Function fn;
+    input list<Expression> args;
+    input Type returnType;
+    input Variability variability;
+    output Call call;
+  protected
+    CallAttributes ca;
+  algorithm
+    ca := CallAttributes.CALL_ATTR(
+      returnType,
+      Type.isTuple(returnType),
+      Function.isBuiltin(fn),
+      Function.isImpure(fn),
+      Function.isFunctionPointer(fn),
+      Function.inlineBuiltin(fn),
+      DAE.NO_TAIL()
+    );
+
+    call := TYPED_CALL(fn, returnType, variability, args, ca);
+  end makeTypedCall;
 
   function vectorizeCall
     input Call base_call;

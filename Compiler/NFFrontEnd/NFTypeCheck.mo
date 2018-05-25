@@ -174,7 +174,7 @@ public function checkBinaryOperationOperatorRecords
   output Type outType;
 protected
   String opstr;
-  Function operfn;
+  Function fn;
   InstNode node1, node2;
   ComponentRef fn_ref;
   list<Function> candidates;
@@ -257,12 +257,14 @@ algorithm
 
   if listLength(exactMatches) == 1 then
     matchedFunc ::_ := exactMatches;
-    outType := Function.returnType(matchedFunc.func);
-    outExp := Expression.CALL(Call.TYPED_CALL(matchedFunc.func, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in matchedFunc.args)
-                                              , CallAttributes.CALL_ATTR(
-                                                  outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
-                                              )
-                              );
+    fn := matchedFunc.func;
+    outType := Function.returnType(fn);
+    outExp := Expression.CALL(
+      Call.makeTypedCall(
+        matchedFunc.func,
+        list(Util.tuple31(a) for a in matchedFunc.args),
+        outType,
+        Variability.CONSTANT));
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
           {Expression.toString(Expression.BINARY(inExp1, inOp, inExp2))
@@ -902,9 +904,8 @@ protected
   Expression e1, e2;
   MatchKind mk;
 algorithm
-
   if Type.isComplex(Type.arrayElementType(type1)) or
-    Type.isComplex(Type.arrayElementType(type2)) then
+     Type.isComplex(Type.arrayElementType(type2)) then
     (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
     return;
   end if;
