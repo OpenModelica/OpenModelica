@@ -1,6 +1,7 @@
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
+.PHONY: omsimulator
 
 omc:
 	$(MAKE) -C OMCompiler @OMC_TARGET@
@@ -12,6 +13,10 @@ omplot: omc
 	$(MAKE) -C OMPlot
 omedit: omc omplot
 	$(MAKE) -C OMEdit
+omsimulator:
+	$(MAKE) -C OMSimulator config-3rdParty
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@
+	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@
 omnotebook: omc omplot
 	$(MAKE) -C OMNotebook
 omoptim: omc omplot
