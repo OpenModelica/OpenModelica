@@ -425,6 +425,7 @@ table td,th
     border-style: solid;
     margin: 0;
     padding: 4px;
+    vertical-align: top;
 }
 
 pre
