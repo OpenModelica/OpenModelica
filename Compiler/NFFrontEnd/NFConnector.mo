@@ -171,6 +171,13 @@ public
     connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty);
   end split;
 
+  function flowCref
+    input Connector conn;
+    output ComponentRef cref;
+  algorithm
+    SOME(cref) := conn.associatedFlow;
+  end flowCref;
+
 protected
   function crefFace
     "Determines whether a cref refers to an inside or outside connector, where

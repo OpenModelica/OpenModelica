@@ -806,77 +806,10 @@ function evaluateEquationsConnOp
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
 algorithm
-  equations := list(evaluateEquationConnOp(eq, sets, setsArray) for eq in equations);
+  equations := list(
+      Equation.mapExp(eq, function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray))
+    for eq in equations);
 end evaluateEquationsConnOp;
-
-function evaluateEquationConnOp
-  input output Equation eq;
-  input ConnectionSets.Sets sets;
-  input array<list<Connector>> setsArray;
-algorithm
-  eq := match eq
-    local
-      Expression e1, e2;
-
-    case Equation.EQUALITY()
-      algorithm
-        e1 := ConnectEquations.evaluateOperators(eq.lhs, sets, setsArray);
-        e2 := ConnectEquations.evaluateOperators(eq.rhs, sets, setsArray);
-      then
-        Equation.EQUALITY(e1, e2, eq.ty, eq.source);
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        eq.rhs := ConnectEquations.evaluateOperators(eq.rhs, sets, setsArray);
-      then
-        eq;
-
-    case Equation.FOR()
-      algorithm
-        eq.body := evaluateEquationsConnOp(eq.body, sets, setsArray);
-      then
-        eq;
-
-    case Equation.IF()
-      algorithm
-        eq.branches := list(evaluateEqBranchConnOp(b, sets, setsArray) for b in eq.branches);
-      then
-        eq;
-
-    case Equation.WHEN()
-      algorithm
-        eq.branches := list(evaluateEqBranchConnOp(b, sets, setsArray) for b in eq.branches);
-      then
-        eq;
-
-    case Equation.REINIT()
-      algorithm
-        eq.reinitExp := ConnectEquations.evaluateOperators(eq.reinitExp, sets, setsArray);
-      then
-        eq;
-
-    case Equation.NORETCALL()
-      algorithm
-        eq.exp := ConnectEquations.evaluateOperators(eq.exp, sets, setsArray);
-      then
-        eq;
-
-    else eq;
-  end match;
-end evaluateEquationConnOp;
-
-function evaluateEqBranchConnOp
-  input output tuple<Expression, list<Equation>> branch;
-  input ConnectionSets.Sets sets;
-  input array<list<Connector>> setsArray;
-protected
-  Expression exp;
-  list<Equation> eql;
-algorithm
-  (exp, eql) := branch;
-  eql := evaluateEquationsConnOp(eql, sets, setsArray);
-  branch := (exp, eql);
-end evaluateEqBranchConnOp;
 
 function flattenFunctions
   input FlatModel flatModel;

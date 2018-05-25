@@ -453,7 +453,7 @@ protected
   Expression stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
-  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, flowThreshold),
+  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, element, flowThreshold),
     Operator.makeMul(Type.REAL()), makeInStreamCall(stream_exp));
 end sumOutside1;
 
@@ -469,7 +469,7 @@ protected
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
-  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, flowThreshold),
+  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, element, flowThreshold),
     Operator.makeMul(Type.REAL()), stream_exp);
 end sumInside1;
 
@@ -484,7 +484,7 @@ protected
   Expression flow_exp;
 algorithm
   flow_exp := flowExp(element);
-  exp := makePositiveMaxCall(flow_exp, flowThreshold);
+  exp := makePositiveMaxCall(flow_exp, element, flowThreshold);
 end sumOutside2;
 
 function sumInside2
@@ -499,7 +499,7 @@ protected
 algorithm
   flow_exp := flowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
-  exp := makePositiveMaxCall(flow_exp, flowThreshold);
+  exp := makePositiveMaxCall(flow_exp, element, flowThreshold);
 end sumInside2;
 
 function makeInStreamCall
@@ -514,6 +514,7 @@ end makeInStreamCall;
 function makePositiveMaxCall
   "Generates a max(flow_exp, eps) call."
   input Expression flowExp;
+  input Connector element;
   input Expression flowThreshold;
   output Expression positiveMaxCall;
 protected
@@ -521,7 +522,7 @@ protected
   Option<Expression> nominal_oexp;
   Expression nominal_exp, flow_threshold;
 algorithm
-  flow_node := ComponentRef.node(Expression.toCref(flowExp));
+  flow_node := ComponentRef.node(Connector.flowCref(element));
   nominal_oexp := Class.lookupAttributeValue("nominal", InstNode.getClass(flow_node));
 
   if isSome(nominal_oexp) then
