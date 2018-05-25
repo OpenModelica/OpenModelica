@@ -110,7 +110,7 @@ protected
   Option<DAE.VariableAttributes> var_attr;
   Option<DAE.Exp> binding_exp;
 algorithm
-  binding_exp := convertBinding(var.binding);
+  binding_exp := Binding.toDAEExp(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
     var.visibility, var_attr, var.comment, useLocalDir, false, var.info);
@@ -189,17 +189,6 @@ algorithm
         getComponentDirection(dir, rest_cref) else Direction.NONE;
   end match;
 end getComponentDirection;
-
-function convertBinding
-  input Binding binding;
-  output Option<DAE.Exp> bindingExp;
-algorithm
-  bindingExp := match binding
-    case Binding.UNBOUND() then NONE();
-    case Binding.TYPED_BINDING() then SOME(Expression.toDAE(binding.bindingExp));
-    case Binding.FLAT_BINDING() then SOME(Expression.toDAE(binding.bindingExp));
-  end match;
-end convertBinding;
 
 function convertVarAttributes
   input list<tuple<String, Binding>> attrs;
@@ -981,7 +970,7 @@ algorithm
     case Component.TYPED_COMPONENT(ty = ty, info = info)
       algorithm
         cref := ComponentRef.fromNode(node, ty);
-        binding := convertBinding(comp.binding);
+        binding := Binding.toDAEExp(comp.binding);
         cls := InstNode.getClass(comp.classInst);
         ty_attr := list((Modifier.name(m), Modifier.binding(m)) for m in Class.getTypeAttributes(cls));
         attr := comp.attributes;
@@ -1061,44 +1050,38 @@ algorithm
 end convertExternalDeclOutput;
 
 public
-function makeTypesVars
+function makeTypeVars
   input InstNode complexCls;
   output list<DAE.Var> typeVars;
 protected
   Component comp;
   DAE.Var type_var;
 algorithm
-  typeVars := {};
+  typeVars := match cls as InstNode.getClass(complexCls)
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE())
+      then list(makeTypeVar(c) for c guard not (InstNode.isOnlyOuter(c) or InstNode.isEmpty(c))
+             in ClassTree.getComponents(cls.elements));
 
-  () := match cls as InstNode.getClass(complexCls)
-    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE()) algorithm
-
-      for c in ClassTree.getComponents(cls.elements) loop
-        if InstNode.isOnlyOuter(c) or InstNode.isEmpty(c) then
-          continue;
-        end if;
-        comp := InstNode.component(InstNode.resolveOuter(c));
-
-        type_var := DAE.TYPES_VAR(InstNode.name(c)
-                      , Component.Attributes.toDAE(Component.getAttributes(comp))
-                      , Type.toDAE(Component.getType(comp))
-                      // Fix recursive bindings and update this
-                      // , Binding.toDAE(Component.getBinding(comp))
-                      , DAE.UNBOUND()
-                      , NONE()
-                     );
-        typeVars := type_var::typeVars;
-      end for;
-
-      typeVars := listReverse(typeVars);
-    then ();
-
-    else ();
-
+    else {};
   end match;
+end makeTypeVars;
 
-end makeTypesVars;
+function makeTypeVar
+  input InstNode component;
+  output DAE.Var typeVar;
+protected
+  Component comp;
+algorithm
+  comp := InstNode.component(InstNode.resolveOuter(component));
 
+  typeVar := DAE.TYPES_VAR(
+    InstNode.name(component),
+    Component.Attributes.toDAE(Component.getAttributes(comp)),
+    Type.toDAE(Component.getType(comp)),
+    Binding.toDAE(Component.getBinding(comp)),
+    NONE()
+  );
+end makeTypeVar;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFConvertDAE;

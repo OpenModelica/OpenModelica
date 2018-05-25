@@ -344,11 +344,13 @@ function getRecordBindings
 protected
   Expression binding_exp;
   list<Expression> expl;
+  Variability var;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
+  var := Binding.variability(binding);
 
   recordBindings := match binding_exp
-    case Expression.RECORD() then list(Binding.FLAT_BINDING(e) for e in binding_exp.elements);
+    case Expression.RECORD() then list(Binding.FLAT_BINDING(e, var) for e in binding_exp.elements);
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got non-record binding " +

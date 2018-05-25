@@ -628,6 +628,7 @@ public
 
   function toDAE
     input Type ty;
+    input Boolean makeTypeVars = true;
     output DAE.Type daeTy;
   algorithm
     daeTy := match ty
@@ -638,15 +639,16 @@ public
       case Type.ENUMERATION() then DAE.T_ENUMERATION(NONE(), ty.typePath, ty.literals, {}, {});
       case Type.CLOCK() then DAE.T_CLOCK_DEFAULT;
       case Type.ARRAY()
-        then DAE.T_ARRAY(toDAE(ty.elementType),
+        then DAE.T_ARRAY(toDAE(ty.elementType, makeTypeVars),
           list(Dimension.toDAE(d) for d in ty.dimensions));
       case Type.TUPLE()
         then DAE.T_TUPLE(list(toDAE(t) for t in ty.types), ty.names);
       case Type.FUNCTION()
-        then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType), ty.attributes, Absyn.IDENT("TODO:FIXME"));
+        then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType, makeTypeVars), ty.attributes, Absyn.IDENT("TODO:FIXME"));
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
-      case Type.COMPLEX() then InstNode.toDAEType(ty.cls);
+      case Type.COMPLEX()
+        then if makeTypeVars then InstNode.toFullDAEType(ty.cls) else InstNode.toPartialDAEType(ty.cls);
       case Type.POLYMORPHIC() then DAE.T_METAPOLYMORPHIC(ty.name);
       case Type.ANY() then DAE.T_ANYTYPE(NONE());
       else

@@ -48,6 +48,7 @@ import MetaModelica.Dangerous.arrayCreateNoInit;
 import Variable = NFVariable;
 import NFComponent.Component;
 import NFPrefixes.Visibility;
+import NFPrefixes.Variability;
 import List;
 import ElementSource;
 import DAE;
@@ -96,6 +97,7 @@ protected
   Variable v;
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
+  Variability bind_var;
 algorithm
   if Type.isArray(var.ty) then
     Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
@@ -110,10 +112,11 @@ algorithm
 
     if Binding.isBound(binding) then
       binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
+      bind_var := Binding.variability(binding);
 
       for cr in crefs loop
         (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-        binding := Binding.FLAT_BINDING(exp);
+        binding := Binding.FLAT_BINDING(exp, bind_var);
         ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
         vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
       end for;
@@ -162,7 +165,7 @@ algorithm
     (iter, exp) := ExpressionIterator.next(iters[i]);
     arrayUpdate(iters, i, iter);
     i := i + 1;
-    attrs := (name, Binding.FLAT_BINDING(exp)) :: attrs;
+    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER)) :: attrs;
   end for;
 end nextTypeAttributes;
 

@@ -83,6 +83,7 @@ uniontype Binding
 
   record FLAT_BINDING
     Expression bindingExp;
+    Variability variability;
   end FLAT_BINDING;
 
   record CEVAL_BINDING
@@ -245,7 +246,15 @@ public
     input Binding binding;
     output Variability var;
   algorithm
-    TYPED_BINDING(variability = var) := binding;
+    var := match binding
+      case TYPED_BINDING() then binding.variability;
+      case FLAT_BINDING() then binding.variability;
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown binding", sourceInfo());
+        then
+          fail();
+    end match;
   end variability;
 
   function getInfo
@@ -411,21 +420,46 @@ public
   algorithm
     outBinding := match binding
       case UNBOUND() then DAE.UNBOUND();
-      case TYPED_BINDING()
-        then DAE.EQBOUND(
-            Expression.toDAE(binding.bindingExp),
-            NONE(),
-            Variability.variabilityToDAEConst(binding.variability),
-            DAE.BINDING_FROM_DEFAULT_VALUE() // TODO: revise this.
-          );
-
+      case TYPED_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
+      case FLAT_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
+      case CEVAL_BINDING() then DAE.UNBOUND();
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());
+          Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
         then
           fail();
     end match;
   end toDAE;
+
+  function makeDAEBinding
+    input Expression exp;
+    input Variability var;
+    output DAE.Binding binding;
+  algorithm
+    binding := DAE.EQBOUND(
+      Expression.toDAE(exp),
+      NONE(),
+      Variability.variabilityToDAEConst(var),
+      DAE.BINDING_FROM_DEFAULT_VALUE() // TODO: revise this.
+    );
+  end makeDAEBinding;
+
+  function toDAEExp
+    input Binding binding;
+    output Option<DAE.Exp> bindingExp;
+  algorithm
+    bindingExp := match binding
+      case UNBOUND() then NONE();
+      case TYPED_BINDING() then SOME(Expression.toDAE(binding.bindingExp));
+      case FLAT_BINDING() then SOME(Expression.toDAE(binding.bindingExp));
+      case CEVAL_BINDING() then NONE();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());
+        then
+          fail();
+    end match;
+  end toDAEExp;
 end Binding;
 
 annotation(__OpenModelica_Interface="frontend");

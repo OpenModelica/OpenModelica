@@ -1242,13 +1242,57 @@ uniontype InstNode
     end match;
   end setModifier;
 
-  function toDAEType
+  function toPartialDAEType
+    "Returns the DAE type for a class, without the list of variables filled in."
     input InstNode clsNode;
     output DAE.Type outType;
   algorithm
     outType := match clsNode
       local
         Class cls;
+        ClassInf.State state;
+
+      case CLASS_NODE()
+        algorithm
+          cls := Pointer.access(clsNode.cls);
+        then
+          match cls
+            case Class.DAE_TYPE() then stripDAETypeVars(cls.ty);
+
+            else
+              algorithm
+                state := Restriction.toDAE(Class.restriction(cls), scopePath(clsNode));
+              then
+                DAE.Type.T_COMPLEX(state, {}, NONE());
+
+          end match;
+    end match;
+  end toPartialDAEType;
+
+  function stripDAETypeVars
+    input output DAE.Type ty;
+  algorithm
+    () := match ty
+      case DAE.Type.T_COMPLEX()
+        algorithm
+          ty.varLst := {};
+        then
+          ();
+
+      else ();
+    end match;
+  end stripDAETypeVars;
+
+  function toFullDAEType
+    "Returns the DAE type for a class, with the list of variables filled in."
+    input InstNode clsNode;
+    output DAE.Type outType;
+  algorithm
+    outType := match clsNode
+      local
+        Class cls;
+        list<DAE.Var> vars;
+        ClassInf.State state;
 
       case CLASS_NODE()
         algorithm
@@ -1256,18 +1300,18 @@ uniontype InstNode
         then
           match cls
             case Class.DAE_TYPE() then cls.ty;
+
             else
               algorithm
-                outType := DAE.Type.T_COMPLEX(
-                  Restriction.toDAE(Class.restriction(cls), scopePath(clsNode)),
-                  ConvertDAE.makeTypesVars(clsNode),
-                  NONE());
+                state := Restriction.toDAE(Class.restriction(cls), scopePath(clsNode));
+                vars := ConvertDAE.makeTypeVars(clsNode);
+                outType := DAE.Type.T_COMPLEX(state, vars, NONE());
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
               then
                 outType;
           end match;
     end match;
-  end toDAEType;
+  end toFullDAEType;
 
   function isBuiltin
     input InstNode node;

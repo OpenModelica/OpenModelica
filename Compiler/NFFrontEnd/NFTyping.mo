@@ -830,7 +830,7 @@ algorithm
 
         exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
       then
-        Binding.FLAT_BINDING(exp);
+        Binding.FLAT_BINDING(exp, var);
 
   end match;
 end typeComponentCondition;

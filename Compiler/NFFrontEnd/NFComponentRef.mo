@@ -575,6 +575,7 @@ public
     dcref := match cref
       local
         Type ty;
+        DAE.Type dty;
 
       case EMPTY() then accumCref;
       case CREF()
@@ -585,7 +586,8 @@ public
           // after the typing, but the new frontend doesn't use these types anyway.
           // So instead we just fetch the type of the node if the type is unknown.
           ty := if Type.isUnknown(cref.ty) then InstNode.getType(cref.node) else cref.ty;
-          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(cref.node), Type.toDAE(ty),
+          dty := Type.toDAE(ty, makeTypeVars = false);
+          dcref := DAE.ComponentRef.CREF_QUAL(InstNode.name(cref.node), dty,
             list(Subscript.toDAE(s) for s in cref.subscripts), accumCref);
         then
           toDAE_impl(cref.restCref, dcref);
