@@ -1347,6 +1347,10 @@ algorithm
     i := i + 1;
   end for;
 
+  for dim in dims loop
+    typedSubs := Subscript.WHOLE() :: typedSubs;
+  end for;
+
   typedSubs := listReverseInPlace(typedSubs);
 end typeSubscripts;
 
