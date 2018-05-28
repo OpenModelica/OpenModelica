@@ -114,9 +114,7 @@ public
     input Variable var;
     input output Constants constants;
   algorithm
-    if Binding.isBound(var.binding) then
-      constants := collectExpConstants(Binding.getTypedExp(var.binding), constants);
-    end if;
+    constants := collectBindingConstants(var.binding, constants);
 
     // TODO: The component's attributes (i.e. start, etc) might also contain
     //       package constants.
@@ -126,7 +124,7 @@ public
     input Binding binding;
     input output Constants constants;
   algorithm
-    if Binding.isBound(binding) then
+    if Binding.isExplicitlyBound(binding) then
       constants := collectExpConstants(Binding.getTypedExp(binding), constants);
     end if;
   end collectBindingConstants;
