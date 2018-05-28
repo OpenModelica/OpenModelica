@@ -1585,6 +1585,12 @@ algorithm
       then
         compatibleType;
 
+    case Type.UNKNOWN()
+      algorithm
+        matchKind := if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+      then
+        actualType;
+
     case Type.COMPLEX()
       algorithm
         (expression, compatibleType, matchKind) :=
