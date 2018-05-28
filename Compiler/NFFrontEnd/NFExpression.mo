@@ -42,6 +42,7 @@ protected
   import NFPrefixes.Variability;
   import Prefixes = NFPrefixes;
   import Ceval = NFCeval;
+  import ComplexType = NFComplexType;
   import MetaModelica.Dangerous.listReverseInPlace;
 
 public
@@ -1084,6 +1085,7 @@ public
         DAE.Operator daeOp;
         Boolean swap;
         DAE.Exp dae1, dae2;
+        list<String> names;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -1102,8 +1104,8 @@ public
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
           list(toDAE(e) for e in exp.elements));
 
-      case RECORD()
-        then DAE.RECORD(exp.path, list(toDAE(e) for e in exp.elements), {}, Type.toDAE(exp.ty));
+      case RECORD(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(fieldNames = names)))
+        then DAE.RECORD(exp.path, list(toDAE(e) for e in exp.elements), names, Type.toDAE(exp.ty));
 
       case RANGE()
         then DAE.RANGE(

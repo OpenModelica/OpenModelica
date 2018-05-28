@@ -1796,7 +1796,7 @@ algorithm
         // Instantiate local equation/algorithm sections.
         sections := instSections(node, scope, sections);
 
-        ty := makeComplexType(cls.restriction, node);
+        ty := makeComplexType(cls.restriction, node, cls);
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.restriction);
         InstNode.updateClass(inst_cls, node);
 
@@ -1840,18 +1840,32 @@ end instExpressions;
 function makeComplexType
   input Restriction restriction;
   input InstNode node;
+  input Class cls;
   output Type ty;
 protected
   ComplexType cty;
 algorithm
   cty := match restriction
-    case Restriction.RECORD()
-      then ComplexType.RECORD(InstNode.classScope(InstNode.getDerivedNode(node)));
+    case Restriction.RECORD() then makeRecordComplexType(node, cls);
     else ComplexType.CLASS();
   end match;
 
   ty := Type.COMPLEX(node, cty);
 end makeComplexType;
+
+function makeRecordComplexType
+  input InstNode node;
+  input Class cls;
+  output ComplexType ty;
+protected
+  InstNode cls_node;
+  list<String> fields;
+algorithm
+  cls_node := InstNode.classScope(InstNode.getDerivedNode(node));
+  fields := list(InstNode.name(c) for c guard not InstNode.isEmpty(c) in
+    ClassTree.getComponents(Class.classTree(cls)));
+  ty := ComplexType.RECORD(cls_node, fields);
+end makeRecordComplexType;
 
 function instComplexType
   input Type ty;

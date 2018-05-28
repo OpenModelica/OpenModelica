@@ -547,6 +547,7 @@ uniontype Class
       else node;
     end match;
   end lastBaseClass;
+
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -55,6 +55,7 @@ public
 
   record RECORD
     InstNode constructor;
+    list<String> fieldNames;
   end RECORD;
 
   record EXTERNAL_OBJECT
