@@ -470,9 +470,16 @@ bool OMSProxy::initialize(QString ident)
   return statusToBool(status);
 }
 
-bool OMSProxy::simulate_asynchronous(QString ident)
+/*!
+ * \brief OMSProxy::simulate_asynchronous
+ * Starts the asynchronous simulation.
+ * \param ident
+ * \param terminate
+ * \return
+ */
+bool OMSProxy::simulate_asynchronous(QString ident/*, int *terminate*/)
 {
-  oms_status_enu_t status = oms2_simulate_asynchronous(ident.toStdString().c_str(), simulateCallback);
+  oms_status_enu_t status = oms2_simulate_asynchronous(ident.toStdString().c_str(), /*terminate,*/ simulateCallback);
   return statusToBool(status);
 }
 
@@ -620,6 +627,19 @@ bool OMSProxy::setBooleanParameter(const char* signal, bool value)
 
 /*!
  * \brief OMSProxy::setStartTime
+ * Get the start time from the model.
+ * \param cref
+ * \param startTime
+ * \return
+ */
+bool OMSProxy::getStartTime(QString cref, double *startTime)
+{
+  oms_status_enu_t status = oms2_getStartTime(cref.toStdString().c_str(), startTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStartTime
  * Set the start time of the simulation.
  * \param cref
  * \param startTime
@@ -628,6 +648,19 @@ bool OMSProxy::setBooleanParameter(const char* signal, bool value)
 bool OMSProxy::setStartTime(QString cref, double startTime)
 {
   oms_status_enu_t status = oms2_setStartTime(cref.toStdString().c_str(), startTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStopTime
+ * Get the stop time from the model.
+ * \param cref
+ * \param stopTime
+ * \return
+ */
+bool OMSProxy::getStopTime(QString cref, double *stopTime)
+{
+  oms_status_enu_t status = oms2_getStopTime(cref.toStdString().c_str(), stopTime);
   return statusToBool(status);
 }
 

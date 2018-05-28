@@ -51,7 +51,7 @@ public:
   OMSSimulationOutputWidget(OMSSimulationOptions omsSimulationOptions, QWidget *pParent = 0);
   void simulateCallback(const char* ident, double time, oms_status_enu_t status);
   OMSSimulationOptions getOMSSimulationOptions() {return mOMSSimulationOptions;}
-  bool isSimulationRunning() {return mIsSimulationRunning;}
+  int isSimulationRunning() {return mIsSimulationRunning;}
 private:
   OMSSimulationOptions mOMSSimulationOptions;
   Label *mpSimulationHeading;
@@ -61,7 +61,7 @@ private:
   QPushButton *mpCancelSimulationButton;
   ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
-  bool mIsSimulationRunning;
+  int mIsSimulationRunning;
 signals:
   void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
 public slots:

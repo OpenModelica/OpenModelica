@@ -217,6 +217,14 @@ void OMSSimulationDialog::initializeFields()
 {
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::OMSSimulationSetup, mpLibraryTreeItem->getNameStructure()));
   mpSimulationHeading->setText(QString("%1 - %2").arg(Helper::OMSSimulationSetup, mpLibraryTreeItem->getNameStructure()));
+  // read the simulation start and stop time
+  double startTime, stopTime;
+  if (OMSProxy::instance()->getStartTime(mpLibraryTreeItem->getNameStructure(), &startTime)) {
+    mpStartTimeTextBox->setText(QString::number(startTime));
+  }
+  if (OMSProxy::instance()->getStopTime(mpLibraryTreeItem->getNameStructure(), &stopTime)) {
+    mpStopTimeTextBox->setText(QString::number(stopTime));
+  }
   // set the result file
   mpResultFileTextBox->setText(QString("%1_res.mat").arg(mpLibraryTreeItem->getNameStructure()));
 }

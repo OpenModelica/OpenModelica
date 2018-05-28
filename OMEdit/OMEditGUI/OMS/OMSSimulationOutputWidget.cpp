@@ -83,16 +83,17 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(OMSSimulationOptions omsSim
   } else {
     mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   }
-  mIsSimulationRunning = false;
+  mIsSimulationRunning = 0;
   // initialize the composite model
   if (OMSProxy::instance()->initialize(mOMSSimulationOptions.getCompositeModelName())) {
     // start the asynchronous simulation
     qRegisterMetaType<oms_status_enu_t>("oms_status_enu_t");
     connect(this, SIGNAL(sendSimulationProgress(QString,double,oms_status_enu_t)), SLOT(simulationProgress(QString,double,oms_status_enu_t)));
-    if (OMSProxy::instance()->simulate_asynchronous(mOMSSimulationOptions.getCompositeModelName())) {
+    mIsSimulationRunning = 1;
+    if (OMSProxy::instance()->simulate_asynchronous(mOMSSimulationOptions.getCompositeModelName()/*, &mIsSimulationRunning*/)) {
       mpCancelSimulationButton->setEnabled(true);
-      mIsSimulationRunning = true;
     } else {
+      mIsSimulationRunning = 0;
       mpProgressLabel->setText(tr("Simulation using the <b>%1</b> composite model is failed. %2")
                                .arg(mOMSSimulationOptions.getCompositeModelName())
                                .arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
@@ -128,12 +129,12 @@ void OMSSimulationOutputWidget::simulateCallback(const char* ident, double time,
  */
 void OMSSimulationOutputWidget::cancelSimulation()
 {
-  if (OMSProxy::instance()->terminate(mOMSSimulationOptions.getCompositeModelName())) {
-    mpProgressLabel->setText(tr("Simulation using the <b>%1</b> composite model is cancelled.").arg(mOMSSimulationOptions.getCompositeModelName()));
-    mpProgressBar->setValue(mpProgressBar->maximum());
-    mpCancelSimulationButton->setEnabled(false);
-    mIsSimulationRunning = false;
-  }
+  mIsSimulationRunning = 0; // setting this to zero here will quit the simulation loop since this is passed to OMSProxy::simulate_asynchronous
+  // reset the composite model after the simulation is finished successfully.
+  OMSProxy::instance()->reset(mOMSSimulationOptions.getCompositeModelName());
+  mpProgressLabel->setText(tr("Simulation using the <b>%1</b> composite model is cancelled.").arg(mOMSSimulationOptions.getCompositeModelName()));
+  mpProgressBar->setValue(mpProgressBar->maximum());
+  mpCancelSimulationButton->setEnabled(false);
 }
 
 /*!
@@ -154,7 +155,7 @@ void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, o
       mpProgressBar->setValue(mpProgressBar->maximum());
       mpCancelSimulationButton->setEnabled(false);
       mpArchivedOMSSimulationItem->setStatus(Helper::finished);
-      mIsSimulationRunning = false;
+      mIsSimulationRunning = 0;
       // reset the composite model after the simulation is finished successfully.
       OMSProxy::instance()->reset(ident);
       // simulation finished show the results
