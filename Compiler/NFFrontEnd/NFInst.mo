@@ -648,7 +648,7 @@ algorithm
   res := Restriction.fromSCode(SCode.getClassRestriction(element));
   cls := Class.EXPANDED_DERIVED(ext_node, mod, listArray(dims), prefs, attrs, res);
   node := InstNode.updateClass(cls, node);
-  node := InstNode.setNodeType(InstNodeType.DERIVED_CLASS(), node);
+  node := InstNode.setNodeType(InstNodeType.DERIVED_CLASS(InstNode.nodeType(node)), node);
 end expandClassDerived;
 
 function instDerivedAttributes

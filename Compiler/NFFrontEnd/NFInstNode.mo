@@ -59,10 +59,12 @@ uniontype InstNodeType
   record BASE_CLASS
     "A base class extended by another class."
     InstNode parent;
-    SCode.Element definition;
+    SCode.Element definition "The extends clause definition.";
   end BASE_CLASS;
 
   record DERIVED_CLASS
+    "A short class definition."
+    InstNodeType ty "The base node type not considering that it's a derived class.";
   end DERIVED_CLASS;
 
   record BUILTIN_CLASS
@@ -396,6 +398,13 @@ uniontype InstNode
     end match;
   end name;
 
+  function className
+    input InstNode node;
+    output String name;
+  algorithm
+    CLASS_NODE(name = name) := node;
+  end className;
+
   function scopeName
     "Returns the name of a scope, which in the case of a component is the name
      of the component's type, and for a class simply the name of the class."
@@ -449,6 +458,13 @@ uniontype InstNode
       else EMPTY_NODE();
     end match;
   end parent;
+
+  function classParent
+    input InstNode node;
+    output InstNode parent;
+  algorithm
+    CLASS_NODE(parentScope = parent) := node;
+  end classParent;
 
   function derivedParent
     input InstNode node;
@@ -762,30 +778,49 @@ uniontype InstNode
 
   function scopeList
     input InstNode node;
+    input Boolean includeRoot = false "Whether to include the root class name or not.";
     input list<InstNode> accumScopes = {};
     output list<InstNode> scopes;
   algorithm
     scopes := match node
-      local
-        InstNodeType it;
-
-      case CLASS_NODE(nodeType = it)
-        then
-          match it
-            case InstNodeType.NORMAL_CLASS()
-              then scopeList(node.parentScope, node :: accumScopes);
-            case InstNodeType.BASE_CLASS()
-              then scopeList(it.parent, accumScopes);
-            case InstNodeType.BUILTIN_CLASS()
-              then node :: accumScopes;
-            else accumScopes;
-          end match;
-
+      case CLASS_NODE() then scopeListClass(node, node.nodeType, includeRoot, accumScopes);
       case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
-      case COMPONENT_NODE() then scopeList(node.parent, node :: accumScopes);
-      case IMPLICIT_SCOPE() then scopeList(node.parentScope, accumScopes);
+      case COMPONENT_NODE() then scopeList(node.parent, includeRoot, node :: accumScopes);
+      case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
+      else accumScopes;
     end match;
   end scopeList;
+
+  function scopeListClass
+    input InstNode clsNode;
+    input InstNodeType ty;
+    input Boolean includeRoot;
+    input list<InstNode> accumScopes = {};
+    output list<InstNode> scopes;
+  algorithm
+    scopes := match ty
+      case InstNodeType.NORMAL_CLASS()
+        then scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes);
+      case InstNodeType.BASE_CLASS()
+        then scopeList(ty.parent, includeRoot, accumScopes);
+      case InstNodeType.DERIVED_CLASS()
+        then scopeListClass(clsNode, ty.ty, includeRoot, accumScopes);
+      case InstNodeType.BUILTIN_CLASS()
+        then clsNode :: accumScopes;
+      case InstNodeType.TOP_SCOPE()
+        then accumScopes;
+      case InstNodeType.ROOT_CLASS()
+        then if includeRoot then
+            scopeList(parent(clsNode), includeRoot, clsNode :: accumScopes)
+          else
+            accumScopes;
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
+        then
+          fail();
+    end match;
+  end scopeListClass;
 
   function scopePath
     input InstNode node;
@@ -818,31 +853,42 @@ uniontype InstNode
     output Absyn.Path path;
   algorithm
     path := match node
-      local
-        InstNodeType it;
-
-      case CLASS_NODE(nodeType = it)
-        then
-          match it
-            case InstNodeType.NORMAL_CLASS()
-              then scopePath2(node.parentScope, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
-            case InstNodeType.BASE_CLASS()
-              then scopePath2(it.parent, includeRoot, accumPath);
-            case InstNodeType.DERIVED_CLASS()
-              then scopePath2(node.parentScope, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
-            case InstNodeType.BUILTIN_CLASS()
-              then Absyn.QUALIFIED(node.name, accumPath);
-            case InstNodeType.ROOT_CLASS()
-              then if includeRoot then Absyn.QUALIFIED(node.name, accumPath) else accumPath;
-            else accumPath;
-          end match;
-
-      case COMPONENT_NODE()
-        then scopePath2(node.parent, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
-
+      case CLASS_NODE() then scopePathClass(node, node.nodeType, includeRoot, accumPath);
+      case COMPONENT_NODE() then scopePath2(node.parent, includeRoot, Absyn.QUALIFIED(node.name, accumPath));
       else accumPath;
     end match;
   end scopePath2;
+
+  function scopePathClass
+    input InstNode node;
+    input InstNodeType ty;
+    input Boolean includeRoot;
+    input Absyn.Path accumPath;
+    output Absyn.Path path;
+  algorithm
+    path := match ty
+      case InstNodeType.NORMAL_CLASS()
+        then scopePath2(classParent(node), includeRoot, Absyn.QUALIFIED(className(node), accumPath));
+      case InstNodeType.BASE_CLASS()
+        then scopePath2(ty.parent, includeRoot, accumPath);
+      case InstNodeType.DERIVED_CLASS()
+        then scopePathClass(node, ty.ty, includeRoot, accumPath);
+      case InstNodeType.BUILTIN_CLASS()
+        then Absyn.QUALIFIED(className(node), accumPath);
+      case InstNodeType.TOP_SCOPE()
+        then accumPath;
+      case InstNodeType.ROOT_CLASS()
+        then if includeRoot then
+            scopePath2(classParent(node), includeRoot, Absyn.QUALIFIED(className(node), accumPath))
+          else
+            accumPath;
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown node type", sourceInfo());
+        then
+          fail();
+    end match;
+  end scopePathClass;
 
   function isInput
     input InstNode node;

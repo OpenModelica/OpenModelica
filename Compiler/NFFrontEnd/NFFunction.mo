@@ -267,7 +267,7 @@ uniontype Function
     end try;
 
     (functionRef, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
-    prefix := ComponentRef.fromNodeList(InstNode.scopeList(InstNode.classScope(found_scope)));
+    prefix := ComponentRef.fromNodeList(InstNode.scopeList(InstNode.classScope(found_scope), includeRoot = true));
     functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunction;
 
