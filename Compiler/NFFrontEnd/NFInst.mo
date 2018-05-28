@@ -1870,7 +1870,8 @@ algorithm
           else
             algorithm
               InstNode.cacheInitFunc(node);
-              Record.instConstructors(InstNode.scopePath(node), node, InstNode.info(node));
+              Record.instConstructors(
+                InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
             then
               ();
 

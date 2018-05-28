@@ -88,7 +88,7 @@ algorithm
 
   if ctor_defined then
     ctor_over := ComponentRef.node(con_ref);
-    ctor_over := Function.instFunc2(InstNode.scopePath(ctor_over), ctor_over, InstNode.info(ctor_over));
+    ctor_over := Function.instFunc2(InstNode.scopePath(ctor_over, includeRoot = true), ctor_over, InstNode.info(ctor_over));
     for f in Function.getCachedFuncs(ctor_over) loop
       node := InstNode.cacheAddFunc(node, f, false);
     end for;
@@ -105,7 +105,7 @@ algorithm
   if ctor_defined then
     ctor_over := ComponentRef.node(con_ref);
 
-    ctor_over := Function.instFunc2(InstNode.scopePath(ctor_over), ctor_over, InstNode.info(ctor_over));
+    ctor_over := Function.instFunc2(InstNode.scopePath(ctor_over, includeRoot = true), ctor_over, InstNode.info(ctor_over));
     for f in Function.getCachedFuncs(ctor_over) loop
       node := InstNode.cacheAddFunc(node, f, false);
     end for;
