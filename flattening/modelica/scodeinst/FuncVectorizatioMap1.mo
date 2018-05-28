@@ -25,11 +25,11 @@ end C;
 
 
 // Result:
-// function F
+// function C.F
 //   input Real[4] a;
 //   input Real c;
 //   output Real o = c;
-// end F;
+// end C.F;
 //
 // class C
 //   Real b[1,1,1];
@@ -63,8 +63,8 @@ end C;
 //   Real g[2,2];
 //   Real g[2,3];
 // equation
-//   g = array(F(b[$i1,$i2], 1.0) for $i2 in 1:3, $i1 in 1:2);
-//   g = array(array(F(b[i,$i1,:], 1.0) for $i1 in 1:3) for i in 1:2);
-//   g = array(F(b[i,j,:], 1.0) for j in 1:3, i in 1:2);
+//   g = array(C.F(b[$i1,$i2], 1.0) for $i2 in 1:3, $i1 in 1:2);
+//   g = array(array(C.F(b[i,$i1,:], 1.0) for $i1 in 1:3) for i in 1:2);
+//   g = array(C.F(b[i,j,:], 1.0) for j in 1:3, i in 1:2);
 // end C;
 // endResult

@@ -20,12 +20,12 @@ model FuncViaComp
 end FuncViaComp;
 
 // Result:
-// function a.f
+// function FuncViaComp.a.f
 //   input Integer n;
 //   output Real x = 2;
-// end a.f;
+// end FuncViaComp.a.f;
 //
 // class FuncViaComp
-//   Real x = a.f(1);
+//   Real x = FuncViaComp.a.f(1);
 // end FuncViaComp;
 // endResult

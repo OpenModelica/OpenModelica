@@ -22,14 +22,14 @@ model RedeclareFunction1
 end RedeclareFunction1;
 
 // Result:
-// function P.f
+// function RedeclareFunction1.P.f
 //   input Real x;
 //   output Real y;
 // algorithm
 //   x := y;
-// end P.f;
+// end RedeclareFunction1.P.f;
 //
 // class RedeclareFunction1
-//   Real x = P.f(4);
+//   Real x = RedeclareFunction1.P.f(4);
 // end RedeclareFunction1;
 // endResult

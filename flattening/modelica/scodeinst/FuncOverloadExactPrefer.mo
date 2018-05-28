@@ -25,19 +25,19 @@ model FuncOverloadExactPrefer
 end FuncOverloadExactPrefer;
 
 // Result:
-// function F
+// function FuncOverloadExactPrefer.F
 //   input Integer f1;
 //   output Integer f2;
-// end F;
+// end FuncOverloadExactPrefer.F;
 //
-// function G
+// function FuncOverloadExactPrefer.G
 //   input Real g1;
 //   input Integer g2 = 1;
 //   output Integer g3;
-// end G;
+// end FuncOverloadExactPrefer.G;
 //
 // class FuncOverloadExactPrefer
-//   Integer x = F(1);
-//   Integer y = G(1.0, 1);
+//   Integer x = FuncOverloadExactPrefer.F(1);
+//   Integer y = FuncOverloadExactPrefer.G(1.0, 1);
 // end FuncOverloadExactPrefer;
 // endResult

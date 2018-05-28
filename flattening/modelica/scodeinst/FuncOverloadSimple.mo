@@ -1,11 +1,11 @@
-// name: FuncSimpleOverload
+// name: FuncOverloadSimple
 // keywords: overload
 // status: correct
 // cflags: -d=newInst
 //
 // Tests simple overloading.
 //
-model FuncSimpleOverload
+model FuncOverloadSimple
   function F
     input Integer f1;
     output Integer f2;
@@ -21,22 +21,22 @@ model FuncSimpleOverload
   
   Integer x = OV(1);
   Integer y = OV(1,2);
-end FuncSimpleOverload;
+end FuncOverloadSimple;
 
 // Result:
-// function F
+// function FuncOverloadSimple.F
 //   input Integer f1;
 //   output Integer f2;
-// end F;
+// end FuncOverloadSimple.F;
 //
-// function G
+// function FuncOverloadSimple.G
 //   input Integer g1;
 //   input Integer g2;
 //   output Integer g3;
-// end G;
+// end FuncOverloadSimple.G;
 //
-// class FuncSimpleOverload
-//   Integer x = F(1);
-//   Integer y = G(1, 2);
-// end FuncSimpleOverload;
+// class FuncOverloadSimple
+//   Integer x = FuncOverloadSimple.F(1);
+//   Integer y = FuncOverloadSimple.G(1, 2);
+// end FuncOverloadSimple;
 // endResult

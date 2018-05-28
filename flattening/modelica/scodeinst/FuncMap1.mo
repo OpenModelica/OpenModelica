@@ -24,11 +24,11 @@ end C;
 
 
 // Result:
-// function F
+// function C.F
 //   input Integer a;
 //   input Integer b;
 //   output Integer c = a;
-// end F;
+// end C.F;
 //
 // class C
 //   Integer b[1];
@@ -44,7 +44,7 @@ end C;
 //   b[1] = 1;
 //   b[2] = 2;
 //   b[3] = 3;
-//   c = array(F(b[i], b[i]) for i in 1:3);
-//   d = array(F(b[i], i) for i in 1:3);
+//   c = array(C.F(b[i], b[i]) for i in 1:3);
+//   d = array(C.F(b[i], i) for i in 1:3);
 // end C;
 // endResult

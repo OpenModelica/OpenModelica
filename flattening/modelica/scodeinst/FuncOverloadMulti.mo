@@ -32,24 +32,24 @@ model FuncOverloadMulti
 end FuncOverloadMulti;
 
 // Result:
-// function bool_string
+// function FuncOverloadMulti.bool_string
 //   input Boolean g1;
 //   output String g3 = "Boolean";
-// end bool_string;
+// end FuncOverloadMulti.bool_string;
 //
-// function int_string
+// function FuncOverloadMulti.int_string
 //   input Integer f1;
 //   output String f2 = "Integer";
-// end int_string;
+// end FuncOverloadMulti.int_string;
 //
-// function real_string
+// function FuncOverloadMulti.real_string
 //   input Real g1;
 //   output String g3 = "Real";
-// end real_string;
+// end FuncOverloadMulti.real_string;
 //
 // class FuncOverloadMulti
-//   String x = bool_string(true);
-//   String y = int_string(1);
-//   String z = real_string(1.0);
+//   String x = FuncOverloadMulti.bool_string(true);
+//   String y = FuncOverloadMulti.int_string(1);
+//   String z = FuncOverloadMulti.real_string(1.0);
 // end FuncOverloadMulti;
 // endResult

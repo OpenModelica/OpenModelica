@@ -22,11 +22,11 @@ end C;
 
 
 // Result:
-// function F
+// function C.F
 //   input Integer[4] a;
 //   input Integer b;
 //   output Integer o;
-// end F;
+// end C.F;
 //
 // class C
 //   Integer b[1,1,1];
@@ -60,6 +60,6 @@ end C;
 //   Integer g[2,2];
 //   Integer g[2,3];
 // equation
-//   g = array(F(b[$i1,$i2], 1) for $i2 in 1:3, $i1 in 1:2);
+//   g = array(C.F(b[$i1,$i2], 1) for $i2 in 1:3, $i1 in 1:2);
 // end C;
 // endResult
