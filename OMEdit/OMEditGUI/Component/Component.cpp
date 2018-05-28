@@ -1657,15 +1657,7 @@ void Component::drawOMSComponent()
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
     // draw shapes first
-    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
-      if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-        mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
-      } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-        mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
-      } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-        mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
-      }
-    }
+    drawOMSComponentShapes();
     // draw components now
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
       Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
@@ -1680,6 +1672,23 @@ void Component::drawOMSComponent()
       if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
         mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
       }
+    }
+  }
+}
+
+/*!
+ * \brief Component::drawOMSComponentShapes
+ * Draws the shapes for OMSimulator component.
+ */
+void Component::drawOMSComponentShapes()
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
+    if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
     }
   }
 }
@@ -2158,22 +2167,25 @@ void Component::updatePlacementAnnotation()
                                                         getTransformationOrigin(), getTransformationExtent(),
                                                         QString::number(mTransformation.getRotateAngle()));
   } else if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::OMS) {
-    ssd_element_geometry_t elementGeometry;
-    QPointF extent1 = mTransformation.getExtent1();
-    QPointF extent2 = mTransformation.getExtent2();
-    if (mTransformation.hasOrigin()) {
-      extent1.setX(extent1.x() + mTransformation.getOrigin().x());
-      extent1.setY(extent1.y() + mTransformation.getOrigin().y());
-      extent2.setX(extent2.x() + mTransformation.getOrigin().x());
-      extent2.setY(extent2.y() + mTransformation.getOrigin().y());
+    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
+      ssd_element_geometry_t *pElementGeometry = mpLibraryTreeItem->getOMSElement()->geometry;
+      QPointF extent1 = mTransformation.getExtent1();
+      QPointF extent2 = mTransformation.getExtent2();
+      if (mTransformation.hasOrigin()) {
+        extent1.setX(extent1.x() + mTransformation.getOrigin().x());
+        extent1.setY(extent1.y() + mTransformation.getOrigin().y());
+        extent2.setX(extent2.x() + mTransformation.getOrigin().x());
+        extent2.setY(extent2.y() + mTransformation.getOrigin().y());
+      }
+      pElementGeometry->x1 = extent1.x();
+      pElementGeometry->y1 = extent1.y();
+      pElementGeometry->x2 = extent2.x();
+      pElementGeometry->y2 = extent2.y();
+      pElementGeometry->rotation = mTransformation.getRotateAngle();
+      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), pElementGeometry);
+    } else {
+      qDebug() << "Component::updatePlacementAnnotation() expected to have the OMS Element.";
     }
-    elementGeometry.x1 = extent1.x();
-    elementGeometry.y1 = extent1.y();
-    elementGeometry.x2 = extent2.x();
-    elementGeometry.y2 = extent2.y();
-    elementGeometry.rotation = mTransformation.getRotateAngle();
-    elementGeometry.iconSource = NULL;
-    OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
@@ -2231,10 +2243,22 @@ void Component::handleUnloaded()
 void Component::handleShapeAdded()
 {
   Component *pComponent = getRootParentComponent();
-  pComponent->removeChildren();
-  pComponent->drawComponent();
-  pComponent->emitChanged();
-  pComponent->updateConnections();
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    // remove all shapes
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+      pShapeAnnotation->setParentItem(0);
+      mpGraphicsView->removeItem(pShapeAnnotation);
+      delete pShapeAnnotation;
+    }
+    mShapesList.clear();
+    // draw shapes
+    pComponent->drawOMSComponentShapes();
+  } else {
+    pComponent->removeChildren();
+    pComponent->drawComponent();
+    pComponent->emitChanged();
+    pComponent->updateConnections();
+  }
 }
 
 void Component::handleComponentAdded()

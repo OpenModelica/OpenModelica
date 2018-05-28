@@ -2060,6 +2060,7 @@ void AddSubModelIconCommand::redo()
       mpGraphicsView->addShapeToList(pBitmapAnnotation);
       mpGraphicsView->addItem(pBitmapAnnotation);
       pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
     }
   }
 }
@@ -2099,6 +2100,7 @@ void AddSubModelIconCommand::undo()
       mpGraphicsView->addShapeToList(pTextAnnotation);
       mpGraphicsView->addItem(pTextAnnotation);
       pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
     }
   }
 }
@@ -2166,6 +2168,90 @@ void UpdateSubModelIconCommand::undo()
       mpShapeAnnotation->update();
       pElementLibraryTreeItem->handleIconUpdated();
       mpShapeAnnotation->emitChanged();
+    }
+  }
+}
+
+DeleteSubModelIconCommand::DeleteSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mIcon = icon;
+  mpGraphicsView = pGraphicsView;
+  setText(QString("Delete SubModel Icon"));
+}
+
+/*!
+ * \brief DeleteSubModelIconCommand::redo
+ * Redo the DeleteSubModelIconCommand
+ */
+void DeleteSubModelIconCommand::redo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    pElementGeometry->iconSource = NULL;
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      // clear all shapes of the submodel first
+      foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
+        mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation);
+      }
+      // Rectangle shape as base
+      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpGraphicsView);
+      pRectangleAnnotation->initializeTransformation();
+      pRectangleAnnotation->drawCornerItems();
+      pRectangleAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pRectangleAnnotation);
+      mpGraphicsView->addItem(pRectangleAnnotation);
+      // Text for name
+      TextAnnotation *pTextAnnotation = new TextAnnotation(mpGraphicsView);
+      pTextAnnotation->initializeTransformation();
+      pTextAnnotation->drawCornerItems();
+      pTextAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pTextAnnotation);
+      mpGraphicsView->addItem(pTextAnnotation);
+      pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+    }
+  }
+}
+
+/*!
+ * \brief DeleteSubModelIconCommand::undo
+ * Undo the DeleteSubModelIconCommand
+ */
+void DeleteSubModelIconCommand::undo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    QString fileURI = "file:///" + mIcon;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    size_t size = fileURI.toStdString().size() + 1;
+    pElementGeometry->iconSource = new char[size];
+    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      // clear all shapes of the submodel first
+      foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
+        mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation);
+      }
+      // Add new bitmap shape
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mIcon, mpGraphicsView);
+      pBitmapAnnotation->initializeTransformation();
+      pBitmapAnnotation->drawCornerItems();
+      pBitmapAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pBitmapAnnotation);
+      mpGraphicsView->addItem(pBitmapAnnotation);
+      pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
     }
   }
 }

@@ -3025,16 +3025,15 @@ void LibraryTreeView::createActions()
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // simulate OMSimulator model action
-  mpSimulateOMSModelAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
-  mpSimulateOMSModelAction->setStatusTip(Helper::OMSSimulationSetupTip);
-  mpSimulateOMSModelAction->setEnabled(false);
-  connect(mpSimulateOMSModelAction, SIGNAL(triggered(bool)), SLOT(simulateOMSModel()));
   // rename OMSimulator model Action
   mpRenameOMSModelAction = new QAction(Helper::rename, this);
   mpRenameOMSModelAction->setStatusTip(Helper::renameOMSModelTip);
   mpRenameOMSModelAction->setEnabled(false);
   connect(mpRenameOMSModelAction, SIGNAL(triggered()), SLOT(renameOMSModel()));
+  // OMSimulator simulation setup action
+  mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
+  mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
+  connect(mpOMSSimulationSetupAction, SIGNAL(triggered(bool)), SLOT(openOMSSimulationDialog()));
   // unload OMSimulator model Action
   mpUnloadOMSModelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
   mpUnloadOMSModelAction->setShortcut(QKeySequence::Delete);
@@ -3211,10 +3210,17 @@ void LibraryTreeView::showContextMenu(QPoint point)
           menu.addAction(mpUnloadCompositeModelFileAction);
           break;
         case LibraryTreeItem::OMS:
-          menu.addAction(mpRenameOMSModelAction);
-          menu.addAction(mpSimulateOMSModelAction);
-          menu.addSeparator();
-          menu.addAction(mpUnloadOMSModelAction);
+          menu.addAction(mpViewDiagramAction);
+          if (pLibraryTreeItem->isTopLevel()) {
+            menu.addSeparator();
+            menu.addAction(mpSaveAction);
+            menu.addAction(mpSaveAsAction);
+            menu.addSeparator();
+            menu.addAction(mpRenameOMSModelAction);
+            menu.addAction(mpOMSSimulationSetupAction);
+            menu.addSeparator();
+            menu.addAction(mpUnloadOMSModelAction);
+          }
           break;
       }
     }
@@ -3719,34 +3725,14 @@ void LibraryTreeView::TLMSimulate()
 }
 
 /*!
- * \brief LibraryTreeView::simulateOMSModel
+ * \brief LibraryTreeView::openOMSSimulationDialog
+ * Opens the OMSimulator Simulation Dialog for the selected LibraryTreeItem.
  */
-void LibraryTreeView::simulateOMSModel()
+void LibraryTreeView::openOMSSimulationDialog()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-
-//    oms_instantiateFMU(pLibraryTreeItem->getOMSimulatorModel(), "C:/Users/adeas31/AppData/Local/Temp/OpenModelica/OMEdit/DualMassOscillator.System1.fmu", "System1");
-//    oms_instantiateFMU(pLibraryTreeItem->getOMSimulatorModel(), "C:/Users/adeas31/AppData/Local/Temp/OpenModelica/OMEdit/DualMassOscillator.System2.fmu", "System2");
-
-//    //if (status1 == oms_status_ok && status2 == oms_status_ok) {
-//      oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.F", "System2.F");
-//      oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.s", "System2.s");
-//      oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.v", "System2.v");
-//      oms_addConnection(pLibraryTreeItem->getOMSimulatorModel(), "System1.a", "System2.a");
-
-//      oms_setResultFile(pLibraryTreeItem->getOMSimulatorModel(), "DualMassOscillator_me.mat");
-
-//      oms_setStopTime(pLibraryTreeItem->getOMSimulatorModel(), 0.1);
-//      oms_setCommunicationInterval(pLibraryTreeItem->getOMSimulatorModel(), 1e-5);
-
-//      oms_initialize(pLibraryTreeItem->getOMSimulatorModel());
-//      oms_simulate(pLibraryTreeItem->getOMSimulatorModel());
-
-//      oms_terminate(pLibraryTreeItem->getOMSimulatorModel());
-
-//      MainWindow::instance()->openResultFiles(QStringList(Utilities::tempDirectory() + "/DualMassOscillator_me.mat"));
-//    }
+    MainWindow::instance()->OMSSimulationSetup(pLibraryTreeItem);
   }
 }
 
@@ -4365,7 +4351,12 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
     result = saveTextLibraryTreeItem(pLibraryTreeItem);
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    result = saveOMSLibraryTreeItem(pLibraryTreeItem);
+    if (pLibraryTreeItem->isTopLevel()) {
+      result = saveOMSLibraryTreeItem(pLibraryTreeItem);
+    } else {
+      result = saveLibraryTreeItem(pLibraryTreeItem->parent());
+      return result;
+    }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);

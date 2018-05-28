@@ -372,8 +372,8 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
-  QAction *mpSimulateOMSModelAction;
   QAction *mpRenameOMSModelAction;
+  QAction *mpOMSSimulationSetupAction;
   QAction *mpUnloadOMSModelAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
@@ -420,7 +420,7 @@ public slots:
   void generateVerificationScenarios();
   void fetchInterfaceData();
   void TLMSimulate();
-  void simulateOMSModel();
+  void openOMSSimulationDialog();
   void renameOMSModel();
   void unloadOMSModel();
 protected:

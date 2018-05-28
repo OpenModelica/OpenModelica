@@ -1314,10 +1314,24 @@ bool GraphicsView::isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem)
  */
 bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()
-      || (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && mpModelWidget->getLibraryTreeItem()->getOMSConnector())) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
     return false;
+  }
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpModelWidget->getLibraryTreeItem()->getOMSElement()
+        && mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+      switch (key) {
+        case Qt::Key_Delete:
+        case Qt::Key_R: // rotate
+        case Qt::Key_H: // horizontal flip
+        case Qt::Key_V: // vertical flip
+          return false;
+        default:
+          break;
+      }
+    } else if (mpModelWidget->getLibraryTreeItem()->getOMSConnector()) {
+      return false;
+    }
   }
   bool selectedAndEditable = false;
   QList<QGraphicsItem*> selectedItems = scene()->selectedItems();

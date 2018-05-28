@@ -2080,5 +2080,6 @@ void AddFMUDialog::addFMU()
   AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(mpNameTextBox->text(), mpPathTextBox->text(), 0,
                                                                    annotation, false, mpGraphicsView);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSubModelCommand);
+  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }

@@ -465,4 +465,15 @@ private:
   ShapeAnnotation *mpShapeAnnotation;
 };
 
+class DeleteSubModelIconCommand : public QUndoCommand
+{
+public:
+  DeleteSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mIcon;
+  GraphicsView *mpGraphicsView;
+};
+
 #endif // COMMANDS_H
