@@ -421,6 +421,7 @@ FuncSimple.mo \
 FuncString.mo \
 FuncStringInvalid1.mo \
 FuncStringInvalid2.mo \
+FuncStringInvalid3.mo \
 FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
 FuncVariability.mo \
