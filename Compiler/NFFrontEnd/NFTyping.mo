@@ -111,24 +111,26 @@ package ExpOrigin
   type Type = Integer;
 
   // Flag values:
-  constant Type CLASS           = 0;     // In class.
-  constant Type FUNCTION        = 1;     // In function.
-  constant Type ALGORITHM       = 2;     // In algorithm section.
-  constant Type EQUATION        = 4;     // In equation section.
-  constant Type INITIAL         = 8;     // In initial section.
-  constant Type LHS             = 16;    // On left hand side of equality/assignment.
-  constant Type RHS             = 32;    // On right hand side of equality/assignment.
-  constant Type WHEN            = 64;    // In when equation/statement.
-  constant Type FOR_LOOP        = 128;   // In a for loop.
-  constant Type NONEXPANDABLE   = 256;   // In non-parameter if/for.
-  constant Type ITERATION_RANGE = 512;   // In range used for iteration.
-  constant Type DIMENSION       = 1024;  // In dimension.
-  constant Type BINDING         = 2048;  // In binding.
-  constant Type CONDITION       = 4096;  // In conditional expression.
-  constant Type SUBSCRIPT       = 8192;  // In subscript.
-  constant Type SUBEXPRESSION   = 16384; // Part of a larger expression.
-  constant Type CONNECT         = 32768; // Part of connect argument.
-  constant Type NOEVENT         = 65536; // Part of noEvent argument.
+  constant Type CLASS           = 0;                   // In class.
+  constant Type FUNCTION        = intBitLShift(1,  0); // In function.
+  constant Type ALGORITHM       = intBitLShift(1,  1); // In algorithm section.
+  constant Type EQUATION        = intBitLShift(1,  2); // In equation section.
+  constant Type INITIAL         = intBitLShift(1,  3); // In initial section.
+  constant Type LHS             = intBitLShift(1,  4); // On left hand side of equality/assignment.
+  constant Type RHS             = intBitLShift(1,  5); // On right hand side of equality/assignment.
+  constant Type WHEN            = intBitLShift(1,  6); // In when equation/statement.
+  constant Type FOR             = intBitLShift(1,  7); // In a for loop.
+  constant Type IF              = intBitLShift(1,  8); // In an if equation/statement.
+  constant Type WHILE           = intBitLShift(1,  9); // In a while loop.
+  constant Type NONEXPANDABLE   = intBitLShift(1, 10); // In non-parameter if/for.
+  constant Type ITERATION_RANGE = intBitLShift(1, 11); // In range used for iteration.
+  constant Type DIMENSION       = intBitLShift(1, 12); // In dimension.
+  constant Type BINDING         = intBitLShift(1, 13); // In binding.
+  constant Type CONDITION       = intBitLShift(1, 14); // In conditional expression.
+  constant Type SUBSCRIPT       = intBitLShift(1, 15); // In subscript.
+  constant Type SUBEXPRESSION   = intBitLShift(1, 16); // Part of a larger expression.
+  constant Type CONNECT         = intBitLShift(1, 17); // Part of connect argument.
+  constant Type NOEVENT         = intBitLShift(1, 18); // Part of noEvent argument.
 
   // Combined flags:
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
@@ -2235,7 +2237,7 @@ algorithm
           fail();
         end if;
 
-        next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
+        next_origin := intBitOr(origin, ExpOrigin.FOR);
         body := list(typeEquation(e, next_origin) for e in eq.body);
       then
         Equation.FOR(eq.iterator, SOME(e1), body, eq.source);
@@ -2461,7 +2463,7 @@ algorithm
           fail();
         end if;
 
-        next_origin := intBitOr(origin, ExpOrigin.FOR_LOOP);
+        next_origin := intBitOr(origin, ExpOrigin.FOR);
         body := typeStatements(st.body, next_origin);
       then
         Statement.FOR(st.iterator, SOME(e1), body, st.source);

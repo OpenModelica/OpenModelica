@@ -145,6 +145,93 @@ public
     output SourceInfo info = ElementSource.getInfo(source(eq));
   end info;
 
+  partial function ApplyFn
+    input Equation eq;
+  end ApplyFn;
+
+  function applyList
+    input list<Equation> eql;
+    input ApplyFn func;
+  algorithm
+    for eq in eql loop
+      apply(eq, func);
+    end for;
+  end applyList;
+
+  function apply
+    input Equation eq;
+    input ApplyFn func;
+  algorithm
+    () := match eq
+      case FOR()
+        algorithm
+          for e in eq.body loop
+            apply(e, func);
+          end for;
+        then
+          ();
+
+      case IF()
+        algorithm
+          for b in eq.branches loop
+            for e in Util.tuple22(b) loop
+              apply(e, func);
+            end for;
+          end for;
+        then
+          ();
+
+      case WHEN()
+        algorithm
+          for b in eq.branches loop
+            for e in Util.tuple22(b) loop
+              apply(e, func);
+            end for;
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+
+    func(eq);
+  end apply;
+
+  partial function MapFn
+    input output Equation eq;
+  end MapFn;
+
+  function map
+    input output Equation eq;
+    input MapFn func;
+  algorithm
+    () := match eq
+      case FOR()
+        algorithm
+          eq.body := list(map(e, func) for e in eq.body);
+        then
+          ();
+
+      case IF()
+        algorithm
+          eq.branches := list((Util.tuple21(b), list(map(e, func) for e in Util.tuple22(b)))
+                              for b in eq.branches);
+        then
+          ();
+
+      case WHEN()
+        algorithm
+          eq.branches := list((Util.tuple21(b), list(map(e, func) for e in Util.tuple22(b)))
+                              for b in eq.branches);
+        then
+          ();
+
+      else ();
+    end match;
+
+    eq := func(eq);
+  end map;
+
   partial function MapExpFn
     input output Expression MapExpFn;
   end MapExpFn;

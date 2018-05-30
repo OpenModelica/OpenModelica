@@ -2001,6 +2001,227 @@ public
     end match;
   end foldSubscript;
 
+  function applyList
+    input list<Expression> expl;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    for e in expl loop
+      apply(e, func);
+    end for;
+  end applyList;
+
+  function apply
+    input Expression exp;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match exp
+      local
+        Expression e;
+
+      case CREF() algorithm applyCref(exp.cref, func); then ();
+      case ARRAY() algorithm applyList(exp.elements, func); then ();
+
+      case MATRIX()
+        algorithm
+          for row in exp.elements loop
+            applyList(row, func);
+          end for;
+        then
+          ();
+
+      case RANGE(step = SOME(e))
+        algorithm
+          apply(exp.start, func);
+          apply(e, func);
+          apply(exp.stop, func);
+        then
+          ();
+
+      case RANGE()
+        algorithm
+          apply(exp.start, func);
+          apply(exp.stop, func);
+        then
+          ();
+
+      case TUPLE() algorithm applyList(exp.elements, func); then ();
+      case RECORD() algorithm applyList(exp.elements, func); then ();
+      case CALL() algorithm applyCall(exp.call, func); then ();
+
+      case SIZE(dimIndex = SOME(e))
+        algorithm
+          apply(exp.exp, func);
+          apply(e, func);
+        then
+          ();
+
+      case SIZE() algorithm apply(exp.exp, func); then ();
+
+      case BINARY()
+        algorithm
+          apply(exp.exp1, func);
+          apply(exp.exp2, func);
+        then
+          ();
+
+      case UNARY() algorithm apply(exp.exp, func); then ();
+
+      case LBINARY()
+        algorithm
+          apply(exp.exp1, func);
+          apply(exp.exp2, func);
+        then
+          ();
+
+      case LUNARY() algorithm apply(exp.exp, func); then ();
+
+      case RELATION()
+        algorithm
+          apply(exp.exp1, func);
+          apply(exp.exp2, func);
+        then
+          ();
+
+      case IF()
+        algorithm
+          apply(exp.condition, func);
+          apply(exp.trueBranch, func);
+          apply(exp.falseBranch, func);
+        then
+          ();
+
+      case CAST() algorithm apply(exp.exp, func); then ();
+      case UNBOX() algorithm apply(exp.exp, func); then ();
+
+      case SUBSCRIPTED_EXP()
+        algorithm
+          apply(exp.exp, func);
+          applyList(exp.subscripts, func);
+        then
+          ();
+
+      case TUPLE_ELEMENT() algorithm apply(exp.tupleExp, func); then ();
+      case BOX() algorithm apply(exp.exp, func); then ();
+      case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
+      else ();
+    end match;
+
+    func(exp);
+  end apply;
+
+  function applyCall
+    input Call call;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match call
+      local
+        Expression e;
+
+      case Call.UNTYPED_CALL()
+        algorithm
+          applyList(call.arguments, func);
+
+          for arg in call.named_args loop
+            (_, e) := arg;
+            apply(e, func);
+          end for;
+        then
+          ();
+
+      case Call.ARG_TYPED_CALL()
+        algorithm
+          for arg in call.arguments loop
+            (e, _, _) := arg;
+            apply(e, func);
+          end for;
+
+          for arg in call.named_args loop
+            (_, e, _, _) := arg;
+            apply(e, func);
+          end for;
+        then
+          ();
+
+      case Call.TYPED_CALL()
+        algorithm
+          applyList(call.arguments, func);
+        then
+          ();
+
+      case Call.UNTYPED_MAP_CALL()
+        algorithm
+          apply(call.exp, func);
+
+          for i in call.iters loop
+            apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
+
+      case Call.TYPED_MAP_CALL()
+        algorithm
+          apply(call.exp, func);
+
+          for i in call.iters loop
+            apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
+
+    end match;
+  end applyCall;
+
+  function applyCref
+    input ComponentRef cref;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match cref
+      case ComponentRef.CREF()
+        algorithm
+          for s in cref.subscripts loop
+            applyCrefSubscript(s, func);
+          end for;
+
+          applyCref(cref.restCref, func);
+        then
+          ();
+
+      else ();
+    end match;
+  end applyCref;
+
+  function applyCrefSubscript
+    input Subscript subscript;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match subscript
+      case Subscript.UNTYPED() algorithm apply(subscript.exp, func); then ();
+      case Subscript.INDEX()   algorithm apply(subscript.index, func); then ();
+      case Subscript.SLICE()   algorithm apply(subscript.slice, func); then ();
+      case Subscript.WHOLE()   then ();
+    end match;
+  end applyCrefSubscript;
+
   function mapFold<ArgT>
     input Expression exp;
     input MapFunc func;

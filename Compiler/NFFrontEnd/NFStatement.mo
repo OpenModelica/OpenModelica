@@ -143,6 +143,63 @@ public
     output SourceInfo info = ElementSource.getInfo(source(stmt));
   end info;
 
+  partial function ApplyFn
+    input Statement stmt;
+  end ApplyFn;
+
+  function apply
+    input Statement stmt;
+    input ApplyFn func;
+  algorithm
+    () := match stmt
+      case FOR()
+        algorithm
+          for e in stmt.body loop
+            apply(e, func);
+          end for;
+        then
+          ();
+
+      case IF()
+        algorithm
+          for b in stmt.branches loop
+            for e in Util.tuple22(b) loop
+              apply(e, func);
+            end for;
+          end for;
+        then
+          ();
+
+      case WHEN()
+        algorithm
+          for b in stmt.branches loop
+            for e in Util.tuple22(b) loop
+              apply(e, func);
+            end for;
+          end for;
+        then
+          ();
+
+      case WHILE()
+        algorithm
+          for e in stmt.body loop
+            apply(e, func);
+          end for;
+        then
+          ();
+
+      case FAILURE()
+        algorithm
+          for e in stmt.body loop
+            apply(e, func);
+          end for;
+        then
+          ();
+    end match;
+
+    func(stmt);
+  end apply;
+
   function mapExpList
     input output list<Statement> stmtl;
     input MapFunc func;

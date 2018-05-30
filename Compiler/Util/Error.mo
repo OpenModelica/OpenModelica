@@ -797,6 +797,8 @@ public constant Message EVAL_RECURSION_LIMIT_REACHED = MESSAGE(334, TRANSLATION(
   Util.gettext("The recursion limit (--evalRecursionLimit=%s) was exceeded during evaluation of %s."));
 public constant Message UNASSIGNED_FUNCTION_OUTPUT = MESSAGE(335, TRANSLATION(), ERROR(),
   Util.gettext("Output parameter %s was not assigned a value"));
+public constant Message INVALID_WHEN_STATEMENT_CONTEXT = MESSAGE(336, TRANSLATION(), ERROR(),
+  Util.gettext("A when-statement may not be used inside a function or a while, if, or for-clause."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

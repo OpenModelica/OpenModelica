@@ -215,6 +215,46 @@ public
     end match;
   end map1;
 
+  function apply
+    input Sections sections;
+    input EquationFn eqFn;
+    input AlgorithmFn algFn;
+    input EquationFn ieqFn = eqFn;
+    input AlgorithmFn ialgFn = algFn;
+
+    partial function EquationFn
+      input Equation eq;
+    end EquationFn;
+
+    partial function AlgorithmFn
+      input Algorithm alg;
+    end AlgorithmFn;
+  algorithm
+    () := match sections
+      case SECTIONS()
+        algorithm
+          for eq in sections.equations loop
+            eqFn(eq);
+          end for;
+
+          for ieq in sections.initialEquations loop
+            ieqFn(ieq);
+          end for;
+
+          for alg in sections.algorithms loop
+            algFn(alg);
+          end for;
+
+          for ialg in sections.initialAlgorithms loop
+            ialgFn(ialg);
+          end for;
+        then
+          ();
+
+      else ();
+    end match;
+  end apply;
+
   function isEmpty
     input Sections sections;
     output Boolean isEmpty;

@@ -43,6 +43,30 @@ public
     ElementSource source;
   end ALGORITHM;
 
+  partial function ApplyFn
+    input Statement alg;
+  end ApplyFn;
+
+  function applyList
+    input list<Algorithm> algs;
+    input ApplyFn func;
+  algorithm
+    for alg in algs loop
+      for s in alg.statements loop
+        Statement.apply(s, func);
+      end for;
+    end for;
+  end applyList;
+
+  function apply
+    input Algorithm alg;
+    input ApplyFn func;
+  algorithm
+    for s in alg.statements loop
+      Statement.apply(s, func);
+    end for;
+  end apply;
+
   function mapExp
     input output Algorithm alg;
     input MapFunc func;
