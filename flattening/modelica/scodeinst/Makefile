@@ -696,8 +696,13 @@ When1.mo \
 When2.mo \
 When3.mo \
 When4.mo \
+WhenIllegalContext1.mo \
+WhenIllegalContext2.mo \
+WhenIllegalContext3.mo \
+WhenIllegalContext4.mo \
 WhenInitial1.mo \
 WhenNested1.mo \
+WhenNested2.mo \
 Wild1.mo \
 
 # test that currently fail. Move up when fixed.
