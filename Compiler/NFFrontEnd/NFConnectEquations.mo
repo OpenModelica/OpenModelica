@@ -61,6 +61,7 @@ import NFClass.Class;
 import NFBinding.Binding;
 import NFFunction.Function;
 import Global;
+import BuiltinCall = NFBuiltinCall;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -209,7 +210,7 @@ algorithm
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
     exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
-    exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.ABS_REAL, {exp}));
+    exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp)));
     exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
@@ -295,6 +296,7 @@ algorithm
       DAE.ElementSource src, src1, src2;
       Expression cref1, cref2, e1, e2;
       list<Connector> inside, outside;
+      Variability var1, var2;
 
     // Unconnected stream connector, do nothing.
     case ({Connector.CONNECTOR(face = Face.INSIDE)}) then {};
@@ -508,7 +510,8 @@ function makeInStreamCall
   output Expression inStreamCall;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  inStreamCall := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.IN_STREAM, {streamExp}));
+  inStreamCall := Expression.CALL(BuiltinCall.makeCall(
+    NFBuiltinFuncs.IN_STREAM, {streamExp}, Expression.variability(streamExp)));
 end makeInStreamCall;
 
 function makePositiveMaxCall
@@ -532,8 +535,8 @@ algorithm
     flow_threshold := flowThreshold;
   end if;
 
-  positiveMaxCall := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
-    {flowExp, flow_threshold}));
+  positiveMaxCall := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
+    {flowExp, flow_threshold}, Connector.variability(element)));
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;

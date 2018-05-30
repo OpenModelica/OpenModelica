@@ -42,6 +42,7 @@ public
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
   import ConvertDAE = NFConvertDAE;
+  import ComponentRef = NFComponentRef;
 
   record INTEGER
   end INTEGER;
@@ -88,8 +89,8 @@ public
   end COMPLEX;
 
   record FUNCTION
+    //ComponentRef fnRef;
     Type resultType;
-    DAE.FunctionAttributes attributes;
   end FUNCTION;
 
   record METABOXED "Used for MetaModelica generic types"
@@ -643,8 +644,8 @@ public
           list(Dimension.toDAE(d) for d in ty.dimensions));
       case Type.TUPLE()
         then DAE.T_TUPLE(list(toDAE(t) for t in ty.types), ty.names);
-      case Type.FUNCTION()
-        then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType, makeTypeVars), ty.attributes, Absyn.IDENT("TODO:FIXME"));
+      //case Type.FUNCTION()
+      //  then DAE.T_FUNCTION({} /*TODO:FIXME*/, toDAE(ty.resultType, makeTypeVars), ty.attributes, Absyn.IDENT("TODO:FIXME"));
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;
       case Type.COMPLEX()

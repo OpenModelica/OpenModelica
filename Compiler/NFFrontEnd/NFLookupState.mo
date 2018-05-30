@@ -40,6 +40,7 @@ protected
 import Dump;
 import Error;
 import System;
+import NFClass.Class;
 
 public
 uniontype LookupStateName
@@ -130,14 +131,21 @@ uniontype LookupState
       LookupStateName.CREF(name), info);
   end assertComponent;
 
-  function isCallable
+  function isCallableType
     input InstNode node;
     output Boolean callable;
   protected
     SCode.Element def = InstNode.definition(node);
   algorithm
     callable := SCode.isRecord(def) or SCode.isOperator(def);
-  end isCallable;
+  end isCallableType;
+
+  function isCallableComponent
+    input InstNode node;
+    output Boolean callable;
+  algorithm
+    callable := Class.isFunction(InstNode.getClass(node));
+  end isCallableComponent;
 
   function isFunction
     input LookupState state;
@@ -147,7 +155,9 @@ uniontype LookupState
     isFunction := match state
       case FUNC() then true;
       case COMP_FUNC() then true;
-      case CLASS() then isCallable(node);
+      case CLASS() then isCallableType(node);
+      case COMP() then isCallableComponent(node);
+      case COMP_COMP() then isCallableComponent(node);
       else false;
     end match;
   end isFunction;
@@ -177,18 +187,21 @@ uniontype LookupState
         SourceInfo info2;
 
       // Found the expected kind of element.
-      case (COMP(),         COMP()) then ();
-      case (COMP_COMP(),    COMP()) then ();
-      case (PREDEF_COMP(),  COMP()) then ();
+      case (COMP(),         COMP())  then ();
+      case (COMP_COMP(),    COMP())  then ();
+      case (PREDEF_COMP(),  COMP())  then ();
+      case (FUNC(),         COMP())  then ();
+      case (COMP_FUNC(),    COMP())  then ();
       case (PACKAGE(),      CLASS()) then ();
       case (CLASS(),        CLASS()) then ();
       case (PREDEF_CLASS(), CLASS()) then ();
       case (FUNC(),         CLASS()) then ();
-      case (FUNC(),         FUNC()) then ();
-      case (COMP_FUNC(),    FUNC()) then ();
+      case (FUNC(),         FUNC())  then ();
+      case (COMP_FUNC(),    FUNC())  then ();
 
-
-      case (CLASS(), FUNC()) guard isCallable(node) then ();
+      case (CLASS(), FUNC())     guard isCallableType(node) then ();
+      case (COMP(),  FUNC())     guard isCallableComponent(node) then ();
+      case (COMP_COMP(), FUNC()) guard isCallableComponent(node) then ();
 
       // Found a class via a component, but expected a function.
       case (COMP_CLASS(), FUNC())

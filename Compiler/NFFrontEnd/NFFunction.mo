@@ -295,7 +295,7 @@ uniontype Function
     CachedData cache;
   algorithm
     // Look up the function.
-    fn_node := ComponentRef.node(fn_ref);
+    fn_node := InstNode.classScope(ComponentRef.node(fn_ref));
     cache := InstNode.getFuncCache(fn_node);
 
     // Check if a cached instantiation of this function already exists.
@@ -408,7 +408,7 @@ uniontype Function
   protected
     CachedData cache;
   algorithm
-    cache := InstNode.getFuncCache(inNode);
+    cache := InstNode.getFuncCache(InstNode.classScope(inNode));
     outFuncs := match cache
       case CachedData.FUNCTION() then cache.funcs;
       else fail();
@@ -508,6 +508,11 @@ uniontype Function
     // if isSome(display_name) then Util.getOption(display_name) else fn.path;
     str := Absyn.pathString(fn_name) + "(" + input_str + ")" + output_str;
   end signatureString;
+
+  function candidateFuncListString
+    input list<Function> fns;
+    output String s = stringDelimitList(list(Function.signatureString(fn, true) for fn in fns), "\n  ");
+  end candidateFuncListString;
 
   function callString
     "Constructs a string representing a call, for use in error messages."
@@ -941,6 +946,40 @@ uniontype Function
       else true;
     end match;
   end isTyped;
+
+  function typeRefCache
+    "Returns the function(s) referenced by the given cref, and types them if
+     they are not already typed."
+    input ComponentRef functionRef;
+    output list<Function> functions;
+  protected
+    InstNode fn_node;
+    Boolean typed, special;
+    String name;
+  algorithm
+    functions := match functionRef
+      case ComponentRef.CREF(node = fn_node)
+        algorithm
+          fn_node := InstNode.classScope(fn_node);
+          CachedData.FUNCTION(functions, typed, special) := InstNode.getFuncCache(fn_node);
+
+          // Type the function(s) if not already done.
+          if not typed then
+            functions := list(typeFunctionSignature(f) for f in functions);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
+            functions := list(typeFunctionBody(f) for f in functions);
+            InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
+          end if;
+        then
+          functions;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid function call reference", sourceInfo());
+        then
+          fail();
+    end match;
+  end typeRefCache;
 
   function typeFunction
     input output Function fn;

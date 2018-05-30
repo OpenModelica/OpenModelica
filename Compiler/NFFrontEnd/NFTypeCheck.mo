@@ -68,6 +68,7 @@ import NFFunction.TypedArg;
 import NFFunction.FunctionMatchKind;
 import NFFunction.MatchedFunction;
 import NFCall.Call;
+import BuiltinCall = NFBuiltinCall;
 import NFCall.CallAttributes;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
@@ -199,7 +200,7 @@ algorithm
 
     if oper_defined then
       fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
-      for fn in Call.typeCachedFunctions(fn_ref) loop
+      for fn in Function.typeRefCache(fn_ref) loop
         checkValidOperatorOverload(opstr, fn, node1);
         candidates := fn::candidates;
       end for;
@@ -221,7 +222,7 @@ algorithm
 
         if oper_defined then
           fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node2));
-          for fn in Call.typeCachedFunctions(fn_ref) loop
+          for fn in Function.typeRefCache(fn_ref) loop
             checkValidOperatorOverload(opstr, fn, node2);
             candidates := fn::candidates;
           end for;
@@ -268,7 +269,7 @@ algorithm
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
           {Expression.toString(Expression.BINARY(inExp1, inOp, inExp2))
-            , Call.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
+            , Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
     fail();
   end if;
 
@@ -331,7 +332,7 @@ algorithm
     else
     // TODO: FIX ME: Add proper error message.
     print("Ambiguous operator: " + "\nCandidates:\n  ");
-    print(Call.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs)));
+    print(Function.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs)));
     print("\n");
     fail();
   end if;
@@ -859,7 +860,7 @@ algorithm
 
   fn_ref := Function.lookupFunctionSimple(opstr, node1);
   fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
-  candidates := Call.typeCachedFunctions(fn_ref);
+  candidates := Function.typeRefCache(fn_ref);
   for fn in candidates loop
     checkValidOperatorOverload(opstr, fn, node1);
   end for;
@@ -884,8 +885,8 @@ algorithm
                               );
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
-          {Expression.toString(Expression.UNARY(inOp, inExp1))
-            , Call.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
+      {Expression.toString(Expression.UNARY(inOp, inExp1)),
+       Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
     fail();
   end if;
 
@@ -2008,11 +2009,11 @@ algorithm
         if isSome(stepExp) then
           SOME(step_exp) := stepExp;
           var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
-          dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
+          dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
         end if;
 
         dim_exp := Expression.BINARY(dim_exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(1));
-        dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.MAX_INT, {dim_exp}, var));
+        dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.MAX_INT, {dim_exp}, var));
       then
         Dimension.fromExp(dim_exp, var);
 
@@ -2062,8 +2063,8 @@ algorithm
           dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.REAL()), Expression.REAL(5e-15));
         end if;
 
-        dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
-        dim_exp := Expression.CALL(Call.makeBuiltinCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
+        dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
+        dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
       then
         Dimension.fromExp(dim_exp, var);

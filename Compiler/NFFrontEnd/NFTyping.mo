@@ -58,6 +58,7 @@ import Algorithm = NFAlgorithm;
 
 protected
 import Builtin = NFBuiltin;
+import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
 import ClassInf;
 import ComponentRef = NFComponentRef;
@@ -1487,7 +1488,7 @@ algorithm
       resTys := ty::resTys;
       res := e::res;
     end for;
-    (arrayExp, arrayType) := Call.makeBuiltinCat(1, res, resTys, info);
+    (arrayExp, arrayType) := BuiltinCall.makeCatExp(1, res, resTys, variability, info);
   else
     (arrayExp, arrayType, variability) := typeMatrixComma(listHead(elements), origin, info);
     if Type.dimensionCount(arrayType) < 2 then
@@ -1515,7 +1516,7 @@ algorithm
   Error.assertion(not listEmpty(elements), getInstanceName() + " expected non-empty arguments", sourceInfo());
   if listLength(elements) > 1 then
     for e in elements loop
-      (exp, ty1, ) := typeExp(e, origin, info);
+      (exp, ty1, var) := typeExp(e, origin, info);
       expl := exp :: expl;
       if Type.isEqual(ty, Type.UNKNOWN()) then
         ty := ty1;
@@ -1526,6 +1527,7 @@ algorithm
         end if;
       end if;
       tys := ty1 :: tys;
+      variability := Prefixes.variabilityMax(variability, var);
       n := max(n, Type.dimensionCount(ty));
     end for;
     tys2 := {};
@@ -1545,7 +1547,7 @@ algorithm
       res := e :: res;
       tys2 := ty3 :: tys2;
     end for;
-    (arrayExp, arrayType) := Call.makeBuiltinCat(2, res, tys2, info);
+    (arrayExp, arrayType) := BuiltinCall.makeCatExp(2, res, tys2, variability, info);
   else
     (arrayExp, arrayType, variability) := typeExp(listHead(elements), origin, info);
   end if;

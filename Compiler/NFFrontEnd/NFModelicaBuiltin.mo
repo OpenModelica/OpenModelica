@@ -852,7 +852,7 @@ record SimulationResult
   String simulationOptions;
   String messages;
 end SimulationResult; */
-encapsulated package OpenModelica "OpenModelica internal defintions and scripting functions"
+encapsulated package OpenModelica "OpenModelica internal definitions and scripting functions"
 
 package $Code
   "Code quoting is not a uniontype yet because that would require enabling MetaModelica

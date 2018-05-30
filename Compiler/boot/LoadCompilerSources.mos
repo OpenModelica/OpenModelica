@@ -291,6 +291,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFAlgorithm.mo",
     "../NFFrontEnd/NFBinding.mo",
     "../NFFrontEnd/NFBuiltin.mo",
+    "../NFFrontEnd/NFBuiltinCall.mo",
     "../NFFrontEnd/NFBuiltinFuncs.mo",
     "../NFFrontEnd/NFCall.mo",
     "../NFFrontEnd/NFCeval.mo",

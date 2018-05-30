@@ -36,6 +36,7 @@ protected
   import List;
 
   import Builtin = NFBuiltin;
+  import BuiltinCall = NFBuiltinCall;
   import Expression = NFExpression;
   import Function = NFFunction;
   import RangeIterator = NFRangeIterator;
@@ -3104,7 +3105,8 @@ public
       // An expression with array type, but which is not an array expression.
       // Such an expression can't be promoted here, so we create a promote call instead.
       case (_, _) guard isArray
-        then CALL(Call.makeBuiltinCall2(NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, listHead(types)));
+        then CALL(BuiltinCall.makeCall2(
+          NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, listHead(types), variability(exp)));
 
       // A scalar expression, promote it as many times as the number of types given.
       else
@@ -3262,7 +3264,7 @@ public
   algorithm
     indexExp := match enumExp
       case ENUM_LITERAL() then INTEGER(enumExp.index);
-      else CALL(Call.makeBuiltinCall(
+      else CALL(BuiltinCall.makeCall(
         NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp)));
     end match;
   end enumIndexExp;

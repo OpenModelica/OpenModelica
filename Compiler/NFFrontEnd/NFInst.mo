@@ -1318,7 +1318,7 @@ algorithm
       Component inst_comp;
       InstNode ty_node;
       Class ty;
-      Boolean use_binding;
+      Boolean use_binding, in_function;
 
     case SCode.COMPONENT(info = info)
       algorithm
@@ -1340,7 +1340,8 @@ algorithm
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
         attr := instComponentAttributes(component.attributes, component.prefixes);
-        attr := mergeComponentAttributes(attributes, attr, node);
+        attr := mergeComponentAttributes(attributes, attr, node,
+          Class.isFunction(InstNode.getClass(parent)));
 
         // Create the untyped component and update the node with it. We need the
         // untyped component in instClass to make sure everything is scoped
@@ -1495,6 +1496,7 @@ function mergeComponentAttributes
   input Component.Attributes outerAttr;
   input Component.Attributes innerAttr;
   input InstNode node;
+  input Boolean inFunction;
   output Component.Attributes attr;
 protected
   ConnectorType cty;
@@ -1513,7 +1515,13 @@ algorithm
     cty := Prefixes.mergeConnectorType(outerAttr.connectorType, innerAttr.connectorType, node);
     par := Prefixes.mergeParallelism(outerAttr.parallelism, innerAttr.parallelism, node);
     var := Prefixes.variabilityMin(outerAttr.variability, innerAttr.variability);
-    dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
+
+    if inFunction then
+      dir := innerAttr.direction;
+    else
+      dir := Prefixes.mergeDirection(outerAttr.direction, innerAttr.direction, node);
+    end if;
+
     fin := outerAttr.isFinal or innerAttr.isFinal;
     redecl := innerAttr.isRedeclare;
     repl := innerAttr.isReplaceable;
@@ -2140,72 +2148,112 @@ algorithm
 
   crefExp := match cref
     case ComponentRef.CREF()
-      algorithm
-        if InstNode.isComponent(cref.node) then
-          comp := InstNode.component(cref.node);
-
-          crefExp := match comp
-            case Component.ITERATOR()
-              algorithm
-                checkUnsubscriptableCref(cref, cref.subscripts, info);
-              then
-                Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(cref.node, comp.ty));
-
-            case Component.ENUM_LITERAL()
-              algorithm
-                checkUnsubscriptableCref(cref, cref.subscripts, info);
-              then
-                comp.literal;
-
-            case Component.TYPE_ATTRIBUTE()
-              algorithm
-                Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
-                  {Dump.printComponentRefStr(absynCref), InstNode.name(scope)}, info);
-              then
-                fail();
-
-            else
-              algorithm
-                prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
-                prefixed_cref := if ComponentRef.isEmpty(prefixed_cref) then
-                  cref else ComponentRef.append(cref, prefixed_cref);
-              then
-                Expression.CREF(Type.UNKNOWN(), prefixed_cref);
-
-          end match;
-        else
-          checkUnsubscriptableCref(cref, cref.subscripts, info);
-          ty := InstNode.getType(cref.node);
-
-          ty := match ty
-            case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
-            case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
-            else
-              algorithm
-                // This should be caught by lookupComponent, only type name classes
-                // are allowed to be used where a component is expected.
-                Error.assertion(false, getInstanceName() + " got unknown class node", sourceInfo());
-              then
-                fail();
-          end match;
-
-          crefExp := Expression.TYPENAME(ty);
-        end if;
       then
-        crefExp;
+        match cref.node
+          case InstNode.COMPONENT_NODE()
+            then instCrefComponent(cref, cref.node, found_scope, info);
+          case InstNode.CLASS_NODE()
+            then if Class.isFunction(InstNode.getClass(cref.node)) then
+                   instCrefFunction(cref, info)
+                 else
+                   instCrefTypename(cref, cref.node, info);
+          else
+            algorithm
+              Error.assertion(false, getInstanceName() + " got invalid instance node", sourceInfo());
+            then
+              fail();
+        end match;
 
     else Expression.CREF(Type.UNKNOWN(), cref);
   end match;
 end instCref;
 
+function instCrefComponent
+  input ComponentRef cref;
+  input InstNode node;
+  input InstNode scope;
+  input SourceInfo info;
+  output Expression crefExp;
+protected
+  Component comp;
+  ComponentRef prefixed_cref;
+algorithm
+  comp := InstNode.component(node);
+
+  crefExp := match comp
+    case Component.ITERATOR()
+      algorithm
+        checkUnsubscriptableCref(cref, info);
+      then
+        Expression.CREF(Type.UNKNOWN(), ComponentRef.makeIterator(node, comp.ty));
+
+    case Component.ENUM_LITERAL()
+      algorithm
+        checkUnsubscriptableCref(cref, info);
+      then
+        comp.literal;
+
+    case Component.TYPE_ATTRIBUTE()
+      algorithm
+        Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,
+          {InstNode.name(node), InstNode.name(InstNode.parent(node))}, info);
+      then
+        fail();
+
+    else
+      algorithm
+        prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(scope));
+        prefixed_cref := if ComponentRef.isEmpty(prefixed_cref) then
+          cref else ComponentRef.append(cref, prefixed_cref);
+      then
+        Expression.CREF(Type.UNKNOWN(), prefixed_cref);
+
+  end match;
+end instCrefComponent;
+
+function instCrefFunction
+  input ComponentRef cref;
+  input SourceInfo info;
+  output Expression crefExp;
+protected
+  ComponentRef fn_ref;
+algorithm
+  fn_ref := Function.instFuncRef(cref, info);
+  crefExp := Expression.CREF(Type.UNKNOWN(), fn_ref);
+end instCrefFunction;
+
+function instCrefTypename
+  input ComponentRef cref;
+  input InstNode node;
+  input SourceInfo info;
+  output Expression crefExp;
+protected
+  Type ty;
+algorithm
+  checkUnsubscriptableCref(cref, info);
+  ty := InstNode.getType(node);
+
+  ty := match ty
+    case Type.BOOLEAN() then Type.ARRAY(ty, {Dimension.BOOLEAN()});
+    case Type.ENUMERATION() then Type.ARRAY(ty, {Dimension.ENUM(ty)});
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown class node " +
+         InstNode.name(node), sourceInfo());
+      then
+        fail();
+  end match;
+
+  crefExp := Expression.TYPENAME(ty);
+end instCrefTypename;
+
 function checkUnsubscriptableCref
   input ComponentRef cref;
-  input list<Subscript> subscripts;
   input SourceInfo info;
 algorithm
-  if not listEmpty(subscripts) then
+  if ComponentRef.hasSubscripts(cref) then
     Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
-      {ComponentRef.toString(cref), String(listLength(subscripts)), "0"}, info);
+      {ComponentRef.toString(cref), String(listLength(ComponentRef.getSubscripts(cref))), "0"}, info);
     fail();
   end if;
 end checkUnsubscriptableCref;
