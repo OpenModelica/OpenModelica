@@ -1136,6 +1136,11 @@ algorithm
     case "listMember" guard Config.acceptMetaModelicaGrammar() then cevalListMember;
     case "anyString" guard Config.acceptMetaModelicaGrammar() then cevalAnyString;
     case "listArrayLiteral" guard Config.acceptMetaModelicaGrammar() then cevalListArrayLiteral;
+    case "intBitAnd" guard Config.acceptMetaModelicaGrammar() then cevalIntBitAnd;
+    case "intBitOr" guard Config.acceptMetaModelicaGrammar() then cevalIntBitOr;
+    case "intBitXor" guard Config.acceptMetaModelicaGrammar() then cevalIntBitXor;
+    case "intBitLShift" guard Config.acceptMetaModelicaGrammar() then cevalIntBitLShift;
+    case "intBitRShift" guard Config.acceptMetaModelicaGrammar() then cevalIntBitRShift;
     case "numBits" then cevalNumBits;
     case "integerMax" then cevalIntegerMax;
 
@@ -2569,6 +2574,96 @@ algorithm
         (inCache,Values.INTEGER(i));
   end match;
 end cevalIntegerMax;
+
+function cevalIntBitAnd
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<DAE.Exp> args;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+        output Values.Value result;
+protected
+  DAE.Exp e1, e2;
+  Integer i1, i2;
+algorithm
+  e1 :: e2 :: _ := args;
+  (cache, Values.INTEGER(i1)) := ceval(cache, env, e1, impl, msg, numIter + 1);
+  (cache, Values.INTEGER(i2)) := ceval(cache, env, e2, impl, msg, numIter + 1);
+  result := Values.INTEGER(intBitAnd(i1, i2));
+end cevalIntBitAnd;
+
+function cevalIntBitOr
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<DAE.Exp> args;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+        output Values.Value result;
+protected
+  DAE.Exp e1, e2;
+  Integer i1, i2;
+algorithm
+  e1 :: e2 :: _ := args;
+  (cache, Values.INTEGER(i1)) := ceval(cache, env, e1, impl, msg, numIter + 1);
+  (cache, Values.INTEGER(i2)) := ceval(cache, env, e2, impl, msg, numIter + 1);
+  result := Values.INTEGER(intBitOr(i1, i2));
+end cevalIntBitOr;
+
+function cevalIntBitXor
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<DAE.Exp> args;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+        output Values.Value result;
+protected
+  DAE.Exp e1, e2;
+  Integer i1, i2;
+algorithm
+  e1 :: e2 :: _ := args;
+  (cache, Values.INTEGER(i1)) := ceval(cache, env, e1, impl, msg, numIter + 1);
+  (cache, Values.INTEGER(i2)) := ceval(cache, env, e2, impl, msg, numIter + 1);
+  result := Values.INTEGER(intBitXor(i1, i2));
+end cevalIntBitXor;
+
+function cevalIntBitLShift
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<DAE.Exp> args;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+        output Values.Value result;
+protected
+  DAE.Exp e1, e2;
+  Integer i, s;
+algorithm
+  e1 :: e2 :: _ := args;
+  (cache, Values.INTEGER(i)) := ceval(cache, env, e1, impl, msg, numIter + 1);
+  (cache, Values.INTEGER(s)) := ceval(cache, env, e2, impl, msg, numIter + 1);
+  result := Values.INTEGER(intBitLShift(i, s));
+end cevalIntBitLShift;
+
+function cevalIntBitRShift
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<DAE.Exp> args;
+  input Boolean impl;
+  input Absyn.Msg msg;
+  input Integer numIter;
+        output Values.Value result;
+protected
+  DAE.Exp e1, e2;
+  Integer i, s;
+algorithm
+  e1 :: e2 :: _ := args;
+  (cache, Values.INTEGER(i)) := ceval(cache, env, e1, impl, msg, numIter + 1);
+  (cache, Values.INTEGER(s)) := ceval(cache, env, e2, impl, msg, numIter + 1);
+  result := Values.INTEGER(intBitRShift(i, s));
+end cevalIntBitRShift;
 
 protected function makeLoadLibrariesEntry "Needed to be able to resolve modelica:// during runtime, etc.
 Should not be part of CevalScript since ModelicaServices needs this feature and the frontend needs to take care of it."

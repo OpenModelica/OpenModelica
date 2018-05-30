@@ -1297,6 +1297,11 @@ algorithm
     case "vector" then evalBuiltinVector(listHead(args));
     case "zeros" then evalBuiltinZeros(args);
     case "OpenModelica_uriToFilename" then evalUriToFilename(listHead(args));
+    case "intBitAnd" then evalIntBitAnd(args);
+    case "intBitOr" then evalIntBitOr(args);
+    case "intBitXor" then evalIntBitXor(args);
+    case "intBitLShift" then evalIntBitLShift(args);
+    case "intBitRShift" then evalIntBitRShift(args);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2230,6 +2235,76 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
 end evalUriToFilename;
+
+function evalIntBitAnd
+  input list<Expression> args;
+  output Expression result;
+protected
+  Integer i1, i2;
+algorithm
+  result := match args
+    case {Expression.INTEGER(value = i1), Expression.INTEGER(value = i2)}
+      then Expression.INTEGER(intBitAnd(i1, i2));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalIntBitAnd;
+
+function evalIntBitOr
+  input list<Expression> args;
+  output Expression result;
+protected
+  Integer i1, i2;
+algorithm
+  result := match args
+    case {Expression.INTEGER(value = i1), Expression.INTEGER(value = i2)}
+      then Expression.INTEGER(intBitOr(i1, i2));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalIntBitOr;
+
+function evalIntBitXor
+  input list<Expression> args;
+  output Expression result;
+protected
+  Integer i1, i2;
+algorithm
+  result := match args
+    case {Expression.INTEGER(value = i1), Expression.INTEGER(value = i2)}
+      then Expression.INTEGER(intBitXor(i1, i2));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalIntBitXor;
+
+function evalIntBitLShift
+  input list<Expression> args;
+  output Expression result;
+protected
+  Integer i1, i2;
+algorithm
+  result := match args
+    case {Expression.INTEGER(value = i1), Expression.INTEGER(value = i2)}
+      then Expression.INTEGER(intBitLShift(i1, i2));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalIntBitLShift;
+
+function evalIntBitRShift
+  input list<Expression> args;
+  output Expression result;
+protected
+  Integer i1, i2;
+algorithm
+  result := match args
+    case {Expression.INTEGER(value = i1), Expression.INTEGER(value = i2)}
+      then Expression.INTEGER(intBitRShift(i1, i2));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalIntBitRShift;
 
 function evalReduction
   input Expression exp;
