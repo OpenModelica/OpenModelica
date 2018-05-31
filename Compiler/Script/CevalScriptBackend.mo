@@ -4994,7 +4994,11 @@ algorithm
 
     case Absyn.ElementArg.MODIFICATION(modification =
         SOME(Absyn.Modification.CLASSMOD(eqMod = Absyn.EqMod.EQMOD(exp = exp))))
-      then Absyn.pathString(arg.path) + "=" + Dump.printExpStr(exp);
+      then
+        match exp
+          case Absyn.STRING("()") then Absyn.pathString(arg.path);
+          else Absyn.pathString(arg.path) + "=" + Dump.printExpStr(exp);
+        end match;
 
     case Absyn.ElementArg.MODIFICATION()
       then Absyn.pathString(arg.path);
