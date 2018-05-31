@@ -1426,7 +1426,7 @@ algorithm
       equation
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, msg);
+        (b,cache,compileDir,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
         executable = if not Config.getRunningTestsuite() then compileDir + executable else executable;
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
@@ -1440,7 +1440,7 @@ algorithm
         //Flags.set(Flags.WRITE_TO_BUFFER,true);
         List.map_0(ClockIndexes.buildModelClocks,System.realtimeClear);
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,compileDir,executable,_,_,initfilename,_,_) = buildModel(cache,env, vals, msg);
+        (b,cache,compileDir,executable,_,_,initfilename,_,_,vals) = buildModel(cache,env, vals, msg);
       then
         (cache,ValuesUtil.makeArray(if b then {Values.STRING(executable),Values.STRING(initfilename)} else {Values.STRING(""),Values.STRING("")}));
 
@@ -1498,7 +1498,7 @@ algorithm
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,_)
       algorithm
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
-        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) := buildModel(cache,env,vals,msg);
+        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) := buildModel(cache,env,vals,msg);
 
         if b then
           exeDir := compileDir;
@@ -1603,7 +1603,7 @@ algorithm
 
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
 
-        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,msg);
+        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
         if b then
           Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
           executableSuffixedExe = stringAppend(executable, System.getExeExt());
@@ -1664,7 +1664,7 @@ algorithm
         Flags.setConfigEnum(Flags.GRAMMAR, Flags.OPTIMICA);
         Flags.setConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,true);
 
-        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,msg);
+        (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
         if b then
           exeDir=compileDir;
           (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
@@ -4872,8 +4872,9 @@ protected function buildModel "translates and builds the model by running compil
   output String outInitFileName "initFileName";
   output String outSimFlags;
   output list<tuple<String,Values.Value>> resultValues;
+  output list<Values.Value> outArgs;
 algorithm
-  (outCache,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues):=
+  (outCache,compileDir,outString1,outString2,outputFormat_str,outInitFileName,outSimFlags,resultValues,outArgs):=
   matchcontinue (inCache,inEnv,inValues,inMsg)
     local
       BackendDAE.BackendDAE indexed_dlow_1;
@@ -4890,6 +4891,7 @@ algorithm
       Absyn.Msg msg;
       FCore.Cache cache;
       Boolean existFile;
+      Option<Absyn.Modification> simflags_mod;
 
     // compile the model
     case (cache,env,vals,msg)
@@ -4912,10 +4914,22 @@ algorithm
         (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
+
+        // If simflags is empty and --ignoreSimulationFlagsAnnotation isn't used,
+        // use the __OpenModelica_simulationFlags annotation in the class to be simulated.
+        if stringEmpty(simflags) and not Flags.getConfigBool(Flags.IGNORE_SIMULATION_FLAGS_ANNOTATION) then
+          simflags_mod := Interactive.getNamedAnnotation(classname, SymbolTable.getAbsyn(),
+            Absyn.IDENT("__OpenModelica_simulationFlags"), SOME(NONE()), Util.id);
+          simflags := formatSimulationFlagsString(simflags_mod);
+
+          if not stringEmpty(simflags) then
+            values := List.replaceAt(Values.STRING(simflags), 12, values);
+          end if;
+        end if;
+
         compileDir := System.pwd() + System.pathDelimiter();
         (cache,simSettings) := calculateSimulationSettings(cache, env, values, msg);
-        SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str)
-           := simSettings;
+        SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) := simSettings;
 
         (success,cache,libs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
@@ -4944,7 +4958,7 @@ algorithm
         end if;
         resultValues := ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
-        (cache,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues);
+        (cache,compileDir,filenameprefix,method_str,outputFormat_str,init_filename,simflags,resultValues,values);
 
     // failure
     else
@@ -4953,6 +4967,40 @@ algorithm
       then fail();
   end matchcontinue;
 end buildModel;
+
+function formatSimulationFlagsString
+  "Formats a modification in the format expected by the simflags argument to buildModel."
+  input Option<Absyn.Modification> mod;
+  output String str;
+algorithm
+  str := match mod
+    local
+      list<Absyn.ElementArg> args;
+
+    case SOME(Absyn.CLASSMOD(elementArgLst = args))
+      then List.toString(args, formatSimulationFlagString, "", "-", " -", "", false);
+
+    else "";
+  end match;
+end formatSimulationFlagsString;
+
+function formatSimulationFlagString
+  input Absyn.ElementArg arg;
+  output String str;
+algorithm
+  str := match arg
+    local
+      Absyn.Exp exp;
+
+    case Absyn.ElementArg.MODIFICATION(modification =
+        SOME(Absyn.Modification.CLASSMOD(eqMod = Absyn.EqMod.EQMOD(exp = exp))))
+      then Absyn.pathString(arg.path) + "=" + Dump.printExpStr(exp);
+
+    case Absyn.ElementArg.MODIFICATION()
+      then Absyn.pathString(arg.path);
+
+  end match;
+end formatSimulationFlagString;
 
 protected function createSimulationResultFromcallModelExecutable
 "This function calls the compiled simulation executable."
