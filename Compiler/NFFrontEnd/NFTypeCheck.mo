@@ -1689,7 +1689,6 @@ algorithm
         if matchKind <> MatchKind.NOT_COMPATIBLE then
           matchKind := MatchKind.PLUG_COMPATIBLE;
         end if;
-
       then
         ();
 

@@ -879,6 +879,12 @@ algorithm
   exp := match exp1
     case Expression.INTEGER() then Expression.INTEGER(-exp1.value);
     case Expression.REAL() then Expression.REAL(-exp1.value);
+    case Expression.ARRAY()
+      algorithm
+        exp1.elements := list(evalUnaryMinus(e) for e in exp1.elements);
+      then
+        exp1;
+
     else
       algorithm
         exp := Expression.UNARY(Operator.makeUMinus(Type.UNKNOWN()), exp1);

@@ -75,6 +75,12 @@ public
           case IMPORT() then entry.index;
         end match;
       end index;
+
+      function isEqual
+        input Entry entry1;
+        input Entry entry2;
+        output Boolean isEqual = index(entry1) == index(entry2);
+      end isEqual;
     end Entry;
 
     import BaseAvlTree;
@@ -151,6 +157,15 @@ public
       input LookupTree.Entry lentry;
       output Entry entry = ENTRY(lentry, NONE(), {}, EntryType.ENTRY);
     end newEntry;
+
+    function idExistsInEntry
+      input LookupTree.Entry id;
+      input Entry entry;
+      output Boolean exists;
+    algorithm
+      exists := LookupTree.Entry.isEqual(id, entry.entry) or
+                List.exist(entry.children, function idExistsInEntry(id = id));
+    end idExistsInEntry;
 
     annotation(__OpenModelica_Interface="util");
   end DuplicateTree;
@@ -1665,6 +1680,7 @@ public
       DuplicateTree.Entry dup_entry;
       Integer new_id = LookupTree.Entry.index(newEntry);
       Integer old_id = LookupTree.Entry.index(oldEntry);
+      DuplicateTree.EntryType ty;
     algorithm
       dups := Mutable.access(duplicates);
       opt_dup_entry := DuplicateTree.getOpt(dups, name);
@@ -1681,48 +1697,56 @@ public
 
         dups := DuplicateTree.add(dups, name, dup_entry);
         Mutable.update(duplicates, dups);
-      elseif isNone(DuplicateTree.getOpt(extDuplicates, name)) then
-        // If a duplicate entry does exist, but not in the extends node's duplicate
-        // tree, then we need to add the inherited element to the existing entry.
-        // This happens when the element is not a duplicate in its own scope.
-        SOME(dup_entry) := opt_dup_entry;
-
-        // TODO: Change this to an if-statement when compiler bug #4502 is fixed.
-        () := match dup_entry.ty
-          case DuplicateTree.EntryType.REDECLARE
-            algorithm
-              // If the existing entry is for a redeclare, then the position of
-              // the element doesn't matter and the new entry should be added as
-              // a child to the redeclare.
-              entry := newEntry;
-              dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
-            then
-              ();
-          else
-            algorithm
-              // Otherwise we need to keep the 'first' element as the parent.
-              // Note that this only actually works for components, since we don't
-              // preserve the order for classes. But which class we choose shouldn't
-              // matter since they should be identical. We might also compare e.g. a
-              // component to a class here, but that will be caught in checkDuplicates.
-              if new_id < old_id then
-                entry := newEntry;
-                dup_entry := DuplicateTree.Entry.ENTRY(newEntry, NONE(),
-                  DuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
-              else
-                entry := oldEntry;
-                dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
-              end if;
-            then
-              ();
-        end match;
-
-        dups := DuplicateTree.update(dups, name, dup_entry);
-        Mutable.update(duplicates, dups);
       else
-        // If an entry does exist in both duplicate tree, then it's already been
-        // added by expandExtends and nothing more needs to be done here.
-        entry := if new_id < old_id then newEntry else oldEntry;
+        SOME(dup_entry) := opt_dup_entry;
+        ty := dup_entry.ty;
+
+        // Here it's possible for either the new or the old entry to not exist in the duplicate entry.
+        // The new might not exist simply because it hasn't been added yet, while the old might not
+        // exist because it wasn't a duplicate in its own scope. At least one of them must exist though,
+        // since duplicate entries are added for any name occurring more than once.
+        if not DuplicateTree.idExistsInEntry(newEntry, dup_entry) then
+          if ty == DuplicateTree.EntryType.REDECLARE then
+            // If the existing entry is for a redeclare, then the position of the element
+            // doesn't matter and the new entry should be added as a child to the redeclare.
+            entry := newEntry;
+            dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
+          else
+            // Otherwise we need to keep the 'first' element as the parent.
+            // Note that this only actually works for components, since we don't
+            // preserve the order for classes. But which class we choose shouldn't
+            // matter since they should be identical. We might also compare e.g. a
+            // component to a class here, but that will be caught in checkDuplicates.
+            if new_id < old_id then
+              entry := newEntry;
+              dup_entry := DuplicateTree.Entry.ENTRY(newEntry, NONE(),
+                DuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
+            else
+              entry := oldEntry;
+              dup_entry.children := DuplicateTree.newEntry(newEntry) :: dup_entry.children;
+            end if;
+          end if;
+
+          dups := DuplicateTree.update(dups, name, dup_entry);
+          Mutable.update(duplicates, dups);
+        elseif not DuplicateTree.idExistsInEntry(oldEntry, dup_entry) then
+          // Same as above but we add the old entry instead.
+          if ty == DuplicateTree.EntryType.REDECLARE or new_id < old_id then
+            entry := newEntry;
+            dup_entry.children := DuplicateTree.newEntry(oldEntry) :: dup_entry.children;
+          else
+            entry := newEntry;
+            dup_entry := DuplicateTree.Entry.ENTRY(newEntry, NONE(),
+              DuplicateTree.newEntry(oldEntry) :: dup_entry.children, dup_entry.ty);
+          end if;
+
+          dups := DuplicateTree.update(dups, name, dup_entry);
+          Mutable.update(duplicates, dups);
+        else
+          // If both the old and the new entry already exists, which can happen if the
+          // new entry was added by expandExtents, then we don't need to add anything.
+          entry := if new_id < old_id then newEntry else oldEntry;
+        end if;
       end if;
     end addInheritedElementConflict;
 

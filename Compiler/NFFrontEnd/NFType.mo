@@ -368,7 +368,6 @@ public
     isNumeric := match ty
       case REAL() then true;
       case INTEGER() then true;
-      case FUNCTION() then isBasicNumeric(ty.resultType);
       else false;
     end match;
   end isBasicNumeric;
