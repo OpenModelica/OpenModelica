@@ -218,10 +218,11 @@ void OMSSimulationDialog::initializeFields()
   setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::OMSSimulationSetup, mpLibraryTreeItem->getNameStructure()));
   mpSimulationHeading->setText(QString("%1 - %2").arg(Helper::OMSSimulationSetup, mpLibraryTreeItem->getNameStructure()));
   // read the simulation start and stop time
-  double startTime, stopTime;
+  double startTime = 0;
   if (OMSProxy::instance()->getStartTime(mpLibraryTreeItem->getNameStructure(), &startTime)) {
     mpStartTimeTextBox->setText(QString::number(startTime));
   }
+  double stopTime = 1;
   if (OMSProxy::instance()->getStopTime(mpLibraryTreeItem->getNameStructure(), &stopTime)) {
     mpStopTimeTextBox->setText(QString::number(stopTime));
   }

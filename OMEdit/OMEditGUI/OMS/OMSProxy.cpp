@@ -313,7 +313,7 @@ bool OMSProxy::deleteSubModel(QString modelIdent, QString subModelIdent)
  * \param pModelName
  * \return
  */
-bool OMSProxy::loadModel(QString filename, QString *pModelName)
+bool OMSProxy::loadModel(QString filename, QString* pModelName)
 {
   char* ident = NULL;
   oms_status_enu_t status = oms2_loadModel(filename.toStdString().c_str(), &ident);
@@ -341,7 +341,7 @@ bool OMSProxy::saveModel(QString filename, QString ident)
  * \param pElement
  * \return
  */
-bool OMSProxy::getElement(QString cref, oms_element_t **pElement)
+bool OMSProxy::getElement(QString cref, oms_element_t** pElement)
 {
   oms_status_enu_t status = oms2_getElement(cref.toStdString().c_str(), pElement);
   return statusToBool(status);
@@ -354,7 +354,7 @@ bool OMSProxy::getElement(QString cref, oms_element_t **pElement)
  * \param pGeometry
  * \return
  */
-bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t *pGeometry)
+bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
   oms_status_enu_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
   return statusToBool(status);
@@ -367,7 +367,7 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t *pG
  * \param pElements
  * \return
  */
-bool OMSProxy::getElements(QString cref, oms_element_t ***pElements)
+bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
 {
   oms_status_enu_t status = oms2_getElements(cref.toStdString().c_str(), pElements);
   return statusToBool(status);
@@ -380,7 +380,7 @@ bool OMSProxy::getElements(QString cref, oms_element_t ***pElements)
  * \param pFmuPath
  * \return
  */
-bool OMSProxy::getFMUPath(QString cref, QString *pFmuPath)
+bool OMSProxy::getFMUPath(QString cref, QString* pFmuPath)
 {
   char* path = NULL;
   oms_status_enu_t status = oms2_getFMUPath(cref.toStdString().c_str(), &path);
@@ -395,9 +395,22 @@ bool OMSProxy::getFMUPath(QString cref, QString *pFmuPath)
  * \param pFmuInfo
  * \return
  */
-bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t **pFmuInfo)
+bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
 {
   oms_status_enu_t status = oms2_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setConnectorGeometry
+ * Sets the connector geometry.
+ * \param connector
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setConnectorGeometry(QString connector, const ssd_connector_geometry_t* pGeometry)
+{
+  oms_status_enu_t status = oms2_setConnectorGeometry(connector.toStdString().c_str(), pGeometry);
   return statusToBool(status);
 }
 
@@ -408,7 +421,7 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t **pFmuInfo)
  * \param pConnections
  * \return
  */
-bool OMSProxy::getConnections(QString cref, oms_connection_t ***pConnections)
+bool OMSProxy::getConnections(QString cref, oms_connection_t*** pConnections)
 {
   oms_status_enu_t status = oms2_getConnections(cref.toStdString().c_str(), pConnections);
   return statusToBool(status);
@@ -451,7 +464,7 @@ bool OMSProxy::deleteConnection(QString cref, QString conA, QString conB)
  * \param pConnection
  * \return
  */
-bool OMSProxy::updateConnection(QString cref, QString conA, QString conB, const oms_connection_t *pConnection)
+bool OMSProxy::updateConnection(QString cref, QString conA, QString conB, const oms_connection_t* pConnection)
 {
   oms_status_enu_t status = oms2_updateConnection(cref.toStdString().c_str(), conA.toStdString().c_str(),
                                                   conB.toStdString().c_str(), pConnection);
@@ -477,7 +490,7 @@ bool OMSProxy::initialize(QString ident)
  * \param terminate
  * \return
  */
-bool OMSProxy::simulate_asynchronous(QString ident/*, int *terminate*/)
+bool OMSProxy::simulate_asynchronous(QString ident/*, int* terminate*/)
 {
   oms_status_enu_t status = oms2_simulate_asynchronous(ident.toStdString().c_str(), /*terminate,*/ simulateCallback);
   return statusToBool(status);
@@ -554,7 +567,7 @@ void OMSProxy::setWorkingDirectory(QString path)
  * \param pValue
  * \return
  */
-bool OMSProxy::getRealParameter(QString signal, double *pValue)
+bool OMSProxy::getRealParameter(QString signal, double* pValue)
 {
   oms_status_enu_t status = oms2_getRealParameter(signal.toStdString().c_str(), pValue);
   return statusToBool(status);
@@ -580,7 +593,7 @@ bool OMSProxy::setRealParameter(const char* signal, double value)
  * \param pValue
  * \return
  */
-bool OMSProxy::getIntegerParameter(QString signal, int *pValue)
+bool OMSProxy::getIntegerParameter(QString signal, int* pValue)
 {
   oms_status_enu_t status = oms2_getIntegerParameter(signal.toStdString().c_str(), pValue);
   return statusToBool(status);
@@ -606,7 +619,7 @@ bool OMSProxy::setIntegerParameter(const char* signal, int value)
  * \param pValue
  * \return
  */
-bool OMSProxy::getBooleanParameter(QString signal, bool *pValue)
+bool OMSProxy::getBooleanParameter(QString signal, bool* pValue)
 {
   oms_status_enu_t status = oms2_getBooleanParameter(signal.toStdString().c_str(), pValue);
   return statusToBool(status);
@@ -632,7 +645,7 @@ bool OMSProxy::setBooleanParameter(const char* signal, bool value)
  * \param startTime
  * \return
  */
-bool OMSProxy::getStartTime(QString cref, double *startTime)
+bool OMSProxy::getStartTime(QString cref, double* startTime)
 {
   oms_status_enu_t status = oms2_getStartTime(cref.toStdString().c_str(), startTime);
   return statusToBool(status);
@@ -658,7 +671,7 @@ bool OMSProxy::setStartTime(QString cref, double startTime)
  * \param stopTime
  * \return
  */
-bool OMSProxy::getStopTime(QString cref, double *stopTime)
+bool OMSProxy::getStopTime(QString cref, double* stopTime)
 {
   oms_status_enu_t status = oms2_getStopTime(cref.toStdString().c_str(), stopTime);
   return statusToBool(status);

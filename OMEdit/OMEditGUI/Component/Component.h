@@ -122,10 +122,6 @@ public:
   int getDimensions() const {return mDimensions;}
   void setTLMCausality(QString causality) {mTLMCausality = causality;}
   QString getTLMCausality() const {return mTLMCausality;}
-  void setOMSCausality(oms_causality_enu_t causality) {mOMSCausality = causality;}
-  oms_causality_enu_t getOMSCausality() const {return mOMSCausality;}
-  void setOMSSignalType(oms_signal_type_enu_t signalType) {mOMSSignalType = signalType;}
-  oms_signal_type_enu_t getOMSSignalType() const {return mOMSSignalType;}
   void setDomain(QString domain) {mDomain = domain;}
   QString getDomain() const {return mDomain;}
   // operator overloading
@@ -162,8 +158,6 @@ private:
   int mDimensions;
   QString mTLMCausality;
   QString mDomain;
-  oms_causality_enu_t mOMSCausality;
-  oms_signal_type_enu_t mOMSSignalType;
 
   bool isModiferClassRecord(QString modifierName, Component *pComponent);
 };
@@ -185,8 +179,6 @@ public:
   Component(Component *pComponent, GraphicsView *pGraphicsView);
   // used for interface point
   Component(ComponentInfo *pComponentInfo, Component *pParentComponent);
-  // used for OMSimulator signals
-  Component(ComponentInfo *pComponentInfo, LibraryTreeItem *pLibraryTreeItem, Component *pParentComponent);
   bool isInheritedComponent() {return mIsInheritedComponent;}
   bool hasShapeAnnotation(Component *pComponent);
   bool hasNonExistingClass();
@@ -250,7 +242,6 @@ public:
   void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
   void removeInterfacePoint(QString interfaceName);
   void adjustInterfacePoints();
-  void adjustOMSSignals();
 
   Transformation mTransformation;
   Transformation mOldTransformation;
