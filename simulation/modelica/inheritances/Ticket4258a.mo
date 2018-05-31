@@ -23,5 +23,5 @@ equation
   connect(Ambient_in.ports[1], WT_Nachreformer.port_a1) annotation(Line(points = {{-24, -42}, {-24, -42}, {-24, -28}, {-24, -28}}, color = {0, 127, 255}));
   annotation(Documentation(info = "<html>
 
-</html>"), experiment(StopTime = 200, StartTime = 0, Tolerance = 1e-5, Interval = 0.2), __OpenModelica_simulationFlags(jacobian = "coloredNumerical", s = "dassl", lv = "LOG_STATS"));
+</html>"), experiment(StopTime = 200, StartTime = 0, Tolerance = 1e-5, Interval = 0.2));
 end simple_BasicHX_water_gas;
