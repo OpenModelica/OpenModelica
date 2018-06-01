@@ -613,7 +613,6 @@ void MainWindow::openDroppedFile(QDropEvent *event)
   showProgressBar();
   //retrieves the filenames of all the dragged files in list and opens the valid files.
   foreach (QUrl fileUrl, event->mimeData()->urls()) {
-    qDebug() << fileUrl.toLocalFile() << fileUrl.toDisplayString();
     QFileInfo fileInfo(fileUrl.toLocalFile());
     // show file loading message
     mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));

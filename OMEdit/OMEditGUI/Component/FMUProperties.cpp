@@ -62,6 +62,7 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpComponent->getName());
+  mpNameTextBox->setDisabled(true);
   // FMU Info
   const oms_fmu_info_t *pFMUInfo = mpComponent->getLibraryTreeItem()->getFMUInfo();
   mpGeneralGroupBox = new QGroupBox(Helper::general);

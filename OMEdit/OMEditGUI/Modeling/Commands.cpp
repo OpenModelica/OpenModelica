@@ -1950,10 +1950,10 @@ FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString oldNam
 void FMUPropertiesCommand::redo()
 {
   // Rename
-  if (OMSProxy::instance()->rename(mOldName, mNewName)) {
-    mpComponent->getComponentInfo()->setName(mNewName.split('.').last());
-    mpComponent->componentNameHasChanged();
-  }
+//  if (OMSProxy::instance()->rename(mOldName, mNewName)) {
+//    mpComponent->getComponentInfo()->setName(mNewName.split('.').last());
+//    mpComponent->componentNameHasChanged();
+//  }
   // Parameters
   int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
@@ -1989,10 +1989,10 @@ void FMUPropertiesCommand::redo()
 void FMUPropertiesCommand::undo()
 {
   // Rename
-  if (OMSProxy::instance()->rename(mNewName, mOldName)) {
-    mpComponent->getComponentInfo()->setName(mOldName.split('.').last());
-    mpComponent->componentNameHasChanged();
-  }
+//  if (OMSProxy::instance()->rename(mNewName, mOldName)) {
+//    mpComponent->getComponentInfo()->setName(mOldName.split('.').last());
+//    mpComponent->componentNameHasChanged();
+//  }
   // Parameters
   int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {

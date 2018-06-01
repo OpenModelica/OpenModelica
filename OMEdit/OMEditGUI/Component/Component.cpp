@@ -2321,9 +2321,7 @@ void Component::componentNameHasChanged()
   if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     mpLibraryTreeItem->setName(mpComponentInfo->getName());
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
-    if (mpDefaultComponentText) {
-      mpDefaultComponentText->setTextString(mpComponentInfo->getName());
-    }
+    emit displayTextChanged();
   } else {
     displayTextChangedRecursive();
   }
