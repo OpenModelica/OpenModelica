@@ -1371,7 +1371,7 @@ protected
   Type ty, ety;
   MatchKind mk;
 algorithm
-  ty := match subscript
+  (ty, variability) := match subscript
     // An untyped subscript, type the expression and create a typed subscript.
     case Subscript.UNTYPED()
       algorithm
@@ -1385,15 +1385,15 @@ algorithm
           outSubscript := Subscript.INDEX(e);
         end if;
       then
-        ty;
+        (ty, variability);
 
-    // Other subscripts have already been typed, but still need to be type checked.
-    case Subscript.INDEX() then Expression.typeOf(subscript.index);
-    case Subscript.SLICE() then Type.unliftArray(Expression.typeOf(subscript.slice));
-    case Subscript.WHOLE() then Type.UNKNOWN();
+    //// Other subscripts have already been typed, but still need to be type checked.
+    case Subscript.INDEX(index = e) then (Expression.typeOf(e), Expression.variability(e));
+    case Subscript.SLICE(slice = e) then (Type.unliftArray(Expression.typeOf(e)), Expression.variability(e));
+    case Subscript.WHOLE() then (Type.UNKNOWN(), Dimension.variability(dimension));
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got untyped subscript", sourceInfo());
+        Error.assertion(false, getInstanceName() + " got unknown subscript", sourceInfo());
       then
         fail();
   end match;
@@ -1802,11 +1802,9 @@ function evaluateEnd
 
     case Expression.END() then Dimension.endExp(dim, cref, index);
 
-    case Expression.CREF()
-      algorithm
-       (cr, ty) := typeCref(exp.cref, origin, info);
-      then
-       Expression.CREF(ty, cr);
+    // Stop when encountering a cref, any 'end' in a cref expression refers to
+    // the cref's dimensions and will be evaluated when the cref is typed.
+    case Expression.CREF() then exp;
 
     else Expression.mapShallow(exp,
       function evaluateEnd(dim = dim, cref = cref, index = index, info = info, origin = origin));
