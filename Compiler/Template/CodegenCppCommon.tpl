@@ -2429,16 +2429,16 @@ match rel.optionExpisASUB
    else
           match rel.operator
         case LESS(__) then
-          'getCondition(<%rel.index%>) && (<%e1%> < <%e2%>)'
+          '(<%e1%> < <%e2%>)'
 
         case LESSEQ(__) then
-          'getCondition(<%rel.index%>) && (<%e1%> <= <%e2%>)'
+          '(<%e1%> <= <%e2%>)'
 
         case GREATER(__) then
-          'getCondition(<%rel.index%>) && (<%e1%> > <%e2%>)'
+          '(<%e1%> > <%e2%>)'
 
         case GREATEREQ(__) then
-         'getCondition(<%rel.index%>) && (<%e1%> >= <%e2%>)'
+         '(<%e1%> >= <%e2%>)'
             end match
 end daeExpRelation;
 
