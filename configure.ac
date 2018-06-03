@@ -203,9 +203,11 @@ if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^5"; then
   TRY_FLAGS="$TRY_FLAGS -fno-ipa-pure-const"
 fi
 
-# GCC 7.x generates RUNPATH instead of RPATH
+# GCC 7.x issues:
+# - RUNPATH instead of RPATH, disable that via -Wl,--disable-new-dtags
+# - sqrt from libcolamd is not found in -lm if -Wl,--no-as-needed is not specified
 if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^7"; then
-  TRY_FLAGS="$TRY_FLAGS -Wl,--disable-new-dtags"
+  TRY_FLAGS="$TRY_FLAGS -Wl,--disable-new-dtags -Wl,--no-as-needed"
 fi
 
 for flag in $TRY_FLAGS; do
