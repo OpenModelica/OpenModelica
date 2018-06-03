@@ -207,7 +207,8 @@ fi
 # - RUNPATH instead of RPATH, disable that via -Wl,--disable-new-dtags
 # - sqrt from libcolamd is not found in -lm if -Wl,--no-as-needed is not specified
 if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^7"; then
-  TRY_FLAGS="$TRY_FLAGS -Wl,--disable-new-dtags -Wl,--no-as-needed"
+  TRY_FLAGS="$TRY_FLAGS -Wl,--no-as-needed"
+  RPATH_EXTRA="-Wl,--disable-new-dtags"
 fi
 
 for flag in $TRY_FLAGS; do
@@ -735,8 +736,8 @@ else
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS $LIBLPSOLVE55 -lzmq $LIBUUID"
-  RPATH="-Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
-  RPATH_QMAKE="-Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
+  RPATH="$RPATH_EXTRA -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN/../lib/$host_short/omc' -Wl,-rpath,'\$\$ORIGIN'"
+  RPATH_QMAKE="$RPATH_EXTRA -Wl,-z,origin -Wl,-rpath,\\'\\\$\$ORIGIN/../lib/$host_short/omc\\' -Wl,-rpath,\\'\\\$\$ORIGIN\\'"
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
