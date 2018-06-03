@@ -203,6 +203,11 @@ if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^5"; then
   TRY_FLAGS="$TRY_FLAGS -fno-ipa-pure-const"
 fi
 
+# GCC 7.x generates RUNPATH instead of RPATH
+if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^7"; then
+  TRY_FLAGS="$TRY_FLAGS -Wl,--disable-new-dtags"
+fi
+
 for flag in $TRY_FLAGS; do
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
