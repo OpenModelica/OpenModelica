@@ -84,6 +84,8 @@ CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
 CevalFuncRecursive1.mo \
 CevalFuncRecursive2.mo \
+CevalFuncSubscript1.mo \
+CevalFuncSubscript2.mo \
 CevalFuncTerminate1.mo \
 CevalFuncWhile1.mo \
 CevalFuncWhile2.mo \
