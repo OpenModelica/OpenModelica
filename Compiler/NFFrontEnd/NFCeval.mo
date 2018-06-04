@@ -670,7 +670,7 @@ algorithm
   exp := match arrayExp
     case Expression.ARRAY()
       then Expression.ARRAY(arrayExp.ty,
-        list(evalBinaryScalarArray(e, scalarExp, opFunc) for e in arrayExp.elements));
+        list(evalBinaryArrayScalar(e, scalarExp, opFunc) for e in arrayExp.elements));
 
     else opFunc(arrayExp, scalarExp);
   end match;
@@ -1711,7 +1711,7 @@ algorithm
         dim_count := Type.dimensionCount(ty);
 
         if dim_count < 2 then
-          result := evalBuiltinPromoteWork(arg, 2);
+          result := Expression.promote(arg, ty, 2);
         elseif dim_count == 2 then
           result := arg;
         else
@@ -1724,10 +1724,19 @@ algorithm
       then
         result;
 
-    case _ guard Type.isScalar(Expression.typeOf(arg))
-      then evalBuiltinPromoteWork(arg, 2);
+    else
+      algorithm
+        ty := Expression.typeOf(arg);
 
-    else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+        if Type.isScalar(ty) then
+          result := Expression.promote(arg, ty, 2);
+        else
+          printWrongArgsError(getInstanceName(), {arg}, sourceInfo());
+          fail();
+        end if;
+      then
+        result;
+
   end match;
 end evalBuiltinMatrix;
 
@@ -1881,44 +1890,16 @@ function evalBuiltinPromote
   input Expression arg, argN;
   output Expression result;
 protected
-  Integer n, numToPromote;
-  Type ty;
+  Integer n;
 algorithm
-  Expression.INTEGER(n) := argN;
-  ty := Expression.typeOf(arg);
-  numToPromote := n - Type.dimensionCount(ty);
-  result := evalBuiltinPromoteWork(arg, numToPromote);
+  if Expression.isInteger(argN) then
+    Expression.INTEGER(n) := argN;
+    result := Expression.promote(arg, Expression.typeOf(arg), n);
+  else
+    printWrongArgsError(getInstanceName(), {arg, argN}, sourceInfo());
+    fail();
+  end if;
 end evalBuiltinPromote;
-
-function evalBuiltinPromoteWork
-  input Expression arg;
-  input Integer n;
-  output Expression result;
-protected
-  Expression exp;
-  list<Expression> exps;
-  Type ty;
-algorithm
-  Error.assertion(n >= 0, "Promote called with n<number of dimensions", sourceInfo());
-  if n == 0 then
-    result := arg;
-    return;
-  end if;
-  if n == 1 then
-    result := Expression.ARRAY(Type.liftArrayLeft(Expression.typeOf(arg),Dimension.fromInteger(1)), {arg});
-    return;
-  end if;
-  result := match arg
-    case Expression.ARRAY()
-      algorithm
-        (exps as (Expression.ARRAY(ty=ty)::_)) := list(evalBuiltinPromoteWork(e, n-1) for e in arg.elements);
-      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.fromInteger(listLength(arg.elements))), exps);
-    else
-      algorithm
-        (exp as Expression.ARRAY(ty=ty)) := evalBuiltinPromoteWork(arg, n-1);
-      then Expression.ARRAY(Type.liftArrayLeft(ty,Dimension.fromInteger(1)), {exp});
-  end match;
-end evalBuiltinPromoteWork;
 
 function evalBuiltinRem
   input list<Expression> args;
