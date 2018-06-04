@@ -5,7 +5,7 @@ OMMatlab – the OpenModelica Matlab API is a free, open source, highly
 portable Matlab-based interactive session handler for Modelica
 scripting. It provides the modeler with components for creating a
 complete Modelica modeling, compilation and simulation environment based
-on the latest OpenModelica library standard available. OMPython is
+on the latest OpenModelica library standard available. OMMatlab is
 architectured to combine both the solving strategy and model building.
 So domain experts (people writing the models) and computational
 engineers (people writing the solver code) can work on one unified tool
@@ -20,7 +20,7 @@ messaging library and it supports the Modelica
 Standard Library version 3.2 that is included in starting with
 OpenModelica 1.9.2.
 
-The Development is in progress and will be soon available.At the moment
+The Development is in progress and will be soon available. At the moment
 a prototype of OMMatlab is completed where the users will be able to import the
 OMMatlab package in Matlab and start to interact with omc through API calls
 
