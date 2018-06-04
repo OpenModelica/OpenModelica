@@ -5578,6 +5578,11 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let ty_str = '<%expTypeArray(ty)%>'
     'sum_<%ty_str%>(<%arr%>)'
 
+  case CALL(path=IDENT(name="product"), attr=CALL_ATTR(ty = ty), expLst={e}) then
+    let arr = daeExp(e, context, &preExp, &varDecls, &auxFunction)
+    let ty_str = '<%expTypeArray(ty)%>'
+    'product_<%ty_str%>(<%arr%>)'
+
   case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls, &auxFunction)
     let var2 = daeExp(e2, context, &preExp, &varDecls, &auxFunction)
