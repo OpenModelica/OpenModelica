@@ -666,8 +666,9 @@ protected
       // If it had iterators then it will not reach here. The args would have been parsed to
       // Absyn.FOR_ITER_FARG and that is handled in instIteratorCall.
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
-      else algorithm
-        (fn_ref, _, _) := Function.instFunc(functionName,scope,info);
+      else
+        algorithm
+          fn_ref := Function.instFunction(functionName,scope,info);
         then
           Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
     end match;
@@ -744,14 +745,14 @@ protected
 
       // wrap the array call in the given function
       // e.g. sum(array(i for i in ...)).
-      fn_ref := Function.instFunc(functionName, scope, info);
+      fn_ref := Function.instFunction(functionName, scope, info);
       call := UNTYPED_CALL(fn_ref, {Expression.CALL(call)}, {}, scope);
     else
       // Otherwise, make an array call with the original function call as an argument.
       // But only if the original function is not array() itself.
       // e.g. Change myfunc(i for i in ...) TO array(myfunc(i) for i in ...).
       if not is_array then
-        fn_ref := Function.instFunc(functionName, scope, info);
+      fn_ref := Function.instFunction(functionName, scope, info);
         call := UNTYPED_CALL(fn_ref, {exp}, {}, scope);
         exp := Expression.CALL(call);
       end if;

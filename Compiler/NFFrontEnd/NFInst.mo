@@ -857,8 +857,8 @@ algorithm
 
   if not (InstNode.isClass(par) and Class.isExternalObject(InstNode.getClass(par))) then
     Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
-    Function.instFuncNode(constructor);
-    Function.instFuncNode(destructor);
+    Function.instFunctionNode(constructor);
+    Function.instFunctionNode(destructor);
   end if;
 end instExternalObjectStructors;
 
@@ -2218,7 +2218,7 @@ function instCrefFunction
 protected
   ComponentRef fn_ref;
 algorithm
-  fn_ref := Function.instFuncRef(cref, info);
+  fn_ref := Function.instFunctionRef(cref, info);
   crefExp := Expression.CREF(Type.UNKNOWN(), fn_ref);
 end instCrefFunction;
 

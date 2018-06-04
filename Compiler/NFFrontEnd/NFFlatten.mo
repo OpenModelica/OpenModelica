@@ -350,7 +350,14 @@ algorithm
   var := Binding.variability(binding);
 
   recordBindings := match binding_exp
-    case Expression.RECORD() then list(Binding.FLAT_BINDING(e, var) for e in binding_exp.elements);
+    case Expression.RECORD() then
+      list(if Expression.isEmpty(e) then
+               // The binding for a record field might be Expression.EMPTY if it comes
+               // from an evaluated function call where it wasn't assigned a value.
+               NFBinding.EMPTY_BINDING
+             else
+               Binding.FLAT_BINDING(e, var)
+           for e in binding_exp.elements);
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got non-record binding " +

@@ -203,7 +203,7 @@ algorithm
     end try;
 
     if oper_defined then
-      fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
+      fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node1));
       for fn in Function.typeRefCache(fn_ref) loop
         checkValidOperatorOverload(opstr, fn, node1);
         candidates := fn::candidates;
@@ -225,7 +225,7 @@ algorithm
         end try;
 
         if oper_defined then
-          fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node2));
+          fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node2));
           for fn in Function.typeRefCache(fn_ref) loop
             checkValidOperatorOverload(opstr, fn, node2);
             candidates := fn::candidates;
@@ -310,14 +310,14 @@ algorithm
     if mk1 == MatchKind.EXACT then
       // We only want overloaded constructors when trying to implicitly construct. Default constructors are not considered.
       scope := InstNode.classScope(in2);
-      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),scope,InstNode.info(in2));
+      fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'",{}),scope,InstNode.info(in2));
       exp2 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {inExp2}, {}, scope));
       (exp2, ty, var) := Call.typeCall(exp2, 0, InstNode.info(in1));
       matchedfuncs := (fn,{inExp1,exp2}, var)::matchedfuncs;
     elseif mk2 == MatchKind.EXACT then
       // We only want overloaded constructors when trying to implicitly construct. Default constructors are not considered.
       scope := InstNode.classScope(in1);
-      (fn_ref, _, _) := Function.instFunc(Absyn.CREF_IDENT("'constructor'",{}),scope,InstNode.info(in1));
+      fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'",{}),scope,InstNode.info(in1));
       exp1 := Expression.CALL(NFCall.UNTYPED_CALL(fn_ref, {inExp1}, {}, scope));
       (exp1, ty, var) := Call.typeCall(exp1, 0, InstNode.info(in2));
       matchedfuncs := (fn,{exp1,inExp2},var)::matchedfuncs;
@@ -860,7 +860,7 @@ algorithm
   Type.COMPLEX(cls=node1) := inType1;
 
   fn_ref := Function.lookupFunctionSimple(opstr, node1);
-  fn_ref := Function.instFuncRef(fn_ref, InstNode.info(node1));
+  fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node1));
   candidates := Function.typeRefCache(fn_ref);
   for fn in candidates loop
     checkValidOperatorOverload(opstr, fn, node1);

@@ -3225,6 +3225,16 @@ public
     end match;
   end isMutable;
 
+  function isEmpty
+    input Expression exp;
+    output Boolean empty;
+  algorithm
+    empty := match exp
+      case EMPTY() then true;
+      else false;
+    end match;
+  end isEmpty;
+
   function lookupRecordField
     input String name;
     input Expression exp;

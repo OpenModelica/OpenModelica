@@ -271,7 +271,7 @@ uniontype Function
     functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunction;
 
-  function instFunc
+  function instFunction
     input Absyn.ComponentRef functionName;
     input InstNode scope;
     input SourceInfo info;
@@ -281,12 +281,11 @@ uniontype Function
   protected
     CachedData cache;
   algorithm
-    // Look up the the function.
     fn_ref := lookupFunction(functionName, scope, info);
-    (fn_ref, fn_node, specialBuiltin) := instFuncRef(fn_ref, info);
-  end instFunc;
+    (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, info);
+  end instFunction;
 
-  function instFuncRef
+  function instFunctionRef
     input output ComponentRef fn_ref;
     input SourceInfo info;
     output InstNode fn_node;
@@ -294,18 +293,17 @@ uniontype Function
   protected
     CachedData cache;
   algorithm
-    // Look up the function.
     fn_node := InstNode.classScope(ComponentRef.node(fn_ref));
     cache := InstNode.getFuncCache(fn_node);
 
     // Check if a cached instantiation of this function already exists.
     (fn_node, specialBuiltin) := match cache
       case CachedData.FUNCTION() then (fn_node, cache.specialBuiltin);
-      else instFunc2(ComponentRef.toPath(fn_ref), fn_node, info);
+      else instFunction2(ComponentRef.toPath(fn_ref), fn_node, info);
     end match;
-  end instFuncRef;
+  end instFunctionRef;
 
-  function instFuncNode
+  function instFunctionNode
     "Instantiates the given InstNode as a function."
     input output InstNode node;
   protected
@@ -317,27 +315,13 @@ uniontype Function
       case CachedData.FUNCTION() then ();
       else
         algorithm
-          node := instFunc2(InstNode.scopePath(node), node, InstNode.info(node));
-          Inst.instExpressions(node);
+          node := instFunction2(InstNode.scopePath(node), node, InstNode.info(node));
         then
           ();
     end match;
-  end instFuncNode;
+  end instFunctionNode;
 
-  function instFuncExpressions
-    input InstNode node;
-  protected
-    list<Function> funcs;
-    Boolean special;
-  algorithm
-    funcs := getCachedFuncs(node);
-
-    for func in funcs loop
-      Inst.instExpressions(func.node);
-    end for;
-  end instFuncExpressions;
-
-  function instFunc2
+  function instFunction2
     input Absyn.Path fnPath;
     input output InstNode fnNode;
     input SourceInfo info;
@@ -355,20 +339,14 @@ uniontype Function
 
       case SCode.CLASS() guard SCode.isRecord(def)
         algorithm
-          // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
-          fnNode := Inst.instantiate(fnNode);
-          InstNode.cacheInitFunc(fnNode);
-          Inst.instExpressions(fnNode);
+          fnNode := instFunction3(fnNode);
           fnNode := Record.instConstructors(fnPath, fnNode, info);
         then
           (fnNode, false);
 
       case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
         algorithm
-          // fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
-          fnNode := Inst.instantiate(fnNode);
-          InstNode.cacheInitFunc(fnNode);
-          Inst.instExpressions(fnNode);
+          fnNode := instFunction3(fnNode);
           fnNode := Record.instOperatorFunctions(fnNode, info);
         then
           (fnNode, false);
@@ -377,7 +355,7 @@ uniontype Function
         algorithm
           for p in cdef.pathLst loop
             cr := Absyn.pathToCref(p);
-            (_,sub_fnNode,specialBuiltin) := instFunc(cr,fnNode,info);
+            (_,sub_fnNode,specialBuiltin) := instFunction(cr,fnNode,info);
             for f in getCachedFuncs(sub_fnNode) loop
               fnNode := InstNode.cacheAddFunc(fnNode, f, specialBuiltin);
             end for;
@@ -388,11 +366,7 @@ uniontype Function
       case SCode.CLASS()
         algorithm
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
-          fnNode := Inst.instantiate(fnNode);
-          // Set up an empty function cache to signal that this function is
-          // currently being instantiated, so recursive functions can be handled.
-          InstNode.cacheInitFunc(fnNode);
-          Inst.instExpressions(fnNode);
+          fnNode := instFunction3(fnNode);
           fn := Function.new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
@@ -400,7 +374,17 @@ uniontype Function
           (fnNode, specialBuiltin);
 
     end match;
-  end instFunc2;
+  end instFunction2;
+
+  function instFunction3
+    input output InstNode fnNode;
+  algorithm
+    fnNode := Inst.instantiate(fnNode);
+    // Set up an empty function cache to signal that this function is
+    // currently being instantiated, so recursive functions can be handled.
+    InstNode.cacheInitFunc(fnNode);
+    Inst.instExpressions(fnNode);
+  end instFunction3;
 
   function getCachedFuncs
     input InstNode inNode;

@@ -381,7 +381,7 @@ protected
       fail();
     end try;
 
-    fn_ref := Function.instFuncRef(fn_ref, InstNode.info(recopnode));
+    fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(recopnode));
     candidates := Function.typeRefCache(fn_ref);
     for fn in candidates loop
       TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
