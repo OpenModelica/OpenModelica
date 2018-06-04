@@ -298,36 +298,8 @@ public
     // We have all except dimension n having equal sizes; with matching types
 
     ty := resTy;
-    callExp := Expression.CALL(makeCall2(NFBuiltinFuncs.CAT, Expression.INTEGER(n)::res, resTy, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.CAT, Expression.INTEGER(n)::res, variability, resTy));
   end makeCatExp;
-
-  function makeCall
-    "Creates a call to a builtin function, given a Function and a list of
-     argument expressions."
-    input Function func;
-    input list<Expression> args;
-    input Variability var;
-    output Call call;
-  algorithm
-    call := Call.TYPED_CALL(func, func.returnType, var, args,
-      CallAttributes.CALL_ATTR(func.returnType, false, true, false, false,
-        DAE.NO_INLINE(), DAE.NO_TAIL()));
-  end makeCall;
-
-  function makeCall2
-    "Creates a call to a builtin function, given a Function, list of argument
-     expressions and a return type. Used for builtin functions defined with no
-     return type."
-    input Function func;
-    input list<Expression> args;
-    input Type returnType;
-    input Variability var;
-    output Call call;
-  algorithm
-    call := Call.TYPED_CALL(func, returnType, var, args,
-      CallAttributes.CALL_ATTR(returnType, false, true, false, false,
-        DAE.NO_INLINE(), DAE.NO_TAIL()));
-  end makeCall2;
 
 protected
   function assertNoNamedParams
@@ -432,13 +404,11 @@ protected
       end for;
 
       callExp := Expression.CALL(
-        Call.TYPED_CALL(
+        Call.makeTypedCall(
           matchedFunc.func,
-          outType,
-          var,
           list(Util.tuple31(a) for a in matchedFunc.args),
-          CallAttributes.CALL_ATTR(outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL()))
-      );
+          var,
+          outType));
       return;
     else
       Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
@@ -564,7 +534,7 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
   end typePreChangeCall;
 
   function typeDerCall
@@ -611,7 +581,7 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeDerCall;
 
   function typeDiagonalCall
@@ -653,7 +623,7 @@ protected
     end match;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeDiagonalCall;
 
   function typeEdgeCall
@@ -783,7 +753,7 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg1, arg2}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typeSmoothCall;
 
   function typeFillCall
@@ -866,7 +836,7 @@ protected
     if variability <= Variability.STRUCTURAL_PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
       callExp := Ceval.evalBuiltinFill(ty_args);
     else
-      callExp := Expression.CALL(makeCall2(NFBuiltinFuncs.FILL_FUNC, ty_args, ty, variability));
+      callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
     end if;
   end typeFillCall2;
 
@@ -932,7 +902,7 @@ protected
 
     ty := Type.arrayElementType(ty);
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeScalarCall;
 
   function typeVectorCall
@@ -986,7 +956,7 @@ protected
 
     ty := Type.ARRAY(Type.arrayElementType(ty), {Dimension.fromInteger(dim_size)});
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeVectorCall;
 
   function typeMatrixCall
@@ -1042,7 +1012,7 @@ protected
 
     ty := Type.ARRAY(Type.arrayElementType(ty), dims);
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeMatrixCall;
 
   function typeCatCall
@@ -1125,7 +1095,7 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeSymmetricCall;
 
   function typeTransposeCall
@@ -1168,7 +1138,7 @@ protected
     end match;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeTransposeCall;
 
   function typeCardinalityCall
@@ -1213,7 +1183,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.INTEGER();
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
     // TODO: Check cardinality restrictions, 3.7.2.3.
   end typeCardinalityCall;
 
@@ -1253,7 +1223,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(makeCall2(fn, {arg1, arg2}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typeBranchCall;
 
   function typeIsRootCall
@@ -1288,7 +1258,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
   end typeIsRootCall;
 
   function typePotentialRootCall
@@ -1351,7 +1321,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(makeCall2(fn, {arg1, arg2}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg1, arg2}, var, ty));
   end typePotentialRootCall;
 
   function typeRootCall
@@ -1386,7 +1356,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.NORETCALL();
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
   end typeRootCall;
 
   function typeRootedCall
@@ -1421,7 +1391,7 @@ protected
 
     {fn} := Function.typeRefCache(fn_ref);
     ty := Type.BOOLEAN();
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, var));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
   end typeRootedCall;
 
   function checkConnectionsArgument
@@ -1497,7 +1467,7 @@ protected
     (arg, ty, variability) := Typing.typeExp(arg, intBitOr(origin, ExpOrigin.NOEVENT), info);
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(makeCall2(fn, {arg}, ty, variability));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeNoEventCall;
 
   function typeGetInstanceName

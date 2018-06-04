@@ -210,7 +210,7 @@ algorithm
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
     exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
-    exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp)));
+    exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp)));
     exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
@@ -510,7 +510,7 @@ function makeInStreamCall
   output Expression inStreamCall;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  inStreamCall := Expression.CALL(BuiltinCall.makeCall(
+  inStreamCall := Expression.CALL(Call.makeTypedCall(
     NFBuiltinFuncs.IN_STREAM, {streamExp}, Expression.variability(streamExp)));
 end makeInStreamCall;
 
@@ -535,7 +535,7 @@ algorithm
     flow_threshold := flowThreshold;
   end if;
 
-  positiveMaxCall := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
+  positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
     {flowExp, flow_threshold}, Connector.variability(element)));
 
   setGlobalRoot(Global.isInStream, SOME(true));

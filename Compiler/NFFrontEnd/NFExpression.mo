@@ -3105,8 +3105,8 @@ public
       // An expression with array type, but which is not an array expression.
       // Such an expression can't be promoted here, so we create a promote call instead.
       case (_, _) guard isArray
-        then CALL(BuiltinCall.makeCall2(
-          NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, listHead(types), variability(exp)));
+        then CALL(Call.makeTypedCall(
+          NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, variability(exp), listHead(types)));
 
       // A scalar expression, promote it as many times as the number of types given.
       else
@@ -3264,7 +3264,7 @@ public
   algorithm
     indexExp := match enumExp
       case ENUM_LITERAL() then INTEGER(enumExp.index);
-      else CALL(BuiltinCall.makeCall(
+      else CALL(Call.makeTypedCall(
         NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp)));
     end match;
   end enumIndexExp;

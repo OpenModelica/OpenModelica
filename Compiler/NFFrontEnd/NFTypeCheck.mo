@@ -138,16 +138,18 @@ end isValidPlugCompatibleMatch;
 function checkBinaryOperation
   input Expression exp1;
   input Type type1;
+  input Variability var1;
   input Operator operator;
   input Expression exp2;
   input Type type2;
+  input Variability var2;
   input SourceInfo info;
   output Expression binaryExp;
   output Type resultType;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (binaryExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
+    (binaryExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, var1, operator, exp2, type2, var2, info);
   else
     (binaryExp, resultType) := match operator.op
       case Op.ADD then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
@@ -167,9 +169,11 @@ end checkBinaryOperation;
 public function checkBinaryOperationOperatorRecords
   input Expression inExp1;
   input Type inType1;
+  input Variability var1;
   input Operator inOp;
   input Expression inExp2;
   input Type inType2;
+  input Variability var2;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
@@ -231,7 +235,7 @@ algorithm
   end if;
   candidates := listReverse(candidates);
 
-  args := {(inExp1,inType1,Variability.CONSTANT),(inExp2,inType2,Variability.CONSTANT)};
+  args := {(inExp1,inType1,var1),(inExp2,inType2,var2)};
 
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
   // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
@@ -264,8 +268,8 @@ algorithm
       Call.makeTypedCall(
         matchedFunc.func,
         list(Util.tuple31(a) for a in matchedFunc.args),
-        outType,
-        Variability.CONSTANT));
+        Prefixes.variabilityMax(var1, var2),
+        outType));
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
           {Expression.toString(Expression.BINARY(inExp1, inOp, inExp2))
@@ -323,20 +327,15 @@ algorithm
 
   if listLength(matchedfuncs) == 1 then
     (operfn, {exp1,exp2}, var)::_ := matchedfuncs;
-      outType := Function.returnType(operfn);
-      outExp := Expression.CALL(Call.TYPED_CALL(operfn, outType, var, {exp1,exp2}
-                                                , CallAttributes.CALL_ATTR(
-                                                    outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
-                                                )
-                                );
-    else
+    outType := Function.returnType(operfn);
+    outExp := Expression.CALL(Call.makeTypedCall(operfn, {exp1, exp2}, var, outType));
+  else
     // TODO: FIX ME: Add proper error message.
     print("Ambiguous operator: " + "\nCandidates:\n  ");
     print(Function.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs)));
     print("\n");
     fail();
   end if;
-
 end implicitConstructAndMatch;
 
 function checkValidBinaryOperatorOverload
@@ -809,6 +808,7 @@ end checkBinaryOperationEW;
 public function checkUnaryOperation
   input Expression exp1;
   input Type type1;
+  input Variability var1;
   input Operator operator;
   input SourceInfo info;
   output Expression unaryExp;
@@ -818,7 +818,7 @@ protected
   Operator op;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
-    (unaryExp,unaryType) := checkUnaryOperationOperatorRecords(exp1, type1, operator, info);
+  (unaryExp,unaryType) := checkUnaryOperationOperatorRecords(exp1, type1, var1, operator, info);
     return;
   end if;
 
@@ -838,6 +838,7 @@ end checkUnaryOperation;
 public function checkUnaryOperationOperatorRecords
   input Expression inExp1;
   input Type inType1;
+  input Variability var;
   input Operator inOp;
   input SourceInfo info;
   output Expression outExp;
@@ -865,7 +866,7 @@ algorithm
     checkValidOperatorOverload(opstr, fn, node1);
   end for;
 
-  args := {(inExp1,inType1,Variability.CONSTANT)};
+  args := {(inExp1,inType1,var)};
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
 
   // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
@@ -878,11 +879,12 @@ algorithm
   if listLength(exactMatches) == 1 then
     matchedFunc ::_ := exactMatches;
     outType := Function.returnType(matchedFunc.func);
-    outExp := Expression.CALL(Call.TYPED_CALL(matchedFunc.func, outType, Variability.CONSTANT, list(Util.tuple31(a) for a in matchedFunc.args)
-                                              , CallAttributes.CALL_ATTR(
-                                                  outType, false, false, false, false, DAE.NO_INLINE(),DAE.NO_TAIL())
-                                              )
-                              );
+    outExp := Expression.CALL(
+      Call.makeTypedCall(
+        matchedFunc.func,
+        list(Util.tuple31(a) for a in matchedFunc.args),
+        var,
+        outType));
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
       {Expression.toString(Expression.UNARY(inOp, inExp1)),
@@ -895,9 +897,11 @@ end checkUnaryOperationOperatorRecords;
 function checkLogicalBinaryOperation
   input Expression exp1;
   input Type type1;
+  input Variability var1;
   input Operator operator;
   input Expression exp2;
   input Type type2;
+  input Variability var2;
   input SourceInfo info;
   output Expression outExp;
   output Type resultType;
@@ -907,7 +911,7 @@ protected
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
+    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, var1, operator, exp2, type2, var2, info);
     return;
   end if;
 
@@ -924,6 +928,7 @@ end checkLogicalBinaryOperation;
 function checkLogicalUnaryOperation
   input Expression exp1;
   input Type type1;
+  input Variability var1;
   input Operator operator;
   input SourceInfo info;
   output Expression outExp;
@@ -932,9 +937,8 @@ protected
   Expression e1, e2;
   MatchKind mk;
 algorithm
-
   if Type.isComplex(Type.arrayElementType(type1)) then
-    (outExp,resultType) := checkUnaryOperationOperatorRecords(exp1, type1, operator, info);
+    (outExp,resultType) := checkUnaryOperationOperatorRecords(exp1, type1, var1, operator, info);
     return;
   end if;
 
@@ -948,9 +952,11 @@ end checkLogicalUnaryOperation;
 function checkRelationOperation
   input Expression exp1;
   input Type type1;
+  input Variability var1;
   input Operator operator;
   input Expression exp2;
   input Type type2;
+  input Variability var2;
   input ExpOrigin.Type origin;
   input SourceInfo info;
   output Expression outExp;
@@ -965,7 +971,7 @@ algorithm
 
   if Type.isComplex(Type.arrayElementType(type1)) or
     Type.isComplex(Type.arrayElementType(type2)) then
-    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, operator, exp2, type2, info);
+    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, var1, operator, exp2, type2, var2, info);
     return;
   end if;
 
@@ -2008,11 +2014,11 @@ algorithm
         if isSome(stepExp) then
           SOME(step_exp) := stepExp;
           var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
-          dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
+          dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
         end if;
 
         dim_exp := Expression.BINARY(dim_exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(1));
-        dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.MAX_INT, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp}, var));
       then
         Dimension.fromExp(dim_exp, var);
 
@@ -2062,8 +2068,8 @@ algorithm
           dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.REAL()), Expression.REAL(5e-15));
         end if;
 
-        dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
-        dim_exp := Expression.CALL(BuiltinCall.makeCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
       then
         Dimension.fromExp(dim_exp, var);

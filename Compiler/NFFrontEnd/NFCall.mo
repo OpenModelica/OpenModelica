@@ -275,8 +275,8 @@ uniontype Call
   function makeTypedCall
     input Function fn;
     input list<Expression> args;
-    input Type returnType;
     input Variability variability;
+    input Type returnType = fn.returnType;
     output Call call;
   protected
     CallAttributes ca;
@@ -357,7 +357,7 @@ uniontype Call
       ty := evaluateCallType(ty, func, args);
     end if;
 
-    call := makeTypedCall(func, args, ty, var);
+    call := makeTypedCall(func, args, var, ty);
 
     // If the matching was a vectorized one then create a map call
     // using the vectorization dim. This means going through each argument
