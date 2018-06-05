@@ -60,6 +60,7 @@ public
   import NFComponent.Component;
   import NFClassTree.ClassTree;
   import NFClass.Class;
+  import NFComponentRef.Origin;
 
   record INTEGER
     Integer value;
@@ -1457,7 +1458,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case ComponentRef.CREF()
+      case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
           subs := list(mapSubscript(s, func) for s in cref.subscripts);
           rest := mapCref(cref.restCref, func);
@@ -1635,7 +1636,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case ComponentRef.CREF()
+      case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
           subs := list(mapSubscriptShallow(s, func) for s in cref.subscripts);
           rest := mapCref(cref.restCref, func);
@@ -1972,7 +1973,7 @@ public
     end FoldFunc;
   algorithm
     () := match cref
-      case ComponentRef.CREF()
+      case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
           arg := List.fold(cref.subscripts, function foldSubscript(func = func), arg);
           arg := foldCref(cref.restCref, func, arg);
@@ -2193,7 +2194,7 @@ public
     end ApplyFunc;
   algorithm
     () := match cref
-      case ComponentRef.CREF()
+      case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
           for s in cref.subscripts loop
             applyCrefSubscript(s, func);
@@ -2518,7 +2519,7 @@ public
         list<Subscript> subs;
         ComponentRef rest;
 
-      case ComponentRef.CREF()
+      case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
           (subs, arg) := List.map1Fold(cref.subscripts, mapFoldSubscript, func, arg);
           (rest, arg) := mapFoldCref(cref.restCref, func, arg);
