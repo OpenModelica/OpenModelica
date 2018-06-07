@@ -86,10 +86,16 @@ public:
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
   void setWorkingDirectory(QString path);
+  bool getReal(QString signal, double* value);
+  bool setReal(QString signal, double value);
   bool getRealParameter(QString signal, double* pValue);
   bool setRealParameter(const char* signal, double value);
+  bool getInteger(QString signal, int* value);
+  bool setInteger(QString signal, int value);
   bool getIntegerParameter(QString signal, int* pValue);
   bool setIntegerParameter(const char* signal, int value);
+  bool getBoolean(QString signal, bool* value);
+  bool setBoolean(QString signal, bool value);
   bool getBooleanParameter(QString signal, bool* pValue);
   bool setBooleanParameter(const char* signal, bool value);
   bool getStartTime(QString cref, double* startTime);

@@ -42,6 +42,7 @@ public:
   FMUProperties();
 
   QList<QString> mParameterValues;
+  QList<QString> mInputValues;
 };
 
 class FMUPropertiesDialog : public QDialog
@@ -87,6 +88,8 @@ private:
   Label *mpProvidesDirectionalDerivativeValueLabel;
   QList<Label*> mParameterLabels;
   QList<QLineEdit*> mParameterLineEdits;
+  QList<Label*> mInputLabels;
+  QList<QLineEdit*> mInputLineEdits;
   FMUProperties mOldFMUProperties;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;

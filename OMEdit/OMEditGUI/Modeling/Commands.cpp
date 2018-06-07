@@ -1955,19 +1955,38 @@ void FMUPropertiesCommand::redo()
 //    mpComponent->componentNameHasChanged();
 //  }
   // Parameters
-  int index = 0;
+  int parametersIndex = 0;
+  int inputsIndex = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
-        QString parameterValue = mNewFMUProperties.mParameterValues.at(index);
-        index++;
+        QString parameterValue = mNewFMUProperties.mParameterValues.at(parametersIndex);
+        parametersIndex++;
         if (pInterfaces[i]->type == oms_signal_type_real) {
           OMSProxy::instance()->setRealParameter(pInterfaces[i]->name, parameterValue.toDouble());
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
           OMSProxy::instance()->setIntegerParameter(pInterfaces[i]->name, parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
           OMSProxy::instance()->setBooleanParameter(pInterfaces[i]->name, parameterValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+        }
+      } else if (pInterfaces[i]->causality == oms_causality_input) {
+        QString inputValue = mNewFMUProperties.mInputValues.at(inputsIndex);
+        inputsIndex++;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          OMSProxy::instance()->setReal(pInterfaces[i]->name, inputValue.toDouble());
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          OMSProxy::instance()->setInteger(pInterfaces[i]->name, inputValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          OMSProxy::instance()->setBoolean(pInterfaces[i]->name, inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
@@ -1994,19 +2013,38 @@ void FMUPropertiesCommand::undo()
 //    mpComponent->componentNameHasChanged();
 //  }
   // Parameters
-  int index = 0;
+  int parametersIndex = 0;
+  int inputsIndex = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
-        QString parameterValue = mOldFMUProperties.mParameterValues.at(index);
-        index++;
+        QString parameterValue = mOldFMUProperties.mParameterValues.at(parametersIndex);
+        parametersIndex++;
         if (pInterfaces[i]->type == oms_signal_type_real) {
           OMSProxy::instance()->setRealParameter(pInterfaces[i]->name, parameterValue.toDouble());
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
           OMSProxy::instance()->setIntegerParameter(pInterfaces[i]->name, parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
           OMSProxy::instance()->setBooleanParameter(pInterfaces[i]->name, parameterValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+        }
+      } else if (pInterfaces[i]->causality == oms_causality_input) {
+        QString inputValue = mOldFMUProperties.mInputValues.at(inputsIndex);
+        inputsIndex++;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          OMSProxy::instance()->setReal(pInterfaces[i]->name, inputValue.toDouble());
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          OMSProxy::instance()->setInteger(pInterfaces[i]->name, inputValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          OMSProxy::instance()->setBoolean(pInterfaces[i]->name, inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {

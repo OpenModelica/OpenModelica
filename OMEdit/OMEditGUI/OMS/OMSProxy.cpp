@@ -561,6 +561,32 @@ void OMSProxy::setWorkingDirectory(QString path)
 }
 
 /*!
+ * \brief OMSProxy::getReal
+ * Gets the real variable value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::getReal(QString signal, double *value)
+{
+  oms_status_enu_t status = oms2_getReal(signal.toStdString().c_str(), value);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setReal
+ * Sets the real variable value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::setReal(QString signal, double value)
+{
+  oms_status_enu_t status = oms2_setReal(signal.toStdString().c_str(), value);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getRealParameter
  * Gets the real parameter value.
  * \param signal
@@ -587,6 +613,32 @@ bool OMSProxy::setRealParameter(const char* signal, double value)
 }
 
 /*!
+ * \brief OMSProxy::getInteger
+ * Gets the integer variable value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::getInteger(QString signal, int *value)
+{
+  oms_status_enu_t status = oms2_getInteger(signal.toStdString().c_str(), value);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setInteger
+ * Sets the integer variable value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::setInteger(QString signal, int value)
+{
+  oms_status_enu_t status = oms2_setInteger(signal.toStdString().c_str(), value);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getIntegerParameter
  * Gets the integer parameter value.
  * \param signal
@@ -609,6 +661,32 @@ bool OMSProxy::getIntegerParameter(QString signal, int* pValue)
 bool OMSProxy::setIntegerParameter(const char* signal, int value)
 {
   oms_status_enu_t status = oms2_setIntegerParameter(signal, value);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getBoolean
+ * Gets the boolean variable value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::getBoolean(QString signal, bool *value)
+{
+  oms_status_enu_t status = oms2_getBoolean(signal.toStdString().c_str(), value);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setBoolean
+ * Sets the boolean variable value.
+ * \param signal
+ * \param value
+ * \return
+ */
+bool OMSProxy::setBoolean(QString signal, bool value)
+{
+  oms_status_enu_t status = oms2_setBoolean(signal.toStdString().c_str(), value);
   return statusToBool(status);
 }
 

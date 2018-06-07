@@ -38,6 +38,7 @@
 FMUProperties::FMUProperties()
 {
   mParameterValues.clear();
+  mInputValues.clear();
 }
 
 /*!
@@ -68,6 +69,7 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   mpDescriptionLabel = new Label(QString("%1:").arg(Helper::description));
   mpDescriptionValueLabel = new Label(QString(pFMUInfo->description));
+  mpDescriptionValueLabel->setElideMode(Qt::ElideMiddle);
   mpFMUKindLabel = new Label(tr("FMU Kind:"));
   mpFMUKindValueLabel = new Label(OMSProxy::getFMUKindString(pFMUInfo->fmiKind));
   mpFMIVersionLabel = new Label(tr("FMI Version:"));
@@ -89,7 +91,7 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   pGeneralLayout->addWidget(mpFMIVersionLabel, 2, 0);
   pGeneralLayout->addWidget(mpFMIVersionValueLabel, 2, 1);
   pGeneralLayout->addWidget(mpGenerationToolLabel, 3, 0);
-  pGeneralLayout->addWidget(mpGenerationTimeValueLabel, 3, 1);
+  pGeneralLayout->addWidget(mpGenerationToolValueLabel, 3, 1);
   pGeneralLayout->addWidget(mpGuidLabel, 4, 0);
   pGeneralLayout->addWidget(mpGuidValueLabel, 4, 1);
   pGeneralLayout->addWidget(mpGenerationTimeLabel, 5, 0);
@@ -131,22 +133,24 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   pCapabilitiesGridLayout->addWidget(mpProvidesDirectionalDerivativeValueLabel, 6, 1);
   mpCapabilitiesGroupBox->setLayout(pCapabilitiesGridLayout);
   // FMU Parameters
-  ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-  pParametersScrollArea->setBackgroundRole(QPalette::NoRole);
-  pParametersScrollArea->getLayout()->setContentsMargins(0, 0, 0, 0);
-  GroupBox *pParametersGroupBox = new GroupBox("Parameters");
-  pParametersScrollArea->addGroupBox(pParametersGroupBox);
+  QGridLayout *pParametersGridLayout = new QGridLayout;
+  pParametersGridLayout->setContentsMargins(5, 5, 5, 5);
+  QGroupBox *pParametersGroupBox = new QGroupBox(Helper::parameters);
+  pParametersGroupBox->setLayout(pParametersGridLayout);
+  QScrollArea *pParametersScrollArea = new QScrollArea;
+  pParametersScrollArea->setFrameShape(QFrame::NoFrame);
+  pParametersScrollArea->setWidgetResizable(true);
+  pParametersScrollArea->setWidget(pParametersGroupBox);
   mParameterLabels.clear();
   mParameterLineEdits.clear();
-  int index = 0;
   if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
-        index++;
-        QString name = StringHandler::getLastWordAfterDot(pInterfaces[i]->name);
-        name = name.split(':', QString::SkipEmptyParts).last();
-        mParameterLabels.append(new Label(name));
+        QString name = QString(pInterfaces[i]->name).split(':', QString::SkipEmptyParts).last();
+        Label *pNameLabel = new Label(name);
+        pNameLabel->setToolTip(pInterfaces[i]->name);
+        mParameterLabels.append(pNameLabel);
         QLineEdit *pParameterLineEdit = new QLineEdit;
         bool status = false;
         if (pInterfaces[i]->type == oms_signal_type_real) {
@@ -184,15 +188,73 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
         }
         mParameterLineEdits.append(pParameterLineEdit);
         mOldFMUProperties.mParameterValues.append(pParameterLineEdit->text());
-        GroupBox *pParametersGroupBox = pParametersScrollArea->getGroupBox("Parameters");
-        if (pParametersGroupBox) {
-          pParametersGroupBox->show();
-          QGridLayout *pGroupBoxGridLayout = pParametersGroupBox->getGridLayout();
-          int layoutIndex = pGroupBoxGridLayout->rowCount();
-          int columnIndex = 0;
-          pGroupBoxGridLayout->addWidget(mParameterLabels.last(), layoutIndex, columnIndex++);
-          pGroupBoxGridLayout->addWidget(mParameterLineEdits.last(), layoutIndex, columnIndex++);
+        int layoutIndex = pParametersGridLayout->rowCount();
+        int columnIndex = 0;
+        pParametersGridLayout->addWidget(mParameterLabels.last(), layoutIndex, columnIndex++);
+        pParametersGridLayout->addWidget(mParameterLineEdits.last(), layoutIndex, columnIndex++);
+      }
+    }
+  }
+  // FMU Inputs
+  QGridLayout *pInputsGridLayout = new QGridLayout;
+  pInputsGridLayout->setContentsMargins(5, 5, 5, 5);
+  QGroupBox *pInputsGroupBox = new QGroupBox(tr("Inputs"));
+  pInputsGroupBox->setLayout(pInputsGridLayout);
+  QScrollArea *pInputsScrollArea = new QScrollArea;
+  pInputsScrollArea->setFrameShape(QFrame::NoFrame);
+  pInputsScrollArea->setWidgetResizable(true);
+  pInputsScrollArea->setWidget(pInputsGroupBox);
+  mInputLabels.clear();
+  mInputLineEdits.clear();
+  if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
+    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
+    for (int i = 0 ; pInterfaces[i] ; i++) {
+      if (pInterfaces[i]->causality == oms_causality_input) {
+        QString name = QString(pInterfaces[i]->name).split(':', QString::SkipEmptyParts).last();
+        Label *pNameLabel = new Label(name);
+        pNameLabel->setToolTip(pInterfaces[i]->name);
+        mInputLabels.append(pNameLabel);
+        QLineEdit *pInputLineEdit = new QLineEdit;
+        bool status = false;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+          pInputLineEdit->setValidator(pDoubleValidator);
+          double value;
+          if ((status = OMSProxy::instance()->getReal(pInterfaces[i]->name, &value))) {
+            pInputLineEdit->setText(QString::number(value));
+          }
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          QIntValidator *pIntValidator = new QIntValidator(this);
+          pInputLineEdit->setValidator(pIntValidator);
+          int value;
+          if ((status = OMSProxy::instance()->getInteger(pInterfaces[i]->name, &value))) {
+            pInputLineEdit->setText(QString::number(value));
+          }
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          QIntValidator *pIntValidator = new QIntValidator(this);
+          pInputLineEdit->setValidator(pIntValidator);
+          bool value;
+          if ((status = OMSProxy::instance()->getBoolean(pInterfaces[i]->name, &value))) {
+            pInputLineEdit->setText(QString::number(value));
+          }
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "OMSSubModelAttributes::OMSSubModelAttributes() unknown oms_signal_type_enu_t.";
         }
+        if (!status) {
+          pInputLineEdit->setPlaceholderText("unknown");
+        }
+        mInputLineEdits.append(pInputLineEdit);
+        mOldFMUProperties.mInputValues.append(pInputLineEdit->text());
+        int layoutIndex = pInputsGridLayout->rowCount();
+        int columnIndex = 0;
+        pInputsGridLayout->addWidget(mInputLabels.last(), layoutIndex, columnIndex++);
+        pInputsGridLayout->addWidget(mInputLineEdits.last(), layoutIndex, columnIndex++);
       }
     }
   }
@@ -217,7 +279,8 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   pMainLayout->addWidget(mpGeneralGroupBox, 3, 0, 1, 2);
   pMainLayout->addWidget(mpCapabilitiesGroupBox, 4, 0, 1, 2);
   pMainLayout->addWidget(pParametersScrollArea, 5, 0, 1, 2);
-  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(pInputsScrollArea, 6, 0, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -233,6 +296,9 @@ void FMUPropertiesDialog::updateFMUParameters()
   FMUProperties newFMUProperties;
   foreach (QLineEdit *pParameterLineEdit, mParameterLineEdits) {
     newFMUProperties.mParameterValues.append(pParameterLineEdit->text());
+  }
+  foreach (QLineEdit *pInputLineEdit, mInputLineEdits) {
+    newFMUProperties.mInputValues.append(pInputLineEdit->text());
   }
   // push the change on the undo stack
   FMUPropertiesCommand *pFMUPropertiesCommand = new FMUPropertiesCommand(mpComponent, oldName, newName, mOldFMUProperties, newFMUProperties);
