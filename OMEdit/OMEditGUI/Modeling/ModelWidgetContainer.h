@@ -245,7 +245,7 @@ public:
   void addItem(QGraphicsItem *pGraphicsItem);
   void removeItem(QGraphicsItem *pGraphicsItem);
   void fitInViewInternal();
-  void addFMU(QString name, QString path);
+  void addSubModel(QString name, QString path);
   void deleteSubModel(QString name);
 private:
   void createActions();
@@ -525,7 +525,7 @@ public slots:
   void printModel();
   void showSimulationParams();
   void alignInterfaces();
-  void addFMU();
+  void addSubModel();
   void addOrEditSubModelIcon();
 };
 

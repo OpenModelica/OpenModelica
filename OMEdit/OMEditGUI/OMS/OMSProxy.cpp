@@ -133,6 +133,8 @@ QString OMSProxy::getElementTypeString(oms_element_type_enu_t type)
       return "FMI model";
     case oms_component_fmu:
       return "FMU";
+    case oms_component_table:
+      return "Table";
     case oms_component_port:
       return "Port";
     case oms_component_none:
@@ -290,6 +292,20 @@ bool OMSProxy::rename(QString identOld, QString identNew)
 bool OMSProxy::addFMU(QString modelIdent, QString fmuPath, QString fmuIdent)
 {
   oms_status_enu_t status = oms2_addFMU(modelIdent.toStdString().c_str(), fmuPath.toStdString().c_str(), fmuIdent.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addTable
+ * Adds the table to the model
+ * \param modelIdent
+ * \param fmuPath
+ * \param fmuIdent
+ * \return
+ */
+bool OMSProxy::addTable(QString modelIdent, QString tablePath, QString tableIdent)
+{
+  oms_status_enu_t status = oms2_addTable(modelIdent.toStdString().c_str(), tablePath.toStdString().c_str(), tableIdent.toStdString().c_str());
   return statusToBool(status);
 }
 

@@ -69,6 +69,7 @@ public:
   static QString txtFileTypes;
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
+  static QString subModelFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -343,8 +344,8 @@ public:
   static QString animationPauseTip;
   static QString simulationParams;
   static QString simulationParamsTip;
-  static QString addFMU;
-  static QString addFMUTip;
+  static QString addSubModel;
+  static QString addSubModelTip;
   static QString running;
   static QString finished;
   static QString newVariable;
@@ -373,6 +374,7 @@ public:
   static QString startTime;
   static QString stopTime;
   static QString status;
+  static QString fmuProperties;
 };
 
 class GUIMessages : public QObject

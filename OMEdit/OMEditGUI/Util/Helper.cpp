@@ -63,6 +63,7 @@ QString Helper::exeFileTypes = "Executable files (*)";
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;
@@ -341,8 +342,8 @@ QString Helper::animationPause;
 QString Helper::animationPauseTip;
 QString Helper::simulationParams;
 QString Helper::simulationParamsTip;
-QString Helper::addFMU;
-QString Helper::addFMUTip;
+QString Helper::addSubModel;
+QString Helper::addSubModelTip;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -371,6 +372,7 @@ QString Helper::dateTime;
 QString Helper::startTime;
 QString Helper::stopTime;
 QString Helper::status;
+QString Helper::fmuProperties;
 
 void Helper::initHelperVariables()
 {
@@ -605,8 +607,8 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
-  Helper::addFMU = tr("Add FMU");
-  Helper::addFMUTip = tr("Adds the FMU");
+  Helper::addSubModel = tr("Add SubModel");
+  Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");
@@ -635,6 +637,7 @@ void Helper::initHelperVariables()
   Helper::startTime = tr("Start Time");
   Helper::stopTime = tr("Stop Time");
   Helper::status = tr("Status");
+  Helper::fmuProperties = tr("FMU Properties");
 }
 
 QString GUIMessages::getMessage(int type)

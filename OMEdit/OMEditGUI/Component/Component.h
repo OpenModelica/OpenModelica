@@ -205,6 +205,7 @@ public:
   QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
   QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
+  QAction* getFMUPropertiesAction() {return mpFMUPropertiesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
@@ -269,6 +270,7 @@ private:
   QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpSubModelAttributesAction;
+  QAction *mpFMUPropertiesAction;
   ResizerItem *mpBottomLeftResizerItem;
   ResizerItem *mpTopLeftResizerItem;
   ResizerItem *mpTopRightResizerItem;

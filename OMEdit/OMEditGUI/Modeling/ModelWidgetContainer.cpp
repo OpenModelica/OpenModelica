@@ -1171,16 +1171,20 @@ void GraphicsView::fitInViewInternal()
 }
 
 /*!
- * \brief GraphicsView::addFMU
- * Adds the FMU as submodel to the OMS model.
+ * \brief GraphicsView::addSubModel
+ * Adds the submodel to the OMS model.
  * \param name
  * \param path
  */
-void GraphicsView::addFMU(QString name, QString path)
+void GraphicsView::addSubModel(QString name, QString path)
 {
   QFileInfo fileInfo(path);
   OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  OMSProxy::instance()->addFMU(mpModelWidget->getLibraryTreeItem()->getNameStructure(), fileInfo.absoluteFilePath(), name);
+  if (fileInfo.suffix().compare("fmu") == 0) {
+    OMSProxy::instance()->addFMU(mpModelWidget->getLibraryTreeItem()->getNameStructure(), fileInfo.absoluteFilePath(), name);
+  } else {
+    OMSProxy::instance()->addTable(mpModelWidget->getLibraryTreeItem()->getNameStructure(), fileInfo.absoluteFilePath(), name);
+  }
   OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
 }
 
@@ -1319,7 +1323,8 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
   }
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     if (mpModelWidget->getLibraryTreeItem()->getOMSElement()
-        && mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+        && (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu
+            || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table)) {
       switch (key) {
         case Qt::Key_Delete:
         case Qt::Key_R: // rotate
@@ -2627,8 +2632,9 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addSeparator();
       if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
         if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmi) {
-          menu.addAction(MainWindow::instance()->getAddFMUAction());
-        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+          menu.addAction(MainWindow::instance()->getAddSubModelAction());
+        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu
+                   || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table) {
           menu.addAction(MainWindow::instance()->getAddOrEditSubModelIconAction());
         }
       }
@@ -3003,6 +3009,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     }
     mpEditor = 0;
     if ((mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu)
+        || (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_table)
         || mpLibraryTreeItem->getOMSConnector()) {
       drawOMSModelElements();
     }
@@ -5482,7 +5489,7 @@ void ModelWidget::drawOMSModelElements()
           mpUndoStack->push(pAddSubModelCommand);
         }
       }
-    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
+    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu || mpLibraryTreeItem->getOMSElement()->type == oms_component_table) {
       if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
         // Draw bitmap with icon source
         QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
@@ -5954,7 +5961,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
-  connect(MainWindow::instance()->getAddFMUAction(), SIGNAL(triggered()), SLOT(addFMU()));
+  connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
   connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
 }
 
@@ -6390,7 +6397,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       oms = true;
       oms_submodel = false;
       oms_connector = false;
-      if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
+      if (pLibraryTreeItem->getOMSElement() && (pLibraryTreeItem->getOMSElement()->type == oms_component_fmu
+                                                || pLibraryTreeItem->getOMSElement()->type == oms_component_table)) {
         oms_submodel = true;
       }
       if (pLibraryTreeItem->getOMSConnector()) {
@@ -6451,7 +6459,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getAddFMUAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
+  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
   MainWindow::instance()->getAddOrEditSubModelIconAction()->setEnabled(enabled && oms_submodel);
   MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -6624,14 +6632,14 @@ void ModelWidgetContainer::alignInterfaces()
 }
 
 /*!
- * \brief ModelWidgetContainer::addFMU
+ * \brief ModelWidgetContainer::addSubModel
  * Opens the AddFMUDialog.
  */
-void ModelWidgetContainer::addFMU()
+void ModelWidgetContainer::addSubModel()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-    AddFMUDialog *pAddFMUDialog = new AddFMUDialog(pModelWidget->getDiagramGraphicsView());
+    AddSubModelDialog *pAddFMUDialog = new AddSubModelDialog(pModelWidget->getDiagramGraphicsView());
     pAddFMUDialog->exec();
   }
 }

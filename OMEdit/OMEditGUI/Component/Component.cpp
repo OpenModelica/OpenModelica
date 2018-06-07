@@ -1699,6 +1699,10 @@ void Component::createActions()
   mpSubModelAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpSubModelAttributesAction->setStatusTip(tr("Shows the submodel attributes"));
   connect(mpSubModelAttributesAction, SIGNAL(triggered()), SLOT(showSubModelAttributes()));
+  // FMU Properties Action
+  mpFMUPropertiesAction = new QAction(Helper::fmuProperties, mpGraphicsView);
+  mpFMUPropertiesAction->setStatusTip(tr("Shows the FMU Properties dialog"));
+  connect(mpFMUPropertiesAction, SIGNAL(triggered()), SLOT(showFMUPropertiesDialog()));
 }
 
 void Component::createResizerItems()
@@ -2761,6 +2765,9 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
       case LibraryTreeItem::OMS:
+        if (pComponent->getLibraryTreeItem()->getOMSElement() && pComponent->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+          menu.addAction(pComponent->getFMUPropertiesAction());
+        }
         break;
     }
     menu.addSeparator();

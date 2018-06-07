@@ -64,6 +64,7 @@ public:
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);
   bool addFMU(QString modelIdent, QString fmuPath, QString fmuIdent);
+  bool addTable(QString modelIdent, QString tablePath, QString tableIdent);
   bool deleteSubModel(QString modelIdent, QString subModelIdent);
   bool rename(QString identOld, QString identNew);
   bool loadModel(QString filename, QString* pModelName);

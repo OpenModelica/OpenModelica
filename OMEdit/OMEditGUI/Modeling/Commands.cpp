@@ -1815,7 +1815,7 @@ AddSubModelCommand::AddSubModelCommand(QString name, QString path, LibraryTreeIt
 void AddSubModelCommand::redo()
 {
   if (!mOpeningClass) {
-    mpGraphicsView->addFMU(mName, mPath);
+    mpGraphicsView->addSubModel(mName, mPath);
   }
   if (!mpLibraryTreeItem) {
     // Create a LibraryTreeItem for FMU
@@ -1910,7 +1910,7 @@ void DeleteSubModelCommand::redo()
 void DeleteSubModelCommand::undo()
 {
   // add submodel
-  mpGraphicsView->addFMU(mName, mPath);
+  mpGraphicsView->addSubModel(mName, mPath);
   // Create a LibraryTreeItem for FMU
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -1957,7 +1957,7 @@ void FMUPropertiesCommand::redo()
   // Parameters
   int parametersIndex = 0;
   int inputsIndex = 0;
-  if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
+  if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
@@ -2015,7 +2015,7 @@ void FMUPropertiesCommand::undo()
   // Parameters
   int parametersIndex = 0;
   int inputsIndex = 0;
-  if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
+  if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {

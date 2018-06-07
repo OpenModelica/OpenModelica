@@ -584,6 +584,11 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
                 .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
                 .arg(Helper::fileLocation).arg(mFileName);
+    } else if (mpOMSElement && mpOMSElement->type == oms_component_table) {
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
+                .arg(Helper::fileLocation).arg(mFileName);
     } else if (mpOMSConnector) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8")
                 .arg(Helper::name).arg(mName)
@@ -2640,8 +2645,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   }
   pLibraryTreeItem->setOMSElement(pOMSElement);
   pLibraryTreeItem->setOMSConnector(pOMSConnector);
-  if (pParentLibraryTreeItem && pParentLibraryTreeItem->getOMSElement() &&
-      pParentLibraryTreeItem->getOMSElement()->type < oms_component_fmu) {
+  if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
     const oms_fmu_info_t *pFMUInfo;
     if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
       pLibraryTreeItem->setFMUInfo(pFMUInfo);
@@ -2670,7 +2674,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
  */
 void LibraryTreeModel::createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getOMSElement()) {
+  if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->connectors) {
     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->connectors[j] ; j++) {
       QString name = StringHandler::getLastWordAfterDot(pLibraryTreeItem->getOMSElement()->connectors[j]->name);
       name = name.split(':', QString::SkipEmptyParts).last();

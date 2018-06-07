@@ -53,11 +53,11 @@ FMUProperties::FMUProperties()
 FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("FMU Properties")));
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::fmuProperties));
   setAttribute(Qt::WA_DeleteOnClose);
   mpComponent = pComponent;
   // heading
-  mpHeading = Utilities::getHeadingLabel(tr("FMU Properties"));
+  mpHeading = Utilities::getHeadingLabel(Helper::fmuProperties);
   // horizontal line
   mpHorizontalLine = Utilities::getHeadingLine();
   // Create the name label and text box
@@ -143,10 +143,12 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   pParametersScrollArea->setWidget(pParametersGroupBox);
   mParameterLabels.clear();
   mParameterLineEdits.clear();
-  if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
+  if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
+    bool hasParameter = false;
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_parameter) {
+        hasParameter = true;
         QString name = QString(pInterfaces[i]->name).split(':', QString::SkipEmptyParts).last();
         Label *pNameLabel = new Label(name);
         pNameLabel->setToolTip(pInterfaces[i]->name);
@@ -194,6 +196,9 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
         pParametersGridLayout->addWidget(mParameterLineEdits.last(), layoutIndex, columnIndex++);
       }
     }
+    if (!hasParameter) {
+      pParametersScrollArea->setVisible(false);
+    }
   }
   // FMU Inputs
   QGridLayout *pInputsGridLayout = new QGridLayout;
@@ -206,10 +211,12 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   pInputsScrollArea->setWidget(pInputsGroupBox);
   mInputLabels.clear();
   mInputLineEdits.clear();
-  if (mpComponent->getLibraryTreeItem()->getOMSElement()) {
+  if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
+    bool hasInput = false;
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       if (pInterfaces[i]->causality == oms_causality_input) {
+        hasInput = true;
         QString name = QString(pInterfaces[i]->name).split(':', QString::SkipEmptyParts).last();
         Label *pNameLabel = new Label(name);
         pNameLabel->setToolTip(pInterfaces[i]->name);
@@ -256,6 +263,9 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
         pInputsGridLayout->addWidget(mInputLabels.last(), layoutIndex, columnIndex++);
         pInputsGridLayout->addWidget(mInputLineEdits.last(), layoutIndex, columnIndex++);
       }
+    }
+    if (!hasInput) {
+      pInputsScrollArea->setVisible(false);
     }
   }
   // Create the buttons

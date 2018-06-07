@@ -3372,9 +3372,9 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // Add FMU Action
-  mpAddFMUAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addFMU, this);
-  mpAddFMUAction->setStatusTip(Helper::addFMUTip);
+  // Add SubModel Action
+  mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
+  mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
   // Add or Edit submodel icon Action
   mpAddOrEditSubModelIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit SubModel Icon"), this);
   mpAddOrEditSubModelIconAction->setStatusTip(tr("Adds/Edits an icon for submodel"));
@@ -4023,7 +4023,7 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->setObjectName("OMSimulator Toolbar");
   mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to OMSimulator Toolbar
-  mpOMSimulatorToobar->addAction(mpAddFMUAction);
+  mpOMSimulatorToobar->addAction(mpAddSubModelAction);
   mpOMSimulatorToobar->addAction(mpAddOrEditSubModelIconAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);

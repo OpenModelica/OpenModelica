@@ -1985,22 +1985,22 @@ void ComponentNameDialog::updateComponentName()
 }
 
 /*!
- * \class AddFMUDialog
- * \brief Creates a dialog to allow users to add FMUs to OMSimulator model.
+ * \class AddSubModelDialog
+ * \brief Creates a dialog to allow users to add submodels to OMSimulator model.
  */
 /*!
- * \brief AddFMUDialog::AddFMUDialog
+ * \brief AddSubModelDialog::AddSubModelDialog
  * \param pGraphicsView
  */
-AddFMUDialog::AddFMUDialog(GraphicsView *pGraphicsView)
+AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addFMU));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addSubModel));
   setMinimumWidth(400);
   mpGraphicsView = pGraphicsView;
   // set heading
-  mpHeading = Utilities::getHeadingLabel(Helper::addFMU);
+  mpHeading = Utilities::getHeadingLabel(Helper::addSubModel);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // name
@@ -2011,11 +2011,11 @@ AddFMUDialog::AddFMUDialog(GraphicsView *pGraphicsView)
   mpPathTextBox = new QLineEdit;
   mpBrowsePathButton = new QPushButton(Helper::browse);
   mpBrowsePathButton->setAutoDefault(false);
-  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseFMUPath()));
+  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseSubModelPath()));
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), SLOT(addFMU()));
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addSubModel()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
@@ -2038,31 +2038,31 @@ AddFMUDialog::AddFMUDialog(GraphicsView *pGraphicsView)
 }
 
 /*!
- * \brief AddFMUDialog::browseFMUPath
+ * \brief AddSubModelDialog::browseSubModelPath
  * Slot activated when mpBrowsePathButton clicked signal is raised.\n
- * Allows the user to select the FMU path.
+ * Allows the user to select the submodel path.
  */
-void AddFMUDialog::browseFMUPath()
+void AddSubModelDialog::browseSubModelPath()
 {
   mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile),
-                                                        NULL, Helper::fmuFileTypes, NULL));
+                                                        NULL, Helper::subModelFileTypes, NULL));
 }
 
 /*!
- * \brief AddFMUDialog::addFMU
- * Adds the FMU to the OMSimulator model.
+ * \brief AddSubModelDialog::addSubModel
+ * Adds the submodel to the OMSimulator model.
  */
-void AddFMUDialog::addFMU()
+void AddSubModelDialog::addSubModel()
 {
   if (mpNameTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), Helper::ok);
     return;
   }
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Unable to find the FMU file."), Helper::ok);
+                          tr("Unable to find the SubModel file."), Helper::ok);
     return;
   }
   LibraryTreeItem *pParentLibraryTreeItem;
@@ -2072,7 +2072,7 @@ void AddFMUDialog::addFMU()
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
-                            .arg(tr("FMU"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            .arg(tr("SubModel"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
       return;
     }
   }
