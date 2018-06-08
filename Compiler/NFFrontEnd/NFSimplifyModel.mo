@@ -147,7 +147,7 @@ algorithm
       algorithm
         eq.condition := SimplifyExp.simplify(eq.condition);
       then
-        if Expression.isFalse(eq.condition) then equations else eq :: equations;
+        if Expression.isTrue(eq.condition) then equations else eq :: equations;
 
     case Equation.REINIT()
       algorithm

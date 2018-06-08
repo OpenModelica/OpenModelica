@@ -40,9 +40,14 @@ public
 
   record INT_RANGE
     Integer current;
-    Integer stepsize;
     Integer last;
   end INT_RANGE;
+
+  record INT_STEP_RANGE
+    Integer current;
+    Integer stepsize;
+    Integer last;
+  end INT_STEP_RANGE;
 
   record REAL_RANGE
     Real start;
@@ -91,13 +96,12 @@ public
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = SOME(Expression.INTEGER(istep)),
                             stop = Expression.INTEGER(istop))
-        then
-          INT_RANGE(istart, istep, istop);
+        then INT_STEP_RANGE(istart, istep, istop);
 
       case Expression.RANGE(start = Expression.INTEGER(istart),
                             step = NONE(),
                             stop = Expression.INTEGER(istop))
-        then INT_RANGE(istart, 1, istop);
+        then INT_RANGE(istart, istop);
 
       case Expression.RANGE(start = Expression.REAL(rstart),
                             step = SOME(Expression.REAL(rstep)),
@@ -145,7 +149,7 @@ public
         Type ty;
         list<Expression> expl;
 
-      case Dimension.INTEGER() then INT_RANGE(1, 1, dim.size);
+      case Dimension.INTEGER() then INT_RANGE(1, dim.size);
 
       case Dimension.BOOLEAN()
         then ARRAY_RANGE({Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
@@ -170,6 +174,13 @@ public
   algorithm
     nextExp := match iterator
       case INT_RANGE()
+        algorithm
+          nextExp := Expression.INTEGER(iterator.current);
+          iterator.current := iterator.current + 1;
+        then
+          nextExp;
+
+      case INT_STEP_RANGE()
         algorithm
           nextExp := Expression.INTEGER(iterator.current);
           iterator.current := iterator.current + iterator.stepsize;
@@ -205,6 +216,8 @@ public
   algorithm
     hasNext := match iterator
       case INT_RANGE() then iterator.current <= iterator.last;
+      case INT_STEP_RANGE() then if iterator.stepsize > 0 then iterator.current <= iterator.last
+                                                          else iterator.current >= iterator.last;
       case REAL_RANGE() then iterator.current < iterator.steps;
       case ARRAY_RANGE() then not listEmpty(iterator.values);
       case INVALID_RANGE()
@@ -254,6 +267,25 @@ public
 
     lst := listReverse(lst);
   end map;
+
+  function fold<ArgT>
+    input RangeIterator iterator;
+    input FuncT func;
+    input output ArgT arg;
+
+    partial function FuncT
+      input Expression exp;
+      input output ArgT arg;
+    end FuncT;
+  protected
+    RangeIterator iter = iterator;
+    Expression exp;
+  algorithm
+    while hasNext(iter) loop
+      (iter, exp) := next(iter);
+      arg := func(exp, arg);
+    end while;
+  end fold;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRangeIterator;

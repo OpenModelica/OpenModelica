@@ -700,7 +700,9 @@ algorithm
   Equation.FOR(iterator = iter, range = SOME(range), body = body) := forLoop;
 
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
+  range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
   range_iter := RangeIterator.fromExp(range);
+
   while RangeIterator.hasNext(range_iter) loop
     (range_iter, val) := RangeIterator.next(range_iter);
     unrolled_body := list(Equation.mapExp(eq,

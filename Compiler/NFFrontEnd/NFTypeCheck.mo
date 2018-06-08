@@ -73,8 +73,7 @@ import NFCall.CallAttributes;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
 import NFBuiltin;
-
-
+import SimplifyExp = NFSimplifyExp;
 
 public
 type MatchKind = enumeration(
@@ -1996,7 +1995,10 @@ algorithm
 
     // Ranges like 1:n have size n.
     case (Expression.INTEGER(1), NONE(), _)
-      then Dimension.fromExp(stopExp, Expression.variability(stopExp));
+      algorithm
+        dim_exp := SimplifyExp.simplify(stopExp);
+      then
+        Dimension.fromExp(dim_exp, Expression.variability(dim_exp));
 
     // Ranges like n:n have size 1.
     case (_, NONE(), _)
@@ -2017,8 +2019,9 @@ algorithm
           dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
         end if;
 
-        dim_exp := Expression.BINARY(dim_exp, Operator.makeSub(Type.INTEGER()), Expression.INTEGER(1));
-        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp}, var));
+        dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp, Expression.INTEGER(0)}, var));
+        dim_exp := SimplifyExp.simplify(dim_exp);
       then
         Dimension.fromExp(dim_exp, var);
 
@@ -2071,6 +2074,7 @@ algorithm
         dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
         dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
+        dim_exp := SimplifyExp.simplify(dim_exp);
       then
         Dimension.fromExp(dim_exp, var);
 
@@ -2111,6 +2115,7 @@ algorithm
               Expression.INTEGER(2),
               Expression.INTEGER(0)));
 
+          dim_exp := SimplifyExp.simplify(dim_exp);
           dim := Dimension.fromExp(dim_exp, var);
         end if;
       then
@@ -2153,6 +2158,7 @@ algorithm
             Operator.makeAdd( Type.INTEGER()),
             Expression.INTEGER(1));
 
+          dim_exp := SimplifyExp.simplify(dim_exp);
           dim := Dimension.fromExp(dim_exp, var);
         end if;
       then

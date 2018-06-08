@@ -604,7 +604,7 @@ algorithm
 
     else
       algorithm
-        exp := Expression.BINARY(exp1, Operator.makeMul(Type.UNKNOWN()), exp2);
+        exp := Expression.BINARY(exp1, Operator.makeDiv(Type.UNKNOWN()), exp2);
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
@@ -1279,8 +1279,8 @@ algorithm
     case "log10" then evalBuiltinLog10(listHead(args), target);
     case "log" then evalBuiltinLog(listHead(args), target);
     case "matrix" then evalBuiltinMatrix(listHead(args));
-    case "max" then evalBuiltinMax(args);
-    case "min" then evalBuiltinMin(args);
+    case "max" then evalBuiltinMax(args, fn);
+    case "min" then evalBuiltinMin(args, fn);
     case "mod" then evalBuiltinMod(args);
     case "noEvent" then listHead(args); // No events during ceval, just return the argument.
     case "ones" then evalBuiltinOnes(args);
@@ -1755,14 +1755,26 @@ end evalBuiltinMatrix2;
 
 function evalBuiltinMax
   input list<Expression> args;
+  input Function fn;
   output Expression result;
 protected
   Expression e1, e2;
   list<Expression> expl;
+  Type ty;
 algorithm
   result := match args
     case {e1, e2} then evalBuiltinMax2(e1, e2);
-    case {Expression.ARRAY(elements = expl)} then evalBuiltinMax2(e for e in expl);
+    case {e1 as Expression.ARRAY(ty = ty)}
+      algorithm
+        result := Expression.fold(e1, evalBuiltinMax2, Expression.EMPTY());
+
+        if Expression.isEmpty(result) then
+          result := Expression.CALL(Call.makeTypedCall(fn,
+            {Expression.ARRAY(ty, {})}, Variability.CONSTANT, Type.arrayElementType(ty)));
+        end if;
+      then
+        result;
+
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
 end evalBuiltinMax;
@@ -1781,25 +1793,34 @@ algorithm
       then if exp1.value < exp2.value then exp2 else exp1;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then if exp1.index < exp2.index then exp2 else exp1;
-    case (Expression.ARRAY(), Expression.ARRAY())
-      then evalBuiltinMax2(evalBuiltinMax2(e for e in exp1.elements),
-                           evalBuiltinMax2(e for e in exp2.elements));
-    case (Expression.ARRAY(), _)
-      then evalBuiltinMax2(evalBuiltinMax2(e for e in exp1.elements), exp2);
+    case (Expression.ARRAY(), _) then exp2;
+    case (_, Expression.EMPTY()) then exp1;
     else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
 end evalBuiltinMax2;
 
 function evalBuiltinMin
   input list<Expression> args;
+  input Function fn;
   output Expression result;
 protected
   Expression e1, e2;
   list<Expression> expl;
+  Type ty;
 algorithm
   result := match args
     case {e1, e2} then evalBuiltinMin2(e1, e2);
-    case {Expression.ARRAY(elements = expl)} then evalBuiltinMin2(e for e in expl);
+    case {e1 as Expression.ARRAY(ty = ty)}
+      algorithm
+        result := Expression.fold(e1, evalBuiltinMin2, Expression.EMPTY());
+
+        if Expression.isEmpty(result) then
+          result := Expression.CALL(Call.makeTypedCall(fn,
+            {Expression.ARRAY(ty, {})}, Variability.CONSTANT, Type.arrayElementType(ty)));
+        end if;
+      then
+        result;
+
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
 end evalBuiltinMin;
@@ -1818,11 +1839,8 @@ algorithm
       then if exp1.value > exp2.value then exp2 else exp1;
     case (Expression.ENUM_LITERAL(), Expression.ENUM_LITERAL())
       then if exp1.index > exp2.index then exp2 else exp1;
-    case (Expression.ARRAY(), Expression.ARRAY())
-      then evalBuiltinMin2(evalBuiltinMin2(e for e in exp1.elements),
-                           evalBuiltinMin2(e for e in exp2.elements));
-    case (Expression.ARRAY(), _)
-      then evalBuiltinMin2(evalBuiltinMin2(e for e in exp1.elements), exp2);
+    case (Expression.ARRAY(), _) then exp2;
+    case (_, Expression.EMPTY()) then exp1;
     else algorithm printWrongArgsError(getInstanceName(), {exp1, exp2}, sourceInfo()); then fail();
   end match;
 end evalBuiltinMin2;
@@ -1857,11 +1875,16 @@ function evalBuiltinProduct
   input Expression arg;
   output Expression result;
 algorithm
-  result := matchcontinue Type.arrayElementType(Expression.typeOf(arg))
-    case Type.INTEGER() then Expression.INTEGER(Expression.fold(arg, evalBuiltinProductInt, 1));
-    case Type.REAL() then Expression.REAL(Expression.fold(arg, evalBuiltinProductReal, 1.0));
+  result := match arg
+    case Expression.ARRAY()
+      then match Type.arrayElementType(Expression.typeOf(arg))
+        case Type.INTEGER() then Expression.INTEGER(Expression.fold(arg, evalBuiltinProductInt, 1));
+        case Type.REAL() then Expression.REAL(Expression.fold(arg, evalBuiltinProductReal, 1.0));
+        else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+      end match;
+
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
-  end matchcontinue;
+  end match;
 end evalBuiltinProduct;
 
 function evalBuiltinProductInt
@@ -2073,11 +2096,16 @@ function evalBuiltinSum
   input Expression arg;
   output Expression result;
 algorithm
-  result := matchcontinue Type.arrayElementType(Expression.typeOf(arg))
-    case Type.INTEGER() then Expression.INTEGER(Expression.fold(arg, evalBuiltinSumInt, 0));
-    case Type.REAL() then Expression.REAL(Expression.fold(arg, evalBuiltinSumReal, 0.0));
+  result := match arg
+    case Expression.ARRAY()
+      then match Type.arrayElementType(Expression.typeOf(arg))
+        case Type.INTEGER() then Expression.INTEGER(Expression.fold(arg, evalBuiltinSumInt, 0));
+        case Type.REAL() then Expression.REAL(Expression.fold(arg, evalBuiltinSumReal, 0.0));
+        else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
+      end match;
+
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
-  end matchcontinue;
+  end match;
 end evalBuiltinSum;
 
 function evalBuiltinSumInt

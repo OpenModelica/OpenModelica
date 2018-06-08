@@ -61,6 +61,7 @@ public
   import NFClassTree.ClassTree;
   import NFClass.Class;
   import NFComponentRef.Origin;
+  import NFTyping.ExpOrigin;
 
   record INTEGER
     Integer value;
@@ -2816,6 +2817,18 @@ public
     end match;
   end isIterator;
 
+  function containsIterator
+    input Expression exp;
+    input ExpOrigin.Type origin;
+    output Boolean iter;
+  algorithm
+    if intBitAnd(origin, ExpOrigin.FOR) > 0 then
+      iter := contains(exp, isIterator);
+    else
+      iter := false;
+    end if;
+  end containsIterator;
+
   function isZero
     input Expression exp;
     output Boolean isZero;
@@ -2828,6 +2841,20 @@ public
       else false;
     end match;
   end isZero;
+
+  function isPositive
+    input Expression exp;
+    output Boolean positive;
+  algorithm
+    positive := match exp
+      case INTEGER() then exp.value > 0;
+      case REAL() then exp.value > 0;
+      case BOOLEAN() then true;
+      case ENUM_LITERAL() then true;
+      case CAST() then isPositive(exp.exp);
+      case UNARY() then not isPositive(exp.exp);
+    end match;
+  end isPositive;
 
   function isScalarLiteral
     input Expression exp;
@@ -2855,6 +2882,9 @@ public
       case ENUM_LITERAL() then true;
       case ARRAY() then List.all(exp.elements, isLiteral);
       case RECORD() then List.all(exp.elements, isLiteral);
+      case RANGE() then isLiteral(exp.start) and
+                        isLiteral(exp.stop) and
+                        Util.applyOptionOrDefault(exp.step, isLiteral, true);
       else false;
     end match;
   end isLiteral;

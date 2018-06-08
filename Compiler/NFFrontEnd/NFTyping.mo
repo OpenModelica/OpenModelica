@@ -427,13 +427,9 @@ algorithm
         (exp, ty, var) := typeExp(range, intBitOr(origin, ExpOrigin.ITERATION_RANGE), info, replaceConstants = false);
 
         // If the iteration range is structural, it must be a parameter expression.
-        if structural then
-          if var > Variability.PARAMETER then
-            Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
-              {Expression.toString(exp)}, info);
-          else
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.RANGE(info));
-          end if;
+        if structural and var > Variability.PARAMETER then
+          Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
+            {Expression.toString(exp)}, info);
         end if;
 
         // The iteration range must be a vector expression.
@@ -946,7 +942,8 @@ algorithm
         (cref, ty, variability) := typeCref(exp.cref, origin, info);
         e1 := Expression.CREF(ty, cref);
 
-        if replaceConstants and variability <= Variability.STRUCTURAL_PARAMETER then
+        if replaceConstants and variability <= Variability.STRUCTURAL_PARAMETER and
+           not Expression.containsIterator(e1, origin) then
           e1 := Ceval.evalExp(e1, Ceval.EvalTarget.GENERIC(info));
         end if;
       then
@@ -1607,12 +1604,6 @@ algorithm
     ostep_ty := NONE();
   end if;
 
-  if variability <= Variability.STRUCTURAL_PARAMETER then
-    start_exp := Ceval.evalExp(start_exp, Ceval.EvalTarget.IGNORE_ERRORS());
-    ostep_exp := Ceval.evalExpOpt(ostep_exp, Ceval.EvalTarget.IGNORE_ERRORS());
-    stop_exp := Ceval.evalExp(stop_exp, Ceval.EvalTarget.IGNORE_ERRORS());
-  end if;
-
   rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);
   rangeExp := Expression.RANGE(rangeType, start_exp, ostep_exp, stop_exp);
 end typeRange;
@@ -1691,7 +1682,8 @@ algorithm
           fail();
         end if;
 
-        if variability <= Variability.STRUCTURAL_PARAMETER then
+        if variability <= Variability.STRUCTURAL_PARAMETER and
+           not Expression.containsIterator(index, origin) then
           // Evaluate the index if it's a constant.
           index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
 

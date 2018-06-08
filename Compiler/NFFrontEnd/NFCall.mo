@@ -816,6 +816,7 @@ protected
     InstNode iter;
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
+    ExpOrigin.Type next_origin;
   algorithm
     (call, ty, variability) := match call
       // This is always a call to the function array()/$array(). See instIteratorCall.
@@ -833,7 +834,9 @@ protected
           end for;
           iters := listReverseInPlace(iters);
 
-          (arg, ty) := Typing.typeExp(call.exp, origin, info);
+          // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
+          next_origin := intBitOr(origin, ExpOrigin.FOR);
+          (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
           ty := Type.liftArrayLeftList(ty, dims);
         then
           (TYPED_MAP_CALL(ty, variability, arg, iters), ty, variability);

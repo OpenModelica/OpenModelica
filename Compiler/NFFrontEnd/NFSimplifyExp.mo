@@ -119,7 +119,7 @@ algorithm
 
         // Use Ceval for builtin pure functions with literal arguments.
         if builtin and not Function.isImpure(call.fn) and List.all(args, Expression.isLiteral) then
-          callExp := Ceval.evalBuiltinCall(call.fn, args, EvalTarget.IGNORE_ERRORS());
+          callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
         else
           callExp := Expression.CALL(call);
         end if;

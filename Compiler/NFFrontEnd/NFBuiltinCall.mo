@@ -802,17 +802,21 @@ protected
     Type arg_ty;
     Function fn;
     list<Dimension> dims;
+    Boolean evaluated;
   algorithm
     ty_args := {fillArg};
     dims := {};
+    evaluated := true;
 
     // Type the dimension arguments.
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
 
-      if arg_var <= Variability.STRUCTURAL_PARAMETER then
+      if arg_var <= Variability.STRUCTURAL_PARAMETER and not Expression.containsIterator(arg, origin) then
         arg := Ceval.evalExp(arg);
         arg_ty := Expression.typeOf(arg);
+      else
+        evaluated := false;
       end if;
 
       // Each dimension argument must be an Integer expression.
@@ -833,7 +837,7 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if variability <= Variability.STRUCTURAL_PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+    if evaluated and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
       callExp := Ceval.evalBuiltinFill(ty_args);
     else
       callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
