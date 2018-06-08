@@ -18,6 +18,6 @@ end FuncBuiltinProduct;
 //   Real r1 = 6.0;
 //   Real r2 = 6.0;
 //   Real r3 = 362880.0;
-//   Real r4 = /*Real*/(product(1:0));
+//   Real r4 = 1.0;
 // end FuncBuiltinProduct;
 // endResult

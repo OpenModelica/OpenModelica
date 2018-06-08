@@ -18,6 +18,6 @@ end FuncBuiltinSum;
 //   Real r1 = 6.0;
 //   Real r2 = 6.0;
 //   Real r3 = 45.0;
-//   Real r4 = /*Real*/(sum(1:0));
+//   Real r4 = 0.0;
 // end FuncBuiltinSum;
 // endResult

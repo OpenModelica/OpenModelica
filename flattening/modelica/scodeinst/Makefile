@@ -347,6 +347,7 @@ ForEquation3.mo \
 ForEquation4.mo \
 ForEquation5.mo \
 ForEquation6.mo \
+ForEquation7.mo \
 ForEquationEnum1.mo \
 ForEquationEnum2.mo \
 ForEquationNonParam.mo \
