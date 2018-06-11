@@ -5033,7 +5033,7 @@ algorithm
       equation
         ty =  DAE.T_FUNCTION(
                 {},
-                DAE.T_REAL_DEFAULT,
+                DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("firstTick"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, pre, info);
@@ -5045,7 +5045,7 @@ algorithm
         ty1 = Types.arrayElementType(Types.getPropType(prop1));
         ty =  DAE.T_FUNCTION(
                 {DAE.FUNCARG("u",ty1,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-                DAE.T_REAL_DEFAULT,
+                DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("firstTick"));
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, pre, info);
