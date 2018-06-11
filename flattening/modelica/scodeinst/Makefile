@@ -438,6 +438,11 @@ FuncVectorizatioBuiltin.mo \
 FuncVectorizatioMap1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
+FunctionDerivative1.mo \
+FunctionDerivativeInvalidInput1.mo \
+FunctionDerivativeInvalidOrder1.mo \
+FunctionDerivativeInvalidOrder2.mo \
+FunctionDerivativeMissingName1.mo \
 FunctionExtends1.mo \
 FunctionMultiOutput1.mo \
 FunctionMultiOutput2.mo \
