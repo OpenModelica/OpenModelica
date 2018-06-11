@@ -925,7 +925,7 @@ algorithm
           else DAE.FunctionDefinition.FUNCTION_DEF(listReverse(elems));
         end match;
       then
-        Function.toDAE(func, {def});
+        Function.toDAE(func, def);
 
     case Class.INSTANCED_CLASS(restriction = Restriction.RECORD_CONSTRUCTOR())
       then DAE.Function.RECORD_CONSTRUCTOR(Function.name(func),

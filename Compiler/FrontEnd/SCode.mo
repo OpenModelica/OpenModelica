@@ -3921,6 +3921,60 @@ algorithm
   end match;
 end hasNamedAnnotation;
 
+public function lookupNamedAnnotation
+  "Returns the modifier with the given name if it can be found in the
+   annotation, otherwise an empty modifier."
+  input Annotation ann;
+  input String name;
+  output Mod mod;
+protected
+  list<SubMod> submods;
+  String id;
+algorithm
+  mod := match ann
+    case Annotation.ANNOTATION(modification = Mod.MOD(subModLst = submods))
+      algorithm
+        for sm in submods loop
+          SubMod.NAMEMOD(id, mod) := sm;
+
+          if id == name then
+            return;
+          end if;
+        end for;
+      then
+        Mod.NOMOD();
+
+    else Mod.NOMOD();
+  end match;
+end lookupNamedAnnotation;
+
+public function lookupNamedAnnotations
+  "Returns a list of modifiers with the given name found in the annotation."
+  input Annotation ann;
+  input String name;
+  output list<Mod> mods = {};
+protected
+  list<SubMod> submods;
+  String id;
+  Mod mod;
+algorithm
+  mods := match ann
+    case Annotation.ANNOTATION(modification = Mod.MOD(subModLst = submods))
+      algorithm
+        for sm in submods loop
+          SubMod.NAMEMOD(id, mod) := sm;
+
+          if id == name then
+            mods := mod :: mods;
+          end if;
+        end for;
+      then
+        mods;
+
+    else {};
+  end match;
+end lookupNamedAnnotations;
+
 public function hasBooleanNamedAnnotationInClass
   input Element inClass;
   input String namedAnnotation;

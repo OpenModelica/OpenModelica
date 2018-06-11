@@ -52,6 +52,7 @@ import ElementSource;
 import ModelicaExternalC;
 import System;
 import NFTyping.ExpOrigin;
+import SCode;
 
 encapsulated package ReplTree
   import BaseAvlTree;
@@ -759,21 +760,18 @@ end isKnownExternalFunc;
 
 function isKnownLibrary
   input Option<SCode.Annotation> extAnnotation;
-  output Boolean isKnown;
+  output Boolean isKnown = false;
 protected
   SCode.Annotation ann;
-  Absyn.Exp exp;
+  Option<Absyn.Exp> oexp;
 algorithm
   if isSome(extAnnotation) then
     SOME(ann) := extAnnotation;
+    oexp := SCode.getModifierBinding(SCode.lookupNamedAnnotation(ann, "Library"));
 
-    try
-      isKnown := isKnownLibraryExp(SCode.getNamedAnnotation(ann, "Library"));
-    else
-      isKnown := false;
-    end try;
-  else
-    isKnown := false;
+    if isSome(oexp) then
+      isKnown := isKnownLibraryExp(Util.getOption(oexp));
+    end if;
   end if;
 end isKnownLibrary;
 

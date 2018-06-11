@@ -799,6 +799,12 @@ public constant Message UNASSIGNED_FUNCTION_OUTPUT = MESSAGE(335, TRANSLATION(),
   Util.gettext("Output parameter %s was not assigned a value"));
 public constant Message INVALID_WHEN_STATEMENT_CONTEXT = MESSAGE(336, TRANSLATION(), ERROR(),
   Util.gettext("A when-statement may not be used inside a function or a while, if, or for-clause."));
+public constant Message MISSING_FUNCTION_DERIVATIVE_NAME = MESSAGE(337, TRANSLATION(), WARNING(),
+  Util.gettext("Derivative annotation for function ‘%s‘ does not specify a derivative function."));
+public constant Message INVALID_FUNCTION_DERIVATIVE_ATTR = MESSAGE(338, TRANSLATION(), WARNING(),
+  Util.gettext("‘%s‘ is not a valid function derivative attribute."));
+public constant Message INVALID_FUNCTION_DERIVATIVE_INPUT = MESSAGE(339, TRANSLATION(), ERROR(),
+  Util.gettext("‘%s‘ is not an input of function ‘%s‘."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

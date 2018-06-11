@@ -163,7 +163,7 @@ algorithm
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   collected := Pointer.create(false);
   InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
-    {out_rec}, locals, {}, Type.UNKNOWN(), attr, collected, Pointer.create(0)), false);
+    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, collected, Pointer.create(0)), false);
 end instDefaultConstructor;
 
 function collectRecordParams

@@ -313,6 +313,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFFlatModel.mo",
     "../NFFrontEnd/NFFlatten.mo",
     "../NFFrontEnd/NFFunction.mo",
+    "../NFFrontEnd/NFFunctionDerivative.mo",
     "../NFFrontEnd/NFInst.mo",
     "../NFFrontEnd/NFClass.mo",
     "../NFFrontEnd/NFClassTree.mo",

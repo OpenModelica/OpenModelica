@@ -1090,6 +1090,12 @@ algorithm
     Function.collect(fn);
     funcs := FunctionTree.add(funcs, Function.name(fn), fn);
     funcs := collectClassFunctions(fn.node, funcs);
+
+    for fn_der in fn.derivatives loop
+      for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+        funcs := flattenFunction(der_fn, funcs);
+      end for;
+    end for;
   end if;
 end flattenFunction;
 
