@@ -1131,6 +1131,10 @@ public constant Message UNABLE_TO_UNZIP_FILE = MESSAGE(7020, SCRIPTING(), ERROR(
   Util.gettext("Unable to unzip the file: %s."));
 public constant Message EXPECTED_ENCRYPTED_PACKAGE = MESSAGE(7021, SCRIPTING(), ERROR(),
   Util.gettext("Expected encrypted package with .mol extension got: %s."));
+public constant Message SAVE_ENCRYPTED_CLASS_ERROR = MESSAGE(7022, SCRIPTING(), ERROR(),
+  Util.gettext("Cannot save the encrypted class. Encrypted classes are read-only."));
+public constant Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = MESSAGE(7023, SCRIPTING(), ERROR(),
+  Util.gettext("Cannot access encrypted and protected class contents."));
 
 protected
 

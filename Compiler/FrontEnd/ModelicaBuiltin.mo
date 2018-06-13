@@ -2466,7 +2466,7 @@ end buildModelFMU;
 function buildEncryptedPackage
   input TypeName className "the class that should encrypted";
   output Boolean success;
-  output String commandOutput "Output of the packagetool execuable";
+  output String commandOutput "Output of the packagetool executable";
 external "builtin";
 annotation(preferredView="text");
 end buildEncryptedPackage;

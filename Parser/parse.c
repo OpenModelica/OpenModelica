@@ -424,6 +424,11 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
     return parseEncryptedFile(fileName, members.filename_C, langStd, runningTestsuite);
   }
+#else
+  if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
+    c_add_message(NULL,-1, ErrorType_scripting, ErrorLevel_error, gettext("Cannot load the encrypted package. OpenModelica is not compiled with encryption support."), NULL, 0);
+    return NULL;
+  }
 #endif
 
   /*

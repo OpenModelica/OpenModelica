@@ -316,7 +316,7 @@ algorithm
     // see https://trac.openmodelica.org/OpenModelica/ticket/2422
     // prio = if_(stringEq(prio,""), "default", prio);
     mp := System.realpath(dir + "/../") + System.groupDelimiter() + Settings.getModelicaPath(Config.getRunningTestsuite());
-    (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, false);
+    (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
@@ -551,7 +551,7 @@ algorithm
       array<list<Integer>> m,mt;
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3,gcStatRec;
       Absyn.ComponentRef cr,cr_1;
-      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status;
+      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status, access;
       list<Integer> is;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
@@ -635,8 +635,14 @@ algorithm
 
     case (cache,_,"setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},_)
       equation
-        (b,p) = Interactive.setSourceFile(path, str, SymbolTable.getAbsyn());
-        SymbolTable.setAbsyn(p);
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if (access >= 9) then // i.e., The class is not encrypted.
+          (b,p) = Interactive.setSourceFile(path, str, SymbolTable.getAbsyn());
+          SymbolTable.setAbsyn(p);
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b = false;
+        end if;
       then
         (cache,Values.BOOL(b));
 

@@ -702,7 +702,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2,v3;
       Absyn.ComponentRef cr,cr_1;
-      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status;
+      Integer size,resI,i,i1,i2,i3,n,curveStyle,numberOfIntervals, status, access;
       Option<Integer> fmiContext, fmiInstance, fmiModelVariablesInstance; /* void* implementation: DO NOT UNBOX THE POINTER AS THAT MIGHT CHANGE IT. Just treat this as an opaque type. */
       Integer fmiLogLevel, direction;
       list<Integer> is;
@@ -1858,24 +1858,37 @@ algorithm
     case (cache,_,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       algorithm
         b := false;
-        absynClass := Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        str := Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
-        try
-          System.writeFile(filename, str);
-          b := true;
+        Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if (access >= 9) then // i.e., The class is not encrypted.
+          absynClass := Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
+          str := Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP()),true);
+          try
+            System.writeFile(filename, str);
+            b := true;
+          else
+            Error.addMessage(Error.WRITING_FILE_ERROR, {filename});
+          end try;
         else
-          Error.addMessage(Error.WRITING_FILE_ERROR, {filename});
-        end try;
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b := false;
+        end if;
       then
-        (cache,Values.BOOL(true));
+        (cache,Values.BOOL(b));
 
     case (cache,_,"save",{Values.CODE(Absyn.C_TYPENAME(className))},_)
       equation
-        (newp,filename) = Interactive.getContainedClassAndFile(className, SymbolTable.getAbsyn());
-        str = Dump.unparseStr(newp);
-        System.writeFile(filename, str);
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(className, SymbolTable.getAbsyn());
+        if (access >= 9) then // i.e., The class is not encrypted.
+	        (newp,filename) = Interactive.getContainedClassAndFile(className, SymbolTable.getAbsyn());
+	        str = Dump.unparseStr(newp);
+	        System.writeFile(filename, str);
+	        b = true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b = false;
+        end if;
       then
-        (cache,Values.BOOL(true));
+        (cache,Values.BOOL(b));
 
     case (cache,_,"save",{Values.CODE(Absyn.C_TYPENAME(_))},_)
     then (cache,Values.BOOL(false));
@@ -1897,9 +1910,16 @@ algorithm
     case (cache,_,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                     Values.BOOL(b1), Values.BOOL(b2)},_)
       equation
-        saveTotalModel(filename, classpath, b1, b2);
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if (access >= 9) then // i.e., Access.documentation
+          saveTotalModel(filename, classpath, b1, b2);
+          b = true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b = false;
+        end if;
       then
-        (cache, Values.BOOL(true));
+        (cache, Values.BOOL(b));
 
     case (cache,_,"saveTotalModel",{Values.STRING(_),Values.CODE(Absyn.C_TYPENAME(_)),
                                     Values.BOOL(_), Values.BOOL(_)},_)
@@ -1907,7 +1927,13 @@ algorithm
 
     case (cache,_,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
-        ((str1,str2,str3)) = Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if (access >= 3) then // i.e., Access.documentation
+          ((str1,str2,str3)) = Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          ((str1,str2,str3)) = ("", "", "");
+        end if;
       then
         (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)}));
 
@@ -2578,7 +2604,13 @@ algorithm
     case (cache,_,"getConnectionCount",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
-        n = listLength(Interactive.getConnections(absynClass));
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if (access >= 4) then // i.e., Access.diagram
+          n = listLength(Interactive.getConnections(absynClass));
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          n = 0;
+        end if;
       then
         (cache,Values.INTEGER(n));
 
@@ -2586,7 +2618,13 @@ algorithm
 
     case (cache,_,"getNthConnection",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},_)
       equation
-        vals = Interactive.getNthConnection(Absyn.pathToCref(path), SymbolTable.getAbsyn(), n);
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if (access >= 4) then // i.e., Access.diagram
+          vals = Interactive.getNthConnection(Absyn.pathToCref(path), SymbolTable.getAbsyn(), n);
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          vals = {};
+        end if;
       then
         (cache,ValuesUtil.makeArray(vals));
 
@@ -7063,69 +7101,6 @@ algorithm
   end matchcontinue;
 end getDymolaStateAnnotationModStr;
 
-protected function getAccessAnnotation
-  "Returns the Protection(access=) annotation of a class.
-  This is annotated with the annotation:
-  annotation(Protection(access = Access.documentation)); in the class definition"
-  input Absyn.Path className;
-  input Absyn.Program p;
-  output String access;
-algorithm
-  access := match(className,p)
-    local
-      String accessStr;
-    case(_,_)
-      equation
-        accessStr = Interactive.getNamedAnnotation(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
-      then
-        accessStr;
-    else "";
-  end match;
-end getAccessAnnotation;
-
-protected function getAccessAnnotationString
-  "Extractor function for getAccessAnnotation"
-  input Option<Absyn.Modification> mod;
-  output String access;
-algorithm
-  access := match (mod)
-    local
-      list<Absyn.ElementArg> arglst;
-
-    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
-      then getAccessAnnotationString2(arglst);
-
-  end match;
-end getAccessAnnotationString;
-
-protected function getAccessAnnotationString2
-  "Extractor function for getAccessAnnotation"
-  input list<Absyn.ElementArg> eltArgs;
-  output String access;
-algorithm
-  access := match eltArgs
-    local
-      list<Absyn.ElementArg> xs;
-      Absyn.ComponentRef cref;
-      String name;
-      Absyn.Info info;
-
-    case ({}) then "";
-
-    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="access"),
-          modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.CREF(cref)))))::_)
-      equation
-        name = Dump.printComponentRefStr(cref);
-      then name;
-
-    case (_::xs)
-      equation
-        name = getAccessAnnotationString2(xs);
-      then name;
-
-    end match;
-end getAccessAnnotationString2;
-
 protected function getClassInformation
 "author: PA
   Returns all the possible class information.
@@ -7161,7 +7136,7 @@ algorithm
   version := CevalScript.getPackageVersion(path, p);
   Absyn.STRING(preferredView) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("preferredView"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
   isState := getDymolaStateAnnotation(path, p);
-  access := getAccessAnnotation(path, p);
+  access := Interactive.getAccessAnnotation(path, p);
   res_1 := Values.TUPLE({
     Values.STRING(res),
     Values.STRING(cmt),

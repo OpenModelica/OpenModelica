@@ -916,7 +916,7 @@ protected
   Absyn.ComponentRef crident, subident;
   Absyn.Path path;
   list<Absyn.NamedArg> nargs;
-  Integer n;
+  Integer n, access;
   String cmt, variability, causality/*, isField*/;
   Absyn.Class cls;
   Absyn.Modification mod;
@@ -1031,20 +1031,32 @@ algorithm
     case "getComponents"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        outResult := getComponents(cr, useQuotes(nargs));
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
+        if (access >= 4) then // i.e., Access.diagram
+          nargs := getApiFunctionNamedArgs(inStatement);
+          outResult := getComponents(cr, useQuotes(nargs));
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
       then
         outResult;
 
     case "getComponentAnnotations"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        ErrorExt.setCheckpoint("getComponentAnnotations");
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getComponentAnnotations(cr, p);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getComponentAnnotations");
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
+        if (access >= 4) then // i.e., Access.diagram
+          ErrorExt.setCheckpoint("getComponentAnnotations");
+          evalParamAnn := Config.getEvaluateParametersInAnnotations();
+          Config.setEvaluateParametersInAnnotations(true);
+          outResult := getComponentAnnotations(cr, p);
+          Config.setEvaluateParametersInAnnotations(evalParamAnn);
+          ErrorExt.rollBack("getComponentAnnotations");
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
       then
         outResult;
 
@@ -1128,13 +1140,19 @@ algorithm
     case "getNthConnectionAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        ErrorExt.setCheckpoint("getNthConnectionAnnotation");
-        path := Absyn.crefToPath(cr);
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthConnectionAnnotation(path, p, n);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getNthConnectionAnnotation");
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
+        if (access >= 4) then // i.e., Access.diagram
+          ErrorExt.setCheckpoint("getNthConnectionAnnotation");
+          path := Absyn.crefToPath(cr);
+          evalParamAnn := Config.getEvaluateParametersInAnnotations();
+          Config.setEvaluateParametersInAnnotations(true);
+          outResult := getNthConnectionAnnotation(path, p, n);
+          Config.setEvaluateParametersInAnnotations(evalParamAnn);
+          ErrorExt.rollBack("getNthConnectionAnnotation");
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
       then
         outResult;
 
@@ -1165,25 +1183,37 @@ algorithm
     case "getIconAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        graphicsExpMode := Config.getGraphicsExpMode();
-        Config.setEvaluateParametersInAnnotations(true);
-        Config.setGraphicsExpMode(true);
-        outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        Config.setGraphicsExpMode(graphicsExpMode);
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
+        if (access >= 2) then // i.e., Access.icon
+          evalParamAnn := Config.getEvaluateParametersInAnnotations();
+          graphicsExpMode := Config.getGraphicsExpMode();
+          Config.setEvaluateParametersInAnnotations(true);
+          Config.setGraphicsExpMode(true);
+          outResult := getIconAnnotation(Absyn.crefToPath(cr), p);
+          Config.setEvaluateParametersInAnnotations(evalParamAnn);
+          Config.setGraphicsExpMode(graphicsExpMode);
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
       then
         outResult;
 
     case "getDiagramAnnotation"
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
-        ErrorExt.setCheckpoint("getDiagramAnnotation");
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getDiagramAnnotation(Absyn.crefToPath(cr), p);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        ErrorExt.rollBack("getDiagramAnnotation");
+        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(Absyn.crefToPath(cr), p);
+        if (access >= 4) then // i.e., Access.diagram
+          ErrorExt.setCheckpoint("getDiagramAnnotation");
+          evalParamAnn := Config.getEvaluateParametersInAnnotations();
+          Config.setEvaluateParametersInAnnotations(true);
+          outResult := getDiagramAnnotation(Absyn.crefToPath(cr), p);
+          Config.setEvaluateParametersInAnnotations(evalParamAnn);
+          ErrorExt.rollBack("getDiagramAnnotation");
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          outResult := "";
+        end if;
       then
         outResult;
 
@@ -18083,6 +18113,111 @@ algorithm
     else strs;
   end match;
 end getInstantiatedParametersAndValues;
+
+public function getAccessAnnotation
+  "Returns the Protection(access=) annotation of a class.
+  This is annotated with the annotation:
+  annotation(Protection(access = Access.documentation)); in the class definition"
+  input Absyn.Path className;
+  input Absyn.Program p;
+  output String access;
+algorithm
+  access := match(className,p)
+    local
+      String accessStr;
+    case(_,_)
+      equation
+        accessStr = getNamedAnnotation(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
+      then
+        accessStr;
+    else "";
+  end match;
+end getAccessAnnotation;
+
+protected function getAccessAnnotationString
+  "Extractor function for getAccessAnnotation"
+  input Option<Absyn.Modification> mod;
+  output String access;
+algorithm
+  access := match (mod)
+    local
+      list<Absyn.ElementArg> arglst;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      then getAccessAnnotationString2(arglst);
+
+  end match;
+end getAccessAnnotationString;
+
+protected function getAccessAnnotationString2
+  "Extractor function for getAccessAnnotation"
+  input list<Absyn.ElementArg> eltArgs;
+  output String access;
+algorithm
+  access := match eltArgs
+    local
+      list<Absyn.ElementArg> xs;
+      Absyn.ComponentRef cref;
+      String name;
+      Absyn.Info info;
+
+    case ({}) then "";
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="access"),
+          modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.CREF(cref)))))::_)
+      equation
+        name = Dump.printComponentRefStr(cref);
+      then name;
+
+    case (_::xs)
+      equation
+        name = getAccessAnnotationString2(xs);
+      then name;
+
+    end match;
+end getAccessAnnotationString2;
+
+public function checkAccessAnnotationAndEncryption
+  input Absyn.Path path;
+  input Absyn.Program p;
+  output Values.Value val;
+protected
+  String access, fileName;
+  Boolean encryptedClass;
+algorithm
+  try
+    Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := getPathedClassInProgram(path, p);
+    encryptedClass := Util.endsWith(fileName, ".moc");
+    if encryptedClass then
+      access := getAccessAnnotation(path, p);
+      if access == "Access.hide" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("hide"))), 1);
+      elseif access == "Access.icon" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("icon"))), 2);
+      elseif access == "Access.documentation" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("documentation"))), 3);
+      elseif access == "Access.diagram" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("diagram"))), 4);
+      elseif access == "Access.nonPackageText" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("nonPackageText"))), 5);
+      elseif access == "Access.nonPackageDuplicate" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("nonPackageDuplicate"))), 6);
+      elseif access == "Access.packageText" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("packageText"))), 7);
+      elseif access == "Access.packageDuplicate" then
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("packageDuplicate"))), 8);
+      elseif not Absyn.pathIsIdent(path) then // if the class doesn't have the access annotation then look for it in the parent class.
+        val := checkAccessAnnotationAndEncryption(Absyn.stripLast(path), p);
+      else // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
+        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("documentation"))), 3);
+      end if;
+    else
+      val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("all"))), 9);
+    end if;
+  else
+   val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("all"))), 9);
+  end try;
+end checkAccessAnnotationAndEncryption;
 
 annotation(__OpenModelica_Interface="backend");
 end Interactive;
