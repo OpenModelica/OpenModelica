@@ -163,6 +163,7 @@ public:
   QAction* getCheckModelAction() {return mpCheckModelAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getExportFMUAction() {return mpExportFMUAction;}
+  QAction* getExportEncryptedPackageAction() {return mpExportEncryptedPackageAction;}
   QAction* getExportXMLAction() {return mpExportXMLAction;}
   QAction* getExportFigaroAction() {return mpExportFigaroAction;}
   QAction* getLineShapeAction() {return mpLineShapeAction;}
@@ -212,6 +213,7 @@ public:
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFMU(LibraryTreeItem *pLibraryTreeItem);
+  void exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem);
   void exportModelXML(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
   void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
@@ -278,6 +280,7 @@ private:
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
+  QAction *mpLoadEncryptedLibraryAction;
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   // CompositeModel File Actions
@@ -331,6 +334,7 @@ private:
   QAction *mpImportFMUAction;
   QAction *mpImportFMUModelDescriptionAction;
   // Export Menu
+  QAction *mpExportEncryptedPackageAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   // Debug Menu
@@ -428,6 +432,7 @@ public slots:
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
+  void loadEncryptedLibrary();
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void createNewCompositeModelFile();
@@ -466,6 +471,7 @@ public slots:
   void exportModelFMU();
   void importModelFMU();
   void importFMUModelDescription();
+  void exportEncryptedPackage();
   void exportModelXML();
   void exportModelFigaro();
   void showOpenModelicaCommandPrompt();

@@ -3253,8 +3253,10 @@ void ModelWidget::loadComponents()
 {
   if (!mComponentsLoaded) {
     drawModelInheritedClassComponents(this, StringHandler::Icon);
-    getModelComponents();
-    drawModelIconComponents();
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+      getModelComponents();
+      drawModelIconComponents();
+    }
     mComponentsLoaded = true;
   }
 }
@@ -3289,9 +3291,11 @@ void ModelWidget::loadConnections()
 {
   if (!mConnectionsLoaded) {
     drawModelInheritedClassConnections(this);
-    getModelConnections();
-    getModelTransitions();
-    getModelInitialStates();
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {
+      getModelConnections();
+      getModelTransitions();
+      getModelInitialStates();
+    }
     mConnectionsLoaded = true;
   }
 }
@@ -3795,7 +3799,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString modelicaText = pModelicaEditor->getPlainText();
   QString stringToLoad;
-  LibraryTreeItem *pParentLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
   removeDynamicResults(); // show static values during editing
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
     stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
@@ -3807,6 +3811,9 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * then update the package contents with new invalid code because we open P when user clicks on the error message.
      */
     if (mpLibraryTreeItem->isInPackageOneFile()) {
+      if (!pParentLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeModel->showModelWidget(pParentLibraryTreeItem, false);
+      }
       pParentLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
       if (pModelicaEditor) {
@@ -4702,16 +4709,23 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
     LibraryTreeItem::Access access = mpLibraryTreeItem->getAccess();
     switch (access) {
       case LibraryTreeItem::icon:
+        mpIconViewToolButton->setChecked(true);
+        mpDiagramViewToolButton->setEnabled(false);
+        mpTextViewToolButton->setEnabled(false);
+        mpDocumentationViewToolButton->setEnabled(false);
+        break;
       case LibraryTreeItem::documentation:
         mpIconViewToolButton->setChecked(true);
         mpDiagramViewToolButton->setEnabled(false);
         mpTextViewToolButton->setEnabled(false);
+        mpDocumentationViewToolButton->setEnabled(true);
         break;
       case LibraryTreeItem::diagram:
         if (mpTextViewToolButton->isChecked()) {
           mpDiagramViewToolButton->setChecked(true);
         }
         mpTextViewToolButton->setEnabled(false);
+        mpDocumentationViewToolButton->setEnabled(true);
         break;
       case LibraryTreeItem::nonPackageText:
       case LibraryTreeItem::nonPackageDuplicate:
@@ -4724,10 +4738,12 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
           mpDiagramViewToolButton->setEnabled(true);
           mpTextViewToolButton->setEnabled(true);
         }
+        mpDocumentationViewToolButton->setEnabled(true);
         break;
       default:
         mpDiagramViewToolButton->setEnabled(true);
         mpTextViewToolButton->setEnabled(true);
+        mpDocumentationViewToolButton->setEnabled(true);
         break;
     }
   }
@@ -6449,6 +6465,10 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getCheckModelAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportFMUAction()->setEnabled(enabled && modelica);
+  bool packageSaveAsFolder = (enabled && pLibraryTreeItem && pLibraryTreeItem->isTopLevel()
+                              && pLibraryTreeItem->getRestriction() == StringHandler::Package
+                              && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure);
+  MainWindow::instance()->getExportEncryptedPackageAction()->setEnabled(packageSaveAsFolder && enabled && modelica);
   MainWindow::instance()->getExportXMLAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportFigaroAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);

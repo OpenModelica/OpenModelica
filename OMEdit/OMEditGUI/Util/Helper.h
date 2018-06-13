@@ -56,6 +56,7 @@ public:
   static QString OpenModelicaLibrary;
   static QString OMCServerName;
   static QString omFileTypes;
+  static QString omEncryptedFileTypes;
   static QString omnotebookFileTypes;
   static QString ngspiceNetlistFileTypes;
   static QString imageFileTypes;
@@ -164,6 +165,8 @@ public:
   static QString instantiateModelTip;
   static QString exportFMU;
   static QString exportFMUTip;
+  static QString exportEncryptedPackage;
+  static QString exportEncryptedPackageTip;
   static QString importFMU;
   static QString importFMUTip;
   static QString exportXML;
@@ -419,6 +422,7 @@ public:
     FMU_GENERATED,
     XML_GENERATED,
     FIGARO_GENERATED,
+    ENCRYPTED_PACKAGE_GENERATED,
     UNLOAD_CLASS_MSG,
     DELETE_CLASS_MSG,
     UNLOAD_TEXT_FILE_MSG,

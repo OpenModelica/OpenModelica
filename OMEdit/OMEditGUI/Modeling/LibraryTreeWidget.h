@@ -366,6 +366,7 @@ private:
   QAction *mpRenameAction;
   QAction *mpDeleteAction;
   QAction *mpExportFMUAction;
+  QAction *mpExportEncryptedPackageAction;
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   QAction *mpUpdateBindingsAction;
@@ -414,6 +415,7 @@ public slots:
   void renameLibraryTreeItem();
   void deleteTextFile();
   void exportModelFMU();
+  void exportEncryptedPackage();
   void exportModelXML();
   void exportModelFigaro();
   void updateBindings();
@@ -441,6 +443,7 @@ public:
   void openFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true, bool checkFileExists = false,
                 bool loadExternalModel = false);
   void openModelicaFile(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
+  void openEncrytpedModelicaLibrary(QString fileName, QString encoding = Helper::utf8, bool showProgress = true);
   void openCompositeModelOrTextFile(QFileInfo fileInfo, bool showProgress = true);
   void openDirectory(QFileInfo fileInfo, bool showProgress = true);
   void openOMSModelFile(QFileInfo fileInfo, bool showProgress = true);
