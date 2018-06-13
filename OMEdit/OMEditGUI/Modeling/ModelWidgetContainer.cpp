@@ -3667,7 +3667,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString modelicaText = pModelicaEditor->getPlainText();
   QString stringToLoad;
-  LibraryTreeItem *pParentLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
   removeDynamicResults(); // show static values during editing
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
     stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
@@ -3679,6 +3679,9 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
      * then update the package contents with new invalid code because we open P when user clicks on the error message.
      */
     if (mpLibraryTreeItem->isInPackageOneFile()) {
+      if (!pParentLibraryTreeItem->getModelWidget()) {
+        pLibraryTreeModel->showModelWidget(pParentLibraryTreeItem, false);
+      }
       pParentLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
       ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(pParentLibraryTreeItem->getModelWidget()->getEditor());
       if (pModelicaEditor) {
