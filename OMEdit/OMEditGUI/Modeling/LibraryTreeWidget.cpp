@@ -2786,6 +2786,10 @@ void LibraryTreeView::createActions()
   mpExportFMUAction = new QAction(QIcon(":/Resources/icons/export-fmu.svg"), Helper::exportFMU, this);
   mpExportFMUAction->setStatusTip(Helper::exportFMUTip);
   connect(mpExportFMUAction, SIGNAL(triggered()), SLOT(exportModelFMU()));
+  // Export encrypted package Action
+  mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
+  mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
+  connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
   // Export XML Action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
@@ -2950,6 +2954,10 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpExportFMUAction);
+          if (pLibraryTreeItem->isTopLevel() && pLibraryTreeItem->getRestriction() == StringHandler::Package
+              && pLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure) {
+            menu.addAction(mpExportEncryptedPackageAction);
+          }
           menu.addAction(mpExportXMLAction);
           menu.addAction(mpExportFigaroAction);
           if (pLibraryTreeItem->isSimulationAllowed()) {
@@ -3409,6 +3417,14 @@ void LibraryTreeView::exportModelFMU()
   }
 }
 
+void LibraryTreeView::exportEncryptedPackage()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    MainWindow::instance()->exportEncryptedPackage(pLibraryTreeItem);
+  }
+}
+
 /*!
  * \brief LibraryTreeView::exportModelXML
  * Exports the selected LibraryTreeItem to XML.
@@ -3655,6 +3671,8 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   }
   if (fileInfo.suffix().compare("mo") == 0 && !loadExternalModel) {
     openModelicaFile(fileName, encoding, showProgress);
+  } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
+    openEncrytpedModelicaLibrary(fileName, encoding, showProgress);
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
   } else {
@@ -3741,6 +3759,31 @@ void LibraryWidget::openModelicaFile(QString fileName, QString encoding, bool sh
           MainWindow::instance()->hideProgressBar();
         }
       }
+    }
+  }
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->clearMessage();
+  }
+}
+
+/*!
+ * \brief LibraryWidget::openEncrytpedModelicaLibrary
+ * Opens the encrypted library package.
+ * \param fileName
+ * \param encoding
+ * \param showProgress
+ */
+void LibraryWidget::openEncrytpedModelicaLibrary(QString fileName, QString encoding, bool showProgress)
+{
+  if (showProgress) {
+    MainWindow::instance()->getStatusBar()->showMessage(QString(Helper::loading).append(": ").append(fileName));
+  }
+  // load the encrypted package in OMC
+  if (MainWindow::instance()->getOMCProxy()->loadEncryptedPackage(fileName, Utilities::tempDirectory())) {
+    MainWindow::instance()->addRecentFile(fileName, encoding);
+    mpLibraryTreeModel->loadDependentLibraries(MainWindow::instance()->getOMCProxy()->getClassNames());
+    if (showProgress) {
+      MainWindow::instance()->hideProgressBar();
     }
   }
   if (showProgress) {

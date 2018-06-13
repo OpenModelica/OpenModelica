@@ -46,6 +46,7 @@ QString Helper::OpenModelicaHome = "";
 QString Helper::OpenModelicaLibrary = "";
 QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
+QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
 QString Helper::imageFileTypes = "SVG (*.svg);;PNG image (*.png);;Windows BMP image (*.bmp);;TIFF (*.tiff)";
@@ -160,6 +161,8 @@ QString Helper::instantiateModel;
 QString Helper::instantiateModelTip;
 QString Helper::exportFMU;
 QString Helper::exportFMUTip;
+QString Helper::exportEncryptedPackage;
+QString Helper::exportEncryptedPackageTip;
 QString Helper::importFMU;
 QString Helper::importFMUTip;
 QString Helper::exportXML;
@@ -414,6 +417,8 @@ void Helper::initHelperVariables()
   Helper::instantiateModelTip = tr("Instantiate/Flatten the Modelica class");
   Helper::exportFMU = tr("Export FMU");
   Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
+  Helper::exportEncryptedPackage = tr("Export Encrypted Package");
+  Helper::exportEncryptedPackageTip = tr("Exports the package as Encrytped package");
   Helper::importFMU = tr("Import FMU");
   Helper::importFMUTip = tr("Imports the model from Functional Mockup Interface (FMU)");
   Helper::exportXML = tr("Export XML");
@@ -695,6 +700,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The XML is generated at <b>%1</b>.");
     case FIGARO_GENERATED:
       return tr("The FIGARO is generated.");
+    case ENCRYPTED_PACKAGE_GENERATED:
+      return tr("The encrytped package is generated at <b>%1</b>.");
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case DELETE_CLASS_MSG:

@@ -847,6 +847,39 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   mpStatusBar->clearMessage();
 }
 
+/*!
+ * \brief MainWindow::exportEncryptedPackage
+ * Exports the package as encrypted package
+ * \param pLibraryTreeItem
+ */
+void MainWindow::exportEncryptedPackage(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(tr("Exporting the package as encrypted package"));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  // build encrypted package
+  if (mpOMCProxy->buildEncryptedPackage(pLibraryTreeItem->getNameStructure())) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::ENCRYPTED_PACKAGE_GENERATED)
+                                                          .arg(QString("%1/%2.mol")
+                                                               .arg(MainWindow::instance()->getOMCProxy()->changeDirectory())
+                                                               .arg(pLibraryTreeItem->getNameStructure())),
+                                                          Helper::scriptingKind, Helper::notificationLevel));
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
+}
+
 void MainWindow::exportModelXML(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -1302,6 +1335,55 @@ void MainWindow::loadModelicaLibrary()
   libraryPath = libraryPath + QDir::separator() + "package.mo";
   libraryPath = libraryPath.replace("\\", "/");
   mpLibraryWidget->openFile(libraryPath, Helper::utf8, true, true);
+}
+
+void MainWindow::loadEncryptedLibrary()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
+                                              NULL, Helper::omEncryptedFileTypes, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      QFileInfo fileInfo(file);
+      QString library = fileInfo.completeBaseName();
+      LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+      if (pLibraryTreeModel->findLibraryTreeItemOneLevel(library)) {
+        QMessageBox *pMessageBox = new QMessageBox(this);
+        pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::information));
+        pMessageBox->setIcon(QMessageBox::Information);
+        pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(library)));
+        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
+                                        .arg(library).append("\n")
+                                        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(library)));
+        pMessageBox->setStandardButtons(QMessageBox::Ok);
+        pMessageBox->exec();
+      } else {  /* if library is not loaded then load it. */
+        mpLibraryWidget->openFile(file, Helper::utf8, false);
+      }
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
 }
 
 void MainWindow::showOpenResultFileDialog()
@@ -1915,6 +1997,21 @@ void MainWindow::exportModelFMU()
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("making FMU")), Helper::scriptingKind, Helper::notificationLevel));
+  }
+}
+
+/*!
+ * \brief MainWindow::exportEncryptedPackage
+ * Slot activated when mpExportEncryptedPackageAction triggered SIGNAL is raised.
+ */
+void MainWindow::exportEncryptedPackage()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    exportEncryptedPackage(pModelWidget->getLibraryTreeItem());
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                .arg(tr("making encrypted package")), Helper::scriptingKind, Helper::notificationLevel));
   }
 }
 
@@ -2809,6 +2906,10 @@ void MainWindow::createActions()
   mpLoadModelicaLibraryAction = new QAction(tr("Load Library"), this);
   mpLoadModelicaLibraryAction->setStatusTip(tr("Loads the Modelica library"));
   connect(mpLoadModelicaLibraryAction, SIGNAL(triggered()), SLOT(loadModelicaLibrary()));
+  // load encrypted library action
+  mpLoadEncryptedLibraryAction = new QAction(tr("Load Encrypted Library"), this);
+  mpLoadEncryptedLibraryAction->setStatusTip(tr("Loads the encrypted Modelica library"));
+  connect(mpLoadEncryptedLibraryAction, SIGNAL(triggered()), SLOT(loadEncryptedLibrary()));
   // open result file action
   mpOpenResultFileAction = new QAction(tr("Open Result File(s)"), this);
   mpOpenResultFileAction->setShortcut(QKeySequence("Ctrl+shift+o"));
@@ -3008,6 +3109,10 @@ void MainWindow::createActions()
   mpImportFMUModelDescriptionAction->setStatusTip(Helper::importFMUTip);
   connect(mpImportFMUModelDescriptionAction, SIGNAL(triggered()), SLOT(importFMUModelDescription()));
   // XML Menu
+  // export encrypted package action
+  mpExportEncryptedPackageAction = new QAction(Helper::exportEncryptedPackage, this);
+  mpExportEncryptedPackageAction->setStatusTip(Helper::exportEncryptedPackageTip);
+  connect(mpExportEncryptedPackageAction, SIGNAL(triggered()), SLOT(exportEncryptedPackage()));
   // export XML action
   mpExportXMLAction = new QAction(QIcon(":/Resources/icons/export-xml.svg"), Helper::exportXML, this);
   mpExportXMLAction->setStatusTip(Helper::exportXMLTip);
@@ -3274,6 +3379,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenModelicaFileAction);
   pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   pFileMenu->addAction(mpLoadModelicaLibraryAction);
+  pFileMenu->addAction(mpLoadEncryptedLibraryAction);
   pFileMenu->addAction(mpOpenResultFileAction);
   pFileMenu->addAction(mpOpenTransformationFileAction);
   pFileMenu->addSeparator();
@@ -3418,6 +3524,7 @@ void MainWindow::createMenus()
   QMenu *pExportMenu = new QMenu(menuBar());
   pExportMenu->setTitle(tr("E&xport"));
   // add actions to Export menu
+  pExportMenu->addAction(mpExportEncryptedPackageAction);
   pExportMenu->addAction(mpExportXMLAction);
   pExportMenu->addAction(mpExportFigaroAction);
   // add Export menu to menu bar

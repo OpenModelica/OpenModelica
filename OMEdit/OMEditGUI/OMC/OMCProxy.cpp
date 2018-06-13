@@ -2971,6 +2971,37 @@ QList<QList<QString > > OMCProxy::getUses(QString className)
 }
 
 /*!
+ * \brief OMCProxy::buildEncryptedPackage
+ * Builds the encrypted package.
+ * \param className
+ * \return
+ */
+bool OMCProxy::buildEncryptedPackage(QString className)
+{
+  OMCInterface::buildEncryptedPackage_res result = mpOMCInterface->buildEncryptedPackage(className);
+  printMessagesStringInternal();
+  if (!result.success && !result.commandOutput.isEmpty()) {
+    MessageItem messageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, result.commandOutput, Helper::scriptingKind, Helper::errorLevel);
+    MessagesWidget::instance()->addGUIMessage(messageItem);
+  }
+  return result.success;
+}
+
+/*!
+ * \brief OMCProxy::loadEncryptedPackage
+ * Loads the encrypted package.
+ * \param fileName
+ * \param workingDirectory
+ * \return
+ */
+bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory)
+{
+  bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */
