@@ -17247,7 +17247,7 @@ algorithm
     topClassNamesQualified := {};
     return;
   end if;
-  parsed := Parser.parse(fileName,encoding);
+  parsed := Parser.parse(fileName,encoding,NONE());
   parsed := MetaUtil.createMetaClassesInProgram(parsed);
   topClassNamesQualified := getTopQualifiedClassnames(parsed);
   if updateProgram then

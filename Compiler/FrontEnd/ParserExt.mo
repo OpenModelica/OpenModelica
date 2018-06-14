@@ -49,9 +49,10 @@ public function parse "Parse a mo-file"
   input String encoding;
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
+  input Option<Integer> serverContext;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite, serverContext) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
@@ -104,6 +105,13 @@ public function stringCref
   output Absyn.ComponentRef cref;
   external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stringCref;
+
+public function startDecryptionServer "Starts the decryption server executable"
+  output Boolean success;
+  output Option<Integer> outDecryptionServer "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+
+  external "C" success=ParserExt_startDecryptionServer(outDecryptionServer) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end startDecryptionServer;
 
 annotation(__OpenModelica_Interface="frontend");
 end ParserExt;

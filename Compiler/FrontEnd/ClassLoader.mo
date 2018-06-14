@@ -711,7 +711,7 @@ algorithm
           fail();
         end if; */
       then BaseHashTable.get(filename, strategy.ht);
-    case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding);
+    case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding,NONE());
   end match;
 end getProgramFromStrategy;
 

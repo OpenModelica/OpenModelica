@@ -57,9 +57,10 @@ public
 function parse "Parse a mo-file"
   input String filename;
   input String encoding;
+  input Option<Integer> serverContext;
   output Absyn.Program outProgram;
 algorithm
-  outProgram := parsebuiltin(filename,encoding);
+  outProgram := parsebuiltin(filename,encoding,serverContext);
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
@@ -84,6 +85,7 @@ end parsestring;
 function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
   input String filename;
   input String encoding;
+  input Option<Integer> serverContext;
   input Integer acceptedGram=Config.acceptedGrammar();
   input Integer languageStandardInt=Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
   output Absyn.Program outProgram;
@@ -92,7 +94,7 @@ protected
   String realpath;
 algorithm
   realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
-  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), acceptedGram, encoding, languageStandardInt, Config.getRunningTestsuite());
+  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), acceptedGram, encoding, languageStandardInt, Config.getRunningTestsuite(), serverContext);
 end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
@@ -171,8 +173,16 @@ function parallelParseFilesWork
   input Boolean encrypted = false;
   output list<ParserResult> partialResults;
 protected
-  list<tuple<String,String>> workList = list((file,encoding) for file in filenames);
+  list<tuple<String,String,Option<Integer>>> workList;
+  Boolean success;
+  Option<Integer> decryptionServer;
 algorithm
+  if encrypted then
+    (success, decryptionServer) := ParserExt.startDecryptionServer();
+    workList := list((file,encoding,decryptionServer) for file in filenames);
+  else
+    workList := list((file,encoding,NONE()) for file in filenames);
+  end if;
   if Config.getRunningTestsuite() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or encrypted then
     partialResults := list(loadFileThread(t) for t in workList);
   else
@@ -183,14 +193,15 @@ algorithm
 end parallelParseFilesWork;
 
 function loadFileThread
-  input tuple<String,String> inFileEncoding;
+  input tuple<String,String,Option<Integer>> inFileEncoding;
   output ParserResult result;
 algorithm
   result := matchcontinue inFileEncoding
     local
       String filename,encoding;
-    case (filename,encoding) then PARSERRESULT(filename,SOME(Parser.parse(filename, encoding)));
-    case (filename,_) then PARSERRESULT(filename,NONE());
+      Option<Integer> decryptionServer;
+    case (filename,encoding,decryptionServer) then PARSERRESULT(filename,SOME(Parser.parse(filename, encoding, decryptionServer)));
+    case (filename,_,_) then PARSERRESULT(filename,NONE());
   end matchcontinue;
   if ErrorExt.getNumMessages() > 0 then
     ErrorExt.moveMessagesToParentThread();

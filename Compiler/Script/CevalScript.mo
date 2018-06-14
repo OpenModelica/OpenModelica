@@ -319,7 +319,7 @@ algorithm
     (outProgram,true) := loadModel((Absyn.IDENT(cname),{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
     return;
   end if;
-  outProgram := Parser.parse(name,encoding);
+  outProgram := Parser.parse(name,encoding,NONE());
   ClassLoader.checkOnLoadMessage(outProgram);
   outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Config.getRunningTestsuite()));
 end loadFile;
@@ -3011,7 +3011,7 @@ protected function reloadClass
 protected
   Absyn.Program p,newp;
 algorithm
-  newp := Parser.parse(filename,encoding); /* Don't use the classloader since that can pull in entire directory structures. We only want to reload one single file. */
+  newp := Parser.parse(filename,encoding,NONE()); /* Don't use the classloader since that can pull in entire directory structures. We only want to reload one single file. */
   newp := Interactive.updateProgram(newp, SymbolTable.getAbsyn());
   SymbolTable.setAbsyn(newp);
 end reloadClass;
