@@ -1809,7 +1809,7 @@ algorithm
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.restriction);
         InstNode.updateClass(inst_cls, node);
 
-        instRecordConstructor(cls.restriction, node);
+        instComplexType(ty);
       then
         ();
 
@@ -1824,7 +1824,9 @@ algorithm
           dims[i] := instDimension(dims[i], dim_scope, info);
         end for;
 
-        instRecordConstructor(cls.restriction, node);
+        if Restriction.isRecord(cls.restriction) then
+          instRecordConstructor(node);
+        end if;
       then
         ();
 
@@ -1872,44 +1874,54 @@ protected
   InstNode cls_node;
   list<String> fields;
 algorithm
-  cls_node := InstNode.classScope(InstNode.getDerivedNode(node));
+  cls_node := if SCode.isOperatorRecord(InstNode.definition(node))
+    then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
   fields := list(InstNode.name(c) for c guard not InstNode.isEmpty(c) in
     ClassTree.getComponents(Class.classTree(cls)));
   ty := ComplexType.RECORD(cls_node, fields);
 end makeRecordComplexType;
 
-function instRecordConstructor
-  input Restriction restriction;
-  input InstNode node;
-protected
-  CachedData cache;
-  Absyn.Path path;
+function instComplexType
+  input Type ty;
 algorithm
-  () := match restriction
-    case Restriction.RECORD()
+  () := match ty
+    local
+      InstNode node;
+      CachedData cache;
+
+    case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
       algorithm
-        cache := InstNode.getFuncCache(node);
-
-        () := match cache
-          case CachedData.FUNCTION() then ();
-          else
-            algorithm
-              InstNode.cacheInitFunc(node);
-              path := InstNode.scopePath(node, includeRoot = true);
-
-              if SCode.isOperatorRecord(InstNode.definition(node)) then
-                OperatorOverloading.instConstructor(path, node, InstNode.info(node));
-              else
-                Record.instDefaultConstructor(path, node, InstNode.info(node));
-              end if;
-            then
-              ();
-
-        end match;
+        instRecordConstructor(node);
       then
         ();
 
     else ();
+  end match;
+end instComplexType;
+
+function instRecordConstructor
+  input InstNode node;
+protected
+  CachedData cache;
+algorithm
+  cache := InstNode.getFuncCache(node);
+
+  () := match cache
+    case CachedData.FUNCTION() then ();
+    else
+      algorithm
+        InstNode.cacheInitFunc(node);
+
+        if SCode.isOperatorRecord(InstNode.definition(node)) then
+          OperatorOverloading.instConstructor(
+            InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
+        else
+          Record.instDefaultConstructor(
+            InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
+        end if;
+      then
+        ();
+
   end match;
 end instRecordConstructor;
 
