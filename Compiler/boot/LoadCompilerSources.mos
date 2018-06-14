@@ -324,6 +324,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFLookupState.mo",
     "../NFFrontEnd/NFModifier.mo",
     "../NFFrontEnd/NFOperator.mo",
+    "../NFFrontEnd/NFOperatorOverloading.mo",
     "../NFFrontEnd/NFPrefixes.mo",
     "../NFFrontEnd/NFRangeIterator.mo",
     "../NFFrontEnd/NFRecord.mo",

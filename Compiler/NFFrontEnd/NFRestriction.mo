@@ -48,7 +48,11 @@ public
   record FUNCTION end FUNCTION;
   record MODEL end MODEL;
   record OPERATOR end OPERATOR;
-  record RECORD end RECORD;
+
+  record RECORD
+    Boolean isOperator;
+  end RECORD;
+
   record RECORD_CONSTRUCTOR end RECORD_CONSTRUCTOR;
   record TYPE end TYPE;
   record UNKNOWN end UNKNOWN;
@@ -64,7 +68,7 @@ public
       case SCode.Restriction.R_FUNCTION() then FUNCTION();
       case SCode.Restriction.R_MODEL() then MODEL();
       case SCode.Restriction.R_OPERATOR() then OPERATOR();
-      case SCode.Restriction.R_RECORD() then RECORD();
+      case SCode.Restriction.R_RECORD() then RECORD(sres.isOperator);
       case SCode.Restriction.R_TYPE() then TYPE();
       else MODEL();
     end match;

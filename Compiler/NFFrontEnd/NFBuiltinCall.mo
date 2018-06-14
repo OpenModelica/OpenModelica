@@ -383,9 +383,9 @@ protected
 
     fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(recopnode));
     candidates := Function.typeRefCache(fn_ref);
-    for fn in candidates loop
-      TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
-    end for;
+    //for fn in candidates loop
+    //  TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
+    //end for;
 
     matchedFunctions := Function.matchFunctionsSilent(candidates, args, namedArgs, info);
     exactMatches := MatchedFunction.getExactMatches(matchedFunctions);

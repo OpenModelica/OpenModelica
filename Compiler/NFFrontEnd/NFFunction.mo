@@ -70,6 +70,7 @@ import Dimension = NFDimension;
 import Statement = NFStatement;
 import Sections = NFSections;
 import Algorithm = NFAlgorithm;
+import OperatorOverloading = NFOperatorOverloading;
 
 
 public
@@ -340,17 +341,24 @@ uniontype Function
         list<Function> funcs;
         list<FunctionDerivative> fn_ders;
 
+      case SCode.CLASS() guard SCode.isOperatorRecord(def)
+        algorithm
+          fnNode := instFunction3(fnNode);
+          fnNode := OperatorOverloading.instConstructor(fnPath, fnNode, info);
+        then
+          (fnNode, false);
+
       case SCode.CLASS() guard SCode.isRecord(def)
         algorithm
           fnNode := instFunction3(fnNode);
-          fnNode := Record.instConstructors(fnPath, fnNode, info);
+          fnNode := Record.instDefaultConstructor(fnPath, fnNode, info);
         then
           (fnNode, false);
 
       case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
         algorithm
           fnNode := instFunction3(fnNode);
-          fnNode := Record.instOperatorFunctions(fnNode, info);
+          fnNode := OperatorOverloading.instOperatorFunctions(fnNode, info);
         then
           (fnNode, false);
 
@@ -368,6 +376,10 @@ uniontype Function
 
       case SCode.CLASS()
         algorithm
+          if SCode.isOperator(def) then
+            OperatorOverloading.checkOperatorRestrictions(fnNode);
+          end if;
+
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(), fnNode);
           fnNode := instFunction3(fnNode);
           fn := new(fnPath, fnNode);

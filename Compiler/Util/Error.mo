@@ -805,6 +805,12 @@ public constant Message INVALID_FUNCTION_DERIVATIVE_ATTR = MESSAGE(338, TRANSLAT
   Util.gettext("‘%s‘ is not a valid function derivative attribute."));
 public constant Message INVALID_FUNCTION_DERIVATIVE_INPUT = MESSAGE(339, TRANSLATION(), ERROR(),
   Util.gettext("‘%s‘ is not an input of function ‘%s‘."));
+public constant Message OPERATOR_OVERLOADING_ONE_OUTPUT_ERROR = MESSAGE(340, TRANSLATION(), ERROR(),
+  Util.gettext("Operator %s must have exactly one output."));
+public constant Message OPERATOR_OVERLOADING_INVALID_OUTPUT_TYPE = MESSAGE(341, TRANSLATION(), ERROR(),
+  Util.gettext("Output ‘%s‘ in operator %s must be of type %s, got type %s."));
+public constant Message OPERATOR_NOT_ENCAPSULATED = MESSAGE(342, TRANSLATION(), ERROR(),
+  Util.gettext("Operator %s is not encapsulated."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),
@@ -1090,10 +1096,6 @@ public constant Message SUSAN_ERROR = MESSAGE(7000, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message TEMPLATE_ERROR = MESSAGE(7001, TRANSLATION(), ERROR(),
   Util.gettext("Template error: %s."));
-public constant Message OPERATOR_OVERLOADING_WARNING = MESSAGE(7002, TRANSLATION(), WARNING(),
-  Util.gettext("Operator Overloading: %s."));
-public constant Message OPERATOR_OVERLOADING_ERROR = MESSAGE(7003, TRANSLATION(), ERROR(),
-  Util.gettext("Operator Overloading: %s."));
 public constant Message PARMODELICA_WARNING = MESSAGE(7004, TRANSLATION(), WARNING(),
   Util.notrans("ParModelica: %s."));
 public constant Message PARMODELICA_ERROR = MESSAGE(7005, TRANSLATION(), ERROR(),

@@ -536,6 +536,18 @@ uniontype Class
     end match;
   end setPrefixes;
 
+  function isEncapsulated
+    input Class cls;
+    output Boolean isEncapsulated;
+  algorithm
+    isEncapsulated := match cls
+      case PARTIAL_CLASS() then SCode.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
+      case EXPANDED_CLASS() then SCode.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
+      case EXPANDED_DERIVED() then SCode.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
+      else false;
+    end match;
+  end isEncapsulated;
+
   function lastBaseClass
     input output InstNode node;
   protected

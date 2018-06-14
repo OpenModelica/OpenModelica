@@ -97,6 +97,7 @@ import FlatModel = NFFlatModel;
 import ElementSource;
 import SimplifyModel = NFSimplifyModel;
 import Record = NFRecord;
+import OperatorOverloading = NFOperatorOverloading;
 
 public
 function instClassInProgram
@@ -1808,7 +1809,7 @@ algorithm
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.restriction);
         InstNode.updateClass(inst_cls, node);
 
-        instComplexType(ty);
+        instRecordConstructor(cls.restriction, node);
       then
         ();
 
@@ -1822,6 +1823,8 @@ algorithm
         for i in 1:arrayLength(dims) loop
           dims[i] := instDimension(dims[i], dim_scope, info);
         end for;
+
+        instRecordConstructor(cls.restriction, node);
       then
         ();
 
@@ -1875,15 +1878,15 @@ algorithm
   ty := ComplexType.RECORD(cls_node, fields);
 end makeRecordComplexType;
 
-function instComplexType
-  input Type ty;
+function instRecordConstructor
+  input Restriction restriction;
+  input InstNode node;
+protected
+  CachedData cache;
+  Absyn.Path path;
 algorithm
-  () := match ty
-    local
-      InstNode node;
-      CachedData cache;
-
-    case Type.COMPLEX(complexTy = ComplexType.RECORD(node))
+  () := match restriction
+    case Restriction.RECORD()
       algorithm
         cache := InstNode.getFuncCache(node);
 
@@ -1892,8 +1895,13 @@ algorithm
           else
             algorithm
               InstNode.cacheInitFunc(node);
-              Record.instConstructors(
-                InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
+              path := InstNode.scopePath(node, includeRoot = true);
+
+              if SCode.isOperatorRecord(InstNode.definition(node)) then
+                OperatorOverloading.instConstructor(path, node, InstNode.info(node));
+              else
+                Record.instDefaultConstructor(path, node, InstNode.info(node));
+              end if;
             then
               ();
 
@@ -1903,7 +1911,7 @@ algorithm
 
     else ();
   end match;
-end instComplexType;
+end instRecordConstructor;
 
 function instBuiltinAttribute
   input output Modifier attribute;

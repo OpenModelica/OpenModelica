@@ -343,11 +343,11 @@ algorithm
         binding;
 
     // A record field without an explicit binding, evaluate the parent's binding
-    // if it as one and fetch the binding from it instead.
+    // if it has one and fetch the binding from it instead.
     case (_, _, InstNode.COMPONENT_NODE(parent = rec_node as InstNode.COMPONENT_NODE()))
       guard Type.isRecord(InstNode.getType(rec_node))
       algorithm
-        exp := evalComponentBinding(rec_node, Expression.EMPTY(), target);
+        exp := evalComponentBinding(rec_node, Expression.EMPTY(Type.UNKNOWN()), target);
         exp := Expression.lookupRecordField(InstNode.name(node), exp);
         binding := Binding.CEVAL_BINDING(exp);
         InstNode.updateComponent(Component.setBinding(binding, component), node);
@@ -1766,7 +1766,7 @@ algorithm
     case {e1, e2} then evalBuiltinMax2(e1, e2);
     case {e1 as Expression.ARRAY(ty = ty)}
       algorithm
-        result := Expression.fold(e1, evalBuiltinMax2, Expression.EMPTY());
+        result := Expression.fold(e1, evalBuiltinMax2, Expression.EMPTY(ty));
 
         if Expression.isEmpty(result) then
           result := Expression.CALL(Call.makeTypedCall(fn,
@@ -1812,7 +1812,7 @@ algorithm
     case {e1, e2} then evalBuiltinMin2(e1, e2);
     case {e1 as Expression.ARRAY(ty = ty)}
       algorithm
-        result := Expression.fold(e1, evalBuiltinMin2, Expression.EMPTY());
+        result := Expression.fold(e1, evalBuiltinMin2, Expression.EMPTY(ty));
 
         if Expression.isEmpty(result) then
           result := Expression.CALL(Call.makeTypedCall(fn,

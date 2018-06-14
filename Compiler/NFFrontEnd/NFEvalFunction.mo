@@ -125,7 +125,7 @@ algorithm
     fn_body := Function.getBody(fn);
     repl := createReplacements(fn, args);
     // TODO: Also apply replacements to the replacements themselves, i.e. the
-    //       bindings of the function parameters. But the probably need to be
+    //       bindings of the function parameters. But they probably need to be
     //       sorted by dependencies first.
     fn_body := applyReplacements(repl, fn_body);
     ctrl := evaluateStatements(fn_body);
@@ -225,9 +225,10 @@ algorithm
   ty := InstNode.getType(node);
 
   result := match ty
-    case Type.ARRAY() guard Type.hasKnownSize(ty) then Expression.fillType(ty, Expression.EMPTY());
+    case Type.ARRAY() guard Type.hasKnownSize(ty)
+      then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
     case Type.COMPLEX() then buildRecordBinding(ty.cls);
-    else Expression.EMPTY();
+    else Expression.EMPTY(ty);
   end match;
 end buildBinding;
 

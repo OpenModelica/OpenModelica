@@ -67,53 +67,6 @@ import ErrorExt;
 
 public
 
-function instConstructors
-  input Absyn.Path path;
-  input output InstNode node;
-  input SourceInfo info;
-protected
-  InstNode ctor_over;
-  DAE.FunctionAttributes attr;
-  ComponentRef con_ref;
-  Boolean ctor_defined;
-algorithm
-
-  // See if we have overloaded constructors.
-  try
-    con_ref := Function.lookupFunctionSimple("'constructor'", node);
-    ctor_defined := true;
-  else
-    ctor_defined := false;
-  end try;
-
-  if ctor_defined then
-    ctor_over := ComponentRef.node(con_ref);
-    ctor_over := Function.instFunction2(InstNode.scopePath(ctor_over, includeRoot = true), ctor_over, InstNode.info(ctor_over));
-    for f in Function.getCachedFuncs(ctor_over) loop
-      node := InstNode.cacheAddFunc(node, f, false);
-    end for;
-  end if;
-
-  // See if we have '0' constructor.
-  try
-    con_ref := Function.lookupFunctionSimple("'0'", node);
-    ctor_defined := true;
-  else
-    ctor_defined := false;
-  end try;
-
-  if ctor_defined then
-    ctor_over := ComponentRef.node(con_ref);
-
-    ctor_over := Function.instFunction2(InstNode.scopePath(ctor_over, includeRoot = true), ctor_over, InstNode.info(ctor_over));
-    for f in Function.getCachedFuncs(ctor_over) loop
-      node := InstNode.cacheAddFunc(node, f, false);
-    end for;
-  end if;
-
-  node := instDefaultConstructor(path, node, info);
-end instConstructors;
-
 function instDefaultConstructor
   input Absyn.Path path;
   input output InstNode node;
@@ -211,44 +164,6 @@ algorithm
 
   end match;
 end collectRecordParams;
-
-function instOperatorFunctions
-  input output InstNode node;
-  input SourceInfo info;
-protected
-  ClassTree tree;
-  array<InstNode> mclss;
-  InstNode op;
-  Absyn.Path path;
-  list<Function> allfuncs = {}, funcs;
-algorithm
-  tree := Class.classTree(InstNode.getClass(node));
-
-  () := match tree
-    case ClassTree.FLAT_TREE(classes = mclss)
-      algorithm
-        for i in arrayLength(mclss):-1:1 loop
-          op := mclss[i];
-          path := InstNode.scopePath(op);
-          Function.instFunction2(path, op, info);
-          funcs := Function.getCachedFuncs(op);
-          allfuncs := listAppend(allfuncs,funcs);
-        end for;
-
-        for f in allfuncs loop
-          node := InstNode.cacheAddFunc(node, f, false);
-        end for;
-      then
-        ();
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got non-instantiated function", sourceInfo());
-      then
-        fail();
-
-  end match;
-end instOperatorFunctions;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

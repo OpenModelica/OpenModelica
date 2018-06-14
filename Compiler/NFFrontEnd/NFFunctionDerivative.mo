@@ -213,7 +213,7 @@ protected
     input Function fn;
     input InstNode scope;
     input SourceInfo info;
-    output Expression order = Expression.EMPTY();
+    output Expression order = Expression.EMPTY(Type.UNKNOWN());
     output list<tuple<Integer, Condition>> conditions = {};
   protected
     String id;

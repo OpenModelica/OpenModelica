@@ -96,15 +96,29 @@ public
   function prependEquation
     input Equation eq;
     input output Sections sections;
+    input Boolean isInitial = false;
   algorithm
     sections := match sections
       case SECTIONS()
         algorithm
-          sections.equations := eq :: sections.equations;
+          if isInitial then
+            sections.initialEquations := eq :: sections.initialEquations;
+          else
+            sections.equations := eq :: sections.equations;
+          end if;
         then
           sections;
 
-      else SECTIONS({eq}, {}, {}, {});
+      case EMPTY()
+        then if isInitial then SECTIONS({}, {eq}, {}, {}) else SECTIONS({eq}, {}, {}, {});
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() +
+            " got invalid Sections to prepend equation to", sourceInfo());
+        then
+          fail();
+
     end match;
   end prependEquation;
 

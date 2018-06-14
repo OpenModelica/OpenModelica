@@ -82,6 +82,7 @@ import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
 import NFTyping.ExpOrigin;
+import SimplifyExp = NFSimplifyExp;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -309,7 +310,6 @@ algorithm
     binding := flattenBinding(binding, prefix);
   end if;
 
-
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
   if Type.isArray(ty) and Binding.isBound(binding) and
@@ -384,6 +384,7 @@ protected
   Expression binding_exp;
   Equation eq;
   list<Expression> bindings;
+  Variability comp_var;
 algorithm
   dims := Type.arrayDims(ty);
   binding := Component.getBinding(comp);
@@ -393,8 +394,11 @@ algorithm
     binding := flattenBinding(binding, prefix);
     binding_exp := Binding.getTypedExp(binding);
 
-    if Component.variability(comp) <= Variability.PARAMETER then
+    comp_var := Component.variability(comp);
+    if comp_var <= Variability.PARAMETER then
       binding_exp := Ceval.evalExp(binding_exp);
+    else
+      binding_exp := SimplifyExp.simplify(binding_exp);
     end if;
 
     if not Expression.isRecord(binding_exp) then

@@ -199,6 +199,7 @@ public
   end MUTABLE;
 
   record EMPTY
+    Type ty;
   end EMPTY;
 
   function isCref
@@ -568,6 +569,7 @@ public
       case TUPLE_ELEMENT()   then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
+      case EMPTY()           then exp.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;

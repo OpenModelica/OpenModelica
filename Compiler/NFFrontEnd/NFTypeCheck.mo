@@ -204,7 +204,7 @@ algorithm
     if oper_defined then
       fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node1));
       for fn in Function.typeRefCache(fn_ref) loop
-        checkValidOperatorOverload(opstr, fn, node1);
+      //  checkValidOperatorOverload(opstr, fn, node1);
         candidates := fn::candidates;
       end for;
     end if;
@@ -226,7 +226,7 @@ algorithm
         if oper_defined then
           fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node2));
           for fn in Function.typeRefCache(fn_ref) loop
-            checkValidOperatorOverload(opstr, fn, node2);
+            //checkValidOperatorOverload(opstr, fn, node2);
             candidates := fn::candidates;
           end for;
         end if;
@@ -237,7 +237,7 @@ algorithm
   args := {(inExp1,inType1,var1),(inExp2,inType2,var2)};
 
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
-  // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
+  // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
 
   if listEmpty(exactMatches) then
@@ -297,10 +297,9 @@ protected
   Type ty;
   Variability var;
 algorithm
-
   exp1 := inExp1; exp2 := inExp2;
   for fn in candidates loop
-    {in1,in2} := fn.inputs;
+    in1 :: in2 :: _ := fn.inputs;
     (_, _, mk1) := matchTypes(InstNode.getType(in1),inType1,inExp1,false);
     (_, _, mk2) := matchTypes(InstNode.getType(in2),inType2,inExp2,false);
 
@@ -323,7 +322,6 @@ algorithm
     end if;
   end for;
 
-
   if listLength(matchedfuncs) == 1 then
     (operfn, {exp1,exp2}, var)::_ := matchedfuncs;
     outType := Function.returnType(operfn);
@@ -337,125 +335,125 @@ algorithm
   end if;
 end implicitConstructAndMatch;
 
-function checkValidBinaryOperatorOverload
-  input String oper_name;
-  input Function oper_func;
-  input InstNode rec_node;
-protected
-  SourceInfo info;
-algorithm
-  info := InstNode.info(oper_func.node);
-  checkOneOutput(oper_name, oper_func.outputs, rec_node, info);
-  checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, info);
-  checkTwoInputs(oper_name, oper_func.inputs, rec_node, info);
-end checkValidBinaryOperatorOverload;
+//function checkValidBinaryOperatorOverload
+//  input String oper_name;
+//  input Function oper_func;
+//  input InstNode rec_node;
+//protected
+//  SourceInfo info;
+//algorithm
+//  info := InstNode.info(oper_func.node);
+//  checkOneOutput(oper_name, oper_func.outputs, rec_node, info);
+//  checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, info);
+//  checkTwoInputs(oper_name, oper_func.inputs, rec_node, info);
+//end checkValidBinaryOperatorOverload;
 
-function checkValidOperatorOverload
-  input String oper_name;
-  input Function oper_func;
-  input InstNode rec_node;
-protected
-  Type ty1, ty2;
-  InstNode out_class;
-algorithm
-  () := match oper_name
-    case "'constructor'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'0'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'+'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'-'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'*'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'/'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'^'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
-    then ();
-    case "'and'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
-    then ();
-    case "'or'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
-    then ();
-    case "'not'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
-    then ();
-    case "'String'" algorithm
-      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
-      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.STRING_NODE, InstNode.info(oper_func.node));
-    then ();
+//function checkValidOperatorOverload
+//  input String oper_name;
+//  input Function oper_func;
+//  input InstNode rec_node;
+//protected
+//  Type ty1, ty2;
+//  InstNode out_class;
+//algorithm
+//  () := match oper_name
+//    case "'constructor'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'0'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'+'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'-'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'*'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'/'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'^'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), rec_node, InstNode.info(oper_func.node));
+//    then ();
+//    case "'and'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
+//    then ();
+//    case "'or'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
+//    then ();
+//    case "'not'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.BOOLEAN_NODE, InstNode.info(oper_func.node));
+//    then ();
+//    case "'String'" algorithm
+//      checkOneOutput(oper_name, oper_func.outputs, rec_node, InstNode.info(oper_func.node));
+//      checkOutputType(oper_name, List.first(oper_func.outputs), NFBuiltin.STRING_NODE, InstNode.info(oper_func.node));
+//    then ();
+//
+//    else ();
+//
+//  end match;
+//end checkValidOperatorOverload;
 
-    else ();
-
-  end match;
-end checkValidOperatorOverload;
-
-public
-function checkOneOutput
-  input String oper_name;
-  input list<InstNode> outputs;
-  input InstNode rec_node;
-  input SourceInfo info;
-protected
-  InstNode out_class;
-algorithm
-  if listLength(outputs) <> 1 then
-      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
-          {"Overloaded " + oper_name + " operator functions are required to have exactly one output. Found "
-          + intString(listLength(outputs))}, info);
-  end if;
-end checkOneOutput;
-
-public
-function checkTwoInputs
-  input String oper_name;
-  input list<InstNode> inputs;
-  input InstNode rec_node;
-  input SourceInfo info;
-protected
-  InstNode out_class;
-algorithm
-  if listLength(inputs) < 2 then
-      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
-          {"Binary overloaded " + oper_name + " operator functions are required to have at least two inputs. Found "
-          + intString(listLength(inputs))}, info);
-  end if;
-end checkTwoInputs;
-
-function checkOutputType
-  input String oper_name;
-  input InstNode outc;
-  input InstNode expected;
-  input SourceInfo info;
-protected
-  InstNode out_class;
-algorithm
-  out_class := InstNode.classScope(outc);
-  if not InstNode.isSame(out_class, expected) then
-    Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
-      {"Wrong type for output of overloaded operator function '"+ oper_name +
-        "'. Expected '" + InstNode.scopeName(expected) + "' Found '" + InstNode.scopeName(outc) + "'"}, info);
-  end if;
-end checkOutputType;
+//public
+//function checkOneOutput
+//  input String oper_name;
+//  input list<InstNode> outputs;
+//  input InstNode rec_node;
+//  input SourceInfo info;
+//protected
+//  InstNode out_class;
+//algorithm
+//  if listLength(outputs) <> 1 then
+//      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
+//          {"Overloaded " + oper_name + " operator functions are required to have exactly one output. Found "
+//          + intString(listLength(outputs))}, info);
+//  end if;
+//end checkOneOutput;
+//
+//public
+//function checkTwoInputs
+//  input String oper_name;
+//  input list<InstNode> inputs;
+//  input InstNode rec_node;
+//  input SourceInfo info;
+//protected
+//  InstNode out_class;
+//algorithm
+//  if listLength(inputs) < 2 then
+//      Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
+//          {"Binary overloaded " + oper_name + " operator functions are required to have at least two inputs. Found "
+//          + intString(listLength(inputs))}, info);
+//  end if;
+//end checkTwoInputs;
+//
+//function checkOutputType
+//  input String oper_name;
+//  input InstNode outc;
+//  input InstNode expected;
+//  input SourceInfo info;
+//protected
+//  InstNode out_class;
+//algorithm
+//  out_class := InstNode.classScope(outc);
+//  if not InstNode.isSame(out_class, expected) then
+//    Error.addSourceMessage(Error.OPERATOR_OVERLOADING_WARNING,
+//      {"Wrong type for output of overloaded operator function '"+ oper_name +
+//        "'. Expected '" + InstNode.scopeName(expected) + "' Found '" + InstNode.scopeName(outc) + "'"}, info);
+//  end if;
+//end checkOutputType;
 
 function checkBinaryOperationAdd
   input Expression exp1;
@@ -861,9 +859,9 @@ algorithm
   fn_ref := Function.lookupFunctionSimple(opstr, node1);
   fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node1));
   candidates := Function.typeRefCache(fn_ref);
-  for fn in candidates loop
-    checkValidOperatorOverload(opstr, fn, node1);
-  end for;
+  //for fn in candidates loop
+  //  checkValidOperatorOverload(opstr, fn, node1);
+  //end for;
 
   args := {(inExp1,inType1,var)};
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
