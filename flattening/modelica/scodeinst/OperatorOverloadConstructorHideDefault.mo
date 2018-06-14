@@ -8,7 +8,10 @@
 
 operator record C
   Real r;
-  operator 'constructor'
+
+  encapsulated operator 'constructor'
+    import C;
+
     function fromReal
       input Real r;
       output C o;
@@ -26,11 +29,6 @@ end OperatorOverloadConstructorHideDefault;
 
 
 // Result:
-// function C "Automatically generated record constructor for C"
-//   input Real r;
-//   output C res;
-// end C;
-//
 // function C.'constructor'.fromReal
 //   input Real r;
 //   output C o;

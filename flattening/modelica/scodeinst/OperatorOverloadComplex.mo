@@ -1,4 +1,4 @@
-// name: OperatorOverloadComplex.mo
+// name: OperatorOverloadComplex
 // keywords: operator overload complex
 // status: correct
 // cflags: -d=newInst
@@ -29,7 +29,7 @@ operator record Complex "Complex number with overloaded operators"
       c2:=Complex(-c1.re, -c1.im);
     end negate;
 
-  function negateArr "Unary minus (multiply complex number by -1)"
+    function negateArr "Unary minus (multiply complex number by -1)"
       import Complex;
       input Complex c1[:] "Complex number";
       output Complex[size(c1,1)] c2 "= -c1";
@@ -137,16 +137,15 @@ operator record Complex "Complex number with overloaded operators"
     output String s =  " ";
   algorithm
     s:=String(c.re, significantDigits = significantDigits);
+
     if c.im <> 0 then
-        if c.im > 0 then
+      if c.im > 0 then
         s:=s + " + ";
+      else
+        s:=s + " - ";
+      end if;
 
-    else     s:=s + " - ";
-
-    end if;
-    s:=s + String(abs(c.im), significantDigits = significantDigits) + "*" + name;
-
-    else
+      s:= s + String(abs(c.im), significantDigits = significantDigits) + "*" + name;
     end if;
   end 'String';
 
@@ -157,48 +156,39 @@ operator record Complex "Complex number with overloaded operators"
     c := Complex(0,0);
     annotation(Inline=true);
   end '0';
-
 end Complex;
 
-model Test
+model OperatorOverloadComplex
   Complex c1;
   Complex c2,c3,c4,c5,c6,c7,c8;
   Boolean b,b2;
   String s;
 equation
   // overloaded constructor
-   c1 = Complex(1.0);
-   // implicit construction and then addition -> c1 + Complex(1.0)
-   c2 = c1 + 1.0;
-   // negate
-   c3 = -c2;
-   // power
-   c4 = c1 ^ c2;
-   // logical not
-   c5 = not(c4);
-   // logical and
-   b = c1 and c2;
-   // String() operator
-   s = String(c1,"j",5);
-   // implicit construction and then equaltiy test -> c1 == Complex(0)
-   b2 = c4 == 0;
-   // multiplication
-   c6 = c5 * c4;
-   // Mix
-   // ===((((c6 / c5 )* (c4 ^ c3)) * Complex(1.0)) + c2) - c1
-   c7 = c6 / c5 * c4 ^ c3 * 1 + c2 - c1;
-   // '0'
-   c8 = Complex();
-end Test;
-
+  c1 = Complex(1.0);
+  // implicit construction and then addition -> c1 + Complex(1.0)
+  c2 = c1 + 1.0;
+  // negate
+  c3 = -c2;
+  // power
+  c4 = c1 ^ c2;
+  // logical not
+  c5 = not(c4);
+  // logical and
+  b = c1 and c2;
+  // String() operator
+  s = String(c1,"j",5);
+  // implicit construction and then equality test -> c1 == Complex(0)
+  b2 = c4 == 0;
+  // multiplication
+  c6 = c5 * c4;
+  // Mix
+  // ===((((c6 / c5 )* (c4 ^ c3)) * Complex(1.0)) + c2) - c1
+  c7 = c6 / c5 * c4 ^ c3 * 1 + c2 - c1;
+  c8 = Complex.'0'();
+end OperatorOverloadComplex;
 
 // Result:
-// function Complex "Automatically generated record constructor for Complex"
-//   input Real re;
-//   input Real im;
-//   output Complex res;
-// end Complex;
-//
 // function Complex.'*'.multiply "Multiply two complex numbers"
 //   input Complex c1 "Complex number 1";
 //   input Complex c2 "Complex number 2";
@@ -303,7 +293,7 @@ end Test;
 //   c2 := Complex.'constructor'.fromReal(-c1.re, -c1.im);
 // end Complex.'not';
 //
-// class Test
+// class OperatorOverloadComplex
 //   Real c1.re "Real part of complex number";
 //   Real c1.im "Imaginary part of complex number";
 //   Real c2.re "Real part of complex number";
@@ -335,7 +325,5 @@ end Test;
 //   c6 = Complex.'*'.multiply(c5, c4);
 //   c7 = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'*'.multiply(Complex.'/'(c6, c5), Complex.'^'(c4, c3)), Complex.'constructor'.fromReal(1.0, 0.0)), c2), c1);
 //   c8 = Complex.'0'();
-// end Test;
-// [flattening/modelica/scodeinst/OperatorOverloadComplex.mo:124:3-130:12:writable] Warning: Operator Overloading: Wrong type for output of overloaded operator function ''not''. Expected 'Boolean' Found 'Complex'.
-//
+// end OperatorOverloadComplex;
 // endResult

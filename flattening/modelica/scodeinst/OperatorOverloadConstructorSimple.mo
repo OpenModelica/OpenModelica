@@ -6,11 +6,11 @@
 // Tests simple overloaded construction.
 //
 
-
-
 operator record C
   Real r;
-  operator 'constructor'
+  encapsulated operator 'constructor'
+    import C;
+
     function fromNone
       output C o;
     algorithm
@@ -27,11 +27,6 @@ end OperatorOverloadConstructorSimple;
 
 
 // Result:
-// function C "Automatically generated record constructor for C"
-//   input Real r;
-//   output C res;
-// end C;
-//
 // function C.'constructor'.fromNone
 //   output C o;
 // algorithm

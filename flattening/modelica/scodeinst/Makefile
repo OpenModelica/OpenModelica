@@ -575,11 +575,17 @@ OperationSubEW1.mo \
 OperationUnary1.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \
+OperatorNonEncapsulated1.mo \
 OperatorOverloadBinaryAmbiguous.mo \
 OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
 OperatorOverloadComplex.mo \
+OperatorOverloadConstructor1.mo \
+OperatorOverloadConstructorDefault1.mo \
+OperatorOverloadConstructorDefault2.mo \
 OperatorOverloadConstructorHideDefault.mo \
+OperatorOverloadConstructorInvalidOutput1.mo \
+OperatorOverloadConstructorInvalidOutput2.mo \
 OperatorOverloadConstructorSimple.mo \
 OperatorOverloadError1.mo \
 PackageConstant1.mo \

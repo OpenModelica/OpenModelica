@@ -1,13 +1,17 @@
 // name: OperatorOverloadBinaryWithBuiltin
-// keywords: operator overload constructor
+// keywords: operator overload
 // status: correct
 // cflags: -d=newInst
 //
 // Tests binary overloaded operators with simple builtin types.
+//
 
 operator record C
   Real r;
-  operator '+'
+
+  encapsulated operator '+'
+    import C;
+
     function self
       input C i;
       input C j;
@@ -15,6 +19,7 @@ operator record C
     algorithm
       o.r := i.r + j.r;
     end self;
+
     function rightInt
       input C i;
       input Integer j;
@@ -22,6 +27,7 @@ operator record C
     algorithm
       o.r := i.r + j;
     end rightInt;
+
     function leftInt
       input Integer j;
       input C i;
@@ -32,13 +38,13 @@ operator record C
   end '+';
 end C;
 
-model T
+model OperatorOverloadBinaryWithBuiltin
   C c1;
   C c2;
 equation
   c2 = c1 + 1;
   c2 = 1 + c1;
-end T;
+end OperatorOverloadBinaryWithBuiltin;
 
 
 // Result:
@@ -63,11 +69,11 @@ end T;
 //   o.r := i.r + /*Real*/(j);
 // end C.'+'.rightInt;
 //
-// class T
+// class OperatorOverloadBinaryWithBuiltin
 //   Real c1.r;
 //   Real c2.r;
 // equation
 //   c2 = C.'+'.rightInt(c1, 1);
 //   c2 = C.'+'.leftInt(1, c1);
-// end T;
+// end OperatorOverloadBinaryWithBuiltin;
 // endResult
