@@ -31,18 +31,19 @@ ifeq ($(OMENCRYPTION),yes)
 .PHONY : semla semla-clean
 
 semla: mkbuilddirs
-	mkdir -p ../SEMLA/build
-	(cd ../SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
-	(cd ../SEMLA/build && $(CMAKE) --build .)
-	(cd ../SEMLA/build && $(CMAKE) --build . --target install)
+	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
+	# Build SEMLA
+	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
+	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build .)
+	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build . --target install)
 	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
-	cp -pPR ../SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
-	cp -pPR ../SEMLA/install/lib/* $(builddir_lib)/omc/SEMLA
+	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
+	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/* $(builddir_lib)/omc/SEMLA
 	mv $(builddir_lib)/omc/SEMLA/lve$(EXE) $(builddir_lib)/omc/SEMLA/LVE/lve_$(LVE_EXE_SUFFIX)$(EXE)
 
 semla-clean:
-	rm -rf ../SEMLA/build
-	rm -rf ../SEMLA/install
+	rm -rf ../OMEncryption/3rdParty/SEMLA/build
+	rm -rf ../OMEncryption/3rdParty/SEMLA/install
 	rm -rf $(builddir_lib)/omc/SEMLA
 endif # end of OMENCRYPTION
 
