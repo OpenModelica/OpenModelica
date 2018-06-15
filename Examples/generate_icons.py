@@ -1236,7 +1236,7 @@ def main():
           f_p.write('</html>\n')
 
       logger.info('HTML file is ready.')
-    print "Generated svg's for %d models in packages %s in %.1f seconds" % (len(dwgs),PACKAGES_TO_GENERATE,time.time()-t)
+    print("Generated svg's for %d models in packages %s in %.1f seconds" % (len(dwgs),PACKAGES_TO_GENERATE,time.time()-t))
 
     logger.info('End of application')
     return 0 if success else 1
