@@ -1,21 +1,22 @@
-// name: FuncVectorizatioBuiltin
+// name: FuncVectorizationBuiltin
 // keywords: vectorization function map array reduction
 // status: correct
 // cflags: -d=newInst
 //
-// checks vectorization of simple builtin function
+// Checks vectorization of simple builtin functions.
+//
 
 
-model C
+model FuncVectorizationBuiltin
   Real[2,3,4] a, b;
 equation
   a = array(time for i in 1:4, j in 1:3, k in 1:2);
   b = sin(a);
-end C;
+end FuncVectorizationBuiltin;
 
 
 // Result:
-// class C
+// class FuncVectorizationBuiltin
 //   Real a[1,1,1];
 //   Real a[1,1,2];
 //   Real a[1,1,3];
@@ -67,5 +68,5 @@ end C;
 // equation
 //   a = array(time for i in 1:4, j in 1:3, k in 1:2);
 //   b = array(sin(a[$i1,$i2,$i3]) for $i3 in 1:4, $i2 in 1:3, $i1 in 1:2);
-// end C;
+// end FuncVectorizationBuiltin;
 // endResult
