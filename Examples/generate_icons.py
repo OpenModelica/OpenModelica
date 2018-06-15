@@ -39,8 +39,14 @@ import hashlib
 from optparse import OptionParser
 
 import svgwrite
-from OMPython import OMCSession
-OMPython = OMCSession()
+try:
+  from OMPython import OMCSession
+  omc = OMCSession()
+  print("Using CORBA")
+except ImportError:
+  from OMPython import OMCSessionZMQ
+  omc = OMCSessionZMQ()
+  print("No CORBA interface found, using ZMQ instead")
 
 # OpenModelica setup commands
 OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc")']
@@ -106,9 +112,9 @@ def ask_omc(question, opt=None, parsed=True):
 
     try:
         if parsed:
-            res = OMPython.execute(expression)
+            res = omc.execute(expression)
         else:
-            res = OMPython._omc.sendExpression(expression)
+            res = omc.sendExpression(expression, parsed=False)
     except Exception as e:
         logger.error("OMC failed: {0}, {1}, parsed={2}".format(question, opt, parsed))
         raise
@@ -1173,22 +1179,22 @@ def main():
     success = True
 
     for command in OMC_SETUP_COMMANDS:
-        OMPython._omc.sendExpression(command)
+        omc.sendExpression(command, parsed=False)
     for package in PACKAGES_TO_LOAD:
         logger.info('Loading package: {0}'.format(package))
-        package_load = OMPython.sendExpression('loadModel(' + package + ')')
+        package_load = omc.sendExpression('loadModel(' + package + ')')
         if not package_load:
           success = False
           break
     for package in PACKAGES_TO_LOAD_FROM_FILE:
         logger.info('Loading package from file: {0}'.format(package))
-        package_load = OMPython.sendExpression('loadFile("' + package + '")')
+        package_load = omc.sendExpression('loadFile("' + package + '")')
         logger.info('Load success: {0}'.format(package_load))
         if not package_load:
           success = False
           break
     if not success:
-      logger.critical('Failed to load packages in %.1f seconds: %s' % (time.time()-t,OMPython.sendExpression('getErrorString()')))
+      logger.critical('Failed to load packages in %.1f seconds: %s' % (time.time()-t,omc.sendExpression('getErrorString()')))
       return 1
     dwgs = []
 
@@ -1200,7 +1206,7 @@ def main():
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
-        modelica_classes = OMPython.sendExpression('getClassNames(' + package + ', recursive=true, qualified=true, sort=true)')
+        modelica_classes = omc.sendExpression('getClassNames(' + package + ', recursive=true, qualified=true, sort=true)')
         for modelica_class in modelica_classes:
             logger.info('Exporting: ' + modelica_class)
 
