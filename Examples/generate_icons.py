@@ -39,14 +39,8 @@ import hashlib
 from optparse import OptionParser
 
 import svgwrite
-try:
-  from OMPython import OMCSession
-  omc = OMCSession()
-  print("Using CORBA")
-except ImportError:
-  from OMPython import OMCSessionZMQ
-  omc = OMCSessionZMQ()
-  print("No CORBA interface found, using ZMQ instead")
+from OMPython import OMCSessionZMQ
+omc = OMCSessionZMQ()
 
 # OpenModelica setup commands
 OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc")']
