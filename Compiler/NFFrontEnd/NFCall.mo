@@ -955,7 +955,7 @@ protected
       if listLength(exactMatches) == 1 then
         matchedFunc ::_ := exactMatches;
 
-        // Overwrite the actuall function name with the overload name
+        // Overwrite the actual function name with the overload name
         // for builtin functions.
         if Function.isBuiltin(matchedFunc.func) then
           func := matchedFunc.func;

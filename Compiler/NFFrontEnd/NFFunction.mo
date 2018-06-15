@@ -779,9 +779,7 @@ uniontype Function
         end if;
 
         (margexp, mty, matchKind) := TypeCheck.matchTypes(tmpty, compty, argexp, false);
-        // Allow only exact matches for vectorization.
-        // No casting, generic... matches alllowed (which are allowed for non-vected function matching)
-        correct := TypeCheck.isExactMatch(matchKind);
+        correct := TypeCheck.isValidArgumentMatch(matchKind);
         vectorized := true::vectorized;
       end if;
 
