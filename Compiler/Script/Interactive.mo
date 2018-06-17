@@ -18219,5 +18219,24 @@ algorithm
   end try;
 end checkAccessAnnotationAndEncryption;
 
+public function astContainsEncryptedClass
+  input Absyn.Program inProgram;
+  output Boolean containsEncryptedClass = false;
+protected
+  list<Absyn.Class> classes;
+  Absyn.Program p;
+  String fileName;
+algorithm
+  classes := match(inProgram)
+    case p as Absyn.PROGRAM()
+      then p.classes;
+  end match;
+  for c in classes loop
+    Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := c;
+    containsEncryptedClass := containsEncryptedClass or Util.endsWith(fileName, ".moc");
+    if containsEncryptedClass then break; end if;
+  end for;
+end astContainsEncryptedClass;
+
 annotation(__OpenModelica_Interface="backend");
 end Interactive;

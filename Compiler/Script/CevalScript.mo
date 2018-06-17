@@ -734,6 +734,16 @@ algorithm
         SymbolTable.setVars({});
       then (cache,Values.BOOL(true));
 
+    // handle encryption
+    case (cache,_,"list",_,_)
+      equation
+        // if AST contains encrypted class show nothing
+        p = SymbolTable.getAbsyn();
+        true = Interactive.astContainsEncryptedClass(p);
+        Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+      then
+        (cache,Values.STRING(""));
+
     case (cache,_,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.ENUM_LITERAL(name=path)},_)
       equation
         name = Absyn.pathLastIdent(path);
@@ -776,8 +786,15 @@ algorithm
           case Absyn.FULLYQUALIFIED() then className.path;
           else className;
         end match;
-        (absynClass as Absyn.CLASS(info=SOURCEINFO(fileName=str))) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(Absyn.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
+        // handle encryption
+        Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if (access >= 9) then // i.e., The class is not encrypted.
+          (absynClass as Absyn.CLASS(info=SOURCEINFO(fileName=str))) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+          str = Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(Absyn.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
+        else
+          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+          str = "";
+        end if;
       then
         (cache,Values.STRING(str));
 
