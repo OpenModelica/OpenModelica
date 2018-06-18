@@ -300,20 +300,24 @@ protected
   Visibility vis;
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
+  Variability var;
+  Boolean is_fixed;
 algorithm
   Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
     comment = cmt, info = info) := comp;
+  var := comp_attr.variability;
 
   if isSome(outerBinding) then
     SOME(binding) := outerBinding;
+    is_fixed := Binding.isUnbound(binding) and var == Variability.PARAMETER;
   else
     binding := flattenBinding(binding, prefix);
+    is_fixed := false;
   end if;
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
-  if Type.isArray(ty) and Binding.isBound(binding) and
-     Component.variability(comp) >= Variability.DISCRETE then
+  if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
     name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
     eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
       ElementSource.createElementSource(info));
@@ -322,8 +326,15 @@ algorithm
   end if;
 
   name := ComponentRef.prefixScope(comp_node, ty, {}, prefix);
-
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
+
+  // Set fixed = true for parameters that are part of a record instance whose
+  // binding couldn't be split and was moved to an initial equation.
+  if is_fixed then
+    ty_attrs := List.removeOnTrue("fixed", isTypeAttributeNamed, ty_attrs);
+    ty_attrs := ("fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(true), Variability.CONSTANT)) :: ty_attrs;
+  end if;
+
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info) :: vars;
 end flattenSimpleComponent;
 
@@ -337,6 +348,17 @@ algorithm
   binding := flattenBinding(Modifier.binding(attr), prefix, isTypeAttribute = true);
   outAttr := (Modifier.name(attr), binding);
 end flattenTypeAttribute;
+
+function isTypeAttributeNamed
+  input String name;
+  input tuple<String, Binding> attr;
+  output Boolean isNamed;
+protected
+  String attr_name;
+algorithm
+  (attr_name, _) := attr;
+  isNamed := name == attr_name;
+end isTypeAttributeNamed;
 
 function getRecordBindings
   input Binding binding;
@@ -395,7 +417,7 @@ algorithm
     binding_exp := Binding.getTypedExp(binding);
 
     comp_var := Component.variability(comp);
-    if comp_var <= Variability.PARAMETER then
+    if comp_var <= Variability.STRUCTURAL_PARAMETER then
       binding_exp := Ceval.evalExp(binding_exp);
     else
       binding_exp := SimplifyExp.simplify(binding_exp);
@@ -405,7 +427,7 @@ algorithm
       name := ComponentRef.prefixCref(node, ty, {}, prefix);
       eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
         ElementSource.createElementSource(InstNode.info(node)));
-      sections := Sections.prependEquation(eq, sections);
+      sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
     else
       binding := Binding.setTypedExp(binding_exp, binding);
