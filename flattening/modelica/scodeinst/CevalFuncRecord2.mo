@@ -20,12 +20,12 @@ algorithm
 end f;
 
 model CevalFuncRecord2
-  parameter R r = f(1.0, 2.0);
+  constant R r = f(1.0, 2.0);
 end CevalFuncRecord2;
 
 // Result:
 // class CevalFuncRecord2
-//   parameter Real r.x = 1.0;
-//   parameter Real r.y = 2.0;
+//   constant Real r.x = 1.0;
+//   constant Real r.y = 2.0;
 // end CevalFuncRecord2;
 // endResult

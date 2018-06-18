@@ -1,4 +1,4 @@
-// name: CevalFuncRecord4
+// name: CevalFuncRecord5
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -18,15 +18,15 @@ algorithm
 end f;
 
 model CevalFuncRecord5
-  parameter R r1;
-  parameter R r2 = f(r1);
+  constant R r1;
+  constant R r2 = f(r1);
 end CevalFuncRecord5;
 
 // Result:
 // class CevalFuncRecord5
-//   parameter Real r1.x;
-//   parameter Real r1.y;
-//   parameter Real r2.x = 1.0;
-//   parameter Real r2.y;
+//   constant Real r1.x;
+//   constant Real r1.y;
+//   constant Real r2.x = 1.0;
+//   constant Real r2.y;
 // end CevalFuncRecord5;
 // endResult

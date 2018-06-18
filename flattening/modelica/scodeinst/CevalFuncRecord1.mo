@@ -17,12 +17,12 @@ function f
 end f;
 
 model CevalFuncRecord1
-  parameter R r = f(1.0, 2.0);
+  constant R r = f(1.0, 2.0);
 end CevalFuncRecord1;
 
 // Result:
 // class CevalFuncRecord1
-//   parameter Real r.x = 1.0;
-//   parameter Real r.y = 2.0;
+//   constant Real r.x = 1.0;
+//   constant Real r.y = 2.0;
 // end CevalFuncRecord1;
 // endResult

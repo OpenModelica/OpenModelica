@@ -19,15 +19,15 @@ algorithm
 end f;
 
 model CevalFuncRecord3
-  parameter R r1;
-  parameter R r2 = f(r1);
+  constant R r1;
+  constant R r2 = f(r1);
 end CevalFuncRecord3;
 
 // Result:
 // class CevalFuncRecord3
-//   parameter Real r1.x;
-//   parameter Real r1.y;
-//   parameter Real r2.x = r1.x;
-//   parameter Real r2.y = r1.y;
+//   constant Real r1.x;
+//   constant Real r1.y;
+//   constant Real r2.x = r1.x;
+//   constant Real r2.y = r1.y;
 // end CevalFuncRecord3;
 // endResult
