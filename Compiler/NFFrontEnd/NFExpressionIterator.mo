@@ -128,7 +128,7 @@ public
         then if binding.isEach then EACH_ITERATOR(binding.bindingExp) else fromExp(binding.bindingExp);
 
       case Binding.FLAT_BINDING()
-        then SCALAR_ITERATOR(binding.bindingExp);
+        then EACH_ITERATOR(binding.bindingExp);
     end match;
   end fromBinding;
 
