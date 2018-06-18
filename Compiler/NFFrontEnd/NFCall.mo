@@ -1122,7 +1122,7 @@ protected
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
           exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
         then
-          Dimension.fromExp(exp, dim.var);
+          Dimension.fromExp(exp, Variability.CONSTANT);
 
       else dim;
     end match;

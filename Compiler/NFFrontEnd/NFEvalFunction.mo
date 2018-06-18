@@ -53,6 +53,7 @@ import ModelicaExternalC;
 import System;
 import NFTyping.ExpOrigin;
 import SCode;
+import NFPrefixes.Variability;
 
 encapsulated package ReplTree
   import BaseAvlTree;
@@ -195,7 +196,7 @@ protected
   Binding binding;
   Expression repl_exp;
 algorithm
-  repl_exp := getBindingExp(node);
+  repl_exp := getBindingExp(node, repl);
   repl_exp := Expression.map(repl_exp, function applyReplacements2(repl = repl));
   repl_exp := Expression.makeMutable(repl_exp);
   repl := ReplTree.add(repl, prefix + InstNode.name(node), repl_exp);
@@ -203,6 +204,7 @@ end addMutableReplacement;
 
 function getBindingExp
   input InstNode node;
+  input ReplTree.Tree repl;
   output Expression bindingExp;
 protected
   Binding binding;
@@ -212,28 +214,50 @@ algorithm
   if Binding.isBound(binding) then
     bindingExp := Binding.getExp(binding);
   else
-    bindingExp := buildBinding(node);
+    bindingExp := buildBinding(node, repl);
   end if;
 end getBindingExp;
 
 function buildBinding
   input InstNode node;
+  input ReplTree.Tree repl;
   output Expression result;
 protected
   Type ty;
 algorithm
   ty := InstNode.getType(node);
+  ty := Type.mapDims(ty, function applyReplacementsDim(repl = repl));
 
   result := match ty
     case Type.ARRAY() guard Type.hasKnownSize(ty)
       then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
-    case Type.COMPLEX() then buildRecordBinding(ty.cls);
+    case Type.COMPLEX() then buildRecordBinding(ty.cls, repl);
     else Expression.EMPTY(ty);
   end match;
 end buildBinding;
 
+function applyReplacementsDim
+  input ReplTree.Tree repl;
+  input output Dimension dim;
+algorithm
+  dim := match dim
+    local
+      Expression exp;
+
+    case Dimension.EXP()
+      algorithm
+        exp := Expression.map(dim.exp, function applyReplacements2(repl = repl));
+        exp := Ceval.evalExp(exp);
+      then
+        Dimension.fromExp(exp, Variability.CONSTANT);
+
+    else dim;
+  end match;
+end applyReplacementsDim;
+
 function buildRecordBinding
   input InstNode recordNode;
+  input ReplTree.Tree repl;
   output Expression result;
 protected
   Class cls = InstNode.getClass(recordNode);
@@ -247,12 +271,12 @@ algorithm
         bindings := {};
 
         for i in arrayLength(comps):-1:1 loop
-          bindings := Expression.makeMutable(getBindingExp(comps[i])) :: bindings;
+          bindings := Expression.makeMutable(getBindingExp(comps[i], repl)) :: bindings;
         end for;
       then
         Expression.RECORD(InstNode.scopePath(recordNode), cls.ty, bindings);
 
-    case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass);
+    case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, repl);
   end match;
 end buildRecordBinding;
 
