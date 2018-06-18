@@ -71,7 +71,9 @@ CevalFill1.mo \
 CevalFloor1.mo \
 CevalFunc1.mo \
 CevalFuncArray1.mo \
+CevalFuncArray2.mo \
 CevalFuncArray3.mo \
+CevalFuncArray4.mo \
 CevalFuncAssert1.mo \
 CevalFuncAssert2.mo \
 CevalFuncFor1.mo \
@@ -726,7 +728,6 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
-CevalFuncArray2.mo \
 ModClass6.mo \
 IfExpression6.mo \
 TupleOperation3.mo \
