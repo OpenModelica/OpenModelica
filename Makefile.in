@@ -72,7 +72,7 @@ LIBGITDIRS = `ls -f libraries/git`
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
-	git clean -fdx -e OpenModelicaSetup -e .project -e .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+	git clean -fdx -e OpenModelicaSetup -e OMSetup -e .project -e .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
 	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done
 
 prefix=@prefix@
