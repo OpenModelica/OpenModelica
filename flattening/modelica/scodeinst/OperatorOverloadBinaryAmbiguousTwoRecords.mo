@@ -64,9 +64,9 @@ end OperatorOverloadBinaryAmbiguousTwoRecords;
 // Error processing file: OperatorOverloadBinaryAmbiguousTwoRecords.mo
 // [flattening/modelica/scodeinst/OperatorOverloadBinaryAmbiguousTwoRecords.mo:59:3-59:15:writable] Error: Ambiguous matching overloaded operator functions found for c1 + d1.
 // Candidates are:
-//   D.'+'.leftC(C i, D j) => D
 //   C.'+'.self(C i, C j) => C
 //   C.'+'.rightD(C i, D j) => C
+//   D.'+'.leftC(C i, D j) => D
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

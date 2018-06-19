@@ -161,6 +161,7 @@ end Complex;
 model OperatorOverloadComplex
   Complex c1;
   Complex c2,c3,c4,c5,c6,c7,c8;
+  Complex ca1[3], ca2[3], ca3[3];
   Boolean b,b2;
   String s;
 equation
@@ -186,6 +187,9 @@ equation
   // ===((((c6 / c5 )* (c4 ^ c3)) * Complex(1.0)) + c2) - c1
   c7 = c6 / c5 * c4 ^ c3 * 1 + c2 - c1;
   c8 = Complex.'0'();
+
+  ca1 = -ca2;
+  c1 = ca2 * ca3;
 end OperatorOverloadComplex;
 
 // Result:
@@ -196,6 +200,17 @@ end OperatorOverloadComplex;
 // algorithm
 //   c3 := Complex.'constructor'.fromReal(c1.re * c2.re - c1.im * c2.im, c1.re * c2.im + c1.im * c2.re);
 // end Complex.'*'.multiply;
+//
+// function Complex.'*'.scalarProduct "Scalar product c1*c2 of two complex vectors"
+//   input Complex[:] c1 "Vector of Complex numbers 1";
+//   input Complex[size(c1, 1)] c2 "Vector of Complex numbers 2";
+//   output Complex c3 "= c1*c2";
+// algorithm
+//   c3 := Complex.'constructor'.fromReal(0.0, 0.0);
+//   for i in 1:size(c1, 1) loop
+//     c3 := Complex.'+'(c3, Complex.'*'.multiply(c1[i], c2[i]));
+//   end for;
+// end Complex.'*'.scalarProduct;
 //
 // function Complex.'+' "Add two complex numbers"
 //   input Complex c1 "Complex number 1";
@@ -211,6 +226,13 @@ end OperatorOverloadComplex;
 // algorithm
 //   c2 := Complex.'constructor'.fromReal(-c1.re, -c1.im);
 // end Complex.'-'.negate;
+//
+// function Complex.'-'.negateArr "Unary minus (multiply complex number by -1)"
+//   input Complex[:] c1 "Complex number";
+//   output Complex[size(c1, 1)] c2 "= -c1";
+// algorithm
+//   c2[1] := Complex.'constructor'.fromReal(-c1[1].re, -c1[1].im);
+// end Complex.'-'.negateArr;
 //
 // function Complex.'-'.subtract "Subtract two complex numbers"
 //   input Complex c1 "Complex number 1";
@@ -310,6 +332,24 @@ end OperatorOverloadComplex;
 //   Real c7.im "Imaginary part of complex number";
 //   Real c8.re "Real part of complex number";
 //   Real c8.im "Imaginary part of complex number";
+//   Real ca1[1].re "Real part of complex number";
+//   Real ca1[1].im "Imaginary part of complex number";
+//   Real ca1[2].re "Real part of complex number";
+//   Real ca1[2].im "Imaginary part of complex number";
+//   Real ca1[3].re "Real part of complex number";
+//   Real ca1[3].im "Imaginary part of complex number";
+//   Real ca2[1].re "Real part of complex number";
+//   Real ca2[1].im "Imaginary part of complex number";
+//   Real ca2[2].re "Real part of complex number";
+//   Real ca2[2].im "Imaginary part of complex number";
+//   Real ca2[3].re "Real part of complex number";
+//   Real ca2[3].im "Imaginary part of complex number";
+//   Real ca3[1].re "Real part of complex number";
+//   Real ca3[1].im "Imaginary part of complex number";
+//   Real ca3[2].re "Real part of complex number";
+//   Real ca3[2].im "Imaginary part of complex number";
+//   Real ca3[3].re "Real part of complex number";
+//   Real ca3[3].im "Imaginary part of complex number";
 //   Boolean b;
 //   Boolean b2;
 //   String s;
@@ -325,5 +365,7 @@ end OperatorOverloadComplex;
 //   c6 = Complex.'*'.multiply(c5, c4);
 //   c7 = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'*'.multiply(Complex.'/'(c6, c5), Complex.'^'(c4, c3)), Complex.'constructor'.fromReal(1.0, 0.0)), c2), c1);
 //   c8 = Complex.'0'();
+//   ca1 = Complex.'-'.negateArr(ca2);
+//   c1 = Complex.'*'.scalarProduct(ca2, ca3);
 // end OperatorOverloadComplex;
 // endResult

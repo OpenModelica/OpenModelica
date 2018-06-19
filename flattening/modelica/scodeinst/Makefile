@@ -578,6 +578,9 @@ OperationUnary1.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \
 OperatorNonEncapsulated1.mo \
+OperatorOverloadArrayOp1.mo \
+OperatorOverloadArrayOp2.mo \
+OperatorOverloadArrayOp3.mo \
 OperatorOverloadBinaryAmbiguous.mo \
 OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
