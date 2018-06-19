@@ -884,6 +884,7 @@ uniontype Function
     input list<TypedArg> args;
     input list<TypedNamedArg> named_args;
     input SourceInfo info;
+    input Boolean vectorize = true;
     output list<TypedArg> out_args;
     output FunctionMatchKind matchKind = NO_MATCH;
   protected
@@ -895,7 +896,7 @@ uniontype Function
 
       // If we failed to match a function normally then we try to see if
       // we can have a vectorized match.
-      if not matched then
+      if not matched and vectorize then
         (out_args, matched, matchKind) := matchArgsVectorize(func, out_args, info);
       end if;
     end if;
@@ -906,6 +907,7 @@ uniontype Function
     input list<TypedArg> args;
     input list<TypedNamedArg> named_args;
     input SourceInfo info;
+    input Boolean vectorize = true;
     output list<MatchedFunction> matchedFunctions;
   protected
     list<TypedArg> m_args;
@@ -914,7 +916,7 @@ uniontype Function
   algorithm
     matchedFunctions := {};
     for func in funcs loop
-      (m_args, matchKind) := matchFunction(func, args, named_args, info);
+      (m_args, matchKind) := matchFunction(func, args, named_args, info, vectorize);
 
       if FunctionMatchKind.isValid(matchKind) then
         matchedFunctions := MatchedFunction.MATCHED_FUNC(func,m_args,matchKind)::matchedFunctions;
@@ -927,11 +929,12 @@ uniontype Function
     input list<TypedArg> args;
     input list<TypedNamedArg> named_args;
     input SourceInfo info;
+    input Boolean vectorize = true;
     output list<MatchedFunction> matchedFunctions;
   protected
   algorithm
     ErrorExt.setCheckpoint("NFFunction:matchFunctions");
-    matchedFunctions := matchFunctions(funcs, args, named_args, info);
+    matchedFunctions := matchFunctions(funcs, args, named_args, info, vectorize);
     ErrorExt.rollBack("NFFunction:matchFunctions");
   end matchFunctionsSilent;
 

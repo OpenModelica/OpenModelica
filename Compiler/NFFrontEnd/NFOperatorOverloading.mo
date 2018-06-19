@@ -32,9 +32,10 @@
 encapsulated package NFOperatorOverloading
   import Absyn;
   import NFInstNode.InstNode;
+  import NFFunction.Function;
+  import Type = NFType;
 
 protected
-  import NFFunction.Function;
   import Record = NFRecord;
   import ComponentRef = NFComponentRef;
   import NFClassTree.ClassTree;
@@ -126,6 +127,38 @@ public
       fail();
     end if;
   end checkOperatorRestrictions;
+
+  function lookupOperatorFunctionsInType
+    input String operatorName;
+    input Type ty;
+    output list<Function> functions;
+  protected
+    InstNode node;
+    ComponentRef fn_ref;
+    Boolean is_defined;
+  algorithm
+    functions := match Type.arrayElementType(ty)
+      case Type.COMPLEX(cls = node)
+        algorithm
+          try
+            fn_ref := Function.lookupFunctionSimple(operatorName, node);
+            is_defined := true;
+          else
+            is_defined := false;
+          end try;
+
+          if is_defined then
+            fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node));
+            functions := Function.typeRefCache(fn_ref);
+          else
+            functions := {};
+          end if;
+        then
+          functions;
+
+      else {};
+    end match;
+  end lookupOperatorFunctionsInType;
 
 protected
   function checkOperatorConstructorOutput

@@ -724,7 +724,7 @@ public
         then List.isEqualOnTrue(ty1.types, ty2.types, isEqual);
 
       case (TUPLE(), TUPLE()) then false;
-
+      case (COMPLEX(), COMPLEX()) then InstNode.isSame(ty1.cls, ty2.cls);
       else true;
     end match;
   end isEqual;

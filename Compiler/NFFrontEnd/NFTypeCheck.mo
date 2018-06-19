@@ -74,6 +74,9 @@ import ComponentRef = NFComponentRef;
 import ErrorExt;
 import NFBuiltin;
 import SimplifyExp = NFSimplifyExp;
+import MetaModelica.Dangerous.*;
+import OperatorOverloading = NFOperatorOverloading;
+import ExpandExp = NFExpandExp;
 
 public
 type MatchKind = enumeration(
@@ -148,7 +151,7 @@ function checkBinaryOperation
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (binaryExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (binaryExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
   else
     (binaryExp, resultType) := match operator.op
       case Op.ADD then checkBinaryOperationAdd(exp1, type1, exp2, type2, info);
@@ -165,101 +168,95 @@ algorithm
   end if;
 end checkBinaryOperation;
 
-public function checkBinaryOperationOperatorRecords
-  input Expression inExp1;
-  input Type inType1;
+public function checkOverloadedBinaryOperator
+  input Expression exp1;
+  input Type type1;
   input Variability var1;
-  input Operator inOp;
-  input Expression inExp2;
-  input Type inType2;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
   input Variability var2;
   input SourceInfo info;
   output Expression outExp;
   output Type outType;
 protected
-  String opstr;
-  Function fn;
-  InstNode node1, node2;
-  ComponentRef fn_ref;
+  String op_str;
   list<Function> candidates;
-  Boolean matched, oper_defined;
+  Type ety1, ety2;
+algorithm
+  op_str := Operator.symbol(op,"'");
+  ety1 := Type.arrayElementType(type1);
+  ety2 := Type.arrayElementType(type2);
+
+  candidates := OperatorOverloading.lookupOperatorFunctionsInType(op_str, ety1);
+
+  // Only collect operators from both types if they're not the same type.
+  if not Type.isEqual(ety1, ety2) then
+    candidates := listAppend(OperatorOverloading.lookupOperatorFunctionsInType(op_str, ety2), candidates);
+  end if;
+
+  // Give up if no operator functions could be found.
+  if listEmpty(candidates) then
+    printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
+  end if;
+
+  (outExp, outType) := matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+end checkOverloadedBinaryOperator;
+
+function matchOverloadedBinaryOperator
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input list<Function> candidates;
+  input SourceInfo info;
+  input Boolean showErrors = true;
+  output Expression outExp;
+  output Type outType;
+protected
   list<TypedArg> args;
   FunctionMatchKind matchKind;
   MatchedFunction matchedFunc;
-  list<MatchedFunction> matchedFunctions = {}, exactMatches;
+  list<MatchedFunction> matchedFunctions, exactMatches;
+  Function fn;
+  Operator.Op oop;
 algorithm
-
-  opstr := Operator.symbol(inOp,"'");
-
-  candidates := {};
-  if Type.isComplex(inType1) then
-    Type.COMPLEX(cls=node1) := inType1;
-    try
-      fn_ref := Function.lookupFunctionSimple(opstr, node1);
-      oper_defined := true;
-    else
-      oper_defined := false;
-    end try;
-
-    if oper_defined then
-      fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node1));
-      for fn in Function.typeRefCache(fn_ref) loop
-      //  checkValidOperatorOverload(opstr, fn, node1);
-        candidates := fn::candidates;
-      end for;
-    end if;
-  end if;
-
-  if Type.isComplex(inType2) then
-    Type.COMPLEX(cls=node2) := inType2;
-
-    // If the other operand is complex, make sure the two are not of the same class before collecting
-    // operators from this one.
-    if not (Type.isComplex(inType1) and InstNode.isSame(node1, node2)) then
-        try
-          fn_ref := Function.lookupFunctionSimple(opstr, node2);
-          oper_defined := true;
-        else
-          oper_defined := false;
-        end try;
-
-        if oper_defined then
-          fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node2));
-          for fn in Function.typeRefCache(fn_ref) loop
-            //checkValidOperatorOverload(opstr, fn, node2);
-            candidates := fn::candidates;
-          end for;
-        end if;
-      end if;
-  end if;
-  candidates := listReverse(candidates);
-
-  args := {(inExp1,inType1,var1),(inExp2,inType2,var2)};
-
+  args := {(exp1, type1, var1), (exp2, type2, var2)};
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
   // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
 
   if listEmpty(exactMatches) then
     // TODO: new error mentioning overloaded operators.
-    if not listEmpty(candidates) then
-      ErrorExt.setCheckpoint("NFTypeCheck:implicitConstruction");
-      try
-        (outExp, outType) := implicitConstructAndMatch(candidates, inExp1, inType1,inExp2, inType2);
+    ErrorExt.setCheckpoint("NFTypeCheck:implicitConstruction");
+    try
+      (outExp, outType) := implicitConstructAndMatch(candidates, exp1, type1, op, exp2, type2, info);
+
+      if showErrors then
         ErrorExt.delCheckpoint("NFTypeCheck:implicitConstruction");
-        return;
       else
         ErrorExt.rollBack("NFTypeCheck:implicitConstruction");
-        printUnresolvableTypeError(Expression.BINARY(inExp1, inOp, inExp2), {inType1, inType2}, info);
-        fail();
-      end try;
+      end if;
     else
-      printUnresolvableTypeError(Expression.BINARY(inExp1, inOp, inExp2), {inType1, inType2}, info);
-      fail();
-    end if;
-  end if;
+      ErrorExt.rollBack("NFTypeCheck:implicitConstruction");
 
-  if listLength(exactMatches) == 1 then
+      if Type.isArray(type1) or Type.isArray(type2) then
+        oop := op.op;
+
+        if oop == Op.ADD or oop == Op.SUB then
+          (outExp, outType) :=
+            checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+        else
+          printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
+        end if;
+      else
+        printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
+      end if;
+    end try;
+  elseif listLength(exactMatches) == 1 then
     matchedFunc ::_ := exactMatches;
     fn := matchedFunc.func;
     outType := Function.returnType(fn);
@@ -270,20 +267,109 @@ algorithm
         Prefixes.variabilityMax(var1, var2),
         outType));
   else
-    Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
-          {Expression.toString(Expression.BINARY(inExp1, inOp, inExp2))
-            , Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
+    if showErrors then
+      Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
+        {Expression.toString(Expression.BINARY(exp1, op, exp2)),
+         Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
+    end if;
     fail();
   end if;
+end matchOverloadedBinaryOperator;
 
-end checkBinaryOperationOperatorRecords;
+function checkOverloadedBinaryArrayAddSub
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input list<Function> candidates;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  Expression e1, e2;
+  MatchKind mk;
+algorithm
+  // For addition or subtraction both sides must have the same type.
+  (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+
+  if not isCompatibleMatch(mk) then
+    printUnresolvableTypeError(Expression.BINARY(e1, op, e2), {type1, type2}, info);
+  end if;
+
+  e1 := ExpandExp.expand(e1);
+  e2 := ExpandExp.expand(e2);
+
+  (outExp, outType) :=
+    checkOverloadedBinaryArrayAddSub2(e1, type1, var1, op, e2, type2, var2, candidates, info);
+end checkOverloadedBinaryArrayAddSub;
+
+function checkOverloadedBinaryArrayAddSub2
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input list<Function> candidates;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+algorithm
+  (outExp, outType) := match (exp1, exp2)
+    local
+      Type ty, ty1, ty2;
+      Expression e, e2;
+      list<Expression> expl, expl1, expl2;
+
+    case (Expression.ARRAY(elements = expl1), Expression.ARRAY(elements = expl2))
+      algorithm
+        expl := {};
+
+        if listEmpty(expl1) then
+          // If the arrays are empty, match against the element types to get the expected return type.
+          ty1 := Type.arrayElementType(type1);
+          ty2 := Type.arrayElementType(type2);
+
+          try
+            (_, ty) := matchOverloadedBinaryOperator(
+              Expression.EMPTY(ty1), ty1, var1, op, Expression.EMPTY(ty2), ty2, var2, candidates, info, showErrors = false);
+          else
+            printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
+          end try;
+        else
+          ty1 := Type.unliftArray(type1);
+          ty2 := Type.unliftArray(type2);
+
+          for e1 in expl1 loop
+            e2 :: expl2 := expl2;
+            (e, ty) := checkOverloadedBinaryArrayAddSub2(e1, ty1, var1, op, e2, ty2, var2, candidates, info);
+            expl := e :: expl;
+          end for;
+
+          expl := listReverseInPlace(expl);
+        end if;
+
+        outType := Type.setArrayElementType(type1, ty);
+        outExp := Expression.ARRAY(outType, expl);
+      then
+        (outExp, outType);
+
+    else matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+  end match;
+end checkOverloadedBinaryArrayAddSub2;
 
 function implicitConstructAndMatch
   input list<Function> candidates;
   input Expression inExp1;
   input Type inType1;
+  input Operator op;
   input Expression inExp2;
   input Type inType2;
+  input SourceInfo info;
   output Expression outExp;
   output Type outType;
 protected
@@ -327,10 +413,9 @@ algorithm
     outType := Function.returnType(operfn);
     outExp := Expression.CALL(Call.makeTypedCall(operfn, {exp1, exp2}, var, outType));
   else
-    // TODO: FIX ME: Add proper error message.
-    print("Ambiguous operator: " + "\nCandidates:\n  ");
-    print(Function.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs)));
-    print("\n");
+    Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
+      {Expression.toString(Expression.BINARY(exp1, op, exp2)),
+       Function.candidateFuncListString(list(Util.tuple31(fn) for fn in matchedfuncs))}, info);
     fail();
   end if;
 end implicitConstructAndMatch;
@@ -815,7 +900,7 @@ protected
   Operator op;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
-  (unaryExp,unaryType) := checkUnaryOperationOperatorRecords(exp1, type1, var1, operator, info);
+  (unaryExp,unaryType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, info);
     return;
   end if;
 
@@ -832,7 +917,7 @@ algorithm
   end if;
 end checkUnaryOperation;
 
-public function checkUnaryOperationOperatorRecords
+public function checkOverloadedUnaryOperator
   input Expression inExp1;
   input Type inType1;
   input Variability var;
@@ -852,21 +937,17 @@ protected
   MatchedFunction matchedFunc;
   list<MatchedFunction> matchedFunctions = {}, exactMatches;
 algorithm
-
   opstr := Operator.symbol(inOp,"'");
-  Type.COMPLEX(cls=node1) := inType1;
+  candidates := OperatorOverloading.lookupOperatorFunctionsInType(opstr, inType1);
 
-  fn_ref := Function.lookupFunctionSimple(opstr, node1);
-  fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(node1));
-  candidates := Function.typeRefCache(fn_ref);
   //for fn in candidates loop
   //  checkValidOperatorOverload(opstr, fn, node1);
   //end for;
 
   args := {(inExp1,inType1,var)};
-  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
+  matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info, vectorize = false);
 
-  // We only allow exact matches for operator overlaoding. e.g. no casting or generic matches.
+  // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
   if listEmpty(exactMatches) then
     printUnresolvableTypeError(Expression.UNARY(inOp, inExp1), {inType1}, info);
@@ -888,8 +969,7 @@ algorithm
        Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
     fail();
   end if;
-
-end checkUnaryOperationOperatorRecords;
+end checkOverloadedUnaryOperator;
 
 function checkLogicalBinaryOperation
   input Expression exp1;
@@ -908,7 +988,7 @@ protected
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) or
      Type.isComplex(Type.arrayElementType(type2)) then
-    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, var1, operator, exp2, type2, var2, info);
+    (outExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
     return;
   end if;
 
@@ -935,7 +1015,7 @@ protected
   MatchKind mk;
 algorithm
   if Type.isComplex(Type.arrayElementType(type1)) then
-    (outExp,resultType) := checkUnaryOperationOperatorRecords(exp1, type1, var1, operator, info);
+    (outExp,resultType) := checkOverloadedUnaryOperator(exp1, type1, var1, operator, info);
     return;
   end if;
 
@@ -967,8 +1047,8 @@ protected
 algorithm
 
   if Type.isComplex(Type.arrayElementType(type1)) or
-    Type.isComplex(Type.arrayElementType(type2)) then
-    (outExp,resultType) := checkBinaryOperationOperatorRecords(exp1, type1, var1, operator, exp2, type2, var2, info);
+     Type.isComplex(Type.arrayElementType(type2)) then
+    (outExp,resultType) := checkOverloadedBinaryOperator(exp1, type1, var1, operator, exp2, type2, var2, info);
     return;
   end if;
 
@@ -1005,12 +1085,16 @@ function printUnresolvableTypeError
   input Expression exp;
   input list<Type> types;
   input SourceInfo info;
+  input Boolean printError = true;
 protected
   String exp_str, ty_str;
 algorithm
-  exp_str := Expression.toString(exp);
-  ty_str := List.toString(types, Type.toString, "", "", ", ", "", false);
-  Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str, "<NO_COMPONENT>"}, info);
+  if printError then
+    exp_str := Expression.toString(exp);
+    ty_str := List.toString(types, Type.toString, "", "", ", ", "", false);
+    Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str, "<NO_COMPONENT>"}, info);
+  end if;
+
   fail();
 end printUnresolvableTypeError;
 
