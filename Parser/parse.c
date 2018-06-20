@@ -422,7 +422,7 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
 
 #ifdef OMENCRYPTION
   if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
-    return parseEncryptedFile(fileName, members.filename_C, langStd, runningTestsuite, libraryPath, lveInstance);
+    return parseEncryptedFile(fileName, langStd, runningTestsuite, libraryPath, lveInstance);
   }
 #else
   if (len > 3 && 0==strcmp(fileName+len-4,".moc")) {
