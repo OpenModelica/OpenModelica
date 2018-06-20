@@ -57,10 +57,11 @@ public
 function parse "Parse a mo-file"
   input String filename;
   input String encoding;
-  input Option<Integer> serverContext;
+  input String libraryPath = "";
+  input Option<Integer> lveInstance = NONE();
   output Absyn.Program outProgram;
 algorithm
-  outProgram := parsebuiltin(filename,encoding,serverContext);
+  outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
   /* Check that the program is not totally off the charts */
   _ := SCodeUtil.translateAbsyn2SCode(outProgram);
 end parse;
@@ -85,7 +86,8 @@ end parsestring;
 function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
   input String filename;
   input String encoding;
-  input Option<Integer> serverContext;
+  input String libraryPath = "";
+  input Option<Integer> lveInstance = NONE();
   input Integer acceptedGram=Config.acceptedGrammar();
   input Integer languageStandardInt=Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
   output Absyn.Program outProgram;
@@ -94,7 +96,7 @@ protected
   String realpath;
 algorithm
   realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
-  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), acceptedGram, encoding, languageStandardInt, Config.getRunningTestsuite(), serverContext);
+  outProgram := ParserExt.parse(realpath, Util.testsuiteFriendly(realpath), acceptedGram, encoding, languageStandardInt, Config.getRunningTestsuite(), libraryPath, lveInstance);
 end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
@@ -124,12 +126,13 @@ function parallelParseFiles
   input list<String> filenames;
   input String encoding;
   input Integer numThreads = Config.noProc();
-  input Boolean encrypted = false;
+  input String libraryPath = "";
+  input Option<Integer> lveInstance = NONE();
   output HashTableStringToProgram.HashTable ht;
 protected
   list<ParserResult> partialResults;
 algorithm
-  partialResults := parallelParseFilesWork(filenames, encoding, numThreads, encrypted);
+  partialResults := parallelParseFilesWork(filenames, encoding, numThreads, libraryPath, lveInstance);
   ht := HashTableStringToProgram.emptyHashTableSized(Util.nextPrime(listLength(partialResults)));
   for res in partialResults loop
     ht := match res
@@ -157,6 +160,20 @@ algorithm
   result := MetaModelica.Dangerous.listReverseInPlace(result);
 end parallelParseFilesToProgramList;
 
+function startLibraryVendorExecutable
+  input String lvePath;
+  output Boolean success;
+  output Option<Integer> lveInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+algorithm
+  (success, lveInstance) := ParserExt.startLibraryVendorExecutable(lvePath);
+end startLibraryVendorExecutable;
+
+function stopLibraryVendorExecutable
+  input Option<Integer> lveInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+algorithm
+  ParserExt.stopLibraryVendorExecutable(lveInstance);
+end stopLibraryVendorExecutable;
+
 protected
 
 uniontype ParserResult
@@ -170,20 +187,13 @@ function parallelParseFilesWork
   input list<String> filenames;
   input String encoding;
   input Integer numThreads;
-  input Boolean encrypted = false;
+  input String libraryPath = "";
+  input Option<Integer> lveInstance = NONE();
   output list<ParserResult> partialResults;
 protected
-  list<tuple<String,String,Option<Integer>>> workList;
-  Boolean success;
-  Option<Integer> decryptionServer;
+  list<tuple<String,String,String,Option<Integer>>> workList = list((file,encoding,libraryPath,lveInstance) for file in filenames);
 algorithm
-  if encrypted then
-    (success, decryptionServer) := ParserExt.startDecryptionServer();
-    workList := list((file,encoding,decryptionServer) for file in filenames);
-  else
-    workList := list((file,encoding,NONE()) for file in filenames);
-  end if;
-  if Config.getRunningTestsuite() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or encrypted then
+  if Config.getRunningTestsuite() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or not(libraryPath == "") then
     partialResults := list(loadFileThread(t) for t in workList);
   else
     // GC.disable(); // Seems to sometimes break building nightly omc
@@ -193,15 +203,15 @@ algorithm
 end parallelParseFilesWork;
 
 function loadFileThread
-  input tuple<String,String,Option<Integer>> inFileEncoding;
+  input tuple<String,String,String,Option<Integer>> inFileEncoding;
   output ParserResult result;
 algorithm
   result := matchcontinue inFileEncoding
     local
-      String filename,encoding;
-      Option<Integer> decryptionServer;
-    case (filename,encoding,decryptionServer) then PARSERRESULT(filename,SOME(Parser.parse(filename, encoding, decryptionServer)));
-    case (filename,_,_) then PARSERRESULT(filename,NONE());
+      String filename,encoding,libraryPath;
+      Option<Integer> lveInstance;
+    case (filename,encoding,libraryPath,lveInstance) then PARSERRESULT(filename,SOME(Parser.parse(filename, encoding, libraryPath, lveInstance)));
+    case (filename,_,_,_) then PARSERRESULT(filename,NONE());
   end matchcontinue;
   if ErrorExt.getNumMessages() > 0 then
     ErrorExt.moveMessagesToParentThread();

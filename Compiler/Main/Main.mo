@@ -349,7 +349,7 @@ algorithm
     // A .mo-file.
     case true
       equation
-        pnew = Parser.parse(inLib, "UTF-8", NONE());
+        pnew = Parser.parse(inLib, "UTF-8");
         p = SymbolTable.getAbsyn();
         pnew = Interactive.mergeProgram(pnew, p);
         SymbolTable.setAbsyn(pnew);

@@ -185,6 +185,8 @@ algorithm
       Absyn.Class cl;
       list<String> filenames;
       LoadFileStrategy strategy;
+      Boolean lveStarted;
+      Option<Integer> lveInstance;
 
     case (_,_,_,false,_)
       equation
@@ -204,14 +206,24 @@ algorithm
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
-        if Config.getRunningTestsuite() or Config.noProc()==1 then
+        if encrypted then
+          (lveStarted, lveInstance) = Parser.startLibraryVendorExecutable(path + pd + name);
+          if not lveStarted then
+            fail();
+          end if;
+        end if;
+
+        if (Config.getRunningTestsuite() or Config.noProc()==1) and not encrypted then
           strategy = STRATEGY_ON_DEMAND(encoding);
         else
           filenames = getAllFilesFromDirectory(path + pd + name, encrypted);
       // print("Files load in parallel:\n" + stringDelimitList(filenames, "\n") + "\n");
-          strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding, Config.noProc(), encrypted));
+          strategy = STRATEGY_HASHTABLE(Parser.parallelParseFiles(filenames, encoding, Config.noProc(), path + pd + name, lveInstance));
         end if;
         cl = loadCompletePackageFromMp(id, name, path, strategy, Absyn.TOP(), Error.getNumErrorMessages(), encrypted);
+        if (encrypted and lveStarted) then
+          Parser.stopLibraryVendorExecutable(lveInstance);
+        end if;
       then
         cl;
   end match;
@@ -711,7 +723,7 @@ algorithm
           fail();
         end if; */
       then BaseHashTable.get(filename, strategy.ht);
-    case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding,NONE());
+    case STRATEGY_ON_DEMAND() then Parser.parse(filename, strategy.encoding);
   end match;
 end getProgramFromStrategy;
 

@@ -49,10 +49,11 @@ public function parse "Parse a mo-file"
   input String encoding;
   input Integer languageStandardInt;
   input Boolean runningTestsuite;
-  input Option<Integer> serverContext;
+  input String libraryPath;
+  input Option<Integer> lveInstance;
   output Absyn.Program outProgram;
 
-  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite, serverContext) annotation(Library = {"omparse","omantlr3","omcruntime"});
+  external "C" outProgram=ParserExt_parse(filename, infoFilename, acceptedGram, languageStandardInt, encoding, runningTestsuite, libraryPath, lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end parse;
 
 public function parseexp "Parse a mos-file"
@@ -106,12 +107,19 @@ public function stringCref
   external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stringCref;
 
-public function startDecryptionServer "Starts the decryption server executable"
+public function startLibraryVendorExecutable "Starts the library vendor executable"
+  input String lvePath;
   output Boolean success;
-  output Option<Integer> outDecryptionServer "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+  output Option<Integer> lveInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
 
-  external "C" success=ParserExt_startDecryptionServer(outDecryptionServer) annotation(Library = {"omparse","omantlr3","omcruntime"});
-end startDecryptionServer;
+  external "C" success=ParserExt_startLibraryVendorExecutable(lvePath, lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end startLibraryVendorExecutable;
+
+public function stopLibraryVendorExecutable
+  input Option<Integer> lveInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+
+  external "C" ParserExt_stopLibraryVendorExecutable(lveInstance) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end stopLibraryVendorExecutable;
 
 annotation(__OpenModelica_Interface="frontend");
 end ParserExt;

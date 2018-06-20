@@ -36,7 +36,7 @@
 #include "meta_modelica.h"
 #include "parse.c"
 
-void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammar, int langStd, const char* encoding, int runningTestsuite, void* serverContext)
+void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGrammar, int langStd, const char* encoding, int runningTestsuite, const char* libraryPath, void* lveInstance)
 {
   int flags = PARSE_MODELICA;
   if(acceptedGrammar == 2) flags |= PARSE_META_MODELICA;
@@ -44,7 +44,7 @@ void* ParserExt_parse(const char* filename, const char* infoname, int acceptedGr
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
   else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
-  void *res = parseFile(filename, infoname, flags, encoding, langStd, runningTestsuite, serverContext);
+  void *res = parseFile(filename, infoname, flags, encoding, langStd, runningTestsuite, libraryPath, lveInstance);
   if (res == NULL)
     MMC_THROW();
   // printAny(res);
@@ -59,7 +59,7 @@ void* ParserExt_parseexp(const char* filename, const char* infoname, int accepte
   else if(acceptedGrammar == 4) flags |= PARSE_OPTIMICA;
   else if(acceptedGrammar == 5) flags |= PARSE_PDEMODELICA;
 
-  void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, runningTestsuite, 0);
+  void *res = parseFile(filename, infoname, flags, "UTF-8", langStd, runningTestsuite, "", 0);
   if (res == NULL)
     MMC_THROW();
   return res;
@@ -129,7 +129,12 @@ void* ParserExt_stringCref(const char* data, const char* filename, int acceptedG
   }
 }
 
-int ParserExt_startDecryptionServer(void** decryptionServer)
+int ParserExt_startLibraryVendorExecutable(const char* path, void** lveInstance)
 {
-  return startDecryptionServer(decryptionServer);
+  return startLibraryVendorExecutable(path, lveInstance);
+}
+
+void ParserExt_stopLibraryVendorExecutable(void** lveInstance)
+{
+  stopLibraryVendorExecutable(lveInstance);
 }
