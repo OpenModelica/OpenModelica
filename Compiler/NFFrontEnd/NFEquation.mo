@@ -36,6 +36,7 @@ encapsulated uniontype NFEquation
   import NFInstNode.InstNode;
   import DAE;
   import ComponentRef = NFComponentRef;
+  import NFPrefixes.Variability;
 
 protected
   import Equation = NFEquation;
@@ -44,6 +45,14 @@ protected
   import ElementSource;
 
 public
+  uniontype Branch
+    record BRANCH
+      Expression condition;
+      Variability conditionVar;
+      list<Equation> body;
+    end BRANCH;
+  end Branch;
+
   record EQUALITY
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
@@ -78,14 +87,12 @@ public
   end FOR;
 
   record IF
-    list<tuple<Expression, list<Equation>>> branches
-      "List of branches, where each branch is a tuple of a condition and a body.";
+    list<Branch> branches;
     DAE.ElementSource source;
   end IF;
 
   record WHEN
-    list<tuple<Expression, list<Equation>>> branches
-      "List of branches, where each branch is a tuple of a condition and a body.";
+    list<Branch> branches;
     DAE.ElementSource source;
   end WHEN;
 
@@ -112,8 +119,18 @@ public
     DAE.ElementSource source;
   end NORETCALL;
 
+  function makeBranch
+    input Expression condition;
+    input list<Equation> body;
+    input Variability condVar = Variability.CONTINUOUS;
+    output Branch branch;
+  algorithm
+    branch := Branch.BRANCH(condition, condVar, body);
+    annotation(__OpenModelica_EarlyInline=true);
+  end makeBranch;
+
   function makeIf
-    input list<tuple<Expression, list<Equation>>> branches;
+    input list<Branch> branches;
     input DAE.ElementSource src;
     output Equation eq;
   algorithm
@@ -174,9 +191,16 @@ public
       case IF()
         algorithm
           for b in eq.branches loop
-            for e in Util.tuple22(b) loop
-              apply(e, func);
-            end for;
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  for e in b.body loop
+                    apply(e, func);
+                  end for;
+                then
+                  ();
+              else ();
+            end match;
           end for;
         then
           ();
@@ -184,9 +208,16 @@ public
       case WHEN()
         algorithm
           for b in eq.branches loop
-            for e in Util.tuple22(b) loop
-              apply(e, func);
-            end for;
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  for e in b.body loop
+                    apply(e, func);
+                  end for;
+                then
+                  ();
+              else ();
+            end match;
           end for;
         then
           ();
@@ -214,15 +245,31 @@ public
 
       case IF()
         algorithm
-          eq.branches := list((Util.tuple21(b), list(map(e, func) for e in Util.tuple22(b)))
-                              for b in eq.branches);
+          eq.branches := list(
+            match b
+              case Branch.BRANCH()
+                algorithm
+                  b.body := list(map(e, func) for e in b.body);
+                then
+                  b;
+              else b;
+            end match
+          for b in eq.branches);
         then
           ();
 
       case WHEN()
         algorithm
-          eq.branches := list((Util.tuple21(b), list(map(e, func) for e in Util.tuple22(b)))
-                              for b in eq.branches);
+          eq.branches := list(
+            match b
+              case Branch.BRANCH()
+                algorithm
+                  b.body := list(map(e, func) for e in b.body);
+                then
+                  b;
+              else b;
+            end match
+          for b in eq.branches);
         then
           ();
 
@@ -328,16 +375,22 @@ public
   end mapExp;
 
   function mapExpBranch
-    input output tuple<Expression, list<Equation>> branch;
+    input output Branch branch;
     input MapExpFn func;
   protected
     Expression cond;
     list<Equation> eql;
   algorithm
-    (cond, eql) := branch;
-    cond := func(cond);
-    eql := list(mapExp(e, func) for e in eql);
-    branch := (cond, eql);
+    branch := match branch
+      case Branch.BRANCH()
+        algorithm
+          cond := func(branch.condition);
+          eql := list(mapExp(e, func) for e in branch.body);
+        then
+          Branch.BRANCH(cond, branch.conditionVar, eql);
+
+      else branch;
+    end match;
   end mapExpBranch;
 
   function foldExpList<ArgT>
@@ -400,8 +453,16 @@ public
       case Equation.IF()
         algorithm
           for b in eq.branches loop
-            arg := func(Util.tuple21(b), arg);
-            arg := foldExpList(Util.tuple22(b), func, arg);
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  arg := func(b.condition, arg);
+                  arg := foldExpList(b.body, func, arg);
+                then
+                  ();
+
+              else ();
+            end match;
           end for;
         then
           ();
@@ -409,8 +470,16 @@ public
       case Equation.WHEN()
         algorithm
           for b in eq.branches loop
-            arg := func(Util.tuple21(b), arg);
-            arg := foldExpList(Util.tuple22(b), func, arg);
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  arg := func(b.condition, arg);
+                  arg := foldExpList(b.body, func, arg);
+                then
+                  ();
+
+              else ();
+            end match;
           end for;
         then
           ();

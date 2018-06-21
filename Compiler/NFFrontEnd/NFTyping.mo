@@ -2183,7 +2183,7 @@ algorithm
       Expression cond, e1, e2, e3;
       Type ty, ty1, ty2;
       list<Equation> eqs1, body;
-      list<tuple<Expression, list<Equation>>> tybrs;
+      list<Equation.Branch> tybrs;
       InstNode iterator;
       MatchKind mk;
       Variability var, bvar;
@@ -2241,11 +2241,14 @@ algorithm
         next_origin := intBitOr(origin, ExpOrigin.WHEN);
 
         tybrs := list(
-          match br case(cond, body)
-            algorithm
-              e1 := typeCondition(cond, next_origin, eq.source, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
-              eqs1 := list(typeEquation(beq, next_origin) for beq in body);
-            then (e1, eqs1);
+          match br
+            case Equation.Branch.BRANCH(condition = cond, body = body)
+              algorithm
+                (e1, var) := typeCondition(cond, next_origin, eq.source,
+                  Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
+                eqs1 := list(typeEquation(beq, next_origin) for beq in body);
+              then
+                Equation.makeBranch(e1, eqs1, var);
           end match
         for br in eq.branches);
       then
@@ -2556,7 +2559,7 @@ algorithm
 end typeCondition;
 
 function typeIfEquation
-  input list<tuple<Expression, list<Equation>>> branches;
+  input list<Equation.Branch> branches;
   input ExpOrigin.Type origin;
   input DAE.ElementSource source;
   output Equation ifEq;
@@ -2564,11 +2567,11 @@ protected
   Expression cond;
   list<Equation> eql;
   Variability accum_var = Variability.CONSTANT, var;
-  list<tuple<Expression, list<Equation>>> bl = {};
+  list<Equation.Branch> bl = {};
   Integer next_origin = origin;
 algorithm
   for b in branches loop
-    (cond, eql) := b;
+    Equation.Branch.BRANCH(condition = cond, body = eql) := b;
     (cond, var) := typeCondition(cond, next_origin, source, Error.IF_CONDITION_TYPE_ERROR);
     accum_var := Prefixes.variabilityMax(accum_var, var);
 
@@ -2585,13 +2588,30 @@ algorithm
 
     if not Expression.isFalse(cond) then
       eql := list(typeEquation(e, next_origin) for e in eql);
-      bl := (cond, eql) :: bl;
+      bl := Equation.makeBranch(cond, eql, var) :: bl;
 
       if Expression.isTrue(cond) then
         break;
       end if;
     end if;
   end for;
+
+  // If all conditions are parameter expressions, mark all of them as structural.
+  // (If accum_var < Variability.PARAMETER then they're already all structural.)
+  if accum_var == Variability.PARAMETER then
+    bl := list(
+      match b
+        // Only non-structural parameters needs to be changed.
+        case Equation.Branch.BRANCH(conditionVar = Variability.PARAMETER)
+          algorithm
+            b.conditionVar := Variability.STRUCTURAL_PARAMETER;
+          then
+            b;
+
+        else b;
+      end match
+    for b in bl);
+  end if;
 
   // TODO: If accum_var <= PARAMETER, then each branch must have the same number
   //       of equations.

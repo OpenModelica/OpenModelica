@@ -2477,7 +2477,7 @@ algorithm
       Option<Expression> oexp;
       list<Expression> expl;
       list<Equation> eql;
-      list<tuple<Expression, list<Equation>>> branches;
+      list<Equation.Branch> branches;
       SourceInfo info;
       InstNode for_scope, iter;
       ComponentRef lhs_cr, rhs_cr;
@@ -2529,14 +2529,14 @@ algorithm
         for branch in scodeEq.thenBranch loop
           eql := instEEquations(branch, scope, next_origin);
           exp1 :: expl := expl;
-          branches := (exp1, eql) :: branches;
+          branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
 
         // Instantiate the else-branch, if there is one, and make it a branch
         // with condition true (so we only need a simple list of branches).
         if not listEmpty(scodeEq.elseBranch) then
           eql := instEEquations(scodeEq.elseBranch, scope, next_origin);
-          branches := (Expression.BOOLEAN(true), eql) :: branches;
+          branches := Equation.makeBranch(Expression.BOOLEAN(true), eql) :: branches;
         end if;
       then
         Equation.IF(listReverse(branches), makeSource(scodeEq.comment, info));
@@ -2552,12 +2552,12 @@ algorithm
         next_origin := intBitOr(origin, ExpOrigin.WHEN);
         exp1 := instExp(scodeEq.condition, scope, info);
         eql := instEEquations(scodeEq.eEquationLst, scope, next_origin);
-        branches := {(exp1, eql)};
+        branches := {Equation.makeBranch(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
           exp1 := instExp(Util.tuple21(branch), scope, info);
           eql := instEEquations(Util.tuple22(branch), scope, next_origin);
-          branches := (exp1, eql) :: branches;
+          branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
         Equation.WHEN(branches, makeSource(scodeEq.comment, info));
@@ -3016,15 +3016,19 @@ algorithm
         all_params := true;
 
         for branch in eq.branches loop
-          (exp, eql) := branch;
+          () := match branch
+            case Equation.Branch.BRANCH()
+              algorithm
+                if all_params and Expression.variability(branch.condition) == Variability.PARAMETER then
+                  markStructuralParamsExp(branch.condition);
+                else
+                  all_params := false;
+                end if;
 
-          if all_params and Expression.variability(exp) == Variability.PARAMETER then
-            markStructuralParamsExp(exp);
-          else
-            all_params := false;
-          end if;
-
-          updateImplicitVariabilityEql(eql);
+                updateImplicitVariabilityEql(branch.body);
+              then
+                ();
+          end match;
         end for;
       then
         ();
@@ -3032,8 +3036,13 @@ algorithm
     case Equation.WHEN()
       algorithm
         for branch in eq.branches loop
-          (_, eql) := branch;
-          updateImplicitVariabilityEql(eql, inWhen = true);
+          () := match branch
+            case Equation.Branch.BRANCH()
+              algorithm
+                updateImplicitVariabilityEql(branch.body, inWhen = true);
+              then
+                ();
+          end match;
         end for;
       then
         ();

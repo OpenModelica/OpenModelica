@@ -228,21 +228,22 @@ algorithm
 end scalarizeEquation;
 
 function scalarizeIfEquation
-  input list<tuple<Expression, list<Equation>>> branches;
+  input list<Equation.Branch> branches;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
-  list<tuple<Expression, list<Equation>>> bl = {};
+  list<Equation.Branch> bl = {};
   Expression cond;
   list<Equation> body;
+  Variability var;
 algorithm
   for b in branches loop
-    (cond, body) := b;
+    Equation.Branch.BRANCH(cond, var, body) := b;
     body := scalarizeEquations(body);
 
     // Remove branches with no equations after scalarization.
     if not listEmpty(body) then
-      bl := (cond, body) :: bl;
+      bl := Equation.makeBranch(cond, body, var) :: bl;
     end if;
   end for;
 
@@ -254,23 +255,24 @@ algorithm
 end scalarizeIfEquation;
 
 function scalarizeWhenEquation
-  input list<tuple<Expression, list<Equation>>> branches;
+  input list<Equation.Branch> branches;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
-  list<tuple<Expression, list<Equation>>> bl = {};
+  list<Equation.Branch> bl = {};
   Expression cond;
   list<Equation> body;
+  Variability var;
 algorithm
   for b in branches loop
-    (cond, body) := b;
+    Equation.Branch.BRANCH(cond, var, body) := b;
     body := scalarizeEquations(body);
 
     if Type.isArray(Expression.typeOf(cond)) then
       cond := ExpandExp.expand(cond);
     end if;
 
-    bl := (cond, body) :: bl;
+    bl := Equation.makeBranch(cond, body, var) :: bl;
   end for;
 
   equations := Equation.WHEN(listReverseInPlace(bl), source) :: equations;

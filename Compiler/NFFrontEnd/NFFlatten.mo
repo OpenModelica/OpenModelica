@@ -706,29 +706,37 @@ algorithm
 end flattenEquation;
 
 function flattenIfEquation
-  input list<tuple<Expression, list<Equation>>> branches;
+  input list<Equation.Branch> branches;
   input ComponentRef prefix;
   input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
-  list<tuple<Expression, list<Equation>>> bl = {};
+  list<Equation.Branch> bl = {};
   Expression cond;
   list<Equation> eql;
+  Variability var;
 algorithm
   for b in branches loop
-    (cond, eql) := b;
-    eql := flattenEquations(eql, prefix);
+    bl := match b
+      case Equation.Branch.BRANCH(cond, var, eql)
+        algorithm
+          eql := flattenEquations(eql, prefix);
 
-    if Expression.isTrue(cond) and listEmpty(bl) then
-      // If the condition is literal true and we haven't collected any other
-      // branches yet, replace the if equation with this branch.
-      equations := listAppend(eql, equations);
-      return;
-    elseif not Expression.isFalse(cond) then
-      // Only add the branch to the list of branches if the condition is not
-      // literal false, otherwise just drop it since it will never trigger.
-      bl := (cond, eql) :: bl;
-    end if;
+          if Expression.isTrue(cond) and listEmpty(bl) then
+            // If the condition is literal true and we haven't collected any other
+            // branches yet, replace the if equation with this branch.
+            equations := listAppend(eql, equations);
+            return;
+          elseif not Expression.isFalse(cond) then
+            // Only add the branch to the list of branches if the condition is not
+            // literal false, otherwise just drop it since it will never trigger.
+            bl := Equation.makeBranch(cond, eql, var) :: bl;
+          end if;
+        then
+          bl;
+
+      else b :: bl;
+    end match;
   end for;
 
   // Add the flattened if equation to the list of equations if we got this far,
@@ -739,16 +747,17 @@ algorithm
 end flattenIfEquation;
 
 function flattenEqBranch
-  input output tuple<Expression, list<Equation>> branch;
+  input output Equation.Branch branch;
   input ComponentRef prefix;
 protected
   Expression exp;
   list<Equation> eql;
+  Variability var;
 algorithm
-  (exp, eql) := branch;
+  Equation.Branch.BRANCH(exp, var, eql) := branch;
   exp := flattenExp(exp, prefix);
   eql := flattenEquations(eql, prefix);
-  branch := (exp, listReverseInPlace(eql));
+  branch := Equation.makeBranch(exp, listReverseInPlace(eql), var);
 end flattenEqBranch;
 
 function unrollForLoop
@@ -1042,11 +1051,19 @@ algorithm
 end collectEquationFuncs;
 
 function collectEqBranchFuncs
-  input tuple<Expression, list<Equation>> branch;
+  input Equation.Branch branch;
   input output FunctionTree funcs;
 algorithm
-  funcs := collectExpFuncs(Util.tuple21(branch), funcs);
-  funcs := List.fold(Util.tuple22(branch), collectEquationFuncs, funcs);
+  () := match branch
+    case Equation.Branch.BRANCH()
+      algorithm
+        funcs := collectExpFuncs(branch.condition, funcs);
+        funcs := List.fold(branch.body, collectEquationFuncs, funcs);
+      then
+        ();
+
+    else ();
+  end match;
 end collectEqBranchFuncs;
 
 function collectAlgorithmFuncs
