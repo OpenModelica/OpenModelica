@@ -119,6 +119,10 @@ CevalRecord3.mo \
 CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
+CevalRecordArray1.mo \
+CevalRecordArray2.mo \
+CevalRecordArray4.mo \
+CevalRecordArray5.mo \
 CevalReduction1.mo \
 CevalReduction2.mo \
 CevalRelation1.mo \
@@ -731,6 +735,7 @@ Wild1.mo \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+CevalRecordArray3.mo \
 ModClass6.mo \
 IfExpression6.mo \
 TupleOperation3.mo \
