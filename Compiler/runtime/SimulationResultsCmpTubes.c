@@ -743,6 +743,12 @@ static unsigned int cmpDataTubes(int isResultCmp, char* varname, DataField *time
     fname = (char*) omc_alloc_interface.malloc_atomic(25 + strlen(prefix) + strlen(varname));
     sprintf(fname, "%s.%s.csv", prefix, varname);
     fout = fopen(fname,"w");
+    if (!fout)
+    {
+      perror("Error opening file");
+	  fprintf(stderr, "File: %s\n", fname);
+	  fflush(stderr);
+    }
   }
   maxn = intmax(intmax(intmax(ref.size,actual.size),priv->countHigh),priv->countLow);
   if (fout) {
