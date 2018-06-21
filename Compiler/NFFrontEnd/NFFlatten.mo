@@ -380,6 +380,7 @@ algorithm
              else
                Binding.FLAT_BINDING(e, var)
            for e in binding_exp.elements);
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got non-record binding " +
@@ -423,7 +424,11 @@ algorithm
       binding_exp := SimplifyExp.simplify(binding_exp);
     end if;
 
-    if not Expression.isRecord(binding_exp) then
+    // TODO: This will probably not work so well if the binding is an array that
+    //       contains record non-literals. In that case we should probably
+    //       create an equation for each non-literal in the array, and pass the
+    //       rest on as usual.
+    if not Expression.isRecordOrRecordArray(binding_exp) then
       name := ComponentRef.prefixCref(node, ty, {}, prefix);
       eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
         ElementSource.createElementSource(InstNode.info(node)));
@@ -462,10 +467,14 @@ protected
   ComponentRef sub_pre;
   RangeIterator range_iter;
   Expression sub_exp;
+  list<Subscript> subs;
 algorithm
   if listEmpty(dimensions) then
-    sub_pre := ComponentRef.setSubscripts(listReverse(subscripts), prefix);
-    (vars, sections) := flattenClass(cls, sub_pre, visibility, binding, vars, sections);
+    subs := listReverse(subscripts);
+    sub_pre := ComponentRef.setSubscripts(subs, prefix);
+
+    (vars, sections) := flattenClass(cls, sub_pre, visibility,
+      subscriptBindingOpt(subs, binding), vars, sections);
   else
     dim :: rest_dims := dimensions;
     range_iter := RangeIterator.fromDim(dim);
@@ -477,6 +486,36 @@ algorithm
     end while;
   end if;
 end flattenArray;
+
+function subscriptBindingOpt
+  input list<Subscript> subscripts;
+  input output Option<Binding> binding;
+protected
+  Binding b;
+  Expression exp;
+  Type ty;
+algorithm
+  if isSome(binding) then
+    SOME(b) := binding;
+
+    binding := match b
+      case Binding.TYPED_BINDING(bindingExp = exp, bindingType = ty)
+        algorithm
+          b.bindingExp := Expression.applySubscripts(subscripts, exp);
+          b.bindingType := Type.arrayElementType(ty);
+        then
+          SOME(b);
+
+      case Binding.FLAT_BINDING(bindingExp = exp)
+        algorithm
+          b.bindingExp := Expression.applySubscripts(subscripts, exp);
+        then
+          SOME(b);
+
+      else binding;
+    end match;
+  end if;
+end subscriptBindingOpt;
 
 function flattenBinding
   input output Binding binding;

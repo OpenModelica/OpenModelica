@@ -2911,6 +2911,17 @@ public
     end match;
   end isRecord;
 
+  function isRecordOrRecordArray
+    input Expression exp;
+    output Boolean isRecord;
+  algorithm
+    isRecord := match exp
+      case RECORD() then true;
+      case ARRAY() then List.all(exp.elements, isRecordOrRecordArray);
+      else false;
+    end match;
+  end isRecordOrRecordArray;
+
   function fillType
     input Type ty;
     input Expression fillExp;

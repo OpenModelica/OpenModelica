@@ -139,12 +139,8 @@ algorithm
       Dimension dim;
       ExpOrigin.Type exp_origin;
 
-    case Expression.CREF(cref = cref as ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
-                                                          origin = NFComponentRef.Origin.CREF))
-      algorithm
-        exp1 := evalComponentBinding(c, exp, target);
-      then
-        Expression.applySubscripts(list(evalSubscript(s, target) for s in cref.subscripts), exp1);
+    case Expression.CREF()
+      then evalCref(exp.cref, exp, target);
 
     case Expression.TYPENAME()
       then evalTypename(exp.ty, exp, target);
@@ -254,9 +250,31 @@ algorithm
   end match;
 end evalExpOpt;
 
+function evalCref
+  input ComponentRef cref;
+  input Expression defaultExp;
+  input EvalTarget target;
+  output Expression exp;
+protected
+  InstNode c;
+algorithm
+  exp := match cref
+    // TODO: Rewrite this, we need to take all subscripts into account and not
+    //       just the ones on the last identifier.
+    case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
+                           origin = NFComponentRef.Origin.CREF)
+      algorithm
+        exp := evalComponentBinding(c, defaultExp, target);
+      then
+        Expression.applySubscripts(list(evalSubscript(s, target) for s in cref.subscripts), exp);
+
+    else defaultExp;
+  end match;
+end evalCref;
+
 function evalComponentBinding
   input InstNode node;
-  input Expression originExp "The expression the binding came from, e.g. a cref.";
+  input Expression defaultExp "The expression returned if the binding couldn't be evaluated";
   input EvalTarget target;
   output Expression exp;
 protected
@@ -271,14 +289,18 @@ algorithm
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
 
-  if not Binding.isBound(binding) then
-    binding := makeComponentBinding(comp, node, originExp, target);
+  if Binding.isUnbound(binding) then
+    binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
   end if;
 
   exp := match binding
     case Binding.TYPED_BINDING()
       algorithm
         exp := evalExp(binding.bindingExp, target);
+
+        if binding.isEach then
+          exp := Expression.fillType(binding.bindingType, exp);
+        end if;
 
         if not referenceEq(exp, binding.bindingExp) then
           binding.bindingExp := exp;
@@ -292,9 +314,9 @@ algorithm
 
     case Binding.UNBOUND()
       algorithm
-        printUnboundError(target, originExp);
+        printUnboundError(target, defaultExp);
       then
-        originExp;
+        defaultExp;
 
     else
       algorithm
@@ -308,7 +330,7 @@ end evalComponentBinding;
 function makeComponentBinding
   input Component component;
   input InstNode node;
-  input Expression originExp;
+  input ComponentRef cref;
   input EvalTarget target;
   output Binding binding;
 protected
@@ -318,25 +340,24 @@ protected
   Type ty;
   InstNode rec_node;
   Expression exp;
-  ComponentRef cr;
+  ComponentRef rest_cr;
 algorithm
-  binding := matchcontinue (component, originExp, node)
+  binding := matchcontinue (component, cref)
     // A record component without an explicit binding, create one from its children.
-    case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))),
-          Expression.CREF(cref = cr), _)
+    case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))), _)
       algorithm
-        tree := Class.classTree(InstNode.getClass(component.classInst));
-        comps := ClassTree.getComponents(tree);
-        fields := {};
+        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
+        binding := Binding.CEVAL_BINDING(exp);
+        InstNode.updateComponent(Component.setBinding(binding, component), node);
+      then
+        binding;
 
-        for i in arrayLength(comps):-1:1 loop
-          ty := InstNode.getType(comps[i]);
-          fields := Expression.CREF(ty,
-            ComponentRef.CREF(comps[i], {}, ty, NFComponentRef.Origin.CREF, cr)) :: fields;
-        end for;
-
-        exp := Expression.RECORD(InstNode.scopePath(rec_node), component.ty, fields);
-        exp := evalExp(exp);
+    // A record array component without an explicit binding, create one from its children.
+    case (Component.TYPED_COMPONENT(ty = ty as Type.ARRAY(elementType =
+            Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node)))), _)
+      algorithm
+        exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
+        exp := splitRecordArrayExp(exp);
         binding := Binding.CEVAL_BINDING(exp);
         InstNode.updateComponent(Component.setBinding(binding, component), node);
       then
@@ -344,19 +365,101 @@ algorithm
 
     // A record field without an explicit binding, evaluate the parent's binding
     // if it has one and fetch the binding from it instead.
-    case (_, _, InstNode.COMPONENT_NODE(parent = rec_node as InstNode.COMPONENT_NODE()))
-      guard Type.isRecord(InstNode.getType(rec_node))
+    case (_, ComponentRef.CREF(restCref = rest_cr as ComponentRef.CREF(ty = ty)))
+      guard Type.isRecord(Type.arrayElementType(ty))
       algorithm
-        exp := evalComponentBinding(rec_node, Expression.EMPTY(Type.UNKNOWN()), target);
-        exp := Expression.lookupRecordField(InstNode.name(node), exp);
+        exp := evalCref(rest_cr, Expression.EMPTY(ty), target);
+        exp := makeComponentBinding2(exp, InstNode.name(node));
         binding := Binding.CEVAL_BINDING(exp);
-        InstNode.updateComponent(Component.setBinding(binding, component), node);
+
+        // TODO: If the cref has subscripts we can't cache the binding, since it
+        //       will have been evaluated with regards to the subscripts. We
+        //       should create the complete binding and cache it first, then
+        //       subscript it.
+        if not ComponentRef.hasSubscripts(cref) then
+          InstNode.updateComponent(Component.setBinding(binding, component), node);
+        end if;
       then
         binding;
 
     else NFBinding.EMPTY_BINDING;
   end matchcontinue;
 end makeComponentBinding;
+
+function makeComponentBinding2
+  input Expression exp;
+  input String name;
+  output Expression result;
+algorithm
+  result := match exp
+    local
+      list<Expression> expl;
+      Type ty;
+      Dimension dim;
+
+    case Expression.RECORD() then Expression.lookupRecordField(name, exp);
+
+    // An empty array of records will still be empty, only the type needs to be changed.
+    case Expression.ARRAY(elements = {})
+      algorithm
+        exp.ty := Type.lookupRecordFieldType(name, exp.ty);
+      then
+        exp;
+
+    // For a non-empty array of records, look up the field in each record and
+    // create an array from them.
+    // TODO: Optimize this, the index of the field will be the same for each
+    //       element of the array so we only need to do lookup once.
+    case Expression.ARRAY(ty = Type.ARRAY(dimensions = dim :: _))
+      algorithm
+        expl := list(makeComponentBinding2(e, name) for e in exp.elements);
+        ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), dim);
+      then
+        Expression.ARRAY(ty, expl);
+
+  end match;
+end makeComponentBinding2;
+
+function makeRecordBindingExp
+  input InstNode typeNode;
+  input InstNode recordNode;
+  input Type recordType;
+  input ComponentRef cref;
+  output Expression exp;
+protected
+  ClassTree tree;
+  array<InstNode> comps;
+  list<Expression> fields;
+  Type ty;
+  InstNode c;
+  ComponentRef cr;
+algorithm
+  tree := Class.classTree(InstNode.getClass(typeNode));
+  comps := ClassTree.getComponents(tree);
+  fields := {};
+
+  for i in arrayLength(comps):-1:1 loop
+    c := comps[i];
+    ty := InstNode.getType(c);
+    cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
+    fields := Expression.CREF(ty, cr) :: fields;
+  end for;
+
+  exp := Expression.RECORD(InstNode.scopePath(recordNode), recordType, fields);
+  exp := evalExp(exp);
+end makeRecordBindingExp;
+
+function splitRecordArrayExp
+  input output Expression exp;
+protected
+  Absyn.Path path;
+  Type ty;
+  list<Expression> expl;
+algorithm
+  Expression.RECORD(path, ty, expl) := exp;
+  exp := Expression.RECORD(path, Type.arrayElementType(ty), expl);
+  exp := Expression.fillType(ty, exp);
+end splitRecordArrayExp;
 
 function evalTypename
   input Type ty;

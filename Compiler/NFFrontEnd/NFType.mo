@@ -744,5 +744,16 @@ public
     end match;
   end isDiscrete;
 
+  function lookupRecordFieldType
+    input String name;
+    input Type recordType;
+    output Type fieldType;
+  algorithm
+    fieldType := match recordType
+      case Type.COMPLEX()
+        then InstNode.getType(Class.lookupElement(name, InstNode.getClass(recordType.cls)));
+    end match;
+  end lookupRecordFieldType;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;
