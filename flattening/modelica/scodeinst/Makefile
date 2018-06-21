@@ -467,6 +467,7 @@ IfEquation1.mo \
 IfEquation2.mo \
 IfEquation3.mo \
 IfEquation4.mo \
+IfEquation5.mo \
 IfExpression1.mo \
 IfExpression2.mo \
 IfExpression3.mo \
