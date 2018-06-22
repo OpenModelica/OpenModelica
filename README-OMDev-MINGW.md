@@ -1,6 +1,6 @@
 # Compiling OMC using OMDev package
 
-- Checkout the OMDev package from SVN https://openmodelica.org/svn/OpenModelicaExternal/trunk/tools/windows/OMDev
+- Checkout the OMDev package from SVN https://openmodelica.org/svn/OpenModelicaExternal/trunk/tools/windows/OMDev or git clone it from https://openmodelica.org/git/OMDev.git (much faster)
   - this package contains all prerequisites to compile OMC on Windows using msys2+mingw32+mingw64
   - if you get issues with OpenModelica compilation maybe you should update OMDev
 - Make sure you place the OMDev package into `C:\OMDev\`
