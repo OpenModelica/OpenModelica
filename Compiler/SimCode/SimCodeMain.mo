@@ -543,7 +543,7 @@ algorithm
           generatedObjects := AvlSetString.add(generatedObjects, simCode.fileNamePrefix + str);
         end for;
         codegenFuncs := (function runTpl(func=function CodegenC.simulationFile_mixAndHeader(a_simCode=simCode, a_modelNamePrefix=simCode.fileNamePrefix))) :: codegenFuncs;
-        codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=false), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
+        codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFile(in_a_simCode=simCode, in_a_guid=guid, in_a_isModelExchangeFMU=""), file=simCode.fileNamePrefix + ".c")) :: codegenFuncs;
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
         codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
@@ -673,6 +673,7 @@ algorithm
           end if;
         end if;
         Util.createDirectoryTree(fmutmp + "/sources/include/");
+        Util.createDirectoryTree(fmutmp + "/resources/");
         resourcesDir := fmutmp + "/resources/";
         for path in simCode.modelInfo.resourcePaths loop
           newdir := resourcesDir + System.dirname(path);
@@ -689,10 +690,16 @@ algorithm
         end for;
         SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
         str := fmutmp + "/sources/" + simCode.fileNamePrefix;
-        b := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
-        if not b then
-          Error.addMessage(Error.INTERNAL_ERROR, {"System.covertTextFileToCLiteral failed. Could not write "+str+"_info.c\n"});
-          fail();
+        if FMUVersion == "1.0" then
+          b := System.covertTextFileToCLiteral(simCode.fileNamePrefix+"_info.json", str+"_info.c", Flags.getConfigString(Flags.TARGET));
+          if not b then
+            Error.addMessage(Error.INTERNAL_ERROR, {"System.covertTextFileToCLiteral failed. Could not write "+str+"_info.c\n"});
+            fail();
+          end if;
+        else
+          if 0 <> System.systemCall("mv '"+simCode.fileNamePrefix+"_info.json"+"' '" + fmutmp+"/resources/" + "'") then
+            Error.addInternalError("Failed to info.json file", sourceInfo());
+          end if;
         end if;
         SimCodeUtil.resetFunctionIndex();
         Tpl.tplNoret3(CodegenFMU.translateModel, simCode, FMUVersion, FMUType);

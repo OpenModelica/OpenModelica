@@ -3423,7 +3423,7 @@ protected function buildModelFMU " author: Frenkel TUD
   output Values.Value outValue;
 protected
   Boolean staticSourceCodeFMU, success;
-  String filenameprefix, fmutmp, logfile, dir;
+  String filenameprefix, fmutmp, logfile, dir, cmd;
   String fmuTargetName;
   GlobalScript.SimulationOptions defaulSimOpt;
   SimCode.SimulationSettings simSettings;
@@ -3493,6 +3493,15 @@ algorithm
   fmutmp := filenameprefix + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
+
+  if listEmpty(platforms) then
+    cmd := "rm -f \"" + filenameprefix + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + filenameprefix + ".fmu\" *";
+    if 0 <> System.systemCall(cmd, outFile=logfile) then
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+      ExecStat.execStat("buildModelFMU failed for no platform");
+    end if;
+    return;
+  end if;
 
   for platform in platforms loop
     configureFMU(platform, fmutmp, logfile, isWindows);

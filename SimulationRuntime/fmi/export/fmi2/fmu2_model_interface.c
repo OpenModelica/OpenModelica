@@ -439,6 +439,16 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->componentEnvironment = functions->componentEnvironment;
   comp->loggingOn = loggingOn;
   comp->state = modelInstantiated;
+
+  /* Add the resourcesDir */
+  fmuResourceLocation = OpenModelica_parseFmuResourcePath(fmuResourceLocation);
+  if (fmuResourceLocation) {
+    comp->fmuData->modelData->resourcesDir = functions->allocateMemory(1 + strlen(fmuResourceLocation), sizeof(char));
+    strcpy(comp->fmuData->modelData->resourcesDir, fmuResourceLocation);
+  } else {
+    FILTERED_LOG(comp, fmi2OK, LOG_STATUSWARNING, "fmi2Instantiate: Ignoring unknown resource URI: %s", fmuResourceLocation)
+  }
+
   /* intialize modelData */
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   useStream[LOG_STDOUT] = 1;
@@ -453,14 +463,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
 
-  /* Add the resourcesDir */
-  fmuResourceLocation = OpenModelica_parseFmuResourcePath(fmuResourceLocation);
-  if (fmuResourceLocation) {
-    comp->fmuData->modelData->resourcesDir = functions->allocateMemory(1 + strlen(fmuResourceLocation), sizeof(char));
-    strcpy(comp->fmuData->modelData->resourcesDir, fmuResourceLocation);
-  } else {
-    FILTERED_LOG(comp, fmi2OK, LOG_STATUSWARNING, "fmi2Instantiate: Ignoring unknown resource URI: %s", fmuResourceLocation)
-  }
   /* read input vars */
   /* input_function(comp->fmuData); */
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0

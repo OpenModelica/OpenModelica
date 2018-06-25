@@ -989,13 +989,13 @@ template simulationFile_inl(SimCode simCode)
       >>
 end simulationFile_inl;
 
-template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU)
+template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
     case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let mainInit = if boolOr(isModelExchangeFMU, boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM))) then
+    let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM))) then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
@@ -1024,7 +1024,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "simulation/solver/events.h"
 
-    <% if boolNot(isModelExchangeFMU) then
+    <% if stringEq("",isModelExchangeFMU) then
     <<
     #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
     #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
@@ -1139,7 +1139,7 @@ template simulationFile(SimCode simCode, String guid, Boolean isModelExchangeFMU
       return 1;
     }
 
-    <% if boolNot(isModelExchangeFMU) then
+    <% if stringEq("",isModelExchangeFMU) then
     <<
     #if defined(threadData)
     #undef threadData
@@ -1183,7 +1183,7 @@ template simulationFileHeader(String fileNamePrefix)
     >>
 end simulationFileHeader;
 
-template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, DelayedExpression delayed, Boolean isModelExchangeFMU)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, DelayedExpression delayed, String isModelExchangeFMU)
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
@@ -1195,7 +1195,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->resultFileName = NULL;
     data->modelData->modelDir = "<%directory%>";
     data->modelData->modelGUID = "{<%guid%>}";
-    <% if isModelExchangeFMU then
+    <% match isModelExchangeFMU
+    case "1.0" then
     <<
     data->modelData->initXMLData = NULL;
     data->modelData->modelDataXml.infoXMLData =
@@ -1206,7 +1207,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     #endif
     ;
     >>
-    else
+    case "" then
     <<
     #if defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME)
     data->modelData->initXMLData = NULL;
@@ -1235,6 +1236,11 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     #endif /* defined(_MSC_VER) */
     #endif /* defined(OPENMODELICA_XML_FROM_FILE_AT_RUNTIME) */
     >>
+    else
+    <<
+    data->modelData->initXMLData = NULL;
+    data->modelData->modelDataXml.infoXMLData = NULL;
+    >>
     %>
 
     data->modelData->nStates = <%varInfo.numStateVars%>;
@@ -1260,7 +1266,11 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nRelations = <%varInfo.numRelations%>;
     data->modelData->nMathEvents = <%varInfo.numMathEventFunctions%>;
     data->modelData->nExtObjs = <%varInfo.numExternalObjects%>;
-    data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";
+    <% match isModelExchangeFMU
+    case "1.0" then "data->modelData->modelDataXml.fileName = NULL;"
+    case "" then 'data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";'
+    else 'GC_asprintf(&data->modelData->modelDataXml.fileName, "%s/<%fileNamePrefix%>_info.json", data->modelData->resourcesDir);'
+    %>
     data->modelData->modelDataXml.modelInfoXmlLength = 0;
     data->modelData->modelDataXml.nFunctions = <%listLength(functions)%>;
     data->modelData->modelDataXml.nProfileBlocks = 0;
@@ -1285,7 +1295,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, DelayedExpression delayed, String modelNamePrefix, Boolean isModelExchangeFMU)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, DelayedExpression delayed, String modelNamePrefix, String isModelExchangeFMU)
   "Generates function in simulation file."
 ::=
   <<

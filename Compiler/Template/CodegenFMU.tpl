@@ -72,7 +72,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let()= textFile(recordsFile(fileNamePrefix, recordDecls), '<%fileNamePrefixTmpDir%>_records.c')
   let()= textFile(simulationHeaderFile(simCode), '<%fileNamePrefixTmpDir%>_model.h')
 
-  let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir)
+  let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
   let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
   let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefixTmpDir%>_FMU.c')
@@ -92,7 +92,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   "" // Return empty result since result written to files directly
 end translateModel;
 
-/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix)
+/* public */ template generateSimulationFiles(SimCode simCode, String guid, String modelNamePrefix, String fmuVersion)
  "Generates code in different C files for the simulation target.
   To make the compilation faster we split the simulation files into several
   used in Compiler/Template/CodegenFMU.tpl"
@@ -172,7 +172,7 @@ end translateModel;
      // main file
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
-     let()= textFileConvertLines(simulationFile(simCode,guid,true), '<%modelNamePrefix%>.c')
+     let()= textFileConvertLines(simulationFile(simCode,guid,fmuVersion), '<%modelNamePrefix%>.c')
      ""
   end match
 end generateSimulationFiles;
