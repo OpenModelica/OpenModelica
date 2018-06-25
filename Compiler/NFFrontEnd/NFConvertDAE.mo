@@ -453,19 +453,14 @@ algorithm
       list<DAE.Dimension> dims;
       list<DAE.Element> body;
 
-    case Equation.EQUALITY() guard Type.isComplex(eq.ty)
-      algorithm
-        e1 := Expression.toDAE(eq.lhs);
-        e2 := Expression.toDAE(eq.rhs);
-      then
-        DAE.Element.COMPLEX_EQUATION(e1, e2, eq.source) :: elements;
-
     case Equation.EQUALITY()
       algorithm
         e1 := Expression.toDAE(eq.lhs);
         e2 := Expression.toDAE(eq.rhs);
       then
-        DAE.Element.EQUATION(e1, e2, eq.source) :: elements;
+        (if Type.isComplex(eq.ty) then
+           DAE.Element.COMPLEX_EQUATION(e1, e2, eq.source) else
+           DAE.Element.EQUATION(e1, e2, eq.source)) :: elements;
 
     case Equation.CREF_EQUALITY()
       algorithm
@@ -605,7 +600,9 @@ algorithm
         e1 := Expression.toDAE(eq.lhs);
         e2 := Expression.toDAE(eq.rhs);
       then
-        DAE.Element.INITIALEQUATION(e1, e2, eq.source) :: elements;
+        (if Type.isComplex(eq.ty) then
+           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source) else
+           DAE.Element.INITIALEQUATION(e1, e2, eq.source)) :: elements;
 
     case Equation.ARRAY_EQUALITY()
       algorithm

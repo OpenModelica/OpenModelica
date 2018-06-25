@@ -125,13 +125,23 @@ public
 
   function isRecord
     input Restriction res;
-    output Boolean isFunction;
+    output Boolean isRecord;
   algorithm
-    isFunction := match res
+    isRecord := match res
       case RECORD() then true;
       else false;
     end match;
   end isRecord;
+
+  function isOperatorRecord
+    input Restriction res;
+    output Boolean isOpRecord;
+  algorithm
+    isOpRecord := match res
+      case RECORD() then res.isOperator;
+      else false;
+    end match;
+  end isOperatorRecord;
 
   function isType
     input Restriction res;

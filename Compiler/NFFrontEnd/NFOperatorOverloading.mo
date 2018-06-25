@@ -72,11 +72,9 @@ public
         checkOperatorConstructorOutput(f, Class.lastBaseClass(recordNode), ctor_path, info);
         recordNode := InstNode.cacheAddFunc(recordNode, f, false);
       end for;
-    else
-      // If it doesn't have an an overloaded constructor, construct a default
-      // record constructor and use that instead.
-      recordNode := Record.instDefaultConstructor(path, recordNode, info);
     end if;
+
+    recordNode := Record.instDefaultConstructor(path, recordNode, info);
   end instConstructor;
 
   function instOperatorFunctions

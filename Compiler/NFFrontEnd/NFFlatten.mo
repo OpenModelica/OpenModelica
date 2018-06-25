@@ -83,6 +83,7 @@ import ElementSource;
 import Ceval = NFCeval;
 import NFTyping.ExpOrigin;
 import SimplifyExp = NFSimplifyExp;
+import Restriction = NFRestriction;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;

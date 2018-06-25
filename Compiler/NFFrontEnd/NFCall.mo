@@ -900,14 +900,17 @@ protected
     list<Integer> errors;
   algorithm
     ErrorExt.setCheckpoint("NFCall:checkMatchingFunctions");
-    matchedFunctions := {};
 
-    _ := match call
-      case ARG_TYPED_CALL(ref = ComponentRef.CREF(node = fn_node)) algorithm
-        allfuncs := Function.getCachedFuncs(fn_node);
-        matchedFunctions := Function.matchFunctions(allfuncs, call.arguments, call.named_args, info);
-      then
-        ();
+    matchedFunctions := match call
+      case ARG_TYPED_CALL(ref = ComponentRef.CREF(node = fn_node))
+        algorithm
+          allfuncs := Function.getCachedFuncs(fn_node);
+
+          if listLength(allfuncs) > 1 then
+            allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
+          end if;
+        then
+          Function.matchFunctions(allfuncs, call.arguments, call.named_args, info);
     end match;
 
     if listEmpty(matchedFunctions) then
@@ -937,57 +940,27 @@ protected
     // about matching. We have one matching func if we reach here.
     ErrorExt.rollBack("NFCall:checkMatchingFunctions");
 
-    if listLength(matchedFunctions) == 1 then
-      matchedFunc ::_ := matchedFunctions;
-
-      // Overwrite the actuall function name with the overload name
-      // for builtin functions.
-      if Function.isBuiltin(matchedFunc.func) then
-        func := matchedFunc.func;
-        func.path := Function.nameConsiderBuiltin(func);
-        matchedFunc.func := func;
-      end if;
-      return;
-    end if;
-
     if listLength(matchedFunctions) > 1 then
       exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
-      if listLength(exactMatches) == 1 then
-        matchedFunc ::_ := exactMatches;
 
-        // Overwrite the actual function name with the overload name
-        // for builtin functions.
-        if Function.isBuiltin(matchedFunc.func) then
-          func := matchedFunc.func;
-          func.path := Function.nameConsiderBuiltin(func);
-          matchedFunc.func := func;
-        end if;
-        return;
-      else
-        matchedFunctions := resolveOverloadedVsDefaultConstructorAmbigutiy(matchedFunctions);
-        if listLength(matchedFunctions) == 1 then
-          matchedFunc ::_ := matchedFunctions;
-          return;
-        else
-          Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
-            {typedString(call), Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
+      if listLength(exactMatches) > 1 then
+        Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
+          {typedString(call), Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);
           fail();
-        end if;
       end if;
+
+      matchedFunc := listHead(exactMatches);
+    else
+      matchedFunc := listHead(matchedFunctions);
     end if;
 
+    // Overwrite the actual function name with the overload name for builtin functions.
+    if Function.isBuiltin(matchedFunc.func) then
+      func := matchedFunc.func;
+      func.path := Function.nameConsiderBuiltin(func);
+      matchedFunc.func := func;
+    end if;
   end checkMatchingFunctions;
-
-  function resolveOverloadedVsDefaultConstructorAmbigutiy
-    input list<MatchedFunction> matchedFunctions;
-    output list<MatchedFunction> outMatches;
-  algorithm
-    // We have at least two exact matches. find the default constructor (if there is one) and remove it from the list
-    // so that it
-    // - doesn't cause ambiguities if there is only one other match left OR
-    // - it doesn't appear in the error messages in the case of more than one overloaded constructor matches.
-    outMatches := list(m for m guard not Function.isDefaultRecordConstructor(m.func) in matchedFunctions);
-  end resolveOverloadedVsDefaultConstructorAmbigutiy;
 
   function iteratorToDAE
     input tuple<InstNode, Expression> iter;
