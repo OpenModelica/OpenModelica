@@ -298,10 +298,6 @@ algorithm
       algorithm
         exp := evalExp(binding.bindingExp, target);
 
-        if binding.isEach then
-          exp := Expression.fillType(binding.bindingType, exp);
-        end if;
-
         if not referenceEq(exp, binding.bindingExp) then
           binding.bindingExp := exp;
           comp := Component.setBinding(binding, comp);
