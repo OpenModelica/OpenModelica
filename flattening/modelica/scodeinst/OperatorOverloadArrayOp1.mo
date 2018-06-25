@@ -165,6 +165,12 @@ equation
 end OperatorOverloadArrayOp1;
 
 // Result:
+// function Complex "Automatically generated record constructor for Complex"
+//   input Real re;
+//   input Real im;
+//   output Complex res;
+// end Complex;
+//
 // function Complex.'+' "Add two complex numbers"
 //   input Complex c1 "Complex number 1";
 //   input Complex c2 "Complex number 2";

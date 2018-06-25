@@ -25,6 +25,12 @@ end OperatorOverloadConstructor1;
 
 
 // Result:
+// function C "Automatically generated record constructor for C"
+//   input Real r1;
+//   input Real r2;
+//   output C res;
+// end C;
+//
 // function C.'constructor'
 //   input Real r;
 //   output C o;
