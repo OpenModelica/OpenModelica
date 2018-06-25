@@ -1044,16 +1044,18 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer x;
     input Integer y;
     output Integer z;
-  external "builtin" z=rem(x,y);
-  annotation(preferredView="text");
+  algorithm
+    z := x - (div(x, y) * y);
+    annotation(preferredView="text", __OpenModelica_EarlyInline=true);
   end intRem;
 
   function realRem
     input Real x;
     input Real y;
     output Real z;
-  external "builtin" z=rem(x,y);
-  annotation(preferredView="text");
+  algorithm
+    z := x - (div(x, y) * y);
+    annotation(preferredView="text", __OpenModelica_EarlyInline=true);
   end realRem;
 
   /*
@@ -1115,47 +1117,6 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
   </html>"));
   end arrayMax;
-
-  /*
-  function intMin
-    input Integer i1;
-    input Integer i2;
-    output Integer i;
-  algorithm
-    i := if i1 < i2 then i1 else i2;
-    annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-  end intMin;
-
-  function realMin
-    input Real r1;
-    input Real r2;
-    output Real r;
-  algorithm
-    r := if r1 < r2 then r1 else r2;
-    annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-  end realMin;
-
-  function boolMin
-    input Boolean b1;
-    input Boolean b2;
-    output Boolean b;
-  algorithm
-    b := if b1 then b1 else b2;
-    annotation(__OpenModelica_EarlyInline = true, __OpenModelica_BuiltinPtr = true);
-  end boolMin;
-
-  function enumMin<enumType>
-    "Returns the smallest element of two enums.
-    This will need special handling internaly"
-    input enumType s1;
-    input enumType s2;
-    output enumType s;
-    external "builtin" s = min(s1,s2);
-    annotation(Documentation(info="<html>
-    See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
-  </html>"));
-  end enumMin;
-  */
 
   function scalarMin<ScalarBasicType> "Returns the smallest element of two scalar basic types"
     input ScalarBasicType a;
@@ -1313,6 +1274,16 @@ function loadFiles "load files (*.mo) and merges them with the loaded AST."
 external "builtin";
 annotation(preferredView="text");
 end loadFiles;
+
+function loadEncryptedPackage
+  input String fileName;
+  input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Loads the given encrypted package.</p>
+</html>"), preferredView="text");
+end loadEncryptedPackage;
 
 function reloadClass "reloads the file associated with the given (loaded class)"
   input TypeName name;
@@ -1668,7 +1639,7 @@ function setPreOptModules "example input: removeFinalParameters,removeSimpleEqua
   input String modules;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+preOptModules=" + modules);
+  success := setCommandLineOptions("--preOptModules=" + modules);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPreOptModules;
 
@@ -1676,7 +1647,7 @@ function setCheapMatchingAlgorithm "example input: 3"
   input Integer matchingAlgorithm;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+cheapmatchingAlgorithm=" + String(matchingAlgorithm));
+  success := setCommandLineOptions("--cheapmatchingAlgorithm=" + String(matchingAlgorithm));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setCheapMatchingAlgorithm;
 
@@ -1695,7 +1666,7 @@ function setMatchingAlgorithm "example input: omc"
   input String matchingAlgorithm;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+matchingAlgorithm=" + matchingAlgorithm);
+  success := setCommandLineOptions("--matchingAlgorithm=" + matchingAlgorithm);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setMatchingAlgorithm;
 
@@ -1714,7 +1685,7 @@ function setIndexReductionMethod "example input: dynamicStateSelection"
   input String method;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+indexReductionMethod=" + method);
+  success := setCommandLineOptions("--indexReductionMethod=" + method);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setIndexReductionMethod;
 
@@ -1722,7 +1693,7 @@ function setPostOptModules "example input: lateInline,inlineArrayEqn,removeSimpl
   input String modules;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+postOptModules=" + modules);
+  success := setCommandLineOptions("--postOptModules=" + modules);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setPostOptModules;
 
@@ -1741,7 +1712,7 @@ function setTearingMethod "example input: omcTearing"
   input String tearingMethod;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+tearingMethod=" + tearingMethod);
+  success := setCommandLineOptions("--tearingMethod=" + tearingMethod);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setTearingMethod;
 
@@ -1911,7 +1882,7 @@ external "builtin";
 annotation(preferredView="text");
 end readFileNoNumeric;
 
-function getErrorString "Returns the current error message. [file.mo:n:n-n:n:b] Error: message"
+impure function getErrorString "Returns the current error message. [file.mo:n:n-n:n:b] Error: message"
   input Boolean warningsAsErrors = false;
   output String errorString;
 external "builtin";
@@ -1981,7 +1952,7 @@ external "builtin";
 annotation(preferredView="text");
 end clearMessages;
 
-function runScript "Runs the mos-script specified by the filename."
+impure function runScript "Runs the mos-script specified by the filename."
   input String fileName "*.mos";
   output String result;
 external "builtin";
@@ -2024,7 +1995,7 @@ function setAnnotationVersion "Sets the annotation version."
   input String annotationVersion;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+annotationVersion=" + annotationVersion);
+  success := setCommandLineOptions("--annotationVersion=" + annotationVersion);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setAnnotationVersion;
 
@@ -2051,7 +2022,7 @@ function setVectorizationLimit
   input Integer vectorizationLimit;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+v=" + String(vectorizationLimit));
+  success := setCommandLineOptions("-v=" + String(vectorizationLimit));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setVectorizationLimit;
 
@@ -2067,7 +2038,7 @@ public function setDefaultOpenCLDevice
   input Integer defdevid;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+o=" + String(defdevid));
+  success := setCommandLineOptions("-o=" + String(defdevid));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setDefaultOpenCLDevice;
 
@@ -2088,7 +2059,7 @@ function setOrderConnections "Sets the orderConnection flag."
   input Boolean orderConnections;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+orderConnections=" + String(orderConnections));
+  success := setCommandLineOptions("--orderConnections=" + String(orderConnections));
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setOrderConnections;
 
@@ -2102,7 +2073,7 @@ function setLanguageStandard "Sets the Modelica Language Standard."
   input String inVersion;
   output Boolean success;
 algorithm
-  success := setCommandLineOptions("+std=" + inVersion);
+  success := setCommandLineOptions("--std=" + inVersion);
 annotation(__OpenModelica_EarlyInline = true, preferredView="text");
 end setLanguageStandard;
 
@@ -2258,6 +2229,8 @@ end saveModel;
 function saveTotalModel
   input String fileName;
   input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
@@ -2602,12 +2575,20 @@ The only required argument is the className, while all others have some default 
   input String version = "2.0" "FMU version, 1.0 or 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
-  input String platforms[:] = {"dynamic"} "The list of platforms to generate code for. \"dynamic\"=current platform, dynamically link the runtime. \"static\"=current platform, statically link everything. Else, use a host triple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\"";
+  input String platforms[:] = {"static"} "The list of platforms to generate code for. \"dynamic\"=current platform, dynamically link the runtime. \"static\"=current platform, statically link everything. Else, use a host triple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
   output String generatedFileName "Returns the full path of the generated FMU.";
 external "builtin";
 annotation(preferredView="text");
 end buildModelFMU;
+
+function buildEncryptedPackage
+  input TypeName className "the class that should encrypted";
+  output Boolean success;
+  output String commandOutput "Output of the packagetool executable";
+external "builtin";
+annotation(preferredView="text");
+end buildEncryptedPackage;
 
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some default values.
@@ -2667,6 +2648,43 @@ function buildModel "builds a modelica model by generating c code and build it.
 external "builtin";
 annotation(preferredView="text");
 end buildModel;
+
+function buildLabel "builds Label."
+input TypeName className "the class that should be built";
+ input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
+  input String options = "" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "" "cflags. <default> = \"\"";
+  input String simflags = "" "simflags. <default> = \"\"";
+output String[2] buildModelResults;
+external "builtin";
+annotation(preferredView="text");
+end buildLabel;
+
+function reduceTerms "reduce terms."
+input TypeName className "the class that should be built";
+ input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
+  input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method = "dassl" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix = "" "fileNamePrefix. <default> = \"\"";
+  input String options = "" "options. <default> = \"\"";
+  input String outputFormat = "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter = ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input String cflags = "" "cflags. <default> = \"\"";
+  input String simflags = "" "simflags. <default> = \"\"";
+  input String labelstoCancel="";
+output String[2] buildModelResults;
+external "builtin";
+annotation(preferredView="text");
+end reduceTerms;
 
 function moveClass
  "Moves a class up or down depending on the given offset, where a positive
@@ -2970,6 +2988,7 @@ public function filterSimulationResults
   input String outFile;
   input String[:] vars;
   input Integer numberOfIntervals = 0 "0=Do not resample";
+  input Boolean removeDescription = false;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3157,6 +3176,17 @@ annotation(
 </html>"),
   preferredView="text");
 end getComponentModifierValues;
+
+function getInstantiatedParametersAndValues
+  input TypeName cls;
+  output String[:] values;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  <p>Returns the parameter names and values from the DAE.</p>
+</html>"),
+  preferredView="text");
+end getInstantiatedParametersAndValues;
 
 function removeComponentModifiers
   input TypeName class_;
