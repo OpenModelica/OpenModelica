@@ -302,7 +302,7 @@ protected
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
-  Boolean is_fixed;
+  Boolean unfix;
 algorithm
   Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
     comment = cmt, info = info) := comp;
@@ -310,10 +310,10 @@ algorithm
 
   if isSome(outerBinding) then
     SOME(binding) := outerBinding;
-    is_fixed := Binding.isUnbound(binding) and var == Variability.PARAMETER;
+    unfix := Binding.isUnbound(binding) and var == Variability.PARAMETER;
   else
     binding := flattenBinding(binding, prefix);
-    is_fixed := false;
+    unfix := false;
   end if;
 
   // If the component is an array component with a binding and at least discrete variability,
@@ -331,9 +331,9 @@ algorithm
 
   // Set fixed = true for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
-  if is_fixed then
+  if unfix then
     ty_attrs := List.removeOnTrue("fixed", isTypeAttributeNamed, ty_attrs);
-    ty_attrs := ("fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(true), Variability.CONSTANT)) :: ty_attrs;
+    ty_attrs := ("fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT)) :: ty_attrs;
   end if;
 
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info) :: vars;
