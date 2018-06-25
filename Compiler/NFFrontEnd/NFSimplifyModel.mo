@@ -131,9 +131,12 @@ algorithm
 
     case Equation.ARRAY_EQUALITY()
       algorithm
-        eq.rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
+        if not Type.isEmptyArray(eq.ty) then
+          eq.rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
+          equations := eq :: equations;
+        end if;
       then
-        eq :: equations;
+        equations;
 
     case Equation.IF()
       then simplifyIfEqBranches(eq.branches, eq.source, equations);
