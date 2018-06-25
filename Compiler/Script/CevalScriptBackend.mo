@@ -1879,10 +1879,10 @@ algorithm
       equation
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(className, SymbolTable.getAbsyn());
         if (access >= 9) then // i.e., The class is not encrypted.
-	        (newp,filename) = Interactive.getContainedClassAndFile(className, SymbolTable.getAbsyn());
-	        str = Dump.unparseStr(newp);
-	        System.writeFile(filename, str);
-	        b = true;
+          (newp,filename) = Interactive.getContainedClassAndFile(className, SymbolTable.getAbsyn());
+          str = Dump.unparseStr(newp);
+          System.writeFile(filename, str);
+          b = true;
         else
           Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
           b = false;
@@ -3392,7 +3392,7 @@ algorithm
       then ();
     else
       algorithm
-        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os -flto"+quote+" LDFLAGS=-flto";
+        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" LDFLAGS=";
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
           System.removeFile(dir + logfile);
