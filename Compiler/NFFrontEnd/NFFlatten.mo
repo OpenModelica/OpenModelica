@@ -243,8 +243,9 @@ algorithm
   () := match c
     case Component.TYPED_COMPONENT(condition = condition, ty = ty)
       algorithm
-        // Don't add the component if it has a condition that's false.
+        // Delete the component if it has a condition that's false.
         if Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition)) then
+          deleteComponent(component);
           return;
         end if;
 
@@ -268,6 +269,45 @@ algorithm
 
   end match;
 end flattenComponent;
+
+function deleteComponent
+  "Recursively marks components as deleted."
+  input InstNode compNode;
+protected
+  Component comp;
+algorithm
+  if not InstNode.isEmpty(compNode) then
+    comp := InstNode.component(compNode);
+    InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
+    deleteClassComponents(Component.classInstance(comp));
+  end if;
+end deleteComponent;
+
+function deleteClassComponents
+  input InstNode clsNode;
+protected
+  Class cls = InstNode.getClass(clsNode);
+  array<InstNode> comps;
+algorithm
+  () := match cls
+    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
+      guard not Restriction.isType(cls.restriction)
+      algorithm
+        for c in comps loop
+          deleteComponent(c);
+        end for;
+      then
+        ();
+
+    case Class.TYPED_DERIVED()
+      algorithm
+        deleteClassComponents(cls.baseClass);
+      then
+        ();
+
+    else ();
+  end match;
+end deleteClassComponents;
 
 function isComplexComponent
   input Type ty;

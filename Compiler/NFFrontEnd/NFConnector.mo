@@ -147,6 +147,11 @@ public
     isInside := f == Face.INSIDE;
   end isInside;
 
+  function isDeleted
+    input Connector conn;
+    output Boolean isDeleted = ComponentRef.isDeleted(conn.name);
+  end isDeleted;
+
   function name
     input Connector conn;
     output ComponentRef name = conn.name;

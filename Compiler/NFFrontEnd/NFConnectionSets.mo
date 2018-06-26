@@ -106,7 +106,13 @@ package ConnectionSets
 
     for c1 in lhsl loop
       c2 :: rhsl := rhsl;
-      sets := merge(c1, c2, sets);
+
+      // Connections involving deleted conditional connectors are filtered out
+      // when collecting the connections, but if the connectors themselves
+      // contain connectors that have been deleted we need to remove them here.
+      if not (Connector.isDeleted(c1) or Connector.isDeleted(c2)) then
+        sets := merge(c1, c2, sets);
+      end if;
     end for;
   end addConnection;
 

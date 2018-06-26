@@ -195,6 +195,10 @@ uniontype Component
     Modifier modifier;
   end TYPE_ATTRIBUTE;
 
+  record DELETED_COMPONENT
+    Component component;
+  end DELETED_COMPONENT;
+
   function new
     input SCode.Element definition;
     output Component component;
@@ -325,6 +329,7 @@ uniontype Component
       case UNTYPED_COMPONENT() then InstNode.getType(component.classInst);
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;
+      case DELETED_COMPONENT() then getType(component.component);
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -628,6 +633,7 @@ uniontype Component
     cty := match component
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
+      case DELETED_COMPONENT() then connectorType(component.component);
       else ConnectorType.POTENTIAL;
     end match;
   end connectorType;
@@ -752,6 +758,8 @@ uniontype Component
 
       case TYPED_COMPONENT(condition = condition)
         then Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition));
+
+      case DELETED_COMPONENT() then true;
       else false;
     end match;
   end isDeleted;
