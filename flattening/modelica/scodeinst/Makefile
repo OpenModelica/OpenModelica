@@ -178,6 +178,7 @@ Condition2.mo \
 Condition3.mo \
 Condition4.mo \
 Condition5.mo \
+Condition6.mo \
 ConditionInvalid1.mo \
 ConditionInvalidType1.mo \
 Connect1.mo \
