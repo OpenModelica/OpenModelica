@@ -261,6 +261,8 @@ algorithm
       then
         ();
 
+    case Component.DELETED_COMPONENT() then ();
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
