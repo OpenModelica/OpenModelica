@@ -1815,7 +1815,7 @@ algorithm
 
     case Class.EXPANDED_DERIVED(dims = dims)
       algorithm
-        sections := instExpressions(cls.baseClass, cls.baseClass, sections);
+        sections := instExpressions(cls.baseClass, scope, sections);
 
         dim_scope := InstNode.parent(node);
         info := InstNode.info(node);
