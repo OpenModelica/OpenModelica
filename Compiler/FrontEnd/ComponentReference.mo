@@ -753,13 +753,9 @@ package CompareWithGenericSubscript "Package that can be modified to do differen
       end if;
       s2::ss := ss;
       if compareSubscript == CompareWithSubsType.WithGenericSubscript then
-        e1 := Expression.getSubscriptExp(s1);
-        e2 := Expression.getSubscriptExp(s2);
-        res := stringCompare(ExpressionDump.printExpStr(e1),ExpressionDump.printExpStr(e2));
+        res := stringCompare(ExpressionDump.printSubscriptStr(s1), ExpressionDump.printSubscriptStr(s2));
       elseif compareSubscript == CompareWithSubsType.WithGenericSubscriptNotAlphabetic then
-        e1 := Expression.getSubscriptExp(s1);
-        e2 := Expression.getSubscriptExp(s2);
-        res := Expression.compare(e1, e2);
+        res := Expression.compareSubscripts(s1, s2);
       else
         i1 := Expression.subscriptInt(s1);
         i2 := Expression.subscriptInt(s2);

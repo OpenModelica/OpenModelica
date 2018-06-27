@@ -370,30 +370,14 @@ end debugPrintSubscriptStr;
 
 public function printSubscriptStr "
   Print a Subscript into a String."
-  input DAE.Subscript inSubscript;
+  input DAE.Subscript sub;
   output String outString;
 algorithm
-  outString:=
-  match (inSubscript)
-    local
-      String s;
-      DAE.Exp e1;
-    case (DAE.WHOLEDIM()) then ":";
-    case (DAE.INDEX(exp = e1))
-      equation
-        s = printExpStr(e1);
-      then
-        s;
-    case (DAE.SLICE(exp = e1))
-      equation
-        s = printExpStr(e1);
-      then
-        s;
-    case (DAE.WHOLE_NONEXP(exp = e1))
-      equation
-        s = printExpStr(e1);
-      then
-        "1:"+s;
+  outString := match sub
+    case DAE.WHOLEDIM() then ":";
+    case DAE.INDEX() then printExpStr(sub.exp);
+    case DAE.SLICE() then printExpStr(sub.exp);
+    case DAE.WHOLE_NONEXP() then "1:" + printExpStr(sub.exp);
   end match;
 end printSubscriptStr;
 
