@@ -699,7 +699,9 @@ TupleInvalid2.mo \
 TupleInvalid3.mo \
 TupleOperation1.mo \
 TupleOperation2.mo \
+TupleOperation3.mo \
 TupleOperation4.mo \
+TupleOperation5.mo \
 type2.mo \
 TypeDim1.mo \
 TypeDim2.mo \
@@ -740,7 +742,6 @@ FAILINGTESTFILES=\
 CevalRecordArray3.mo \
 ModClass6.mo \
 IfExpression6.mo \
-TupleOperation3.mo \
 RedeclareConstant1.mo \
 ActualStream.mo \
 ActualStreamMinMax.mo \
