@@ -1435,9 +1435,8 @@ algorithm
               b = true;
               s1 = System.basename(filename);
               s2 = Util.removeLast4Char(s1);
-              s3 = System.dirname(filename);
-              filename1 = s3 + "/" + s2 + "/" + s2 + ".moc";
-              filename2 = s3 + "/" + s2 + "/package.moc";
+              filename1 = workdir + "/" + s2 + "/" + s2 + ".moc";
+              filename2 = workdir + "/" + s2 + "/package.moc";
               filename_1 = if System.regularFileExists(filename1) then filename1 else filename2;
               if (System.regularFileExists(filename_1)) then
                 filename_1 = Util.testsuiteFriendlyPath(filename_1);
