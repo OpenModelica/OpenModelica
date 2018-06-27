@@ -193,22 +193,26 @@ algorithm
       SourceInfo info;
       list<Equation> eql;
 
-    case Equation.EQUALITY(ty = ty, source = src) guard Type.isArray(ty)
+    case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) guard Type.isArray(ty)
       algorithm
-        lhs_iter := ExpressionIterator.fromExp(eq.lhs);
-        rhs_iter := ExpressionIterator.fromExp(eq.rhs);
-        ty := Type.arrayElementType(ty);
+        if Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs) then
+          equations := Equation.ARRAY_EQUALITY(lhs, rhs, ty, src) :: equations;
+        else
+          lhs_iter := ExpressionIterator.fromExp(lhs);
+          rhs_iter := ExpressionIterator.fromExp(rhs);
+          ty := Type.arrayElementType(ty);
 
-        while ExpressionIterator.hasNext(lhs_iter) loop
-          if not ExpressionIterator.hasNext(rhs_iter) then
-            Error.addInternalError(getInstanceName() + " could not expand rhs " +
-              Expression.toString(eq.rhs), ElementSource.getInfo(src));
-          end if;
+          while ExpressionIterator.hasNext(lhs_iter) loop
+            if not ExpressionIterator.hasNext(rhs_iter) then
+              Error.addInternalError(getInstanceName() + " could not expand rhs " +
+                Expression.toString(eq.rhs), ElementSource.getInfo(src));
+            end if;
 
-          (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
-          (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-          equations := Equation.EQUALITY(lhs, rhs, ty, src) :: equations;
-        end while;
+            (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
+            (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
+            equations := Equation.EQUALITY(lhs, rhs, ty, src) :: equations;
+          end while;
+        end if;
       then
         equations;
 

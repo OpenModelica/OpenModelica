@@ -44,6 +44,7 @@ import Ceval = NFCeval;
 import NFCeval.EvalTarget;
 import NFFunction.Function;
 import ComponentRef = NFComponentRef;
+import ExpandExp = NFExpandExp;
 
 public
 
@@ -121,7 +122,7 @@ algorithm
         if builtin and not Function.isImpure(call.fn) and List.all(args, Expression.isLiteral) then
           callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
         else
-          callExp := Expression.CALL(call);
+          callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call);
         end if;
       then
         callExp;
@@ -136,6 +137,18 @@ algorithm
     else callExp;
   end match;
 end simplifyCall;
+
+function simplifyBuiltinCall
+  input Absyn.Path name;
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+algorithm
+  exp := match Absyn.pathFirstIdent(name)
+    case "cat" then ExpandExp.expandBuiltinCat(args);
+    else Expression.CALL(call);
+  end match;
+end simplifyBuiltinCall;
 
 function simplifySize
   input output Expression sizeExp;
@@ -319,11 +332,7 @@ protected
 algorithm
   Expression.TUPLE_ELEMENT(e, index, ty) := tupleExp;
   e := simplify(e);
-
-  tupleExp := match e
-    case Expression.TUPLE() then listGet(e.elements, index);
-    else Expression.TUPLE_ELEMENT(e, index, ty);
-  end match;
+  tupleExp := Expression.tupleElement(e, ty, index);
 end simplifyTupleElement;
 
 annotation(__OpenModelica_Interface="frontend");

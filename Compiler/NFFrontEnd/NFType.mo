@@ -436,6 +436,7 @@ public
   algorithm
     outTy := match ty
       case TUPLE() then listHead(ty.types);
+      case ARRAY() then Type.ARRAY(firstTupleType(ty.elementType), ty.dimensions);
       else ty;
     end match;
   end firstTupleType;

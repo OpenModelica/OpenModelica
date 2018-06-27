@@ -160,6 +160,12 @@ algorithm
         if EvalTarget.isRange(target) then
           Expression.RANGE(exp.ty, exp1, oexp, exp3) else evalRange(exp1, oexp, exp3);
 
+    case Expression.TUPLE()
+      algorithm
+        exp.elements := list(evalExp(e, target) for e in exp.elements);
+      then
+        exp;
+
     case Expression.RECORD()
       algorithm
         exp.elements := list(evalExp(e, target) for e in exp.elements);
@@ -224,14 +230,20 @@ algorithm
         exp1 := evalExp(exp.exp, target);
       then Expression.UNBOX(exp1, exp.ty);
 
+    case Expression.SUBSCRIPTED_EXP()
+      then evalSubscriptedExp(exp.exp, exp.subscripts, target);
+
+    case Expression.TUPLE_ELEMENT()
+      algorithm
+        exp1 := evalExp(exp.tupleExp, target);
+      then
+        Expression.tupleElement(exp1, exp.ty, exp.index);
+
     case Expression.MUTABLE()
       algorithm
         exp1 := evalExp(Mutable.access(exp.exp), target);
       then
         exp1;
-
-    case Expression.SUBSCRIPTED_EXP()
-      then evalSubscriptedExp(exp.exp, exp.subscripts, target);
 
     else exp;
   end match;

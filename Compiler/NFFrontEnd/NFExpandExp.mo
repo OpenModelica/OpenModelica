@@ -107,7 +107,6 @@ public
     end match;
   end expandCref;
 
-protected
   function expandCref2
     input ComponentRef cref;
     input output list<list<list<Subscript>>> subs = {};

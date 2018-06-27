@@ -1967,7 +1967,8 @@ algorithm
         if isCompatibleMatch(matchKind) then
           expression := match expression
             case Expression.TUPLE() then listHead(expression.elements);
-            else Expression.TUPLE_ELEMENT(expression, 1, compatibleType);
+            else Expression.TUPLE_ELEMENT(expression, 1,
+              Type.setArrayElementType(Expression.typeOf(expression), compatibleType));
           end match;
 
           matchKind := MatchKind.CAST;

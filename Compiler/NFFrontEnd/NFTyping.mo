@@ -1033,7 +1033,7 @@ algorithm
         // equation/algorithm, select the first output.
         if Type.isTuple(ty) and not ExpOrigin.isSingleExpression(origin) then
           ty := Type.firstTupleType(ty);
-          e1 := Expression.TUPLE_ELEMENT(e1, 1, ty);
+          e1 := Expression.tupleElement(e1, ty, 1);
         end if;
       then
         (e1, ty, var1);
@@ -2188,7 +2188,6 @@ algorithm
       MatchKind mk;
       Variability var, bvar;
       Integer next_origin;
-      Equation tyeq;
       SourceInfo info;
 
     case Equation.EQUALITY()
@@ -2204,15 +2203,8 @@ algorithm
              Type.toString(ty1) + " = " + Type.toString(ty2)}, info);
           fail();
         end if;
-
-        // Array equations containing function calls should not be scalarized.
-        if Type.isArray(ty) and (Expression.hasArrayCall(e1) or Expression.hasArrayCall(e2)) then
-          tyeq := Equation.ARRAY_EQUALITY(e1, e2, ty, eq.source);
-        else
-          tyeq := Equation.EQUALITY(e1, e2, ty, eq.source);
-        end if;
       then
-        tyeq;
+        Equation.EQUALITY(e1, e2, ty, eq.source);
 
     case Equation.CONNECT()
       then typeConnect(eq.lhs, eq.rhs, origin, eq.source);

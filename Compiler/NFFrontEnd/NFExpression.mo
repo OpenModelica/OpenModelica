@@ -3333,5 +3333,28 @@ public
     end match;
   end toScalar;
 
+  function tupleElement
+    input Expression exp;
+    input Type ty;
+    input Integer index;
+    output Expression tupleElem;
+  algorithm
+    tupleElem := match exp
+      local
+        Type ety;
+
+      case Expression.TUPLE() then listGet(exp.elements, index);
+
+      case Expression.ARRAY()
+        algorithm
+          ety := Type.unliftArray(ty);
+          exp.elements := list(tupleElement(e, ety, index) for e in exp.elements);
+        then
+          exp;
+
+      else Expression.TUPLE_ELEMENT(exp, index, ty);
+    end match;
+  end tupleElement;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
