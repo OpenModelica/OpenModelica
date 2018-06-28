@@ -247,7 +247,8 @@ fmil:
 	cp -pPR 3rdParty/FMIL/build/$(LIBFMILIB) $(builddir_lib_omc)
 	test ! -f $(OMBUILDDIR)/$(LIB_OMC)/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) $(OMBUILDDIR)/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
-	#cp -rp 3rdParty/FMIL/install/include/* $(builddir_inc)
+	mkdir -p $(builddir_inc)/fmil/
+	cp -pPR 3rdParty/FMIL/install/include/* $(builddir_inc)/fmil/
 
 qjson:
 	test -d 3rdParty/qjson-0.8.1
