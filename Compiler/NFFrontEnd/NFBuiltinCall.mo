@@ -58,6 +58,7 @@ protected
   import TypeCheck = NFTypeCheck;
   import Typing = NFTyping;
   import Util;
+  import ExpandExp = NFExpandExp;
 
 public
   function needSpecialHandling
@@ -885,6 +886,7 @@ protected
     Expression arg;
     Variability var;
     Function fn;
+    Boolean expanded;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("scalar", named_args, info);
@@ -904,9 +906,22 @@ protected
       end if;
     end for;
 
+    (arg, expanded) := ExpandExp.expand(arg);
     ty := Type.arrayElementType(ty);
-    {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+
+    if expanded then
+      args := Expression.arrayScalarElements(arg);
+
+      if listLength(args) <> 1 then
+        Error.assertion(false, getInstanceName() + " failed to expand scalar(" +
+          Expression.toString(arg) + ") correctly", info);
+      end if;
+
+      callExp := listHead(args);
+    else
+      {fn} := Function.typeRefCache(fn_ref);
+      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    end if;
   end typeScalarCall;
 
   function typeVectorCall

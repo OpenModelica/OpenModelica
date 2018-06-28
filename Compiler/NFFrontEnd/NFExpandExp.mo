@@ -68,6 +68,7 @@ public
       case Expression.ARRAY() then (exp, true);
       case Expression.RANGE() then expandRange(exp);
       case Expression.CALL() then expandCall(exp.call, exp);
+      case Expression.SIZE() then expandSize(exp);
       case Expression.BINARY() then expandBinary(exp, exp.operator);
       case Expression.UNARY() then expandUnary(exp.exp, exp.operator);
       case Expression.LBINARY() then expandLogicalBinary(exp);
@@ -337,6 +338,31 @@ public
       result := Expression.ARRAY(ty, listReverseInPlace(expl));
     end if;
   end expandReduction2;
+
+  function expandSize
+    input Expression exp;
+    output Expression outExp;
+    output Boolean expanded = true;
+  algorithm
+    outExp := match exp
+      local
+        Integer dims;
+        Expression e;
+        Type ty;
+        list<Expression> expl;
+
+      case Expression.SIZE(exp = e, dimIndex = NONE())
+        algorithm
+          ty := Expression.typeOf(e);
+          dims := Type.dimensionCount(ty);
+          expl := list(Expression.SIZE(e, SOME(Expression.INTEGER(i))) for i in 1:dims);
+        then
+          Expression.ARRAY(Type.ARRAY(ty, {Dimension.fromInteger(dims)}), expl);
+
+      // Size with an index is scalar, and thus already maximally expanded.
+      else exp;
+    end match;
+  end expandSize;
 
   function expandBinary
     input Expression exp;
