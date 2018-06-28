@@ -2906,6 +2906,10 @@ algorithm
           markStructuralParamsDim(dim);
         end for;
 
+        if Binding.isBound(c.binding) then
+          markStructuralParamsExpSize(Binding.getUntypedExp(c.binding));
+        end if;
+
         updateImplicitVariability(c.classInst);
       then
         ();
@@ -2970,6 +2974,31 @@ algorithm
     else ();
   end match;
 end markStructuralParamsExp_traverser;
+
+function markStructuralParamsExpSize
+  input Expression exp;
+algorithm
+  Expression.apply(exp, markStructuralParamsExpSize_traverser);
+end markStructuralParamsExpSize;
+
+function markStructuralParamsExpSize_traverser
+  input Expression exp;
+algorithm
+  () := match exp
+    local
+      list<tuple<InstNode, Expression>> iters;
+
+    case Expression.CALL(call = Call.UNTYPED_MAP_CALL(iters = iters))
+      algorithm
+        for iter in iters loop
+          markStructuralParamsExp(Util.tuple22(iter));
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end markStructuralParamsExpSize_traverser;
 
 function updateImplicitVariabilityEql
   input list<Equation> eql;

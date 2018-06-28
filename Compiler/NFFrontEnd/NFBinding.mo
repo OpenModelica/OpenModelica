@@ -166,6 +166,13 @@ public
     end match;
   end typedExp;
 
+  function getUntypedExp
+    input Binding binding;
+    output Expression exp;
+  algorithm
+    UNTYPED_BINDING(bindingExp = exp) := binding;
+  end getUntypedExp;
+
   function getTypedExp
     input Binding binding;
     output Expression exp;
