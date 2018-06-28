@@ -82,6 +82,7 @@ public
     list<Connector> cl1, cl2;
     Expression e1, e2;
     Type ty1, ty2;
+    Boolean b1, b2;
   algorithm
     // Collect all flow variables.
     for var in flatModel.variables loop
@@ -101,10 +102,8 @@ public
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
             if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
-              e1 := Expression.CREF(ty1, ComponentRef.simplifySubscripts(lhs));
-              cl1 := Connector.fromExp(ExpandExp.expand(e1), source);
-              e2 := Expression.CREF(ty2, ComponentRef.simplifySubscripts(rhs));
-              cl2 := Connector.fromExp(ExpandExp.expand(e2), source);
+              cl1 := makeConnectors(lhs, ty1, source);
+              cl2 := makeConnectors(rhs, ty2, source);
 
               for c1 in cl1 loop
                 c2 :: cl2 := cl2;
@@ -122,6 +121,29 @@ public
       flatModel.equations := listReverseInPlace(eql);
     end if;
   end collect;
+
+  function makeConnectors
+    input ComponentRef cref;
+    input Type ty;
+    input DAE.ElementSource source;
+    output list<Connector> connectors;
+  protected
+    Expression cref_exp;
+    Boolean expanded;
+  algorithm
+    cref_exp := Expression.CREF(ty, ComponentRef.simplifySubscripts(cref));
+    (cref_exp, expanded) := ExpandExp.expand(cref_exp);
+
+    if expanded then
+      connectors := Connector.fromExp(cref_exp, source);
+    else
+      // Connectors should only have structural parameter subscripts, so it
+      // should always be possible to expand them.
+      Error.assertion(false, getInstanceName() + " failed to expand connector `" +
+        ComponentRef.toString(cref) + "\n", ElementSource.getInfo(source));
+    end if;
+  end makeConnectors;
+
 
   annotation(__OpenModelica_Interface="frontend");
 end NFConnections;

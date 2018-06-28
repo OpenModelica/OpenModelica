@@ -145,7 +145,12 @@ function simplifyBuiltinCall
   output Expression exp;
 algorithm
   exp := match Absyn.pathFirstIdent(name)
-    case "cat" then ExpandExp.expandBuiltinCat(args);
+    case "cat"
+      algorithm
+        exp := ExpandExp.expandBuiltinCat(args, call);
+      then
+        exp;
+
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;

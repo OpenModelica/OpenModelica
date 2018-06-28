@@ -69,10 +69,17 @@ public
       local
         list<Expression> arr, slice;
         Expression e;
+        Boolean expanded;
 
       case Expression.ARRAY()
         algorithm
-          Expression.ARRAY(elements = arr) := ExpandExp.expand(exp);
+          (Expression.ARRAY(elements = arr), expanded) := ExpandExp.expand(exp);
+
+          if not expanded then
+            Error.assertion(false, getInstanceName() + " got unexpandable expression `" +
+              Expression.toString(exp) + "`", sourceInfo());
+          end if;
+
           (arr, slice) := nextArraySlice(arr);
         then
           ARRAY_ITERATOR(arr, slice);

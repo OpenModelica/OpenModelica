@@ -1009,7 +1009,7 @@ function evalLogicBinaryOp
   input Expression exp1;
   input Operator op;
   input Expression exp2;
-  input EvalTarget target;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
   output Expression exp;
 algorithm
   exp := match op.op
