@@ -397,6 +397,7 @@ FuncBuiltinProduct.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSample.mo \
 FuncBuiltinScalar.mo \
+FuncBuiltinScalar2.mo \
 FuncBuiltinSemiLinear.mo \
 FuncBuiltinSign.mo \
 FuncBuiltinSize.mo \
