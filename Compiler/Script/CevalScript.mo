@@ -590,6 +590,7 @@ algorithm
       Boolean new_inst;
       SymbolTable interactiveSymbolTable, interactiveSymbolTable2;
       GC.ProfStats gcStats;
+      Absyn.Restriction restriction;
 
     case (cache,_,"parseString",{Values.STRING(str1),Values.STRING(str2)},_)
       equation
@@ -788,8 +789,11 @@ algorithm
         end match;
         // handle encryption
         Values.ENUM_LITERAL(index=access) = Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., The class is not encrypted.
-          (absynClass as Absyn.CLASS(info=SOURCEINFO(fileName=str))) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+        (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
+        /* If the class has Access.packageText annotation or higher
+         * If the class has Access.nonPackageText annotation or higher and class is not a package
+         */
+        if ((access >= 7) or ((access >= 5) and not Absyn.isPackageRestriction(restriction))) then
           str = Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(Absyn.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
