@@ -2308,14 +2308,20 @@ void LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLi
 QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem)
 {
   QString contents = "";
-  QFile file(pLibraryTreeItem->getFileName());
-  if (!file.open(QIODevice::ReadOnly)) {
-    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-                          .arg(file.errorString()), Helper::ok);
-  } else {
-    contents = QString(file.readAll());
-    file.close();
+  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+  // if the file is encrypted use listFile
+  if (fileInfo.suffix().compare("moc") == 0) {
+    contents = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure());
+  } else { // else read the file contents
+    QFile file(pLibraryTreeItem->getFileName());
+    if (!file.open(QIODevice::ReadOnly)) {
+      QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
+                            .arg(file.errorString()), Helper::ok);
+    } else {
+      contents = QString(file.readAll());
+      file.close();
+    }
   }
   return contents;
 }
