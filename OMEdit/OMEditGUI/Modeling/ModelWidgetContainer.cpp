@@ -6024,7 +6024,14 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getSimulateWithAnimationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
 #endif
   MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
-  MainWindow::instance()->getInstantiateModelAction()->setEnabled(enabled && modelica);
+  bool accessAnnotation = false;
+  if (pLibraryTreeItem && (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
+                           || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText
+                                || pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageDuplicate)
+                               && pLibraryTreeItem->getRestriction() != StringHandler::Package))) {
+    accessAnnotation = true;
+  }
+  MainWindow::instance()->getInstantiateModelAction()->setEnabled(enabled && modelica && accessAnnotation);
   MainWindow::instance()->getCheckModelAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getCheckAllModelsAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportFMUAction()->setEnabled(enabled && modelica);

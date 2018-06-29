@@ -2913,6 +2913,14 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           menu.addSeparator();
           menu.addAction(mpInstantiateModelAction);
+          if (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
+              || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText
+                   || pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageDuplicate)
+                  && pLibraryTreeItem->getRestriction() != StringHandler::Package)) {
+            mpInstantiateModelAction->setEnabled(true);
+          } else {
+            mpInstantiateModelAction->setEnabled(false);
+          }
           menu.addAction(mpCheckModelAction);
           menu.addAction(mpCheckAllModelsAction);
           /* Ticket #3040.
