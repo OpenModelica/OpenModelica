@@ -756,7 +756,6 @@ algorithm
       SourceInfo info;
       SymbolTable forkedSymbolTable;
 
-
     case (cache,_,"runScriptParallel",{Values.ARRAY(valueLst=vals),Values.INTEGER(i),Values.BOOL(true)},_)
       equation
         strs = List.map(vals,ValuesUtil.extractValueString);
@@ -1699,6 +1698,16 @@ algorithm
         res = "Failed to run the optimize command: " + str;
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
      then (cache,simValue);
+
+    // handle encryption
+    case (cache,_,"instantiateModel",_,_)
+      equation
+        // if AST contains encrypted class show nothing
+        p = SymbolTable.getAbsyn();
+        true = Interactive.astContainsEncryptedClass(p);
+        Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+      then
+        (cache,Values.STRING(""));
 
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},_)
       equation
