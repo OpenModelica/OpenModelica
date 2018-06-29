@@ -32,9 +32,17 @@ echo $OPENMODELICAHOME
 echo $OPENMODELICALIBRARY
 echo $PATH
 #--- end om.sh
+To find out where your HOME is (mine is set via a windows environment variable called HOME)
+just start mingw64 terminal and type
+> pwd
+In that directory you will find your .bashrc file and you can create your om.sh file.
 
-Then you can start your mingw64 terminal and start omc or OMEdit from
-OpenModelica/build/bin directory.
+Then when you start your mingw64 terminal the paths will be automatically set
+and you can use your compiled omc or OMEdit from OpenModelica/build/bin directory
+without any problem.
+
+If you want to start OMEdit from Windows Explorer you can create an OMEdit.bat file
+where you set these paths and then start OMEdit.
 
 Linux:
 ======
