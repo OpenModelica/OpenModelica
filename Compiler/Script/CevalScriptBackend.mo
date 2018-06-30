@@ -3347,21 +3347,25 @@ protected function configureFMU
   input String logfile;
   input Boolean isWindows;
 protected
-  String CC, CFLAGS, LDFLAGS, makefileStr,
+  String CC, CFLAGS, LDFLAGS, makefileStr, container, host, nozip,
     dir=fmutmp+"/sources/", cmd="",
     quote="'",
     dquote = if isWindows then "\"" else "'";
+  list<String> rest;
+  Boolean finishedBuild;
+  Integer uid;
 algorithm
   CC := System.getCCompiler();
   CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
                          "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+System.getTriple()+"/omc"+dquote+" "+
                          System.getLDFlags()+" ");
-  if System.regularFileExists(dir + logfile) then
-    System.removeFile(dir + logfile);
+  if System.regularFileExists(logfile) then
+    System.removeFile(logfile);
   end if;
-  _ := match platform
-    case "dynamic"
+  nozip := System.getMakeCommand()+" -j"+intString(Config.noProc()) + " nozip";
+  finishedBuild := match Util.stringSplitAtChar(platform, " ")
+    case {"dynamic"}
       algorithm
         makefileStr := System.readFile(dir + "Makefile.in");
         // replace @XX@ variables in the Makefile
@@ -3379,8 +3383,8 @@ algorithm
         System.writeFile(dir + "Makefile", makefileStr);
         System.writeFile(dir + "config.log", "Using cached values for dynamic platform");
         cmd := "cached values";
-      then ();
-    case "static"
+      then false;
+    case {"static"}
       algorithm
         makefileStr := System.readFile(dir + "Makefile.in");
         // replace @XX@ variables in the Makefile
@@ -3398,24 +3402,49 @@ algorithm
         System.writeFile(dir + "Makefile", makefileStr);
         System.writeFile(dir + "config.log", "Using cached values for static platform");
         cmd := "cached values";
-      then ();
-    else
+      then false;
+    case {_}
       algorithm
-        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" LDFLAGS=";
+        cmd := "cd \"" +  fmutmp + "/sources\" && ./configure --host="+quote+platform+quote+" CFLAGS="+quote+"-Os"+quote+" LDFLAGS= && " +
+               nozip;
         if 0 <> System.systemCall(cmd, outFile=logfile) then
           Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
           System.removeFile(dir + logfile);
           fail();
         end if;
-      then ();
+      then true;
+    case host::"docker"::"run"::rest
+      algorithm
+        uid := System.getuid();
+        cmd := "docker run "+(if uid<>0 then "--user " + String(uid) else "")+" --rm -w /fmu -v "+quote+System.realpath(fmutmp+"/..")+quote+":/fmu " +stringDelimitList(rest," ")+ " sh -c " + dquote +
+               "cd " + dquote + System.basename(fmutmp) + "/sources" + dquote + " && " +
+               "./configure --host="+quote+host+quote+" CFLAGS="+quote+"-Os"+quote+" LDFLAGS= && " +
+               nozip + dquote;
+        if 0 <> System.systemCall(cmd, outFile=logfile) then
+          Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+          System.removeFile(dir + logfile);
+          fail();
+        end if;
+      then true;
+    else
+      algorithm
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Unknown platform (contains spaces but does does not conform to \"platform docker run [args] container\""});
+      then fail();
   end match;
-  if not isWindows then
-    if 0 <> System.systemCall("cd " + dir + " && make clean > /dev/null 2>&1") then
-      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to make clean"});
+  ExecStat.execStat("buildModelFMU: configured platform " + platform + " using " + cmd);
+  if not finishedBuild then
+    if not isWindows then
+      if 0 <> System.systemCall("cd " + dir + " && make clean > /dev/null 2>&1") then
+        Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Failed to make clean"});
+        fail();
+      end if;
+    end if;
+    if 0 <> System.systemCall("cd \"" +  fmutmp + "/sources\" && " + nozip, outFile=logfile) then
+      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
+      System.removeFile(dir + logfile);
       fail();
     end if;
   end if;
-  ExecStat.execStat("buildModelFMU: configured platform " + platform + " using " + cmd);
 end configureFMU;
 
 protected function buildModelFMU " author: Frenkel TUD
@@ -3503,27 +3532,21 @@ algorithm
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 
-  if listEmpty(platforms) then
-    cmd := "rm -f \"" + filenameprefix + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + filenameprefix + ".fmu\" *";
-    if 0 <> System.systemCall(cmd, outFile=logfile) then
-      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-      ExecStat.execStat("buildModelFMU failed for no platform");
-    end if;
-    return;
-  end if;
-
   for platform in platforms loop
-    configureFMU(platform, fmutmp, logfile, isWindows);
-    try
-      CevalScript.compileModel(filenameprefix, libs, workingDir=dir, makeVars={});
-    else
-      outValue := Values.STRING("");
-      Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {System.readFile(logfile)});
-      ExecStat.execStat("buildModelFMU failed for platform " + platform);
-      return;
-    end try;
+    configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
+
+  cmd := "rm -f \"" + filenameprefix + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  if 0 <> System.systemCall(cmd, outFile=logfile) then
+    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
+    ExecStat.execStat("buildModelFMU failed");
+  end if;
+
+  if not System.regularFileExists(fmuTargetName + ".fmu") then
+    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Build commands returned success, but " + filenameprefix + ".fmu does not exist"});
+    fail();
+  end if;
 
   System.removeDirectory(fmutmp);
 end buildModelFMU;

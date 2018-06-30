@@ -961,6 +961,14 @@ algorithm
   end try;
 end writeFileOrErrorMsg;
 
+public function stringStartsWith
+  input String inString1;
+  input String inString2;
+  output Boolean outEqual;
+algorithm
+  outEqual := (0 == System.strncmp(inString1, inString2, stringLength(inString1)));
+end stringStartsWith;
+
 public function strncmp "Compare two strings up to the nth character
   Returns true if they are equal."
   input String inString1;

@@ -736,6 +736,11 @@ Consider opening a socket and letting anyone run system() commands without authe
   external "C" isRoot=System_userIsRoot() annotation(Library = "omcruntime");
 end userIsRoot;
 
+public function getuid
+  output Integer uid;
+  external "C" uid=System_getuid() annotation(Library = "omcruntime");
+end getuid;
+
 public function configureCommandLine
 "Returns the date and command used to configure OpenModelica.
 On the platforms that don't configure options, like OMDev, the returned string

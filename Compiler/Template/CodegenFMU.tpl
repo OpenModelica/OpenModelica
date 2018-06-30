@@ -1140,20 +1140,21 @@ match platform
   >>
   else
   <<
-  <%fileNamePrefix%>_FMU: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
+  <%fileNamePrefix%>_FMU: nozip
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+  nozip: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
   <%\t%>mkdir -p ../binaries/$(FMIPLATFORM)
   ifeq (@LIBTYPE_DYNAMIC@,1)
   <%\t%>$(LD) -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(OFILES) $(RUNTIMEFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDFLAGS)
-  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs config.log ../binaries/$(FMIPLATFORM)/
+  <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
-  <%\t%>head -n20 Makefile > ../binaries/$(FMIPLATFORM)/config.summary
+  <%\t%>head -n20 Makefile > ../resources/$(FMIPLATFORM).summary
   ifeq (@LIBTYPE_STATIC@,1)
   <%\t%>rm -f <%modelNamePrefix%>.a
   <%\t%>$(AR) -rsu <%modelNamePrefix%>.a $(MAINOBJ) $(OFILES) $(RUNTIMEFILES)
-  <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs config.log ../binaries/$(FMIPLATFORM)/
+  <%\t%>cp <%fileNamePrefix%>.a <%fileNamePrefix%>_FMU.libs ../binaries/$(FMIPLATFORM)/
   endif
   <%\t%>$(MAKE) distclean
-  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
   distclean: clean
   <%\t%>rm -f Makefile config.status config.log
   clean:

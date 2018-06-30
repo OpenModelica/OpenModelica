@@ -538,6 +538,15 @@ extern int System_userIsRoot()
   return CONFIG_USER_IS_ROOT;
 }
 
+extern int System_getuid()
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  return 0;
+#else
+  return getuid();
+#endif
+}
+
 extern const char* System_readEnv(const char *envname)
 {
   char *envvalue = getenv(envname);
