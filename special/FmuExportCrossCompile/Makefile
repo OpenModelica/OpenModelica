@@ -14,6 +14,10 @@ test: clean
 	cp FmuExportCrossCompile.fmu FmuExportCrossCompile-archive.fmu
 	tar cJf Test_FMUs.tar.xz ./Test_FMUs
 	$(MAKE) clean
+dockerpull:
+	docker pull docker.openmodelica.org/osxcross-omsimulator:v2.0
+	docker pull docker.openmodelica.org/armcross-omsimulator:v2.0
+	docker pull docker.openmodelica.org/msyscross-omsimulator:v2.0
 check-files:
 	@file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll | grep "PE32 executable (DLL) (console) Intel 80386, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/win64/FmuExportCrossCompile.dll | grep "PE32+ executable (DLL) (console) x86-64, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win64/FmuExportCrossCompile.dll ; false)
