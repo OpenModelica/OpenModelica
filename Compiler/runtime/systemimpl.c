@@ -593,6 +593,9 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
     if (*outFile) {
       /* redirect stdout, stderr in the fork'ed process */
       int fd = open(outFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      if (fd < 0) {
+        _exit(1);
+      }
       dup2(fd, 1);
       dup2(fd, 2);
 #if defined(__APPLE_CC__)
