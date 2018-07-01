@@ -48,6 +48,13 @@ extern const char* OpenModelica_parseFmuResourcePath(const char *path)
     while (path[0] && path[1]=='/') {
       path++;
     }
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    if (strchr(path,':')) {
+      while (path[0]) {
+        path++;
+      }
+    }
+#endif
     return path;
   }
   return NULL;
