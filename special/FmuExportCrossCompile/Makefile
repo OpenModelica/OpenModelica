@@ -10,10 +10,6 @@ test: clean
 	$(OMC) fmuExportCrossCompile.mos
 	unzip -q FmuExportCrossCompile.fmu -d FmuExportCrossCompile.fmutmp
 	$(MAKE) check-files
-	$(MAKE) fmu-check
-	cp FmuExportCrossCompile.fmu FmuExportCrossCompile-archive.fmu
-	tar cJf Test_FMUs.tar.xz ./Test_FMUs
-	$(MAKE) clean
 dockerpull:
 	docker pull docker.openmodelica.org/osxcross-omsimulator:v2.0
 	docker pull docker.openmodelica.org/armcross-omsimulator:v2.0
