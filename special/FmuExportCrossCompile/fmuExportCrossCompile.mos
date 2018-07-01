@@ -65,7 +65,7 @@ for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","Water
 ");
   writeFile("test.mos", "
   (start,stop,tolerance,numberOfIntervals,interval) := getSimulationOptions("+c+");
-  res := buildModel("+c+", method=\"euler\", numberOfIntervals=2000, outputFormat=\"csv\", fileNamePrefix=c2); getErrorString();
+  res := simulate("+c+", method=\"euler\", numberOfIntervals=2000, outputFormat=\"csv\", fileNamePrefix=c2); getErrorString();
   print(getErrorString()+\"
 \");
   b := buildModelFMU("+c+", fileNamePrefix=c2, version=\"2.0\", fmuType=\"me_cs\", platforms=platforms);

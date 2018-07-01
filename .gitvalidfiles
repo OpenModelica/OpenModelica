@@ -255,3 +255,4 @@
 ./simulation/modelica/hpcom/ReferenceGraphs/MergingExample_TaskGraphODE.graphml
 ./simulation/modelica/hpcom/ReferenceGraphs/SimpleResistor_TaskGraphODE.graphml
 ./special/FmuExportCrossCompile/fmu-run.sh
+./special/FmuExportCrossCompile/single-fmu-run.sh
