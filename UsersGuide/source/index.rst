@@ -24,6 +24,7 @@ Generated on |date| at |time|
   debugger
   graphs
   fmi
+  encryption
   omnotebook
   omsimulator
   optimization
