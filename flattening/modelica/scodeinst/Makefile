@@ -302,6 +302,7 @@ Extends1.mo \
 Extends2.mo \
 Extends3.mo \
 Extends4.mo \
+Extends5.mo \
 ExtendConnector1.mo \
 ExtendImport1.mo \
 ExtendImport2.mo \
