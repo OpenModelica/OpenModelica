@@ -28,11 +28,11 @@ Notes
 -----
 
 - There is no license management and obfuscation of the generated code and
-files. However just a basic encryption and decryption is supported along with
-full support for protection access annotation as defined in
-Modelica specification 18.9. This means that anyone who has an OpenModelica
-version with encryption support can encrypt or decrypt files.
+  files. However just a basic encryption and decryption is supported along with
+  full support for protection access annotation as defined in
+  Modelica specification 18.9. This means that anyone who has an OpenModelica
+  version with encryption support can encrypt or decrypt files.
 
 - OpenModelica encryption is based on
-SEMLA (Safe/Superiour/Super Encryption of Modelica Libraries and Artifacts)
-module from Modelon AB.
+  SEMLA (Safe/Superiour/Super Encryption of Modelica Libraries and Artifacts)
+  module from Modelon AB.
