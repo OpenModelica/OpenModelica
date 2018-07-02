@@ -984,7 +984,9 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Real expr;
     parameter input Real delayTime;
     output Real value;
-    external "builtin" value=delay(expr, delayTime);
+  algorithm
+    value := delay3(expr, delayTime, delayTime);
+    annotation(__OpenModelica_EarlyInline=true);
   end delay2;
 
   impure function delay3
