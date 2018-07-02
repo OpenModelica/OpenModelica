@@ -2528,6 +2528,8 @@ function printUnboundError
   input Expression exp;
 algorithm
   () := match target
+    case EvalTarget.IGNORE_ERRORS() then ();
+
     case EvalTarget.DIMENSION()
       algorithm
         Error.addSourceMessage(Error.STRUCTURAL_PARAMETER_OR_CONSTANT_WITH_NO_BINDING,
@@ -2542,15 +2544,14 @@ algorithm
       then
         fail();
 
-    case EvalTarget.GENERIC()
+    else
       algorithm
         Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
           {Expression.toString(exp)},
-          {InstNode.info(ComponentRef.node(Expression.toCref(exp))), target.info});
+          {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
       then
         fail();
 
-    else ();
   end match;
 end printUnboundError;
 
