@@ -1,4 +1,4 @@
-// name: FuncBuiltinCardinality
+// name: Cardinality1
 // keywords: cardinality
 // status: correct
 // cflags: -d=newInst
@@ -6,7 +6,7 @@
 // Tests the builtin cardinality operator.
 //
 
-model FuncBuiltinCardinality
+model Cardinality1
   connector C
     Real e;
     flow Real f;
@@ -14,14 +14,14 @@ model FuncBuiltinCardinality
 
   C c;
   Integer r1 = cardinality(c);
-end FuncBuiltinCardinality;
+end Cardinality1;
 
 // Result:
-// class FuncBuiltinCardinality
+// class Cardinality1
 //   Real c.e;
 //   Real c.f;
 //   Integer r1 = 0;
 // equation
 //   c.f = 0.0;
-// end FuncBuiltinCardinality;
+// end Cardinality1;
 // endResult

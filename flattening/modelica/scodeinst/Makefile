@@ -46,6 +46,12 @@ BuiltinAttribute19.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
+Cardinality1.mo \
+Cardinality2.mo \
+Cardinality3.mo \
+Cardinality4.mo \
+CardinalityInvalidArg1.mo \
+CardinalityInvalidArg2.mo \
 ceval1.mo \
 ceval2.mo \
 ceval3.mo \
@@ -777,7 +783,6 @@ expconn5.mo \
 expconn6.mo \
 expconn7.mo \
 func1.mo \
-FuncBuiltinCardinality.mo \
 FuncBuiltinEnumTypeName.mo \
 FuncBuiltinReduction.mo \
 ImportShadowing1.mo \
