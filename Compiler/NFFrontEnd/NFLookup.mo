@@ -370,7 +370,7 @@ algorithm
     else
       // TODO: Handle encapsulated scopes.
       // If the scope has the same name as we're looking for we can just return it.
-      if name == InstNode.name(cur_scope) then
+      if name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) then
         node := cur_scope;
         return;
       else
