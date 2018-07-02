@@ -40,14 +40,15 @@ Modelica.Electrical.Analog.Examples.CauerLowPassSC_tbb.mos
 
 TESTFILES_MCP = \
 Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos \
-Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos
+Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos
 
 # Run make failingtest
 FAILINGTESTFILES= \
 Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_level_omp.mos \
 Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_list_omp.mos \
-Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp_memory.mos
+Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp_memory.mos \
+Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos
+# Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos fails due to timeout on docker containers
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
