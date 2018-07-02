@@ -45,6 +45,8 @@ import NFCeval.EvalTarget;
 import NFFunction.Function;
 import ComponentRef = NFComponentRef;
 import ExpandExp = NFExpandExp;
+import TypeCheck = NFTypeCheck;
+import Absyn;
 
 public
 
@@ -55,6 +57,7 @@ algorithm
     case Expression.CREF()
       algorithm
         exp.cref := ComponentRef.simplifySubscripts(exp.cref);
+        exp.ty := ComponentRef.getSubscriptedType(exp.cref);
       then
         exp;
 
@@ -65,7 +68,7 @@ algorithm
         exp;
 
     case Expression.RANGE()
-      then Expression.RANGE(exp.ty, simplify(exp.start), simplifyOpt(exp.step), simplify(exp.stop));
+      then simplifyRange(exp);
 
     case Expression.RECORD()
       algorithm
@@ -101,6 +104,31 @@ algorithm
     else exp;
   end match;
 end simplifyOpt;
+
+function simplifyRange
+  input Expression range;
+  output Expression exp;
+protected
+  Expression start_exp1, stop_exp1, start_exp2, stop_exp2;
+  Option<Expression> step_exp1, step_exp2;
+  Type ty;
+algorithm
+  Expression.RANGE(ty = ty, start = start_exp1, step = step_exp1, stop = stop_exp1) := range;
+
+  start_exp2 := simplify(start_exp1);
+  step_exp2 := simplifyOpt(step_exp1);
+  stop_exp2 := simplify(stop_exp1);
+
+  if referenceEq(start_exp1, start_exp2) and
+     referenceEq(step_exp1, step_exp2) and
+     referenceEq(stop_exp1, stop_exp2) then
+    exp := range;
+  else
+    ty := TypeCheck.getRangeType(start_exp2, step_exp2, stop_exp2,
+      Type.arrayElementType(ty), Absyn.dummyInfo);
+    exp := Expression.RANGE(ty, start_exp2, step_exp2, stop_exp2);
+  end if;
+end simplifyRange;
 
 function simplifyCall
   input output Expression callExp;
@@ -151,9 +179,45 @@ algorithm
       then
         exp;
 
+    case "sum"     then simplifySumProduct(listHead(args), call, isSum = true);
+    case "product" then simplifySumProduct(listHead(args), call, isSum = false);
+
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifySumProduct
+  input Expression arg;
+  input Call call;
+  input Boolean isSum;
+  output Expression exp;
+protected
+  Boolean expanded;
+  list<Expression> args;
+  Type ty;
+  Operator op;
+algorithm
+  (exp, expanded) := ExpandExp.expand(arg);
+
+  if expanded then
+    args := Expression.arrayScalarElements(exp);
+    ty := Expression.typeOf(arg);
+
+    if listEmpty(args) then
+      exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
+    else
+      exp :: args := args;
+      op := if isSum then Operator.makeAdd(Type.arrayElementType(ty)) else
+                          Operator.makeMul(Type.arrayElementType(ty));
+
+      for e in args loop
+        exp := Expression.BINARY(exp, op, e);
+      end for;
+    end if;
+  else
+    exp := Expression.CALL(call);
+  end if;
+end simplifySumProduct;
 
 function simplifySize
   input output Expression sizeExp;

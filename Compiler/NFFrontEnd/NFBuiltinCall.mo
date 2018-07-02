@@ -710,29 +710,8 @@ protected
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
     ty := Type.arrayElementType(ty);
 
-    if intBitAnd(origin, intBitOr(ExpOrigin.FUNCTION, ExpOrigin.ALGORITHM)) == 0 then
-      (arg, expanded) := ExpandExp.expand(arg);
-    else
-      expanded := false;
-    end if;
-
-    if expanded then
-      args := Expression.arrayScalarElements(arg);
-
-      if listEmpty(args) then
-        callExp := Expression.makeZero(ty);
-      else
-        callExp :: args := args;
-        op := Operator.makeAdd(ty);
-
-        for e in args loop
-          callExp := Expression.BINARY(callExp, op, e);
-        end for;
-      end if;
-    else
-      {fn} := Function.typeRefCache(fn_ref);
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
-    end if;
+    {fn} := Function.typeRefCache(fn_ref);
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeSumCall;
 
   function typeProductCall
@@ -762,29 +741,8 @@ protected
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
     ty := Type.arrayElementType(ty);
 
-    if intBitAnd(origin, intBitOr(ExpOrigin.FUNCTION, ExpOrigin.ALGORITHM)) == 0 then
-      (arg, expanded) := ExpandExp.expand(arg);
-    else
-      expanded := false;
-    end if;
-
-    if expanded then
-      args := Expression.arrayScalarElements(arg);
-
-      if listEmpty(args) then
-        callExp := Expression.makeOne(ty);
-      else
-        callExp :: args := args;
-        op := Operator.makeMul(ty);
-
-        for e in args loop
-          callExp := Expression.BINARY(callExp, op, e);
-        end for;
-      end if;
-    else
-      {fn} := Function.typeRefCache(fn_ref);
-      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
-    end if;
+    {fn} := Function.typeRefCache(fn_ref);
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeProductCall;
 
   function typeSmoothCall
