@@ -46,6 +46,7 @@ import Statement = NFStatement;
 import FlatModel = NFFlatModel;
 import Prefix;
 import Algorithm = NFAlgorithm;
+import CardinalityTable = NFCardinalityTable;
 
 protected
 import ComponentRef = NFComponentRef;
@@ -876,6 +877,7 @@ protected
   list<Equation> conn_eql;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
+  CardinalityTable.Table ctable;
 algorithm
   // Generate the connect equations and add them to the equation list.
   (flatModel, conns) := Connections.collect(flatModel);
@@ -883,10 +885,11 @@ algorithm
   csets_array := ConnectionSets.extractSets(csets);
   conn_eql := ConnectEquations.generateEquations(csets_array);
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
+  ctable := CardinalityTable.fromConnections(conns);
 
   // Evaluate any connection operators if they're used.
   if System.getHasStreamConnectors() or System.getUsesCardinality() then
-    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array);
+    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, ctable);
   end if;
 
   execStat(getInstanceName() + "(" + name + ")");
@@ -896,10 +899,11 @@ function evaluateConnectionOperators
   input output FlatModel flatModel;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
 algorithm
-  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray) for c in flatModel.variables);
-  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray);
-  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray);
+  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, ctable) for c in flatModel.variables);
+  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, ctable);
+  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, ctable);
   // TODO: Implement evaluation for algorithm sections.
 end evaluateConnectionOperators;
 
@@ -907,6 +911,7 @@ function evaluateBindingConnOp
   input output Variable var;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
 protected
   Binding binding;
   Expression exp, eval_exp;
@@ -914,7 +919,7 @@ algorithm
   () := match var
     case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING(bindingExp = exp))
       algorithm
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray);
+        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, ctable);
 
         if not referenceEq(exp, eval_exp) then
           binding.bindingExp := eval_exp;
@@ -931,9 +936,11 @@ function evaluateEquationsConnOp
   input output list<Equation> equations;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
 algorithm
   equations := list(
-      Equation.mapExp(eq, function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray))
+      Equation.mapExp(eq,
+        function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable))
     for eq in equations);
 end evaluateEquationsConnOp;
 

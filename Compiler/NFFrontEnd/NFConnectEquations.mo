@@ -41,6 +41,7 @@ import Connector = NFConnector;
 import DAE;
 import ConnectionSets = NFConnectionSets.ConnectionSets;
 import Equation = NFEquation;
+import CardinalityTable = NFCardinalityTable;
 
 protected
 import ComponentReference;
@@ -102,8 +103,10 @@ function evaluateOperators
   input output Expression exp;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
 algorithm
-  exp := Expression.map(exp, function evaluateOperatorExp(sets = sets, setsArray = setsArray));
+  exp := Expression.map(exp,
+    function evaluateOperatorExp(sets = sets, setsArray = setsArray, ctable = ctable));
 end evaluateOperators;
 
 protected
@@ -545,6 +548,7 @@ function evaluateOperatorExp
   input Expression exp;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
   output Expression evalExp;
 algorithm
   evalExp := match exp
@@ -554,9 +558,11 @@ algorithm
     case Expression.CALL(call = call as Call.TYPED_CALL())
       then match Function.name(call.fn)
         case Absyn.IDENT("inStream")
-          then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray);
+          then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
         //case Absyn.IDENT("actualStream")
         //  then evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray);
+        case Absyn.IDENT("cardinality")
+          then CardinalityTable.evaluateCardinality(listHead(call.arguments), ctable);
         else exp;
       end match;
 
@@ -569,6 +575,7 @@ function evaluateInStream
   input ComponentRef cref;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
   output Expression exp;
 protected
   Connector c;
@@ -585,7 +592,7 @@ algorithm
     sl := {c};
   end try;
 
-  exp := generateInStreamExp(cref, sl, sets, setsArray,
+  exp := generateInStreamExp(cref, sl, sets, setsArray, ctable,
     Flags.getConfigReal(Flags.FLOW_THRESHOLD));
 end evaluateInStream;
 
@@ -596,6 +603,7 @@ function generateInStreamExp
   input list<Connector> streams;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
   input Real flowThreshold;
   output Expression exp;
 protected
@@ -630,7 +638,7 @@ algorithm
         {Connector.CONNECTOR(name = cr)} :=
           removeStreamSetElement(streamCref, reducedStreams);
       then
-        evaluateInStream(cr, sets, setsArray);
+        evaluateInStream(cr, sets, setsArray, ctable);
 
     // The general case:
     else
@@ -639,7 +647,7 @@ algorithm
         inside := removeStreamSetElement(streamCref, inside);
         exp := streamSumEquationExp(outside, inside, Expression.REAL(flowThreshold));
         // Evaluate any inStream calls that were generated.
-        exp := evaluateOperatorExp(exp, sets, setsArray);
+        exp := evaluateOperatorExp(exp, sets, setsArray, ctable);
       then
         exp;
 

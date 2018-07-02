@@ -60,6 +60,7 @@ protected
   import Util;
   import ExpandExp = NFExpandExp;
   import Operator = NFOperator;
+  import NFComponent.Component;
 
 public
   function needSpecialHandling
@@ -1259,6 +1260,7 @@ protected
     list<NamedArg> named_args;
     Expression arg;
     Function fn;
+    InstNode node;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("cardinality", named_args, info);
@@ -1280,7 +1282,9 @@ protected
         {"First", ComponentRef.toString(fn_ref), "<REMOVE ME>"}, info);
     end if;
 
-    if not Type.isConnector(ty) then
+    node := ComponentRef.node(Expression.toCref(arg));
+
+    if not (Type.isScalar(ty) and InstNode.isComponent(node) and Component.isConnector(InstNode.component(node))) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
         {"1", ComponentRef.toString(fn_ref), "",
          Expression.toString(arg), Type.toString(ty), "connector"}, info);

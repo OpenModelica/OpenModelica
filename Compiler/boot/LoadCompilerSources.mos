@@ -294,6 +294,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFBuiltinCall.mo",
     "../NFFrontEnd/NFBuiltinFuncs.mo",
     "../NFFrontEnd/NFCall.mo",
+    "../NFFrontEnd/NFCardinalityTable.mo",
     "../NFFrontEnd/NFCeval.mo",
     "../NFFrontEnd/NFComplexType.mo",
     "../NFFrontEnd/NFComponent.mo",
