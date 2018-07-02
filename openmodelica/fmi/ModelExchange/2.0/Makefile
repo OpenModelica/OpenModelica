@@ -13,7 +13,6 @@ testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
-testBug3902.mos \
 testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
@@ -28,7 +27,7 @@ FMIExercise.mos \
 # Run make testfailing
 FAILINGTESTFILES= \
 Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-testExperimentalFMU.mos \
+testExperimentalFMU.mos
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
