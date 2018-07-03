@@ -19,6 +19,11 @@ end OperatorOverloadConstructorDefault1;
 
 
 // Result:
+// function C "Automatically generated record constructor for C"
+//   input Real r;
+//   output C res;
+// end C;
+//
 // class OperatorOverloadConstructorDefault1
 //   Real c.r;
 // equation
