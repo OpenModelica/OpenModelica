@@ -4,8 +4,7 @@ TESTFILES = \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC_levelfix_pthreads_memory.mos \
 Modelica.Electrical.Analog.Examples.CauerLowPassSC_level_omp_measureTime.mos \
 Modelica.Electrical.Spice3.Examples.CoupledInductors_level_omp.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads_spin.mos \
-Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos
+Modelica.Electrical.Spice3.Examples.CoupledInductors_list_pthreads_spin.mos
 
 TESTFILES_ALL = $(TESTFILES_SERIAL) $(TESTFILES_LEVELFIX) $(TESTFILES_LEVEL) $(TESTFILES_METIS) $(TESTFILES_LIST) $(TESTFILES_LISTR) $(TESTFILES_TBB) $(TESTFILES_MCP)
 
@@ -40,7 +39,8 @@ Modelica.Electrical.Analog.Examples.CauerLowPassSC_tbb.mos
 
 TESTFILES_MCP = \
 Modelica.Fluid.Examples.DrumBoiler.DrumBoiler_mcp_pthreads.mos \
-Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos
+Modelica.Electrical.Spice3.Examples.CoupledInductors_mcp_omp.mos \
+Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_omp.mos
 
 # Run make failingtest
 FAILINGTESTFILES= \
