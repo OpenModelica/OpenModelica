@@ -342,7 +342,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   int retValIntegrator=0;
   int retValue=0;
-  int i, retry=0;
+  int i, retry=0, steadStateReached=0;
 
   unsigned int __currStepNo = 0;
 
@@ -403,8 +403,11 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
             if(maxDer < currDer)
               maxDer = currDer;
           }
-          if(maxDer < steadyStateTol)
-            throwStreamPrint(threadData, "steady state reached at time = %g\n  * max(|d(x_i)/dt|/nominal(x_i)) = %g\n  * relative tolerance = %g", solverInfo->currentTime, maxDer, steadyStateTol);
+          if (maxDer < steadyStateTol) {
+            steadStateReached=1;
+            infoStreamPrint(LOG_STDOUT, 0, "steady state reached at time = %g\n  * max(|d(x_i)/dt|/nominal(x_i)) = %g\n  * relative tolerance = %g", solverInfo->currentTime, maxDer, steadyStateTol);
+            break;
+          }
         }
         else
           throwStreamPrint(threadData, "No states in model. Flag -steadyState can only be used if states are present.");
@@ -525,8 +528,9 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
 
   fmtClose(&fmt);
 
-  if (omc_flag[FLAG_STEADY_STATE])
+  if (omc_flag[FLAG_STEADY_STATE] && !steadStateReached) {
     warningStreamPrint(LOG_STDOUT, 0, "Steady state has not been reached.\nThis may be due to too restrictive relative tolerance (%g) or short stopTime (%g).", steadyStateTol, simInfo->stopTime);
+  }
 
   TRACE_POP
   return retValue;
