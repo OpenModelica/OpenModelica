@@ -20,14 +20,14 @@ simulate(Hydrogen_Iodide, stopTime=10, simflags="-steadyState -steadyStateTol=1e
 // true
 // ""
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "Hydrogen_Iodide_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Hydrogen_Iodide', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-steadyState -steadyStateTol=1e-5'",
-//     messages = "Simulation execution failed for model: Hydrogen_Iodide
-// stdout            | info    | Tolerance for steady state detection changed to 1e-05
+//     messages = "stdout            | info    | Tolerance for steady state detection changed to 1e-05
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | debug   | steady state reached at time = 3
+// stdout            | info    | steady state reached at time = 3
 // |                 | |       |   * max(|d(x_i)/dt|/nominal(x_i)) = 9.98919e-06
 // |                 | |       |   * relative tolerance = 1e-05
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
