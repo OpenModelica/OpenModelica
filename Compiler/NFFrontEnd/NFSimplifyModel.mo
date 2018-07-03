@@ -61,6 +61,8 @@ algorithm
   flatModel.variables := list(simplifyVariable(v) for v in flatModel.variables);
   flatModel.equations := simplifyEquations(flatModel.equations);
   flatModel.initialEquations := simplifyEquations(flatModel.initialEquations);
+  flatModel.algorithms := list(simplifyAlgorithm(a) for a in flatModel.algorithms);
+  flatModel.initialAlgorithms := list(simplifyAlgorithm(a) for a in flatModel.initialAlgorithms);
 
   functions := FunctionTree.map(functions, simplifyFunction);
 
@@ -183,6 +185,12 @@ algorithm
   end match;
 end simplifyEquation;
 
+function simplifyAlgorithm
+  input output Algorithm alg;
+algorithm
+  alg.statements := simplifyStatements(alg.statements);
+end simplifyAlgorithm;
+
 function simplifyStatements
   input list<Statement> stmts;
   output list<Statement> outStmts = {};
@@ -209,10 +217,24 @@ algorithm
       then
         stmt :: statements;
 
-    case Statement.FOR()
+    case Statement.FOR(range = SOME(e))
       algorithm
-        stmt.range := SimplifyExp.simplifyOpt(stmt.range);
-        stmt.body := simplifyStatements(stmt.body);
+        if not Type.isEmptyArray(Expression.typeOf(e)) then
+          stmt.range := SimplifyExp.simplifyOpt(stmt.range);
+          stmt.body := simplifyStatements(stmt.body);
+          statements := stmt :: statements;
+        end if;
+      then
+        statements;
+
+    case Statement.IF()
+      then simplifyIfStmtBranches(stmt.branches, stmt.source, Statement.makeIf, simplifyStatements, statements);
+
+    case Statement.WHEN()
+      algorithm
+        stmt.branches := list(
+          (SimplifyExp.simplify(Util.tuple21(b)), simplifyStatements(Util.tuple22(b)))
+          for b in stmt.branches);
       then
         stmt :: statements;
 
@@ -226,9 +248,6 @@ algorithm
         end if;
       then
         statements;
-
-    case Statement.IF()
-      then simplifyIfStmtBranches(stmt.branches, stmt.source, Statement.makeIf, simplifyStatements, statements);
 
     else stmt :: statements;
   end match;

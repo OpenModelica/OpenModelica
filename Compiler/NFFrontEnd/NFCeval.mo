@@ -1013,8 +1013,8 @@ function evalLogicBinaryOp
   output Expression exp;
 algorithm
   exp := match op.op
-    case Op.AND then evalLogicBinaryAnd(exp1, exp2, target);
-    case Op.OR then evalLogicBinaryOr(exp1, exp2, target);
+    case Op.AND then evalLogicBinaryAnd(evalExp(exp1, target), exp2, target);
+    case Op.OR then evalLogicBinaryOr(evalExp(exp1, target), exp2, target);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -1029,14 +1029,21 @@ function evalLogicBinaryAnd
   input Expression exp2;
   input EvalTarget target;
   output Expression exp;
-protected
-  Expression e;
 algorithm
-  e := evalExp(exp1, target);
+  exp := matchcontinue exp1
+    local
+      list<Expression> expl;
 
-  exp := match e
     case Expression.BOOLEAN()
-      then if e.value then evalExp(exp2, target) else e;
+      then if exp1.value then evalExp(exp2, target) else exp1;
+
+    case Expression.ARRAY()
+      algorithm
+        Expression.ARRAY(elements = expl) := evalExp(exp2, target);
+        expl := list(evalLogicBinaryAnd(e1, e2, target)
+                     threaded for e1 in exp1.elements, e2 in expl);
+      then
+        Expression.ARRAY(Type.setArrayElementType(exp1.ty, Type.BOOLEAN()), expl);
 
     else
       algorithm
@@ -1044,7 +1051,7 @@ algorithm
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
-  end match;
+  end matchcontinue;
 end evalLogicBinaryAnd;
 
 function evalLogicBinaryOr
@@ -1052,14 +1059,21 @@ function evalLogicBinaryOr
   input Expression exp2;
   input EvalTarget target;
   output Expression exp;
-protected
-  Expression e;
 algorithm
-  e := evalExp(exp1, target);
+  exp := match exp1
+    local
+      list<Expression> expl;
 
-  exp := match e
     case Expression.BOOLEAN()
-      then if e.value then e else evalExp(exp2, target);
+      then if exp1.value then exp1 else evalExp(exp2, target);
+
+    case Expression.ARRAY()
+      algorithm
+        Expression.ARRAY(elements = expl) := evalExp(exp2, target);
+        expl := list(evalLogicBinaryOr(e1, e2, target)
+                     threaded for e1 in exp1.elements, e2 in expl);
+      then
+        Expression.ARRAY(Type.setArrayElementType(exp1.ty, Type.BOOLEAN()), expl);
 
     else
       algorithm
@@ -1076,7 +1090,7 @@ function evalLogicUnaryOp
   output Expression exp;
 algorithm
   exp := match op.op
-    case Op.NOT then evalLogicUnaryNot(exp1);
+    case Op.NOT then Expression.mapArrayElements(exp1, evalLogicUnaryNot);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -1092,6 +1106,7 @@ function evalLogicUnaryNot
 algorithm
   exp := match exp1
     case Expression.BOOLEAN() then Expression.BOOLEAN(not exp1.value);
+
     else
       algorithm
         exp := Expression.UNARY(Operator.makeNot(Type.UNKNOWN()), exp1);
