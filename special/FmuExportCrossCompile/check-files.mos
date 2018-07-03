@@ -1,4 +1,4 @@
-gifor m in {"FmuExportCrossCompile","RoomHeating_OM_RH","WaterTank_Control","WaterTank_TestSingleWaterTank"} loop
+for m in {"FmuExportCrossCompile","RoomHeating_OM_RH","WaterTank_Control","WaterTank_TestSingleWaterTank"} loop
 for os in {"linux32","linux64","win32","win64","darwin64","arm-linux-gnueabi"} loop // "darwin32"
 for t in {"me","cs"} loop
 
