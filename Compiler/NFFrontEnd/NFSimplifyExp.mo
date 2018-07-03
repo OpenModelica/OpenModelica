@@ -201,14 +201,14 @@ algorithm
 
   if expanded then
     args := Expression.arrayScalarElements(exp);
-    ty := Expression.typeOf(arg);
+    ty := Type.arrayElementType(Expression.typeOf(arg));
 
     if listEmpty(args) then
       exp := if isSum then Expression.makeZero(ty) else Expression.makeOne(ty);
     else
       exp :: args := args;
-      op := if isSum then Operator.makeAdd(Type.arrayElementType(ty)) else
-                          Operator.makeMul(Type.arrayElementType(ty));
+      op := if isSum then Operator.makeAdd(ty) else
+                          Operator.makeMul(ty);
 
       for e in args loop
         exp := Expression.BINARY(exp, op, e);
