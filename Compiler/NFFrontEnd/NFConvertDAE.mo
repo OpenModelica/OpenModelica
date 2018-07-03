@@ -735,8 +735,7 @@ protected
   DAE.Exp dlhs, drhs;
   list<Expression> expl;
 algorithm
-  Statement.ASSIGNMENT(lhs, rhs, src) := stmt;
-  ty := Expression.typeOf(lhs);
+  Statement.ASSIGNMENT(lhs, rhs, ty, src) := stmt;
 
   if Type.isTuple(ty) then
     Expression.TUPLE(elements = expl) := lhs;
@@ -748,7 +747,6 @@ algorithm
       // (lhs) := call(...) => lhs := TSUB[call(...), 1]
       case {lhs}
         algorithm
-          ty := Expression.typeOf(lhs);
           dty := Type.toDAE(ty);
           dlhs := Expression.toDAE(lhs);
           drhs := DAE.Exp.TSUB(Expression.toDAE(rhs), 1, dty);

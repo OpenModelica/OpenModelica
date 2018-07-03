@@ -1042,6 +1042,7 @@ algorithm
       algorithm
         funcs := collectExpFuncs(eq.lhs, funcs);
         funcs := collectExpFuncs(eq.rhs, funcs);
+        funcs := collectTypeFuncs(eq.ty, funcs);
       then
         ();
 
@@ -1049,9 +1050,12 @@ algorithm
       algorithm
         // Lhs is always a cref, no need to check it.
         funcs := collectExpFuncs(eq.rhs, funcs);
+        funcs := collectTypeFuncs(eq.ty, funcs);
       then
         ();
 
+    // For equations are always unrolled, so functions in the range doesn't
+    // matter since they are always evaluated.
     case Equation.FOR()
       algorithm
         funcs := List.fold(eq.body, collectEquationFuncs, funcs);
@@ -1132,12 +1136,14 @@ algorithm
       algorithm
         funcs := collectExpFuncs(stmt.lhs, funcs);
         funcs := collectExpFuncs(stmt.rhs, funcs);
+        funcs := collectTypeFuncs(stmt.ty, funcs);
       then
         ();
 
     case Statement.FOR()
       algorithm
         funcs := List.fold(stmt.body, collectStatementFuncs, funcs);
+        funcs := collectExpFuncs(Util.getOption(stmt.range), funcs);
       then
         ();
 

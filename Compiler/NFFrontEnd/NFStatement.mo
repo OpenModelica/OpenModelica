@@ -45,6 +45,7 @@ public
   record ASSIGNMENT
     Expression lhs "The asignee";
     Expression rhs "The expression";
+    Type ty;
     DAE.ElementSource source;
   end ASSIGNMENT;
 
@@ -229,7 +230,7 @@ public
           e2 := func(stmt.rhs);
         then
           if referenceEq(e1, stmt.lhs) and referenceEq(e2, stmt.rhs) then
-            stmt else ASSIGNMENT(e1, e2, stmt.source);
+            stmt else ASSIGNMENT(e1, e2, stmt.ty, stmt.source);
 
       case FOR()
         algorithm

@@ -2660,7 +2660,7 @@ algorithm
         exp1 := instExp(scodeStmt.assignComponent, scope, info);
         exp2 := instExp(scodeStmt.value, scope, info);
       then
-        Statement.ASSIGNMENT(exp1, exp2, makeSource(scodeStmt.comment, info));
+        Statement.ASSIGNMENT(exp1, exp2, Type.UNKNOWN(), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
