@@ -289,6 +289,7 @@ function evalComponentBinding
   input Expression defaultExp "The expression returned if the binding couldn't be evaluated";
   input EvalTarget target;
   output Expression exp;
+  output Boolean evaluated;
 protected
   ExpOrigin.Type exp_origin;
   Component comp;
@@ -305,7 +306,7 @@ algorithm
     binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
   end if;
 
-  exp := match binding
+  (exp, evaluated) := match binding
     case Binding.TYPED_BINDING()
       algorithm
         exp := evalExp(binding.bindingExp, target);
@@ -316,15 +317,15 @@ algorithm
           InstNode.updateComponent(comp, node);
         end if;
       then
-        exp;
+        (exp, true);
 
-    case Binding.CEVAL_BINDING() then binding.bindingExp;
+    case Binding.CEVAL_BINDING() then (binding.bindingExp, true);
 
     case Binding.UNBOUND()
       algorithm
         printUnboundError(target, defaultExp);
       then
-        defaultExp;
+        (defaultExp, false);
 
     else
       algorithm

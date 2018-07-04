@@ -931,23 +931,12 @@ algorithm
       ComponentRef cref;
       Integer next_origin;
 
-    case Expression.INTEGER() then (exp, Type.INTEGER(), Variability.CONSTANT);
-    case Expression.REAL() then (exp, Type.REAL(), Variability.CONSTANT);
-    case Expression.STRING() then (exp, Type.STRING(), Variability.CONSTANT);
-    case Expression.BOOLEAN() then (exp, Type.BOOLEAN(), Variability.CONSTANT);
-    case Expression.ENUM_LITERAL() then (exp, exp.ty, Variability.CONSTANT);
-
-    case Expression.CREF()
-      algorithm
-        (cref, ty, variability) := typeCref(exp.cref, origin, info);
-        e1 := Expression.CREF(ty, cref);
-
-        if replaceConstants and variability <= Variability.STRUCTURAL_PARAMETER and
-           not Expression.containsIterator(e1, origin) then
-          e1 := Ceval.evalExp(e1, Ceval.EvalTarget.GENERIC(info));
-        end if;
-      then
-        (e1, ty, variability);
+    case Expression.INTEGER()      then (exp, Type.INTEGER(), Variability.CONSTANT);
+    case Expression.REAL()         then (exp, Type.REAL(),    Variability.CONSTANT);
+    case Expression.STRING()       then (exp, Type.STRING(),  Variability.CONSTANT);
+    case Expression.BOOLEAN()      then (exp, Type.BOOLEAN(), Variability.CONSTANT);
+    case Expression.ENUM_LITERAL() then (exp, exp.ty,         Variability.CONSTANT);
+    case Expression.CREF()         then typeCrefExp(exp.cref, origin, info, replaceConstants);
 
     case Expression.TYPENAME()
       algorithm
@@ -959,11 +948,11 @@ algorithm
       then
         (exp, exp.ty, Variability.CONSTANT);
 
-    case Expression.ARRAY() then typeArray(exp.elements, origin, info);
+    case Expression.ARRAY()  then typeArray(exp.elements, origin, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, origin, info);
-    case Expression.RANGE() then typeRange(exp, origin, info);
-    case Expression.TUPLE() then typeTuple(exp.elements, origin, info);
-    case Expression.SIZE() then typeSize(exp, origin, info);
+    case Expression.RANGE()  then typeRange(exp, origin, info);
+    case Expression.TUPLE()  then typeTuple(exp.elements, origin, info);
+    case Expression.SIZE()   then typeSize(exp, origin, info);
 
     case Expression.END()
       algorithm
@@ -1245,12 +1234,42 @@ algorithm
   end if;
 end nthDimensionBoundsChecked;
 
+function typeCrefExp
+  input ComponentRef cref;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+  input Boolean replaceConstants;
+  output Expression exp;
+  output Type ty;
+  output Variability variability;
+protected
+  ComponentRef cr;
+  Variability node_var, subs_var;
+  Boolean eval;
+algorithm
+  (cr, ty, node_var, subs_var) := typeCref(cref, origin, info);
+  exp := Expression.CREF(ty, cr);
+
+  if replaceConstants and node_var <= Variability.STRUCTURAL_PARAMETER and
+     not ComponentRef.isIterator(cr) then
+    (exp, eval) := Ceval.evalComponentBinding(ComponentRef.node(cr), exp,
+      Ceval.EvalTarget.IGNORE_ERRORS());
+
+    if eval then
+      exp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), exp);
+    end if;
+  end if;
+
+  variability := Prefixes.variabilityMax(node_var, subs_var);
+end typeCrefExp;
+
 function typeCref
   input output ComponentRef cref;
   input ExpOrigin.Type origin;
   input SourceInfo info;
         output Type ty;
-        output Variability variability;
+        output Variability nodeVariability;
+        output Variability subsVariability;
 protected
   Variability subs_var;
 algorithm
@@ -1263,9 +1282,9 @@ algorithm
     fail();
   end if;
 
-  (cref, subs_var) := typeCref2(cref, origin, info);
+  (cref, subsVariability) := typeCref2(cref, origin, info);
   ty := ComponentRef.getSubscriptedType(cref);
-  variability := Prefixes.variabilityMax(ComponentRef.nodeVariability(cref), subs_var);
+  nodeVariability := ComponentRef.nodeVariability(cref);
 end typeCref;
 
 function typeCref2
