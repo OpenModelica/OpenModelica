@@ -246,6 +246,8 @@ case SIMCODE(__) then
   fmi2String getString(ModelInstance* comp, const fmi2ValueReference vr);
   fmi2Status setString(ModelInstance* comp, const fmi2ValueReference vr, fmi2String value);
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
+  fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
+  fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
   >>
   else
   <<
@@ -293,6 +295,7 @@ case SIMCODE(__) then
   <%getStringFunction2(simCode, modelInfo)%>
   <%setStringFunction2(simCode, modelInfo)%>
   <%setExternalFunction2(modelInfo)%>
+  <%mapInputAndOutputs(simCode)%>
   >>
   else
   <<
@@ -1104,6 +1107,34 @@ match simVar
         >>
      end match
 end SwitchAliasVarsSet;
+
+template mapInputAndOutputs(SimCode simCode)
+""
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=outputVars))) then
+    <<
+    /* function maps input references to a input index used in partialDerivatives */
+    fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%inputVars |> var hasindex index0 =>  match var case SIMVAR(name=name, type_=T_REAL()) then
+          'case <%lookupVR(name, simCode)%>: return <%index0%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    /* function maps output references to a input index used in partialDerivatives */
+    fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%outputVars |> var hasindex index0 =>  match var case SIMVAR(name=name, type_=T_REAL()) then
+          'case <%lookupVR(name, simCode)%>: return <%index0%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    >>
+end match
+end mapInputAndOutputs;
 
 
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)

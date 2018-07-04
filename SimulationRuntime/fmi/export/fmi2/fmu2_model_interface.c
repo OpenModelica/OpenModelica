@@ -483,13 +483,13 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 #endif
 
   /* allocate memory for Jacobian */
+  comp->_has_jacobian = 0;
+  comp->fmiDerJac = NULL;
   if (comp->fmuData->callback->initialPartialFMIDER != NULL){
-    comp->_has_jacobian = 1;
-    comp->fmiDerJac = &(comp->fmuData->simulationInfo->analyticJacobians[comp->fmuData->callback->INDEX_JAC_FMIDER]);
-  }
-  else{
-    comp->_has_jacobian = 0;
-    comp->fmiDerJac = NULL;
+    if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData)) {
+      comp->_has_jacobian = 1;
+      comp->fmiDerJac = &(comp->fmuData->simulationInfo->analyticJacobians[comp->fmuData->callback->INDEX_JAC_FMIDER]);
+    }
   }
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
@@ -960,7 +960,9 @@ fmi2Status fmi2DeSerializeFMUstate(fmi2Component c, const fmi2Byte serializedSta
   return unsupportedFunction(c, "fmi2DeSerializeFMUstate", modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
 }
 
-fmi2Status fmi2GetDirectionalDerivative(fmi2Component c, const fmi2ValueReference vUnknown_ref[], size_t nUnknown, const fmi2ValueReference vKnown_ref[] , size_t nKnown,
+fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
+    const fmi2ValueReference vUnknown_ref[], size_t nUnknown,
+    const fmi2ValueReference vKnown_ref[] , size_t nKnown,
     const fmi2Real dvKnown[], fmi2Real dvUnknown[])
 {
   ModelInstance *comp = (ModelInstance *)c;
@@ -980,20 +982,27 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c, const fmi2ValueReferenc
   if (!comp->_has_jacobian)
     return unsupportedFunction(c, "fmi2GetDirectionalDerivative", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError);
   /***************************************/
-  // This code assumes that the FMU variables are always sorted,
-  // states first and then derivatives.
-  // This is true for the actual OMC FMUs.
-
-  /* TODO: Use the literal names instead of the data-> structure
-   * Beware! This code assumes that the FMI variables are sorted putting
-   * states first (0 to nStates-1) and state derivatives (nStates to 2*nStates-1) second. */
+  /* This code assumes that the FMU variables are always sorted,
+     states first and then derivatives.
+     This is true for the actual OMC FMUs.
+     The input values references are mapped with mapInputReference2InputNumber
+     and mapOutputReference2OutputNumber functions
+  */
+  /* clear out the seeds */
   for (i=0;i<independent; i++) {
-    // Clear out the seeds
     comp->fmiDerJac->seedVars[i]=0;
   }
-  for (i=0;i<nUnknown; i++) {
+  for (i=0;i<nKnown; i++) {
+    int idx = vKnown_ref[i];
+    /* if idx is > nStates it's an input so we need a mapping */
+    if (idx >= modelData->nStates){
+      idx = mapInputReference2InputNumber(vKnown_ref[i]);
+      idx = modelData->nStates + idx;
+    }
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative input index", idx, independent))
+      return fmi2Error;
     /* Put the supplied value in the seeds */
-    comp->fmiDerJac->seedVars[vUnknown_ref[i]]=dvKnown[i];
+    comp->fmiDerJac->seedVars[idx]=dvKnown[i];
   }
   /* Call the Jacobian evaluation function. This function evaluates the whole column of the Jacobian.
    * More efficient code could only evaluate the equations needed for the
@@ -1002,9 +1011,18 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c, const fmi2ValueReferenc
   fmudata->callback->functionJacFMIDER_column(fmudata, td);
   resetThreadData(comp);
 
-  // Write the results back to the array
-  for (i=0;i<nKnown; i++) {
-    dvUnknown[vKnown_ref[i]-dependent] = comp->fmiDerJac->resultVars[vKnown_ref[i]-dependent];
+  /* Write the results to dvUnknown array */
+  for (i=0;i<nUnknown; i++) {
+    /* derivatives are behind the states */
+    int idx = vUnknown_ref[i] - modelData->nStates;
+    /* if idx is > nStates it's an output so we need a mapping */
+    if (idx >= modelData->nStates){
+      idx = mapOutputReference2OutputNumber(vUnknown_ref[i]);
+      idx = modelData->nStates + idx;
+    }
+    if (vrOutOfRange(comp, "fmi2GetDirectionalDerivative output index", idx, dependent))
+      return fmi2Error;
+    dvUnknown[i] = comp->fmiDerJac->resultVars[idx];
   }
   /***************************************/
   return fmi2OK;
