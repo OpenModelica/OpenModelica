@@ -61,9 +61,13 @@ CevalAcos1.mo \
 CevalAcos2.mo \
 CevalAdd1.mo \
 CevalArray1.mo \
+CevalArrayConstant1.mo \
+CevalArrayConstant2.mo \
+CevalArrayConstant3.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
+CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
 CevalCosh1.mo \
