@@ -544,7 +544,7 @@ int runProcess(const char* cmd)
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
   char *c = "cmd /c";
-  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(c) + 2);
+  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(c) + 4);
   DWORD exitCode = 1;
 
   ZeroMemory(&si, sizeof(si));
@@ -552,7 +552,7 @@ int runProcess(const char* cmd)
   ZeroMemory(&pi, sizeof(pi));
 
 
-  sprintf(command, "%s %s", c, cmd);
+  sprintf(command, "%s \"%s\"", c, cmd);
 
   /* fprintf(stderr, "%s\n", command); fflush(NULL); */
 
