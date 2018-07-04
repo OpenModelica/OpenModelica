@@ -496,6 +496,40 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
   return (value - offset) / scaleFactor;
 }
 
+/*!
+ * \brief Utilities::arrayExpressionUnitConversion
+ * If the expression is like an array of constants see ticket:4840
+ * \param pOMCProxy
+ * \param modifierValue
+ * \param fromUnit
+ * \param toUnit
+ * \return
+ */
+QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit)
+{
+  QStringList modifierValuesArray = StringHandler::removeFirstLastCurlBrackets(modifierValue).split(",");
+  QStringList modifierConvertedValuesArray;
+  OMCInterface::convertUnits_res convertUnit;
+  int i = 0;
+  bool ok = true;
+  foreach (QString modifierValueArrayElement, modifierValuesArray) {
+    qreal modifierRealValueArrayElement = modifierValueArrayElement.toDouble(&ok);
+    if (ok) {
+      if (i == 0) {
+        convertUnit = pOMCProxy->convertUnits(fromUnit, toUnit);
+      }
+      if (convertUnit.unitsCompatible) {
+        modifierRealValueArrayElement = Utilities::convertUnit(modifierRealValueArrayElement, convertUnit.offset, convertUnit.scaleFactor);
+        modifierConvertedValuesArray.append(QString::number(modifierRealValueArrayElement));
+      }
+    }
+  }
+  if (ok) {
+    modifierValue = QString("{%1}").arg(modifierConvertedValuesArray.join(","));
+  }
+  return modifierValue;
+}
+
 Label* Utilities::getHeadingLabel(QString heading)
 {
   Label *pHeadingLabel = new Label(heading);
