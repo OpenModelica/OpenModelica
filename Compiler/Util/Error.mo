@@ -348,10 +348,11 @@ public constant Message NON_PARAMETER_ITERATOR_RANGE = MESSAGE(109, TRANSLATION(
   Util.gettext("The iteration range %s is not a constant or parameter expression."));
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
   Util.gettext("Identifier %s of implicit for iterator must be present as array subscript in the loop body."));
-public constant Message LOOKUP_VIA_COMP_NON_FUNCALL = MESSAGE(111, TRANSLATION(), ERROR(),
-  Util.gettext("Illegal access of class '%s' in component '%s' when looking for non-function call name '%s'."));
+
+// UNUSED ID 111
+
 public constant Message LOOKUP_CLASS_VIA_COMP_COMP = MESSAGE(112, TRANSLATION(), ERROR(),
-  Util.gettext("Illegal access of class '%s' via component '%s' when looking for '%s'."));
+  Util.gettext("Illegal access of class '%s' via a component when looking for '%s'."));
 public constant Message SUBSCRIPTED_FUNCTION_CALL = MESSAGE(113, TRANSLATION(), ERROR(),
   Util.gettext("Function call %s contains subscripts."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),
