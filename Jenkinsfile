@@ -135,10 +135,11 @@ pipeline {
                     standardSetup()
                     unstash 'omc-clang'
                     makeLibsAndCache()
-                    sh 'build/bin/omc --version | grep -o "v[0-9]\\+[.][0-9]\\+[.][0-9]\\+" > testsuite/special/FmuExportCrossCompile/VERSION && cat testsuite/special/FmuExportCrossCompile/VERSION'
+                    writeFile file: 'testsuite/special/FmuExportCrossCompile/VERSION', text: getVersion()
                     sh 'make -C testsuite/special/FmuExportCrossCompile/ dockerpull'
                     sh 'make -C testsuite/special/FmuExportCrossCompile/ test'
-                    stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
+                    stash name: 'cross-fmu', includes: 'testsuite/special/FmuExportCrossCompile/*.fmu'
+                    stash name: 'cross-fmu-extras', includes: 'testsuite/special/FmuExportCrossCompile/*.mos, testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/*.sh, testsuite/special/FmuExportCrossCompile/*.opt, testsuite/special/FmuExportCrossCompile/*.txt, testsuite/special/FmuExportCrossCompile/VERSION'
                     archiveArtifacts "testsuite/special/FmuExportCrossCompile/*.fmu"
                   }
                 }
@@ -147,19 +148,54 @@ pipeline {
           }
         }
 
-        stage('testsuite-matlab-translator') {
+        stage('testsuite-compliance') {
           agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.13'
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              /* The cache Dockerfile makes /cache/runtest, etc world writable
+               * This is necessary because we run the docker image as a user and need to
+               * be able to have a global caching of the omlibrary parts and the runtest database.
+               * Note that the database is stored in a volume on a per-node basis, so the first time
+               * the tests run on a particular node, they might execute slightly slower
+               */
               label 'linux'
-              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
             }
           }
+          environment {
+            LIBRARIES = "/cache/omlibrary"
+            COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance.failures"
+            COMPLIANCEPREFIX = "compliance"
+          }
           steps {
-            standardSetup()
-            unstash 'omc-clang'
-            generateTemplates()
-            sh 'make -C testsuite/special/MatlabTranslator/ test'
+            compliance()
+          }
+        }
+
+        stage('testsuite-compliance-newinst') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              /* The cache Dockerfile makes /cache/runtest, etc world writable
+               * This is necessary because we run the docker image as a user and need to
+               * be able to have a global caching of the omlibrary parts and the runtest database.
+               * Note that the database is stored in a volume on a per-node basis, so the first time
+               * the tests run on a particular node, they might execute slightly slower
+               */
+              label 'linux'
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          environment {
+            LIBRARIES = "/cache/omlibrary"
+            COMPLIANCEEXTRAOMFLAGS = "-d=newInst"
+            COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance-newinst.failures"
+            COMPLIANCEPREFIX = "compliance-newinst"
+          }
+          steps {
+            compliance()
           }
         }
 
@@ -221,6 +257,22 @@ pipeline {
           }
         }
 
+        stage('testsuite-matlab-translator') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.13'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          steps {
+            standardSetup()
+            unstash 'omc-clang'
+            generateTemplates()
+            sh 'make -C testsuite/special/MatlabTranslator/ test'
+          }
+        }
+
       }
     }
     stage('fmuchecker') {
@@ -237,6 +289,7 @@ pipeline {
           }
           steps {
             unstash 'cross-fmu'
+            unstash 'cross-fmu-extras'
             sh '''
             export HOME="$PWD"
             cd testsuite/special/FmuExportCrossCompile/
@@ -257,6 +310,7 @@ pipeline {
           }
           steps {
             unstash 'cross-fmu'
+            unstash 'cross-fmu-extras'
             sh '''
             cd testsuite/special/FmuExportCrossCompile/
             ./single-fmu-run.sh darwin64 `cat VERSION` /usr/local/bin/fmuCheck.darwin64
@@ -276,6 +330,7 @@ pipeline {
           }
           steps {
             unstash 'cross-fmu'
+            unstash 'cross-fmu-extras'
             sh '''
             cd testsuite/special/FmuExportCrossCompile/
             ./single-fmu-run.sh arm-linux-gnueabihf `cat VERSION` /usr/local/bin/fmuCheck.arm-linux-gnueabihf
@@ -285,22 +340,49 @@ pipeline {
         }
       }
     }
-    stage('check-and-upload-fmuchecker-results') {
-      agent {
-        docker {
-          image 'docker.openmodelica.org/build-deps:v1.13'
-          label 'linux'
-          alwaysPull true
+    stage('check-and-upload') {
+      parallel {
+        stage('fmuchecker-results') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.13'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          options {
+            skipDefaultCheckout true
+          }
+          steps {
+            unstash 'omc-clang'
+            unstash 'cross-fmu-extras'
+            unstash 'cross-fmu-results-linux-wine'
+            unstash 'cross-fmu-results-osx'
+            unstash 'cross-fmu-results-armhf'
+            sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
+            sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
+            archiveArtifacts 'Test_FMUs.tar.gz'
+          }
         }
-      }
-      steps {
-        unstash 'omc-clang'
-        unstash 'cross-fmu-results-linux-wine'
-        unstash 'cross-fmu-results-osx'
-        unstash 'cross-fmu-results-armhf'
-        sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
-        sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
-        archiveArtifacts 'Test_FMUs.tar.gz'
+        stage('upload-compliance') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.13'
+              label 'linux'
+              alwaysPull true
+            }
+          }
+          when {
+            not {
+              changeRequest()
+            }
+          }
+          steps {
+            unstash 'compliance'
+            unstash 'compliance-newinst'
+            sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
+          }
+        }
       }
     }
   }
@@ -346,7 +428,7 @@ void partest(cache=true, extraArgs='') {
   junit 'testsuite/partest/result.xml'
 }
 
-void makeLibsAndCache() {
+void makeLibsAndCache(libs='core') {
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${env.CACHE_BRANCH}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
@@ -355,7 +437,7 @@ void makeLibsAndCache() {
   sh "find libraries"
   sh "ln -s '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git' libraries/"
   sh "./config.status"
-  sh "make -j${numLogicalCPU()} --output-sync omlibrary-core ReferenceFiles"
+  sh "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles"
   generateTemplates()
 }
 
@@ -381,6 +463,27 @@ void buildGUI(stash) {
 void generateTemplates() {
   // Runs Susan again, for bootstrapping tests, etc
   sh 'make -C OMCompiler/Compiler/Template/ -f Makefile.in OMC=$PWD/build/bin/omc'
+}
+
+def getVersion() {
+  return (sh (script: 'build/bin/omc --version | grep -o "v[0-9]\\+[.][0-9]\\+[.][0-9]\\+[^ ]*"', returnStdout: true)).replaceAll("\\s","")
+}
+
+void compliance() {
+  standardSetup()
+  unstash 'omc-clang'
+  makeLibsAndCache('all')
+  sh 'build/bin/omc -g=MetaModelica build/share/doc/omc/testmodels/ComplianceSuite.mos'
+  sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
+  sh "test -f ${env.COMPLIANCEPREFIX}.xml"
+  // Only publish openmodelica-current.html if we are running master
+  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${env.CACHE_BRANCH=='master' ? '' : ('-' + env.CACHE_BRANCH).replace('/','-')}-${getVersion()}.html"
+  sh "test ! '${env.CACHE_BRANCH}' = 'master' || rm -f ${env.COMPLIANCEPREFIX}-current.html"
+  stash name: "${env.COMPLIANCEPREFIX}", includes: "${env.COMPLIANCEPREFIX}-*.html"
+  archiveArtifacts "${env.COMPLIANCEPREFIX}*${getVersion()}.html, ${env.COMPLIANCEPREFIX}.failures"
+  // get rid of freaking %
+  sh "sed -i.bak 's/%/\\&#37;/g' ${env.COMPLIANCEPREFIX}.ignore.xml && sed -i.bak 's/[^[:print:]]/ /g' ${env.COMPLIANCEPREFIX}.ignore.xml"
+  junit "${env.COMPLIANCEPREFIX}.ignore.xml"
 }
 
 /* Note: If getting "Unexpected end of /proc/mounts line" , flatten the docker image:
