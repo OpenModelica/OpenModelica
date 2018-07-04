@@ -4086,8 +4086,14 @@ bool LibraryWidget::saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   }
   /* Ticket #4788. Add the file to the recent files list. */
   if (result) {
-    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-    MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+    QString topLevelLibraryTreeItemName = StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(topLevelLibraryTreeItemName);
+    // Ticket #4987. Only add the top level model/package to recent files list.
+    if (pLibraryTreeItem->isTopLevel() ||
+        (pTopLevelLibraryTreeItem && pLibraryTreeItem->getFileName().compare(pTopLevelLibraryTreeItem->getFileName()) == 0)) {
+      QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+      MainWindow::instance()->addRecentFile(fileInfo.absoluteFilePath(), Helper::utf8);
+    }
   }
   MainWindow::instance()->getStatusBar()->clearMessage();
   MainWindow::instance()->hideProgressBar();
