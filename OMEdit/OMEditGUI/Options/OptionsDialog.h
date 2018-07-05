@@ -845,6 +845,7 @@ public:
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
+  QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpExportGroupBox;
@@ -859,6 +860,8 @@ private:
   QLineEdit *mpFMUNameTextBox;
   QGroupBox *mpPlatformsGroupBox;
   QComboBox *mpLinkingComboBox;
+  QGroupBox *mpImportGroupBox;
+  QCheckBox *mpDeleteFMUDirectoryAndModelCheckBox;
 };
 
 class TLMPage : public QWidget

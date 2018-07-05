@@ -1038,3 +1038,24 @@ QList<QPointF> Utilities::liangBarskyClipper(float xmin, float ymin, float xmax,
 //  qDebug() << x1 << y1 << xn1 << yn1 << x2 << y2 << xn2 << yn2;
   return QList<QPointF>() << QPointF(xn1, yn1) << QPointF(xn2, yn2);
 }
+
+/*!
+ * \brief Utilities::removeDirectoryRecursivly
+ * Removes the directory recursively.
+ * \param path
+ */
+void Utilities::removeDirectoryRecursivly(QString path)
+{
+  QFileInfo fileInfo(path);
+  if (fileInfo.isDir()) {
+    QDir dir(path);
+    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
+                                          QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+    for (int i = 0 ; i < filesList.count() ; ++i) {
+      removeDirectoryRecursivly(QString("%1/%2").arg(path, filesList.at(i)));
+    }
+    QDir().rmdir(path);
+  } else {
+    QFile::remove(path);
+  }
+}

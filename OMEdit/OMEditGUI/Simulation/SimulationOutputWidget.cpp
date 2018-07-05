@@ -361,7 +361,7 @@ SimulationOutputWidget::~SimulationOutputWidget()
 {
   /* Ticket:3788 comment:12 Delete the entire simulation folder. */
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteEntireSimulationDirectoryCheckBox()->isChecked()) {
-    removeSimulationDirectory(mSimulationOptions.getWorkingDirectory());
+    Utilities::removeDirectoryRecursivly(mSimulationOptions.getWorkingDirectory());
   }
   if (mpSimulationOutputHandler) {
     delete mpSimulationOutputHandler;
@@ -456,27 +456,6 @@ void SimulationOutputWidget::deleteIntermediateCompilationFiles()
         QFile::remove(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
       }
     }
-  }
-}
-
-/*!
- * \brief SimulationOutputWidget::removeSimulationDirectory
- * Removes the directory recursively.
- * \param path
- */
-void SimulationOutputWidget::removeSimulationDirectory(const QString &path)
-{
-  QFileInfo fileInfo(path);
-  if (fileInfo.isDir()) {
-    QDir dir(path);
-    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
-                                          QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-    for (int i = 0 ; i < filesList.count() ; ++i) {
-      removeSimulationDirectory(QString("%1/%2").arg(path, filesList.at(i)));
-    }
-    QDir().rmdir(path);
-  } else {
-    QFile::remove(path);
   }
 }
 

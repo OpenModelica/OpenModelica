@@ -569,6 +569,15 @@ void MainWindow::beforeClosingMainWindow()
   pSettings->setValue("modeling/gridLines", mpShowGridLinesAction->isChecked());
   // save the splitter state of welcome page
   pSettings->setValue("welcomePage/splitterState", mpWelcomePageWidget->getSplitter()->saveState());
+  // Delete the FMU directories we created while importing
+  if (OptionsDialog::instance()->getFMIPage()->getDeleteFMUDirectoryAndModelCheckBox()->isChecked()) {
+    foreach (QString fmuDirectory, mFMUDirectoriesList) {
+      if (QDir().exists(fmuDirectory)) {
+        Utilities::removeDirectoryRecursivly(fmuDirectory);
+      }
+    }
+    mFMUDirectoriesList.clear();
+  }
   delete pSettings;
   // delete the OptionsDialog object
   OptionsDialog::destroy();
