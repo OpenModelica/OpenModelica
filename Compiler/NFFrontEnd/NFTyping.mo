@@ -1061,6 +1061,10 @@ algorithm
       then
         (exp, ty, var1);
 
+    // Subscripted expressions are assumed to already be typed.
+    case Expression.SUBSCRIPTED_EXP()
+      then (exp, exp.ty, Expression.variability(exp));
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());
