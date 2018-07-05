@@ -6072,6 +6072,12 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
   }
+  /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
+   * Provided that the Documentation Browser is already visible.
+   */
+  if (pModelWidget && pModelWidget->getLibraryTreeItem() && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+    MainWindow::instance()->getDocumentationWidget()->showDocumentation(pModelWidget->getLibraryTreeItem());
+  }
 }
 
 /*!
