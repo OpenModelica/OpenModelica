@@ -331,6 +331,22 @@ uniontype InstNode
     end match;
   end isBaseClass;
 
+  function isUserdefinedClass
+    input InstNode node;
+    output Boolean isUserdefined;
+  algorithm
+    isUserdefined := match node
+      case CLASS_NODE()
+        then match node.nodeType
+          case InstNodeType.NORMAL_CLASS() then true;
+          case InstNodeType.BASE_CLASS() then true;
+          case InstNodeType.DERIVED_CLASS() then true;
+          else false;
+        end match;
+      else false;
+    end match;
+  end isUserdefinedClass;
+
   function isComponent
     input InstNode node;
     output Boolean isComponent;

@@ -677,7 +677,7 @@ public
     output Boolean isPkgConst;
   algorithm
     isPkgConst := match cref
-      case CREF(node = InstNode.CLASS_NODE(nodeType = InstNodeType.NORMAL_CLASS())) then true;
+      case CREF(node = InstNode.CLASS_NODE()) then InstNode.isUserdefinedClass(cref.node);
       case CREF(origin = Origin.CREF) then isPackageConstant(cref.restCref);
       else false;
     end match;
