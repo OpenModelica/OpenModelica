@@ -144,6 +144,33 @@ package ExpOrigin
     input Type origin;
     output Boolean isSingle = origin < ITERATION_RANGE - 1;
   end isSingleExpression;
+
+  function setFlag
+    input Type origin;
+    input Type flag;
+    output Type newOrigin;
+  algorithm
+    newOrigin := intBitOr(origin, flag);
+    annotation(__OpenModelica_EarlyInline=true);
+  end setFlag;
+
+  function flagSet
+    input Type origin;
+    input Type flag;
+    output Boolean set;
+  algorithm
+    set := intBitAnd(origin, flag) > 0;
+    annotation(__OpenModelica_EarlyInline=true);
+  end flagSet;
+
+  function flagNotSet
+    input Type origin;
+    input Type flag;
+    output Boolean notSet;
+  algorithm
+    notSet := intBitAnd(origin, flag) == 0;
+    annotation(__OpenModelica_EarlyInline=true);
+  end flagNotSet;
 end ExpOrigin;
 
 public
@@ -1249,18 +1276,32 @@ protected
 algorithm
   (cr, ty, node_var, subs_var) := typeCref(cref, origin, info);
   exp := Expression.CREF(ty, cr);
+  variability := Prefixes.variabilityMax(node_var, subs_var);
 
-  if replaceConstants and node_var <= Variability.STRUCTURAL_PARAMETER and
-     not ComponentRef.isIterator(cr) then
+  // Evaluate constants and structural parameters if replaceConstants = true.
+  if replaceConstants and node_var <= Variability.STRUCTURAL_PARAMETER then
+    // But don't try to evaluate iterators.
+    if ComponentRef.isIterator(cr) then
+      return;
+    end if;
+
+    // Also avoid evaluating local constants in functions, since they're handled
+    // just fine by the backend.
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
+       not ComponentRef.isPackageConstant(cr) then
+      return;
+    end if;
+
+    // Evaluate the binding of the node the cref is pointing to.
     (exp, eval) := Ceval.evalComponentBinding(ComponentRef.node(cr), exp,
       Ceval.EvalTarget.IGNORE_ERRORS());
 
+    // If it could be evaluated, apply the subscripts to it. Otherwise we just
+    // return the unevaluated expression and hope for the best.
     if eval then
       exp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), exp);
     end if;
   end if;
-
-  variability := Prefixes.variabilityMax(node_var, subs_var);
 end typeCrefExp;
 
 function typeCref
