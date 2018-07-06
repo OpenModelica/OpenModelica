@@ -46,17 +46,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __cplusplus
-#include <string>
-
 #include "linearization/linearize.h"
 #include "simulation/results/simulation_result.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif /* cplusplus */
 
 extern int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime);
-
-#endif /* cplusplus */
 
 extern int modelTermination;     /* Becomes non-zero when simulation terminates. */
 extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
