@@ -482,11 +482,26 @@ public function directoryExists
   external "C" outBool=SystemImpl__directoryExists(inString) annotation(Library = "omcruntime");
 end directoryExists;
 
+
 public function removeDirectory
   input String inString;
   output Boolean outBool;
-  external "C" outBool=SystemImpl__removeDirectory(inString) annotation(Library = "omcruntime");
+algorithm
+  outBool := System.removeDirectory_dispatch(inString);
+  // oh Windows crap: stat fails on very long paths!
+  if (not outBool) then
+    if System.os() == "Windows_NT" then
+      // try rm as that somehow works on long paths
+      outBool := (0 == System.systemCall("rm -r " + inString));
+    end if;
+  end if;
 end removeDirectory;
+
+protected function removeDirectory_dispatch
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool=SystemImpl__removeDirectory(inString) annotation(Library = "omcruntime");
+end removeDirectory_dispatch;
 
 public function platform
   output String outString;

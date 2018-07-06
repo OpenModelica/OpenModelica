@@ -32,8 +32,17 @@ CONFIG_H=$(top_builddir)/Compiler/runtime/config.h
 LIBSIMULATION=libSimulationRuntimeC.a
 LIBRUNTIME=libOpenModelicaRuntimeC.a
 LIBFMIRUNTIME=libOpenModelicaFMIRuntimeC.a
-OBJ_EXT=.o
 CMINPACK_NO_DLL=-DCMINPACK_NO_DLL
+
+ifeq ($(OMC_MINIMAL_RUNTIME),)
+OBJ_EXT=.o
+else
+ifeq ($(OMC_FMI_RUNTIME),)
+OBJ_EXT=.minimal.o
+else
+OBJ_EXT=.o
+endif
+endif
 
 defaultMakefileTarget = Makefile.omdev.mingw
 

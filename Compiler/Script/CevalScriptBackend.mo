@@ -3537,14 +3537,14 @@ algorithm
     ExecStat.execStat("buildModelFMU: Generate platform " + platform);
   end for;
 
-  cmd := "rm -f \"" + filenameprefix + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
+  cmd := "rm -f \"" + fmuTargetName + ".fmu\" && cd \"" +  fmutmp + "\" && zip -r \"../" + fmuTargetName + ".fmu\" *";
   if 0 <> System.systemCall(cmd, outFile=logfile) then
     Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {cmd + "\n\n" + System.readFile(logfile)});
     ExecStat.execStat("buildModelFMU failed");
   end if;
 
   if not System.regularFileExists(fmuTargetName + ".fmu") then
-    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Build commands returned success, but " + filenameprefix + ".fmu does not exist"});
+    Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {"Build commands returned success, but " + fmuTargetName + ".fmu does not exist"});
     fail();
   end if;
 

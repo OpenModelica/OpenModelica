@@ -1145,27 +1145,14 @@ match platform
   case "win32"
   case "win64" then
   <<
-  <%fileNamePrefix%>_FMU: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
+  <%fileNamePrefix%>_FMU: nozip
+  <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
+  nozip: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES) $(RUNTIMEFILES)
   <%\t%>$(CXX) -shared -I. -o <%modelNamePrefix%>$(DLLEXT) $(MAINOBJ) $(RUNTIMEFILES) $(OFILES) $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) -llis -Wl,--kill-at
   <%\t%>mkdir.exe -p ../binaries/<%platform%>
   <%\t%>dlltool -d <%fileNamePrefix%>.def --dllname <%fileNamePrefix%>$(DLLEXT) --output-lib <%fileNamePrefix%>.lib --kill-at
   <%\t%>cp <%fileNamePrefix%>$(DLLEXT) <%fileNamePrefix%>.lib <%fileNamePrefix%>_FMU.libs ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libsundials_*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libopenblas.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libexpat*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libgfortran*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libquadmath*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libwinpthread*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/zlib*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libszip*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libhdf5*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libsystre*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libtre*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libintl*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libiconv*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libgcc_s_*.dll ../binaries/<%platform%>/
-  <%\t%>cp <%omhome%>/bin/libstdc*.dll ../binaries/<%platform%>/
-  <%\t%>rm -f <%fileNamePrefix%>.def <%fileNamePrefix%>.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
+  <%\t%>rm -f *.o <%fileNamePrefix%>$(DLLEXT) $(OFILES) $(RUNTIMEFILES)
   <%\t%>cd .. && rm -f ../<%fileNamePrefix%>.fmu && zip -r ../<%fmuTargetName%>.fmu *
 
   >>

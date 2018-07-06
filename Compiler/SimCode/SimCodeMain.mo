@@ -660,7 +660,7 @@ algorithm
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
-      String str, newdir, newpath, resourcesDir;
+      String str, newdir, newpath, resourcesDir, dirname;
       String fmutmp;
       Boolean b;
     case (SimCode.SIMCODE(),"C")
@@ -668,7 +668,7 @@ algorithm
         fmutmp := simCode.fileNamePrefix + ".fmutmp";
         if System.directoryExists(fmutmp) then
           if not System.removeDirectory(fmutmp) then
-            print("Failed to remove directory: " + fmutmp + "\n");
+            Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
             fail();
           end if;
         end if;
@@ -676,7 +676,12 @@ algorithm
         Util.createDirectoryTree(fmutmp + "/resources/");
         resourcesDir := fmutmp + "/resources/";
         for path in simCode.modelInfo.resourcePaths loop
-          newdir := resourcesDir + System.dirname(path);
+          dirname := System.dirname(path);
+          // on windows, remove ":" from the path!
+          if System.os() == "Windows_NT" then
+            dirname := System.stringReplace(dirname, ":", "");
+          end if;
+          newdir := resourcesDir + dirname;
           newpath := resourcesDir + path;
           if System.regularFileExists(newpath) or System.directoryExists(newpath) then
             /* Already copied. Maybe one resource loaded a library and this one only a file in the directory */
@@ -685,7 +690,7 @@ algorithm
           Util.createDirectoryTree(newdir);
           // copy the file or directory
           if 0 <> System.systemCall("cp -rf \"" + path + "\" \"" + newdir + "/\"") then
-            Error.addInternalError("Failed to copy path " + path + " to " + fmutmp + "/resources/" + System.dirname(path), sourceInfo());
+            Error.addInternalError("Failed to copy path " + path + " to " + fmutmp + "/resources/" + dirname, sourceInfo());
           end if;
         end for;
         SerializeModelInfo.serialize(simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));

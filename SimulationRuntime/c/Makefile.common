@@ -4,13 +4,14 @@
 # If you need to add files, etc, you modify Makefile.common - a common file
 # for both UNIX/Linux and Windows platforms.
 
+BUILDPATH=build/c
+
 # Forces the generation of the dgesv sources
 NEED_DGESV=1
 include Makefile.objs
 
 LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
-BUILDPATH=build/c
 
 CPPFLAGS = -I. -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -I$(builddir_inc)/c
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
