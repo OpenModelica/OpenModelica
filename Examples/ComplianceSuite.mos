@@ -1,7 +1,7 @@
 // Runs the ModelicaCompliance suite
 // Default output is the files "openmodelica.xml" and "openmodelica.html", which is a valid jUnit testcase and possible to generate html reports from (the generated file is one example, using the default xsl)
 // A file called "openmodelica.ignore.xml" is also generated, which can be used together with a file to mark skipped tests (they still run to see if the results have improved)
-// COMPLIANCEEXTRAOMFLAGS=-d=newInst COMPLIANCEEXTRAREPORTFLAGS=--prefix=openmodelica-newinst can be used as well
+// COMPLIANCEEXTRAOMFLAGS=-d=newInst COMPLIANCEPREFIX=openmodelica-newinst can be used as well
 
 setCommandLineOptions("-g=Modelica");
 loadModel(ModelicaCompliance);getErrorString();
@@ -10,6 +10,10 @@ writeFile("version","omc "+getVersion()+" compliance suite "+getVersion(Modelica
 
 COMPLIANCEEXTRAOMFLAGS := getEnvironmentVar("COMPLIANCEEXTRAFLAGS");
 COMPLIANCEEXTRAREPORTFLAGS := getEnvironmentVar("COMPLIANCEEXTRAREPORTFLAGS");
+COMPLIANCEPREFIX := getEnvironmentVar("COMPLIANCEPREFIX");
+if COMPLIANCEPREFIX=="" then
+  COMPLIANCEPREFIX := "openmodelica";
+end if;
 
 loadString("
 function last
@@ -73,5 +77,5 @@ getErrorString();
 
 filename := OpenModelica.Scripting.uriToFilename("modelica://ModelicaCompliance/Resources/tools/xml-report/report.xsl");getErrorString();
 system_parallel(commands);getErrorString();
-system("python3 "+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/ComplianceSuite.py --version=\"`cat version`\"" + COMPLIANCEEXTRAREPORTFLAGS);getErrorString();
-system("xsltproc -o openmodelica.html '" + filename + "' openmodelica.xml");getErrorString();
+system("python3 "+getInstallationDirectoryPath()+"/share/doc/omc/testmodels/ComplianceSuite.py --version=\"`cat version`\" --outPrefix=\"" + COMPLIANCEPREFIX + "\" " + COMPLIANCEEXTRAREPORTFLAGS);getErrorString();
+system("xsltproc -o "+COMPLIANCEPREFIX+".html '" + filename + "' "+COMPLIANCEPREFIX+".xml");getErrorString();
