@@ -34,7 +34,7 @@
 /* For MMC_THROW, so we can end this thing */
 #include "meta/meta_modelica.h"
 
-const int firstOMCErrorStream = 3;
+const int firstOMCErrorStream = 1;
 
 const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_UNKNOWN",
@@ -85,8 +85,8 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
 
 const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "unknown",
-  "this stream is always active",                                               /* LOG_STDOUT */
-  "this stream is always active",                                               /* LOG_ASSERT */
+  "this stream is always active, can be disabled with -lv=-stdout",             /* LOG_STDOUT */
+  "this stream is always active, can be disabled with -lv=-assert",             /* LOG_ASSERT */
 
   "additional information about dassl solver",                                  /* LOG_DASSL */
   "outputs the states at every dassl call",                                     /* LOG_DASSL_STATES */

@@ -131,6 +131,10 @@ void setGlobalVerboseLevel(int argc, char**argv)
     return; // no lv flag given.
   }
 
+  /* default activated, but it can be disabled with -stdout or -assert */
+  useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
+
   if(flags->find("LOG_ALL", 0) != string::npos)
   {
     for(i=1; i<SIM_LOG_MAX; ++i)
@@ -180,10 +184,6 @@ void setGlobalVerboseLevel(int argc, char**argv)
       }
     }while(pos != string::npos);
   }
-
-  /* default activated */
-  useStream[LOG_STDOUT] = 1;
-  useStream[LOG_ASSERT] = 1;
 
   /* print LOG_SOTI if LOG_INIT is enabled */
   if(useStream[LOG_INIT])

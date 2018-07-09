@@ -2,16 +2,36 @@
 #include "OMC.h"
 #include <string>
 #include <iostream>
-#include "meta/meta_modelica.h"
+#include <thread>
+
+#define GC_THREADS
+#include "gc.h"
+
 /*
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
 */
-#include <pthread.h>
-void runTest(OMCData* omcData, std::string testfolder, std::string omhome)
+
+void runTest(std::string testfolder, std::string omhome)
 {
+
+  GC_stack_base sb;
+  GC_get_stack_base(&sb);
+  GC_register_my_thread(&sb);
+
   int status = 0;
   char *change_dir_results = 0, *mkDirResults = 0, *version = 0, *errorMsg2 = 0, *simulateResult = 0, *clear = 0;
+
+  OMCData *omcData;
+  std::cout << "Initialize OMC, use gcc compiler on folder: " << testfolder << std::endl;
+  // if you send in 1 here it will crash on Windows, i need do debug more why this happens
+  status = InitOMC(&omcData, "gcc", "");
+  if(status > 0)
+    std::cout << "..ok" << std::endl;
+  else
+    std::cout << "..failed" << std::endl;
+  /*----------------------------------------*/
+
 
   // create the test folder
   std::cout << "Create working directory of OMC: " << testfolder << std::endl;
@@ -97,39 +117,29 @@ void runTest(OMCData* omcData, std::string testfolder, std::string omhome)
     std::cout << "..ok " << clear << std::endl;
   else
     std::cout << "..failed" << std::endl;
+
+  GC_unregister_my_thread();
 }
+
+#define MAX_THREADS 4
 
 int main(int argc, const char* argv[])
 {
-  OMCData *omcData = 0;
-  int status = 0;
+  std::thread threads[MAX_THREADS];
+  int i = 0;
 
   std::cout << "Test OMC C-API dll ..." << std::endl;
   InitMetaOMC();
+  GC_allow_register_threads();
 
-  /*----------------------------------------*/
-  std::cout << "Initialize OMC, use gcc compiler" << std::endl;
-  // if you send in 1 here it will crash on Windows, i need do debug more why this happens
-  status = InitOMC(&omcData, "gcc", "");
-  if(status > 0)
-    std::cout << "..ok" << std::endl;
-  else
-    std::cout << "..failed" << std::endl;
-  /*----------------------------------------*/
+  for (i = 0; i < MAX_THREADS; i++)
+  {
+    std::string dir = std::string("./tmp") + std::to_string(i);
+    threads[i] = std::thread(runTest, dir, "");
+  }
 
-
-  std::cout << "starting test 1" << std::endl;
-  std::string dir = "./tmp1";
-  runTest(omcData, dir, "");
-  std::cout << "starting test 2" << std::endl;
-  dir = "./tmp2";
-  runTest(omcData, dir, "");
-  std::cout << "starting test 3" << std::endl;
-  dir = "./tmp3";
-  runTest(omcData, dir, "");
-
-  /*------------------------------------------*/
-
-  FreeOMC(omcData);
+  for (i = 0; i < MAX_THREADS; i++)
+    if (threads[i].joinable())
+      threads[i].join();
 }
 
