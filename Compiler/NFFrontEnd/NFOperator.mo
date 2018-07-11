@@ -195,6 +195,12 @@ public
     op.ty := ty;
   end setType;
 
+  function scalarize
+    input output Operator op;
+  algorithm
+    op.ty := Type.arrayElementType(op.ty);
+  end scalarize;
+
   function symbol
     input Operator op;
     input String spacing = " ";

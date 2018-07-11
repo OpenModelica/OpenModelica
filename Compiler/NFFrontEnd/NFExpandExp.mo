@@ -761,11 +761,14 @@ public
     input Operator op;
     output Expression outExp;
     output Boolean expanded;
+  protected
+    Operator scalar_op;
   algorithm
     (outExp, expanded) := expand(exp);
+    scalar_op := Operator.scalarize(op);
 
     if expanded then
-      outExp := Expression.mapArrayElements(outExp, function makeUnaryOp(op = op));
+      outExp := Expression.mapArrayElements(outExp, function makeUnaryOp(op = scalar_op));
     end if;
   end expandUnary;
 
@@ -815,11 +818,14 @@ public
     input Operator op;
     output Expression outExp;
     output Boolean expanded;
+  protected
+    Operator scalar_op;
   algorithm
     (outExp, expanded) := expand(exp);
+    scalar_op := Operator.scalarize(op);
 
     if expanded then
-      outExp := Expression.mapArrayElements(outExp, function makeLogicalUnaryOp(op = op));
+      outExp := Expression.mapArrayElements(outExp, function makeLogicalUnaryOp(op = scalar_op));
     else
       outExp := exp;
     end if;
