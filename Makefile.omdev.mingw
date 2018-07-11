@@ -33,7 +33,7 @@ BUILDTYPE=Debug
 endif
 
 
-.PHONY: omc omc-diff omlibrary-core omplot omedit omnotebook omshell omoptim
+.PHONY: omc omc-diff omlibrary-core omplot omedit omsimulator omnotebook omshell omoptim
 
 all: omc omc-diff omlibrary-core
 
@@ -54,6 +54,11 @@ omplot: omc qtclientsDLLs
 
 omedit: omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR)
+
+omsimulator:
+	$(MAKE) -C OMSimulator config-3rdParty
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR)
 
 omnotebook: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR)
