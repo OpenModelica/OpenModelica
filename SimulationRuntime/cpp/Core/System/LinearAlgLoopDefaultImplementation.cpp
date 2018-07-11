@@ -12,13 +12,18 @@ LinearAlgLoopDefaultImplementation::LinearAlgLoopDefaultImplementation()
   ,_b(NULL)
   ,_AData(NULL)
   ,_Ax(NULL)
+  ,_x0(NULL)
+ , _firstcall(true)
 {
+
 }
 
 LinearAlgLoopDefaultImplementation::~LinearAlgLoopDefaultImplementation()
 {
   if(_b)
     delete [] _b;
+ if (_x0)
+	 delete [] _x0;
 }
 
 /// Provide number (dimension) of variables according to data type
@@ -37,6 +42,9 @@ void LinearAlgLoopDefaultImplementation::initialize()
     delete [] _b;
   _b     = new double[_dimAEq];
   memset(_b,0,_dimAEq*sizeof(double));
+  if(_x0)
+	  delete [] _x0;
+  _x0 = new double[_dimAEq];
 };
 
 void LinearAlgLoopDefaultImplementation::getb(double* res) const
@@ -52,7 +60,10 @@ bool LinearAlgLoopDefaultImplementation::getUseSparseFormat(){
 void LinearAlgLoopDefaultImplementation::setUseSparseFormat(bool value){
   _useSparseFormat = value;
 }
-
+void LinearAlgLoopDefaultImplementation::getRealStartValues(double* vars) const
+{
+    memcpy(vars, _x0, sizeof(double) * _dimAEq);
+}
 
 
 //void LinearAlgLoopDefaultImplementation::getSparseAdata(double* data, int nonzeros)

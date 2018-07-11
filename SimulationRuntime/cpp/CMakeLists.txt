@@ -69,7 +69,7 @@ else()
   message(STATUS "Libs will be installed in ${LIBINSTALLEXT}")
 endif()
 
-PROJECT(CppSolverInterface)
+PROJECT(CppSimulationRuntime)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake")
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -93,11 +93,14 @@ OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 #Set Variables
 IF(NOT FMU_TARGET)
  IF(MSVC)
-  SET(LIBINSTALLEXT "lib/omc/cpp/msvc" CACHE STRING "library directory")
+  SET(LIBINSTALLEXT "lib/omc/cpp/msvc" CACHE STRINGz "library directory")
  ELSE(MSVC)
   SET(LIBINSTALLEXT "lib/omc/cpp" CACHE STRING "library directory")
 ENDIF()
 ENDIF(NOT FMU_TARGET)
+
+MESSAGE(STATUS "Using library folder extension" ${LIBINSTALLEXT})
+
 SET(MODELICA_MODEL "ModelicaSystem")
 SET(LIBPREFIX "OMCpp")
 IF(BUILD_SHARED_LIBS)
@@ -350,7 +353,7 @@ IF(WIN32)
   SET(MICO_LIB_HOME $ENV{OMDEV}/lib/mico-msys-mingw/)
   SET(MICO_INCLUDE_HOME  $ENV{OMDEV}/include/mico-msys-mingw/)
 
-  SET(INSTALL_OMDEV_LIBS ON)
+  SET(INSTALL_OMDEV_LIBS OFF)
 ENDIF(WIN32)
 
 # Find OpenMP

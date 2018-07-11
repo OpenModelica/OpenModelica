@@ -13,7 +13,7 @@
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
 
-LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
+LinearSolver::LinearSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
   : _algLoop            (algLoop)
   , _dimSys             (0)
 
@@ -46,7 +46,10 @@ LinearSolver::LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings
   , _generateoutput     (false)
   , _fNominal           (NULL)
 {
-  _sparse = _algLoop->getUseSparseFormat();
+	if (_algLoop)
+		_single_instance = false;
+	else
+		_single_instance = true;
 }
 
 LinearSolver::~LinearSolver()
@@ -84,10 +87,16 @@ LinearSolver::~LinearSolver()
 
 void LinearSolver::initialize()
 {
-  _firstCall = false;
-  //(Re-) Initialization of algebraic loop
-  _algLoop->initialize();
 
+	if(_firstCall)
+	 _algLoop->initialize();
+
+	_firstCall = false;
+  //(Re-) Initialization of algebraic loop
+  if(!_algLoop)
+     throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
+
+  _sparse = _algLoop->getUseSparseFormat();
   int dimDouble=_algLoop->getDimReal();
   int ok=0;
 
@@ -179,12 +188,27 @@ void LinearSolver::initialize()
   LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
+
+void LinearSolver::solve(shared_ptr<ILinearAlgLoop> algLoop, bool first_solve)
+{
+	if (first_solve)
+	{
+		_algLoop = algLoop;
+		_firstCall = true;
+	}
+	if (_algLoop != algLoop)
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
+	solve();
+}
+
 void LinearSolver::solve()
 {
-  if (_firstCall) {
-    initialize();
+  if (_firstCall)
+  {
+      initialize();
   }
-
+  if(!_algLoop)
+    throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
   _iterationStatus = CONTINUE;
 
   LOGGER_WRITE_BEGIN("LinearSolver: eq" + to_string(_algLoop->getEquationIndex()) +
@@ -377,7 +401,7 @@ void LinearSolver::solve()
   LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
-IAlgLoopSolver::ITERATIONSTATUS LinearSolver::getIterationStatus()
+ILinearAlgLoopSolver::ITERATIONSTATUS LinearSolver::getIterationStatus()
 {
   return _iterationStatus;
 }

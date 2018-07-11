@@ -7,10 +7,7 @@
 
 #include "FactoryExport.h"
 
-#include <Core/System/ILinearAlgLoop.h>               // Interface to AlgLoo
-#include <Core/System/INonLinearAlgLoop.h>               // Interface to AlgLoo
-#include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
-#include <Core/Solver/INonLinSolverSettings.h>
+
 #include <Solver/Broyden/BroydenSettings.h>
 
 #include <Core/Utils/extension/logger.hpp>
@@ -45,19 +42,23 @@ where A is an n-by-n matrix and y and B are n-by-n(right hand side) matrices.
 /*****************************************************************************
 OSMS(c) 2008
 *****************************************************************************/
-class Broyden : public IAlgLoopSolver
+class Broyden : public INonLinearAlgLoopSolver
 {
 public:
 
-    Broyden(INonLinearAlgLoop* algLoop,INonLinSolverSettings* settings);
+    Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
 
     virtual ~Broyden();
 
     /// (Re-) initialize the solver
     virtual void initialize();
 
+
     /// Solution of a (non-)linear system of equations
     virtual void solve();
+    //solve for a single instance call
+    virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve = false);
+
 
     /// Returns the status of iteration
     virtual ITERATIONSTATUS getIterationStatus();
@@ -76,8 +77,7 @@ private:
     INonLinSolverSettings
         *_BroydenSettings;            ///< Settings for the solver
 
-    INonLinearAlgLoop
-        *_algLoop;                    ///< Algebraic loop to be solved
+    shared_ptr<INonLinearAlgLoop> _algLoop;                    ///< Algebraic loop to be solved
 
     ITERATIONSTATUS
         _iterationStatus;            ///< Output        - Denotes the status of iteration

@@ -4,7 +4,7 @@
 */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-#include <Solver/Broyden/Broyden.h>
+
 
 #include <Core/Math/ILapack.h>        // needed for solution of linear system with Lapack
 #include <Core/Math/IBlas.h>        // use BLAS routines
@@ -12,8 +12,12 @@
 
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
+#include <Core/System/INonLinearAlgLoop.h>               // Interface to AlgLoo
+#include <Core/Solver/INonLinearAlgLoopSolver.h>        // Export function from dll
+#include <Core/Solver/INonLinSolverSettings.h>
+#include <Solver/Broyden/Broyden.h>
 
-Broyden::Broyden(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
+Broyden::Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
 	: _algLoop            (algLoop)
 	, _BroydenSettings    ((INonLinSolverSettings*)settings)
 	, _y                  (NULL)
@@ -76,7 +80,11 @@ void Broyden::initialize()
 	_firstCall = false;
 
 	//(Re-) initializeialization of algebraic loop
-	_algLoop->initialize();
+	if(_algLoop)
+       _algLoop->initialize();
+    else
+	 throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
+
 
 	// Dimension of the system (number of variables)
 	int
@@ -182,7 +190,12 @@ void Broyden::initialize()
 
 }
 
-void Broyden::solve()
+void Broyden::solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve)
+{
+	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+}
+
+void Broyden::solve( )
 {
 
 	long int
@@ -194,13 +207,13 @@ void Broyden::solve()
 
 	double delta;
 
-	// If initialize() was not called yet
+    if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
+    // If initialize() was not called yet
 	if (_firstCall)
 	{
 		initialize();
 	}
-
-
 	// Reset status flag
 	_iterationStatus = CONTINUE;
 	calcFunction(_y,_fold);
@@ -317,7 +330,7 @@ void Broyden::solve()
 	}
 }
 
-IAlgLoopSolver::ITERATIONSTATUS Broyden::getIterationStatus()
+INonLinearAlgLoopSolver::ITERATIONSTATUS Broyden::getIterationStatus()
 {
 	return _iterationStatus;
 }
@@ -325,6 +338,8 @@ IAlgLoopSolver::ITERATIONSTATUS Broyden::getIterationStatus()
 
 void Broyden::calcFunction(const double *y, double *residual)
 {
+	if(!_algLoop)
+       throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	_algLoop->setReal(y);
 	_algLoop->evaluate();
 	_algLoop->getRHS(residual);
@@ -339,7 +354,8 @@ void Broyden::stepCompleted(double time)
 
 void Broyden::calcJacobian()
 {
-
+    if(!_algLoop)
+       throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	for(int j=0; j<_dimSys; ++j)
 	{
 		// Reset variables for every column

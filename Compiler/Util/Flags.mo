@@ -1459,6 +1459,9 @@ constant ConfigFlag IGNORE_REPLACEABLE = CONFIG_FLAG(117, "ignoreReplaceable",
     "evalRecursionLimit", NONE(), EXTERNAL(), INT_FLAG(256), NONE(),
     Util.gettext("The recursion limit used when evaluating constant function calls."));
 
+  constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER = CONFIG_FLAG(127, "singleInstanceAglSolver",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Sets to instantiate only  one algebraic loop solver all algebraic loops"));
 
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
@@ -1590,7 +1593,8 @@ constant list<ConfigFlag> allConfigFlags = {
   BUILDING_MODEL,
   POST_OPT_MODULES_DAE,
   EVAL_LOOP_LIMIT,
-  EVAL_RECURSION_LIMIT
+  EVAL_RECURSION_LIMIT,
+  SINGLE_INSTANCE_AGLSOLVER
 };
 
 public function new

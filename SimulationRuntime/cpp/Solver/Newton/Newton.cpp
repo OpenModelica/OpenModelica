@@ -14,7 +14,7 @@
 #include <Core/Math/ILapack.h>     // needed for solution of linear system with Lapack
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
-Newton::Newton(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
+Newton::Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
   : _algLoop          (algLoop)
   , _newtonSettings   ((INonLinSolverSettings*)settings)
   , _yNames           (NULL)
@@ -59,7 +59,10 @@ void Newton::initialize()
   _firstCall = false;
 
   //(Re-) initializeialization of algebraic loop
-  _algLoop->initialize();
+   if(_algLoop)
+    _algLoop->initialize();
+  else
+	 throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
   // Dimension of the system (number of variables)
   int
@@ -116,9 +119,17 @@ void Newton::initialize()
   LOGGER_WRITE_VECTOR("yNominal", _yNominal, _dimSys, _lc, LL_DEBUG);
   LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
-
-void Newton::solve()
+void Newton::solve( shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve)
 {
+	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+}
+
+void Newton::solve( )
+{
+
+
+  if(!_algLoop)
+    throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
   long int
     dimRHS   = 1,        // Dimension of right hand side of linear system (=b)
     info     = 0;        // Retrun-flag of Fortran code
@@ -279,13 +290,15 @@ void Newton::solve()
   LOGGER_WRITE_END(_lc, LL_DEBUG);
 }
 
-IAlgLoopSolver::ITERATIONSTATUS Newton::getIterationStatus()
+INonLinearAlgLoopSolver::ITERATIONSTATUS Newton::getIterationStatus()
 {
   return _iterationStatus;
 }
 
 void Newton::calcFunction(const double *y, double *residual)
 {
+   if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
   _algLoop->setReal(y);
   _algLoop->evaluate();
   _algLoop->getRHS(residual);
@@ -298,6 +311,8 @@ void Newton::stepCompleted(double time)
 
 void Newton::calcJacobian(double *jac, double *fNominal)
 {
+  if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
   const double *Adata = NULL;
   std::fill(fNominal, fNominal + _dimSys, 1e2 * _newtonSettings->getAtol());
 

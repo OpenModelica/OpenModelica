@@ -10,7 +10,7 @@
 #include <Core/Math/Constants.h>        // definition of constants like uround
 #include <algorithm>    // std::max
 
-Hybrj::Hybrj(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
+Hybrj::Hybrj(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
 	: _algLoop            (algLoop)
 	, _newtonSettings    ((INonLinSolverSettings*)settings)
 	, _x                (NULL)
@@ -76,7 +76,10 @@ void Hybrj::initialize()
 	_firstCall = false;
 
 	//(Re-) Initialization of algebraic loop
-	_algLoop->initialize();
+	 if(_algLoop)
+      _algLoop->initialize();
+    else
+	  throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
 	// Dimension of the system (number of variables)
 	int
@@ -168,13 +171,18 @@ void Hybrj::initialize()
 
 }
 
+void Hybrj::solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve)
+{
+	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+}
+
+
 void Hybrj::solve()
 {
-	// If initialize() was not called yet
-	if (_firstCall)
+
+ 	// If initialize() was not called yet
+    if (_firstCall)
 		initialize();
-
-
 
 
 
@@ -356,7 +364,7 @@ void Hybrj::solve()
 
 }
 
-IAlgLoopSolver::ITERATIONSTATUS Hybrj::getIterationStatus()
+INonLinearAlgLoopSolver::ITERATIONSTATUS Hybrj::getIterationStatus()
 {
 	return _iterationStatus;
 }
@@ -364,6 +372,8 @@ IAlgLoopSolver::ITERATIONSTATUS Hybrj::getIterationStatus()
 
 void Hybrj::calcFunction(const double *y, double *residual)
 {
+	if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	_algLoop->setReal(y);
 	_algLoop->evaluate();
 	_algLoop->getRHS(residual);
@@ -371,6 +381,9 @@ void Hybrj::calcFunction(const double *y, double *residual)
 
 void  Hybrj::saveVars(double time)
 {
+
+	 if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	_algLoop->getReal(_x);
 	memcpy(_x2,_x1,_dimSys*sizeof(double));
 	memcpy(_x1,_x0,_dimSys*sizeof(double));
@@ -381,6 +394,8 @@ void  Hybrj::saveVars(double time)
 }
 void  Hybrj::extrapolateVars()
 {
+    if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	if (_t1 == _t2)
 	{
 
@@ -395,6 +410,8 @@ void  Hybrj::extrapolateVars()
 
 void Hybrj::calcJacobian(double *fjac)
 {
+	if(!_algLoop)
+      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	for(int j=0; j<_dimSys; ++j)
 	{
 		// Reset variables for every column
@@ -415,6 +432,7 @@ void Hybrj::calcJacobian(double *fjac)
 
 void Hybrj::fcn(const int *n, const double *x, double *fvec, double *fjac, const int *ldfjac, int *iflag, void* userdata)
 {
+
 	if(*iflag == 1)
 	{
 		((Hybrj*)userdata)->calcFunction(x,fvec);

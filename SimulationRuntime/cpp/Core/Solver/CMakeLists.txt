@@ -15,7 +15,8 @@ install(FILES $<TARGET_PDB_FILE:${SolverName}> DESTINATION ${LIBINSTALLEXT} OPTI
 
 install(TARGETS ${SolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/IAlgLoopSolver.h
+  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinearAlgLoopSolver.h
+  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/INonLinearAlgLoopSolver.h
   ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinSolverSettings.h
   ${CMAKE_SOURCE_DIR}/Include/Core/Solver/INonLinSolverSettings.h
   ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolver.h

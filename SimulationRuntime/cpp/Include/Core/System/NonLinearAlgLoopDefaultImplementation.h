@@ -70,6 +70,7 @@ public:
 
   void setUseSparseFormat(bool value);
 
+  virtual void getRealStartValues(double* vars) const;
   //void getSparseAdata(double* data, int nonzeros);
 
   // Member variables
@@ -77,11 +78,12 @@ public:
 protected:
   int _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
   double* _res;
-
+  double* _x0;
 
   double * _AData;
   double* _Ax;
   bool _useSparseFormat;
+  bool _firstcall;
 
 };
 /** @} */ // end of coreSystem

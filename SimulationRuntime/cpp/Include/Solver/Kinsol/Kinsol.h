@@ -3,16 +3,11 @@
  *
  *  @{
  */
-#if defined(__vxworks)
-//#include <klu.h>
-#else
-//#include <Solver/KLU/klu.h>
-#endif
 
-class Kinsol : public IAlgLoopSolver
+class Kinsol : public INonLinearAlgLoopSolver
 {
 public:
-  Kinsol(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings);
+  Kinsol(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
   virtual ~Kinsol();
 
   /// (Re-) initialize the solver
@@ -20,7 +15,8 @@ public:
 
   /// Solution of a (non-)linear system of equations
   virtual void solve();
-
+  //solve for a single instance call
+  virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve = false);
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
   virtual void stepCompleted(double time);
@@ -47,8 +43,7 @@ private:
   INonLinSolverSettings
     *_kinsolSettings;     ///< Settings for the solver
 
-  INonLinearAlgLoop
-    *_algLoop;            ///< Algebraic loop to be solved
+  shared_ptr<INonLinearAlgLoop> _algLoop;            ///< Algebraic loop to be solved
 
   ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration

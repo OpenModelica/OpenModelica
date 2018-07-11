@@ -8,8 +8,8 @@
 
 shared_ptr<INonLinSolverSettings> createNewtonSettings();
  shared_ptr<INonLinSolverSettings> createKinsolSettings();
- shared_ptr<IAlgLoopSolver> createNewtonSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings);
- shared_ptr<IAlgLoopSolver> createKinsolSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings);
+ shared_ptr<INonLinearAlgLoopSolver> createNewtonSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algLoop);
+ shared_ptr<INonLinearAlgLoopSolver> createKinsolSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algLoop);
 template <class CreationPolicy>
 class StaticNonLinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>
 {
@@ -41,18 +41,18 @@ public:
       throw ModelicaSimulationError(MODEL_FACTORY,"Selected nonlin solver is not available");
       //return NonLinSolverOMCFactory<CreationPolicy>::createNonLinSolverSettings(nonlin_solver);
    }
-   virtual shared_ptr<IAlgLoopSolver> createNonLinSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings> solver_settings)
+   virtual shared_ptr<INonLinearAlgLoopSolver> createNonLinSolver(string solver_name, shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algLoop = shared_ptr<INonLinearAlgLoop>())
    {
       if(solver_name.compare("newton")==0)
       {
-        shared_ptr<IAlgLoopSolver> newton = createNewtonSolver(algLoop,solver_settings);
+        shared_ptr<INonLinearAlgLoopSolver> newton = createNewtonSolver(solver_settings,algLoop);
         return newton;
       }
 
       #ifdef ENABLE_SUNDIALS_STATIC
       if(solver_name.compare("kinsol")==0)
       {
-        shared_ptr<IAlgLoopSolver> kinsol = createKinsolSolver(algLoop,solver_settings);
+        shared_ptr<INonLinearAlgLoopSolver> kinsol = createKinsolSolver(solver_settings,algLoop);
         return kinsol;
       }
       #endif //ENABLE_SUNDIALS_STATIC

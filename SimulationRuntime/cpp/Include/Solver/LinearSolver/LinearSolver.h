@@ -8,10 +8,10 @@
   #include <../../../../build/include/omc/c/suitesparse/Include/klu.h>
 #endif
 
-class LinearSolver : public IAlgLoopSolver
+class LinearSolver : public ILinearAlgLoopSolver
 {
 public:
-  LinearSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings);
+  LinearSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop=shared_ptr<ILinearAlgLoop>());
   virtual ~LinearSolver();
 
   /// (Re-) initialize the solver
@@ -19,6 +19,8 @@ public:
 
   /// Solution of a (non-)linear system of equations
   virtual void solve();
+  //solve for a single instance call
+  virtual void solve(shared_ptr<ILinearAlgLoop> algLoop,bool first_solve = false);
 
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
@@ -32,8 +34,8 @@ private:
   // Member variables
   //---------------------------------------------------------------
 
-  ILinearAlgLoop
-    *_algLoop;            ///< Algebraic loop to be solved
+  shared_ptr<ILinearAlgLoop>
+    _algLoop;            ///< Algebraic loop to be solved
 
   ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration
@@ -64,6 +66,7 @@ private:
     *_scale;            //scaling parameter to prevent overflow in singular systems
   bool _sparse;
   bool _generateoutput;   //prints nothing, if set to false. Prints Matrix, right hand side, and solution of the linear system, if set to true.
+  bool _single_instance;
 #if defined(klu)
   klu_symbolic* _kluSymbolic;
   klu_numeric* _kluNumeric;

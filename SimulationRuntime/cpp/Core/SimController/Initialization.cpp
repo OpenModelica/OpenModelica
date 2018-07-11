@@ -53,6 +53,8 @@ void Initialization::initializeSystem()
   if( _solver->stateSelection())
   {
     _system->initEquations();
+	continous_system->stepCompleted(0.0);
+
 
     /* report a warning about strange start values */
     if(_solver->stateSelection())

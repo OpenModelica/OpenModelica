@@ -17,6 +17,8 @@ NonLinearAlgLoopDefaultImplementation::NonLinearAlgLoopDefaultImplementation()
   ,_res(NULL)
   ,_AData(NULL)
   ,_Ax(NULL)
+  ,_x0(NULL)
+, _firstcall(true)
 {
 }
 
@@ -24,6 +26,8 @@ NonLinearAlgLoopDefaultImplementation::~NonLinearAlgLoopDefaultImplementation()
 {
   if(_res)
     delete [] _res;
+if (_x0)
+	 delete _x0;
 }
 
 /// Provide number (dimension) of variables according to data type
@@ -42,6 +46,9 @@ void NonLinearAlgLoopDefaultImplementation::initialize()
     delete [] _res;
   _res     = new double[_dimAEq];
   memset(_res,0,_dimAEq*sizeof(double));
+   if(_x0)
+	  delete [] _x0;
+   _x0 = new double[_dimAEq];
 };
 
 //in algloop default verschieben
@@ -57,6 +64,13 @@ bool NonLinearAlgLoopDefaultImplementation::getUseSparseFormat(){
 void NonLinearAlgLoopDefaultImplementation::setUseSparseFormat(bool value){
   _useSparseFormat = value;
 }
+
+void NonLinearAlgLoopDefaultImplementation::getRealStartValues(double* vars) const
+{
+
+	 memcpy(vars, _x0, sizeof(double) * _dimAEq);
+}
+
 
 //void NonLinearAlgLoopDefaultImplementation::getSparseAdata(double* data, int nonzeros)
 //{

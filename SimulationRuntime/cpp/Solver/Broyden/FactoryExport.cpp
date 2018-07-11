@@ -4,22 +4,7 @@
  */
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-#if defined(__vxworks)
-#include <Solver/Broyden/Broyden.h>
-#include <Solver/Broyden/BroydenSettings.h>
-extern "C" IAlgLoopSolver* createBroyden(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
-{
-    return new Broyden(algLoop, settings);
-}
-
-extern "C" INonLinSolverSettings* createBroydenSettings()
-{
-    return new BroydenSettings();
-}
-
-
-
-#elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
+#if defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
 #include <Solver/Broyden/Broyden.h>
 #include <Solver/Broyden/BroydenSettings.h>
@@ -28,7 +13,7 @@ extern "C" INonLinSolverSettings* createBroydenSettings()
     using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> > >()
+  types.get<std::map<std::string, factory<INonLinearAlgLoopSolver, INonLinSolverSettings*,shared_ptr<INonLinearAlgLoop> > > >()
     ["broyden"].set<Broyden>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
     ["broydenSettings"].set<BroydenSettings>();
@@ -41,9 +26,9 @@ BOOST_EXTENSION_TYPE_MAP_FUNCTION {
      shared_ptr<INonLinSolverSettings> settings = shared_ptr<INonLinSolverSettings>(new BroydenSettings());
       return settings;
  }
- shared_ptr<IAlgLoopSolver> createBroydenSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+ shared_ptr<INonLinearAlgLoopSolver> createBroydenSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algloop)
  {
-     shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new Broyden(algLoop,solver_settings.get()));
+     shared_ptr<INonLinearAlgLoopSolver> solver = shared_ptr<INonLinearAlgLoopSolver>(new Broyden(solver_settings.get(),algloop));
         return solver;
  }
 #else

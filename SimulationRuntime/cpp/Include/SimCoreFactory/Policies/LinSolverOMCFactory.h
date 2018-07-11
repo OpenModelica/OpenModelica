@@ -68,18 +68,18 @@ public:
         return linsolversetting;
   }
 
-  virtual shared_ptr<IAlgLoopSolver> createLinSolver(ILinearAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
+  virtual shared_ptr<ILinearAlgLoopSolver> createLinSolver(string solver_name, shared_ptr<ILinSolverSettings> solver_settings,shared_ptr<ILinearAlgLoop> algLoop = shared_ptr<ILinearAlgLoop>())
   {
     if(_last_selected_solver.compare(solver_name) == 0)
     {
-            std::map<std::string, factory<IAlgLoopSolver,ILinearAlgLoop*, ILinSolverSettings*> >::iterator iter;
-            std::map<std::string, factory<IAlgLoopSolver,ILinearAlgLoop*, ILinSolverSettings*> >& linSolverFactory(_linsolver_type_map->get());
+            std::map<std::string, factory<ILinearAlgLoopSolver, ILinSolverSettings*,shared_ptr<ILinearAlgLoop> > >::iterator iter;
+            std::map<std::string, factory<ILinearAlgLoopSolver, ILinSolverSettings*,shared_ptr<ILinearAlgLoop> > >& linSolverFactory(_linsolver_type_map->get());
             iter = linSolverFactory.find(solver_name);
             if (iter == linSolverFactory.end())
             {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such linear Solver");
             }
-            shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
+            shared_ptr<ILinearAlgLoopSolver> solver = shared_ptr<ILinearAlgLoopSolver>(iter->second.create(solver_settings.get(),algLoop));
 
             return solver;
     }

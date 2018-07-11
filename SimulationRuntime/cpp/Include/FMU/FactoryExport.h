@@ -24,7 +24,7 @@
  {
    throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
  }
- shared_ptr<IAlgLoopSolver> createKinsolSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+ shared_ptr<INonLinearAlgLoopSolver> createKinsolSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algLoop)
  {
    throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
  }

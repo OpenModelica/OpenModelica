@@ -5,9 +5,9 @@
  */
 #include <SimCoreFactory/ObjectFactory.h>
 shared_ptr<ILinSolverSettings> createLinearSolverSettings();
-shared_ptr<IAlgLoopSolver> createLinearSolver(ILinearAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings);
+shared_ptr<ILinearAlgLoopSolver> createLinearSolver(shared_ptr<ILinSolverSettings> solver_settings,shared_ptr<ILinearAlgLoop> algLoop = shared_ptr<ILinearAlgLoop>());
 shared_ptr<ILinSolverSettings> createDgesvSolverSettings();
-shared_ptr<IAlgLoopSolver> createDgesvSolver(ILinearAlgLoop* algLoop, shared_ptr<ILinSolverSettings> solver_settings);
+shared_ptr<ILinearAlgLoopSolver> createDgesvSolver(shared_ptr<ILinSolverSettings> solver_settings,shared_ptr<ILinearAlgLoop> algLoop = shared_ptr<ILinearAlgLoop>());
 template<class CreationPolicy>
 struct StaticLinSolverOMCFactory : virtual public ObjectFactory<CreationPolicy>{
 
@@ -34,7 +34,7 @@ public:
       else
         throw ModelicaSimulationError(MODEL_FACTORY,"Selected lin solver is not available");
   }
-  virtual shared_ptr<IAlgLoopSolver> createLinSolver(ILinearAlgLoop* algLoop, string solver_name, shared_ptr<ILinSolverSettings> solver_settings)
+  virtual shared_ptr<ILinearAlgLoopSolver> createLinSolver(string solver_name, shared_ptr<ILinSolverSettings> solver_settings,shared_ptr<ILinearAlgLoop> algLoop = shared_ptr<ILinearAlgLoop>())
   {
 
        if(solver_name.compare("linearSolver")==0)
@@ -43,7 +43,7 @@ public:
        }
        else if(solver_name.compare("dgesvSolver")==0)
        {
-           shared_ptr<IAlgLoopSolver> solver =createDgesvSolver(algLoop,solver_settings);
+           shared_ptr<ILinearAlgLoopSolver> solver =createDgesvSolver(solver_settings,algLoop);
            return solver;
        }
        else

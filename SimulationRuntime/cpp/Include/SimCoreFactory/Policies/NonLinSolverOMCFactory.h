@@ -112,18 +112,18 @@ public:
 
    }
 
-   virtual shared_ptr<IAlgLoopSolver> createNonLinSolver(INonLinearAlgLoop* algLoop, string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings)
+   virtual shared_ptr<INonLinearAlgLoopSolver> createNonLinSolver(string solver_name, shared_ptr<INonLinSolverSettings>  solver_settings,shared_ptr<INonLinearAlgLoop> algLoop = shared_ptr<INonLinearAlgLoop>())
    {
        if(_last_selected_solver.compare(solver_name)==0)
        {
-            std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> >::iterator iter;
-            std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> >& nonlinSolverFactory(_non_linsolver_type_map->get());
+            std::map<std::string, factory<INonLinearAlgLoopSolver, INonLinSolverSettings*,shared_ptr<INonLinearAlgLoop> > >::iterator iter;
+            std::map<std::string, factory<INonLinearAlgLoopSolver, INonLinSolverSettings*,shared_ptr<INonLinearAlgLoop> > >& nonlinSolverFactory(_non_linsolver_type_map->get());
             iter = nonlinSolverFactory.find(solver_name);
             if (iter ==nonlinSolverFactory.end())
             {
                 throw ModelicaSimulationError(MODEL_FACTORY,"No such non linear Solver");
             }
-            shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(iter->second.create(algLoop,solver_settings.get()));
+            shared_ptr<INonLinearAlgLoopSolver> solver = shared_ptr<INonLinearAlgLoopSolver>(iter->second.create(solver_settings.get(),algLoop));
             return solver;
        }
        else

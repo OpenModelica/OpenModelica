@@ -95,7 +95,8 @@
   #include <Core/System/INonLinearAlgLoop.h>
   #include <Core/Solver/ISolverSettings.h>
   #include <Core/Solver/ISolver.h>
-  #include <Core/Solver/IAlgLoopSolver.h>
+  #include <Core/Solver/ILinearAlgLoopSolver.h>
+  #include <Core/Solver/INonLinearAlgLoopSolver.h>
   #include <Core/System/IAlgLoopSolverFactory.h>
   #include <Core/System/ISimVars.h>
   #include <Core/DataExchange/ISimVar.h>

@@ -3,8 +3,8 @@
  *
  *  @{
  */
-class IAlgLoop;
-class IContinuous;
+class INonLinearAlgLoop;
+
 
 /*****************************************************************************/
 /**
@@ -20,7 +20,7 @@ solution of algebraic loops in open modelica.
 Copyright (c) 2008, OSMC
 *****************************************************************************/
 
-class IAlgLoopSolver
+class INonLinearAlgLoopSolver
 {
 public:
   /// Enumeration to denote the status of iteration
@@ -31,13 +31,16 @@ public:
     DONE,
   };
 
-  virtual ~IAlgLoopSolver() {};
+  virtual ~INonLinearAlgLoopSolver() {};
 
   /// (Re-) initialize the solver
   virtual void initialize() = 0;
 
-  /// Solution of a (non-)linear system of equations
+   /// Solution of a (non-)linear system of equations
   virtual void solve() = 0;
+  //solve for a single instance call
+  virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve = false) = 0;
+
 
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus() = 0;

@@ -3551,7 +3551,7 @@ package Flags
   constant ConfigFlag LABELED_REDUCTION;
   constant ConfigFlag LOAD_MSL_MODEL;
   constant ConfigFlag Load_PACKAGE_FILE;
-
+   constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER;
   function set
     input DebugFlag inFlag;
     input Boolean inValue;

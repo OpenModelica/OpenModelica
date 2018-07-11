@@ -5,36 +5,7 @@
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
 
-#if defined(__vxworks) || defined(__TRICORE__)
-#include <nvector/nvector_serial.h>
-#include <kinsol/kinsol.h>
-
-#include <Solver/Kinsol/Kinsol.h>
-#include <Solver/Kinsol/KinsolSettings.h>
-
-extern "C" IAlgLoopSolver* createKinsol(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
-{
-    return new Kinsol(algLoop, settings);
-}
-
-extern "C" INonLinSolverSettings* createKinsolSettings()
-{
-    return new KinsolSettings();
-}
-
-#elif defined(SIMSTER_BUILD)
-
-#include <Solver/Kinsol/Kinsol.h>
-#include <Solver/Kinsol/KinsolSettings.h>
-
-/*Simster factory*/
-extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::extensions::factory_map & fm)
-{
-    fm.get<IAlgLoopSolver,int,INonlinearAlgLoop*, INonLinSolverSettings*>()[1].set<Kinsol>();
-    fm.get<INonLinSolverSettings,int >()[2].set<KinsolSettings>();
-}
-
-#elif defined(OMC_BUILD)  && !defined(RUNTIME_STATIC_LINKING)
+#if defined(OMC_BUILD)  && !defined(RUNTIME_STATIC_LINKING)
 #include <nvector/nvector_serial.h>
 #include <kinsol/kinsol.h>
 #ifdef USE_SUNDIALS_LAPACK
@@ -55,7 +26,7 @@ extern "C" void BOOST_EXTENSION_EXPORT_DECL extension_export_kinsol(boost::exten
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> > >()
+  types.get<std::map<std::string, factory<INonLinearAlgLoopSolver, INonLinSolverSettings*,shared_ptr<INonLinearAlgLoop> > > >()
     ["kinsol"].set<Kinsol>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
     ["kinsolSettings"].set<KinsolSettings>();
@@ -88,9 +59,9 @@ error "operating system not supported"
        shared_ptr<INonLinSolverSettings> settings = shared_ptr<INonLinSolverSettings>(new KinsolSettings());
         return settings;
    }
-    shared_ptr<IAlgLoopSolver> createKinsolSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+    shared_ptr<INonLinearAlgLoopSolver> createKinsolSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algLoop)
    {
-       shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new Kinsol(algLoop,solver_settings.get()));
+       shared_ptr<INonLinearAlgLoopSolver> solver = shared_ptr<INonLinearAlgLoopSolver>(new Kinsol(solver_settings.get(),algLoop));
           return solver;
    }
   #else
@@ -98,7 +69,7 @@ error "operating system not supported"
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }
-   shared_ptr<IAlgLoopSolver> createKinsolSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+   shared_ptr<INonLinearAlgLoopSolver> createKinsolSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algLoop)
    {
      throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol was disabled during build");
    }

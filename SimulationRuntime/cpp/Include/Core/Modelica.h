@@ -219,7 +219,8 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/System/INonLinearAlgLoop.h>
 #include <Core/System/ISystemTypes.h>
 #include <Core/Solver/ISolver.h>
-#include <Core/Solver/IAlgLoopSolver.h>
+#include <Core/Solver/ILinearAlgLoopSolver.h>
+#include <Core/Solver/INonLinearAlgLoopSolver.h>
 #include <Core/System/IAlgLoopSolverFactory.h>
 #include <Core/System/ISimVars.h>
 #include <Core/DataExchange/ISimVar.h>

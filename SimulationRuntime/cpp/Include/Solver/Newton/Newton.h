@@ -7,7 +7,7 @@
 
 #include <Core/System/ILinearAlgLoop.h>                // Interface to AlgLoo
 #include <Core/System/INonLinearAlgLoop.h>                // Interface to AlgLoo
-#include <Core/Solver/IAlgLoopSolver.h>        // Export function from dll
+#include <Core/Solver/INonLinearAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/INonLinSolverSettings.h>
 #include <Solver/Newton/NewtonSettings.h>
 
@@ -32,18 +32,20 @@
 /*****************************************************************************
  * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  *****************************************************************************/
-class Newton : public IAlgLoopSolver
+class Newton : public INonLinearAlgLoopSolver
 {
  public:
-  Newton(INonLinearAlgLoop* algLoop,INonLinSolverSettings* settings);
+  Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
 
   virtual ~Newton();
 
   /// (Re-) initialize the solver
   virtual void initialize();
 
-  /// Solution of a (non-)linear system of equations
-  virtual void solve();
+   /// Solution of a (non-)linear system of equations
+   virtual void solve();
+   //solve for a single instance call
+   virtual void solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve = false);
 
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus();
@@ -62,8 +64,7 @@ class Newton : public IAlgLoopSolver
   INonLinSolverSettings
     *_newtonSettings;           ///< Settings for the solver
 
-  INonLinearAlgLoop
-    *_algLoop;                  ///< Algebraic loop to be solved
+   shared_ptr<INonLinearAlgLoop> _algLoop;                  ///< Algebraic loop to be solved
 
   ITERATIONSTATUS
     _iterationStatus;           ///< Output      - Denotes the status of iteration

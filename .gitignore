@@ -56,6 +56,8 @@ $RECYCLE.BIN/
 .Spotlight-V100
 .Trashes
 
+
+
 # Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
@@ -153,5 +155,7 @@ Parser/ParModelica_Lexer_BaseModelica_Lexer.h
 
 SimulationRuntime/**/test_files/*.jar
 SimulationRuntime/cpp/build_msvc/
-
+# Visual Studio 2015/2017 cache/options directory
+SimulationRuntime/cpp/.vs/
+SimulationRuntime/cpp/CMakeSettings.json
 tags

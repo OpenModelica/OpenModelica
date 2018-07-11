@@ -5,21 +5,7 @@
 
 #include <Core/ModelicaDefine.h>
 #include <Core/Modelica.h>
-#if defined(__vxworks)
-#include <Solver/Newton/Newton.h>
-#include <Solver/Newton/NewtonSettings.h>
-
-extern "C" IAlgLoopSolver* createNewton(INonLinearAlgLoop* algLoop, INonLinSolverSettings* settings)
-{
-  return new Newton(algLoop, settings);
-}
-
-extern "C" INonLinSolverSettings* createNewtonSettings()
-{
-  return new NewtonSettings();
-}
-
-#elif defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
+#if defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
 #include <Solver/Newton/Newton.h>
 #include <Solver/Newton/NewtonSettings.h>
@@ -28,7 +14,7 @@ extern "C" INonLinSolverSettings* createNewtonSettings()
 using boost::extensions::factory;
 
 BOOST_EXTENSION_TYPE_MAP_FUNCTION {
-  types.get<std::map<std::string, factory<IAlgLoopSolver,INonLinearAlgLoop*, INonLinSolverSettings*> > >()
+  types.get<std::map<std::string, factory<INonLinearAlgLoopSolver, INonLinSolverSettings*,shared_ptr<INonLinearAlgLoop> > > >()
     ["newton"].set<Newton>();
   types.get<std::map<std::string, factory<INonLinSolverSettings> > >()
     ["newtonSettings"].set<NewtonSettings>();
@@ -44,9 +30,9 @@ shared_ptr<INonLinSolverSettings> createNewtonSettings()
   return settings;
 }
 
-shared_ptr<IAlgLoopSolver> createNewtonSolver(INonLinearAlgLoop* algLoop, shared_ptr<INonLinSolverSettings> solver_settings)
+shared_ptr<INonLinearAlgLoopSolver> createNewtonSolver(shared_ptr<INonLinSolverSettings> solver_settings,shared_ptr<INonLinearAlgLoop> algloop)
 {
-  shared_ptr<IAlgLoopSolver> solver = shared_ptr<IAlgLoopSolver>(new Newton(algLoop,solver_settings.get()));
+  shared_ptr<INonLinearAlgLoopSolver> solver = shared_ptr<INonLinearAlgLoopSolver>(new Newton(solver_settings.get(),algloop));
   return solver;
 }
 

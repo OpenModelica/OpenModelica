@@ -15,7 +15,7 @@
 #include <Core/Utils/numeric/bindings/ublas.hpp>
 #include <Core/Utils/numeric/utils.h>
 
-DgesvSolver::DgesvSolver(ILinearAlgLoop* algLoop, ILinSolverSettings* settings)
+DgesvSolver::DgesvSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
   : _algLoop            (algLoop)
   , _dimSys             (0)
   , _yNames             (NULL)
@@ -57,7 +57,10 @@ void DgesvSolver::initialize()
 {
   _firstCall = false;
   //(Re-) Initialization of algebraic loop
+  if(_algLoop)
   _algLoop->initialize();
+  else
+	  throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
   int dimDouble = _algLoop->getDimReal();
   int ok = 0;
@@ -117,12 +120,22 @@ void DgesvSolver::initialize()
   LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
+void DgesvSolver::solve(shared_ptr<ILinearAlgLoop> algLoop,bool first_solve)
+{
+	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+}
+
 void DgesvSolver::solve()
 {
-  if (_firstCall) {
-    initialize();
-  }
 
+
+  if(!_algLoop)
+    throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
+
+   if (_firstCall)
+   {
+    initialize();
+   }
   _iterationStatus = CONTINUE;
 
   LOGGER_WRITE_BEGIN("DgesvSolver: eq" + to_string(_algLoop->getEquationIndex()) +
@@ -211,7 +224,7 @@ void DgesvSolver::solve()
   LOGGER_WRITE_END(LC_LS, LL_DEBUG);
 }
 
-IAlgLoopSolver::ITERATIONSTATUS DgesvSolver::getIterationStatus()
+ILinearAlgLoopSolver::ITERATIONSTATUS DgesvSolver::getIterationStatus()
 {
   return _iterationStatus;
 }
