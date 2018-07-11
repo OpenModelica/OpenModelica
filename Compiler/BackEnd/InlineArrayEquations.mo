@@ -134,67 +134,50 @@ protected function getScalarArrayEqns1
   output list<BackendDAE.Equation> outEqnLst;
   output Boolean outFound;
 algorithm
-  (outEqnLst, outFound) := matchcontinue(inEqn, inAccEqnLst)
+  (outEqnLst, outFound) := matchcontinue inEqn
     local
       DAE.ElementSource source;
-      DAE.Exp lhs, rhs, e1_1, e2_1;
+      DAE.Exp lhs, rhs, e1, e2;
       list<DAE.Exp> ea1, ea2;
       list<BackendDAE.Equation> eqns;
-      BackendDAE.EquationAttributes eqAttr;
+      BackendDAE.EquationAttributes attr;
+      DAE.Exp e1_1, e2_1;
 
-    case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs, source=source, attr=eqAttr), _) equation
-      true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
-      true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
-      ea1 = Expression.flattenArrayExpToList(lhs);
-      ea2 = Expression.flattenArrayExpToList(rhs);
-      ((_, eqns)) = List.threadFold3(ea1, ea2, generateScalarArrayEqns2, source, eqAttr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
-    then (eqns, true);
+    case BackendDAE.ARRAY_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
+      algorithm
+        if Expression.isArray(lhs) or Expression.isMatrix(lhs) then
+          ea1 := Expression.flattenArrayExpToList(lhs);
+        else
+          e1 := Expression.extendArrExp(lhs);
+          e1 := ExpressionSimplify.simplify(e1);
+          true := Expression.isArray(e1) or Expression.isMatrix(e1);
+          ea1 := Expression.flattenArrayExpToList(e1);
+        end if;
 
-    case (BackendDAE.ARRAY_EQUATION(left=(lhs as DAE.CREF()), right=rhs, source=source, attr=eqAttr), _) equation
-      // the lhs array is expressed as a cref
-      true = Expression.isArray(rhs) or Expression.isMatrix(rhs);
-      (e1_1, _) = Expression.extendArrExp(lhs, false);
-      ea1 = Expression.flattenArrayExpToList(e1_1);
-      ea2 = Expression.flattenArrayExpToList(rhs);
-      ((_, eqns)) = List.threadFold3(ea1, ea2, generateScalarArrayEqns2, source, eqAttr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
-    then (eqns, true);
+        if Expression.isArray(rhs) or Expression.isMatrix(rhs) then
+          ea2 := Expression.flattenArrayExpToList(rhs);
+        else
+          e2 := Expression.extendArrExp(rhs);
+          e2 := ExpressionSimplify.simplify(e2);
+          true := Expression.isArray(e2) or Expression.isMatrix(e2);
+          ea2 := Expression.flattenArrayExpToList(e2);
+        end if;
 
-    case (BackendDAE.ARRAY_EQUATION(left=lhs, right=rhs as DAE.CREF(), source=source, attr=eqAttr), _) equation
-      true = Expression.isArray(lhs) or Expression.isMatrix(lhs);
-      (e2_1, _) = Expression.extendArrExp(rhs,false);
-      ea1 = Expression.flattenArrayExpToList(lhs);
-      ea2 = Expression.flattenArrayExpToList(e2_1);
-      ((_, eqns)) = List.threadFold3(ea1, ea2, generateScalarArrayEqns2, source, eqAttr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
-    then (eqns,true);
+        ((_, eqns)) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
+          source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
+      then
+        (eqns, true);
 
-    case (BackendDAE.ARRAY_EQUATION(left=lhs as DAE.CREF(),right=rhs as DAE.CREF(), source=source, attr=eqAttr), _) equation
-      (e1_1, _) = Expression.extendArrExp(lhs, false);
-      (e2_1, _) = Expression.extendArrExp(rhs, false);
-      ea1 = Expression.flattenArrayExpToList(e1_1);
-      ea2 = Expression.flattenArrayExpToList(e2_1);
-      ((_, eqns)) = List.threadFold3(ea1, ea2, generateScalarArrayEqns2, source, eqAttr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
-    then (eqns, true);
+    case BackendDAE.COMPLEX_EQUATION(left = lhs, right = rhs, source = source, attr = attr)
+      algorithm
+        ea1 := Expression.splitRecord(lhs, Expression.typeof(lhs));
+        ea2 := Expression.splitRecord(rhs, Expression.typeof(rhs));
+        ((_, eqns)) := List.threadFold3(ea1, ea2, generateScalarArrayEqns2,
+          source, attr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
+      then
+        (eqns, true);
 
-    case (BackendDAE.ARRAY_EQUATION(left=lhs,right=rhs, source=source, attr=eqAttr), _) equation
-      (e1_1, _) = Expression.extendArrExp(lhs, false);
-      (e2_1, _) = Expression.extendArrExp(rhs, false);
-      (e1_1,_) = ExpressionSimplify.simplify(e1_1);
-      (e2_1,_) = ExpressionSimplify.simplify(e2_1);
-      true = Expression.isArray(e1_1) or Expression.isMatrix(e1_1);
-      true = Expression.isArray(e2_1) or Expression.isMatrix(e2_1);
-      ea1 = Expression.flattenArrayExpToList(e1_1);
-      ea2 = Expression.flattenArrayExpToList(e2_1);
-      ((_, eqns)) = List.threadFold3(ea1, ea2, generateScalarArrayEqns2, source, eqAttr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
-    then (eqns, true);
-
-    case (BackendDAE.COMPLEX_EQUATION(left=lhs, right=rhs, source=source, attr=eqAttr), _) equation
-      ea1 = Expression.splitRecord(lhs,Expression.typeof(lhs));
-      ea2 = Expression.splitRecord(rhs,Expression.typeof(rhs));
-      ((_, eqns)) = List.threadFold3(ea1, ea2, generateScalarArrayEqns2, source, eqAttr, DAE.EQUALITY_EXPS(lhs, rhs), (1, inAccEqnLst));
-    then (eqns, true);
-
-    case (_, _)
-    then (inEqn::inAccEqnLst, false);
+    else (inEqn :: inAccEqnLst, false);
   end matchcontinue;
 end getScalarArrayEqns1;
 

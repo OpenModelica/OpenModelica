@@ -165,7 +165,7 @@ public
       case Op.POW_SCALAR_ARRAY  then DAE.POW_SCALAR_ARRAY(ty);
       case Op.POW_ARRAY_SCALAR  then DAE.POW_ARRAY_SCALAR(ty);
       case Op.POW_MATRIX        then DAE.POW_ARR(ty);
-      case Op.UMINUS            then DAE.UMINUS(ty);
+      case Op.UMINUS            then if Type.isArray(op.ty) then DAE.UMINUS_ARR(ty) else DAE.UMINUS(ty);
       case Op.AND               then DAE.AND(ty);
       case Op.OR                then DAE.OR(ty);
       case Op.NOT               then DAE.NOT(ty);

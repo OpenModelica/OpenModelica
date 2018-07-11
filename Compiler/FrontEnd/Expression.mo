@@ -12093,7 +12093,7 @@ end expandExpression;
 public function extendArrExp "author: Frenkel TUD 2010-07
   alternative name: vectorizeExp"
   input DAE.Exp inExp;
-  input Boolean inExpanded "True if something was expanded, otherwise false.";
+  input Boolean inExpanded = false "True if something was expanded, otherwise false.";
   output DAE.Exp outExp;
   output Boolean outExpanded;
 algorithm
