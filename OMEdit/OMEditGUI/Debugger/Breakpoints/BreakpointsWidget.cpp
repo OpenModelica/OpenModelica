@@ -37,6 +37,7 @@
 #include "Debugger/GDB/CommandFactory.h"
 #include "Util/Helper.h"
 #include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/ItemDelegate.h"
 
 #include <QGridLayout>
 #include <QMenu>

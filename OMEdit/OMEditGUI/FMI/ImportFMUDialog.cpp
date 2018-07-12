@@ -43,6 +43,7 @@
 #include "Git/CommitChangesDialog.h"
 
 #include <QMessageBox>
+#include <QGridLayout>
 
 /*!
  * \class ImportFMUDialog

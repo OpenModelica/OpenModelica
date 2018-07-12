@@ -215,6 +215,7 @@ private:
   void setUpForm();
   bool validate();
   void initializeFields(bool isReSimulate, SimulationOptions simulationOptions);
+  void applySimulationOptions(SimulationOptions simulationOptions);
   bool translateModel(QString simulationParameters);
   SimulationOptions createSimulationOptions();
   void createAndShowSimulationOutputWidget(SimulationOptions simulationOptions);

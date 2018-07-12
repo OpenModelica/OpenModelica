@@ -36,12 +36,14 @@
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"
 
 #include <QMessageBox>
+#include <QGridLayout>
 
 /*!
  * \class ImportFMUModelDescriptionDialog

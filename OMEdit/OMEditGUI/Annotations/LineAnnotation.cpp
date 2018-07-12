@@ -34,6 +34,7 @@
 
 #include "MainWindow.h"
 #include "LineAnnotation.h"
+#include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
 
 #include <QMessageBox>

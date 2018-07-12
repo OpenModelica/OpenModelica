@@ -37,6 +37,7 @@
 #include "Options/OptionsDialog.h"
 #include "Util/StringHandler.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "Editors/TransformationsEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include <qjson/parser.h>

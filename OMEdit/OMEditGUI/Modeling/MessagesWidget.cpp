@@ -34,6 +34,7 @@
 
 #include "MessagesWidget.h"
 #include "MainWindow.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "LibraryTreeWidget.h"
 #include "Util/Helper.h"
 #include "Options/OptionsDialog.h"

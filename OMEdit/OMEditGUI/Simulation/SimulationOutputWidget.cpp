@@ -34,9 +34,11 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "SimulationOutputHandler.h"
 #include "Editors/CEditor.h"
+#include "Editors/TextEditor.h"
 #include "SimulationProcessThread.h"
 #include "SimulationDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
@@ -582,7 +584,7 @@ void SimulationOutputWidget::simulationProcessStarted()
   mpCancelButton->setText(Helper::cancelSimulation);
   mpCancelButton->setEnabled(true);
   // save the last modified datetime of result file.
-  QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getResultFileName()));
+  QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getFullResultFileName()));
   if (resultFileInfo.exists()) {
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
   }

@@ -35,6 +35,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "MainWindow.h"
 #include "LibraryTreeWidget.h"
+#include "ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "MessagesWidget.h"
 #include "DocumentationWidget.h"

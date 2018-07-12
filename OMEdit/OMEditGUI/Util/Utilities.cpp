@@ -34,8 +34,10 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#include "StringHandler.h"
+#include "OMC/OMCProxy.h"
+#include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
-#include "Modeling/LibraryTreeWidget.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -44,6 +46,8 @@
 #include <QPainter>
 #include <QColorDialog>
 #include <QXmlSchema>
+#include <QXmlSchemaValidator>
+#include <QDir>
 
 SplashScreen *SplashScreen::mpInstance = 0;
 

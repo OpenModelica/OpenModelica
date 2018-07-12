@@ -121,6 +121,7 @@ SOURCES += main.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Modeling/MessagesWidget.cpp \
+  Modeling/ItemDelegate.cpp \
   Modeling/LibraryTreeWidget.cpp \
   Modeling/Commands.cpp \
   Modeling/CoOrdinateSystem.cpp \
@@ -153,6 +154,7 @@ SOURCES += main.cpp \
   Simulation/SimulationOutputWidget.cpp \
   Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
+  Simulation/OpcUaClient.cpp \
   TLM/FetchInterfaceDataDialog.cpp \
   TLM/FetchInterfaceDataThread.cpp \
   TLM/TLMCoSimulationDialog.cpp \
@@ -186,8 +188,7 @@ SOURCES += main.cpp \
   Git/CleanDialog.cpp \
   OMEditApplication.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
-  Traceability/TraceabilityInformationURI.cpp \
-  Simulation/OpcUaClient.cpp
+  Traceability/TraceabilityInformationURI.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -195,7 +196,9 @@ HEADERS  += Util/Helper.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
+  Simulation/SimulationOptions.h \
   Modeling/MessagesWidget.h \
+  Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
   Modeling/Commands.h \
   Modeling/CoOrdinateSystem.h \
@@ -224,11 +227,11 @@ HEADERS  += Util/Helper.h \
   Component/ComponentProperties.h \
   Component/Transformation.h \
   Modeling/DocumentationWidget.h \
-  Simulation/SimulationOptions.h \
   Simulation/SimulationDialog.h \
   Simulation/SimulationOutputWidget.h \
   Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
+  Simulation/OpcUaClient.h \
   TLM/FetchInterfaceDataDialog.h \
   TLM/FetchInterfaceDataThread.h \
   TLM/TLMCoSimulationOptions.h \
@@ -263,8 +266,7 @@ HEADERS  += Util/Helper.h \
   Git/CleanDialog.h \
   OMEditApplication.h \
   Traceability/TraceabilityGraphViewWidget.h \
-  Traceability/TraceabilityInformationURI.h \
-  Simulation/OpcUaClient.h
+  Traceability/TraceabilityInformationURI.h
 
 CONFIG(osg) {
 

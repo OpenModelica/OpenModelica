@@ -37,36 +37,12 @@
 
 #include "OMC/OMCProxy.h"
 #include "Util/StringHandler.h"
+#include "Simulation/SimulationOptions.h"
 
-#include <QItemDelegate>
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 
-class ItemDelegate : public QItemDelegate
-{
-  Q_OBJECT
-private:
-  bool mDrawRichText;
-  QPoint mLastTextPos;
-  bool mDrawGrid;
-  QColor mGridColor;
-  QObject *mpParent;
-public:
-  ItemDelegate(QObject *pParent = 0, bool drawRichText = false, bool drawGrid = false);
-  QColor getGridColor() {return mGridColor;}
-  void setGridColor(QColor color) {mGridColor = color;}
-  QString formatDisplayText(QVariant variant) const;
-  void initTextDocument(QTextDocument *pTextDocument, QFont font, int width) const;
-  virtual void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  void drawHover(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  virtual QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  virtual bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index);
-  virtual QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-  virtual void setEditorData(QWidget *editor, const QModelIndex &index) const;
-public slots:
-  void unitComboBoxChanged(QString text);
-};
-
+class GraphicsView;
 class ModelWidget;
 class ShapeAnnotation;
 class Component;
@@ -170,6 +146,7 @@ public:
   void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView) {emit coOrdinateSystemUpdated(pGraphicsView);}
 
   OMCInterface::getClassInformation_res mClassInformation;
+  SimulationOptions mSimulationOptions;
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;

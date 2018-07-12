@@ -33,6 +33,7 @@
 
 #include "DebuggerConfigurationsDialog.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Util/Helper.h"
 #include "Util/StringHandler.h"

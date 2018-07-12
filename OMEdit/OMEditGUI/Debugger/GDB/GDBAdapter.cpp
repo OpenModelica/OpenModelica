@@ -1401,7 +1401,7 @@ void GDBAdapter::handleGDBProcessStarted()
  */
 void GDBAdapter::handleGDBProcessStartedForSimulation()
 {
-  QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getResultFileName()));
+  QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getFullResultFileName()));
   if (resultFileInfo.exists()) {
     mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
   }

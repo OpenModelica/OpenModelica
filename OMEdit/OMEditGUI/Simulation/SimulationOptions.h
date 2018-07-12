@@ -34,6 +34,9 @@
 #ifndef SIMULATIONOPTIONS_H
 #define SIMULATIONOPTIONS_H
 
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
+
 #include <QString>
 #include <QVariant>
 #include <QStringList>
@@ -44,10 +47,10 @@ public:
   SimulationOptions()
   {
     setClassName("");
-    setStartTime("");
-    setStopTime("");
-    setMethod("");
-    setTolerance("");
+    setStartTime("0");
+    setStopTime("1");
+    setMethod("dassl");
+    setTolerance("1e-6");
     setJacobian("");
     setRootFinding(true);
     setRestartAfterEvent(true);
@@ -55,7 +58,7 @@ public:
     setMaxStepSize("");
     setMaxIntegration(5);
     setCflags("");
-    setNumberOfProcessors(1);
+    setNumberOfProcessors(MainWindow::instance()->getOMCProxy()->numProcessors());
     setBuildOnly(false);
     setLaunchTransformationalDebugger(false);
     setLaunchAlgorithmicDebugger(false);
@@ -66,7 +69,7 @@ public:
     setSinglePrecision(false);
     setFileNamePrefix("");
     setResultFileName("");
-    setVariableFilter("");
+    setVariableFilter(".*");
     setProtectedVariables(false);
     setEquidistantTimeGrid(true);
     setStoreVariablesAtEvents(true);
@@ -83,8 +86,9 @@ public:
     setProfiling("none");
     setCPUTime(false);
     setEnableAllWarnings(true);
-    setLogStreams(QStringList());
+    setLogStreams(QStringList() << "LOG_STATS");
     setAdditionalSimulationFlags("");
+    setInteractiveSimulationPortNumber(4841);
     setIsValid(false);
     setReSimulate(false);
     setWorkingDirectory("");
@@ -140,7 +144,8 @@ public:
   QString getFileNamePrefix() {return mFileNamePrefix;}
   QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
   void setResultFileName(QString resultFileName) {mResultFileName = resultFileName;}
-  QString getResultFileName() {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
+  QString getResultFileName() {return mResultFileName;}
+  QString getFullResultFileName() {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
   void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
   QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
   void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
