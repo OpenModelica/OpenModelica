@@ -229,6 +229,8 @@ public:
                                    const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
                                    const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
                                    const char* variables);
+
+  QList<QString> mFMUDirectoriesList;
 private:
   bool mDebug;
   OMCProxy *mpOMCProxy;

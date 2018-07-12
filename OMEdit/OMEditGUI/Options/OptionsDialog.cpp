@@ -36,6 +36,9 @@
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
 #include "OMS/OMSProxy.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
@@ -744,7 +747,7 @@ void OptionsDialog::readFMISettings()
     mpFMIPage->setFMIExportType(mpSettings->value("FMIExport/Type").toString());
   }
   if (mpSettings->contains("FMIExport/FMUName")) {
-    mpFMIPage->getFMUNameTextBox()->setText(mpSettings->value("FMI/FMUName").toString());
+    mpFMIPage->getFMUNameTextBox()->setText(mpSettings->value("FMIExport/FMUName").toString());
   }
   // read platforms
   QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
@@ -765,6 +768,9 @@ void OptionsDialog::readFMISettings()
         i++;
       }
     }
+  }
+  if (mpSettings->contains("FMIImport/DeleteFMUDirectoyAndModel")) {
+    mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->setChecked(mpSettings->value("FMIImport/DeleteFMUDirectoyAndModel").toBool());
   }
 }
 
@@ -1233,6 +1239,7 @@ void OptionsDialog::saveFMISettings()
     i++;
   }
   mpSettings->setValue("FMIExport/Platforms", platforms);
+  mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked());
 }
 
 /*!
@@ -4318,11 +4325,20 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(mpFMUNameTextBox, 2, 1);
   pExportLayout->addWidget(mpPlatformsGroupBox, 3, 0, 1, 2);
   mpExportGroupBox->setLayout(pExportLayout);
+  // import groupbox
+  mpImportGroupBox = new QGroupBox(tr("Import"));
+  mpDeleteFMUDirectoryAndModelCheckBox = new QCheckBox(tr("Delete FMU directory and generated model when OMEdit is closed"));
+  // set the import group box layout
+  QGridLayout *pImportLayout = new QGridLayout;
+  pImportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pImportLayout->addWidget(mpDeleteFMUDirectoryAndModelCheckBox, 0, 0);
+  mpImportGroupBox->setLayout(pImportLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpExportGroupBox);
+  pMainLayout->addWidget(mpImportGroupBox);
   setLayout(pMainLayout);
 }
 

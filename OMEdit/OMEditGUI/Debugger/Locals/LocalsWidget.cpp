@@ -34,11 +34,16 @@
 #include "Debugger/Locals/LocalsWidget.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/ModelicaValue.h"
 #include "Debugger/GDB/CommandFactory.h"
 #include "Util/Helper.h"
+
+#include <QSplitter>
+#include <QGridLayout>
+#include <QHBoxLayout>
 
 /*!
  * \class LocalsTreeItem

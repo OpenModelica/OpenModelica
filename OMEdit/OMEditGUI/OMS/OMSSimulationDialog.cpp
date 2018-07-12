@@ -35,6 +35,7 @@
 #include "MainWindow.h"
 #include "Util/Helper.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "OMSSimulationOutputWidget.h"
 #include "Options/OptionsDialog.h"
 #include "Plotting/VariablesWidget.h"

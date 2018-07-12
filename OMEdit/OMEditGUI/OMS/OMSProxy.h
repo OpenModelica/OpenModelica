@@ -82,7 +82,6 @@ public:
   bool initialize(QString ident);
   bool simulate_asynchronous(QString ident/*, int* terminate*/);
   bool reset(QString ident);
-  bool terminate(QString ident);
   void setLoggingLevel(int logLevel);
   void setLogFile(QString filename);
   void setTempDirectory(QString path);

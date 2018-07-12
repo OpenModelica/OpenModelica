@@ -36,10 +36,9 @@
 #define OMCPROXY_H
 
 #include "OpenModelicaScriptingAPIQt.h"
-#include "Component/Component.h"
 #include "Util/StringHandler.h"
-#include "Util/Utilities.h"
 #include "Util/Helper.h"
+#include "Util/Utilities.h"
 
 class CustomExpressionBox;
 class ComponentInfo;

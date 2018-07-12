@@ -44,6 +44,7 @@ if test -z "$WITH_OSG"; then
 else
   AC_MSG_RESULT([WITH_OSG=$WITH_OSG])
 fi
+
 if test "$WITH_OSG" = 1; then
   AC_PREPROC_IFELSE(
         [AC_LANG_PROGRAM([[]], [[]])],
@@ -64,6 +65,7 @@ if test "$WITH_OSG" = 1; then
   )
   CPPFLAGS="$OLD_CPPFLAGS"
 fi
+
 if test "$WITH_OSG" = 1; then
   AC_MSG_CHECKING([for osg/qt broken OpenGL])
   OLD_CPPFLAGS="$CPPFLAGS"
@@ -84,15 +86,39 @@ if test "$WITH_OSG" = 1; then
   )
   CPPFLAGS="$OLD_CPPFLAGS"
 fi
+
+if test "$WITH_OSG" = 1; then
+  AC_MSG_CHECKING([for osg/qt broken OpenGL])
+  OLD_CPPFLAGS="$CPPFLAGS"
+  CPPFLAGS="$CPPFLAGS -Wl,--unresolved-symbols=ignore-all"
+  AC_LINK_IFELSE( [AC_LANG_PROGRAM([[]], [[]])],
+    [],
+    [CPPFLAGS="$OLD_CPPFLAGS"]
+  )
+  CPPFLAGS="$CPPFLAGS -fPIC -I$QT_INSTALL_HEADERS -I$QT_INSTALL_HEADERS/QtOpenGL -I$QT_INSTALL_HEADERS/QtWidgets"
+  AC_LINK_IFELSE(
+        [AC_LANG_PROGRAM([[
+#include <osg/GL>
+#include <QtWidgets>
+]],
+  [[]])],
+  [AC_MSG_RESULT([OK])],
+  [AC_MSG_RESULT([no (giving up on OSG)]); WITH_OSG=0]
+  )
+  CPPFLAGS="$OLD_CPPFLAGS"
+fi
+
 if test "$WITH_OSG" = 1; then
   AC_CHECK_HEADERS(osg/Uniform, [], [WITH_OSG=0])
 fi
 
 if test "$WITH_OSG" = 0; then
   CPPFLAGS="$CPPFLAGS -DWITHOUT_OSG"
+  AC_MSG_RESULT("Disabled OSG")
 else
   QMAKE_CONFIG_OSG="CONFIG += osg"
   LIBOSG="-losg -losgViewer -losgDB -losgGA -lOpenThreads"
+  AC_MSG_RESULT("OSG is enabled")
 fi
 
 for flag in -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter; do

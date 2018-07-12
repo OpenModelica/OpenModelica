@@ -35,6 +35,8 @@
 #include "VariablesWidget.h"
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
 #include "util/read_matlab4.h"
@@ -1329,11 +1331,11 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
   if (initFile.open(QIODevice::ReadOnly)) {
     if (initXmlDocument.setContent(&initFile)) {
       VariablesTreeItem *pTopVariableTreeItem;
-      pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getResultFileName(),
+      pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getFullResultFileName(),
                                                                          mpVariablesTreeModel->getRootVariablesTreeItem());
       if (pTopVariableTreeItem) {
         QHash<QString, QHash<QString, QString> > variables;
-        readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getResultFileName(), &variables);
+        readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getFullResultFileName(), &variables);
         findVariableAndUpdateValue(initXmlDocument, variables);
       }
     } else {

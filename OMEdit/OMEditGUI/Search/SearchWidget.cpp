@@ -44,6 +44,8 @@
 #include <QMenu>
 #include <QHeaderView>
 #include <QToolBar>
+#include <QGridLayout>
+#include <QVBoxLayout>
 
 /*!
  * \brief SearchWidget::SearchWidget

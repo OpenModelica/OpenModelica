@@ -41,6 +41,7 @@
 #include "Util/StringHandler.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Commands.h"
+#include "Modeling/ItemDelegate.h"
 
 #include <QApplication>
 #include <QMessageBox>

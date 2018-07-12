@@ -36,7 +36,6 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Options/OptionsDialog.h"
-#include "Modeling/ModelWidgetContainer.h"
 #include "ShapePropertiesDialog.h"
 #include "Modeling/Commands.h"
 #include "Component/ComponentProperties.h"

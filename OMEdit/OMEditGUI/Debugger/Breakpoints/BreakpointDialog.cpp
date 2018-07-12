@@ -34,13 +34,16 @@
 #include "BreakpointDialog.h"
 #include "MainWindow.h"
 #include "BreakpointsWidget.h"
+#include "BreakpointMarker.h"
 #include "Util/Helper.h"
 #include "Util/Utilities.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
+#include "Modeling/ModelWidgetContainer.h"
 
 #include <limits>
 #include <QMessageBox>
+#include <QGridLayout>
 
 /*!
  * \class BreakpointDialog

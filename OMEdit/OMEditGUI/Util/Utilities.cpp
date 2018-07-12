@@ -34,8 +34,10 @@
 
 #include "Utilities.h"
 #include "Helper.h"
+#include "StringHandler.h"
+#include "OMC/OMCProxy.h"
+#include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
-#include "Modeling/LibraryTreeWidget.h"
 
 #include <QApplication>
 #include <QDesktopWidget>
@@ -44,6 +46,8 @@
 #include <QPainter>
 #include <QColorDialog>
 #include <QXmlSchema>
+#include <QXmlSchemaValidator>
+#include <QDir>
 
 SplashScreen *SplashScreen::mpInstance = 0;
 
@@ -494,6 +498,40 @@ void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString
 qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
 {
   return (value - offset) / scaleFactor;
+}
+
+/*!
+ * \brief Utilities::arrayExpressionUnitConversion
+ * If the expression is like an array of constants see ticket:4840
+ * \param pOMCProxy
+ * \param modifierValue
+ * \param fromUnit
+ * \param toUnit
+ * \return
+ */
+QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit)
+{
+  QStringList modifierValuesArray = StringHandler::removeFirstLastCurlBrackets(modifierValue).split(",");
+  QStringList modifierConvertedValuesArray;
+  OMCInterface::convertUnits_res convertUnit;
+  int i = 0;
+  bool ok = true;
+  foreach (QString modifierValueArrayElement, modifierValuesArray) {
+    qreal modifierRealValueArrayElement = modifierValueArrayElement.toDouble(&ok);
+    if (ok) {
+      if (i == 0) {
+        convertUnit = pOMCProxy->convertUnits(fromUnit, toUnit);
+      }
+      if (convertUnit.unitsCompatible) {
+        modifierRealValueArrayElement = Utilities::convertUnit(modifierRealValueArrayElement, convertUnit.offset, convertUnit.scaleFactor);
+        modifierConvertedValuesArray.append(QString::number(modifierRealValueArrayElement));
+      }
+    }
+  }
+  if (ok) {
+    modifierValue = QString("{%1}").arg(modifierConvertedValuesArray.join(","));
+  }
+  return modifierValue;
 }
 
 Label* Utilities::getHeadingLabel(QString heading)
@@ -1003,6 +1041,27 @@ QList<QPointF> Utilities::liangBarskyClipper(float xmin, float ymin, float xmax,
 
 //  qDebug() << x1 << y1 << xn1 << yn1 << x2 << y2 << xn2 << yn2;
   return QList<QPointF>() << QPointF(xn1, yn1) << QPointF(xn2, yn2);
+}
+
+/*!
+ * \brief Utilities::removeDirectoryRecursivly
+ * Removes the directory recursively.
+ * \param path
+ */
+void Utilities::removeDirectoryRecursivly(QString path)
+{
+  QFileInfo fileInfo(path);
+  if (fileInfo.isDir()) {
+    QDir dir(path);
+    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
+                                          QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+    for (int i = 0 ; i < filesList.count() ; ++i) {
+      removeDirectoryRecursivly(QString("%1/%2").arg(path, filesList.at(i)));
+    }
+    QDir().rmdir(path);
+  } else {
+    QFile::remove(path);
+  }
 }
 
 /*!

@@ -67,6 +67,8 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+class OMCProxy;
+
 class SplashScreen : public QSplashScreen
 {
   Q_OBJECT
@@ -434,6 +436,7 @@ namespace Utilities {
   QSettings* getApplicationSettings();
   void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
+  QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
   bool detectBOM(QString fileName);
@@ -474,6 +477,7 @@ namespace Utilities {
   float maxi(float arr[],int n);
   float mini(float arr[], int n);
   QList<QPointF> liangBarskyClipper(float xmin, float ymin, float xmax, float ymax, float x1, float y1, float x2, float y2);
+  void removeDirectoryRecursivly(QString path);
   qreal mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
 
 } // namespace Utilities

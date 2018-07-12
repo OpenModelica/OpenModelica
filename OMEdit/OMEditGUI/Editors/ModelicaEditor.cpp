@@ -35,13 +35,17 @@
 #include "ModelicaEditor.h"
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
+#include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Debugger/Breakpoints/BreakpointMarker.h"
 #include "Util/Helper.h"
 #include "Options/NotificationsDialog.h"
+
 #include <QCompleter>
 #include <QMenu>
 #include <QMessageBox>
+
 
 /*!
  * \class ModelicaEditor

@@ -72,16 +72,16 @@ win32 {
     QMAKE_LFLAGS_RELEASE =
     # win32 vs. win64
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
     }
     LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
   } else { # debug
     contains(QT_ARCH, i386) { # 32-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
     } else { # 64-bit
-      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib -L$$(OPENMODELICAHOME)/../OMCompiler/3rdParty/FMIL/install/lib
+      LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
     }
     LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
   }
@@ -89,19 +89,17 @@ win32 {
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
     -lws2_32 \
-    -L../../../OMSimulator/install/mingw/bin -lOMSimulatorLib
+    -L$$(OMBUILDDIR)/lib -lOMSimulatorLib
 
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
+    $$(OMBUILDDIR)/include \
     $$(OMBUILDDIR)/include/omplot/qwt \
-    $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c \
-    ../../../OMSimulator/install/mingw/include
+    $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
 
   RC_FILE = rc_omedit.rc
   CONFIG += osg
 } else { # Unix libraries and includes
   include(OMEdit.config)
-  LIBS += -L../../../OMSimulator/install/linux/bin -lOMSimulatorLib
-  INCLUDEPATH += ../../../OMSimulator/install/linux/include
   # required for backtrace
   # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
   # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
@@ -125,6 +123,7 @@ SOURCES += main.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
   Modeling/MessagesWidget.cpp \
+  Modeling/ItemDelegate.cpp \
   Modeling/LibraryTreeWidget.cpp \
   Modeling/Commands.cpp \
   Modeling/CoOrdinateSystem.cpp \
@@ -157,6 +156,7 @@ SOURCES += main.cpp \
   Simulation/SimulationOutputWidget.cpp \
   Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
+  Simulation/OpcUaClient.cpp \
   TLM/FetchInterfaceDataDialog.cpp \
   TLM/FetchInterfaceDataThread.cpp \
   TLM/TLMCoSimulationDialog.cpp \
@@ -191,7 +191,6 @@ SOURCES += main.cpp \
   OMEditApplication.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
   Traceability/TraceabilityInformationURI.cpp \
-  Simulation/OpcUaClient.cpp \
   OMS/OMSProxy.cpp \
   Component/FMUProperties.cpp \
   OMS/OMSSimulationDialog.cpp \
@@ -203,7 +202,9 @@ HEADERS  += Util/Helper.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
+  Simulation/SimulationOptions.h \
   Modeling/MessagesWidget.h \
+  Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
   Modeling/Commands.h \
   Modeling/CoOrdinateSystem.h \
@@ -232,11 +233,11 @@ HEADERS  += Util/Helper.h \
   Component/ComponentProperties.h \
   Component/Transformation.h \
   Modeling/DocumentationWidget.h \
-  Simulation/SimulationOptions.h \
   Simulation/SimulationDialog.h \
   Simulation/SimulationOutputWidget.h \
   Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
+  Simulation/OpcUaClient.h \
   TLM/FetchInterfaceDataDialog.h \
   TLM/FetchInterfaceDataThread.h \
   TLM/TLMCoSimulationOptions.h \
@@ -272,7 +273,6 @@ HEADERS  += Util/Helper.h \
   OMEditApplication.h \
   Traceability/TraceabilityGraphViewWidget.h \
   Traceability/TraceabilityInformationURI.h \
-  Simulation/OpcUaClient.h \
   OMS/OMSProxy.h \
   Component/FMUProperties.h \
   OMS/OMSSimulationOptions.h \
@@ -330,7 +330,7 @@ INCLUDEPATH += ../../qjson/build/include
 
 INCLUDEPATH += $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c/util \
-  $$OPENMODELICAHOME/../OMCompiler/3rdParty/FMIL/install/include
+  $$OPENMODELICAHOME/include/omc/fmil
 
 OTHER_FILES += Resources/css/stylesheet.qss \
   Resources/XMLSchema/tlmModelDescription.xsd \

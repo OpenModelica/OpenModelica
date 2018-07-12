@@ -43,6 +43,7 @@
 #include "Git/CommitChangesDialog.h"
 
 #include <QMessageBox>
+#include <QGridLayout>
 
 /*!
  * \class ImportFMUDialog
@@ -152,7 +153,22 @@ void ImportFMUDialog::importFMU()
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU File")), Helper::ok);
     return;
   }
-  QString fmuFileName = MainWindow::instance()->getOMCProxy()->importFMU(mpFmuFileTextBox->text(), mpOutputDirectoryTextBox->text(),
+  /* ticket:4959 Create a unique folder for each FMU
+   * Otherwise we have issues during simulation since the files are mixed.
+   */
+  QString outputDirectory;
+  if (mpOutputDirectoryTextBox->text().isEmpty()) {
+    // Create an output directory for FMU binaries and files
+    outputDirectory = QString("%1/temp%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory())
+                      .arg(QDateTime::currentDateTime().toString("yyyyMMddhhmmsszzz"));
+    if (!QDir().exists(outputDirectory)) {
+      QDir().mkpath(outputDirectory);
+    }
+    MainWindow::instance()->mFMUDirectoriesList.append(outputDirectory);
+  } else {
+    outputDirectory = mpOutputDirectoryTextBox->text();
+  }
+  QString fmuFileName = MainWindow::instance()->getOMCProxy()->importFMU(mpFmuFileTextBox->text(), outputDirectory,
                                                                          mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt(),
                                                                          mpDebugLoggingCheckBox->isChecked(),
                                                                          mpGenerateIntputConnectors->isChecked(),

@@ -33,11 +33,13 @@
 
 #include "AttachToProcessDialog.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QGridLayout>
 
 /*!
  * \class AttachToProcessDialog

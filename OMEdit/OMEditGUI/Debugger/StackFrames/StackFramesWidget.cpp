@@ -35,12 +35,14 @@
 #include "Options/OptionsDialog.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ItemDelegate.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/GDB/CommandFactory.h"
 #include "Debugger/Locals/LocalsWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
+#include <QHBoxLayout>
 
 StackFrameItem::StackFrameItem(QString level, QString address, QString function, QString line, QString file, QString fullName, StackFramesTreeWidget *pStackFramesTreeWidget)
   : QTreeWidgetItem(pStackFramesTreeWidget)

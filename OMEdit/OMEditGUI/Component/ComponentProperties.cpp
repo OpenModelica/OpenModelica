@@ -166,6 +166,7 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
   if (!fromUnit.isEmpty() && mpUnitComboBox->currentText().compare(fromUnit) != 0) {
     bool ok = true;
     qreal realValue = value.toDouble(&ok);
+    // if the modifier is a literal constant
     if (ok) {
       OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
       OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
@@ -173,6 +174,8 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
         value = QString::number(realValue);
       }
+    } else { // if expression
+      value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->currentText());
     }
   }
   mDefaultValue = defaultValue;
@@ -1170,12 +1173,17 @@ void ComponentParameters::updateComponentParameters()
     if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
       bool ok = true;
       qreal componentModifierRealValue = componentModifierValue.toDouble(&ok);
+      // if the modifier is a literal constant
       if (ok) {
         OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
         if (convertUnit.unitsCompatible) {
           componentModifierRealValue = Utilities::convertUnit(componentModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
           componentModifierValue = QString::number(componentModifierRealValue);
         }
+      } else { // if expression
+        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue,
+                                                                          pParameter->getUnitComboBox()->currentText(),
+                                                                          pParameter->getUnit());
       }
     }
     if (pParameter->isValueModified()) {

@@ -31,11 +31,14 @@
 #include "FetchInterfaceDataDialog.h"
 #include "Util/Helper.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ModelWidgetContainer.h"
+#include "Modeling/ItemDelegate.h"
 #include "Util/Utilities.h"
 #include "FetchInterfaceDataThread.h"
 
 #include <QPushButton>
 #include <QObject>
+#include <QGridLayout>
 
 /*!
  * \class FetchInterfaceDataDialog

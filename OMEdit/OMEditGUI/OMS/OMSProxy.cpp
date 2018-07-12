@@ -525,18 +525,6 @@ bool OMSProxy::reset(QString ident)
 }
 
 /*!
- * \brief OMSProxy::terminate
- * Terminates a composite model (works for both FMI and TLM).
- * \param ident
- * \return
- */
-bool OMSProxy::terminate(QString ident)
-{
-  oms_status_enu_t status = oms2_terminate(ident.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::setDebugLogging
  * Sets the logging level.
  * \param logLevel
@@ -806,7 +794,7 @@ bool OMSProxy::setCommunicationInterval(QString cref, double communicationInterv
  */
 bool OMSProxy::setResultFile(QString cref, QString filename)
 {
-  oms_status_enu_t status = oms2_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str());
+  oms_status_enu_t status = oms2_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), 1);
   return statusToBool(status);
 }
 
