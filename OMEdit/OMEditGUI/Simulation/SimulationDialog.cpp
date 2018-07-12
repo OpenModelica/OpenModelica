@@ -499,13 +499,17 @@ void SimulationDialog::setUpForm()
   mpLoggingGroupLayout = new QGridLayout;
   // create log stream checkboxes
   int row = 0;
+  int column = 0;
   for (int i = 0 ; i < logStreamNames.size() ; i++) {
     QCheckBox *pLogStreamCheckBox = new QCheckBox(logStreamNames[i]);
     pLogStreamCheckBox->setToolTip(logSteamDescriptions[i]);
-    if (i % 2 == 0) {
-      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, 0);
-    } else {
-      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, 1);
+    if (column == 0) {
+      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column++);
+    } else if (column == 1) {
+      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column++);
+    } else if (column == 2) {
+      mpLoggingGroupLayout->addWidget(pLogStreamCheckBox, row, column);
+      column = 0;
       row++;
     }
   }
