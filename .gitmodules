@@ -28,3 +28,6 @@
 [submodule "OMShell"]
 	path = OMShell
 	url = ../OMShell.git
+[submodule "OMSimulator"]
+	path = OMSimulator
+	url = ../OMSimulator.git
