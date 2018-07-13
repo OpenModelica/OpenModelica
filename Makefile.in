@@ -11,7 +11,7 @@ omlibrary-all:
 	$(MAKE) -C libraries BUILD_DIR=@OMBUILDDIR@/lib/omlibrary "host_short=@host_short@" "RPATH_QMAKE=@RPATH_QMAKE@ @CMAKE_LDFLAGS@" "SHREXT=@SHREXT@" all
 omplot: omc
 	$(MAKE) -C OMPlot
-omedit: omc omplot
+omedit: omc omplot omsimulator
 	$(MAKE) -C OMEdit
 omsimulator:
 	$(MAKE) -C OMSimulator config-3rdParty

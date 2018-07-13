@@ -52,7 +52,7 @@ omlibrary-all:
 omplot: omc qtclientsDLLs
 	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
-omedit: omplot qtclientsDLLs
+omedit: omplot omsimulator qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR)
 
 omsimulator:
