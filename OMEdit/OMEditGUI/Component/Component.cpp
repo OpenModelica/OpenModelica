@@ -35,6 +35,7 @@
 #include "MainWindow.h"
 #include "Component.h"
 #include "ComponentProperties.h"
+#include "FMUProperties.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 
@@ -374,7 +375,9 @@ bool ComponentInfo::operator==(const ComponentInfo &componentInfo) const
       (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
       (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
       (componentInfo.getModelFile() == this->getModelFile()) && (componentInfo.getGeometryFile() == this->getGeometryFile()) &&
-      (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321());
+      (componentInfo.getPosition() == this->getPosition()) && (componentInfo.getAngle321() == this->getAngle321()) &&
+      (componentInfo.getDimensions() == this->getDimensions()) && (componentInfo.getTLMCausality() == this->getTLMCausality()) &&
+      (componentInfo.getDomain() == this->getDomain());
 }
 
 /*!
@@ -460,6 +463,8 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
     drawInterfacePoints();
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    drawOMSComponent();
   } else {
     drawComponent();
   }
@@ -523,6 +528,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
+  mpInputOutputComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -557,6 +563,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   createNonExistingComponent();
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
+  mpInputOutputComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -650,6 +657,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
+  mpInputOutputComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -1483,6 +1491,53 @@ void Component::drawInterfacePoints()
 }
 
 /*!
+ * \brief Component::drawOMSComponent
+ * Draws the OMSimulator component.
+ */
+void Component::drawOMSComponent()
+{
+  if (mpLibraryTreeItem->getOMSElement()) { // if component is fmu
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    }
+    // draw shapes first
+    drawOMSComponentShapes();
+    // draw components now
+    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
+      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
+      mComponentsList.append(pNewComponent);
+    }
+    //adjustOMSSignals();
+  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is signal i.e., input/output
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    }
+    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
+      if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+        mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
+      }
+    }
+  }
+}
+
+/*!
+ * \brief Component::drawOMSComponentShapes
+ * Draws the shapes for OMSimulator component.
+ */
+void Component::drawOMSComponentShapes()
+{
+  foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
+    if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
+    } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+      mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
+    }
+  }
+}
+
+/*!
  * \brief Component::drawComponent
  * Draws the Component.
  */
@@ -1579,16 +1634,26 @@ void Component::createClassShapes()
       MainWindow *pMainWindow = MainWindow::instance();
       pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
-    GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    /* ticket:4505
-     * Only use the diagram annotation when connector is inside the component instance.
-     */
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
-      mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-      if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
-        pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+
+    GraphicsView *pGraphicsView = 0;
+    if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+      pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+      /* ticket:4505
+       * Only use the diagram annotation when connector is inside the component instance.
+       */
+      if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+        mpLibraryTreeItem->getModelWidget()->loadDiagramView();
+        if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
+          pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+        }
       }
+    } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+    } else {
+      qDebug() << "Component::createClassShapes() unknonw library type.";
+      return;
     }
+
     foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
       if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
         mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
@@ -1634,11 +1699,18 @@ void Component::createActions()
   mpSubModelAttributesAction = new QAction(Helper::attributes, mpGraphicsView);
   mpSubModelAttributesAction->setStatusTip(tr("Shows the submodel attributes"));
   connect(mpSubModelAttributesAction, SIGNAL(triggered()), SLOT(showSubModelAttributes()));
+  // FMU Properties Action
+  mpFMUPropertiesAction = new QAction(Helper::fmuProperties, mpGraphicsView);
+  mpFMUPropertiesAction->setStatusTip(tr("Shows the FMU Properties dialog"));
+  connect(mpFMUPropertiesAction, SIGNAL(triggered()), SLOT(showFMUPropertiesDialog()));
 }
 
 void Component::createResizerItems()
 {
   bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
+  bool isOMSConnector = (mpLibraryTreeItem
+                         && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+                         && mpLibraryTreeItem->getOMSConnector());
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -1649,7 +1721,7 @@ void Component::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
   mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
@@ -1658,7 +1730,7 @@ void Component::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
   mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
@@ -1667,7 +1739,7 @@ void Component::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
   mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
@@ -1676,7 +1748,7 @@ void Component::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent());
+  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
 }
 
 void Component::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2)
@@ -1892,22 +1964,26 @@ bool Component::checkEnumerationDisplayString(QString &displayString, const QStr
  */
 void Component::updateToolTip()
 {
-  QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  comment = pOMCProxy->makeDocumentationUriToFileName(comment);
-  // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
-#ifdef WIN32
-  comment.replace("src=\"file:///", "src=\"");
-#else
-  comment.replace("src=\"file://", "src=\"");
-#endif
-
-  if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent) {
-    setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
-               .arg(mpComponentInfo->getName()).arg(comment)
-               .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    setToolTip(mpLibraryTreeItem->getTooltip());
   } else {
-    setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(comment));
+    QString comment = mpComponentInfo->getComment().replace("\\\"", "\"");
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    comment = pOMCProxy->makeDocumentationUriToFileName(comment);
+    // since tooltips can't handle file:// scheme so we have to remove it in order to display images and make links work.
+  #ifdef WIN32
+    comment.replace("src=\"file:///", "src=\"");
+  #else
+    comment.replace("src=\"file://", "src=\"");
+  #endif
+
+    if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent) {
+      setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
+                 .arg(mpComponentInfo->getName()).arg(comment)
+                 .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
+    } else {
+      setToolTip(tr("<b>%1</b> %2<br/>%3").arg(mpComponentInfo->getClassName()).arg(mpComponentInfo->getName()).arg(comment));
+    }
   }
 }
 
@@ -1938,6 +2014,30 @@ void Component::updatePlacementAnnotation()
     pCompositeModelEditor->updateSubModelPlacementAnnotation(mpComponentInfo->getName(), mTransformation.getVisible()? "true" : "false",
                                                         getTransformationOrigin(), getTransformationExtent(),
                                                         QString::number(mTransformation.getRotateAngle()));
+  } else if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::OMS) {
+    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
+      ssd_element_geometry_t *pElementGeometry = mpLibraryTreeItem->getOMSElement()->geometry;
+      QPointF extent1 = mTransformation.getExtent1();
+      QPointF extent2 = mTransformation.getExtent2();
+      if (mTransformation.hasOrigin()) {
+        extent1.setX(extent1.x() + mTransformation.getOrigin().x());
+        extent1.setY(extent1.y() + mTransformation.getOrigin().y());
+        extent2.setX(extent2.x() + mTransformation.getOrigin().x());
+        extent2.setY(extent2.y() + mTransformation.getOrigin().y());
+      }
+      pElementGeometry->x1 = extent1.x();
+      pElementGeometry->y1 = extent1.y();
+      pElementGeometry->x2 = extent2.x();
+      pElementGeometry->y2 = extent2.y();
+      pElementGeometry->rotation = mTransformation.getRotateAngle();
+      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), pElementGeometry);
+    } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSConnector()) {
+      ssd_connector_geometry_t *pConnectorGeometry = mpLibraryTreeItem->getOMSConnector()->geometry;
+      pConnectorGeometry->x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
+      pConnectorGeometry->y = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
+      OMSProxy::instance()->setConnectorGeometry(QString("%1:%2").arg(mpLibraryTreeItem->parent()->getNameStructure())
+                                                 .arg(mpLibraryTreeItem->getName()), pConnectorGeometry);
+    }
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
     pOMCProxy->updateComponent(mpComponentInfo->getName(), mpComponentInfo->getClassName(),
@@ -1995,10 +2095,22 @@ void Component::handleUnloaded()
 void Component::handleShapeAdded()
 {
   Component *pComponent = getRootParentComponent();
-  pComponent->removeChildren();
-  pComponent->drawComponent();
-  pComponent->emitChanged();
-  pComponent->updateConnections();
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    // remove all shapes
+    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
+      pShapeAnnotation->setParentItem(0);
+      mpGraphicsView->removeItem(pShapeAnnotation);
+      delete pShapeAnnotation;
+    }
+    mShapesList.clear();
+    // draw shapes
+    pComponent->drawOMSComponentShapes();
+  } else {
+    pComponent->removeChildren();
+    pComponent->drawComponent();
+    pComponent->emitChanged();
+    pComponent->updateConnections();
+  }
 }
 
 void Component::handleComponentAdded()
@@ -2210,7 +2322,13 @@ void Component::componentCommentHasChanged()
 void Component::componentNameHasChanged()
 {
   updateToolTip();
-  displayTextChangedRecursive();
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    mpLibraryTreeItem->setName(mpComponentInfo->getName());
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+    emit displayTextChanged();
+  } else {
+    displayTextChangedRecursive();
+  }
   update();
 }
 
@@ -2584,6 +2702,18 @@ void Component::showSubModelAttributes()
 }
 
 /*!
+ * \brief Component::showFMUPropertiesDialog
+ * Slot that opens up the FMUPropertiesDialog Dialog.
+ */
+void Component::showFMUPropertiesDialog()
+{
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getFMUInfo()) {
+    FMUPropertiesDialog *pFMUPropertiesDialog = new FMUPropertiesDialog(this, MainWindow::instance());
+    pFMUPropertiesDialog->exec();
+  }
+}
+
+/*!
  * \brief Component::contextMenuEvent
  * Reimplementation of contextMenuEvent.\n
  * Creates a context menu for the component.\n
@@ -2602,6 +2732,11 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     pComponent->setSelected(true);
   }
 
+  // No context menu for component of type OMS connector i.e., input/output signal of fmu.
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getOMSConnector()) {
+    return;
+  }
+
   LibraryTreeItem *pLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pLibraryTreeItem) {
     QMenu menu(mpGraphicsView);
@@ -2614,6 +2749,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getOpenClassAction());
         menu.addAction(pComponent->getViewDocumentationAction());
         menu.addSeparator();
+        menu.addAction(mpGraphicsView->getDuplicateAction());
         if (pComponent->isInheritedComponent()) {
           mpGraphicsView->getDeleteAction()->setDisabled(true);
           mpGraphicsView->getDuplicateAction()->setDisabled(true);
@@ -2622,20 +2758,25 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
           mpGraphicsView->getFlipHorizontalAction()->setDisabled(true);
           mpGraphicsView->getFlipVerticalAction()->setDisabled(true);
         }
-        menu.addAction(mpGraphicsView->getDeleteAction());
-        menu.addAction(mpGraphicsView->getDuplicateAction());
-        menu.addSeparator();
-        menu.addAction(mpGraphicsView->getRotateClockwiseAction());
-        menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
-        menu.addAction(mpGraphicsView->getFlipHorizontalAction());
-        menu.addAction(mpGraphicsView->getFlipVerticalAction());
         break;
       case LibraryTreeItem::CompositeModel:
         menu.addAction(pComponent->getFetchInterfaceDataAction());
         menu.addSeparator();
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
+      case LibraryTreeItem::OMS:
+        if (pComponent->getLibraryTreeItem()->getOMSElement() && pComponent->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+          menu.addAction(pComponent->getFMUPropertiesAction());
+        }
+        break;
     }
+    menu.addSeparator();
+    menu.addAction(mpGraphicsView->getDeleteAction());
+    menu.addSeparator();
+    menu.addAction(mpGraphicsView->getRotateClockwiseAction());
+    menu.addAction(mpGraphicsView->getRotateAntiClockwiseAction());
+    menu.addAction(mpGraphicsView->getFlipHorizontalAction());
+    menu.addAction(mpGraphicsView->getFlipVerticalAction());
     menu.exec(event->screenPos());
   }
 }

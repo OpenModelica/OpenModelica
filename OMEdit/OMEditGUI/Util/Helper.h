@@ -70,6 +70,7 @@ public:
   static QString txtFileTypes;
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
+  static QString subModelFileTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -155,6 +156,7 @@ public:
   static QString information;
   static QString rename;
   static QString renameTip;
+  static QString renameOMSModelTip;
   static QString checkModel;
   static QString checkModelTip;
   static QString checkAllModels;
@@ -195,6 +197,7 @@ public:
   static QString unloadClass;
   static QString unloadClassTip;
   static QString unloadCompositeModelOrTextTip;
+  static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
   static QString simulateTip;
@@ -344,6 +347,8 @@ public:
   static QString animationPauseTip;
   static QString simulationParams;
   static QString simulationParamsTip;
+  static QString addSubModel;
+  static QString addSubModelTip;
   static QString running;
   static QString finished;
   static QString newVariable;
@@ -366,6 +371,13 @@ public:
   static QString priority;
   static QString secs;
   static QString saveContentsInOneFile;
+  static QString OMSSimulationSetup;
+  static QString OMSSimulationSetupTip;
+  static QString dateTime;
+  static QString startTime;
+  static QString stopTime;
+  static QString status;
+  static QString fmuProperties;
 };
 
 class GUIMessages : public QObject

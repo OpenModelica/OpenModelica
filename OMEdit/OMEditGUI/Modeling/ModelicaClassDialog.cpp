@@ -1984,3 +1984,103 @@ void ComponentNameDialog::updateComponentName()
   }
   accept();
 }
+
+/*!
+ * \class AddSubModelDialog
+ * \brief Creates a dialog to allow users to add submodels to OMSimulator model.
+ */
+/*!
+ * \brief AddSubModelDialog::AddSubModelDialog
+ * \param pGraphicsView
+ */
+AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addSubModel));
+  setMinimumWidth(400);
+  mpGraphicsView = pGraphicsView;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::addSubModel);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // name
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // path
+  mpPathLabel = new Label(Helper::path);
+  mpPathTextBox = new QLineEdit;
+  mpBrowsePathButton = new QPushButton(Helper::browse);
+  mpBrowsePathButton->setAutoDefault(false);
+  connect(mpBrowsePathButton, SIGNAL(clicked()), SLOT(browseSubModelPath()));
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addSubModel()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 3);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpNameLabel, 2, 0);
+  pMainLayout->addWidget(mpNameTextBox, 2, 1, 1, 2);
+  pMainLayout->addWidget(mpPathLabel, 3, 0);
+  pMainLayout->addWidget(mpPathTextBox, 3, 1);
+  pMainLayout->addWidget(mpBrowsePathButton, 3, 2);
+  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief AddSubModelDialog::browseSubModelPath
+ * Slot activated when mpBrowsePathButton clicked signal is raised.\n
+ * Allows the user to select the submodel path.
+ */
+void AddSubModelDialog::browseSubModelPath()
+{
+  mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile),
+                                                        NULL, Helper::subModelFileTypes, NULL));
+}
+
+/*!
+ * \brief AddSubModelDialog::addSubModel
+ * Adds the submodel to the OMSimulator model.
+ */
+void AddSubModelDialog::addSubModel()
+{
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), Helper::ok);
+    return;
+  }
+  QFileInfo fileInfo(mpPathTextBox->text());
+  if (!fileInfo.exists()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Unable to find the SubModel file."), Helper::ok);
+    return;
+  }
+  LibraryTreeItem *pParentLibraryTreeItem;
+  pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
+  for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
+                            .arg(tr("SubModel"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+      return;
+    }
+  }
+  QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
+  AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(mpNameTextBox->text(), mpPathTextBox->text(), 0,
+                                                                   annotation, false, mpGraphicsView);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSubModelCommand);
+  mpGraphicsView->getModelWidget()->updateModelText();
+  accept();
+}

@@ -1784,3 +1784,512 @@ void RenameCompositeModelCommand::undo()
   mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mOldCompositeModelName);
   mpCompositeModelEditor->getModelWidget()->setWindowTitle(mOldCompositeModelName);
 }
+
+/*!
+ * \brief AddSubModelCommand::AddSubModelCommand
+ * Adds the submodel to fmi model.
+ * \param name
+ * \param path
+ * \param pLibraryTreeItem
+ * \param openingClass
+ * \param pGraphicsView
+ * \param pParent
+ */
+AddSubModelCommand::AddSubModelCommand(QString name, QString path, LibraryTreeItem *pLibraryTreeItem, QString annotation,
+                                       bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mName = name;
+  mPath = path;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mAnnotation = annotation;
+  mOpeningClass = openingClass;
+  mpGraphicsView = pGraphicsView;
+  setText(QString("Add submodel %1").arg(name));
+}
+
+/*!
+ * \brief AddSubModelCommand::redo
+ * Redo the AddSubModelCommand.
+ */
+void AddSubModelCommand::redo()
+{
+  if (!mOpeningClass) {
+    mpGraphicsView->addSubModel(mName, mPath);
+  }
+  if (!mpLibraryTreeItem) {
+    // Create a LibraryTreeItem for FMU
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+    LibraryTreeItem *pFMULibraryTreeItem;
+    pFMULibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName,
+                                                                   QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
+                                                                   .arg(mName), mPath,
+                                                                   true, pParentLibraryTreeItem);
+    // Create ModelWidget for FMU so that its input/output signals are fetched
+    pLibraryTreeModel->loadLibraryTreeItemPixmap(pFMULibraryTreeItem);
+    mpLibraryTreeItem = pFMULibraryTreeItem;
+  }
+  // add the FMU to view
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(mpLibraryTreeItem->getName());
+  pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  mpComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpGraphicsView->addItem(mpComponent);
+  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addComponentToList(mpComponent);
+  // select the component when not opening class.
+  if (!mOpeningClass) {
+    // unselect all items
+    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
+      pItem->setSelected(false);
+    }
+    mpComponent->setSelected(true);
+  }
+}
+
+/*!
+ * \brief AddSubModelCommand::undo
+ * Undo the AddSubModelCommand.
+ */
+void AddSubModelCommand::undo()
+{
+  // delete the submodel
+  mpGraphicsView->deleteSubModel(mName);
+  // delete the LibraryTreeItem
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
+  mpLibraryTreeItem = 0;
+  // delete the Component
+  mpGraphicsView->removeItem(mpComponent);
+  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->deleteComponentFromList(mpComponent);
+  mpComponent->deleteLater();
+  mpComponent = 0;
+}
+
+/*!
+ * \brief DeleteSubModelCommand::DeleteSubModelCommand
+ * Used to delete the OMS submodel(s).
+ * \param pComponent
+ * \param pGraphicsView
+ * \param pParent
+ */
+DeleteSubModelCommand::DeleteSubModelCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mpGraphicsView = pGraphicsView;
+  mName = mpComponent->getName();
+  mPath = mpComponent->getLibraryTreeItem()->getFileName();
+  mAnnotation = mpComponent->getTransformationString();
+}
+
+/*!
+ * \brief DeleteSubModelCommand::redo
+ * Redo the DeleteSubModelCommand.
+ */
+void DeleteSubModelCommand::redo()
+{
+  // delete the submodel
+  mpGraphicsView->deleteSubModel(mpComponent->getName());
+  // delete the LibraryTreeItem
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpComponent->getLibraryTreeItem(), false);
+  // delete the Component
+  mpGraphicsView->removeItem(mpComponent);
+  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->deleteComponentFromList(mpComponent);
+  mpComponent->deleteLater();
+  mpComponent = 0;
+  mpGraphicsView->deleteComponentFromClass(mpComponent);
+}
+
+/*!
+ * \brief DeleteSubModelCommand::undo
+ * Undo the DeleteSubModelCommand.
+ */
+void DeleteSubModelCommand::undo()
+{
+  // add submodel
+  mpGraphicsView->addSubModel(mName, mPath);
+  // Create a LibraryTreeItem for FMU
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  LibraryTreeItem *pLibraryTreeItem;
+  pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName,
+                                                              QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
+                                                              .arg(mName), mPath,
+                                                              true, pParentLibraryTreeItem);
+  // Create ModelWidget for FMU so that its input/output signals are fetched
+  pLibraryTreeModel->loadLibraryTreeItemPixmap(pLibraryTreeItem);
+  // add the FMU to view
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(pLibraryTreeItem->getName());
+  pComponentInfo->setClassName(pLibraryTreeItem->getNameStructure());
+  mpComponent = new Component(mName, pLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpGraphicsView->addItem(mpComponent);
+  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addComponentToList(mpComponent);
+}
+
+FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString oldName, QString newName, FMUProperties oldFMUProperties,
+                                           FMUProperties newFMUProperties, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpComponent = pComponent;
+  mOldName = oldName;
+  mNewName = newName;
+  mOldFMUProperties = oldFMUProperties;
+  mNewFMUProperties = newFMUProperties;
+  setText(QString("Update FMU %1 Parameters").arg(mpComponent->getName()));
+}
+
+/*!
+ * \brief FMUPropertiesCommand::redo
+ * Redo the FMUPropertiesCommand
+ */
+void FMUPropertiesCommand::redo()
+{
+  // Rename
+//  if (OMSProxy::instance()->rename(mOldName, mNewName)) {
+//    mpComponent->getComponentInfo()->setName(mNewName.split('.').last());
+//    mpComponent->componentNameHasChanged();
+//  }
+  // Parameters
+  int parametersIndex = 0;
+  int inputsIndex = 0;
+  if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
+    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
+    for (int i = 0 ; pInterfaces[i] ; i++) {
+      if (pInterfaces[i]->causality == oms_causality_parameter) {
+        QString parameterValue = mNewFMUProperties.mParameterValues.at(parametersIndex);
+        parametersIndex++;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          OMSProxy::instance()->setRealParameter(pInterfaces[i]->name, parameterValue.toDouble());
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          OMSProxy::instance()->setIntegerParameter(pInterfaces[i]->name, parameterValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          OMSProxy::instance()->setBooleanParameter(pInterfaces[i]->name, parameterValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+        }
+      } else if (pInterfaces[i]->causality == oms_causality_input) {
+        QString inputValue = mNewFMUProperties.mInputValues.at(inputsIndex);
+        inputsIndex++;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          OMSProxy::instance()->setReal(pInterfaces[i]->name, inputValue.toDouble());
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          OMSProxy::instance()->setInteger(pInterfaces[i]->name, inputValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          OMSProxy::instance()->setBoolean(pInterfaces[i]->name, inputValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+        }
+      }
+    }
+  }
+}
+
+/*!
+ * \brief FMUPropertiesCommand::undo
+ * Undo the FMUPropertiesCommand
+ */
+void FMUPropertiesCommand::undo()
+{
+  // Rename
+//  if (OMSProxy::instance()->rename(mNewName, mOldName)) {
+//    mpComponent->getComponentInfo()->setName(mOldName.split('.').last());
+//    mpComponent->componentNameHasChanged();
+//  }
+  // Parameters
+  int parametersIndex = 0;
+  int inputsIndex = 0;
+  if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
+    oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
+    for (int i = 0 ; pInterfaces[i] ; i++) {
+      if (pInterfaces[i]->causality == oms_causality_parameter) {
+        QString parameterValue = mOldFMUProperties.mParameterValues.at(parametersIndex);
+        parametersIndex++;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          OMSProxy::instance()->setRealParameter(pInterfaces[i]->name, parameterValue.toDouble());
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          OMSProxy::instance()->setIntegerParameter(pInterfaces[i]->name, parameterValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          OMSProxy::instance()->setBooleanParameter(pInterfaces[i]->name, parameterValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+        }
+      } else if (pInterfaces[i]->causality == oms_causality_input) {
+        QString inputValue = mOldFMUProperties.mInputValues.at(inputsIndex);
+        inputsIndex++;
+        if (pInterfaces[i]->type == oms_signal_type_real) {
+          OMSProxy::instance()->setReal(pInterfaces[i]->name, inputValue.toDouble());
+        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          OMSProxy::instance()->setInteger(pInterfaces[i]->name, inputValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+          OMSProxy::instance()->setBoolean(pInterfaces[i]->name, inputValue.toInt());
+        } else if (pInterfaces[i]->type == oms_signal_type_string) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+        } else {
+          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+        }
+      }
+    }
+  }
+}
+
+AddSubModelIconCommand::AddSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mIcon = icon;
+  mpGraphicsView = pGraphicsView;
+  setText(QString("Add SubModel Icon"));
+}
+
+/*!
+ * \brief AddSubModelIconCommand::redo
+ * Redo the AddSubModelIconCommand
+ */
+void AddSubModelIconCommand::redo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    QString fileURI = "file:///" + mIcon;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    size_t size = fileURI.toStdString().size() + 1;
+    pElementGeometry->iconSource = new char[size];
+    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      // clear all shapes of the submodel first
+      foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
+        mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation);
+      }
+      // Add new bitmap shape
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mIcon, mpGraphicsView);
+      pBitmapAnnotation->initializeTransformation();
+      pBitmapAnnotation->drawCornerItems();
+      pBitmapAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pBitmapAnnotation);
+      mpGraphicsView->addItem(pBitmapAnnotation);
+      pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
+    }
+  }
+}
+
+/*!
+ * \brief AddSubModelIconCommand::undo
+ * Undo the AddSubModelIconCommand
+ */
+void AddSubModelIconCommand::undo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    pElementGeometry->iconSource = NULL;
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      // clear all shapes of the submodel first
+      foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
+        mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation);
+      }
+      // Rectangle shape as base
+      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpGraphicsView);
+      pRectangleAnnotation->initializeTransformation();
+      pRectangleAnnotation->drawCornerItems();
+      pRectangleAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pRectangleAnnotation);
+      mpGraphicsView->addItem(pRectangleAnnotation);
+      // Text for name
+      TextAnnotation *pTextAnnotation = new TextAnnotation(mpGraphicsView);
+      pTextAnnotation->initializeTransformation();
+      pTextAnnotation->drawCornerItems();
+      pTextAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pTextAnnotation);
+      mpGraphicsView->addItem(pTextAnnotation);
+      pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+    }
+  }
+}
+
+UpdateSubModelIconCommand::UpdateSubModelIconCommand(QString oldIcon, QString newIcon, ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mOldIcon = oldIcon;
+  mNewIcon = newIcon;
+  mpShapeAnnotation = pShapeAnnotation;
+  setText(QString("Update SubModel Icon"));
+}
+
+/*!
+ * \brief UpdateSubModelIconCommand::redo
+ * Redo the UpdateSubModelIconCommand
+ */
+void UpdateSubModelIconCommand::redo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    QString fileURI = "file:///" + mNewIcon;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    size_t size = fileURI.toStdString().size() + 1;
+    pElementGeometry->iconSource = new char[size];
+    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      mpShapeAnnotation->setFileName(mNewIcon);
+      QPixmap pixmap;
+      pixmap.load(mNewIcon);
+      mpShapeAnnotation->setImage(pixmap.toImage());
+      mpShapeAnnotation->update();
+      pElementLibraryTreeItem->handleIconUpdated();
+      mpShapeAnnotation->emitChanged();
+    }
+  }
+}
+
+/*!
+ * \brief UpdateSubModelIconCommand::undo
+ * Undo the UpdateSubModelIconCommand
+ */
+void UpdateSubModelIconCommand::undo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    QString fileURI = "file:///" + mOldIcon;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    size_t size = fileURI.toStdString().size() + 1;
+    pElementGeometry->iconSource = new char[size];
+    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      mpShapeAnnotation->setFileName(mOldIcon);
+      QPixmap pixmap;
+      pixmap.load(mOldIcon);
+      mpShapeAnnotation->setImage(pixmap.toImage());
+      mpShapeAnnotation->update();
+      pElementLibraryTreeItem->handleIconUpdated();
+      mpShapeAnnotation->emitChanged();
+    }
+  }
+}
+
+DeleteSubModelIconCommand::DeleteSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mIcon = icon;
+  mpGraphicsView = pGraphicsView;
+  setText(QString("Delete SubModel Icon"));
+}
+
+/*!
+ * \brief DeleteSubModelIconCommand::redo
+ * Redo the DeleteSubModelIconCommand
+ */
+void DeleteSubModelIconCommand::redo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    pElementGeometry->iconSource = NULL;
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      // clear all shapes of the submodel first
+      foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
+        mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation);
+      }
+      // Rectangle shape as base
+      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpGraphicsView);
+      pRectangleAnnotation->initializeTransformation();
+      pRectangleAnnotation->drawCornerItems();
+      pRectangleAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pRectangleAnnotation);
+      mpGraphicsView->addItem(pRectangleAnnotation);
+      // Text for name
+      TextAnnotation *pTextAnnotation = new TextAnnotation(mpGraphicsView);
+      pTextAnnotation->initializeTransformation();
+      pTextAnnotation->drawCornerItems();
+      pTextAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pTextAnnotation);
+      mpGraphicsView->addItem(pTextAnnotation);
+      pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+    }
+  }
+}
+
+/*!
+ * \brief DeleteSubModelIconCommand::undo
+ * Undo the DeleteSubModelIconCommand
+ */
+void DeleteSubModelIconCommand::undo()
+{
+  // update element ssd_element_geometry_t
+  LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
+    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    QString fileURI = "file:///" + mIcon;
+    if (pElementGeometry->iconSource) {
+      delete[] pElementGeometry->iconSource;
+    }
+    size_t size = fileURI.toStdString().size() + 1;
+    pElementGeometry->iconSource = new char[size];
+    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+      // clear all shapes of the submodel first
+      foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
+        mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
+        mpGraphicsView->removeItem(pShapeAnnotation);
+      }
+      // Add new bitmap shape
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mIcon, mpGraphicsView);
+      pBitmapAnnotation->initializeTransformation();
+      pBitmapAnnotation->drawCornerItems();
+      pBitmapAnnotation->setCornerItemsActiveOrPassive();
+      mpGraphicsView->addShapeToList(pBitmapAnnotation);
+      mpGraphicsView->addItem(pBitmapAnnotation);
+      pElementLibraryTreeItem->handleIconUpdated();
+      pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
+    }
+  }
+}

@@ -445,6 +445,10 @@ void ShapeAnnotation::createActions()
   mpEditTransitionAction = new QAction(Helper::editTransition, mpGraphicsView);
   mpEditTransitionAction->setStatusTip(tr("Edits the transition"));
   connect(mpEditTransitionAction, SIGNAL(triggered()), SLOT(editTransition()));
+  // delete submodel icon action
+  mpDeleteSubModelIconAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete SubModel Icon"), mpGraphicsView);
+  mpDeleteSubModelIconAction->setStatusTip(tr("Deletes the submodel icon"));
+  connect(mpDeleteSubModelIconAction, SIGNAL(triggered()), SLOT(deleteSubModelIcon()));
 }
 
 /*!
@@ -974,11 +978,13 @@ void ShapeAnnotation::adjustGeometries()
   */
 void ShapeAnnotation::setShapeFlags(bool enable)
 {
-  /*
-    Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
-    AND shape is not an inherited shape.
-    */
-  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()) {
+  /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on shape if the class is not a system library class
+   * AND shape is not an inherited shape.
+   * AND shape is not a OMS connector i.e., input/output signals of fmu.
+   */
+  if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()
+      && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+           && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector())) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }
@@ -1592,6 +1598,16 @@ void ShapeAnnotation::editTransition()
 }
 
 /*!
+ * \brief ShapeAnnotation::deleteSubModelIcon
+ * Slot activated when delete submodel icon option is chosen from context menu of the shape.
+ */
+void ShapeAnnotation::deleteSubModelIcon()
+{
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new DeleteSubModelIconCommand(mOriginalFileName, mpGraphicsView));
+  mpGraphicsView->getModelWidget()->updateModelText();
+}
+
+/*!
  * \brief ShapeAnnotation::alignInterfaces
  * Slot activated when Align Interfaces option is chosen from context menu of the shape.
  */
@@ -1639,7 +1655,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
 
     menu.addSeparator();
     menu.addAction(mpGraphicsView->getDeleteAction());
-  } else {
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::Modelica) {
     menu.addAction(mpShapePropertiesAction);
     menu.addSeparator();
     if (isInheritedShape()) {
@@ -1675,6 +1691,15 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     } else if (lineType == LineAnnotation::TransitionType) {
       menu.addSeparator();
       menu.addAction(mpEditTransitionAction);
+    }
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
+    BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(this);
+    if (pBitmapAnnotation && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()
+        && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu
+            || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()->type == oms_component_table)) {
+      menu.addAction(mpDeleteSubModelIconAction);
+    } else {
+      return;
     }
   }
   menu.exec(pEvent->screenPos());

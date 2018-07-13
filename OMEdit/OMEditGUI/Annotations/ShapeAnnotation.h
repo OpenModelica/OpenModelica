@@ -113,6 +113,7 @@ private:
   QAction *mpAlignInterfacesAction;
   QAction *mpShapeAttributesAction;
   QAction *mpEditTransitionAction;
+  QAction *mpDeleteSubModelIconAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
@@ -228,6 +229,7 @@ public slots:
   void alignInterfaces();
   void showShapeAttributes();
   void editTransition();
+  void deleteSubModelIcon();
   void manhattanizeShape(bool addToStack = true);
   void referenceShapeAdded();
   void referenceShapeChanged();

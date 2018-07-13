@@ -190,9 +190,9 @@ void SimulationDialog::setUpForm()
   mpGeneralTabScrollArea->setWidget(mpGeneralTab);
   // Simulation Interval
   mpSimulationIntervalGroupBox = new QGroupBox(tr("Simulation Interval"));
-  mpStartTimeLabel = new Label(tr("Start Time:"));
+  mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
   mpStartTimeTextBox = new QLineEdit;
-  mpStopTimeLabel = new Label(tr("Stop Time:"));
+  mpStopTimeLabel = new Label(QString("%1:").arg(Helper::stopTime));
   mpStopTimeTextBox = new QLineEdit;
   // Output Interval
   mpNumberofIntervalsRadioButton = new QRadioButton(tr("Number of Intervals:"));
@@ -566,7 +566,7 @@ void SimulationDialog::setUpForm()
   mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpArchivedSimulationsTreeWidget->setColumnCount(4);
   QStringList headers;
-  headers << tr("Class") << tr("DateTime") << tr("Start Time") << tr("Stop Time") << tr("Status");
+  headers << tr("Class") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
   mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
   mpArchivedSimulationsTreeWidget->setIndentation(0);
   connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));

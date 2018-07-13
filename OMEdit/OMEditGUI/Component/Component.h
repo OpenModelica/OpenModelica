@@ -46,6 +46,7 @@
 #include "Annotations/EllipseAnnotation.h"
 #include "Annotations/TextAnnotation.h"
 #include "Annotations/BitmapAnnotation.h"
+#include "OMS/OMSProxy.h"
 
 class OMCProxy;
 class GraphicsScene;
@@ -204,6 +205,7 @@ public:
   QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
   QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
+  QAction* getFMUPropertiesAction() {return mpFMUPropertiesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
@@ -261,12 +263,14 @@ private:
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
   RectangleAnnotation *mpStateComponentRectangle;
+  PolygonAnnotation *mpInputOutputComponentPolygon;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
   QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpSubModelAttributesAction;
+  QAction *mpFMUPropertiesAction;
   ResizerItem *mpBottomLeftResizerItem;
   ResizerItem *mpTopLeftResizerItem;
   ResizerItem *mpTopRightResizerItem;
@@ -290,6 +294,8 @@ private:
   void createDefaultComponent();
   void createStateComponent();
   void drawInterfacePoints();
+  void drawOMSComponent();
+  void drawOMSComponentShapes();
   void drawComponent();
   void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();
@@ -358,6 +364,7 @@ public slots:
   void openClass();
   void viewDocumentation();
   void showSubModelAttributes();
+  void showFMUPropertiesDialog();
 protected:
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);

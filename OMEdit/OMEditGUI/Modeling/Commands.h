@@ -35,6 +35,7 @@
 #define COMMANDS_H
 
 #include "Modeling/ModelWidgetContainer.h"
+#include "Component/FMUProperties.h"
 
 class AddShapeCommand : public QUndoCommand
 {
@@ -393,6 +394,86 @@ private:
   CompositeModelEditor *mpCompositeModelEditor;
   QString mOldCompositeModelName;
   QString mNewCompositeModelName;
+};
+
+class AddSubModelCommand : public QUndoCommand
+{
+public:
+  AddSubModelCommand(QString name, QString path, LibraryTreeItem *pLibraryTreeItem, QString annotation, bool openingClass,
+                     GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mName;
+  QString mPath;
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mAnnotation;
+  bool mOpeningClass;
+  Component *mpComponent;
+  GraphicsView *mpGraphicsView;
+};
+
+class DeleteSubModelCommand : public QUndoCommand
+{
+public:
+  DeleteSubModelCommand(Component *pComponent, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  GraphicsView *mpGraphicsView;
+  QString mName;
+  QString mPath;
+  QString mAnnotation;
+};
+
+class FMUPropertiesCommand : public QUndoCommand
+{
+public:
+  FMUPropertiesCommand(Component *pComponent, QString oldName, QString newName, FMUProperties oldFMUProperties,
+                       FMUProperties newFMUProperties, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  Component *mpComponent;
+  QString mOldName;
+  QString mNewName;
+  FMUProperties mOldFMUProperties;
+  FMUProperties mNewFMUProperties;
+};
+
+class AddSubModelIconCommand : public QUndoCommand
+{
+public:
+  AddSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mIcon;
+  GraphicsView *mpGraphicsView;
+};
+
+class UpdateSubModelIconCommand : public QUndoCommand
+{
+public:
+  UpdateSubModelIconCommand(QString oldIcon, QString newIcon, ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mOldIcon;
+  QString mNewIcon;
+  ShapeAnnotation *mpShapeAnnotation;
+};
+
+class DeleteSubModelIconCommand : public QUndoCommand
+{
+public:
+  DeleteSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mIcon;
+  GraphicsView *mpGraphicsView;
 };
 
 #endif // COMMANDS_H

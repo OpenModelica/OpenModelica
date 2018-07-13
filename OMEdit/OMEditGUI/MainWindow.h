@@ -76,6 +76,7 @@ class ThreeDViewer;
 class BreakpointsWidget;
 class SimulationDialog;
 class TLMCoSimulationDialog;
+class OMSSimulationDialog;
 class ModelWidgetContainer;
 class WelcomePageWidget;
 class InfoBar;
@@ -125,6 +126,7 @@ public:
 #endif
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
+  OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
   GitCommands* getGitCommands() {return mpGitCommands;}
@@ -183,6 +185,9 @@ public:
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
+  QAction* getAddSubModelAction() {return mpAddSubModelAction;}
+  QAction* getAddOrEditSubModelIconAction() {return mpAddOrEditSubModelIconAction;}
+  QAction* getOMSSimulationSetupAction() {return mpOMSSimulationSetupAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
   QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
@@ -203,6 +208,7 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void OMSSimulationSetup(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -257,6 +263,7 @@ private:
 #endif
   SimulationDialog *mpSimulationDialog;
   TLMCoSimulationDialog *mpTLMCoSimulationDialog;
+  OMSSimulationDialog *mpOMSSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
   GitCommands *mpGitCommands;
@@ -282,6 +289,9 @@ private:
   QAction *mpNewCompositeModelFileAction;
   QAction *mpOpenCompositeModelFileAction;
   QAction *mpLoadExternModelAction;
+  // OMSimulator File Actions
+  QAction *mpNewFMIModelAction;
+  QAction *mpOpenOMSModelFileAction;
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -393,6 +403,10 @@ private:
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
+  // OMSimulator Actions
+  QAction *mpAddSubModelAction;
+  QAction *mpAddOrEditSubModelIconAction;
+  QAction *mpOMSSimulationSetupAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -411,6 +425,7 @@ private:
   QMenu *mpDebugConfigurationMenu;
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpTLMSimulationToolbar;
+  QToolBar *mpOMSimulatorToobar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 public slots:
   void showMessagesBrowser();
@@ -425,6 +440,8 @@ public slots:
   void createNewCompositeModelFile();
   void openCompositeModelFile();
   void loadExternalModels();
+  void createNewFMIModel();
+  void openOMSModelFile();
   void openDirectory();
   void loadSystemLibrary();
   void writeOutputFileData(QString data);
@@ -467,6 +484,7 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
+  void openOMSSimulationDialog();
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();

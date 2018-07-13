@@ -35,6 +35,7 @@
 #include "OptionsDialog.h"
 #include "MainWindow.h"
 #include "OMC/OMCProxy.h"
+#include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/ModelWidgetContainer.h"
@@ -107,6 +108,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
   mpTLMPage = new TLMPage(this);
+  mpOMSimulatorPage = new OMSimulatorPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
   // get the settings
   readSettings();
@@ -147,6 +149,7 @@ void OptionsDialog::readSettings()
   readDebuggerSettings();
   readFMISettings();
   readTLMSettings();
+  readOMSimulatorSettings();
   readTraceabilitySettings();
 }
 
@@ -792,6 +795,28 @@ void OptionsDialog::readTLMSettings()
 }
 
 /*!
+ * \brief OptionsDialog::readOMSimulatorSettings
+ * Reads the OMSimulator settings from omedit.ini
+ */
+void OptionsDialog::readOMSimulatorSettings()
+{
+  // read working directory
+  if (mpSettings->contains("OMSimulator/workingDirectory")) {
+    mpOMSimulatorPage->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
+    OMSProxy::instance()->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
+  }
+  // read logging level
+  int index;
+  if (mpSettings->contains("OMSimulator/loggingLevel")) {
+    index = mpOMSimulatorPage->getLoggingLevelComboBox()->findData(mpSettings->value("OMSimulator/loggingLevel").toInt());
+    if (index > -1) {
+      mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
+      OMSProxy::instance()->setLoggingLevel(mpSettings->value("OMSimulator/loggingLevel").toInt());
+    }
+  }
+}
+
+/*!
  * \brief OptionsDialog::readTraceabilitySettings
  * Reads the  Traceability settings from omedit.ini
  */
@@ -1232,6 +1257,20 @@ void OptionsDialog::saveTLMSettings()
 }
 
 /*!
+ * \brief OptionsDialog::saveOMSimulatorSettings
+ * Saves the OMSimulator settings in omedit.ini
+ */
+void OptionsDialog::saveOMSimulatorSettings()
+{
+  // set working directory
+  mpSettings->setValue("OMSimulator/workingDirectory", mpOMSimulatorPage->getWorkingDirectory());
+  OMSProxy::instance()->setWorkingDirectory(mpOMSimulatorPage->getWorkingDirectory());
+  // set logging level
+  mpSettings->setValue("OMSimulator/loggingLevel", mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt());
+  OMSProxy::instance()->setLoggingLevel(mpOMSimulatorPage->getLoggingLevelComboBox()->itemData(mpOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt());
+}
+
+/*!
  * \brief OptionsDialog::saveTraceabilitySettings
  * Saves the traceability settings in omedit.ini
  */
@@ -1377,6 +1416,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pTLMItem = new QListWidgetItem(mpOptionsList);
   pTLMItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
   pTLMItem->setText(tr("OMTLMSimulator"));
+  // OMSimulator Item
+  QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
+  pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/tlm-icon.svg"));
+  pOMSimulatorItem->setText(tr("OMSimulator"));
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
@@ -1407,6 +1450,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpDebuggerPage);
   mpPagesWidget->addWidget(mpFMIPage);
   mpPagesWidget->addWidget(mpTLMPage);
+  mpPagesWidget->addWidget(mpOMSimulatorPage);
   mpPagesWidget->addWidget(mpTraceabilityPage);
 }
 
@@ -1501,6 +1545,7 @@ void OptionsDialog::saveSettings()
   saveDebuggerSettings();
   saveFMISettings();
   saveTLMSettings();
+  saveOMSimulatorSettings();
   saveTraceabilitySettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
@@ -4493,6 +4538,58 @@ void TLMPage::browseTLMMonitorProcess()
 {
   mpTLMMonitorProcessTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                                      NULL, Helper::exeFileTypes, NULL));
+}
+
+/*!
+ * \class OMSimulatorPage
+ * Creates an interface for OMSimulator settings.
+ */
+/*!
+ * \brief OMSimulatorPage::OMSimulatorPage
+ * \param pOptionsDialog
+ */
+OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpGeneralGroupBox = new QGroupBox(Helper::general);
+  // working directory
+  mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
+  mpWorkingDirectoryTextBox = new QLineEdit(Utilities::tempDirectory());
+  mpBrowseWorkingDirectoryButton = new QPushButton(Helper::browse);
+  mpBrowseWorkingDirectoryButton->setAutoDefault(false);
+  connect(mpBrowseWorkingDirectoryButton, SIGNAL(clicked()), SLOT(browseWorkingDirectory()));
+  // logging level
+  mpLoggingLevelLabel = new Label(tr("Logging Level:"));
+  mpLoggingLevelComboBox = new QComboBox;
+  mpLoggingLevelComboBox->addItem("default", QVariant(0));
+  mpLoggingLevelComboBox->addItem("default+debug", QVariant(1));
+  mpLoggingLevelComboBox->addItem("default+debug+trace", QVariant(2));
+  // set the layout
+  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
+  pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryLabel, 0, 0);
+  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryTextBox, 0, 1);
+  pGeneralGroupBoxLayout->addWidget(mpBrowseWorkingDirectoryButton, 0, 2);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 1, 1, 1, 2);
+  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpGeneralGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief OMSimulatorPage::browseWorkingDirectory
+ * Slot activated when mpBrowseWorkingDirectoryButton clicked signal is raised.
+ * Allows user to choose a new working directory.
+ */
+void OMSimulatorPage::browseWorkingDirectory()
+{
+  mpWorkingDirectoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                         .arg(Helper::chooseDirectory), NULL));
 }
 
 /*!

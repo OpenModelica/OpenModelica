@@ -87,10 +87,12 @@ win32 {
   }
   LIBS += -L../OMEditGUI/Debugger/Parser -lGDBMIParser \
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
-    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi\
-    -lws2_32
+    -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
+    -lws2_32 \
+    -L$$(OMBUILDDIR)/lib -lOMSimulatorLib
 
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
+    $$(OMBUILDDIR)/include \
     $$(OMBUILDDIR)/include/omplot/qwt \
     $$(OMBUILDDIR)/include/omc/antlr3 $$(OMBUILDDIR)/include/omc/c
 
@@ -188,7 +190,11 @@ SOURCES += main.cpp \
   Git/CleanDialog.cpp \
   OMEditApplication.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
-  Traceability/TraceabilityInformationURI.cpp
+  Traceability/TraceabilityInformationURI.cpp \
+  OMS/OMSProxy.cpp \
+  Component/FMUProperties.cpp \
+  OMS/OMSSimulationDialog.cpp \
+  OMS/OMSSimulationOutputWidget.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -266,7 +272,12 @@ HEADERS  += Util/Helper.h \
   Git/CleanDialog.h \
   OMEditApplication.h \
   Traceability/TraceabilityGraphViewWidget.h \
-  Traceability/TraceabilityInformationURI.h
+  Traceability/TraceabilityInformationURI.h \
+  OMS/OMSProxy.h \
+  Component/FMUProperties.h \
+  OMS/OMSSimulationOptions.h \
+  OMS/OMSSimulationDialog.h \
+  OMS/OMSSimulationOutputWidget.h
 
 CONFIG(osg) {
 

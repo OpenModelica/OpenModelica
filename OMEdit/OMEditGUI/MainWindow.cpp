@@ -39,6 +39,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
@@ -55,6 +56,7 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "TLM/TLMCoSimulationOutputWidget.h"
+#include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
 #include "Debugger/Attach/AttachToProcessDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
@@ -154,6 +156,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
+  // create an object of OMSProxy
+  OMSProxy::create();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setMaximumWidth(300);
@@ -311,6 +315,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpSimulationDialog = 0;
   // Create TLM co-simulation dialog when needed
   mpTLMCoSimulationDialog = 0;
+  // Create the OMSimulator simulation dialog when needed
+  mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
   mpModelWidgetContainer = new ModelWidgetContainer(this);
   // Create an object of WelcomePageWidget
@@ -520,12 +526,25 @@ void MainWindow::beforeClosingMainWindow()
 {
   mpOMCProxy->quitOMC();
   delete mpOMCProxy;
+  // Unload the OMSimulator models
+  LibraryTreeItem* pLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getRootLibraryTreeItem();
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      mpLibraryWidget->getLibraryTreeModel()->unloadOMSModel(pChildLibraryTreeItem, false);
+    }
+  }
+  // delete the OMSProxy object
+  OMSProxy::destroy();
   delete mpModelWidgetContainer;
   if (mpSimulationDialog) {
     delete mpSimulationDialog;
   }
   if (mpTLMCoSimulationDialog) {
     delete mpTLMCoSimulationDialog;
+  }
+  if (mpOMSSimulationDialog) {
+    delete mpOMSSimulationDialog;
   }
   /* save the TransformationsWidget last window geometry and splitters state. */
   QSettings *pSettings = Utilities::getApplicationSettings();
@@ -709,6 +728,19 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
+}
+
+/*!
+ * \brief MainWindow::OMSSimulationSetup
+ * Opens the OMSimulator simulation setup
+ * \param pLibraryTreeItem
+ */
+void MainWindow::OMSSimulationSetup(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (!mpOMSSimulationDialog) {
+    mpOMSSimulationDialog = new OMSSimulationDialog(this);
+  }
+  mpOMSSimulationDialog->show(pLibraryTreeItem);
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -1472,6 +1504,67 @@ void MainWindow::openCompositeModelFile()
   }
   mpStatusBar->clearMessage();
   hideProgressBar();
+}
+
+/*!
+ * \brief MainWindow::createNewFMIModel
+ * Creates a new OMSimulator FMI Model LibraryTreeItem & ModelWidget.\n
+ * Slot activated when mpNewFMIModelAction triggered signal is raised.
+ */
+void MainWindow::createNewFMIModel()
+{
+  QString newFMIModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
+  // create new FMI Model
+  if (OMSProxy::instance()->newFMIModel(newFMIModelName)) {
+    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, newFMIModelName,
+                                                                                 newFMIModelName, "", false,
+                                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    }
+  }
+}
+
+/*!
+ * \brief MainWindow::openOMSModelFile
+ * Opens the OMSimulator model file(s).\n
+ * Slot activated when mpOpenOMSModelFileAction triggered signal is raised.
+ */
+void MainWindow::openOMSModelFile()
+{
+  QStringList fileNames;
+  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
+                                              Helper::xmlFileTypes, NULL);
+  if (fileNames.isEmpty()) {
+    return;
+  }
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString file, fileNames) {
+    file = file.replace("\\", "/");
+    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
+    mpProgressBar->setValue(++progressValue);
+    // if file doesn't exists
+    if (!QFile::exists(file)) {
+      QMessageBox *pMessageBox = new QMessageBox(this);
+      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setIcon(QMessageBox::Critical);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
+      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
+      pMessageBox->setStandardButtons(QMessageBox::Ok);
+      pMessageBox->exec();
+    } else {
+      /*! @todo Call LibraryWidget::openFile once we replace the TLM Composite modeling with OMSimulator. */
+      QFileInfo fileInfo(file);
+      mpLibraryWidget->openOMSModelFile(fileInfo);
+    }
+  }
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+
 }
 
 /*!
@@ -2277,6 +2370,19 @@ void MainWindow::TLMSimulate()
 }
 
 /*!
+ * \brief MainWindow::openOMSSimulationDialog
+ * Slot activated when mpOMSSimulationSetupAction triggered signal is raised.
+ * Opens the OMSimulator Simulation Dialog
+ */
+void MainWindow::openOMSSimulationDialog()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    OMSSimulationSetup(pModelWidget->getLibraryTreeItem());
+  }
+}
+
+/*!
  * \brief MainWindow::openWorkingDirectory
  * Opens the current working directory.
  */
@@ -2941,6 +3047,14 @@ void MainWindow::createActions()
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
+  // create new FMI Model action
+  mpNewFMIModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New FMI Model"), this);
+  mpNewFMIModelAction->setStatusTip(tr("Create a new FMI Model"));
+  connect(mpNewFMIModelAction, SIGNAL(triggered()), SLOT(createNewFMIModel()));
+  // open OMSimulator Model file action
+  mpOpenOMSModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open OMSimulator Model(s)"), this);
+  mpOpenOMSModelFileAction->setStatusTip(tr("Opens the OMSimulator model file(s)"));
+  connect(mpOpenOMSModelFileAction, SIGNAL(triggered()), SLOT(openOMSModelFile()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -3373,6 +3487,16 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // Add SubModel Action
+  mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
+  mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
+  // Add or Edit submodel icon Action
+  mpAddOrEditSubModelIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit SubModel Icon"), this);
+  mpAddOrEditSubModelIconAction->setStatusTip(tr("Adds/Edits an icon for submodel"));
+  // OMSimulator simulation setup action
+  mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
+  mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
+  connect(mpOMSSimulationSetupAction, SIGNAL(triggered()), SLOT(openOMSSimulationDialog()));
 }
 
 //! Creates the menus
@@ -3396,6 +3520,9 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpNewCompositeModelFileAction);
   pFileMenu->addAction(mpOpenCompositeModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
+  pFileMenu->addSeparator();
+  pFileMenu->addAction(mpNewFMIModelAction);
+  pFileMenu->addAction(mpOpenOMSModelFileAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpOpenDirectoryAction);
   pFileMenu->addSeparator();
@@ -3472,6 +3599,7 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpDebuggerToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpTLMSimulationToolbar->toggleViewAction());
+  pViewToolbarsMenu->addAction(mpOMSimulatorToobar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
@@ -3674,6 +3802,7 @@ void MainWindow::switchToWelcomePerspective()
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(false);
+  mpOMSimulatorToobar->setVisible(false);
 }
 
 /*!
@@ -3698,6 +3827,7 @@ void MainWindow::switchToModelingPerspective()
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
   mpTLMSimulationToolbar->setVisible(true);
+  mpOMSimulatorToobar->setVisible(true);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3747,6 +3877,7 @@ void MainWindow::switchToPlottingPerspective()
   mpPlotToolBar->setVisible(true);
   mpPlotToolBar->setEnabled(true);
   mpTLMSimulationToolbar->setVisible(false);
+  mpOMSimulatorToobar->setVisible(false);
   // In case user has tabbed the dock widgets then make VariablesWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpVariablesDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -3783,7 +3914,8 @@ void MainWindow::switchToAlgorithmicDebuggingPerspective()
   enableReSimulationToolbar(mpVariablesDockWidget->isVisible());
   mpPlotToolBar->setVisible(false);
   mpPlotToolBar->setEnabled(false);
-  mpTLMSimulationToolbar->setVisible(true);
+  mpTLMSimulationToolbar->setVisible(false);
+  mpOMSimulatorToobar->setVisible(false);
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -4003,6 +4135,15 @@ void MainWindow::createToolbars()
   mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
   mpTLMSimulationToolbar->addSeparator();
   mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
+  // OMSimulator Toolbar
+  mpOMSimulatorToobar = addToolBar(tr("OMSimulator Toolbar"));
+  mpOMSimulatorToobar->setObjectName("OMSimulator Toolbar");
+  mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
+  // add actions to OMSimulator Toolbar
+  mpOMSimulatorToobar->addAction(mpAddSubModelAction);
+  mpOMSimulatorToobar->addAction(mpAddOrEditSubModelIconAction);
+  mpOMSimulatorToobar->addSeparator();
+  mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);
 }
 
 //! when the dragged object enters the main window
@@ -4059,7 +4200,8 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
      "<b>%3</b><br />"
-     "<b>Connected to %4</b><br /><br />"
+     "<b>Connected to %4</b><br />"
+     "<b>Connected to %5</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
      "Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis."
@@ -4089,7 +4231,8 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
           GIT_SHA,
-          Helper::OpenModelicaVersion);
+          Helper::OpenModelicaVersion,
+          oms2_getVersion());
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

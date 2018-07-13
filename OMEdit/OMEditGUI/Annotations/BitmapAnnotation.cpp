@@ -35,6 +35,8 @@
 #include "BitmapAnnotation.h"
 #include "Modeling/Commands.h"
 
+#include <QMessageBox>
+
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
   : ShapeAnnotation(false, pGraphicsView, 0)
 {
@@ -73,6 +75,38 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsVi
   connect(pShapeAnnotation, SIGNAL(added()), this, SLOT(referenceShapeAdded()));
   connect(pShapeAnnotation, SIGNAL(changed()), this, SLOT(referenceShapeChanged()));
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
+}
+
+/*!
+ * \brief BitmapAnnotation::BitmapAnnotation
+ * Used by OMSimulator FMU ModelWidget\n
+ * We always make this shape as inherited shape since its not allowed to be modified.
+ * \param classFileName
+ * \param pGraphicsView
+ */
+BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView)
+  : ShapeAnnotation(true, pGraphicsView, 0)
+{
+  mpComponent = 0;
+  mClassFileName = classFileName;
+  // set the default values
+  GraphicItem::setDefaults();
+  ShapeAnnotation::setDefaults();
+  // set users default value by reading the settings file.
+  ShapeAnnotation::setUserDefaults();
+  QList<QPointF> extents;
+  extents << QPointF(-100, -100) << QPointF(100, 100);
+  setExtents(extents);
+  setPos(mOrigin);
+  setRotation(mRotation);
+  setShapeFlags(true);
+
+  setFileName(mClassFileName);
+  if (!mFileName.isEmpty()) {
+    mImage.load(mFileName);
+  } else {
+    mImage = QImage(":/Resources/icons/bitmap-shape.svg");
+  }
 }
 
 void BitmapAnnotation::parseShapeAnnotation(QString annotation)
@@ -213,4 +247,83 @@ void BitmapAnnotation::duplicate()
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
   setSelected(false);
   pBitmapAnnotation->setSelected(true);
+}
+
+AddOrEditSubModelIconDialog::AddOrEditSubModelIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent)
+  : QDialog(pParent)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2 Icon").arg(Helper::applicationName).arg(pShapeAnnotation ? Helper::edit : Helper::add));
+  setMinimumWidth(400);
+  mpShapeAnnotation = pShapeAnnotation;
+  mpGraphicsView = pGraphicsView;
+  mpFileLabel = new Label(Helper::fileLabel);
+  mpFileTextBox = new QLineEdit(mpShapeAnnotation ? mpShapeAnnotation->getFileName() : "");
+  mpFileTextBox->setEnabled(false);
+  mpBrowseFileButton = new QPushButton(Helper::browse);
+  connect(mpBrowseFileButton, SIGNAL(clicked()), SLOT(browseImageFile()));
+  mpPreviewImageLabel = new Label;
+  mpPreviewImageLabel->setAlignment(Qt::AlignCenter);
+  if (mpShapeAnnotation) {
+    mpPreviewImageLabel->setPixmap(QPixmap::fromImage(mpShapeAnnotation->getImage()));
+  }
+  mpPreviewImageScrollArea = new QScrollArea;
+  mpPreviewImageScrollArea->setMinimumSize(400, 150);
+  mpPreviewImageScrollArea->setWidgetResizable(true);
+  mpPreviewImageScrollArea->setWidget(mpPreviewImageLabel);
+  // Create the buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(addOrEditIcon()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layput
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->addWidget(mpFileLabel, 0, 0);
+  pMainLayout->addWidget(mpFileTextBox, 0, 1);
+  pMainLayout->addWidget(mpBrowseFileButton, 0, 2);
+  pMainLayout->addWidget(mpPreviewImageScrollArea, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void AddOrEditSubModelIconDialog::browseImageFile()
+{
+  QString imageFileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
+                                                         NULL, Helper::bitmapFileTypes, NULL);
+  if (imageFileName.isEmpty()) {
+    return;
+  }
+  mpFileTextBox->setText(imageFileName);
+  QPixmap pixmap;
+  pixmap.load(imageFileName);
+  mpPreviewImageLabel->setPixmap(pixmap);
+}
+
+void AddOrEditSubModelIconDialog::addOrEditIcon()
+{
+  if (mpShapeAnnotation) { // edit case
+    if (mpShapeAnnotation->getFileName().compare(mpFileTextBox->text()) != 0) {
+      QString oldIcon = mpShapeAnnotation->getFileName();
+      QString newIcon = mpFileTextBox->text();
+      UpdateSubModelIconCommand *pUpdateSubModelIconCommand = new UpdateSubModelIconCommand(oldIcon, newIcon, mpShapeAnnotation);
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateSubModelIconCommand);
+      mpGraphicsView->getModelWidget()->updateModelText();
+    }
+  } else { // add case
+    if (mpFileTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+      mpFileTextBox->setFocus();
+      return;
+    }
+    AddSubModelIconCommand *pAddSubModelIconCommand = new AddSubModelIconCommand(mpFileTextBox->text(), mpGraphicsView);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSubModelIconCommand);
+    mpGraphicsView->getModelWidget()->updateModelText();
+  }
+  accept();
 }

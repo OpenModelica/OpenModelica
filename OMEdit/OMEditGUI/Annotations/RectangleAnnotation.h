@@ -50,6 +50,8 @@ public:
   RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for default component
   RectangleAnnotation(Component *pParent);
+  // Used for OMSimulator FMU
+  RectangleAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation);
   QRectF boundingRect() const;
   QPainterPath shape() const;

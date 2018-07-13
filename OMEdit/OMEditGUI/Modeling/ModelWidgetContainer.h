@@ -46,6 +46,7 @@
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
+#include "OMSimulator.h"
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
@@ -244,6 +245,8 @@ public:
   void addItem(QGraphicsItem *pGraphicsItem);
   void removeItem(QGraphicsItem *pGraphicsItem);
   void fitInViewInternal();
+  void addSubModel(QString name, QString path);
+  void deleteSubModel(QString name);
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -467,6 +470,8 @@ private:
   QString getCompositeModelName();
   void getCompositeModelSubModels();
   void getCompositeModelConnections();
+  void drawOMSModelElements();
+  void drawOMSModelConnections();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
@@ -520,6 +525,8 @@ public slots:
   void printModel();
   void showSimulationParams();
   void alignInterfaces();
+  void addSubModel();
+  void addOrEditSubModelIcon();
 };
 
 #endif // MODELWIDGETCONTAINER_H

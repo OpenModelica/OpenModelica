@@ -64,6 +64,7 @@ QString Helper::exeFileTypes = "Executable files (*)";
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;
@@ -153,6 +154,7 @@ QString Helper::type;
 QString Helper::information;
 QString Helper::rename;
 QString Helper::renameTip;
+QString Helper::renameOMSModelTip;
 QString Helper::checkModel;
 QString Helper::checkModelTip;
 QString Helper::checkAllModels;
@@ -193,6 +195,7 @@ QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClassTip;
 QString Helper::unloadCompositeModelOrTextTip;
+QString Helper::unloadOMSModelTip;
 QString Helper::refresh;
 QString Helper::simulate;
 QString Helper::simulateTip;
@@ -342,6 +345,8 @@ QString Helper::animationPause;
 QString Helper::animationPauseTip;
 QString Helper::simulationParams;
 QString Helper::simulationParamsTip;
+QString Helper::addSubModel;
+QString Helper::addSubModelTip;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -364,6 +369,13 @@ QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
+QString Helper::OMSSimulationSetup;
+QString Helper::OMSSimulationSetupTip;
+QString Helper::dateTime;
+QString Helper::startTime;
+QString Helper::stopTime;
+QString Helper::status;
+QString Helper::fmuProperties;
 
 void Helper::initHelperVariables()
 {
@@ -409,6 +421,7 @@ void Helper::initHelperVariables()
   Helper::information = tr("Information");
   Helper::rename = tr("Rename");
   Helper::renameTip = tr("Renames an item");
+  Helper::renameOMSModelTip = tr("Renames the model");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
   Helper::checkAllModels = tr("Check All Models");
@@ -449,6 +462,7 @@ void Helper::initHelperVariables()
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
   Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
+  Helper::unloadOMSModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
   Helper::simulateTip = tr("Simulates the Modelica class");
@@ -598,6 +612,8 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
+  Helper::addSubModel = tr("Add SubModel");
+  Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");
@@ -620,6 +636,13 @@ void Helper::initHelperVariables()
   Helper::priority = tr("Priority:");
   Helper::secs = tr("secs");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
+  Helper::OMSSimulationSetup = tr("OMSimulator Simulation Setup");
+  Helper::OMSSimulationSetupTip = tr("Opens the OMSimulator simulation setup");
+  Helper::dateTime = tr("DateTime");
+  Helper::startTime = tr("Start Time");
+  Helper::stopTime = tr("Stop Time");
+  Helper::status = tr("Status");
+  Helper::fmuProperties = tr("FMU Properties");
 }
 
 QString GUIMessages::getMessage(int type)
