@@ -23,10 +23,10 @@ Generated on |date| at |time|
   solving
   debugger
   graphs
-  fmi
+  fmitlm
+  omsimulator
   encryption
   omnotebook
-  omsimulator
   optimization
   parametersensitivity
   pdemodelica
