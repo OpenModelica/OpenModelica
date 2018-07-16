@@ -368,6 +368,7 @@ private:
   QAction *mpModelicaDocumentationAction;
   QAction *mpModelicaByExampleAction;
   QAction *mpModelicaWebReferenceAction;
+  QAction *mpOMSimulatorUsersGuideAction;
   QAction *mpOpenModelicaTLMSimulatorDocumentationAction;
   QAction *mpAboutOMEditAction;
   // Toolbar Actions
@@ -496,7 +497,8 @@ public slots:
   void openModelicaDocumentation();
   void openModelicaByExample();
   void openModelicaWebReference();
-  void openOpenModelicaTLMSimulatorDocumentationAction();
+  void openOMSimulatorUsersGuide();
+  void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
   void openRecentModelWidget();
