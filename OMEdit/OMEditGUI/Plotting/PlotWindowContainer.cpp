@@ -149,6 +149,7 @@ void PlotWindowContainer::setTopPlotWindowActive()
   for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
     if (0 != subWindowsList.at(i)->widget()->objectName().compare(QString("animationWidget"))) {
       setActiveSubWindow(subWindowsList.at(i));
+      return;
     }
   }
 }
