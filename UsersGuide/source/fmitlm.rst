@@ -1,5 +1,5 @@
-OMSimulator - FMI and TLM-Based Simulation and Co-simulation of External Models
-===============================================================================
+FMI and TLM-Based Simulation and Co-simulation of External Models
+=================================================================
 
 Functional Mock-up Interface - FMI
 ----------------------------------
