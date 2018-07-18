@@ -173,6 +173,8 @@ import alabaster
 html_theme_path = [alabaster.get_path()]
 html_theme = 'alabaster'
 html_theme_options = {
+  "logo" : "logo.svg",
+  "logo_name" : "OpenModelica",
   "font_family" : "Arial, Helvetica, sans-serif, 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro', serif",
 }
 

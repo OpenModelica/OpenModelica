@@ -218,7 +218,7 @@ pdf: latex
 	sed -i "s,{\(media/[A-Za-z_0-9.-]*\)[.][*],{`pwd`/source/\1.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	sed -i "s,{ProfilingTest_prof[.]\([^.]*\)[.]thumb[.]svg,{`pwd`/source/ProfilingTest_prof-\1-thumb.pdf,g" build/latex/OpenModelicaUsersGuide.tex
 	(cd build/latex && latexmk -pdf OpenModelicaUsersGuide.tex)
-source/logo.pdf: source/logo.svg
+source/logo.pdf: source/_static/logo.svg
 	inkscape -f $< -A $@
 source/media/systemoverview.pdf: source/media/systemoverview.svg
 	inkscape -f $< --export-pdf $@
