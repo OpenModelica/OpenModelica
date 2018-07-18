@@ -1022,7 +1022,7 @@ the compiler:
 C:\\dev> C:\\OpenModelica1.9.2 \\bin\\omc --showErrorMessages
 -d=failtrace script.mos
 
-.. |omlogo| image:: _static/logo.*
+.. |omlogo| image:: logo.*
   :alt: OpenModelica logotype
   :height: 14pt
   :target: https://openmodelica.org
