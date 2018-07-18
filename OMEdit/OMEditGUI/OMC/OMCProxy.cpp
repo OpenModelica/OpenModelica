@@ -2446,7 +2446,7 @@ bool OMCProxy::setIndexReductionMethod(QString method)
 
 /*!
  * \brief OMCProxy::setCommandLineOptions
- * Sets the OMC flags.
+ * Sets the OMC CommandLineOptions.
  * \param options - a space separated list fo OMC command line options e.g. -d=initialization --cheapmatchingAlgorithm=3
  * \return true on success
  */
@@ -2461,7 +2461,7 @@ bool OMCProxy::setCommandLineOptions(QString options)
 
 /*!
  * \brief OMCProxy::clearCommandLineOptions
- * Clears the OMC flags.
+ * Clears the OMC CommandLineOptions.
  * \return true on success
  */
 bool OMCProxy::clearCommandLineOptions()

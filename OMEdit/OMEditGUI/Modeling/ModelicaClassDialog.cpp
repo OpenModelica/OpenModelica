@@ -1261,20 +1261,20 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
     mpTabWidget->setTabEnabled(1, false);
   }
-  // OMC Flags tab
-  QWidget *pOMCFlagsWidget = new QWidget;
-  mpOMCFlagsLabel = new Label(Helper::OMCFlagsTip);
-  mpOMCFlagsTextBox = new QPlainTextEdit;
+  // OMC CommandLineOptions tab
+  QWidget *pOMCCommandLineOptionsWidget = new QWidget;
+  mpOMCCommandLineOptionsLabel = new Label(Helper::OMCCommandLineOptionsTip);
+  mpOMCCommandLineOptionsTextBox = new QPlainTextEdit;
   // get the command line options annotation
-  mOMCFlags = pOMCProxy->getCommandLineOptionsAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
-  mpOMCFlagsTextBox->insertPlainText(mOMCFlags);
-  // OMC Flags tab layout
-  QGridLayout *pOMCFlagsGridLayout = new QGridLayout;
-  pOMCFlagsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pOMCFlagsGridLayout->addWidget(mpOMCFlagsLabel, 0, 0);
-  pOMCFlagsGridLayout->addWidget(mpOMCFlagsTextBox, 1, 0);
-  pOMCFlagsWidget->setLayout(pOMCFlagsGridLayout);
-  mpTabWidget->addTab(pOMCFlagsWidget, Helper::OMCFlags);
+  mOMCCommandLineOptions = pOMCProxy->getCommandLineOptionsAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
+  mpOMCCommandLineOptionsTextBox->insertPlainText(mOMCCommandLineOptions);
+  // OMC CommandLineOptions tab layout
+  QGridLayout *pOMCCommandLineOptionsGridLayout = new QGridLayout;
+  pOMCCommandLineOptionsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pOMCCommandLineOptionsGridLayout->addWidget(mpOMCCommandLineOptionsLabel, 0, 0);
+  pOMCCommandLineOptionsGridLayout->addWidget(mpOMCCommandLineOptionsTextBox, 1, 0);
+  pOMCCommandLineOptionsWidget->setLayout(pOMCCommandLineOptionsGridLayout);
+  mpTabWidget->addTab(pOMCCommandLineOptionsWidget, Helper::OMCCommandLineOptions);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1434,8 +1434,8 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand;
   pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(mpGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem,
                                                                      mpCopyProperties->isChecked(), oldVersion, mpVersionTextBox->text(),
-                                                                     oldUsesAnnotationString, newUsesAnnotationString, mOMCFlags,
-                                                                     mpOMCFlagsTextBox->toPlainText());
+                                                                     oldUsesAnnotationString, newUsesAnnotationString, mOMCCommandLineOptions,
+                                                                     mpOMCCommandLineOptionsTextBox->toPlainText());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {

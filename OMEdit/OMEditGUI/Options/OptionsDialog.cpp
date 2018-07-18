@@ -522,7 +522,7 @@ void OptionsDialog::readSimulationSettings()
     }
   }
   if (mpSettings->contains("simulation/OMCFlags")) {
-    mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+    mpSimulationPage->getOMCCommandLineOptionsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
   if (mpSettings->contains("simulation/ignoreCommandLineOptionsAnnotation")) {
     mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->setChecked(mpSettings->value("simulation/ignoreCommandLineOptionsAnnotation").toBool());
@@ -1080,10 +1080,10 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/targetCompiler", mpSimulationPage->getTargetCompilerComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(mpSimulationPage->getTargetCompilerComboBox()->currentText()));
   // save command line options ste manually by user. This will override above options.
-  if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCFlagsTextBox()->text())) {
-    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCFlagsTextBox()->text());
+  if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCCommandLineOptionsTextBox()->text())) {
+    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCCommandLineOptionsTextBox()->text());
   } else {
-    mpSimulationPage->getOMCFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+    mpSimulationPage->getOMCCommandLineOptionsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
   // save ignore command line options
   mpSettings->setValue("simulation/ignoreCommandLineOptionsAnnotation", mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked());
@@ -3330,14 +3330,14 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     mpTargetCompilerComboBox->setItemData(i, description, Qt::ToolTipRole);
     i++;
   }
-  // OMC Flags
-  mpOMCFlagsLabel = new Label(QString("%1:").arg(Helper::OMCFlags));
-  mpOMCFlagsLabel->setToolTip(Helper::OMCFlagsTip);
-  mpOMCFlagsTextBox = new QLineEdit("-d=initialization");
-  mpOMCFlagsHelpButton = new QToolButton;
-  mpOMCFlagsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
-  mpOMCFlagsHelpButton->setToolTip(tr("OMC flags help"));
-  connect(mpOMCFlagsHelpButton, SIGNAL(clicked()), SLOT(showOMCFlagsHelp()));
+  // OMC CommandLineOptions
+  mpOMCCommandLineOptionsLabel = new Label(QString("%1:").arg(Helper::OMCCommandLineOptions));
+  mpOMCCommandLineOptionsLabel->setToolTip(Helper::OMCCommandLineOptionsTip);
+  mpOMCCommandLineOptionsTextBox = new QLineEdit("-d=initialization");
+  mpOMCCommandLineOptionsHelpButton = new QToolButton;
+  mpOMCCommandLineOptionsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
+  mpOMCCommandLineOptionsHelpButton->setToolTip(tr("OMC command line options help"));
+  connect(mpOMCCommandLineOptionsHelpButton, SIGNAL(clicked()), SLOT(showOMCCommandLineOptionsHelp()));
   // ignore command line options annotation checkbox
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
@@ -3387,9 +3387,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpTargetLanguageComboBox, 2, 1, 1, 2);
   pSimulationLayout->addWidget(mpCompilerLabel, 3, 0);
   pSimulationLayout->addWidget(mpTargetCompilerComboBox, 3, 1, 1, 2);
-  pSimulationLayout->addWidget(mpOMCFlagsLabel, 4, 0);
-  pSimulationLayout->addWidget(mpOMCFlagsTextBox, 4, 1);
-  pSimulationLayout->addWidget(mpOMCFlagsHelpButton, 4, 2);
+  pSimulationLayout->addWidget(mpOMCCommandLineOptionsLabel, 4, 0);
+  pSimulationLayout->addWidget(mpOMCCommandLineOptionsTextBox, 4, 1);
+  pSimulationLayout->addWidget(mpOMCCommandLineOptionsHelpButton, 4, 2);
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, 5, 0, 1, 3);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, 6, 0, 1, 3);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 7, 0, 1, 3);
@@ -3446,11 +3446,11 @@ void SimulationPage::updateIndexReductionToolTip(int index)
 }
 
 /*!
- * \brief SimulationPage::showOMCFlagsHelp
- * Slot activated when mpOMCFlagsHelpButton clicked signal is raised.\n
+ * \brief SimulationPage::showOMCCommandLineOptionsHelp
+ * Slot activated when mpOMCCommandLineOptionsHelpButton clicked signal is raised.\n
  * Opens the omchelptext.html page of OpenModelica users guide.
  */
-void SimulationPage::showOMCFlagsHelp()
+void SimulationPage::showOMCCommandLineOptionsHelp()
 {
   QUrl omcHelpTextPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
                         .append("/share/doc/omc/OpenModelicaUsersGuide/omchelptext.html"));

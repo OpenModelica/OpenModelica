@@ -345,9 +345,9 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpOMCProxy->setMatchingAlgorithm(OptionsDialog::instance()->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
   // set the index reduction methods.
   mpOMCProxy->setIndexReductionMethod(OptionsDialog::instance()->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
-  // set the OMC Flags.
-  if (!OptionsDialog::instance()->getSimulationPage()->getOMCFlagsTextBox()->text().isEmpty()) {
-    mpOMCProxy->setCommandLineOptions(OptionsDialog::instance()->getSimulationPage()->getOMCFlagsTextBox()->text());
+  // set the OMC CommandLineOptions.
+  if (!OptionsDialog::instance()->getSimulationPage()->getOMCCommandLineOptionsTextBox()->text().isEmpty()) {
+    mpOMCProxy->setCommandLineOptions(OptionsDialog::instance()->getSimulationPage()->getOMCCommandLineOptionsTextBox()->text());
   }
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");

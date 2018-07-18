@@ -291,7 +291,8 @@ class UpdateCoOrdinateSystemCommand : public QUndoCommand
 public:
   UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem, CoOrdinateSystem newCoOrdinateSystem,
                                 bool copyProperties, QString oldVersion, QString newVersion, QString oldUsesAnnotationString,
-                                QString newUsesAnnotationString, QString oldOMCFlags, QString newOMCFlags, QUndoCommand *pParent = 0);
+                                QString newUsesAnnotationString, QString oldOMCCommandLineOptions, QString newOMCCommandLineOptions,
+                                QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -303,8 +304,8 @@ private:
   QString mNewVersion;
   QString mOldUsesAnnotationString;
   QString mNewUsesAnnotationString;
-  QString mOldOMCFlags;
-  QString mNewOMCFlags;
+  QString mOldOMCCommandLineOptions;
+  QString mNewOMCCommandLineOptions;
 };
 
 class UpdateClassAnnotationCommand : public QUndoCommand

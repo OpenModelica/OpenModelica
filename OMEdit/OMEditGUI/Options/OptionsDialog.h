@@ -572,7 +572,7 @@ public:
   QComboBox* getIndexReductionMethodComboBox() {return mpIndexReductionMethodComboBox;}
   QComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
   QComboBox* getTargetCompilerComboBox() {return mpTargetCompilerComboBox;}
-  QLineEdit* getOMCFlagsTextBox() {return mpOMCFlagsTextBox;}
+  QLineEdit* getOMCCommandLineOptionsTextBox() {return mpOMCCommandLineOptionsTextBox;}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
@@ -593,9 +593,9 @@ private:
   QComboBox *mpTargetLanguageComboBox;
   Label *mpCompilerLabel;
   QComboBox *mpTargetCompilerComboBox;
-  Label *mpOMCFlagsLabel;
-  QLineEdit *mpOMCFlagsTextBox;
-  QToolButton *mpOMCFlagsHelpButton;
+  Label *mpOMCCommandLineOptionsLabel;
+  QLineEdit *mpOMCCommandLineOptionsTextBox;
+  QToolButton *mpOMCCommandLineOptionsHelpButton;
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
@@ -609,7 +609,7 @@ private:
 public slots:
   void updateMatchingAlgorithmToolTip(int index);
   void updateIndexReductionToolTip(int index);
-  void showOMCFlagsHelp();
+  void showOMCCommandLineOptionsHelp();
 };
 
 class MessagesPage : public QWidget

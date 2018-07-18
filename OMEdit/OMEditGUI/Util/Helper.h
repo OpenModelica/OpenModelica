@@ -357,8 +357,8 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
-  static QString OMCFlags;
-  static QString OMCFlagsTip;
+  static QString OMCCommandLineOptions;
+  static QString OMCCommandLineOptionsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;
   static QString item;

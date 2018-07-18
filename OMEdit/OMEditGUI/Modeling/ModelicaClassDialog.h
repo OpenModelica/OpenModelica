@@ -241,9 +241,9 @@ private:
   QToolButton *mpAddUsesAnnotationButton;
   QToolButton *mpRemoveUsesAnnotationButton;
   QDialogButtonBox *mpUsesButtonBox;
-  Label *mpOMCFlagsLabel;
-  QString mOMCFlags;
-  QPlainTextEdit *mpOMCFlagsTextBox;
+  Label *mpOMCCommandLineOptionsLabel;
+  QString mOMCCommandLineOptions;
+  QPlainTextEdit *mpOMCCommandLineOptionsTextBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
