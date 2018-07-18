@@ -309,7 +309,23 @@ Move towards the end connector and click when cursor changes to cross cursor.
 Simulating a Model
 ------------------
 
-The OMEdit Simulation Dialog can be launched by,
+The simulation options for each model are stored inside the OMEdit data structure.
+They have the following sequence,
+
+-  Each model has its own simulation options.
+
+-  If the model is opened for the first time then the simulation options
+   are set to default.
+
+-  ``experiment`` and ``__OpenModelica_simulationFlags`` annotations are
+   applied if the model contains them.
+
+-  After that all the changes done via Simulation Setup window are
+   preserved for the whole session. If you want to use the same settings in
+   the future sessions then you should store them inside ``experiment`` and
+   ``__OpenModelica_simulationFlags``.
+
+The OMEdit Simulation Setup can be launched by,
 
 -  Selecting Simulation > Simulation Setup from the menu. (requires a
    model to be active in ModelWidget)
@@ -361,7 +377,7 @@ General Tab
 
     -  *Maximum Integration Order*
 
--  *Compiler Flags (Optional)* – the optional C compiler flags.
+-  *C/C++ Compiler Flags (Optional)* – the optional C/C++ compiler flags.
 
 -  *Number of Processors* – the number of processors used to build the simulation.
 
@@ -377,6 +393,8 @@ Output Tab
 ~~~~~~~~~~
 
 -  *Output Format* – the simulation result file output format.
+
+-  *Single Precision* - Output results in single precision (only for mat output format).
 
 -  *File Name Prefix (Optional)* – the name is used as a prefix for the output files.
 
@@ -425,12 +443,15 @@ Simulation Flags Tab
 
 -  *Logging (Optional)*
 
+  -  *stdout* - standard output stream. This stream is always active, can be disabled with -lv=-stdout
+  -  *assert* - This stream is always active, can be disabled with -lv=-assert
   -  *LOG_DASSL* - additional information about dassl solver.
   -  *LOG_DASSL_STATES* - outputs the states at every dassl call.
   -  *LOG_DEBUG* - additional debug information.
   -  *LOG_DSS* - outputs information about dynamic state selection.
   -  *LOG_DSS_JAC* - outputs jacobian of the dynamic state selection.
   -  *LOG_DT* - additional information about dynamic tearing.
+  -  *LOG_DT_CONS* - additional information about dynamic tearing (local and global constraints).
   -  *LOG_EVENTS* - additional information during event iteration.
   -  *LOG_EVENTS_V* - verbose logging of event system.
   -  *LOG_INIT* - additional information during initialization.
@@ -453,10 +474,12 @@ Simulation Flags Tab
   -  *LOG_RT* - additional information regarding real-time processes.
   -  *LOG_SIMULATION* - additional information about simulation process.
   -  *LOG_SOLVER* - additional information about solver process.
+  -  *LOG_SOLVER_V* - verbose information about the integration process.
   -  *LOG_SOLVER_CONTEXT* - context information during the solver process.
   -  *LOG_SOTI* - final solution of the initialization.
   -  *LOG_STATS* - additional statistics about timer/events/solver.
   -  *LOG_STATS_V* - additional statistics for LOG_STATS.
+  -  *LOG_SUCCESS* - This stream is always active, can be disabled with -lv=-LOG_SUCCESS.
   -  *LOG_UTIL*.
   -  *LOG_ZEROCROSSINGS* - additional information about the zerocrossings.
 
@@ -893,6 +916,10 @@ Text Editor
 
   -  *Enable Line Wrapping* – Enable/Disable the line wrapping.
 
+-  Autocomplete
+
+  -  *Enable Autocomplete* – Enable/Disable the autocomplete.
+
 -  Font
 
   -  *Font Family* – Shows the names list of available fonts.
@@ -989,19 +1016,29 @@ Simulation
 
   -  *Target Compiler* – sets the target compiler for compiling the generated code.
 
-  -  *OMC Flags* – sets the omc flags for simulation.
+  -  *OMC Command Line Options* – sets the OMC command line options for the simulation.
 
-  -  *Ignore __OpenModelica_commandLineOptions annotation* – if ture then ignores the __OpenModelica_commandLineOptions
+  -  *Ignore __OpenModelica_commandLineOptions annotation* – if true then ignores the __OpenModelica_commandLineOptions
      annotation while running the simulation.
 
-  -  *Ignore __OpenModelica_simulationFlags annotation* – if ture then ignores the __OpenModelica_simulationFlags
+  -  *Ignore __OpenModelica_simulationFlags annotation* – if true then ignores the __OpenModelica_simulationFlags
      annotation while running the simulation.
 
-  -  *Save class before simulation* – if ture then always saves the class
+  -  *Save class before simulation* – if true then always saves the class
      before running the simulation.
 
-  -  *Switch to plotting perspective after simulation* – if ture then GUI always switches to plotting
+  -  *Switch to plotting perspective after simulation* – if true then GUI always switches to plotting
      perspective after the simulation.
+
+  -  *Close completed simulation output windows before simulation* – if true
+     then the completed simulation output windows are closed before starting
+     a new simulation.
+
+  -  *Delete intermediate compilation files* – if true then the files
+     generated during the compilation are deleted automatically.
+
+  -  *Delete entire simulation directory of the model when OMEdit is closed* –
+     if true then the entire simulation directory is deleted on quit.
 
   -  Output
 
@@ -1063,6 +1100,9 @@ Notifications
   -  *Always ask for the dragged component name* – If true then a
      message will pop-up when user drag & drop the component on the
      graphical view.
+
+  -  *Always ask for what to do with the text editor error* – If true then a
+     message will always pop-up when there is an error in the text editor.
 
 Line Style
 ~~~~~~~~~~
@@ -1178,16 +1218,31 @@ FMI
 
   -  Platforms - list of platforms to generate FMU binaries.
 
-TLM
-~~~
+-  Import
+
+  -  *Delete FMU directory and generated model when OMEdit is closed* - If true
+     then the temporary FMU directory that is created for importing the FMU
+     will be deleted.
+
+OMTLMSimulator
+~~~~~~~~~~~~~~
 
 -  General
 
-  -  TLM Plugin Path - path to TLM plugin bin directory.
+  -  *Path* - path to OMTLMSimulator bin directory.
 
-  -  TLM Manager Process - path to TLM managar process.
+  -  *Manager Process* - path to OMTLMSimulator managar process.
 
-  -  TLM Monitor Process - path to TLM monitor process.
+  -  *Monitor Process* - path to OMTLMSimulator monitor process.
+
+OMSimulator
+~~~~~~~~~~~
+
+-  General
+
+  -  *Working Directory* - working directory for OMSimulator files.
+
+  -  *Logging Level* - OMSimulator logging level.
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
@@ -1206,7 +1261,7 @@ The annotation is a space separated list of options where each option is either 
 flag or a flag with a value.
 
 In OMEdit right click inside the icon/diagram view of the model and choose `Properties`.
-Then `OMC Flags` and in the text field write `--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection`.
+Then `OMC Command Line Options` and in the text field write `--matchingAlgorithm=BFSB --indexReductionMethod=dynamicStateSelection`.
 
 If you want to ignore this annotation then use `setCommandLineOptions("--ignoreCommandLineOptionsAnnotation=true")`.
 In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_commandLineOptions annotation`.
