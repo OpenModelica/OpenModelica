@@ -7,60 +7,60 @@ The |omlogo| system described in this document has both short-term
 and long-term goals:
 
 -  The short-term goal is to develop an efficient interactive
-       computational environment for the Modelica language, as well as a
-       rather complete implementation of the language. It turns out that
-       with support of appropriate tools and libraries, Modelica is very
-       well suited as a computational language for development and
-       execution of both low level and high level numerical algorithms,
-       e.g. for control system design, solving nonlinear equation
-       systems, or to develop optimization algorithms that are applied
-       to complex applications.
+   computational environment for the Modelica language, as well as a
+   rather complete implementation of the language. It turns out that
+   with support of appropriate tools and libraries, Modelica is very
+   well suited as a computational language for development and
+   execution of both low level and high level numerical algorithms,
+   e.g. for control system design, solving nonlinear equation
+   systems, or to develop optimization algorithms that are applied
+   to complex applications.
 
--  The longer-term goal is to have a complete reference implementation
-       of the Modelica language, including simulation of equation based
-       models and additional facilities in the programming environment,
-       as well as convenient facilities for research and experimentation
-       in language design or other research activities. However, our
-       goal is not to reach the level of performance and quality
-       provided by current commercial Modelica environments that can
-       handle large models requiring advanced analysis and optimization
-       by the Modelica compiler.
+-  The long-term goal is to have a complete reference implementation
+   of the Modelica language, including simulation of equation based
+   models and additional facilities in the programming environment,
+   as well as convenient facilities for research and experimentation
+   in language design or other research activities. However, our
+   goal is not to reach the level of performance and quality
+   provided by current commercial Modelica environments that can
+   handle large models requiring advanced analysis and optimization
+   by the Modelica compiler.
 
 The long-term *research* related goals and issues of the OpenModelica
 open source implementation of a Modelica environment include but are not
 limited to the following:
 
 -  Development of a *complete formal specification* of Modelica,
-       including both static and dynamic semantics. Such a specification
-       can be used to assist current and future Modelica implementers by
-       providing a semantic reference, as a kind of reference
-       implementation.
+   including both static and dynamic semantics. Such a specification
+   can be used to assist current and future Modelica implementers by
+   providing a semantic reference, as a kind of reference
+   implementation.
 
 -  *Language design*, e.g. to further *extend the scope* of the
-       language, e.g. for use in diagnosis, structural analysis, system
-       identification, etc., as well as modeling problems that require
-       extensions such as partial differential equations, enlarged scope
-       for discrete modeling and simulation, etc.
+   language, e.g. for use in diagnosis, structural analysis, system
+   identification, etc., as well as modeling problems that require
+   extensions such as partial differential equations, enlarged scope
+   for discrete modeling and simulation, etc.
 
 -  *Language design* to *improve abstract properties* such as
-       expressiveness, orthogonality, declarativity, reuse,
-       configurability, architectural properties, etc.
+   expressiveness, orthogonality, declarativity, reuse,
+   configurability, architectural properties, etc.
 
 -  *Improved implementation techniques*, e.g. to enhance the performance
-       of compiled Modelica code by generating code for parallel
-       hardware.
+   of compiled Modelica code by generating code for parallel
+   hardware.
 
 -  *Improved debugging* support for equation based languages such as
-       Modelica, to make them even easier to use.
+   Modelica, to make them even easier to use.
 
 -  *Easy-to-use* specialized high-level (graphical) *user interfaces*
-       for certain application domains.
+   for certain application domains.
 
 -  *Visualization* and animation techniques for interpretation and
-       presentation of results.
+   presentation of results.
 
 -  *Application usage* and model library development by researchers in
-       various application areas.
+   various application areas.
 
 The OpenModelica environment provides a test bench for language design
 ideas that, if successful, can be submitted to the Modelica Association
@@ -94,83 +94,83 @@ The following subsystems are currently integrated in the OpenModelica
 environment:
 
 -  *An interactive session handler*, that parses and interprets commands
-       and Modelica expressions for evaluation, simulation, plotting,
-       etc. The session handler also contains simple history facilities,
-       and completion of file names and certain identifiers in commands.
+   and Modelica expressions for evaluation, simulation, plotting,
+   etc. The session handler also contains simple history facilities,
+   and completion of file names and certain identifiers in commands.
 
 -  *A Modelica compiler subsystem*, translating Modelica to C code, with
-       a symbol table containing definitions of classes, functions, and
-       variables. Such definitions can be predefined, user-defined, or
-       obtained from libraries. The compiler also includes a Modelica
-       interpreter for interactive usage and constant expression
-       evaluation. The subsystem also includes facilities for building
-       simulation executables linked with selected numerical ODE or DAE
-       solvers.
+   a symbol table containing definitions of classes, functions, and
+   variables. Such definitions can be predefined, user-defined, or
+   obtained from libraries. The compiler also includes a Modelica
+   interpreter for interactive usage and constant expression
+   evaluation. The subsystem also includes facilities for building
+   simulation executables linked with selected numerical ODE or DAE
+   solvers.
 
 -  *An execution and run-time module*. This module currently executes
-       compiled binary code from translated expressions and functions,
-       as well as simulation code from equation based models, linked
-       with numerical solvers. In the near future event handling
-       facilities will be included for the discrete and hybrid parts of
-       the Modelica language.
+   compiled binary code from translated expressions and functions,
+   as well as simulation code from equation based models, linked
+   with numerical solvers. In the near future event handling
+   facilities will be included for the discrete and hybrid parts of
+   the Modelica language.
 
 -  *Eclipse plugin editor/browser*. The Eclipse plugin called MDT
-       (Modelica Development Tooling) provides file and class hierarchy
-       browsing and text editing capabilities, rather analogous to
-       previously described Emacs editor/browser. Some syntax
-       highlighting facilities are also included. The Eclipse framework
-       has the advantage of making it easier to add future extensions
-       such as refactoring and cross referencing support.
+   (Modelica Development Tooling) provides file and class hierarchy
+   browsing and text editing capabilities, rather analogous to
+   previously described Emacs editor/browser. Some syntax
+   highlighting facilities are also included. The Eclipse framework
+   has the advantage of making it easier to add future extensions
+   such as refactoring and cross referencing support.
 
 -  *OMNotebook DrModelica model editor*. This subsystem provides a
-       lightweight notebook editor, compared to the more advanced
-       Mathematica notebooks available in MathModelica. This basic
-       functionality still allows essentially the whole DrModelica
-       tutorial to be handled. Hierarchical text documents with chapters
-       and sections can be represented and edited, including basic
-       formatting. Cells can contain ordinary text or Modelica models
-       and expressions, which can be evaluated and simulated. However,
-       no mathematical typesetting facilities are yet available in the
-       cells of this notebook editor.
+   lightweight notebook editor, compared to the more advanced
+   Mathematica notebooks available in MathModelica. This basic
+   functionality still allows essentially the whole DrModelica
+   tutorial to be handled. Hierarchical text documents with chapters
+   and sections can be represented and edited, including basic
+   formatting. Cells can contain ordinary text or Modelica models
+   and expressions, which can be evaluated and simulated. However,
+   no mathematical typesetting facilities are yet available in the
+   cells of this notebook editor.
 
 -  *Graphical model editor/browser OMEdit*. This is a graphical
-       connection editor, for component based model design by connecting
-       instances of Modelica classes, and browsing Modelica model
-       libraries for reading and picking component models. The graphical
-       model editor also includes a textual editor for editing model
-       class definitions, and a window for interactive Modelica command
-       evaluation.
+   connection editor, for component based model design by connecting
+   instances of Modelica classes, and browsing Modelica model
+   libraries for reading and picking component models. The graphical
+   model editor also includes a textual editor for editing model
+   class definitions, and a window for interactive Modelica command
+   evaluation.
 
 -  *Optimization subsystem OMOptim*. This is an optimization subsystem
-       for OpenModelica, currently for design optimization choosing an
-       optimal set of design parameters for a model. The current version
-       has a graphical user interface, provides genetic optimization
-       algorithms and Pareto front optimization, works integrated with
-       the simulators and automatically accesses variables and design
-       parameters from the Modelica model.
+   for OpenModelica, currently for design optimization choosing an
+   optimal set of design parameters for a model. The current version
+   has a graphical user interface, provides genetic optimization
+   algorithms and Pareto front optimization, works integrated with
+   the simulators and automatically accesses variables and design
+   parameters from the Modelica model.
 
 -  *Dynamic Optimization subsystem*. This is dynamic optimization using
-       collocation methods, for Modelica models extended with
-       optimization specifications with goal functions and additional
-       constraints. This subsystem is integrated with in the
-       OpenModelica compiler.
+   collocation methods, for Modelica models extended with
+   optimization specifications with goal functions and additional
+   constraints. This subsystem is integrated with in the
+   OpenModelica compiler.
 
 -  *Modelica equation model debugger*. The equation model debugger shows
-       the location of an error in the model equation source code. It
-       keeps track of the symbolic transformations done by the compiler
-       on the way from equations to low-level generated C code, and also
-       explains which transformations have been done.
+   the location of an error in the model equation source code. It
+   keeps track of the symbolic transformations done by the compiler
+   on the way from equations to low-level generated C code, and also
+   explains which transformations have been done.
 
 -  *Modelica algorithmic code debugger*. The algorithmic code Modelica
-       debugger provides debugging for an extended algorithmic subset of
-       Modelica, excluding equation-based models and some other
-       features, but including some meta-programming and model
-       transformation extensions to Modelica. This is a conventional
-       full-feature debugger, using Eclipse for displaying the source
-       code during stepping, setting breakpoints, etc. Various
-       back-trace and inspection commands are available. The debugger
-       also includes a data-view browser for browsing hierarchical data
-       such as tree- or list structures in extended Modelica.
+   debugger provides debugging for an extended algorithmic subset of
+   Modelica, excluding equation-based models and some other
+   features, but including some meta-programming and model
+   transformation extensions to Modelica. This is a conventional
+   full-feature debugger, using Eclipse for displaying the source
+   code during stepping, setting breakpoints, etc. Various
+   back-trace and inspection commands are available. The debugger
+   also includes a data-view browser for browsing hierarchical data
+   such as tree- or list structures in extended Modelica.
 
 Interactive Session with Examples
 ---------------------------------
