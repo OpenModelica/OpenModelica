@@ -21,6 +21,7 @@ Aclass
   - ``Aclass(2,:)`` is ``1.1`` in OpenModelica
   - ``Aclass(3,:)`` is empty
   - ``Aclass(4,:)`` is either ``binTrans`` or ``binNormal``
+
   The most important part of the variable is ``Aclass(4,:)`` since there are
   two main ways the result-file is stored: transposed or not.
   For efficiency, the result-file is written time-step by time-step during
@@ -44,7 +45,6 @@ description
 dataInfo
   Is an n x 4 integer matrix containing information for each variable (in the
   same order as the name and description matrices).
-
   - ``dataInfo(i,1)`` is ``1`` or ``2``, saying if variable i is stored in the data_1 or data_2 matrix. If it is ``0`, it is the abscissa (time variable).
   - ``dataInfo(i,2)`` contains the index in the data_1 or data_2 matrix.
     The index is 1-based and may contain several variables pointing to the same row (alias variables).

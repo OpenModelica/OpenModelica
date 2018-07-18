@@ -583,7 +583,7 @@ which replaces third-party libraries (such as `Modelica3D
 <https://github.com/OpenModelica/Modelica3D>`_) for 3D visualization.
 
 Running a Visualization
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 The 3d visualization is based on OpenSceneGraph. In order to run the
 visualization simply right click the class in Libraries Browser an
@@ -602,7 +602,7 @@ This scene description references all variables which are needed for the animati
 When simulating with *+d=visxml*, the compiler will always generate results for these variables.
 
 Viewing a Visualization
-^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~
 
 After the successful simulation of the model, the visualization window will
 show up automatically as shown in :numref:`omedit-visualization`.
@@ -634,7 +634,8 @@ Shape context menu         Right Mouse + Shift
 Predefined views (Isometric, Side, Front, Top) can be selected and the scene can be tilted by 90° either clock or anticlockwise with the rotation buttons.
 
 Additional Visualization Features
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The shapes that are displayed in the viewer can be selected with shift + right click.
 If a shape is selected, a context menu pops up that offers additional visualization features
 
@@ -654,7 +655,6 @@ Apply Custom Texture      A file selection dialog pops up and an image file can 
 Remove Texture            Removes the current texture of the shape.
 ========================  ================================================================================================
 
-|
 .. figure :: media/visual_features.png
   :name: Different visualization features.
 
@@ -995,10 +995,10 @@ Graphical Views
 -  Component
 
   -  *Scale factor* – Defines the initial scale factor for the component
-   dragged on the view.
+     dragged on the view.
 
   -  *Preserve aspect ratio* – If true then the component’s aspect ratio
-   is preserved while scaling.
+     is preserved while scaling.
 
 .. _omedit-settings-simulation :
 
