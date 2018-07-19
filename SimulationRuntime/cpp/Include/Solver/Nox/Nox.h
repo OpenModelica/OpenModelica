@@ -3,12 +3,14 @@
  *
  *  @{
  */
-
+#include "FactoryExport.h"
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
 #include <Solver/Nox/NOX_StatusTest_SgnChange.H>
 
 
-class Nox : public INonLinearAlgLoopSolver
+
+class Nox : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
 public:
   Nox(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
@@ -27,6 +29,10 @@ public:
   virtual void stepCompleted(double time);
   virtual void restoreOldValues();
   virtual void restoreNewValues();
+
+    virtual bool* getConditionsWorkArray();
+  virtual bool* getConditions2WorkArray();
+  virtual double* getVariableWorkArray();
 
 private:
 
@@ -63,7 +69,7 @@ private:
   ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
-  const long int _dimSys;
+
 
   double
 	  *_y,

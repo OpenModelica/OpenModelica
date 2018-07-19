@@ -9,7 +9,7 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 add_precompiled_header(${NoxName} Include/Core/Modelica.h)
-target_link_libraries(${NoxName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${TRILINOS_LIBRARIES} )    #C:/OpenModelica/OMCompiler/SimulationRuntime/cpp/Solver/KLU/OMCppklu_static.lib
+target_link_libraries(${NoxName}  ${SolverName}  ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${TRILINOS_LIBRARIES} )    #C:/OpenModelica/OMCompiler/SimulationRuntime/cpp/Solver/KLU/OMCppklu_static.lib
 #target_link_libraries(${NoxName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES} ${LAPACK_LIBRARIES} ${kluName})
 
 install(FILES $<TARGET_PDB_FILE:${NoxName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)

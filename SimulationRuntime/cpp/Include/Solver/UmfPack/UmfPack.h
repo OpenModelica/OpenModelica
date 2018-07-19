@@ -1,5 +1,6 @@
 #pragma once
-
+#include "FactoryExport.h"
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 #include <Core/System/ILinearAlgLoop.h>              // Interface to AlgLoo
 #include <Core/System/INonLinearAlgLoop.h>              // Interface to AlgLoo
 #include <Core/Solver/ILinearAlgLoopSolver.h>        // Export function from dll
@@ -7,7 +8,7 @@
 #include <Solver/UmfPack/UmfPackSettings.h>
 
 
-class UmfPack : public ILinearAlgLoopSolver
+class UmfPack : public ILinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
 public:
   UmfPack(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop=shared_ptr<ILinearAlgLoop>());
@@ -26,6 +27,11 @@ public:
     virtual void stepCompleted(double time);
     virtual void restoreOldValues();
     virtual void restoreNewValues();
+
+
+	virtual bool* getConditionsWorkArray();
+    virtual bool* getConditions2WorkArray();
+    virtual double* getVariableWorkArray();
 private:
     ITERATIONSTATUS _iterationStatus;
     ILinSolverSettings *_umfpackSettings;

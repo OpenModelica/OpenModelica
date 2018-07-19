@@ -6,10 +6,9 @@
 #pragma once
 
 #include "FactoryExport.h"
-
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
 #include <Solver/Broyden/BroydenSettings.h>
-
 #include <Core/Utils/extension/logger.hpp>
 
 /*****************************************************************************/
@@ -42,7 +41,7 @@ where A is an n-by-n matrix and y and B are n-by-n(right hand side) matrices.
 /*****************************************************************************
 OSMS(c) 2008
 *****************************************************************************/
-class Broyden : public INonLinearAlgLoopSolver
+class Broyden : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
 public:
 
@@ -65,6 +64,10 @@ public:
     virtual void stepCompleted(double time);
     virtual void restoreOldValues();
     virtual void restoreNewValues();
+
+	virtual bool* getConditionsWorkArray();
+    virtual bool* getConditions2WorkArray();
+    virtual double* getVariableWorkArray();
 private:
     /// Encapsulation of determination of residuals to given unknowns
     void calcFunction(const double* y, double* residual);
@@ -83,7 +86,7 @@ private:
         _iterationStatus;            ///< Output        - Denotes the status of iteration
 
     long int
-        _dimSys,                    ///< Temp        - Number of unknowns (=dimension of system of equations)
+
 		_lwork,
 		_iONE;
 

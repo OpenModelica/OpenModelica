@@ -36,6 +36,11 @@ int NonLinearAlgLoopDefaultImplementation::getDimReal() const
   return _dimAEq;
 }
 
+int NonLinearAlgLoopDefaultImplementation::getDimZeroFunc() const
+{
+   return _dimZeroFunc;
+}
+
 /// (Re-) initialize the system of equations
 void NonLinearAlgLoopDefaultImplementation::initialize()
 {

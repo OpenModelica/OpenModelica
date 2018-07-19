@@ -107,7 +107,8 @@ int kin_DlsDenseJacFn(long int N, N_Vector u, N_Vector fu,DlsMat J, void *user_d
 */
 
 Kinsol::Kinsol(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
-	: _algLoop            (algLoop)
+    :AlgLoopSolverDefaultImplementation()
+	,_algLoop            (algLoop)
 	, _kinsolSettings     ((INonLinSolverSettings*)settings)
 	, _y                  (NULL)
 	, _y0                 (NULL)
@@ -119,7 +120,7 @@ Kinsol::Kinsol(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> alg
 	, _jac                (NULL)
 	, _fHelp              (NULL)
 	, _yHelp              (NULL)
-	, _dimSys             (0)
+
 	, _fnorm              (10.0)
 	, _currentIterateNorm (100.0)
 	, _firstCall          (true)
@@ -143,9 +144,21 @@ Kinsol::Kinsol(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> alg
     , _y_old(NULL)
     , _y_new(NULL)
   , _solverErrorNotificationGiven(false)
-{
-	_data = ((void*)this);
 
+{
+	_max_dimSys = 100;
+	_max_dimZeroFunc=50;
+	_data = ((void*)this);
+	if (_algLoop)
+	{
+		_single_instance = false;
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		_single_instance = true;
+		AlgLoopSolverDefaultImplementation::initialize(_max_dimZeroFunc,_max_dimSys);
+	}
 }
 
 Kinsol::~Kinsol()
@@ -200,28 +213,15 @@ Kinsol::~Kinsol()
 void Kinsol::initialize()
 {
 	int idid;
-
+    if(!_algLoop)
+        throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	if(_firstCall)
 	   _algLoop->initialize();
 
 	_firstCall = false;
+    _sparse = _algLoop->getUseSparseFormat();
+    _dimSys =_algLoop->getDimReal();
 
-     if(!_algLoop)
-        throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
-
-	 _sparse = _algLoop->getUseSparseFormat();
-
-	// Dimension of the system (number of variables)
-	int
-		dimDouble  = _algLoop->getDimReal(),
-		dimInt    = 0,
-		dimBool    = 0;
-
-
-		_dimSys = dimDouble;
-
-		if(_dimSys > 0)
-		{
 			// Initialization of vector of unknowns
 			if(_y)               delete []  _y;
 			if(_y0)              delete []  _y0;
@@ -364,7 +364,6 @@ void Kinsol::initialize()
 
 			_counter = 0;
 
-	}
 	LOGGER_WRITE("Kinsol: initialized",LC_NLS,LL_DEBUG);
 }
 
@@ -379,6 +378,24 @@ void Kinsol::solve(shared_ptr<INonLinearAlgLoop> algLoop, bool first_solve)
 		throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 	solve();
 }
+bool* Kinsol::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
+
+}
+bool* Kinsol::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* Kinsol::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 
 
 void Kinsol::solve()

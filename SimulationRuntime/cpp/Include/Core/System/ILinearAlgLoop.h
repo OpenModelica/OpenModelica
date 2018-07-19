@@ -29,7 +29,7 @@ public:
 
   /// Provide number (dimension) of variables according to the data type
   virtual int getDimReal() const = 0;
-
+   virtual int getDimZeroFunc() const =0;
   /// (Re-) initialize the system of equations
   virtual void initialize() = 0;
 

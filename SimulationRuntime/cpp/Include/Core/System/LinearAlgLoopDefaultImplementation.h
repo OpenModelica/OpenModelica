@@ -27,7 +27,7 @@ public:
 
   /// Provide number (dimension) of variables according to data type
   int getDimReal() const;
-
+  virtual int getDimZeroFunc() const;
   /// (Re-) initialize the system of equations
   void initialize();
 
@@ -38,12 +38,14 @@ public:
 
   void setUseSparseFormat(bool value);
   virtual void getRealStartValues(double* vars) const;
+
   //void getSparseAdata(double* data, int nonzeros);
 
   // Member variables
   //---------------------------------------------------------------
 protected:
   int _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
+  int _dimZeroFunc;
   double* _b;
   double* _x0;
 

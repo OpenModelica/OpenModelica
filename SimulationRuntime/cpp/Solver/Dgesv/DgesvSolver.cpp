@@ -16,8 +16,9 @@
 #include <Core/Utils/numeric/utils.h>
 
 DgesvSolver::DgesvSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
-  : _algLoop            (algLoop)
-  , _dimSys             (0)
+  :AlgLoopSolverDefaultImplementation()
+  , _algLoop            (algLoop)
+
   , _yNames             (NULL)
   , _yNominal           (NULL)
   , _y                  (NULL)
@@ -35,6 +36,14 @@ DgesvSolver::DgesvSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop>
   , _hasDgetc2Factors   (false)
   , _fNominal           (NULL)
 {
+	if (_algLoop)
+	{
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+	}
 }
 
 DgesvSolver::~DgesvSolver()
@@ -62,12 +71,7 @@ void DgesvSolver::initialize()
   else
 	  throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
-  int dimDouble = _algLoop->getDimReal();
-  int ok = 0;
-
-  if (dimDouble != _dimSys) {
-    _dimSys = dimDouble;
-
+  int _dimSys = _algLoop->getDimReal();
     if (_dimSys > 0) {
       // Initialization of vector of unknowns
       if (_yNames)         delete [] _yNames;
@@ -108,10 +112,10 @@ void DgesvSolver::initialize()
       memset(_A, 0, _dimSys*_dimSys*sizeof(double));
       memset(_zeroVec, 0, _dimSys*sizeof(double));
     }
-    else {
+      else {
       _iterationStatus = SOLVERERROR;
     }
-  }
+
 
   LOGGER_WRITE_BEGIN("DgesvSolver: eq" + to_string(_algLoop->getEquationIndex()) +
                      " initialized", LC_LS, LL_DEBUG);
@@ -124,7 +128,24 @@ void DgesvSolver::solve(shared_ptr<ILinearAlgLoop> algLoop,bool first_solve)
 {
 	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
 }
+bool* DgesvSolver::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
 
+}
+bool* DgesvSolver::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* DgesvSolver::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 void DgesvSolver::solve()
 {
 
@@ -137,6 +158,7 @@ void DgesvSolver::solve()
     initialize();
    }
   _iterationStatus = CONTINUE;
+
 
   LOGGER_WRITE_BEGIN("DgesvSolver: eq" + to_string(_algLoop->getEquationIndex()) +
                      " at time " + to_string(_algLoop->getSimTime()) + ":",

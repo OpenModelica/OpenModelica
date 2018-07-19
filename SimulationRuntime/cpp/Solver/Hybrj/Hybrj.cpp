@@ -11,7 +11,8 @@
 #include <algorithm>    // std::max
 
 Hybrj::Hybrj(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
-	: _algLoop            (algLoop)
+    :AlgLoopSolverDefaultImplementation()
+	, _algLoop            (algLoop)
 	, _newtonSettings    ((INonLinSolverSettings*)settings)
 	, _x                (NULL)
 	, _xHelp            (NULL)
@@ -26,7 +27,7 @@ Hybrj::Hybrj(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLo
 	,_wa2(NULL)
 	,_wa3(NULL)
 	,_wa4(NULL)
-	, _dimSys(0)
+
 	, _firstCall(true)
 	, _iterationStatus(CONTINUE)
 	,_x0(NULL)
@@ -40,6 +41,14 @@ Hybrj::Hybrj(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLo
 	,_usescale(false)
 {
 	_data = ((void*)this);
+	if (_algLoop)
+	{
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+	}
 }
 
 Hybrj::~Hybrj()
@@ -82,15 +91,7 @@ void Hybrj::initialize()
 	  throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
 	// Dimension of the system (number of variables)
-	int
-		dimDouble    = _algLoop->getDimReal(),
-		dimInt        = 0,
-		dimBool        = 0;
-
-	// Check system dimension
-	if (dimDouble != _dimSys)
-	{
-		_dimSys = dimDouble;
+	 _dimSys    = _algLoop->getDimReal();
 
 		if(_dimSys > 0)
 		{
@@ -162,11 +163,6 @@ void Hybrj::initialize()
 
 
 		}
-		else
-		{
-			_iterationStatus = SOLVERERROR;
-		}
-	}
 
 
 }
@@ -176,7 +172,24 @@ void Hybrj::solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve)
 	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
 }
 
+bool* Hybrj::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
 
+}
+bool* Hybrj::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* Hybrj::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 void Hybrj::solve()
 {
 
@@ -194,12 +207,13 @@ void Hybrj::solve()
 	_iterationStatus = CONTINUE;
 	bool isConsistent = true;
 	double local_tol = 1e-12;
+	int dimSys = _dimSys;
 	while(_iterationStatus == CONTINUE)
 	{
 		/* Scaling x vector */
 		if(_usescale)
-			std::transform (_x, _x+_dimSys, _x_scale,_x, std::divides<double>());
-		__minpack_func__(hybrj)((minpack_funcder_nn)fcn, &_dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag,
+			std::transform (_x, _x+dimSys, _x_scale,_x, std::divides<double>());
+		__minpack_func__(hybrj)((minpack_funcder_nn)fcn, &dimSys, _x, _f, _jac, &_ldfjac, &_xtol, &_maxfev, _diag,
 			&_mode, &_factor, &_nprint, &info, &_nfev, &_njev, _r, &_lr, _qtf,
 			_wa1, _wa2, _wa3, _wa4,_data);
 		//check if  the conditions of the system has changed
@@ -211,10 +225,10 @@ void Hybrj::solve()
 		}
 		/* re-scaling x vector */
 		if(_usescale)
-			std::transform (_x, _x+_dimSys, _x_scale, _x, std::multiplies<double>());
+			std::transform (_x, _x+dimSys, _x_scale, _x, std::multiplies<double>());
 
 
-		_fnorm = __minpack_func__(enorm)(&_dimSys, _f);
+		_fnorm = __minpack_func__(enorm)(&dimSys, _f);
 		/*solution was found*/
 		if(info==1  || (_fnorm <= local_tol))
 			_iterationStatus = DONE;
@@ -232,7 +246,7 @@ void Hybrj::solve()
 		else if((info==4 || info == 5) && iter<4)
 		{
 			_factor=_initial_factor;
-			for(int i = 0; i < _dimSys; i++)
+			for(int i = 0; i < dimSys; i++)
 				_x[i] += _x_nom[i] * 0.1;
 			iter++;
 			//  cout <<"iteration making no progress:\t vary solution point by 1%%"<< std::endl ;
@@ -240,7 +254,7 @@ void Hybrj::solve()
 		/* try old values as x-Scaling factors */
 		else if((info==4 || info == 5) && iter<5)
 		{
-			for(int i = 0; i < _dimSys; i++)
+			for(int i = 0; i < dimSys; i++)
 				_x_scale[i] = std::max(_x0[i], _x_nom[i]);
 			iter++;
 			//cout << "iteration making no progress:\t try without scaling at all."<< std::endl ;
@@ -250,14 +264,14 @@ void Hybrj::solve()
 		else if((info==4 || info == 5) && iter<6)
 		{
 			_usescale = false;
-			memcpy(_x_scale, _x_nom,_dimSys*(sizeof(double)));
+			memcpy(_x_scale, _x_nom,dimSys*(sizeof(double)));
 			iter++;
 			// cout << "iteration making no progress:\t try without scaling at all."<< std::endl ;
 		}
 		/*try with old values (instead of extrapolating )*/
 		else if((info==4 || info == 5) && iter_retry<1)
 		{
-			memcpy(_x, _x0, _dimSys*(sizeof(double)));
+			memcpy(_x, _x0, dimSys*(sizeof(double)));
 			iter=0;
 			iter_retry++;
 			// cout << "- iteration making no progress:\t use old values instead extrapolated."<< std::endl ;
@@ -265,8 +279,8 @@ void Hybrj::solve()
 		/* try to vary the initial values */
 		else if((info==4 || info == 5) && iter_retry<2)
 		{
-			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-			for(int i = 0; i < _dimSys; i++)
+			memcpy(_x, _x_ex, dimSys*(sizeof(double)));
+			for(int i = 0; i < dimSys; i++)
 			{
 				_x[i] *= 1.01;
 			}
@@ -278,8 +292,8 @@ void Hybrj::solve()
 		/* try to vary the initial values */
 		else if((info==4 || info == 5) && iter_retry<3)
 		{
-			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-			for(int i = 0; i < _dimSys; i++)
+			memcpy(_x, _x_ex, dimSys*(sizeof(double)));
+			for(int i = 0; i < dimSys; i++)
 			{
 				_x[i] *= 0.99;
 			}
@@ -291,7 +305,7 @@ void Hybrj::solve()
 		/* try to vary the initial values */
 		else if((info==4 || info == 5) && iter_retry<4)
 		{
-			memcpy(_x, _x_nom, _dimSys*(sizeof(double)));
+			memcpy(_x, _x_nom, dimSys*(sizeof(double)));
 			iter = 0;
 			iter_retry++;
 			// cout << "-   iteration making no progress:\t try scaling factor as initial point."<< std::endl ;
@@ -299,8 +313,8 @@ void Hybrj::solve()
 		/* try own scaling factors */
 		else if((info==4 || info == 5) && iter_retry<5)
 		{
-			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-			for(int i = 0; i < _dimSys; i++)
+			memcpy(_x, _x_ex, dimSys*(sizeof(double)));
+			for(int i = 0; i < dimSys; i++)
 			{
 				_diag[i] = fabs(_x_scale[i]);
 				if(_diag[i] <= 0)
@@ -314,8 +328,8 @@ void Hybrj::solve()
 		/* try without internal scaling */
 		else if((info==4 || info == 5) && iter_retry2<2)
 		{
-			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
-			for(int i = 0; i < _dimSys; i++)
+			memcpy(_x, _x_ex, dimSys*(sizeof(double)));
+			for(int i = 0; i < dimSys; i++)
 			{
 				_diag[i] = 1.0;
 			}
@@ -329,7 +343,7 @@ void Hybrj::solve()
 		/* try to reduce the tolerance a bit */
 		else if((info==4 || info == 5) && iter_retry2<6)
 		{
-			memcpy(_x, _x_ex, _dimSys*(sizeof(double)));
+			memcpy(_x, _x_ex, dimSys*(sizeof(double)));
 			_xtol*=10;
 			_factor = _initial_factor;
 			iter = 0;

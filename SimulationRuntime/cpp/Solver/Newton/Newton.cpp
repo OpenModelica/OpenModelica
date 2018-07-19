@@ -15,7 +15,8 @@
 #include <Core/Math/Constants.h>   // definitializeion of constants like uround
 
 Newton::Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
-  : _algLoop          (algLoop)
+  :AlgLoopSolverDefaultImplementation()
+   ,_algLoop          (algLoop)
   , _newtonSettings   ((INonLinSolverSettings*)settings)
   , _yNames           (NULL)
   , _yNominal         (NULL)
@@ -30,11 +31,18 @@ Newton::Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> alg
   , _fTest            (NULL)
   , _iHelp            (NULL)
   , _jac              (NULL)
-  , _dimSys           (0)
   , _firstCall        (true)
   , _iterationStatus  (CONTINUE)
   , _lc               (LC_NLS)
 {
+	if (_algLoop)
+	{
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+	}
 }
 
 Newton::~Newton()
@@ -64,15 +72,8 @@ void Newton::initialize()
   else
 	 throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
-  // Dimension of the system (number of variables)
-  int
-    dimDouble    = _algLoop->getDimReal(),
-    dimInt       = 0,
-    dimBool      = 0;
 
-  // Check system dimension
-  if (dimDouble != _dimSys) {
-    _dimSys = dimDouble;
+    _dimSys    = _algLoop->getDimReal();
 
     if (_dimSys > 0) {
       // initialize of vectors of unknowns and residuals
@@ -109,10 +110,9 @@ void Newton::initialize()
       _algLoop->getMinReal(_yMin);
       _algLoop->getMaxReal(_yMax);
     }
-    else {
-      _iterationStatus = SOLVERERROR;
-    }
-  }
+
+
+
   LOGGER_WRITE_BEGIN("Newton: eq" + to_string(_algLoop->getEquationIndex()) +
                      " initialized", _lc, LL_DEBUG);
   LOGGER_WRITE_VECTOR("yNames", _yNames, _dimSys, _lc, LL_DEBUG);
@@ -363,7 +363,24 @@ void Newton::calcJacobian(double *jac, double *fNominal)
       //jac[idx] *= _yNominal[j] / fNominal[i];
       jac[idx] /= fNominal[i];
 }
+bool* Newton::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
 
+}
+bool* Newton::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* Newton::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 void Newton::restoreOldValues()
 {
 }

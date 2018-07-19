@@ -4,6 +4,8 @@
  *  @{
  */
 #include "FactoryExport.h"
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
+
 #include "HybrjSettings.h"
 
 #if defined(__MINGW32__) || defined(_MSC_VER) /* we have static libcminpack.a on MinGW and MSVC */
@@ -16,7 +18,7 @@
  see documentation: http://www.math.utah.edu/software/minpack/minpack/hybrj.html
 */
 
-class Hybrj : public INonLinearAlgLoopSolver
+class Hybrj : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
 public:
 
@@ -40,6 +42,10 @@ public:
     virtual void restoreOldValues();
     virtual void restoreNewValues();
 
+	virtual bool* getConditionsWorkArray();
+    virtual bool* getConditions2WorkArray();
+    virtual double* getVariableWorkArray();
+
 private:
     /// Encapsulation of determination of residuals to given unknowns
     void calcFunction(const double* y, double* residual);
@@ -59,8 +65,7 @@ private:
     ITERATIONSTATUS
         _iterationStatus;            ///< Output        - Denotes the status of iteration
 
-    int
-        _dimSys;                    ///< Temp        - Number of unknowns (=dimension of system of equations)
+
 
     bool
         _firstCall;                    ///< Temp        - Denotes the first call to the solver, initialize() is called

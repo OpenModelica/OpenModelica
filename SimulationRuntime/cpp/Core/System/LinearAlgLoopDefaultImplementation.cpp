@@ -32,6 +32,10 @@ int LinearAlgLoopDefaultImplementation::getDimReal() const
   return _dimAEq;
 }
 
+int LinearAlgLoopDefaultImplementation::getDimZeroFunc() const
+{
+   return _dimZeroFunc;
+}
 /// (Re-) initialize the system of equations
 void LinearAlgLoopDefaultImplementation::initialize()
 {

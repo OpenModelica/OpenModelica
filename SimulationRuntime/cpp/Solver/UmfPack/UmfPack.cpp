@@ -12,7 +12,8 @@
 namespace umf = boost::numeric::bindings::umfpack;
 #endif
 UmfPack::UmfPack(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
-: _iterationStatus(CONTINUE),
+  :AlgLoopSolverDefaultImplementation()
+  ,_iterationStatus(CONTINUE),
  _umfpackSettings(settings),
  _algLoop(algLoop),
  _rhs(NULL),
@@ -20,6 +21,14 @@ UmfPack::UmfPack(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop
  _firstuse(true),
  _jacd(NULL)
 {
+	if (_algLoop)
+	{
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+	}
 }
 
 UmfPack::~UmfPack()
@@ -37,7 +46,9 @@ void UmfPack::initialize()
       _algLoop->initialize();
     else
 	  throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
-    if(_algLoop->queryDensity()<1. &&_umfpackSettings->getUseSparseFormat() )
+     _dimSys = _algLoop->getDimReal();
+
+	if(_algLoop->queryDensity()<1. &&_umfpackSettings->getUseSparseFormat() )
     {
         _algLoop->setUseSparseFormat(true);
 
@@ -53,6 +64,26 @@ void UmfPack::initialize()
     _x = new double[_algLoop->getDimReal()];
 #endif
 }
+
+
+bool* UmfPack::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
+
+}
+bool* UmfPack::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* UmfPack::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 
 void UmfPack::solve(shared_ptr<ILinearAlgLoop> algLoop,bool first_solve)
 {

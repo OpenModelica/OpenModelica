@@ -18,7 +18,8 @@
 #include <Solver/Broyden/Broyden.h>
 
 Broyden::Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
-	: _algLoop            (algLoop)
+    :AlgLoopSolverDefaultImplementation()
+	, _algLoop            (algLoop)
 	, _BroydenSettings    ((INonLinSolverSettings*)settings)
 	, _y                  (NULL)
 	, _yHelp              (NULL)
@@ -38,7 +39,7 @@ Broyden::Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> a
 	, _work               (NULL)
 	, _identity           (NULL)
 
-	, _dimSys            (0)
+
 	, _firstCall        (true)
 	, _iterationStatus    (CONTINUE)
 	, _broydenMethod	(2)
@@ -51,6 +52,15 @@ Broyden::Broyden(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> a
 
 {
 	_sparse = _algLoop->getUseSparseFormat();
+	if (_algLoop)
+	{
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+	}
+
 }
 
 Broyden::~Broyden()
@@ -84,19 +94,9 @@ void Broyden::initialize()
        _algLoop->initialize();
     else
 	 throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
+	 // Dimension of the system (number of variables)
+	_dimSys =_algLoop->getDimReal();
 
-
-	// Dimension of the system (number of variables)
-	int
-		dimDouble    = _algLoop->getDimReal(),
-
-		dimInt        = 0,
-		dimBool        = 0;
-
-	// Check system dimension
-	if (dimDouble != _dimSys)
-	{
-		_dimSys = dimDouble;
 		_lwork = 8*_dimSys;
 		_fNormTol = 1e-6;
 		_dim = _dimSys;
@@ -169,7 +169,7 @@ void Broyden::initialize()
 		{
 			_iterationStatus = SOLVERERROR;
 		}
-	}
+
 
 
 	long int
@@ -194,6 +194,26 @@ void Broyden::solve(shared_ptr<INonLinearAlgLoop> algLoop,bool first_solve)
 {
 	throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
 }
+
+
+bool* Broyden::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
+
+}
+bool* Broyden::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* Broyden::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 
 void Broyden::solve( )
 {

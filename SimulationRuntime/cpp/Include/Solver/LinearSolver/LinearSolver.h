@@ -3,12 +3,14 @@
  *
  *  @{
  */
+#include "FactoryExport.h"
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
 #if defined(klu)
   #include <../../../../build/include/omc/c/suitesparse/Include/klu.h>
 #endif
 
-class LinearSolver : public ILinearAlgLoopSolver
+class LinearSolver : public ILinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
 public:
   LinearSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop=shared_ptr<ILinearAlgLoop>());
@@ -29,6 +31,10 @@ public:
   virtual void restoreNewValues();
 
 
+  virtual bool* getConditionsWorkArray();
+  virtual bool* getConditions2WorkArray();
+  virtual double* getVariableWorkArray();
+
 
 private:
   // Member variables
@@ -40,8 +46,7 @@ private:
   ITERATIONSTATUS
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
-  long int
-    _dimSys;              ///< Temp   - Number of unknowns (=dimension of system of equations)
+
 
   bool
     _firstCall,           ///< Temp   - Denotes the first call to the solver, init() is called
@@ -66,7 +71,7 @@ private:
     *_scale;            //scaling parameter to prevent overflow in singular systems
   bool _sparse;
   bool _generateoutput;   //prints nothing, if set to false. Prints Matrix, right hand side, and solution of the linear system, if set to true.
-  bool _single_instance;
+
 #if defined(klu)
   klu_symbolic* _kluSymbolic;
   klu_numeric* _kluNumeric;

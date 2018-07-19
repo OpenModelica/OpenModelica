@@ -14,8 +14,9 @@
 #include <Core/Utils/numeric/utils.h>
 
 LinearSolver::LinearSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop)
-  : _algLoop            (algLoop)
-  , _dimSys             (0)
+   :AlgLoopSolverDefaultImplementation()
+   , _algLoop            (algLoop)
+
 
   , _yNames             (NULL)
   , _yNominal           (NULL)
@@ -45,11 +46,21 @@ LinearSolver::LinearSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoo
   , _scale              (NULL)
   , _generateoutput     (false)
   , _fNominal           (NULL)
+
 {
+	_max_dimSys = 100;
+	_max_dimZeroFunc=50;
 	if (_algLoop)
+	{
 		_single_instance = false;
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
 	else
+	{
 		_single_instance = true;
+		AlgLoopSolverDefaultImplementation::initialize(_max_dimZeroFunc,_max_dimSys);
+	}
+
 }
 
 LinearSolver::~LinearSolver()
@@ -97,13 +108,8 @@ void LinearSolver::initialize()
      throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
 
   _sparse = _algLoop->getUseSparseFormat();
-  int dimDouble=_algLoop->getDimReal();
-  int ok=0;
-
-  if (dimDouble!=_dimSys) {
-    _dimSys=dimDouble;
-
-    if (_dimSys>0) {
+  _dimSys =_algLoop->getDimReal();
+  if (_dimSys>0) {
       // Initialization of vector of unknowns
       if (_yNames)          delete [] _yNames;
       if (_yNominal)        delete [] _yNominal;
@@ -175,10 +181,7 @@ void LinearSolver::initialize()
           throw ModelicaSimulationError(ALGLOOP_SOLVER, "error during numerical factorization with Sparse Solver KLU");
       }
 #endif
-    }
-    else {
-      _iterationStatus = SOLVERERROR;
-    }
+
   }
 
   LOGGER_WRITE_BEGIN("LinearSolver: eq" + to_string(_algLoop->getEquationIndex()) +
@@ -405,6 +408,27 @@ ILinearAlgLoopSolver::ITERATIONSTATUS LinearSolver::getIterationStatus()
 {
   return _iterationStatus;
 }
+
+bool* LinearSolver::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
+
+}
+bool* LinearSolver::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* LinearSolver::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
+
+
 
 void LinearSolver::stepCompleted(double time)
 {

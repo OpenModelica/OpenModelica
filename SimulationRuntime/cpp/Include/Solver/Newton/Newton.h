@@ -10,6 +10,8 @@
 #include <Core/Solver/INonLinearAlgLoopSolver.h>        // Export function from dll
 #include <Core/Solver/INonLinSolverSettings.h>
 #include <Solver/Newton/NewtonSettings.h>
+#include "FactoryExport.h"
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
 
 /*****************************************************************************/
@@ -32,7 +34,7 @@
 /*****************************************************************************
  * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  *****************************************************************************/
-class Newton : public INonLinearAlgLoopSolver
+class Newton : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
  public:
   Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop=shared_ptr<INonLinearAlgLoop>());
@@ -52,6 +54,12 @@ class Newton : public INonLinearAlgLoopSolver
   virtual void stepCompleted(double time);
   virtual void restoreOldValues();
   virtual void restoreNewValues();
+
+  virtual bool* getConditionsWorkArray();
+  virtual bool* getConditions2WorkArray();
+  virtual double* getVariableWorkArray();
+
+
  private:
   /// Encapsulation of determination of residuals to given unknowns
   void calcFunction(const double* y, double* residual);
@@ -69,8 +77,7 @@ class Newton : public INonLinearAlgLoopSolver
   ITERATIONSTATUS
     _iterationStatus;           ///< Output      - Denotes the status of iteration
 
-  long int
-    _dimSys;                    ///< Temp        - Number of unknowns (=dimension of system of equations)
+
 
   bool
     _firstCall;                 ///< Temp        - Denotes the first call to the solver, init() is called

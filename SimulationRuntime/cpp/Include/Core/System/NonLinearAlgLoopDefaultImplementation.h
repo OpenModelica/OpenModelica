@@ -59,7 +59,7 @@ public:
 
   /// Provide number (dimension) of variables according to data type
   int getDimReal() const;
-
+  virtual int getDimZeroFunc() const;
   /// (Re-) initialize the system of equations
   void initialize();
 
@@ -77,6 +77,7 @@ public:
   //---------------------------------------------------------------
 protected:
   int _dimAEq;                        ///< Number (dimension) of unknown/equations (the index denotes the data type; 0: double, 1: int, 2: bool)
+  int _dimZeroFunc;
   double* _res;
   double* _x0;
 

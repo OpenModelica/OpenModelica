@@ -40,7 +40,9 @@ public:
   virtual void solve() = 0;
   //solve for a single instance call
   virtual void solve(shared_ptr<ILinearAlgLoop> algLoop,bool first_solve = false) = 0;
-
+  virtual bool* getConditionsWorkArray()=0;
+  virtual bool* getConditions2WorkArray()=0;
+  virtual double* getVariableWorkArray()=0;
   /// Returns the status of iteration
   virtual ITERATIONSTATUS getIterationStatus() = 0;
   virtual void stepCompleted(double time) = 0;

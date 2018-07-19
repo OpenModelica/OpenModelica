@@ -4,7 +4,11 @@
  *  @{
  */
 
-class DgesvSolver : public ILinearAlgLoopSolver
+#include "FactoryExport.h"
+#include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
+
+
+class DgesvSolver : public ILinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation
 {
  public:
   DgesvSolver(ILinSolverSettings* settings,shared_ptr<ILinearAlgLoop> algLoop=shared_ptr<ILinearAlgLoop>());
@@ -24,6 +28,9 @@ class DgesvSolver : public ILinearAlgLoopSolver
   virtual void restoreOldValues();
   virtual void restoreNewValues();
 
+  virtual bool* getConditionsWorkArray();
+  virtual bool* getConditions2WorkArray();
+  virtual double* getVariableWorkArray();
  private:
   // Member variables
   //---------------------------------------------------------------
@@ -34,7 +41,7 @@ class DgesvSolver : public ILinearAlgLoopSolver
     _iterationStatus;     ///< Output   - Denotes the status of iteration
 
   long int
-    _dimSys,              ///< Number of unknowns (=dimension of system of equations)
+
     *_iHelp,              ///< Pivot indices for LAPACK routines
     *_jHelp;              ///< Pivot indices for LAPACK routines
 

@@ -25,7 +25,8 @@
 
 //!Constructor
 Nox::Nox(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
-	: _algLoop            (algLoop)
+	 :AlgLoopSolverDefaultImplementation()
+	, _algLoop            (algLoop)
 	, _noxSettings        ((INonLinSolverSettings*)settings)
 	, _iterationStatus    (CONTINUE)
 	, _y                  (NULL)
@@ -37,11 +38,19 @@ Nox::Nox(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> algLoop)
 	, _firstCall		  (true)
 	, _useDomainScaling         (false)
 	, _currentIterate             (NULL)
-	, _dimSys (_algLoop->getDimReal())
+
   , _lc(LC_NLS)
   , _SimTimeOld  (0.0)
   , _SimTimeNew  (0.0)
 {
+	if (_algLoop)
+	{
+		AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_algLoop->getDimReal());
+	}
+	else
+	{
+		throw ModelicaSimulationError(ALGLOOP_SOLVER, "solve for single instance is not supported");
+	}
 
 }
 
@@ -70,7 +79,8 @@ void Nox::initialize()
       _algLoop->initialize();
     else
 	  throw ModelicaSimulationError(ALGLOOP_SOLVER, "algloop system is not initialized");
-
+    _dimSys = _algLoop->getDimReal();
+	AlgLoopSolverDefaultImplementation::initialize(_algLoop->getDimZeroFunc(),_dimSys);
 	if(_y) delete [] _y;
 	if(_y0) delete [] _y0;
 	if(_y_old) delete [] _y_old;
@@ -387,7 +397,24 @@ void Nox::stepCompleted(double time)
     _SimTimeNew = _algLoop->getSimTime();
   }
 }
+bool* Nox::getConditionsWorkArray()
+{
+	return AlgLoopSolverDefaultImplementation::getConditionsWorkArray();
 
+}
+bool* Nox::getConditions2WorkArray()
+{
+
+	return AlgLoopSolverDefaultImplementation::getConditions2WorkArray();
+ }
+
+
+ double* Nox::getVariableWorkArray()
+ {
+
+	return AlgLoopSolverDefaultImplementation::getVariableWorkArray();
+
+ }
 /**
  *  \brief Restores all algloop variables for a output step
  *  \return Return_Description

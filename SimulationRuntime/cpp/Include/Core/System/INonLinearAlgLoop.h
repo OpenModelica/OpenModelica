@@ -35,7 +35,7 @@ public:
 
   /// Provide index of equation
   virtual int getEquationIndex() const = 0;
-
+  virtual int getDimZeroFunc() const = 0;;
   /// Provide number (dimension) of variables according to the data type
   virtual int getDimReal() const = 0;
 
