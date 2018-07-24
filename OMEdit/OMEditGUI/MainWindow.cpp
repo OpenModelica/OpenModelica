@@ -151,6 +151,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     return;
   }
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
+  // Get the number of processors.
+  mNumberOfProcessors = mpOMCProxy->numProcessors();
   // Create an object of OptionsDialog
   OptionsDialog::create();
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);

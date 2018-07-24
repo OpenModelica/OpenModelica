@@ -105,6 +105,7 @@ public:
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
+  int getNumberOfProcessors() {return mNumberOfProcessors;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
@@ -235,6 +236,7 @@ private:
   bool mDebug;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
+  int mNumberOfProcessors;
   SearchWidget *mpSearchWidget;
   QDockWidget *mpSearchDockWidget;
   QDockWidget *mpMessagesDockWidget;
