@@ -129,6 +129,12 @@ public
                              conn1.face == conn2.face;
   end isEqual;
 
+  function isPrefix
+    input Connector conn1;
+    input Connector conn2;
+    output Boolean isPrefix = ComponentRef.isPrefix(conn1.name, conn2.name);
+  end isPrefix;
+
   function isOutside
     input Connector conn;
     output Boolean isOutside;

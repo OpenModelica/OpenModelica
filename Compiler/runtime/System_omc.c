@@ -289,6 +289,16 @@ extern void System_setHasExpandableConnectors(int b)
   hasExpandableConnectors = b;
 }
 
+extern int System_getHasOverconstrainedConnectors()
+{
+  return hasOverconstrainedConnectors;
+}
+
+extern void System_setHasOverconstrainedConnectors(int b)
+{
+  hasOverconstrainedConnectors = b;
+}
+
 extern int System_getPartialInstantiation()
 {
   return isPartialInstantiation;

@@ -31,13 +31,16 @@
 
 encapsulated package NFConnectionSets
 import DisjointSets;
+import ComponentRef = NFComponentRef;
 import Connector = NFConnector;
 import Connection = NFConnection;
 import Connections = NFConnections;
+import BrokenEdges = NFConnections.BrokenEdges;
 
 protected
 import Flags;
 import List;
+import NFOCConnectionGraph;
 
 public
 package ConnectionSets
@@ -73,7 +76,7 @@ package ConnectionSets
     end if;
 
     // Add the connections.
-    sets := List.fold(connections.connections, addConnection, sets);
+    sets := List.fold1(connections.connections, addConnection, connections.broken, sets);
   end fromConnections;
 
   function addScalarConnector
@@ -95,6 +98,7 @@ package ConnectionSets
     "Adds a connection to the sets, which means merging the two sets that the
      connectors belong to, unless they already belong to the same set."
     input Connection connection;
+    input BrokenEdges broken;
     input output ConnectionSets.Sets sets;
   protected
     Connector lhs, rhs, c2;
@@ -111,10 +115,40 @@ package ConnectionSets
       // when collecting the connections, but if the connectors themselves
       // contain connectors that have been deleted we need to remove them here.
       if not (Connector.isDeleted(c1) or Connector.isDeleted(c2)) then
-        sets := merge(c1, c2, sets);
+        if listEmpty(broken) then
+          sets := merge(c1, c2, sets);
+        elseif isBroken(c1, c2, broken) then
+          // do nothing
+          // print("Ignore broken: connect(" + Connector.toString(c1) + ", " + Connector.toString(c2) + ")\n");
+        else
+          sets := merge(c1, c2, sets);
+        end if;
       end if;
     end for;
   end addConnection;
+
+  function isBroken
+    input Connector c1, c2;
+    input BrokenEdges broken;
+    output Boolean b = false;
+  protected
+    ComponentRef lhs, rhs, cr1, cr2;
+  algorithm
+    cr1 := Connector.name(c1);
+    cr2 := Connector.name(c2);
+    // print("Check: connect(" + ComponentRef.toString(cr1) + ", " + ComponentRef.toString(cr2) + ")\n");
+
+    for c in broken loop
+      ((lhs, rhs, _)) := c;
+
+      if ComponentRef.isPrefix(lhs, cr1) and ComponentRef.isPrefix(rhs, cr2) or
+         ComponentRef.isPrefix(lhs, cr2) and ComponentRef.isPrefix(rhs, cr1)
+      then
+        b := true;
+        break;
+      end if;
+    end for;
+  end isBroken;
 
   annotation(__OpenModelica_Interface="frontend");
 end ConnectionSets;

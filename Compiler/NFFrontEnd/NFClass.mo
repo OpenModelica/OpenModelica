@@ -46,6 +46,7 @@ import Expression = NFExpression;
 protected
 import NFBinding.Binding;
 import ComplexType = NFComplexType;
+import System;
 
 public
 
@@ -499,6 +500,8 @@ uniontype Class
   algorithm
     try
       lookupElement("equalityConstraint", cls);
+      // set the external flag that signals the presence of expandable connectors in the model
+      System.setHasOverconstrainedConnectors(true);
       isOverdetermined := true;
     else
       isOverdetermined := false;

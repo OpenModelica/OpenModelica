@@ -90,6 +90,8 @@ algorithm
         System.setHasInnerOuterDefinitions(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasExpandableConnectors(false);
+        // set the external flag that signals the presence of overconstrained connectors in the model
+        System.setHasOverconstrainedConnectors(false);
         // set the external flag that signals the presence of expandable connectors in the model
         System.setHasStreamConnectors(false);
 

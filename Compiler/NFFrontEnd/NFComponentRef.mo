@@ -551,6 +551,26 @@ public
     end match;
   end isEqual;
 
+  function isPrefix
+    input ComponentRef cref1;
+    input ComponentRef cref2;
+    output Boolean isPrefix;
+  algorithm
+    if referenceEq(cref1, cref2) then
+      isPrefix := true;
+      return;
+    end if;
+
+    isPrefix := match (cref1, cref2)
+      case (CREF(), CREF())
+        then
+          if InstNode.name(cref1.node) == InstNode.name(cref2.node) then
+             isEqual(cref1.restCref, cref2.restCref)
+          else isEqual(cref1, cref2.restCref);
+      else false;
+    end match;
+  end isPrefix;
+
   function toDAE
     input ComponentRef cref;
     output DAE.ComponentRef dcref;
@@ -612,6 +632,13 @@ public
       else "EMPTY_CREF";
     end match;
   end toString;
+
+  function listToString
+    input list<ComponentRef> crs;
+    output String str;
+  algorithm
+    str := "{" + stringDelimitList(List.map(crs, toString), ",") + "}";
+  end listToString;
 
   function hash
     input ComponentRef cref;

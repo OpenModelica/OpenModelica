@@ -160,7 +160,11 @@ static char *linker = (char *)def_linker;
 static char *cflags = (char *)def_cflags;
 static char *ldflags= (char *)def_ldflags;
 
+/* TODO! FIXME!
+ * we need to move these to threadData if we are to run things in parallel in OMC!
+ */
 static int hasExpandableConnectors = 0;
+static int hasOverconstrainedConnectors = 0;
 static int hasInnerOuterDefinitions = 0;
 static int hasStreamConnectors = 0;
 static int isPartialInstantiation = 0;

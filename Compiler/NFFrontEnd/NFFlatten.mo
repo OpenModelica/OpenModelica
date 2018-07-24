@@ -62,6 +62,7 @@ import NFClassTree.ClassTree;
 import NFComponent.Component;
 import NFModifier.Modifier;
 import Sections = NFSections;
+import NFOCConnectionGraph;
 import Prefixes = NFPrefixes;
 import NFPrefixes.Visibility;
 import RangeIterator = NFRangeIterator;
@@ -870,6 +871,7 @@ algorithm
 end addElementSourceArrayPrefix;
 
 function resolveConnections
+"Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
   input String name;
 protected
@@ -878,17 +880,31 @@ protected
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
   CardinalityTable.Table ctable;
+  Connections.BrokenEdges broken = {};
 algorithm
-  // Generate the connect equations and add them to the equation list.
+  // handle overconstrained connections
+  // - build the graph
+  // - evaluate the Connections.* operators
+  // - generate the equations to replace the broken connects
+  // - return the broken connects + the equations
+  if  System.getHasOverconstrainedConnectors() then
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, name);
+  end if;
+  // get the connections from the model
   (flatModel, conns) := Connections.collect(flatModel);
+  // add the broken connections
+  conns := Connections.addBroken(broken, conns);
+  // build the sets, check the broken connects
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
+  // generated the equations
   conn_eql := ConnectEquations.generateEquations(csets_array);
+  // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
   ctable := CardinalityTable.fromConnections(conns);
 
   // Evaluate any connection operators if they're used.
-  if System.getHasStreamConnectors() or System.getUsesCardinality() then
+  if  System.getHasStreamConnectors() or System.getUsesCardinality() then
     flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, ctable);
   end if;
 
