@@ -4855,7 +4855,9 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   QString annotationString;
   if (viewType == StringHandler::Icon) {
     pGraphicsView = mpIconGraphicsView;
-    annotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
+    if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
+      annotationString = pOMCProxy->getIconAnnotation(mpLibraryTreeItem->getNameStructure());
+    }
   } else {
     pGraphicsView = mpDiagramGraphicsView;
     if (mpLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {

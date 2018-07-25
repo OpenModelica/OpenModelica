@@ -2145,7 +2145,10 @@ QString LibraryTreeModel::readLibraryTreeItemClassTextFromFile(LibraryTreeItem *
   QString contents = "";
   QFileInfo fileInfo(pLibraryTreeItem->getFileName());
   // if the file is encrypted use listFile
-  if (fileInfo.suffix().compare("moc") == 0) {
+  if ((fileInfo.suffix().compare("moc") == 0)
+      && (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
+          || (pLibraryTreeItem->getAccess() >= LibraryTreeItem::nonPackageText
+              && pLibraryTreeItem->getRestriction() != StringHandler::Package))) {
     contents = MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure());
   } else { // else read the file contents
     QFile file(pLibraryTreeItem->getFileName());
