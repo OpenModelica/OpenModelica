@@ -516,7 +516,7 @@ void OptionsDialog::readSimulationSettings()
     }
   }
   if (mpSettings->contains("simulation/targetCompiler")) {
-    int currentIndex = mpSimulationPage->getTargetCompilerComboBox()->findText(mpSettings->value("simulation/targetCompiler").toString(), Qt::MatchExactly);
+    int currentIndex = mpSimulationPage->getTargetCompilerComboBox()->findData(mpSettings->value("simulation/targetCompiler"), Qt::UserRole, Qt::MatchExactly);
     if (currentIndex > -1) {
       mpSimulationPage->getTargetCompilerComboBox()->setCurrentIndex(currentIndex);
     }
@@ -1077,8 +1077,9 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/targetLanguage", mpSimulationPage->getTargetLanguageComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
   // save +target
-  mpSettings->setValue("simulation/targetCompiler", mpSimulationPage->getTargetCompilerComboBox()->currentText());
-  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(mpSimulationPage->getTargetCompilerComboBox()->currentText()));
+  QString target = mpSimulationPage->getTargetCompilerComboBox()->itemData(mpSimulationPage->getTargetCompilerComboBox()->currentIndex()).toString();
+  mpSettings->setValue("simulation/targetCompiler", target);
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(target));
   // save command line options ste manually by user. This will override above options.
   if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCCommandLineOptionsTextBox()->text())) {
     mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCCommandLineOptionsTextBox()->text());
@@ -3321,15 +3322,20 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
   // Compiler
   mpCompilerLabel = new Label(tr("Target Compiler:"));
-  OMCInterface::getConfigFlagValidOptions_res target = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("target");
   mpTargetCompilerComboBox = new QComboBox;
-  mpTargetCompilerComboBox->addItems(target.validOptions);
-  mpTargetCompilerComboBox->setToolTip(target.mainDescription);
-  i = 0;
-  foreach (QString description, target.descriptions) {
-    mpTargetCompilerComboBox->setItemData(i, description, Qt::ToolTipRole);
-    i++;
-  }
+#ifdef Q_OS_WIN
+  mpTargetCompilerComboBox->addItem("MinGW GCC (gcc)", "gcc");
+  mpTargetCompilerComboBox->addItem("Visual Studio (msvc)", "msvc");
+  mpTargetCompilerComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
+  mpTargetCompilerComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
+  mpTargetCompilerComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
+  mpTargetCompilerComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
+#else
+  mpTargetCompilerComboBox->addItem("GCC", "gcc");
+  mpTargetCompilerComboBox->addItem("Clang", "clang");
+#endif
+  mpTargetCompilerComboBox->addItem("vxworks69", "vxworks69");
+  mpTargetCompilerComboBox->addItem("debugrt", "debugrt");
   // OMC CommandLineOptions
   mpOMCCommandLineOptionsLabel = new Label(QString("%1:").arg(Helper::OMCCommandLineOptions));
   mpOMCCommandLineOptionsLabel->setToolTip(Helper::OMCCommandLineOptionsTip);

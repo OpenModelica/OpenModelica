@@ -355,7 +355,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
   }
   mpOMCProxy->setCommandLineOptions(QString("--simCodeTarget=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
-  mpOMCProxy->setCommandLineOptions(QString("--target=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetCompilerComboBox()->currentText()));
+  QString target = OptionsDialog::instance()->getSimulationPage()->getTargetCompilerComboBox()->itemData(OptionsDialog::instance()->getSimulationPage()->getTargetCompilerComboBox()->currentIndex()).toString();
+  mpOMCProxy->setCommandLineOptions(QString("--target=%1").arg(target));
   if (OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("--ignoreCommandLineOptionsAnnotation=true");
   }

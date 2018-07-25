@@ -1463,7 +1463,7 @@ void SimulationDialog::performSimulation()
   if (isTranslationSuccessful) {
     // check if we can compile using the target compiler
     SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
-    QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->currentText();
+    QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->itemData(pSimulationPage->getTargetCompilerComboBox()->currentIndex()).toString();
     if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
       QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
           .arg(simulationOptions.getWorkingDirectory());

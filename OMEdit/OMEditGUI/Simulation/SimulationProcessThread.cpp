@@ -95,7 +95,9 @@ void SimulationProcessThread::compileModel()
 #else
   const char* omPlatform = "mingw32";
 #endif
-  args << simulationOptions.getOutputFileName() << pSimulationPage->getTargetCompilerComboBox()->currentText() << omPlatform << "parallel" << numProcs << "0";
+  args << simulationOptions.getOutputFileName()
+       << pSimulationPage->getTargetCompilerComboBox()->itemData(pSimulationPage->getTargetCompilerComboBox()->currentIndex()).toString()
+       << omPlatform << "parallel" << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   emit sendCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start(compilationProcessPath, args);
