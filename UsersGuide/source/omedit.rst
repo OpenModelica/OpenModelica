@@ -836,6 +836,10 @@ General
 
   -  *Hide Variables Browser* – Hides the variable browser when switching away from plotting perspective.
 
+  -  *Activate Access Annotations* – Activates the access annotations
+     for the non-encrypted libraries. Access annotations are always active
+     for encrypted libraries.
+
 -  Libraries Browser
 
   -  *Library Icon Size* – Sets the size for library icons.
