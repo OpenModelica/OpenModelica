@@ -214,6 +214,7 @@ public:
   void setTerminalCommandArguments(QString value) {mpTerminalCommandArgumentsTextBox->setText(value);}
   QString getTerminalCommandArguments() {return mpTerminalCommandArgumentsTextBox->text();}
   QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
+  QCheckBox* getActivateAccessAnnotationsCheckBox() {return mpActivateAccessAnnotationsCheckBox;}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
   bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
@@ -245,6 +246,7 @@ private:
   Label *mpTerminalCommandArgumentsLabel;
   QLineEdit *mpTerminalCommandArgumentsTextBox;
   QCheckBox *mpHideVariablesBrowserCheckBox;
+  QCheckBox *mpActivateAccessAnnotationsCheckBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;

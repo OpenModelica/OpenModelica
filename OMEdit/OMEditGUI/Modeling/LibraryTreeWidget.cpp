@@ -219,24 +219,34 @@ bool LibraryTreeItem::isDocumentationClass()
  */
 LibraryTreeItem::Access LibraryTreeItem::getAccess()
 {
-  if (mClassInformation.access.compare("Access.hide") == 0) {
-    return LibraryTreeItem::hide;
-  } else if (mClassInformation.access.compare("Access.icon") == 0) {
-    return LibraryTreeItem::icon;
-  } else if (mClassInformation.access.compare("Access.documentation") == 0) {
-    return LibraryTreeItem::documentation;
-  } else if (mClassInformation.access.compare("Access.diagram") == 0) {
-    return LibraryTreeItem::diagram;
-  } else if (mClassInformation.access.compare("Access.nonPackageText") == 0) {
-    return LibraryTreeItem::nonPackageText;
-  } else if (mClassInformation.access.compare("Access.nonPackageDuplicate") == 0) {
-    return LibraryTreeItem::nonPackageDuplicate;
-  } else if (mClassInformation.access.compare("Access.packageText") == 0) {
-    return LibraryTreeItem::packageText;
-  } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
-    return LibraryTreeItem::packageDuplicate;
-  } else if (mpParentLibraryTreeItem) {   // if there is no override for Access annotation then look in the parent class.
-    return mpParentLibraryTreeItem->getAccess();
+  /* Activate the access annotations if the class is encrypted
+   * OR if the activate access annotations option is set.
+   */
+  bool isEncryptedClass = mFileName.endsWith(".moc");
+  bool activateAccessAnnotations = OptionsDialog::instance()->getGeneralSettingsPage()->getActivateAccessAnnotationsCheckBox()->isChecked();
+
+  if (isEncryptedClass || activateAccessAnnotations) {
+    if (mClassInformation.access.compare("Access.hide") == 0) {
+      return LibraryTreeItem::hide;
+    } else if (mClassInformation.access.compare("Access.icon") == 0) {
+      return LibraryTreeItem::icon;
+    } else if (mClassInformation.access.compare("Access.documentation") == 0) {
+      return LibraryTreeItem::documentation;
+    } else if (mClassInformation.access.compare("Access.diagram") == 0) {
+      return LibraryTreeItem::diagram;
+    } else if (mClassInformation.access.compare("Access.nonPackageText") == 0) {
+      return LibraryTreeItem::nonPackageText;
+    } else if (mClassInformation.access.compare("Access.nonPackageDuplicate") == 0) {
+      return LibraryTreeItem::nonPackageDuplicate;
+    } else if (mClassInformation.access.compare("Access.packageText") == 0) {
+      return LibraryTreeItem::packageText;
+    } else if (mClassInformation.access.compare("Access.packageDuplicate") == 0) {
+      return LibraryTreeItem::packageDuplicate;
+    } else if (mpParentLibraryTreeItem) {   // if there is no override for Access annotation then look in the parent class.
+      return mpParentLibraryTreeItem->getAccess();
+    } else {
+      return LibraryTreeItem::all;
+    }
   } else {
     return LibraryTreeItem::all;
   }

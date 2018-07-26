@@ -190,6 +190,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("hideVariablesBrowser")) {
     mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->setChecked(mpSettings->value("hideVariablesBrowser").toBool());
   }
+  // read activate access annotations
+  if (mpSettings->contains("activateAccessAnnotations")) {
+    mpGeneralSettingsPage->getActivateAccessAnnotationsCheckBox()->setChecked(mpSettings->value("activateAccessAnnotations").toBool());
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -873,6 +877,8 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("terminalCommandArgs", mpGeneralSettingsPage->getTerminalCommandArguments());
   // save hide variables browser
   mpSettings->setValue("hideVariablesBrowser", mpGeneralSettingsPage->getHideVariablesBrowserCheckBox()->isChecked());
+  // save activate access annotations
+  mpSettings->setValue("activateAccessAnnotations", mpGeneralSettingsPage->getActivateAccessAnnotationsCheckBox()->isChecked());
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save show protected classes
@@ -1621,6 +1627,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpHideVariablesBrowserCheckBox = new QCheckBox(tr("Hide Variables Browser"));
   mpHideVariablesBrowserCheckBox->setToolTip(tr("Hides the variable browser when switching away from plotting perspective."));
   mpHideVariablesBrowserCheckBox->setChecked(true);
+  // activate access annotation
+  mpActivateAccessAnnotationsCheckBox = new QCheckBox(tr("Activate Access Annotations *"));
+  mpActivateAccessAnnotationsCheckBox->setToolTip(tr("Activates the access annotations for the non-encrypted libraries. "
+                                                     "Access annotations are always active for encrypted libraries."));
   // set the layout of general settings group
   QGridLayout *generalSettingsLayout = new QGridLayout;
   generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1638,6 +1648,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   generalSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
   generalSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
   generalSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
+  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsCheckBox, 7, 0, 1, 3);
   mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
