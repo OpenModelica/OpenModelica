@@ -87,7 +87,7 @@ public:
   void setLibraryType(LibraryType libraryType) {mLibraryType = libraryType;}
   void setSystemLibrary(bool systemLibrary) {mSystemLibrary = systemLibrary;}
   bool isSystemLibrary() {return mSystemLibrary;}
-  void setModelWidget(ModelWidget *pModelWidget) {mpModelWidget = pModelWidget;}
+  void setModelWidget(ModelWidget *pModelWidget);
   ModelWidget* getModelWidget() {return mpModelWidget;}
   void setName(QString name) {mName = name;}
   const QString& getName() const {return mName;}
@@ -162,6 +162,10 @@ public:
   void addInheritedClass(LibraryTreeItem *pLibraryTreeItem);
   void removeInheritedClasses();
   QList<LibraryTreeItem*> getInheritedClasses() const {return mInheritedClasses;}
+  QList<LibraryTreeItem*> getInheritedClassesDeepList();
+  LibraryTreeItem *getDirectComponentsClass(const QString &name);
+  LibraryTreeItem *getComponentsClass(const QString &name);
+  void tryToComplete(QSet<QString> &result, const QString &lastPart);
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
@@ -188,6 +192,9 @@ private:
   LibraryTreeItem *mpParentLibraryTreeItem;
   QList<LibraryTreeItem*> mChildren;
   QList<LibraryTreeItem*> mInheritedClasses;
+  QList<ComponentInfo*> mComponents;
+  bool mComponentsLoaded;
+  const QList<ComponentInfo *> &getComponentsList();
   LibraryType mLibraryType;
   bool mSystemLibrary;
   ModelWidget *mpModelWidget;

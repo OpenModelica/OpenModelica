@@ -58,6 +58,11 @@ public:
   void setTextChanged(bool changed) {mTextChanged = changed;}
   bool isTextChanged() {return mTextChanged;}
   virtual void popUpCompleter();
+  QString wordUnderCursor();
+  static LibraryTreeItem *deepResolve(LibraryTreeItem *pItem, QStringList nameComponents);
+  QList<LibraryTreeItem *> getCandidateContexts(QStringList nameComponents);
+  static void tryToCompleteInSingleContext(QStringList &result, LibraryTreeItem *pItem, QString lastPart);
+  QStringList getCodeSymbols(QString word);
   static QList<CompleterItem> getCodeSnippets();
 private:
   QString mLastValidText;

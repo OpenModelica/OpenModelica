@@ -231,6 +231,8 @@ public:
   PlainTextEdit(BaseEditor *pBaseEditor);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
+  void clearCompleter();
+  void insertCompleterSymbols(QStringList symbols);
   void insertCompleterKeywords(QStringList keywords);
   void insertCompleterTypes(QStringList types);
   void insertCompleterCodeSnippets(QList<CompleterItem> items);
@@ -243,6 +245,7 @@ public:
   QCompleter *completer();
   bool isUndoAvailable() {return mIsUndoAvailable;}
   bool isRedoAvailable() {return mIsRedoAvailable;}
+  void setCompletionCharacters(QString chars) { mCompletionCharacters = chars; }
 private:
   BaseEditor *mpBaseEditor;
   LineNumberArea *mpLineNumberArea;
@@ -255,6 +258,7 @@ private:
   QCompleter *mpCompleter;
   bool mIsUndoAvailable;
   bool mIsRedoAvailable;
+  QString mCompletionCharacters;
 
   void highlightCurrentLine();
   void highlightParentheses();

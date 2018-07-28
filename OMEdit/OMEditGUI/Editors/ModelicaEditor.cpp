@@ -59,14 +59,9 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
   : BaseEditor(pParent), mLastValidText(""), mTextChanged(false)
 {
   mpPlainTextEdit->setCanHaveBreakpoints(true);
+  mpPlainTextEdit->setCompletionCharacters(".");
   /* set the document marker */
   mpDocumentMarker = new DocumentMarker(mpPlainTextEdit->document());
-  QStringList keywords = ModelicaHighlighter::getKeywords();
-  mpPlainTextEdit->insertCompleterKeywords(keywords);
-  QStringList types = ModelicaHighlighter::getTypes();
-  mpPlainTextEdit->insertCompleterTypes(types);
-  QList<CompleterItem> codesnippets = getCodeSnippets();
-  mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
 }
 
 /*!
@@ -75,6 +70,20 @@ ModelicaEditor::ModelicaEditor(QWidget *pParent)
  */
 void ModelicaEditor::popUpCompleter()
 {
+  QString word = wordUnderCursor();
+  mpPlainTextEdit->clearCompleter();
+
+  if (!word.contains('.')) {
+    QStringList keywords = ModelicaHighlighter::getKeywords();
+    mpPlainTextEdit->insertCompleterKeywords(keywords);
+    QStringList types = ModelicaHighlighter::getTypes();
+    mpPlainTextEdit->insertCompleterTypes(types);
+    QList<CompleterItem> codesnippets = getCodeSnippets();
+    mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
+  }
+  QStringList symbols = getCodeSymbols(word);
+  mpPlainTextEdit->insertCompleterSymbols(symbols);
+
   QCompleter *completer = mpPlainTextEdit->completer();
   QRect cr = mpPlainTextEdit->cursorRect();
   cr.setWidth(completer->popup()->sizeHintForColumn(0)+ completer->popup()->verticalScrollBar()->sizeHint().width());
@@ -103,6 +112,71 @@ QList<CompleterItem> ModelicaEditor::getCodeSnippets()
                    << CompleterItem("when", "when condition then\n  \nelsewhen condition then\n  \nend when;", "condition");
   return codesnippetslist;
 }
+
+LibraryTreeItem *ModelicaEditor::deepResolve(LibraryTreeItem *pItem, QStringList nameComponents)
+{
+  LibraryTreeItem *pCurrentItem = pItem;
+  for (int i = 0; i < nameComponents.size(); ++i) {
+    pCurrentItem = pCurrentItem->getComponentsClass(nameComponents[i]);
+    if (!pCurrentItem)
+      return 0;
+  }
+  return pCurrentItem;
+}
+
+QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(QStringList nameComponents)
+{
+  QList<LibraryTreeItem*> result;
+  QList<LibraryTreeItem*> roots;
+  LibraryTreeItem *pItem = getModelWidget()->getLibraryTreeItem();
+  while (pItem) {
+    roots.append(pItem->getInheritedClassesDeepList());
+    pItem = pItem->parent();
+  }
+
+  for (int i = 0; i < roots.size(); ++i) {
+    LibraryTreeItem *pResolved = ModelicaEditor::deepResolve(roots[i], nameComponents);
+    if (pResolved)
+      result.append(pResolved);
+  }
+  return result;
+}
+
+QString ModelicaEditor::wordUnderCursor()
+{
+  int end = mpPlainTextEdit->textCursor().position();
+  int begin = end - 1;
+  while (begin >= 0) {
+    QChar ch = mpPlainTextEdit->document()->characterAt(begin);
+    if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+      break;
+    begin--;
+  }
+  begin++;
+  return mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin);
+}
+
+QStringList ModelicaEditor::getCodeSymbols(QString word)
+{
+  QStringList nameComponents = word.split('.');
+  QString lastPart;
+  if (!nameComponents.empty()) {
+    lastPart = nameComponents.last();
+    nameComponents.removeLast();
+  } else {
+    lastPart = "";
+  }
+
+  QList<LibraryTreeItem*> contexts = getCandidateContexts(nameComponents);
+
+  QSet<QString> symbols;
+  for (int i = 0; i < contexts.size(); ++i) {
+    contexts[i]->tryToComplete(symbols, lastPart);
+  }
+
+  return QStringList::fromSet(symbols);
+}
+
 /*!
  * \brief ModelicaEditor::getClassNames
  * Uses the OMC parseString API to check the class names inside the Modelica Text

@@ -761,6 +761,21 @@ CompleterItem::CompleterItem(QString key, QString value, QString select)
   mSelect=select;
 }
 
+void PlainTextEdit::clearCompleter()
+{
+  mpStandardItemModel->clear();
+}
+
+void PlainTextEdit::insertCompleterSymbols(QStringList symbols)
+{
+  for (int i = 0; i < symbols.size(); ++i) {
+    QStandardItem *pStandardItem = new QStandardItem(symbols[i]);
+    pStandardItem->setIcon(QIcon(":/Resources/icons/completerSymbol.svg"));
+    pStandardItem->setData(QVariant::fromValue(CompleterItem(symbols[i], symbols[i], "")), Qt::UserRole);
+    mpStandardItemModel->appendRow(pStandardItem);
+  }
+}
+
 /*!
  * \brief PlainTextEdit::insertCompleterKeywords
  * \param keywords
@@ -1594,7 +1609,8 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
 {
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
-  bool isShortcut = (controlModifier && pEvent->key() == Qt::Key_Space); // CTRL+space
+  bool isCompleterShortcut = controlModifier && (pEvent->key() == Qt::Key_Space); // CTRL+space
+  bool isCompleterChar = mCompletionCharacters.indexOf(pEvent->key()) != -1;
   /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
   if (mpCompleter && mpCompleter->popup()->isVisible()) {
     // The following keys are forwarded by the completer to the widget
@@ -1666,7 +1682,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
     pEvent->setModifiers(Qt::NoModifier);
   }
   /* do not change the order of execution as the indentation event will fail when completer is on */
-  if (!mpCompleter || !isShortcut) { // do not process the shortcut when we have a completer
+  if (!mpCompleter || !isCompleterShortcut) { // do not process the shortcut when we have a completer
     QPlainTextEdit::keyPressEvent(pEvent);
   }
   /* If user has pressed enter then a new line is inserted.
@@ -1693,19 +1709,21 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   static QString eow("~!@#$%^&*()_+{}|:\"<>?,./;'[]\\-="); // end of word
   bool hasModifier = (pEvent->modifiers() != Qt::NoModifier) && !ctrlOrShift;
   QString completionPrefix = textUnderCursor();
-  if (!isShortcut && (hasModifier || pEvent->text().isEmpty()|| completionPrefix.length() < 3 || eow.contains(pEvent->text().right(1)))) {
+  if ((!isCompleterShortcut && !isCompleterChar) && (hasModifier || pEvent->text().isEmpty()|| completionPrefix.length() < 1 || eow.contains(pEvent->text().right(1)))) {
     mpCompleter->popup()->hide();
     return;
   }
 
   if (completionPrefix != mpCompleter->completionPrefix()) {
     mpCompleter->setCompletionPrefix(completionPrefix);
-    mpCompleter->popup()->setCurrentIndex(mpCompleter->completionModel()->index(0, 0));
   }
   //pop up the completer according to editor instance
   TextEditorPage *pTextEditorPage = OptionsDialog::instance()->getTextEditorPage();
   if (pTextEditorPage->getAutoCompleteCheckBox()->isChecked()) {
     mpBaseEditor->popUpCompleter();
+  }
+  if (mpCompleter->popup()->selectionModel()->selection().empty()) {
+    mpCompleter->popup()->setCurrentIndex(mpCompleter->completionModel()->index(0, 0));
   }
 }
 

@@ -99,7 +99,7 @@ LibraryTreeItem::LibraryTreeItem()
  */
 LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStructure, OMCInterface::getClassInformation_res classInformation,
                                  QString fileName, bool isSaved, LibraryTreeItem *pParent)
-  : mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
+  : mComponentsLoaded(false), mLibraryType(type), mSystemLibrary(false), mpModelWidget(0)
 {
   mIsRootItem = false;
   mpParentLibraryTreeItem = pParent;
@@ -614,6 +614,88 @@ void LibraryTreeItem::removeInheritedClasses()
     disconnect(pLibraryTreeItem, SIGNAL(coOrdinateSystemUpdated(GraphicsView*)), this, SLOT(handleCoOrdinateSystemUpdated(GraphicsView*)));
   }
   mInheritedClasses.clear();
+}
+
+QList<LibraryTreeItem*> LibraryTreeItem::getInheritedClassesDeepList()
+{
+  QList<LibraryTreeItem*> result;
+  result.append(this);
+  for (int i = 0; i < result.size(); ++i) {
+    result.append(result[i]->getInheritedClasses());
+  }
+  return result;
+}
+
+void LibraryTreeItem::setModelWidget(ModelWidget *pModelWidget)
+{
+  mpModelWidget = pModelWidget;
+  mComponents.clear();
+  mComponentsLoaded = false;
+}
+
+const QList<ComponentInfo*> &LibraryTreeItem::getComponentsList()
+{
+  if (mpModelWidget) {
+    return mpModelWidget->getComponentsList();
+  } else {
+    if (!mComponentsLoaded) {
+      mComponents = MainWindow::instance()->getOMCProxy()->getComponents(getNameStructure());
+      mComponentsLoaded = true;
+    }
+    return mComponents;
+  }
+}
+
+LibraryTreeItem *LibraryTreeItem::getDirectComponentsClass(const QString &name)
+{
+  QList<LibraryTreeItem*> children = childrenItems();
+  for (int i = 0; i < children.size(); ++i) {
+    if (children[i]->getName() == name)
+      return children[i];
+  }
+  const QList<ComponentInfo*> &components = getComponentsList();
+  for (int i = 0; i < components.size(); ++i) {
+    if (components[i]->getName() == name) {
+      LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+      return pLibraryTreeModel->findLibraryTreeItem(components[i]->getClassName());
+    }
+  }
+
+  return 0;
+}
+
+LibraryTreeItem *LibraryTreeItem::getComponentsClass(const QString &name)
+{
+  QList<LibraryTreeItem*> inheritedClasses = getInheritedClassesDeepList();
+  for (int i = 0; i < inheritedClasses.size(); ++i) {
+    LibraryTreeItem *result = inheritedClasses[i]->getDirectComponentsClass(name);
+    if (result)
+      return result;
+  }
+
+  return 0;
+}
+
+void LibraryTreeItem::tryToComplete(QSet<QString> &result, const QString &lastPart)
+{
+  QList<LibraryTreeItem*> baseClasses = getInheritedClassesDeepList();
+
+  for (int bc = 0; bc < baseClasses.size(); ++bc) {
+    QList<LibraryTreeItem*> classes = baseClasses[bc]->childrenItems();
+    for (int i = 0; i < classes.size(); ++i) {
+      if (classes[i]->getName().startsWith(lastPart) &&
+              classes[i]->getNameStructure().compare("OMEdit.Search.Feature") != 0)
+        result.insert(classes[i]->getName());
+    }
+
+    const QList<ComponentInfo*> &components = baseClasses[bc]->getComponentsList();
+    if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getComponentType() == LibraryTreeItem::Modelica) {
+      for (int i = 0; i < components.size(); ++i) {
+        if (components[i]->getName().startsWith(lastPart))
+          result.insert(components[i]->getName());
+      }
+    }
+  }
 }
 
 /*!
