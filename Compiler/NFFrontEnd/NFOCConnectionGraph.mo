@@ -84,6 +84,7 @@ import DAEUtil;
 import NFBuiltin;
 import NFCall.Call;
 import NFClass.Class;
+import Dimension = NFDimension;
 import NFFunction.Function;
 import NFHashTable;
 import NFHashTable3;
@@ -98,6 +99,8 @@ import MetaModelica.Dangerous.listReverseInPlace;
 import Connector = NFConnector;
 import ElementSource;
 import NFTyping.ExpOrigin;
+import Typing = NFTyping;
+import NFPrefixes.Variability;
 
 type Edge  = tuple<ComponentRef,ComponentRef> "an edge is a tuple with two component references";
 type Edges = list<Edge> "A list of edges";
@@ -148,7 +151,7 @@ protected
   ComponentRef lhs, rhs, cref, fcref;
   DAE.ElementSource source;
   NFOCConnectionGraph graph = EMPTY;
-  list<Equation> eql = {};
+  list<Equation> eql = {}, eqlBroken, ieql;
   FlatEdges broken, connected;
   Call call;
   list<Expression> lst;
@@ -160,13 +163,17 @@ protected
   list<Connector> cl1, cl2, lhsl, rhsl;
   Equation replaceEq;
   Expression exp;
+  Boolean added = false;
 algorithm
   // go over all equations, connect, Connection.branch
   for eq in flatModel.equations loop
     eql := match eq
       case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
-                            rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
+                            rhs = Expression.CREF(ty = ty2, cref = rhs),
+                            broken = eqlBroken,
+                            source = source)
         algorithm
+          added := false;
           if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs))
           then
             cl1 := NFConnections.makeConnectors(lhs, ty1, source);
@@ -185,14 +192,15 @@ algorithm
                   if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
                     lhs := getOverconstrainedCref(lhs);
                     rhs := getOverconstrainedCref(rhs);
-                    //fcref := Function.lookupFunctionSimple("equalityConstraint", ComponentRef.node(lhs));
-                    //exp := Expression.CALL(Call.UNTYPED_CALL(fcref, {Expression.CREF(ComponentRef.getComponentType(lhs), lhs), Expression.CREF(ComponentRef.getComponentType(rhs), rhs)}, {}, ComponentRef.node(lhs)));
-                    //Call.typeCall(exp, ExpOrigin.CLASS, ElementSource.getInfo(source));
-                    // replaceEq := Equation.EQUALITY(Equation., rhs, ty, source);
-                    graph := addConnection(graph, lhs, rhs, {});
+                    graph := addConnection(graph, lhs, rhs, eqlBroken);
+                    added := true;
+                    break;
                   end if;
                 end if;
               end for;
+              if added then
+                break;
+              end if;
             end for;
           end if;
         then
@@ -242,14 +250,92 @@ algorithm
 
   // now we have the graph, remove the broken connects and evaluate the equation operators
   eql := listReverseInPlace(eql);
-  (eql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, modelNameQualified, eql);
+  ieql := flatModel.initialEquations;
+  (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, modelNameQualified, eql, ieql);
 
   eql := removeBrokenConnects(eql, connected, broken);
 
   flatModel.equations := eql;
+  flatModel.initialEquations := ieql;
   outBroken := broken;
 
 end handleOverconstrainedConnections;
+
+function generateEqualityConstraintEquation
+  input Expression elhs;
+  input Type lhs_ty;
+  input Expression erhs;
+  input Type rhs_ty;
+  input ExpOrigin.Type origin;
+  input DAE.ElementSource source;
+  output list<Equation> eqsEqualityConstraint = {};
+protected
+  ComponentRef lhs, rhs, cref, fcref_rhs, fcref_lhs;
+  list<Equation> eql = {};
+  list<Expression> lst;
+  Type ty, ty1, ty2;
+  ComponentRef lhs, rhs;
+  Integer priority;
+  Expression root, msg;
+  Connector c1, c2, cc1, cc2;
+  list<Connector> cl1, cl2, lhsl, rhsl;
+  Equation replaceEq;
+  Expression expLHS, expRHS;
+  InstNode fn_node_lhs, fn_node_rhs;
+  Variability var;
+algorithm
+  if not System.getHasOverconstrainedConnectors() then
+    return;
+  end if;
+
+  Expression.CREF(ty = ty1, cref = lhs) := elhs;
+  Expression.CREF(ty = ty2, cref = rhs) := erhs;
+  if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs))
+  then
+    cl1 := NFConnections.makeConnectors(lhs, ty1, source);
+    cl2 := NFConnections.makeConnectors(rhs, ty2, source);
+
+    for c1 in cl1 loop
+      c2 :: cl2 := cl2;
+
+      lhsl := Connector.split(c1);
+      rhsl := Connector.split(c2);
+
+      for cc1 in lhsl loop
+        cc2 :: rhsl := rhsl;
+        if not (Connector.isDeleted(cc1) or Connector.isDeleted(cc2)) then
+          lhs := Connector.name(cc1);
+          rhs := Connector.name(cc2);
+          if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
+            lhs := getOverconstrainedCref(lhs);
+            rhs := getOverconstrainedCref(rhs);
+
+            ty1 := ComponentRef.getComponentType(lhs);
+            ty2 := ComponentRef.getComponentType(rhs);
+
+            fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", ComponentRef.node(lhs));
+            (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, ElementSource.getInfo(source));
+            expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhs), Expression.CREF(ty2, rhs)}, {}, fn_node_rhs));
+
+            (expRHS, ty, var) := Typing.typeExp(expRHS, origin, ElementSource.getInfo(source), true);
+
+            fcref_lhs := Function.lookupFunctionSimple("fill", ComponentRef.node(lhs));
+            (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, ElementSource.getInfo(source));
+            expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
+
+            (expLHS, ty, var) := Typing.typeExp(expLHS, origin, ElementSource.getInfo(source), true);
+
+            replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
+
+            eqsEqualityConstraint := {replaceEq};
+
+            return;
+          end if;
+        end if;
+      end for;
+    end for;
+  end if;
+end generateEqualityConstraintEquation;
 
 protected
 
@@ -291,22 +377,24 @@ function handleOverconstrainedConnections_dispatch
   input NFOCConnectionGraph inGraph;
   input String modelNameQualified;
   input list<Equation> inEquations;
+  input list<Equation> inInitialEquations;
   output list<Equation> outEquations;
+  output list<Equation> outInitialEquations;
   output FlatEdges outConnected;
   output FlatEdges outBroken;
 algorithm
-  (outEquations, outConnected, outBroken) := matchcontinue(inGraph, modelNameQualified, inEquations)
+  (outEquations, outInitialEquations, outConnected, outBroken) := matchcontinue(inGraph, modelNameQualified, inEquations, inInitialEquations)
     local
       NFOCConnectionGraph graph;
-      list<Equation> eqs;
+      list<Equation> eqs, ieqs;
       list<ComponentRef> roots;
       FlatEdges broken, connected;
 
     // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}, {}), _, _) then (inEquations, {}, {});
+    case (GRAPH(_, {}, {}, {}, {}, {}), _, _, _) then (inEquations, inInitialEquations, {}, {});
 
     // handle the connection breaking
-    case (graph, _, eqs)
+    case (graph, _, eqs, ieqs)
       equation
 
         if Flags.isSet(Flags.CGRAPH) then
@@ -327,8 +415,9 @@ algorithm
         end if;
 
         eqs = evalConnectionsOperators(roots, graph, eqs);
+        ieqs = evalConnectionsOperators(roots, graph, ieqs);
       then
-        (eqs, connected, broken);
+        (eqs, ieqs, connected, broken);
 
     // handle the connection breaking
     else
@@ -1191,7 +1280,9 @@ algorithm
     // handle rooted - with zero size array or the normal call
     case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
       equation
-        true = Absyn.pathEqual(Function.name(call.fn), Absyn.IDENT("rooted"));
+        true =
+          Absyn.pathEqual(Function.name(call.fn), Absyn.IDENT("rooted")) or
+          Absyn.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("rooted")));
         res = match lst
           // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
           case {Expression.ARRAY(elements = {})}
@@ -1230,7 +1321,9 @@ algorithm
     // deal with Connections.isRoot - with zero size array and normal
     case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
       equation
-        true = Absyn.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")));
+        true =
+        Absyn.pathEqual(Function.name(call.fn), Absyn.IDENT("isRoot")) or
+        Absyn.pathEqual(Function.name(call.fn), Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")));
         res = match lst
           // zero size array TODO! FIXME! check how zero size arrays are handled in the NF
           case {Expression.ARRAY(elements = {})}
@@ -1251,17 +1344,6 @@ algorithm
         end match;
       then
         res;
-
-    // deal with NOT exp
-    case (Expression.LUNARY(Operator.OPERATOR(op = Op.NOT), exp), (rooted,roots,graph))
-      equation
-        Expression.BOOLEAN(result) = evalConnectionsOperatorsHelper(exp, inRoots);
-        if Flags.isSet(Flags.CGRAPH) then
-          print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + "\n");
-        end if;
-        result = boolNot(result);
-      then
-        Expression.BOOLEAN(result);
 
     // deal with Connections.uniqueRootIndices, TODO! FIXME! actually implement this
     case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))

@@ -86,6 +86,7 @@ import NFInstNode.CachedData;
 import Direction = NFPrefixes.Direction;
 import ElementSource;
 import StringUtil;
+import NFOCConnectionGraph;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -2355,6 +2356,7 @@ protected
   MatchKind mk;
   Integer next_origin;
   SourceInfo info;
+  list<Equation> eql;
 algorithm
   info := ElementSource.getInfo(source);
 
@@ -2398,7 +2400,12 @@ algorithm
   //  fail();
   //end if;
 
-  connEq := Equation.CONNECT(lhs, rhs, source);
+  // @adrpo: here we see if we have any overconstrained connectors in the connect
+  // if we do, we generate equation:
+  // zeros(:) = OverconstrainedType.equalityConstraint(lhs.overconstrained_component, rhs.overconstrained_component)
+  eql := NFOCConnectionGraph.generateEqualityConstraintEquation(lhs, lhs_ty, rhs, rhs_ty, origin, source);
+
+  connEq := Equation.CONNECT(lhs, rhs, eql, source);
 end typeConnect;
 
 function checkConnector

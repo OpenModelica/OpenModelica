@@ -167,6 +167,7 @@ protected
   list<Binding> bindings;
   Binding b;
 algorithm
+  // print(">" + stringAppendList(List.fill("  ", ComponentRef.depth(prefix)-1)) + ComponentRef.toString(prefix) + "\n");
   () := match cls
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
       algorithm
@@ -217,6 +218,7 @@ algorithm
         ();
 
   end match;
+  // print("<" + stringAppendList(List.fill("  ", ComponentRef.depth(prefix)-1)) + ComponentRef.toString(prefix) + "\n");
 end flattenClass;
 
 function flattenComponent
@@ -241,6 +243,8 @@ algorithm
 
   comp_node := InstNode.resolveOuter(component);
   c := InstNode.component(comp_node);
+
+  // print("->" + stringAppendList(List.fill("  ", ComponentRef.depth(prefix))) + ComponentRef.toString(prefix) + "." + InstNode.name(component) + "\n");
 
   () := match c
     case Component.TYPED_COMPONENT(condition = condition, ty = ty)
@@ -272,6 +276,8 @@ algorithm
         fail();
 
   end match;
+
+  // print("<-" + stringAppendList(List.fill("  ", ComponentRef.depth(prefix))) + ComponentRef.toString(prefix) + "." + InstNode.name(component) + "\n");
 end flattenComponent;
 
 function deleteComponent
@@ -280,6 +286,11 @@ function deleteComponent
 protected
   Component comp;
 algorithm
+  // @adrpo: don't delete the inner/outer node, it doesn't work!
+  if InstNode.isInnerOuterNode(compNode) then
+    return;
+  end if;
+
   if not InstNode.isEmpty(compNode) then
     comp := InstNode.component(compNode);
     InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
@@ -692,6 +703,7 @@ algorithm
   equations := match eq
     local
       Expression e1, e2, e3;
+      list<Equation> eql;
 
     case Equation.EQUALITY()
       algorithm
@@ -707,8 +719,9 @@ algorithm
       algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
+        eql := flattenEquations(eq.broken, prefix);
       then
-        Equation.CONNECT(e1, e2, eq.source) :: equations;
+        Equation.CONNECT(e1, e2, eql, eq.source) :: equations;
 
     case Equation.IF()
       then flattenIfEquation(eq.branches, prefix, eq.source, equations);
@@ -897,10 +910,17 @@ algorithm
   // build the sets, check the broken connects
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
-  // generated the equations
+  // generate the equations
   conn_eql := ConnectEquations.generateEquations(csets_array);
+
+  // append the equalityConstraint call equations for the broken connects
+  if  System.getHasOverconstrainedConnectors() then
+    conn_eql := listAppend(conn_eql, List.flatten(List.map(broken, Util.tuple33)));
+  end if;
+
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
+
   ctable := CardinalityTable.fromConnections(conns);
 
   // Evaluate any connection operators if they're used.

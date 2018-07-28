@@ -794,5 +794,24 @@ public
     end match;
   end toListReverse;
 
+  function depth
+    input ComponentRef cref;
+    output Integer d = 0;
+  algorithm
+    d := match cref
+      case CREF(restCref = EMPTY())
+        then d + 1;
+
+      case CREF()
+        algorithm
+          d := 1 + depth(cref.restCref);
+        then
+          d;
+
+      case WILD() then 0;
+      else "EMPTY_CREF" then 0;
+    end match;
+  end depth;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

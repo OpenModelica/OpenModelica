@@ -2507,7 +2507,7 @@ algorithm
         exp1 := instCref(scodeEq.crefLeft, scope, info);
         exp2 := instCref(scodeEq.crefRight, scope, info);
       then
-        Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
+        Equation.CONNECT(exp1, exp2, {}, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
