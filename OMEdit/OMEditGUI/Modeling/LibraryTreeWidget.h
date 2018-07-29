@@ -146,6 +146,7 @@ public:
   LibraryTreeItem* parent() const {return mpParentLibraryTreeItem;}
   bool isTopLevel() const;
   bool isSimulationAllowed();
+  void callFunction();
   void emitLoaded();
   void emitUnLoaded();
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
@@ -330,6 +331,7 @@ private:
   QAction *mpCheckModelAction;
   QAction *mpCheckAllModelsAction;
   QAction *mpSimulateAction;
+  QAction *mpCallAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
 #if !defined(WITHOUT_OSG)
@@ -380,6 +382,7 @@ public slots:
   void instantiateModel();
   void checkModel();
   void checkAllModels();
+  void call();
   void simulate();
   void simulateWithTransformationalDebugger();
   void simulateWithAlgorithmicDebugger();

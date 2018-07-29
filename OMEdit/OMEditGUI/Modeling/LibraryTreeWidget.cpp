@@ -747,6 +747,19 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
   emit coOrdinateSystemUpdated(pGraphicsView);
 }
 
+void LibraryTreeItem::callFunction()
+{
+  QInputDialog dlg(MainWindow::instance());
+  dlg.setLabelText(getNameStructure() + "(...):");
+
+  if (dlg.exec() == QDialog::Accepted) {
+    QString cmd = getNameStructure() + "(" + dlg.textValue() + ")";
+
+    MainWindow::instance()->getOMCProxy()->openOMCLoggerWidget();
+    MainWindow::instance()->getOMCProxy()->sendCommand(cmd);
+  }
+}
+
 /*!
  * \class LibraryTreeProxyModel
  * \brief A sort filter proxy model for Libraries Browser.
@@ -2675,6 +2688,10 @@ void LibraryTreeView::createActions()
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
+  // call Action
+  mpCallAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::call, this);
+  mpCallAction->setStatusTip(Helper::callTip);
+  connect(mpCallAction, SIGNAL(triggered()), SLOT(call()));
   // simulate with transformational debugger Action
   mpSimulateWithTransformationalDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-equation.svg"), Helper::simulateWithTransformationalDebugger, this);
   mpSimulateWithTransformationalDebuggerAction->setStatusTip(Helper::simulateWithTransformationalDebuggerTip);
@@ -2899,6 +2916,9 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSimulateWithAnimationAction);
   #endif
             menu.addAction(mpSimulationSetupAction);
+          }
+          if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
+            menu.addAction(mpCallAction);
           }
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
@@ -3218,6 +3238,18 @@ void LibraryTreeView::checkAllModels()
   if (pLibraryTreeItem) {
     MainWindow::instance()->checkAllModels(pLibraryTreeItem);
   }
+}
+
+void LibraryTreeView::call()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  pLibraryTreeItem->callFunction();
 }
 
 /*!

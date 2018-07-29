@@ -201,6 +201,8 @@ public:
   static QString refresh;
   static QString simulate;
   static QString simulateTip;
+  static QString call;
+  static QString callTip;
   static QString reSimulate;
   static QString reSimulateTip;
   static QString reSimulateSetup;
