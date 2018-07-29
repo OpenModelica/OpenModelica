@@ -530,6 +530,8 @@ constant DebugFlag EXEC_STAT_EXTRA_GC = DEBUG_FLAG(177, "execstatGCcollect", fal
   Util.gettext("When running execstat, also perform an extra full garbage collection."));
 constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(178, "debugDAEmode", false,
   Util.gettext("Dump debug output for the DAEmode."));
+constant DebugFlag NF_SCALARIZE = DEBUG_FLAG(179, "nfScalarize", true,
+  Util.gettext("Run scalarization in NF, default true."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -714,7 +716,8 @@ constant list<DebugFlag> allDebugFlags = {
   SUSAN_MATCHCONTINUE_DEBUG,
   OLD_FE_UNITCHECK,
   EXEC_STAT_EXTRA_GC,
-  DEBUG_DAEMODE
+  DEBUG_DAEMODE,
+  NF_SCALARIZE
 };
 
 public

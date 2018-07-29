@@ -152,7 +152,10 @@ algorithm
   flat_model := Package.collectConstants(flat_model, funcs);
 
   // Scalarize array components in the flat model.
-  flat_model := Scalarize.scalarize(flat_model, name);
+  if Flags.isSet(Flags.NF_SCALARIZE) then
+    flat_model := Scalarize.scalarize(flat_model, name);
+  end if;
+
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs, name, InstNode.info(inst_cls));
 
