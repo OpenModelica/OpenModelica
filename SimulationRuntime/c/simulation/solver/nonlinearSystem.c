@@ -629,6 +629,55 @@ void printNonLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLev
   messageClose(logLevel);
 }
 
+/*! \fn printNonLinearInitialInfo
+ *
+ *  This function prints information of an non-linear systems before an solving step.
+ *
+ *  \param [in]  [logName] log level in general LOG_NLS
+ *         [ref] [data]
+ *         [ref] [nonlinsys] index of corresponding non-linear system
+ */
+void printNonLinearInitialInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *nonlinsys)
+{
+  long i;
+
+  if (!ACTIVE_STREAM(logName)) return;
+  infoStreamPrint(logName, 1, "initial variable values:");
+
+  for(i=0; i<nonlinsys->size; i++)
+    infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g", i+1,
+                    modelInfoGetEquation(&data->modelData->modelDataXml,nonlinsys->equationIndex).vars[i],
+                    nonlinsys->nlsx[i], nonlinsys->nominal[i]);
+  messageClose(logName);
+}
+
+/*! \fn printNonLinearFinishInfo
+ *
+ *  This function prints information of an non-linear systems after a solving step.
+ *
+ *  \param [in]  [logName] log level in general LOG_NLS
+ *         [ref] [data]
+ *         [ref] [nonlinsys] index of corresponding non-linear system
+ */
+void printNonLinearFinishInfo(int logName, DATA* data, NONLINEAR_SYSTEM_DATA *nonlinsys)
+{
+  long i;
+
+  if (!ACTIVE_STREAM(logName)) return;
+
+  infoStreamPrint(logName, 1, "Solution status: %s", nonlinsys->solved?"SOLVED":"FAILED");
+  infoStreamPrint(logName, 0, " number of iterations           : %ld", nonlinsys->numberOfIterations);
+  infoStreamPrint(logName, 0, " number of function evaluations : %ld", nonlinsys->numberOfFEval);
+  infoStreamPrint(logName, 0, " number of jacobian evaluations : %ld", nonlinsys->numberOfJEval);
+  infoStreamPrint(logName, 0, "solution values:");
+  for(i=0; i<nonlinsys->size; i++)
+    infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g", i+1,
+                    modelInfoGetEquation(&data->modelData->modelDataXml,nonlinsys->equationIndex).vars[i],
+                    nonlinsys->nlsx[i]);
+
+  messageClose(logName);
+}
+
 /*! \fn getInitialGuess
  *
  *  This function writes initial guess to nonlinsys->nlsx and nonlinsys->nlsOld.
@@ -915,8 +964,8 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* performance measurement */
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
+  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "Nonlinear system %ld dump LOG_NLS_EXTRAPOLATE", nonlinsys->equationIndex);
   /* grab the initial guess */
-  infoStreamPrint(LOG_NLS_EXTRAPOLATE, 1, "############ Start new iteration for nonlinear system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
   /* if last solving is too long ago use just old values  */
   if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
   {
@@ -932,6 +981,10 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   {
     constraintsSatisfied = updateInnerEquation(dataAndThreadData, sysNumber, 1);
   }
+
+  /* print debug initial information */
+  infoStreamPrint(LOG_NLS, 1, "############ Solve nonlinear system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  printNonLinearInitialInfo(LOG_NLS, data, nonlinsys);
 
   /* try */
 #ifndef OMC_EMCC
@@ -1078,6 +1131,8 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   {
     nonlinsys->lastTimeSolved = data->localData[0]->timeValue;
   }
+  printNonLinearFinishInfo(LOG_NLS, data, nonlinsys);
+  messageClose(LOG_NLS);
 
 
   /* enable to avoid division by zero */

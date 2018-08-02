@@ -1122,9 +1122,9 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     getIndicesOfPivotElement(&n, &nPivot, &i, A, indRow, indCol, &pRow, &pCol, &absMax);
     if (absMax<DBL_EPSILON) {
       *rank = i;
-      warningStreamPrint(LOG_NLS, 0, "Matrix singular!");
-      debugInt(LOG_NLS,"rank = ", *rank);
-      debugInt(LOG_NLS,"position = ", *pos);
+      warningStreamPrint(LOG_NLS_V, 0, "Matrix singular!");
+      debugInt(LOG_NLS_V,"rank = ", *rank);
+      debugInt(LOG_NLS_V,"position = ", *pos);
       break;
     }
     /* swap row indices */
@@ -1155,7 +1155,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
   debugMatrixPermutedDouble(LOG_NLS_JAC,"Linear System Matrix [Jac res] after decomposition",A, n, m, indRow, indCol);
   debugDouble(LOG_NLS_JAC,"Determinant = ", detJac);
   if (isnan(detJac)){
-    warningStreamPrint(LOG_NLS, 0, "Jacobian determinant is NaN.");
+    warningStreamPrint(LOG_NLS_V, 0, "Jacobian determinant is NaN.");
     return -1;
   }
   else if (fabs(detJac) < 1e-9 && casualTearingSet)
@@ -1169,7 +1169,7 @@ int solveSystemWithTotalPivotSearch(int n, double* x, double* A, int* indRow, in
     if (i>=*rank) {
       /* this criteria should be evaluated and may be improved in future */
       if (fabs(A[indRow[i] + indCol[n]*n])>1e-6) {
-        warningStreamPrint(LOG_NLS, 0, "under-determined linear system not solvable!");
+        warningStreamPrint(LOG_NLS_V, 0, "under-determined linear system not solvable!");
         return -1;
       } else {
         x[indCol[i]] = 0.0;
@@ -1319,7 +1319,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   debugString(LOG_NLS_V, "******************************************************");
   debugInt(LOG_NLS_V, "NEWTON SOLVER STARTED! equation number: ",solverData->eqSystemNumber);
   debugInt(LOG_NLS_V, "maximum number of function evaluation: ", solverData->maxNumberOfIterations);
-  printUnknowns(LOG_NLS, solverData);
+  printUnknowns(LOG_NLS_V, solverData);
 
   /* set default solver message */
   solverData->info = 0;
@@ -1393,7 +1393,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 
       if (lambda1 < lambdaMin)
       {
-        debugDouble(LOG_NLS,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+        debugDouble(LOG_NLS_V,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
         solverData->info = -1;
         break;
       }
@@ -1439,7 +1439,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #endif
         if (assert)
         {
-          debugDouble(LOG_NLS,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+          debugDouble(LOG_NLS_V,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
           solverData->info = -1;
           break;
         }
@@ -1487,7 +1487,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #endif
           if (assert)
           {
-            debugDouble(LOG_NLS,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
+            debugDouble(LOG_NLS_V,"UPS! MUST HANDLE A PROBLEM (Newton method), time : ", solverData->timeValue);
             solverData->info = -1;
             break;
           }
@@ -1693,7 +1693,7 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
   vecConst(solverData->n, 0.0, solverData->dy2);
   solverData->dy2[solverData->n]= solverData->startDirection;
-  printHomotopyUnknowns(LOG_NLS, solverData);
+  printHomotopyUnknowns(LOG_NLS_V, solverData);
   assert = 1;
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -2299,7 +2299,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 
       // If this is the casual tearing set (only exists for dynamic tearing), break after first try
       if (solverData->info == -1 && solverData->casualTearingSet){
-        infoStreamPrint(LOG_NLS, 0, "### No Solution for the casual tearing set at the first try! ###");
+        infoStreamPrint(LOG_NLS_V, 0, "### No Solution for the casual tearing set at the first try! ###");
         break;
       }
 
@@ -2353,7 +2353,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
 
           pos = solverData->n;
           solveSystemWithTotalPivotSearch(solverData->n, solverData->dy0, solverData->fJac,   solverData->indRow, solverData->indCol, &pos, &rank, solverData->casualTearingSet);
-          debugDouble(LOG_NLS,"solve mixed system at time : ", solverData->timeValue);
+          debugDouble(LOG_NLS_V,"solve mixed system at time : ", solverData->timeValue);
           continue;
         }
       }
@@ -2362,7 +2362,7 @@ int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber)
         debugString(LOG_NLS_V,"SYSTEM SOLVED");
         debugInt(LOG_NLS_V,   "homotopy method:          ",runHomotopy);
         debugInt(LOG_NLS_V,   "number of function calls: ",solverData->numberOfFunctionEvaluations-numberOfFunctionEvaluationsOld);
-        printUnknowns(LOG_NLS, solverData);
+        printUnknowns(LOG_NLS_V, solverData);
         debugString(LOG_NLS_V, "------------------------------------------------------");
         /* take the solution */
         vecCopy(solverData->n, solverData->x, systemData->nlsx);

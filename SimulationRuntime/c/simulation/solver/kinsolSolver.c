@@ -606,7 +606,7 @@ void nlsKinsolJacSumDense(DlsMat mat)
     }
 
     if (sum == 0.0){
-      warningStreamPrint(LOG_NLS, 0, "sum of col %d of jacobian is zero!", i);
+      warningStreamPrint(LOG_NLS_V, 0, "sum of col %d of jacobian is zero!", i);
     }else{
       infoStreamPrint(LOG_NLS_JAC, 0, "col %d jac sum = %g", i, sum);
     }
@@ -627,7 +627,7 @@ void nlsKinsolJacSumSparse(SlsMat mat)
     }
 
     if (sum == 0.0){
-      warningStreamPrint(LOG_NLS, 0, "sum of col %d of jacobian is zero!", i);
+      warningStreamPrint(LOG_NLS_V, 0, "sum of col %d of jacobian is zero!", i);
     }else{
       infoStreamPrint(LOG_NLS_JAC, 0, "col %d jac sum = %g", i, sum);
     }
@@ -644,13 +644,13 @@ void nlsKinsolErrorPrint(int errorCode, const char *module, const char *function
   int sysNumber = kinsolData->userData.sysNumber;
   long eqSystemNumber = data->simulationInfo->nonlinearSystemData[sysNumber].equationIndex;
 
-  if (ACTIVE_STREAM(LOG_NLS))
+  if (ACTIVE_STREAM(LOG_NLS_V))
   {
-    warningStreamPrint(LOG_NLS, 1, "kinsol failed for %d", modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).id);
-    warningStreamPrint(LOG_NLS, 0, "[module] %s | [function] %s | [error_code] %d", module, function, errorCode);
-    warningStreamPrint(LOG_NLS, 0, "%s", msg);
+    warningStreamPrint(LOG_NLS_V, 1, "kinsol failed for %d", modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).id);
+    warningStreamPrint(LOG_NLS_V, 0, "[module] %s | [function] %s | [error_code] %d", module, function, errorCode);
+    warningStreamPrint(LOG_NLS_V, 0, "%s", msg);
 
-    messageClose(LOG_NLS);
+    messageClose(LOG_NLS_V);
   }
 }
 
@@ -839,32 +839,32 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
   case KIN_MEM_NULL:
   case KIN_ILL_INPUT:
   case KIN_NO_MALLOC:
-    errorStreamPrint(LOG_NLS, 0, "kinsol has a serious memory issue ERROR %d\n", errorCode);
+    errorStreamPrint(LOG_NLS_V, 0, "kinsol has a serious memory issue ERROR %d\n", errorCode);
     return errorCode;
     break;
   /* just retry with new initial guess */
   case KIN_MXNEWT_5X_EXCEEDED:
-    warningStreamPrint(LOG_NLS, 0, "Newton step exceed the maximum step size several times. Try again after increasing maximum step size.\n");
+    warningStreamPrint(LOG_NLS_V, 0, "Newton step exceed the maximum step size several times. Try again after increasing maximum step size.\n");
     kinsolData->maxstepfactor *= 1e5;
     nlsKinsolSetMaxNewtonStep(kinsolData, kinsolData->maxstepfactor);
     return 1;
     break;
   /* just retry without line search */
   case KIN_LINESEARCH_NONCONV:
-    warningStreamPrint(LOG_NLS, 0, "kinsols line search did not convergence. Try without.\n");
+    warningStreamPrint(LOG_NLS_V, 0, "kinsols line search did not convergence. Try without.\n");
     kinsolData->kinsolStrategy = KIN_NONE;
     kinsolData->retries--;
     return 1;
   /* maybe happened because of an out-dated factorization, so just retry  */
   case KIN_LSOLVE_FAIL:
-    warningStreamPrint(LOG_NLS, 0, "kinsols matrix need new factorization. Try again.\n");
+    warningStreamPrint(LOG_NLS_V, 0, "kinsols matrix need new factorization. Try again.\n");
     if (nlsData->isPatternAvailable){
       KINKLUReInit(kinsolData->kinsolMemory, kinsolData->size, kinsolData->nnz, 2);
     }
     return 1;
   case KIN_MAXITER_REACHED:
   case KIN_REPTD_SYSFUNC_ERR:
-    warningStreamPrint(LOG_NLS, 0, "kinsols runs into issues retry with different configuration.\n");
+    warningStreamPrint(LOG_NLS_V, 0, "kinsols runs into issues retry with different configuration.\n");
     retValue = 1;
     break;
   case KIN_LSETUP_FAIL:
@@ -883,7 +883,7 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
     break;
   case KIN_LINESEARCH_BCFAIL:
     KINGetNumBetaCondFails(kinsolData->kinsolMemory, &outL);
-    warningStreamPrint(LOG_NLS, 0, "kinsols runs into issues with beta-condition fails: %ld\n", outL);
+    warningStreamPrint(LOG_NLS_V, 0, "kinsols runs into issues with beta-condition fails: %ld\n", outL);
     retValue = 1;
     break;
   default:
@@ -896,14 +896,14 @@ int nlsKinsolErrorHandler(int errorCode, DATA *data, NONLINEAR_SYSTEM_DATA *nlsD
   KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
   if (fNorm<FTOL_WITH_LESS_ACCURANCY)
   {
-    warningStreamPrint(LOG_NLS, 0, "Move forward with a less accurate solution.");
+    warningStreamPrint(LOG_NLS_V, 0, "Move forward with a less accurate solution.");
     KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURANCY);
     KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURANCY);
     retValue2 = 1;
   }
   else
   {
-    warningStreamPrint(LOG_NLS, 0, "Current status of fx = %f", fNorm);
+    warningStreamPrint(LOG_NLS_V, 0, "Current status of fx = %f", fNorm);
   }
 
   /* reconfigure kinsol for an other try */
@@ -976,8 +976,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
   /* reset configuration settings */
   nlsKinsolConfigSetup(kinsolData);
 
-  infoStreamPrint(LOG_NLS, 0, "------------------------------------------------------");
-  infoStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "Start solving non-linear system >>%ld<< using Kinsol solver at time %g", eqSystemNumber, data->localData[0]->timeValue);
+  infoStreamPrintWithEquationIndexes(LOG_NLS_V, 1, indexes, "Start Kinsol solver at time %g", data->localData[0]->timeValue);
 
   nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
 
@@ -1031,10 +1030,10 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
     N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
     fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fRes);
 
-    infoStreamPrint(LOG_NLS, 0, "scaled Euclidean norm of F(u) = %e", fNormValue);
+    infoStreamPrint(LOG_NLS_V, 0, "scaled Euclidean norm of F(u) = %e", fNormValue);
     if (FTOL_WITH_LESS_ACCURANCY<fNormValue)
     {
-      warningStreamPrint(LOG_NLS, 0, "False positive solution. FNorm is not small enough.");
+      warningStreamPrint(LOG_NLS_V, 0, "False positive solution. FNorm is not small enough.");
       success = 0;
     }
     else /* solved system for reuse linear solver information */
@@ -1043,19 +1042,9 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
     }
     /* copy solution */
     memcpy(nlsData->nlsx, xStart, nlsData->size*(sizeof(double)));
-    /* dump solution */
-    if(ACTIVE_STREAM(LOG_NLS))
-    {
-      infoStreamPrintWithEquationIndexes(LOG_NLS, 1, indexes, "solution for NLS %ld at t=%g", eqSystemNumber, kinsolData->userData.data->localData[0]->timeValue);
-      for(i=0; i<nlsData->size; ++i)
-      {
-        infoStreamPrintWithEquationIndexes(LOG_NLS, 0, indexes, "[%d] %s = %g", i+1, modelInfoGetEquation(&kinsolData->userData.data->modelData->modelDataXml,eqSystemNumber).vars[i], nlsData->nlsx[i]);
-      }
-      messageClose(LOG_NLS);
-    }
   }
 
-  messageClose(LOG_NLS);
+  messageClose(LOG_NLS_V);
 
   return success;
 }
