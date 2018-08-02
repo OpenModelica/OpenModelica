@@ -10,11 +10,11 @@ simulate(ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator);getErro
 // ""
 // record SimulationResult
 //     resultFile = "ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 400.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "stdout            | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

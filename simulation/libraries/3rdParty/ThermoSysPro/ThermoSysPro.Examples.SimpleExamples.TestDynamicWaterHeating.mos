@@ -203,19 +203,19 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // stdout            | warning | While solving non-linear system an assertion failed at time 524.286.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // stdout            | warning | While solving non-linear system an assertion failed at time 458.75.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // stdout            | warning | While solving non-linear system an assertion failed at time 425.982.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // stdout            | warning | While solving non-linear system an assertion failed at time 409.598.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

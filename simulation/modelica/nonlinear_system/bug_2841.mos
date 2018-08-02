@@ -43,6 +43,10 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | | updated start value: x(start=50000)
 // LOG_NLS           | info    | update static data of non-linear system solvers
 // LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_NLS           | info    | ############ Solve nonlinear system 7 at time 0 ############
+// |                 | |       | | initial variable values:
+// |                 | |       | | | [ 1]                              x  =            50000		 nom =           100000
+// |                 | |       | | | [ 2]                              y  =            5e-06		 nom =            1e-05
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)
 // LOG_NLS_V         | info    | EQUATION NUMBER: 7
@@ -66,7 +70,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  7
 // LOG_NLS_V         | info    | maximum number of function evaluation:  200
-// LOG_NLS           | info    | nls status
+// LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
 // |                 | |       | | [ 1]                              x  =            50000		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // |                 | |       | | [ 2]                              y  =            5e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
@@ -249,13 +253,20 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | SYSTEM SOLVED
 // LOG_NLS_V         | info    | homotopy method:           0
 // LOG_NLS_V         | info    | number of function calls:  10
-// LOG_NLS           | info    | nls status
+// LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
 // |                 | |       | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
+// LOG_NLS           | info    | | Solution status: SOLVED
+// |                 | |       | | |  number of iterations           : 8
+// |                 | |       | | |  number of function evaluations : 10
+// |                 | |       | | |  number of jacobian evaluations : 8
+// |                 | |       | | | solution values:
+// |                 | |       | | | [ 1]                              x  =       -77390.689
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06
 // LOG_INIT          | info    | parameter values
 // |                 | |       | | real parameters
 // |                 | |       | | | [1] parameter Real xn(start=100000, fixed=true) = 100000
@@ -267,6 +278,10 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // |                 | |       | | | [3] Real x(start=50000, nominal=100000) = -77390.7 (pre: 50000)
 // |                 | |       | | | [4] Real y(start=5e-06, nominal=1e-05) = 3.31182e-06 (pre: 5e-06)
 // LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_NLS           | info    | ############ Solve nonlinear system 18 at time 0 ############
+// |                 | |       | | initial variable values:
+// |                 | |       | | | [ 1]                              x  =       -77390.689		 nom =           100000
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)
 // LOG_NLS_V         | info    | EQUATION NUMBER: 18
@@ -290,7 +305,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  18
 // LOG_NLS_V         | info    | maximum number of function evaluation:  200
-// LOG_NLS           | info    | nls status
+// LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
 // |                 | |       | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
@@ -324,14 +339,25 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | SYSTEM SOLVED
 // LOG_NLS_V         | info    | homotopy method:           0
 // LOG_NLS_V         | info    | number of function calls:  2
-// LOG_NLS           | info    | nls status
+// LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
 // |                 | |       | | [ 1]                              x  =       -77390.689		 nom =           100000		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // |                 | |       | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05		 min =  -1.7976931e+308		 max =   1.7976931e+308
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
+// LOG_NLS           | info    | | Solution status: SOLVED
+// |                 | |       | | |  number of iterations           : 1
+// |                 | |       | | |  number of function evaluations : 2
+// |                 | |       | | |  number of jacobian evaluations : 1
+// |                 | |       | | | solution values:
+// |                 | |       | | | [ 1]                              x  =       -77390.689
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_NLS           | info    | ############ Solve nonlinear system 18 at time 0 ############
+// |                 | |       | | initial variable values:
+// |                 | |       | | | [ 1]                              x  =       -77390.689		 nom =           100000
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06		 nom =            1e-05
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | SOLVING NON-LINEAR SYSTEM USING MIXED SOLVER (Newton/Homotopy solver)
 // LOG_NLS_V         | info    | EQUATION NUMBER: 18
@@ -352,6 +378,13 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT,LOG
 // LOG_NLS_V         | info    | ------------------------------------------------------
 // LOG_NLS_V         | info    | Solution [2-dim]
 // |                 | |       | |       -77390.689    3.3118158e-06 
+// LOG_NLS           | info    | | Solution status: SOLVED
+// |                 | |       | | |  number of iterations           : 1
+// |                 | |       | | |  number of function evaluations : 3
+// |                 | |       | | |  number of jacobian evaluations : 1
+// |                 | |       | | | solution values:
+// |                 | |       | | | [ 1]                              x  =       -77390.689
+// |                 | |       | | | [ 2]                              y  =    3.3118158e-06
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_NLS           | info    | free mixed system solvers
 // LOG_NLS           | info    | free non-linear system solvers

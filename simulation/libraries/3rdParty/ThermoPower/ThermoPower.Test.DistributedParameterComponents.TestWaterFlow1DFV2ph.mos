@@ -15,11 +15,11 @@ simulate(ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph); 
 //     messages = "stdout            | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // stdout            | warning | While solving non-linear system an assertion failed during initialization.
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
-// |                 | |       | | For more information simulate with -lv LOG_NLS
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
 // assert            | debug   | Solving non-linear system 453 failed at time=0.
 // |                 | |       | For more information please use -lv LOG_NLS.
 // assert            | warning | Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.
