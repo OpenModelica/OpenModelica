@@ -5602,7 +5602,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
 
-      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" + warnAboutVars(varlst);
+      warning = "Iteration variables of equation system with analytic Jacobian:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 
@@ -5610,7 +5610,7 @@ algorithm
       varlst = List.map1r(vlst, BackendVariable.getVarAt, inVars);
       false = listEmpty(varlst);
 
-      warning = "Iteration variables of equation system w/o analytic Jacobian:\n" + warnAboutVars(varlst);
+      warning = "Iteration variables of equation system without analytic Jacobian:\n" + warnAboutVars(varlst);
       warningList = listAllIterationVariables2(rest, inVars);
     then warning::warningList;
 

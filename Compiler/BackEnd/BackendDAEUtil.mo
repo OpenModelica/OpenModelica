@@ -9432,9 +9432,9 @@ algorithm
         case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NONLINEAR())
           then ("nonlinear equation system in the " + daeTypeStr + " DAE:", vlst);
         case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_GENERIC())
-          then ("equation system w/o analytic Jacobian in the " + daeTypeStr + " DAE:", vlst);
+          then ("equation system with analytic Jacobian in the " + daeTypeStr + " DAE:", vlst);
         case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NO_ANALYTIC())
-          then ("equation system w/o analytic Jacobian in the " + daeTypeStr + " DAE:", vlst);
+          then ("equation system without analytic Jacobian in the " + daeTypeStr + " DAE:", vlst);
         case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
           then ("torn nonlinear equation system in the " + daeTypeStr + " DAE:", vlst);
         // If the component is none of these types, do nothing.

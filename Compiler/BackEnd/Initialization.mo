@@ -705,9 +705,9 @@ algorithm
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NONLINEAR())
         then ("nonlinear equation system:\n", vlst);
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_GENERIC())
-        then ("equation system w/o analytic Jacobian:\n", vlst);
+        then ("equation system with analytic Jacobian:\n", vlst);
       case BackendDAE.EQUATIONSYSTEM(vars = vlst, jacType = BackendDAE.JAC_NO_ANALYTIC())
-        then ("equation system w/o analytic Jacobian:\n", vlst);
+        then ("equation system without analytic Jacobian:\n", vlst);
       case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars = vlst), linear = false)
         then ("torn nonlinear equation system:\n", vlst);
       // If the component is none of these types, do nothing.
