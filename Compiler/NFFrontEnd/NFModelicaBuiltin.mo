@@ -1142,11 +1142,11 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
   package Architecture
     function numBits
       output Integer numBit;
-      external "builtin";
+      external "builtin" numBit = architecture_numbits() annotation(Include="#define architecture_numbits() (8*sizeof(void*))");
     end numBits;
     function integerMax
       output Integer max;
-      external "builtin";
+      external "builtin" max = intMaxLit();
     end integerMax;
   end Architecture;
 

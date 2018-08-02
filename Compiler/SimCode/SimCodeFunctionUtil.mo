@@ -545,7 +545,7 @@ algorithm
       DAE.Function fel;
       list<DAE.Function> rest;
       list<SimCodeFunction.RecordDeclaration> decls;
-      String name;
+      String name, fname;
       list<String> includeDirs;
       Absyn.Path path;
 
@@ -563,18 +563,26 @@ algorithm
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs,libPaths);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
-    case (_, DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_)::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
+    case (_, (fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="builtin"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
-        // skip over builtin functions
-        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs,libPaths);
+        // skip over builtin functions @adrpo: we should skip ONLY IF THE NAME OF THE FUNCTION IS THE SAME AS THE NAME OF THE EXTERNAL FUNCTION!
+        fname = Absyn.pathString(Absyn.makeNotFullyQualified(path));
+        b = stringEq(fname, name);
+        if not b then
+          (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
+        end if;
+        (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs,libPaths);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);
 
-    case (_, (fel as DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="C"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
+    case (_, (fel as DAE.FUNCTION(path = path, functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name, language="C"))::_))::rest, accfns, rt, decls, includes, includeDirs, libs,libPaths)
       equation
-        // skip over builtin functions
-        b = listMember(name, SCode.knownExternalCFunctions);
-        (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
+        // skip over known external C functions @adrpo: we should skip ONLY IF THE NAME OF THE FUNCTION IS THE SAME AS THE NAME OF THE EXTERNAL FUNCTION!
+        fname = Absyn.pathString(Absyn.makeNotFullyQualified(path));
+        b = listMember(name, SCode.knownExternalCFunctions) and stringEq(fname, name);
+        if not b then
+          (fn,_, decls, includes, includeDirs, libs,libPaths) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs,libPaths);
+        end if;
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths) = elaborateFunctions2(program, rest, List.consOnTrue(not b, fn, accfns), rt, decls, includes, includeDirs, libs,libPaths);
       then
         (fns, rt_2, decls, includes, includeDirs, libs,libPaths);

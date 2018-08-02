@@ -5800,13 +5800,16 @@ algorithm
         Flags.setConfigBool(Flags.CHECK_MODEL, true);
         (_,Values.STRING(str)) = checkModel(FCore.emptyCache(), env, className, msg);
         Flags.setConfigBool(Flags.CHECK_MODEL, false);
-        (_,Values.STRING(str)) = checkModel(FCore.emptyCache(), env, className, msg);
         t2 = clock();
         elapsedTime = t2 - t1;
         s = realString(elapsedTime);
         print (s + " seconds -> " + failOrSuccess(str) + "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
+        print ("Error String:\n" + Print.getErrorString() + "\n");
+        print ("Error Buffer:\n" + ErrorExt.printMessagesStr(false) + "\n");
+        print ("# " + realString(elapsedTime) + " : " + Absyn.pathString(className) + "\n");
+        print ("-------------------------------------------------------------------------\n");
         checkAll(cache, env, rest, msg);
       then ();
 

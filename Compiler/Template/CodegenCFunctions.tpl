@@ -784,17 +784,16 @@ case func as EXTERNAL_FUNCTION(__) then
   let fn_name = extFunctionName(extName, language)
   let fargsStr = extFunDefArgs(extArgs, language)
   let fargsStrEscaped = '<%escapeCComments(fargsStr)%>'
-  let includesStr = includes |> i => i ;separator=", "
+  let isBuiltin = match language case "BUILTIN" then true end match
   /*
    * adrpo:
    *   only declare the external function definition IF THERE WERE NO INCLUDES!
-   *   i did not put includesStr string in the comment below as it might include
-   *   entire files
+   *   or if the function is not builtin
    */
-  if  includes then
+  if boolOr(boolNot(listEmpty(includes)), boolNot(stringEq(isBuiltin, ""))) then
     <<
     /*
-     * The function has annotation(Include=...>)
+     * The function has annotation(Include=...>) or is builtin
      * the external function definition should be present
      * in one of these files and have this prototype:
      * extern <%extReturnType(extReturn)%> <%fn_name%>(<%fargsStrEscaped%>);
@@ -823,17 +822,19 @@ end extFunDefDynamic;
 /* public */ template extFunctionName(String name, String language) "used in Compiler/Template/CodegenFMU.tpl"
 ::=
   match language
+  case "BUILTIN"
   case "C" then '<%name%>'
   case "FORTRAN 77" then '<%name%>_'
-  else error(sourceInfo(), 'Unsupport external language: <%language%>')
+  else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extFunctionName;
 
 template extFunDefArgs(list<SimExtArg> args, String language)
 ::=
   match language
+  case "BUILTIN"
   case "C" then (args |> arg => extFunDefArg(arg) ;separator=", ")
   case "FORTRAN 77" then (args |> arg => extFunDefArgF77(arg) ;separator=", ")
-  else error(sourceInfo(), 'Unsupport external language: <%language%>')
+  else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extFunDefArgs;
 
 template extReturnType(SimExtArg extArg)
@@ -2111,8 +2112,10 @@ template extFunCall(Function fun, Text &preExp, Text &varDecls, Text &varInit, T
 match fun
 case EXTERNAL_FUNCTION(__) then
   match language
+  case "BUILTIN"
   case "C" then extFunCallC(fun, &preExp, &varDecls, &auxFunction)
   case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &varInit, &auxFunction)
+  else error(sourceInfo(), 'Unsupported external language: <%language%>')
 end extFunCall;
 
 template extFunCallC(Function fun, Text &preExp, Text &varDecls, Text &auxFunction)
