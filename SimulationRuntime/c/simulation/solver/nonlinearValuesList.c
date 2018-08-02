@@ -38,6 +38,7 @@
  *
  */
 
+#include "epsilon.h"
 #include "nonlinearValuesList.h"
 
 #include "util/list.h"
@@ -186,7 +187,7 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
    *  push the element just in front and if the end element
    *  is later than current push it just back.*/
   node = listFirstNode(valuesList->valueList);
-  if (((VALUE*)listNodeData(node))->time < newElem->time)
+  if ( fabs( ((VALUE*)listNodeData(node))->time - newElem->time ) > MINIMAL_STEP_SIZE )
   {
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "First Value list element is:");
     printValueElement(((VALUE*)listNodeData(node)));
@@ -215,13 +216,14 @@ void addListElement(VALUES_LIST* valuesList, VALUE* newElem)
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Next node of list is element:");
     printValueElement(elem);
 
-    if (elem->time < newElem->time)
-    {
-      break;
-    }
-    else if (elem->time == newElem->time)
+
+    if (fabs(elem->time - newElem->time)<=MINIMAL_STEP_SIZE)
     {
       replace = 1;
+      break;
+    }
+    else if (elem->time < newElem->time)
+    {
       break;
     }
     node = next;
@@ -270,7 +272,7 @@ void getValues(VALUES_LIST* valuesList, double time, double* extrapolatedValues,
     infoStreamPrint(LOG_NLS_EXTRAPOLATE, 0, "Searching current element:");
     printValueElement(elem);
 
-    if (elem->time == time)
+    if (fabs(elem->time - time)<=MINIMAL_STEP_SIZE)
     {
       old = begin;
       old2 = NULL;
