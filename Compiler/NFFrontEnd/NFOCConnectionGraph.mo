@@ -101,6 +101,7 @@ import ElementSource;
 import NFTyping.ExpOrigin;
 import Typing = NFTyping;
 import NFPrefixes.Variability;
+import Error;
 
 type Edge  = tuple<ComponentRef,ComponentRef> "an edge is a tuple with two component references";
 type Edges = list<Edge> "A list of edges";
@@ -1283,9 +1284,10 @@ algorithm
       list<Expression> lst;
       Call call;
       Expression res, exp;
+      String str;
 
     // handle rooted - with zero size array or the normal call
-    case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst)), (rooted,roots,graph))
+    case (Expression.CALL(call = call as Call.TYPED_CALL(arguments = lst as {_})), (rooted,roots,graph))
       equation
         true =
           Absyn.pathEqual(Function.name(call.fn), Absyn.IDENT("rooted")) or
@@ -1300,22 +1302,28 @@ algorithm
            then Expression.BOOLEAN(false);
           // normal call
           case {Expression.CREF(cref = cref)}
-            equation
+            algorithm
               // find partner in branches
-              branches = getBranches(graph);
-              cref1 = getEdge(cref,branches);
-              // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-              //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-              if Flags.isSet(Flags.CGRAPH) then
-                print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
-                 ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
-              end if;
-              result = getRooted(cref,cref1,rooted);
-              //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
-              //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
-              if Flags.isSet(Flags.CGRAPH) then
-                print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + " = " + boolString(result) + "\n");
-              end if;
+              branches := getBranches(graph);
+              try
+               cref1 := getEdge(cref,branches);
+               // print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
+               //   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
+               if Flags.isSet(Flags.CGRAPH) then
+                 print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: Found Branche Partner " +
+                   ComponentRef.toString(cref) + ", " + ComponentRef.toString(cref1) + "\n");
+               end if;
+               result := getRooted(cref,cref1,rooted);
+               //print("- NFOCConnectionGraph.evalRootedAndIsRootHelper: " +
+               //   ComponentRef.toString(cref) + " is " + boolString(result) + " rooted\n");
+               if Flags.isSet(Flags.CGRAPH) then
+                 print("- NFOCConnectionGraph.evalConnectionsOperatorsHelper: " + Expression.toString(inExp) + " = " + boolString(result) + "\n");
+               end if;
+              else // add an error message:
+                str := ComponentRef.toString(cref);
+                Error.addMessage(Error.OCG_MISSING_BRANCH, {str, str, str});
+                result := false;
+              end try;
             then
               Expression.BOOLEAN(result);
         end match;

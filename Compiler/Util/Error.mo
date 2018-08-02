@@ -994,6 +994,9 @@ public constant Message STATE_STATESELECT_NEVER = MESSAGE(592, SYMBOLIC(), WARNI
   Util.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
 public constant Message FUNCTION_HIGHER_VARIABILITY_BINDING = MESSAGE(593, TRANSLATION(), WARNING(),
   Util.gettext("Component ‘%s’ of variability %s has binding %s of higher variability %s."));
+public constant Message OCG_MISSING_BRANCH = MESSAGE(594, TRANSLATION(), WARNING(),
+  Util.gettext("Connections.rooted(%s) needs exactly one statement Connections.branch(%s, B.R) involving %s but we found none in the graph. Run with -d=cgraphGraphVizFile to debug"));
+
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
