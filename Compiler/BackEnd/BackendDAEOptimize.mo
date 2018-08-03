@@ -5852,6 +5852,7 @@ algorithm
       tasks := List.sort(listAppend(predecessors,listAppend(outputTasks,stateTasks)),intGt);
         //print("predecessors of outputs and states "+stringDelimitList(List.map(tasks,intString),", ")+"\n");
       compsNew := List.map1(tasks,List.getIndexFirst,comps);
+      compsNew := List.unique(compsNew);
         print("There have been "+intString(listLength(comps))+" SCCs and now there are "+intString(listLength(compsNew))+" SCCs.\n");
 
       //get vars and equations from the new reduced set of comps and make a equationIdxMap
