@@ -607,6 +607,21 @@ void LibraryTreeItem::emitComponentAdded(Component *pComponent)
 }
 
 /*!
+ * \brief LibraryTreeItem::updateChildrenNameStructure
+ * Updates the children name structure recursively.
+ */
+void LibraryTreeItem::updateChildrenNameStructure()
+{
+  for (int i = 0; i < childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = child(i);
+    if (pChildLibraryTreeItem) {
+      pChildLibraryTreeItem->setNameStructure(QString("%1.%2").arg(mNameStructure, pChildLibraryTreeItem->getName()));
+      pChildLibraryTreeItem->updateChildrenNameStructure();
+    }
+  }
+}
+
+/*!
  * \brief LibraryTreeItem::handleLoaded
  * Handles the case when an undefined inherited class is loaded.
  * \param pLibraryTreeItem
@@ -2751,11 +2766,10 @@ void LibraryTreeView::createActions()
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // rename OMSimulator model Action
-  mpRenameOMSModelAction = new QAction(Helper::rename, this);
-  mpRenameOMSModelAction->setStatusTip(Helper::renameOMSModelTip);
-  mpRenameOMSModelAction->setEnabled(false);
-  connect(mpRenameOMSModelAction, SIGNAL(triggered()), SLOT(renameOMSModel()));
+  // OMSimulator rename Action
+  mpOMSRenameAction = new QAction(Helper::rename, this);
+  mpOMSRenameAction->setStatusTip(Helper::OMSRenameTip);
+  connect(mpOMSRenameAction, SIGNAL(triggered()), SLOT(OMSRename()));
   // OMSimulator simulation setup action
   mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
   mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
@@ -2949,12 +2963,15 @@ void LibraryTreeView::showContextMenu(QPoint point)
           break;
         case LibraryTreeItem::OMS:
           menu.addAction(mpViewDiagramAction);
+          if (pLibraryTreeItem->isTopLevel() || (!pLibraryTreeItem->getOMSConnector())) {
+            menu.addSeparator();
+            menu.addAction(mpOMSRenameAction);
+          }
           if (pLibraryTreeItem->isTopLevel()) {
             menu.addSeparator();
             menu.addAction(mpSaveAction);
             menu.addAction(mpSaveAsAction);
             menu.addSeparator();
-            menu.addAction(mpRenameOMSModelAction);
             menu.addAction(mpOMSSimulationSetupAction);
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
@@ -3482,12 +3499,17 @@ void LibraryTreeView::openOMSSimulationDialog()
   }
 }
 
-void LibraryTreeView::renameOMSModel()
+/*!
+ * \brief LibraryTreeView::OMSRename
+ * Opens the RenameItemDialog.
+ */
+void LibraryTreeView::OMSRename()
 {
-  /*! @todo Implement the OMSimulator model rename functionality.
-   * We need to update the name structure of nested models.
-   */
-  qDebug() << "not implemented yet";
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    RenameItemDialog *pRenameItemDialog = new RenameItemDialog(pLibraryTreeItem, MainWindow::instance());
+    pRenameItemDialog->exec();
+  }
 }
 
 /*!

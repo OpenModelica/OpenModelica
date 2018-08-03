@@ -154,7 +154,7 @@ QString Helper::type;
 QString Helper::information;
 QString Helper::rename;
 QString Helper::renameTip;
-QString Helper::renameOMSModelTip;
+QString Helper::OMSRenameTip;
 QString Helper::checkModel;
 QString Helper::checkModelTip;
 QString Helper::checkAllModels;
@@ -421,7 +421,7 @@ void Helper::initHelperVariables()
   Helper::information = tr("Information");
   Helper::rename = tr("Rename");
   Helper::renameTip = tr("Renames an item");
-  Helper::renameOMSModelTip = tr("Renames the model");
+  Helper::OMSRenameTip = tr("OMSimulator rename");
   Helper::checkModel = tr("Check Model");
   Helper::checkModelTip = tr("Check the Modelica class");
   Helper::checkAllModels = tr("Check All Models");

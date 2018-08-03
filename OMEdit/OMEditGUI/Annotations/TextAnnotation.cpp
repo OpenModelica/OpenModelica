@@ -583,7 +583,7 @@ void TextAnnotation::updateTextString()
     if (mOriginalTextString.toLower().contains("%name")) {
       mTextString.replace(QRegExp("%name"), mpComponent->getName());
     }
-    if (mOriginalTextString.toLower().contains("%class")) {
+    if (mOriginalTextString.toLower().contains("%class") && mpComponent->getLibraryTreeItem()) {
       mTextString.replace(QRegExp("%class"), mpComponent->getLibraryTreeItem()->getNameStructure());
     }
     if (!mTextString.contains("%")) {

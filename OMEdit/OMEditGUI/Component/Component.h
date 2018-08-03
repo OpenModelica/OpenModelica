@@ -329,6 +329,7 @@ public slots:
   void handleUnloaded();
   void handleShapeAdded();
   void handleComponentAdded();
+  void handleNameChanged();
   void referenceComponentAdded();
   void referenceComponentTransformHasChanged();
   void referenceComponentChanged();

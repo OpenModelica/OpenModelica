@@ -1847,6 +1847,10 @@ void RenameItemDialog::renameItem()
                             GUIMessages::ENTER_NAME).arg(Helper::item), Helper::ok);
     return;
   }
+  // if the name is same as old then simply return.
+  if (mpNameTextBox->text().compare(mpLibraryTreeItem->getName()) == 0) {
+    return;
+  }
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
     // check if file/folder already exists
     QFileInfo oldFileInfo(mpLibraryTreeItem->getFileName());
@@ -1881,6 +1885,13 @@ void RenameItemDialog::renameItem()
       mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pRenameCompositeModelCommand);
       mpLibraryTreeItem->getModelWidget()->updateModelText();
     }
+  } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    }
+    OMSRenameCommand *pOMSRenameCommand = new OMSRenameCommand(mpLibraryTreeItem, mpNameTextBox->text());
+    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pOMSRenameCommand);
+    mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     qDebug() << "Rename feature not implemented for Modelica library type.";
   } else {

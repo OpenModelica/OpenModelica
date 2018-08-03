@@ -156,7 +156,7 @@ public:
   static QString information;
   static QString rename;
   static QString renameTip;
-  static QString renameOMSModelTip;
+  static QString OMSRenameTip;
   static QString checkModel;
   static QString checkModelTip;
   static QString checkAllModels;

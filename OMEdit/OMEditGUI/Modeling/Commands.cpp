@@ -1931,13 +1931,11 @@ void DeleteSubModelCommand::undo()
   mpGraphicsView->addComponentToList(mpComponent);
 }
 
-FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString oldName, QString newName, FMUProperties oldFMUProperties,
+FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString name, FMUProperties oldFMUProperties,
                                            FMUProperties newFMUProperties, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mpComponent = pComponent;
-  mOldName = oldName;
-  mNewName = newName;
   mOldFMUProperties = oldFMUProperties;
   mNewFMUProperties = newFMUProperties;
   setText(QString("Update FMU %1 Parameters").arg(mpComponent->getName()));
@@ -1949,11 +1947,6 @@ FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString oldNam
  */
 void FMUPropertiesCommand::redo()
 {
-  // Rename
-//  if (OMSProxy::instance()->rename(mOldName, mNewName)) {
-//    mpComponent->getComponentInfo()->setName(mNewName.split('.').last());
-//    mpComponent->componentNameHasChanged();
-//  }
   // Parameters
   int parametersIndex = 0;
   int inputsIndex = 0;
@@ -2007,11 +2000,6 @@ void FMUPropertiesCommand::redo()
  */
 void FMUPropertiesCommand::undo()
 {
-  // Rename
-//  if (OMSProxy::instance()->rename(mNewName, mOldName)) {
-//    mpComponent->getComponentInfo()->setName(mOldName.split('.').last());
-//    mpComponent->componentNameHasChanged();
-//  }
   // Parameters
   int parametersIndex = 0;
   int inputsIndex = 0;
@@ -2292,4 +2280,45 @@ void DeleteSubModelIconCommand::undo()
       pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
     }
   }
+}
+
+OMSRenameCommand::OMSRenameCommand(LibraryTreeItem *pLibraryTreeItem, QString name, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOldName = mpLibraryTreeItem->getName();
+  mNewName = name;
+  setText("OMS rename");
+}
+
+/*!
+ * \brief OMSRenameCommand::redo
+ * Redo the OMSRenameCommand
+ */
+void OMSRenameCommand::redo()
+{
+  QString identOld = mpLibraryTreeItem->getNameStructure();
+  QString identNew = mpLibraryTreeItem->parent()->getNameStructure().isEmpty() ? mNewName : mpLibraryTreeItem->parent()->getNameStructure() + "." + mNewName;
+  OMSProxy::instance()->rename(identOld, identNew);
+  mpLibraryTreeItem->setName(mNewName);
+  mpLibraryTreeItem->setNameStructure(identNew);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+  mpLibraryTreeItem->emitNameChanged();
+  mpLibraryTreeItem->updateChildrenNameStructure();
+}
+
+/*!
+ * \brief OMSRenameCommand::undo
+ * Undo the OMSRenameCommand
+ */
+void OMSRenameCommand::undo()
+{
+  QString identOld = mpLibraryTreeItem->getNameStructure();
+  QString identNew = mpLibraryTreeItem->parent()->getNameStructure().isEmpty() ? mOldName : mpLibraryTreeItem->parent()->getNameStructure() + "." + mOldName;
+  OMSProxy::instance()->rename(identOld, identNew);
+  mpLibraryTreeItem->setName(mOldName);
+  mpLibraryTreeItem->setNameStructure(identNew);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+  mpLibraryTreeItem->emitNameChanged();
+  mpLibraryTreeItem->updateChildrenNameStructure();
 }

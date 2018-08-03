@@ -35,6 +35,8 @@
 #include "Modeling/Commands.h"
 #include "ComponentProperties.h"
 
+#include <QMessageBox>
+
 FMUProperties::FMUProperties()
 {
   mParameterValues.clear();
@@ -63,7 +65,6 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpComponent->getName());
-  mpNameTextBox->setDisabled(true);
   // FMU Info
   const oms_fmu_info_t *pFMUInfo = mpComponent->getLibraryTreeItem()->getFMUInfo();
   mpGeneralGroupBox = new QGroupBox(Helper::general);
@@ -301,8 +302,19 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
  */
 void FMUPropertiesDialog::updateFMUParameters()
 {
-  QString oldName = mpComponent->getLibraryTreeItem()->getNameStructure();
-  QString newName = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->parent()->getNameStructure(), mpNameTextBox->text());
+  // check name
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error), GUIMessages::getMessage(
+                            GUIMessages::ENTER_NAME).arg(Helper::item), Helper::ok);
+    return;
+  }
+  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
+  pModelWidget->getUndoStack()->beginMacro("Update FMU properties");
+  // if the name is same as old then skip OMSRenameCommand.
+  if (mpNameTextBox->text().compare(mpComponent->getName()) != 0) {
+    // push the change on the undo stack
+    pModelWidget->getUndoStack()->push(new OMSRenameCommand(mpComponent->getLibraryTreeItem(), mpNameTextBox->text()));
+  }
   FMUProperties newFMUProperties;
   foreach (QLineEdit *pParameterLineEdit, mParameterLineEdits) {
     newFMUProperties.mParameterValues.append(pParameterLineEdit->text());
@@ -311,10 +323,9 @@ void FMUPropertiesDialog::updateFMUParameters()
     newFMUProperties.mInputValues.append(pInputLineEdit->text());
   }
   // push the change on the undo stack
-  FMUPropertiesCommand *pFMUPropertiesCommand = new FMUPropertiesCommand(mpComponent, oldName, newName, mOldFMUProperties, newFMUProperties);
-  ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  pModelWidget->getUndoStack()->push(pFMUPropertiesCommand);
+  pModelWidget->getUndoStack()->push(new FMUPropertiesCommand(mpComponent, mpNameTextBox->text(), mOldFMUProperties, newFMUProperties));
   pModelWidget->updateModelText();
+  pModelWidget->endMacro();
   // accept the dialog
   accept();
 }

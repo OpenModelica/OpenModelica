@@ -2954,6 +2954,39 @@ void WelcomePageWidget::openLatestNewsItem(QListWidgetItem *pItem)
   QDesktopServices::openUrl(url);
 }
 
+/*!
+ * \class UndoStack
+ * \brief Subclass QUndoStack.\n
+ * We need to handle which commands to push to the stack.
+ */
+/*!
+ * \brief UndoStack::UndoStack
+ * \param parent
+ */
+UndoStack::UndoStack(QObject *parent)
+  : QUndoStack(parent)
+{
+  mEnabled = true;
+}
+
+/*!
+ * \brief UndoStack::push
+ * \param cmd
+ */
+void UndoStack::push(QUndoCommand *cmd)
+{
+  /* We only push the commands to the stack when its enabled.
+   * When the stack is not enabled we don't push the command but we do execute the command.
+   * Most of such cases are when loading and opening a class. The operations performed at that time are not needed on the stack.
+   * This is needed since we don't want to call clear on the stack.
+   */
+  if (isEnabled()) {
+    QUndoStack::push(cmd);
+  } else {
+    cmd->redo();
+  }
+}
+
 ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer *pModelWidgetContainer)
   : QWidget(pModelWidgetContainer), mpModelWidgetContainer(pModelWidgetContainer), mpLibraryTreeItem(pLibraryTreeItem),
     mComponentsLoaded(false), mDiagramViewLoaded(false), mConnectionsLoaded(false), mCreateModelWidgetComponents(false),
@@ -2973,7 +3006,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
     // Undo stack for model
-    mpUndoStack = new QUndoStack;
+    mpUndoStack = new UndoStack;
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
     if (MainWindow::instance()->isDebug()) {
@@ -3002,7 +3035,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
     mpDiagramGraphicsView->hide();
     // Undo stack for model
-    mpUndoStack = new QUndoStack;
+    mpUndoStack = new UndoStack;
     connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
     connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
     if (MainWindow::instance()->isDebug()) {
@@ -3012,7 +3045,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     if ((mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu)
         || (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_table)
         || mpLibraryTreeItem->getOMSConnector()) {
+      mpUndoStack->setEnabled(false);
       drawOMSModelElements();
+      mpUndoStack->setEnabled(true);
     }
   } else {
     // icon graphics framework
@@ -3570,7 +3605,7 @@ void ModelWidget::createModelWidgetComponents()
       mpDiagramGraphicsView->setScene(mpDiagramGraphicsScene);
       mpDiagramGraphicsView->hide();
       // Undo stack for model
-      mpUndoStack = new QUndoStack;
+      mpUndoStack = new UndoStack;
       connect(mpUndoStack, SIGNAL(canUndoChanged(bool)), SLOT(handleCanUndoChanged(bool)));
       connect(mpUndoStack, SIGNAL(canRedoChanged(bool)), SLOT(handleCanRedoChanged(bool)));
       if (MainWindow::instance()->isDebug()) {
@@ -3619,11 +3654,13 @@ void ModelWidget::createModelWidgetComponents()
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
-      // only get the components and connectoins if the we are not creating a new class.
+      // only get the components and connections if the we are not creating a new class.
       if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi &&
           !mpLibraryTreeItem->getFileName().isEmpty()) {
+        mpUndoStack->setEnabled(false);
         drawOMSModelElements();
         drawOMSModelConnections();
+        mpUndoStack->setEnabled(true);
       }
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -3636,7 +3673,6 @@ void ModelWidget::createModelWidgetComponents()
         pMainLayout->addWidget(mpUndoView);
       }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
-      mpUndoStack->clear();
     }
     if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::OMS) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
@@ -6514,6 +6550,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     }
     // update the Undo/Redo actions
     pModelWidget->updateUndoRedoActions();
+  } else {
+    MainWindow::instance()->getUndoAction()->setEnabled(false);
+    MainWindow::instance()->getRedoAction()->setEnabled(false);
   }
   /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
    * Provided that the Documentation Browser is already visible.

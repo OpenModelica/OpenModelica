@@ -359,6 +359,19 @@ private slots:
   void openLatestNewsItem(QListWidgetItem *pItem);
 };
 
+class UndoStack : public QUndoStack
+{
+  Q_OBJECT
+public:
+  UndoStack(QObject *parent = Q_NULLPTR);
+  void push(QUndoCommand *cmd);
+
+  bool isEnabled() {return mEnabled;}
+  void setEnabled(bool enable) {mEnabled = enable;}
+private:
+  bool mEnabled;
+};
+
 class ModelWidgetContainer;
 class ModelicaHighlighter;
 class CompositeModelHighlighter;
@@ -377,7 +390,7 @@ public:
   QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
-  QUndoStack* getUndoStack() {return mpUndoStack;}
+  UndoStack* getUndoStack() {return mpUndoStack;}
   BaseEditor* getEditor() {return mpEditor;}
   void setModelClassPathLabel(QString path) {mpModelClassPathLabel->setText(path);}
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
@@ -435,7 +448,7 @@ private:
   GraphicsScene *mpDiagramGraphicsScene;
   GraphicsView *mpIconGraphicsView;
   GraphicsScene *mpIconGraphicsScene;
-  QUndoStack *mpUndoStack;
+  UndoStack *mpUndoStack;
   QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   QStatusBar *mpModelStatusBar;

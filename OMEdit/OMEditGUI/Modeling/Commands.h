@@ -431,14 +431,12 @@ private:
 class FMUPropertiesCommand : public QUndoCommand
 {
 public:
-  FMUPropertiesCommand(Component *pComponent, QString oldName, QString newName, FMUProperties oldFMUProperties,
-                       FMUProperties newFMUProperties, QUndoCommand *pParent = 0);
+  FMUPropertiesCommand(Component *pComponent, QString name, FMUProperties oldFMUProperties, FMUProperties newFMUProperties,
+                       QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   Component *mpComponent;
-  QString mOldName;
-  QString mNewName;
   FMUProperties mOldFMUProperties;
   FMUProperties mNewFMUProperties;
 };
@@ -475,6 +473,18 @@ public:
 private:
   QString mIcon;
   GraphicsView *mpGraphicsView;
+};
+
+class OMSRenameCommand : public QUndoCommand
+{
+public:
+  OMSRenameCommand(LibraryTreeItem *pLibraryTreeItem, QString name, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mOldName;
+  QString mNewName;
 };
 
 #endif // COMMANDS_H

@@ -498,6 +498,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
     connect(mpLibraryTreeItem, SIGNAL(shapeAddedForComponent()), SLOT(handleShapeAdded()));
     connect(mpLibraryTreeItem, SIGNAL(componentAddedForComponent()), SLOT(handleComponentAdded()));
+    connect(mpLibraryTreeItem, SIGNAL(nameChanged()), SLOT(handleNameChanged()));
   }
   connect(this, SIGNAL(transformHasChanged()), SLOT(updatePlacementAnnotation()));
   connect(this, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
@@ -2123,6 +2124,23 @@ void Component::handleComponentAdded()
 }
 
 /*!
+ * \brief Component::handleNameChanged
+ * Handles the name change of OMSimulator elements.
+ */
+void Component::handleNameChanged()
+{
+  if (mpComponentInfo) {
+    // we should update connections associated with this component before updating the component name
+    renameComponentInConnections(mpLibraryTreeItem->getName());
+    mpComponentInfo->setName(mpLibraryTreeItem->getName());
+    mpComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  }
+  updateToolTip();
+  displayTextChangedRecursive();
+  update();
+}
+
+/*!
  * \brief Component::referenceComponentAdded
  * Adds the referenced components when reference component is added.
  */
@@ -2322,13 +2340,7 @@ void Component::componentCommentHasChanged()
 void Component::componentNameHasChanged()
 {
   updateToolTip();
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    mpLibraryTreeItem->setName(mpComponentInfo->getName());
-    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
-    emit displayTextChanged();
-  } else {
-    displayTextChangedRecursive();
-  }
+  displayTextChangedRecursive();
   update();
 }
 

@@ -150,6 +150,8 @@ public:
   void emitUnLoaded();
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void emitComponentAdded(Component *pComponent);
+  void emitNameChanged() {emit nameChanged();}
+  void updateChildrenNameStructure();
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
   void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView) {emit coOrdinateSystemUpdated(pGraphicsView);}
 
@@ -189,6 +191,7 @@ signals:
   void shapeAddedForComponent();
   void componentAdded(Component *pComponent);
   void componentAddedForComponent();
+  void nameChanged();
   void connectionAdded(LineAnnotation *pConnectionLineAnnotation);
   void iconUpdated();
   void coOrdinateSystemUpdated(GraphicsView *pGraphicsView);
@@ -350,7 +353,7 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
-  QAction *mpRenameOMSModelAction;
+  QAction *mpOMSRenameAction;
   QAction *mpOMSSimulationSetupAction;
   QAction *mpUnloadOMSModelAction;
   void createActions();
@@ -400,7 +403,7 @@ public slots:
   void fetchInterfaceData();
   void TLMSimulate();
   void openOMSSimulationDialog();
-  void renameOMSModel();
+  void OMSRename();
   void unloadOMSModel();
 protected:
   virtual void mouseDoubleClickEvent(QMouseEvent *event);
