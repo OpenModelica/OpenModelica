@@ -160,21 +160,24 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
           QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
           pParameterLineEdit->setValidator(pDoubleValidator);
           double value;
-          if ((status = OMSProxy::instance()->getRealParameter(pInterfaces[i]->name, &value))) {
+          if ((status = OMSProxy::instance()->getRealParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                                    name), &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pParameterLineEdit->setValidator(pIntValidator);
           int value;
-          if ((status = OMSProxy::instance()->getIntegerParameter(pInterfaces[i]->name, &value))) {
+          if ((status = OMSProxy::instance()->getIntegerParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                                       name), &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pParameterLineEdit->setValidator(pIntValidator);
           bool value;
-          if ((status = OMSProxy::instance()->getBooleanParameter(pInterfaces[i]->name, &value))) {
+          if ((status = OMSProxy::instance()->getBooleanParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                                       name), &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
@@ -228,21 +231,24 @@ FMUPropertiesDialog::FMUPropertiesDialog(Component *pComponent, QWidget *pParent
           QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
           pInputLineEdit->setValidator(pDoubleValidator);
           double value;
-          if ((status = OMSProxy::instance()->getReal(pInterfaces[i]->name, &value))) {
+          if ((status = OMSProxy::instance()->getReal(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                           name), &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pInputLineEdit->setValidator(pIntValidator);
           int value;
-          if ((status = OMSProxy::instance()->getInteger(pInterfaces[i]->name, &value))) {
+          if ((status = OMSProxy::instance()->getInteger(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                              name), &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pInputLineEdit->setValidator(pIntValidator);
           bool value;
-          if ((status = OMSProxy::instance()->getBoolean(pInterfaces[i]->name, &value))) {
+          if ((status = OMSProxy::instance()->getBoolean(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                              name), &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {

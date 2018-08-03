@@ -363,7 +363,7 @@ class UndoStack : public QUndoStack
 {
   Q_OBJECT
 public:
-  UndoStack(QObject *parent = Q_NULLPTR);
+  UndoStack(QObject *parent = 0);
   void push(QUndoCommand *cmd);
 
   bool isEnabled() {return mEnabled;}

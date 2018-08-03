@@ -1953,15 +1953,19 @@ void FMUPropertiesCommand::redo()
   if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
+      QString name = QString(pInterfaces[i]->name).split(':', QString::SkipEmptyParts).last();
       if (pInterfaces[i]->causality == oms_causality_parameter) {
         QString parameterValue = mNewFMUProperties.mParameterValues.at(parametersIndex);
         parametersIndex++;
         if (pInterfaces[i]->type == oms_signal_type_real) {
-          OMSProxy::instance()->setRealParameter(pInterfaces[i]->name, parameterValue.toDouble());
+          OMSProxy::instance()->setRealParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                      name).toStdString().c_str(), parameterValue.toDouble());
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          OMSProxy::instance()->setIntegerParameter(pInterfaces[i]->name, parameterValue.toInt());
+          OMSProxy::instance()->setIntegerParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                         name).toStdString().c_str(), parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          OMSProxy::instance()->setBooleanParameter(pInterfaces[i]->name, parameterValue.toInt());
+          OMSProxy::instance()->setBooleanParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                         name).toStdString().c_str(), parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
@@ -1975,11 +1979,14 @@ void FMUPropertiesCommand::redo()
         QString inputValue = mNewFMUProperties.mInputValues.at(inputsIndex);
         inputsIndex++;
         if (pInterfaces[i]->type == oms_signal_type_real) {
-          OMSProxy::instance()->setReal(pInterfaces[i]->name, inputValue.toDouble());
+          OMSProxy::instance()->setReal(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                             name).toStdString().c_str(), inputValue.toDouble());
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          OMSProxy::instance()->setInteger(pInterfaces[i]->name, inputValue.toInt());
+          OMSProxy::instance()->setInteger(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                name).toStdString().c_str(), inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          OMSProxy::instance()->setBoolean(pInterfaces[i]->name, inputValue.toInt());
+          OMSProxy::instance()->setBoolean(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                name).toStdString().c_str(), inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
@@ -2006,15 +2013,19 @@ void FMUPropertiesCommand::undo()
   if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
+      QString name = QString(pInterfaces[i]->name).split(':', QString::SkipEmptyParts).last();
       if (pInterfaces[i]->causality == oms_causality_parameter) {
         QString parameterValue = mOldFMUProperties.mParameterValues.at(parametersIndex);
         parametersIndex++;
         if (pInterfaces[i]->type == oms_signal_type_real) {
-          OMSProxy::instance()->setRealParameter(pInterfaces[i]->name, parameterValue.toDouble());
+          OMSProxy::instance()->setRealParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                      name).toStdString().c_str(), parameterValue.toDouble());
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          OMSProxy::instance()->setIntegerParameter(pInterfaces[i]->name, parameterValue.toInt());
+          OMSProxy::instance()->setIntegerParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                         name).toStdString().c_str(), parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          OMSProxy::instance()->setBooleanParameter(pInterfaces[i]->name, parameterValue.toInt());
+          OMSProxy::instance()->setBooleanParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                         name).toStdString().c_str(), parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
@@ -2028,11 +2039,14 @@ void FMUPropertiesCommand::undo()
         QString inputValue = mOldFMUProperties.mInputValues.at(inputsIndex);
         inputsIndex++;
         if (pInterfaces[i]->type == oms_signal_type_real) {
-          OMSProxy::instance()->setReal(pInterfaces[i]->name, inputValue.toDouble());
+          OMSProxy::instance()->setReal(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                             name).toStdString().c_str(), inputValue.toDouble());
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          OMSProxy::instance()->setInteger(pInterfaces[i]->name, inputValue.toInt());
+          OMSProxy::instance()->setInteger(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                name).toStdString().c_str(), inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          OMSProxy::instance()->setBoolean(pInterfaces[i]->name, inputValue.toInt());
+          OMSProxy::instance()->setBoolean(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
+                                                                name).toStdString().c_str(), inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
