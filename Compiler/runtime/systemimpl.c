@@ -893,6 +893,36 @@ extern int SystemImpl__createDirectory(const char *str)
   }
 }
 
+extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
+{
+  int rv = 1;
+  char ch;
+  FILE *source, *target;
+
+  if (!SystemImpl__directoryExists(str_2))
+  {
+      rv = SystemImpl__createDirectory(str_2);
+  }
+
+  if (str_1 == "")
+    rv = 0;
+
+  char targetFile[100];
+  strcpy(targetFile,str_2);
+  strcat(targetFile,"/");
+  strcat(targetFile,str_1);
+
+  source = fopen(str_1, "r");
+  target = fopen(targetFile, "w");
+
+  while( ( ch = fgetc(source) ) != EOF )
+     rv=rv && fputc(ch, target);
+
+  fclose(source);
+  fclose(target);
+  return rv;
+}
+
 static char * SystemImpl__NextDir(const char * path)
 {
   char * res = NULL;

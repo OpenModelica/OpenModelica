@@ -482,6 +482,13 @@ public function directoryExists
   external "C" outBool=SystemImpl__directoryExists(inString) annotation(Library = "omcruntime");
 end directoryExists;
 
+public function copyFile
+  input String source;
+  input String destination;
+  output Boolean outBool;
+  external "C" outBool=SystemImpl__copyFile(source, destination) annotation(Library = "omcruntime");
+end copyFile;
+
 
 public function removeDirectory
   input String inString;

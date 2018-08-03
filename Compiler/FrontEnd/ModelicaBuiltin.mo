@@ -1993,6 +1993,14 @@ external "builtin";
 annotation(preferredView="text");
 end mkdir;
 
+function copy "copies the source file to the destined directory. Returns true if the file has been copied."
+  input String source;
+  input String destination;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end copy;
+
 function remove "removes a file or directory of given path (which may be either relative or absolute)."
   input String path;
   output Boolean success "Returns true on success.";
