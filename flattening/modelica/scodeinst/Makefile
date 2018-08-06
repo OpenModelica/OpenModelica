@@ -822,6 +822,8 @@ redeclare8.mo \
 type4.mo \
 type5.mo \
 PackageConstant2.mo \
+sts.mos \
+
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

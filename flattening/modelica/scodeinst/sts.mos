@@ -1,0 +1,20 @@
+// name: Ticket:5054 [OCG]
+// status: correct
+// cflags: -d=newInst
+// 
+//
+// tests the overconstrained connection graph
+// 
+
+
+loadFile("sts.mo"); getErrorString();
+checkModel(ScalableTestSuite.Mechanical.FlexibleBeam.ScaledExperiments.FlexibleBeamModelica_N_2); getErrorString();
+
+// Result:
+// true
+// ""
+// "Check of ScalableTestSuite.Mechanical.FlexibleBeam.ScaledExperiments.FlexibleBeamModelica_N_2 completed successfully.
+// Class ScalableTestSuite.Mechanical.FlexibleBeam.ScaledExperiments.FlexibleBeamModelica_N_2 has 1637 equation(s) and 1637 variable(s).
+// 1210 of these are trivial equation(s)."
+// ""
+// endResult
