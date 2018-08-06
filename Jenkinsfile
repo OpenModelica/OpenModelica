@@ -374,7 +374,8 @@ void buildGUI(stash) {
   sh 'autoconf'
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
   sh 'touch omc omc-diff ReferenceFiles && make -q omc omc-diff ReferenceFiles' // Pretend we already built omc since we already did so
-  sh "make -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
+  // OMSimulator requires HOME to be set and writeable
+  sh "HOME='${env.WORKSPACE}' make -j${numPhysicalCPU()} --output-sync" // Builds the GUI files
 }
 
 void generateTemplates() {
