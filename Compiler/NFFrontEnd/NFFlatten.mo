@@ -778,6 +778,9 @@ algorithm
     bl := match b
       case Equation.Branch.BRANCH(cond, var, eql)
         algorithm
+          // flatten the condition first
+          cond := flattenExp(cond, prefix);
+          // flatten the equations
           eql := flattenEquations(eql, prefix);
 
           if Expression.isTrue(cond) and listEmpty(bl) then
