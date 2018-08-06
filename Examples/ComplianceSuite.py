@@ -54,7 +54,9 @@ if __name__ == '__main__':
   if expectedFailuresFile:
     with open(expectedFailuresFile) as fin:
       expectedFailures = set(l.strip() for l in fin.readlines())
+  print("=== Expected Failures ===")
   print(expectedFailures)
+  print("=== End Expected Failures ===")
 
   res = [readTest(f, expectedFailures) for f in natsorted(glob.glob("*.res"))]
 

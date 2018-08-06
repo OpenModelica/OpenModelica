@@ -31,7 +31,7 @@ end fixName;
 system("rm -f ModelicaCompliance.*.res");getErrorString();
 
 echo(false);
-allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(recursive=true)};getErrorString();
+allClasses:={cl for cl guard classAnnotationExists(cl,__ModelicaAssociation.TestCase.shouldPass) in getClassNames(ModelicaCompliance.Algorithms.Assert, recursive=true)};getErrorString();
 commands:={"ulimit -t 120 && ("+getInstallationDirectoryPath()+"/bin/omc -d=nogen "+COMPLIANCEEXTRAOMFLAGS+" \"" + fixName(OpenModelica.Scripting.typeNameString(cl)) + ".mos\"  > /dev/null 2>&1)" for cl in allClasses};
 echo(true);
 String(size(allClasses,1)) + " number of classes";
@@ -70,7 +70,11 @@ messages := messages + err;
 messages := messages + (if not success and not shouldPass /* This is correct; try to figure out why (hint: success is a poor name) */ then \"\nSucceeded, but expected failure\" else \"\");
 messages := stringReplace(stringReplace(firstPart(messages),\"\\\"\",\"\\\\\\\"\"),\"\n\",\"\\\\n\");
 errorType := if shouldPass then \"failed\" else \"expected failure\";
-time := rec.timeTotal;
+if resultFile <> \"\" then
+  time := rec.timeTotal;
+else
+  time := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
+end if;
 writeFile(\""+fixName(typeNameString(cl))+".res\",\"{\\\"time\\\":\"+String(time)+\", \\\"success\\\":\"+String(success)+\", \\\"messages\\\":\\\"\"+messages+\"\\\", \\\"shouldPass\\\":\"+String(shouldPass)+\"}\n\");
 ") for cl in allClasses);
 getErrorString();
