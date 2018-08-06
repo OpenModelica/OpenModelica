@@ -51,6 +51,8 @@ pipeline {
           }
           steps {
             standardSetup()
+            // It's really bad if we mess up the repo and can no longer build properly
+            sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
             // TODO: trailing-whitespace-error tab-error
             sh "make -f Makefile.in -j${numLogicalCPU()} --output-sync bom-error utf8-error thumbsdb-error spellcheck"
             sh '''
