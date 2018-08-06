@@ -6,6 +6,7 @@ import glob
 import simplejson
 import subprocess
 import time
+from natsort import natsorted
 
 def readTest(f, expectedFailures):
   cl = ".".join(f.split(".")[:-1])
@@ -55,7 +56,7 @@ if __name__ == '__main__':
       expectedFailures = set(l.strip() for l in fin.readlines())
   print(expectedFailures)
 
-  res = [readTest(f, expectedFailures) for f in glob.glob("*.res")]
+  res = [readTest(f, expectedFailures) for f in natsorted(glob.glob("*.res"))]
 
   (tcs1,tcs2,failures) = zip(*res)
   ts1 = TestSuite(version, tcs1)
