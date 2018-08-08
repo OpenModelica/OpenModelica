@@ -62,10 +62,22 @@ algorithm
   out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\\\"'\\\",\\\"\\\"),\\\"\\\\\\\"\\\",\\\"\\\"),\\\"\\\\\\\\\\\",\\\"\\\");
 end fixName;
 \");
-resultFile := rec.resultFile;
+if length(err) >= 21 then
+  print(substring(err, 1, 21));
+  b := \"Error: Stack overflow\" <> substring(err, 1, 21);
+else
+  b := true;
+end if;
+resultFile := \"\";
+if b then
+  resultFile := rec.resultFile;
+end if;
 shouldPass := OpenModelica.Scripting.getBooleanClassAnnotation("+OpenModelica.Scripting.typeNameString(cl)+",__ModelicaAssociation.TestCase.shouldPass);
 success := if shouldPass then resultFile<>\"\" else resultFile==\"\";
-messages := rec.messages;
+messages := \"\";
+if b then
+  messages := rec.messages;
+end if;
 messages := messages + err;
 messages := messages + (if not success and not shouldPass /* This is correct; try to figure out why (hint: success is a poor name) */ then \"\nSucceeded, but expected failure\" else \"\");
 messages := firstPart(messages);
