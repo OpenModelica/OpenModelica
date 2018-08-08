@@ -68,7 +68,10 @@ success := if shouldPass then resultFile<>\"\" else resultFile==\"\";
 messages := rec.messages;
 messages := messages + err;
 messages := messages + (if not success and not shouldPass /* This is correct; try to figure out why (hint: success is a poor name) */ then \"\nSucceeded, but expected failure\" else \"\");
-messages := stringReplace(stringReplace(firstPart(messages),\"\\\"\",\"\\\\\\\"\"),\"\n\",\"\\\\n\");
+messages := firstPart(messages);
+messages := stringReplace(messages, \"\\\\\",\"/\");
+messages := stringReplace(messages, \"\\\"\",\"'\");
+messages := stringReplace(messages,\"\n\",\"\\\\n\");
 errorType := if shouldPass then \"failed\" else \"expected failure\";
 if resultFile <> \"\" then
   time := rec.timeTotal;

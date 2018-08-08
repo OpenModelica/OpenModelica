@@ -12,7 +12,12 @@ def readTest(f, expectedFailures):
   cl = ".".join(f.split(".")[:-1])
   name = f.split(".")[-2]
   with open(f) as fin:
-    res = simplejson.load(fin)
+    try:
+      res = simplejson.load(fin)
+    except simplejson.errors.JSONDecodeError:
+      print("Error loading file %s" % f)
+      raise
+
   if "killed" in res:
     tc = TestCase(name, cl, 0, '', '')
     tc.add_error_info('Killed or crashed')
