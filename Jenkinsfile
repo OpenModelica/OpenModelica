@@ -5,7 +5,6 @@ pipeline {
   }
   environment {
     LC_ALL = 'C.UTF-8'
-    CACHE_BRANCH = "${env.CHANGE_TARGET ?: env.GIT_BRANCH}"
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -430,7 +429,7 @@ void partest(cache=true, extraArgs='') {
 
 void makeLibsAndCache(libs='core') {
   // If we don't have any result, copy to the master to get a somewhat decent cache
-  sh "cp -f ${env.RUNTESTDB}/${env.CACHE_BRANCH}/runtest.db.* testsuite/ || " +
+  sh "cp -f ${env.RUNTESTDB}/${cacheBranch()}/runtest.db.* testsuite/ || " +
      "cp -f ${env.RUNTESTDB}/master/runtest.db.* testsuite/ || true"
   // env.WORKSPACE is null in the docker agent, so link the svn/git cache afterwards
   sh "mkdir -p '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git'"
@@ -477,13 +476,17 @@ void compliance() {
   sh "mv ${env.COMPLIANCEPREFIX}.html ${env.COMPLIANCEPREFIX}-current.html"
   sh "test -f ${env.COMPLIANCEPREFIX}.xml"
   // Only publish openmodelica-current.html if we are running master
-  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${env.CACHE_BRANCH=='master' ? '' : ('-' + env.CACHE_BRANCH).replace('/','-')}-${getVersion()}.html"
-  sh "test ! '${env.CACHE_BRANCH}' = 'master' || rm -f ${env.COMPLIANCEPREFIX}-current.html"
+  sh "cp -p ${env.COMPLIANCEPREFIX}-current.html ${env.COMPLIANCEPREFIX}${cacheBranch()=='master' ? '' : ('-' + cacheBranch()).replace('/','-')}-${getVersion()}.html"
+  sh "test ! '${cacheBranch()}' = 'master' || rm -f ${env.COMPLIANCEPREFIX}-current.html"
   stash name: "${env.COMPLIANCEPREFIX}", includes: "${env.COMPLIANCEPREFIX}-*.html"
   archiveArtifacts "${env.COMPLIANCEPREFIX}*${getVersion()}.html, ${env.COMPLIANCEPREFIX}.failures"
   // get rid of freaking %
   sh "sed -i.bak 's/%/\\&#37;/g' ${env.COMPLIANCEPREFIX}.ignore.xml && sed -i.bak 's/[^[:print:]]/ /g' ${env.COMPLIANCEPREFIX}.ignore.xml"
   junit "${env.COMPLIANCEPREFIX}.ignore.xml"
+}
+
+def cacheBranch() {
+  return "${env.CHANGE_TARGET ?: env.GIT_BRANCH}"
 }
 
 /* Note: If getting "Unexpected end of /proc/mounts line" , flatten the docker image:
