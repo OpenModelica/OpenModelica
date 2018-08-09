@@ -1,7 +1,7 @@
 // name:      Rename
 // keywords:  rename Component
 // status:    correct
-// setup_command: chmod -w RenameRO.mo
+// setup_command: chmod a-w RenameRO.mo
 //
 loadFile("Rename.mo"); getErrorString();
 
