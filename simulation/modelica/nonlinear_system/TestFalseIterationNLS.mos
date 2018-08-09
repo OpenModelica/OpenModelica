@@ -182,8 +182,8 @@ val(h_i[5], 1.0); getErrorString();
 // ========================================
 // algVars (12)
 // ----------------------
-// index: 0: $TMP_pureComponentProperties__pTnc3.p_s (no alias)  protected  initial: 	no arrCref index:(1) [] 
-// index: 1: $TMP_pureComponentProperties__pTnc8.p_s (no alias)  protected  initial: 	no arrCref index:(2) [] 
+// index: 0: $TMP_pureComponentProperties__pTnc3.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(1) [] 
+// index: 1: $TMP_pureComponentProperties__pTnc8.p_s (no alias)  protected  hideResult  initial: 	no arrCref index:(2) [] 
 // index: 2: T (no alias)  initial: 288.15	no arrCref index:(3) [] 
 // index: 3: delta_hd (no alias)  initial: 	no arrCref index:(4) [] 
 // index: 4: delta_hv (no alias)  initial: 	no arrCref index:(5) [] 
@@ -217,7 +217,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.791562663333761e-316
+// 1.672367152385719e-316
 // ""
 // 0.0
 // ""
@@ -233,7 +233,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.794046430148534e-316
+// 1.674850919200492e-316
 // ""
 // 0.0
 // ""
