@@ -189,7 +189,7 @@ pipeline {
           }
           environment {
             LIBRARIES = "/cache/omlibrary"
-            COMPLIANCEEXTRAOMFLAGS = "-d=newInst"
+            COMPLIANCEEXTRAFLAGS = "-d=newInst"
             COMPLIANCEEXTRAREPORTFLAGS = "--expectedFailures=.CI/compliance-newinst.failures"
             COMPLIANCEPREFIX = "compliance-newinst"
           }
