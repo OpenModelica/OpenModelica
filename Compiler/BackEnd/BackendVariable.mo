@@ -1600,6 +1600,7 @@ algorithm
       outVar = BackendDAE.VAR(inCref, varKind, DAE.BIDIR(), DAE.NON_PARALLEL(), inType, NONE(), NONE(), {}, DAE.emptyElementSource, DAEUtil.setProtectedAttr(NONE(), true), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true);
     then outVar;
   end match;
+  outVar := setHideResult(outVar, DAE.BCONST(true));
 end createCSEVar;
 
 public function generateVar

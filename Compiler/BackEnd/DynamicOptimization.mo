@@ -510,6 +510,7 @@ algorithm
       equation
         (var,_) = BackendVariable.getVarSingle(cr, vars);
         true = BackendVariable.isVarOnTopLevelAndInput(var);
+        var = BackendVariable.setHideResult(var, DAE.BCONST(true));
         cr1 = ComponentReference.prependStringCref("$TMP$DER$P", cr);
         //cr1 = ComponentReference.crefPrefixDer(cr);
         e = Expression.crefExp(cr1);

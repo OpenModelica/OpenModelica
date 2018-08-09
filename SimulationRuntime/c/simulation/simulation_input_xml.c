@@ -607,11 +607,7 @@ void read_input_xml(MODEL_DATA* modelData,
     omc_ScalarVariable *v = *findHashLongVar(in, i); \
     read_var_info(v, info); \
     read_var_attribute(v, attribute); \
-    if (info->name[0] == '$') \
-    { \
-      out[j].filterOutput = 1; \
-    } \
-    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v, "isProtected"), "true") && 0 == strcmp(findHashStringString(v, "hideResult"), "true")) \
+    if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(v, "isProtected"), "true") && 0 == strcmp(findHashStringString(v, "hideResult"), "true")) \
     { \
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", info->name); \
       out[j].filterOutput = 1; \
@@ -671,12 +667,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->realAlias[i].info.name, modelData->realAlias[i].negate);
 
-    if(modelData->realAlias[i].info.name[0] == '$')
-    {
-      /* filter internal variables */
-      modelData->realAlias[i].filterOutput = 1;
-    }
-    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "hideResult"), "true"))
+    if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.rAli,i), "hideResult"), "true"))
     {
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->realAlias[i].info.name);
       modelData->realAlias[i].filterOutput = 1;
@@ -728,12 +719,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file",modelData->integerAlias[i].info.name,modelData->integerAlias[i].negate);
 
-    /* filter internal variables */
-    if(modelData->integerAlias[i].info.name[0] == '$')
-    {
-      modelData->integerAlias[i].filterOutput = 1;
-    }
-    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "hideResult"), "true"))
+    if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.iAli,i), "hideResult"), "true"))
     {
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->integerAlias[i].info.name);
       modelData->integerAlias[i].filterOutput = 1;
@@ -782,12 +768,7 @@ void read_input_xml(MODEL_DATA* modelData,
 
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->booleanAlias[i].info.name, modelData->booleanAlias[i].negate);
 
-    if(modelData->booleanAlias[i].info.name[0] == '$')
-    {
-      /* filter internal variables */
-      modelData->booleanAlias[i].filterOutput = 1;
-    }
-    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "hideResult"), "true"))
+    if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.bAli,i), "hideResult"), "true"))
     {
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->booleanAlias[i].info.name);
       modelData->booleanAlias[i].filterOutput = 1;
@@ -835,12 +816,7 @@ void read_input_xml(MODEL_DATA* modelData,
     }
     infoStreamPrint(LOG_DEBUG, 0, "read for %s negated %d from setup file", modelData->stringAlias[i].info.name, modelData->stringAlias[i].negate);
 
-    if(modelData->stringAlias[i].info.name[0] == '$')
-    {
-      /* filter internal variables */
-      modelData->stringAlias[i].filterOutput = 1;
-    }
-    else if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "hideResult"), "true"))
+    if (!omc_flag[FLAG_EMIT_PROTECTED] && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "isProtected"), "true") && 0 == strcmp(findHashStringString(*findHashLongVar(mi.sAli,i), "hideResult"), "true"))
     {
       infoStreamPrint(LOG_DEBUG, 0, "filtering protected variable %s", modelData->stringAlias[i].info.name);
       modelData->stringAlias[i].filterOutput = 1;
