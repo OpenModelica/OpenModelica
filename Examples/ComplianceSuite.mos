@@ -50,7 +50,13 @@ deleteClass(ModelicaCompliance.Scoping.NameLookup.Imports.QualifiedImportConflic
 deleteClass(ModelicaCompliance.Redeclare.ClassExtends.ClassExtendsNonReplaceable); getErrorString();
 */
 
+loadString(\"record OpenModelicaSimulationResult
+  String resultFile, messages;
+end OpenModelicaSimulationResult;\");
+// Give rec a value even if we overflow the stack and fail to execute the command
+rec:=OpenModelicaSimulationResult(\"\", \"\");
 rec:=simulate("+OpenModelica.Scripting.typeNameString(cl)+");err:=getErrorString();
+resultFile := rec.resultFile;
 loadString(\"
 function length input String str; output Integer len; external \\\"C\\\" len=ModelicaStrings_length(str); end length;
 function substring input String str; input Integer i1,i2; output String out; external \\\"C\\\" out=ModelicaStrings_substring(str,i1,i2); end substring;
@@ -62,22 +68,9 @@ algorithm
   out := OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(OpenModelica.Scripting.stringReplace(str,\\\"'\\\",\\\"\\\"),\\\"\\\\\\\"\\\",\\\"\\\"),\\\"\\\\\\\\\\\",\\\"\\\");
 end fixName;
 \");
-if length(err) >= 21 then
-  print(substring(err, 1, 21));
-  b := \"Error: Stack overflow\" <> substring(err, 1, 21);
-else
-  b := true;
-end if;
-resultFile := \"\";
-if b then
-  resultFile := rec.resultFile;
-end if;
 shouldPass := OpenModelica.Scripting.getBooleanClassAnnotation("+OpenModelica.Scripting.typeNameString(cl)+",__ModelicaAssociation.TestCase.shouldPass);
 success := if shouldPass then resultFile<>\"\" else resultFile==\"\";
-messages := \"\";
-if b then
-  messages := rec.messages;
-end if;
+messages := rec.messages;
 messages := messages + err;
 messages := messages + (if not success and not shouldPass /* This is correct; try to figure out why (hint: success is a poor name) */ then \"\nSucceeded, but expected failure\" else \"\");
 messages := firstPart(messages);
