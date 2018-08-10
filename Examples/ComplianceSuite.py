@@ -18,6 +18,8 @@ def readTest(f, expectedFailures):
       print("Error loading file %s" % f)
       raise
 
+  expectFail = cl in expectedFailures
+
   if "killed" in res:
     tc1 = TestCase(name, cl, 0, '', '')
     tc2 = TestCase(name, cl, 0, '', '')
@@ -32,7 +34,6 @@ def readTest(f, expectedFailures):
   tc2 = TestCase(name, cl, res["time"], res["messages"], '')
   success = res["success"]
   shouldPass = res["shouldPass"]
-  expectFail = cl in expectedFailures
   if expectFail:
     if success:
       tc1.add_error_info('This testcase started working (failure was expected)')
