@@ -88,15 +88,15 @@ sub setbaselineone
     my $teardown_command = $info{"teardown_command"};
     my $stack_size = $info{"stack_size"};
     my $ulimit = ulimit_cmd($stack_size);
-	my $start_t = time;
+    my $start_t = time;
 
     $log = "$tmpdir/log-$f";
     system "rm -f $log";
     if ($setup_command) {
       if ( system "$setup_command" ) {
-	    my $end_t = time-$start_t;
+        my $end_t = time-$start_t;
         print "== Failed to set baseline for $f (system $setup_command failed)";
-		print " [time: $end_t]\n";
+        print " [time: $end_t]\n";
         return 1;
       }
     }
@@ -148,8 +148,8 @@ sub setbaselineone
     close RES;
     close LOG;
     close SRC;
-	
-	my $end_t = time-$start_t;
+
+    my $end_t = time-$start_t;
     print "Set baseline for $f [time: $end_t]\n";
 
     open(SRC,"<$baseline");
@@ -236,9 +236,13 @@ sub runone
       # fix generated files on windows
       if ($^O =~ /^msys/) {
         # replace /X.mo?_tempNNNN/: -> /
-		$str =~ s/\/[^\/]+\.mos?_temp[\d]+\//\//g;
-      } 
-      print RES $str;
+        $str =~ s/\/[^\/]+\.mos?_temp[\d]+\//\//g;
+      }
+      if ($str =~ /^Unexpected end of \/proc\/mounts line/) {
+        # Ignore; sometimes comes from libhwloc when running docker
+      } else {
+        print RES $str;
+      }
     }
     close LOG;
     close RES;
