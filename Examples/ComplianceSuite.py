@@ -19,9 +19,14 @@ def readTest(f, expectedFailures):
       raise
 
   if "killed" in res:
-    tc = TestCase(name, cl, 0, '', '')
-    tc.add_error_info('Killed or crashed')
-    return (tc, tc, cl)
+    tc1 = TestCase(name, cl, 0, '', '')
+    tc2 = TestCase(name, cl, 0, '', '')
+    if expectFail:
+      tc1.add_skipped_info('Killed or crashed; expected failure')
+    else:
+      tc1.add_error_info('Killed or crashed')
+    tc2.add_error_info('Killed or crashed')
+    return (tc1, tc2, cl)
 
   tc1 = TestCase(name, cl, res["time"], res["messages"], '')
   tc2 = TestCase(name, cl, res["time"], res["messages"], '')
