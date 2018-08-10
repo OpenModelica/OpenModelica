@@ -323,7 +323,7 @@ algorithm
 
     case Binding.UNBOUND()
       algorithm
-        printUnboundError(target, defaultExp);
+        printUnboundError(comp, target, defaultExp);
       then
         (defaultExp, false);
 
@@ -2540,6 +2540,7 @@ end evalSubscript;
 protected
 
 function printUnboundError
+  input Component component;
   input EvalTarget target;
   input Expression exp;
 algorithm
@@ -2562,11 +2563,24 @@ algorithm
 
     else
       algorithm
-        Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
-          {Expression.toString(exp)},
-          {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
+        // check if we have a parameter with (fixed = true), annotation(Evaluate = true) and no binding
+        if listMember(Component.variability(component), {Variability.STRUCTURAL_PARAMETER, Variability.PARAMETER}) and
+           Component.getEvaluateAnnotation(component)
+        then
+          // only add an error if fixed = true
+          if Component.getFixedAttribute(component) then
+	          Error.addMultiSourceMessage(Error.UNBOUND_PARAMETER_EVALUATE_TRUE,
+	            {Expression.toString(exp) + "(fixed = true)"},
+	            {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
+	        end if;
+        else // constant with no binding
+          Error.addMultiSourceMessage(Error.UNBOUND_CONSTANT,
+            {Expression.toString(exp)},
+            {InstNode.info(ComponentRef.node(Expression.toCref(exp))), EvalTarget.getInfo(target)});
+          fail();
+        end if;
       then
-        fail();
+        ();
 
   end match;
 end printUnboundError;

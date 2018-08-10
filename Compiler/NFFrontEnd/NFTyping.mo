@@ -690,6 +690,11 @@ algorithm
 
   c := InstNode.component(node);
 
+  // @adrpo: if Evaluate=true make the parameter a structural parameter
+  if Component.getEvaluateAnnotation(c) then
+    c := Component.setVariability(Variability.STRUCTURAL_PARAMETER, c);
+  end if;
+
   () := match c
     // A component with a binding that's already been typed.
     case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
@@ -734,8 +739,9 @@ algorithm
           end if;
         end if;
 
-        // Evaluate the binding if the component is a constant.
-        if comp_var <= Variability.STRUCTURAL_PARAMETER then
+        // Evaluate the binding if the component is a constant or has annotation(Evaluate=true)
+        if (comp_var <= Variability.STRUCTURAL_PARAMETER)
+        then
           // TODO: Allow this to fail for now. Once constant evaluation has
           // been improved we should print an error when a constant binding
           // couldn't be evaluated instead.

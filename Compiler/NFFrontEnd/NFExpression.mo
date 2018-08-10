@@ -62,6 +62,7 @@ public
   import NFClass.Class;
   import NFComponentRef.Origin;
   import NFTyping.ExpOrigin;
+  import ExpressionSimplify;
 
   record INTEGER
     Integer value;
@@ -1083,6 +1084,8 @@ public
   function toDAE
     input Expression exp;
     output DAE.Exp dexp;
+  protected
+    Boolean changed = true;
   algorithm
     dexp := match exp
       local
@@ -1175,6 +1178,8 @@ public
           fail();
 
     end match;
+
+    // (dexp, changed) := ExpressionSimplify.simplify(dexp);
   end toDAE;
 
   function dimensionCount

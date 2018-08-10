@@ -10013,7 +10013,7 @@ algorithm
         exp_str := ExpressionDump.printExpStr(inExp);
         c_str := Types.unparseConst(c2);
         Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
-          {fa1, exp_str, c_str}, inInfo);
+          {fa1, exp_str, Types.unparseConst(c1), c_str}, inInfo);
       end if;
 
       // Found a valid slot, fill it and reconstruct the slot list.

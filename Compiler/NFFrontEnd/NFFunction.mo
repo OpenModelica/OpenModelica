@@ -798,6 +798,7 @@ uniontype Function
         correct := false;
         Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
           InstNode.name(inputnode), Expression.toString(argexp),
+          Prefixes.variabilityString(var),
           Prefixes.variabilityString(Component.variability(comp))
         }, info);
         funcMatchKind := NO_MATCH;
@@ -865,6 +866,7 @@ uniontype Function
         correct := false;
         Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
           InstNode.name(inputnode), Expression.toString(argexp),
+          Prefixes.variabilityString(var),
           Prefixes.variabilityString(Component.variability(comp))
         }, info);
         funcMatchKind := NO_MATCH;
@@ -1286,6 +1288,7 @@ protected
     ConnectorType cty;
     InnerOuter io;
     Visibility vis;
+    Variability var;
   algorithm
     Component.Attributes.ATTRIBUTES(
       connectorType = cty,
@@ -1293,6 +1296,7 @@ protected
       innerOuter = io) := Component.getAttributes(InstNode.component(component));
 
     vis := InstNode.visibility(component);
+    var := Component.variability(InstNode.component(component));
 
     // Function components may not be connectors.
     if cty <> ConnectorType.POTENTIAL then
@@ -1318,10 +1322,14 @@ protected
         fail();
       end if;
     else
+
       if vis == Visibility.PUBLIC then
         Error.addSourceMessage(Error.NON_FORMAL_PUBLIC_FUNCTION_VAR,
           {InstNode.name(component)}, InstNode.info(component));
-        fail();
+        // @adrpo: alow public constants and parameters in functions
+        if var > Variability.PARAMETER then
+          fail();
+        end if;
       end if;
     end if;
   end paramDirection;

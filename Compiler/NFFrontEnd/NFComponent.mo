@@ -561,6 +561,16 @@ uniontype Component
     output Boolean isConst = variability(component) == Variability.CONSTANT;
   end isConst;
 
+  function isParameter
+    input Component component;
+    output Boolean b = variability(component) == Variability.PARAMETER;
+  end isParameter;
+
+  function isStructuralParameter
+    input Component component;
+    output Boolean b = variability(component) == Variability.STRUCTURAL_PARAMETER;
+  end isStructuralParameter;
+
   function isVar
     input Component component;
     output Boolean isVar = variability(component) == Variability.CONTINUOUS;
@@ -747,6 +757,52 @@ uniontype Component
       else NONE();
     end match;
   end comment;
+
+  function getEvaluateAnnotation
+    input Component component;
+    output Boolean evaluate;
+  protected
+    SCode.Comment cmt;
+  algorithm
+    evaluate := SCode.getEvaluateAnnotation(comment(component));
+  end getEvaluateAnnotation;
+
+  function getFixedAttribute
+    input Component component;
+    output Boolean fixed = false;
+  protected
+    list<Modifier> typeAttrs = {};
+    Binding binding;
+  algorithm
+    try
+	    typeAttrs := match (component)
+	      case (TYPED_COMPONENT())
+	        then Class.getTypeAttributes(InstNode.getClass(component.classInst));
+	      else {};
+	    end match;
+	  else
+	    typeAttrs := {};
+	  end try;
+    if listEmpty(typeAttrs) then
+      // for parameters the default is fixed = true
+      if isParameter(component) then
+        fixed := true;
+      else
+        fixed := false;
+      end if;
+      return;
+    end if;
+    for m in typeAttrs loop
+      fixed := matchcontinue(m)
+        case Modifier.MODIFIER(name = "fixed", binding = binding)
+          algorithm
+            fixed := fixed and Expression.isTrue(Binding.getTypedExp(binding));
+          then
+            fixed;
+         else fixed;
+      end matchcontinue;
+    end for;
+  end getFixedAttribute;
 
   function isDeleted
     input Component component;

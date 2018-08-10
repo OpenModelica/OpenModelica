@@ -5725,14 +5725,15 @@ algorithm
       String ret;
       FCore.Graph env;
       Boolean b;
+      Integer failed;
 
     case (cache,env,_,b,msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, b, SymbolTable.getAbsyn());
         print("Number of classes to check: " + intString(listLength(allClassPaths)) + "\n");
         // print ("All paths: \n" + stringDelimitList(List.map(allClassPaths, Absyn.pathString), "\n") + "\n");
-        checkAll(cache, env, allClassPaths, msg);
-        ret = "Number of classes checked: " + intString(listLength(allClassPaths));
+        failed = checkAll(cache, env, allClassPaths, msg, 0);
+        ret = "Number of classes checked / failed: " + intString(listLength(allClassPaths)) + "/" + intString(failed);
       then
         (cache,Values.STRING(ret));
 
@@ -5748,15 +5749,22 @@ function failOrSuccess
 "@author adrpo"
   input String inStr;
   output String outStr;
+  output Boolean failed = false;
 algorithm
   outStr := matchcontinue(inStr)
     local Integer res;
     case _
-      equation
-        res = System.stringFind(inStr, "successfully");
-        true = (res >= 0);
-      then "OK";
-    else "FAILED!";
+      algorithm
+        res := System.stringFind(inStr, "successfully");
+        true := (res >= 0);
+        failed := false;
+      then
+        "OK";
+    else
+      algorithm
+        failed := true;
+      then
+        "FAILED!";
   end matchcontinue;
 end failOrSuccess;
 
@@ -5767,6 +5775,7 @@ function checkAll
   input FCore.Graph inEnv;
   input list<Absyn.Path> allClasses;
   input Absyn.Msg inMsg;
+  input output Integer failed;
 protected
   Absyn.Program p;
 algorithm
@@ -5777,11 +5786,13 @@ algorithm
       Absyn.Path className;
       Absyn.Msg msg;
       FCore.Cache cache;
-      String  str, s;
+      String  str, s, smsg;
       FCore.Graph env;
       Real t1, t2, elapsedTime;
       Absyn.ComponentRef cr;
       Absyn.Class c;
+      Boolean f = false;
+
     case (_,_,{},_) then ();
 
     case (cache,env,className::rest,msg)
@@ -5803,21 +5814,25 @@ algorithm
         t2 = clock();
         elapsedTime = t2 - t1;
         s = realString(elapsedTime);
-        print (s + " seconds -> " + failOrSuccess(str) + "\n\t");
+        (smsg, f) = failOrSuccess(str);
+        failed = if f then failed + 1 else 0;
+        print (s + " seconds -> " + smsg + "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
         print ("Error String:\n" + Print.getErrorString() + "\n");
         print ("Error Buffer:\n" + ErrorExt.printMessagesStr(false) + "\n");
-        print ("# " + realString(elapsedTime) + " : " + Absyn.pathString(className) + "\n");
+        print ("#" + (if f then "[-]" else "[+]") + ", " +
+          realString(elapsedTime) + ", " +
+          Absyn.pathString(className) + "\n");
         print ("-------------------------------------------------------------------------\n");
-        checkAll(cache, env, rest, msg);
+        failed = checkAll(cache, env, rest, msg, failed);
       then ();
 
     case (cache,env,className::rest,msg)
       equation
         c = Interactive.getPathedClassInProgram(className, p);
         print("Checking skipped: " + Dump.unparseClassAttributesStr(c) + " " + Absyn.pathString(className) + "... \n");
-        checkAll(cache, env, rest, msg);
+        failed = checkAll(cache, env, rest, msg, failed);
       then
         ();
   end matchcontinue;
