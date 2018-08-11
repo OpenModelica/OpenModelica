@@ -1179,7 +1179,10 @@ public
 
     end match;
 
-    // (dexp, changed) := ExpressionSimplify.simplify(dexp);
+    //(dexp, changed) := ExpressionSimplify.simplify(dexp);
+    //if changed then
+    //  (dexp, changed) := ExpressionSimplify.simplify(dexp);
+    //end if;
   end toDAE;
 
   function dimensionCount
