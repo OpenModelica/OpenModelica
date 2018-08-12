@@ -17,7 +17,7 @@ end FuncVariability;
 
 // Result:
 // Error processing file: FuncVariability.mo
-// [flattening/modelica/scodeinst/FuncVariability.mo:15:3-15:19:writable] Error: Function argument x=time with variability continuous is not a parameter expression.
+// [flattening/modelica/scodeinst/FuncVariability.mo:15:3-15:19:writable] Error: Function argument x=time in call to f has variability continuous which is not a parameter expression.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

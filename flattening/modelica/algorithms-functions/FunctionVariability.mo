@@ -15,7 +15,7 @@ end FunctionVariability;
 
 // Result:
 // Error processing file: FunctionVariability.mo
-// [flattening/modelica/algorithms-functions/FunctionVariability.mo:13:3-13:19:writable] Error: Function argument x=a with variability continuous is not a constant expression.
+// [flattening/modelica/algorithms-functions/FunctionVariability.mo:13:3-13:19:writable] Error: Function argument x=a in call to f has variability continuous which is not a constant expression.
 // Error: Error occurred while flattening model FunctionVariability
 //
 // # Error encountered! Exiting...

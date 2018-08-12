@@ -16,7 +16,7 @@ equation
 end Delay;
 // Result:
 // Error processing file: Delay7.mo
-// [flattening/modelica/built-in-functions/Delay7.mo:15:3-15:21:writable] Error: Function argument delayMax=b with variability continuous is not a parameter expression.
+// [flattening/modelica/built-in-functions/Delay7.mo:15:3-15:21:writable] Error: Function argument delayMax=b in call to OpenModelica.Internal.delay3 has variability continuous which is not a parameter expression.
 // [flattening/modelica/built-in-functions/Delay7.mo:15:3-15:21:writable] Error: No matching function found for delay in component <NO COMPONENT>
 // candidates are .OpenModelica.Internal.delay2<function>(Real expr, Real parameter delayTime) => Real
 //  -.OpenModelica.Internal.delay3<function>(Real expr, Real delayTime, Real parameter delayMax) => Real
