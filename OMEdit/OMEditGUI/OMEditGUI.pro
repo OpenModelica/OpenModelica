@@ -194,7 +194,8 @@ SOURCES += main.cpp \
   OMS/OMSProxy.cpp \
   Component/FMUProperties.cpp \
   OMS/OMSSimulationDialog.cpp \
-  OMS/OMSSimulationOutputWidget.cpp
+  OMS/OMSSimulationOutputWidget.cpp \
+    Modeling/FunctionArgumentDialog.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -277,7 +278,8 @@ HEADERS  += Util/Helper.h \
   Component/FMUProperties.h \
   OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \
-  OMS/OMSSimulationOutputWidget.h
+  OMS/OMSSimulationOutputWidget.h \
+    Modeling/FunctionArgumentDialog.h
 
 CONFIG(osg) {
 

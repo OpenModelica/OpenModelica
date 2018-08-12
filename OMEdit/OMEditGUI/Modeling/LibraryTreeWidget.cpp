@@ -36,6 +36,7 @@
 #include "ItemDelegate.h"
 #include "MainWindow.h"
 #include "ModelWidgetContainer.h"
+#include "FunctionArgumentDialog.h"
 #include "Options/OptionsDialog.h"
 #include "MessagesWidget.h"
 #include "DocumentationWidget.h"
@@ -749,11 +750,10 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
 
 void LibraryTreeItem::callFunction()
 {
-  QInputDialog dlg(MainWindow::instance());
-  dlg.setLabelText(getNameStructure() + "(...):");
+  FunctionArgumentDialog dlg(this, MainWindow::instance());
 
   if (dlg.exec() == QDialog::Accepted) {
-    QString cmd = getNameStructure() + "(" + dlg.textValue() + ")";
+    QString cmd = dlg.getFunctionCallCommand();
 
     MainWindow::instance()->getOMCProxy()->openOMCLoggerWidget();
     MainWindow::instance()->getOMCProxy()->sendCommand(cmd);
