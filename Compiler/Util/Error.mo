@@ -518,7 +518,7 @@ public constant Message ARRAY_TYPE_MISMATCH = MESSAGE(193, TRANSLATION(), ERROR(
 public constant Message VECTORIZE_TWO_UNKNOWN = MESSAGE(194, TRANSLATION(), ERROR(),
   Util.gettext("Could not vectorize call with unknown dimensions due to finding two for-iterators: %s and %s."));
 public constant Message FUNCTION_SLOT_VARIABILITY = MESSAGE(195, TRANSLATION(), ERROR(),
-  Util.gettext("Function argument %s=%s with variability %s is not a %s expression."));
+  Util.gettext("Function argument %s=%s in call to %s has variability %s which is not a %s expression."));
 public constant Message INVALID_ARRAY_DIM_IN_CONVERSION_OP = MESSAGE(196, TRANSLATION(), ERROR(),
   Util.gettext("Invalid dimension %s of argument to %s, expected dimension size %s but got %s."));
 public constant Message DUPLICATE_REDECLARATION = MESSAGE(197, TRANSLATION(), ERROR(),

@@ -9702,7 +9702,7 @@ algorithm
     case (cache, env, e, DAE.FUNCARG(name=id,ty = vt as DAE.T_CODE(ct),par=pr), _, slots, _, true, _, polymorphicBindings,pre)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,info);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info, path);
       then
         (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
@@ -9714,7 +9714,7 @@ algorithm
         vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info) "no vectorized dim" ;
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info, path) "no vectorized dim" ;
       then
         (cache,slots_1,c1,polymorphicBindings);
 
@@ -9726,7 +9726,7 @@ algorithm
         vt = Types.traverseType(vt, -1, Types.makeExpDimensionsUnknown);
         c1 = Types.propAllConst(props);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info, path);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
@@ -9737,7 +9737,7 @@ algorithm
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         /* fill slot with actual type for error message*/
-        slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,t,c1,pr,NONE()), e_1, {}, slots, pre,info, path);
       then
         (cache,slots_1,c1,polymorphicBindings);
 
@@ -9872,7 +9872,7 @@ algorithm
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         e_1 = elabCodeExp(e,cache,env,ct,info);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,DAE.C_VAR(),pr,NONE()), e_1, {}, slots,pre,info, path);
       then (cache,slots_1,DAE.C_VAR(),polymorphicBindings);
 
     // check types exact match
@@ -9882,7 +9882,7 @@ algorithm
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1)) = elabExpInExpression(cache, env, e, impl, true,pre,info);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,FGraph.getGraphPathNoImplicitScope(env),polymorphicBindings,false);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, {}, slots,pre,info, path);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // check types vectorized argument
@@ -9892,7 +9892,7 @@ algorithm
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(t,c1)) = elabExpInExpression(cache, env, e, impl, true,pre,info);
         (e_2,_,ds,polymorphicBindings) = Types.vectorizableType(e_1, t, vt, FGraph.getGraphPathNoImplicitScope(env));
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_2, ds, slots, pre,info, path);
       then (cache,slots_1,c1,polymorphicBindings);
 
     // do not check types
@@ -9901,7 +9901,7 @@ algorithm
         vt = findNamedArgType(id, farg);
         pr = findNamedArgParallelism(id,farg);
         (cache,e_1,DAE.PROP(_,c1)) = elabExpInExpression(cache,env, e, impl,true,pre,info);
-        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info);
+        slots_1 = fillSlot(DAE.FUNCARG(id,vt,c1,pr,NONE()), e_1, {}, slots,pre,info, path);
       then (cache,slots_1,c1,polymorphicBindings);
 
     case (cache, _, Absyn.NAMEDARG(argName = id), farg, slots, true /* only 1 function */, _, _, polymorphicBindings,_)
@@ -9978,6 +9978,7 @@ protected function fillSlot
   input list<Slot> inSlotLst;
   input Prefix.Prefix inPrefix;
   input SourceInfo inInfo;
+  input Absyn.Path fn;
   output list<Slot> outSlotLst = {};
 protected
   String fa1, fa2, exp_str, c_str, pre_str;
@@ -10013,7 +10014,7 @@ algorithm
         exp_str := ExpressionDump.printExpStr(inExp);
         c_str := Types.unparseConst(c2);
         Error.addSourceMessageAndFail(Error.FUNCTION_SLOT_VARIABILITY,
-          {fa1, exp_str, Types.unparseConst(c1), c_str}, inInfo);
+          {fa1, exp_str, Absyn.pathStringNoQual(fn), Types.unparseConst(c1), c_str}, inInfo);
       end if;
 
       // Found a valid slot, fill it and reconstruct the slot list.

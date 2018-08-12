@@ -347,7 +347,7 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got unknown class", sourceInfo());
+        Error.assertion(false, getInstanceName() + " got unknown class:\n" + SCodeDump.unparseElementStr(def), sourceInfo());
       then
         fail();
 

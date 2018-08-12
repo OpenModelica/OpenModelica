@@ -798,6 +798,7 @@ uniontype Function
         correct := false;
         Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
           InstNode.name(inputnode), Expression.toString(argexp),
+          Absyn.pathString(Function.name(func)),
           Prefixes.variabilityString(var),
           Prefixes.variabilityString(Component.variability(comp))
         }, info);
@@ -866,6 +867,7 @@ uniontype Function
         correct := false;
         Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY, {
           InstNode.name(inputnode), Expression.toString(argexp),
+          Absyn.pathString(name(func)),
           Prefixes.variabilityString(var),
           Prefixes.variabilityString(Component.variability(comp))
         }, info);

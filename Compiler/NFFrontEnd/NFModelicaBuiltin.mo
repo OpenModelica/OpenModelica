@@ -106,7 +106,7 @@ annotation(Documentation(info="<html>
 </html>"));
 end floor;
 
-function integer "Round a real number towards minus infinity"
+function integer "Returns the largest integer not greater than x. The argument shall have type Real. The result has type Integer. [Note, outside of a when-clause state events are triggered when the return value changes discontinuously.]."
   input Real x;
   output Integer y;
 external "builtin";
