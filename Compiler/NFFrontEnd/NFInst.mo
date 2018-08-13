@@ -1971,7 +1971,7 @@ algorithm
         instExpressions(c.classInst, node);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], InstNode.parent(component), c.info);
+          dims[i] := instDimension(dims[i], InstNode.parent(node), c.info);
         end for;
 
         // This is to avoid instantiating the same component multiple times,
