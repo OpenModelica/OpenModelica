@@ -1468,6 +1468,24 @@ void GraphicsView::addConnection(Component *pComponent)
                                GUIMessages::getMessage(GUIMessages::SAME_COMPONENT_CONNECT), Helper::ok);
       removeCurrentConnection();
     } else {
+      /* Ticket:4956
+       * Only set the connection line thickness to 0.5 when both connectors are either expandable or array.
+       * Otherwise set it to 0.25 i.e., default.
+       */
+      if (((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+           (pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+           (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+           (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+           (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray())) &&
+          ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+           (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+           (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+           (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+           (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray()))) {
+        mpConnectionLineAnnotation->setLineThickness(0.5);
+      } else {
+        mpConnectionLineAnnotation->setLineThickness(0.25);
+      }
       // check of any of starting or ending components are array
       bool showConnectionArrayDialog = false;
       if ((pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||

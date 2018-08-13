@@ -122,10 +122,24 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   setSynchronize(false);
   setPriority(1);
   if (mLineType == LineAnnotation::ConnectionType) {
-    // use the linecolor of start component for the connection line.
-    if (pStartComponent->getShapesList().size() > 0) {
-      ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
-      mLineColor = pShapeAnnotation->getLineColor();
+    /* Use the linecolor of the first shape from icon layer of start component for the connection line.
+     * Or use black color if there is no shape in the icon layer
+     * Dymola is doing it the way explained above. The Modelica specification doesn't say anything about it.
+     * We are also doing it the same way except that we will use the diagram layer shape if there is no shape in the icon layer.
+     * If there is no shape even in diagram layer then use the default black color.
+     */
+    if (pStartComponent->getLibraryTreeItem()) {
+      if (!pStartComponent->getLibraryTreeItem()->getModelWidget()) {
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pStartComponent->getLibraryTreeItem(), false);
+      }
+      ShapeAnnotation *pShapeAnnotation;
+      if (pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
+        pShapeAnnotation = pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
+        mLineColor = pShapeAnnotation->getLineColor();
+      } else if (pStartComponent->getShapesList().size() > 0) {
+        ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
+        mLineColor = pShapeAnnotation->getLineColor();
+      }
     }
     mpTextAnnotation = 0;
   } else if (mLineType == LineAnnotation::TransitionType) {
