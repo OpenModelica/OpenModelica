@@ -179,6 +179,7 @@ function typeClass
   input InstNode cls;
   input String name;
 algorithm
+  typeClassType(cls, NFBinding.EMPTY_BINDING, ExpOrigin.CLASS);
   typeComponents(cls, ExpOrigin.CLASS);
   execStat("NFTyping.typeComponents(" + name + ")");
   typeBindings(cls, cls, ExpOrigin.CLASS);
