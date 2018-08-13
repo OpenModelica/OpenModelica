@@ -262,6 +262,7 @@ dim18.mo \
 dim19.mo \
 dim7.mo \
 dim8.mo \
+DerivedRootClass1.mo \
 DuplicateElements1.mo \
 DuplicateElements2.mo \
 DuplicateElements3.mo \
