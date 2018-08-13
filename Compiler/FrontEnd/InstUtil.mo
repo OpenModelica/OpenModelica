@@ -5960,44 +5960,38 @@ public function splitInnerAndOtherTplLstElementMod
 "@author: adrpo
   Split the elements into inner, inner outer and others"
   input list<tuple<SCode.Element, DAE.Mod>> inTplLstElementMod;
-  output list<tuple<SCode.Element, DAE.Mod>> outInnerTplLstElementMod;
-  output list<tuple<SCode.Element, DAE.Mod>> outInnerOuterTplLstElementMod;
-  output list<tuple<SCode.Element, DAE.Mod>> outOtherTplLstElementMod;
+  output list<tuple<SCode.Element, DAE.Mod>> outInnerTplLstElementMod = {};
+  output list<tuple<SCode.Element, DAE.Mod>> outInnerOuterTplLstElementMod = {};
+  output list<tuple<SCode.Element, DAE.Mod>> outOtherTplLstElementMod = {};
+protected
+  SCode.Element comp;
+  Absyn.InnerOuter io;
 algorithm
-  (outInnerTplLstElementMod, outInnerOuterTplLstElementMod, outOtherTplLstElementMod) := matchcontinue (inTplLstElementMod)
-    local
-      list<tuple<SCode.Element, DAE.Mod>> rest,innerComps,innerouterComps,otherComps;
-      tuple<SCode.Element, DAE.Mod> comp;
-      Absyn.InnerOuter io;
+  for e in listReverse(inTplLstElementMod) loop
+    (comp, _) := e;
 
-    // empty case
-    case ({}) then ({},{},{});
+    () := match comp
+      case SCode.COMPONENT(prefixes = SCode.PREFIXES(innerOuter = io))
+        guard Absyn.isInner(io)
+        algorithm
+          if Absyn.isOuter(io) then
+            // inner outer components.
+            outInnerOuterTplLstElementMod := e :: outInnerOuterTplLstElementMod;
+          else
+            // inner components.
+            outInnerTplLstElementMod := e :: outInnerTplLstElementMod;
+          end if;
+        then
+          ();
 
-    // inner components
-    case ( ( comp as (SCode.COMPONENT(prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
-      equation
-        true = Absyn.isInner(io);
-        false = Absyn.isOuter(io);
-        (innerComps,innerouterComps,otherComps) = splitInnerAndOtherTplLstElementMod(rest);
-      then
-        (comp::innerComps,innerouterComps,otherComps);
-
-    // inner outer components
-    case ( ( comp as (SCode.COMPONENT(prefixes=SCode.PREFIXES(innerOuter = io)), _) ) :: rest)
-      equation
-        true = Absyn.isInner(io);
-        true = Absyn.isOuter(io);
-        (innerComps,innerouterComps,otherComps) = splitInnerAndOtherTplLstElementMod(rest);
-      then
-        (innerComps,comp::innerouterComps,otherComps);
-
-    // any other components
-    case (comp :: rest)
-      equation
-        (innerComps,innerouterComps,otherComps) = splitInnerAndOtherTplLstElementMod(rest);
-      then
-        (innerComps,innerouterComps,comp::otherComps);
-  end matchcontinue;
+      else
+        algorithm
+          // any other components.
+          outOtherTplLstElementMod := e :: outOtherTplLstElementMod;
+        then
+          ();
+    end match;
+  end for;
 end splitInnerAndOtherTplLstElementMod;
 
 public function splitEltsOrderInnerOuter "
