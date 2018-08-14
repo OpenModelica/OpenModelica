@@ -399,6 +399,7 @@ public:
   void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
   void clearInheritedClasses() {mInheritedClassesList.clear();}
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
+  QList<ComponentInfo*> getComponentsList() {return mComponentsList;}
   QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
   void fetchExtendsModifiers(QString extendsClass);
   void reDrawModelWidgetInheritedClasses();

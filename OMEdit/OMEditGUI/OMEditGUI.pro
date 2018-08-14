@@ -129,6 +129,7 @@ SOURCES += main.cpp \
   Modeling/CoOrdinateSystem.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
+  Modeling/FunctionArgumentDialog.cpp \
   Search/SearchWidget.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
@@ -194,8 +195,7 @@ SOURCES += main.cpp \
   OMS/OMSProxy.cpp \
   Component/FMUProperties.cpp \
   OMS/OMSSimulationDialog.cpp \
-  OMS/OMSSimulationOutputWidget.cpp \
-    Modeling/FunctionArgumentDialog.cpp
+  OMS/OMSSimulationOutputWidget.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -211,6 +211,7 @@ HEADERS  += Util/Helper.h \
   Modeling/CoOrdinateSystem.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
+  Modeling/FunctionArgumentDialog.h \
   Search/SearchWidget.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
@@ -278,8 +279,7 @@ HEADERS  += Util/Helper.h \
   Component/FMUProperties.h \
   OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \
-  OMS/OMSSimulationOutputWidget.h \
-    Modeling/FunctionArgumentDialog.h
+  OMS/OMSSimulationOutputWidget.h
 
 CONFIG(osg) {
 

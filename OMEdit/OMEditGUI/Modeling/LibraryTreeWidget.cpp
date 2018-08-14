@@ -748,18 +748,6 @@ void LibraryTreeItem::handleCoOrdinateSystemUpdated(GraphicsView *pGraphicsView)
   emit coOrdinateSystemUpdated(pGraphicsView);
 }
 
-void LibraryTreeItem::callFunction()
-{
-  FunctionArgumentDialog dlg(this, MainWindow::instance());
-
-  if (dlg.exec() == QDialog::Accepted) {
-    QString cmd = dlg.getFunctionCallCommand();
-
-    MainWindow::instance()->getOMCProxy()->openOMCLoggerWidget();
-    MainWindow::instance()->getOMCProxy()->sendCommand(cmd);
-  }
-}
-
 /*!
  * \class LibraryTreeProxyModel
  * \brief A sort filter proxy model for Libraries Browser.
@@ -2688,10 +2676,10 @@ void LibraryTreeView::createActions()
   mpSimulateAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateAction->setStatusTip(Helper::simulateTip);
   connect(mpSimulateAction, SIGNAL(triggered()), SLOT(simulate()));
-  // call Action
-  mpCallAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::call, this);
-  mpCallAction->setStatusTip(Helper::callTip);
-  connect(mpCallAction, SIGNAL(triggered()), SLOT(call()));
+  // call function Action
+  mpCallFunctionAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::callFunction, this);
+  mpCallFunctionAction->setStatusTip(Helper::callFunctionTip);
+  connect(mpCallFunctionAction, SIGNAL(triggered()), SLOT(callFunction()));
   // simulate with transformational debugger Action
   mpSimulateWithTransformationalDebuggerAction = new QAction(QIcon(":/Resources/icons/simulate-equation.svg"), Helper::simulateWithTransformationalDebugger, this);
   mpSimulateWithTransformationalDebuggerAction->setStatusTip(Helper::simulateWithTransformationalDebuggerTip);
@@ -2918,7 +2906,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSimulationSetupAction);
           }
           if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
-            menu.addAction(mpCallAction);
+            menu.addAction(mpCallFunctionAction);
           }
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
@@ -3240,7 +3228,11 @@ void LibraryTreeView::checkAllModels()
   }
 }
 
-void LibraryTreeView::call()
+/*!
+ * \brief LibraryTreeView::callFunction
+ * Opens the call function dialog for the selected LibraryTreeItem
+ */
+void LibraryTreeView::callFunction()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -3249,7 +3241,19 @@ void LibraryTreeView::call()
       return;
     }
   }
-  pLibraryTreeItem->callFunction();
+  // Load the class if its not loaded so we can get the components
+  if (!pLibraryTreeItem->getModelWidget()) {
+    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
+  }
+  pLibraryTreeItem->getModelWidget()->loadComponents();
+
+  FunctionArgumentDialog functionArgumentDialog(pLibraryTreeItem, MainWindow::instance());
+
+  if (functionArgumentDialog.exec() == QDialog::Accepted) {
+    QString cmd = functionArgumentDialog.getFunctionCallCommand();
+    MainWindow::instance()->getOMCProxy()->openOMCLoggerWidget();
+    MainWindow::instance()->getOMCProxy()->sendCommand(cmd);
+  }
 }
 
 /*!
