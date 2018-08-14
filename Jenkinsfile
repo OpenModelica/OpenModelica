@@ -385,6 +385,18 @@ pipeline {
       }
     }
   }
+  post {
+    failure {
+      script {
+        if (cacheBranch()=="master") {
+          emailext subject: '$DEFAULT_SUBJECT',
+          body: '$DEFAULT_CONTENT',
+          replyTo: '$DEFAULT_REPLYTO',
+          to: 'DEFAULT_TO'
+        }
+      }
+    }
+  }
 }
 
 void standardSetup() {
