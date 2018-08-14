@@ -386,16 +386,38 @@ pipeline {
     }
   }
   post {
+    unstable {
+      script {
+        emailIfMaster()
+      }
+    }
     failure {
       script {
-        if (cacheBranch()=="master") {
-          emailext subject: '$DEFAULT_SUBJECT',
-          body: '$DEFAULT_CONTENT',
-          replyTo: '$DEFAULT_REPLYTO',
-          to: 'DEFAULT_TO'
+        emailIfMaster()
+      }
+    }
+    always {
+      node('linux') { // githubPRComment requires a File context
+        script {
+          ghCommentPR()
         }
       }
     }
+  }
+}
+
+void emailIfMaster() {
+  if (!changeRequest()) {
+    emailext subject: '$DEFAULT_SUBJECT',
+    body: '$DEFAULT_CONTENT',
+    replyTo: '$DEFAULT_REPLYTO',
+    to: '$DEFAULT_TO'
+  }
+}
+
+void ghCommentPR() {
+  if (changeRequest()) {
+    pullRequest.comment('Build ${BUILD_NUMBER} ${BUILD_STATUS}')
   }
 }
 
