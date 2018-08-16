@@ -391,16 +391,16 @@ bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
 
 /*!
  * \brief OMSProxy::getFMUPath
- * Returns the FMU path.
+ * Returns the submodel path.
  * \param cref
- * \param pFmuPath
+ * \param pPath
  * \return
  */
-bool OMSProxy::getFMUPath(QString cref, QString* pFmuPath)
+bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
 {
   char* path = NULL;
-  oms_status_enu_t status = oms2_getFMUPath(cref.toStdString().c_str(), &path);
-  *pFmuPath = QString(path);
+  oms_status_enu_t status = oms2_getSubModelPath(cref.toStdString().c_str(), &path);
+  *pPath = QString(path);
   return statusToBool(status);
 }
 

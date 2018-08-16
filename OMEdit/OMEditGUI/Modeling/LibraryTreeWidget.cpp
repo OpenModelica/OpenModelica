@@ -2387,6 +2387,19 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
       if (fmuFileInfo.isRelative()) {
         QFileInfo fileInfo(pParentLibraryTreeItem->getFileName());
         pLibraryTreeItem->setFileName(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath(), pFMUInfo->path));
+      } else {
+        pLibraryTreeItem->setFileName(QString(pFMUInfo->path));
+      }
+    }
+  } else if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_table) {
+    QString path;
+    if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
+      QFileInfo tableFileInfo(path);
+      if (tableFileInfo.isRelative()) {
+        QFileInfo fileInfo(pParentLibraryTreeItem->getFileName());
+        pLibraryTreeItem->setFileName(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath(), path));
+      } else {
+        pLibraryTreeItem->setFileName(path);
       }
     }
   }

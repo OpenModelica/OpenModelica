@@ -72,7 +72,7 @@ public:
   bool getElement(QString cref, oms_element_t** pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
   bool getElements(QString cref, oms_element_t*** pElements);
-  bool getFMUPath(QString cref, QString* pFmuPath);
+  bool getSubModelPath(QString cref, QString* pPath);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool setConnectorGeometry(QString connector, const ssd_connector_geometry_t* pGeometry);
   bool getConnections(QString cref, oms_connection_t*** pConnections);
