@@ -103,6 +103,16 @@ public
     end match;
   end isConnector;
 
+  function isExpandableConnector
+    input Restriction res;
+    output Boolean isConnector;
+  algorithm
+    isConnector := match res
+      case CONNECTOR() then res.isExpandable;
+      else false;
+    end match;
+  end isExpandableConnector;
+
   function isExternalObject
     input Restriction res;
     output Boolean isExternalObject;

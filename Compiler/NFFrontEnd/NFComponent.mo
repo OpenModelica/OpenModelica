@@ -659,6 +659,12 @@ uniontype Component
       Class.isConnectorClass(InstNode.getDerivedClass(classInstance(component)));
   end isConnector;
 
+  function isExpandableConnector
+    input Component component;
+    output Boolean isExpandableConnector =
+      Class.isExpandableConnectorClass(InstNode.getDerivedClass(classInstance(component)));
+  end isExpandableConnector;
+
   function isIdentical
     input Component comp1;
     input Component comp2;

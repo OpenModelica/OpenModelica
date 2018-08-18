@@ -36,6 +36,7 @@ encapsulated package NFLookup
 "
 
 import Absyn;
+import SCode;
 import Dump;
 import Error;
 import Global;
@@ -261,8 +262,18 @@ algorithm
       algorithm
         (node, foundCref, foundScope, state) :=
           lookupSimpleCref(cref.name, cref.subscripts, scope);
+        if InstNode.isExpandableConnector(ComponentRef.node(foundCref)) then
+          try // it migth not be there!
+            (foundCref, foundScope, state) := lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
+          else
+            // add it if is not there, fake crefs
+             (foundCref, foundScope, state) := createVirtualCrefs(cref.componentRef, node, foundCref, foundScope, state);
+          end try;
+        else
+          (foundCref, foundScope, state) := lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
+        end if;
       then
-        lookupCrefInNode(cref.componentRef, node, foundCref, foundScope, state);
+        (foundCref, foundScope, state);
 
     case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
       then lookupCref(cref.componentRef, InstNode.topScope(scope));
@@ -274,6 +285,58 @@ algorithm
       then (ComponentRef.WILD(), scope, LookupState.PREDEF_COMP());
   end match;
 end lookupCref;
+
+function createVirtualCrefs
+  "This function will create virtual crefs for the expandable connectors"
+  input Absyn.ComponentRef cref;
+  input InstNode node;
+  input output ComponentRef foundCref;
+  input output InstNode foundScope;
+  input output LookupState state;
+protected
+  SCode.Element definition;
+  InstNode crefNode;
+algorithm
+  (foundCref, foundScope, state) := match cref
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        definition :=
+          SCode.COMPONENT(
+            cref.name,
+            SCode.defaultPrefixes,
+            SCode.defaultVarAttr,
+            Absyn.TPATH(Absyn.IDENT("Any"), NONE()),
+            SCode.NOMOD(),
+            SCode.COMMENT(NONE(), SOME("virtual expandable component")),
+            NONE(),
+            Absyn.dummyInfo);
+        crefNode := InstNode.newComponent(definition, node);
+        foundCref := ComponentRef.fromAbsyn(crefNode, cref.subscripts, foundCref);
+        state := LookupState.nodeState(crefNode);
+      then
+        (foundCref, foundScope, state);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        definition :=
+          SCode.COMPONENT(
+            cref.name,
+            SCode.defaultPrefixes,
+            SCode.defaultVarAttr,
+            Absyn.TPATH(Absyn.IDENT("Any"), NONE()),
+            SCode.NOMOD(),
+            SCode.COMMENT(NONE(), SOME("virtual expandable component")),
+            NONE(),
+            Absyn.dummyInfo);
+        crefNode := InstNode.newComponent(definition, node);
+        foundCref := ComponentRef.fromAbsyn(crefNode, cref.subscripts, foundCref);
+        state := LookupState.nodeState(crefNode);
+        (foundCref, foundScope, state) :=
+           createVirtualCrefs(cref.componentRef, node, foundCref, foundScope, state);
+      then
+        (foundCref, foundScope, state);
+  end match;
+end createVirtualCrefs;
 
 function lookupLocalCref
   "Looks up a cref in the local scope without going into any enclosing scopes."

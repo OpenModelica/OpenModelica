@@ -87,6 +87,7 @@ import Direction = NFPrefixes.Direction;
 import ElementSource;
 import StringUtil;
 import NFOCConnectionGraph;
+import System;
 
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
@@ -2006,6 +2007,14 @@ algorithm
           typeComponentSections(InstNode.resolveOuter(c), origin);
         end for;
 
+        // we need to update the ClassTree and add the expandable virtual components from the connects
+        if System.getHasExpandableConnectors() then
+          // collect the expandable virtual components from the connect equations
+
+          // create the components inside the existing expandable connectors
+        end if;
+
+
         InstNode.updateClass(typed_cls, classNode);
       then
         ();
@@ -2378,8 +2387,18 @@ algorithm
   end if;
 
   next_origin := intBitOr(origin, ExpOrigin.CONNECT);
-  (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, next_origin, info, replaceConstants = false);
-  (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, next_origin, info, replaceConstants = false);
+
+  try // try the normal stuff first!
+    (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, next_origin, info, replaceConstants = false);
+    (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, next_origin, info, replaceConstants = false);
+  else // either is an error or there are expandable connectors in there
+    // check if any of them are expandable connectors!
+    if InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(lhsConn))) or
+       InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(rhsConn)))
+    then // handle expandable
+      (lhs, rhs, lhs_ty, lhs_var, rhs_ty, rhs_var) := typeExpandableConnectors(lhsConn, rhsConn, next_origin, info, replaceConstants = false);
+    end if;
+  end try;
 
   checkConnector(lhs, info);
   checkConnector(rhs, info);
@@ -2416,6 +2435,82 @@ algorithm
   connEq := Equation.CONNECT(lhs, rhs, eql, source);
 end typeConnect;
 
+function typeExpandableConnectors
+  input output Expression lhs;
+  input output Expression rhs;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+  input Boolean replaceConstants = true;
+        output Type tyLHS;
+        output Variability variabilityLHS;
+        output Type tyRHS;
+        output Variability variabilityRHS;
+algorithm
+  // first, try to type both of them, they might already exist
+  try
+    (lhs, tyLHS, variabilityLHS) := typeExp(lhs, origin, info, replaceConstants = false);
+    (rhs, tyRHS, variabilityRHS) := typeExp(rhs, origin, info, replaceConstants = false);
+    return;
+  else
+    // do nothing, continue
+  end try;
+
+  // lhs existing, type it and use it!
+  if InstNode.isConnector(ComponentRef.node(Expression.toCref(lhs))) then
+    (lhs, tyLHS, variabilityLHS) := typeExp(lhs, origin, info, replaceConstants = false);
+    tyRHS := tyLHS;
+    variabilityRHS := variabilityLHS;
+    rhs := updateVirtualCrefExp(rhs, lhs, tyLHS, variabilityLHS);
+    return;
+  end if;
+
+  // rhs existing, reuse the case above
+  (rhs, lhs, tyRHS, variabilityRHS, tyLHS, variabilityLHS) := typeExpandableConnectors(rhs, lhs, origin, info, replaceConstants = false);
+
+  if InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(rhs))) or
+     InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(rhs)))
+  then
+    // error, we don't handle this case yet!
+  end if;
+end typeExpandableConnectors;
+
+function updateVirtualCrefExp
+  input output Expression virtual;
+  input Expression existing;
+  input Type ty;
+  input Variability var;
+protected
+  ComponentRef v, e;
+algorithm
+  virtual := match(virtual, existing)
+    case (Expression.CREF(_, v), Expression.CREF(_, e)) then Expression.CREF(ty, updateVirtualCref(v, e, ty, var));
+  end match;
+end updateVirtualCrefExp;
+
+function updateVirtualCref
+  input output ComponentRef virtual;
+  input ComponentRef existing;
+  input Type ty;
+  input Variability var;
+protected
+  InstNode e;
+algorithm
+ virtual := match (virtual, existing)
+      case (ComponentRef.CREF(), ComponentRef.CREF())
+        algorithm
+          virtual.ty := existing.ty;
+          // set the correct parrent
+          e := InstNode.setParent(existing.node, ComponentRef.node(virtual.restCref));
+          // change the name!
+          e := InstNode.rename(InstNode.name(virtual.node), e);
+          virtual.node := e;
+          virtual.origin := existing.origin;
+        then
+          virtual;
+
+    end match;
+end updateVirtualCref;
+
 function checkConnector
   input Expression connExp;
   input SourceInfo info;
@@ -2426,12 +2521,17 @@ algorithm
     case Expression.CREF(cref = cr as ComponentRef.CREF(origin = Origin.CREF))
       algorithm
         if not InstNode.isConnector(cr.node) then
-          Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
-            {ComponentRef.toString(cr)}, info);
-          fail();
+          if not InstNode.hasParentExpandableConnector(cr.node) then
+            Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
+              {ComponentRef.toString(cr)}, info);
+            fail();
+          end if;
         end if;
 
-        checkConnectorForm(cr, info);
+        // expandable connectors can have the form eC.C.m, eC.m
+        if not InstNode.hasParentExpandableConnector(cr.node) then
+          checkConnectorForm(cr, info);
+        end if;
       then
         ();
 

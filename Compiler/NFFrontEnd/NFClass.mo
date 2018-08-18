@@ -469,6 +469,11 @@ uniontype Class
     output Boolean isConnector = Restriction.isConnector(restriction(cls));
   end isConnectorClass;
 
+  function isExpandableConnectorClass
+    input Class cls;
+    output Boolean isConnector = Restriction.isExpandableConnector(restriction(cls));
+  end isExpandableConnectorClass;
+
   function isExternalObject
     input Class cls;
     output Boolean isExternalObject = Restriction.isExternalObject(restriction(cls));

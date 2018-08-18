@@ -398,6 +398,34 @@ uniontype InstNode
     end match;
   end isConnector;
 
+  function isExpandableConnector
+    input InstNode node;
+    output Boolean isConnector;
+  algorithm
+    isConnector := match node
+      case COMPONENT_NODE() then Component.isExpandableConnector(component(node));
+      else false;
+    end match;
+  end isExpandableConnector;
+
+  function hasParentExpandableConnector
+  "@author: adrpo
+   returns true if itself or any of the parents are expandable connectors"
+    input InstNode node;
+    output Boolean b = isExpandableConnector(node);
+  protected
+    InstNode p;
+  algorithm
+    p := node;
+    while not isEmpty(p) loop
+      p := parent(p);
+      b := boolOr(b, isExpandableConnector(p));
+      if b then
+        break;
+      end if;
+    end while;
+  end hasParentExpandableConnector;
+
   function name
     input InstNode node;
     output String name;
