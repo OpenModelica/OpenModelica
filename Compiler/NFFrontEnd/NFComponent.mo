@@ -780,34 +780,22 @@ uniontype Component
     list<Modifier> typeAttrs = {};
     Binding binding;
   algorithm
-    try
-	    typeAttrs := match (component)
-	      case (TYPED_COMPONENT())
-	        then Class.getTypeAttributes(InstNode.getClass(component.classInst));
-	      else {};
-	    end match;
-	  else
-	    typeAttrs := {};
-	  end try;
-    if listEmpty(typeAttrs) then
-      // for parameters the default is fixed = true
-      if isParameter(component) then
-        fixed := true;
-      else
-        fixed := false;
-      end if;
+    // for parameters the default is fixed = true
+    if isParameter(component) or isStructuralParameter(component) then
+      fixed := true;
+    else
+      fixed := false;
+    end if;
+
+    binding := Class.lookupAttributeBinding("fixed", InstNode.getClass(classInstance(component)));
+
+    // no fixed attribute present
+    if Binding.isUnbound(binding) then
       return;
     end if;
-    for m in typeAttrs loop
-      fixed := matchcontinue(m)
-        case Modifier.MODIFIER(name = "fixed", binding = binding)
-          algorithm
-            fixed := fixed and Expression.isTrue(Binding.getTypedExp(binding));
-          then
-            fixed;
-         else fixed;
-      end matchcontinue;
-    end for;
+
+    fixed := fixed and Expression.isTrue(Binding.getTypedExp(binding));
+
   end getFixedAttribute;
 
   function isDeleted

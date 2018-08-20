@@ -303,6 +303,13 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isUnbound(binding) then
+   // use the start value only if the component is a parameter(fixed=true)
+   if Component.getFixedAttribute(comp) and (Component.isParameter(comp) or Component.isStructuralParameter(comp)) then
+     binding := Class.lookupAttributeBinding("start", InstNode.getClass(node));
+   end if;
+  end if;
+
+  if Binding.isUnbound(binding) then
     binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
   end if;
 
