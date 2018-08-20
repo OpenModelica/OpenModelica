@@ -14,8 +14,8 @@ omplot: omc
 omedit: omc omplot omsimulator
 	$(MAKE) -C OMEdit
 omsimulator:
-	$(MAKE) -C OMSimulator config-3rdParty
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@
+	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF
 	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@
 omnotebook: omc omplot
 	$(MAKE) -C OMNotebook
