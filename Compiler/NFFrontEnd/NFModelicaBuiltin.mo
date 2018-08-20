@@ -358,8 +358,9 @@ end cross;
 function skew "The skew matrix associated with the vector"
   input Real[3] x;
   output Real[3,3] y;
-external "builtin" skew(x,y);
-  annotation(Documentation(info="<html>
+algorithm
+  y := {{0, -x[3], x[2]}, {x[3], 0, -x[1]}, {-x[2], x[1], 0}};
+annotation(__OpenModelica_EarlyInline = true, preferredView = "text", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'skew()'\">skew()</a>
 </html>"));
 end skew;
