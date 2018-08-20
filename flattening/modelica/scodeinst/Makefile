@@ -692,6 +692,8 @@ Subscript1.mo \
 Subscript2.mo \
 Subscript3.mo \
 Subscript4.mo \
+Subscript5.mo \
+Subscript6.mo \
 SubscriptCevalIndex1.mo \
 SubscriptCevalIndexRange1.mo \
 SubscriptCevalSlice1.mo \
