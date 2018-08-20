@@ -539,6 +539,16 @@ public
     end match;
   end hasKnownSize;
 
+  function hasZeroDimension
+    input Type ty;
+    output Boolean hasZero;
+  algorithm
+    hasZero := match ty
+      case ARRAY() then List.exist(ty.dimensions, Dimension.isZero);
+      else false;
+    end match;
+  end hasZeroDimension;
+
   function mapDims
     input output Type ty;
     input FuncT func;

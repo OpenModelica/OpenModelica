@@ -63,6 +63,10 @@ public
     Expression slice;
   end SLICE;
 
+  record EXPANDED_SLICE
+    list<Subscript> indices;
+  end EXPANDED_SLICE;
+
   record WHOLE end WHOLE;
 
   function fromExp
@@ -295,6 +299,8 @@ public
       case UNTYPED() then Expression.toString(subscript.exp);
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);
+      case EXPANDED_SLICE()
+        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
     end match;
   end toString;
@@ -338,7 +344,7 @@ public
     end match;
   end toDimension;
 
-  function expand
+  function scalarize
     input Subscript subscript;
     input Dimension dimension;
     output list<Subscript> subscripts;
@@ -350,9 +356,9 @@ public
       case WHOLE()
         then RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex);
     end match;
-  end expand;
+  end scalarize;
 
-  function expandList
+  function scalarizeList
     input list<Subscript> subscripts;
     input list<Dimension> dimensions;
     output list<list<Subscript>> outSubscripts = {};
@@ -363,7 +369,7 @@ public
   algorithm
     for s in subscripts loop
       dim :: rest_dims := rest_dims;
-      subs := expand(s, dim);
+      subs := scalarize(s, dim);
 
       if listEmpty(subs) then
         outSubscripts := {};
@@ -382,6 +388,42 @@ public
       else
         outSubscripts := subs :: outSubscripts;
       end if;
+    end for;
+
+    outSubscripts := listReverse(outSubscripts);
+  end scalarizeList;
+
+  function expand
+    input Subscript subscript;
+    input Dimension dimension;
+    output Subscript outSubscript;
+  algorithm
+    outSubscript := match subscript
+      case INDEX() then subscript;
+      case SLICE()
+        then EXPANDED_SLICE(list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice))));
+      case WHOLE() then EXPANDED_SLICE(RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex));
+    end match;
+  end expand;
+
+  function expandList
+    input list<Subscript> subscripts;
+    input list<Dimension> dimensions;
+    output list<Subscript> outSubscripts = {};
+  protected
+    Dimension dim;
+    list<Dimension> rest_dims = dimensions;
+    Subscript sub;
+  algorithm
+    for s in subscripts loop
+      dim :: rest_dims := rest_dims;
+      sub := expand(s, dim);
+      outSubscripts := sub :: outSubscripts;
+    end for;
+
+    for d in rest_dims loop
+      sub := EXPANDED_SLICE(RangeIterator.map(RangeIterator.fromDim(d), makeIndex));
+      outSubscripts := sub :: outSubscripts;
     end for;
 
     outSubscripts := listReverse(outSubscripts);

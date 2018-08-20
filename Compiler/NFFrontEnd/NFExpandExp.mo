@@ -111,21 +111,24 @@ public
     output Expression arrayExp;
     output Boolean expanded;
   protected
-    list<list<list<Subscript>>> subs;
+    list<list<Subscript>> subs;
   algorithm
     (arrayExp, expanded) := match crefExp
       case Expression.CREF(cref = ComponentRef.CREF())
-        guard Type.hasKnownSize(crefExp.ty)
         algorithm
-          subs := expandCref2(crefExp.cref);
-
-          if listEmpty(subs) then
+          if Type.hasZeroDimension(crefExp.ty) then
             arrayExp := Expression.ARRAY(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.fromInteger(0)}), {});
-          else
+            expanded := true;
+          elseif Type.hasKnownSize(crefExp.ty) then
+            subs := expandCref2(crefExp.cref);
             arrayExp := expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
+            expanded := true;
+          else
+            arrayExp := crefExp;
+            expanded := false;
           end if;
         then
-          (arrayExp, true);
+          (arrayExp, expanded);
 
       else (crefExp, false);
     end match;
@@ -133,9 +136,9 @@ public
 
   function expandCref2
     input ComponentRef cref;
-    input output list<list<list<Subscript>>> subs = {};
+    input output list<list<Subscript>> subs = {};
   protected
-    list<list<Subscript>> cr_subs = {};
+    list<Subscript> cr_subs = {};
     list<Dimension> dims;
 
     import NFComponentRef.Origin;
@@ -154,7 +157,7 @@ public
   end expandCref2;
 
   function expandCref3
-    input list<list<list<Subscript>>> subs;
+    input list<list<Subscript>> subs;
     input ComponentRef cref;
     input Type crefType;
     input list<list<Subscript>> accum = {};
@@ -167,26 +170,29 @@ public
   end expandCref3;
 
   function expandCref4
-    input list<list<Subscript>> subs;
+    input list<Subscript> subs;
     input list<Subscript> comb = {};
     input list<list<Subscript>> accum = {};
-    input list<list<list<Subscript>>> restSubs;
+    input list<list<Subscript>> restSubs;
     input ComponentRef cref;
     input Type crefType;
     output Expression arrayExp;
   protected
     list<Expression> expl = {};
     Type arr_ty;
+    list<Subscript> slice, rest;
   algorithm
     arrayExp := match subs
       case {} then expandCref3(restSubs, cref, crefType, listReverse(comb) :: accum);
-      else
+
+      case Subscript.EXPANDED_SLICE(indices = slice) :: rest
         algorithm
-          expl := list(expandCref4(listRest(subs), sub :: comb, accum, restSubs, cref, crefType)
-            for sub in listHead(subs));
+          expl := list(expandCref4(rest, idx :: comb, accum, restSubs, cref, crefType) for idx in slice);
           arr_ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), Dimension.fromExpList(expl));
         then
           Expression.ARRAY(arr_ty, expl);
+
+      else expandCref4(listRest(subs), listHead(subs) :: comb, accum, restSubs, cref, crefType);
     end match;
   end expandCref4;
 

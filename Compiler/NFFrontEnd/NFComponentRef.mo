@@ -690,7 +690,7 @@ public
       case CREF(ty = Type.ARRAY())
         algorithm
           dims := Type.arrayDims(cref.ty);
-          subs := Subscript.expandList(cref.subscripts, dims);
+          subs := Subscript.scalarizeList(cref.subscripts, dims);
           subs := List.combination(subs);
         then
           list(setSubscripts(s, cref) for s in subs);
