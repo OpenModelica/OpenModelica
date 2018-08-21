@@ -1039,7 +1039,7 @@ protected
     Function fn;
     list<Dimension> dims;
     Dimension dim1, dim2;
-    Integer i;
+    Integer i, ndims;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("matrix", named_args, info);
@@ -1051,32 +1051,32 @@ protected
 
     (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
     dims := Type.arrayDims(ty);
+    ndims := listLength(dims);
 
-    dims := match listLength(dims)
-      case 0 then {Dimension.fromInteger(1), Dimension.fromInteger(1)};
-      case 1 then {listHead(dims), Dimension.fromInteger(1)};
-      case 2 then dims;
-      else
-        algorithm
-          // matrix requires all but the first two dimensions to have size 1.
-          dim1 :: dim2 :: dims := dims;
-          i := 3;
+    if ndims < 2 then
+      // matrix(A) where A is a scalar or vector returns promote(A, 2).
+      (callExp, ty) := Expression.promote(arg, ty, 2);
+    elseif ndims == 2 then
+      // matrix(A) where A is a matrix just returns A.
+      callExp := arg;
+    else
+      // matrix requires all but the first two dimensions to have size 1.
+      dim1 :: dim2 :: dims := dims;
+      i := 3;
 
-          for dim in dims loop
-            if Dimension.isKnown(dim) and Dimension.size(dim) > 1 then
-              Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
-                {String(i), "matrix", "1", Dimension.toString(dim)}, info);
-            end if;
+      for dim in dims loop
+        if Dimension.isKnown(dim) and Dimension.size(dim) > 1 then
+          Error.addSourceMessageAndFail(Error.INVALID_ARRAY_DIM_IN_CONVERSION_OP,
+            {String(i), "matrix", "1", Dimension.toString(dim)}, info);
+        end if;
 
-            i := i + 1;
-          end for;
-        then
-          {dim1, dim2};
-    end match;
+        i := i + 1;
+      end for;
 
-    ty := Type.ARRAY(Type.arrayElementType(ty), dims);
-    {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+      ty := Type.ARRAY(Type.arrayElementType(ty), {dim1, dim2});
+      {fn} := Function.typeRefCache(fn_ref);
+      callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
+    end if;
   end typeMatrixCall;
 
   function typeCatCall
