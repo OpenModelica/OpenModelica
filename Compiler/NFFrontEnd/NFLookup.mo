@@ -484,7 +484,7 @@ algorithm
       algorithm
         (node, state) := lookupFirstIdent(name.name, scope);
       then
-        lookupLocalName(name.path, node, state, InstNode.refEqual(node, scope));
+        lookupLocalName(name.path, node, state, checkAccessViolations, InstNode.refEqual(node, scope));
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
