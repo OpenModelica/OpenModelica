@@ -138,6 +138,7 @@ SOURCES += main.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
   Editors/CompositeModelEditor.cpp \
+  Editors/OMSimulatorEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Editors/HTMLEditor.cpp \
   Plotting/PlotWindowContainer.cpp \
@@ -220,6 +221,7 @@ HEADERS  += Util/Helper.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
   Editors/CompositeModelEditor.h \
+  Editors/OMSimulatorEditor.h \
   Editors/MetaModelicaEditor.h \
   Editors/HTMLEditor.h \
   Plotting/PlotWindowContainer.h \

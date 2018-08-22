@@ -1715,6 +1715,12 @@ void MainWindow::undo()
     pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelText(false);
   }
+  /* We don't use the editor undo/redo for OMSimulator.
+   * So simply return from here now.
+   */
+  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    return;
+  }
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable())) {
     if (pModelWidget &&
         ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
@@ -1753,6 +1759,12 @@ void MainWindow::redo()
     pModelWidget->getUndoStack()->redo();
     pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelText(false);
+  }
+  /* We don't use the editor undo/redo for OMSimulator.
+   * So simply return from here now.
+   */
+  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    return;
   }
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable())) {
     if (pModelWidget &&
@@ -1808,11 +1820,11 @@ void MainWindow::resetZoom()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible()) {
+    if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pModelWidget->getDiagramGraphicsView()->resetZoom();
-    } else if (pModelWidget->getIconGraphicsView()->isVisible()) {
+    } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->resetZoom();
-    } else if (pModelWidget->getEditor()->isVisible()) {
+    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->getPlainTextEdit()->resetZoom();
     }
   }
@@ -1828,11 +1840,11 @@ void MainWindow::zoomIn()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible()) {
+    if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pModelWidget->getDiagramGraphicsView()->zoomIn();
-    } else if (pModelWidget->getIconGraphicsView()->isVisible()) {
+    } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->zoomIn();
-    } else if (pModelWidget->getEditor()->isVisible()) {
+    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->getPlainTextEdit()->zoomIn();
     }
   }
@@ -1848,11 +1860,11 @@ void MainWindow::zoomOut()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-    if (pModelWidget->getDiagramGraphicsView()->isVisible()) {
+    if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pModelWidget->getDiagramGraphicsView()->zoomOut();
-    } else if (pModelWidget->getIconGraphicsView()->isVisible()) {
+    } else if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
       pModelWidget->getIconGraphicsView()->zoomOut();
-    } else if (pModelWidget->getEditor()->isVisible()) {
+    } else if (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()) {
       pModelWidget->getEditor()->getPlainTextEdit()->zoomOut();
     }
   }

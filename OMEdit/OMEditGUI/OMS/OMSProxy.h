@@ -69,6 +69,7 @@ public:
   bool rename(QString identOld, QString identNew);
   bool loadModel(QString filename, QString* pModelName);
   bool saveModel(QString filename, QString ident);
+  bool listModel(QString ident, QString *pContents);
   bool getElement(QString cref, oms_element_t** pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
   bool getElements(QString cref, oms_element_t*** pElements);

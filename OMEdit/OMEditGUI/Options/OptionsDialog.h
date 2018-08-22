@@ -52,6 +52,7 @@ class TextEditorPage;
 class ModelicaEditorPage;
 class MetaModelicaEditorPage;
 class CompositeModelEditorPage;
+class OMSimulatorEditorPage;
 class CEditorPage;
 class HTMLEditorPage;
 class GraphicalViewsPage;
@@ -91,6 +92,7 @@ public:
   void readModelicaEditorSettings();
   void readMetaModelicaEditorSettings();
   void readCompositeModelEditorSettings();
+  void readOMSimulatorEditorSettings();
   void readCEditorSettings();
   void readHTMLEditorSettings();
   void readGraphicalViewsSettings();
@@ -112,6 +114,7 @@ public:
   void saveModelicaEditorSettings();
   void saveMetaModelicaEditorSettings();
   void saveCompositeModelEditorSettings();
+  void saveOMSimulatorEditorSettings();
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
   void saveTLMSettings();
@@ -136,6 +139,7 @@ public:
   ModelicaEditorPage* getModelicaEditorPage() {return mpModelicaEditorPage;}
   MetaModelicaEditorPage* getMetaModelicaEditorPage() {return mpMetaModelicaEditorPage;}
   CompositeModelEditorPage* getCompositeModelEditorPage() {return mpCompositeModelEditorPage;}
+  OMSimulatorEditorPage* getOMSimulatorEditorPage() {return mpOMSimulatorEditorPage;}
   CEditorPage* getCEditorPage() {return mpCEditorPage;}
   HTMLEditorPage* getHTMLEditorPage() {return mpHTMLEditorPage;}
   GraphicalViewsPage* getGraphicalViewsPage() {return mpGraphicalViewsPage;}
@@ -160,6 +164,7 @@ signals:
   void modelicaEditorSettingsChanged();
   void metaModelicaEditorSettingsChanged();
   void compositeModelEditorSettingsChanged();
+  void omsimulatorEditorSettingsChanged();
   void cEditorSettingsChanged();
   void HTMLEditorSettingsChanged();
 public slots:
@@ -173,6 +178,7 @@ private:
   ModelicaEditorPage *mpModelicaEditorPage;
   MetaModelicaEditorPage *mpMetaModelicaEditorPage;
   CompositeModelEditorPage *mpCompositeModelEditorPage;
+  OMSimulatorEditorPage *mpOMSimulatorEditorPage;
   CEditorPage *mpCEditorPage;
   HTMLEditorPage *mpHTMLEditorPage;
   GraphicalViewsPage *mpGraphicalViewsPage;
@@ -436,6 +442,24 @@ class CompositeModelEditorPage : public QWidget
   Q_OBJECT
 public:
   CompositeModelEditorPage(OptionsDialog *pOptionsDialog);
+  OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
+  void setColor(QString item, QColor color);
+  QColor getColor(QString item);
+  void emitUpdatePreview() {emit updatePreview();}
+private:
+  OptionsDialog *mpOptionsDialog;
+  CodeColorsWidget *mpCodeColorsWidget;
+signals:
+  void updatePreview();
+public slots:
+  void setLineWrapping(bool enabled);
+};
+
+class OMSimulatorEditorPage : public QWidget
+{
+  Q_OBJECT
+public:
+  OMSimulatorEditorPage(OptionsDialog *pOptionsDialog);
   OptionsDialog* getOptionsDialog() {return mpOptionsDialog;}
   void setColor(QString item, QColor color);
   QColor getColor(QString item);

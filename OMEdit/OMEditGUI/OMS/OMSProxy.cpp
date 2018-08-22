@@ -351,6 +351,25 @@ bool OMSProxy::saveModel(QString filename, QString ident)
 }
 
 /*!
+ * \brief OMSProxy::listModel
+ * Lists the contents of a composite model.
+ * Since memory is allocated in oms2_listModel so we need to call free.
+ * \param ident
+ * \param pContents
+ * \return
+ */
+bool OMSProxy::listModel(QString ident, QString *pContents)
+{
+  char* contents = NULL;
+  oms_status_enu_t status = oms2_listModel(ident.toStdString().c_str(), &contents);
+  if (contents) {
+    *pContents = QString(contents);
+    free(contents);
+  }
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getElement
  * Gets the model element
  * \param cref

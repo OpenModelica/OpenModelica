@@ -3646,7 +3646,7 @@ void ModelWidget::createModelWidgetComponents()
         pCompositeModelEditor->setPlainText(defaultCompositeModelText);
         mpLibraryTreeItem->setClassText(defaultCompositeModelText);
       } else {
-        pCompositeModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()));
+        pCompositeModelEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
       }
       CompositeModelHighlighter *pCompositeModelHighlighter = new CompositeModelHighlighter(OptionsDialog::instance()->getCompositeModelEditorPage(),
                                                                                             mpEditor->getPlainTextEdit());
@@ -3672,6 +3672,27 @@ void ModelWidget::createModelWidgetComponents()
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
+      // Only the top level OMSimualtor models will have the editor.
+      if (mpLibraryTreeItem->isTopLevel()) {
+        connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
+        pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
+        // create an xml editor for CompositeModel
+        mpEditor = new OMSimulatorEditor(this);
+        OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
+        if (mpLibraryTreeItem->getFileName().isEmpty()) {
+          QString contents;
+          if (OMSProxy::instance()->listModel(mpLibraryTreeItem->getNameStructure(), &contents)) {
+            pOMSimulatorEditor->setPlainText(contents, false);
+            mpLibraryTreeItem->setClassText(contents);
+          }
+        } else {
+          pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
+        }
+        OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(),
+                                                                                     mpEditor->getPlainTextEdit());
+        mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
+        connect(OptionsDialog::instance(), SIGNAL(omsimulatorEditorSettingsChanged()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
+      }
       // only get the components and connections if the we are not creating a new class.
       if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi &&
           !mpLibraryTreeItem->getFileName().isEmpty()) {
@@ -3692,7 +3713,7 @@ void ModelWidget::createModelWidgetComponents()
       }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
     }
-    if (mpLibraryTreeItem->getLibraryType() != LibraryTreeItem::OMS) {
+    if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
       pMainLayout->addWidget(mpEditor, 1);
@@ -3825,13 +3846,12 @@ void ModelWidget::reDrawModelWidget()
  */
 bool ModelWidget::validateText(LibraryTreeItem **pLibraryTreeItem)
 {
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    return true;
-  }
   if (ModelicaEditor *pModelicaEditor = dynamic_cast<ModelicaEditor*>(mpEditor)) {
     return pModelicaEditor->validateText(pLibraryTreeItem);
   } else if (CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpEditor)) {
     return pCompositeModelEditor->validateText();
+  } else if (OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor)) {
+    return pOMSimulatorEditor->validateText();
   } else {
     return true;
   }
@@ -4038,7 +4058,10 @@ void ModelWidget::updateModelText(bool updateText)
     return;
   }
   setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
-  if (updateText) {
+  /* We don't use the editor undo/redo in MainWindow::undo/redo for OMSimulator.
+   * So always call LibraryTreeModel::updateLibraryTreeItemClassText() to get the updated text.
+   */
+  if (updateText || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
   } else {
     mpLibraryTreeItem->setIsSaved(false);
@@ -5835,9 +5858,7 @@ void ModelWidget::showDiagramView(bool checked)
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     mpIconGraphicsView->hide();
   }
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
-      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel
-      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+  if (mpEditor) {
     mpEditor->hide();
   }
   mpDiagramGraphicsView->show();
@@ -5866,9 +5887,7 @@ void ModelWidget::showTextView(bool checked)
     mpIconGraphicsView->hide();
   }
   mpDiagramGraphicsView->hide();
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
-      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel
-      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
+  if (mpEditor) {
     mpEditor->show();
     mpEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
     mpEditor->getPlainTextEdit()->updateCursorPosition();
@@ -5953,6 +5972,20 @@ bool ModelWidget::compositeModelEditorTextChanged()
   /* get the model components and connectors */
   reDrawModelWidget();
   return true;
+}
+
+/*!
+ * \brief ModelWidget::omsimulatorEditorTextChanged
+ * Called when OMSimulatorEditor text has been changed by user manually.\n
+ * Updates the LibraryTreeItem and ModelWidget with new changes.
+ * \return
+ */
+bool ModelWidget::omsimulatorEditorTextChanged()
+{
+  /*! @todo For now return false.
+   * We need an API call oms2_loadModelFromString() or something similar to load the changed model back.
+   */
+  return false;
 }
 
 /*!
@@ -6077,13 +6110,16 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->getEditor()->show();
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel
+             || (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+                 && pModelWidget->getLibraryTreeItem()->isTopLevel())) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
+             && !pModelWidget->getLibraryTreeItem()->isTopLevel()) {
     pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   pModelWidget->updateViewButtonsBasedOnAccess();
@@ -6393,7 +6429,8 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel
+             || pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
       case StringHandler::ModelicaText:
         pModelWidget->getTextViewToolButton()->setChecked(true);

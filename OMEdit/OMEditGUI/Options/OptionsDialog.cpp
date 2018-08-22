@@ -91,6 +91,9 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpCompositeModelEditorPage = new CompositeModelEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCompositeModelEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCompositeModelEditorPage, SIGNAL(updatePreview()));
+  mpOMSimulatorEditorPage = new OMSimulatorEditorPage(this);
+  connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
+  connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpOMSimulatorEditorPage, SIGNAL(updatePreview()));
   mpCEditorPage = new CEditorPage(this);
   connect(mpTextEditorPage->getFontFamilyComboBox(), SIGNAL(currentFontChanged(QFont)), mpCEditorPage, SIGNAL(updatePreview()));
   connect(mpTextEditorPage->getFontSizeSpinBox(), SIGNAL(valueChanged(double)), mpCEditorPage, SIGNAL(updatePreview()));
@@ -132,6 +135,9 @@ void OptionsDialog::readSettings()
   readCompositeModelEditorSettings();
   emit compositeModelEditorSettingsChanged();
   mpCompositeModelEditorPage->emitUpdatePreview();
+  readOMSimulatorEditorSettings();
+  emit omsimulatorEditorSettingsChanged();
+  mpOMSimulatorEditorPage->emitUpdatePreview();
   readCEditorSettings();
   emit cEditorSettingsChanged();
   mpCEditorPage->emitUpdatePreview();
@@ -412,6 +418,29 @@ void OptionsDialog::readCompositeModelEditorSettings()
   }
   if (mpSettings->contains("compositeModelEditor/elementsRuleColor")) {
     mpCompositeModelEditorPage->setColor("Element", QColor(mpSettings->value("compositeModelEditor/elementsRuleColor").toUInt()));
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readOMSCompositeModelEditorSettings
+ * Reads the OMSCompositeModelEditor settings from omedit.ini
+ */
+void OptionsDialog::readOMSimulatorEditorSettings()
+{
+  if (mpSettings->contains("omsimulatorEditor/textRuleColor")) {
+    mpOMSimulatorEditorPage->setColor("Text", QColor(mpSettings->value("omsimulatorEditor/textRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("omsimulatorEditor/commentRuleColor")) {
+    mpOMSimulatorEditorPage->setColor("Comment", QColor(mpSettings->value("omsimulatorEditor/commentRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("omsimulatorEditor/tagRuleColor")) {
+    mpOMSimulatorEditorPage->setColor("Tag", QColor(mpSettings->value("omsimulatorEditor/tagRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("omsimulatorEditor/quotesRuleColor")) {
+    mpOMSimulatorEditorPage->setColor("Quotes", QColor(mpSettings->value("omsimulatorEditor/quotesRuleColor").toUInt()));
+  }
+  if (mpSettings->contains("omsimulatorEditor/elementsRuleColor")) {
+    mpOMSimulatorEditorPage->setColor("Element", QColor(mpSettings->value("omsimulatorEditor/elementsRuleColor").toUInt()));
   }
 }
 
@@ -1022,6 +1051,19 @@ void OptionsDialog::saveCompositeModelEditorSettings()
 }
 
 /*!
+ * \brief OptionsDialog::saveOMSimulatorEditorSettings
+ * Saves the OMSimulatorEditor settings to omedit.ini
+ */
+void OptionsDialog::saveOMSimulatorEditorSettings()
+{
+  mpSettings->setValue("omsimulatorEditor/textRuleColor", mpOMSimulatorEditorPage->getColor("Text").rgba());
+  mpSettings->setValue("omsimulatorEditor/commentRuleColor", mpOMSimulatorEditorPage->getColor("Comment").rgba());
+  mpSettings->setValue("omsimulatorEditor/tagRuleColor", mpOMSimulatorEditorPage->getColor("Tag").rgba());
+  mpSettings->setValue("omsimulatorEditor/quotesRuleColor", mpOMSimulatorEditorPage->getColor("Quotes").rgba());
+  mpSettings->setValue("omsimulatorEditor/elementsRuleColor", mpOMSimulatorEditorPage->getColor("Element").rgba());
+}
+
+/*!
  * \brief OptionsDialog::saveCEditorSettings
  * Saves the CEditor settings to omedit.ini
  */
@@ -1371,6 +1413,10 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pCompositeModelEditorItem = new QListWidgetItem(mpOptionsList);
   pCompositeModelEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
   pCompositeModelEditorItem->setText(tr("CompositeModel Editor"));
+  // OMSimulator Editor Item
+  QListWidgetItem *pOMSimulatorEditorItem = new QListWidgetItem(mpOptionsList);
+  pOMSimulatorEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
+  pOMSimulatorEditorItem->setText(tr("OMSimulator Editor"));
   // C/C++ Editor Item
   QListWidgetItem *pCEditorItem = new QListWidgetItem(mpOptionsList);
   pCEditorItem->setIcon(QIcon(":/Resources/icons/modeltext.svg"));
@@ -1444,6 +1490,7 @@ void OptionsDialog::createPages()
   mpPagesWidget->addWidget(mpModelicaEditorPage);
   mpPagesWidget->addWidget(mpMetaModelicaEditorPage);
   mpPagesWidget->addWidget(mpCompositeModelEditorPage);
+  mpPagesWidget->addWidget(mpOMSimulatorEditorPage);
   mpPagesWidget->addWidget(mpCEditorPage);
   mpPagesWidget->addWidget(mpHTMLEditorPage);
   mpPagesWidget->addWidget(mpGraphicalViewsPage);
@@ -1537,6 +1584,8 @@ void OptionsDialog::saveSettings()
   emit metaModelicaEditorSettingsChanged();
   saveCompositeModelEditorSettings();
   emit compositeModelEditorSettingsChanged();
+  saveOMSimulatorEditorSettings();
+  emit omsimulatorEditorSettingsChanged();
   saveCEditorSettings();
   emit cEditorSettingsChanged();
   saveHTMLEditorSettings();
@@ -2733,6 +2782,109 @@ QColor CompositeModelEditorPage::getColor(QString item)
  * Sets the mpPreviewPlainTextBox line wrapping mode.
  */
 void CompositeModelEditorPage::setLineWrapping(bool enabled)
+{
+  if (enabled) {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  } else {
+    mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::NoWrap);
+  }
+}
+
+/*!
+ * \class OMSimulatorEditorPage
+ * \brief Creates an interface for OMS CompositeModel Text settings.
+ */
+/*!
+ * \brief OMSimulatorEditorPage::OMSimulatorEditorPage
+ * \param pOptionsDialog is the pointer to OptionsDialog
+ */
+OMSimulatorEditorPage::OMSimulatorEditorPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  // code colors widget
+  mpCodeColorsWidget = new CodeColorsWidget(this);
+  connect(mpCodeColorsWidget, SIGNAL(colorUpdated()), SIGNAL(updatePreview()));
+  // Add items to list
+  // tag (blue)
+  new ListWidgetItem("Tag", QColor(0, 0, 255), mpCodeColorsWidget->getItemsListWidget());
+  // element (blue)
+  new ListWidgetItem("Element", QColor(0, 0, 255), mpCodeColorsWidget->getItemsListWidget());
+  // quotes (dark red)
+  new ListWidgetItem("Quotes", QColor(139, 0, 0), mpCodeColorsWidget->getItemsListWidget());
+  // comment (dark green)
+  new ListWidgetItem("Comment", QColor(0, 150, 0), mpCodeColorsWidget->getItemsListWidget());
+  // preview textbox
+  QString previewText;
+  previewText.append("<!-- This is a comment. -->\n"
+                     "<ssd:SystemStructureDescription name=\"model\">"
+                     "\t<ssd:System name=\"model\">\n"
+                     "\t\t<ssd:Component name=\"adder1\" type=\"application/x-fmu-sharedlibrary\" source=\"FMUs/adder.fmu\">\n"
+                     "\t\t\t<ssd:ElementGeometry x1=\"40\" y1=\"20\" x2=\"60\" y2=\"40\" rotation=\"0\" iconRotation=\"0\" iconFlip=\"false\" iconFixedAspectRatio=\"false\" />\n"
+                     "\t\t\t<ssd:Connectors />\n"
+                     "\t\t</ssd:Component>\n"
+                     "\t\t<ssd:Connections />\n"
+                     "\t</ssd:System>\n"
+                     "\t<ssd:DefaultExperiment startTime=\"0\" stopTime=\"5\" />\n"
+                     "</ssd:SystemStructureDescription>");
+  mpCodeColorsWidget->getPreviewPlainTextEdit()->setPlainText(previewText);
+  // highlight preview textbox
+  OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(this, mpCodeColorsWidget->getPreviewPlainTextEdit());
+  connect(this, SIGNAL(updatePreview()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getSyntaxHighlightingGroupBox(), SIGNAL(toggled(bool)),
+          pOMSimulatorHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getMatchParenthesesCommentsQuotesCheckBox(), SIGNAL(toggled(bool)),
+          pOMSimulatorHighlighter, SLOT(settingsChanged()));
+  connect(mpOptionsDialog->getTextEditorPage()->getLineWrappingCheckbox(), SIGNAL(toggled(bool)), this, SLOT(setLineWrapping(bool)));
+  // set the layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->addWidget(mpCodeColorsWidget);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief OMSimulatorEditorPage::setColor
+ * Sets the color of an item.
+ * \param item
+ * \param color
+ */
+void OMSimulatorEditorPage::setColor(QString item, QColor color)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      pListWidgetItem->setColor(color);
+      pListWidgetItem->setForeground(color);
+    }
+  }
+}
+
+/*!
+ * \brief OMSimulatorEditorPage::getColor
+ * Returns the color of an item.
+ * \param item
+ * \return
+ */
+QColor OMSimulatorEditorPage::getColor(QString item)
+{
+  QList<QListWidgetItem*> items = mpCodeColorsWidget->getItemsListWidget()->findItems(item, Qt::MatchExactly);
+  if (items.size() > 0) {
+    ListWidgetItem *pListWidgetItem = dynamic_cast<ListWidgetItem*>(items.at(0));
+    if (pListWidgetItem) {
+      return pListWidgetItem->getColor();
+    }
+  }
+  return QColor(0, 0, 0);
+}
+
+/*!
+ * \brief OMSimulatorEditorPage::setLineWrapping
+ * Slot activated when mpLineWrappingCheckbox toggled SIGNAL is raised.
+ * Sets the mpPreviewPlainTextBox line wrapping mode.
+ */
+void OMSimulatorEditorPage::setLineWrapping(bool enabled)
 {
   if (enabled) {
     mpCodeColorsWidget->getPreviewPlainTextEdit()->setLineWrapMode(QPlainTextEdit::WidgetWidth);

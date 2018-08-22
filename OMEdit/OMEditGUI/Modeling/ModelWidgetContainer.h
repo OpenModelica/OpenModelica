@@ -42,6 +42,7 @@
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include "Editors/CompositeModelEditor.h"
+#include "Editors/OMSimulatorEditor.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
@@ -494,6 +495,7 @@ public slots:
   void makeFileWritAble();
   void showDocumentationView();
   bool compositeModelEditorTextChanged();
+  bool omsimulatorEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
   void removeDynamicResults(QString resultFileName = "");

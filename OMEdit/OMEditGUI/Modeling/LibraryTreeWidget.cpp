@@ -1262,6 +1262,23 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
       updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
       pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
     }
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    if (!pLibraryTreeItem->getModelWidget()) {
+      showModelWidget(pLibraryTreeItem, false);
+    }
+    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->getEditor()) {
+      pLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
+    }
+    QString contents;
+    if (OMSProxy::instance()->listModel(pLibraryTreeItem->getNameStructure(), &contents)) {
+      pLibraryTreeItem->setClassText(contents);
+      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+        OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
+        if (pOMSimulatorEditor) {
+          pOMSimulatorEditor->setPlainText(contents);
+        }
+      }
+    }
   }
 }
 
