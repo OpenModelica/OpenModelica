@@ -45,6 +45,7 @@ protected
   import Ceval = NFCeval;
   import NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
+  import NFPrefixes.Variability;
   import MetaModelica.Dangerous.*;
 
 public
@@ -245,6 +246,9 @@ public
     (outExp, expanded) := match Absyn.pathFirstIdent(fn_path)
       case "cat" then expandBuiltinCat(args, call);
       case "promote" then expandBuiltinPromote(args);
+      case "der" then expandBuiltinGeneric(call);
+      case "pre" then expandBuiltinGeneric(call);
+      case "previous" then expandBuiltinGeneric(call);
     end match;
   end expandBuiltinCall;
 
@@ -281,6 +285,47 @@ public
     (eexp, expanded) := expand(eexp);
     exp := Expression.promote(eexp, Expression.typeOf(eexp), n);
   end expandBuiltinPromote;
+
+  function expandBuiltinGeneric
+    input Call call;
+    output Expression outExp;
+    output Boolean expanded = true;
+  protected
+    Function fn;
+    Type ty;
+    Variability var;
+    NFCall.CallAttributes attr;
+    Expression arg;
+    list<Expression> args, expl;
+  algorithm
+    Call.TYPED_CALL(fn, ty, var, {arg}, attr) := call;
+    ty := Type.arrayElementType(ty);
+    attr.ty := ty;
+
+    (arg, true) := expand(arg);
+    outExp := expandBuiltinGeneric2(arg, fn, ty, var, attr);
+  end expandBuiltinGeneric;
+
+  function expandBuiltinGeneric2
+    input output Expression exp;
+    input Function fn;
+    input Type ty;
+    input Variability var;
+    input NFCall.CallAttributes attr;
+  algorithm
+    exp := match exp
+      local
+        list<Expression> expl;
+
+      case Expression.ARRAY()
+        algorithm
+          expl := list(expandBuiltinGeneric2(e, fn, ty, var, attr) for e in exp.elements);
+        then
+          Expression.ARRAY(Type.setArrayElementType(exp.ty, ty), expl);
+
+      else Expression.CALL(Call.TYPED_CALL(fn, ty, var, {exp}, attr));
+    end match;
+  end expandBuiltinGeneric2;
 
   function expandReduction
     input Expression exp;

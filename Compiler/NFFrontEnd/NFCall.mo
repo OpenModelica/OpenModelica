@@ -651,6 +651,26 @@ uniontype Call
     end match;
   end toDAE;
 
+  function isVectorizeable
+    input Call call;
+    output Boolean isVect;
+  algorithm
+    isVect := match call
+      local
+        String name;
+
+      case TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = name)))
+        then match name
+          case "der" then false;
+          case "pre" then false;
+          case "previous" then false;
+          else true;
+        end match;
+
+      else true;
+    end match;
+  end isVectorizeable;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;

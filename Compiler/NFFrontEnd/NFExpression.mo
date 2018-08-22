@@ -3042,7 +3042,8 @@ public
     input output Boolean hasArrayCall;
   algorithm
     hasArrayCall := match exp
-      case CALL() then Type.isArray(Call.typeOf(exp.call));
+      case CALL() then hasArrayCall or
+                       (Type.isArray(Call.typeOf(exp.call)) and Call.isVectorizeable(exp.call));
       else hasArrayCall;
     end match;
   end hasArrayCall2;
