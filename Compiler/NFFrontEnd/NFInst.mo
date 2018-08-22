@@ -118,7 +118,7 @@ algorithm
   name := Absyn.pathString(classPath);
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo);
+  cls := Lookup.lookupClassName(classPath, top, Absyn.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(), cls);
 
   // Initialize the storage for automatically generated inner elements.

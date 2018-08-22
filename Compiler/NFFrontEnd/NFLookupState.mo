@@ -335,15 +335,19 @@ uniontype LookupState
      print a (hopefully relevant) error message and fail."
     input InstNode node;
     input LookupState currentState;
+    input Boolean checkAccessViolations = true;
     output LookupState nextState;
   protected
     LookupState entry_ty;
     SCode.Element el;
   algorithm
-    // Check that the element is allowed to be accessed given its visibility.
-    checkProtection(node, currentState);
-    // Check that we're allowed to look in the current scope.
-    //checkPackageLikeAccess(inCurrentState, el, inEnv);
+    if checkAccessViolations then
+      // Check that the element is allowed to be accessed given its visibility.
+      checkProtection(node, currentState);
+      // Check that we're allowed to look in the current scope.
+      //checkPackageLikeAccess(inCurrentState, el, inEnv);
+    end if;
+
     // Get the state for the found element, and check that the transition to the
     // new state is valid.
     entry_ty := nodeState(node);

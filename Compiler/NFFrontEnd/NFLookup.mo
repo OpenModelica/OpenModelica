@@ -62,11 +62,12 @@ function lookupClassName
   input Absyn.Path name;
   input InstNode scope;
   input SourceInfo info;
+  input Boolean checkAccessViolations = true;
   output InstNode node;
 protected
   LookupState state;
 algorithm
-  (node, state) := lookupNameWithError(name, scope, info, Error.LOOKUP_ERROR);
+  (node, state) := lookupNameWithError(name, scope, info, Error.LOOKUP_ERROR, checkAccessViolations);
   LookupState.assertClass(state, node, name, info);
 end lookupClassName;
 
@@ -453,11 +454,12 @@ function lookupNameWithError
   input InstNode scope;
   input SourceInfo info;
   input Error.Message errorType;
+  input Boolean checkAccessViolations = true;
   output InstNode node;
   output LookupState state;
 algorithm
   try
-    (node, state) := lookupName(name, scope);
+    (node, state) := lookupName(name, scope, checkAccessViolations);
   else
     Error.addSourceMessage(errorType, {Absyn.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
@@ -467,6 +469,7 @@ end lookupNameWithError;
 function lookupName
   input Absyn.Path name;
   input InstNode scope;
+  input Boolean checkAccessViolations;
   output InstNode node;
   output LookupState state;
 algorithm
@@ -485,7 +488,7 @@ algorithm
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
-      then lookupName(name.path, InstNode.topScope(scope));
+      then lookupName(name.path, InstNode.topScope(scope), checkAccessViolations);
 
   end match;
 end lookupName;
@@ -546,6 +549,7 @@ function lookupLocalName
   input Absyn.Path name;
   input output InstNode node;
   input output LookupState state;
+  input Boolean checkAccessViolations = true;
   input Boolean selfReference = false;
 algorithm
   // Looking something up in a component is only legal when the name begins with
@@ -565,15 +569,15 @@ algorithm
     case Absyn.Path.IDENT()
       algorithm
         node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state);
+        state := LookupState.next(node, state, checkAccessViolations);
       then
         ();
 
     case Absyn.Path.QUALIFIED()
       algorithm
         node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state);
-        (node, state) := lookupLocalName(name.path, node, state);
+        state := LookupState.next(node, state, checkAccessViolations);
+        (node, state) := lookupLocalName(name.path, node, state, checkAccessViolations);
       then
         ();
 
