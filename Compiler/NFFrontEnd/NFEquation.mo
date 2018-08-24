@@ -51,6 +51,13 @@ public
       Variability conditionVar;
       list<Equation> body;
     end BRANCH;
+
+    function toString
+      input Branch branch;
+      output String str;
+    algorithm
+      str := Expression.toString(branch.condition) + " then\n" + toStringList(branch.body);
+    end toString;
   end Branch;
 
   record EQUALITY
@@ -517,6 +524,67 @@ public
       else ();
     end match;
   end foldExp;
+
+  function toString
+    input Equation eq;
+    output String str;
+  algorithm
+    str := match eq
+      local
+        String s1, s2;
+
+      case EQUALITY()
+        then Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+
+      case CREF_EQUALITY()
+        then ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs);
+
+      case ARRAY_EQUALITY()
+        then Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+
+      case CONNECT()
+        then "connect(" + Expression.toString(eq.lhs) + ", " + Expression.toString(eq.rhs) + ")";
+
+      case FOR()
+        algorithm
+          s1 := if isSome(eq.range) then " in " + Expression.toString(Util.getOption(eq.range)) else "";
+          s2 := toStringList(eq.body);
+        then
+          "for " + InstNode.name(eq.iterator) + s1 + " loop\n" + s2 + "end for";
+
+      case IF()
+        then "if " + Branch.toString(listHead(eq.branches)) +
+             List.toString(listRest(eq.branches), Branch.toString, "", "elseif ", "\nelseif ", "", false) +
+             "\nend if";
+
+      case WHEN()
+        then "when " + Branch.toString(listHead(eq.branches)) +
+             List.toString(listRest(eq.branches), Branch.toString, "", "elsewhen ", "\nelsewhen ", "", false) +
+             "\nend when";
+
+      case ASSERT()
+        then "assert(" + Expression.toString(eq.condition) + ", " +
+             Expression.toString(eq.message) + ", " + Expression.toString(eq.level) + ")";
+
+      case TERMINATE()
+        then "terminate( " + Expression.toString(eq.message) + ")";
+
+      case REINIT()
+        then "reinit(" + Expression.toString(eq.cref) + ", " + Expression.toString(eq.reinitExp) + ")";
+
+      case NORETCALL()
+        then Expression.toString(eq.exp);
+
+      else "#UNKNOWN EQUATION#";
+    end match;
+  end toString;
+
+  function toStringList
+    input list<Equation> eql;
+    output String str;
+  algorithm
+    str := List.toString(eql, toString, "", "  ", "\n  ", "", false) + "\n";
+  end toStringList;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;

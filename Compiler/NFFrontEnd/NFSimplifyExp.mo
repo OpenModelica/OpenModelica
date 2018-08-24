@@ -388,7 +388,13 @@ algorithm
   subscriptedExp := simplify(e);
 
   for s in subs loop
-    subscriptedExp := Expression.applyIndexSubscript(simplify(s), subscriptedExp);
+    s := simplify(s);
+
+    if Type.isArray(Expression.typeOf(s)) then
+      subscriptedExp := Expression.applySliceSubscript(s, subscriptedExp);
+    else
+      subscriptedExp := Expression.applyIndexSubscript(s, subscriptedExp);
+    end if;
   end for;
 end simplifySubscriptedExp;
 
