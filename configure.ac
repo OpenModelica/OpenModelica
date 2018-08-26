@@ -5,6 +5,8 @@ AC_INIT([OpenModelica],[dev],[https://trac.openmodelica.org/OpenModelica],[openm
 
 AC_LANG([C])
 AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
 
 m4_include([common/m4/pre-commit.m4])
 m4_include([common/m4/ombuilddir.m4])
