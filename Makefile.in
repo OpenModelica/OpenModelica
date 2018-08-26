@@ -1,3 +1,5 @@
+# main Makefile template for Linux and MacOS, populated by configure
+
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
@@ -14,9 +16,9 @@ omplot: omc
 omedit: omc omplot omsimulator
 	$(MAKE) -C OMEdit
 omsimulator:
-	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@"
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF "host_short=@host_short@"
-	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@"
+	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
+	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
 omnotebook: omc omplot
 	$(MAKE) -C OMNotebook
 omoptim: omc omplot
