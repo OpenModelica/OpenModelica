@@ -403,6 +403,7 @@ private:
 #if !defined(WITHOUT_OSG)
   QAction *mpNewAnimationWindowAction;
 #endif
+  QAction *mpDiagramWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
   // Other Actions

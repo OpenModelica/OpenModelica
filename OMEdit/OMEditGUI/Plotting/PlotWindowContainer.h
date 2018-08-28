@@ -43,6 +43,7 @@
 #include "OMPlot.h"
 
 class AnimationWindow;
+class DiagramWindow;
 class VariablesTreeItem;
 
 class PlotWindowContainer : public QMdiArea
@@ -58,7 +59,14 @@ public:
 #if !defined(WITHOUT_OSG)
   AnimationWindow* getCurrentAnimationWindow();
 #endif
+  QMdiSubWindow* getDiagramSubWindowFromMdi();
+  DiagramWindow* getDiagramWindow() {return mpDiagramWindow;}
+  bool isPlotWindow(QObject *pObject);
+  bool isAnimationWindow(QObject *pObject);
+  bool isDiagramWindow(QObject *pObject);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
+private:
+  DiagramWindow *mpDiagramWindow;
 public slots:
   void addPlotWindow(bool maximized = false);
   void addParametricPlotWindow();
@@ -66,6 +74,7 @@ public slots:
   void addArrayParametricPlotWindow();
   OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QString owner = QString(), int port = 0);
   void addAnimationWindow(bool maximized = false);
+  void addDiagramWindow(bool maximized = false);
   void clearPlotWindow();
   void removeInteractivePlotWindow();
   void exportVariables();

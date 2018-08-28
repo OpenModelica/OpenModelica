@@ -38,6 +38,7 @@
 #include "FMUProperties.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
+#include "Plotting/VariablesWidget.h"
 #include "Modeling/BusDialog.h"
 
 #include <QMessageBox>
@@ -460,6 +461,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   createStateComponent();
   mHasTransition = false;
   mIsInitialState = false;
+  mActiveState = false;
   mpBusComponent = 0;
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     mpDefaultComponentRectangle->setVisible(true);
@@ -532,6 +534,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mActiveState = false;
   mpBusComponent = 0;
   drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
@@ -567,6 +570,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mActiveState = false;
   mpBusComponent = mpReferenceComponent->getBusComponent();
   drawInheritedComponentsAndShapes();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
@@ -616,8 +620,9 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   createNonExistingComponent();
   createDefaultComponent();
   createStateComponent();
-  mHasTransition = false;
-  mIsInitialState = false;
+  mHasTransition = mpReferenceComponent->hasTransition();;
+  mIsInitialState = mpReferenceComponent->isInitialState();
+  mActiveState = false;
   mpBusComponent = 0;
   drawComponent();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
@@ -663,6 +668,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mActiveState = false;
   mpBusComponent = 0;
 
   if (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
@@ -1347,8 +1353,7 @@ void Component::renameComponentInConnections(QString newName)
       QString startComponentName = pConnectionLineAnnotation->getStartComponentName();
       startComponentName.replace(getName(), newName);
       pConnectionLineAnnotation->setStartComponentName(startComponentName);
-      pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(pConnectionLineAnnotation->getStartComponentName())
-                                            .arg(pConnectionLineAnnotation->getEndComponentName()));
+      pConnectionLineAnnotation->updateToolTip();
     }
     // update end component name
     Component *pEndComponent = pConnectionLineAnnotation->getEndComponent();
@@ -1356,8 +1361,7 @@ void Component::renameComponentInConnections(QString newName)
       QString endComponentName = pConnectionLineAnnotation->getEndComponentName();
       endComponentName.replace(getName(), newName);
       pConnectionLineAnnotation->setEndComponentName(endComponentName);
-      pConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(pConnectionLineAnnotation->getStartComponentName())
-                                            .arg(pConnectionLineAnnotation->getEndComponentName()));
+      pConnectionLineAnnotation->updateToolTip();
     }
   }
 }
@@ -2108,7 +2112,7 @@ void Component::updateToolTip()
     comment.replace("src=\"file://", "src=\"");
   #endif
 
-    if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent) {
+    if ((mIsInheritedComponent || mComponentType == Component::Port) && mpReferenceComponent && !mpGraphicsView->isVisualizationView()) {
       setToolTip(tr("<b>%1</b> %2<br/>%3<br /><br />Component declared in %4").arg(mpComponentInfo->getClassName())
                  .arg(mpComponentInfo->getName()).arg(comment)
                  .arg(mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
@@ -2906,6 +2910,24 @@ void Component::showFMUPropertiesDialog()
   if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getFMUInfo()) {
     FMUPropertiesDialog *pFMUPropertiesDialog = new FMUPropertiesDialog(this, MainWindow::instance());
     pFMUPropertiesDialog->exec();
+  }
+}
+
+/*!
+ * \brief Component::updateDynamicSelect
+ * Slot activated when updateDynamicSelect SIGNAL is raised by VariablesWidget during the visualization of result file.
+ * \param time
+ */
+void Component::updateDynamicSelect(double time)
+{
+  if (mpLibraryTreeItem && mpLibraryTreeItem->isState()) {
+    double value = MainWindow::instance()->getVariablesWidget()->readVariableValue(getName() + ".active", time);
+    setActiveState(value);
+    foreach (LineAnnotation *pTransitionLineAnnotation, mpGraphicsView->getTransitionsList()) {
+      if (pTransitionLineAnnotation->getEndComponent()->getName().compare(getName()) == 0) {
+        pTransitionLineAnnotation->setActiveState(value);
+      }
+    }
   }
 }
 

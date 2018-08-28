@@ -99,6 +99,7 @@ public:
   static QFontInfo systemFontInfo;
   static QFontInfo monospacedFontInfo;
   static QString toolsOptionsPath;
+  static QString speedOptions;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;
@@ -400,6 +401,7 @@ public:
   static QString stopTime;
   static QString status;
   static QString fmuProperties;
+  static QString speed;
   static QString instantiateOMSModelTip;
   static QString terminateInstantiation;
   static QString terminateInstantiationTip;

@@ -77,7 +77,7 @@ AbstractAnimationWindow::AbstractAnimationWindow(QWidget *pParent)
     mCameraInitialized(false)
 {
   // to distinguish this widget as a subwindow among the plotwindows
-  setObjectName(QString("animationWidget"));
+  setObjectName(QString("animationWindow"));
   //the viewer widget
   mpViewerWidget = new ViewerWidget(this);
   // we need to set the minimum height so that visualization window is still shown when we cascade windows.
@@ -190,7 +190,7 @@ void AbstractAnimationWindow::createActions()
   mpAnimationSpeedLabel->setText(tr("Speed:"));
   mpSpeedComboBox = new QComboBox;
   mpSpeedComboBox->setEditable(true);
-  mpSpeedComboBox->addItems(QStringList() << "10" << "5" << "2" << "1" << "0.5" << "0.2" << "0.1");
+  mpSpeedComboBox->addItems(Helper::speedOptions.split(","));
   mpSpeedComboBox->setCurrentIndex(3);
   mpSpeedComboBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
   mpSpeedComboBox->setEnabled(false);

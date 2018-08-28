@@ -72,6 +72,7 @@
 #include "Git/GitCommands.h"
 #include "Traceability/TraceabilityInformationURI.h"
 #include "Traceability/TraceabilityGraphViewWidget.h"
+#include "Plotting/DiagramWindow.h"
 #include "omc_config.h"
 
 #include <QtSvg/QSvgGenerator>
@@ -3117,7 +3118,6 @@ void MainWindow::createActions()
   // print  action
   mpPrintModelAction = new QAction(QIcon(":/Resources/icons/print.svg"), tr("Print..."), this);
   mpPrintModelAction->setShortcut(QKeySequence("Ctrl+p"));
-  mpPrintModelAction->setEnabled(false);
   // close OMEdit action
   mpQuitAction = new QAction(QIcon(":/Resources/icons/quit.svg"), tr("Quit"), this);
   mpQuitAction->setStatusTip(tr("Quit the ").append(Helper::applicationIntroText));
@@ -3469,23 +3469,24 @@ void MainWindow::createActions()
   mpNewParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/parametric-plot-window.svg"), tr("New Parametric Plot Window"), this);
   mpNewParametricPlotWindowAction->setStatusTip(tr("Inserts new parametric plot window"));
   connect(mpNewParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addParametricPlotWindow()));
-
   // new array plot window action
   mpNewArrayPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-plot-window.svg"), tr("New Array Plot Window"), this);
   mpNewArrayPlotWindowAction->setStatusTip(tr("Inserts new array plot window"));
   connect(mpNewArrayPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayPlotWindow()));
-
   // new array parametric plot window action
   mpNewArrayParametricPlotWindowAction = new QAction(QIcon(":/Resources/icons/array-parametric-plot-window.svg"), tr("New Array Parametric Plot Window"), this);
   mpNewArrayParametricPlotWindowAction->setStatusTip(tr("Inserts new array parametric plot window"));
   connect(mpNewArrayParametricPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addArrayParametricPlotWindow()));
-
-  #if !defined(WITHOUT_OSG)
+#if !defined(WITHOUT_OSG)
   // new mpAnimationWindowAction plot action
   mpNewAnimationWindowAction = new QAction(QIcon(":/Resources/icons/animation.svg"), tr("New Animation Window"), this);
   mpNewAnimationWindowAction->setStatusTip(tr("Inserts new animation window"));
   connect(mpNewAnimationWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addAnimationWindow()));
 #endif
+  // Diagram window action
+  mpDiagramWindowAction = new QAction(QIcon(":/Resources/icons/modeling.png"), tr("Diagram Window"), this);
+  mpDiagramWindowAction->setStatusTip(tr("Inserts a diagram window"));
+  connect(mpDiagramWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(addDiagramWindow()));
   // export variables action
   mpExportVariablesAction = new QAction(QIcon(":/Resources/icons/export-variables.svg"), Helper::exportVariables, this);
   mpExportVariablesAction->setStatusTip(tr("Exports the plotted variables to a CSV file"));
@@ -3498,11 +3499,10 @@ void MainWindow::createActions()
   // export as image action
   mpExportAsImageAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), Helper::exportAsImage, this);
   mpExportAsImageAction->setStatusTip(Helper::exportAsImageTip);
-  mpExportAsImageAction->setEnabled(false);
   connect(mpExportAsImageAction, SIGNAL(triggered()), SLOT(exportModelAsImage()));
+  // export to clipboard action
   mpExportToClipboardAction = new QAction(tr("Export to Clipboard"), this);
   mpExportToClipboardAction->setStatusTip(Helper::exportAsImageTip);
-  mpExportToClipboardAction->setEnabled(false);
   connect(mpExportToClipboardAction, SIGNAL(triggered()), SLOT(exportToClipboard()));
   // simulation parameters
   mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
@@ -3942,6 +3942,10 @@ void MainWindow::switchToPlottingPerspective()
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
     mpPlotWindowContainer->addPlotWindow(true);
   }
+  // if we have DiagramWindow then draw items on it based on the current ModelWidget
+  if (pModelWidget && mpPlotWindowContainer->getDiagramSubWindowFromMdi()) {
+    mpPlotWindowContainer->getDiagramWindow()->drawDiagram();
+  }
   mpVariablesDockWidget->show();
   // show/hide toolbars
   mpEditToolBar->setVisible(false);
@@ -4181,8 +4185,9 @@ void MainWindow::createToolbars()
   mpPlotToolBar->addAction(mpNewArrayParametricPlotWindowAction);
 #if !defined(WITHOUT_OSG)
   mpPlotToolBar->addAction(mpNewAnimationWindowAction);
-  mpPlotToolBar->addSeparator();
 #endif
+  mpPlotToolBar->addAction(mpDiagramWindowAction);
+  mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpExportVariablesAction);
   mpPlotToolBar->addSeparator();
   mpPlotToolBar->addAction(mpClearPlotWindowAction);

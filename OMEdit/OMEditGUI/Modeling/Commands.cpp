@@ -847,8 +847,7 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
   setText(QString("Add Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
                                                         mpConnectionLineAnnotation->getEndComponentName()));
 
-  mpConnectionLineAnnotation->setToolTip(QString("<b>connect</b>(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName())
-                                         .arg(mpConnectionLineAnnotation->getEndComponentName()));
+  mpConnectionLineAnnotation->updateToolTip();
   mpConnectionLineAnnotation->drawCornerItems();
   mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
 }
@@ -1061,14 +1060,7 @@ AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnota
   setText(QString("Add Transition transition(%1, %2)").arg(mpTransitionLineAnnotation->getStartComponentName(),
                                                            mpTransitionLineAnnotation->getEndComponentName()));
 
-  mpTransitionLineAnnotation->setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
-                                         .arg(mpTransitionLineAnnotation->getStartComponentName())
-                                         .arg(mpTransitionLineAnnotation->getEndComponentName())
-                                         .arg(mpTransitionLineAnnotation->getCondition())
-                                         .arg(mpTransitionLineAnnotation->getImmediate() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getReset() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getSynchronize() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getPriority()));
+  mpTransitionLineAnnotation->updateToolTip();
   mpTransitionLineAnnotation->drawCornerItems();
   mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
 }
@@ -1187,14 +1179,7 @@ void UpdateTransitionCommand::redoInternal()
   mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
   mpTransitionLineAnnotation->updateTransitionTextPosition();
   mpTransitionLineAnnotation->updateTransitionAnnotation(mOldCondition, mOldImmediate, mOldReset, mOldSynchronize, mOldPriority);
-  mpTransitionLineAnnotation->setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
-                                         .arg(mpTransitionLineAnnotation->getStartComponentName())
-                                         .arg(mpTransitionLineAnnotation->getEndComponentName())
-                                         .arg(mpTransitionLineAnnotation->getCondition())
-                                         .arg(mpTransitionLineAnnotation->getImmediate() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getReset() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getSynchronize() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getPriority()));
+  mpTransitionLineAnnotation->updateToolTip();
 }
 
 /*!
@@ -1220,14 +1205,7 @@ void UpdateTransitionCommand::undo()
   mpTransitionLineAnnotation->getTextAnnotation()->updateTextString();
   mpTransitionLineAnnotation->updateTransitionTextPosition();
   mpTransitionLineAnnotation->updateTransitionAnnotation(mNewCondition, mNewImmediate, mNewReset, mNewSynchronize, mNewPriority);
-  mpTransitionLineAnnotation->setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
-                                         .arg(mpTransitionLineAnnotation->getStartComponentName())
-                                         .arg(mpTransitionLineAnnotation->getEndComponentName())
-                                         .arg(mpTransitionLineAnnotation->getCondition())
-                                         .arg(mpTransitionLineAnnotation->getImmediate() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getReset() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getSynchronize() ? "true" : "false")
-                                         .arg(mpTransitionLineAnnotation->getPriority()));
+  mpTransitionLineAnnotation->updateToolTip();
 }
 
 DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, UndoCommand *pParent)

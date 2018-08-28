@@ -56,25 +56,33 @@
 
 #include <QNetworkReply>
 
-
-//! @class GraphicsScene
-//! @brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
-
-//! Constructor.
-//! @param parent defines a parent to the new instanced object.
+/*!
+ * \class GraphicsScene
+ * \brief The GraphicsScene class is a container for graphicsl components in a simulationmodel.
+ */
+/*!
+ * \brief GraphicsScene::GraphicsScene
+ * \param viewType
+ * \param pModelWidget
+ */
 GraphicsScene::GraphicsScene(StringHandler::ViewType viewType, ModelWidget *pModelWidget)
   : QGraphicsScene(pModelWidget), mViewType(viewType)
 {
   mpModelWidget = pModelWidget;
 }
 
-//! @class GraphicsView
-//! @brief The GraphicsView class is a class which display the content of a scene of components.
-
-//! Constructor.
-//! @param parent defines a parent to the new instanced object.
-GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent)
-  : QGraphicsView(parent), mViewType(viewType), mSkipBackground(false)
+/*!
+ * \class GraphicsView
+ * \brief The GraphicsView class is a class which display the content of a scene of components.
+ */
+/*!
+ * \brief GraphicsView::GraphicsView
+ * \param viewType
+ * \param parent
+ * \param animationView
+ */
+GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent, bool visualizationView)
+  : QGraphicsView(parent), mViewType(viewType), mVisualizationView(visualizationView), mSkipBackground(false)
 {
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
@@ -713,6 +721,18 @@ void GraphicsView::deleteTransitionFromClass(LineAnnotation *pTransitionLineAnno
 }
 
 /*!
+ * \brief GraphicsView::removeTransitionsFromView
+ * Removes the transitions from the view.
+ */
+void GraphicsView::removeTransitionsFromView()
+{
+  foreach (LineAnnotation *pTransitionLineAnnotation, mTransitionsList) {
+    deleteTransitionFromList(pTransitionLineAnnotation);
+    removeItem(pTransitionLineAnnotation);
+  }
+}
+
+/*!
  * \brief GraphicsView::addInitialStateToClass
  * Adds the initial state to class.
  * \param pInitialStateLineAnnotation - the initial state to add.
@@ -735,6 +755,18 @@ void GraphicsView::deleteInitialStateFromClass(LineAnnotation *pInitialStateLine
 {
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   pOMCProxy->deleteInitialState(mpModelWidget->getLibraryTreeItem()->getNameStructure(), pInitialStateLineAnnotation->getStartComponentName());
+}
+
+/*!
+ * \brief GraphicsView::removeInitialStatesFromView
+ * Removes the initial states from the view.
+ */
+void GraphicsView::removeInitialStatesFromView()
+{
+  foreach (LineAnnotation *pInitialStateLineAnnotation, mInitialStatesList) {
+    deleteInitialStateFromList(pInitialStateLineAnnotation);
+    removeItem(pInitialStateLineAnnotation);
+  }
 }
 
 /*!
@@ -875,7 +907,7 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
 
 void GraphicsView::createLineShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
 
@@ -892,7 +924,7 @@ void GraphicsView::createLineShape(QPointF point)
 
 void GraphicsView::createPolygonShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
 
@@ -910,7 +942,7 @@ void GraphicsView::createPolygonShape(QPointF point)
 
 void GraphicsView::createRectangleShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
 
@@ -942,7 +974,7 @@ void GraphicsView::createRectangleShape(QPointF point)
 
 void GraphicsView::createEllipseShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
 
@@ -974,7 +1006,7 @@ void GraphicsView::createEllipseShape(QPointF point)
 
 void GraphicsView::createTextShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
 
@@ -1008,7 +1040,7 @@ void GraphicsView::createTextShape(QPointF point)
 
 void GraphicsView::createBitmapShape(QPointF point)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
 
@@ -1233,7 +1265,7 @@ void GraphicsView::deleteSubModel(QString name)
  */
 void GraphicsView::createActions()
 {
-  bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary();
+  bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView();
   // Graphics View Properties Action
   mpPropertiesAction = new QAction(Helper::properties, this);
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
@@ -1347,7 +1379,7 @@ bool GraphicsView::isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem)
  */
 bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return false;
   }
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
@@ -1416,7 +1448,7 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
           return 0;
         } else if (pRootComponent && !pRootComponent->isSelected()) {
           if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
+              !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
               ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
                (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
                 pComponent->getComponentType() == Component::Port) ||
@@ -1447,7 +1479,7 @@ Component* GraphicsView::stateComponentAtPosition(QPoint position)
         Component *pRootComponent = pComponent->getRootParentComponent();
         if (pRootComponent && !pRootComponent->isSelected()) {
           if (MainWindow::instance()->getTransitionModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
-              !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
+              !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) &&
               ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica &&
                 pComponent->getLibraryTreeItem()->isState()))) {
             return pComponent;
@@ -1858,7 +1890,7 @@ void GraphicsView::clearSelection()
  */
 void GraphicsView::addClassAnnotation(bool alwaysAdd)
 {
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     return;
   }
   MainWindow *pMainWindow = MainWindow::instance();
@@ -2096,7 +2128,7 @@ void GraphicsView::cancelTransition()
 void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 {
   // check if the class is system library or a package or a OMSimulator model
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() ||
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView() ||
       mpModelWidget->getLibraryTreeItem()->getRestriction() == StringHandler::Package ||
       mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     event->ignore();
@@ -2129,7 +2161,7 @@ void GraphicsView::dropEvent(QDropEvent *event)
     event->accept();
   } else if (event->mimeData()->hasFormat(Helper::modelicaComponentFormat)) {
     // check if the class is system library
-    if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+    if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
       event->ignore();
       return;
     }
@@ -2154,7 +2186,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   }
   QPen grayPen(QBrush(QColor(192, 192, 192)), 0);
   QPen lightGrayPen(QBrush(QColor(229, 229, 229)), 0);
-  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView()) {
     painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   } else if (mViewType == StringHandler::Icon) {
     painter->setBrush(QBrush(QColor(229, 244, 255), Qt::SolidPattern));
@@ -2166,7 +2198,7 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
   painter->drawRect(getExtentRectangle());
-  if (mpModelWidget->getModelWidgetContainer()->isShowGridLines() && !mpModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpModelWidget->getModelWidgetContainer()->isShowGridLines() && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView())) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
     /* Draw left half vertical lines */
@@ -2774,8 +2806,10 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     QMenu menu(MainWindow::instance());
     menu.addAction(MainWindow::instance()->getExportAsImageAction());
     menu.addAction(MainWindow::instance()->getExportToClipboardAction());
-    menu.addSeparator();
-    menu.addAction(MainWindow::instance()->getExportToOMNotebookAction());
+    if (!isVisualizationView()) {
+      menu.addSeparator();
+      menu.addAction(MainWindow::instance()->getExportToOMNotebookAction());
+    }
     menu.addSeparator();
     menu.addAction(MainWindow::instance()->getPrintModelAction());
     if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
@@ -3932,6 +3966,8 @@ void ModelWidget::clearGraphicsViews()
     removeClassComponents(StringHandler::Icon);
     mpIconGraphicsView->removeAllShapes();
     mpIconGraphicsView->removeAllConnections();
+    mpIconGraphicsView->removeAllTransitions();
+    mpIconGraphicsView->removeAllInitialStates();
     removeInheritedClassShapes(StringHandler::Icon);
     removeInheritedClassComponents(StringHandler::Icon);
     mpIconGraphicsView->scene()->clear();
@@ -3941,6 +3977,8 @@ void ModelWidget::clearGraphicsViews()
     removeClassComponents(StringHandler::Diagram);
     mpDiagramGraphicsView->removeAllShapes();
     mpDiagramGraphicsView->removeAllConnections();
+    mpDiagramGraphicsView->removeAllTransitions();
+    mpDiagramGraphicsView->removeAllInitialStates();
     removeInheritedClassShapes(StringHandler::Diagram);
     removeInheritedClassComponents(StringHandler::Diagram);
     removeInheritedClassConnections();
@@ -6928,9 +6966,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getExportXMLAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportFigaroAction()->setEnabled(enabled && modelica);
   MainWindow::instance()->getExportToOMNotebookAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getExportAsImageAction()->setEnabled(enabled);
-  MainWindow::instance()->getExportToClipboardAction()->setEnabled(enabled);
-  MainWindow::instance()->getPrintModelAction()->setEnabled(enabled);
   MainWindow::instance()->getSimulationParamsAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
@@ -7052,9 +7087,10 @@ void ModelWidgetContainer::saveTotalModelWidget()
 }
 
 /*!
-  Slot activated when MainWindow::mpPrintModelAction triggered SIGNAL is raised.
-  Prints the model Icon/Diagram/Text depending on which one is visible.
-  */
+ * \brief ModelWidgetContainer::printModel
+ * Slot activated when MainWindow::mpPrintModelAction triggered SIGNAL is raised.
+ * Prints the model Icon/Diagram/Text depending on which one is visible.
+ */
 void ModelWidgetContainer::printModel()
 {
 #ifndef QT_NO_PRINTER

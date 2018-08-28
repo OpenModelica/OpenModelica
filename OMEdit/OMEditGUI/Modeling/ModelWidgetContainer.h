@@ -85,6 +85,7 @@ class GraphicsView : public QGraphicsView
 private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
+  bool mVisualizationView;
   QRectF mExtentRectangle;
   bool mIsCustomScale;
   bool mAddClassAnnotationNeeded;
@@ -135,11 +136,12 @@ private:
   QAction *mpSetInitialStateAction;
   QAction *mpCancelTransitionAction;
 public:
-  GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent);
+  GraphicsView(StringHandler::ViewType viewType, ModelWidget *parent, bool visualizationView = false);
   CoOrdinateSystem mCoOrdinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
   StringHandler::ViewType getViewType() {return mViewType;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
+  bool isVisualizationView() {return mVisualizationView;}
   void setExtentRectangle(qreal x1, qreal y1, qreal x2, qreal y2);
   QRectF getExtentRectangle() {return mExtentRectangle;}
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
@@ -214,11 +216,13 @@ public:
   void deleteTransitionFromClass(LineAnnotation *pTransitionLineAnnotation);
   void addTransitionToList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.append(pTransitionLineAnnotation);}
   void deleteTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mTransitionsList.removeOne(pTransitionLineAnnotation);}
+  void removeTransitionsFromView();
   QList<LineAnnotation*> getInitialStatesList() {return mInitialStatesList;}
   void addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation);
   void deleteInitialStateFromClass(LineAnnotation *pInitialStateLineAnnotation);
   void addInitialStateToList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.append(pInitialStateLineAnnotation);}
   void deleteInitialStateFromList(LineAnnotation *pInitialStateLineAnnotation) {mInitialStatesList.removeOne(pInitialStateLineAnnotation);}
+  void removeInitialStatesFromView();
   void addShapeToList(ShapeAnnotation *pShape, int index = -1);
   void addInheritedShapeToList(ShapeAnnotation *pShape) {mInheritedShapesList.append(pShape);}
   void deleteShape(ShapeAnnotation *pShapeAnnotation);
@@ -232,6 +236,8 @@ public:
   void removeAllComponents() {mComponentsList.clear();}
   void removeAllShapes() {mShapesList.clear();}
   void removeAllConnections() {mConnectionsList.clear();}
+  void removeAllTransitions() {mTransitionsList.clear();}
+  void removeAllInitialStates() {mInitialStatesList.clear();}
   void createLineShape(QPointF point);
   void createPolygonShape(QPointF point);
   void createRectangleShape(QPointF point);

@@ -1751,11 +1751,12 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
 #endif
         MainWindow::instance()->getPerspectiveTabBar()->setCurrentIndex(2);
         if (showPlotWindow) {
-          OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
-          if (pPlotWindow) {
-            MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
-          } else {
-            MainWindow::instance()->getPlotWindowContainer()->addPlotWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+          QList<QMdiSubWindow*> subWindowsList = MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::ActivationHistoryOrder);
+          if (!subWindowsList.isEmpty() && subWindowsList.last()->widget()->objectName().compare("diagramWindow") != 0) {
+            OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getTopPlotWindow();
+            if (pPlotWindow) {
+              MainWindow::instance()->getPlotWindowContainer()->setTopPlotWindowActive();
+            }
           }
         }
       } else {

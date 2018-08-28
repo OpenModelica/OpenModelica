@@ -159,6 +159,15 @@ void RectangleAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsIte
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible || !mDynamicVisible.isEmpty()) {
+    // state machine visualization
+    if (mpParentComponent && mpParentComponent->getLibraryTreeItem() && mpParentComponent->getLibraryTreeItem()->isState()
+        && mpParentComponent->getGraphicsView()->isVisualizationView()) {
+      if (mpParentComponent->isActiveState()) {
+        painter->setOpacity(1.0);
+      } else {
+        painter->setOpacity(0.2);
+      }
+    }
     drawRectangleAnnotaion(painter);
   }
 }

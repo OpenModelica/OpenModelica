@@ -790,6 +790,8 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
     mpModelWidget->reDrawModelWidgetInheritedClasses();
     if (mpModelWidget->getDiagramGraphicsView()) {
       mpModelWidget->getDiagramGraphicsView()->removeConnectionsFromView();
+      mpModelWidget->getDiagramGraphicsView()->removeTransitionsFromView();
+      mpModelWidget->getDiagramGraphicsView()->removeInitialStatesFromView();
     }
     mpModelWidget->getModelConnections();
     // load new icon for the class.
@@ -810,6 +812,8 @@ void LibraryTreeItem::handleUnloaded()
     mpModelWidget->reDrawModelWidgetInheritedClasses();
     if (mpModelWidget->getDiagramGraphicsView()) {
       mpModelWidget->getDiagramGraphicsView()->removeConnectionsFromView();
+      mpModelWidget->getDiagramGraphicsView()->removeTransitionsFromView();
+      mpModelWidget->getDiagramGraphicsView()->removeInitialStatesFromView();
     }
     MainWindow *pMainWindow = MainWindow::instance();
     // load new icon for the class.

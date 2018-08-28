@@ -269,6 +269,26 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     return;
   }
   if (mVisible || !mDynamicVisible.isEmpty()) {
+    // state machine visualization
+    // text annotation on a component
+    if (mpComponent && mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isState()
+        && mpComponent->getGraphicsView()->isVisualizationView()) {
+      if (mpComponent->isActiveState()) {
+        painter->setOpacity(1.0);
+      } else {
+        painter->setOpacity(0.2);
+      }
+    }
+    // text annotation on a transition
+    LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(parentItem());
+    if (pTransitionLineAnnotation && pTransitionLineAnnotation->getLineType() == LineAnnotation::TransitionType
+        && pTransitionLineAnnotation->getGraphicsView() && pTransitionLineAnnotation->getGraphicsView()->isVisualizationView()) {
+      if (pTransitionLineAnnotation->isActiveState()) {
+        painter->setOpacity(1.0);
+      } else {
+        painter->setOpacity(0.2);
+      }
+    }
     drawTextAnnotaion(painter);
   }
 }

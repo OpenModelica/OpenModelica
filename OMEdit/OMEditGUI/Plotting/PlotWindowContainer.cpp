@@ -38,6 +38,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/VariablesWidget.h"
+#include "Plotting/DiagramWindow.h"
 
 using namespace OMPlot;
 
@@ -50,7 +51,7 @@ using namespace OMPlot;
  * \param pParent
  */
 PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
-  : QMdiArea(pParent)
+  : QMdiArea(pParent), mpDiagramWindow(0)
 {
   setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
@@ -97,8 +98,7 @@ PlotWindow* PlotWindowContainer::getCurrentWindow()
   if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
   } else {
-    bool isPlotWidget = (0 != subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-    if (isPlotWidget) {
+    if (isPlotWindow(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget())) {
       return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
     } else {
       return 0;
@@ -132,7 +132,7 @@ PlotWindow* PlotWindowContainer::getTopPlotWindow()
 {
   QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
   for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
-    if (0 != subWindowsList.at(i)->widget()->objectName().compare(QString("animationWidget"))) {
+    if (isPlotWindow(subWindowsList.at(i)->widget())) {
       return qobject_cast<PlotWindow*>(subWindowsList.at(i)->widget());
     }
   }
@@ -147,7 +147,7 @@ void PlotWindowContainer::setTopPlotWindowActive()
 {
   QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
   for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
-    if (0 != subWindowsList.at(i)->widget()->objectName().compare(QString("animationWidget"))) {
+    if (isPlotWindow(subWindowsList.at(i)->widget())) {
       setActiveSubWindow(subWindowsList.at(i));
       return;
     }
@@ -165,8 +165,7 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
   if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
     return 0;
   } else {
-    bool isAnimationWidget = (0 == subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget()->objectName().compare(QString("animationWidget")));
-    if (isAnimationWidget) {
+    if (isAnimationWindow(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget())) {
       return qobject_cast<AnimationWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
     } else {
       return 0;
@@ -176,6 +175,69 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
 #endif
 
 /*!
+ * \brief PlotWindowContainer::getDiagramSubWindowFromMdi
+ * Returns the diagram sub window, if there is any in the PlotWindowContainer
+ * \return
+ */
+QMdiSubWindow* PlotWindowContainer::getDiagramSubWindowFromMdi()
+{
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
+    return 0;
+  } else {
+    QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
+    for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
+      if (isDiagramWindow(subWindowsList.at(i)->widget())) {
+        return subWindowsList.at(i);
+      }
+    }
+    return 0;
+  }
+}
+
+/*!
+ * \brief PlotWindowContainer::isPlotWindow
+ * Returns true if pObject is a PlotWindow.
+ * \param pObject
+ * \return
+ */
+bool PlotWindowContainer::isPlotWindow(QObject *pObject)
+{
+  if (0 != pObject->objectName().compare("animationWindow")
+      && 0 != pObject->objectName().compare("diagramWindow")) {
+    return true;
+  }
+  return false;
+}
+
+/*!
+ * \brief PlotWindowContainer::isAnimationWindow
+ * Returns true if pObject is a AnimationWindow.
+ * \param pObject
+ * \return
+ */
+bool PlotWindowContainer::isAnimationWindow(QObject *pObject)
+{
+  if (0 == pObject->objectName().compare("animationWindow")) {
+    return true;
+  }
+  return false;
+}
+
+/*!
+ * \brief PlotWindowContainer::isDiagramWindow
+ * Returns true if pObject is a DiagramWindow.
+ * \param pObject
+ * \return
+ */
+bool PlotWindowContainer::isDiagramWindow(QObject *pObject)
+{
+  if (0 == pObject->objectName().compare("diagramWindow")) {
+    return true;
+  }
+  return false;
+}
+
+/*!
  * \brief PlotWindowContainer::eventFilter
  * \param pObject
  * \param pEvent
@@ -183,9 +245,8 @@ AnimationWindow* PlotWindowContainer::getCurrentAnimationWindow()
  */
 bool PlotWindowContainer::eventFilter(QObject *pObject, QEvent *pEvent)
 {
-  bool isPlotWidget = (0 != pObject->objectName().compare(QString("animationWidget")));
   PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pObject);
-  if (pPlotWindow && isPlotWidget && pEvent->type() == QEvent::Paint) {
+  if (pPlotWindow && isPlotWindow(pObject) && pEvent->type() == QEvent::Paint) {
     QPainter painter (pPlotWindow);
     painter.setPen(Qt::gray);
     QRect rectangle = pPlotWindow->rect();
@@ -376,6 +437,30 @@ void PlotWindowContainer::addAnimationWindow(bool maximized)
 }
 
 /*!
+ * \brief PlotWindowContainer::addDiagramWindow
+ * Adds a diagram window as subwindow
+ * \param maximized - sets the window state maximized
+ */
+void PlotWindowContainer::addDiagramWindow(bool maximized)
+{
+  if (!mpDiagramWindow) {
+    mpDiagramWindow = new DiagramWindow(this);
+    mpDiagramWindow->drawDiagram();
+  }
+  QMdiSubWindow *pSubWindow = getDiagramSubWindowFromMdi();
+  if (!pSubWindow) {
+    pSubWindow = addSubWindow(mpDiagramWindow);
+    addCloseActionsToSubWindowSystemMenu(pSubWindow);
+    pSubWindow->setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
+  }
+  mpDiagramWindow->show();
+  if (maximized) {
+    mpDiagramWindow->setWindowState(Qt::WindowMaximized);
+  }
+  setActiveSubWindow(pSubWindow);
+}
+
+/*!
  * \brief PlotWindowContainer::removeInteractivePlotWindow
  * If an interactive plot window is closed, also remove the tree item
  */
@@ -467,8 +552,7 @@ void PlotWindowContainer::exportVariables()
 void PlotWindowContainer::updatePlotWindows(QString variable)
 {
   foreach (QMdiSubWindow *pSubWindow, subWindowList()) {
-    bool isPlotWidget = (0 != pSubWindow->widget()->objectName().compare(QString("animationWidget")));
-    if (isPlotWidget) {
+    if (isPlotWindow(pSubWindow->widget())) {
       PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         if (variable.compare(pPlotCurve->getFileName()) == 0) {

@@ -97,7 +97,7 @@ QString Helper::toolsOptionsPath = "OMEdit->Preferences";
 #else
 QString Helper::toolsOptionsPath = "Tools->Options";
 #endif
-
+QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");
@@ -399,6 +399,7 @@ QString Helper::startTime;
 QString Helper::stopTime;
 QString Helper::status;
 QString Helper::fmuProperties;
+QString Helper::speed;
 QString Helper::instantiateOMSModelTip;
 QString Helper::terminateInstantiation;
 QString Helper::terminateInstantiationTip;
@@ -687,6 +688,7 @@ void Helper::initHelperVariables()
   Helper::stopTime = tr("Stop Time");
   Helper::status = tr("Status");
   Helper::fmuProperties = tr("FMU Properties");
+  Helper::speed = tr("Speed:");
   Helper::instantiateOMSModelTip = tr("Instantiates the OMSimulator model");
   Helper::terminateInstantiation = tr("Terminate Instantiation");
   Helper::terminateInstantiationTip = tr("Terminates the model instantiation");

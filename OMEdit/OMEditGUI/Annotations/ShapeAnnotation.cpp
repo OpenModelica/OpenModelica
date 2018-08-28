@@ -381,6 +381,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mTextString = pShapeAnnotation->mTextString;
   mFontSize = pShapeAnnotation->mFontSize;
   mFontName = pShapeAnnotation->mFontName;
+  mTextStyles = pShapeAnnotation->mTextStyles;
   mHorizontalAlignment = pShapeAnnotation->mHorizontalAlignment;
   mOriginalFileName = mOriginalFileName;
   mFileName = pShapeAnnotation->mFileName;

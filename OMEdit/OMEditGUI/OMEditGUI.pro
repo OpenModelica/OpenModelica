@@ -171,6 +171,7 @@ SOURCES += main.cpp \
   FMI/ImportFMUDialog.cpp \
   FMI/ImportFMUModelDescriptionDialog.cpp \
   Plotting/VariablesWidget.cpp \
+  Plotting/DiagramWindow.cpp \
   Options/NotificationsDialog.cpp \
   Annotations/ShapePropertiesDialog.cpp \
   TransformationalDebugger/OMDumpXML.cpp \
@@ -257,6 +258,7 @@ HEADERS  += Util/Helper.h \
   FMI/ImportFMUDialog.h \
   FMI/ImportFMUModelDescriptionDialog.h \
   Plotting/VariablesWidget.h \
+  Plotting/DiagramWindow.h \
   Options/NotificationsDialog.h \
   Annotations/ShapePropertiesDialog.h \
   TransformationalDebugger/OMDumpXML.cpp \

@@ -226,7 +226,11 @@ public:
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
   void setHasTransition(bool hasTransition);
+  bool hasTransition() {return mHasTransition;}
   void setIsInitialState(bool isInitialState);
+  bool isInitialState() {return mIsInitialState;}
+  void setActiveState(bool activeState) {mActiveState = activeState;}
+  bool isActiveState() {return mActiveState;}
   void removeChildren();
   void emitAdded();
   void emitTransformChange() {emit transformChange();}
@@ -293,6 +297,7 @@ private:
   QPointF mOldPosition;
   bool mHasTransition;
   bool mIsInitialState;
+  bool mActiveState;
   Component *mpBusComponent;
   void createNonExistingComponent();
   void createDefaultComponent();
@@ -370,6 +375,7 @@ public slots:
   void viewDocumentation();
   void showSubModelAttributes();
   void showFMUPropertiesDialog();
+  void updateDynamicSelect(double time);
 protected:
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);

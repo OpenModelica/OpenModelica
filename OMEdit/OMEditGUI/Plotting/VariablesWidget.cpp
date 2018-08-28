@@ -41,6 +41,7 @@
 #include "Modeling/MessagesWidget.h"
 #include "util/read_matlab4.h"
 #include "Plotting/PlotWindowContainer.h"
+#include "Plotting/DiagramWindow.h"
 #include "Simulation/SimulationDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "Simulation/SimulationProcessThread.h"
@@ -87,6 +88,7 @@ VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, 
   mEditable = false;
   mVariability = "";
   mIsMainArray = variableItemData[10].toBool();
+  mActive = false;
 }
 
 VariablesTreeItem::~VariablesTreeItem()
@@ -98,6 +100,27 @@ VariablesTreeItem::~VariablesTreeItem()
 QString VariablesTreeItem::getPlotVariable()
 {
   return QString(mVariableName).remove(0, mFileName.length() + 1);
+}
+
+/*!
+ * \brief VariablesTreeItem::setActive
+ * Sets all the VariablesTreeItems inactive except this one.
+ */
+void VariablesTreeItem::setActive()
+{
+  VariablesTreeItem *pRootVariablesTreeItem;
+  pRootVariablesTreeItem = MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->getRootVariablesTreeItem();
+  for (int i = 0 ; i < pRootVariablesTreeItem->getChildren().size() ; i++) {
+    VariablesTreeItem *pVariablesTreeItem = pRootVariablesTreeItem->child(i);
+    if (pVariablesTreeItem) {
+      if (pVariablesTreeItem != this) {
+        pVariablesTreeItem->mActive = false;
+      }
+    }
+  }
+  // set VariablesTreeView to active.
+  mActive = true;
+  MainWindow::instance()->getVariablesWidget()->initializeVisualization(mSimulationOptions);
 }
 
 QIcon VariablesTreeItem::getVariableTreeItemIcon(QString name) const
@@ -177,7 +200,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
     case 0:
       switch (role) {
         case Qt::DisplayRole:
-          return mDisplayVariableName;
+          return isActive() ? "(Active) " + mDisplayVariableName : mDisplayVariableName;
         case Qt::DecorationRole:
           return mIsRootItem ? getVariableTreeItemIcon(mVariableName) : QIcon();
         case Qt::ToolTipRole:
@@ -186,6 +209,14 @@ QVariant VariablesTreeItem::data(int column, int role) const
           if ((mChildren.size() == 0 && parent()->parent()) || mIsMainArray) {  // do not show checkbox for top level items without children.
             return isChecked() ? Qt::Checked : Qt::Unchecked;
            } else {
+            return QVariant();
+          }
+        case Qt::FontRole:
+          if (isActive()) {
+            QFont font;
+            font.setBold(true);
+            return font;
+          } else {
             return QVariant();
           }
         default:
@@ -293,6 +324,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
   headers << "" << "" << Helper::variables << Helper::variables << tr("Value") << tr("Unit") << tr("Display Unit") <<
              QStringList() << Helper::description << "" << false;
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
+  mpActiveVariablesTreeItem = 0;
 }
 
 int VariablesTreeModel::columnCount(const QModelIndex &parent) const
@@ -535,6 +567,11 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   beginInsertRows(index, row, row);
   mpRootVariablesTreeItem->insertChild(row, pTopVariablesTreeItem);
   endInsertRows();
+  // set the newly inserted VariablesTreeItem active
+  mpActiveVariablesTreeItem = pTopVariablesTreeItem;
+  if (simulationOptions.isValid()) {
+    pTopVariablesTreeItem->setActive();
+  }
   /* open the model_init.xml file for reading */
   QString initFileName;
   if (simulationOptions.isValid()) {
@@ -870,6 +907,23 @@ void VariablesTreeModel::removeVariableTreeItem()
 }
 
 /*!
+ * \brief VariablesTreeModel::setVariableTreeItemActive
+ * Slots activated when mpSetResultActiveAction triggered SIGNAL is raised.
+ * Sets a VariablesTreeItem active.
+ */
+void VariablesTreeModel::setVariableTreeItemActive()
+{
+  QAction *pAction = qobject_cast<QAction*>(sender());
+  if (pAction) {
+    VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(pAction->data().toString(), mpRootVariablesTreeItem);
+    if (pVariablesTreeItem) {
+      mpActiveVariablesTreeItem = pVariablesTreeItem;
+      pVariablesTreeItem->setActive();
+    }
+  }
+}
+
+/*!
  * \class VariableTreeProxyModel
  * \brief A sort filter proxy model for Variables Browser.
  */
@@ -1017,6 +1071,61 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSimulationTimeSlider->setMinimum(0);
   mpSimulationTimeSlider->setMaximum(100);
   connect(mpSimulationTimeSlider, SIGNAL(valueChanged(int)), SLOT(simulationTimeChanged(int)));
+  // toolbar
+  mpToolBar = new QToolBar;
+  int toolbarIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value();
+  mpToolBar->setIconSize(QSize(toolbarIconSize, toolbarIconSize));
+  // rewind action
+  mpRewindAction = new QAction(QIcon(":/Resources/icons/initialize.svg"), tr("Rewind"), this);
+  mpRewindAction->setStatusTip(tr("Rewinds the visualization to the start"));
+  connect(mpRewindAction, SIGNAL(triggered()), SLOT(rewindVisualization()));
+  // play action
+  mpPlayAction = new QAction(QIcon(":/Resources/icons/play_animation.svg"), Helper::animationPlay, this);
+  mpPlayAction->setStatusTip(tr("Play the visualization"));
+  connect(mpPlayAction, SIGNAL(triggered()), SLOT(playVisualization()));
+  // pause action
+  mpPauseAction = new QAction(QIcon(":/Resources/icons/pause.svg"), Helper::animationPause, this);
+  mpPauseAction->setStatusTip(tr("Pause the visualization"));
+  connect(mpPauseAction, SIGNAL(triggered()), SLOT(pauseVisualization()));
+  // time
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  pDoubleValidator->setBottom(0);
+  mpTimeLabel = new Label;
+  mpTimeLabel->setText(tr("Time:"));
+  mpTimeTextBox = new QLineEdit("0.0");
+  mpTimeTextBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpTimeTextBox->setValidator(pDoubleValidator);
+  connect(mpTimeTextBox, SIGNAL(returnPressed()), SLOT(visulizationTimeChanged()));
+  // speed
+  mpSpeedLabel = new Label;
+  mpSpeedLabel->setText(Helper::speed);
+  mpSpeedComboBox = new QComboBox;
+  mpSpeedComboBox->setEditable(true);
+  mpSpeedComboBox->addItems(Helper::speedOptions.split(","));
+  mpSpeedComboBox->setCurrentIndex(3);
+  mpSpeedComboBox->setMaximumSize(QSize(toolbarIconSize*2, toolbarIconSize));
+  mpSpeedComboBox->setValidator(pDoubleValidator);
+  mpSpeedComboBox->setCompleter(0);
+  connect(mpSpeedComboBox, SIGNAL(currentIndexChanged(int)), SLOT(visualizationSpeedChanged()));
+  connect(mpSpeedComboBox->lineEdit(), SIGNAL(textChanged(QString)), SLOT(visualizationSpeedChanged()));
+  // add actions to toolbar
+  mpToolBar->addAction(mpRewindAction);
+  mpToolBar->addSeparator();
+  mpToolBar->addAction(mpPlayAction);
+  mpToolBar->addAction(mpPauseAction);
+  mpToolBar->addSeparator();
+  mpToolBar->addWidget(mpTimeLabel);
+  mpToolBar->addWidget(mpTimeTextBox);
+  mpToolBar->addSeparator();
+  mpToolBar->addWidget(mpSpeedLabel);
+  mpToolBar->addWidget(mpSpeedComboBox);
+  // time manager
+  mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 1.0);
+  mpTimeManager->setStartTime(0.0);
+  mpTimeManager->setEndTime(1.0);
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  mpTimeManager->setPause(true);
+  connect(mpTimeManager->getUpdateSceneTimer(), SIGNAL(timeout()), SLOT(incrementVisualization()));
   // create variables tree widget
   mpVariablesTreeView = new VariablesTreeView(this);
   mpVariablesTreeModel = new VariablesTreeModel(mpVariablesTreeView);
@@ -1030,6 +1139,8 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpVariablesTreeView->setColumnWidth(3, 70);
   mpVariablesTreeView->setColumnHidden(2, true); // hide Unit column
   mpLastActiveSubWindow = 0;
+  mModelicaMatReader.file = 0;
+  mpCSVData = 0;
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -1038,7 +1149,8 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   pMainLayout->addWidget(mpSimulationTimeLabel, 1, 0);
   pMainLayout->addWidget(mpSimulationTimeComboBox, 1, 1);
   pMainLayout->addWidget(mpSimulationTimeSlider, 2, 0, 1, 2);
-  pMainLayout->addWidget(mpVariablesTreeView, 3, 0, 1, 2);
+  pMainLayout->addWidget(mpToolBar, 3, 0, 1, 2);
+  pMainLayout->addWidget(mpVariablesTreeView, 4, 0, 1, 2);
   setLayout(pMainLayout);
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
@@ -1367,6 +1479,79 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
                                                           GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                           .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
+}
+
+/*!
+ * \brief VariablesWidget::initializeVisualization
+ * Initializes the TimeManager with SimulationOptions for Visualization.
+ * \param simulationOptions
+ */
+void VariablesWidget::initializeVisualization(SimulationOptions simulationOptions)
+{
+  // close any result file before opening a new one
+  closeResultFile();
+  // Open the file for reading
+  openResultFile();
+  // Initialize the time manager
+  mpTimeManager->setStartTime(simulationOptions.getStartTime().toDouble());
+  mpTimeManager->setEndTime(simulationOptions.getStopTime().toDouble());
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  mpTimeManager->setPause(true);
+  // reset the visualization controls
+  mpTimeTextBox->setText("0.0");
+  mpSimulationTimeSlider->setValue(0);
+}
+
+/*!
+ * \brief VariablesWidget::readVariableValue
+ * Reads the variable value at specific time.
+ * \param variable
+ * \param time
+ * \return
+ */
+double VariablesWidget::readVariableValue(QString variable, double time)
+{
+  double value = 0.0;
+  if (mModelicaMatReader.file) {
+    ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toStdString().c_str());
+    if (var) {
+      omc_matlab4_val(&value, &mModelicaMatReader, var, time);
+    }
+  } else if (mpCSVData) {
+    double *timeDataSet = read_csv_dataset(mpCSVData, "time");
+    if (timeDataSet) {
+      for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
+        if (QString::number(timeDataSet[i]).compare(QString::number(time)) == 0) {
+          double *varDataSet = read_csv_dataset(mpCSVData, variable.toStdString().c_str());
+          if (varDataSet) {
+            value = varDataSet[i];
+            break;
+          }
+        }
+      }
+    }
+  } else if (mPlotFileReader.isOpen()) {
+    QTextStream textStream(&mPlotFileReader);
+    QString currentLine;
+    bool variableFound = false;
+    while (!textStream.atEnd()) {
+      currentLine = textStream.readLine();
+      if (currentLine.compare(QString("DataSet: %1").arg(variable)) == 0) {
+        variableFound = true;
+      } else if (variableFound) {
+        if (currentLine.startsWith("DataSet:")) { // new dataset started. Unable to find the value.
+          break;
+        }
+        QStringList values = currentLine.split(",");
+        if (QString::number(time).compare(values[0]) == 0) {
+          value = values[1].toDouble();
+          break;
+        }
+      }
+    }
+    textStream.seek(0);
+  }
+  return value;
 }
 
 void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, PlotCurve *pPlotCurve,
@@ -1804,6 +1989,11 @@ void VariablesWidget::simulationTimeChanged(int timePercent)
     } else {
       return;
     }
+  } else { // if no plot window then try to update the DiagramWindow
+    float time = (mpTimeManager->getEndTime() - mpTimeManager->getStartTime()) * (float) (timePercent / 100.0);
+    mpTimeManager->setVisTime(time);
+    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+    updateVisualization();
   }
 }
 /*!
@@ -1859,6 +2049,82 @@ void VariablesWidget::selectInteractivePlotWindow(VariablesTreeItem *pVariablesT
       }
     }
   }
+}
+
+/*!
+ * \brief VariablesWidget::closeResultFile
+ * Closes the result file.
+ */
+void VariablesWidget::closeResultFile()
+{
+  if (mModelicaMatReader.file) {
+    omc_free_matlab4_reader(&mModelicaMatReader);
+    mModelicaMatReader.file = 0;
+  }
+  if (mpCSVData) {
+    omc_free_csv_reader(mpCSVData);
+    mpCSVData = 0;
+  }
+  if (mPlotFileReader.isOpen()) {
+    mPlotFileReader.close();
+  }
+}
+
+/*!
+ * \brief VariablesWidget::openResultFile
+ * Opens the result file.
+ */
+void VariablesWidget::openResultFile()
+{
+  if (mpVariablesTreeModel->getActiveVariablesTreeItem()) {
+    // read filename
+    QString fileName = QString("%1/%2").arg(mpVariablesTreeModel->getActiveVariablesTreeItem()->getFilePath())
+                       .arg(mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName());
+    bool errorOpeningFile = false;
+    QString errorString = "";
+    if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".mat")) {
+      const char *msg[] = {""};
+      if (0 != (msg[0] = omc_new_matlab4_reader(fileName.toStdString().c_str(), &mModelicaMatReader))) {
+        errorOpeningFile = true;
+        errorString = msg[0];
+      }
+    } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".csv")) {
+      mpCSVData = read_csv(fileName.toStdString().c_str());
+      if (!mpCSVData) {
+        errorOpeningFile = true;
+      }
+    } else if (mpVariablesTreeModel->getActiveVariablesTreeItem()->getFileName().endsWith(".plt")) {
+      mPlotFileReader.setFileName(fileName);
+      if (!mPlotFileReader.open(QIODevice::ReadOnly)) {
+        errorOpeningFile = true;
+        errorString = mPlotFileReader.errorString();
+      }
+    }
+    // check file opening error
+    if (errorOpeningFile) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE)
+                                                            .arg(fileName, errorString), Helper::scriptingKind, Helper::errorLevel));
+    }
+  }
+}
+
+/*!
+ * \brief VariablesWidget::updateVisualization
+ * Updates the visualization.
+ */
+void VariablesWidget::updateVisualization()
+{
+  mpTimeManager->updateTick();  //for real-time measurement
+  double visTime = mpTimeManager->getRealTime();
+  // Update the DiagramWindow
+  emit updateDynamicSelect(mpTimeManager->getVisTime());
+  if (MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()) {
+    MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getGraphicsView()->scene()->update();
+  }
+  mpTimeManager->updateTick();  //for real-time measurement
+  visTime = mpTimeManager->getRealTime() - visTime;
+  mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
 }
 
 /*!
@@ -1935,8 +2201,17 @@ void VariablesWidget::showContextMenu(QPoint point)
     pDeleteResultAction->setStatusTip(tr("Delete the result"));
     connect(pDeleteResultAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(removeVariableTreeItem()));
 
+    /* set result active action */
+    QAction *pSetResultActiveAction = new QAction(tr("Set Active"), this);
+    pSetResultActiveAction->setData(pVariablesTreeItem->getVariableName());
+    pSetResultActiveAction->setStatusTip(tr("An active item is used for the visualization"));
+    pSetResultActiveAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid() && !pVariablesTreeItem->isActive());
+    connect(pSetResultActiveAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(setVariableTreeItemActive()));
+
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
+    menu.addSeparator();
+    menu.addAction(pSetResultActiveAction);
     menu.addSeparator();
     menu.addAction(MainWindow::instance()->getReSimulateModelAction());
     menu.addAction(MainWindow::instance()->getReSimulateSetupAction());
@@ -1977,4 +2252,110 @@ void VariablesWidget::directReSimulate()
 void VariablesWidget::showReSimulateSetup()
 {
   reSimulate(true);
+}
+
+/*!
+ * \brief VariablesWidget::rewindVisualization
+ * Slot activated when mpRewindAction triggered SIGNAL is raised.
+ */
+void VariablesWidget::rewindVisualization()
+{
+  mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+  mpTimeManager->setRealTimeFactor(0.0);
+  mpTimeManager->setPause(true);
+  bool state = mpSimulationTimeSlider->blockSignals(true);
+  mpSimulationTimeSlider->setValue(0);
+  mpSimulationTimeSlider->blockSignals(state);
+  mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+}
+
+/*!
+ * \brief VariablesWidget::playVisualization
+ * Slot activated when mpPlayAction triggered SIGNAL is raised.
+ */
+void VariablesWidget::playVisualization()
+{
+  mpTimeManager->setPause(false);
+}
+
+/*!
+ * \brief VariablesWidget::pauseVisualization
+ * Slot activated when mpPauseAction triggered SIGNAL is raised.
+ */
+void VariablesWidget::pauseVisualization()
+{
+  mpTimeManager->setPause(true);
+}
+
+/*!
+ * \brief VariablesWidget::visulizationTimeChanged
+ * Slot activated when mpTimeTextBox returnPressed SIGNAL is raised.
+ */
+void VariablesWidget::visulizationTimeChanged()
+{
+  QString time = mpTimeTextBox->text();
+  bool isFloat = true;
+  double start = mpTimeManager->getStartTime();
+  double end = mpTimeManager->getEndTime();
+  double value = time.toFloat(&isFloat);
+  if (isFloat && value >= 0.0) {
+    if (value < start) {
+      value = start;
+    } else if (value > end) {
+      value = end;
+    }
+    mpTimeManager->setVisTime(value);
+    bool state = mpSimulationTimeSlider->blockSignals(true);
+    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    mpSimulationTimeSlider->blockSignals(state);
+    updateVisualization();
+  }
+}
+
+/*!
+ * \brief VariablesWidget::visualizationSpeedChanged
+ * Slot activated when mpSpeedComboBox currentIndexChanged SIGNAL is raised.
+ */
+void VariablesWidget::visualizationSpeedChanged()
+{
+  QString speed = mpSpeedComboBox->lineEdit()->text();
+  bool isFloat = true;
+  double value = speed.toFloat(&isFloat);
+  if (isFloat && value > 0.0) {
+    mpTimeManager->setSpeedUp(value);
+  }
+}
+
+/*!
+ * \brief VariablesWidget::incrementVisualization
+ * Slot activated when TimeManager timer emits timeout SIGNAL.
+ */
+void VariablesWidget::incrementVisualization()
+{
+  if (!mpTimeManager->isPaused()) {
+    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+    // set time slider
+    int time = mpTimeManager->getTimeFraction();
+    bool state = mpSimulationTimeSlider->blockSignals(true);
+    mpSimulationTimeSlider->setValue(time);
+    mpSimulationTimeSlider->blockSignals(state);
+  }
+
+  //measure realtime
+  mpTimeManager->updateTick();
+  //update scene and set next time step
+  if (!mpTimeManager->isPaused()) {
+    updateVisualization();
+    //finish animation with pause when endtime is reached
+    if (mpTimeManager->getVisTime() >= mpTimeManager->getEndTime()) {
+      pauseVisualization();
+    } else { // get the new visualization time
+      double newTime = mpTimeManager->getVisTime() + (mpTimeManager->getHVisual()*mpTimeManager->getSpeedUp());
+      if (newTime <= mpTimeManager->getEndTime()) {
+        mpTimeManager->setVisTime(newTime);
+      } else {
+        mpTimeManager->setVisTime(mpTimeManager->getEndTime());
+      }
+    }
+  }
 }

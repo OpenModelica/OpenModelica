@@ -58,6 +58,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -87,6 +88,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -125,6 +127,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   setSynchronize(false);
   setPriority(1);
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
     /* Use the linecolor of the first shape from icon layer of start component for the connection line.
      * Or use black color if there is no shape in the icon layer
@@ -210,6 +213,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -248,6 +252,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -287,6 +292,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, Graphi
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -318,6 +324,7 @@ LineAnnotation::LineAnnotation(Component *pParent)
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -354,6 +361,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setZfr("");
   setAlpha("");
   setOMSConnectionType(oms3_connection_single);
+  setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -467,6 +475,13 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   Q_UNUSED(option);
   Q_UNUSED(widget);
   if (mVisible || !mDynamicVisible.isEmpty()) {
+    if (mLineType == LineAnnotation::TransitionType && mpGraphicsView->isVisualizationView()) {
+      if (isActiveState()) {
+        painter->setOpacity(1.0);
+      } else {
+        painter->setOpacity(0.2);
+      }
+    }
     drawLineAnnotaion(painter);
   }
 }
@@ -1019,13 +1034,19 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   setReset(pLineAnnotation->getReset());
   setSynchronize(pLineAnnotation->getSynchronize());
   setPriority(pLineAnnotation->getPriority());
-  mpTextAnnotation = pLineAnnotation->getTextAnnotation();
+  if (pLineAnnotation->getTextAnnotation()) {
+    mpTextAnnotation = new TextAnnotation("", this);
+    mpTextAnnotation->updateShape(pLineAnnotation->getTextAnnotation());
+  } else {
+    mpTextAnnotation = 0;
+  }
   setOldAnnotation(pLineAnnotation->getOldAnnotation());
   setDelay(pLineAnnotation->getDelay());
   setZf(pLineAnnotation->getZf());
   setZfr(pLineAnnotation->getZfr());
   setAlpha(pLineAnnotation->getAlpha());
   setOMSConnectionType(pLineAnnotation->getOMSConnectionType());
+  setActiveState(pLineAnnotation->isActiveState());
   // set the default values
   GraphicItem::setDefaults(pShapeAnnotation);
   mPoints.clear();
@@ -1033,6 +1054,7 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   for (int i = 0 ; i < points.size() ; i++) {
     addPoint(points[i]);
   }
+  updateTransitionTextPosition();
   ShapeAnnotation::setDefaults(pShapeAnnotation);
 }
 
@@ -1090,6 +1112,22 @@ void LineAnnotation::showOMSConnection()
              && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
     TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(mpGraphicsView, this, false);
     pTLMBusConnectionDialog->exec();
+  }
+}
+
+void LineAnnotation::updateToolTip()
+{
+  if (mLineType == LineAnnotation::ConnectionType) {
+    setToolTip(QString("<b>connect</b>(%1, %2)").arg(getStartComponentName()).arg(getEndComponentName()));
+  } else if (mLineType == LineAnnotation::TransitionType) {
+    setToolTip(QString("<b>transition</b>(%1, %2, %3, %4, %5, %6, %7)")
+               .arg(getStartComponentName())
+               .arg(getEndComponentName())
+               .arg(getCondition())
+               .arg(getImmediate() ? "true" : "false")
+               .arg(getReset() ? "true" : "false")
+               .arg(getSynchronize() ? "true" : "false")
+               .arg(getPriority()));
   }
 }
 
@@ -2076,6 +2114,9 @@ CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphi
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->isVisualizationView()) {
+    mpOkButton->setDisabled(true);
+  }
   connect(mpOkButton, SIGNAL(clicked()), SLOT(createOrEditTransition()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
