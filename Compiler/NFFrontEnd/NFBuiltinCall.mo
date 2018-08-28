@@ -1482,8 +1482,7 @@ protected
                 restCref = ComponentRef.CREF(ty = ty2, origin = NFComponentRef.Origin.CREF,
                 restCref = rest_cref))
               then Class.isOverdetermined(InstNode.getClass(node)) and
-                   Type.isConnector(ty2) and
-                   not ComponentRef.isFromCref(rest_cref);
+                   Type.isConnector(ty2);
 
             else false;
           end match;
