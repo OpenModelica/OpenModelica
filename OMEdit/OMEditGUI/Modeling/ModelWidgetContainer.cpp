@@ -3757,20 +3757,24 @@ Component* ModelWidget::getConnectorComponent(Component *pConnectorComponent, QS
 void ModelWidget::clearGraphicsViews()
 {
   /* remove everything from the icon view */
-  removeClassComponents(StringHandler::Icon);
-  mpIconGraphicsView->removeAllShapes();
-  mpIconGraphicsView->removeAllConnections();
-  removeInheritedClassShapes(StringHandler::Icon);
-  removeInheritedClassComponents(StringHandler::Icon);
-  mpIconGraphicsView->scene()->clear();
+  if (mpIconGraphicsView) {
+    removeClassComponents(StringHandler::Icon);
+    mpIconGraphicsView->removeAllShapes();
+    mpIconGraphicsView->removeAllConnections();
+    removeInheritedClassShapes(StringHandler::Icon);
+    removeInheritedClassComponents(StringHandler::Icon);
+    mpIconGraphicsView->scene()->clear();
+  }
   /* remove everything from the diagram view */
-  removeClassComponents(StringHandler::Diagram);
-  mpDiagramGraphicsView->removeAllShapes();
-  mpDiagramGraphicsView->removeAllConnections();
-  removeInheritedClassShapes(StringHandler::Diagram);
-  removeInheritedClassComponents(StringHandler::Diagram);
-  removeInheritedClassConnections();
-  mpDiagramGraphicsView->scene()->clear();
+  if (mpDiagramGraphicsView) {
+    removeClassComponents(StringHandler::Diagram);
+    mpDiagramGraphicsView->removeAllShapes();
+    mpDiagramGraphicsView->removeAllConnections();
+    removeInheritedClassShapes(StringHandler::Diagram);
+    removeInheritedClassComponents(StringHandler::Diagram);
+    removeInheritedClassConnections();
+    mpDiagramGraphicsView->scene()->clear();
+  }
 }
 
 /*!
@@ -3791,6 +3795,16 @@ void ModelWidget::reDrawModelWidget()
     // get the submodels and connections
     getCompositeModelSubModels();
     getCompositeModelConnections();
+    // clear the undo stack
+    mpUndoStack->clear();
+//    if (mpEditor) {
+//      mpEditor->getPlainTextEdit()->document()->clearUndoRedoStacks();
+//    }
+  } else if (getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
+    // get the submodels and connections
+    drawOMSModelElements();
+    drawOMSModelConnections();
     // clear the undo stack
     mpUndoStack->clear();
 //    if (mpEditor) {
@@ -3971,7 +3985,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
+      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, LibraryTreeItem::Modelica);
       i = 0;  //Restart iteration if list has changed
     } else {
       i++;
@@ -4004,6 +4018,70 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
       pLibraryTreeModel->checkIfAnyNonExistingClassLoaded();
     }
     index++;
+  }
+}
+
+/*!
+ * \brief ModelWidget::omsimulatorEditorTextChanged
+ * Called when OMSimulatorEditor text has been changed by user manually.\n
+ * Updates the LibraryTreeItem and ModelWidget with new changes.
+ * \return
+ */
+bool ModelWidget::omsimulatorEditorTextChanged()
+{
+  OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
+  QFileInfo fileInfo(mpLibraryTreeItem->getFileName());
+  if (fileInfo.exists()) {
+    OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  }
+  QString modelName;
+  bool success = false;
+  if (OMSProxy::instance()->parseString(pOMSimulatorEditor->getPlainTextEdit()->toPlainText(), &modelName)) {
+    if (mpLibraryTreeItem->getNameStructure().compare(modelName) != 0
+        && MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(modelName)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
+                                                            .arg("Composite model").arg(modelName).arg("scope"),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return false;
+    }
+    success = OMSProxy::instance()->loadString(pOMSimulatorEditor->getPlainTextEdit()->toPlainText(), &modelName);
+  }
+  if (fileInfo.exists()) {
+    OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
+  }
+  if (success) {
+    // model name has changed
+    if (mpLibraryTreeItem->getNameStructure().compare(modelName) != 0) {
+      // unload the old model from OMSimulator
+      OMSProxy::instance()->unloadModel(mpLibraryTreeItem->getNameStructure());
+      // Update to the new name
+      mpLibraryTreeItem->setName(modelName);
+      mpLibraryTreeItem->setNameStructure(modelName);
+      setWindowTitle(mpLibraryTreeItem->getName() + (mpLibraryTreeItem->isSaved() ? "" : "*"));
+      setModelClassPathLabel(mpLibraryTreeItem->getNameStructure());
+    }
+    // Update the OMS element
+    oms_element_t *pOMSElement = 0;
+    OMSProxy::instance()->getElement(mpLibraryTreeItem->getNameStructure(), &pOMSElement);
+    mpLibraryTreeItem->setOMSElement(pOMSElement);
+    // remove the children
+    int i = 0;
+    while (i < mpLibraryTreeItem->childrenSize()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->removeLibraryTreeItem(mpLibraryTreeItem->child(i), LibraryTreeItem::OMS);
+      i = 0;  //Restart iteration
+    }
+    // create the children
+    QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(mpLibraryTreeItem);
+    QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->collapse(proxyIndex);
+    mpLibraryTreeItem->setExpanded(false);
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->createLibraryTreeItems(mpLibraryTreeItem);
+    reDrawModelWidget();
+    mpLibraryTreeItem->setClassText(pOMSimulatorEditor->getPlainTextEdit()->toPlainText());
+    return true;
+  } else {
+    return false;
   }
 }
 
@@ -5972,20 +6050,6 @@ bool ModelWidget::compositeModelEditorTextChanged()
   /* get the model components and connectors */
   reDrawModelWidget();
   return true;
-}
-
-/*!
- * \brief ModelWidget::omsimulatorEditorTextChanged
- * Called when OMSimulatorEditor text has been changed by user manually.\n
- * Updates the LibraryTreeItem and ModelWidget with new changes.
- * \return
- */
-bool ModelWidget::omsimulatorEditorTextChanged()
-{
-  /*! @todo For now return false.
-   * We need an API call oms2_loadModelFromString() or something similar to load the changed model back.
-   */
-  return false;
 }
 
 /*!

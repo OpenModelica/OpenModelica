@@ -2017,7 +2017,7 @@ void Component::updatePlacementAnnotation()
                                                         QString::number(mTransformation.getRotateAngle()));
   } else if (pLibraryTreeItem->getLibraryType()== LibraryTreeItem::OMS) {
     if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSElement()) {
-      ssd_element_geometry_t *pElementGeometry = mpLibraryTreeItem->getOMSElement()->geometry;
+      ssd_element_geometry_t elementGeometry = mpLibraryTreeItem->getOMSElementGeometry();
       QPointF extent1 = mTransformation.getExtent1();
       QPointF extent2 = mTransformation.getExtent2();
       if (mTransformation.hasOrigin()) {
@@ -2026,12 +2026,12 @@ void Component::updatePlacementAnnotation()
         extent2.setX(extent2.x() + mTransformation.getOrigin().x());
         extent2.setY(extent2.y() + mTransformation.getOrigin().y());
       }
-      pElementGeometry->x1 = extent1.x();
-      pElementGeometry->y1 = extent1.y();
-      pElementGeometry->x2 = extent2.x();
-      pElementGeometry->y2 = extent2.y();
-      pElementGeometry->rotation = mTransformation.getRotateAngle();
-      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), pElementGeometry);
+      elementGeometry.x1 = extent1.x();
+      elementGeometry.y1 = extent1.y();
+      elementGeometry.x2 = extent2.x();
+      elementGeometry.y2 = extent2.y();
+      elementGeometry.rotation = mTransformation.getRotateAngle();
+      OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
     } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSConnector()) {
       ssd_connector_geometry_t *pConnectorGeometry = mpLibraryTreeItem->getOMSConnector()->geometry;
       pConnectorGeometry->x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);

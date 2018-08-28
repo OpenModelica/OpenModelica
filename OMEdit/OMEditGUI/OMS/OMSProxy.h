@@ -68,7 +68,9 @@ public:
   bool deleteSubModel(QString modelIdent, QString subModelIdent);
   bool rename(QString identOld, QString identNew);
   bool loadModel(QString filename, QString* pModelName);
-  bool saveModel(QString filename, QString ident);
+  bool parseString(QString contents, QString* pModelName);
+  bool loadString(QString contents, QString* pModelName);
+  bool saveModel(QString ident, QString filename);
   bool listModel(QString ident, QString *pContents);
   bool getElement(QString cref, oms_element_t** pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
@@ -106,6 +108,7 @@ public:
   bool setCommunicationInterval(QString cref, double communicationInterval);
   bool setResultFile(QString cref, QString filename);
   bool setMasterAlgorithm(QString cref, QString masterAlgorithm);
+  bool exists(QString cref);
 };
 
 #endif // OMSPROXY_H

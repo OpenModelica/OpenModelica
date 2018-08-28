@@ -420,6 +420,7 @@ public:
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
   bool modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem);
   void updateChildClasses(LibraryTreeItem *pLibraryTreeItem);
+  bool omsimulatorEditorTextChanged();
   void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelText(bool updateText = true);
@@ -495,7 +496,6 @@ public slots:
   void makeFileWritAble();
   void showDocumentationView();
   bool compositeModelEditorTextChanged();
-  bool omsimulatorEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
   void removeDynamicResults(QString resultFileName = "");

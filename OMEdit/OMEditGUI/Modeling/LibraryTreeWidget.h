@@ -125,6 +125,7 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms_element_t* getOMSElement() const {return mpOMSElement;}
+  ssd_element_geometry_t getOMSElementGeometry();
   void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
   void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
@@ -262,7 +263,7 @@ public:
   bool unloadCompositeModelOrTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
-  bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem::LibraryType type);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);
@@ -280,7 +281,9 @@ private:
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
+public:
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+private:
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1);
   void createNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
@@ -295,7 +298,9 @@ private:
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
+public:
   void unloadFileChildren(LibraryTreeItem *pLibraryTreeItem);
+private:
   void deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void deleteFileChildren(LibraryTreeItem *pLibraryTreeItem);
 protected:

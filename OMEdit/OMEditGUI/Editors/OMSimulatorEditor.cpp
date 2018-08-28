@@ -243,6 +243,8 @@ void OMSimulatorHighlighter::initializeSettings()
                   << "\\bssd:ConnectorGeometry\\b"
                   << "\\bParameter\\b"
                   << "\\bssd:Connections\\b"
+                  << "\\bssd:Connection\\b"
+                  << "\\bssd:ConnectionGeometry\\b"
                   << "\\bssd:DefaultExperiment\\b";
   foreach (const QString &elementPattern, elementPatterns)
   {

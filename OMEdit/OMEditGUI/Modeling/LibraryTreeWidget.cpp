@@ -268,6 +268,37 @@ QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
 }
 
 /*!
+ * \brief LibraryTreeItem::getOMSElementGeometry
+ * \return
+ */
+ssd_element_geometry_t LibraryTreeItem::getOMSElementGeometry()
+{
+  ssd_element_geometry_t elementGeometry;
+  if (getOMSElement() && getOMSElement()->geometry) {
+    elementGeometry.x1 = getOMSElement()->geometry->x1;
+    elementGeometry.y1 = getOMSElement()->geometry->y1;
+    elementGeometry.x2 = getOMSElement()->geometry->x2;
+    elementGeometry.y2 = getOMSElement()->geometry->y2;
+    elementGeometry.rotation = getOMSElement()->geometry->rotation;
+    elementGeometry.iconSource = getOMSElement()->geometry->iconSource;
+    elementGeometry.iconRotation = getOMSElement()->geometry->iconRotation;
+    elementGeometry.iconFlip = getOMSElement()->geometry->iconFlip;
+    elementGeometry.iconFixedAspectRatio = getOMSElement()->geometry->iconFixedAspectRatio;
+  } else {
+    elementGeometry.x1 = 0.0; // -10.0;
+    elementGeometry.y1 = 0.0; // -10.0;
+    elementGeometry.x2 = 0.0; // 10.0;
+    elementGeometry.y2 = 0.0; // 10.0;
+    elementGeometry.rotation = 0.0;
+    elementGeometry.iconSource = NULL;
+    elementGeometry.iconRotation = 0.0;
+    elementGeometry.iconFlip = false;
+    elementGeometry.iconFixedAspectRatio = false;
+  }
+  return elementGeometry;
+}
+
+/*!
  * \brief LibraryTreeItem::getTooltip
  * Returns the LibraryTreeItem tooltip.
  */
@@ -1794,9 +1825,10 @@ bool LibraryTreeModel::unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, 
  * \brief LibraryTreeModel::removeLibraryTreeItem
  * Removes the LibraryTreeItem.
  * \param pLibraryTreeItem
+ * \param type
  * \return
  */
-bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem::LibraryType type)
 {
   /* QSortFilterProxy::filterAcceptRows changes the expand/collapse behavior of indexes or I am using it in some stupid way.
    * If index is expanded and we delete it then the next sibling index automatically becomes expanded.
@@ -1811,7 +1843,15 @@ bool LibraryTreeModel::removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
     expandState = mpLibraryWidget->getLibraryTreeView()->isExpanded(proxyIndex);
   }
-  unloadClassChildren(pLibraryTreeItem);
+  if (type == LibraryTreeItem::OMS) {
+    // remove the LibraryTreeItem from Libraries Browser
+    int row = pLibraryTreeItem->row();
+    beginRemoveRows(libraryTreeItemIndex(pLibraryTreeItem), row, row);
+    unloadFileChildren(pLibraryTreeItem);
+    endRemoveRows();
+  } else {
+    unloadClassChildren(pLibraryTreeItem);
+  }
   if (pNextLibraryTreeItem) {
     QModelIndex modelIndex = libraryTreeItemIndex(pNextLibraryTreeItem);
     QModelIndex proxyIndex = mpLibraryWidget->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
@@ -2489,7 +2529,7 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
 void LibraryTreeModel::unloadClassChildren(LibraryTreeItem *pLibraryTreeItem)
 {
   int i = 0;
-  while(i < pLibraryTreeItem->childrenSize()) {
+  while (i < pLibraryTreeItem->childrenSize()) {
     unloadClassChildren(pLibraryTreeItem->child(i));
     i = 0;  //Restart iteration
   }
@@ -2525,7 +2565,7 @@ void LibraryTreeModel::unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
 void LibraryTreeModel::unloadFileChildren(LibraryTreeItem *pLibraryTreeItem)
 {
   int i = 0;
-  while(i < pLibraryTreeItem->childrenSize()) {
+  while (i < pLibraryTreeItem->childrenSize()) {
     unloadFileChildren(pLibraryTreeItem->child(i));
     i = 0;  //Restart iteration
   }
@@ -2574,7 +2614,7 @@ void LibraryTreeModel::deleteFileHelper(LibraryTreeItem *pLibraryTreeItem, Libra
 void LibraryTreeModel::deleteFileChildren(LibraryTreeItem *pLibraryTreeItem)
 {
   int i = 0;
-  while(i < pLibraryTreeItem->childrenSize()) {
+  while (i < pLibraryTreeItem->childrenSize()) {
     deleteFileChildren(pLibraryTreeItem->child(i));
     i = 0;  //Restart iteration
   }
@@ -4599,7 +4639,7 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     fileName = pLibraryTreeItem->getFileName();
   }
 
-  if (OMSProxy::instance()->saveModel(fileName, pLibraryTreeItem->getNameStructure())) {
+  if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
     /* mark the file as saved and update the labels. */
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);

@@ -2078,15 +2078,15 @@ void AddSubModelIconCommand::redo()
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    ssd_element_geometry_t elementGeometry = pElementLibraryTreeItem->getOMSElementGeometry();
     QString fileURI = "file:///" + mIcon;
-    if (pElementGeometry->iconSource) {
-      delete[] pElementGeometry->iconSource;
+    if (elementGeometry.iconSource) {
+      delete[] elementGeometry.iconSource;
     }
     size_t size = fileURI.toStdString().size() + 1;
-    pElementGeometry->iconSource = new char[size];
-    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
-    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+    elementGeometry.iconSource = new char[size];
+    memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
       // clear all shapes of the submodel first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
@@ -2114,12 +2114,12 @@ void AddSubModelIconCommand::undo()
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
-    if (pElementGeometry->iconSource) {
-      delete[] pElementGeometry->iconSource;
+    ssd_element_geometry_t elementGeometry = pElementLibraryTreeItem->getOMSElementGeometry();
+    if (elementGeometry.iconSource) {
+      delete[] elementGeometry.iconSource;
     }
-    pElementGeometry->iconSource = NULL;
-    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+    elementGeometry.iconSource = NULL;
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
       // clear all shapes of the submodel first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
@@ -2163,15 +2163,15 @@ void UpdateSubModelIconCommand::redo()
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
   if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    ssd_element_geometry_t elementGeometry = pElementLibraryTreeItem->getOMSElementGeometry();
     QString fileURI = "file:///" + mNewIcon;
-    if (pElementGeometry->iconSource) {
-      delete[] pElementGeometry->iconSource;
+    if (elementGeometry.iconSource) {
+      delete[] elementGeometry.iconSource;
     }
     size_t size = fileURI.toStdString().size() + 1;
-    pElementGeometry->iconSource = new char[size];
-    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
-    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+    elementGeometry.iconSource = new char[size];
+    memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
       mpShapeAnnotation->setFileName(mNewIcon);
       QPixmap pixmap;
       pixmap.load(mNewIcon);
@@ -2192,15 +2192,15 @@ void UpdateSubModelIconCommand::undo()
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
   if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    ssd_element_geometry_t elementGeometry = pElementLibraryTreeItem->getOMSElementGeometry();
     QString fileURI = "file:///" + mOldIcon;
-    if (pElementGeometry->iconSource) {
-      delete[] pElementGeometry->iconSource;
+    if (elementGeometry.iconSource) {
+      delete[] elementGeometry.iconSource;
     }
     size_t size = fileURI.toStdString().size() + 1;
-    pElementGeometry->iconSource = new char[size];
-    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
-    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+    elementGeometry.iconSource = new char[size];
+    memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
       mpShapeAnnotation->setFileName(mOldIcon);
       QPixmap pixmap;
       pixmap.load(mOldIcon);
@@ -2229,12 +2229,12 @@ void DeleteSubModelIconCommand::redo()
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
-    if (pElementGeometry->iconSource) {
-      delete[] pElementGeometry->iconSource;
+    ssd_element_geometry_t elementGeometry = pElementLibraryTreeItem->getOMSElementGeometry();
+    if (elementGeometry.iconSource) {
+      delete[] elementGeometry.iconSource;
     }
-    pElementGeometry->iconSource = NULL;
-    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+    elementGeometry.iconSource = NULL;
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
       // clear all shapes of the submodel first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
@@ -2269,15 +2269,15 @@ void DeleteSubModelIconCommand::undo()
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   if (pElementLibraryTreeItem && pElementLibraryTreeItem->getOMSElement() && pElementLibraryTreeItem->getOMSElement()->geometry) {
-    ssd_element_geometry_t *pElementGeometry = pElementLibraryTreeItem->getOMSElement()->geometry;
+    ssd_element_geometry_t elementGeometry = pElementLibraryTreeItem->getOMSElementGeometry();
     QString fileURI = "file:///" + mIcon;
-    if (pElementGeometry->iconSource) {
-      delete[] pElementGeometry->iconSource;
+    if (elementGeometry.iconSource) {
+      delete[] elementGeometry.iconSource;
     }
     size_t size = fileURI.toStdString().size() + 1;
-    pElementGeometry->iconSource = new char[size];
-    memcpy(pElementGeometry->iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
-    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), pElementGeometry)) {
+    elementGeometry.iconSource = new char[size];
+    memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
+    if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
       // clear all shapes of the submodel first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);

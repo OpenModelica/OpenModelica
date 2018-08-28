@@ -1714,12 +1714,12 @@ void MainWindow::undo()
     pModelWidget->getUndoStack()->undo();
     pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelText(false);
-  }
-  /* We don't use the editor undo/redo for OMSimulator.
-   * So simply return from here now.
-   */
-  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    return;
+    /* We don't use the editor undo/redo for OMSimulator.
+     * So simply return from here now.
+     */
+    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      return;
+    }
   }
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable())) {
     if (pModelWidget &&
@@ -1759,12 +1759,12 @@ void MainWindow::redo()
     pModelWidget->getUndoStack()->redo();
     pModelWidget->updateClassAnnotationIfNeeded();
     pModelWidget->updateModelText(false);
-  }
-  /* We don't use the editor undo/redo for OMSimulator.
-   * So simply return from here now.
-   */
-  if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    return;
+    /* We don't use the editor undo/redo for OMSimulator.
+     * So simply return from here now.
+     */
+    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      return;
+    }
   }
   if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable())) {
     if (pModelWidget &&

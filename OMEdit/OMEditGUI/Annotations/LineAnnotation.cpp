@@ -133,7 +133,8 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pStartComponent->getLibraryTreeItem(), false);
       }
       ShapeAnnotation *pShapeAnnotation;
-      if (pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
+      if (pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
+          && pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
         pShapeAnnotation = pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
         mLineColor = pShapeAnnotation->getLineColor();
       } else if (pStartComponent->getShapesList().size() > 0) {

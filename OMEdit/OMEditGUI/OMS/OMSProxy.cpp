@@ -338,15 +338,48 @@ bool OMSProxy::loadModel(QString filename, QString* pModelName)
 }
 
 /*!
- * \brief OMSProxy::saveModel
- * Saves the model.
- * \param filename
- * \param ident
+ * \brief OMSProxy::parseString
+ * Parses a model string and returns a model name.
+ * \param contents
+ * \param pModelName
  * \return
  */
-bool OMSProxy::saveModel(QString filename, QString ident)
+bool OMSProxy::parseString(QString contents, QString *pModelName)
 {
-  oms_status_enu_t status = oms2_saveModel(filename.toStdString().c_str(), ident.toStdString().c_str());
+  char* ident = NULL;
+  oms_status_enu_t status = oms2_parseString(contents.toStdString().c_str(), &ident);
+  if (ident) {
+    *pModelName = QString(ident);
+    free(ident);
+  }
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::loadString
+ * Loads the model from a string.
+ * \param contents
+ * \param pModelName
+ * \return
+ */
+bool OMSProxy::loadString(QString contents, QString* pModelName)
+{
+  char* ident = NULL;
+  oms_status_enu_t status = oms2_loadString(contents.toStdString().c_str(), &ident);
+  *pModelName = QString(ident);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::saveModel
+ * Saves the model.
+ * \param ident
+ * \param filename
+ * \return
+ */
+bool OMSProxy::saveModel(QString ident, QString filename)
+{
+  oms_status_enu_t status = oms2_saveModel(ident.toStdString().c_str(), filename.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -833,4 +866,17 @@ bool OMSProxy::setMasterAlgorithm(QString cref, QString masterAlgorithm)
 {
   oms_status_enu_t status = oms2_setMasterAlgorithm(cref.toStdString().c_str(), masterAlgorithm.toStdString().c_str());
   return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::exists
+ * This function returns 1 if a given cref exists in the scope,
+ * otherwise 0. It can be used to check for composite models, sub-models such
+ * as FMUs, and solver instances.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::exists(QString cref)
+{
+  return oms2_exists(cref.toStdString().c_str());
 }
