@@ -682,6 +682,8 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpRestartAfterEventCheckBox->setChecked(false);
           } else if (simulationFlag.compare("noRootFinding") == 0) {
             mpRootFindingCheckBox->setChecked(false);
+          } else if (simulationFlag.compare("outputFormat") == 0) {
+            mpOutputFormatComboBox->setCurrentIndex(mpOutputFormatComboBox->findText(value));
           } else if (simulationFlag.compare("single") == 0) {
             mpSinglePrecisionCheckBox->setChecked(true);
           } else if (simulationFlag.compare("emit_protected") == 0) {
@@ -1306,6 +1308,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (!mpRootFindingCheckBox->isChecked()) {
     simulationFlags.insert("noRootFinding", "()");
   }
+  simulationFlags.insert("outputFormat", mpOutputFormatComboBox->currentText());
   if ((mpOutputFormatComboBox->currentText().compare("mat") == 0) && mpSinglePrecisionCheckBox->isChecked()) {
     simulationFlags.insert("single", "()");
   }
