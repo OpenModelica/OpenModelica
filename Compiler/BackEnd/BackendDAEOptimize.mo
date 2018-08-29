@@ -154,20 +154,27 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp e, expr, a, b;
       Option<DAE.Exp> eMin, eMax;
-      Boolean isZero;
+      Boolean simplifyToZero;
 
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.CREF(componentRef=cr), expr}) algorithm
+    // positiveMax(cref, eps) = 0 if variable(cref).max <= 0
+    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.CREF(componentRef=cr), expr})
+    algorithm
       (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
-      isZero := simplifyInStreamWorkSimplify(eMin, false);
+      simplifyToZero := simplifyInStreamWorkSimplify(eMax, true); // var.max <= 0.0
       tp := ComponentReference.crefTypeFull(cr);
-    then if isZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+    then
+       if simplifyToZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
 
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef=cr)), expr}) algorithm
+    //positiveMax(-cref, eps) = 0 if variable(cref).min >= 0
+    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef=cr)), expr})
+    algorithm
       (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
-      isZero := simplifyInStreamWorkSimplify(eMax, true);
-    then if isZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+      simplifyToZero := simplifyInStreamWorkSimplify(eMin, false); // var.min >= 0.0
+    then
+       if simplifyToZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
 
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr}) guard Expression.isZero(e)
+    //positiveMax(-cref, eps) = -cref where variable is constant <= 0
+    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr}) guard Expression.isNegativeOrZero(e)
     then e;
 
     case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr})
@@ -175,18 +182,20 @@ algorithm
       //print(ExpressionDump.printExpStr(inExp));
       //print(" <-> ");
       //print(ExpressionDump.printExpStr(e));
-    then Expression.makePureBuiltinCall("max", {e, expr}, Expression.typeof(e));
+    then
+      Expression.makePureBuiltinCall("max", {e, expr}, Expression.typeof(e));
 
     case DAE.CALL(path=Absyn.IDENT("$OMC$inStreamDiv"),expLst={e, expr})
       algorithm
           e := ExpressionSimplify.simplify(e);
           expr := match(e)
-                      case DAE.BINARY(a, DAE.DIV(), b)
-                        guard Expression.isZero(a) and Expression.isZero(b)
-                      then
-                        expr;
-                      else
-                        e;
+
+                  case DAE.BINARY(a, DAE.DIV(), b)
+                  guard Expression.isZero(a) and Expression.isZero(b)
+                  then expr;
+
+                  else e;
+
                  end match;
       then
          expr;
@@ -207,7 +216,7 @@ algorithm
     try
       (v, _) := BackendVariable.getVarSingle(cr, vars);
       (outMin, outMax) := BackendVariable.getMinMaxAttribute(v);
-      return;
+      break;
     else
       // search
     end try;
