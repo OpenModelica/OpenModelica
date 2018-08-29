@@ -258,7 +258,7 @@ signals:
   void commandFinished();
 public slots:
   void logCommand(QString command, QTime *commandTime);
-  void logResponse(QString response, QTime *responseTime);
+  void logResponse(QString command, QString response, QTime *responseTime);
   void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();

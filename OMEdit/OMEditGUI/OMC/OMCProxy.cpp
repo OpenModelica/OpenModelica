@@ -208,7 +208,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
   connect(mpOMCInterface, SIGNAL(logCommand(QString,QTime*)), this, SLOT(logCommand(QString,QTime*)));
-  connect(mpOMCInterface, SIGNAL(logResponse(QString,QTime*)), this, SLOT(logResponse(QString,QTime*)));
+  connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,QTime*)), this, SLOT(logResponse(QString,QString,QTime*)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
   // get OpenModelica version
@@ -273,7 +273,7 @@ void OMCProxy::sendCommand(const QString expression)
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
-  logResponse(mResult.trimmed(), &commandTime);
+  logResponse(expression, mResult.trimmed(), &commandTime);
 
   MMC_ELSE()
     mResult = "";
@@ -346,8 +346,17 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
  * \param response - the response to write
  * \param responseTime - the response end time
  */
-void OMCProxy::logResponse(QString response, QTime *responseTime)
+void OMCProxy::logResponse(QString command, QString response, QTime *responseTime)
 {
+  QString firstLine("");
+  for (int i = 0; i < command.length(); i++)
+    if (command[i] != '\n')
+    {
+      firstLine.append(command[i]);
+    }
+    else
+      break;
+
   if (isLoggingEnabled()) {
     // insert the response to the logger window.
     QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
@@ -358,7 +367,7 @@ void OMCProxy::logResponse(QString response, QTime *responseTime)
     if (mpCommunicationLogFile) {
       fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
       mTotalOMCCallsTime += (double)responseTime->elapsed() / 1000;
-      fputs(QString("%1 secs (%2 secs)\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).toStdString().c_str(), mpCommunicationLogFile);
+      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMCCallsTime)).arg(firstLine).toStdString().c_str(),  mpCommunicationLogFile);
     }
   }
 }
