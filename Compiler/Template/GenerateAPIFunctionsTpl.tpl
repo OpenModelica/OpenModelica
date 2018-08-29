@@ -150,7 +150,7 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
     <%heads%>
   signals:
     void logCommand(QString command, QTime *commandTime);
-    void logResponse(QString response, QTime *responseTime);
+    void logResponse(QString command, QString response, QTime *responseTime);
     void throwException(QString exception);
   };
   >>
@@ -426,7 +426,13 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
 
     QString responseLog;
     <%responseLog%>
-    emit logResponse(responseLog, &commandTime);
+    <%if intGt(listLength(args), 0) then
+    <<
+    emit logResponse("<%replaceDotAndUnderscore(name)%>("+commandLog+")", responseLog, &commandTime);
+    >> else
+    <<
+    emit logResponse("<%replaceDotAndUnderscore(name)%>()", responseLog, &commandTime);
+    >>%>
 
     <%if outArg then "return result;"%>
   }
