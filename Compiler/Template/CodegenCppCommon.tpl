@@ -2287,7 +2287,19 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case ADD(__) then '(<%e1%> + <%e2%>)'
   case SUB(__) then '(<%e1%> - <%e2%>)'
   case MUL(__) then '(<%e1%> * <%e2%>)'
-  case DIV(__) then '(<%e1%> / <%e2%>)'
+  case DIV(__) then
+   let e2str = Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(exp2,"\""))
+    match context
+     case ALGLOOP_CONTEXT(genInitialisation = false)
+        then
+        <<
+        division(<%e1%>,<%e2%>,!_system->_initial,"<%e2str%>")
+        >>
+       else
+        <<
+        division(<%e1%>,<%e2%>,!_initial,"<%e2str%>")
+        >>
+    end match
   case POW(__) then 'std::pow(<%e1%>, <%e2%>)'
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
