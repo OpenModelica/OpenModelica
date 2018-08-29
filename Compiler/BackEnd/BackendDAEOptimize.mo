@@ -173,10 +173,11 @@ algorithm
     then
        if simplifyToZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
 
-    //positiveMax(-cref, eps) = -cref where variable is constant <= 0
-    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr}) guard Expression.isNegativeOrZero(e)
+    //positiveMax(cref, eps) = cref where cref >= 0
+    case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr}) guard Expression.isPositiveOrZero(e)
     then e;
 
+    // e.g. positiveMax(cref, eps) = max(cref,eps) = eps where cref < 0
     case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr})
       //print("\nsimplifyInStreamWork: ");
       //print(ExpressionDump.printExpStr(inExp));
