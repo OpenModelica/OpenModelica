@@ -113,7 +113,7 @@ win32 {
     QMAKE_CXXFLAGS += -g
     QMAKE_LFLAGS_RELEASE = -rdynamic
   }
-  equals(QT_ARCH, i386)|equals(QT_ARCH, i686) { # 32-bit
+  equals(QT_ARCH, i386)|equals(QT_ARCH, i486)|equals(QT_ARCH, i586)|equals(QT_ARCH, i686) { # 32-bit
     LIBS += -latomic -lboost_atomic
   }
 }
