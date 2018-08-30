@@ -13,6 +13,7 @@ AC_SUBST(QT4BUILD)
 AC_SUBST(QMAKE_CONFIG_OSG)
 AC_SUBST(LIBOSG)
 AC_SUBST(LSB_RELEASE)
+AC_SUBST(LIB_BOOST_REGEX)
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
@@ -120,6 +121,36 @@ else
   LIBOSG="-losg -losgViewer -losgDB -losgGA -lOpenThreads"
   AC_MSG_RESULT("OSG is enabled")
 fi
+
+AC_MSG_CHECKING([check if -lboost_regex is needed for OMSimulator])
+AC_RUN_IFELSE( [AC_LANG_PROGRAM([[
+#include <regex>
+// adrpo: crap regex handling
+#if __cplusplus >= 201103L &&                             \
+    (!defined(__GLIBCXX__) || (__cplusplus >= 201402L) || \
+        (defined(_GLIBCXX_REGEX_DFS_QUANTIFIERS_LIMIT) || \
+         defined(_GLIBCXX_REGEX_STATE_LIMIT)           || \
+             (defined(_GLIBCXX_RELEASE)                && \
+             _GLIBCXX_RELEASE > 4)))
+#define OMS_GOOD_REGEX 1
+#else /* bad regex, filter by MSVC */
+#if defined(_MSC_VER)
+#define OMS_GOOD_REGEX 1
+#else /* surely bad regex */
+#define OMS_GOOD_REGEX 0
+#endif
+#endif
+]],
+[[
+#if OMS_GOOD_REGEX
+#else
+exit(1);
+#endif
+]])],
+  [AC_MSG_RESULT([no need for -lboost_regex, std::regex is good enough])],
+  [AC_MSG_RESULT([bad std::regex, -lboost_regex is needed]); LIB_BOOST_REGEX=-lboost_regex]
+  )
+
 
 for flag in -Wno-clobbered -Wno-unused-variable -Wno-unused-function -Wno-unused-parameter; do
   OLD_CXXFLAGS="$CXXFLAGS"
