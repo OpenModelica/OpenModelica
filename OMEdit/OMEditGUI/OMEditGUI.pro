@@ -89,7 +89,7 @@ win32 {
     -L$$(OMBUILDDIR)/lib/omc -lomantlr3 -lOMPlot -lomqwt -lomopcua \
     -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
     -lws2_32 \
-    -L$$(OMBUILDDIR)/lib -lOMSimulatorLib -lomtlmsimulator
+    -L$$(OMBUILDDIR)/lib -lOMSimulator -lomtlmsimulator
 
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot \
     $$(OMBUILDDIR)/include \
