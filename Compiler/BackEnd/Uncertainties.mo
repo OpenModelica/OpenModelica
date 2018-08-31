@@ -77,6 +77,8 @@ import Util;
 protected type ExtIncidenceMatrixRow = tuple<Integer,list<Integer>>;
 protected type ExtIncidenceMatrix = list<ExtIncidenceMatrixRow>;
 
+protected type mapBlocks =list<tuple<list<Integer>,Boolean,Boolean>>; // {blocks,blocks.visited,blocks.square}
+
 protected uniontype AliasSet
   record ALIASSET
     HashSet.HashSet symbols;
@@ -214,7 +216,6 @@ algorithm
         unknowns = listAppend(directlyLinked,indirectlyLinked);
         outputvars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
 
-
               printSep(getMathematicaText("Known variables"));
               printSep(variablesToMathematicaGrid(knowns,allVars));
 
@@ -268,10 +269,10 @@ algorithm
         unknownVariables = BackendVariable.listVar(List.map1r(unknowns,BackendVariable.getVarAt,allVars));
 
         //print("* Uncertainty equations extracted: \n");
-        //BackendDump.dumpEquationList(setC_eq);
+        //BackendDump.dumpEquationList(setC_eq,"setC");
 
         //print("* Auxiliary set of equations: \n");
-        //BackendDump.dumpEquationList(setS_eq);
+        //BackendDump.dumpEquationList(setS_eq,"setS");
 
         outStringB = "{{"+getMathematicaVarStr(knownVariables)+","+getMathematicaEqStr(setC_eq,allVars,globalKnownVars)+"},{"
                         +getMathematicaVarStr(unknownVariables)+","+getMathematicaEqStr(setS_eq,allVars,globalKnownVars)+"},"
@@ -297,6 +298,700 @@ algorithm
         fail();
   end matchcontinue;
 end modelEquationsUC;
+
+public function dataReconciliation
+  input  BackendDAE.BackendDAE inDae;
+  output BackendDAE.BackendDAE outDae;
+algorithm
+    outDae:=match(inDae)
+    local
+      BackendDAE.BackendDAE dae;
+      BackendDAE.BackendDAE dlow,dlow_1;
+      BackendDAE.IncidenceMatrix m,mt;
+      list<Integer> approximatedEquations,approximatedEquations_one;
+      list<BackendDAE.Equation> setC_eq,setS_eq;
+      list<BackendDAE.EqSystem> eqsyslist;
+      BackendDAE.Variables allVars,knownVariables,unknownVariables,globalKnownVars,finalvars;
+      BackendDAE.EquationArray allEqs,newEqs;
+      list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,inputvar,outputvars,fullvars,finalvarlist;
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem currentSystem;
+      ExtIncidenceMatrix mExt;
+      list<Integer> setS,setC,removedequationsquared;
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn, match1,match2;
+      list<list<Integer>> bltblocks,blockstofind;
+      list<tuple<list<Integer>,Integer>> blockranks;
+      list<list<String>> blockstatus;
+      list<tuple<Integer,Integer>> var;
+      list<BackendDAE.Var> tempvar;
+      list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blocktargetinfo;
+      list<Boolean> blocksqstatus;
+      list<Integer> removedequationssolvedvar,outputblocks,removedequationvars;
+      mapBlocks initblocks;
+      list<tuple<list<Integer>,list<String>,Boolean,Integer,Boolean>> blockdata;
+    case(dae)
+       equation
+        BackendDAE.DAE(currentSystem::eqsyslist,shared) = dae;
+        BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
+        BackendDAE.SHARED(globalKnownVars=globalKnownVars) = shared;
+        (m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
+
+        BackendDump.dumpEquationArray(allEqs,"orderedEquation");
+        BackendDump.dumpVariables(allVars,"orderedVariables");
+        (match1,match2) = Matching.PerfectMatching(m);
+        var=dumpMatching(match1);
+        BackendDump.dumpMatching(match1);
+        bltblocks=Sorting.Tarjan(m,match1);
+//        print("\n BLT Blocks:=>");
+//        print(anyString(bltblocks));
+        true = listEmpty(eqsyslist);
+        mExt=getExtIncidenceMatrix(m);
+        //dumpExtIncidenceMatrix(mExt);
+        // Extract List of variables
+        variables = List.intRange(BackendVariable.varsSize(allVars));
+        (knowns,_) = getUncertainRefineVariableIndexes(allVars,variables);
+        directlyLinked = getRelatedVariables(mExt,knowns);
+        indirectlyLinked = List.setDifference(getRelatedVariables(mExt,directlyLinked),knowns);
+        unknowns = listAppend(directlyLinked,indirectlyLinked);
+        outputvars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
+        unknowns = listAppend(unknowns,outputvars);
+        fullvars =listAppend(unknowns,knowns);
+        initblocks=setInitialBlocks(bltblocks);
+        // Extract approximated equation
+        approximatedEquations_one = getEquationsWithApproximatedAnnotation(dae);
+        approximatedEquations = List.flatten(List.map1r(approximatedEquations_one,listGet,arrayList(mapEqnIncRow)));
+
+        // Extraction Algorithm steps
+        (blockstofind,blockstatus)=originalBlocks(bltblocks,knowns,unknowns,outputvars,var);
+        blockranks=List.toListWithPositions(blockstofind);
+        blockstatus=checkBlockStatus(blockstofind,blockstatus);
+        blocktargetinfo=findBlockTargets(blockstofind,blockstatus,var,mExt,initblocks,blockranks);
+        //step-3 of algorithm
+        (blocksqstatus,blockdata)=findSquareAndNonSquareBlocks(blocktargetinfo,var,mExt,initblocks);
+        //Step-4 of algorithm
+        (setC,setS,removedequationsquared)=ExtractEquationsfromBlocks(blockdata);
+
+        setC=List.setDifferenceOnTrue(setC,approximatedEquations,intEq);
+        setS=List.setDifferenceOnTrue(setS,approximatedEquations,intEq);
+
+        print("\n FINAL SET OF EQUATIONS After Reconciliation \n");
+        BackendDump.dumpList(setC,"setC_Eqs :");
+        BackendDump.dumpList(setS,"setS_Eqs :");
+
+        removedequationsquared=List.setDifferenceOnTrue(removedequationsquared,setS,intEq);
+        removedequationsquared=List.unique(listAppend(removedequationsquared,approximatedEquations));
+        removedequationssolvedvar=getRemovedEquationSolvedVariables(removedequationsquared,var);
+        //removedequationvars=getRemovedEquationSolvedVariables(outputblocks,var);
+        removedequationvars={};
+
+        setC = List.setDifferenceOnTrue(setC,setS,intEq);
+        setC = List.map1r(setC, listGet, arrayList(mapIncRowEqn));
+        setC = List.unique(setC);
+        setS = List.map1r(setS, listGet, arrayList(mapIncRowEqn));
+        setS = List.unique(setS);
+
+        setC_eq = List.map1r(setC, BackendEquation.get, allEqs);
+        setS_eq = List.map1r(setS, BackendEquation.get, allEqs);
+
+        finalvarlist=List.setDifferenceOnTrue(fullvars,listAppend(removedequationvars,removedequationssolvedvar),intEq);
+        finalvars=BackendVariable.listVar(List.map1r(finalvarlist,BackendVariable.getVarAt,allVars));
+        tempvar= List.map1r(removedequationssolvedvar,BackendVariable.getVarAt,allVars);
+        globalKnownVars=BackendVariable.listVar(List.map1(tempvar,BackendVariable.setVarDirection,DAE.INPUT()));
+        newEqs=BackendEquation.listEquation(listAppend(setC_eq,setS_eq));
+
+        currentSystem=BackendDAEUtil.setEqSystVars(currentSystem,finalvars);
+        currentSystem=BackendDAEUtil.setEqSystEqs(currentSystem,newEqs);
+        shared = BackendDAEUtil.setSharedGlobalKnownVars(shared, globalKnownVars);
+
+        //BackendDump.dumpEquationArray(currentSystem.orderedEqs,"After_data_RECONCIALTION_EQUATIONS");
+        //BackendDump.dumpVariables(currentSystem.orderedVars,"After_data_RECONCIALTION_VARIABLES");
+
+        BackendDump.dumpEquationList(setC_eq,"SET_C");
+        BackendDump.dumpEquationList(setS_eq,"SET_S");
+        outDae=BackendDAE.DAE({currentSystem}, shared);
+      then
+       outDae;
+    case(_) then inDae;
+  end match;
+end dataReconciliation;
+
+public function setInitialBlocks
+   /* Dictionary to set the Square status of BLT BLocks
+      At start set all BLT Blocks Square status = true
+      order of datastructure
+      1 - BLT BLOCKS
+      2 - Visited status  // may be not needed
+      3 - square status
+    */
+   input list<list<Integer>> inlist1;
+   output mapBlocks outlist={};
+algorithm
+   for i in inlist1 loop
+      outlist:=(i,false,true)::outlist;
+   end for;
+   outlist:=listReverse(outlist);
+end setInitialBlocks;
+
+public function updateBlocks
+   /* Function to update the Square Status of BLT Blocks */
+   input list<Integer> blocktoupdate;
+   input mapBlocks inlist;
+   input Boolean visited;
+   input Boolean square;
+   output mapBlocks outlist={};
+protected
+   list<Integer> i1;
+   Boolean b1,b2,b3;
+algorithm
+   for i in inlist loop
+       (i1,b1,b2):=i;
+       b3:=List.setEqualOnTrue(i1,blocktoupdate,intEq);
+       if(b3==true) then
+          b1:=visited;
+          b2:=square;
+       end if;
+       outlist:=(i1,b1,b2)::outlist;
+   end for;
+   outlist:=listReverse(outlist);
+end updateBlocks;
+
+public function sortBlocks
+   input list<Integer> sortedranklist;
+   input list<tuple<list<Integer>,Integer>> inlist2;
+   output list<tuple<list<Integer>,Integer>> outlist={};
+protected
+   Integer e1,e2;
+   list<Integer> blocks;
+algorithm
+   for i in sortedranklist loop
+       for j in inlist2 loop
+          (blocks,e1):=j;
+          if(valueEq(i,e1)) then
+              outlist:=(blocks,e1)::outlist;
+          end if;
+       end for;
+   end for;
+   outlist:=listReverse(outlist);
+end sortBlocks;
+
+public function findBlocksRanks
+   input list<tuple<list<Integer>,Integer>> inlist1;
+   input list<list<Integer>>  inlist2;
+   output list<tuple<list<Integer>,Integer>> outlist={};
+   output list<Integer> ranklist={};
+protected
+   list<Integer> blocks;
+   Integer rank;
+algorithm
+   for i in inlist2 loop
+      for j in inlist1 loop
+          (blocks,rank):=j;
+          if(valueEq(i,blocks)) then
+             outlist:=(i,rank)::outlist;
+             ranklist:=rank::ranklist;
+          end if;
+      end for;
+   end for;
+   outlist:=listReverse(outlist);
+   ranklist:=List.sort(ranklist,intGt);
+end findBlocksRanks;
+
+public function findBlockTargets
+  /* Function which finds the Target blocks for each BLT blocks */
+  input list<list<Integer>> inlist1;
+  input list<list<String>> inlist2;
+  input list<tuple<Integer,Integer>> solvedvariables;
+  input ExtIncidenceMatrix mxt;
+  input mapBlocks map;
+  input list<tuple<list<Integer>,Integer>> blockranks;
+  output list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> outlist={};
+protected
+  list<list<Integer>> targetblocks;
+  list<tuple<list<String>,Integer>> targetvarlist;
+  list<String> blockvarlst;
+  list<Integer> ranklist,blocks1;
+  Integer rank;
+  list<tuple<list<Integer>,Integer>> updatedblocks;
+algorithm
+   for i in inlist1 loop
+      targetblocks:=findBlockTargetsHelper({i},inlist2,solvedvariables,mxt,map,inlist1);
+      targetblocks:=listAppend({i},targetblocks);
+      (updatedblocks,ranklist):=findBlocksRanks(blockranks,targetblocks);
+      updatedblocks:=sortBlocks(ranklist,updatedblocks);
+//      print("\n TARGET BLOCKS ===>");
+//      print(anyString(i));
+//      print("=>");
+//      print(anyString(updatedblocks));
+      targetvarlist:={};
+      for blocks in updatedblocks loop
+          (blocks1,rank):=blocks;
+          blockvarlst:=getBlockVarList(blocks1,inlist1,inlist2);
+          targetvarlist:=(blockvarlst,rank)::targetvarlist;
+      end for;
+      //print("=>");
+      //print(anyString(listReverse(targetvarlist)));
+      outlist:=(i,updatedblocks,listReverse(targetvarlist))::outlist;
+   end for;
+   outlist:=listReverse(outlist);
+end findBlockTargets;
+
+
+public function findBlockTargetsHelper
+  /* Recursive Function which finds the Target blocks for each BLT blocks */
+  input list<list<Integer>> inlist1;
+  input list<list<String>> inlist2;
+  input list<tuple<Integer,Integer>> solvedvariables;
+  input ExtIncidenceMatrix mxt;
+  input mapBlocks map;
+  input list<list<Integer>> actualblocks;
+  output list<list<Integer>> outlist={};
+algorithm
+   outlist:=match(inlist1,inlist2,solvedvariables,mxt,map,actualblocks)
+   local
+     list<Integer> first,dependencyequation,targetblockslist;
+     list<list<Integer>> rest, targetblocks,targetblocks1,originalblocks;
+     list<list<String>> restitem;
+     list<String> firstitem;
+     list<tuple<Integer,Integer>> solvar;
+     ExtIncidenceMatrix mxt1;
+     mapBlocks map1;
+   case(first::rest,firstitem::restitem,solvar,mxt1,map1,originalblocks)
+     equation
+          dependencyequation=findBlockTargetsHelper1((first::rest),solvar,mxt1);
+          targetblocks=getActualBlocks(dependencyequation,originalblocks,first);
+          targetblocks1=findBlockTargetsHelper(targetblocks,firstitem::restitem,solvar,mxt1,map1,originalblocks);
+     then
+       (List.unique(listAppend(targetblocks,targetblocks1)));
+   case(_,_,_,_,_,_) then {};
+   end match;
+end findBlockTargetsHelper;
+
+public function findBlockTargetsHelper1
+   input list<list<Integer>>  inlist;
+   input list<tuple<Integer,Integer>> solvedvariables;
+   input ExtIncidenceMatrix mxt;
+   output list<Integer> outlist={};
+protected
+   list<Integer> dependencyequations;
+algorithm
+   for i in inlist loop
+      dependencyequations:=getDependencyequation(i,{},solvedvariables,mxt);
+      for v in listReverse(dependencyequations) loop
+        outlist:=v::outlist;
+      end for;
+   end for;
+end findBlockTargetsHelper1;
+
+
+public function findSquareAndNonSquareBlocks
+  /*
+   Step-3 of DataReconciliation Algorithm
+   This function provides the square status of the BLT Blocks
+  */
+  input list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>>> blockinfo;
+  input list<tuple<Integer,Integer>> solvedvariables;
+  input ExtIncidenceMatrix mxt;
+  input mapBlocks map;
+  output list<Boolean> outlist={};
+  output list<tuple<list<Integer>,list<String>,Boolean,Integer,Boolean>> outlist2={};
+protected
+  list<Integer> dependencyequation;
+  list<tuple<list<Integer>,Integer>> blockstoupdate,targetblocks;
+  list<tuple<list<String>,Integer>> targetblocksvar;
+  list<Integer> blockitem,blockitems1,blockitems2;
+  list<String> blockvarlst,blockvarlst1,blockvarlst2;
+  Integer foundblock,count=1,foundblockrank;
+  mapBlocks map1=map;
+  Boolean visited,square,status,checkknowns,finalsquarestauts,exist,exist1;
+  list<tuple<list<Integer>,list<String>,Boolean,Integer>> outlist1={};
+algorithm
+   for blocks in blockinfo loop
+      (blockitems1,targetblocks,targetblocksvar):= blocks;
+      (blockstoupdate,exist,foundblock):=findSquareAndNonSquareBlocksHelper(targetblocks,targetblocksvar);
+      (blockvarlst1,_):=List.first(targetblocksvar);
+      outlist1:=(blockitems1,blockvarlst1,exist,foundblock)::outlist1;
+      for j in blockstoupdate loop
+         (blockitem,_):=j;
+         visited:=false;
+         map1:=updateBlocks(blockitem,map1,visited,false);
+      end for;
+   end for;
+   //print("\n AFTER NEW SQUARE TRAVERSAL =====>");
+   for k in map1 loop
+       (_,_,finalsquarestauts):=k;
+       (blockitems1,blockvarlst2,exist1,foundblockrank):=listGet(listReverse(outlist1),count);
+       outlist:=finalsquarestauts::outlist;
+       outlist2:=(blockitems1,blockvarlst2,exist1,foundblockrank,finalsquarestauts)::outlist2;
+       count:=count+1;
+   end for;
+   outlist:=listReverse(outlist);
+   outlist2:=listReverse(outlist2);
+end findSquareAndNonSquareBlocks;
+
+public function findSquareAndNonSquareBlocksHelper
+    input list<tuple<list<Integer>,Integer>> inlist1;
+    input list<tuple<list<String>,Integer>> inlist2;
+    output list<tuple<list<Integer>,Integer>> targetblocks={};
+    output Boolean exists=false;
+    output Integer foundblock=-1;
+protected
+    Boolean checkknowns;
+    list<String> blocksvarlist;
+    Integer count=1,rank;
+    list<tuple<list<Integer>,Integer>> targetblockstest={};
+algorithm
+    for i in inlist2 loop
+        (blocksvarlist,rank):=i;
+        checkknowns:=listMember("knowns",blocksvarlist);
+        if(checkknowns==true) then
+           /* Extract Blocks After the first known blocks to update the square status of these blocks to false */
+           targetblocks:=List.lastN(inlist1,(listLength(inlist1)-count));
+           foundblock:=rank;
+           exists:=true;
+           break;
+        end if;
+        count:=count+1;
+    end for;
+end findSquareAndNonSquareBlocksHelper;
+
+public function getBlockVarList
+   input list<Integer> blocktofind;
+   input list<list<Integer>> inlist1;
+   input list<list<String>> inlist2;
+   output list<String> outstringlist={};
+protected
+   Integer count=1;
+   Boolean b3;
+algorithm
+   for i in inlist1 loop
+       b3:=List.setEqualOnTrue(i,blocktofind,intEq);
+       if(b3==true) then
+          outstringlist:=listGet(inlist2,count);
+       end if;
+   count:=count+1;
+   end for;
+end getBlockVarList;
+
+public function getActualBlocks
+  input list<Integer> searchblock;
+  input list<list<Integer>> inlist1;
+  input list<Integer> inlist2;
+  output list<list<Integer>> outlist={};
+algorithm
+  for i in inlist1 loop
+      if(not listEmpty(List.intersectionOnTrue(searchblock,i,intEq))) then
+        outlist:=i::outlist;
+      end if;
+  end for;
+  //outlist:=listReverse(listAppend(outlist,{inlist2}));
+  outlist:=listReverse(outlist);
+end getActualBlocks;
+
+public function ExtractEquationsfromBlocks
+  /*
+   order of dataStructure
+    list<Integer> - Blocks -> {1,2}
+    list<String>  - Blocksvarlist ->{knowns,unknowns}
+    Boolean       - BlockExistorNot
+    Integer       - BlockRank
+    Boolean       - BlockSquareStatus
+   */
+   input list<tuple<list<Integer>,list<String>,Boolean,Integer,Boolean>> blockdata;
+   output list<Integer> setc={};
+   output list<Integer> sets={};
+   output list<Integer> removedeq={};
+protected
+   list<Integer> blockitem,blockitem1,setc1,sets1,temp1,temp2,rmeqlist;
+   list<list<Integer>> usedblocklist={};
+   list<String> blockvarlist;
+   Boolean blockexist,squarestatus,used=false,checkusedblock,targetBlockSquareStatus;
+   Integer blockrank,knownvarcount,blocksize;
+algorithm
+   for i in blockdata loop
+      (blockitem,blockvarlist,blockexist,blockrank,squarestatus):=i;
+      if (blockexist==true and squarestatus==true) then
+          /*
+            EXISTING BLOCKS with squarestatus True
+            Input Blocks Insert equations in setc
+          */
+         (blockitem1,_,_,_,targetBlockSquareStatus):=listGet(blockdata,blockrank);
+         checkusedblock:=listMember(blockitem1,usedblocklist);
+         if(not List.setEqualOnTrue(blockitem,blockitem1,intEq)) then
+            /*
+              EXISTING NON-EQUAL BLOCKS with Target blocks different
+              eg: B1={B1,B2,B3}
+              where B1=>B3(B1 depends on B3) which contains variable of interest
+            */
+            if (targetBlockSquareStatus==true and checkusedblock==false) then
+                temp1:=List.lastN(blockitem,(listLength(blockitem)-1));
+                if(listEmpty(temp1)) then
+                    removedeq:=listAppend(blockitem,removedeq);
+                end if;
+                sets:=listAppend(temp1,sets);
+                //add one equation of found block into sets
+                sets:=listAppend(List.firstOrEmpty(blockitem1),sets);
+                usedblocklist:=blockitem1::usedblocklist;
+            elseif (targetBlockSquareStatus==false or checkusedblock==true) then
+                sets:=listAppend(blockitem,sets);
+            end if;
+         else
+            /*
+              EXISTING EQUAL BLOCKS with Target blocks same
+              eg: B1={B1,B2,B3}
+              where B1=>B1(B1 depends on B1) which contains variable of interest
+              insert equations in setc and sets
+            */
+            (setc1,sets1):=extractMixedBlock(blockitem,blockvarlist);
+            setc:=listAppend(List.restOrEmpty(setc1),setc);
+            sets:=listAppend(sets,sets1);
+            removedeq:=listAppend(List.firstOrEmpty(setc1),removedeq);
+         end if;
+      elseif (blockexist==true and squarestatus==false) then
+         /*
+          EXISTING BLOCKS with squarestatus False
+          insert equations into setc and sets
+        */
+         (setc1,sets1):=extractMixedBlock(blockitem,blockvarlist);
+         sets:=listAppend(sets,sets1);
+         setc:=listAppend(setc,setc1);
+      else
+        /*
+          NON EXISTING BLOCKS,Blocks to be removed
+          Eg: B1:={B1,B2,B3}
+          where B1,B2,B3 does not contain known variables
+        */
+        removedeq:=listAppend(blockitem,removedeq);
+      end if;
+   end for;
+   setc:=List.unique(setc);
+   sets:=List.unique(sets);
+   removedeq:=List.unique(removedeq);
+end ExtractEquationsfromBlocks;
+
+
+public function getRemovedEquationSolvedVariables
+  input list<Integer> inlist;
+  input list<tuple<Integer,Integer>> solvedvar;
+  output list<Integer> outvarlist={};
+protected
+  Integer eqnumber,varnumber;
+algorithm
+    for i in inlist loop
+        (_,varnumber):=getSolvedVariableNumber(i,solvedvar);
+        outvarlist:=varnumber::outvarlist;
+    end for;
+end getRemovedEquationSolvedVariables;
+
+
+public function countKnownVariables
+  input list<String> inlist1;
+  output Integer count=0;
+protected
+  Boolean value;
+algorithm
+   for i in inlist1 loop
+       if(valueEq(i,"knowns")) then
+          count:=count+1;
+       end if;
+   end for;
+end countKnownVariables;
+
+
+public function checkBlockStatus
+   input list<list<Integer>> inlist1;
+   input list<list<String>> inlist2;
+   output list<list<String>> instringlist={};
+protected
+   Integer count=0;
+   Boolean b1,b2,b3,setinputs=true,setinputs1=true;
+algorithm
+   for i in inlist2 loop
+       b1:=listMember("knowns",i);
+       b2:=listMember("unknowns",i);
+       b3:=listMember("inputs",i);
+       if(setinputs==true and b2==true and b1==false) then
+          i:=List.fill("inputs",listLength(i));
+       end if;
+       if(b1==true and b2==false) then
+          setinputs:=false;
+       end if;
+       if(b1==true and b2==true) then
+          setinputs:=false;
+       end if;
+       instringlist:=i::instringlist;
+       count:=count+1;
+   end for;
+   instringlist:=listReverse(instringlist);
+end checkBlockStatus;
+
+
+public function originalBlocks
+  input list<list<Integer>> inlist;
+  input list<Integer> knowns;
+  input list<Integer> unknowns;
+  input list<Integer> outputs;
+  input list<tuple<Integer,Integer>> solvedvariables;
+  output list<list<Integer>> outlist={};
+  output list<list<String>> outstringlist={};
+protected
+   list<Integer> blocks;
+   list<String> blockinfo;
+algorithm
+   for i in inlist loop
+       (blocks,blockinfo):=checkBlueOrRedSquareBlocks(i,knowns,unknowns,outputs,solvedvariables);
+       outlist:=blocks::outlist;
+       outstringlist:=blockinfo::outstringlist;
+   end for;
+   outlist:=listReverse(outlist);
+   outstringlist:=listReverse(outstringlist);
+end originalBlocks;
+
+
+public function extractMixedBlock
+  input list<Integer> inlist;
+  input list<String> instringList;
+  output list<Integer> setc={};
+  output list<Integer> sets={};
+protected
+  Integer count=1;
+  String s;
+algorithm
+   for e in inlist loop
+     s:=listGet(instringList,count);
+     if(valueEq(s,"knowns")) then
+        setc:=e::setc;
+     else
+        sets:=e::sets;
+     end if;
+     count:=count+1;
+   end for;
+end extractMixedBlock;
+
+
+public function getDependencyequation
+  input list<Integer> inlist;
+  input list<Integer> inlist1;
+  input list<tuple<Integer,Integer>> solvedvariables;
+  input ExtIncidenceMatrix m;
+  output list<Integer> outinteger;
+protected
+  list<Integer> t={},nonsq;
+  Integer eqnumber,varnumber;
+algorithm
+    for i in inlist loop
+       (eqnumber,varnumber):= getSolvedVariableNumber(i,solvedvariables);
+       nonsq:=getdirectOccurrencesinEquation(m,eqnumber,varnumber);
+       //print(anyString(nonsq));
+       for lst in nonsq loop
+          if(not listMember(lst,inlist)) then
+             t:=lst::t;
+          end if;
+       end for;
+    end for;
+   outinteger:=listAppend(t,inlist1);
+end getDependencyequation;
+
+
+public function getdirectOccurrencesinEquation
+  input ExtIncidenceMatrix m;
+  input Integer eqnumber;
+  input Integer varnumber;
+  output list<Integer> out;
+algorithm
+  out:=match(m,eqnumber,varnumber)
+    local
+      ExtIncidenceMatrix tail;
+      list<Integer> ret,vars,matchedeq;
+      Integer eq,eqnum,varnum;
+      case((eq,vars)::tail,eqnum,varnum)
+        equation
+          if(not intEq(eq,eqnum)) then
+              if(listMember(varnum,vars)) then
+                matchedeq={eq};
+              else
+                matchedeq={};
+              end if;
+          else
+             matchedeq={};
+          end if;
+          ret = getdirectOccurrencesinEquation(tail,eqnum,varnum);
+        then
+          (listAppend(matchedeq,ret));
+      case({},_,_)then {};
+  end match;
+end getdirectOccurrencesinEquation;
+
+public function checkBlueOrRedSquareBlocks
+  input list<Integer> inlist;
+  input list<Integer> knowns;
+  input list<Integer> unknowns;
+  input list<Integer> outputs;
+  input list<tuple<Integer,Integer>> solvedvar;
+  output list<Integer> outlist={};
+  output list<String> outstring={};
+protected
+   Integer count=1,eqnumber,varnumber;
+   Boolean b1,b2,b3;
+   String s1;
+algorithm
+      for i in inlist loop
+        (eqnumber,varnumber):=getSolvedVariableNumber(i,solvedvar);
+         b1:=listMember(varnumber,knowns);
+         b2:=listMember(varnumber,unknowns);
+         b3:=listMember(varnumber,outputs);
+         if(b1==false and b2==true) then
+            s1:="unknowns";
+            outstring:=s1::outstring;
+            outlist:=i::outlist;
+         end if;
+         if(b1==true and b2==false) then
+            s1:="knowns";
+            outstring:=s1::outstring;
+            outlist:=i::outlist;
+         end if;
+
+         if(b1==false and b2==false) then
+            s1:="unknowns";
+            outstring:=s1::outstring;
+            outlist:=i::outlist;
+         end if;
+         count:=count+1;
+      end for;
+   outlist:=listReverse(outlist);
+   outstring:=listReverse(outstring);
+end checkBlueOrRedSquareBlocks;
+
+
+public function getSolvedVariableNumber
+  input Integer eqnumber;
+  input list<tuple<Integer,Integer>> inlist;
+  output tuple<Integer,Integer> mappedEqVar;
+protected
+     Integer eq,solvedvar;
+algorithm
+   for var in inlist loop
+      (eq,solvedvar):=var;
+      if(intEq(eqnumber,eq)) then
+          mappedEqVar :=(eqnumber,solvedvar);
+          return;
+      end if;
+   end for;
+end getSolvedVariableNumber;
+
+public function dumpMatching
+  input array<Integer> v;
+  output list<tuple<Integer,Integer>> eqvarlist={};
+protected
+  list<Integer> var;
+  Integer count=1;
+algorithm
+  var:=arrayList(v);
+  for i in var loop
+      eqvarlist:=(i,count)::eqvarlist;
+      count:=count+1;
+  end for;
+end dumpMatching;
 
 protected function printSep
   input String s;
@@ -675,6 +1370,7 @@ algorithm
 end matchcontinue;
 end flattenModel;
 
+
 protected function getMathematicaVarStr
   input BackendDAE.Variables vars;
   output String out;
@@ -780,7 +1476,8 @@ algorithm
         printSep(getMathematicaText("System of knowns after step 7"));
         printSep(equationsToMathematicaGrid(getEquationsNumber(knownsSystem),allEqs,variables,knownVariables,mapIncRowEqn));
 
-
+        //print("\n System of knowns");
+        //print(anyString(knownsSystem));
         knownsSystemComp=sortEquations(knownsSystem,knowns);
         knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns);
 

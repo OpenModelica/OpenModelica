@@ -117,6 +117,7 @@ import System;
 import Tearing;
 import Types;
 import UnitCheck;
+import Uncertainties;
 import Values;
 import XMLDump;
 import ZeroCrossings;
@@ -7613,6 +7614,7 @@ end selectMatchingAlgorithm;
 public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (Uncertainties.dataReconciliation, "dataReconciliation"),
     (UnitCheck.unitChecking, "unitChecking"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
