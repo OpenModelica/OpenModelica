@@ -406,17 +406,33 @@ void standardSetup() {
 }
 
 def numPhysicalCPU() {
-  return sh (
-    script: 'lscpu -p | egrep -v "^#" | sort -u -t, -k 2,4 | wc -l',
-    returnStdout: true
-  ).trim().toInteger()
+  def uname = sh script: 'uname', returnStdout: true
+  if (uname.startsWith("Darwin")) {
+    return sh (
+      script: 'sysctl hw.physicalcpu_max | cut -d" " -f2',
+      returnStdout: true
+    ).trim().toInteger() ?: 1
+  } else {
+    return sh (
+      script: 'lscpu -p | egrep -v "^#" | sort -u -t, -k 2,4 | wc -l',
+      returnStdout: true
+    ).trim().toInteger() ?: 1
+  }
 }
 
 def numLogicalCPU() {
-  return sh (
-    script: 'lscpu -p | egrep -v "^#" | wc -l',
-    returnStdout: true
-  ).trim().toInteger()
+  def uname = sh script: 'uname', returnStdout: true
+  if (uname.startsWith("Darwin")) {
+    return sh (
+      script: 'sysctl hw.logicalcpu_max | cut -d" " -f2',
+      returnStdout: true
+    ).trim().toInteger() ?: 1
+  } else {
+    return sh (
+      script: 'lscpu -p | egrep -v "^#" | wc -l',
+      returnStdout: true
+    ).trim().toInteger() ?: 1
+  }
 }
 
 void partest(cache=true, extraArgs='') {
