@@ -7605,6 +7605,167 @@ AAAAAAAAAAAAAAB4KaX50xp77gAAAABJRU5ErkJggg==
     y2+y3=0;
     y2*y3=3;
   end ExtractionSetS_NL_Test;
+  
+  // NEW TEST CASES  
+  model TwoFlows
+    Real Q1(uncertain=Uncertainty.refine); 
+	Real Q2(uncertain=Uncertainty.refine); 
+	Real Q3(uncertain=Uncertainty.refine);
+    Real Q4(uncertain=Uncertainty.refine);
+    Real y1, a;
+  equation
+	  y1 = 2;       // Eq1
+	  a = 0.5;      // Eq2
+	  Q1 = y1;      // Eq3
+	  Q2 = a*y1 annotation(__OpenModelica_ApproximatedEquation=true); // Eq4 uncertain
+	  Q1 = Q2 + Q3; // Eq5
+	  Q4 = Q1 + Q2; // Eq6
+  end TwoFlows;
+  
+  model Splitter
+	 Real Q(uncertain=Uncertainty.refine);
+	 Real Q1(uncertain=Uncertainty.refine);
+	 Real Q2(uncertain=Uncertainty.refine);
+	 Real y, y1, y2, a;
+	 Real A, Y;
+  equation
+     Y = 2;       // Eq1
+     y = Y;       // Eq2
+     A = 0.5;     // Eq3
+     a = A;       // Eq4
+     y1 = a*y;    // Eq5
+     y = y1 + y2; // Eq6
+     Q = y;       // Eq7
+     Q1 = y1;     // Eq8
+     Q2 = y2;     // Eq9
+  end Splitter;
+  
+  
+  model Splitter1
+	  Real Q1(uncertain=Uncertainty.refine); 
+	  Real Q2(uncertain=Uncertainty.refine); 
+	  Real Q3(uncertain=Uncertainty.refine);
+	  Real P01,P02,P03,T1_P1,T2_P2,T3_P2,T1_P2,T2_P1;
+	  Real T3_P1,V_Q1,V_Q2,V_Q3,T1_Q2,T1_Q2,T2_Q1,T3_Q1,V_P1,P,V_P2,V_P3,T1_Q1,T2_Q2,T3_Q2;
+  equation
+	  P01 = 3;			// Eq1
+	  P02 = 1;			// Eq2
+	  P03 = 1;			// Eq3
+	  T1_P1 = P01;		// Eq4
+	  T2_P2 = P02;		// Eq5
+	  T3_P2 = P03;		// Eq6
+	  T1_P1 - T1_P2 = Q1^2 annotation(__OpenModelica_ApproximatedEquation=true); // Eq7
+	  T2_P1 - T2_P2 = Q2^2 annotation(__OpenModelica_ApproximatedEquation=true);// Eq8
+	  T3_P1 - T3_P2 = Q3^2 annotation(__OpenModelica_ApproximatedEquation=true); // Eq9
+	  V_Q1 = V_Q2 + V_Q3; // Eq10
+	  V_Q1 = T1_Q2;	 	// Eq11    
+	  T1_Q2 = Q1;		// Eq12
+	  V_Q2 = T2_Q1;	 	// Eq13
+	  T2_Q1 = Q2;		// Eq14
+	  V_Q3 = T3_Q1;	 	// Eq15
+	  T3_Q1 = Q3;		// Eq16
+	  T1_P2 = V_P1;	 	// Eq17
+	  V_P1 = P;			// Eq18  
+	  T2_P1 = V_P2 ;	// Eq19
+	  V_P2 = P; 		// Eq20 
+	  T3_P1 = V_P3;	 	// Eq21
+	  V_P3 = P;			// Eq22
+	  T1_Q1 = Q1;		// Eq23
+	  T2_Q2 = Q2;  		// Eq24
+	  T3_Q2 = Q3;  		// Eq25
+  end Splitter1;
+  
+  model Pipe1
+    Real p;
+    Real Q1(uncertain=Uncertainty.refine);
+	Real Q2(uncertain=Uncertainty.refine);
+  equation
+    p=2;
+    Q1 = Q2;
+    Q1 = p;  
+  end Pipe1; 
+    
+  model Pipe2
+    Real p;
+    Real Q1(uncertain=Uncertainty.refine);
+	Real Q2(uncertain=Uncertainty.refine);
+    Real y1, y2;
+  equation
+    p=2;
+    Q1 = y1; 
+    Q2 = Q1; // Eq2
+    y1 = y2; // Eq3
+    Q1 = p;  // Eq4
+  end Pipe2; 
+
+  model Pipe3
+    Real p=2;
+    Real Q1(uncertain=Uncertainty.refine);
+	Real Q2(uncertain=Uncertainty.refine);
+    Real y1, y2;
+  equation
+    Q1 = y1; // Eq1
+    Q2 = y2; // Eq2
+    y1 = y2; // Eq3
+    Q1 = p;  // Eq4
+  end Pipe3; 
+
+  model Pipe4
+    Real p;
+    Real q; 
+    Real Q1(uncertain=Uncertainty.refine);
+    Real Q2(uncertain=Uncertainty.refine);
+    Real y1, y2;
+  equation
+    p=2;
+    q=1;
+    Q1 = y1;   // Eq1
+    Q2 = q*y2; // Eq2
+    y1 = y2;   // Eq3
+    Q1 = q*p;  // Eq4
+  end Pipe4; 
+
+  model Pipe5
+    Real p;
+    Real q;
+    Real Q1(uncertain=Uncertainty.refine);
+    Real Q2(uncertain=Uncertainty.refine);
+    Real y1, y2;
+  equation
+    p=2;
+    q=1;
+    Q1 = y1;   // Eq1
+    Q2 = q*y2; // Eq2
+    y1 = q*y2; // Eq3
+    Q1 = p;    // Eq4
+  end Pipe5; 
+  
+  model ExtractionSetSTest2
+    Real x1(uncertain=Uncertainty.refine);
+    Real x2(uncertain=Uncertainty.refine);
+    Real x3(uncertain=Uncertainty.refine);
+    Real y1;
+    Real y2;
+    Real y3;
+    Real z1;
+    Real z2;
+    Real z3;
+    Real z4;
+    Real z5 annotation(Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})));
+  equation
+    x1 + x2 = 0;
+    x1 - x2 = 0;
+    y1 = x2 + 2*x3;
+    x3 - y1 + y2 = x2;
+    y2 + y3 = 0;
+    y2 - 2*y3 = 3;
+    z1 + z2 + z3 + y3 = 2;
+    z2 + 2*z3 = x1 - x2;
+    z3 = 2*x3;
+    y1 + y2 + z4 = x2 + 3*x3 annotation(__OpenModelica_ApproximatedEquation=true);
+    z4 - z5 = x1 - x3;
+  end ExtractionSetSTest2;
+
 
   model ThermoSysProRedundancyTest1
 

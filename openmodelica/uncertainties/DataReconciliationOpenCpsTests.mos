@@ -1,0 +1,742 @@
+// name:     DataReconciliationOpenCpsTests
+// keywords: extraction algorithm
+// status:   correct
+
+
+loadModel(Modelica,{"3.1"}); getErrorString();
+
+setCommandLineOptions("--preOptModules+=dataReconciliation"); 
+getErrorString();
+
+loadFile("DataReconciliationTests21jan2013Total.mo");
+getErrorString();
+
+translateModel(DataReconciliationTests.DistillationTower);
+getErrorString();
+
+translateModel(DataReconciliationTests.VDI2048Exple);
+getErrorString();
+
+translateModel(DataReconciliationTests.FlatSimpleExple);
+getErrorString();
+
+translateModel(DataReconciliationTests.ExtractionSetS_NL_Test);
+getErrorString();
+
+translateModel(DataReconciliationTests.ExtractionSetSTest);
+getErrorString();
+
+translateModel(DataReconciliationTests.ExtractionSetSTest2);
+getErrorString();
+
+translateModel(DataReconciliationTests.Pipe2);
+getErrorString();
+
+translateModel(DataReconciliationTests.Pipe2);
+getErrorString();
+
+translateModel(DataReconciliationTests.Pipe3);
+getErrorString();
+
+translateModel(DataReconciliationTests.Pipe4);
+getErrorString();
+
+translateModel(DataReconciliationTests.Pipe5);
+getErrorString();
+
+translateModel(DataReconciliationTests.RedundancyTestCase1);
+getErrorString();
+
+translateModel(DataReconciliationTests.RedundancyTestCase2);
+getErrorString();
+
+translateModel(DataReconciliationTests.RedundancyTestCase3);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// orderedEquation (9, 9)
+// ========================================
+// 1/1 (1): F = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): B = 1.0   [binding |0|0|0|0|]
+// 3/3 (1): xB1 = 1.0   [binding |0|0|0|0|]
+// 4/4 (1): xT1 = 1.0   [binding |0|0|0|0|]
+// 5/5 (1): F * xF1 + (-B) * xB1 - T * xT1 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): F * xF2 + (-B) * xB2 - T * xT2 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 8/8 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 9/9 (1): xT1 + xT2 = 100.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (9)
+// ========================================
+// 1: xT2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: xT1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: xB2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: xB1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: xF2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: xF1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: B:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: F:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 9 variables and equations
+// var 1 is solved in eqn 9
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 7
+// var 7 is solved in eqn 5
+// var 8 is solved in eqn 2
+// var 9 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :9, 8, 6, 5, 7
+// setS_Eqs :
+//
+// SET_C (5)
+// ========================================
+// 1/1 (1): xT1 + xT2 = 100.0   [dynamic |0|0|0|0|]
+// 2/2 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 3/3 (1): F * xF2 + (-B) * xB2 - T * xT2 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): F * xF1 + (-B) * xB1 - T * xT1 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (0)
+// ========================================
+//
+// true
+// ""
+//
+// orderedEquation (11, 11)
+// ========================================
+// 1/1 (1): mFDKEL = 46.241   [binding |0|0|0|0|]
+// 2/2 (1): mFDKELL = 45.668   [binding |0|0|0|0|]
+// 3/3 (1): mSPL = 44.575   [binding |0|0|0|0|]
+// 4/4 (1): mSPLL = 44.319   [binding |0|0|0|0|]
+// 5/5 (1): mHK = 69.97799999999999   [binding |0|0|0|0|]
+// 6/6 (1): mA7 = 10.364   [binding |0|0|0|0|]
+// 7/7 (1): mA6 = 3.744   [binding |0|0|0|0|]
+// 8/8 (1): mD = 2.092   [binding |0|0|0|0|]
+// 9/9 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
+// 10/10 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
+// 11/11 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (11)
+// ========================================
+// 1: mD:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: mHDNK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: mA5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: mA6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: mA7:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: mHK:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 7: mV:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 8: mSPLL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 9: mSPL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 10: mFDKELL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 11: mFDKEL:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 11 variables and equations
+// var 1 is solved in eqn 8
+// var 2 is solved in eqn 11
+// var 3 is solved in eqn 10
+// var 4 is solved in eqn 7
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 5
+// var 7 is solved in eqn 9
+// var 8 is solved in eqn 4
+// var 9 is solved in eqn 3
+// var 10 is solved in eqn 2
+// var 11 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :9, 10, 11
+// setS_Eqs :
+//
+// SET_C (3)
+// ========================================
+// 1/1 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (0)
+// ========================================
+//
+// true
+// ""
+//
+// orderedEquation (4, 4)
+// ========================================
+// 1/1 (1): q1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): q2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): q1 = q2 + q3   [dynamic |0|0|0|0|]
+// 4/4 (1): q4 = q2 + q3   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (4)
+// ========================================
+// 1: q4:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: q3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 2
+// var 4 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :3, 4
+// setS_Eqs :
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): q1 = q2 + q3   [dynamic |0|0|0|0|]
+// 2/2 (1): q4 = q2 + q3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (0)
+// ========================================
+//
+// true
+// ""
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): y2 * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: y3:VARIABLE()  type: Real 
+// 2: y2:VARIABLE()  type: Real 
+// 3: y1:VARIABLE()  type: Real 
+// 4: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :1, 3
+// setS_Eqs :5, 6, 4
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y2 * y3 = 3.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+// true
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: y3:VARIABLE()  type: Real 
+// 2: y2:VARIABLE()  type: Real 
+// 3: y1:VARIABLE()  type: Real 
+// 4: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :1, 3
+// setS_Eqs :5, 6, 4
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (11, 11)
+// ========================================
+// 1/1 (1): x1 + x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+// 5/5 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+// 7/7 (1): z1 + z2 + z3 + y3 = 2.0   [dynamic |0|0|0|0|]
+// 8/8 (1): z2 + 2.0 * z3 = x1 - x2   [dynamic |0|0|0|0|]
+// 9/9 (1): z3 = 2.0 * x3   [dynamic |0|0|0|0|]
+// 10/10 (1): y1 + y2 + z4 = x2 + 3.0 * x3   [dynamic |0|0|0|0|]
+// 11/11 (1): z4 - z5 = x1 - x3   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (11)
+// ========================================
+// 1: z5:VARIABLE()  type: Real 
+// 2: z4:VARIABLE()  type: Real 
+// 3: z3:VARIABLE()  type: Real 
+// 4: z2:VARIABLE()  type: Real 
+// 5: z1:VARIABLE()  type: Real 
+// 6: y3:VARIABLE()  type: Real 
+// 7: y2:VARIABLE()  type: Real 
+// 8: y1:VARIABLE()  type: Real 
+// 9: x3:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 10: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 11: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 11 variables and equations
+// var 1 is solved in eqn 11
+// var 2 is solved in eqn 10
+// var 3 is solved in eqn 9
+// var 4 is solved in eqn 8
+// var 5 is solved in eqn 7
+// var 6 is solved in eqn 6
+// var 7 is solved in eqn 5
+// var 8 is solved in eqn 4
+// var 9 is solved in eqn 3
+// var 10 is solved in eqn 2
+// var 11 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :2, 3
+// setS_Eqs :6, 5, 4
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x1 - x2 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = x2 + 2.0 * x3   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): y2 + (-2.0) * y3 = 3.0   [dynamic |0|0|0|0|]
+// 2/2 (1): y2 + y3 = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): x3 + y2 - y1 = x2   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (5, 5)
+// ========================================
+// 1/1 (1): p = 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = y2   [dynamic |0|0|0|0|]
+// 5/5 (1): Q1 = p   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (5)
+// ========================================
+// 1: y2:VARIABLE()  type: Real 
+// 2: y1:VARIABLE()  type: Real 
+// 3: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: p:VARIABLE()  type: Real 
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 5
+// var 5 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :3
+// setS_Eqs :5
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): Q2 = Q1   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (1)
+// ========================================
+// 1/1 (1): Q1 = p   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (5, 5)
+// ========================================
+// 1/1 (1): p = 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = y2   [dynamic |0|0|0|0|]
+// 5/5 (1): Q1 = p   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (5)
+// ========================================
+// 1: y2:VARIABLE()  type: Real 
+// 2: y1:VARIABLE()  type: Real 
+// 3: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: p:VARIABLE()  type: Real 
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 5
+// var 5 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :3
+// setS_Eqs :5
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): Q2 = Q1   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (1)
+// ========================================
+// 1/1 (1): Q1 = p   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (5, 5)
+// ========================================
+// 1/1 (1): p = 2.0   [binding |0|0|0|0|]
+// 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = y2   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = y2   [dynamic |0|0|0|0|]
+// 5/5 (1): Q1 = p   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (5)
+// ========================================
+// 1: y2:VARIABLE()  type: Real 
+// 2: y1:VARIABLE()  type: Real 
+// 3: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: p:VARIABLE()  type: Real 
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 5
+// var 5 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :3
+// setS_Eqs :5, 2, 4
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): Q2 = y2   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (3)
+// ========================================
+// 1/1 (1): Q1 = p   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 3/3 (1): y1 = y2   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): p = 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): q = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 4/4 (1): Q2 = q * y2   [dynamic |0|0|0|0|]
+// 5/5 (1): y1 = y2   [dynamic |0|0|0|0|]
+// 6/6 (1): Q1 = q * p   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: y2:VARIABLE()  type: Real 
+// 2: y1:VARIABLE()  type: Real 
+// 3: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: q:VARIABLE()  type: Real 
+// 6: p:VARIABLE()  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :4
+// setS_Eqs :2, 6, 3, 5
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): Q2 = q * y2   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (4)
+// ========================================
+// 1/1 (1): q = 1.0   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = q * p   [dynamic |0|0|0|0|]
+// 3/3 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = y2   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): p = 2.0   [dynamic |0|0|0|0|]
+// 2/2 (1): q = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 4/4 (1): Q2 = q * y2   [dynamic |0|0|0|0|]
+// 5/5 (1): y1 = q * y2   [dynamic |0|0|0|0|]
+// 6/6 (1): Q1 = p   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: y2:VARIABLE()  type: Real 
+// 2: y1:VARIABLE()  type: Real 
+// 3: Q2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 4: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 5: q:VARIABLE()  type: Real 
+// 6: p:VARIABLE()  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 3
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :4
+// setS_Eqs :6, 2, 3, 5
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): Q2 = q * y2   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (4)
+// ========================================
+// 1/1 (1): Q1 = p   [dynamic |0|0|0|0|]
+// 2/2 (1): q = 1.0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q1 = y1   [dynamic |0|0|0|0|]
+// 4/4 (1): y1 = q * y2   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x5:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 3: x4:VARIABLE()  type: Real 
+// 4: x3:VARIABLE()  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :5, 6
+// setS_Eqs :4, 3
+//
+// SET_C (2)
+// ========================================
+// 1/1 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (2)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: x6:VARIABLE()  type: Real 
+// 2: x5:VARIABLE()  type: Real 
+// 3: x4:VARIABLE()  type: Real 
+// 4: x3:VARIABLE()  type: Real 
+// 5: x2:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :
+// setS_Eqs :
+//
+// SET_C (0)
+// ========================================
+//
+//
+// SET_S (0)
+// ========================================
+//
+// true
+// ""
+//
+// orderedEquation (6, 6)
+// ========================================
+// 1/1 (1): x1 = 1.0   [binding |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// orderedVariables (6)
+// ========================================
+// 1: x6:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+// 2: x5:VARIABLE()  type: Real 
+// 3: x4:VARIABLE()  type: Real 
+// 4: x3:VARIABLE()  type: Real 
+// 5: x2:VARIABLE()  type: Real 
+// 6: x1:VARIABLE(uncertain=Uncertainty.refine)  type: Real 
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 6
+// var 2 is solved in eqn 5
+// var 3 is solved in eqn 4
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 1
+//
+//  FINAL SET OF EQUATIONS After Reconciliation 
+// setC_Eqs :6
+// setS_Eqs :4, 2, 3, 5
+//
+// SET_C (1)
+// ========================================
+// 1/1 (1): x4 + x5 - x6 = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// SET_S (4)
+// ========================================
+// 1/1 (1): x2 - x4 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): x2 = 2.0   [binding |0|0|0|0|]
+// 3/3 (1): x1 + (-x2) - x3 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): x3 - x5 = 0.0   [dynamic |0|0|0|0|]
+//
+// true
+// ""
+// endResult

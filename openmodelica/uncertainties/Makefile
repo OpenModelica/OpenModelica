@@ -3,7 +3,8 @@ TEST = ../../rtest -v
 TESTFILES = \
 UncertaintyFlatten1.mo\
 dataReconciliation.mos\
-DataReconciliationTests21jan2013.mos
+DataReconciliationTests21jan2013.mos\
+DataReconciliationOpenCpsTests.mos
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing
