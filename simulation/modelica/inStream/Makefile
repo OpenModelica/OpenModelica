@@ -1,6 +1,11 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
+Test1.mos \
+Test2.mos \
+Test3.mos \
+Test4.mos \
+Test5.mos \
 Test6.mos \
 Test7.mos \
 Test8.mos \
