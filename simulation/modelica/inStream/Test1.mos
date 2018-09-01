@@ -1,0 +1,34 @@
+//name: Test1
+// status: correct
+
+loadModel(Modelica);
+getErrorString();
+
+
+loadFile("TestStreamConnectorsNoActualStreamEvaluateParams.mo");
+getErrorString();
+
+setCommandLineOptions("+d=newInst");
+getErrorString();
+
+simulate(TestStreamConnectorsNoActualStreamEvaluateParams.TestModels.Test1, stopTime=15);
+getErrorString();
+
+val(source.flange.h_outflow, {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestStreamConnectorsNoActualStreamEvaluateParams.TestModels.Test1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 15.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestStreamConnectorsNoActualStreamEvaluateParams.TestModels.Test1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0,80000.0}
+// endResult
