@@ -332,6 +332,9 @@ simulationinheritances.log: omc-diff
 simulationinlineFunction.log: omc-diff
 	$(MAKE) -C simulation/modelica/inlineFunction -f Makefile test > $@
 	@echo $@ done
+simulationinStream.log: omc-diff
+	$(MAKE) -C simulation/modelica/inStream -f Makefile test > $@
+	@echo $@ done
 simulationjapaneselanguage.log: omc-diff
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile test > $@
 	@echo $@ done

@@ -1,0 +1,3 @@
+*.mo text encoding=UTF-8
+*.mos text encoding=UTF-8
+Makefile text encoding=UTF-8
