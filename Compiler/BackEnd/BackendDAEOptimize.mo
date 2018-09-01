@@ -116,7 +116,7 @@ end simplifyAllExpressions;
 // OM introduces $OMC$PosetiveMax which can simplified using min or max attribute
 // see Modelica spec for inStream
 // author: Vitalij Ruge
-// see. #3885, 4441
+// see. #3885, 4441, 5104
 // =============================================================================
 
 public function simplifyInStream
@@ -152,26 +152,40 @@ algorithm
     local
       DAE.Type tp;
       DAE.ComponentRef cr;
-      DAE.Exp e, expr, a, b;
+      DAE.Exp e, expr, ret;
       Option<DAE.Exp> eMin, eMax;
-      Boolean simplifyToZero;
 
     // positiveMax(cref, eps) = 0 if variable(cref).max <= 0
+    // positiveMax(cref, eps) = cref if variable(cref).min >= 0
     case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.CREF(componentRef=cr), expr})
     algorithm
       (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
-      simplifyToZero := simplifyInStreamWorkSimplify(eMax, true); // var.max <= 0.0
-      tp := ComponentReference.crefTypeFull(cr);
+      if simplifyInStreamWorkSimplify(eMax, true) then  // var.max <= 0.0
+        tp := ComponentReference.crefTypeFull(cr);
+        ret := Expression.createZeroExpression(tp);
+      elseif simplifyInStreamWorkSimplify(eMin, false) then // var.min >= 0.0
+        ret := e;
+      else
+        tp := ComponentReference.crefTypeFull(cr);
+        ret := Expression.makePureBuiltinCall("max", {e, expr}, tp);
+      end if;
     then
-       if simplifyToZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+       ret;
 
     //positiveMax(-cref, eps) = 0 if variable(cref).min >= 0
+    //positiveMax(-cref, eps) = -cref if variable(cref).max <= 0
     case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef=cr)), expr})
     algorithm
       (eMin, eMax) := simplifyInStreamWorkExpresion(cr, outVars);
-      simplifyToZero := simplifyInStreamWorkSimplify(eMin, false); // var.min >= 0.0
+      if simplifyInStreamWorkSimplify(eMin, false) then // var.min >= 0.0
+        ret := Expression.createZeroExpression(tp);
+      elseif simplifyInStreamWorkSimplify(eMax, true) then  // var.max <= 0.0
+        ret := e;
+      else
+        ret := Expression.makePureBuiltinCall("max", {e, expr}, tp);
+      end if;
     then
-       if simplifyToZero then Expression.createZeroExpression(tp) else Expression.makePureBuiltinCall("max", {e, expr}, tp);
+       ret;
 
     //positiveMax(cref, eps) = cref where cref >= 0
     case DAE.CALL(path=Absyn.IDENT("$OMC$PositiveMax"),expLst={e, expr}) guard Expression.isPositiveOrZero(e)
@@ -189,7 +203,9 @@ algorithm
     case DAE.CALL(path=Absyn.IDENT("$OMC$inStreamDiv"),expLst={e, expr})
       algorithm
           e := ExpressionSimplify.simplify(e);
-          expr := match(e)
+          ret := match(e)
+                  local
+                    DAE.Exp a,b;
 
                   case DAE.BINARY(a, DAE.DIV(), b)
                   guard Expression.isZero(a) and Expression.isZero(b)
@@ -199,7 +215,7 @@ algorithm
 
                  end match;
       then
-         expr;
+         ret;
 
     else inExp;
   end match;
