@@ -140,6 +140,14 @@ protected function simplifyInStreamWork
   output list<BackendDAE.Variables> outVars = inVars;
 algorithm
   outExp := Expression.traverseExpBottomUp(inExp, simplifyInStreamWork2, outVars);
+
+  // with #5104 we remove max(x, eps)
+  // so in case max(x,eps)*y/max(x,eps) => x*y/x
+  // now x can be equal 0, so we need simplify x*y/x = y
+  // it's seem no other models silplyfied it
+  if not Expression.expEqual(outExp, inExp) then
+    outExp := ExpressionSimplify.simplify(outExp);
+  end if;
 end simplifyInStreamWork;
 
 protected function simplifyInStreamWork2
