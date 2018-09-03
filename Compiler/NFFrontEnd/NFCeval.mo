@@ -278,7 +278,7 @@ algorithm
       algorithm
         exp := evalComponentBinding(c, defaultExp, target);
       then
-        Expression.applySubscripts(list(evalSubscript(s, target) for s in cref.subscripts), exp);
+        Expression.applySubscripts(list(Subscript.eval(s, target) for s in cref.subscripts), exp);
 
     else defaultExp;
   end match;
@@ -2513,9 +2513,11 @@ end evalReduction2;
 
 function evalSubscriptedExp
   input Expression exp;
-  input list<Expression> subs;
+  input list<Subscript> subscripts;
   input EvalTarget target;
   output Expression result;
+protected
+  list<Subscript> subs;
 algorithm
   result := match exp
     case Expression.RANGE()
@@ -2527,22 +2529,9 @@ algorithm
     else evalExp(exp, target);
   end match;
 
-  for s in subs loop
-    result := Expression.applyIndexSubscript(evalExp(s, target), result);
-  end for;
+  subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
+  result := Expression.applySubscripts(subs, result);
 end evalSubscriptedExp;
-
-function evalSubscript
-  input Subscript subscript;
-  input EvalTarget target;
-  output Subscript outSubscript;
-algorithm
-  outSubscript := match subscript
-    case Subscript.INDEX() then Subscript.INDEX(evalExp(subscript.index, target));
-    case Subscript.SLICE() then Subscript.SLICE(evalExp(subscript.slice, target));
-    else subscript;
-  end match;
-end evalSubscript;
 
 protected
 

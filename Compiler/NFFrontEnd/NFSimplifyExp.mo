@@ -35,6 +35,7 @@ import Expression = NFExpression;
 import Operator = NFOperator;
 import Type = NFType;
 import NFCall.Call;
+import Subscript = NFSubscript;
 
 protected
 
@@ -381,21 +382,12 @@ function simplifySubscriptedExp
   input output Expression subscriptedExp;
 protected
   Expression e;
-  list<Expression> subs;
+  list<Subscript> subs;
   Type ty;
 algorithm
   Expression.SUBSCRIPTED_EXP(e, subs, ty) := subscriptedExp;
   subscriptedExp := simplify(e);
-
-  for s in subs loop
-    s := simplify(s);
-
-    if Type.isArray(Expression.typeOf(s)) then
-      subscriptedExp := Expression.applySliceSubscript(s, subscriptedExp);
-    else
-      subscriptedExp := Expression.applyIndexSubscript(s, subscriptedExp);
-    end if;
-  end for;
+  subscriptedExp := Expression.applySubscripts(list(Subscript.simplify(s) for s in subs), subscriptedExp);
 end simplifySubscriptedExp;
 
 function simplifyTupleElement

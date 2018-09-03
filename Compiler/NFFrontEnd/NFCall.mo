@@ -64,6 +64,7 @@ import Prefixes = NFPrefixes;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
+import Subscript = NFSubscript;
 
 public
   uniontype CallAttributes
@@ -1033,6 +1034,7 @@ protected
     list<Boolean> arg_is_vected, b_list;
     Boolean b;
     list<Expression> vect_args;
+    Subscript sub;
   algorithm
     vectorized_call := match base_call
       case TYPED_CALL()
@@ -1058,12 +1060,14 @@ protected
             // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
             // Make a cref expression from the iterator
             exp := Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER()));
+            sub := Subscript.INDEX(exp);
+
             vect_args := {};
             b_list := arg_is_vected;
             for arg in base_call.arguments loop
               // If the argument is supposed to be vectorized
               b :: b_list := b_list;
-              vect_args := (if b then Expression.applyIndexSubscript(exp, arg) else arg) :: vect_args;
+              vect_args := (if b then Expression.applySubscript(sub, arg) else arg) :: vect_args;
             end for;
 
             base_call.arguments := listReverse(vect_args);

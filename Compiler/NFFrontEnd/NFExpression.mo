@@ -45,6 +45,7 @@ protected
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import ExpandExp = NFExpandExp;
 
 public
   import Absyn.Path;
@@ -181,7 +182,7 @@ public
 
   record SUBSCRIPTED_EXP
     Expression exp;
-    list<Expression> subscripts;
+    list<Subscript> subscripts;
     Type ty;
   end SUBSCRIPTED_EXP;
 
@@ -202,6 +203,16 @@ public
   record EMPTY
     Type ty;
   end EMPTY;
+
+  function isArray
+    input Expression exp;
+    output Boolean isArray;
+  algorithm
+    isArray := match exp
+      case ARRAY() then true;
+      else false;
+    end match;
+  end isArray;
 
   function isCref
     input Expression exp;
@@ -307,6 +318,7 @@ public
         Path p;
         Operator op;
         Call c;
+        list<Subscript> subs;
 
       case INTEGER()
         algorithm
@@ -468,11 +480,11 @@ public
 
       case SUBSCRIPTED_EXP()
         algorithm
-          SUBSCRIPTED_EXP(exp = e1, subscripts = expl) := exp2;
+          SUBSCRIPTED_EXP(exp = e1, subscripts = subs) := exp2;
           comp := compare(exp1.exp, e1);
 
           if comp == 0 then
-            comp := compareList(exp1.subscripts, expl);
+            comp := Subscript.compareList(exp1.subscripts, subs);
           end if;
         then
           comp;
@@ -659,99 +671,231 @@ public
   end integerValue;
 
   function applySubscripts
+    "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;
-    input output Expression exp;
+    input Expression exp;
+    output Expression outExp;
   algorithm
-    for sub in subscripts loop
-      exp := applySubscript(sub, exp);
-    end for;
+    if listEmpty(subscripts) then
+      outExp := exp;
+    else
+      outExp := applySubscript(listHead(subscripts), exp, listRest(subscripts));
+    end if;
   end applySubscripts;
 
   function applySubscript
-    input Subscript sub;
+    "Subscripts an expression with the given subscript, and then applies the
+     optional list of subscripts to each element of the subscripted expression."
+    input Subscript subscript;
     input Expression exp;
-    output Expression subscriptedExp;
+    input list<Subscript> restSubscripts = {};
+    output Expression outExp;
   algorithm
-    subscriptedExp := match sub
-      case Subscript.INDEX() then applyIndexSubscript(sub.index, exp);
-      case Subscript.SLICE() then applySliceSubscript(sub.slice, exp);
-      case Subscript.WHOLE() then exp;
-      else
-        algorithm
-          Error.assertion(false, getInstanceName() + " got untyped subscript " +
-            Subscript.toString(sub), sourceInfo());
-        then
-          fail();
+    outExp := match exp
+      case CREF() then applySubscriptCref(subscript, exp.cref, restSubscripts);
+
+      case TYPENAME() guard listEmpty(restSubscripts)
+        then applySubscriptTypename(subscript, exp.ty);
+
+      case ARRAY() then applySubscriptArray(subscript, exp, restSubscripts);
+
+      case RANGE() guard listEmpty(restSubscripts)
+        then applySubscriptRange(subscript, exp);
+
+      case CALL(call = Call.TYPED_MAP_CALL())
+        then applySubscriptReduction(subscript, exp.call, restSubscripts);
+
+      else makeSubscriptedExp(subscript :: restSubscripts, exp);
     end match;
   end applySubscript;
 
-  function applyIndexSubscript
-    input Expression indexExp;
-    input output Expression exp;
+  function applySubscriptCref
+    input Subscript subscript;
+    input ComponentRef cref;
+    input list<Subscript> restSubscripts;
+    output Expression outExp;
   protected
-    Boolean is_scalar_const;
-    Expression texp;
-    Type exp_ty;
-    ComponentRef cref;
+    ComponentRef cr;
+    Type ty;
   algorithm
-    is_scalar_const := isScalarLiteral(indexExp);
+    cr := ComponentRef.applySubscripts(subscript :: restSubscripts, cref);
+    ty := ComponentRef.getSubscriptedType(cr);
+    outExp := CREF(ty, cr);
+  end applySubscriptCref;
 
-    // check exp has array type. Don't apply subs to scalar exp.
-    exp_ty := typeOf(exp);
-    if not Type.isArray(exp_ty) then
-      Error.assertion(false, getInstanceName() + ": Application of subs on non-array expression not allowed. " +
-        "Exp: " + toString(exp) + ", Exp type: " + Type.toString(exp_ty) + ", Sub: " + toString(indexExp), sourceInfo());
-      fail();
-    end if;
+  function applySubscriptTypename
+    input Subscript subscript;
+    input Type ty;
+    output Expression outExp;
+  protected
+    Subscript sub;
+    Integer index;
+    list<Expression> expl;
+  algorithm
+    sub := Subscript.expandSlice(subscript);
 
-    exp := match exp
-      case CREF()
+    outExp := match sub
+      case Subscript.INDEX() then applyIndexSubscriptTypename(ty, sub);
+
+      case Subscript.SLICE()
+        then SUBSCRIPTED_EXP(TYPENAME(ty), {subscript}, Type.ARRAY(ty, {Subscript.toDimension(sub)}));
+
+      case Subscript.WHOLE()
+        then TYPENAME(ty);
+
+      case Subscript.EXPANDED_SLICE()
         algorithm
-          cref := ComponentRef.applyIndexSubscript(Subscript.INDEX(indexExp), exp.cref);
+          expl := list(applyIndexSubscriptTypename(ty, i) for i in sub.indices);
         then
-          CREF(Type.unliftArray(exp.ty), cref);
+          ARRAY(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
 
-      case TYPENAME() guard is_scalar_const
-        then applyIndexSubscriptTypename(exp.ty, toInteger(indexExp));
-
-      case ARRAY()
-        algorithm
-          if is_scalar_const then
-            texp := listGet(exp.elements, toInteger(indexExp));
-          else
-            texp := SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp.ty));
-          end if;
-        then
-          texp;
-
-      case RANGE() guard is_scalar_const
-        then applyIndexSubscriptRange(exp.start, exp.step, exp.stop, toInteger(indexExp));
-
-      case CALL(call = Call.TYPED_MAP_CALL())
-        then applyIndexSubscriptReduction(exp.call, indexExp);
-
-      case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts,{indexExp}), Type.unliftArray(exp.ty));
-
-      else SUBSCRIPTED_EXP(exp, {indexExp}, Type.unliftArray(exp_ty));
     end match;
-  end applyIndexSubscript;
+  end applySubscriptTypename;
 
   function applyIndexSubscriptTypename
     input Type ty;
-    input Integer index;
+    input Subscript index;
     output Expression subscriptedExp;
+  protected
+    Expression idx_exp;
+    Integer idx;
   algorithm
-    subscriptedExp := match ty
-      case Type.BOOLEAN() guard index <= 2
-        then if index == 1 then Expression.BOOLEAN(false) else Expression.BOOLEAN(true);
+    idx_exp := Subscript.toExp(index);
 
-      case Type.ENUMERATION()
-        then Expression.ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, index), index);
-    end match;
+    if isScalarLiteral(idx_exp) then
+      idx := toInteger(idx_exp);
+
+      subscriptedExp := match ty
+        case Type.BOOLEAN() guard idx <= 2
+          then if idx == 1 then Expression.BOOLEAN(false) else Expression.BOOLEAN(true);
+
+        case Type.ENUMERATION()
+          then Expression.ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, idx), idx);
+      end match;
+    else
+      subscriptedExp := SUBSCRIPTED_EXP(TYPENAME(ty), {index}, ty);
+    end if;
   end applyIndexSubscriptTypename;
 
+  function applySubscriptArray
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    output Expression outExp;
+  protected
+    Subscript sub;
+    list<Subscript> rest_subs;
+    list<Expression> expl;
+    Type ty;
+    Integer el_count;
+  algorithm
+    sub := Subscript.expandSlice(subscript);
+
+    outExp := match sub
+      case Subscript.INDEX() then applyIndexSubscriptArray(exp, sub, restSubscripts);
+      case Subscript.SLICE() then makeSubscriptedExp(subscript :: restSubscripts, exp);
+      case Subscript.WHOLE()
+        algorithm
+          if listEmpty(restSubscripts) then
+            outExp := exp;
+          else
+            ARRAY(ty = ty, elements = expl) := exp;
+
+            el_count := listLength(expl);
+            ty := if el_count > 0 then typeOf(listHead(expl)) else
+                                       Type.subscript(ty, restSubscripts);
+            ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
+            outExp := ARRAY(ty, expl);
+          end if;
+        then
+          outExp;
+
+      case Subscript.EXPANDED_SLICE()
+        algorithm
+          expl := list(applyIndexSubscriptArray(exp, i, restSubscripts) for i in sub.indices);
+
+          el_count := listLength(expl);
+          ty := if el_count > 0 then typeOf(listHead(expl)) else
+                                     Type.subscript(typeOf(exp), restSubscripts);
+          ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
+        then
+          ARRAY(ty, expl);
+    end match;
+  end applySubscriptArray;
+
+  function applyIndexSubscriptArray
+    input Expression exp;
+    input Subscript index;
+    input list<Subscript> restSubscripts;
+    output Expression outExp;
+  protected
+    Expression index_exp = Subscript.toExp(index);
+    list<Expression> expl;
+  algorithm
+    if isScalarLiteral(index_exp) then
+      ARRAY(elements = expl) := exp;
+      outExp := applySubscripts(restSubscripts, listGet(expl, toInteger(index_exp)));
+    else
+      outExp := makeSubscriptedExp(index :: restSubscripts, exp);
+    end if;
+  end applyIndexSubscriptArray;
+
+  function applySubscriptRange
+    input Subscript subscript;
+    input Expression exp;
+    output Expression outExp;
+  protected
+    Subscript sub;
+    Expression start_exp, stop_exp;
+    Option<Expression> step_exp;
+    Type ty;
+    list<Expression> expl;
+  algorithm
+    sub := Subscript.expandSlice(subscript);
+
+    outExp := match sub
+      case Subscript.INDEX() then applyIndexSubscriptRange(exp, sub);
+
+      case Subscript.SLICE()
+        algorithm
+          RANGE(ty = ty) := exp;
+          ty := Type.ARRAY(Type.unliftArray(ty), {Subscript.toDimension(sub)});
+        then
+          SUBSCRIPTED_EXP(exp, {subscript}, ty);
+
+      case Subscript.WHOLE() then exp;
+
+      case Subscript.EXPANDED_SLICE()
+        algorithm
+          expl := list(applyIndexSubscriptRange(exp, i) for i in sub.indices);
+          RANGE(ty = ty) := exp;
+        then
+          ARRAY(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
+
+    end match;
+  end applySubscriptRange;
+
   function applyIndexSubscriptRange
+    input Expression rangeExp;
+    input Subscript index;
+    output Expression outExp;
+  protected
+    Expression index_exp, start_exp, stop_exp;
+    Option<Expression> step_exp;
+    Type ty;
+  algorithm
+    Subscript.INDEX(index = index_exp) := index;
+
+    if isScalarLiteral(index_exp) then
+      RANGE(start = start_exp, step = step_exp, stop = stop_exp) := rangeExp;
+      outExp := applyIndexSubscriptRange2(start_exp, step_exp, stop_exp, toInteger(index_exp));
+    else
+      RANGE(ty = ty) := rangeExp;
+      outExp := SUBSCRIPTED_EXP(rangeExp, {index}, ty);
+    end if;
+  end applyIndexSubscriptRange;
+
+  function applyIndexSubscriptRange2
     input Expression startExp;
     input Option<Expression> stepExp;
     input Expression stopExp;
@@ -784,11 +928,25 @@ public
           ENUM_LITERAL(startExp.ty, Type.nthEnumLiteral(startExp.ty, iidx), iidx);
 
     end match;
-  end applyIndexSubscriptRange;
+  end applyIndexSubscriptRange2;
+
+  function applySubscriptReduction
+    input Subscript subscript;
+    input Call call;
+    input list<Subscript> restSubscripts;
+    output Expression outExp;
+  algorithm
+    if Subscript.isIndex(subscript) and listEmpty(restSubscripts) then
+      outExp := applyIndexSubscriptReduction(call, subscript);
+    else
+      // TODO: Handle slicing and multiple subscripts better.
+      outExp := makeSubscriptedExp(subscript :: restSubscripts, CALL(call));
+    end if;
+  end applySubscriptReduction;
 
   function applyIndexSubscriptReduction
     input Call call;
-    input Expression indexExp;
+    input Subscript index;
     output Expression subscriptedExp;
   protected
     Type ty;
@@ -799,13 +957,43 @@ public
   algorithm
     Call.TYPED_MAP_CALL(ty, var, exp, iters) := call;
     ((iter, iter_exp), iters) := List.splitLast(iters);
-    iter_exp := applyIndexSubscript(indexExp, iter_exp);
+    iter_exp := applySubscript(index, iter_exp);
     subscriptedExp := replaceIterator(exp, iter, iter_exp);
 
     if not listEmpty(iters) then
       subscriptedExp := CALL(Call.TYPED_MAP_CALL(Type.unliftArray(ty), var, subscriptedExp, iters));
     end if;
   end applyIndexSubscriptReduction;
+
+  function makeSubscriptedExp
+    input list<Subscript> subscripts;
+    input Expression exp;
+    output Expression outExp;
+  protected
+    Expression e;
+    list<Subscript> subs;
+    Type ty;
+    list<Dimension> dims, accum_dims;
+    Dimension dim;
+  algorithm
+    // If the expression is already a SUBSCRIPTED_EXP we need to concatenate the
+    // old subscripts with the new. Otherwise we just create a new SUBSCRIPTED_EXP.
+    (e, subs, ty) := match exp
+      case SUBSCRIPTED_EXP() then (exp.exp, listAppend(exp.subscripts, subscripts), Expression.typeOf(exp.exp));
+      else (exp, subscripts, Expression.typeOf(exp));
+    end match;
+
+    dims := Type.arrayDims(ty);
+
+    // Check that the expression has enough dimensions to be subscripted.
+    if listLength(dims) < listLength(subs) then
+      Error.assertion(false, getInstanceName() + ": too few dimensions in " +
+        Expression.toString(exp) + " to apply subscripts " + Subscript.toStringList(subscripts), sourceInfo());
+    end if;
+
+    ty := Type.subscript(ty, subs);
+    outExp := SUBSCRIPTED_EXP(e, subs, ty);
+  end makeSubscriptedExp;
 
   function replaceIterator
     input output Expression exp;
@@ -830,51 +1018,6 @@ public
       else exp;
     end match;
   end replaceIterator2;
-
-  function applySliceSubscript
-    input Expression slice;
-    input Expression exp;
-    output Expression subscriptedExp;
-  protected
-    list<Expression> expl;
-    RangeIterator iter;
-    Expression e;
-    Type ty;
-    ComponentRef cref;
-  algorithm
-    // Replace the last dimension of the expression type with the dimension of the slice type.
-    ty := Type.liftArrayLeft(Type.unliftArray(typeOf(exp)), Type.nthDimension(typeOf(slice), 1));
-    iter := RangeIterator.fromExp(slice);
-
-    if RangeIterator.isValid(iter) then
-      // If the slice is a range of known size, apply each subscript in the slice
-      // to the expression and create a new array from the resulting elements.
-      expl := {};
-
-      while RangeIterator.hasNext(iter) loop
-        (iter, e) := RangeIterator.next(iter);
-        e := applyIndexSubscript(e, exp);
-        expl := e :: expl;
-      end while;
-
-      ty := Type.liftArrayLeft(Type.unliftArray(typeOf(exp)), Dimension.fromInteger(listLength(expl)));
-      subscriptedExp := ARRAY(ty, listReverseInPlace(expl));
-    else
-      // If the slice can't be expanded, just add it to the expression as a slice subscript.
-      subscriptedExp := match exp
-        case CREF()
-          algorithm
-            cref := ComponentRef.addSubscript(Subscript.SLICE(slice), exp.cref);
-          then
-            CREF(ty, cref);
-
-        case SUBSCRIPTED_EXP()
-          then SUBSCRIPTED_EXP(exp.exp, listAppend(exp.subscripts, {slice}), ty);
-
-        else SUBSCRIPTED_EXP(exp, {slice}, ty);
-      end match;
-    end if;
-  end applySliceSubscript;
 
   function arrayFromList
     input list<Expression> inExps;
@@ -1022,7 +1165,7 @@ public
 
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
-      case SUBSCRIPTED_EXP() then toString(exp.exp) + "[" + stringDelimitList(list(toString(e) for e in exp.subscripts), ", ") + "]";
+      case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
       case EMPTY() then "#EMPTY#";
@@ -1166,7 +1309,7 @@ public
         then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
       case SUBSCRIPTED_EXP()
-        then DAE.ASUB(toDAE(exp.exp), list(toDAE(s) for s in exp.subscripts));
+        then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAEExp(s) for s in exp.subscripts));
 
       case TUPLE_ELEMENT()
         then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
@@ -1315,7 +1458,7 @@ public
           if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(map(exp.exp, func), list(map(e, func) for e in exp.subscripts), exp.ty);
+        then SUBSCRIPTED_EXP(map(exp.exp, func), list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -1471,7 +1614,7 @@ public
 
       case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
-          subs := list(mapSubscript(s, func) for s in cref.subscripts);
+          subs := list(Subscript.mapExp(s, func) for s in cref.subscripts);
           rest := mapCref(cref.restCref, func);
         then
           ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
@@ -1479,23 +1622,6 @@ public
       else cref;
     end match;
   end mapCref;
-
-  function mapSubscript
-    input Subscript subscript;
-    input MapFunc func;
-    output Subscript outSubscript;
-
-    partial function MapFunc
-      input output Expression e;
-    end MapFunc;
-  algorithm
-    outSubscript := match subscript
-      case Subscript.UNTYPED() then Subscript.UNTYPED(map(subscript.exp, func));
-      case Subscript.INDEX() then Subscript.INDEX(map(subscript.index, func));
-      case Subscript.SLICE() then Subscript.SLICE(map(subscript.slice, func));
-      else subscript;
-    end match;
-  end mapSubscript;
 
   function mapShallow
     input Expression exp;
@@ -1609,7 +1735,7 @@ public
           if referenceEq(exp.exp, e1) then exp else UNBOX(e1, exp.ty);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(func(exp.exp), list(func(e) for e in exp.subscripts), exp.ty);
+        then SUBSCRIPTED_EXP(func(exp.exp), list(Subscript.mapShallowExp(e, func) for e in exp.subscripts), exp.ty);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -1894,7 +2020,7 @@ public
         algorithm
           result := fold(exp.exp, func, arg);
         then
-          foldList(exp.subscripts, func, result);
+          List.fold(exp.subscripts, function Subscript.foldExp(func = func), result);
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
       case BOX() then fold(exp.exp, func, arg);
@@ -1986,7 +2112,7 @@ public
     () := match cref
       case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
-          arg := List.fold(cref.subscripts, function foldSubscript(func = func), arg);
+          arg := List.fold(cref.subscripts, function Subscript.foldExp(func = func), arg);
           arg := foldCref(cref.restCref, func, arg);
         then
           ();
@@ -1994,25 +2120,6 @@ public
       else ();
     end match;
   end foldCref;
-
-  function foldSubscript<ArgT>
-    input Subscript subscript;
-    input FoldFunc func;
-    input ArgT arg;
-    output ArgT result;
-
-    partial function FoldFunc
-      input Expression exp;
-      input output ArgT arg;
-    end FoldFunc;
-  algorithm
-    result := match subscript
-      case Subscript.UNTYPED() then fold(subscript.exp, func, arg);
-      case Subscript.INDEX() then fold(subscript.index, func, arg);
-      case Subscript.SLICE() then fold(subscript.slice, func, arg);
-      case Subscript.WHOLE() then arg;
-    end match;
-  end foldSubscript;
 
   function applyList
     input list<Expression> expl;
@@ -2117,7 +2224,10 @@ public
       case SUBSCRIPTED_EXP()
         algorithm
           apply(exp.exp, func);
-          applyList(exp.subscripts, func);
+
+          for s in exp.subscripts loop
+            Subscript.applyExp(s, func);
+          end for;
         then
           ();
 
@@ -2252,6 +2362,7 @@ public
         ComponentRef cr;
         list<Expression> expl;
         Call call;
+        list<Subscript> subs;
 
       case CREF()
         algorithm
@@ -2373,9 +2484,9 @@ public
       case SUBSCRIPTED_EXP()
         algorithm
           (e1, arg) := mapFold(exp.exp, func, arg);
-          (expl, arg) := List.map1Fold(exp.subscripts, mapFold, func, arg);
+          (subs, arg) := List.mapFold(exp.subscripts, function Subscript.mapFoldExp(func = func), arg);
         then
-          SUBSCRIPTED_EXP(e1, expl, exp.ty);
+          SUBSCRIPTED_EXP(e1, subs, exp.ty);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -2532,7 +2643,7 @@ public
 
       case ComponentRef.CREF(origin = Origin.CREF)
         algorithm
-          (subs, arg) := List.map1Fold(cref.subscripts, mapFoldSubscript, func, arg);
+          (subs, arg) := List.map1Fold(cref.subscripts, Subscript.mapFoldExp, func, arg);
           (rest, arg) := mapFoldCref(cref.restCref, func, arg);
         then
           ComponentRef.CREF(cref.node, subs, cref.ty, cref.origin, rest);
@@ -2540,43 +2651,6 @@ public
       else cref;
     end match;
   end mapFoldCref;
-
-  function mapFoldSubscript<ArgT>
-    input Subscript subscript;
-    input MapFunc func;
-          output Subscript outSubscript;
-    input output ArgT arg;
-
-    partial function MapFunc
-      input output Expression e;
-      input output ArgT arg;
-    end MapFunc;
-  algorithm
-    outSubscript := match subscript
-      local
-        Expression exp;
-
-      case Subscript.UNTYPED()
-        algorithm
-          (exp, arg) := mapFold(subscript.exp, func, arg);
-        then
-          if referenceEq(subscript.exp, exp) then subscript else Subscript.UNTYPED(exp);
-
-      case Subscript.INDEX()
-        algorithm
-          (exp, arg) := mapFold(subscript.index, func, arg);
-        then
-          if referenceEq(subscript.index, exp) then subscript else Subscript.INDEX(exp);
-
-      case Subscript.SLICE()
-        algorithm
-          (exp, arg) := mapFold(subscript.slice, func, arg);
-        then
-          if referenceEq(subscript.slice, exp) then subscript else Subscript.SLICE(exp);
-
-      else subscript;
-    end match;
-  end mapFoldSubscript;
 
   partial function ContainsPred
     input Expression exp;
@@ -2654,7 +2728,7 @@ public
       case UNBOX() then contains(exp.exp, func);
 
       case SUBSCRIPTED_EXP()
-        then contains(exp.exp, func) or listContains(exp.subscripts, func);
+        then contains(exp.exp, func) or Subscript.listContainsExp(exp.subscripts, func);
 
       case TUPLE_ELEMENT()
         then contains(exp.tupleExp, func);
@@ -3231,7 +3305,7 @@ public
       case CAST() then variability(exp.exp);
       case UNBOX() then variability(exp.exp);
       case SUBSCRIPTED_EXP()
-        then Prefixes.variabilityMax(variability(exp.exp), variabilityList(exp.subscripts));
+        then Prefixes.variabilityMax(variability(exp.exp), Subscript.variabilityList(exp.subscripts));
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
       case BOX() then variability(exp.exp);
       else

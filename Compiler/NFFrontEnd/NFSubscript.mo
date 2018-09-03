@@ -31,8 +31,6 @@
 
 encapsulated uniontype NFSubscript
 protected
-  import Subscript = NFSubscript;
-
   import DAE;
   import List;
   import SimplifyExp = NFSimplifyExp;
@@ -40,12 +38,18 @@ protected
   import RangeIterator = NFRangeIterator;
   import Dump;
   import ExpandExp = NFExpandExp;
+  import Prefixes = NFPrefixes;
+  import Ceval = NFCeval;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   import Expression = NFExpression;
   import Absyn;
   import Dimension = NFDimension;
   import NFPrefixes.Variability;
+  import NFCeval.EvalTarget;
+
+  import Subscript = NFSubscript;
 
   record RAW_SUBSCRIPT
     Absyn.Subscript subscript;
@@ -131,6 +135,16 @@ public
       else false;
     end match;
   end isIndex;
+
+  function isWhole
+    input Subscript sub;
+    output Boolean isWhole;
+  algorithm
+    isWhole := match sub
+      case WHOLE() then true;
+      else false;
+    end match;
+  end isWhole;
 
   function isScalar
     input Subscript sub;
@@ -274,6 +288,176 @@ public
     comp := 0;
   end compareList;
 
+  function containsExp
+    input Subscript subscript;
+    input Expression.ContainsPred func;
+    output Boolean res;
+  algorithm
+    res := match subscript
+      case UNTYPED() then Expression.contains(subscript.exp, func);
+      case INDEX() then Expression.contains(subscript.index, func);
+      case SLICE() then Expression.contains(subscript.slice, func);
+      else false;
+    end match;
+  end containsExp;
+
+  function listContainsExp
+    input list<Subscript> subscripts;
+    input Expression.ContainsPred func;
+    output Boolean res;
+  algorithm
+    for s in subscripts loop
+      if containsExp(s, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end listContainsExp;
+
+  function applyExp
+    input Subscript subscript;
+    input ApplyFunc func;
+
+    partial function ApplyFunc
+      input Expression exp;
+    end ApplyFunc;
+  algorithm
+    () := match subscript
+      case UNTYPED() algorithm Expression.apply(subscript.exp, func); then ();
+      case INDEX() algorithm Expression.apply(subscript.index, func); then ();
+      case SLICE() algorithm Expression.apply(subscript.slice, func); then ();
+      else ();
+    end match;
+  end applyExp;
+
+  function mapExp
+    input Subscript subscript;
+    input MapFunc func;
+    output Subscript outSubscript;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outSubscript := match subscript
+      local
+        Expression e1, e2;
+
+      case UNTYPED(exp = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then subscript else UNTYPED(e2);
+
+      case INDEX(index = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then subscript else INDEX(e2);
+
+      case SLICE(slice = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then subscript else SLICE(e2);
+
+      else subscript;
+    end match;
+  end mapExp;
+
+  function mapShallowExp
+    input Subscript subscript;
+    input MapFunc func;
+    output Subscript outSubscript;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outSubscript := match subscript
+      local
+        Expression e1, e2;
+
+      case UNTYPED(exp = e1)
+        algorithm
+          e2 := func(e1);
+        then
+          if referenceEq(e1, e2) then subscript else UNTYPED(e2);
+
+      case INDEX(index = e1)
+        algorithm
+          e2 := func(e1);
+        then
+          if referenceEq(e1, e2) then subscript else INDEX(e2);
+
+      case SLICE(slice = e1)
+        algorithm
+          e2 := func(e1);
+        then
+          if referenceEq(e1, e2) then subscript else SLICE(e2);
+
+      else subscript;
+    end match;
+  end mapShallowExp;
+
+  function foldExp<ArgT>
+    input Subscript subscript;
+    input FoldFunc func;
+    input ArgT arg;
+    output ArgT result;
+
+    partial function FoldFunc
+      input Expression exp;
+      input output ArgT arg;
+    end FoldFunc;
+  algorithm
+    result := match subscript
+      case UNTYPED() then Expression.fold(subscript.exp, func, arg);
+      case INDEX() then Expression.fold(subscript.index, func, arg);
+      case SLICE() then Expression.fold(subscript.slice, func, arg);
+      else arg;
+    end match;
+  end foldExp;
+
+  function mapFoldExp<ArgT>
+    input Subscript subscript;
+    input MapFunc func;
+          output Subscript outSubscript;
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  algorithm
+    outSubscript := match subscript
+      local
+        Expression exp;
+
+      case UNTYPED()
+        algorithm
+          (exp, arg) := Expression.mapFold(subscript.exp, func, arg);
+        then
+          if referenceEq(subscript.exp, exp) then subscript else UNTYPED(exp);
+
+      case INDEX()
+        algorithm
+          (exp, arg) := Expression.mapFold(subscript.index, func, arg);
+        then
+          if referenceEq(subscript.index, exp) then subscript else INDEX(exp);
+
+      case SLICE()
+        algorithm
+          (exp, arg) := Expression.mapFold(subscript.slice, func, arg);
+        then
+          if referenceEq(subscript.slice, exp) then subscript else SLICE(exp);
+
+      else subscript;
+    end match;
+  end mapFoldExp;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;
@@ -289,6 +473,22 @@ public
           fail();
     end match;
   end toDAE;
+
+  function toDAEExp
+    input Subscript subscript;
+    output DAE.Exp daeExp;
+  algorithm
+    daeExp := match subscript
+      case INDEX() then Expression.toDAE(subscript.index);
+      case SLICE() then Expression.toDAE(subscript.slice);
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " failed on unknown subscript '" +
+            toString(subscript) + "'", sourceInfo());
+        then
+          fail();
+    end match;
+  end toDAEExp;
 
   function toString
     input Subscript subscript;
@@ -312,23 +512,26 @@ public
     string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
 
-  function simplify
-    input output Subscript subscript;
+  function eval
+    input Subscript subscript;
+    input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+    output Subscript outSubscript;
   algorithm
-    () := match subscript
-      case INDEX()
-        algorithm
-          subscript.index := SimplifyExp.simplify(subscript.index);
-        then
-          ();
+    outSubscript := match subscript
+      case INDEX() then INDEX(Ceval.evalExp(subscript.index, target));
+      case SLICE() then SLICE(Ceval.evalExp(subscript.slice, target));
+      else subscript;
+    end match;
+  end eval;
 
-      case SLICE()
-        algorithm
-          subscript.slice := SimplifyExp.simplify(subscript.slice);
-        then
-          ();
-
-      else ();
+  function simplify
+    input Subscript subscript;
+    output Subscript outSubscript;
+  algorithm
+    outSubscript := match subscript
+      case INDEX() then INDEX(SimplifyExp.simplify(subscript.index));
+      case SLICE() then SLICE(SimplifyExp.simplify(subscript.slice));
+      else subscript;
     end match;
   end simplify;
 
@@ -397,14 +600,59 @@ public
     input Subscript subscript;
     input Dimension dimension;
     output Subscript outSubscript;
+    output Boolean expanded;
   algorithm
-    outSubscript := match subscript
-      case INDEX() then subscript;
-      case SLICE()
-        then EXPANDED_SLICE(list(INDEX(e) for e in Expression.arrayElements(ExpandExp.expand(subscript.slice))));
-      case WHOLE() then EXPANDED_SLICE(RangeIterator.map(RangeIterator.fromDim(dimension), makeIndex));
+    (outSubscript, expanded) := match subscript
+      local
+        Expression exp;
+        RangeIterator iter;
+
+      case SLICE() then expandSlice(subscript);
+
+      case WHOLE()
+        algorithm
+          iter := RangeIterator.fromDim(dimension);
+
+          if RangeIterator.isValid(iter) then
+            outSubscript := EXPANDED_SLICE(RangeIterator.map(iter, makeIndex));
+            expanded := true;
+          else
+            outSubscript := subscript;
+            expanded := false;
+          end if;
+        then
+          (outSubscript, expanded);
+
+      else (subscript, true);
     end match;
   end expand;
+
+  function expandSlice
+    input Subscript subscript;
+    output Subscript outSubscript;
+    output Boolean expanded;
+  algorithm
+    (outSubscript, expanded) := match subscript
+      local
+        Expression exp;
+
+      case SLICE()
+        algorithm
+          exp := ExpandExp.expand(subscript.slice);
+
+          if Expression.isArray(exp) then
+            outSubscript := EXPANDED_SLICE(list(INDEX(e) for e in Expression.arrayElements(exp)));
+            expanded := true;
+          else
+            outSubscript := subscript;
+            expanded := false;
+          end if;
+        then
+          (outSubscript, expanded);
+
+      else (subscript, false);
+    end match;
+  end expandSlice;
 
   function expandList
     input list<Subscript> subscripts;
@@ -440,6 +688,104 @@ public
       case WHOLE() then Variability.CONSTANT;
     end match;
   end variability;
+
+  function variabilityList
+    input list<Subscript> subscripts;
+    output Variability var = Variability.CONSTANT;
+  algorithm
+    for s in subscripts loop
+      var := Prefixes.variabilityMax(var, variability(s));
+    end for;
+  end variabilityList;
+
+  function mergeList
+    "Merges a list of subscripts with a list of 'existing' subscripts.
+     This is done by e.g. subscripting existing slice and : subscripts,
+     such that e.g. mergeList({1, :}, {3:5, 1:3, 4}) => {3, 1:3, 4}.
+     The function will ensure that the output list contains at most as
+     many subscripts as the given number of dimensions, and also returns
+     the list of remaining subscripts that couldn't be added."
+    input list<Subscript> newSubs "Subscripts to add";
+    input list<Subscript> oldSubs "Existing subscripts";
+    input Integer dimensions "The number of dimensions to subscript";
+    output list<Subscript> outSubs "The merged subscripts, at most 'dimensions' many";
+    output list<Subscript> remainingSubs "The subscripts that didn't fit";
+  protected
+    Integer subs_count;
+    Subscript new_sub, old_sub;
+    list<Subscript> rest_old_subs;
+    Boolean merged = true;
+  algorithm
+    // If there aren't any existing subscripts we just add as many subscripts
+    // from the list of new subscripts as possible.
+    if listEmpty(oldSubs) then
+      if listLength(newSubs) <= dimensions then
+        outSubs := newSubs;
+        remainingSubs := {};
+      else
+        (outSubs, remainingSubs) := List.split(newSubs, dimensions);
+      end if;
+
+      return;
+    end if;
+
+    subs_count := listLength(oldSubs);
+    remainingSubs := newSubs;
+    rest_old_subs := oldSubs;
+    outSubs := {};
+
+    // Loop over the remaining subscripts as long as they can be merged.
+    while merged and not listEmpty(remainingSubs) loop
+      new_sub :: remainingSubs := remainingSubs;
+      merged := false;
+
+      // Loop over the old subscripts while this new subscript hasn't been
+      // merged and there's still old subscript left.
+      while not merged loop
+        if listEmpty(rest_old_subs) then
+          remainingSubs := new_sub :: remainingSubs;
+          break;
+        else
+          old_sub :: rest_old_subs := rest_old_subs;
+
+          // Try to replace the old subscript with the new.
+          (merged, outSubs) := match old_sub
+            // If the old subscript is a slice, subscript it with the new subscript.
+            case SLICE()
+              algorithm
+                // The old subscript only changes if the new is an index or slice, not :.
+                if not isWhole(new_sub) then
+                  outSubs := Subscript.INDEX(Expression.applySubscript(new_sub, old_sub.slice)) :: outSubs;
+                else
+                  outSubs := old_sub :: outSubs;
+                end if;
+              then
+                (true, old_sub :: outSubs);
+
+            // If the old subscript is :, replace it with the new subscript.
+            case WHOLE() then (true, new_sub :: outSubs);
+            // If the old subscript is a scalar index it can't be replaced.
+            else (false, old_sub :: outSubs);
+          end match;
+        end if;
+      end while;
+    end while;
+
+    // Append any remaining old subscripts.
+    for s in rest_old_subs loop
+      outSubs := s :: outSubs;
+    end for;
+
+    // Append any remaining new subscripts to the end of the list as long as
+    // there are dimensions left to fill.
+    while not listEmpty(remainingSubs) and subs_count < dimensions loop
+      new_sub :: remainingSubs := remainingSubs;
+      outSubs := new_sub :: outSubs;
+      subs_count := subs_count + 1;
+    end while;
+
+    outSubs := listReverseInPlace(outSubs);
+  end mergeList;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

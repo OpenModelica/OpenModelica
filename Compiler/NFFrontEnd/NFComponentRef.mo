@@ -311,51 +311,36 @@ public
     end match;
   end addSubscript;
 
-  function applyIndexSubscript
-    input Subscript subscript;
+  function applySubscripts
+    input list<Subscript> subscripts;
     input output ComponentRef cref;
   algorithm
-    () := match cref
+    ({}, cref) := applySubscripts2(subscripts, cref);
+  end applySubscripts;
+
+  function applySubscripts2
+    input output list<Subscript> subscripts;
+    input output ComponentRef cref;
+  algorithm
+    (subscripts, cref) := match cref
       local
-        Boolean success;
-        list<Subscript> subs;
+        ComponentRef rest_cref;
+        list<Subscript> cref_subs;
 
-      case CREF()
+      case CREF(origin = Origin.CREF, subscripts = cref_subs)
         algorithm
-          // First check if there's any space left for another subscript.
-          if Type.dimensionCount(cref.ty) - listLength(cref.subscripts) > 0 then
-            // If so, just append the subscript.
-            cref.subscripts := listAppend(cref.subscripts, {subscript});
-          else
-            // Otherwise, check if there are any slice subscripts that can be subscripted.
-            (subs, success) := List.findMap(cref.subscripts,
-              function applySubscript2(indexSub = subscript));
+          (subscripts, rest_cref) := applySubscripts2(subscripts, cref.restCref);
 
-            if success then
-              cref.subscripts := subs;
-            else
-              // If the subscript couldn't be added to this cref part, push it down.
-              cref.restCref := applyIndexSubscript(subscript, cref.restCref);
-            end if;
+          if not listEmpty(subscripts) then
+            (cref_subs, subscripts) :=
+              Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty));
           end if;
         then
-          ();
+          (subscripts, CREF(cref.node, cref_subs, cref.ty, cref.origin, rest_cref));
 
+      else (subscripts, cref);
     end match;
-  end applyIndexSubscript;
-
-  function applySubscript2
-    input output Subscript existingSub;
-    input Subscript indexSub;
-          output Boolean success;
-  algorithm
-    (existingSub, success) := match existingSub
-      case Subscript.SLICE()
-        then (Subscript.INDEX(Expression.applySubscript(indexSub, existingSub.slice)), true);
-      case Subscript.WHOLE() then (indexSub, true);
-      else (existingSub, false);
-    end match;
-  end applySubscript2;
+  end applySubscripts2;
 
   function hasSubscripts
     input ComponentRef cref;

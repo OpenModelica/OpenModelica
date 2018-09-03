@@ -43,6 +43,7 @@ import NFComponent.Component;
 import Type = NFType;
 import Dimension = NFDimension;
 import NFClassTree.ClassTree;
+import Subscript = NFSubscript;
 
 protected
 import Ceval = NFCeval;
@@ -494,34 +495,34 @@ end assignVariable;
 
 function assignSubscriptedVariable
   input Mutable<Expression> variable;
-  input list<Expression> subscripts;
+  input list<Subscript> subscripts;
   input Expression value;
 protected
-  list<Expression> subs;
+  list<Subscript> subs;
 algorithm
-  subs := list(Ceval.evalExp(s) for s in subscripts);
+  subs := list(Subscript.eval(s) for s in subscripts);
   Mutable.update(variable, assignArrayElement(Mutable.access(variable), subs, value));
 end assignSubscriptedVariable;
 
 function assignArrayElement
   input Expression arrayExp;
-  input list<Expression> subscripts;
+  input list<Subscript> subscripts;
   input Expression value;
   output Expression result;
 protected
   Expression sub;
-  list<Expression> rest_subs;
+  list<Subscript> rest_subs;
   Integer idx;
 algorithm
   result := match (arrayExp, subscripts)
-    case (Expression.ARRAY(), {sub}) guard Expression.isScalarLiteral(sub)
+    case (Expression.ARRAY(), {Subscript.INDEX(sub)}) guard Expression.isScalarLiteral(sub)
       algorithm
         idx := Expression.toInteger(sub);
         arrayExp.elements := List.set(arrayExp.elements, idx, value);
       then
         arrayExp;
 
-    case (Expression.ARRAY(), sub :: rest_subs) guard Expression.isScalarLiteral(sub)
+    case (Expression.ARRAY(), Subscript.INDEX(sub) :: rest_subs) guard Expression.isScalarLiteral(sub)
       algorithm
         idx := Expression.toInteger(sub);
         arrayExp.elements := List.set(arrayExp.elements, idx,
@@ -533,7 +534,7 @@ algorithm
       algorithm
         Error.assertion(false, getInstanceName() + ": unimplemented case for " +
           Expression.toString(arrayExp) +
-          List.toString(subscripts, Expression.toString, "", "[", ", ", "]", false) + " = " +
+          Subscript.toStringList(subscripts) + " = " +
           Expression.toString(value), sourceInfo());
       then
         fail();

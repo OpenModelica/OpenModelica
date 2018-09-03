@@ -912,7 +912,7 @@ public
   protected
     Type ty;
     list<Dimension> dims;
-    list<list<Expression>> subs;
+    list<list<Subscript>> subs;
   algorithm
     ty := Expression.typeOf(exp);
 
@@ -921,7 +921,7 @@ public
 
       if expanded then
         dims := Type.arrayDims(ty);
-        subs := list(RangeIterator.toList(RangeIterator.fromDim(d)) for d in dims);
+        subs := list(list(Subscript.INDEX(e) for e in RangeIterator.toList(RangeIterator.fromDim(d))) for d in dims);
         outExp := expandGeneric2(subs, exp, ty);
       else
         outExp := exp;
@@ -933,15 +933,16 @@ public
   end expandGeneric;
 
   function expandGeneric2
-    input list<list<Expression>> subs;
+    input list<list<Subscript>> subs;
     input Expression exp;
     input Type ty;
-    input list<Expression> accum = {};
+    input list<Subscript> accum = {};
     output Expression outExp;
   protected
     Type t;
-    list<Expression> sub, expl;
-    list<list<Expression>> rest_subs;
+    list<Subscript> sub;
+    list<Expression> expl;
+    list<list<Subscript>> rest_subs;
   algorithm
     outExp := match subs
       case sub :: rest_subs
@@ -955,7 +956,7 @@ public
         algorithm
           outExp := exp;
           for s in listReverse(accum) loop
-            outExp := Expression.applyIndexSubscript(s, outExp);
+            outExp := Expression.applySubscript(s, outExp);
           end for;
         then
           outExp;
