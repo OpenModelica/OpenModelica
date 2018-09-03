@@ -70,6 +70,7 @@ public:
   static QString txtFileTypes;
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
+  static QString omsFileTypes;
   static QString subModelFileTypes;
   static int treeIndentation;
   static QSize iconSize;

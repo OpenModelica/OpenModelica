@@ -315,7 +315,7 @@ void FMUPropertiesDialog::updateFMUParameters()
     return;
   }
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  pModelWidget->getUndoStack()->beginMacro("Update FMU properties");
+  pModelWidget->beginMacro("Update FMU properties");
   // if the name is same as old then skip OMSRenameCommand.
   if (mpNameTextBox->text().compare(mpComponent->getName()) != 0) {
     // push the change on the undo stack

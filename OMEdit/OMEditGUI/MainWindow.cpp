@@ -1538,7 +1538,7 @@ void MainWindow::openOMSModelFile()
 {
   QStringList fileNames;
   fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              Helper::xmlFileTypes, NULL);
+                                              Helper::omsFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }

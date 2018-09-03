@@ -64,6 +64,7 @@ QString Helper::exeFileTypes = "Executable files (*)";
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
+QString Helper::omsFileTypes = "Composite Model Files (*.ssd)";
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
