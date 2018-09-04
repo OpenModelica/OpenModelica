@@ -971,22 +971,22 @@ public
     output Expression outExp;
   protected
     Expression e;
-    list<Subscript> subs;
+    list<Subscript> subs, extra_subs;
     Type ty;
-    list<Dimension> dims, accum_dims;
-    Dimension dim;
+    Integer dim_count;
   algorithm
     // If the expression is already a SUBSCRIPTED_EXP we need to concatenate the
     // old subscripts with the new. Otherwise we just create a new SUBSCRIPTED_EXP.
     (e, subs, ty) := match exp
-      case SUBSCRIPTED_EXP() then (exp.exp, listAppend(exp.subscripts, subscripts), Expression.typeOf(exp.exp));
-      else (exp, subscripts, Expression.typeOf(exp));
+      case SUBSCRIPTED_EXP() then (exp.exp,exp.subscripts, Expression.typeOf(exp.exp));
+      else (exp, {}, Expression.typeOf(exp));
     end match;
 
-    dims := Type.arrayDims(ty);
+    dim_count := Type.dimensionCount(ty);
+    (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count);
 
     // Check that the expression has enough dimensions to be subscripted.
-    if listLength(dims) < listLength(subs) then
+    if not listEmpty(extra_subs) then
       Error.assertion(false, getInstanceName() + ": too few dimensions in " +
         Expression.toString(exp) + " to apply subscripts " + Subscript.toStringList(subscripts), sourceInfo());
     end if;
