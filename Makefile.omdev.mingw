@@ -1,3 +1,4 @@
+
 defaultMakefileTarget = Makefile.omdev.mingw
 REALPATH = $(realpath .)
 OMBUILDDIR=$(REALPATH)/build
@@ -101,19 +102,19 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre-1.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/liblzma-5.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libxml2-2.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libwebp-6.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libwebp-*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libsqlite3-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/zlib1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libszip-0.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libszip*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libhdf5-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpng16-16.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libjpeg-8.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libfreetype-6.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libglib-2.0-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libbz2-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuin56.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuuc56.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicudt56.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuin*.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuuc*.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicudt*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre16-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/share/qt5/plugins/* $(builddir_bin)/
@@ -151,19 +152,19 @@ else # mingw64
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libxslt-1.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/liblzma-5.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libxml2-2.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libwebp-6.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libwebp-*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libsqlite3-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/zlib1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libszip-0.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libszip*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libhdf5-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpng16-16.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libjpeg-8.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libfreetype-6.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libglib-2.0-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libbz2-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuin56.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuuc56.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicudt56.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuin*.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuuc*.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicudt*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpcre16-0.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/share/qt5/plugins/* $(builddir_bin)/
@@ -279,5 +280,5 @@ LIBGITDIRS = `ls -f libraries/git`
 
 gitclean:
 	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
-	git clean -fdx -e OpenModelicaSetup -e OMSetup -e .project -e .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
+	git clean -fdx -e OpenModelicaSetup -e OMSetup -e .project -e *.launch
 	for d in $(LIBGITDIRS); do git clean -fdx libraries/git/$$d; done
