@@ -25,7 +25,7 @@ extern "C" {
 #include <windows.h>
 #include <excpt.h>
 #include <imagehlp.h>
-#if defined(__MINGW32__) && (GCC_VERSION > 40900)
+#if defined(__MINGW32__) && ((GCC_VERSION > 40900) || defined(__clang__))
 #define PACKAGE OMEdit
 #include <binutils/bfd.h>
 #else
