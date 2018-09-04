@@ -47,6 +47,7 @@ protected
   import SimplifyExp = NFSimplifyExp;
   import NFPrefixes.Variability;
   import MetaModelica.Dangerous.*;
+  import EvalTarget = NFCeval.EvalTarget;
 
 public
   function expand
@@ -209,8 +210,7 @@ public
     expanded := Type.hasKnownSize(ty);
 
     if expanded then
-      range_iter := RangeIterator.fromExp(exp);
-      outExp := Expression.ARRAY(ty, RangeIterator.toList(range_iter));
+      outExp := Ceval.evalExp(exp);
     else
       outExp := exp;
     end if;

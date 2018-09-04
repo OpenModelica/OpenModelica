@@ -251,7 +251,7 @@ end evalExp;
 
 function evalExpOpt
   input output Option<Expression> oexp;
-  input EvalTarget target;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
 algorithm
   oexp := match oexp
     local
