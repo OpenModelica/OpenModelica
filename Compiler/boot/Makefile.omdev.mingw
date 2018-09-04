@@ -1,3 +1,7 @@
+
+EXE_EXT=.exe
+EXE_SUFFIX=
+
 OMDEVMSYS=$(shell cygpath $$OMDEV)
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
@@ -8,7 +12,10 @@ endif
 
 CC=gcc
 CXX=g++
-override CFLAGS += -fno-ipa-pure-const
+
+ifeq (gcc,$(findstring gcc,$(CC)))
+	override CFLAGS += -fno-ipa-pure-const
+endif
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
 ifeq ($(OMENCRYPTION),yes)
@@ -21,7 +28,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lModelicaExternalC -lm \
 -lomantlr3 -lregex -lwsock32 -llpsolve55 -luuid -lole32 -lws2_32 -limagehlp \
 -lRpcrt4 -lopenblas -fopenmp -lomcgc -lpthread $(FMILIB_OR_BOOT) -lshlwapi -liconv -lintl -lmetis \
--Wl,--enable-stdcall-fixup -lstdc++ -static-libgcc \
+-Wl,--enable-stdcall-fixup -Bstatic -lstdc++ -Bdynamic -static-libgcc \
 -L../../3rdParty/lpsolve/build/lib \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
 -lzmq \

@@ -1,3 +1,17 @@
+
+CC = gcc
+CXX = g++
+FC = gfortran
+CFLAGS =-g -O2
+
+ifeq (gcc,$(findstring gcc,$(CC)))
+	override CFLAGS +=-falign-functions
+endif
+
+ifeq (clang,$(findstring clang,$(CC)))
+	EXTRA_LDFLAGS=-Wl,-lmsvcrt
+endif
+
 # makefile for Windows MinGW OMDev
 all : .testvariables settings mkbuilddirs omc
 
@@ -23,13 +37,10 @@ libdir = ${exec_prefix}/lib
 includedir = ${prefix}/include
 datadir = ${prefix}/share
 docdir = ${prefix}/doc
-CC = gcc
-CXX = g++
-FC = gfortran
-CFLAGS =-g -O2 -falign-functions
+
 MSGPACK_CFLAGS = -march=i686
 
-CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" $(OMDEVMSYS)/bin/cmake/bin/cmake
 CMAKE_CHECK_UNDEFINED_LOOKUP = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
@@ -176,7 +187,7 @@ settings:
 	@echo Using Path : '$(PATH)'
 	@echo Current directory: `pwd`
 	@echo Building in OMBUILDDIR: $(OMBUILDDIR)
-	which gcc
+	which $(CC)
 
 # on windows run also msvc test
 testlogwindows:
@@ -206,11 +217,11 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgcc_s_dw2-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libintl-8.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgfortran-3.dll $(builddir_bin)/)
+	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libgfortran*.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libexpat-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libopenblas.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/zlib1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libszip-0.dll $(builddir_bin)/)
+	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libszip*.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libhdf5-0.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw32/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
@@ -233,11 +244,11 @@ else # mingw64
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgcc_s_seh-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libintl-8.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libiconv-2.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgfortran-3.dll $(builddir_bin)/)
+	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgfortran*.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libexpat-1.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libopenblas.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/zlib1.dll $(builddir_bin)/)
-	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libszip-0.dll $(builddir_bin)/)
+	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libszip*.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libhdf5-0.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniORB420_rt.dll $(builddir_bin)/)
 	(cp -puf $(OMDEVMSYS)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omnithread40_rt.dll $(builddir_bin)/)
@@ -502,9 +513,9 @@ simulationruntimecmsvc: mkbuilddirs getMSVCversion Umfpack_msvc CMinpack_msvc fm
 	rm -rf 3rdParty/gc/build_msvc/
 
 omc-bootstrapped: mkbuilddirs
-	$(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR) bootstrap-dependencies sim-dependencies
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CFLAGS="$(CFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR) bootstrap-dependencies sim-dependencies
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 
 lis:
 
