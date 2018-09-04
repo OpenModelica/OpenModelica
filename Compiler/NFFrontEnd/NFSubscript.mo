@@ -760,7 +760,7 @@ public
                   outSubs := old_sub :: outSubs;
                 end if;
               then
-                (true, old_sub :: outSubs);
+                (true, outSubs);
 
             // If the old subscript is :, replace it with the new subscript.
             case WHOLE() then (true, new_sub :: outSubs);
