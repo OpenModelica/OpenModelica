@@ -93,6 +93,26 @@ package TestStreamConnectorsNoActualStreamEvaluateParams
     annotation(
         Icon(graphics = {Rectangle(origin = {0, -1}, extent = {{-100, 101}, {100, -99}})}));end Mixer;
 
+    model Pipe2
+      parameter Real Kf = 1;
+      parameter Real cp = 4000;
+      parameter Boolean allowFlowReversal = false annotation(
+        Evaluate = true);
+      Real dp = inlet.p - outlet.p;
+      Interfaces.Flange outlet(m_flow(max = if allowFlowReversal then 1e9 else 0)) annotation(
+        Placement(visible = true, transformation(origin = {98, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {100, 0}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
+      Interfaces.Flange inlet(m_flow(min = if allowFlowReversal then -1e9 else 0)) annotation(
+        Placement(visible = true, transformation(origin = {108, 10}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-100, 0}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
+    equation
+      inlet.m_flow + outlet.m_flow = 0;
+      inlet.p - outlet.p = Kf * inlet.m_flow;
+      inlet.h_outflow = inStream(outlet.h_outflow);
+      outlet.h_outflow = inStream(inlet.h_outflow);
+      annotation(
+        Icon(coordinateSystem(initialScale = 0.1), graphics = {Rectangle(origin = {1, -10}, fillColor = {170, 170, 255}, fillPattern = FillPattern.Solid, extent = {{-101, 50}, {99, -30}}), Line(origin = {8.89736, -0.111111}, points = {{-50, 0}, {50, 0}}), Line(origin = {50.3211, -10.1111}, points = {{-30, -10}, {10, 10}}), Line(origin = {89.4877, 9.28817}, points = {{-30, -10}, {-70, 10}})}));
+    end Pipe2;
+
+
 
 
   end Components;
@@ -311,11 +331,11 @@ inStream(pipe1.outlet.h_outflow)=<br>(max(-pipe2.outlet.m_flow, 1e-7)*pipe2.outl
         Placement(visible = true, transformation(origin = {20, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
       Components.Pipe pipe3 annotation(
         Placement(visible = true, transformation(origin = {20, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Components.PressureSource sink2 annotation(
+  TestStreamConnectorsNoActualStreamEvaluateParams.Components.PressureSource sink2 annotation(
         Placement(visible = true, transformation(origin = {60, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     equation
   connect(pipe2.outlet, sink2.flange) annotation(
-        Line(points = {{30, 20}, {46, 20}, {46, 18}, {60, 18}}));
+        Line(points = {{30, 20}, {46, 20}, {46, 22}, {60, 22}}));
   connect(source.flange, pipe1.inlet) annotation(
         Line(points = {{-60, 0}, {-30, 0}}));
   connect(pipe1.outlet, pipe2.inlet) annotation(
@@ -328,7 +348,7 @@ inStream(pipe1.outlet.h_outflow)=<br>(max(-pipe2.outlet.m_flow, 1e-7)*pipe2.outl
       assert(abs(pipe1.inlet.h_outflow - 80000) < 1e-10, "Error in computation of inStream(pipe1.outlet.h_outflow");
       annotation(
         experiment(StopTime = 1),
-        Documentation(info = "<html><head></head><body><p>Fan-out 2-to-one connection, flow reversal only allowed on pipe4 (m_flow.min=0 on all other inlets).</p>
+        Documentation(info = "<html><head></head><body><p>Fan-out 2-to-one connection, flow reversal not allowed (m_flow.min=0 on other inlets).</p>
 <p>No mixing equation for pipe2.outlet.h_outflow</p><p>pipe2.outlet.h_outflow =<br>
 inStream(pipe2.inlet.h_outflow)=<br>pipe1.outlet.h_outflow=<br>inStream(pipe1.inlet.h_outflow)=<br>source.flange.h_outflow=<br>source.h=<br>80000.</p>
 <p>Default enthalpy fo for pipe1.inlet.h_outflow, due to pipe2.inlet.m_flow.min=0 and pipe3.inlet.m_flow.min=0</p>
@@ -340,43 +360,44 @@ source.h=<br>
     end Test8;
 
 
-    model Test9
-      extends Modelica.Icons.Example;
-      Components.PressureSource sink3(T = 50, p = 1.6)  annotation(
-        Placement(visible = true, transformation(origin = {60, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-      Components.PressureSource source(p = 2) annotation(
-        Placement(visible = true, transformation(origin = {-60, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-      Components.Pipe pipe1 annotation(
-        Placement(visible = true, transformation(origin = {-20, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-      Components.Pipe pipe2(allowFlowReversal = false)  annotation(
-        Placement(visible = true, transformation(origin = {20, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-      Components.Pipe pipe3(allowFlowReversal = true)  annotation(
-        Placement(visible = true, transformation(origin = {20, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-      Components.PressureSource sink2 annotation(
-        Placement(visible = true, transformation(origin = {60, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    equation
-      connect(pipe2.outlet, sink2.flange) annotation(
-        Line(points = {{30, 20}, {46, 20}, {46, 18}, {60, 18}}));
-      connect(source.flange, pipe1.inlet) annotation(
-        Line(points = {{-60, 0}, {-30, 0}}));
-      connect(pipe1.outlet, pipe2.inlet) annotation(
-        Line(points = {{-10, 0}, {0, 0}, {0, 20}, {10, 20}}));
-      connect(pipe1.outlet, pipe3.inlet) annotation(
-        Line(points = {{-10, 0}, {0, 0}, {0, -20}, {10, -20}}));
-      connect(pipe3.outlet, sink3.flange) annotation(
-        Line(points = {{30, -20}, {60, -20}}));
-      assert(abs(pipe3.outlet.h_outflow - 80000) < 1e-10, "Error in computation of inStream(pipe3.outlet.h_outflow");
-      assert(abs(pipe2.outlet.h_outflow - 95000) < 1e-10, "Error in computation of inStream(pipe2.outlet.h_outflow");
-      annotation(
-        experiment(StopTime = 1),
-        Documentation(info = "<html>
+model Test9
+  extends Modelica.Icons.Example;
+  Components.PressureSource sink3(T = 50, p = 1.6)  annotation(
+    Placement(visible = true, transformation(origin = {60, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Components.PressureSource source(p = 2) annotation(
+    Placement(visible = true, transformation(origin = {-60, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Components.Pipe pipe1 annotation(
+    Placement(visible = true, transformation(origin = {-20, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Components.Pipe pipe2(allowFlowReversal = false)  annotation(
+    Placement(visible = true, transformation(origin = {20, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Components.Pipe pipe3(allowFlowReversal = true)  annotation(
+    Placement(visible = true, transformation(origin = {20, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  Components.PressureSource sink2 annotation(
+    Placement(visible = true, transformation(origin = {60, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+equation
+  connect(pipe2.outlet, sink2.flange) annotation(
+    Line(points = {{30, 20}, {46, 20}, {46, 18}, {60, 18}}));
+  connect(source.flange, pipe1.inlet) annotation(
+    Line(points = {{-60, 0}, {-30, 0}}));
+  connect(pipe1.outlet, pipe2.inlet) annotation(
+    Line(points = {{-10, 0}, {0, 0}, {0, 20}, {10, 20}}));
+  connect(pipe1.outlet, pipe3.inlet) annotation(
+    Line(points = {{-10, 0}, {0, 0}, {0, -20}, {10, -20}}));
+  connect(pipe3.outlet, sink3.flange) annotation(
+    Line(points = {{30, -20}, {60, -20}}));
+  assert(abs(pipe3.outlet.h_outflow - 80000) < 1e-10, "Error in computation of inStream(pipe3.outlet.h_outflow");
+  assert(abs(pipe2.outlet.h_outflow - 95000) < 1e-10, "Error in computation of inStream(pipe2.outlet.h_outflow");
+  annotation(
+    experiment(StopTime = 1),
+    Documentation(info = "<html>
 <p>Fan-out 2-to-one connection, flow reversal allowed ony on pipe3 (m_flow.min=0 on all other pipe inlets).</p>
 <p>No mixing equation for pipe3.outlet.h_outflow</p><p>pipe3.outlet.h_outflow =<br>inStream(pipe3.inlet.h_outflow)=<br>pipe1.outlet.h_outflow=<br>inStream(pipe1.inlet.h_outflow)=<br>source.flange.h_outflow=<br>source.h=<br>80000.</p>
 <p>Mixing equation for pipe2.outlet.h_outflow</p>
 <p>pipe2.outlet.h_outflow =<br>inStream(pipe2.inlet.h_outflow)=<br>(max(-pipe1.outlet.m_flow,1e-7)*pipe1.outlet.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*pipe3.outlet.h_outflow)/(max(-pipe1.outlet.m_flow,1e-7)+max(-pipe3.outlet.m_flow,1e-7)) =<br>
 95000.</p>
 </html>"));
-    end Test9;
+end Test9;
+
 
     model Test10
       extends Modelica.Icons.Example;
@@ -445,6 +466,87 @@ source.h=<br>
 80000.</p>
 </body></html>"));
     end Test11;
+
+    model Test12
+      extends Modelica.Icons.Example;
+      Components.PressureSource sink(p = 0) annotation(
+        Placement(visible = true, transformation(origin = {70, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.PressureSource source1(T = 100) annotation(
+        Placement(visible = true, transformation(origin = {-70, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.PressureSource source2(T = 50) annotation(
+        Placement(visible = true, transformation(origin = {-70, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.Pipe2 pipe1 annotation(
+        Placement(visible = true, transformation(origin = {-20, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.Pipe2 pipe2 annotation(
+        Placement(visible = true, transformation(origin = {-20, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.Pipe2 pipe3 annotation(
+        Placement(visible = true, transformation(origin = {26, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    equation
+      connect(source2.flange, pipe2.inlet) annotation(
+        Line(points = {{-70, -20}, {-30, -20}}));
+      connect(pipe3.inlet, pipe2.outlet) annotation(
+        Line(points = {{16, 0}, {8, 0}, {8, -18}, {-10, -18}}));
+      connect(pipe3.outlet, sink.flange) annotation(
+        Line(points = {{36, 0}, {70, 0}}));
+      connect(pipe1.outlet, pipe3.inlet) annotation(
+        Line(points = {{-10, 20}, {8, 20}, {8, 0}, {16, 0}}));
+      connect(source1.flange, pipe1.inlet) annotation(
+        Line(points = {{-70, 20}, {-30, 20}, {-30, 20}, {-30, 20}}));
+      assert(abs(pipe3.outlet.h_outflow - 300000) < 1e-10, "Error in computation of inStream(pipe3.outlet.h_outflow");
+      assert(abs(pipe1.inlet.h_outflow - 200000) < 1e-10, "Error in computation of inStream(pipe1.outlet.h_outflow");
+      annotation(
+        experiment(StopTime = 1),
+        Documentation(info = "<html><head></head><body><p>Fan-in 2-to-one connection, flow reversal not allowed (m_flow.min=0 on all inlets, m_flow.max=0 on all outlets).</p>
+<p>Full mixing equation for pipe3.outlet.h_outflow; max operators can be simplified away thanks to m_flow.max = 0 on the outlet ports</p><p>pipe3.outlet.h_outflow =<br>
+inStream(pipe3.inlet.h_outflow)=<br>(max(-pipe1.outlet.m_flow, 1e-7)*pipe1.outlet.h_outflow + max(pipe2.outlet.m_flow,1e-7)*pipe2.outlet.h_outflow)/(max(-pipe1.outlet.m_flow, 1e-7) + max(pipe2.outlet.m_flow,1e-7)=<br>((-pipe1.outlet.m_flow)*pipe1.outlet.h_outflow + (-pipe2.outlet.m_flow)*pipe2.outlet.h_outflow)/((-pipe1.outlet.m_flow) + (-pipe2.outlet.m_flow))=<br>300000.</p>
+<p>No mixing for pipe1.inlet.h_outflow, due to pipe3.inlet.m_flow.min=0</p>
+<p>pipe1.inlet.h_outflow =<br>
+inStream(pipe1.outlet.h_outflow)=<br>
+pipe2.outlet.h_outflow=<br>
+inStream(pipe2.inlet.h_outflow)=<br>
+source2.flange.h_outflow=<br>
+source2.h=<br>
+200000</p>
+</body></html>"));
+    end Test12;
+
+    model Test13
+      extends Modelica.Icons.Example;
+      Components.PressureSource sink3(T = 50, p = 1.6) annotation(
+        Placement(visible = true, transformation(origin = {60, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.PressureSource source(p = 2) annotation(
+        Placement(visible = true, transformation(origin = {-60, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.Pipe2 pipe1 annotation(
+        Placement(visible = true, transformation(origin = {-20, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.Pipe2 pipe2(allowFlowReversal = false) annotation(
+        Placement(visible = true, transformation(origin = {20, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.Pipe2 pipe3(allowFlowReversal = true) annotation(
+        Placement(visible = true, transformation(origin = {20, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+      Components.PressureSource sink2 annotation(
+        Placement(visible = true, transformation(origin = {60, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    equation
+      connect(pipe2.outlet, sink2.flange) annotation(
+        Line(points = {{30, 20}, {46, 20}, {46, 18}, {60, 18}}));
+      connect(source.flange, pipe1.inlet) annotation(
+        Line(points = {{-60, 0}, {-30, 0}}));
+      connect(pipe1.outlet, pipe2.inlet) annotation(
+        Line(points = {{-10, 0}, {0, 0}, {0, 20}, {10, 20}}));
+      connect(pipe1.outlet, pipe3.inlet) annotation(
+        Line(points = {{-10, 0}, {0, 0}, {0, -20}, {10, -20}}));
+      connect(pipe3.outlet, sink3.flange) annotation(
+        Line(points = {{30, -20}, {60, -20}}));
+      assert(abs(pipe3.outlet.h_outflow - 80000) < 1e-10, "Error in computation of inStream(pipe3.outlet.h_outflow");
+      assert(abs(pipe2.outlet.h_outflow - 95000) < 1e-10, "Error in computation of inStream(pipe2.outlet.h_outflow");
+      annotation(
+        experiment(StopTime = 1),
+        Documentation(info = "<html><head></head><body><p>Fan-out 2-to-one connection, flow reversal allowed ony on pipe3 (m_flow.min=0 on all other pipe inlets, m_flow.max=0 on all other pipe outlets).</p>
+<p>No mixing equation for pipe3.outlet.h_outflow</p><p>pipe3.outlet.h_outflow =<br>inStream(pipe3.inlet.h_outflow)=<br>pipe1.outlet.h_outflow=<br>inStream(pipe1.inlet.h_outflow)=<br>source.flange.h_outflow=<br>source.h=<br>80000.</p>
+<p>Mixing equation for pipe2.outlet.h_outflow: max(-pipe1.outlet.m_flow,1e-7) is simplified to (-pipe1.outlet.m_flow) because max(pipe1.outlet.m_flow) = 0.</p>
+<p>pipe2.outlet.h_outflow =<br>inStream(pipe2.inlet.h_outflow)=<br>(max(-pipe1.outlet.m_flow,1e-7)*pipe1.outlet.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*pipe3.inlet.h_outflow)/(max(-pipe1.outlet.m_flow,1e-7)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*inStream(pipe1.inlet.h_outflow) + max(-pipe3.outlet.m_flow,1e-7)*inStream(pipe3.outlet.h_outflow))/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*source.flange.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*sink3.flange.h_outflow)/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*source.h + max(-pipe3.outlet.m_flow,1e-7)*sink3.h)/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>(pipe1.inlet.m_flow*source.h + max(-pipe3.outlet.m_flow,1e-7)*sink3.h)/(pipe1.outlet.m_flow+max(-pipe3.outlet.m_flow,1e-7)) =<br>95000.</p>
+</body></html>"));
+    end Test13;
+
+
 
 
 

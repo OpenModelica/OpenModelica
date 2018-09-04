@@ -12,6 +12,8 @@ Test8.mos \
 Test9.mos \
 Test10.mos \
 Test11.mos \
+Test12.mos \
+Test13.mos \
 
 
 # test that currently fail. Move up when fixed.
