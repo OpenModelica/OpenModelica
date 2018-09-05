@@ -21,6 +21,6 @@ end OperationVectorProduct1;
 //   Real y[3];
 //   Real z;
 // equation
-//   z = x * y;
+//   z = x[1] * y[1] + x[2] * y[2] + x[3] * y[3];
 // end OperationVectorProduct1;
 // endResult
