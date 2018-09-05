@@ -57,16 +57,18 @@ IF (Qt5Core_FOUND)
   # As moc files are generated in the binary dir, tell CMake
   # to always look for includes there:
   set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
+IF (NOT WIN32)
   # find "-std=" in the flags, some Qt5 cmake configs do not set it (centos el7)
   string(FIND ${CMAKE_CXX_FLAGS} "-std" FLAG_INDEX)
   # check if we found it
   if (FLAG_INDEX GREATER 0)
-   message(STATUS "We have -std=something")
+    message(STATUS "We have -std in CMAKE_CXX_FLAGS / CMAKE_C_FLAGS / CMAKE_CXX_FLAGS_RELEASE: [${CMAKE_CXX_FLAGS}  / ${CMAKE_C_FLAGS} / ${CMAKE_CXX_FLAGS_RELEASE}]")
   else()
-   message(STATUS "Qt5 doesn't set std=c++11, add it")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+    message(STATUS "Qt5 doesn't set std=c++11 in CMAKE_CXX_FLAGS / CMAKE_C_FLAGS / CMAKE_CXX_FLAGS_RELEASE: [${CMAKE_CXX_FLAGS} / ${CMAKE_C_FLAGS} / ${CMAKE_CXX_FLAGS_RELEASE}]")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
   endif()
+ENDIF()
+
 ELSE()
   MESSAGE ("Qt5 not found, searching for Qt4")
   # Find Qt4
