@@ -456,16 +456,22 @@ public
     Operator op;
   algorithm
     Expression.BINARY(exp1 = exp1, operator = op, exp2 = exp2) := exp;
-    (exp1, expanded) := expand(exp1);
 
-    if expanded then
-      (exp2, expanded) := expand(exp2);
-    end if;
+    if Type.isArray(Operator.typeOf(op)) then
+      (exp1, expanded) := expand(exp1);
 
-    if expanded then
-      outExp := expandBinaryElementWise2(exp1, op, exp2, makeBinaryOp);
+      if expanded then
+        (exp2, expanded) := expand(exp2);
+      end if;
+
+      if expanded then
+        outExp := expandBinaryElementWise2(exp1, op, exp2, makeBinaryOp);
+      else
+        outExp := exp;
+      end if;
     else
       outExp := exp;
+      expanded := true;
     end if;
   end expandBinaryElementWise;
 

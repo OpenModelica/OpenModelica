@@ -36,6 +36,7 @@ import Operator = NFOperator;
 import Type = NFType;
 import NFCall.Call;
 import Subscript = NFSubscript;
+import NFOperator.Op;
 
 protected
 
@@ -273,7 +274,9 @@ algorithm
   se1 := simplify(e1);
   se2 := simplify(e2);
 
-  if Expression.isLiteral(se1) and Expression.isLiteral(se2) then
+  if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) then
+    binaryExp := ExpandExp.expand(ExpandExp.makeBinaryOp(se1, op, se2));
+  elseif Expression.isLiteral(se1) and Expression.isLiteral(se2) then
     binaryExp := Ceval.evalBinaryOp(se1, op, se2);
   elseif not (referenceEq(e1, se1) and referenceEq(e2, se2)) then
     binaryExp := Expression.BINARY(se1, op, se2);
