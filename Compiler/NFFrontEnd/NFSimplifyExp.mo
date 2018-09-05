@@ -292,7 +292,9 @@ algorithm
   Expression.UNARY(op, e) := unaryExp;
   se := simplify(e);
 
-  if Expression.isLiteral(se) then
+  if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) then
+    unaryExp := ExpandExp.expand(ExpandExp.makeUnaryOp(se, op));
+  elseif Expression.isLiteral(se) then
     unaryExp := Ceval.evalUnaryOp(se, op);
   elseif not referenceEq(e, se) then
     unaryExp := Expression.UNARY(op, se);

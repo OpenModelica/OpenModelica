@@ -832,7 +832,13 @@ public
   function makeUnaryOp
     input Expression exp1;
     input Operator op;
-    output Expression exp = Expression.UNARY(op, exp1);
+    output Expression exp;
+  algorithm
+    if Expression.isScalarLiteral(exp1) then
+      exp := Ceval.evalUnaryOp(exp1, op);
+    else
+      exp := Expression.UNARY(op, exp1);
+    end if;
   end makeUnaryOp;
 
   function expandLogicalBinary
