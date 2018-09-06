@@ -970,6 +970,10 @@ protected
     if listLength(matchedFunctions) > 1 then
       exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
 
+      if listEmpty(exactMatches) then
+        exactMatches := MatchedFunction.getExactVectorizedMatches(matchedFunctions);
+      end if;
+
       if listLength(exactMatches) > 1 then
         Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_FUNCTIONS_NFINST,
           {typedString(call), Function.candidateFuncListString(list(mfn.func for mfn in matchedFunctions))}, info);

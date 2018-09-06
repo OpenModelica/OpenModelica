@@ -134,6 +134,7 @@ uniontype FunctionMatchKind
     // Instead they are added to each call as is.
     // This list represents which args should be vectorized.
     list<Boolean> is_vectorized;
+    FunctionMatchKind baseMatch;
   end VECTORIZED;
 
   record NOT_COMPATIBLE end NOT_COMPATIBLE;
@@ -168,6 +169,16 @@ uniontype FunctionMatchKind
     end match;
   end isVectorized;
 
+  function isExactVectorized
+    input FunctionMatchKind mk;
+    output Boolean b;
+  algorithm
+    b := match mk
+      case VECTORIZED(baseMatch = EXACT()) then true;
+      else false;
+    end match;
+  end isExactVectorized;
+
 end FunctionMatchKind;
 
 constant FunctionMatchKind EXACT_MATCH = FunctionMatchKind.EXACT();
@@ -191,6 +202,12 @@ uniontype MatchedFunction
     input list<MatchedFunction> matchedFunctions;
     output list<MatchedFunction> outFuncs = list(mf for mf guard(FunctionMatchKind.isExact(mf.mk)) in matchedFunctions);
   end getExactMatches;
+
+  function getExactVectorizedMatches
+    input list<MatchedFunction> matchedFunctions;
+    output list<MatchedFunction> outFuncs =
+      list(mf for mf guard(FunctionMatchKind.isExactVectorized(mf.mk)) in matchedFunctions);
+  end getExactVectorizedMatches;
 
   function isVectorized
     input MatchedFunction mf;
@@ -736,6 +753,7 @@ uniontype Function
     list<Dimension> argdims, compdims, vectdims, tmpdims, outvectdims;
     Boolean has_cast;
     list<Boolean> vectorized;
+    FunctionMatchKind base_mk = EXACT_MATCH;
   algorithm
 
     checked_args := {};
@@ -806,13 +824,19 @@ uniontype Function
         return;
       end if;
 
+      if TypeCheck.isCastMatch(matchKind) then
+        base_mk := CAST_MATCH;
+      elseif TypeCheck.isGenericMatch(matchKind) then
+        base_mk := GENERIC_MATCH;
+      end if;
+
       checked_args := (margexp,mty,var) :: checked_args;
       idx := idx + 1;
     end for;
 
     correct := true;
     args := listReverse(checked_args);
-    funcMatchKind := VECTORIZED(vectdims, listReverse(vectorized));
+    funcMatchKind := VECTORIZED(vectdims, listReverse(vectorized), base_mk);
   end matchArgsVectorize;
 
   function matchArgs
