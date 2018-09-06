@@ -456,6 +456,7 @@ FuncVectorization1.mo \
 FuncVectorization2.mo \
 FuncVectorization3.mo \
 FuncVectorizationBuiltin.mo \
+FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
