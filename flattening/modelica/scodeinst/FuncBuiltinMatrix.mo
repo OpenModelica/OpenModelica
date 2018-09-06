@@ -60,7 +60,7 @@ end FuncBuiltinMatrix;
 //   a = {{1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}, {1.0, 2.0, 3.0}};
 //   b = a;
 //   v = {1.0, 2.0, 3.0};
-//   c = promote(v, 2);
+//   c = {{v[1]}, {v[2]}, {v[3]}};
 //   d = {{s}};
 // end FuncBuiltinMatrix;
 // endResult
