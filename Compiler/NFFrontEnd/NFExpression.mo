@@ -43,6 +43,7 @@ protected
   import Prefixes = NFPrefixes;
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
+  import ExpandExp = NFExpandExp;
   import MetaModelica.Dangerous.listReverseInPlace;
 
 public
@@ -2924,6 +2925,18 @@ public
     end match;
   end isZero;
 
+  function isOne
+    input Expression exp;
+    output Boolean isOne;
+  algorithm
+    isOne := match exp
+      case INTEGER() then exp.value == 1;
+      case REAL() then exp.value == 1.0;
+      case CAST() then isOne(exp.exp);
+      else false;
+    end match;
+  end isOne;
+
   function isPositive
     input Expression exp;
     output Boolean positive;
@@ -3219,6 +3232,7 @@ public
         Type ty;
         list<Type> rest_ty;
         Expression arr_exp;
+        Boolean expanded;
 
       // No types left, we're done!
       case (_, {}) then exp;
@@ -3230,8 +3244,17 @@ public
       // An expression with array type, but which is not an array expression.
       // Such an expression can't be promoted here, so we create a promote call instead.
       case (_, _) guard isArray
-        then CALL(Call.makeTypedCall(
-          NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, variability(exp), listHead(types)));
+        algorithm
+          (outExp, expanded) := ExpandExp.expand(exp);
+
+          if expanded then
+            outExp := promote2(outExp, true, dims, types);
+          else
+            outExp := CALL(Call.makeTypedCall(
+              NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, variability(exp), listHead(types)));
+          end if;
+        then
+          outExp;
 
       // A scalar expression, promote it as many times as the number of types given.
       else

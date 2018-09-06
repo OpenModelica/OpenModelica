@@ -465,7 +465,7 @@ public
       end if;
 
       if expanded then
-        outExp := expandBinaryElementWise2(exp1, op, exp2, makeBinaryOp);
+        outExp := expandBinaryElementWise2(exp1, op, exp2, SimplifyExp.simplifyBinaryOp);
       else
         outExp := exp;
       end if;
@@ -522,7 +522,8 @@ public
 
     if expanded then
       op := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp);
-      outExp := Expression.mapArrayElements(exp2, function makeBinaryOp(op = op, exp1 = exp1));
+      outExp := Expression.mapArrayElements(exp2,
+        function SimplifyExp.simplifyBinaryOp(op = op, exp1 = exp1));
     else
       outExp := exp;
     end if;
@@ -536,7 +537,7 @@ public
   algorithm
     exp := match exp2
       case Expression.ARRAY() then exp2;
-      else makeBinaryOp(exp1, op, exp2);
+      else SimplifyExp.simplifyBinaryOp(exp1, op, exp2);
     end match;
   end makeScalarArrayBinary_traverser;
 
@@ -555,7 +556,8 @@ public
 
     if expanded then
       op := Operator.OPERATOR(Type.arrayElementType(Operator.typeOf(op)), scalarOp);
-      outExp := Expression.mapArrayElements(exp1, function makeBinaryOp(op = op, exp2 = exp2));
+      outExp := Expression.mapArrayElements(exp1,
+        function SimplifyExp.simplifyBinaryOp(op = op, exp2 = exp2));
     else
       outExp := exp;
     end if;
@@ -675,8 +677,8 @@ public
     end if;
     mul_op := Operator.makeMul(tyUnlift);
     add_op := Operator.makeAdd(tyUnlift);
-    expl1 := list(makeBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
-    exp := List.reduce(expl1, function makeBinaryOp(op = add_op));
+    expl1 := list(SimplifyExp.simplifyBinaryOp(e1, mul_op, e2) threaded for e1 in expl1, e2 in expl2);
+    exp := List.reduce(expl1, function SimplifyExp.simplifyBinaryOp(op = add_op));
   end makeScalarProduct;
 
   function expandBinaryMatrixProduct
@@ -800,19 +802,6 @@ public
     end match;
   end expandBinaryPowMatrix2;
 
-  function makeBinaryOp
-    input Expression exp1;
-    input Operator op;
-    input Expression exp2;
-    output Expression exp;
-  algorithm
-    if Expression.isScalarLiteral(exp1) and Expression.isScalarLiteral(exp2) then
-      exp := Ceval.evalBinaryOp(exp1, op, exp2);
-    else
-      exp := Expression.BINARY(exp1, op, exp2);
-    end if;
-  end makeBinaryOp;
-
   function expandUnary
     input Expression exp;
     input Operator op;
@@ -825,21 +814,10 @@ public
     scalar_op := Operator.scalarize(op);
 
     if expanded then
-      outExp := Expression.mapArrayElements(outExp, function makeUnaryOp(op = scalar_op));
+      outExp := Expression.mapArrayElements(outExp,
+        function SimplifyExp.simplifyUnaryOp(op = scalar_op));
     end if;
   end expandUnary;
-
-  function makeUnaryOp
-    input Expression exp1;
-    input Operator op;
-    output Expression exp;
-  algorithm
-    if Expression.isScalarLiteral(exp1) then
-      exp := Ceval.evalUnaryOp(exp1, op);
-    else
-      exp := Expression.UNARY(op, exp1);
-    end if;
-  end makeUnaryOp;
 
   function expandLogicalBinary
     input Expression exp;

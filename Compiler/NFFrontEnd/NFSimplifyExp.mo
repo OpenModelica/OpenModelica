@@ -181,8 +181,9 @@ algorithm
       then
         exp;
 
-    case "sum"     then simplifySumProduct(listHead(args), call, isSum = true);
-    case "product" then simplifySumProduct(listHead(args), call, isSum = false);
+    case "sum"     then   simplifySumProduct(listHead(args), call, isSum = true);
+    case "product" then   simplifySumProduct(listHead(args), call, isSum = false);
+    case "transpose" then simplifyTranspose(listHead(args), call);
 
     else Expression.CALL(call);
   end match;
@@ -220,6 +221,17 @@ algorithm
     exp := Expression.CALL(call);
   end if;
 end simplifySumProduct;
+
+function simplifyTranspose
+  input Expression arg;
+  input Call call;
+  output Expression exp;
+algorithm
+  exp := match arg
+    case Expression.ARRAY() then Expression.transposeArray(arg);
+    else Expression.CALL(call);
+  end match;
+end simplifyTranspose;
 
 function simplifySize
   input output Expression sizeExp;
@@ -274,14 +286,121 @@ algorithm
   se1 := simplify(e1);
   se2 := simplify(e2);
 
-  if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) then
-    binaryExp := ExpandExp.expand(ExpandExp.makeBinaryOp(se1, op, se2));
-  elseif Expression.isLiteral(se1) and Expression.isLiteral(se2) then
-    binaryExp := Ceval.evalBinaryOp(se1, op, se2);
-  elseif not (referenceEq(e1, se1) and referenceEq(e2, se2)) then
-    binaryExp := Expression.BINARY(se1, op, se2);
+  binaryExp := simplifyBinaryOp(se1, op, se2);
+
+  if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) and not Expression.hasArrayCall(binaryExp) then
+    binaryExp := ExpandExp.expand(binaryExp);
   end if;
 end simplifyBinary;
+
+function simplifyBinaryOp
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+
+  import NFOperator.Op;
+algorithm
+  if Expression.isLiteral(exp1) and Expression.isLiteral(exp2) then
+    outExp := Ceval.evalBinaryOp(exp1, op, exp2);
+  else
+    outExp := match op.op
+      case Op.ADD then simplifyBinaryAdd(exp1, op, exp2);
+      case Op.SUB then simplifyBinarySub(exp1, op, exp2);
+      case Op.MUL then simplifyBinaryMul(exp1, op, exp2);
+      case Op.DIV then simplifyBinaryDiv(exp1, op, exp2);
+      case Op.POW then simplifyBinaryPow(exp1, op, exp2);
+      else Expression.BINARY(exp1, op, exp2);
+    end match;
+  end if;
+end simplifyBinaryOp;
+
+function simplifyBinaryAdd
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  if Expression.isZero(exp1) then
+    // 0 + e = e
+    outExp := exp2;
+  elseif Expression.isZero(exp2) then
+    // e + 0 = e
+    outExp := exp1;
+  else
+    outExp := Expression.BINARY(exp1, op, exp2);
+  end if;
+end simplifyBinaryAdd;
+
+function simplifyBinarySub
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  if Expression.isZero(exp1) then
+    // 0 - e = -e
+    outExp := Expression.UNARY(Operator.makeUMinus(Operator.typeOf(op)), exp2);
+  elseif Expression.isZero(exp2) then
+    // e - 0 = e
+    outExp := exp1;
+  else
+    outExp := Expression.BINARY(exp1, op, exp2);
+  end if;
+end simplifyBinarySub;
+
+function simplifyBinaryMul
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  input Boolean switched = false;
+  output Expression outExp;
+algorithm
+  outExp := match exp1
+    // 0 * e = 0
+    case Expression.INTEGER(value = 0) then exp1;
+    case Expression.REAL(value = 0.0) then exp1;
+
+    // 1 * e = e
+    case Expression.INTEGER(value = 1) then exp2;
+    case Expression.REAL(value = 1.0) then exp2;
+
+    else
+      if switched then
+        Expression.BINARY(exp2, op, exp1)
+      else
+        simplifyBinaryMul(exp2, op, exp1, true);
+  end match;
+end simplifyBinaryMul;
+
+function simplifyBinaryDiv
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  // e / 1 = e
+  if Expression.isOne(exp2) then
+    outExp := exp1;
+  else
+    outExp := Expression.BINARY(exp1, op, exp2);
+  end if;
+end simplifyBinaryDiv;
+
+function simplifyBinaryPow
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression outExp;
+algorithm
+  if Expression.isZero(exp2) then
+    outExp := Expression.makeOne(Operator.typeOf(op));
+  elseif Expression.isOne(exp2) then
+    outExp := exp1;
+  else
+    outExp := Expression.BINARY(exp1, op, exp2);
+  end if;
+end simplifyBinaryPow;
 
 function simplifyUnary
   input output Expression unaryExp;
@@ -292,14 +411,24 @@ algorithm
   Expression.UNARY(op, e) := unaryExp;
   se := simplify(e);
 
-  if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) then
-    unaryExp := ExpandExp.expand(ExpandExp.makeUnaryOp(se, op));
-  elseif Expression.isLiteral(se) then
-    unaryExp := Ceval.evalUnaryOp(se, op);
-  elseif not referenceEq(e, se) then
-    unaryExp := Expression.UNARY(op, se);
+  unaryExp := simplifyUnaryOp(se, op);
+
+  if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) and not Expression.hasArrayCall(unaryExp) then
+    unaryExp := ExpandExp.expand(unaryExp);
   end if;
 end simplifyUnary;
+
+function simplifyUnaryOp
+  input Expression exp;
+  input Operator op;
+  output Expression outExp;
+algorithm
+  if Expression.isLiteral(exp) then
+    outExp := Ceval.evalUnaryOp(exp, op);
+  else
+    outExp := Expression.UNARY(op, exp);
+  end if;
+end simplifyUnaryOp;
 
 function simplifyLogicBinary
   input output Expression binaryExp;
