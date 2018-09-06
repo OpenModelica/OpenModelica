@@ -14,7 +14,7 @@ all: build
 
 Makefile: qwt.pro
 	@rm -f $@
-	$(QMAKE) QMAKE_CXX=@CXX@ QMAKE_CXXFLAGS="@CXXFLAGS@" qwt.pro
+	$(QMAKE) QMAKE_CXX=@CXX@ QMAKE_CXXFLAGS="@CXXFLAGS@" QMAKE_LINK="@CXX@" qwt.pro
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	rm -rf build lib Makefile
