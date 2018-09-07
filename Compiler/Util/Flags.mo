@@ -536,6 +536,8 @@ constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(180, "nfEvalConstArgFunc
   Util.gettext("Evaluate all functions with constant arguments in the new frontend."));
 constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(181, "nfExpandOperations", true,
   Util.gettext("Expand all unary/binary operations to scalar expressions in the new frontend."));
+constant DebugFlag NF_API = DEBUG_FLAG(182, "nfAPI", false,
+  Util.gettext("Enables experimental new instantiation use in the OMC API."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -723,7 +725,8 @@ constant list<DebugFlag> allDebugFlags = {
   DEBUG_DAEMODE,
   NF_SCALARIZE,
   NF_EVAL_CONST_ARG_FUNCS,
-  NF_EXPAND_OPERATIONS
+  NF_EXPAND_OPERATIONS,
+  NF_API
 };
 
 public

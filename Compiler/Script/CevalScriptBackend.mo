@@ -5815,7 +5815,7 @@ algorithm
         elapsedTime = t2 - t1;
         s = realString(elapsedTime);
         (smsg, f) = failOrSuccess(str);
-        failed = if f then failed + 1 else 0;
+        failed = if f then failed + 1 else failed;
         print (s + " seconds -> " + smsg + "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));
         print ("\n");
