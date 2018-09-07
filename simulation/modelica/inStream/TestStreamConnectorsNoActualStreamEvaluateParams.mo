@@ -522,11 +522,11 @@ source2.h=<br>
         Placement(visible = true, transformation(origin = {20, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
       Components.Pipe2 pipe3(allowFlowReversal = true) annotation(
         Placement(visible = true, transformation(origin = {20, -20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-      Components.PressureSource sink2 annotation(
+      TestStreamConnectorsNoActualStreamEvaluateParams.Components.PressureSource sink2 annotation(
         Placement(visible = true, transformation(origin = {60, 20}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     equation
       connect(pipe2.outlet, sink2.flange) annotation(
-        Line(points = {{30, 20}, {46, 20}, {46, 18}, {60, 18}}));
+        Line(points = {{30, 20}, {45, 20}, {45, 22}, {60, 22}}));
       connect(source.flange, pipe1.inlet) annotation(
         Line(points = {{-60, 0}, {-30, 0}}));
       connect(pipe1.outlet, pipe2.inlet) annotation(
@@ -542,7 +542,7 @@ source2.h=<br>
         Documentation(info = "<html><head></head><body><p>Fan-out 2-to-one connection, flow reversal allowed ony on pipe3 (m_flow.min=0 on all other pipe inlets, m_flow.max=0 on all other pipe outlets).</p>
 <p>No mixing equation for pipe3.outlet.h_outflow</p><p>pipe3.outlet.h_outflow =<br>inStream(pipe3.inlet.h_outflow)=<br>pipe1.outlet.h_outflow=<br>inStream(pipe1.inlet.h_outflow)=<br>source.flange.h_outflow=<br>source.h=<br>80000.</p>
 <p>Mixing equation for pipe2.outlet.h_outflow: max(-pipe1.outlet.m_flow,1e-7) is simplified to (-pipe1.outlet.m_flow) because max(pipe1.outlet.m_flow) = 0.</p>
-<p>pipe2.outlet.h_outflow =<br>inStream(pipe2.inlet.h_outflow)=<br>(max(-pipe1.outlet.m_flow,1e-7)*pipe1.outlet.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*pipe3.inlet.h_outflow)/(max(-pipe1.outlet.m_flow,1e-7)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*inStream(pipe1.inlet.h_outflow) + max(-pipe3.outlet.m_flow,1e-7)*inStream(pipe3.outlet.h_outflow))/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*source.flange.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*sink3.flange.h_outflow)/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*source.h + max(-pipe3.outlet.m_flow,1e-7)*sink3.h)/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>(pipe1.inlet.m_flow*source.h + max(-pipe3.outlet.m_flow,1e-7)*sink3.h)/(pipe1.outlet.m_flow+max(-pipe3.outlet.m_flow,1e-7)) =<br>95000.</p>
+<p>pipe2.outlet.h_outflow =<br>inStream(pipe2.inlet.h_outflow)=<br>(max(-pipe1.outlet.m_flow,1e-7)*pipe1.outlet.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*pipe3.inlet.h_outflow)/(max(-pipe1.outlet.m_flow,1e-7)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*inStream(pipe1.inlet.h_outflow) + max(-pipe3.outlet.m_flow,1e-7)*inStream(pipe3.outlet.h_outflow))/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*source.flange.h_outflow + max(-pipe3.outlet.m_flow,1e-7)*sink3.flange.h_outflow)/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>((-pipe1.outlet.m_flow)*source.h + max(-pipe3.outlet.m_flow,1e-7)*sink3.h)/((-pipe1.outlet.m_flow)+max(-pipe3.outlet.m_flow,1e-7)) =<br>(pipe1.inlet.m_flow*source.h + max(-pipe3.outlet.m_flow,1e-7)*sink3.h)/(pipe1.inlet.m_flow+max(-pipe3.outlet.m_flow,1e-7)) =<br>95000.</p>
 </body></html>"));
     end Test13;
 
