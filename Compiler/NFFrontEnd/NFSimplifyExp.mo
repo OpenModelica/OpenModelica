@@ -49,6 +49,9 @@ import ComponentRef = NFComponentRef;
 import ExpandExp = NFExpandExp;
 import TypeCheck = NFTypeCheck;
 import Absyn;
+import ErrorExt;
+import Flags;
+import Debug;
 
 public
 
@@ -137,7 +140,7 @@ function simplifyCall
 protected
   Call call;
   list<Expression> args;
-  Boolean builtin;
+  Boolean builtin, is_pure;
 algorithm
   Expression.CALL(call = call) := callExp;
 
@@ -147,12 +150,19 @@ algorithm
         args := list(simplify(arg) for arg in call.arguments);
         call.arguments := args;
         builtin := Function.isBuiltin(call.fn);
+        is_pure := not Function.isImpure(call.fn);
 
         // Use Ceval for builtin pure functions with literal arguments.
-        if builtin and not Function.isImpure(call.fn) and List.all(args, Expression.isLiteral) then
-          callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+        if builtin then
+          if is_pure and List.all(args, Expression.isLiteral) then
+            callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+          else
+            callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call);
+          end if;
+        elseif Flags.isSet(Flags.NF_EVAL_CONST_ARG_FUNCS) and is_pure and List.all(args, Expression.isLiteral) then
+          callExp := simplifyCall2(call);
         else
-          callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call);
+          callExp := Expression.CALL(call);
         end if;
       then
         callExp;
@@ -167,6 +177,27 @@ algorithm
     else callExp;
   end match;
 end simplifyCall;
+
+function simplifyCall2
+  input Call call;
+  output Expression outExp;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    outExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    if Flags.isSet(Flags.FAILTRACE) then
+      ErrorExt.delCheckpoint(getInstanceName());
+      Debug.traceln("- " + getInstanceName() + " failed to evaluate " + Call.toString(call) + "\n");
+    else
+      ErrorExt.rollBack(getInstanceName());
+    end if;
+
+    outExp := Expression.CALL(call);
+  end try;
+end simplifyCall2;
 
 function simplifyBuiltinCall
   input Absyn.Path name;

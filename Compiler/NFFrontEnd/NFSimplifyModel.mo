@@ -61,8 +61,8 @@ algorithm
   flatModel.variables := list(simplifyVariable(v) for v in flatModel.variables);
   flatModel.equations := simplifyEquations(flatModel.equations);
   flatModel.initialEquations := simplifyEquations(flatModel.initialEquations);
-  flatModel.algorithms := list(simplifyAlgorithm(a) for a in flatModel.algorithms);
-  flatModel.initialAlgorithms := list(simplifyAlgorithm(a) for a in flatModel.initialAlgorithms);
+  flatModel.algorithms := simplifyAlgorithms(flatModel.algorithms);
+  flatModel.initialAlgorithms := simplifyAlgorithms(flatModel.initialAlgorithms);
 
   functions := FunctionTree.map(functions, simplifyFunction);
 
@@ -184,6 +184,21 @@ algorithm
     else eq :: equations;
   end match;
 end simplifyEquation;
+
+function simplifyAlgorithms
+  input list<Algorithm> algs;
+  output list<Algorithm> outAlgs = {};
+algorithm
+  for alg in algs loop
+    alg := simplifyAlgorithm(alg);
+
+    if not listEmpty(alg.statements) then
+      outAlgs := alg :: outAlgs;
+    end if;
+  end for;
+
+  outAlgs := listReverseInPlace(outAlgs);
+end simplifyAlgorithms;
 
 function simplifyAlgorithm
   input output Algorithm alg;

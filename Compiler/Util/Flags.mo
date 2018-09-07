@@ -532,7 +532,7 @@ constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(178, "debugDAEmode", false,
   Util.gettext("Dump debug output for the DAEmode."));
 constant DebugFlag NF_SCALARIZE = DEBUG_FLAG(179, "nfScalarize", true,
   Util.gettext("Run scalarization in NF, default true."));
-constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(180, "nfEvalConstArgFuncs", false,
+constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(180, "nfEvalConstArgFuncs", true,
   Util.gettext("Evaluate all functions with constant arguments in the new frontend."));
 constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(181, "nfExpandOperations", true,
   Util.gettext("Expand all unary/binary operations to scalar expressions in the new frontend."));
