@@ -1,7 +1,7 @@
 // name: OperatorOverloadConstructorHideDefault
 // keywords: operator overload constructor
 // status: correct
-// cflags: -d=newInst
+// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 // Checks that overloaded constructor has precedence over deafault constructor 
 // which would otherwise cause ambiguity. 

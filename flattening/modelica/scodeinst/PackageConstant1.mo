@@ -1,7 +1,7 @@
 // name: PackageConstant1
 // keywords:
 // status: correct
-// cflags: -d=newInst
+// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 
 package P

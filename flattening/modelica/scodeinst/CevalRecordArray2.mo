@@ -35,6 +35,6 @@ end CevalRecordArray2;
 // end P.f;
 //
 // class CevalRecordArray2
-//   Real x = P.f(1.0);
+//   Real x = 2.0;
 // end CevalRecordArray2;
 // endResult

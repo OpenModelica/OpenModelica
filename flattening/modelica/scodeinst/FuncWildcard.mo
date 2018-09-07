@@ -27,6 +27,6 @@ end FuncWildcard;
 // end _;
 //
 // class FuncWildcard
-//   Real x = _(3.0);
+//   Real x = 3.0;
 // end FuncWildcard;
 // endResult

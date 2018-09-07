@@ -22,10 +22,10 @@ end FuncViaComp;
 // Result:
 // function FuncViaComp.a.f
 //   input Integer n;
-//   output Real x = 2;
+//   output Real x = 2.0;
 // end FuncViaComp.a.f;
 //
 // class FuncViaComp
-//   Real x = FuncViaComp.a.f(1);
+//   Real x = 2.0;
 // end FuncViaComp;
 // endResult

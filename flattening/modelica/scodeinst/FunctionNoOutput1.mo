@@ -21,9 +21,5 @@ end FunctionNoOutput1;
 // end f;
 //
 // class FunctionNoOutput1
-// equation
-//   f(2.0);
-// algorithm
-//   f(1.0);
 // end FunctionNoOutput1;
 // endResult

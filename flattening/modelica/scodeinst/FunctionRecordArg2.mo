@@ -36,6 +36,6 @@ end M;
 // end f;
 //
 // class M
-//   Real x = f();
+//   Real x = 1.0;
 // end M;
 // endResult

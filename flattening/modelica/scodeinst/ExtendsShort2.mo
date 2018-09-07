@@ -38,6 +38,6 @@ end ExtendsShort2;
 // end P.f2;
 //
 // class ExtendsShort2
-//   Real x = ExtendsShort2.f(2.0);
+//   Real x = 4.0;
 // end ExtendsShort2;
 // endResult

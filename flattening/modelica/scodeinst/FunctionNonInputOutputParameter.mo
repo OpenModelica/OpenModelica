@@ -1,4 +1,4 @@
-// name: FunctionNoOutput1
+// name: FunctionNonInputOutputParameter
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -13,9 +13,9 @@ algorithm
   y := a + b + z;
 end f;
 
-model M
+model FunctionNonInputOutputParameter
   parameter Real p = f(1, 2);
-end M;
+end FunctionNonInputOutputParameter;
 
 
 // Result:
@@ -28,9 +28,9 @@ end M;
 //   y := a + b + z;
 // end f;
 //
-// class M
-//   parameter Real p = f(1.0, 2.0);
-// end M;
+// class FunctionNonInputOutputParameter
+//   parameter Real p = 4.0;
+// end FunctionNonInputOutputParameter;
 // [flattening/modelica/scodeinst/FunctionNonInputOutputParameter.mo:11:3-11:23:writable] Warning: Invalid public variable z, function variables that are not input/output must be protected.
 //
 // endResult

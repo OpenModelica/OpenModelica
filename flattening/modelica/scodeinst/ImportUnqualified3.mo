@@ -29,6 +29,6 @@ end ImportUnqualified3;
 // end A.B.f;
 //
 // class ImportUnqualified3
-//   parameter Real x = A.B.f(100.0);
+//   parameter Real x = 100.0;
 // end ImportUnqualified3;
 // endResult

@@ -24,6 +24,6 @@ end M;
 // end f2;
 //
 // class M
-//   Real x = f2(1.0);
+//   Real x = 1.0;
 // end M;
 // endResult

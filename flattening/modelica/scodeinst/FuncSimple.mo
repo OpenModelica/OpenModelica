@@ -22,6 +22,6 @@ end FuncSimple;
 // end f;
 //
 // class FuncSimple
-//   Real x = f(1.0);
+//   Real x = 1.0;
 // end FuncSimple;
 // endResult

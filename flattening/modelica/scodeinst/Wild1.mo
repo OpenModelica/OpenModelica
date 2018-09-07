@@ -24,6 +24,6 @@ end Wild1;
 // class Wild1
 //   Real x;
 // algorithm
-//   (_, x) := f();
+//   (_, x) := (1.0, 2.0);
 // end Wild1;
 // endResult

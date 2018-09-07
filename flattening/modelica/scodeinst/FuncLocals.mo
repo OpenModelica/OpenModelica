@@ -29,6 +29,6 @@ end FuncLocals;
 // end f;
 //
 // class FuncLocals
-//   Real x = f(4.0);
+//   Real x = 8.0;
 // end FuncLocals;
 // endResult

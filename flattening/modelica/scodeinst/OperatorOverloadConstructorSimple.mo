@@ -1,7 +1,7 @@
 // name: OperatorOverloadConstructorSimple
 // keywords: operator constructor overload
 // status: correct
-// cflags: -d=newInst
+// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 // Tests simple overloaded construction.
 //

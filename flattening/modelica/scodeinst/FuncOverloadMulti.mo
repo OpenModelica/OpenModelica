@@ -48,8 +48,8 @@ end FuncOverloadMulti;
 // end FuncOverloadMulti.real_string;
 //
 // class FuncOverloadMulti
-//   String x = FuncOverloadMulti.bool_string(true);
-//   String y = FuncOverloadMulti.int_string(1);
-//   String z = FuncOverloadMulti.real_string(1.0);
+//   String x = "Boolean";
+//   String y = "Integer";
+//   String z = "Real";
 // end FuncOverloadMulti;
 // endResult

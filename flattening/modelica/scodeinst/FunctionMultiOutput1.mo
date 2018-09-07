@@ -30,6 +30,6 @@ end FunctionMultiOutput1;
 //   Real y;
 //   Real z;
 // algorithm
-//   (x, y, z) := f(2.0);
+//   (x, y, z) := (4.0, 6.0, 8.0);
 // end FunctionMultiOutput1;
 // endResult

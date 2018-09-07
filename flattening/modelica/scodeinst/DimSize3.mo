@@ -1,7 +1,7 @@
 // name: DimSize3
 // keywords:
 // status: correct
-// cflags: -d=newInst
+// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 
 function f

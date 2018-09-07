@@ -32,6 +32,6 @@ end FunctionRecursive1;
 // end fac;
 //
 // class FunctionRecursive1
-//   Integer x = fac(5);
+//   Integer x = 120;
 // end FunctionRecursive1;
 // endResult

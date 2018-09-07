@@ -1,7 +1,7 @@
 // name: OperatorOverloadConstructor1
 // keywords: operator overload constructor
 // status: correct
-// cflags: -d=newInst
+// cflags: -d=newInst,-nfEvalConstArgFuncs
 //
 //
 

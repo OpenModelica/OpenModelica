@@ -28,6 +28,6 @@ end FuncUnknownDim2;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x = f(3);
+//   x = {1.0, 1.0, 1.0};
 // end FuncUnknownDim2;
 // endResult
