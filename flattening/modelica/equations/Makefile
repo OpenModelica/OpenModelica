@@ -10,6 +10,7 @@ ConditionalArrayExpression2.mo \
 ConnectInNonParamIf.mo \
 ConnectInWhen.mo \
 DAEexample.mo \
+EnumEquation1.mo \
 Epidemics1.mo \
 EqualityEquations.mo \
 EqualityEquationsCorrect.mo \
