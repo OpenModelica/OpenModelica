@@ -3130,8 +3130,8 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
   match type_
     case T_INTEGER(__) then
       <<
-      <%attrstr%>.min = <%optInitValFMU(minValue,"-DBL_MAX")%>;
-      <%attrstr%>.max = <%optInitValFMU(maxValue,"DBL_MAX")%>;
+      <%attrstr%>.min = <%optInitValFMU(minValue,"-LONG_MAX")%>;
+      <%attrstr%>.max = <%optInitValFMU(maxValue,"LONG_MAX")%>;
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.start = <%optInitValFMU(startValue,"0")%>;
       >>
