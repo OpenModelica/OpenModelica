@@ -1654,7 +1654,7 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         '<%cref(name)%> = data->simulationInfo->inputVars[<%i0%>];'
         ;separator="\n"
       %>
@@ -1667,7 +1667,7 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'data->simulationInfo->inputVars[<%i0%>] = data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start;'
@@ -1683,7 +1683,7 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
     {
       TRACE_PUSH
 
-      <%vars.inputVars |> SIMVAR(__) hasindex i0 =>
+      <%vars.inputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
         'data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start = data->simulationInfo->inputVars[<%i0%>];'
@@ -1723,7 +1723,7 @@ template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
     {
       TRACE_PUSH
 
-      <%vars.outputVars |> SIMVAR(__) hasindex i0 =>
+      <%vars.outputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         'data->simulationInfo->outputVars[<%i0%>] = <%cref(name)%>;'
         ;separator="\n"
       %>
