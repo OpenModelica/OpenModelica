@@ -1474,6 +1474,12 @@ algorithm
       then
         dae;
 
+    case (e1, DAE.CREF(componentRef = cr), DAE.T_ENUMERATION(), _, _, initial_)
+      then makeDaeDefine(cr, e1, source, initial_);
+
+    case (e1, e2, DAE.T_ENUMERATION(), _, _, initial_)
+      then makeDaeEquation(e1, e2, source, initial_);
+
     // array equations
     case (e1,e2,tt as DAE.T_ARRAY(),_,_,initial_)
       equation
