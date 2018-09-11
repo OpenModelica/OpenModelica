@@ -1,6 +1,8 @@
 TEST=../../../rtest -v
 
 TESTFILES=\
+ActualStream.mo \
+ActualStreamMinMax.mo \
 Algorithm1.mo \
 Algorithm2.mo \
 Algorithm3.mo \
@@ -762,8 +764,6 @@ CevalRecordArray3.mo \
 ModClass6.mo \
 IfExpression6.mo \
 RedeclareConstant1.mo \
-ActualStream.mo \
-ActualStreamMinMax.mo \
 InStreamInvalidArgument1.mo \
 InStreamInvalidArgument2.mo \
 Connect3.mo \
