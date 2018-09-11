@@ -787,19 +787,20 @@ function associatedFlowCref
    stream cref."
   input ComponentRef streamCref;
   output ComponentRef flowCref;
+protected
+  Type ty;
+  ComponentRef rest_cr;
+  InstNode flow_node;
 algorithm
-  flowCref := match streamCref
-    local
-      InstNode flow_node;
+  ComponentRef.CREF(ty = ty, restCref = rest_cr) := streamCref;
 
+  flowCref := match Type.arrayElementType(ty)
     // A connector with a single flow, append the flow node to the cref and return it.
-    case ComponentRef.CREF(ty = Type.COMPLEX(complexTy = ComplexType.CONNECTOR(flows = {flow_node})))
+    case Type.COMPLEX(complexTy = ComplexType.CONNECTOR(flows = {flow_node}))
       then ComponentRef.prefixCref(flow_node, InstNode.getType(flow_node), {}, streamCref);
 
     // Otherwise, remove the first part of the cref and try again.
-    case ComponentRef.CREF()
-      then associatedFlowCref(streamCref.restCref);
-
+    else associatedFlowCref(rest_cr);
   end match;
 end associatedFlowCref;
 
