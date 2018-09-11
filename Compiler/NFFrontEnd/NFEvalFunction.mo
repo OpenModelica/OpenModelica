@@ -55,6 +55,7 @@ import System;
 import NFTyping.ExpOrigin;
 import SCode;
 import NFPrefixes.Variability;
+import EvalFunctionExt = NFEvalFunctionExt;
 
 encapsulated package ReplTree
   import BaseAvlTree;
@@ -149,8 +150,9 @@ protected
   String name, lang;
   ComponentRef output_ref;
   Option<SCode.Annotation> ann;
+  list<Expression> ext_args;
 algorithm
-  Sections.EXTERNAL(name = name, outputRef = output_ref, language = lang, ann = ann) :=
+  Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
     Class.getSections(InstNode.getClass(fn.node));
 
   if lang == "builtin" then
@@ -158,13 +160,19 @@ algorithm
     result := Ceval.evalBuiltinCall(fn, args, NFCeval.EvalTarget.IGNORE_ERRORS());
   elseif isKnownExternalFunc(name, ann) then
     // External functions that we know how to evaluate without generating code.
+    // TODO: Move this to EvalFunctionExt and unify evaluateKnownExternal and
+    //       evaluateExternal2. This requires handling of outputRef though.
     result := evaluateKnownExternal(name, args);
   else
-    // External functions that we would need to generate code for and execute.
-    Error.assertion(false, getInstanceName() +
-      " failed on " + Absyn.pathString(fn.path) +
-      ", evaluation of userdefined external functions not yet implemented", sourceInfo());
-    fail();
+    try
+      result := evaluateExternal2(name, fn, args, ext_args);
+    else
+      // External functions that we would need to generate code for and execute.
+      Error.assertion(false, getInstanceName() +
+        " failed on " + Absyn.pathString(fn.path) +
+        ", evaluation of userdefined external functions not yet implemented", sourceInfo());
+      fail();
+    end try;
   end if;
 end evaluateExternal;
 
@@ -452,6 +460,7 @@ algorithm
   assignVariable(lhsExp, Ceval.evalExp(rhsExp));
 end evaluateAssignment;
 
+public
 function assignVariable
   input Expression variable;
   input Expression value;
@@ -493,6 +502,7 @@ algorithm
   end match;
 end assignVariable;
 
+protected
 function assignSubscriptedVariable
   input Mutable<Expression> variable;
   input list<Subscript> subscripts;
@@ -878,7 +888,7 @@ algorithm
       then
         Expression.INTEGER(0);
 
-    case ("ModelicaString_compare", {Expression.STRING(s1), Expression.STRING(s2), Expression.BOOLEAN(b)})
+    case ("ModelicaStrings_compare", {Expression.STRING(s1), Expression.STRING(s2), Expression.BOOLEAN(b)})
       algorithm
         i := ModelicaExternalC.Strings_compare(s1, s2, b);
       then
@@ -942,6 +952,44 @@ algorithm
         fail();
   end match;
 end evaluateOpenModelicaRegex;
+
+function evaluateExternal2
+  input String name;
+  input Function fn;
+  input list<Expression> args;
+  input list<Expression> extArgs;
+  output Expression result;
+protected
+  ReplTree.Tree repl;
+  list<Expression> ext_args;
+algorithm
+  repl := createReplacements(fn, args);
+  ext_args := list(Expression.map(e, function applyReplacements2(repl = repl)) for e in extArgs);
+  evaluateExternal3(name, ext_args);
+  result := createResult(repl, fn.outputs);
+end evaluateExternal2;
+
+function evaluateExternal3
+  input String name;
+  input list<Expression> args;
+algorithm
+  () := match name
+    case "dgeev"  algorithm EvalFunctionExt.Lapack_dgeev(args);  then ();
+    case "dgegv"  algorithm EvalFunctionExt.Lapack_dgegv(args);  then ();
+    case "dgels"  algorithm EvalFunctionExt.Lapack_dgels(args);  then ();
+    case "dgelsx" algorithm EvalFunctionExt.Lapack_dgelsx(args); then ();
+    case "dgesv"  algorithm EvalFunctionExt.Lapack_dgesv(args);  then ();
+    case "dgglse" algorithm EvalFunctionExt.Lapack_dgglse(args); then ();
+    case "dgtsv"  algorithm EvalFunctionExt.Lapack_dgtsv(args);  then ();
+    case "dgbsv"  algorithm EvalFunctionExt.Lapack_dgtsv(args);  then ();
+    case "dgesvd" algorithm EvalFunctionExt.Lapack_dgesvd(args); then ();
+    case "dgetrf" algorithm EvalFunctionExt.Lapack_dgetrf(args); then ();
+    case "dgetrs" algorithm EvalFunctionExt.Lapack_dgetrs(args); then ();
+    case "dgetri" algorithm EvalFunctionExt.Lapack_dgetri(args); then ();
+    case "dgeqpf" algorithm EvalFunctionExt.Lapack_dgeqpf(args); then ();
+    case "dorgqr" algorithm EvalFunctionExt.Lapack_dorgqr(args); then ();
+  end match;
+end evaluateExternal3;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEvalFunction;

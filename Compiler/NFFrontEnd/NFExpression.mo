@@ -662,12 +662,56 @@ public
     end match;
   end realValue;
 
+  function makeReal
+    input Real value;
+    output Expression exp = REAL(value);
+  end makeReal;
+
   function integerValue
     input Expression exp;
     output Integer value;
   algorithm
     INTEGER(value=value) := exp;
   end integerValue;
+
+  function makeInteger
+    input Integer value;
+    output Expression exp = INTEGER(value);
+  end makeInteger;
+
+  function makeIntegerArray
+    input list<Integer> values;
+    output Expression exp;
+  algorithm
+    exp := ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(values))}),
+                 list(INTEGER(v) for v in values));
+  end makeIntegerArray;
+
+  function makeRealArray
+    input list<Real> values;
+    output Expression exp;
+  algorithm
+    exp := ARRAY(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(values))}),
+                 list(REAL(v) for v in values));
+  end makeRealArray;
+
+  function makeRealMatrix
+    input list<list<Real>> values;
+    output Expression exp;
+  protected
+    Type ty;
+    list<Expression> expl;
+  algorithm
+    if listEmpty(values) then
+      ty := Type.ARRAY(Type.REAL(), {Dimension.fromInteger(0), Dimension.UNKNOWN()});
+      exp := ARRAY(ty, {});
+    else
+      ty := Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(listHead(values)))});
+      expl := list(ARRAY(ty, list(REAL(v) for v in row)) for row in values);
+      ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
+      exp := ARRAY(ty, expl);
+    end if;
+  end makeRealMatrix;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -3113,6 +3157,13 @@ public
     end match;
   end arrayScalarElements_impl;
 
+  function arrayScalarElement
+    input Expression arrayExp;
+    output Expression scalarExp;
+  algorithm
+    ARRAY(elements = {scalarExp}) := arrayExp;
+  end arrayScalarElement;
+
   function hasArrayCall
     "Returns true if the given expression contains a function call that returns
      an array, otherwise false."
@@ -3459,6 +3510,35 @@ public
       else Expression.TUPLE_ELEMENT(exp, index, ty);
     end match;
   end tupleElement;
+
+  function splitRecord
+    input Expression recordExp;
+    output list<Expression> recordFields;
+  algorithm
+    recordFields := match recordExp
+      local
+        InstNode cls;
+        array<InstNode> comps;
+        ComponentRef cr, field_cr;
+        Type ty;
+
+      case RECORD() then recordExp.elements;
+
+      case CREF(ty = Type.COMPLEX(cls = cls), cref = cr)
+        algorithm
+          comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls)));
+          recordFields := {};
+
+          for i in arrayLength(comps):-1:1 loop
+            ty := InstNode.getType(comps[i]);
+            field_cr := ComponentRef.prefixCref(comps[i], ty, {}, cr);
+            recordFields := CREF(ty, field_cr) :: recordFields;
+          end for;
+        then
+          recordFields;
+
+    end match;
+  end splitRecord;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
