@@ -208,14 +208,13 @@ function find
   input output Sets sets;
         output Integer index;
 algorithm
-  // TODO: Replace with try once the bootstrapping has been updated.
-  _ := matchcontinue () case () algorithm
+  try
     // Check if a node already exists in the forest.
     index := BaseHashTable.get(entry, sets.elements);
-  then (); else algorithm
+  else
     // If a node doesn't already exist, create a new one.
     (sets, index) := add(entry, sets);
-  then (); end matchcontinue;
+  end try;
 end find;
 
 function findRoot

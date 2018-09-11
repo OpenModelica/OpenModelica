@@ -175,6 +175,13 @@ public
     CREF(node = node) := cref;
   end node;
 
+  function nodeType
+    input ComponentRef cref;
+    output Type ty;
+  algorithm
+    CREF(ty = ty) := cref;
+  end nodeType;
+
   function firstName
     input ComponentRef cref;
     output String name;

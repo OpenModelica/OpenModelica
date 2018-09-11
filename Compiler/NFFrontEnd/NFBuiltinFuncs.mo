@@ -276,5 +276,10 @@ constant Function FILL_FUNC = Function.FUNCTION(Path.IDENT("fill"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
     Pointer.createImmutable(true), Pointer.createImmutable(0));
 
+constant Function SMOOTH = Function.FUNCTION(Path.IDENT("smooth"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Pointer.createImmutable(true), Pointer.createImmutable(0));
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;
