@@ -842,6 +842,8 @@ protected
   list<Integer> ds;
   Integer len;
   list<DAE.Exp> exps;
+  DAE.Exp exp1;
+  Absyn.Ident call1, call2;
   DAE.ComponentRef cr1,cr2;
   list<DAE.Subscript> subs;
   Integer ndim;
@@ -859,7 +861,13 @@ algorithm
   ndim := listLength(ds);
   len := product(i for i in ds);
   true := len > 0;
-  (DAE.CREF(componentRef=cr1)::exps) := Expression.flattenArrayExpToList(e); // TODO: Use a better routine? We now get all expressions even if no expression is a cref...
+  //(DAE.CREF(componentRef=cr1)::exps) := Expression.flattenArrayExpToList(e); // TODO: Use a better routine? We now get all expressions even if no expression is a cref...
+  (exp1::exps) := Expression.flattenArrayExpToList(e);
+  (cr1, call1) := match exp1
+    case DAE.CREF(componentRef=cr1) then (cr1, "");
+    case DAE.CALL(path=Absyn.IDENT(name=call1), expLst={DAE.CREF(componentRef=cr1)}) then (cr1, call1);
+    else fail();
+  end match;
   // Check that the first element starts at index [1,...,1]
   subs := ComponentReference.crefLastSubs(cr1);
   true := ndim==listLength(subs);
@@ -870,14 +878,23 @@ algorithm
   // Same number of expressions as expected...
   true := (1+listLength(exps))==len;
   for exp in exps loop
-    DAE.CREF(componentRef=cr2) := exp;
+    //DAE.CREF(componentRef=cr2) := exp;
+    (cr2, call2) := match exp
+      case DAE.CREF(componentRef=cr2) then (cr2, "");
+      case DAE.CALL(path=Absyn.IDENT(name=call2), expLst={DAE.CREF(componentRef=cr2)}) then (cr2, call2);
+      else fail();
+    end match;
     true := ndim==listLength(ComponentReference.crefLastSubs(cr2));
     true := ComponentReference.crefEqualWithoutSubs(cr1,cr2);
     true := 1==ComponentReference.crefCompareIntSubscript(cr2,cr1); // cr2 > cr1
+    true := call1==call2;
     cr1 := cr2;
   end for;
   // All of the crefs are in ascending order; the first one starts at 1,1; the length is the full array... So it is the complete cref!
   e := Expression.makeCrefExp(ComponentReference.crefStripLastSubs(cr1), ty);
+  if call1 <> "" then
+    e := DAE.CALL(Absyn.IDENT(name = call1), {e}, DAE.callAttrBuiltinImpureReal);
+  end if;
 end collapseArrayCrefExpWork2;
 
 annotation(__OpenModelica_Interface="backend");
