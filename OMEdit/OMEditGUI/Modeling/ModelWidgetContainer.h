@@ -543,6 +543,8 @@ public slots:
   void alignInterfaces();
   void addSubModel();
   void addOrEditSubModelIcon();
+  void addConnector();
+  void addBus();
 };
 
 #endif // MODELWIDGETCONTAINER_H

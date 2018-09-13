@@ -375,4 +375,26 @@ private slots:
   void addSubModel();
 };
 
+class AddConnectorDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  AddConnectorDialog(GraphicsView *pGraphicsView);
+private:
+  GraphicsView *mpGraphicsView;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpCausalityLabel;
+  QComboBox *mpCausalityComboBox;
+  Label *mpTypeLabel;
+  QComboBox *mpTypeComboBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void addConnector();
+};
+
 #endif // MODELICACLASSDIALOG_H

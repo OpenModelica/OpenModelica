@@ -1409,6 +1409,10 @@ LibraryTreeItem* LibraryTreeModel::getContainingFileParentLibraryTreeItem(Librar
  */
 void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem)
 {
+  // Return if the class is OMSimulator connector.
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && pLibraryTreeItem->getOMSConnector()) {
+    return;
+  }
   if (!pLibraryTreeItem->getModelWidget()) {
     showModelWidget(pLibraryTreeItem, false);
   }
@@ -3655,6 +3659,8 @@ void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
         setExpandsOnDoubleClick(false);
         return;
       }
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && pLibraryTreeItem->getOMSConnector()) {
+      return;
     }
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
   }

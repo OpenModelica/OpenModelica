@@ -352,6 +352,10 @@ public:
   static QString simulationParamsTip;
   static QString addSubModel;
   static QString addSubModelTip;
+  static QString addBus;
+  static QString addBusTip;
+  static QString addConnector;
+  static QString addConnectorTip;
   static QString running;
   static QString finished;
   static QString newVariable;

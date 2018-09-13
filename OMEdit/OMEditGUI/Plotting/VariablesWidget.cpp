@@ -946,10 +946,12 @@ VariablesTreeView::VariablesTreeView(VariablesWidget *pVariablesWidget)
 }
 
 /*!
-  Reimplementation of QTreeView::mouseReleaseEvent\n
-  Checks if user clicks on the first column then check/uncheck the corresponsing checkbox of the column.\n
-  Otherwise calls the QTreeView::mouseReleaseEvent
-  */
+ * \brief VariablesTreeView::mouseReleaseEvent
+ * Reimplementation of QTreeView::mouseReleaseEvent\n
+ * Checks if user clicks on the first column then check/uncheck the corresponsing checkbox of the column.\n
+ * Otherwise calls the QTreeView::mouseReleaseEvent
+ * \param event
+ */
 void VariablesTreeView::mouseReleaseEvent(QMouseEvent *event)
 {
   QModelIndex index = indexAt(event->pos());
@@ -957,18 +959,16 @@ void VariablesTreeView::mouseReleaseEvent(QMouseEvent *event)
       index.column() == 0 &&
       index.parent().isValid() &&
       index.flags() & Qt::ItemIsUserCheckable &&
-      event->button() == Qt::LeftButton)
-  {
-    if (visualRect(index).contains(event->pos()))
-    {
+      event->button() == Qt::LeftButton) {
+    if (visualRect(index).contains(event->pos())) {
       index = mpVariablesWidget->getVariableTreeProxyModel()->mapToSource(index);
       VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-      if (pVariablesTreeItem && pVariablesTreeItem)
-      {
-        if (pVariablesTreeItem->isChecked())
+      if (pVariablesTreeItem && pVariablesTreeItem) {
+        if (pVariablesTreeItem->isChecked()) {
           mpVariablesWidget->getVariablesTreeModel()->setData(index, Qt::Unchecked, Qt::CheckStateRole);
-        else
+        } else {
           mpVariablesWidget->getVariablesTreeModel()->setData(index, Qt::Checked, Qt::CheckStateRole);
+        }
       }
       return;
     }

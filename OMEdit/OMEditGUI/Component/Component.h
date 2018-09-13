@@ -197,6 +197,7 @@ public:
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
   void setChoicesAnnotation(QStringList choicesAnnotation) {mChoicesAnnotation = choicesAnnotation;}
   QStringList getChoicesAnnotation() {return mChoicesAnnotation;}
+  PolygonAnnotation* getInputOutputComponentPolygon() {return mpInputOutputComponentPolygon;}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}

@@ -421,6 +421,24 @@ private:
   QString mAnnotation;
 };
 
+class AddConnectorCommand : public QUndoCommand
+{
+public:
+  AddConnectorCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                      bool openingClass = false, int causality = 0, int type = 0, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mName;
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mAnnotation;
+  GraphicsView *mpGraphicsView;
+  bool mOpeningClass;
+  int mCausality;
+  int mType;
+  Component *mpComponent;
+};
+
 class FMUPropertiesCommand : public QUndoCommand
 {
 public:
@@ -478,6 +496,20 @@ private:
   LibraryTreeItem *mpLibraryTreeItem;
   QString mOldName;
   QString mNewName;
+};
+
+class AddBusCommand : public QUndoCommand
+{
+public:
+  AddBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mName;
+  LibraryTreeItem *mpLibraryTreeItem;
+  bool mOpeningClass;
+  Component *mpComponent;
+  GraphicsView *mpGraphicsView;
 };
 
 #endif // COMMANDS_H

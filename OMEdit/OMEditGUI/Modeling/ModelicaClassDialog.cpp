@@ -2095,3 +2095,95 @@ void AddSubModelDialog::addSubModel()
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }
+
+/*!
+ * \class AddConnectorDialog
+ * \brief Creates a dialog to allow users to add a connector to OMSimulator model.
+ */
+/*!
+ * \brief AddConnectorDialog::AddConnectorDialog
+ * \param pGraphicsView
+ */
+AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addConnector));
+  setMinimumWidth(400);
+  mpGraphicsView = pGraphicsView;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::addConnector);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // name
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // causality
+  mpCausalityLabel = new Label("Causality:");
+  mpCausalityComboBox = new QComboBox;
+  mpCausalityComboBox->addItem("Input", oms_causality_input);
+  mpCausalityComboBox->addItem("Output", oms_causality_output);
+  // type
+  mpTypeLabel = new Label(Helper::type);
+  mpTypeComboBox = new QComboBox;
+  mpTypeComboBox->addItem("Real", oms_signal_type_real);
+  mpTypeComboBox->addItem("Integer", oms_signal_type_integer);
+  mpTypeComboBox->addItem("Boolean", oms_signal_type_boolean);
+  mpTypeComboBox->addItem("String", oms_signal_type_string);
+  mpTypeComboBox->addItem("Bus", oms_signal_type_bus);
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addConnector()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpNameLabel, 2, 0);
+  pMainLayout->addWidget(mpNameTextBox, 2, 1);
+  pMainLayout->addWidget(mpCausalityLabel, 3, 0);
+  pMainLayout->addWidget(mpCausalityComboBox, 3, 1);
+  pMainLayout->addWidget(mpTypeLabel, 4, 0);
+  pMainLayout->addWidget(mpTypeComboBox, 4, 1);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief AddConnectorDialog::addConnector
+ * Adds a connector to the OMSimulator model.
+ */
+void AddConnectorDialog::addConnector()
+{
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Connector")), Helper::ok);
+    return;
+  }
+
+  LibraryTreeItem *pParentLibraryTreeItem;
+  pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
+  for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      return;
+    }
+  }
+  QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
+  AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false,
+                                                                      mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt(),
+                                                                      mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorCommand);
+  mpGraphicsView->getModelWidget()->updateModelText();
+  accept();
+}

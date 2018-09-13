@@ -73,6 +73,17 @@ PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Graphics
   connect(pShapeAnnotation, SIGNAL(deleted()), this, SLOT(referenceShapeDeleted()));
 }
 
+PolygonAnnotation::PolygonAnnotation(Component *pParent)
+  : ShapeAnnotation(pParent)
+{
+  // set the default values
+  GraphicItem::setDefaults();
+  FilledShape::setDefaults();
+  ShapeAnnotation::setDefaults();
+  setPos(mOrigin);
+  setRotation(mRotation);
+}
+
 void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 {
   GraphicItem::parseShapeAnnotation(annotation);

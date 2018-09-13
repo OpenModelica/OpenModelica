@@ -188,6 +188,8 @@ public:
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getAddOrEditSubModelIconAction() {return mpAddOrEditSubModelIconAction;}
+  QAction* getAddConnectorAction() {return mpAddConnectorAction;}
+  QAction* getAddBusAction() {return mpAddBusAction;}
   QAction* getOMSSimulationSetupAction() {return mpOMSSimulationSetupAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
@@ -409,6 +411,8 @@ private:
   // OMSimulator Actions
   QAction *mpAddSubModelAction;
   QAction *mpAddOrEditSubModelIconAction;
+  QAction *mpAddConnectorAction;
+  QAction *mpAddBusAction;
   QAction *mpOMSSimulationSetupAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;

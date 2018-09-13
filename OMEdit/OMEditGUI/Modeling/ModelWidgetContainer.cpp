@@ -52,6 +52,7 @@
 #include "Animation/ThreeDViewer.h"
 #endif
 #include "OMS/OMSProxy.h"
+#include "Modeling/BusDialog.h"
 
 #include <QNetworkReply>
 
@@ -2683,6 +2684,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
                    || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old) {
           menu.addAction(MainWindow::instance()->getAddOrEditSubModelIconAction());
         }
+        menu.addAction(MainWindow::instance()->getAddConnectorAction());
+        menu.addAction(MainWindow::instance()->getAddBusAction());
       }
     }
     menu.exec(event->globalPos());
@@ -5713,94 +5716,90 @@ void ModelWidget::drawOMSModelElements()
       for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
         LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
         if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
-          // Load the ModelWidget if not loaded already
-          if (!pChildLibraryTreeItem->getModelWidget()) {
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
-          }
-
           QString annotation = QString("Placement(true,%1,%2,-10,-10,10,10,-,-,-,-,-,-,-,)")
                                .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->x, 0, 1, -100, 100))
                                .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->y, 0, 1, -100, 100));
-          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", pChildLibraryTreeItem,
-                                                                           annotation, true, mpDiagramGraphicsView);
-          mpUndoStack->push(pAddSubModelCommand);
+          AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
+                                                                              annotation, mpDiagramGraphicsView, true);
+          mpUndoStack->push(pAddConnectorCommand);
         }
       }
     }
   } else if (mpLibraryTreeItem->getOMSConnector()) {
-    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
-      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
-      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-          pPolygonAnnotation->setLineColor(QColor(255,127,0));
-          pPolygonAnnotation->setFillColor(QColor(255,127,0));
-          break;
-        case oms_signal_type_boolean:
-          pPolygonAnnotation->setLineColor(QColor(255,0,255));
-          pPolygonAnnotation->setFillColor(QColor(255,0,255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
-          pPolygonAnnotation->setFillColor(QColor(0, 0, 127));
-          break;
-      }
-      pPolygonAnnotation->initializeTransformation();
-      pPolygonAnnotation->drawCornerItems();
-      pPolygonAnnotation->setCornerItemsActiveOrPassive();
-      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
-                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
-                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
-                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
-      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
-      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
-    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
-      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
-      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-          pPolygonAnnotation->setLineColor(QColor(255,127,0));
-          pPolygonAnnotation->setFillColor(QColor(255,255,255));
-          break;
-        case oms_signal_type_boolean:
-          pPolygonAnnotation->setLineColor(QColor(255,0,255));
-          pPolygonAnnotation->setFillColor(QColor(255,255,255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
-          pPolygonAnnotation->setFillColor(QColor(255, 255, 255));
-          break;
-      }
-      pPolygonAnnotation->initializeTransformation();
-      pPolygonAnnotation->drawCornerItems();
-      pPolygonAnnotation->setCornerItemsActiveOrPassive();
-      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
-                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
-                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
-                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
-      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
-      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
-    }
+    qDebug() << "we should not reach here.";
+//    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+//      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
+//      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
+//      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+//        case oms_signal_type_integer:
+//          pPolygonAnnotation->setLineColor(QColor(255,127,0));
+//          pPolygonAnnotation->setFillColor(QColor(255,127,0));
+//          break;
+//        case oms_signal_type_boolean:
+//          pPolygonAnnotation->setLineColor(QColor(255,0,255));
+//          pPolygonAnnotation->setFillColor(QColor(255,0,255));
+//          break;
+//        case oms_signal_type_string:
+//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
+//          break;
+//        case oms_signal_type_enum:
+//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
+//          break;
+//        case oms_signal_type_bus:
+//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
+//          break;
+//        case oms_signal_type_real:
+//        default:
+//          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+//          pPolygonAnnotation->setFillColor(QColor(0, 0, 127));
+//          break;
+//      }
+//      pPolygonAnnotation->initializeTransformation();
+//      pPolygonAnnotation->drawCornerItems();
+//      pPolygonAnnotation->setCornerItemsActiveOrPassive();
+//      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
+//                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
+//                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
+//                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
+//      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
+//      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
+//    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+//      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
+//      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
+//      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+//        case oms_signal_type_integer:
+//          pPolygonAnnotation->setLineColor(QColor(255,127,0));
+//          pPolygonAnnotation->setFillColor(QColor(255,255,255));
+//          break;
+//        case oms_signal_type_boolean:
+//          pPolygonAnnotation->setLineColor(QColor(255,0,255));
+//          pPolygonAnnotation->setFillColor(QColor(255,255,255));
+//          break;
+//        case oms_signal_type_string:
+//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
+//          break;
+//        case oms_signal_type_enum:
+//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
+//          break;
+//        case oms_signal_type_bus:
+//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
+//          break;
+//        case oms_signal_type_real:
+//        default:
+//          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+//          pPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+//          break;
+//      }
+//      pPolygonAnnotation->initializeTransformation();
+//      pPolygonAnnotation->drawCornerItems();
+//      pPolygonAnnotation->setCornerItemsActiveOrPassive();
+//      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
+//                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
+//                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
+//                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
+//      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
+//      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
+//    }
   }
 }
 
@@ -6153,6 +6152,8 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
   connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
+  connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
+  connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
@@ -6666,6 +6667,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
   MainWindow::instance()->getAddOrEditSubModelIconAction()->setEnabled(enabled && oms_submodel);
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && (oms || oms_submodel));
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && (oms || oms_submodel));
   MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -6877,5 +6880,36 @@ void ModelWidgetContainer::addOrEditSubModelIcon()
         pAddOrEditSubModelIconDialog->exec();
       }
     }
+  }
+}
+
+void ModelWidgetContainer::addConnector()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    AddConnectorDialog *pAddConnectorDialog = new AddConnectorDialog(pModelWidget->getDiagramGraphicsView());
+    pAddConnectorDialog->exec();
+  }
+}
+
+/*!
+ * \brief ModelWidgetContainer::addBus
+ * Opens the AddBusDialog.
+ */
+void ModelWidgetContainer::addBus()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    QList<Component*> components;
+    QList<QGraphicsItem*> selectedItems = pModelWidget->getDiagramGraphicsView()->scene()->selectedItems();
+    for (int i = 0 ; i < selectedItems.size() ; i++) {
+      // check the selected components.
+      Component *pComponent = dynamic_cast<Component*>(selectedItems.at(i));
+      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()) {
+        components.append(pComponent);
+      }
+    }
+    AddBusDialog *pAddBusDialog = new AddBusDialog(components, pModelWidget->getDiagramGraphicsView());
+    pAddBusDialog->exec();
   }
 }

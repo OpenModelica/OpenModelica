@@ -48,6 +48,8 @@ public:
   PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pParent);
   // Used for icon/diagram inherited shape
   PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for default input/output component
+  PolygonAnnotation(Component *pParent);
   void parseShapeAnnotation(QString annotation);
   QPainterPath getShape() const;
   QRectF boundingRect() const;

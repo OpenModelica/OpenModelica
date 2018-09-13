@@ -133,6 +133,7 @@ SOURCES += main.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
+  Modeling/BusDialog.cpp \
   Search/SearchWidget.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
@@ -216,6 +217,7 @@ HEADERS  += Util/Helper.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \
+  Modeling/BusDialog.h \
   Search/SearchWidget.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \

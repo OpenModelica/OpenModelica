@@ -3472,6 +3472,12 @@ void MainWindow::createActions()
   // Add or Edit submodel icon Action
   mpAddOrEditSubModelIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit SubModel Icon"), this);
   mpAddOrEditSubModelIconAction->setStatusTip(tr("Adds/Edits an icon for submodel"));
+  // Add connector action
+  mpAddConnectorAction = new QAction(QIcon(":/Resources/icons/add-connector.svg"), Helper::addConnector, this);
+  mpAddConnectorAction->setStatusTip(Helper::addConnectorTip);
+  // Add bus action
+  mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
+  mpAddBusAction->setStatusTip(Helper::addBusTip);
   // OMSimulator simulation setup action
   mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
   mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
@@ -4122,6 +4128,8 @@ void MainWindow::createToolbars()
   // add actions to OMSimulator Toolbar
   mpOMSimulatorToobar->addAction(mpAddSubModelAction);
   mpOMSimulatorToobar->addAction(mpAddOrEditSubModelIconAction);
+  mpOMSimulatorToobar->addAction(mpAddConnectorAction);
+  mpOMSimulatorToobar->addAction(mpAddBusAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);
 }

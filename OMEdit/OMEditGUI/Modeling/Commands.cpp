@@ -1923,6 +1923,89 @@ void DeleteSubModelCommand::undo()
   mpGraphicsView->addComponentToList(mpComponent);
 }
 
+/*!
+ * \brief AddConnectorCommand::AddConnectorCommand
+ * Adds the connector.
+ * \param name
+ * \param pLibraryTreeItem
+ * \param annotation
+ * \param pGraphicsView
+ * \param openingClass
+ * \param causality
+ * \param type
+ * \param pParent
+ */
+AddConnectorCommand::AddConnectorCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                                         bool openingClass, int causality, int type, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mName = name;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mAnnotation = annotation;
+  mpGraphicsView = pGraphicsView;
+  mOpeningClass = openingClass;
+  mCausality = causality;
+  mType = type;
+  setText(QString("Add connector %1").arg(name));
+}
+
+/*!
+ * \brief AddConnectorCommand::redo
+ * Redo the AddConnectorCommand.
+ */
+void AddConnectorCommand::redo()
+{
+  if (!mOpeningClass) {
+    /*! @todo Add a function addConnector to add the connector to OMSimulator */
+    //mpGraphicsView->addSubModel(mName, mPath);
+  }
+  if (!mpLibraryTreeItem) {
+    // Create a LibraryTreeItem for connector
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName,
+                                                                 QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
+                                                                 .arg(mName), "",
+                                                                 true, pParentLibraryTreeItem);
+  }
+  // add the FMU to view
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(mpLibraryTreeItem->getName());
+  pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  mpComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpGraphicsView->addItem(mpComponent);
+  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addComponentToList(mpComponent);
+  // select the component when not opening class.
+  if (!mOpeningClass) {
+    // unselect all items
+    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
+      pItem->setSelected(false);
+    }
+    mpComponent->setSelected(true);
+  }
+}
+
+/*!
+ * \brief AddConnectorCommand::undo
+ * Undo the AddConnectorCommand.
+ */
+void AddConnectorCommand::undo()
+{
+  // delete the connector
+  /*! @todo Add a function deleteConnector to delete the connector from OMSimulator */
+  //mpGraphicsView->deleteSubModel(mName);
+  // delete the LibraryTreeItem
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
+  mpLibraryTreeItem = 0;
+  // delete the Component
+  mpGraphicsView->removeItem(mpComponent);
+  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->deleteComponentFromList(mpComponent);
+  mpComponent->deleteLater();
+  mpComponent = 0;
+}
+
 FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString name, FMUProperties oldFMUProperties,
                                            FMUProperties newFMUProperties, QUndoCommand *pParent)
   : QUndoCommand(pParent)
@@ -2327,4 +2410,74 @@ void OMSRenameCommand::undo()
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
   mpLibraryTreeItem->emitNameChanged();
   mpLibraryTreeItem->updateChildrenNameStructure();
+}
+
+AddBusCommand::AddBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, bool openingClass,
+                             GraphicsView *pGraphicsView, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mName = name;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mOpeningClass = openingClass;
+  mpGraphicsView = pGraphicsView;
+  setText(QString("Add bus %1").arg(name));
+}
+
+/*!
+ * \brief AddBusCommand::redo
+ * Redo the AddBusCommand.
+ */
+void AddBusCommand::redo()
+{
+  if (!mOpeningClass) {
+//    mpGraphicsView->addSubModel(mName, mPath);
+  }
+  if (!mpLibraryTreeItem) {
+    // Create a LibraryTreeItem for FMU
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+    LibraryTreeItem *pFMULibraryTreeItem;
+    pFMULibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName,
+                                                                   QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
+                                                                   .arg(mName), "",
+                                                                   true, pParentLibraryTreeItem);
+    // Create ModelWidget for FMU so that its input/output signals are fetched
+    pLibraryTreeModel->loadLibraryTreeItemPixmap(pFMULibraryTreeItem);
+    mpLibraryTreeItem = pFMULibraryTreeItem;
+  }
+  // add the FMU to view
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(mpLibraryTreeItem->getName());
+  pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  mpComponent = new Component(mName, mpLibraryTreeItem, "", QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpGraphicsView->addItem(mpComponent);
+  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addComponentToList(mpComponent);
+  // select the component when not opening class.
+  if (!mOpeningClass) {
+    // unselect all items
+    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
+      pItem->setSelected(false);
+    }
+    mpComponent->setSelected(true);
+  }
+}
+
+/*!
+ * \brief AddBusCommand::undo
+ * Undo the AddBusCommand.
+ */
+void AddBusCommand::undo()
+{
+  // delete the submodel
+  mpGraphicsView->deleteSubModel(mName);
+  // delete the LibraryTreeItem
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
+  mpLibraryTreeItem = 0;
+  // delete the Component
+  mpGraphicsView->removeItem(mpComponent);
+  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->deleteComponentFromList(mpComponent);
+  mpComponent->deleteLater();
+  mpComponent = 0;
 }
