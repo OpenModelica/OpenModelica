@@ -22,6 +22,7 @@ Modelica.Blocks.Sources.BooleanPulse.mos \
 Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
 FMIExercise.mos \
+testDisableDep.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
