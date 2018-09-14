@@ -12,6 +12,7 @@ model FuncBuiltinMax
   Real r1 = max(4.0, 2.0);
   Real r2 = max({3.0, 1.0, 2.0});
   Real r3 = max(r1, r2);
+  Real r4 = max(1, r2);
 
   Integer i1 = max(5, 6);
   Integer i2 = max({4, 2, 1});
@@ -31,6 +32,7 @@ end FuncBuiltinMax;
 //   Real r1 = 4.0;
 //   Real r2 = 3.0;
 //   Real r3 = max(r1, r2);
+//   Real r4 = max(1.0, r2);
 //   Integer i1 = 6;
 //   Integer i2 = 4;
 //   Integer i3 = max(i2, i1);
