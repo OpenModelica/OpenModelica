@@ -115,9 +115,9 @@
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  #define DEFAULT_CFLAGS "-falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
 #else
-  #define DEFAULT_CFLAGS "-falign-functions ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-falign-functions -fno-ipa-pure-const ${MODELICAUSERCFLAGS}"
 #endif
 #if defined(__x86_64__)
   /* -fPIC needed on x86_64! */
