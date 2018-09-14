@@ -373,18 +373,24 @@ function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.de
 // function min = $overload(OpenModelica.Internal.realMin, OpenModelica.Internal.intMin
 //                         , OpenModelica.Internal.boolMin, OpenModelica.Internal.enumMin
 //                         , OpenModelica.Internal.arrayMin)
-function min = $overload(OpenModelica.Internal.scalarMin, OpenModelica.Internal.arrayMin)
+//function min = $overload(OpenModelica.Internal.scalarMin, OpenModelica.Internal.arrayMin)
+function min
+  external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
 </html>"));
+end min;
 
 // function max = $overload(OpenModelica.Internal.realMax, OpenModelica.Internal.intMax
 //                         , OpenModelica.Internal.boolMax, OpenModelica.Internal.enumMax
 //                         , OpenModelica.Internal.arrayMax)
-function max = $overload(OpenModelica.Internal.scalarMax, OpenModelica.Internal.arrayMax)
+//function max = $overload(OpenModelica.Internal.scalarMax, OpenModelica.Internal.arrayMax)
+function max
+  external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'max()'\">max()</a>
 </html>"));
+end max;
 
 function sum<ArrayType, ScalarBasicType> "Sum of all array elements"
   input ArrayType a;

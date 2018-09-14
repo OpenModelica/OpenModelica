@@ -114,8 +114,8 @@ public
       case "initial" then typeDiscreteCall(call, origin, info);
       case "isRoot" then typeIsRootCall(call, origin, info);
       case "matrix" then typeMatrixCall(call, origin, info);
-      case "max" then typeMinMaxCall(call, origin, info);
-      case "min" then typeMinMaxCall(call, origin, info);
+      case "max" then typeMinMaxCall("max", call, origin, info);
+      case "min" then typeMinMaxCall("min", call, origin, info);
       case "ndims" then typeNdimsCall(call, origin, info);
       case "noEvent" then typeNoEventCall(call, origin, info);
       case "ones" then typeZerosOnesCall("ones", call, origin, info);
@@ -664,6 +664,7 @@ protected
   end typeEdgeCall;
 
   function typeMinMaxCall
+    input String name;
     input Call call;
     input ExpOrigin.Type origin;
     input SourceInfo info;
@@ -671,16 +672,67 @@ protected
     output Type ty;
     output Variability var;
   protected
-    Call argtycall;
+    ComponentRef fn_ref;
+    list<Expression> args;
+    list<NamedArg> named_args;
+    Expression arg;
+    Function fn;
+    Expression arg1, arg2;
+    Type ty1, ty2;
+    Variability var1, var2;
+    TypeCheck.MatchKind mk;
   algorithm
-    argtycall := Call.typeMatchNormalCall(call, origin, info);
-    argtycall := Call.unboxArgs(argtycall);
-    ty := Call.typeOf(argtycall);
-    var := Call.variability(argtycall);
-    callExp := Expression.CALL(argtycall);
-    // TODO: check basic type in two argument overload.
-    // check arrays of simple types in one argument overload.
-    // fix return type.
+    Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
+    assertNoNamedParams(name, named_args, info);
+
+    (args, ty, var) := match args
+      case {arg1}
+        algorithm
+          (arg1, ty1, var1) := Typing.typeExp(arg1, origin, info);
+          ty := Type.arrayElementType(ty1);
+
+          if not (Type.isArray(ty1) and Type.isBasic(ty)) then
+            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any[:, ...]"}, info);
+          end if;
+
+        then
+          ({arg1}, ty, var1);
+
+      case {arg1, arg2}
+        algorithm
+          (arg1, ty1, var1) := Typing.typeExp(arg1, origin, info);
+          (arg2, ty2, var2) := Typing.typeExp(arg2, origin, info);
+
+          if not Type.isBasic(ty1) then
+            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+              {"1", name, "", Expression.toString(arg1), Type.toString(ty1), "Any"}, info);
+          end if;
+
+          if not Type.isBasic(ty2) then
+            Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
+              {"2", name, "", Expression.toString(arg2), Type.toString(ty2), "Any"}, info);
+          end if;
+
+          (arg1, arg2, ty, mk) := TypeCheck.matchExpressions(arg1, ty1, arg2, ty2);
+
+          if not TypeCheck.isValidArgumentMatch(mk) then
+            Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+              {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+          end if;
+        then
+          ({arg1, arg2}, ty, Prefixes.variabilityMax(var1, var2));
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
+            {Call.toString(call), name + "(Any[:, ...]) => Any\n" + name + "(Any, Any) => Any"}, info);
+        then
+          fail();
+    end match;
+
+    fn := listHead(Function.typeRefCache(fn_ref));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, args, var, ty));
   end typeMinMaxCall;
 
   function typeSumCall
