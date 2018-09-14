@@ -3509,6 +3509,10 @@ algorithm
 
   isWindows := System.os() == "Windows_NT";
 
+  fmutmp := filenameprefix + ".fmutmp";
+  logfile := filenameprefix + ".log";
+  dir := fmutmp+"/sources/";
+
   if Config.simCodeTarget() == "Cpp" then
     System.removeDirectory("binaries");
     for platform in platforms loop
@@ -3520,17 +3524,15 @@ algorithm
       end if;
       ExecStat.execStat("buildModelFMU: Generate C++ for platform " + platform);
     end for;
-    System.systemCall("make -f " + filenameprefix + "_FMU.makefile clean");
+    if 0 <> System.systemCall("make -f " + filenameprefix + "_FMU.makefile clean", outFile=logfile) then
+	  // do nothing
+	end if;
     return;
   end if;
 
   CevalScript.compileModel(filenameprefix+"_FMU" , libs);
 
   ExecStat.execStat("buildModelFMU: Generate the FMI files");
-
-  fmutmp := filenameprefix + ".fmutmp";
-  logfile := filenameprefix + ".log";
-  dir := fmutmp+"/sources/";
 
   for platform in platforms loop
     configureFMU(platform, fmutmp, System.realpath(fmutmp)+"/resources/"+System.stringReplace(listGet(Util.stringSplitAtChar(platform," "),1),"/","-")+".log", isWindows);
