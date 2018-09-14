@@ -12005,8 +12005,33 @@ algorithm
           SimCode.FMIDISCRETESTATES(discreteStates),
           SimCode.FMIINITIALUNKNOWNS({})));
 else
-  Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
-  fail();
+  // create empty model structure
+  try
+    // create empty derivatives dependencies
+    derivatives := list(createFmiUnknownFromSimVar(v,1) for v in inModelInfo.vars.derivativeVars);
+
+    // create empty output dependencies
+    varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
+    outputs := list(createFmiUnknownFromSimVar(v,1) for v in varsA);
+
+    // create empty clockedStates dependencies
+    clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
+    discreteStates := list(createFmiUnknownFromSimVar(v,1) for v in clockedStates);
+
+    contPartSimDer := NONE();
+
+    outFmiModelStructure :=
+      SOME(
+        SimCode.FMIMODELSTRUCTURE(
+          SimCode.FMIOUTPUTS(outputs),
+          SimCode.FMIDERIVATIVES(derivatives),
+          contPartSimDer,
+          SimCode.FMIDISCRETESTATES(discreteStates),
+          SimCode.FMIINITIALUNKNOWNS({})));
+  else
+    Error.addInternalError("SimCodeUtil.createFMIModelStructure failed", sourceInfo());
+    fail();
+  end try;
 end try;
 end createFMIModelStructure;
 
