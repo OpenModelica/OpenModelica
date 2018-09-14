@@ -83,7 +83,7 @@
 #define DEFAULT_MAKE "make"
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
-#define DEFAULT_LDFLAGS "-lregex -lexpat -lomcgc -Wl,-Bstatic -lpthread -Wl,-Bdynamic -fopenmp -loleaut32 -limagehlp -lz -lhdf5"
+#define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lomcgc -lpthread -loleaut32 -limagehlp -lz -lhdf5 -lszip -Wl,-Bdynamic"
 
 
 #define CONFIG_WITH_OPENMP 1
@@ -96,10 +96,10 @@
 #endif
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
-#define BASIC_LDFLAGS_RT " -lomcgc -lexpat -lregex -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd -lsundials_idas -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack"
+#define BASIC_LDFLAGS_RT " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -Wl,-Bdynamic -lsundials_idas -lsundials_kinsol -lsundials_nvecserial -Wl,-Bstatic -lipopt -lcoinmumps -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic"
 #define LDFLAGS_RT " -lOpenModelicaRuntimeC" BASIC_LDFLAGS_RT
-#define LDFLAGS_RT_SIM " -lSimulationRuntimeC" BASIC_LDFLAGS_RT " -lwsock32 -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
-#define LDFLAGS_RT_SOURCE_FMU " -lregex -static-libgcc -Wl,-Bstatic -lpthread -Wl,-Bdynamic -lm -lgfortranbegin -lgfortran -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lz -lhdf5"
+#define LDFLAGS_RT_SIM " -Wl,-Bstatic -lSimulationRuntimeC -Wl,-Bdynamic" BASIC_LDFLAGS_RT " -lwsock32 -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
+#define LDFLAGS_RT_SOURCE_FMU " -Wl,-Bstatic -lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lz -lhdf5 -lszip -Wl,-Bdynamic"
 #define CONFIG_EXE_EXT ".exe"
 #define CONFIG_DLL_EXT ".dll"
 #define CONFIG_OS "Windows_NT"
@@ -115,7 +115,7 @@
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  #define DEFAULT_CFLAGS "-falign-functions -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
 #else
   #define DEFAULT_CFLAGS "-falign-functions ${MODELICAUSERCFLAGS}"
 #endif
