@@ -71,6 +71,8 @@ import Statement = NFStatement;
 import Sections = NFSections;
 import Algorithm = NFAlgorithm;
 import OperatorOverloading = NFOperatorOverloading;
+import MetaModelica.Dangerous.listReverseInPlace;
+import Array;
 
 
 public
@@ -85,12 +87,16 @@ type SlotType = enumeration(
   GENERIC    "Accepts both positional and named arguments."
 ) "Determines which type of argument a slot accepts.";
 
+type SlotEvalStatus = enumeration(NOT_EVALUATED, EVALUATING, EVALUATED);
+
 uniontype Slot
   record SLOT
     String name;
     SlotType ty;
     Option<Expression> default;
     Option<TypedArg> arg;
+    Integer index;
+    SlotEvalStatus evalStatus;
   end SLOT;
 
   function positional
@@ -114,6 +120,12 @@ uniontype Slot
       else false;
     end match;
   end named;
+
+  function hasName
+    input String name;
+    input Slot slot;
+    output Boolean hasName = name == slot.name;
+  end hasName;
 end Slot;
 
 public
@@ -582,55 +594,42 @@ uniontype Function
     output Boolean matching;
   protected
     Slot slot;
-    list<Slot> slots;
+    list<Slot> slots, remaining_slots;
     list<TypedArg> filled_named_args;
+    array<Slot> slots_arr;
+    Integer pos_arg_count, slot_count, index = 1;
   algorithm
     slots := fn.slots;
+    pos_arg_count := listLength(posArgs);
+    slot_count := listLength(slots);
 
-    if listLength(posArgs) > listLength(slots) then
+    if pos_arg_count > slot_count then
+      // If we have too many positional arguments it can't possibly match.
       matching := false;
       return;
+    elseif pos_arg_count == slot_count and listEmpty(namedArgs) then
+      // If we have exactly as many positional arguments as slots and no named
+      // arguments we can just return the list of arguments as it is.
+      matching := true;
+      return;
     end if;
-    // Remove as many slots as there are positional arguments. We don't actually
-    // need to fill the slots, the positional arguments will always be first
-    // anyway. This makes it a bit slower to figure out what error to give if a
-    // named argument is wrong, but faster for the most common case of
-    // everything being correct.
+
+    slots_arr := listArray(slots);
+
     for arg in args loop
-      slot :: slots := slots;
+      slot := slots_arr[index];
 
       if not Slot.positional(slot) then
         // Slot doesn't allow positional arguments (used for some builtin functions).
         matching := false;
         return;
       end if;
+
+      slot.arg := SOME(arg);
+      arrayUpdate(slots_arr, index, slot);
+      index := index + 1;
     end for;
 
-    // Fill the remaining slots with the named arguments.
-    (filled_named_args, matching) := fillNamedArgs(namedArgs, slots, fn, info);
-
-    // Append the now ordered named arguments to the positional arguments.
-    if matching then
-      args := listAppend(posArgs, filled_named_args);
-    end if;
-  end fillArgs;
-
-  function fillNamedArgs
-    "Sorts a list of named arguments based on the given slots, and returns the
-     arguments for the slots if the arguments are correct. If the arguments
-     are not correct the list of expressions returned is undefined, along with
-     the matching output being false."
-    input list<TypedNamedArg> namedArgs;
-    input list<Slot> slots;
-    input Function fn;
-    input SourceInfo info;
-    output list<TypedArg> args = {};
-    output Boolean matching = true;
-  protected
-    array<Slot> slots_arr = listArray(slots);
-    String name;
-    Expression arg;
-  algorithm
     for narg in namedArgs loop
       (slots_arr, matching) := fillNamedArg(narg, slots_arr, fn, info);
 
@@ -640,7 +639,7 @@ uniontype Function
     end for;
 
     (args, matching) := collectArgs(slots_arr, info);
-  end fillNamedArgs;
+  end fillArgs;
 
   function fillNamedArg
     "Looks up a slot with the given name and tries to fill it with the given
@@ -658,7 +657,9 @@ uniontype Function
     Variability var;
   algorithm
     // Try to find a slot and fill it with the argument expression.
-    for i in 1:arrayLength(slots) loop
+    // Positional arguments fill the slots from the start of the array, so
+    // searching backwards will generally be a bit more efficient.
+    for i in arrayLength(slots):-1:1 loop
       s := slots[i];
 
       (argName, argExp, ty, var) := inArg;
@@ -718,21 +719,132 @@ uniontype Function
     for s in slots loop
       SLOT(name = name, default = default, arg = arg) := s;
 
-      args := match (default, arg)
-        case (_, SOME(a)) then a :: args; // Use the argument from the call if one was given.
-        // TODO: save this info in the defaults in slots (the type we can get from the exp manually but the variability is lost.).
-        case (SOME(e), _) then (e,Expression.typeOf(e),Variability.CONSTANT) ::args; // Otherwise, check that a default value exists.
-        else // Give an error if no argument was given and there's no default value.
+      args := matchcontinue arg
+        // Use the argument from the call if one was given.
+        case SOME(a) then a :: args;
+
+        // Otherwise, try to fill the slot with its default argument.
+        case _ then fillDefaultSlot(s, slots, info) :: args;
+
+        else
           algorithm
-            Error.addSourceMessage(Error.UNFILLED_SLOT, {name}, info);
             matching := false;
           then
             args;
-      end match;
+      end matchcontinue;
     end for;
 
     args := listReverse(args);
   end collectArgs;
+
+  function fillDefaultSlot
+    input Slot slot;
+    input array<Slot> slots;
+    input SourceInfo info;
+    output TypedArg outArg;
+  algorithm
+    outArg := match slot
+      // Slot already filled by function argument.
+      case SLOT(arg = SOME(outArg)) then outArg;
+
+      // Slot not filled by function argument, but has default value.
+      case SLOT(default = SOME(_))
+        then fillDefaultSlot2(slot, slots, info);
+
+      // Give an error if no argument was given and there's no default argument.
+      else
+        algorithm
+          Error.addSourceMessage(Error.UNFILLED_SLOT, {slot.name}, info);
+        then
+          fail();
+
+    end match;
+  end fillDefaultSlot;
+
+  function fillDefaultSlot2
+    input Slot slot;
+    input array<Slot> slots;
+    input SourceInfo info;
+    output TypedArg outArg;
+  algorithm
+    outArg := match slot.evalStatus
+      local
+        Expression exp;
+
+      // An already evaluated slot, return its binding.
+      case SlotEvalStatus.EVALUATED
+        then Util.getOption(slot.arg);
+
+      // A slot in the process of being evaluated => cyclic bindings.
+      case SlotEvalStatus.EVALUATING
+        algorithm
+          Error.addSourceMessage(Error.CYCLIC_DEFAULT_VALUE, {slot.name}, info);
+        then
+          fail();
+
+      // A slot with a not evaluated binding, evaluate the binding and return it.
+      case SlotEvalStatus.NOT_EVALUATED
+        algorithm
+          slot.evalStatus := SlotEvalStatus.EVALUATING;
+          arrayUpdate(slots, slot.index, slot);
+
+          exp := evaluateSlotExp(Util.getOption(slot.default), slots, info);
+          outArg := (exp, Expression.typeOf(exp), Expression.variability(exp));
+
+          slot.arg := SOME(outArg);
+          slot.evalStatus := SlotEvalStatus.EVALUATED;
+          arrayUpdate(slots, slot.index, slot);
+        then
+          outArg;
+
+    end match;
+  end fillDefaultSlot2;
+
+  function evaluateSlotExp
+    input Expression exp;
+    input array<Slot> slots;
+    input SourceInfo info;
+    output Expression outExp;
+  algorithm
+    outExp := Expression.map(exp,
+      function evaluateSlotExp_traverser(slots = slots, info = info));
+  end evaluateSlotExp;
+
+  function evaluateSlotExp_traverser
+    input Expression exp;
+    input array<Slot> slots;
+    input SourceInfo info;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      local
+        ComponentRef cref;
+        Option<Slot> slot;
+
+      case Expression.CREF(cref = cref as ComponentRef.CREF(restCref = ComponentRef.EMPTY()))
+        algorithm
+          slot := lookupSlotInArray(ComponentRef.firstName(cref), slots);
+        then
+          if isSome(slot) then Util.tuple31(fillDefaultSlot(Util.getOption(slot), slots, info)) else exp;
+
+      else exp;
+    end match;
+  end evaluateSlotExp_traverser;
+
+  function lookupSlotInArray
+    input String slotName;
+    input array<Slot> slots;
+    output Option<Slot> outSlot;
+  protected
+    Slot slot;
+  algorithm
+    try
+      slot := Array.getMemberOnTrue(slotName, slots, Slot.hasName);
+      outSlot := SOME(slot);
+    else
+      outSlot := NONE();
+    end try;
+  end lookupSlotInArray;
 
   function matchArgsVectorize
     input Function func;
@@ -1042,7 +1154,7 @@ uniontype Function
       end for;
 
       // Make the slots and return type for the function.
-      fn.slots := list(makeSlot(i) for i in fn.inputs);
+      fn.slots := makeSlots(fn.inputs);
       checkParamTypes(fn);
       fn.returnType := makeReturnType(fn);
     end if;
@@ -1360,8 +1472,23 @@ protected
     end if;
   end paramDirection;
 
+  function makeSlots
+    input list<InstNode> inputs;
+    output list<Slot> slots = {};
+  protected
+    Integer index = 1;
+  algorithm
+    for i in inputs loop
+      slots := makeSlot(i, index) :: slots;
+      index := index + 1;
+    end for;
+
+    slots := listReverseInPlace(slots);
+  end makeSlots;
+
   function makeSlot
     input InstNode component;
+    input Integer index;
     output Slot slot;
   protected
     Component comp;
@@ -1380,7 +1507,7 @@ protected
         end if;
       end if;
 
-      slot := SLOT(InstNode.name(component), SlotType.GENERIC, default, NONE());
+      slot := SLOT(InstNode.name(component), SlotType.GENERIC, default, NONE(), index, SlotEvalStatus.NOT_EVALUATED);
     else
       Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
     end try;

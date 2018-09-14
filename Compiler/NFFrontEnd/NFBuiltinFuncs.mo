@@ -57,6 +57,7 @@ import ComponentRef = NFComponentRef;
 import NFComponentRef.Origin;
 import NFModifier.Modifier;
 import Sections = NFSections;
+import NFFunction.SlotEvalStatus;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -127,7 +128,7 @@ constant InstNode INTEGER_DUMMY_NODE = NFInstNode.CLASS_NODE("Integer",
 
 constant Function INTEGER_FUNCTION = Function.FUNCTION(Path.IDENT("Integer"),
   INTEGER_DUMMY_NODE, {ENUM_PARAM}, {}, {}, {
-    Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE())
+    Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
   }, Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 constant InstNode INTEGER_NODE = InstNode.CLASS_NODE("IntegerFunc",
@@ -149,45 +150,45 @@ constant InstNode STRING_DUMMY_NODE = NFInstNode.CLASS_NODE("String",
 // String(r, significantDigits=d, minimumLength=0, leftJustified=true)
 constant Function STRING_REAL = Function.FUNCTION(Path.IDENT("String"),
   STRING_DUMMY_NODE, {REAL_PARAM, INT_PARAM, INT_PARAM, BOOL_PARAM}, {STRING_PARAM}, {}, {
-    Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE()),
-    Slot.SLOT("significantDigits", SlotType.NAMED, SOME(Expression.INTEGER(6)), NONE()),
-    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
-    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
+    Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("significantDigits", SlotType.NAMED, SOME(Expression.INTEGER(6)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE(), 3, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE(), 4, SlotEvalStatus.NOT_EVALUATED)
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(r, format="-0.6g")
 constant Function STRING_REAL_FORMAT = Function.FUNCTION(Path.IDENT("String"),
   STRING_DUMMY_NODE, {REAL_PARAM, STRING_PARAM}, {STRING_PARAM}, {}, {
-    Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE()),
-    Slot.SLOT("format", SlotType.NAMED, NONE(), NONE())
+    Slot.SLOT("r", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("format", SlotType.NAMED, NONE(), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(i, minimumLength=0, leftJustified=true)
 constant Function STRING_INT = Function.FUNCTION(Path.IDENT("String"),
   STRING_DUMMY_NODE, {INT_PARAM, INT_PARAM, BOOL_PARAM}, {STRING_PARAM}, {}, {
-    Slot.SLOT("i", SlotType.POSITIONAL, NONE(), NONE()),
-    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
-    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
+    Slot.SLOT("i", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE(), 3, SlotEvalStatus.NOT_EVALUATED)
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(b, minimumLength=0, leftJustified=true)
 constant Function STRING_BOOL = Function.FUNCTION(Path.IDENT("String"),
   STRING_DUMMY_NODE, {BOOL_PARAM, INT_PARAM, BOOL_PARAM}, {STRING_PARAM}, {}, {
-    Slot.SLOT("b", SlotType.POSITIONAL, NONE(), NONE()),
-    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
-    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
+    Slot.SLOT("b", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE(), 3, SlotEvalStatus.NOT_EVALUATED)
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(true), Pointer.createImmutable(0));
 
 // String(e, minimumLength=0, leftJustified=true)
 constant Function STRING_ENUM = Function.FUNCTION(Path.IDENT("String"),
   STRING_DUMMY_NODE, {ENUM_PARAM, INT_PARAM, BOOL_PARAM}, {STRING_PARAM}, {}, {
-    Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE()),
-    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE()),
-    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE())
+    Slot.SLOT("e", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("minimumLength", SlotType.NAMED, SOME(Expression.INTEGER(0)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("leftJustified", SlotType.NAMED, SOME(Expression.BOOLEAN(true)), NONE(), 3, SlotEvalStatus.NOT_EVALUATED)
   }, Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(true), Pointer.createImmutable(0));
 
