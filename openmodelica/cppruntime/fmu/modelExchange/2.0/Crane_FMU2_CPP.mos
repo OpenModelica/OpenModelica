@@ -31,8 +31,6 @@ val(prismatic_v, 1);
 // ""
 // true
 // ""
-// rm -f OMCppcranes_crane* cranes_crane_FMU.* cranes_crane.def cranes_crane.sh cranes_crane.bat cranes_crane.makefile cranes_crane_init.xml
-// rm -rf modelDescription.xml binaries sources documentation
 // "cranes.crane.fmu"
 // ""
 // "cranes_crane_me_FMU.mo"

@@ -37,8 +37,6 @@ val(y2, 1);
 // true
 // ""
 // true
-// rm -f OMCppDIC* DIC_FMU.* DIC.def DIC.sh DIC.bat DIC.makefile DIC_init.xml
-// rm -rf modelDescription.xml binaries sources documentation
 // "DIC.fmu"
 // ""
 // true

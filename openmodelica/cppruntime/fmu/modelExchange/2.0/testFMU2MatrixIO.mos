@@ -36,8 +36,6 @@ val(ync12, 0);
 // ""
 // true
 // ""
-// rm -f OMCppMatrixIOTest* MatrixIOTest_FMU.* MatrixIOTest.def MatrixIOTest.sh MatrixIOTest.bat MatrixIOTest.makefile MatrixIOTest_init.xml
-// rm -rf modelDescription.xml binaries sources documentation
 // "MatrixIOTest.fmu"
 // ""
 // true

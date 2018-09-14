@@ -34,8 +34,6 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
-// rm -f OMCppSIDTest* SIDTest_FMU.* SIDTest.def SIDTest.sh SIDTest.bat SIDTest.makefile SIDTest_init.xml
-// rm -rf modelDescription.xml binaries sources documentation
 // "SIDTest.fmu"
 // ""
 // 0

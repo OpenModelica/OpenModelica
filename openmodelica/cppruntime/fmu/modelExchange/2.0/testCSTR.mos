@@ -51,8 +51,6 @@ getErrorString();
 // ""
 // true
 // ""
-// rm -f OMCppCSTRModel* CSTRModel_FMU.* CSTRModel.def CSTRModel.sh CSTRModel.bat CSTRModel.makefile CSTRModel_init.xml
-// rm -rf modelDescription.xml binaries sources documentation
 // "CSTRModel.fmu"
 // "[openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable $outputStateAlias_cA has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
 // [openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable cA.$pDERFMIDER.dummyVarFMIDER has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
