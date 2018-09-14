@@ -433,6 +433,7 @@ FuncBuiltinVectorWrongType1.mo \
 FuncBuiltinZeros.mo \
 FuncClassParam.mo \
 FuncDefaultArg1.mo \
+FuncDefaultArg2.mo \
 FuncDuplicateParams1.mo \
 FuncExtends.mo \
 FuncInnerParam.mo \
