@@ -25,7 +25,6 @@ builddir_lib=$(OMBUILDDIR)/lib/omc
 LIBSOCKET = -lwsock32
 
 SHELL	= /bin/sh
-CC	= cc
 override CFLAGS	+= $(USE_CORBA)
 
 USE_CORBA = -DUSE_CORBA

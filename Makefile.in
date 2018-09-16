@@ -55,6 +55,7 @@ FMILIB_SHARED = @FMILIB_SHARED@
 CMINPACKLIB_SHARED = @CMINPACKLIB_SHARED@
 MODELICA_SPEC_PLATFORM=@MODELICA_SPEC_PLATFORM@
 SHREXT = @SHREXT@
+STAEXT = .a
 BOOST_INCLUDE = @BOOST_INCLUDE@
 WITH_FMIL=@WITH_FMIL@
 ifeq ($(WITH_FMIL),yes)
@@ -91,7 +92,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
-omc-bootstrapped: mkbuilddirs
+omc-bootstrapped:
 	$(MAKE) bootstrap-dependencies interactive sim-dependencies
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
@@ -177,7 +178,7 @@ wine_sundials_msvc: .wine_sundials_msvc
 	@touch $@
 
 wine_runc_msvc_release: .wine_runc_msvc_release
-.wine_runc_msvc_release: mkbuilddirs checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
+.wine_runc_msvc_release:  checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/release
 	echo 'Build the MSVC RELEASE'
@@ -189,7 +190,7 @@ wine_runc_msvc_release: .wine_runc_msvc_release
 	@touch $@
 
 wine_runc_msvc_debug: .wine_runc_msvc_debug
-.wine_runc_msvc_debug: mkbuilddirs checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
+.wine_runc_msvc_debug:  checkMSVCwine wine_sundials_msvc wine_fmil_msvc wine_runc_msvc_gc
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug
 	echo 'Build the MSVC DEBUG'
@@ -201,7 +202,7 @@ wine_runc_msvc_debug: .wine_runc_msvc_debug
 	@touch $@
 
 wine_runc_msvc_gc: .wine_runc_msvc_gc
-.wine_runc_msvc_gc: mkbuilddirs checkMSVCwine
+.wine_runc_msvc_gc:  checkMSVCwine
 	# build gc as well, as it is needed for the msvc c runtime
 	@echo 'Build gc (RelWithDebInfo)'
 

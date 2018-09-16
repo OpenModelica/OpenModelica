@@ -1,4 +1,5 @@
-inclu.PHONY : all omc release clean .testvariables mkbuilddirs checkMSVCwine
+
+inclu.PHONY : all omc release clean .testvariables  checkMSVCwine
 
 unexport PREFIX
 
@@ -25,12 +26,50 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS) antlr-copy
+BUILD_DIRS = \
+$(builddir_bin) \
+$(OMBUILDDIR)/lib/omc/emcc \
+$(builddir_lib_omc) \
+$(builddir_inc)/c/ \
+$(builddir_inc)/c/gc/ \
+$(builddir_inc)/c/linearization/ \
+$(builddir_inc)/c/optimization/ \
+$(builddir_inc)/c/simulation/ \
+$(builddir_inc)/c/simulation/results/ \
+$(builddir_inc)/c/simulation/solver/ \
+$(builddir_inc)/c/simulation/solver/initialization/ \
+$(builddir_inc)/c/meta/ \
+$(builddir_inc)/c/util/ \
+$(builddir_inc)/c/fmi1/ \
+$(builddir_inc)/c/fmi2/ \
+$(builddir_inc)/scripting-API \
+$(builddir_java) \
+$(builddir_share)/omc/scripts/OpenTurns/ \
+$(builddir_doc)/omc/testmodels \
+$(builddir_man)/man1/
+
+ifeq ("$(APP)",".app")
+	BUILD_DIRS += $(builddir_app)
+endif
+
+# create directories directly after parsing the Makefile if OMBUILDDIR is not empty!
+ifneq ($(OMBUILDDIR),)
+$(info Creating dirs: $(BUILD_DIRS))
+$(info $(shell mkdir -p $(BUILD_DIRS)))
+endif
+
+ifeq ($(UMFPACK_SHARED),OFF)
+	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(STAEXT)
+else
+	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
+endif
+
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall CMinpack metis Cdaskr boehm-gc libzmq $(MINGW_EXTRA_LIBS) antlr-copy
 
 ifeq ($(OMENCRYPTION),yes)
 .PHONY : semla semla-clean
 
-semla: mkbuilddirs
+semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
 	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
@@ -47,31 +86,6 @@ semla-clean:
 	rm -rf $(builddir_lib)/omc/SEMLA
 endif # end of OMENCRYPTION
 
-mkbuilddirs:
-	echo Making build directories under $(OMBUILDDIR)
-	if [ "$(APP)" = ".app" ]; then mkdir -p $(builddir_app); fi
-	mkdir -p $(builddir_bin)
-	mkdir -p $(OMBUILDDIR)/lib/omc/emcc
-	mkdir -p $(builddir_lib_omc)
-	mkdir -p $(builddir_inc)/c/
-	mkdir -p $(builddir_inc)/c/gc/
-	mkdir -p $(builddir_inc)/c/linearization/
-	mkdir -p $(builddir_inc)/c/optimization/
-	mkdir -p $(builddir_inc)/c/simulation/
-	mkdir -p $(builddir_inc)/c/simulation/results/
-	mkdir -p $(builddir_inc)/c/simulation/solver/
-	mkdir -p $(builddir_inc)/c/simulation/solver/initialization/
-	mkdir -p $(builddir_inc)/c/meta/
-	mkdir -p $(builddir_inc)/c/meta/
-	mkdir -p $(builddir_inc)/c/util/
-	mkdir -p $(builddir_inc)/c/fmi1/
-	mkdir -p $(builddir_inc)/c/fmi2/
-	mkdir -p $(builddir_inc)/scripting-API
-	mkdir -p $(builddir_java)
-	mkdir -p $(builddir_share)/omc/scripts/OpenTurns/
-	mkdir -p $(builddir_doc)/omc/testmodels
-	mkdir -p $(builddir_man)/man1/
-
 release: omc
 
 bootstrap-dependencies: graphstream antlr-copy $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXTRA_LIBS) interactive-short libzmq
@@ -79,12 +93,12 @@ bootstrap-dependencies: graphstream antlr-copy $(BOOTSTRAP_FMIL_DEP) $(MINGW_EXT
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler builtin OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Parser install_bootstrapping OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
 
-antlr-copy: mkbuilddirs
+antlr-copy:
 	cp ./3rdParty/antlr/3.2/tool/antlr-3.2.jar ./3rdParty/antlr/3.2/tool/antlr-2.7.7.jar ${builddir_java}/
 
 sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc
 
-install-openturns: mkbuilddirs
+install-openturns:
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
 $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl
@@ -92,7 +106,7 @@ $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.
 	cp -a "$<" "$@"
 idl: $(builddir_share)/omc/omc_communication.idl
 
-interactive-common: .testvariables mkbuilddirs boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS)
+interactive-common: .testvariables  boehm-gc idl ModelicaExternalC antlr-copy $(MINGW_EXTRA_LIBS)
 
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
@@ -100,11 +114,11 @@ interactive-short: .testvariables interactive-common
 interactive: .testvariables interactive-common fmil lis Cdaskr CMinpack docs libzmq $(SUNDIALS_TARGET) $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
-opc: .testvariables mkbuilddirs boehm-gc
+opc: .testvariables  boehm-gc
 	$(MAKE) -C SimulationRuntime/opc/ua -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	test ! `uname` = Darwin || (install_name_tool -id @rpath/libomopcua.dylib "$(builddir_lib_omc)/libomopcua.dylib")
 
-docs: mkbuilddirs
+docs:
 	mkdir -p $(builddir_doc)/omc/testmodels
 	cp -p Examples/*.* $(builddir_doc)/omc/testmodels/
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
@@ -121,18 +135,18 @@ libgc-dev: /usr/include/gc/leak_detector.h
 libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
-boehm-gc: mkbuilddirs boehm-gc-lib $(OMBUILDDIR)/include/omc/c/gc.h $(OMBUILDDIR)/include/omc/c/gc_config_macros.h $(OMBUILDDIR)/include/omc/c/gc_version.h $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h
-$(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a: 3rdParty/gc/.libs/libomcgc.a mkbuilddirs
+boehm-gc:  boehm-gc-lib $(OMBUILDDIR)/include/omc/c/gc.h $(OMBUILDDIR)/include/omc/c/gc_config_macros.h $(OMBUILDDIR)/include/omc/c/gc_version.h $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h
+$(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a: 3rdParty/gc/.libs/libomcgc.a
 	cp -p $< $@
 3rdParty/gc/.libs/libomcgc.a: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
-$(OMBUILDDIR)/include/omc/c/gc.h: 3rdParty/gc/include/gc.h mkbuilddirs
+$(OMBUILDDIR)/include/omc/c/gc.h: 3rdParty/gc/include/gc.h
 	cp -pPR $< $@
-$(OMBUILDDIR)/include/omc/c/gc_config_macros.h: 3rdParty/gc/include/gc_config_macros.h mkbuilddirs
+$(OMBUILDDIR)/include/omc/c/gc_config_macros.h: 3rdParty/gc/include/gc_config_macros.h
 	cp -pPR $< $@
-$(OMBUILDDIR)/include/omc/c/gc_version.h: 3rdParty/gc/include/gc_version.h mkbuilddirs
+$(OMBUILDDIR)/include/omc/c/gc_version.h: 3rdParty/gc/include/gc_version.h
 	cp -pPR $< $@
-$(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthread_redirects.h mkbuilddirs
+$(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthread_redirects.h
 	cp -pPR $< $@
 3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
 	(cd 3rdParty/gc && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`" "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --enable-static --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
@@ -151,7 +165,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 
 ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
 
-$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT): 3rdParty/SuiteSparse/CMakeLists.txt
+$(UMFPACK_LIB_TARGET): 3rdParty/SuiteSparse/CMakeLists.txt
 	mkdir -p 3rdParty/SuiteSparse/build
 	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC="$(LIB_OMC)" -DBUILD_SHARED_LIBS:Bool=$(UMFPACK_SHARED)
 	$(MAKE) -C 3rdParty/SuiteSparse/build install
@@ -169,7 +183,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT): 3rdParty/SuiteSparse/CMakeLists.tx
 	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
 	#cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
-umfpack: $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
+umfpack: $(UMFPACK_LIB_TARGET)
 
 umfpack-clean:
 	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && make clean ; fi
@@ -198,10 +212,10 @@ breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
 	(cd tools/debugging/ && cp BreakProcess.exe $(builddir_bin))
 
-all-runtimeCPPinstall: mkbuilddirs CMinpack sundials
+all-runtimeCPPinstall:  CMinpack sundials
 	$(MAKE) all runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
-omc-and-runtimeCPPinstall: mkbuilddirs CMinpack sundials
+omc-and-runtimeCPPinstall:  CMinpack sundials
 	$(MAKE) omc runtimeCPPinstall OMBUILDDIR=$(OMBUILDDIR)
 
 runtimeCPP: CMinpack sundials antlr-copy $(MINGW_EXTRA_LIBS)
@@ -236,10 +250,8 @@ testlibrariemsl32cpp:
 runtimeCPPclean:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 
-fmil:
-	test -d 3rdParty/FMIL
-	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+fmil: $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB)
+$(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	@# Pass CC/CFLAGS/CPPFLAGS because FMIL does not configure subprojects with the selected CC. Shocking; a cmake project not working the way it should.
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
@@ -249,6 +261,10 @@ fmil:
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
 	mkdir -p $(builddir_inc)/fmil/
 	cp -pPR 3rdParty/FMIL/install/include/* $(builddir_inc)/fmil/
+3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt
+	test -d 3rdParty/FMIL
+	mkdir -p 3rdParty/FMIL/build
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 
 qjson:
 	test -d 3rdParty/qjson-0.8.1
@@ -259,10 +275,8 @@ qjson:
 	cp -a 3rdParty/qjson-0.8.1/build/lib/libqjson*$(SHREXT)* $(builddir_lib_omc)
 	cp -a 3rdParty/qjson-0.8.1/src/*.h 3rdParty/qjson-0.8.1/build/include/qjson
 
-CMinpack:
-	test -d 3rdParty/CMinpack
-	mkdir -p 3rdParty/CMinpack/build
-	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DBUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
+CMinpack: $(builddir_lib_omc)/$(LIBCMINPACKLIB)
+$(builddir_lib_omc)/$(LIBCMINPACKLIB): 3rdParty/CMinpack/build/Makefile
 	test -f 3rdParty/CMinpack/build/$(LIBCMINPACKLIB) || $(MAKE) -C 3rdParty/CMinpack/build
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBCMINPACKLIB) 3rdParty/CMinpack/build/$(LIBCMINPACKLIB)
 	# copy dll/so to $(LIB_OMC)/ folders
@@ -270,7 +284,10 @@ CMinpack:
 	(cp -af 3rdParty/CMinpack/build/$(LIBCMINPACKLIB)* $(builddir_lib_omc))
 	# Darwin has to be special always
 	(test ! `uname` = Darwin || cp -af 3rdParty/CMinpack/build/lib*.dylib $(builddir_lib_omc))
-
+3rdParty/CMinpack/build/Makefile: 3rdParty/CMinpack/CMakeLists.txt
+	test -d 3rdParty/CMinpack
+	mkdir -p 3rdParty/CMinpack/build
+	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DBUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	#This is a bad idea, because the cache contains the absolute path to cmake that was used for build -> if the cmake location has changed, the clean command will fail
@@ -278,7 +295,8 @@ CMinpack-clean:
 	#rm -f 3rdParty/CMinpack/build/Makefile
 	rm -rf 3rdParty/CMinpack/build
 
-libzmq:
+libzmq: $(builddir_lib_omc)/$(LIBZMQLIB)
+$(builddir_lib_omc)/$(LIBZMQLIB):
 	test -d 3rdParty/libzmq
 	mkdir -p 3rdParty/libzmq/build
 	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
@@ -297,15 +315,16 @@ endif
 libzmq-clean:
 	rm -rf 3rdParty/libzmq/build
 
-metis:
+metis: $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
+$(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT): 3rdParty/metis-5.1.0/CMakeLists.txt
 	(cd 3rdParty/metis-5.1.0 && $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)
-	cp 3rdParty/metis-5.1.0/libmetis/libmetis.a $(builddir_lib_omc)
-
+	cp 3rdParty/metis-5.1.0/libmetis/libmetis$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || make -C 3rdParty/metis-5.1.0 clean
 	rm -rf 3rdParty/metis-5.1.0/CMakeCache.txt 3rdParty/metis-5.1.0/libmetis/libmetis.a 3rdParty/metis-5.1.0/CMakeFiles 3rdParty/metis-5.1.0/Makefile 3rdParty/metis-5.1.0/cmake_install.cmake 3rdParty/metis-5.1.0/include/CMakeFiles 3rdParty/metis-5.1.0/include/Makefile 3rdParty/metis-5.1.0/include/cmake_install.cmake 3rdParty/metis-5.1.0/libmetis/CMakeFiles 3rdParty/metis-5.1.0/libmetis/Makefile 3rdParty/metis-5.1.0/libmetis/cmake_install.cmake 3rdParty/metis-5.1.0/programs/CMakeFiles 3rdParty/metis-5.1.0/programs/Makefile 3rdParty/metis-5.1.0/programs/cmake_install.cmake
 
-Cdaskr:
+Cdaskr: 3rdParty/Cdaskr/solver/libcdaskr.a
+3rdParty/Cdaskr/solver/libcdaskr.a:
 	test -d 3rdParty/Cdaskr/solver
 	(cd 3rdParty/Cdaskr/solver && make -f Makefile CC="$(CC)" CFLAGS="$(CFLAGS)")
 
@@ -443,17 +462,17 @@ msgpack-clean:
 	test ! -f 3rdParty/msgpack-0.5.8/Makefile || $(MAKE) -C 3rdParty/msgpack-0.5.8 distclean || true
 	rm -f 3rdParty/msgpack-0.5.8/Makefile
 
-graphstream: mkbuilddirs $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar
+graphstream: 3rdParty/graphstream/gs-netstream/c++/libnetstream.a $(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar
+3rdParty/graphstream/gs-netstream/c++/libnetstream.a:
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(CXXFLAGS)" -C 3rdParty/graphstream/; fi
-
-$(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar: mkbuilddirs
+$(OMBUILDDIR)/share/omc/java/org.omc.graphstream.jar:
 	if test -f 3rdParty/graphstream/org.omc.graphstream.jar; then cp -p 3rdParty/graphstream/org.omc.graphstream.jar $(OMBUILDDIR)/share/omc/java/.; fi
-
 graphstream-clean:
 	if test -f 3rdParty/graphstream/Makefile; then $(MAKE) -C 3rdParty/graphstream/ clean; fi
 
 # build lpsolve
-lpsolve: 3rdParty/lpsolve/Makefile
+lpsolve: $(builddir_lib_omc)/liblpsolve55.a
+$(builddir_lib_omc)/liblpsolve55.a: 3rdParty/lpsolve/Makefile
 	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" -j1
 	cp -pf 3rdParty/lpsolve/build/lib/liblpsolve55* $(builddir_lib_omc)
 	cp -prf 3rdParty/lpsolve/build/include/* $(builddir_inc)/

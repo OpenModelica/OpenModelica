@@ -13,7 +13,7 @@ ifeq (clang,$(findstring clang,$(CC)))
 endif
 
 # makefile for Windows MinGW OMDev
-all : .testvariables settings mkbuilddirs omc
+all : .testvariables settings  omc
 
 autoconfGeneratedFiles =
 
@@ -72,6 +72,7 @@ LIBCMINPACKLIB=libcminpack.a
 LIBZMQLIB=libzmq.dll
 MODELICA_SPEC_PLATFORM=win32
 SHREXT=.dll
+STAEXT=.a
 EXE=.exe
 IPOPT_TARGET=ipopt
 UMFPACK_TARGET=umfpack
@@ -92,7 +93,6 @@ BOOTSTRAP_FMIL_DEP=fmil
 defaultMakefileTarget = Makefile.omdev.mingw
 MAKEFILE_BOOT = LinkMain.makefile.mingw
 
-include Makefile.common
 # For Windows build static FMI lib!
 FMILIB_SHARED = OFF
 # For Windows build static CMinpack lib!
@@ -104,6 +104,8 @@ PLATFORM_ARCH = (32-bit)
 else # mingw64
 PLATFORM_ARCH = (64-bit)
 endif
+
+include Makefile.common
 
 getMSVCversion:
 	echo "Check for given VSVERSION (2010|2012|2013|2015) version: [VSVERSION=$(VSVERSION)]"
@@ -279,13 +281,13 @@ copycppmsvcheader: getMSVCversion
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/cpp/3rdParty/boost/msvc/boost)
 
 ifeq ($(OMENCRYPTION),yes)
-omc: mkbuilddirs interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream semla
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream semla
 else
-omc: mkbuilddirs interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) graphstream
 endif
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
-boehm-gc-lib: $(OMBUILDDIR)/lib/omc/libomcgc.a
+boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 
 fmil_msvc: getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
@@ -449,12 +451,12 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 omcCAPImsvcinstall:
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPmsvcinstall: mkbuilddirs CMinpack_msvc Umfpack_msvc fmil_msvc sundials_msvc copycppmsvcheader
+runtimeCPPmsvcinstall:  CMinpack_msvc Umfpack_msvc fmil_msvc sundials_msvc copycppmsvcheader
 	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
 
-simulationruntimecmsvc: mkbuilddirs getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
+simulationruntimecmsvc:  getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug
@@ -512,7 +514,7 @@ simulationruntimecmsvc: mkbuilddirs getMSVCversion Umfpack_msvc CMinpack_msvc fm
 	cp -u 3rdParty/gc/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
 	rm -rf 3rdParty/gc/build_msvc/
 
-omc-bootstrapped: mkbuilddirs
+omc-bootstrapped:
 	$(MAKE) -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR) bootstrap-dependencies sim-dependencies
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler/boot CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" OMBUILDDIR=$(OMBUILDDIR)
