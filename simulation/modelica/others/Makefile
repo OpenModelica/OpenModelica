@@ -77,6 +77,7 @@ TestSolve15.mos \
 TestSolve16.mos \
 TestSolve17.mos \
 TestSolve18.mos \
+Ticket5129.mos \
 VariableFilter.mos \
 WhenStatement4.mos \
 localKnownVars.mos

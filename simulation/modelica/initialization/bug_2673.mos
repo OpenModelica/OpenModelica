@@ -26,7 +26,7 @@ simulate(initializationTests.bug_2673, startTime=0.0, stopTime=0.0, simflags="-i
 // true
 // ""
 // record SimulationResult
-//     resultFile = "initializationTests.bug_2673_res.mat",
+//     resultFile = "bug_2673.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.bug_2673', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=bug_2673.mat'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
