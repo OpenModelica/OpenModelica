@@ -1504,6 +1504,8 @@ algorithm
           (cache,simSettings) := calculateSimulationSettings(cache,env,vals,msg);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
           result_file := stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+          // result file might have been set by simflags (-r ...)
+          result_file := selectResultFile(result_file, simflags);
           executableSuffixedExe := stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),System.platform()));
           logFile := stringAppend(executable,".log");
           // adrpo: log file is deleted by buildModel! do NOT DELETE IT AGAIN!
@@ -8113,6 +8115,54 @@ algorithm
       then List.consOnTrue(not b,v,acc);
   end match;
 end makeLoadLibrariesEntryAbsyn;
+
+function selectResultFile
+  input output String resultFile;
+  input String simflags;
+protected
+  Integer nm;
+  String f = "";
+algorithm
+  // if there is no -r in the simflags, return
+  if  System.stringFind(simflags, "-r") < 0 then
+    return;
+  end if;
+  // never fail!
+  try
+   // match -r="file"
+   (nm, {_, f}) := System.regex(simflags, "-r=\"(.*?)\"", 2, true);
+   if nm == 2 then
+     resultFile := f; return;
+   end if;
+   // match -r='file'
+   (nm, {_, f}) := System.regex(simflags, "-r=\'(.*?)\'", 2, true);
+   if nm == 2 then
+     resultFile := f; return;
+   end if;
+   // match -r 'file'
+   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\"(.*?)\"", 2, true);
+   if nm == 2 then
+     resultFile := f; return;
+   end if;
+   // match -r "file"
+   (nm, {_, f}) := System.regex(simflags, "-r[ ]*\'(.*?)\'", 2, true);
+   if nm == 2 then
+     resultFile := f; return;
+   end if;
+   // match -r=file
+   (nm, {_, f}) := System.regex(simflags, "-r=([^ ]*)", 2, true);
+   if nm == 2 then
+     resultFile := f; return;
+   end if;
+   // match -r file
+   (nm, {_, f}) := System.regex(simflags, "-r[ ]*([^ ]*)", 2, true);
+   if nm == 2 then
+     resultFile := f; return;
+   end if;
+	else
+	  // do nothing
+  end try;
+end selectResultFile;
 
 annotation(__OpenModelica_Interface="backend");
 
