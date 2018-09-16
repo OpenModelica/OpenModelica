@@ -865,7 +865,7 @@ algorithm
   (exp1::exps) := Expression.flattenArrayExpToList(e);
   (cr1, call1) := match exp1
     case DAE.CREF(componentRef=cr1) then (cr1, "");
-    case DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr1)}) then (cr1, "previous");
+    case DAE.CALL(path=Absyn.IDENT(name=call1), expLst={DAE.CREF(componentRef=cr1)}) then (cr1, call1);
     else fail();
   end match;
   if call1 <> "" and Config.simCodeTarget() <> "Cpp" or call1 == "pre" then
@@ -886,7 +886,7 @@ algorithm
     //DAE.CREF(componentRef=cr2) := exp;
     (cr2, call2) := match exp
       case DAE.CREF(componentRef=cr2) then (cr2, "");
-      case DAE.CALL(path=Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr2)}) then (cr2, "previous");
+      case DAE.CALL(path=Absyn.IDENT(name=call2), expLst={DAE.CREF(componentRef=cr2)}) then (cr2, call2);
       else fail();
     end match;
     true := ndim==listLength(ComponentReference.crefLastSubs(cr2));

@@ -5444,11 +5444,21 @@ protected function createSingleArrayEqnCode
   output list<SimCode.SimEqSystem> noDiscequations;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
+protected
+  BackendDAE.Equation inEquation;
 algorithm
-  (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquations, inVars, iuniqueEqIndex, itempvars, iextra)
+  // first replace der() to match them as cref $DER. below
+  inEquation := match listHead(inEquations)
+    case inEquation as BackendDAE.ARRAY_EQUATION(_)
+    algorithm
+      inEquation.left := Expression.replaceDerOpInExp(inEquation.left);
+      inEquation.right := Expression.replaceDerOpInExp(inEquation.right);
+    then inEquation;
+    end match;
+  (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquation, inVars, iuniqueEqIndex, itempvars, iextra)
     local
       list<Integer> ds;
-      DAE.Exp e1, e2, e1_1, e2_1, lhse, rhse;
+      DAE.Exp e1, e2, lhse, rhse;
       list<DAE.Exp> ea1, ea2, expLst, expLstTmp;
       list<BackendDAE.Equation> re;
       list<BackendDAE.Var> vars;
@@ -5482,14 +5492,11 @@ algorithm
     // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}
     // => tmp = rhsexp;
     // z1 = tmp[1]; z2 = tmp[2] ....
-    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr))::{}, _, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr)), _, _, _, _)
     guard Expression.isMatrix(e1) or Expression.isArray(e1)
     equation
       // Flattne multi-dimensional ARRAY{ARRAY} expressions
       expLst = Expression.flattenArrayExpToList(e1);
-      // Replace the der() operators
-      expLst = List.map(expLst, Expression.replaceDerOpInExp);
-      e2_1 = Expression.replaceDerOpInExp(e2);
       // create the lhs tmp var
       ty = Expression.typeof(e1);
       (basety,dims) = Types.flattenArrayType(ty);
@@ -5506,16 +5513,14 @@ algorithm
       exptl = List.threadTuple(expLst, expLstTmp);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqAttr, iuniqueEqIndex);
       // Create the array equation with the tmp var as lhs
-      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2_1, source, eqAttr)::eqSystlst;
+      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2, source, eqAttr)::eqSystlst;
     then (eqSystlst, eqSystlst, uniqueEqIndex+1, tempvars);
 
     // An array equation
     // cref = rhsexp
-    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_, _, _, _)
     guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
     equation
-      e1 = Expression.replaceDerOpInExp(lhse);
-      e2 = Expression.replaceDerOpInExp(e2);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
@@ -5525,11 +5530,9 @@ algorithm
 
     // An array equation
     // lhsexp = cref
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=rhse as DAE.CREF(cr_1, _), source=source, attr=eqAttr))::_, BackendDAE.VAR(varName=cr)::_, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2 as DAE.CREF(cr_1, _), source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_, _, _, _)
     guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
     equation
-      e1 = Expression.replaceDerOpInExp(e1);
-      e2 = Expression.replaceDerOpInExp(rhse);
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
       (e2, e1) = solveTrivialArrayEquation(cr_1, e2, e1);
