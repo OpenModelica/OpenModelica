@@ -1370,6 +1370,12 @@ uniontype Function
     output list<Statement> body = getBody2(fn.node);
   end getBody;
 
+  function hasUnboxArgs
+    input SCode.Element def;
+    output Boolean res =
+      SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments");
+  end hasUnboxArgs;
+
 protected
   function collectParams
     "Sorts all the function parameters as inputs, outputs and locals."
@@ -1524,12 +1530,6 @@ protected
     output Boolean res =
       SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
   end hasImpure;
-
-  function hasUnboxArgs
-    input SCode.Element def;
-    output Boolean res =
-      SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments");
-  end hasUnboxArgs;
 
   function getBuiltin
     input SCode.Element def;

@@ -1115,7 +1115,7 @@ algorithm
     /*
     case "Clock"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then cevalBuiltinClock; */
     // MetaModelica type conversions
     case "intString" guard Config.acceptMetaModelicaGrammar() then cevalIntString;

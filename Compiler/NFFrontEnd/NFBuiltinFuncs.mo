@@ -282,5 +282,92 @@ constant Function SMOOTH = Function.FUNCTION(Path.IDENT("smooth"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
     Pointer.createImmutable(true), Pointer.createImmutable(0));
 
+
+constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
+  Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), Absyn.dummyInfo);
+
+constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
+  Visibility.PUBLIC,
+  Pointer.createImmutable(CLOCK_COMPONENT), InstNode.EMPTY_NODE());
+
+constant InstNode CLOCK_DUMMY_NODE = NFInstNode.CLASS_NODE("Clock",
+  DUMMY_ELEMENT, Visibility.PUBLIC, Pointer.createImmutable(Class.NOT_INSTANTIATED()),
+  EMPTY_NODE_CACHE, InstNode.EMPTY_NODE(), InstNodeType.NORMAL_CLASS());
+
+// Clock() - inferred clock
+constant Function CLOCK_INFERED = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {}, {CLOCK_PARAM}, {}, {}, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+// Clock(intervalCounter) - clock with Integer interval
+constant Function CLOCK_INT = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {INT_PARAM}, {CLOCK_PARAM}, {}, {
+    Slot.SLOT("intervalCounter", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
+  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+// Clock(intervalCounter, resolution) - clock with Integer interval
+constant Function CLOCK_INT_RESOLUTION = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {INT_PARAM, INT_PARAM}, {CLOCK_PARAM}, {}, {
+    Slot.SLOT("intervalCounter", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("resolution", SlotType.NAMED, SOME(Expression.INTEGER(1)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
+  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+// Clock(interval) - clock with Real interval
+constant Function CLOCK_REAL = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {REAL_PARAM}, {CLOCK_PARAM}, {}, {
+    Slot.SLOT("interval", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
+  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+// Clock(condition) - Boolean clock, triggered by zero-crossing events
+constant Function CLOCK_BOOL = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {BOOL_PARAM}, {CLOCK_PARAM}, {}, {
+    Slot.SLOT("condition", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
+  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+// Clock(condition, startInterval) - Boolean clock, triggered by zero-crossing events
+constant Function CLOCK_BOOL_INTERVAL = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {BOOL_PARAM, REAL_PARAM}, {CLOCK_PARAM}, {}, {
+    Slot.SLOT("condition", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("startInterval", SlotType.NAMED, SOME(Expression.REAL(0.0)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
+  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+// Clock(c, solverMethod) - Solver clock
+constant Function CLOCK_SOLVER = Function.FUNCTION(Path.IDENT("Clock"),
+  CLOCK_DUMMY_NODE, {CLOCK_PARAM, STRING_PARAM}, {CLOCK_PARAM}, {}, {
+    Slot.SLOT("condition", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("solverMethod", SlotType.NAMED, NONE(), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
+  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+  Pointer.createImmutable(true), Pointer.createImmutable(0));
+
+
+constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
+  DUMMY_ELEMENT, Visibility.PUBLIC,
+  Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.CLOCK(), ClassTree.EMPTY_TREE(),
+    Modifier.NOMOD(), Restriction.TYPE())),
+  listArrayLiteral({
+    NFInstNode.CachedData.FUNCTION({
+        CLOCK_INFERED,
+        CLOCK_INT,
+        CLOCK_INT_RESOLUTION,
+        CLOCK_REAL,
+        CLOCK_BOOL,
+        CLOCK_BOOL_INTERVAL,
+        CLOCK_SOLVER
+        },
+      true, true),
+    NFInstNode.CachedData.NO_CACHE(),
+    NFInstNode.CachedData.NO_CACHE()}
+  ),
+  InstNode.EMPTY_NODE(), InstNodeType.BUILTIN_CLASS());
+
+constant ComponentRef CLOCK_CREF =
+  ComponentRef.CREF(CLOCK_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

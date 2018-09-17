@@ -54,6 +54,7 @@ import NFInstNode.CachedData;
 import NFComponent.Component;
 import Subscript = NFSubscript;
 import ComplexType = NFComplexType;
+import Config;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -254,8 +255,7 @@ algorithm
   (foundCref, foundScope, state) := match cref
     case Absyn.ComponentRef.CREF_IDENT()
       algorithm
-        (_, foundCref, foundScope, state) :=
-          lookupSimpleCref(cref.name, cref.subscripts, scope);
+        (_, foundCref, foundScope, state) := lookupSimpleCref(cref.name, cref.subscripts, scope);
       then
         (foundCref, foundScope, state);
 
@@ -647,6 +647,7 @@ algorithm
     case "Integer" then NFBuiltin.INTEGER_NODE;
     case "Boolean" then NFBuiltin.BOOLEAN_NODE;
     case "String" then NFBuiltin.STRING_NODE;
+    case "Clock" then NFBuiltin.CLOCK_NODE;
     case "polymorphic" then NFBuiltin.POLYMORPHIC_NODE;
   end match;
 end lookupSimpleBuiltinName;
@@ -658,6 +659,7 @@ function lookupSimpleBuiltinCref
   output ComponentRef cref;
   output LookupState state;
 algorithm
+
   (node, cref, state) := match name
     case "time"
       then (NFBuiltin.TIME, NFBuiltin.TIME_CREF, LookupState.PREDEF_COMP());
@@ -667,6 +669,8 @@ algorithm
       then (NFBuiltinFuncs.INTEGER_NODE, NFBuiltinFuncs.INTEGER_CREF, LookupState.FUNC());
     case "String"
       then (NFBuiltinFuncs.STRING_NODE, NFBuiltinFuncs.STRING_CREF, LookupState.FUNC());
+    case "Clock" guard Config.synchronousFeaturesAllowed()
+      then (NFBuiltinFuncs.CLOCK_NODE, NFBuiltinFuncs.CLOCK_CREF, LookupState.FUNC());
   end match;
 
   if not listEmpty(subs) then

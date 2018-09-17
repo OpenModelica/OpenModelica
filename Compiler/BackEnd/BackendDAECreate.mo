@@ -434,7 +434,7 @@ algorithm
       // when equations
       case DAE.WHEN_EQUATION(condition = e, equations = dae_elts)
         algorithm
-          if intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33) and Types.isClockOrSubTypeClock(Expression.typeof(e)) then
+          if Config.synchronousFeaturesAllowed() and Types.isClockOrSubTypeClock(Expression.typeof(e)) then
 
             (outEqns, outVars, eq_attrs) := createWhenClock(whenClkCnt, e, outEqns, outVars);
             whenClkCnt := whenClkCnt + 1;

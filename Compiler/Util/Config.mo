@@ -641,5 +641,15 @@ algorithm
   end match;
 end adaptiveHomotopy;
 
+public function synchronousFeaturesAllowed
+"@autor: adrpo
+ checks returns true if language standard is above or equal to Modelica 3.3"
+  output Boolean outRes;
+protected
+  LanguageStandard std = getLanguageStandard();
+algorithm
+  outRes := intGe(languageStandardInt(std), 33);
+end synchronousFeaturesAllowed;
+
 annotation(__OpenModelica_Interface="util");
 end Config;

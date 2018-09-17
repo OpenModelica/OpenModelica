@@ -6520,43 +6520,43 @@ algorithm
     case "DynamicSelect" then elabBuiltinDynamicSelect;
     case "Clock"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinClock;
     case "hold"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinHold;
     case "shiftSample"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinShiftSample;
     case "backSample"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinBackSample;
     case "noClock"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinNoClock;
     case "transition"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinTransition;
     case "initialState"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinInitialState;
     case "activeState"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinActiveState;
     case "ticksInState"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinTicksInState;
     case "timeInState"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then elabBuiltinTimeInState;
     case "sourceInfo"
       equation

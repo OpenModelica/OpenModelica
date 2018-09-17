@@ -64,6 +64,60 @@ public
   import NFTyping.ExpOrigin;
   import ExpressionSimplify;
 
+	uniontype ClockKind
+	  record INFERRED_CLOCK
+	  end INFERRED_CLOCK;
+
+	  record INTEGER_CLOCK
+	    Expression intervalCounter;
+	    Expression resolution " integer type >= 1 ";
+	  end INTEGER_CLOCK;
+
+	  record REAL_CLOCK
+	    Expression interval;
+	  end REAL_CLOCK;
+
+	  record BOOLEAN_CLOCK
+	    Expression condition;
+	    Expression startInterval " real type >= 0.0 ";
+	  end BOOLEAN_CLOCK;
+
+	  record SOLVER_CLOCK
+	    Expression c;
+	    Expression solverMethod " string type ";
+	  end SOLVER_CLOCK;
+
+	  function toDAE
+	    input ClockKind ick;
+	    output DAE.ClockKind ock;
+	  algorithm
+	    ock := match ick
+	      local
+	        Expression i, ic, r, c, si, sm;
+	      case (INFERRED_CLOCK()) then DAE.INFERRED_CLOCK();
+	      case (INTEGER_CLOCK(i, r)) then DAE.INTEGER_CLOCK(Expression.toDAE(i), Expression.toDAE(r));
+	      case (REAL_CLOCK(i)) then DAE.REAL_CLOCK(Expression.toDAE(i));
+	      case (BOOLEAN_CLOCK(c, si)) then DAE.BOOLEAN_CLOCK(Expression.toDAE(c), Expression.toDAE(si));
+	      case (SOLVER_CLOCK(c, sm)) then DAE.SOLVER_CLOCK(Expression.toDAE(c), Expression.toDAE(sm));
+	    end match;
+	  end toDAE;
+
+    function toString
+      input ClockKind ick;
+      output String ock;
+    algorithm
+      ock := match ick
+        local
+          Expression i, ic, r, c, si, sm;
+        case (INFERRED_CLOCK()) then "INFERRED_CLOCK()";
+        case (INTEGER_CLOCK(i, r)) then "INTEGER_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
+        case (REAL_CLOCK(i)) then "REAL_CLOCK(" + Expression.toString(i) + ")";
+        case (BOOLEAN_CLOCK(c, si)) then "BOOLEAN_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
+        case (SOLVER_CLOCK(c, sm)) then "SOLVER_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(sm) + ")";
+      end match;
+    end toString;
+	end ClockKind;
+
   record INTEGER
     Integer value;
   end INTEGER;
@@ -202,6 +256,10 @@ public
   record EMPTY
     Type ty;
   end EMPTY;
+
+  record CLKCONST "Clock constructors"
+    ClockKind clk "Clock kinds";
+  end CLKCONST;
 
   function isArray
     input Expression exp;
@@ -679,6 +737,13 @@ public
     output Expression exp = INTEGER(value);
   end makeInteger;
 
+  function stringValue
+    input Expression exp;
+    output String value;
+  algorithm
+    STRING(value=value) := exp;
+  end stringValue;
+
   function makeIntegerArray
     input list<Integer> values;
     output Expression exp;
@@ -1153,6 +1218,7 @@ public
     output String str;
   protected
     Type t;
+    ClockKind clk;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1162,6 +1228,8 @@ public
 
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then Absyn.pathString(t.typePath) + "." + exp.name;
+
+      case CLKCONST(clk) then "CLKCONST(" + ClockKind.toString(clk) + ")";
 
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
@@ -1207,6 +1275,7 @@ public
       case IF() then "if " + toString(exp.condition) + " then " + toString(exp.trueBranch) + " else " + toString(exp.falseBranch);
 
       case UNBOX() then "UNBOX(" + toString(exp.exp) + ")";
+      case BOX() then "BOX(" + toString(exp.exp) + ")";
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
@@ -1280,6 +1349,7 @@ public
         Boolean swap;
         DAE.Exp dae1, dae2;
         list<String> names;
+        ClockKind clk;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -1287,6 +1357,9 @@ public
       case BOOLEAN() then DAE.BCONST(exp.value);
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
         then DAE.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
+
+      case CLKCONST(clk)
+        then DAE.CLKCONST(ClockKind.toDAE(clk));
 
       case CREF()
         then DAE.CREF(ComponentRef.toDAE(exp.cref), Type.toDAE(exp.ty));
@@ -3330,6 +3403,7 @@ public
       case STRING() then Variability.CONSTANT;
       case BOOLEAN() then Variability.CONSTANT;
       case ENUM_LITERAL() then Variability.CONSTANT;
+      case CLKCONST(_) then Variability.DISCRETE;
       case CREF() then ComponentRef.variability(exp.cref);
       case TYPENAME() then Variability.CONSTANT;
       case ARRAY() then variabilityList(exp.elements);

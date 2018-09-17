@@ -40,6 +40,7 @@ encapsulated package NFBuiltinCall
   import Type = NFType;
 
 protected
+  import Config;
   import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
@@ -132,6 +133,18 @@ public
       case "transpose" then typeTransposeCall(call, origin, info);
       case "vector" then typeVectorCall(call, origin, info);
       case "zeros" then typeZerosOnesCall("zeros", call, origin, info);
+      case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, origin, info);
+      /*
+      case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, origin, info);
+      case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, origin, info);
+      case "backSample" guard Config.synchronousFeaturesAllowed() then typeBackSampleCall(call, origin, info);
+      case "noClock" guard Config.synchronousFeaturesAllowed() then typeNoClockCall(call, origin, info);
+      case "transition" guard Config.synchronousFeaturesAllowed() then typeTransitionCall(call, origin, info);
+      case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, origin, info);
+      case "activeState" guard Config.synchronousFeaturesAllowed() then typeActiveStateCall(call, origin, info);
+      case "ticksInState" guard Config.synchronousFeaturesAllowed() then typeTicksInStateCall(call, origin, info);
+      case "timeInState" guard Config.synchronousFeaturesAllowed() then typeTimeInStateCall(call, origin, info);
+      */
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
@@ -1599,6 +1612,92 @@ protected
     Call.UNTYPED_CALL(call_scope = scope) := call;
     result := Expression.STRING(Absyn.pathString(InstNode.scopePath(scope, includeRoot = true)));
   end typeGetInstanceName;
+
+  function typeClockCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type outType;
+    output Variability var;
+  protected
+    Type arg_ty;
+    list<TypedArg> args;
+    list<TypedNamedArg> named_args;
+    Call ty_call;
+    Expression e, e1, e2;
+    Type t, t1, t2;
+    Variability v, v1, v2;
+  algorithm
+    ty_call as Call.ARG_TYPED_CALL(_, args, named_args) := Call.typeNormalCall(call, origin, info);
+    (callExp, outType, var) := match(args, named_args)
+      // Clock() - inferred clock
+      case ({}, {})
+        then (Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK()), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(intervalCounter) - integer clock
+      case ({(e, Type.INTEGER(), v)}, {})
+        then (Expression.CLKCONST(Expression.INTEGER_CLOCK(e, Expression.INTEGER(1))), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(intervalCounter, resolution) - integer clock
+      case ({(e, Type.INTEGER(), v), (e1, Type.REAL(), v1)}, {})
+        algorithm
+          e2 := Ceval.evalExp(e1);
+          Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
+            Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", Expression.toString(e2), ">= 1"}, info);
+        then
+          (Expression.CLKCONST(Expression.INTEGER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(intervalCounter, resolution=expression) - integer clock
+      case ({(e, Type.INTEGER(), v)}, {("resolution", e1, Type.REAL(), v1)})
+        algorithm
+          e2 := Ceval.evalExp(e1);
+          Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
+            Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", Expression.toString(e2), ">= 1"}, info);
+        then
+          (Expression.CLKCONST(Expression.INTEGER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(interval) - real clock
+      case ({(e, Type.REAL(), v)}, {})
+        then
+          (Expression.CLKCONST(Expression.REAL_CLOCK(e)), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(condition) - boolean clock
+      case ({(e, Type.BOOLEAN(), v)}, {})
+        then
+          (Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e, Expression.REAL(0.0))), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(condition, startInterval) - boolean clock
+      case ({(e, Type.BOOLEAN(), v), (e1, Type.REAL(), v1)}, {})
+        algorithm
+          e2 := Ceval.evalExp(e1);
+          Error.assertionOrAddSourceMessage(Expression.realValue(e2) > 0.0,
+            Error.WRONG_VALUE_OF_ARG, {"Clock", "startInterval", Expression.toString(e2), "> 0.0"}, info);
+        then
+          (Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(condition, startInterval=expression) - boolean clock
+      case ({(e, Type.BOOLEAN(), v)}, {("startInterval", e1, Type.REAL(), v1)})
+        algorithm
+          e2 := Ceval.evalExp(e1);
+          Error.assertionOrAddSourceMessage(Expression.realValue(e2) > 0.0,
+            Error.WRONG_VALUE_OF_ARG, {"Clock", "startInterval", Expression.toString(e2), "> 0.0"}, info);
+        then
+          (Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+      // Clock(c, solverMethod) - solver clock
+      case ({(e, Type.CLOCK(), v), (e1, Type.STRING(), v1)}, {})
+        algorithm
+          e2 := Ceval.evalExp(e1);
+        then
+          (Expression.CLKCONST(Expression.SOLVER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+
+      // Clock(c, solverMethod=string) - solver clock
+      case ({(e, Type.CLOCK(), v)}, {("solverMethod", e1, Type.STRING(), v1)})
+        algorithm
+          e2 := Ceval.evalExp(e1);
+        then
+          (Expression.CLKCONST(Expression.SOLVER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call), "<NO COMPONENT>"}, info);
+        then
+          fail();
+    end match;
+  end typeClockCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

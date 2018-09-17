@@ -38,6 +38,7 @@ encapsulated package InstStateMachineUtil
 
 public import DAE;
 
+protected import Config;
 protected import Flags;
 protected import List;
 protected import ComponentReference;
@@ -949,7 +950,7 @@ algorithm
     case SCode.EQUATION(eEquation = SCode.EQ_NORETCALL(exp = Absyn.CALL(function_ =
         Absyn.CREF_IDENT(name = name))))
       then (name == "transition" or name == "initialState") and
-           intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+           Config.synchronousFeaturesAllowed();
 
     else false;
   end match;
@@ -967,7 +968,7 @@ algorithm
 
     case DAE.NORETCALL(exp = DAE.CALL(path = Absyn.IDENT(name)))
       then (name == "transition" or name == "initialState") and
-           intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+           Config.synchronousFeaturesAllowed();
 
     else false;
   end match;

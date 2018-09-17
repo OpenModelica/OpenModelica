@@ -55,6 +55,7 @@ public
 
   record RECORD_CONSTRUCTOR end RECORD_CONSTRUCTOR;
   record TYPE end TYPE;
+  record CLOCK end CLOCK;
   record UNKNOWN end UNKNOWN;
 
   function fromSCode
@@ -70,6 +71,7 @@ public
       case SCode.Restriction.R_OPERATOR() then OPERATOR();
       case SCode.Restriction.R_RECORD() then RECORD(sres.isOperator);
       case SCode.Restriction.R_TYPE() then TYPE();
+      case SCode.Restriction.R_PREDEFINED_CLOCK() then CLOCK();
       else MODEL();
     end match;
   end fromSCode;
@@ -89,6 +91,7 @@ public
       case OPERATOR() then ClassInf.State.FUNCTION(path, false);
       case RECORD() then ClassInf.State.RECORD(path);
       case TYPE() then ClassInf.State.TYPE(path);
+      case CLOCK() then ClassInf.State.TYPE_CLOCK(path);
       else ClassInf.State.UNKNOWN(path);
     end match;
   end toDAE;
@@ -163,6 +166,16 @@ public
     end match;
   end isType;
 
+  function isClock
+    input Restriction res;
+    output Boolean isClock;
+  algorithm
+    isClock := match res
+      case CLOCK() then true;
+      else false;
+    end match;
+  end isClock;
+
   function toString
     input Restriction res;
     output String str;
@@ -176,6 +189,7 @@ public
       case OPERATOR() then "operator";
       case RECORD() then "record";
       case TYPE() then "type";
+      case CLOCK() then "clock";
       else "unknown";
     end match;
   end toString;

@@ -209,7 +209,11 @@ uniontype Call
             if isRecordConstructor(call) then
               outExp := toRecordExpression(call, ty);
             else
-              outExp := Expression.CALL(call);
+              if Function.hasUnboxArgs(InstNode.definition(ComponentRef.node(cref))) then
+                outExp := Expression.CALL(Call.unboxArgs(call));
+              else
+                outExp := Expression.CALL(call);
+              end if;
               outExp := Inline.inlineCallExp(outExp);
             end if;
           end if;
@@ -1197,6 +1201,8 @@ protected
         then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
       case Absyn.IDENT("product")
         then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
+      case Absyn.IDENT("previous")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
       else
         algorithm
           Error.assertion(false, getInstanceName() + ": unhandled case for " +

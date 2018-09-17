@@ -1189,7 +1189,7 @@ algorithm
     // BTH
     case "Clock"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then DAE.T_CLOCK_DEFAULT;
   end match;
 end getBasicTypeType;
@@ -1206,7 +1206,7 @@ algorithm
     // BTH
     case "Clock"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then getClockAttributeType;
   end match;
 end getBasicTypeAttrTyper;

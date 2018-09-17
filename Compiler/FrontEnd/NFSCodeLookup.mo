@@ -45,6 +45,7 @@ public import NFInstPrefix;
 public import SCode;
 public import NFSCodeEnv;
 
+protected import Config;
 protected import Debug;
 protected import NFEnvExtends;
 protected import Flags;
@@ -1266,7 +1267,7 @@ algorithm
     case "ExternalObject" then BUILTIN_EXTERNALOBJECT;
     case "Clock"
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then BUILTIN_CLOCK;
     case "$RealType" then BUILTIN_REALTYPE_ITEM;
     case "$IntegerType" then BUILTIN_INTEGERTYPE_ITEM;

@@ -157,7 +157,12 @@ algorithm
           if is_pure and List.all(args, Expression.isLiteral) then
             callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
           else
-            callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call);
+            // do not expand builtin calls if we should not scalarize
+            if Flags.isSet(Flags.NF_SCALARIZE) then
+              callExp := simplifyBuiltinCall(Function.nameConsiderBuiltin(call.fn), args, call);
+            else
+              // nothing
+            end if;
           end if;
         elseif Flags.isSet(Flags.NF_EVAL_CONST_ARG_FUNCS) and is_pure and List.all(args, Expression.isLiteral) then
           callExp := simplifyCall2(call);

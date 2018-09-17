@@ -49,6 +49,7 @@ encapsulated package ClassInf
 public import SCode;
 public import Absyn;
 
+protected import Config;
 protected import Debug;
 protected import Error;
 protected import Flags;
@@ -432,7 +433,7 @@ algorithm
     // BTH
     case (SCode.R_PREDEFINED_CLOCK(),p)
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then TYPE_CLOCK(p);
     case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */

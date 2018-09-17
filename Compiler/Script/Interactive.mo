@@ -8539,7 +8539,7 @@ algorithm
     // BTH
     case (Absyn.IDENT(name = "Clock"),_,_)
       equation
-        true = intGe(Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), 33);
+        true = Config.synchronousFeaturesAllowed();
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
           Absyn.dummyParts,Absyn.dummyInfo),Absyn.IDENT("Clock"));
 
