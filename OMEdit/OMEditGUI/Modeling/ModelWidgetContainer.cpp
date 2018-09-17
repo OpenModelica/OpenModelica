@@ -1173,6 +1173,17 @@ void GraphicsView::fitInViewInternal()
 }
 
 /*!
+ * \brief GraphicsView::addSystem
+ * Adds a system to a model.
+ * \param name
+ * \param type
+ */
+void GraphicsView::addSystem(QString name, oms_system_enu_t type)
+{
+  OMSProxy::instance()->addSystem(name, type);
+}
+
+/*!
  * \brief GraphicsView::addSubModel
  * Adds the submodel to the OMS model.
  * \param name
@@ -2677,6 +2688,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addAction(mpSimulationParamsAction);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
       menu.addSeparator();
+      menu.addAction(MainWindow::instance()->getAddSystemAction());
       if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
         if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmi) {
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
@@ -5720,7 +5732,9 @@ void ModelWidget::drawOMSModelElements()
                                .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->x, 0, 1, -100, 100))
                                .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->y, 0, 1, -100, 100));
           AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
-                                                                              annotation, mpDiagramGraphicsView, true);
+                                                                              annotation, mpDiagramGraphicsView, true,
+                                                                              pChildLibraryTreeItem->getOMSConnector()->causality,
+                                                                              pChildLibraryTreeItem->getOMSConnector()->type);
           mpUndoStack->push(pAddConnectorCommand);
         }
       }
@@ -6150,6 +6164,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
+  connect(MainWindow::instance()->getAddSystemAction(), SIGNAL(triggered()), SLOT(addSystem()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
   connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
@@ -6665,6 +6680,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
+  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && oms);
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
   MainWindow::instance()->getAddOrEditSubModelIconAction()->setEnabled(enabled && oms_submodel);
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && (oms || oms_submodel));
@@ -6849,6 +6865,19 @@ void ModelWidgetContainer::alignInterfaces()
 }
 
 /*!
+ * \brief ModelWidgetContainer::addSystem
+ * Opens the AddSystemDialog
+ */
+void ModelWidgetContainer::addSystem()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    AddSystemDialog *pAddSystemDialog = new AddSystemDialog(pModelWidget->getDiagramGraphicsView());
+    pAddSystemDialog->exec();
+  }
+}
+
+/*!
  * \brief ModelWidgetContainer::addSubModel
  * Opens the AddFMUDialog.
  */
@@ -6883,6 +6912,10 @@ void ModelWidgetContainer::addOrEditSubModelIcon()
   }
 }
 
+/*!
+ * \brief ModelWidgetContainer::addConnector
+ * Opens the AddConnectorDialog.
+ */
 void ModelWidgetContainer::addConnector()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();

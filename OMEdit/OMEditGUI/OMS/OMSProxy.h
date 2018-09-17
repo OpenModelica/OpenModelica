@@ -62,6 +62,8 @@ public:
 
   bool newModel(QString cref);
   bool omsDelete(QString cref);
+  bool addSystem(QString cref, oms_system_enu_t type);
+
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);

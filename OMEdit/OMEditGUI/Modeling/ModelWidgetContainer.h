@@ -246,6 +246,7 @@ public:
   void addItem(QGraphicsItem *pGraphicsItem);
   void removeItem(QGraphicsItem *pGraphicsItem);
   void fitInViewInternal();
+  void addSystem(QString name, oms_system_enu_t type);
   void addSubModel(QString name, QString path);
   void deleteSubModel(QString name);
 private:
@@ -541,6 +542,7 @@ public slots:
   void printModel();
   void showSimulationParams();
   void alignInterfaces();
+  void addSystem();
   void addSubModel();
   void addOrEditSubModelIcon();
   void addConnector();

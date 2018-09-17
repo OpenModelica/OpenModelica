@@ -348,6 +348,8 @@ QString Helper::animationPause;
 QString Helper::animationPauseTip;
 QString Helper::simulationParams;
 QString Helper::simulationParamsTip;
+QString Helper::addSystem;
+QString Helper::addSystemTip;
 QString Helper::addSubModel;
 QString Helper::addSubModelTip;
 QString Helper::addBus;
@@ -621,6 +623,8 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
+  Helper::addSystem = tr("Add System");
+  Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
   Helper::addSubModel = tr("Add SubModel");
   Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
   Helper::addBus = tr("Add Bus");

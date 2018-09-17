@@ -353,6 +353,26 @@ private slots:
   void updateComponentName();
 };
 
+class AddSystemDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  AddSystemDialog(GraphicsView *pGraphicsView);
+private:
+  GraphicsView *mpGraphicsView;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpTypeLabel;
+  QComboBox *mpTypeComboBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void addSystem();
+};
+
 class AddSubModelDialog : public QDialog
 {
   Q_OBJECT

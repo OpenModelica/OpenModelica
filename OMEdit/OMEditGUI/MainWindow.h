@@ -186,6 +186,7 @@ public:
   QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
   QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
+  QAction* getAddSystemAction() {return mpAddSystemAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getAddOrEditSubModelIconAction() {return mpAddOrEditSubModelIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
@@ -410,6 +411,7 @@ private:
   QAction *mpAlignInterfacesAction;
   QAction *mpTLMCoSimulationAction;
   // OMSimulator Actions
+  QAction *mpAddSystemAction;
   QAction *mpAddSubModelAction;
   QAction *mpAddOrEditSubModelIconAction;
   QAction *mpAddConnectorAction;

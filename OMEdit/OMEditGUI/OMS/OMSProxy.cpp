@@ -255,6 +255,19 @@ bool OMSProxy::omsDelete(QString cref)
 }
 
 /*!
+ * \brief OMSProxy::addSystem
+ * Adds a system to a model.
+ * \param cref
+ * \param type
+ * \return
+ */
+bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
+{
+  oms_status_enu_t status = oms3_addSystem(cref.toStdString().c_str(), type);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::newFMIModel
  * Creates a new FMI model.
  * \param ident

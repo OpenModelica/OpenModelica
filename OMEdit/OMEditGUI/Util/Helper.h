@@ -350,6 +350,8 @@ public:
   static QString animationPauseTip;
   static QString simulationParams;
   static QString simulationParamsTip;
+  static QString addSystem;
+  static QString addSystemTip;
   static QString addSubModel;
   static QString addSubModelTip;
   static QString addBus;

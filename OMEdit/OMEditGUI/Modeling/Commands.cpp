@@ -1778,8 +1778,88 @@ void RenameCompositeModelCommand::undo()
 }
 
 /*!
+ * \brief AddSystemCommand::AddSystemCommand
+ * Adds a system to a model.
+ * \param name
+ * \param pLibraryTreeItem
+ * \param annotation
+ * \param pGraphicsView
+ * \param openingClass
+ * \param type
+ * \param pParent
+ */
+AddSystemCommand::AddSystemCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                                         bool openingClass, oms_system_enu_t type, QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mName = name;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mAnnotation = annotation;
+  mpGraphicsView = pGraphicsView;
+  mOpeningClass = openingClass;
+  mType = type;
+  setText(QString("Add system %1").arg(name));
+}
+
+/*!
+ * \brief AddSystemCommand::redo
+ * Redo the AddSystemCommand.
+ */
+void AddSystemCommand::redo()
+{
+  if (!mOpeningClass) {
+    mpGraphicsView->addSystem(mName, mType);
+  }
+  if (!mpLibraryTreeItem) {
+    // Create a LibraryTreeItem for connector
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName,
+                                                                 QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
+                                                                 .arg(mName), "",
+                                                                 true, pParentLibraryTreeItem);
+  }
+  // add the FMU to view
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(mpLibraryTreeItem->getName());
+  pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  mpComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpGraphicsView);
+  mpGraphicsView->addItem(mpComponent);
+  mpGraphicsView->addItem(mpComponent->getOriginItem());
+  mpGraphicsView->addComponentToList(mpComponent);
+  // select the component when not opening class.
+  if (!mOpeningClass) {
+    // unselect all items
+    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
+      pItem->setSelected(false);
+    }
+    mpComponent->setSelected(true);
+  }
+}
+
+/*!
+ * \brief AddSystemCommand::undo
+ * Undo the AddSystemCommand.
+ */
+void AddSystemCommand::undo()
+{
+  // delete the connector
+  /*! @todo Add a function deleteSystem to delete the system from OMSimulator */
+  //mpGraphicsView->deleteSystem(mName);
+  // delete the LibraryTreeItem
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(mpLibraryTreeItem, false);
+  mpLibraryTreeItem = 0;
+  // delete the Component
+  mpGraphicsView->removeItem(mpComponent);
+  mpGraphicsView->removeItem(mpComponent->getOriginItem());
+  mpGraphicsView->deleteComponentFromList(mpComponent);
+  mpComponent->deleteLater();
+  mpComponent = 0;
+}
+
+/*!
  * \brief AddSubModelCommand::AddSubModelCommand
- * Adds the submodel to fmi model.
+ * Adds a submodel to fmi model.
  * \param name
  * \param path
  * \param pLibraryTreeItem
@@ -1925,7 +2005,7 @@ void DeleteSubModelCommand::undo()
 
 /*!
  * \brief AddConnectorCommand::AddConnectorCommand
- * Adds the connector.
+ * Adds a connector.
  * \param name
  * \param pLibraryTreeItem
  * \param annotation
@@ -1936,7 +2016,7 @@ void DeleteSubModelCommand::undo()
  * \param pParent
  */
 AddConnectorCommand::AddConnectorCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
-                                         bool openingClass, int causality, int type, QUndoCommand *pParent)
+                                         bool openingClass, oms_causality_enu_t causality, oms_signal_type_enu_t type, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mName = name;

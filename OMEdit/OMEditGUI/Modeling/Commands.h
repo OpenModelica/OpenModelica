@@ -390,6 +390,23 @@ private:
   QString mNewCompositeModelName;
 };
 
+class AddSystemCommand : public QUndoCommand
+{
+public:
+  AddSystemCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                   bool openingClass, oms_system_enu_t type, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mName;
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mAnnotation;
+  GraphicsView *mpGraphicsView;
+  bool mOpeningClass;
+  oms_system_enu_t mType;
+  Component *mpComponent;
+};
+
 class AddSubModelCommand : public QUndoCommand
 {
 public:
@@ -425,7 +442,7 @@ class AddConnectorCommand : public QUndoCommand
 {
 public:
   AddConnectorCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
-                      bool openingClass = false, int causality = 0, int type = 0, QUndoCommand *pParent = 0);
+                      bool openingClass, oms_causality_enu_t causality, oms_signal_type_enu_t type, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -434,8 +451,8 @@ private:
   QString mAnnotation;
   GraphicsView *mpGraphicsView;
   bool mOpeningClass;
-  int mCausality;
-  int mType;
+  oms_causality_enu_t mCausality;
+  oms_signal_type_enu_t mType;
   Component *mpComponent;
 };
 

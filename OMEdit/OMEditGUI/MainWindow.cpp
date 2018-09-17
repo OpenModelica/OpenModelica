@@ -3489,6 +3489,9 @@ void MainWindow::createActions()
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   mpTLMCoSimulationAction->setEnabled(false);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
+  // Add System Action
+  mpAddSystemAction = new QAction(QIcon(":/Resources/icons/add-system.svg"), Helper::addSystem, this);
+  mpAddSystemAction->setStatusTip(Helper::addSystemTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4150,6 +4153,7 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->setObjectName("OMSimulator Toolbar");
   mpOMSimulatorToobar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to OMSimulator Toolbar
+  mpOMSimulatorToobar->addAction(mpAddSystemAction);
   mpOMSimulatorToobar->addAction(mpAddSubModelAction);
   mpOMSimulatorToobar->addAction(mpAddOrEditSubModelIconAction);
   mpOMSimulatorToobar->addAction(mpAddConnectorAction);
