@@ -259,7 +259,10 @@ function simplifyTranspose
   output Expression exp;
 algorithm
   exp := match arg
-    case Expression.ARRAY() then Expression.transposeArray(arg);
+    case Expression.ARRAY()
+      guard List.all(arg.elements, Expression.isArray)
+      then Expression.transposeArray(arg);
+
     else Expression.CALL(call);
   end match;
 end simplifyTranspose;
