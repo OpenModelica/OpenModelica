@@ -727,19 +727,12 @@ algorithm
         comp_eff_var := Prefixes.effectiveVariability(comp_var);
         bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
 
-        if bind_var > comp_eff_var then
-          if comp_var == Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
-            Error.addSourceMessage(Error.FUNCTION_HIGHER_VARIABILITY_BINDING, {
-              name, Prefixes.variabilityString(comp_eff_var),
-              Binding.toString(c.binding), Prefixes.variabilityString(bind_var)},
-              Binding.getInfo(binding));
-          else
-            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-              name, Prefixes.variabilityString(comp_eff_var),
-              "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
-              Binding.getInfo(binding));
-            fail();
-          end if;
+        if bind_var > comp_eff_var and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+          Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
+            name, Prefixes.variabilityString(comp_eff_var),
+            "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
+            Binding.getInfo(binding));
+          fail();
         end if;
 
         // Evaluate the binding if the component is a constant or has annotation(Evaluate=true)
@@ -1783,15 +1776,12 @@ algorithm
             exp := Expression.SIZE(exp, SOME(index));
           end if;
 
-          // Use the most variable of the index and the dimension as the variability
-          // of the size expression.
-          variability := Prefixes.variabilityMax(variability, Dimension.variability(dim));
-
-          // Hack to make size work properly in functions. The size of an input
-          // parameter should really be based on the variability of the input
-          // argument, but we don't have that information while typing functions.
-          if variability > Variability.PARAMETER and intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
-            variability := Variability.PARAMETER;
+          if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 or Dimension.isKnown(dim) then
+            // size is constant outside functions, or for known dimensions inside functions.
+            variability := Variability.CONSTANT;
+          else
+            // size is discrete for : in functions.
+            variability := Variability.DISCRETE;
           end if;
         else
           // If the index is not a constant, type the whole expression.
