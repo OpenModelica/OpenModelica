@@ -249,6 +249,7 @@ public
       case "der" then expandBuiltinGeneric(call);
       case "pre" then expandBuiltinGeneric(call);
       case "previous" then expandBuiltinGeneric(call);
+      case "transpose" then expandBuiltinTranspose(listHead(args));
     end match;
   end expandBuiltinCall;
 
@@ -285,6 +286,18 @@ public
     (eexp, expanded) := expand(eexp);
     exp := Expression.promote(eexp, Expression.typeOf(eexp), n);
   end expandBuiltinPromote;
+
+  function expandBuiltinTranspose
+    input Expression arg;
+    output Expression outExp;
+    output Boolean expanded;
+  algorithm
+    (outExp, expanded) := expand(arg);
+
+    if expanded then
+      outExp := Expression.transposeArray(outExp);
+    end if;
+  end expandBuiltinTranspose;
 
   function expandBuiltinGeneric
     input Call call;
