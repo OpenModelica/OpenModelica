@@ -3,7 +3,7 @@
 // teardown_command: rm -f nonlinear_system.problem8* _nonlinear_system.problem8* output.log
 
 loadFile("nlsTestPackage.mo"); getErrorString();
-simulate(nonlinear_system.problem8, stopTime=100, solver="dassl", simflags="-nls=newton", tolerance=0.5e-7); getErrorString();
+simulate(nonlinear_system.problem8, stopTime=100, method="dassl", simflags="-nls=newton", tolerance=0.5e-7); getErrorString();
 
 val(a,{0.0,1.0,10.0,100.0});
 

@@ -18,7 +18,7 @@ end CheckConstraintViolation;
 getErrorString();
 
 echo(false);
-res := optimize(CheckConstraintViolation,numberOfIntervalls=200, tolerance = 1e-12, simflags="-lv LOG_IPOPT -ipopt_max_iter 2");
+res := optimize(CheckConstraintViolation,numberOfIntervals=200, tolerance = 1e-12, simflags="-lv LOG_IPOPT -ipopt_max_iter 2");
 messages:=res.messages;
 
 echo(true);

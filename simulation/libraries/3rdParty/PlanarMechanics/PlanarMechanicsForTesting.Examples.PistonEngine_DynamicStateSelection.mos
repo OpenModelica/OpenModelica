@@ -13,7 +13,7 @@ loadFile("PlanarMechanicsForTesting.mo"); getErrorString();
 setMatchingAlgorithm("PFPlus");
 setIndexReductionMethod("dynamicStateSelection");
 // adrpo: stopTime=3 is got from the experiment annotation in the model
-simulate(PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection,stopTime=0.000001,steps=2); getErrorString();
+simulate(PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection,stopTime=0.000001,numberOfIntervals=2); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_res.mat",
   getEnvironmentVar("REFERENCEFILES")+"/PlanarMechanics//PistonEngine.mat","PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_diff.csv",0.01,0.001,
@@ -28,7 +28,7 @@ res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTestin
 // true
 // record SimulationResult
 //     resultFile = "PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1e-06, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1e-06, numberOfIntervals = 2, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

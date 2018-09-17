@@ -6,7 +6,7 @@
 
 loadModel(Modelica,{"3.2.1"}); getErrorString();
 loadFile("Inverter2.mo"); getErrorString();
-simulate(Inverter2, stopTime=1e-11,numberOfIntervalls=2000);getErrorString();
+simulate(Inverter2, stopTime=1e-11,numberOfIntervals=2000);getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("Inverter2_res.mat",
   "ReferenceFiles/Inverter2.mat",
   "Inverter2_diff.csv", 0.01, 0.0001,
