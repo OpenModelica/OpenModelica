@@ -145,6 +145,7 @@ public function getSimulationArguments
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
   input Boolean inImplInst;
   input Prefix.Prefix inPrefix;
+  input String callName;
   input SourceInfo inInfo;
   input Option<GlobalScript.SimulationOptions> defaultOption;
   output FCore.Cache outCache;
@@ -170,6 +171,7 @@ algorithm
     // fill in defaults
     case (cache,env,{crexp},args,impl,pre,info,_)
       equation
+        checkSimulationArguments(args, callName, info);
         exp = Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
         // We need to force eval in order to get the correct prefix
         (cache,v) = Ceval.ceval(cache,env,exp,true,Absyn.MSG(info),0);
@@ -237,6 +239,36 @@ algorithm
 
   end match;
 end getSimulationArguments;
+
+constant list<String> VALID_SIMULATE_ARGS = {
+  "startTime",
+  "stopTime",
+  "numberOfIntervals",
+  "stepSize",
+  "tolerance",
+  "method",
+  "fileNamePrefix",
+  "options",
+  "outputFormat",
+  "variableFilter",
+  "cflags",
+  "simflags"
+};
+
+function checkSimulationArguments
+  input list<Absyn.NamedArg> args;
+  input String callName;
+  input SourceInfo info;
+protected
+  list<String> valid_names;
+algorithm
+  for arg in args loop
+    if not listMember(arg.argName, VALID_SIMULATE_ARGS) then
+      Error.addSourceMessage(Error.NO_SUCH_PARAMETER, {callName, arg.argName}, info);
+      fail();
+    end if;
+  end for;
+end checkSimulationArguments;
 
 public function elabCallInteractive "This function elaborates the functions defined in the interactive environment.
   Since some of these functions are meta-functions, they can not be described in the type
@@ -323,7 +355,7 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF()},args,_,_,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "translateModel", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("translateModel",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()));
 
@@ -383,42 +415,42 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF()},args,_,_,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "buildModel", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModel",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF()},args,_,_,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "buildModelBeast", info, NONE());
       then
         (cache,Expression.makePureBuiltinCall("buildModelBeast",simulationArgs,DAE.T_UNKNOWN_DEFAULT),
          DAE.PROP(DAE.T_ARRAY(DAE.T_STRING_DEFAULT,{DAE.DIM_INTEGER(2)}),DAE.C_VAR()));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulate", info, NONE());
         recordtype = CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "simulation", info, NONE());
         recordtype = CevalScriptBackend.getDrModelicaSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache,env,Absyn.CREF_IDENT(name = "linearize"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "linearize", info, NONE());
         recordtype = CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("linearize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
 
     case (cache,env,Absyn.CREF_IDENT(name = "optimize"),{Absyn.CREF()},args,_,_,_) /* Fill in rest of defaults here */
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, info, NONE());
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inImplInst, inPrefix, "optimize", info, NONE());
         recordtype = CevalScriptBackend.getSimulationResultType();
       then
         (cache,Expression.makePureBuiltinCall("optimize",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()));
