@@ -467,7 +467,7 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
     // collect symbolic jacobians from state selection
-    (stateSets, modelInfo, SymbolicJacsStateSelect) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
+    (stateSets, modelInfo, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
 
     // collect fmi partial derivative
@@ -487,6 +487,7 @@ algorithm
 
     SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
+    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelectInternal);
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
     seedVars := collectAllSeedVars(SymbolicJacs);
@@ -1253,19 +1254,21 @@ public function addAlgebraicLoopsModelInfoStateSets
   output list<SimCode.StateSet> outSets = {};
   output SimCode.ModelInfo modelInfo = inModelInfo;
   output list<SimCode.JacobianMatrix> outSymJacs = {};
+  output list<SimCode.JacobianMatrix> outSymJacsInternal = {};
 protected
   SimCode.JacobianMatrix symJac;
   list<SimCode.JacobianMatrix> tmpSymJacs;
 algorithm
   for set in inSets loop
     ({symJac}, modelInfo, tmpSymJacs) := addAlgebraicLoopsModelInfoSymJacs({set.jacobianMatrix}, modelInfo);
-    outSymJacs := listAppend(tmpSymJacs, outSymJacs);
+    outSymJacsInternal := listAppend(tmpSymJacs, outSymJacsInternal);
     set.jacobianMatrix := symJac;
     outSymJacs := symJac::outSymJacs;
     outSets := set::outSets;
   end for;
   outSets := listReverse(outSets);
   outSymJacs := listReverse(outSymJacs);
+  outSymJacsInternal := listReverse(outSymJacsInternal);
 end addAlgebraicLoopsModelInfoStateSets;
 
 protected function addAlgebraicLoopsClockPartitions "
