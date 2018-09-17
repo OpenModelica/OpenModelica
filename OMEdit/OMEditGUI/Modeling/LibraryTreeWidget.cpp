@@ -1727,7 +1727,7 @@ bool LibraryTreeModel::unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool as
   }
   // unload OMSimulator model
   bool deleted = false;
-  if (pLibraryTreeItem->isTopLevel() && OMSProxy::instance()->unloadModel(pLibraryTreeItem->getNameStructure())) {
+  if (pLibraryTreeItem->isTopLevel() && OMSProxy::instance()->omsDelete(pLibraryTreeItem->getNameStructure())) {
     deleted = true;
   } else if (!pLibraryTreeItem->isTopLevel()) {
     deleted = true;

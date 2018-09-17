@@ -60,6 +60,8 @@ public:
 
   bool statusToBool(oms_status_enu_t status);
 
+  bool newModel(QString cref);
+  bool omsDelete(QString cref);
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
   bool unloadModel(QString ident);

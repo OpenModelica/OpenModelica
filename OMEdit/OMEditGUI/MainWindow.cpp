@@ -1530,6 +1530,25 @@ void MainWindow::createNewFMIModel()
 }
 
 /*!
+ * \brief MainWindow::createNewOMSModel
+ * Create a new OMSimulator model.
+ */
+void MainWindow::createNewOMSModel()
+{
+  QString newModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
+  // create new model
+  if (OMSProxy::instance()->newModel(newModelName)) {
+    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
+    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, newModelName,
+                                                                                 newModelName, "", false,
+                                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
+    if (pLibraryTreeItem) {
+      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
+    }
+  }
+}
+
+/*!
  * \brief MainWindow::openOMSModelFile
  * Opens the OMSimulator model file(s).\n
  * Slot activated when mpOpenOMSModelFileAction triggered signal is raised.
@@ -3026,6 +3045,10 @@ void MainWindow::createActions()
   mpNewFMIModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New FMI Model"), this);
   mpNewFMIModelAction->setStatusTip(tr("Create a new FMI Model"));
   connect(mpNewFMIModelAction, SIGNAL(triggered()), SLOT(createNewFMIModel()));
+  // create new OMSimulator Model action
+  mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New OMSimulator Model"), this);
+  mpNewOMSimulatorModelAction->setStatusTip(tr("Create a new OMSimulator Model"));
+  connect(mpNewOMSimulatorModelAction, SIGNAL(triggered()), SLOT(createNewOMSModel()));
   // open OMSimulator Model file action
   mpOpenOMSModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open OMSimulator Model(s)"), this);
   mpOpenOMSModelFileAction->setStatusTip(tr("Opens the OMSimulator model file(s)"));
@@ -3507,6 +3530,7 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpNewFMIModelAction);
+  pFileMenu->addAction(mpNewOMSimulatorModelAction);
   pFileMenu->addAction(mpOpenOMSModelFileAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpOpenDirectoryAction);
@@ -4220,7 +4244,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
           Helper::applicationIntroText,
           GIT_SHA,
           Helper::OpenModelicaVersion,
-          oms2_getVersion());
+          oms3_getVersion());
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

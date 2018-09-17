@@ -233,6 +233,28 @@ bool OMSProxy::statusToBool(oms_status_enu_t status)
 }
 
 /*!
+ * \brief OMSProxy::newModel
+ * \param cref
+ * \return
+ */
+bool OMSProxy::newModel(QString cref)
+{
+  oms_status_enu_t status = oms3_newModel(cref.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::omsDelete
+ * \param cref
+ * \return
+ */
+bool OMSProxy::omsDelete(QString cref)
+{
+  oms_status_enu_t status = oms3_delete(cref.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::newFMIModel
  * Creates a new FMI model.
  * \param ident
@@ -593,7 +615,7 @@ void OMSProxy::setLoggingLevel(int logLevel)
  */
 void OMSProxy::setLogFile(QString filename)
 {
-  oms2_setLogFile(filename.toStdString().c_str());
+  oms3_setLogFile(filename.toStdString().c_str());
 }
 
 /*!
@@ -603,7 +625,7 @@ void OMSProxy::setLogFile(QString filename)
  */
 void OMSProxy::setTempDirectory(QString path)
 {
-  oms2_setTempDirectory(path.toStdString().c_str());
+  oms3_setTempDirectory(path.toStdString().c_str());
 }
 
 /*!
@@ -613,7 +635,7 @@ void OMSProxy::setTempDirectory(QString path)
  */
 void OMSProxy::setWorkingDirectory(QString path)
 {
-  oms2_setWorkingDirectory(path.toStdString().c_str());
+  oms3_setWorkingDirectory(path.toStdString().c_str());
 }
 
 /*!
