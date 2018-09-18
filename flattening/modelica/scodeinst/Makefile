@@ -740,6 +740,7 @@ usertype3.mo \
 usertype4.mo \
 usertype5.mo \
 usertype6.mo \
+VectorTest.mo \
 Visibility1.mo \
 Visibility2.mo \
 Visibility3.mo \
