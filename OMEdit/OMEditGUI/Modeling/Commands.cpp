@@ -1807,17 +1807,15 @@ AddSystemCommand::AddSystemCommand(QString name, LibraryTreeItem *pLibraryTreeIt
  */
 void AddSystemCommand::redo()
 {
+  LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {
-    mpGraphicsView->addSystem(mName, mType);
+    mpGraphicsView->addSystem(nameStructure, mType);
   }
   if (!mpLibraryTreeItem) {
     // Create a LibraryTreeItem for connector
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName,
-                                                                 QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
-                                                                 .arg(mName), "",
-                                                                 true, pParentLibraryTreeItem);
+    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName, nameStructure, "", true, pParentLibraryTreeItem);
   }
   // add the FMU to view
   ComponentInfo *pComponentInfo = new ComponentInfo;

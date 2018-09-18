@@ -53,7 +53,7 @@ private:
 public:
   static OMSProxy* instance() {return mpInstance;}
 
-  static QString getElementTypeString(oms_element_type_enu_t type);
+  static QString getElementTypeString(oms3_element_type_enu_t type);
   static QString getFMUKindString(oms_fmi_kind_enu_t kind);
   static QString getSignalTypeString(oms_signal_type_enu_t type);
   static QString getCausalityString(oms_causality_enu_t causality);
@@ -75,9 +75,8 @@ public:
   bool parseString(QString contents, QString* pModelName);
   bool loadString(QString contents, QString* pModelName);
   bool saveModel(QString ident, QString filename);
-  bool listModel(QString ident, QString *pContents);
-  bool oms3GetElement(QString cref, oms3_element_t** pElement);
-  bool getElement(QString cref, oms_element_t** pElement);
+  bool list(QString ident, QString *pContents);
+  bool getElement(QString cref, oms3_element_t **pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
   bool getElements(QString cref, oms_element_t*** pElements);
   bool getSubModelPath(QString cref, QString* pPath);

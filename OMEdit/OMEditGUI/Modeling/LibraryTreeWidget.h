@@ -123,8 +123,8 @@ public:
   bool isExpanded() const {return mExpanded;}
   void setNonExisting(bool nonExisting) {mNonExisting = nonExisting;}
   bool isNonExisting() const {return mNonExisting;}
-  void setOMSElement(oms_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
-  oms_element_t* getOMSElement() const {return mpOMSElement;}
+  void setOMSElement(oms3_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
+  oms3_element_t* getOMSElement() const {return mpOMSElement;}
   ssd_element_geometry_t getOMSElementGeometry();
   void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
@@ -180,7 +180,7 @@ private:
   QString mClassTextAfter;
   bool mExpanded;
   bool mNonExisting;
-  oms_element_t *mpOMSElement;
+  oms3_element_t *mpOMSElement;
   oms_connector_t *mpOMSConnector;
   const oms_fmu_info_t *mpFMUInfo;
 signals:
@@ -292,7 +292,7 @@ private:
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-                                                LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement = 0,
+                                                LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement = 0,
                                                 oms_connector_t *pOMSConnector = 0, int row = -1);
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);

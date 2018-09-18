@@ -3048,6 +3048,7 @@ void MainWindow::createActions()
   // create new OMSimulator Model action
   mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New OMSimulator Model"), this);
   mpNewOMSimulatorModelAction->setStatusTip(tr("Create a new OMSimulator Model"));
+  mpNewOMSimulatorModelAction->setShortcut(QKeySequence("Ctrl+t"));
   connect(mpNewOMSimulatorModelAction, SIGNAL(triggered()), SLOT(createNewOMSModel()));
   // open OMSimulator Model file action
   mpOpenOMSModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open OMSimulator Model(s)"), this);

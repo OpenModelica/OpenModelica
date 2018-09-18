@@ -2690,7 +2690,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addSeparator();
       menu.addAction(MainWindow::instance()->getAddSystemAction());
       if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
-        if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmi) {
+        if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_element_system) {
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
         } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu_old
                    || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old) {
@@ -3723,7 +3723,7 @@ void ModelWidget::createModelWidgetComponents()
         OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
         if (mpLibraryTreeItem->getFileName().isEmpty()) {
           QString contents;
-          if (OMSProxy::instance()->listModel(mpLibraryTreeItem->getNameStructure(), &contents)) {
+          if (OMSProxy::instance()->list(mpLibraryTreeItem->getNameStructure(), &contents)) {
             pOMSimulatorEditor->setPlainText(contents, false);
             mpLibraryTreeItem->setClassText(contents);
           }
@@ -3736,7 +3736,7 @@ void ModelWidget::createModelWidgetComponents()
         connect(OptionsDialog::instance(), SIGNAL(omsimulatorEditorSettingsChanged()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
       }
       // only get the components and connections if the we are not creating a new class.
-      if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi &&
+      if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system &&
           !mpLibraryTreeItem->getFileName().isEmpty()) {
         mpUndoStack->setEnabled(false);
         drawOMSModelElements();
@@ -4106,7 +4106,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
       setModelClassPathLabel(mpLibraryTreeItem->getNameStructure());
     }
     // Update the OMS element
-    oms_element_t *pOMSElement = 0;
+    oms3_element_t *pOMSElement = 0;
     OMSProxy::instance()->getElement(mpLibraryTreeItem->getNameStructure(), &pOMSElement);
     mpLibraryTreeItem->setOMSElement(pOMSElement);
     // remove the children
@@ -5666,7 +5666,7 @@ void ModelWidget::getCompositeModelConnections()
 void ModelWidget::drawOMSModelElements()
 {
   if (mpLibraryTreeItem->getOMSElement()) {
-    if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi) {
+    if (mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
       for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
         LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
         if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
@@ -5823,7 +5823,7 @@ void ModelWidget::drawOMSModelElements()
  */
 void ModelWidget::drawOMSModelConnections()
 {
-  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmi) {
+  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
     MessagesWidget *pMessagesWidget = MessagesWidget::instance();
     oms_connection_t** pConnections = NULL;
     if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {

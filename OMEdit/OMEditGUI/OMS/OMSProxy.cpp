@@ -124,7 +124,7 @@ OMSProxy::OMSProxy()
  * \param type
  * \return
  */
-QString OMSProxy::getElementTypeString(oms_element_type_enu_t type)
+QString OMSProxy::getElementTypeString(oms3_element_type_enu_t type)
 {
   switch (type) {
     case oms_component_tlm:
@@ -135,7 +135,7 @@ QString OMSProxy::getElementTypeString(oms_element_type_enu_t type)
       return "FMU";
     case oms_component_table_old:
       return "Table";
-    case oms_component_port:
+    case oms_element_port:
       return "Port";
     case oms_component_none_old:
     default:
@@ -419,27 +419,21 @@ bool OMSProxy::saveModel(QString ident, QString filename)
 }
 
 /*!
- * \brief OMSProxy::listModel
+ * \brief OMSProxy::list
  * Lists the contents of a composite model.
- * Since memory is allocated in oms2_listModel so we need to call free.
+ * Since memory is allocated so we need to call free.
  * \param ident
  * \param pContents
  * \return
  */
-bool OMSProxy::listModel(QString ident, QString *pContents)
+bool OMSProxy::list(QString ident, QString *pContents)
 {
   char* contents = NULL;
-  oms_status_enu_t status = oms2_listModel(ident.toStdString().c_str(), &contents);
+  oms_status_enu_t status = oms3_list(ident.toStdString().c_str(), &contents);
   if (contents) {
     *pContents = QString(contents);
     free(contents);
   }
-  return statusToBool(status);
-}
-
-bool OMSProxy::oms3GetElement(QString cref, oms3_element_t** pElement)
-{
-  oms_status_enu_t status = oms3_getElement(cref.toStdString().c_str(), pElement);
   return statusToBool(status);
 }
 
@@ -450,9 +444,9 @@ bool OMSProxy::oms3GetElement(QString cref, oms3_element_t** pElement)
  * \param pElement
  * \return
  */
-bool OMSProxy::getElement(QString cref, oms_element_t** pElement)
+bool OMSProxy::getElement(QString cref, oms3_element_t** pElement)
 {
-  oms_status_enu_t status = oms2_getElement(cref.toStdString().c_str(), pElement);
+  oms_status_enu_t status = oms3_getElement(cref.toStdString().c_str(), pElement);
   return statusToBool(status);
 }
 

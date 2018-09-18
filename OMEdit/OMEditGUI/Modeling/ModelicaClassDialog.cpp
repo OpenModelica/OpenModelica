@@ -2021,9 +2021,9 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   // type
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
-  mpTypeComboBox->addItem("TLM", oms_system_tlm);
-  mpTypeComboBox->addItem("Weakly Coupled", oms_system_wc);
-  mpTypeComboBox->addItem("Strongly Coupled", oms_system_sc);
+  mpTypeComboBox->addItem("TLM - Transmission Line Modeling System", oms_system_tlm);
+  mpTypeComboBox->addItem("Weakly Coupled - Connected Co-Simulation FMUs System", oms_system_wc);
+  mpTypeComboBox->addItem("Strongly Coupled - Connected Model-Exchange FMUs System", oms_system_sc);
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);

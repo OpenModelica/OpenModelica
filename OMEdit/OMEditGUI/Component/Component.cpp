@@ -2844,7 +2844,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
       case LibraryTreeItem::OMS:
-        if (pComponent->getLibraryTreeItem()->getOMSElement() && pComponent->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu) {
+        if (pComponent->getLibraryTreeItem()->getOMSElement() && pComponent->getLibraryTreeItem()->getOMSElement()->type == oms_element_fmu) {
           menu.addAction(pComponent->getFMUPropertiesAction());
         }
         break;
