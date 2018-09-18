@@ -437,6 +437,12 @@ bool OMSProxy::listModel(QString ident, QString *pContents)
   return statusToBool(status);
 }
 
+bool OMSProxy::oms3GetElement(QString cref, oms3_element_t** pElement)
+{
+  oms_status_enu_t status = oms3_getElement(cref.toStdString().c_str(), pElement);
+  return statusToBool(status);
+}
+
 /*!
  * \brief OMSProxy::getElement
  * Gets the model element
