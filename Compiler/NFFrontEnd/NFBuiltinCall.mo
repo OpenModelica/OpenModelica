@@ -134,6 +134,7 @@ public
       case "vector" then typeVectorCall(call, origin, info);
       case "zeros" then typeZerosOnesCall("zeros", call, origin, info);
       case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, origin, info);
+      case "sample" then typeSampleCall(call, origin, info);
       /*
       case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, origin, info);
       case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, origin, info);
@@ -1698,6 +1699,93 @@ protected
           fail();
     end match;
   end typeClockCall;
+
+  function typeSampleCall
+    input Call call;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+    output Expression callExp;
+    output Type outType;
+    output Variability var;
+  protected
+    Call ty_call;
+    Type arg_ty;
+    list<TypedArg> args;
+    list<TypedNamedArg> namedArgs;
+    Expression e, e1, e2;
+    Type t, t1, t2;
+    Variability v, v1, v2;
+    ComponentRef fn_ref;
+    Function normalSample, clockedSample;
+    InstNode recopnode;
+  algorithm
+    Call.ARG_TYPED_CALL(fn_ref, args, namedArgs) := Call.typeNormalCall(call, origin, info);
+
+    recopnode := ComponentRef.node(fn_ref);
+
+    fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(recopnode));
+    {normalSample, clockedSample} := Function.typeRefCache(fn_ref);
+
+    (callExp, outType, var) := match(args, namedArgs)
+
+      // sample(start, Real interval) - the usual stuff
+      case ({(e, t, v), (e1, Type.INTEGER(), v1)}, {})
+        algorithm
+          if valueEq(t, Type.INTEGER()) then
+            e := Expression.CAST(Type.REAL(), e);
+          end if;
+          ty_call := Call.makeTypedCall(normalSample, {e, Expression.CAST(Type.REAL(), e1)}, Variability.PARAMETER, Type.BOOLEAN());
+        then
+          (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
+
+      // sample(start, Real interval) - the usual stuff
+      case ({(e, t, v), (e1, Type.REAL(), v1)}, {})
+        algorithm
+          if valueEq(t, Type.INTEGER()) then
+            e := Expression.CAST(Type.REAL(), e);
+          end if;
+          ty_call := Call.makeTypedCall(normalSample, {e, e1}, Variability.PARAMETER, Type.BOOLEAN());
+        then
+          (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
+
+      // sample(start, Real interval = value) - the usual stuff
+      case ({(e, t, v)}, {("interval", e1, Type.REAL(), v1)})
+        algorithm
+          if valueEq(t, Type.INTEGER()) then
+            e := Expression.CAST(Type.REAL(), e);
+          end if;
+          ty_call := Call.makeTypedCall(normalSample, {e, e1}, Variability.PARAMETER, Type.BOOLEAN());
+        then
+          (Expression.CALL(ty_call), Type.BOOLEAN(), Variability.PARAMETER);
+
+      // sample(u) - inferred clock
+      case ({(e, t, v)}, {}) guard Config.synchronousFeaturesAllowed()
+        algorithm
+          ty_call := Call.makeTypedCall(clockedSample, {e, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK())}, v, t);
+        then
+          (Expression.CALL(ty_call), t, v);
+
+      // sample(u, c) - specified clock
+      case ({(e, t, v), (e1, Type.CLOCK(), v1)}, {}) guard Config.synchronousFeaturesAllowed()
+        algorithm
+          ty_call := Call.makeTypedCall(clockedSample, {e, e1}, v, t);
+        then
+          (Expression.CALL(ty_call), t, v);
+
+      // sample(u, Clock c = c) - specified clock
+      case ({(e, t, v)}, {("c", e1, Type.CLOCK(), v1)}) guard Config.synchronousFeaturesAllowed()
+        algorithm
+          ty_call := Call.makeTypedCall(clockedSample, {e, e1}, v, t);
+        then
+          (Expression.CALL(ty_call), t, v);
+
+      else
+        algorithm
+          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call), "<NO COMPONENT>"}, info);
+        then
+          fail();
+    end match;
+  end typeSampleCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;

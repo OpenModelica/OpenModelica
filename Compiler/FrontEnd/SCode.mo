@@ -3983,11 +3983,25 @@ algorithm
   hasAnn := match(inClass,namedAnnotation)
     local
       Annotation ann;
-    case(CLASS(cmt=COMMENT(annotation_=SOME(ann))),_)
-      then hasBooleanNamedAnnotation(ann,namedAnnotation);
+    case(CLASS(cmt=COMMENT(annotation_ = SOME(ann))), _)
+      then hasBooleanNamedAnnotation(ann, namedAnnotation);
     else false;
   end match;
 end hasBooleanNamedAnnotationInClass;
+
+public function hasBooleanNamedAnnotationInComponent
+  input Element inComponent;
+  input String namedAnnotation;
+  output Boolean hasAnn;
+algorithm
+  hasAnn := match(inComponent,namedAnnotation)
+    local
+      Annotation ann;
+    case (COMPONENT(comment = COMMENT(annotation_ = SOME(ann))), _)
+      then hasBooleanNamedAnnotation(ann, namedAnnotation);
+    else false;
+  end match;
+end hasBooleanNamedAnnotationInComponent;
 
 public function optCommentHasBooleanNamedAnnotation
 "check if the named annotation is present and has value true"

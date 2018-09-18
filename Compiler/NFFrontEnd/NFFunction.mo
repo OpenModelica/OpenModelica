@@ -1275,6 +1275,8 @@ uniontype Function
           case "vector" then true;
           // can have variable number of arguments
           case "zeros" then true;
+          // sample - overloaded for sync features
+          case "sample" then true;
           else false;
         end match;
       end if;
@@ -1375,6 +1377,11 @@ uniontype Function
     output Boolean res =
       SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments");
   end hasUnboxArgs;
+
+  function hasOptionalArgument
+    input SCode.Element component;
+    output Boolean res = SCode.hasBooleanNamedAnnotationInComponent(component, "__OpenModelica_optionalArgument");
+  end hasOptionalArgument;
 
 protected
   function collectParams

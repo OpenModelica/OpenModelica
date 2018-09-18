@@ -368,6 +368,5 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
 constant ComponentRef CLOCK_CREF =
   ComponentRef.CREF(CLOCK_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
 
-
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;
