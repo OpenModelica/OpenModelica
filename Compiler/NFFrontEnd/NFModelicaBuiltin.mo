@@ -519,7 +519,6 @@ function reinit<RealOrArrayCref, RealOrArrayExpr> "Reinitialize state variable"
 </html>"));
 end reinit;
 
-
 function sample = $overload(OMC_NO_CLOCK.sample, OMC_CLOCK.sample)
    "Returns the interval between the previous and present tick of the clock of its argument"
   annotation(__OpenModelica_UnboxArguments=true, Documentation(info="<html>
