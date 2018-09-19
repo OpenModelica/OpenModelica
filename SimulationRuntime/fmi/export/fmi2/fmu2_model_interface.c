@@ -508,6 +508,23 @@ void fmi2FreeInstance(fmi2Component c)
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2FreeInstance")
 
+  /* call external objects destructors */
+  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+  /* free nonlinear system data */
+  freeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
+  /* free mixed system data */
+  freeMixedSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
+  /* free linear system data */
+  freeLinearSystems(comp->fmuData, comp->threadData);
+#endif
+  /* free data struct */
+  deInitializeDataStruc(comp->fmuData);
+
   comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
 
   /* free simuation data */
@@ -623,6 +640,14 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   return fmi2OK;
 }
 
+/*
+ * fmi2Status fmi2Terminate(fmi2Component c);
+ * Informs the FMU that the simulation run is terminated. After calling this function, the final
+ * values of all variables can be inquired with the fmi2GetXXX(..) functions. It is not allowed
+ * to call this function after one of the functions returned with a status flag of fmi2Error or
+ * fmi2Fatal.
+ *
+ */
 fmi2Status fmi2Terminate(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
@@ -631,24 +656,6 @@ fmi2Status fmi2Terminate(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Terminate")
 
   setThreadData(comp);
-
-  /* call external objects destructors */
-  comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
-#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
-  /* free nonlinear system data */
-  freeNonlinearSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
-  /* free mixed system data */
-  freeMixedSystems(comp->fmuData, comp->threadData);
-#endif
-#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
-  /* free linear system data */
-  freeLinearSystems(comp->fmuData, comp->threadData);
-#endif
-  /* free data struct */
-  deInitializeDataStruc(comp->fmuData);
-
   comp->state = modelTerminated;
   resetThreadData(comp);
   return fmi2OK;
