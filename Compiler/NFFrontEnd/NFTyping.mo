@@ -2798,7 +2798,7 @@ algorithm
       then match Absyn.pathFirstIdent(fn.path)
         case "Connections" then true;
         case "cardinality" then true;
-        else false;
+        else Call.isImpure(exp.call);
       end match;
     else false;
   end match;

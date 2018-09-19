@@ -486,7 +486,7 @@ uniontype Call
     output Boolean isImpure;
   algorithm
     isImpure := match call
-      case TYPED_CALL() then Function.isImpure(call.fn);
+      case TYPED_CALL() then Function.isImpure(call.fn) or Function.isOMImpure(call.fn);
       else false;
     end match;
   end isImpure;
