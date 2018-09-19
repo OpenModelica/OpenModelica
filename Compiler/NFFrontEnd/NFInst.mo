@@ -113,6 +113,13 @@ protected
   FlatModel flat_model;
   FunctionTree funcs;
 algorithm
+  // gather here all the flags to disable expansion
+  // and scalarization if -d=-nfScalarize is on
+  if not Flags.isSet(Flags.NF_SCALARIZE) then
+    // make sure we don't expand anything
+    Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
+  end if;
+
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);
   name := Absyn.pathString(classPath);
