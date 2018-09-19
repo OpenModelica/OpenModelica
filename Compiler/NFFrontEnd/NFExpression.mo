@@ -87,6 +87,40 @@ public
 	    Expression solverMethod " string type ";
 	  end SOLVER_CLOCK;
 
+    function compare
+      input ClockKind ck1;
+      input ClockKind ck2;
+      output Integer comp;
+    algorithm
+      comp := match (ck1, ck2)
+        local
+          Expression i1, ic1, r1, c1, si1, sm1, i2, ic2, r2, c2, si2, sm2;
+        case (INFERRED_CLOCK(), INFERRED_CLOCK()) then 0;
+        case (INTEGER_CLOCK(i1, r1),INTEGER_CLOCK(i2, r2))
+          algorithm
+            comp := Expression.compare(i1, i2);
+            if (comp == 0) then
+              comp := Expression.compare(r1, r2);
+            end if;
+          then comp;
+        case (REAL_CLOCK(i1), REAL_CLOCK(i2)) then Expression.compare(i1, i2);
+        case (BOOLEAN_CLOCK(c1, si1), BOOLEAN_CLOCK(c2, si2))
+          algorithm
+            comp := Expression.compare(c1, c2);
+            if (comp == 0) then
+              comp := Expression.compare(si1, si2);
+            end if;
+          then comp;
+        case (SOLVER_CLOCK(c1, sm2), SOLVER_CLOCK(c2, sm1))
+          algorithm
+            comp := Expression.compare(c1, c2);
+            if (comp == 0) then
+              comp := Expression.compare(sm1, sm2);
+            end if;
+          then comp;
+      end match;
+    end compare;
+
 	  function toDAE
 	    input ClockKind ick;
 	    output DAE.ClockKind ock;
@@ -376,6 +410,7 @@ public
         Operator op;
         Call c;
         list<Subscript> subs;
+        ClockKind clk1, clk2;
 
       case INTEGER()
         algorithm
@@ -400,6 +435,12 @@ public
           BOOLEAN(value = b) := exp2;
         then
           Util.boolCompare(exp1.value, b);
+
+      case CLKCONST(clk1)
+        algorithm
+          CLKCONST(clk2) := exp2;
+        then
+          ClockKind.compare(clk1, clk2);
 
       case CREF()
         algorithm
@@ -618,6 +659,7 @@ public
       case STRING()          then Type.STRING();
       case BOOLEAN()         then Type.BOOLEAN();
       case ENUM_LITERAL()    then exp.ty;
+      case CLKCONST()        then Type.CLOCK();
       case CREF()            then exp.ty;
       case ARRAY()           then exp.ty;
       case RANGE()           then exp.ty;
@@ -1475,6 +1517,41 @@ public
       local
         Expression e1, e2, e3, e4;
 
+      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
+        algorithm
+          e3 := map(e1, func);
+          e4 := map(e2, func);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
+
+      case CLKCONST(ClockKind.REAL_CLOCK(e1))
+        algorithm
+          e2 := map(e1, func);
+       then
+          if referenceEq(e1, e2)
+          then exp
+          else CLKCONST(ClockKind.REAL_CLOCK(e2));
+
+      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
+        algorithm
+          e3 := map(e1, func);
+          e4 := map(e2, func);
+        then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
+
+      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
+        algorithm
+          e3 := map(e1, func);
+          e4 := map(e2, func);
+        then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
+
       case CREF() then CREF(exp.ty, mapCref(exp.cref, func));
       case ARRAY() then ARRAY(exp.ty, list(map(e, func) for e in exp.elements));
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
@@ -1751,6 +1828,41 @@ public
     outExp := match exp
       local
         Expression e1, e2, e3, e4;
+
+      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
+        algorithm
+          e3 := func(e1);
+          e4 := func(e2);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
+
+      case CLKCONST(ClockKind.REAL_CLOCK(e1))
+        algorithm
+          e2 := func(e1);
+       then
+          if referenceEq(e1, e2)
+          then exp
+          else CLKCONST(ClockKind.REAL_CLOCK(e2));
+
+      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
+        algorithm
+          e3 := func(e1);
+          e4 := func(e2);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
+
+      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
+        algorithm
+          e3 := func(e1);
+          e4 := func(e2);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
 
       case CREF() then CREF(exp.ty, mapCrefShallow(exp.cref, func));
       case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements));
@@ -2061,7 +2173,34 @@ public
   algorithm
     result := match exp
       local
-        Expression e;
+        Expression e, e1, e2;
+
+      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
+        algorithm
+          result := fold(e1, func, arg);
+          result := fold(e2, func, result);
+       then
+          result;
+
+      case CLKCONST(ClockKind.REAL_CLOCK(e1))
+        algorithm
+          result := fold(e1, func, arg);
+       then
+          result;
+
+      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
+        algorithm
+          result := fold(e1, func, arg);
+          result := fold(e2, func, result);
+       then
+          result;
+
+      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
+        algorithm
+          result := fold(e1, func, arg);
+          result := fold(e2, func, result);
+       then
+          result;
 
       case CREF() then foldCref(exp.cref, func, arg);
       case ARRAY() then foldList(exp.elements, func, arg);
@@ -2260,7 +2399,34 @@ public
   algorithm
     () := match exp
       local
-        Expression e;
+        Expression e, e1, e2;
+
+      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
+        algorithm
+          apply(e1, func);
+          apply(e2, func);
+       then
+          ();
+
+      case CLKCONST(ClockKind.REAL_CLOCK(e1))
+        algorithm
+          apply(e1, func);
+       then
+         ();
+
+      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
+        algorithm
+          apply(e1, func);
+          apply(e2, func);
+       then
+          ();
+
+      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
+        algorithm
+          apply(e1, func);
+          apply(e2, func);
+       then
+          ();
 
       case CREF() algorithm applyCref(exp.cref, func); then ();
       case ARRAY() algorithm applyList(exp.elements, func); then ();
@@ -2479,6 +2645,41 @@ public
         list<Expression> expl;
         Call call;
         list<Subscript> subs;
+
+      case CLKCONST(ClockKind.INTEGER_CLOCK(e1, e2))
+        algorithm
+          (e3, arg) := mapFold(e1, func, arg);
+          (e4, arg) := mapFold(e2, func, arg);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.INTEGER_CLOCK(e3, e4));
+
+      case CLKCONST(ClockKind.REAL_CLOCK(e1))
+        algorithm
+          (e2, arg) := mapFold(e1, func, arg);
+       then
+          if referenceEq(e1, e2)
+          then exp
+          else CLKCONST(ClockKind.REAL_CLOCK(e2));
+
+      case CLKCONST(ClockKind.BOOLEAN_CLOCK(e1, e2))
+        algorithm
+          (e3, arg) := mapFold(e1, func, arg);
+          (e4, arg) := mapFold(e2, func, arg);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.BOOLEAN_CLOCK(e3, e4));
+
+      case CLKCONST(ClockKind.SOLVER_CLOCK(e1, e2))
+        algorithm
+          (e3, arg) := mapFold(e1, func, arg);
+          (e4, arg) := mapFold(e2, func, arg);
+       then
+          if referenceEq(e1, e3) and referenceEq(e2, e4)
+          then exp
+          else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
 
       case CREF()
         algorithm

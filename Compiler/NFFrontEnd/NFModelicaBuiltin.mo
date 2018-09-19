@@ -540,25 +540,33 @@ end OMC_NO_CLOCK;
 package OMC_CLOCK
   impure function sample<T> "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
     input T u;
-    input Clock c = Clock();
+    input Clock c = OpenModelica.Internal.inferredClock();
     output T o;
     external "builtin";
-    annotation(Documentation(info="<html>
+    annotation(version="Modelica 3.3", Documentation(info="<html>
     See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
   </html>"));
   end sample;
 end OMC_CLOCK;
 
-function shiftSample "First activation of clock is shifted in time"
+function shiftSample<T> "First activation of clock is shifted in time"
+  input T u;
+  parameter input Integer shiftCounter(min = 0);
+  parameter input Integer resolution(min = 1) = 1;
+  output T c;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'shiftSample()'\">shiftSample()</a>
 </html>"));
 end shiftSample;
 
-function backSample "First activation of clock is shifted in time before activation of u"
+function backSample<T> "First activation of clock is shifted in time before activation of u"
+  input T u;
+  parameter input Integer backCounter(min = 0);
+  parameter input Integer resolution(min = 1) = 1;
+  output T c;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'backSample()'\">backSample()</a>
 </html>"));
 end backSample;
@@ -875,16 +883,15 @@ package OMC_ARGS
   end interval;
 end OMC_ARGS;
 
-
 function subSample = $overload(OpenModelica.Internal.subSampleExpression, OpenModelica.Internal.subSampleClock)
   "Conversion from faster clock to slower clock"
-  annotation(version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'subSample()'\">subSample()</a>
 </html>"));
 
 function superSample = $overload(OpenModelica.Internal.superSampleExpression, OpenModelica.Internal.superSampleClock)
   "Conversion from slower clock to faster clock"
-  annotation(version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
 </html>"));
 
@@ -989,20 +996,20 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
 
   function rationalClock
     input Integer intervalCounter(min=0);
-    parameter input Integer resolution(unit="Hz", min=1)=1;
+    parameter input Integer resolution(min = 1) = 1;
     output Clock c;
     external "builtin";
   end rationalClock;
 
   function realClock
-    input Real interval(unit="s", min=0);
+    input Real interval(unit="s", min = 0);
     output Clock c;
     external "builtin";
   end realClock;
 
   function booleanClock
     input Boolean condition;
-    input Real startInterval=0.0;
+    input Real startInterval = 0.0;
     output Clock c;
     external "builtin";
   end booleanClock;

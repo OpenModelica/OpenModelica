@@ -477,6 +477,16 @@ uniontype Call
     end match;
   end isExternal;
 
+  function isImpure
+    input Call call;
+    output Boolean isImpure;
+  algorithm
+    isImpure := match call
+      case TYPED_CALL() then Function.isImpure(call.fn);
+      else false;
+    end match;
+  end isImpure;
+
   function isRecordConstructor
     input Call call;
     output Boolean isConstructor;
@@ -1202,6 +1212,16 @@ protected
       case Absyn.IDENT("product")
         then Type.arrayElementType(Expression.typeOf(Expression.unbox(listHead(args))));
       case Absyn.IDENT("previous")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("shiftSample")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("backSample")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("hold")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("superSample")
+        then Expression.typeOf(Expression.unbox(listHead(args)));
+      case Absyn.IDENT("subSample")
         then Expression.typeOf(Expression.unbox(listHead(args)));
       else
         algorithm

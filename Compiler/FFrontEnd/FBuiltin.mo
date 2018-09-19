@@ -362,7 +362,7 @@ algorithm
 
   (initialProgram,initialSCodeProgram) := matchcontinue ()
     local
-      list<tuple<tuple<Integer,Config.LanguageStandard>,tuple<Absyn.Program,SCode.Program>>> assocLst;
+      list<tuple<Integer,tuple<Absyn.Program,SCode.Program>>> assocLst;
       list<Absyn.Class> classes,classes1,classes2;
       Absyn.Program p;
       SCode.Program sp;
@@ -374,60 +374,56 @@ algorithm
     case ()
       equation
         assocLst = getGlobalRoot(Global.builtinIndex);
-        ((p,sp)) = Util.assoc((Flags.getConfigEnum(Flags.GRAMMAR), Config.getLanguageStandard()), assocLst);
+        ((p,sp)) = Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
       then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},Absyn.dummyInfo);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) =
-          patchSample(Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA));
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileMetaModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP());
         (p as Absyn.PROGRAM(classes=classes)) = MetaUtil.createMetaClassesInProgram(p);
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, ((Flags.METAMODELICA, Config.getLanguageStandard()), (p,sp))::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,(p,sp))::assocLst);
       then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileParModelica),Error.FILE_NOT_FOUND_ERROR,{fileParModelica},Absyn.dummyInfo);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) =
-          patchSample(Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA));
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(fileParModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP());
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, ((Flags.PARMODELICA,Config.getLanguageStandard()), (p,sp))::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,(p,sp))::assocLst);
       then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
-        (p as Absyn.PROGRAM(classes=classes)) =
-          patchSample(Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA));
+        (p as Absyn.PROGRAM(classes=classes)) = Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, ((Flags.MODELICA, Config.getLanguageStandard()), (p,sp))::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,(p,sp))::assocLst);
       then (p,sp);
     case ()
       equation
         true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PDEMODELICA);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelica),Error.FILE_NOT_FOUND_ERROR,{fileModelica},Absyn.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(filePDEModelica),Error.FILE_NOT_FOUND_ERROR,{filePDEModelica},Absyn.dummyInfo);
-        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) =
-          patchSample(Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA));
+        Absyn.PROGRAM(classes=classes1,within_=Absyn.TOP()) = Parser.parsebuiltin(fileModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         Absyn.PROGRAM(classes=classes2,within_=Absyn.TOP()) = Parser.parsebuiltin(filePDEModelica,"UTF-8","",NONE(),acceptedGram=Flags.METAMODELICA);
         classes = listAppend(classes1,classes2);
         p = Absyn.PROGRAM(classes,Absyn.TOP());
         sp = List.map(classes, SCodeUtil.translateClass);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, ((Flags.PDEMODELICA, Config.getLanguageStandard()), (p,sp))::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.PDEMODELICA,(p,sp))::assocLst);
       then (p,sp);
 
     else
@@ -436,35 +432,6 @@ algorithm
       then fail();
   end matchcontinue;
 end getInitialFunctions;
-
-protected function patchSample
-"patch sample definition if --std < 3.3"
-  input output Absyn.Program p;
-protected
-  list<Absyn.Class> classes;
-  Absyn.Within w;
-algorithm
-  if not Config.synchronousFeaturesAllowed() then
-    Absyn.PROGRAM(classes, w) := p;
-    classes := List.map(classes, samplePatch);
-    p := Absyn.PROGRAM(classes, w);
-  end if;
-end patchSample;
-
-protected function samplePatch
-  input Absyn.Class inCls;
-  output Absyn.Class outCls;
-protected
-  Absyn.Class c;
-  Option<Absyn.Comment> cmt;
-  list<Absyn.Path> functionNames;
-algorithm
-  outCls := match(inCls)
-    case c as Absyn.CLASS(name="sample", body = Absyn.OVERLOAD(functionNames, cmt))
-      then Absyn.setClassBody(c, Absyn.OVERLOAD({listHead(functionNames),listHead(functionNames)}, cmt));
-    else inCls;
-  end match;
-end samplePatch;
 
 public function initialGraph
 "The initial environment where instantiation takes place is built

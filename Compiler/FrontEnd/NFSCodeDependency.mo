@@ -45,6 +45,7 @@ public import NFSCodeEnv;
 
 public type Env = NFSCodeEnv.Env;
 
+protected import Config;
 protected import Debug;
 protected import Error;
 protected import Flags;
@@ -579,8 +580,12 @@ algorithm
     // Other cases which doesn't need to be analysed.
     case (SCode.ENUMERATION(), _, _, _, _) then ();
     case (SCode.OVERLOAD(pathLst = paths), _, _, _, _)
-      equation
-        List.map2_0(paths,analyseClass,inEnv,inInfo);
+      algorithm
+	    if not Config.synchronousFeaturesAllowed() and Absyn.pathFirstIdent(listHead(paths)) == "OMC_NO_CLOCK" then
+          List.map2_0({listHead(paths)},analyseClass,inEnv,inInfo);
+		else
+		  List.map2_0(paths,analyseClass,inEnv,inInfo);
+		end if;
       then ();
     case (SCode.PDER(), _, _, _, _) then ();
 
