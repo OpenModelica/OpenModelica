@@ -343,7 +343,9 @@ uniontype Call
     typed_args := matchedFunc.args;
 
     args := {};
-    var := Variability.CONSTANT;
+    var := if Function.isImpure(func) or Function.isOMImpure(func) // if is impure, make it highest variability
+           then Variability.CONTINUOUS
+           else Variability.CONSTANT;
     for a in typed_args loop
       (arg_exp, _, arg_var) := a;
       args := arg_exp :: args;

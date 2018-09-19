@@ -174,9 +174,7 @@ algorithm
 
     case Expression.CALL()
       then
-        if Call.isImpure(exp.call) // do NOT evaluate impure calls!
-        then exp
-        else evalCall(exp.call, target);
+        evalCall(exp.call, target);
 
     case Expression.SIZE(dimIndex = SOME(exp1))
       algorithm

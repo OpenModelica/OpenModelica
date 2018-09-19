@@ -1288,6 +1288,11 @@ uniontype Function
     output Boolean isImpure = fn.attributes.isImpure;
   end isImpure;
 
+  function isOMImpure
+    input Function fn;
+    output Boolean isImpure = not fn.attributes.isOpenModelicaPure;
+  end isOMImpure;
+
   function isFunctionPointer
     input Function fn;
     output Boolean isPointer = fn.attributes.isFunctionPointer;
