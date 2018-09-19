@@ -116,6 +116,10 @@ public:
   static QString BOOLEAN;
   static QString INTEGER;
   static QString REAL;
+  /* OMSimulator system types */
+  static QString systemTLM;
+  static QString systemWC;
+  static QString systemSC;
   /* Global translated variables */
   static QString newModelicaClass;
   static QString createNewModelicaClass;
@@ -350,6 +354,7 @@ public:
   static QString animationPauseTip;
   static QString simulationParams;
   static QString simulationParamsTip;
+  static QString newModel;
   static QString addSystem;
   static QString addSystemTip;
   static QString addSubModel;

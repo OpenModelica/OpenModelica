@@ -125,6 +125,10 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   void setOMSElement(oms3_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms3_element_t* getOMSElement() const {return mpOMSElement;}
+  void setSystemType(oms_system_enu_t type) {mSystemType = type;}
+  oms_system_enu_t getSystemType() {return mSystemType;}
+  void setComponentType(oms3_component_enu_t type) {mComponentType = type;}
+  oms3_component_enu_t getComponentType() {return mComponentType;}
   ssd_element_geometry_t getOMSElementGeometry();
   void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
@@ -181,6 +185,8 @@ private:
   bool mExpanded;
   bool mNonExisting;
   oms3_element_t *mpOMSElement;
+  oms_system_enu_t mSystemType;
+  oms3_component_enu_t mComponentType;
   oms_connector_t *mpOMSConnector;
   const oms_fmu_info_t *mpFMUInfo;
 signals:

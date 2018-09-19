@@ -3087,8 +3087,10 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpEditor = 0;
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
-    mpIconGraphicsScene = 0;
-    mpIconGraphicsView = 0;
+    mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
+    mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
+    mpIconGraphicsView->setScene(mpIconGraphicsScene);
+    mpIconGraphicsView->hide();
     // diagram graphics framework
     mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
     mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
@@ -3712,7 +3714,9 @@ void ModelWidget::createModelWidgetComponents()
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
+      pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       // Only the top level OMSimualtor models will have the editor.
       if (mpLibraryTreeItem->isTopLevel()) {
@@ -3754,6 +3758,7 @@ void ModelWidget::createModelWidgetComponents()
         pMainLayout->addWidget(mpUndoView);
       }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
+      pMainLayout->addWidget(mpIconGraphicsView, 1);
     }
     if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
@@ -5934,7 +5939,9 @@ void ModelWidget::showIconView(bool checked)
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Icon));
   mpDiagramGraphicsView->hide();
-  mpEditor->hide();
+  if (mpEditor) {
+    mpEditor->hide();
+  }
   mpIconGraphicsView->show();
   mpIconGraphicsView->setFocus();
   mpModelWidgetContainer->setPreviousViewType(StringHandler::Icon);
@@ -5966,7 +5973,8 @@ void ModelWidget::showDiagramView(bool checked)
     return;
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     mpIconGraphicsView->hide();
   }
   if (mpEditor) {
@@ -5994,7 +6002,8 @@ void ModelWidget::showTextView(bool checked)
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
+      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     mpIconGraphicsView->hide();
   }
   mpDiagramGraphicsView->hide();

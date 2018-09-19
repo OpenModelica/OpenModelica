@@ -53,7 +53,8 @@ private:
 public:
   static OMSProxy* instance() {return mpInstance;}
 
-  static QString getElementTypeString(oms3_element_type_enu_t type);
+//  static QString getElementTypeString(oms3_element_enu_t type);
+  static QString getSystemTypeString(oms_system_enu_t type);
   static QString getFMUKindString(oms_fmi_kind_enu_t kind);
   static QString getSignalTypeString(oms_signal_type_enu_t type);
   static QString getCausalityString(oms_causality_enu_t causality);

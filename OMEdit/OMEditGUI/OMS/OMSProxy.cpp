@@ -120,24 +120,45 @@ OMSProxy::OMSProxy()
 
 /*!
  * \brief OMSProxy::getElementTypeString
- * Returns the oms_element_type_enu_t as string.
+ * Returns the oms3_element_enu_t as string.
  * \param type
  * \return
  */
-QString OMSProxy::getElementTypeString(oms3_element_type_enu_t type)
+//QString OMSProxy::getElementTypeString(oms3_element_enu_t type)
+//{
+//  switch (type) {
+//    case oms_element_system:
+//      return "System";
+//    case oms_element_external:
+//      return "External Model";
+//    case oms_element_fmu:
+//      return "FMU";
+//    case oms_element_table:
+//      return "Table";
+//    case oms_element_port:
+//      return "Port";
+//    case oms_element_none:
+//    default:
+//      // should never be reached
+//      return "";
+//  }
+//}
+
+/*!
+ * \brief OMSProxy::getSystemTypeString
+ * Returns the oms_system_enu_t as string.
+ * \param type
+ * \return
+ */
+QString OMSProxy::getSystemTypeString(oms_system_enu_t type)
 {
   switch (type) {
-    case oms_component_tlm:
-      return "TLM model";
-    case oms_component_fmi:
-      return "FMI model";
-    case oms_component_fmu_old:
-      return "FMU";
-    case oms_component_table_old:
-      return "Table";
-    case oms_element_port:
-      return "Port";
-    case oms_component_none_old:
+    case oms_system_tlm:
+      return Helper::systemTLM;
+    case oms_system_wc:
+      return Helper::systemWC;
+    case oms_system_sc:
+      return Helper::systemSC;
     default:
       // should never be reached
       return "";

@@ -77,6 +77,8 @@ LibraryTreeItem::LibraryTreeItem()
   setExpanded(false);
   setNonExisting(true);
   setOMSElement(0);
+  setSystemType(oms_system_tlm);
+  setComponentType(oms3_component_fmu);
   setOMSConnector(0);
   setFMUInfo(0);
 }
@@ -133,6 +135,8 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setExpanded(false);
   setNonExisting(false);
   setOMSElement(0);
+  setSystemType(oms_system_tlm);
+  setComponentType(oms3_component_fmu);
   setOMSConnector(0);
   setFMUInfo(0);
 }
@@ -312,24 +316,29 @@ QString LibraryTreeItem::getTooltip() const {
               .arg(Helper::fileLocation).arg(mFileName)
               .arg(QObject::tr("Path")).arg(mNameStructure);
   } else if (mLibraryType == LibraryTreeItem::OMS) {
-    if (isTopLevel() && mpOMSElement) {
+    if (isTopLevel()) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
+                .arg(Helper::type).arg("Model")
                 .arg(Helper::fileLocation).arg(mFileName);
-    } else if (mpOMSElement && mpOMSElement->type == oms_component_fmu_old) {
+    } else if (mpOMSElement && mpOMSElement->type == oms_element_system) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
-                .arg(Helper::description).arg(QString(mpFMUInfo->description))
-                .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
-                .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
+                .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
                 .arg(Helper::fileLocation).arg(mFileName);
-    } else if (mpOMSElement && mpOMSElement->type == oms_component_table_old) {
-      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
-                .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
-                .arg(Helper::fileLocation).arg(mFileName);
+//    } else if (mpOMSElement && mpOMSElement->type == oms_element_system) {
+//      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
+//                .arg(Helper::name).arg(mName)
+//                .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
+//                .arg(Helper::description).arg(QString(mpFMUInfo->description))
+//                .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
+//                .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
+//                .arg(Helper::fileLocation).arg(mFileName);
+//    } else if (mpOMSElement && mpOMSElement->type == oms_element_table) {
+//      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
+//                .arg(Helper::name).arg(mName)
+//                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
+//                .arg(Helper::fileLocation).arg(mFileName);
     } else if (mpOMSConnector) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8")
                 .arg(Helper::name).arg(mName)
@@ -354,18 +363,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
   if (mLibraryType == LibraryTreeItem::CompositeModel) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::OMS) {
-    if (mpOMSElement) {
-      switch (mpOMSElement->type) {
-        case oms_element_fmu:
-          return QIcon(":/Resources/icons/fmu-icon.svg");
-        case oms_element_table:
-          return QIcon(":/Resources/icons/connect-mode.svg");
-        default:
-          return QIcon(":/Resources/icons/tlm-icon.svg");
-      }
-    } else {
-      return QIcon(":/Resources/icons/tlm-icon.svg");
-    }
+    return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
       case StringHandler::Model:
@@ -2440,7 +2438,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   /* We don't have the OMS element for root item so fetch it.
    * pOMSElement and pOMSConnector will be 0 for newly added FMUs so fetch in that case as well.
    */
-  if (!pOMSElement && !pOMSConnector) {
+  if (!pLibraryTreeItem->isTopLevel() && !pOMSElement && !pOMSConnector) {
     OMSProxy::instance()->getElement(pLibraryTreeItem->getNameStructure(), &pOMSElement);
   }
   pLibraryTreeItem->setOMSElement(pOMSElement);

@@ -1997,6 +1997,126 @@ void ComponentNameDialog::updateComponentName()
 }
 
 /*!
+ * \class SystemWidget
+ * \brief Creates a widget with name and type.
+ */
+/*!
+ * \brief SystemWidget::SystemWidget
+ * \param pParent
+ */
+SystemWidget::SystemWidget(QWidget *pParent)
+  : QWidget(pParent)
+{
+  // name
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // type
+  mpTypeLabel = new Label(Helper::type);
+  mpTypeComboBox = new QComboBox;
+  mpTypeComboBox->addItem(Helper::systemTLM, oms_system_tlm);
+  mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
+  mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
+  // layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpNameLabel, 0, 0);
+  pMainLayout->addWidget(mpNameTextBox, 0, 1);
+  pMainLayout->addWidget(mpTypeLabel, 1, 0);
+  pMainLayout->addWidget(mpTypeComboBox, 1, 1);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \class CreateModelDialog
+ * \brief Creates a dialog to allow users to create a new OMSimulator model.
+ */
+/*!
+ * \brief CreateModelDialog::CreateModelDialog
+ * \param pParent
+ */
+CreateModelDialog::CreateModelDialog(QWidget *pParent)
+  : QDialog(pParent)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::newModel));
+  setMinimumWidth(400);
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::newModel);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // model name
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // Root system groupbox
+  mpRootSystemGroupBox = new QGroupBox(tr("Root System"));
+  // system widget
+  mpSystemWidget = new SystemWidget(this);
+  QHBoxLayout *pSystemGroupBoxLayout = new QHBoxLayout;
+  pSystemGroupBoxLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pSystemGroupBoxLayout->addWidget(mpSystemWidget);
+  mpRootSystemGroupBox->setLayout(pSystemGroupBoxLayout);
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(createNewModel()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpNameLabel, 2, 0);
+  pMainLayout->addWidget(mpNameTextBox, 2, 1);
+  pMainLayout->addWidget(mpRootSystemGroupBox, 3, 0, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief CreateModelDialog::createNewModel
+ * Creates a new OMSimulator model.
+ */
+void CreateModelDialog::createNewModel()
+{
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), Helper::ok);
+    return;
+  }
+
+  if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), Helper::ok);
+    return;
+  }
+
+  // create new model
+  if (OMSProxy::instance()->newModel(mpNameTextBox->text())) {
+    QString systemNameStructure = QString("%1.%2").arg(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text());
+    if (OMSProxy::instance()->addSystem(systemNameStructure, (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt())) {
+      LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mpNameTextBox->text(),
+                                                                                   mpNameTextBox->text(), "", false,
+                                                                                   pLibraryTreeModel->getRootLibraryTreeItem());
+      if (pLibraryTreeItem) {
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+      }
+      accept();
+    } else {
+      // if creating the root system failed then delete the model created.
+      OMSProxy::instance()->omsDelete(mpNameTextBox->text());
+    }
+  }
+}
+
+/*!
  * \class AddSystemDialog
  * \brief Creates a dialog to allow users to add a system to OMSimulator model.
  */
@@ -2015,15 +2135,8 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   mpHeading = Utilities::getHeadingLabel(Helper::addSystem);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
-  // name
-  mpNameLabel = new Label(Helper::name);
-  mpNameTextBox = new QLineEdit;
-  // type
-  mpTypeLabel = new Label(Helper::type);
-  mpTypeComboBox = new QComboBox;
-  mpTypeComboBox->addItem("TLM - Transmission Line Modeling System", oms_system_tlm);
-  mpTypeComboBox->addItem("Weakly Coupled - Connected Co-Simulation FMUs System", oms_system_wc);
-  mpTypeComboBox->addItem("Strongly Coupled - Connected Model-Exchange FMUs System", oms_system_sc);
+  // system widget
+  mpSystemWidget = new SystemWidget(this);
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -2038,13 +2151,10 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   // set the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
-  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(mpNameLabel, 2, 0);
-  pMainLayout->addWidget(mpNameTextBox, 2, 1);
-  pMainLayout->addWidget(mpTypeLabel, 3, 0);
-  pMainLayout->addWidget(mpTypeComboBox, 3, 1);
-  pMainLayout->addWidget(mpButtonBox, 4, 0, 1, 2, Qt::AlignRight);
+  pMainLayout->addWidget(mpHeading, 0, 0);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0);
+  pMainLayout->addWidget(mpSystemWidget, 2, 0);
+  pMainLayout->addWidget(mpButtonBox, 3, 0, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -2054,7 +2164,7 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
  */
 void AddSystemDialog::addSystem()
 {
-  if (mpNameTextBox->text().isEmpty()) {
+  if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), Helper::ok);
     return;
@@ -2064,16 +2174,17 @@ void AddSystemDialog::addSystem()
   pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
   for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
-    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpSystemWidget->getNameTextBox()->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
-                            .arg(tr("System"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            .arg(tr("System"), mpSystemWidget->getNameTextBox()->text(),
+                                 pParentLibraryTreeItem->getNameStructure()), Helper::ok);
       return;
     }
   }
   QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
-  AddSystemCommand *pAddSystemCommand = new AddSystemCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false,
-                                                             (oms_system_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
+  AddSystemCommand *pAddSystemCommand = new AddSystemCommand(mpSystemWidget->getNameTextBox()->text(), 0, annotation, mpGraphicsView, false,
+                                                             (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();

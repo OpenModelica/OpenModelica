@@ -353,6 +353,39 @@ private slots:
   void updateComponentName();
 };
 
+class SystemWidget : public QWidget
+{
+  Q_OBJECT
+public:
+  SystemWidget(QWidget *pParent = 0);
+  QLineEdit* getNameTextBox() {return mpNameTextBox;}
+  QComboBox* getTypeComboBox() {return mpTypeComboBox;}
+private:
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpTypeLabel;
+  QComboBox *mpTypeComboBox;
+};
+
+class CreateModelDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  CreateModelDialog(QWidget *pParent = 0);
+private:
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  QGroupBox *mpRootSystemGroupBox;
+  SystemWidget *mpSystemWidget;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void createNewModel();
+};
+
 class AddSystemDialog : public QDialog
 {
   Q_OBJECT
@@ -362,10 +395,7 @@ private:
   GraphicsView *mpGraphicsView;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
-  Label *mpNameLabel;
-  QLineEdit *mpNameTextBox;
-  Label *mpTypeLabel;
-  QComboBox *mpTypeComboBox;
+  SystemWidget *mpSystemWidget;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

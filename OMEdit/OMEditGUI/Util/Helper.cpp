@@ -96,6 +96,7 @@ QString Helper::toolsOptionsPath = "OMEdit->Preferences";
 #else
 QString Helper::toolsOptionsPath = "Tools->Options";
 #endif
+
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");
@@ -114,6 +115,10 @@ QString Helper::STRING = QString("String");
 QString Helper::BOOLEAN = QString("Boolean");
 QString Helper::INTEGER = QString("Integer");
 QString Helper::REAL = QString("Real");
+/* OMSimulator system types */
+QString Helper::systemTLM = QString("TLM - Transmission Line Modeling System");
+QString Helper::systemWC = QString("Weakly Coupled - Connected Co-Simulation FMUs System");
+QString Helper::systemSC = QString("Strongly Coupled - Connected Model-Exchange FMUs System");
 /* Global translated variables */
 QString Helper::newModelicaClass;
 QString Helper::createNewModelicaClass;
@@ -348,6 +353,7 @@ QString Helper::animationPause;
 QString Helper::animationPauseTip;
 QString Helper::simulationParams;
 QString Helper::simulationParamsTip;
+QString Helper::newModel;
 QString Helper::addSystem;
 QString Helper::addSystemTip;
 QString Helper::addSubModel;
@@ -623,6 +629,7 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
+  Helper::newModel = tr("New OMSimulator Model");
   Helper::addSystem = tr("Add System");
   Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
   Helper::addSubModel = tr("Add SubModel");

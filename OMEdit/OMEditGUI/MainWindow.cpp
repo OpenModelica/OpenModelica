@@ -1535,17 +1535,8 @@ void MainWindow::createNewFMIModel()
  */
 void MainWindow::createNewOMSModel()
 {
-  QString newModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
-  // create new model
-  if (OMSProxy::instance()->newModel(newModelName)) {
-    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, newModelName,
-                                                                                 newModelName, "", false,
-                                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
-    if (pLibraryTreeItem) {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    }
-  }
+  CreateModelDialog *pCreateModelDialog = new CreateModelDialog;
+  pCreateModelDialog->exec();
 }
 
 /*!
@@ -3046,8 +3037,8 @@ void MainWindow::createActions()
   mpNewFMIModelAction->setStatusTip(tr("Create a new FMI Model"));
   connect(mpNewFMIModelAction, SIGNAL(triggered()), SLOT(createNewFMIModel()));
   // create new OMSimulator Model action
-  mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New OMSimulator Model"), this);
-  mpNewOMSimulatorModelAction->setStatusTip(tr("Create a new OMSimulator Model"));
+  mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModel, this);
+  mpNewOMSimulatorModelAction->setStatusTip(tr("Creates a new OMSimulator Model"));
   mpNewOMSimulatorModelAction->setShortcut(QKeySequence("Ctrl+t"));
   connect(mpNewOMSimulatorModelAction, SIGNAL(triggered()), SLOT(createNewOMSModel()));
   // open OMSimulator Model file action
