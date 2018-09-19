@@ -343,8 +343,10 @@ uniontype Call
     typed_args := matchedFunc.args;
 
     args := {};
-    var := if Function.isImpure(func) or Function.isOMImpure(func) // if is impure, make it highest variability
-           then Variability.CONTINUOUS
+	// if is impure, make it a parameter expression
+	// see https://trac.openmodelica.org/OpenModelica/ticket/5133
+    var := if Function.isImpure(func) or Function.isOMImpure(func)
+           then Variability.PARAMETER
            else Variability.CONSTANT;
     for a in typed_args loop
       (arg_exp, _, arg_var) := a;
