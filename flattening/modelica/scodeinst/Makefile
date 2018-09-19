@@ -712,6 +712,7 @@ SubscriptWrongType1.mo \
 SubscriptWrongType2.mo \
 Terminate1.mo \
 TerminateInvalid1.mo \
+TestSampleNoClock.mos \
 Time1.mo \
 Time2.mo \
 Time3.mo \
