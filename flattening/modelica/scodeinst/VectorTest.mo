@@ -68,7 +68,7 @@ end VT;
 // end VectorTest.mysum;
 //
 // class VT
-//   input Real[10] u;
+//   input Real[10] u(start = 1.0);
 //   Real[10] x1;
 //   Real[10] x2;
 //   output Real y0;
