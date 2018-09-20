@@ -197,6 +197,9 @@ function convertVarAttributes
   output Option<DAE.VariableAttributes> attributes;
 protected
   Option<Boolean> is_final;
+  Type elTy;
+  Option<Type> arrayTy = NONE();
+  Boolean is_array = false;
 algorithm
   if listEmpty(attrs) and not compAttrs.isFinal then
     attributes := NONE();
@@ -205,12 +208,18 @@ algorithm
 
   is_final := SOME(compAttrs.isFinal);
 
-  attributes := match ty
-    case Type.REAL() then convertRealVarAttributes(attrs, is_final);
-    case Type.INTEGER() then convertIntVarAttributes(attrs, is_final);
-    case Type.BOOLEAN() then convertBoolVarAttributes(attrs, is_final);
-    case Type.STRING() then convertStringVarAttributes(attrs, is_final);
-    case Type.ENUMERATION() then convertEnumVarAttributes(attrs, is_final);
+  elTy := ty;
+  if Type.isArray(ty) then
+    elTy := Type.arrayElementType(ty);
+    arrayTy := SOME(ty);
+  end if;
+
+  attributes := match elTy
+    case Type.REAL() then convertRealVarAttributes(attrs, is_final, arrayTy);
+    case Type.INTEGER() then convertIntVarAttributes(attrs, is_final, arrayTy);
+    case Type.BOOLEAN() then convertBoolVarAttributes(attrs, is_final, arrayTy);
+    case Type.STRING() then convertStringVarAttributes(attrs, is_final, arrayTy);
+    case Type.ENUMERATION() then convertEnumVarAttributes(attrs, is_final, arrayTy);
     else NONE();
   end match;
 end convertVarAttributes;
@@ -218,6 +227,7 @@ end convertVarAttributes;
 function convertRealVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Option<Boolean> isFinal;
+  input Option<Type> arrayTy;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -260,6 +270,7 @@ end convertRealVarAttributes;
 function convertIntVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Option<Boolean> isFinal;
+  input Option<Type> arrayTy;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -295,6 +306,7 @@ end convertIntVarAttributes;
 function convertBoolVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Option<Boolean> isFinal;
+  input Option<Type> arrayTy;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -326,6 +338,7 @@ end convertBoolVarAttributes;
 function convertStringVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Option<Boolean> isFinal;
+  input Option<Type> arrayTy;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
@@ -357,6 +370,7 @@ end convertStringVarAttributes;
 function convertEnumVarAttributes
   input list<tuple<String, Binding>> attrs;
   input Option<Boolean> isFinal;
+  input Option<Type> arrayTy;
   output Option<DAE.VariableAttributes> attributes;
 protected
   String name;
