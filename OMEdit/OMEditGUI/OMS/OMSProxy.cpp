@@ -119,32 +119,6 @@ OMSProxy::OMSProxy()
 }
 
 /*!
- * \brief OMSProxy::getElementTypeString
- * Returns the oms3_element_enu_t as string.
- * \param type
- * \return
- */
-//QString OMSProxy::getElementTypeString(oms3_element_enu_t type)
-//{
-//  switch (type) {
-//    case oms_element_system:
-//      return "System";
-//    case oms_element_external:
-//      return "External Model";
-//    case oms_element_fmu:
-//      return "FMU";
-//    case oms_element_table:
-//      return "Table";
-//    case oms_element_port:
-//      return "Port";
-//    case oms_element_none:
-//    default:
-//      // should never be reached
-//      return "";
-//  }
-//}
-
-/*!
  * \brief OMSProxy::getSystemTypeString
  * Returns the oms_system_enu_t as string.
  * \param type
@@ -285,6 +259,19 @@ bool OMSProxy::omsDelete(QString cref)
 bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
 {
   oms_status_enu_t status = oms3_addSystem(cref.toStdString().c_str(), type);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getSystemType
+ * Get the system type.
+ * \param cref
+ * \param pType
+ * \return
+ */
+bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
+{
+  oms_status_enu_t status = oms3_getSystemType(cref.toStdString().c_str(), pType);
   return statusToBool(status);
 }
 
@@ -491,9 +478,9 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
  * \param pElements
  * \return
  */
-bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
+bool OMSProxy::getElements(QString cref, oms3_element_t*** pElements)
 {
-  oms_status_enu_t status = oms2_getElements(cref.toStdString().c_str(), pElements);
+  oms_status_enu_t status = oms3_getElements(cref.toStdString().c_str(), pElements);
   return statusToBool(status);
 }
 

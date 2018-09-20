@@ -2052,6 +2052,7 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
   mpRootSystemGroupBox = new QGroupBox(tr("Root System"));
   // system widget
   mpSystemWidget = new SystemWidget(this);
+  mpSystemWidget->getNameTextBox()->setText("Root");
   QHBoxLayout *pSystemGroupBoxLayout = new QHBoxLayout;
   pSystemGroupBoxLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pSystemGroupBoxLayout->addWidget(mpSystemWidget);
@@ -2172,6 +2173,13 @@ void AddSystemDialog::addSystem()
 
   LibraryTreeItem *pParentLibraryTreeItem;
   pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem();
+  // Check if Model already have the system
+  if (pParentLibraryTreeItem->isTopLevel() && pParentLibraryTreeItem->childrenSize() > 0) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("A model already have a system. Only one system is allowed inside a model."), Helper::ok);
+    return;
+  }
+  // Check if system already exists
   for (int i = 0 ; i < pParentLibraryTreeItem->childrenSize() ; i++) {
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpSystemWidget->getNameTextBox()->text()) == 0) {
@@ -2182,9 +2190,40 @@ void AddSystemDialog::addSystem()
       return;
     }
   }
+  // Check if system is allowed
+  oms_system_enu_t systemType = (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt();
+  switch (systemType) {
+    case oms_system_tlm:
+      if (pParentLibraryTreeItem->getOMSElement()) {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                              tr("A TLM system must be the the root system of a model."), Helper::ok);
+        return;
+      }
+      break;
+    case oms_system_wc:
+      if (pParentLibraryTreeItem->getOMSElement() && oms_system_tlm != pParentLibraryTreeItem->getSystemType())
+      {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                              tr("A WC system must be the root system or a subsystem of a TLM system."), Helper::ok);
+        return;
+      }
+      break;
+    case oms_system_sc:
+      if (pParentLibraryTreeItem->getOMSElement() && oms_system_wc != pParentLibraryTreeItem->getSystemType()) {
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                              tr("A SC system must be the root system or a subsystem of a WC system."), Helper::ok);
+        return;
+      }
+      break;
+    default:
+      // Should never be reached.
+      break;
+  }
+
+  // add the system
   QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
-  AddSystemCommand *pAddSystemCommand = new AddSystemCommand(mpSystemWidget->getNameTextBox()->text(), 0, annotation, mpGraphicsView, false,
-                                                             (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt());
+  AddSystemCommand *pAddSystemCommand = new AddSystemCommand(mpSystemWidget->getNameTextBox()->text(), 0, annotation,
+                                                             mpGraphicsView, false, systemType);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();

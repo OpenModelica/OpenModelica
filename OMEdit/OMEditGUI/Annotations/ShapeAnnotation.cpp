@@ -1694,9 +1694,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
     }
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
     BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(this);
-    if (pBitmapAnnotation && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()
-        && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu_old
-            || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old)) {
+    if (pBitmapAnnotation && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()) {
       menu.addAction(mpDeleteSubModelIconAction);
     } else {
       return;

@@ -1335,9 +1335,7 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
     return false;
   }
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    if (mpModelWidget->getLibraryTreeItem()->getOMSElement()
-        && (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu_old
-            || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old)) {
+    if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
       switch (key) {
         case Qt::Key_Delete:
         case Qt::Key_R: // rotate
@@ -2692,8 +2690,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
         if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_element_system) {
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
-        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu_old
-                   || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old) {
+        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_element_component) {
           menu.addAction(MainWindow::instance()->getAddOrEditSubModelIconAction());
         }
         menu.addAction(MainWindow::instance()->getAddConnectorAction());
@@ -3104,13 +3101,9 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
       mpUndoView = new QUndoView(mpUndoStack);
     }
     mpEditor = 0;
-    if ((mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old)
-        || (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_table_old)
-        || mpLibraryTreeItem->getOMSConnector()) {
-      mpUndoStack->setEnabled(false);
-      drawOMSModelElements();
-      mpUndoStack->setEnabled(true);
-    }
+    mpUndoStack->setEnabled(false);
+    drawOMSModelIconElements();
+    mpUndoStack->setEnabled(true);
   } else {
     // icon graphics framework
     mpIconGraphicsScene = 0;
@@ -3739,14 +3732,10 @@ void ModelWidget::createModelWidgetComponents()
         mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
         connect(OptionsDialog::instance(), SIGNAL(omsimulatorEditorSettingsChanged()), pOMSimulatorHighlighter, SLOT(settingsChanged()));
       }
-      // only get the components and connections if the we are not creating a new class.
-      if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system &&
-          !mpLibraryTreeItem->getFileName().isEmpty()) {
-        mpUndoStack->setEnabled(false);
-        drawOMSModelElements();
-        drawOMSModelConnections();
-        mpUndoStack->setEnabled(true);
-      }
+      mpUndoStack->setEnabled(false);
+      drawOMSModelDiagramElements();
+      drawOMSModelConnections();
+      mpUndoStack->setEnabled(true);
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpViewTypeLabel, 0);
@@ -5664,6 +5653,78 @@ void ModelWidget::getCompositeModelConnections()
   }
 }
 
+void ModelWidget::drawOMSModelIconElements()
+{
+  if (mpLibraryTreeItem->isTopLevel()) {
+    return;
+  } else if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+    if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
+      // Draw bitmap with icon source
+      QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
+      QFileInfo fileInfo(url.toLocalFile());
+      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpIconGraphicsView);
+      pBitmapAnnotation->initializeTransformation();
+      pBitmapAnnotation->drawCornerItems();
+      pBitmapAnnotation->setCornerItemsActiveOrPassive();
+      mpIconGraphicsView->addShapeToList(pBitmapAnnotation);
+      mpIconGraphicsView->addItem(pBitmapAnnotation);
+    } else {
+      // Rectangle shape as base
+      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
+      pRectangleAnnotation->initializeTransformation();
+      pRectangleAnnotation->drawCornerItems();
+      pRectangleAnnotation->setCornerItemsActiveOrPassive();
+      mpIconGraphicsView->addShapeToList(pRectangleAnnotation);
+      mpIconGraphicsView->addItem(pRectangleAnnotation);
+      // Text for name
+      TextAnnotation *pTextAnnotation = new TextAnnotation(mpIconGraphicsView);
+      pTextAnnotation->initializeTransformation();
+      pTextAnnotation->drawCornerItems();
+      pTextAnnotation->setCornerItemsActiveOrPassive();
+      mpIconGraphicsView->addShapeToList(pTextAnnotation);
+      mpIconGraphicsView->addItem(pTextAnnotation);
+    }
+  }
+}
+
+void ModelWidget::drawOMSModelDiagramElements()
+{
+  if (mpLibraryTreeItem->isTopLevel()) {
+    for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+      LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+      if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
+        // check if we have zero width and height
+        double x1, y1, x2, y2;
+        x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
+        y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
+        x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
+        y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
+        double width = x2 - x1;
+        double height = y2 - y1;
+        if (width <= 0 && height <= 0) {
+          x1 = -10.0;
+          y1 = -10.0;
+          x2 = 10.0;
+          y2 = 10.0;
+        }
+        // Load the ModelWidget if not loaded already
+        if (!pChildLibraryTreeItem->getModelWidget()) {
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
+        }
+
+        QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
+                             .arg(x1).arg(y1)
+                             .arg(x2).arg(y2)
+                             .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
+        AddSystemCommand *pAddSystemCommand = new AddSystemCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
+                                                                   annotation, mpDiagramGraphicsView, true,
+                                                                   pChildLibraryTreeItem->getSystemType());
+        mpUndoStack->push(pAddSystemCommand);
+      }
+    }
+  }
+}
+
 /*!
  * \brief ModelWidget::drawOMSModelElements
  * Draws the OMSimulator model elements.
@@ -5703,7 +5764,7 @@ void ModelWidget::drawOMSModelElements()
           mpUndoStack->push(pAddSubModelCommand);
         }
       }
-    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old || mpLibraryTreeItem->getOMSElement()->type == oms_component_table_old) {
+    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_element_component) {
       if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
         // Draw bitmap with icon source
         QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
@@ -6616,8 +6677,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       oms = true;
       oms_submodel = false;
       oms_connector = false;
-      if (pLibraryTreeItem->getOMSElement() && (pLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old
-                                                || pLibraryTreeItem->getOMSElement()->type == oms_component_table_old)) {
+      if (pLibraryTreeItem->getOMSElement()) {
         oms_submodel = true;
       }
       if (pLibraryTreeItem->getOMSConnector()) {

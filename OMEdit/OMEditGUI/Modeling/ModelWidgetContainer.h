@@ -488,6 +488,8 @@ private:
   void getCompositeModelSubModels();
   void getCompositeModelConnections();
   void drawOMSModelElements();
+  void drawOMSModelIconElements();
+  void drawOMSModelDiagramElements();
   void drawOMSModelConnections();
 private slots:
   void showIconView(bool checked);

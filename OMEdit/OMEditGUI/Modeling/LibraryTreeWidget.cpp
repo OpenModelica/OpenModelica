@@ -322,7 +322,7 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::type).arg("Model")
                 .arg(Helper::fileLocation).arg(mFileName);
     } else if (mpOMSElement && mpOMSElement->type == oms_element_system) {
-      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
                 .arg(Helper::fileLocation).arg(mFileName);
@@ -2283,17 +2283,19 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
       }
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-//    oms_element_t** pElements = NULL;
-//    if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system &&
-//        OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
-//      for (int i = 0 ; pElements[i] ; i++) {
-//        QString name = StringHandler::getLastWordAfterDot(pElements[i]->name);
-//        createOMSLibraryTreeItemImpl(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-//                                     "", pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
-//      }
-//    } else if (pLibraryTreeItem->getOMSElement()) {
-//      createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
-//    }
+    // we only call oms3_getElements on the model
+    if (pLibraryTreeItem->isTopLevel()) {
+      oms3_element_t** pElements = NULL;
+      if (OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
+        for (int i = 0 ; pElements[i] ; i++) {
+          QString name = QString(pElements[i]->name);
+          createOMSLibraryTreeItemImpl(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                       "", pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i]);
+        }
+      }
+    } else if (pLibraryTreeItem->getOMSElement()) {
+      createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
+    }
   } else {
     qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
   }
@@ -2442,6 +2444,12 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
     OMSProxy::instance()->getElement(pLibraryTreeItem->getNameStructure(), &pOMSElement);
   }
   pLibraryTreeItem->setOMSElement(pOMSElement);
+  if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+    oms_system_enu_t systemType;
+    if (OMSProxy::instance()->getSystemType(pLibraryTreeItem->getNameStructure(), &systemType)) {
+      pLibraryTreeItem->setSystemType(systemType);
+    }
+  }
   pLibraryTreeItem->setOMSConnector(pOMSConnector);
   if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old) {
     const oms_fmu_info_t *pFMUInfo;

@@ -53,7 +53,6 @@ private:
 public:
   static OMSProxy* instance() {return mpInstance;}
 
-//  static QString getElementTypeString(oms3_element_enu_t type);
   static QString getSystemTypeString(oms_system_enu_t type);
   static QString getFMUKindString(oms_fmi_kind_enu_t kind);
   static QString getSignalTypeString(oms_signal_type_enu_t type);
@@ -64,6 +63,7 @@ public:
   bool newModel(QString cref);
   bool omsDelete(QString cref);
   bool addSystem(QString cref, oms_system_enu_t type);
+  bool getSystemType(QString cref, oms_system_enu_t *pType);
 
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
@@ -79,7 +79,7 @@ public:
   bool list(QString ident, QString *pContents);
   bool getElement(QString cref, oms3_element_t **pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
-  bool getElements(QString cref, oms_element_t*** pElements);
+  bool getElements(QString cref, oms3_element_t ***pElements);
   bool getSubModelPath(QString cref, QString* pPath);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool setConnectorGeometry(QString connector, const ssd_connector_geometry_t* pGeometry);
