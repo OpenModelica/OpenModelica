@@ -141,7 +141,11 @@ typedef struct threadData_s {
   void *stackBottom; /* Actually offset 64 kB from bottom, just to never reach the bottom */
 } threadData_t;
 
+#if defined(OMC_BOOTSTRAPPING_STAGE_1) || defined(OMC_BOOTSTRAPPING_STAGE_2)
 typedef threadData_t* OpenModelica_threadData_ThreadData;
+#else
+typedef threadData_t OpenModelica_threadData_ThreadData;
+#endif
 
 #include "meta/meta_modelica_segv.h"
 void mmc_do_out_of_memory() __attribute__ ((noreturn));

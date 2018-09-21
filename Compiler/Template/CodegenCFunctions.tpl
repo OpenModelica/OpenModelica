@@ -844,14 +844,13 @@ template extReturnType(SimExtArg extArg)
  "Generates return type for external function."
 ::=
   match extArg
-  case ex as SIMEXTARG(__)    then extType(type_,true /*Treat this as an input (pass by value)*/,false)
+  case ex as SIMEXTARG(__)    then extType(type_,true /*Treat this as an input (pass by value, except for records)*/,false,true)
   case SIMNOEXTARG(__)  then "void"
   case SIMEXTARGEXP(__) then error(sourceInfo(), 'Expression types are unsupported as return arguments <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
   else error(sourceInfo(), "Unsupported return argument")
 end extReturnType;
 
-
-template extType(Type type, Boolean isInput, Boolean isArray)
+template extType(Type type, Boolean isInput, Boolean isArray, Boolean returnType)
  "Generates type for external function argument or return value."
 ::=
   let s = match type
@@ -860,11 +859,11 @@ template extType(Type type, Boolean isInput, Boolean isArray)
   case T_STRING(__)      then "const char*"
   case T_BOOL(__)        then "int"
   case T_ENUMERATION(__) then "int"
-  case T_ARRAY(__)       then extType(ty,isInput,true)
+  case T_ARRAY(__)       then extType(ty,isInput,true,returnType)
   case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
                       then "void *"
   case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then '<%underscorePath(rname)%>'
+                      then '<%underscorePath(rname)%><%if returnType then "" else "*"%>'
   case T_METATYPE(__)
   case T_METABOXED(__)
        then "modelica_metatype"
@@ -901,12 +900,12 @@ template extFunDefArg(SimExtArg extArg)
   match extArg
   case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
     let name = contextCref(c,contextFunction,&auxFunction)
-    let typeStr = extType(t,ii,ia)
+    let typeStr = extType(t,ii,ia,false)
     <<
     <%typeStr%> /*<%name%>*/
     >>
   case SIMEXTARGEXP(__) then
-    let typeStr = extType(type_,true,false)
+    let typeStr = extType(type_,true,false,false)
     <<
     <%typeStr%>
     >>
@@ -2127,7 +2126,7 @@ template extFunCallC(Function fun, Text &preExp, Text &varDecls, Text &auxFuncti
 match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
-  let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &auxFunction) ;separator="\n")
+  let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &auxFunction, false) ;separator="\n")
   let _ = (biVars |> bivar => extFunCallBiVar(bivar, &preExp, &varDecls, &auxFunction) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then
@@ -2145,7 +2144,7 @@ case EXTERNAL_FUNCTION(__) then
     else
       ""
   <<
-  <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls, &auxFunction)%>
+  <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls, &auxFunction, true)%>
   <%dynamicCheck%>
   <%returnAssign%><%fname%>(<%args%>);
   <%extArgs |> arg => extFunCallVarcopy(arg, &auxFunction) ;separator="\n"%>
@@ -2187,7 +2186,7 @@ case EXTERNAL_FUNCTION(__) then
 
 end extFunCallF77;
 
-template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction)
+template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boolean isReturn)
  "Helper to extFunCall."
 ::=
   match arg
@@ -2218,15 +2217,15 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction)
       else
         error(sourceInfo(), 'Got function pointer that is not a CREF_IDENT: <%crefStr(c)%>, <%unparseType(ty)%>'))
     else
-      let &varDecls += '<%extType(ty,true,false)%> <%extVarName(c)%>;<%\n%>'
+      let &varDecls += '<%extType(ty,true,false,false)%> <%extVarName(c)%>;<%\n%>'
       <<
-      <%extVarName(c)%> = (<%extType(ty,true,false)%>)<%contextCref(c,contextFunction,&auxFunction)%>;
+      <%extVarName(c)%> = (<%extType(ty,true,false,false)%>)<%match ty case T_COMPLEX(complexClassType=RECORD(__)) then "&" else ""%><%contextCref(c,contextFunction,&auxFunction)%>;
       >>
   case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     match oi case 0 then
       ""
     else
-      let &varDecls += '<%extType(ty,true,false)%> <%extVarName(c)%>;<%\n%>'
+      let &varDecls += '<%extType(ty,true,false,true)%> <%extVarName(c)%>;<%\n%>'
       ""
 end extFunCallVardecl;
 
@@ -2361,7 +2360,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
     let shortTypeStr = expTypeShort(t)
     let &varDecls += 'void *<%name%>_c89;<%\n%>'
     let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(&(<%name%>));<%\n%>'
-    '(<%extType(t,isInput,true)%>) <%name%>_c89'
+    '(<%extType(t,isInput,true,false)%>) <%name%>_c89'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = match t case T_STRING(__) then contextCref(c,contextFunction,&auxFunction) else extVarName(c)
     (match t case T_STRING(__) then 'MMC_STRINGDATA(<%cr%>)' else cr)
@@ -4400,7 +4399,7 @@ template daeExternalCExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   match typeof(exp)
     case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
-      '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+      '(<%extType(typeof(exp),true,true,false)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
     case T_STRING(__) then
       let mstr = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
       'MMC_STRINGDATA(<%mstr%>)'
@@ -4413,7 +4412,7 @@ template daeExternalF77Exp(Exp exp, Context context, Text &preExp, Text &varDecl
   match typeof(exp)
     case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
-      '(<%extType(typeof(exp),true,true)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+      '(<%extType(typeof(exp),true,true,false)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
     case T_STRING(__) then
       let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
       let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)
