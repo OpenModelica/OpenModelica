@@ -186,6 +186,7 @@
         <file>Resources/icons/update.svg</file>
         <file>Resources/icons/fmu-icon.svg</file>
         <file>Resources/icons/add-system.svg</file>
+        <file>Resources/icons/bitmap-delete.svg</file>
         <file>Resources/icons/add-connector.svg</file>
         <file>Resources/icons/bus.svg</file>
     </qresource>

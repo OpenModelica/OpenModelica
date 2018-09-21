@@ -445,10 +445,6 @@ void ShapeAnnotation::createActions()
   mpEditTransitionAction = new QAction(Helper::editTransition, mpGraphicsView);
   mpEditTransitionAction->setStatusTip(tr("Edits the transition"));
   connect(mpEditTransitionAction, SIGNAL(triggered()), SLOT(editTransition()));
-  // delete submodel icon action
-  mpDeleteSubModelIconAction = new QAction(QIcon(":/Resources/icons/delete.svg"), tr("Delete SubModel Icon"), mpGraphicsView);
-  mpDeleteSubModelIconAction->setStatusTip(tr("Deletes the submodel icon"));
-  connect(mpDeleteSubModelIconAction, SIGNAL(triggered()), SLOT(deleteSubModelIcon()));
 }
 
 /*!
@@ -1598,16 +1594,6 @@ void ShapeAnnotation::editTransition()
 }
 
 /*!
- * \brief ShapeAnnotation::deleteSubModelIcon
- * Slot activated when delete submodel icon option is chosen from context menu of the shape.
- */
-void ShapeAnnotation::deleteSubModelIcon()
-{
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new DeleteSubModelIconCommand(mOriginalFileName, mpGraphicsView));
-  mpGraphicsView->getModelWidget()->updateModelText();
-}
-
-/*!
  * \brief ShapeAnnotation::alignInterfaces
  * Slot activated when Align Interfaces option is chosen from context menu of the shape.
  */
@@ -1695,7 +1681,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
     BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(this);
     if (pBitmapAnnotation && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()) {
-      menu.addAction(mpDeleteSubModelIconAction);
+      menu.addAction(MainWindow::instance()->getDeleteIconAction());
     } else {
       return;
     }

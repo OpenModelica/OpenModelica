@@ -2685,16 +2685,21 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       menu.addSeparator();
       menu.addAction(mpSimulationParamsAction);
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      menu.addSeparator();
-      menu.addAction(MainWindow::instance()->getAddSystemAction());
-      if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
-        if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_element_system) {
-          menu.addAction(MainWindow::instance()->getAddSubModelAction());
-        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_element_component) {
-          menu.addAction(MainWindow::instance()->getAddOrEditSubModelIconAction());
-        }
+      if (mpModelWidget->getLibraryTreeItem()->isTopLevel() || mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
+        menu.addSeparator();
+        menu.addAction(MainWindow::instance()->getAddSystemAction());
+      }
+      if (mpModelWidget->getLibraryTreeItem()->isSystemElement() || mpModelWidget->getLibraryTreeItem()->isComponentElement()) {
+        menu.addSeparator();
+        menu.addAction(MainWindow::instance()->getAddOrEditIconAction());
+        menu.addAction(MainWindow::instance()->getDeleteIconAction());
+        menu.addSeparator();
         menu.addAction(MainWindow::instance()->getAddConnectorAction());
         menu.addAction(MainWindow::instance()->getAddBusAction());
+        if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
+          menu.addSeparator();
+          menu.addAction(MainWindow::instance()->getAddSubModelAction());
+        }
       }
     }
     menu.exec(event->globalPos());
@@ -3084,10 +3089,15 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpEditor = 0;
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
-    mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
-    mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
-    mpIconGraphicsView->setScene(mpIconGraphicsScene);
-    mpIconGraphicsView->hide();
+    if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+      mpIconGraphicsScene = new GraphicsScene(StringHandler::Icon, this);
+      mpIconGraphicsView = new GraphicsView(StringHandler::Icon, this);
+      mpIconGraphicsView->setScene(mpIconGraphicsScene);
+      mpIconGraphicsView->hide();
+    } else {
+      mpIconGraphicsScene = 0;
+      mpIconGraphicsView = 0;
+    }
     // diagram graphics framework
     mpDiagramGraphicsScene = new GraphicsScene(StringHandler::Diagram, this);
     mpDiagramGraphicsView = new GraphicsView(StringHandler::Diagram, this);
@@ -3707,9 +3717,11 @@ void ModelWidget::createModelWidgetComponents()
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
       mpUndoStack->clear();
     } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-      connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
+      if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+        connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
+        pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
+      }
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
-      pViewButtonsHorizontalLayout->addWidget(mpIconViewToolButton);
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
       // Only the top level OMSimualtor models will have the editor.
       if (mpLibraryTreeItem->isTopLevel()) {
@@ -3747,7 +3759,9 @@ void ModelWidget::createModelWidgetComponents()
         pMainLayout->addWidget(mpUndoView);
       }
       pMainLayout->addWidget(mpDiagramGraphicsView, 1);
-      pMainLayout->addWidget(mpIconGraphicsView, 1);
+      if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
+        pMainLayout->addWidget(mpIconGraphicsView, 1);
+      }
     }
     if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
@@ -5657,7 +5671,7 @@ void ModelWidget::drawOMSModelIconElements()
 {
   if (mpLibraryTreeItem->isTopLevel()) {
     return;
-  } else if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+  } else if (mpLibraryTreeItem->isSystemElement()) {
     if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
       // Draw bitmap with icon source
       QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
@@ -5732,7 +5746,7 @@ void ModelWidget::drawOMSModelDiagramElements()
 void ModelWidget::drawOMSModelElements()
 {
   if (mpLibraryTreeItem->getOMSElement()) {
-    if (mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+    if (mpLibraryTreeItem->isSystemElement()) {
       for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
         LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
         if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
@@ -5764,7 +5778,7 @@ void ModelWidget::drawOMSModelElements()
           mpUndoStack->push(pAddSubModelCommand);
         }
       }
-    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_element_component) {
+    } else if (mpLibraryTreeItem->isComponentElement()) {
       if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
         // Draw bitmap with icon source
         QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
@@ -5889,7 +5903,7 @@ void ModelWidget::drawOMSModelElements()
  */
 void ModelWidget::drawOMSModelConnections()
 {
-  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+  if (mpLibraryTreeItem->isSystemElement()) {
     MessagesWidget *pMessagesWidget = MessagesWidget::instance();
     oms_connection_t** pConnections = NULL;
     if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
@@ -6034,8 +6048,7 @@ void ModelWidget::showDiagramView(bool checked)
     return;
   }
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::Diagram));
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
-      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpIconGraphicsView) {
     mpIconGraphicsView->hide();
   }
   if (mpEditor) {
@@ -6063,8 +6076,7 @@ void ModelWidget::showTextView(bool checked)
   }
   mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   mpViewTypeLabel->setText(StringHandler::getViewType(StringHandler::ModelicaText));
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica
-      || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpIconGraphicsView) {
     mpIconGraphicsView->hide();
   }
   mpDiagramGraphicsView->hide();
@@ -6235,10 +6247,11 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
   connect(MainWindow::instance()->getAddSystemAction(), SIGNAL(triggered()), SLOT(addSystem()));
+  connect(MainWindow::instance()->getAddOrEditIconAction(), SIGNAL(triggered()), SLOT(addOrEditIcon()));
+  connect(MainWindow::instance()->getDeleteIconAction(), SIGNAL(triggered()), SLOT(deleteIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
-  connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
@@ -6679,9 +6692,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       oms_system = false;
       oms_submodel = false;
       oms_connector = false;
-      if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+      if (pLibraryTreeItem->isSystemElement()) {
         oms_system = true;
-      } else if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_component) {
+      } else if (pLibraryTreeItem->isComponentElement()) {
         oms_submodel = true;
       }
       if (pLibraryTreeItem->getOMSConnector()) {
@@ -6754,10 +6767,11 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && (oms_model || oms_system));
+  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && (oms_system || oms_submodel));
+  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && (oms_system || oms_submodel));
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && oms_system);
   MainWindow::instance()->getAddBusAction()->setEnabled(enabled && (oms_system || oms_submodel));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && oms_system);
-  MainWindow::instance()->getAddOrEditSubModelIconAction()->setEnabled(enabled && oms_submodel);
   MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && oms_model);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -6951,35 +6965,39 @@ void ModelWidgetContainer::addSystem()
 }
 
 /*!
- * \brief ModelWidgetContainer::addSubModel
- * Opens the AddFMUDialog.
+ * \brief ModelWidgetContainer::addOrEditIcon
+ * Opens the AddOrEditSubModelIconDialog.
  */
-void ModelWidgetContainer::addSubModel()
+void ModelWidgetContainer::addOrEditIcon()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-    AddSubModelDialog *pAddFMUDialog = new AddSubModelDialog(pModelWidget->getDiagramGraphicsView());
-    pAddFMUDialog->exec();
+  if (pModelWidget && pModelWidget->getIconGraphicsView()) {
+    if (pModelWidget->getIconGraphicsView()->getShapesList().size() > 0) {
+      ShapeAnnotation *pShapeAnnotation = pModelWidget->getIconGraphicsView()->getShapesList().at(0);
+      if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) { // edit case
+        AddOrEditIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditIconDialog(pShapeAnnotation,
+                                                                                                    pModelWidget->getIconGraphicsView());
+        pAddOrEditSubModelIconDialog->exec();
+      } else { // add case
+        AddOrEditIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditIconDialog(0, pModelWidget->getIconGraphicsView());
+        pAddOrEditSubModelIconDialog->exec();
+      }
+    }
   }
 }
 
 /*!
- * \brief ModelWidgetContainer::addOrEditSubModelIcon
- * Opens the AddOrEditSubModelIconDialog.
+ * \brief ModelWidgetContainer::deleteIcon
+ * Deletes the icon from OMSimulator system or component.
  */
-void ModelWidgetContainer::addOrEditSubModelIcon()
+void ModelWidgetContainer::deleteIcon()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-    if (pModelWidget->getDiagramGraphicsView()->getShapesList().size() > 0) {
-      ShapeAnnotation *pShapeAnnotation = pModelWidget->getDiagramGraphicsView()->getShapesList().at(0);
-      if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) { // edit case
-        AddOrEditSubModelIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditSubModelIconDialog(pShapeAnnotation,
-                                                                                                    pModelWidget->getDiagramGraphicsView());
-        pAddOrEditSubModelIconDialog->exec();
-      } else { // add case
-        AddOrEditSubModelIconDialog *pAddOrEditSubModelIconDialog = new AddOrEditSubModelIconDialog(0, pModelWidget->getDiagramGraphicsView());
-        pAddOrEditSubModelIconDialog->exec();
+  if (pModelWidget && pModelWidget->getIconGraphicsView()) {
+    if (pModelWidget->getIconGraphicsView()->getShapesList().size() > 0) {
+      ShapeAnnotation *pShapeAnnotation = pModelWidget->getIconGraphicsView()->getShapesList().at(0);
+      if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+        pModelWidget->getUndoStack()->push(new DeleteIconCommand(pShapeAnnotation->getFileName(), pModelWidget->getIconGraphicsView()));
       }
     }
   }
@@ -7017,5 +7035,18 @@ void ModelWidgetContainer::addBus()
     }
     AddBusDialog *pAddBusDialog = new AddBusDialog(components, pModelWidget->getDiagramGraphicsView());
     pAddBusDialog->exec();
+  }
+}
+
+/*!
+ * \brief ModelWidgetContainer::addSubModel
+ * Opens the AddFMUDialog.
+ */
+void ModelWidgetContainer::addSubModel()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+    AddSubModelDialog *pAddFMUDialog = new AddSubModelDialog(pModelWidget->getDiagramGraphicsView());
+    pAddFMUDialog->exec();
   }
 }

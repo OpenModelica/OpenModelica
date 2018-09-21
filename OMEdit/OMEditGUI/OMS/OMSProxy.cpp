@@ -467,7 +467,7 @@ bool OMSProxy::getElement(QString cref, oms3_element_t** pElement)
  */
 bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
 {
-  oms_status_enu_t status = oms2_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms3_setElementGeometry(cref.toStdString().c_str(), pGeometry);
   return statusToBool(status);
 }
 

@@ -2215,19 +2215,19 @@ void FMUPropertiesCommand::undo()
   }
 }
 
-AddSubModelIconCommand::AddSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+AddIconCommand::AddIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mIcon = icon;
   mpGraphicsView = pGraphicsView;
-  setText(QString("Add SubModel Icon"));
+  setText(QString("Add Icon"));
 }
 
 /*!
- * \brief AddSubModelIconCommand::redo
- * Redo the AddSubModelIconCommand
+ * \brief AddIconCommand::redo
+ * Redo the AddIconCommand
  */
-void AddSubModelIconCommand::redo()
+void AddIconCommand::redo()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2241,7 +2241,7 @@ void AddSubModelIconCommand::redo()
     elementGeometry.iconSource = new char[size];
     memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
     if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
-      // clear all shapes of the submodel first
+      // clear all shapes first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
@@ -2260,10 +2260,10 @@ void AddSubModelIconCommand::redo()
 }
 
 /*!
- * \brief AddSubModelIconCommand::undo
- * Undo the AddSubModelIconCommand
+ * \brief AddIconCommand::undo
+ * Undo the AddIconCommand
  */
-void AddSubModelIconCommand::undo()
+void AddIconCommand::undo()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2274,7 +2274,7 @@ void AddSubModelIconCommand::undo()
     }
     elementGeometry.iconSource = NULL;
     if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
-      // clear all shapes of the submodel first
+      // clear all shapes first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
@@ -2299,20 +2299,20 @@ void AddSubModelIconCommand::undo()
   }
 }
 
-UpdateSubModelIconCommand::UpdateSubModelIconCommand(QString oldIcon, QString newIcon, ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
+UpdateIconCommand::UpdateIconCommand(QString oldIcon, QString newIcon, ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mOldIcon = oldIcon;
   mNewIcon = newIcon;
   mpShapeAnnotation = pShapeAnnotation;
-  setText(QString("Update SubModel Icon"));
+  setText(QString("Update Icon"));
 }
 
 /*!
- * \brief UpdateSubModelIconCommand::redo
- * Redo the UpdateSubModelIconCommand
+ * \brief UpdateIconCommand::redo
+ * Redo the UpdateIconCommand
  */
-void UpdateSubModelIconCommand::redo()
+void UpdateIconCommand::redo()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
@@ -2338,10 +2338,10 @@ void UpdateSubModelIconCommand::redo()
 }
 
 /*!
- * \brief UpdateSubModelIconCommand::undo
- * Undo the UpdateSubModelIconCommand
+ * \brief UpdateIconCommand::undo
+ * Undo the UpdateIconCommand
  */
-void UpdateSubModelIconCommand::undo()
+void UpdateIconCommand::undo()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
@@ -2366,19 +2366,19 @@ void UpdateSubModelIconCommand::undo()
   }
 }
 
-DeleteSubModelIconCommand::DeleteSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
+DeleteIconCommand::DeleteIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
   mIcon = icon;
   mpGraphicsView = pGraphicsView;
-  setText(QString("Delete SubModel Icon"));
+  setText(QString("Delete Icon"));
 }
 
 /*!
- * \brief DeleteSubModelIconCommand::redo
- * Redo the DeleteSubModelIconCommand
+ * \brief DeleteIconCommand::redo
+ * Redo the DeleteIconCommand
  */
-void DeleteSubModelIconCommand::redo()
+void DeleteIconCommand::redo()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2389,7 +2389,7 @@ void DeleteSubModelIconCommand::redo()
     }
     elementGeometry.iconSource = NULL;
     if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
-      // clear all shapes of the submodel first
+      // clear all shapes first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
@@ -2415,10 +2415,10 @@ void DeleteSubModelIconCommand::redo()
 }
 
 /*!
- * \brief DeleteSubModelIconCommand::undo
- * Undo the DeleteSubModelIconCommand
+ * \brief DeleteIconCommand::undo
+ * Undo the DeleteIconCommand
  */
-void DeleteSubModelIconCommand::undo()
+void DeleteIconCommand::undo()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2432,7 +2432,7 @@ void DeleteSubModelIconCommand::undo()
     elementGeometry.iconSource = new char[size];
     memcpy(elementGeometry.iconSource, fileURI.toStdString().c_str(), size*sizeof(char));
     if (OMSProxy::instance()->setElementGeometry(pElementLibraryTreeItem->getNameStructure(), &elementGeometry)) {
-      // clear all shapes of the submodel first
+      // clear all shapes first
       foreach (ShapeAnnotation *pShapeAnnotation, mpGraphicsView->getShapesList()) {
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);

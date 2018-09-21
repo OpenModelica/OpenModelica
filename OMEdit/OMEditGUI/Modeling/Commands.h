@@ -469,10 +469,10 @@ private:
   FMUProperties mNewFMUProperties;
 };
 
-class AddSubModelIconCommand : public QUndoCommand
+class AddIconCommand : public QUndoCommand
 {
 public:
-  AddSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  AddIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -480,10 +480,10 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
-class UpdateSubModelIconCommand : public QUndoCommand
+class UpdateIconCommand : public QUndoCommand
 {
 public:
-  UpdateSubModelIconCommand(QString oldIcon, QString newIcon, ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent = 0);
+  UpdateIconCommand(QString oldIcon, QString newIcon, ShapeAnnotation *pShapeAnnotation, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -492,10 +492,10 @@ private:
   ShapeAnnotation *mpShapeAnnotation;
 };
 
-class DeleteSubModelIconCommand : public QUndoCommand
+class DeleteIconCommand : public QUndoCommand
 {
 public:
-  DeleteSubModelIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  DeleteIconCommand(QString icon, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:

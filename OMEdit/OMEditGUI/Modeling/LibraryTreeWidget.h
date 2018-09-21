@@ -125,6 +125,8 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   void setOMSElement(oms3_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms3_element_t* getOMSElement() const {return mpOMSElement;}
+  bool isSystemElement() const;
+  bool isComponentElement() const;
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
   oms_system_enu_t getSystemType() {return mSystemType;}
   void setComponentType(oms3_component_enu_t type) {mComponentType = type;}

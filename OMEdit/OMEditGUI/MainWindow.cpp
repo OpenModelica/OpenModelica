@@ -3493,9 +3493,12 @@ void MainWindow::createActions()
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
-  // Add or Edit submodel icon Action
-  mpAddOrEditSubModelIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit SubModel Icon"), this);
-  mpAddOrEditSubModelIconAction->setStatusTip(tr("Adds/Edits an icon for submodel"));
+  // Add or Edit icon Action
+  mpAddOrEditIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit Icon"), this);
+  mpAddOrEditIconAction->setStatusTip(tr("Adds/Edits an icon"));
+  // delete icon action
+  mpDeleteIconAction = new QAction(QIcon(":/Resources/icons/bitmap-delete.svg"), tr("Delete Icon"), this);
+  mpDeleteIconAction->setStatusTip(tr("Deletes an icon"));
   // OMSimulator simulation setup action
   mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
   mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
@@ -4147,11 +4150,13 @@ void MainWindow::createToolbars()
   // add actions to OMSimulator Toolbar
   mpOMSimulatorToobar->addAction(mpAddSystemAction);
   mpOMSimulatorToobar->addSeparator();
+  mpOMSimulatorToobar->addAction(mpAddOrEditIconAction);
+  mpOMSimulatorToobar->addAction(mpDeleteIconAction);
+  mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddConnectorAction);
   mpOMSimulatorToobar->addAction(mpAddBusAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddSubModelAction);
-  mpOMSimulatorToobar->addAction(mpAddOrEditSubModelIconAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);
 }

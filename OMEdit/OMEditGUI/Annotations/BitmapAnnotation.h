@@ -65,11 +65,11 @@ public slots:
   void duplicate();
 };
 
-class AddOrEditSubModelIconDialog : public QDialog
+class AddOrEditIconDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddOrEditSubModelIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent = 0);
+  AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent = 0);
 private:
   ShapeAnnotation *mpShapeAnnotation;
   GraphicsView *mpGraphicsView;

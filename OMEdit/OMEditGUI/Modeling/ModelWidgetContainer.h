@@ -545,10 +545,11 @@ public slots:
   void showSimulationParams();
   void alignInterfaces();
   void addSystem();
-  void addSubModel();
-  void addOrEditSubModelIcon();
+  void addOrEditIcon();
+  void deleteIcon();
   void addConnector();
   void addBus();
+  void addSubModel();
 };
 
 #endif // MODELWIDGETCONTAINER_H

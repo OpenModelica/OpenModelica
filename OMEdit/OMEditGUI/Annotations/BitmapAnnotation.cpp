@@ -249,7 +249,7 @@ void BitmapAnnotation::duplicate()
   pBitmapAnnotation->setSelected(true);
 }
 
-AddOrEditSubModelIconDialog::AddOrEditSubModelIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent)
+AddOrEditIconDialog::AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent)
   : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
@@ -291,7 +291,7 @@ AddOrEditSubModelIconDialog::AddOrEditSubModelIconDialog(ShapeAnnotation *pShape
   setLayout(pMainLayout);
 }
 
-void AddOrEditSubModelIconDialog::browseImageFile()
+void AddOrEditIconDialog::browseImageFile()
 {
   QString imageFileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
                                                          NULL, Helper::bitmapFileTypes, NULL);
@@ -304,14 +304,14 @@ void AddOrEditSubModelIconDialog::browseImageFile()
   mpPreviewImageLabel->setPixmap(pixmap);
 }
 
-void AddOrEditSubModelIconDialog::addOrEditIcon()
+void AddOrEditIconDialog::addOrEditIcon()
 {
   if (mpShapeAnnotation) { // edit case
     if (mpShapeAnnotation->getFileName().compare(mpFileTextBox->text()) != 0) {
       QString oldIcon = mpShapeAnnotation->getFileName();
       QString newIcon = mpFileTextBox->text();
-      UpdateSubModelIconCommand *pUpdateSubModelIconCommand = new UpdateSubModelIconCommand(oldIcon, newIcon, mpShapeAnnotation);
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateSubModelIconCommand);
+      UpdateIconCommand *pUpdateIconCommand = new UpdateIconCommand(oldIcon, newIcon, mpShapeAnnotation);
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateIconCommand);
       mpGraphicsView->getModelWidget()->updateModelText();
     }
   } else { // add case
@@ -321,8 +321,8 @@ void AddOrEditSubModelIconDialog::addOrEditIcon()
       mpFileTextBox->setFocus();
       return;
     }
-    AddSubModelIconCommand *pAddSubModelIconCommand = new AddSubModelIconCommand(mpFileTextBox->text(), mpGraphicsView);
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSubModelIconCommand);
+    AddIconCommand *pAddIconCommand = new AddIconCommand(mpFileTextBox->text(), mpGraphicsView);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddIconCommand);
     mpGraphicsView->getModelWidget()->updateModelText();
   }
   accept();

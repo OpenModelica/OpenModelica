@@ -272,6 +272,26 @@ QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
 }
 
 /*!
+ * \brief LibraryTreeItem::isSystemElement
+ * Returns true if the element is system.
+ * \return
+ */
+bool LibraryTreeItem::isSystemElement() const
+{
+  return (mpOMSElement && (mpOMSElement->type == oms_element_system));
+}
+
+/*!
+ * \brief LibraryTreeItem::isComponentElement
+ * Returns true if the element is component.
+ * \return
+ */
+bool LibraryTreeItem::isComponentElement() const
+{
+  return (mpOMSElement && (mpOMSElement->type == oms_element_component));
+}
+
+/*!
  * \brief LibraryTreeItem::getOMSElementGeometry
  * \return
  */
@@ -284,7 +304,12 @@ ssd_element_geometry_t LibraryTreeItem::getOMSElementGeometry()
     elementGeometry.x2 = getOMSElement()->geometry->x2;
     elementGeometry.y2 = getOMSElement()->geometry->y2;
     elementGeometry.rotation = getOMSElement()->geometry->rotation;
-    elementGeometry.iconSource = getOMSElement()->geometry->iconSource;
+    if (getOMSElement()->geometry->iconSource) {
+      elementGeometry.iconSource = new char[strlen(getOMSElement()->geometry->iconSource) + 1];
+      strcpy(elementGeometry.iconSource, getOMSElement()->geometry->iconSource);
+    } else {
+      elementGeometry.iconSource = NULL;
+    }
     elementGeometry.iconRotation = getOMSElement()->geometry->iconRotation;
     elementGeometry.iconFlip = getOMSElement()->geometry->iconFlip;
     elementGeometry.iconFixedAspectRatio = getOMSElement()->geometry->iconFixedAspectRatio;
@@ -321,7 +346,7 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg("Model")
                 .arg(Helper::fileLocation).arg(mFileName);
-    } else if (mpOMSElement && mpOMSElement->type == oms_element_system) {
+    } else if (isSystemElement()) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
@@ -2444,14 +2469,14 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
     OMSProxy::instance()->getElement(pLibraryTreeItem->getNameStructure(), &pOMSElement);
   }
   pLibraryTreeItem->setOMSElement(pOMSElement);
-  if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+  if (pLibraryTreeItem->isSystemElement()) {
     oms_system_enu_t systemType;
     if (OMSProxy::instance()->getSystemType(pLibraryTreeItem->getNameStructure(), &systemType)) {
       pLibraryTreeItem->setSystemType(systemType);
     }
   }
   pLibraryTreeItem->setOMSConnector(pOMSConnector);
-  if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old) {
+  if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
     const oms_fmu_info_t *pFMUInfo;
     if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
       pLibraryTreeItem->setFMUInfo(pFMUInfo);
@@ -2463,7 +2488,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
         pLibraryTreeItem->setFileName(QString(pFMUInfo->path));
       }
     }
-  } else if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_table_old) {
+  } else if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
     QString path;
     if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
       QFileInfo tableFileInfo(path);
@@ -4674,7 +4699,7 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 void LibraryWidget::saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName)
 {
   if (pLibraryTreeItem->isTopLevel()
-      || (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system)) {
+      || (pLibraryTreeItem->isSystemElement())) {
     pLibraryTreeItem->setIsSaved(true);
     pLibraryTreeItem->setFileName(fileName);
     if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {

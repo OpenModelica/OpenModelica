@@ -1515,7 +1515,7 @@ void Component::drawInterfacePoints()
  */
 void Component::drawOMSComponent()
 {
-  if (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+  if (mpLibraryTreeItem->isSystemElement()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
@@ -2859,8 +2859,7 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
       case LibraryTreeItem::OMS:
-        if (pComponent->getLibraryTreeItem()->getOMSElement()
-            && pComponent->getLibraryTreeItem()->getOMSElement()->type == oms_element_component) {
+        if (pComponent->getLibraryTreeItem()->isComponentElement()) {
           menu.addAction(pComponent->getFMUPropertiesAction());
         }
         break;
