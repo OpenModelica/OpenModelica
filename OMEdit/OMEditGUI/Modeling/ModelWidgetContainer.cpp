@@ -6657,83 +6657,66 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, compositeModel, oms, oms_model, oms_system, oms_submodel, oms_connector, gitWorkingDirectory;
-  ModelWidget *pModelWidget;
-  LibraryTreeItem *pLibraryTreeItem;
+  bool enabled = false;
+  bool modelica = false;
+  bool compositeModel = false;
+  bool oms = false;
+  bool omsModel = false;
+  bool omsSystem = false;
+  bool omsSubmodel = false;
+  bool omsConnector = false;
+  bool gitWorkingDirectory = false;
+  bool iconGraphicsView = false;
+  bool diagramGraphicsView = false;
+  bool textView = false;
+  ModelWidget *pModelWidget = 0;
+  LibraryTreeItem *pLibraryTreeItem = 0;
   if (pSubWindow) {
     enabled = true;
     pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
     pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+    iconGraphicsView = pModelWidget->getIconViewToolButton()->isChecked();
+    diagramGraphicsView = pModelWidget->getDiagramViewToolButton()->isChecked();
+    textView = pModelWidget->getTextViewToolButton()->isChecked();
     // check for git working directory
     gitWorkingDirectory = !pLibraryTreeItem->getFileName().isEmpty() && GitCommands::instance()->isSavedUnderGitRepository(pLibraryTreeItem->getFileName());
     if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
       modelica = true;
-      compositeModel = false;
-      oms = false;
-      oms_submodel = false;
-      oms_connector = false;
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Text) {
-      modelica = false;
-      compositeModel = false;
-      oms = false;
-      oms_submodel = false;
-      oms_connector = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
-      modelica = false;
       compositeModel = true;
-      oms = false;
-      oms_submodel = false;
-      oms_connector = false;
     } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-      modelica = false;
-      compositeModel = false;
       oms = true;
-      oms_model = pLibraryTreeItem->isTopLevel() ? true : false;
-      oms_system = false;
-      oms_submodel = false;
-      oms_connector = false;
+      omsModel = pLibraryTreeItem->isTopLevel() ? true : false;
+      omsSystem = false;
+      omsSubmodel = false;
+      omsConnector = false;
       if (pLibraryTreeItem->isSystemElement()) {
-        oms_system = true;
+        omsSystem = true;
       } else if (pLibraryTreeItem->isComponentElement()) {
-        oms_submodel = true;
+        omsSubmodel = true;
       }
       if (pLibraryTreeItem->getOMSConnector()) {
-        oms_connector = true;
+        omsConnector = true;
       }
-    } else {
-      modelica = false;
-      compositeModel = false;
-      oms = false;
-      oms_submodel = false;
-      oms_connector = false;
     }
-  } else {
-    enabled = false;
-    modelica = false;
-    compositeModel = false;
-    oms = false;
-    oms_submodel = false;
-    oms_connector = false;
-    pModelWidget = 0;
-    pLibraryTreeItem = 0;
   }
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
   //  MainWindow::instance()->getSaveAllAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveTotalAction()->setEnabled(enabled && modelica);
-  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !pModelWidget->getTextViewToolButton()->isChecked() && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
+  MainWindow::instance()->getShowGridLinesAction()->setEnabled(enabled && (modelica || compositeModel || oms) && !textView && !pModelWidget->getLibraryTreeItem()->isSystemLibrary());
   MainWindow::instance()->getResetZoomAction()->setEnabled(enabled && (modelica || compositeModel || oms));
   MainWindow::instance()->getZoomInAction()->setEnabled(enabled && (modelica || compositeModel || oms));
   MainWindow::instance()->getZoomOutAction()->setEnabled(enabled && (modelica || compositeModel || oms));
-  MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getEllipseShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getTextShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel || (oms && !(oms_submodel || oms_connector))) && !pModelWidget->getTextViewToolButton()->isChecked());
-  MainWindow::instance()->getTransitionModeAction()->setEnabled(enabled && (modelica) && !pModelWidget->getTextViewToolButton()->isChecked());
+  MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !textView);
+  MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !textView);
+  MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !textView);
+  MainWindow::instance()->getEllipseShapeAction()->setEnabled(enabled && modelica && !textView);
+  MainWindow::instance()->getTextShapeAction()->setEnabled(enabled && modelica && !textView);
+  MainWindow::instance()->getBitmapShapeAction()->setEnabled(enabled && modelica && !textView);
+  MainWindow::instance()->getConnectModeAction()->setEnabled(enabled && (modelica || compositeModel || (oms && !(omsSubmodel || omsConnector))) && !textView);
+  MainWindow::instance()->getTransitionModeAction()->setEnabled(enabled && (modelica) && !textView);
   MainWindow::instance()->getSimulateModelAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithTransformationalDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
   MainWindow::instance()->getSimulateWithAlgorithmicDebuggerAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
@@ -6766,13 +6749,13 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && (oms_model || oms_system));
-  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && (oms_system || oms_submodel));
-  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && (oms_system || oms_submodel));
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && oms_system);
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && (oms_system || oms_submodel));
-  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && oms_system);
-  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && oms_model);
+  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || omsSystem));
+  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
+  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && omsModel);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
