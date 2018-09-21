@@ -90,6 +90,20 @@ function mk_plus_ext
   external "C" annotation(Library="External_C_RecordTest.o");
 end mk_plus_ext;
 
+function mk_plus_ext_explicit
+  input ADD left;
+  input ADD right;
+  output PLUS out;
+  external "C" out = mk_plus_ext(left, right) annotation(Library="External_C_RecordTest.o");
+end mk_plus_ext_explicit;
+
+function mk_plus_ext_by_reference
+  input ADD left;
+  input ADD right;
+  output PLUS out;
+  external "C" void_mk_plus_ext(out, left, right) annotation(Library="External_C_RecordTest.o");
+end mk_plus_ext_by_reference;
+
 function eval_plus
   input PLUS plus;
   output Real out;

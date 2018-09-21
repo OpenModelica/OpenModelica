@@ -1,0 +1,14 @@
+// name:     Ticket5134.mos
+// keywords: record passed by reference!
+// status:   correct
+// teardown_command: rm -rf RecordPassedToFunction* output.log
+
+loadFile("Ticket5134.mo"); getErrorString();
+buildModel(RecordPassedToFunction); getErrorString();
+
+// Result:
+// true
+// ""
+// {"RecordPassedToFunction","RecordPassedToFunction_init.xml"}
+// ""
+// endResult

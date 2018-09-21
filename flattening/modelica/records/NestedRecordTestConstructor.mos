@@ -15,7 +15,12 @@ plus3:=RecordTest.mk_plus3(right,left);
 res:=RecordTest.mk_plus4(1.0,2.0,3.0,4.0);
 res:=RecordTest.MULT_PLUS(plus1,plus2,plus3);
 setCommandLineOptions("-d=gen");
-res:=RecordTest.mk_plus_ext(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+"No explicit external call";
+res := RecordTest.mk_plus_ext(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+"Explicit external call, return value";
+res_explicit := RecordTest.mk_plus_ext_explicit(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
+"Explicit external call, return by input argument reference";
+res_by_ref := RecordTest.mk_plus_ext_by_reference(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
 
 // Result:
 // true
@@ -100,6 +105,29 @@ res:=RecordTest.mk_plus_ext(RecordTest.ADD(1.0,2.0),RecordTest.ADD(3.0,4.0));
 // end RecordTest.PLUS;
 // end RecordTest.MULT_PLUS;
 // true
+// "No explicit external call"
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// "Explicit external call, return value"
+// record RecordTest.PLUS
+//     left = record RecordTest.ADD
+//     a1 = 1.0,
+//     a2 = 2.0
+// end RecordTest.ADD;,
+//     right = record RecordTest.ADD
+//     a1 = 3.0,
+//     a2 = 4.0
+// end RecordTest.ADD;
+// end RecordTest.PLUS;
+// "Explicit external call, return by input argument reference"
 // record RecordTest.PLUS
 //     left = record RecordTest.ADD
 //     a1 = 1.0,

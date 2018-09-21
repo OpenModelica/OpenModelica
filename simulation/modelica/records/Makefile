@@ -3,8 +3,8 @@ TEST = ../../../rtest -v
 TESTFILES = \
 ATotal.mos \
 InOutRecord.mos \
-TestComplexSum1.mos
-
+TestComplexSum1.mos \
+Ticket5134.mos
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

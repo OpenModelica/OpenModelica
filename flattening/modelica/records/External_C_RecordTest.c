@@ -16,12 +16,18 @@ struct PLUS {
   struct ADD right;
 };
 
-struct PLUS mk_plus_ext(struct ADD left, struct ADD right)
+struct PLUS mk_plus_ext(struct ADD *left, struct ADD *right)
 {
   struct PLUS out;
-  out.left = left;
-  out.right = right;
+  out.left = *left;
+  out.right = *right;
   return out;
+}
+
+void void_mk_plus_ext(struct PLUS* out, struct ADD *left, struct ADD *right)
+{
+  out->left = *left;
+  out->right = *right;
 }
 
 struct EMPTY {
