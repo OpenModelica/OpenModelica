@@ -77,7 +77,7 @@ LibraryTreeItem::LibraryTreeItem()
   setExpanded(false);
   setNonExisting(true);
   setOMSElement(0);
-  setSystemType(oms_system_tlm);
+  setSystemType(oms_system_none);
   setComponentType(oms3_component_fmu);
   setOMSConnector(0);
   setFMUInfo(0);
@@ -135,7 +135,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setExpanded(false);
   setNonExisting(false);
   setOMSElement(0);
-  setSystemType(oms_system_tlm);
+  setSystemType(oms_system_none);
   setComponentType(oms3_component_fmu);
   setOMSConnector(0);
   setFMUInfo(0);
@@ -4658,17 +4658,34 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 
   if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
     /* mark the file as saved and update the labels. */
-    pLibraryTreeItem->setIsSaved(true);
-    pLibraryTreeItem->setFileName(fileName);
-    if (pLibraryTreeItem->getModelWidget()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
-      pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
-    }
-    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+    saveOMSLibraryTreeItemHelper(pLibraryTreeItem, fileName);
   } else {
     return false;
   }
   return true;
+}
+
+/*!
+ * \brief LibraryWidget::saveOMSLibraryTreeItemHelper
+ * Saves the OMS type LibraryTreeItem and its children.
+ * \param pLibraryTreeItem
+ * \param fileName
+ */
+void LibraryWidget::saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName)
+{
+  if (pLibraryTreeItem->isTopLevel()
+      || (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system)) {
+    pLibraryTreeItem->setIsSaved(true);
+    pLibraryTreeItem->setFileName(fileName);
+    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
+      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
+      pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+    }
+    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+      saveOMSLibraryTreeItemHelper(pLibraryTreeItem->child(i), fileName);
+    }
+  }
 }
 
 /*!

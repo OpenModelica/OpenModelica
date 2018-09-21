@@ -416,13 +416,13 @@ bool OMSProxy::loadString(QString contents, QString* pModelName)
 /*!
  * \brief OMSProxy::saveModel
  * Saves the model.
- * \param ident
+ * \param cref
  * \param filename
  * \return
  */
-bool OMSProxy::saveModel(QString ident, QString filename)
+bool OMSProxy::saveModel(QString cref, QString filename)
 {
-  oms_status_enu_t status = oms2_saveModel(ident.toStdString().c_str(), filename.toStdString().c_str());
+  oms_status_enu_t status = oms3_export(cref.toStdString().c_str(), filename.toStdString().c_str());
   return statusToBool(status);
 }
 

@@ -6235,10 +6235,10 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
   connect(MainWindow::instance()->getAddSystemAction(), SIGNAL(triggered()), SLOT(addSystem()));
-  connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
-  connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
+  connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
+  connect(MainWindow::instance()->getAddOrEditSubModelIconAction(), SIGNAL(triggered()), SLOT(addOrEditSubModelIcon()));
 }
 
 void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkPreferedView, StringHandler::ViewType viewType)
@@ -6644,7 +6644,7 @@ bool ModelWidgetContainer::openRecentModelWidget(QListWidgetItem *pListWidgetIte
  */
 void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 {
-  bool enabled, modelica, compositeModel, oms, oms_submodel, oms_connector, gitWorkingDirectory;
+  bool enabled, modelica, compositeModel, oms, oms_model, oms_system, oms_submodel, oms_connector, gitWorkingDirectory;
   ModelWidget *pModelWidget;
   LibraryTreeItem *pLibraryTreeItem;
   if (pSubWindow) {
@@ -6675,9 +6675,13 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       modelica = false;
       compositeModel = false;
       oms = true;
+      oms_model = pLibraryTreeItem->isTopLevel() ? true : false;
+      oms_system = false;
       oms_submodel = false;
       oms_connector = false;
-      if (pLibraryTreeItem->getOMSElement()) {
+      if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_system) {
+        oms_system = true;
+      } else if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_element_component) {
         oms_submodel = true;
       }
       if (pLibraryTreeItem->getOMSConnector()) {
@@ -6749,12 +6753,12 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && oms);
-  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
+  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && (oms_model || oms_system));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && oms_system);
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && (oms_system || oms_submodel));
+  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && oms_system);
   MainWindow::instance()->getAddOrEditSubModelIconAction()->setEnabled(enabled && oms_submodel);
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && (oms || oms_submodel));
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && (oms || oms_submodel));
-  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && (oms && !(oms_submodel || oms_connector)));
+  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && oms_model);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);

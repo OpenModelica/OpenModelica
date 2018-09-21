@@ -75,7 +75,7 @@ public:
   bool loadModel(QString filename, QString* pModelName);
   bool parseString(QString contents, QString* pModelName);
   bool loadString(QString contents, QString* pModelName);
-  bool saveModel(QString ident, QString filename);
+  bool saveModel(QString cref, QString filename);
   bool list(QString ident, QString *pContents);
   bool getElement(QString cref, oms3_element_t **pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);

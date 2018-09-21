@@ -1815,7 +1815,8 @@ void AddSystemCommand::redo()
   if (!mpLibraryTreeItem) {
     // Create a LibraryTreeItem for connector
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName, nameStructure, "", true, pParentLibraryTreeItem);
+    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mName, nameStructure, "",
+                                                                 pParentLibraryTreeItem->isSaved(), pParentLibraryTreeItem);
   }
   // add the FMU to view
   ComponentInfo *pComponentInfo = new ComponentInfo;
