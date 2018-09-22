@@ -3746,7 +3746,7 @@ void ModelWidget::createModelWidgetComponents()
       }
       mpUndoStack->setEnabled(false);
       drawOMSModelDiagramElements();
-      drawOMSModelConnections();
+//      drawOMSModelConnections();
       mpUndoStack->setEnabled(true);
       mpDiagramGraphicsScene->clearSelection();
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
@@ -3854,7 +3854,7 @@ void ModelWidget::reDrawModelWidget()
     MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->updateLibraryTreeItem(mpLibraryTreeItem);
     // get the submodels and connections
     drawOMSModelElements();
-    drawOMSModelConnections();
+//    drawOMSModelConnections();
     // clear the undo stack
     mpUndoStack->clear();
 //    if (mpEditor) {

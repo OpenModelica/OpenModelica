@@ -1510,26 +1510,6 @@ void MainWindow::openCompositeModelFile()
 }
 
 /*!
- * \brief MainWindow::createNewFMIModel
- * Creates a new OMSimulator FMI Model LibraryTreeItem & ModelWidget.\n
- * Slot activated when mpNewFMIModelAction triggered signal is raised.
- */
-void MainWindow::createNewFMIModel()
-{
-  QString newFMIModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("OMSimulatorModel");
-  // create new FMI Model
-  if (OMSProxy::instance()->newFMIModel(newFMIModelName)) {
-    LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-    LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, newFMIModelName,
-                                                                                 newFMIModelName, "", false,
-                                                                                 pLibraryTreeModel->getRootLibraryTreeItem());
-    if (pLibraryTreeItem) {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    }
-  }
-}
-
-/*!
  * \brief MainWindow::createNewOMSModel
  * Create a new OMSimulator model.
  */
@@ -3032,10 +3012,6 @@ void MainWindow::createActions()
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
-  // create new FMI Model action
-  mpNewFMIModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New FMI Model"), this);
-  mpNewFMIModelAction->setStatusTip(tr("Create a new FMI Model"));
-  connect(mpNewFMIModelAction, SIGNAL(triggered()), SLOT(createNewFMIModel()));
   // create new OMSimulator Model action
   mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModel, this);
   mpNewOMSimulatorModelAction->setStatusTip(tr("Creates a new OMSimulator Model"));
@@ -3527,7 +3503,6 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpOpenCompositeModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
   pFileMenu->addSeparator();
-  pFileMenu->addAction(mpNewFMIModelAction);
   pFileMenu->addAction(mpNewOMSimulatorModelAction);
   pFileMenu->addAction(mpOpenOMSModelFileAction);
   pFileMenu->addSeparator();
