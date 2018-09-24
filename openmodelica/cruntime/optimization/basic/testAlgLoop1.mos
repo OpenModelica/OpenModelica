@@ -33,7 +33,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testAlgLoop1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testAlgLoop1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv LOG_IPOPT_ERROR -optimizerNP 3'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$y >= 0.0 and $EqCon$y <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$y <= 0.0, has value: 0.158529
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | y >= -1.0 and y <= 0.0
+// assert            | warning | Variable violating min/max constraint: -1.0 <= y <= 0.0, has value: 1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================

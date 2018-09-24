@@ -50,7 +50,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "testFinalCon_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 50, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif ReferenceFiles/testFinalCon3_ref.mat -lv LOG_IPOPT_ERROR -ipopt_max_iter=-1 -ipopt_init FILE -iim none'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con2 >= 0.0 and $finalCon$final_con2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con2 <= 0.0, has value: -4
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con1 >= 0.0 and $finalCon$final_con1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con1 <= 0.0, has value: -1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================

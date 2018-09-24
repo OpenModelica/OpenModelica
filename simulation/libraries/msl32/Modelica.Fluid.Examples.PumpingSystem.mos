@@ -32,10 +32,10 @@ runScript(modelTesting);getErrorString();
 // {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
 // Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|PT1.y|pumps.medium.T|reservoir.level|reservoir.medium.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
-// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 0.800000
+// Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | pipe.flowModel.m_flows[1] >= -0.0 and pipe.flowModel.m_flows[1] <= 100000.0
-// assert            | warning | Variable violating min/max constraint: -0.0 <= pipe.flowModel.m_flows[1] <= 100000.0, has value: -2.27374e-13
+// assert            | warning | Variable violating min/max constraint: -0.0 <= pipe.flowModel.m_flows[1] <= 100000.0, has value: -141.424
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | warning | The following assertion has been violated at time 200.000000
 // |                 | |       | userValve.opening >= 0.0 and userValve.opening <= 1.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= userValve.opening <= 1.0, has value: 1

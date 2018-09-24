@@ -29,10 +29,10 @@ runScript(modelTesting);getErrorString();
 // {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
 // Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = 'time|upperTank.level|upperTank.medium.h|lowerTank.level|lowerTank.medium.h', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
-// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 5.000000
+// Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | overflow.flowModel.states[1].p >= 0.0 and overflow.flowModel.states[1].p <= 100000000.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= overflow.flowModel.states[1].p <= 100000000.0, has value: -93465.5
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // "true

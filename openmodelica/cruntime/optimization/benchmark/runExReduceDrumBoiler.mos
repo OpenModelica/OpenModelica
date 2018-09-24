@@ -27,10 +27,10 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "init_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 500, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'init', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 7.200000
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -3.42937
+// assert            | warning | Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -9.57311
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | warning | The following assertion has been violated at time 849.600000
 // |                 | |       | conSigma.con >= conSigma.MinValue and conSigma.con <= conSigma.MaxValue
 // assert            | warning | Variable violating min/max constraint: conSigma.MinValue <= conSigma.con <= conSigma.MaxValue, has value: -150.308
@@ -47,7 +47,13 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_IPOPT_ERROR -optimizerNP 1 -s optimization -iif init_res.mat -ipopt_init FILE -ipopt_max_iter=100'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$der_evaporator_p >= 0.0 and $EqCon$der_evaporator_p <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$der_evaporator_p <= 0.0, has value: -1.33747e+06
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $EqCon$evaporator_V_l >= 0.0 and $EqCon$evaporator_V_l <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $EqCon$evaporator_V_l <= 0.0, has value: -0.5
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================
@@ -92,14 +98,14 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 61.2224 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 15.3174 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_IPOPT_ERROR   | info    | max violation is 3.83252 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.958948 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.240159 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0600249 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.0149953 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.00373369 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000920456 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 0.000217702 for the constraint $EqCon$der_evaporator_p(time = 1296)
-// LOG_IPOPT_ERROR   | info    | max violation is 4.55761e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.958956 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.240156 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0600273 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.0149906 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.00373544 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000920151 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 0.000217648 for the constraint $EqCon$der_evaporator_p(time = 1296)
+// LOG_IPOPT_ERROR   | info    | max violation is 4.56618e-05 for the constraint $EqCon$der_evaporator_p(time = 1296)
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

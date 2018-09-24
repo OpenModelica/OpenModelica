@@ -17,7 +17,10 @@ simulate(Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates);
 // record SimulationResult
 //     resultFile = "Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 22.0, numberOfIntervals = 2500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TwoPhaseWater.TestTwoPhaseStates', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | medium.p >= 2000.0 and medium.p <= 100000000.0
+// assert            | warning | Variable violating min/max constraint: 2000.0 <= medium.p <= 100000000.0, has value: 700
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // assert            | warning | The following assertion has been violated at time 20.080589
 // |                 | |       | medium.x >= 0.0 and medium.x <= 1.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= medium.x <= 1.0, has value: 1

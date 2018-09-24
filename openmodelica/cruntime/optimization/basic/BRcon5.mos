@@ -46,7 +46,10 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "nmpcBatchReactorCon4_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactorCon4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $con$cc2 >= 0.0
+// assert            | warning | Variable violating min constraint: 0.0 <= $con$cc2, has value: -1
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================

@@ -36,7 +36,10 @@ getErrorString();
 // record SimulationResult
 //     resultFile = "nmpcBatchReactorEqCon_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'nmpcBatchReactorEqCon', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $con$1 >= 0.0 and $con$1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $con$1 <= 0.0, has value: -0.5
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 //
 // Optimizer Variables
 // ========================================================

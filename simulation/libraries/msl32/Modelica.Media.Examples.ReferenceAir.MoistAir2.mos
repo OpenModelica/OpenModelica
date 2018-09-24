@@ -37,19 +37,22 @@ runScript(modelTesting);getErrorString();
 // {"volume.medium.p","volume.medium.T","volume.medium.X[1]","volume.medium.X[2]","volume.medium.Xi[1]","volume1.medium.p","volume1.medium.T","volume1.medium.X[1]","volume1.medium.X[2]","volume1.medium.Xi[1]","fixedMassFlowRate.port.p","ambient.port.m_flow"}
 // Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.ReferenceAir.MoistAir2', options = '', outputFormat = 'mat', variableFilter = 'time|volume.medium.p|volume.medium.T|volume.medium.X.1.|volume.medium.X.2.|volume.medium.Xi.1.|volume1.medium.p|volume1.medium.T|volume1.medium.X.1.|volume1.medium.X.2.|volume1.medium.Xi.1.|fixedMassFlowRate.port.p|ambient.port.m_flow', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Media.Examples.ReferenceAir.MoistAir2_res.mat
-// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | warning | The following assertion has been violated at time 0.002020
+// Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | volume.medium.X_liquid >= 0.0 and volume.medium.X_liquid <= 1.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= volume.medium.X_liquid <= 1.0, has value: -0.0163519
-// assert            | warning | The following assertion has been violated at time 0.002020
+// assert            | warning | Variable violating min/max constraint: 0.0 <= volume.medium.X_liquid <= 1.0, has value: -0.0122993
+// assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | fixedMassFlowRate.medium.X_liquid >= 0.0 and fixedMassFlowRate.medium.X_liquid <= 1.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= fixedMassFlowRate.medium.X_liquid <= 1.0, has value: -0.484032
-// assert            | warning | The following assertion has been violated at time 0.002020
+// assert            | warning | Variable violating min/max constraint: 0.0 <= fixedMassFlowRate.medium.X_liquid <= 1.0, has value: -0.500787
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | fixedMassFlowRate.medium.x_sat >= 0.0 and fixedMassFlowRate.medium.x_sat <= 1.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= fixedMassFlowRate.medium.x_sat <= 1.0, has value: 1.02342
+// assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | volume1.medium.X_liquid >= 0.0 and volume1.medium.X_liquid <= 1.0
-// assert            | warning | Variable violating min/max constraint: 0.0 <= volume1.medium.X_liquid <= 1.0, has value: -0.0125642
-// assert            | warning | The following assertion has been violated at time 0.002020
+// assert            | warning | Variable violating min/max constraint: 0.0 <= volume1.medium.X_liquid <= 1.0, has value: -0.0122993
+// assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | ambient.medium.X_liquid >= 0.0 and ambient.medium.X_liquid <= 1.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= ambient.medium.X_liquid <= 1.0, has value: -0.0122993
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
