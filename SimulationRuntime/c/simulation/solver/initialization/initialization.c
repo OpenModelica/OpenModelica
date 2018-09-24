@@ -731,6 +731,9 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   printZeroCrossings(data, LOG_EVENTS);
 #endif
 
+  /* Check for warning of variables out of range assert(min<x || x>xmax, ...)*/
+  data->callback->checkForAsserts(data, threadData);
+
   /* valid system for the first time! */
   TRACE_POP
   return retVal;

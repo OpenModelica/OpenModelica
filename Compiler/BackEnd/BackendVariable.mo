@@ -1871,7 +1871,7 @@ public function getMinMaxAsserts "author: Frenkel TUD 2011-03"
 algorithm
   outAsserts := matchcontinue(inVar)
     local
-      DAE.Exp e, cond, msg;
+      DAE.Exp e, cond, msg, level;
       Option<DAE.Exp> min, max;
       String str, varStr, format;
       DAE.Type tp;
@@ -1897,11 +1897,17 @@ algorithm
       false = Expression.isConstTrue(cond);
       str = getMinMaxAsserts1Str(min, max, ComponentReference.printComponentRefStr(name));
 
+      if Flags.isSet(Flags.WARNING_MINMAX_ATTRIBUTES) then
+        level = DAE.ASSERTIONLEVEL_WARNING;
+      else
+        level = DAE.ASSERTIONLEVEL_ERROR;
+      end if;
+
       // if is real use %g otherwise use %d (ints and enums)
       format = if Types.isRealOrSubTypeReal(tp) then "g" else "d";
       msg = DAE.BINARY(DAE.SCONST(str), DAE.ADD(DAE.T_STRING_DEFAULT), DAE.CALL(Absyn.IDENT("String"), {e, DAE.SCONST(format)}, DAE.callAttrBuiltinString));
-      BackendDAEUtil.checkAssertCondition(cond, msg, DAE.ASSERTIONLEVEL_WARNING, ElementSource.getElementSourceFileInfo(source));
-    then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, DAE.ASSERTIONLEVEL_WARNING, source)})::inAsserts;
+      BackendDAEUtil.checkAssertCondition(cond, msg, level, ElementSource.getElementSourceFileInfo(source));
+    then DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, msg, level, source)})::inAsserts;
 
     else inAsserts;
   end matchcontinue;
