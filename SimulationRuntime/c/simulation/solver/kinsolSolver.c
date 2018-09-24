@@ -1027,10 +1027,12 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber)
   {
     /* check if solution really solves the residuals */
     nlsKinsolResiduals(kinsolData->initialGuess, kinsolData->fRes, &kinsolData->userData);
-    N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
+    if (!omc_flag[FLAG_NO_SCALING]){
+      N_VProd(kinsolData->fRes, kinsolData->fScale, kinsolData->fRes);
+    }
     fNormValue = N_VWL2Norm(kinsolData->fRes, kinsolData->fRes);
 
-    infoStreamPrint(LOG_NLS_V, 0, "scaled Euclidean norm of F(u) = %e", fNormValue);
+    infoStreamPrint(LOG_NLS_V, 0, "%sEuclidean norm of F(u) = %e", (omc_flag[FLAG_NO_SCALING])?"":"scaled ", fNormValue);
     if (FTOL_WITH_LESS_ACCURANCY<fNormValue)
     {
       warningStreamPrint(LOG_NLS_V, 0, "False positive solution. FNorm is not small enough.");
