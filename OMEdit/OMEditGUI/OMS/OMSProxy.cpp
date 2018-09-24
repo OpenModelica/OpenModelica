@@ -276,6 +276,33 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
 }
 
 /*!
+ * \brief OMSProxy::addConnector
+ * Adds the connector.
+ * \param cref
+ * \param causality
+ * \param type
+ * \return
+ */
+bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type)
+{
+  oms_status_enu_t status = oms3_addConnector(cref.toStdString().c_str(), causality, type);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getConnector
+ * Gets the connector
+ * \param cref
+ * \param pConnector
+ * \return
+ */
+bool OMSProxy::getConnector(QString cref, oms_connector_t** pConnector)
+{
+  oms_status_enu_t status = oms3_getConnector(cref.toStdString().c_str(), pConnector);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::newFMIModel
  * Creates a new FMI model.
  * \param ident
@@ -521,7 +548,7 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
  */
 bool OMSProxy::setConnectorGeometry(QString connector, const ssd_connector_geometry_t* pGeometry)
 {
-  oms_status_enu_t status = oms2_setConnectorGeometry(connector.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms3_setConnectorGeometry(connector.toStdString().c_str(), pGeometry);
   return statusToBool(status);
 }
 

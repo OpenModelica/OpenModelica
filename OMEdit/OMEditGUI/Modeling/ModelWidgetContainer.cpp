@@ -1180,7 +1180,7 @@ void GraphicsView::fitInViewInternal()
  */
 void GraphicsView::addSystem(QString name, oms_system_enu_t type)
 {
-  OMSProxy::instance()->addSystem(name, type);
+
 }
 
 /*!
@@ -6486,22 +6486,22 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
           }
           break;
         case Qt::Key_1: // Ctrl+1 switches to icon view
-          if (pCurrentModelWidget) {
+          if (pCurrentModelWidget && pCurrentModelWidget->getIconGraphicsView()) {
             pCurrentModelWidget->getIconViewToolButton()->setChecked(true);
           }
           return true;
         case Qt::Key_2: // Ctrl+2 switches to diagram view
-          if (pCurrentModelWidget) {
+          if (pCurrentModelWidget && pCurrentModelWidget->getDiagramGraphicsView()) {
             pCurrentModelWidget->getDiagramViewToolButton()->setChecked(true);
           }
           return true;
         case Qt::Key_3: // Ctrl+3 switches to text view
-          if (pCurrentModelWidget) {
+          if (pCurrentModelWidget && pCurrentModelWidget->getEditor()) {
             pCurrentModelWidget->getTextViewToolButton()->setChecked(true);
           }
           return true;
         case Qt::Key_4: // Ctrl+4 shows the documentation view
-          if (pCurrentModelWidget) {
+          if (pCurrentModelWidget && pCurrentModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
             pCurrentModelWidget->showDocumentationView();
           }
           return true;
@@ -6993,8 +6993,14 @@ void ModelWidgetContainer::deleteIcon()
 void ModelWidgetContainer::addConnector()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-    AddConnectorDialog *pAddConnectorDialog = new AddConnectorDialog(pModelWidget->getDiagramGraphicsView());
+  if (pModelWidget) {
+    GraphicsView *pGraphicsView = 0;
+    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    }
+    AddConnectorDialog *pAddConnectorDialog = new AddConnectorDialog(pGraphicsView);
     pAddConnectorDialog->exec();
   }
 }

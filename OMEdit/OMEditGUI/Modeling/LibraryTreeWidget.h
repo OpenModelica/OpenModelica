@@ -254,6 +254,9 @@ public:
   void createLibraryTreeItems(QFileInfo fileInfo, LibraryTreeItem *pParentLibraryTreeItem);
   LibraryTreeItem* createLibraryTreeItem(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
+  LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved,
+                                         LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
+                                         oms_connector_t *pOMSConnector, int row = -1);
   void checkIfAnyNonExistingClassLoaded();
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
@@ -300,8 +303,8 @@ private:
   LibraryTreeItem* createLibraryTreeItemImpl(LibraryTreeItem::LibraryType type, QString name, QString nameStructure, QString path, bool isSaved,
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-                                                LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement = 0,
-                                                oms_connector_t *pOMSConnector = 0, int row = -1);
+                                                LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
+                                                oms_connector_t *pOMSConnector, int row = -1);
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);

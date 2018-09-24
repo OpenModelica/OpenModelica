@@ -1526,6 +1526,68 @@ void Component::drawOMSComponent()
 //      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
 //      mComponentsList.append(pNewComponent);
 //    }
+  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
+    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+      mpInputOutputComponentPolygon = new PolygonAnnotation(this);
+      QList<QPointF> points;
+      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
+      mpInputOutputComponentPolygon->setPoints(points);
+      mpInputOutputComponentPolygon->setFillPattern(StringHandler::FillSolid);
+      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+        case oms_signal_type_integer:
+          mpInputOutputComponentPolygon->setLineColor(QColor(255,127,0));
+          mpInputOutputComponentPolygon->setFillColor(QColor(255,127,0));
+          break;
+        case oms_signal_type_boolean:
+          mpInputOutputComponentPolygon->setLineColor(QColor(255,0,255));
+          mpInputOutputComponentPolygon->setFillColor(QColor(255,0,255));
+          break;
+        case oms_signal_type_string:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
+          break;
+        case oms_signal_type_enum:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
+          break;
+        case oms_signal_type_bus:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
+          break;
+        case oms_signal_type_real:
+        default:
+          mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
+          mpInputOutputComponentPolygon->setFillColor(QColor(0, 0, 127));
+          break;
+      }
+    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+      mpInputOutputComponentPolygon = new PolygonAnnotation(this);
+      QList<QPointF> points;
+      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
+      mpInputOutputComponentPolygon->setPoints(points);
+      mpInputOutputComponentPolygon->setFillPattern(StringHandler::FillSolid);
+      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+        case oms_signal_type_integer:
+          mpInputOutputComponentPolygon->setLineColor(QColor(255, 127, 0));
+          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
+          break;
+        case oms_signal_type_boolean:
+          mpInputOutputComponentPolygon->setLineColor(QColor(255, 0, 255));
+          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
+          break;
+        case oms_signal_type_string:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
+          break;
+        case oms_signal_type_enum:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
+          break;
+        case oms_signal_type_bus:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
+          break;
+        case oms_signal_type_real:
+        default:
+          mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
+          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
+          break;
+      }
+    }
   }
   // return to avoid the old code. The code below should be removed later on.
   return;
@@ -2117,11 +2179,25 @@ void Component::updatePlacementAnnotation()
       elementGeometry.rotation = mTransformation.getRotateAngle();
       OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
     } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSConnector()) {
-      ssd_connector_geometry_t *pConnectorGeometry = mpLibraryTreeItem->getOMSConnector()->geometry;
-      pConnectorGeometry->x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
-      pConnectorGeometry->y = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
-      OMSProxy::instance()->setConnectorGeometry(QString("%1:%2").arg(mpLibraryTreeItem->parent()->getNameStructure())
-                                                 .arg(mpLibraryTreeItem->getName()), pConnectorGeometry);
+      ssd_connector_geometry_t connectorGeometry;
+      connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
+      connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
+      OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+      /* We have connector both on icon and diagram layer.
+       * If one connector is updated then update the other connector automatically.
+       */
+      GraphicsView *pGraphicsView = 0;
+      if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+        pGraphicsView = mpGraphicsView->getModelWidget()->getDiagramGraphicsView();
+      } else {
+        pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
+      }
+      Component *pComponent = pGraphicsView->getComponentObject(getName());
+      if (pComponent) {
+        pComponent->mTransformation.setOrigin(mTransformation.getOrigin());
+        pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
+      }
+      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     }
   } else {
     OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();

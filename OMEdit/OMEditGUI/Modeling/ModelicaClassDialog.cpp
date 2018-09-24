@@ -2103,9 +2103,8 @@ void CreateModelDialog::createNewModel()
     QString systemNameStructure = QString("%1.%2").arg(mpNameTextBox->text(), mpSystemWidget->getNameTextBox()->text());
     if (OMSProxy::instance()->addSystem(systemNameStructure, (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt())) {
       LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::OMS, mpNameTextBox->text(),
-                                                                                   mpNameTextBox->text(), "", false,
-                                                                                   pLibraryTreeModel->getRootLibraryTreeItem());
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false,
+                                                                                   pLibraryTreeModel->getRootLibraryTreeItem(), 0, 0);
       if (pLibraryTreeItem) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
       }
@@ -2413,11 +2412,12 @@ void AddConnectorDialog::addConnector()
       return;
     }
   }
-  QString annotation = QString("Placement(true,-,-,-10.0,-10.0,10.0,10.0,0,-,-,-,-,-,-,)");
+  QString annotation = QString("Placement(true,0.0,0.0,-10.0,-10.0,10.0,10.0,0,0.0,0.0,-10.0,-10.0,10.0,10.0,)");
   AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false,
                                                                       (oms_causality_enu_t)mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt(),
                                                                       (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   accept();
 }

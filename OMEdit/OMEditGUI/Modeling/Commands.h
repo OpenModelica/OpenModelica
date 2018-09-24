@@ -449,11 +449,14 @@ private:
   QString mName;
   LibraryTreeItem *mpLibraryTreeItem;
   QString mAnnotation;
-  GraphicsView *mpGraphicsView;
+  GraphicsView *mpIconGraphicsView;
+  GraphicsView *mpDiagramGraphicsView;
   bool mOpeningClass;
   oms_causality_enu_t mCausality;
   oms_signal_type_enu_t mType;
-  Component *mpComponent;
+  GraphicsView *mpGraphicsView;
+  Component *mpIconComponent;
+  Component *mpDiagramComponent;
 };
 
 class FMUPropertiesCommand : public QUndoCommand

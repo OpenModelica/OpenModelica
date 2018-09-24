@@ -64,6 +64,8 @@ public:
   bool omsDelete(QString cref);
   bool addSystem(QString cref, oms_system_enu_t type);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
+  bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
+  bool getConnector(QString cref, oms_connector_t** pConnector);
 
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
