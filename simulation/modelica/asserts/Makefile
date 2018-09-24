@@ -9,6 +9,7 @@ AssertTest4.mos \
 AssertTest5.mos \
 AssertTest6.mos \
 AssertTest7.mos \
+AssertTest8.mos \
 testAssertSolve.mos \
 TestAssert.mos \
 powAssert1.mos \
