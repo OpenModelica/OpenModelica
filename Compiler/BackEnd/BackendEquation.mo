@@ -188,11 +188,17 @@ public function equationArraySize "author: lochel
   should correspond to the number of variables."
   input BackendDAE.EquationArray equationArray;
   output Integer outSize;
+protected
+  Boolean nfScalarize = Flags.isSet(Flags.NF_SCALARIZE);
 algorithm
   outSize := 0;
   for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
     if ExpandableArray.occupied(i, equationArray) then
-      outSize := outSize + equationSize(ExpandableArray.get(i, equationArray));
+      if nfScalarize then
+        outSize := outSize + equationSize(ExpandableArray.get(i, equationArray));
+      else
+        outSize := outSize + 1;
+      end if;
     end if;
   end for;
 end equationArraySize;
