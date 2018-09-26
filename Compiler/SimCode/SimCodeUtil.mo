@@ -2104,6 +2104,11 @@ algorithm
       BackendDAE.EquationAttributes eqAttr;
       Boolean b;
 
+    // array equation that may result from -d=-nfScalarize and is assumed solved
+    case BackendDAE.ARRAY_EQUATION(left = DAE.CREF(componentRef = cr), right = e2, source = source, attr = eqAttr)
+      then
+        ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
+
     // solved equation
     case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
       algorithm
@@ -6274,25 +6279,25 @@ algorithm
     vars := createVars(dlow, inInitDAE, tempVars);
     if debug then execStat("simCode: createVars"); end if;
     BackendDAE.DAE(shared=BackendDAE.SHARED(info=BackendDAE.EXTRA_INFO(description=description))) := dlow;
-    nx := listLength(vars.stateVars);
-    ny := listLength(vars.algVars);
-    ndy := listLength(vars.discreteAlgVars);
-    ny_int := listLength(vars.intAlgVars);
-    ny_bool := listLength(vars.boolAlgVars);
-    numOutVars := listLength(vars.outputVars);
-    numInVars := listLength(vars.inputVars);
-    na := listLength(vars.aliasVars);
-    na_int := listLength(vars.intAliasVars);
-    na_bool := listLength(vars.boolAliasVars);
-    np := listLength(vars.paramVars);
-    np_int := listLength(vars.intParamVars);
-    np_bool := listLength(vars.boolParamVars);
-    ny_string := listLength(vars.stringAlgVars);
-    np_string := listLength(vars.stringParamVars);
-    na_string := listLength(vars.stringAliasVars);
-    next := listLength(vars.extObjVars);
-    numOptimizeConstraints := listLength(vars.realOptimizeConstraintsVars);
-    numOptimizeFinalConstraints := listLength(vars.realOptimizeFinalConstraintsVars);
+    nx := getNumScalars(vars.stateVars);
+    ny := getNumScalars(vars.algVars);
+    ndy := getNumScalars(vars.discreteAlgVars);
+    ny_int := getNumScalars(vars.intAlgVars);
+    ny_bool := getNumScalars(vars.boolAlgVars);
+    numOutVars := getNumScalars(vars.outputVars);
+    numInVars := getNumScalars(vars.inputVars);
+    na := getNumScalars(vars.aliasVars);
+    na_int := getNumScalars(vars.intAliasVars);
+    na_bool := getNumScalars(vars.boolAliasVars);
+    np := getNumScalars(vars.paramVars);
+    np_int := getNumScalars(vars.intParamVars);
+    np_bool := getNumScalars(vars.boolParamVars);
+    ny_string := getNumScalars(vars.stringAlgVars);
+    np_string := getNumScalars(vars.stringParamVars);
+    na_string := getNumScalars(vars.stringAliasVars);
+    next := getNumScalars(vars.extObjVars);
+    numOptimizeConstraints := getNumScalars(vars.realOptimizeConstraintsVars);
+    numOptimizeFinalConstraints := getNumScalars(vars.realOptimizeFinalConstraintsVars);
     if debug then execStat("simCode: get lengths"); end if;
     varInfo := createVarInfo(dlow, nx, ny, ndy, np, na, next, numOutVars, numInVars,
                              ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,
@@ -12177,6 +12182,34 @@ algorithm
   stateVar := listGet(inStateVars, inIndex + 1 - (if Config.simCodeTarget()=="Cpp" then 0 else listLength(inStateVars)) /* SimVar indexes start from zero */);
   outVariableIndex := getVariableIndex(stateVar);
 end getStateSimVarIndexFromIndex;
+
+protected
+function getNumScalars
+  "Get number of elements when rolling out all arrays of a variable list.
+   author: rfranke"
+  input list<SimCodeVar.SimVar> vars;
+  output Integer numScalars;
+algorithm
+  numScalars := List.fold(List.map(vars, getNumElems), intAdd, 0);
+end getNumScalars;
+
+protected
+function getNumElems
+  "Get number of scalar elements of a variable, rolling out arrays.
+   author: rfranke"
+  input SimCodeVar.SimVar var;
+  output Integer numElems;
+algorithm
+  numElems := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
+      numElems := 1;
+      for i in 1:listLength(var.numArrayElement) loop
+        numElems := numElems * stringInt(listGet(var.numArrayElement, i));
+      end for;
+      then numElems;
+    else then 1;
+  end match;
+end getNumElems;
 
 public function getVariableIndex
   input SimCodeVar.SimVar inVar;
