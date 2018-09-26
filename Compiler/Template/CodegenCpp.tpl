@@ -8052,6 +8052,15 @@ template memberVariableInitialize2(SimVar simVar, HashTableCrIListArray.HashTabl
               getSimVars()->init<%type%>AliasArray(LIST_OF <%arrayIndices%> LIST_END, <%arrayName%>_ref_data);
               <%arrayName%> = RefArrayDim<%dims%><<%typeString%>, <%arrayextentDims(name, v.numArrayElement)%>>(<%arrayName%>_ref_data);
               >>
+    /* newInst with arrays */
+    case v as SIMVAR(type_ = T_ARRAY()) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name, dims)
+      let typeString = expTypeShort(type_)
+      let arrayHeadIdx = listHead(SimCodeUtil.getVarIndexListByMapping(varToArrayIndexMapping,name,true,indexForUndefinedReferences))
+       <<
+       <%varName%> = StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%List.lastN(v.numArrayElement, listLength(v.numArrayElement));separator=","%>, true>(&_pointerTo<%type%>Vars[<%arrayHeadIdx%>]);
+       >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
 
@@ -8310,6 +8319,14 @@ template memberVariableDefine2(SimVar simVar, HashTableCrIListArray.HashTable va
           <<
           RefArrayDim<%dims%><<%typeString%>, <%array_dimensions%>> <%arrayName%>;
           >>
+    /* newInst with arrays */
+    case v as SIMVAR(type_ = T_ARRAY()) then
+      let& dims = buffer "" /*BUFD*/
+      let varName = arraycref2(name, dims)
+      let typeString = expTypeShort(type_)
+      <<
+      StatArrayDim<%listLength(v.numArrayElement)%><<%typeString%>, <%List.lastN(v.numArrayElement, listLength(v.numArrayElement));separator=","%>, <%createRefVar%>> <%varName%>;
+      >>
    /*special case for variables that marked as array but are not arrays */
     case SIMVAR(numArrayElement=_::_) then
       let& dims = buffer "" /*BUFD*/
@@ -9446,22 +9463,16 @@ template initValst(Text &varDecls, Text type, list<SimVar> varsLst, SimCode simC
      let crefStr = cref1(sv.name,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref, stateDerVectorName, useFlatArrayNotation)
      match initialValue
       case SOME(v) then
-        match daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-          case vStr as "0"
-          case vStr as "0.0"
-          case vStr as "(0)" then
-          '<%preExp%>
-           SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%vStr%>);'
-          case vStr as "" then
-          '<%preExp%>
-           SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%vStr%>);'
-          case vStr then
-          '<%preExp%>
-           SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%vStr%>);'
-        end match
+        let vStr = daeExp(v, contextOther, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        <<
+        <%preExp%>
+        SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>, <%vStr%>);
+        >>
       else
-        '<%preExp%>
-         SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>,<%startValue(sv.type_)%>);'
+        <<
+        <%preExp%>
+        SystemDefaultImplementation::set<%type%>StartValue(<%crefStr%>, <%startValue(sv.type_)%>);
+        >>
       ;separator="\n")
   else
     (varsLst |> sv as SIMVAR(__) =>
@@ -9489,7 +9500,8 @@ template startValue(DAE.Type ty)
   case ty as T_REAL(__) then '0.0'
   case ty as T_BOOL(__) then 'false'
   case ty as T_STRING(__) then '"empty"'
-   case ty as T_ENUMERATION(__) then '0'
+  case ty as T_ENUMERATION(__) then '0'
+  case ty as T_ARRAY(ty = elty) then startValue(elty)
   else ""
 end startValue;
 

@@ -146,14 +146,18 @@ public:
   virtual bool& getBoolStartValue(bool& var);
   virtual int& getIntStartValue(int& var);
   virtual string& getStringStartValue(string& var);
-  virtual void setRealStartValue(double& var,double val);
-  virtual void setRealStartValue(double& var,double val,bool overwriteOldValue);
-  virtual void setBoolStartValue(bool& var,bool val);
-  virtual void setBoolStartValue(bool& var,bool val,bool overwriteOldValue);
-  virtual void setIntStartValue(int& var,int val);
-  virtual void setIntStartValue(int& var,int val,bool overwriteOldValue);
-  virtual void setStringStartValue(string& var,string val);
-  virtual void setStringStartValue(string& var,string val,bool overwriteOldValue);
+  virtual void setRealStartValue(double& var, double val, bool overwriteOldValue = false);
+  virtual void setRealStartValue(BaseArray<double>& avar, double val, bool overwriteOldValue = false);
+  virtual void setRealStartValue(BaseArray<double>& avar, const BaseArray<double>& aval, bool overwriteOldValue = false);
+  virtual void setBoolStartValue(bool& var, bool val, bool overwriteOldValue = false);
+  virtual void setBoolStartValue(BaseArray<bool>& avar, bool val, bool overwriteOldValue = false);
+  virtual void setBoolStartValue(BaseArray<bool>& avar, const BaseArray<bool>& aval, bool overwriteOldValue = false);
+  virtual void setIntStartValue(int& var,int val, bool overwriteOldValue = false);
+  virtual void setIntStartValue(BaseArray<int>& avar, int val, bool overwriteOldValue = false);
+  virtual void setIntStartValue(BaseArray<int>& avar, const BaseArray<int>& aval, bool overwriteOldValue = false);
+  virtual void setStringStartValue(string& var, string val, bool overwriteOldValue = false);
+  virtual void setStringStartValue(BaseArray<string>& avar, string val, bool overwriteOldValue = true);
+  virtual void setStringStartValue(BaseArray<string>& avar, const BaseArray<string>& aval, bool overwriteOldValue = true);
 protected:
     void Assert(bool cond, const string& msg);
     void Terminate(string msg);

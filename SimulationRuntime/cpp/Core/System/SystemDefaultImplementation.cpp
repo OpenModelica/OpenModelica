@@ -634,48 +634,112 @@ string& SystemDefaultImplementation::getStringStartValue(string& var)
   return _string_start_values.getGetStartValue(var);
 }
 
-void SystemDefaultImplementation::setRealStartValue(double& var,double val)
+void SystemDefaultImplementation::setRealStartValue(double& var, double val, bool overwriteOldValue)
 {
-  setRealStartValue(var,val,false);
+  var = val;
+  _real_start_values.setStartValue(var, val, overwriteOldValue);
 }
 
-void SystemDefaultImplementation::setRealStartValue(double& var,double val,bool overwriteOldValue)
+void SystemDefaultImplementation::setRealStartValue(BaseArray<double>& avar, double val, bool overwriteOldValue)
 {
-  var=val;
-  _real_start_values.setStartValue(var,val,overwriteOldValue);
+  double *varp = avar.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, i++) {
+    *varp = val;
+    _real_start_values.setStartValue(*varp, val, overwriteOldValue);
+  }
 }
 
-void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val)
+void SystemDefaultImplementation::setRealStartValue(BaseArray<double>& avar, const BaseArray<double>& aval, bool overwriteOldValue)
 {
-  setBoolStartValue(var,val,false);
+  double *varp = avar.getData();
+  const double *valp = aval.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, valp++, i++) {
+    *varp = *valp;
+    _real_start_values.setStartValue(*varp, *valp, overwriteOldValue);
+  }
 }
 
-void SystemDefaultImplementation::setBoolStartValue(bool& var,bool val,bool overwriteOldValue)
+void SystemDefaultImplementation::setBoolStartValue(bool& var, bool val, bool overwriteOldValue)
 {
-  var=val;
-  _bool_start_values.setStartValue(var,val,overwriteOldValue);
+  var = val;
+  _bool_start_values.setStartValue(var, val, overwriteOldValue);
 }
 
-void SystemDefaultImplementation::setIntStartValue(int& var,int val)
+void SystemDefaultImplementation::setBoolStartValue(BaseArray<bool>& avar, bool val, bool overwriteOldValue)
 {
-  setIntStartValue(var,val,false);
+  bool *varp = avar.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, i++) {
+    *varp = val;
+    _bool_start_values.setStartValue(*varp, val, overwriteOldValue);
+  }
 }
 
-void SystemDefaultImplementation::setIntStartValue(int& var,int val,bool overwriteOldValue)
+void SystemDefaultImplementation::setBoolStartValue(BaseArray<bool>& avar, const BaseArray<bool>& aval, bool overwriteOldValue)
 {
-  var=val;
-  _int_start_values.setStartValue(var,val,overwriteOldValue);
+  bool *varp = avar.getData();
+  const bool *valp = aval.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, valp++, i++) {
+    *varp = *valp;
+    _bool_start_values.setStartValue(*varp, *valp, overwriteOldValue);
+  }
 }
 
-void SystemDefaultImplementation::setStringStartValue(string& var,string val)
+void SystemDefaultImplementation::setIntStartValue(int& var, int val, bool overwriteOldValue)
 {
-  setStringStartValue(var,val,false);
+  var = val;
+  _int_start_values.setStartValue(var, val, overwriteOldValue);
 }
 
-void SystemDefaultImplementation::setStringStartValue(string& var,string val,bool overwriteOldValue)
+void SystemDefaultImplementation::setIntStartValue(BaseArray<int>& avar, int val, bool overwriteOldValue)
 {
-  var=val;
-  _string_start_values.setStartValue(var,val,overwriteOldValue);
+  int *varp = avar.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, i++) {
+    *varp = val;
+    _int_start_values.setStartValue(*varp, val, overwriteOldValue);
+  }
+}
+
+void SystemDefaultImplementation::setIntStartValue(BaseArray<int>& avar, const BaseArray<int>& aval, bool overwriteOldValue)
+{
+  int *varp = avar.getData();
+  const int *valp = aval.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, valp++, i++) {
+    *varp = *valp;
+    _int_start_values.setStartValue(*varp, *valp, overwriteOldValue);
+  }
+}
+
+void SystemDefaultImplementation::setStringStartValue(string& var, string val, bool overwriteOldValue)
+{
+  var = val;
+  _string_start_values.setStartValue(var, val, overwriteOldValue);
+}
+
+void SystemDefaultImplementation::setStringStartValue(BaseArray<string>& avar, string val, bool overwriteOldValue)
+{
+  string *varp = avar.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, i++) {
+    *varp = val;
+    _string_start_values.setStartValue(*varp, val, overwriteOldValue);
+  }
+}
+
+void SystemDefaultImplementation::setStringStartValue(BaseArray<string>& avar, const BaseArray<string>& aval, bool overwriteOldValue)
+{
+  string *varp = avar.getData();
+  const string *valp = aval.getData();
+  size_t nel = avar.getNumElems();
+  for (size_t i = 0; i < nel; varp++, valp++, i++) {
+    *varp = *valp;
+    _string_start_values.setStartValue(*varp, *valp, overwriteOldValue);
+  }
 }
 
 /**
