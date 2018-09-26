@@ -39,6 +39,7 @@ PolynomialEvaluator1.mos \
 PolynomialEvaluator2.mos \
 PolynomialEvaluator3.mos \
 ticket2336.mos \
+ticket5114.mos \
 VariableRangeSubscript.mos \
 VectorizeOneReturnValue.mos \
 Xpowers1.mos \
