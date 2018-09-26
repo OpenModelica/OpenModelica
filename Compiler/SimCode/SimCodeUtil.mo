@@ -10372,11 +10372,20 @@ algorithm
           arrayName = ComponentReference.crefStripLastSubs(name);
         end if;
 
-        if(ComponentReference.crefEqual(arrayName, name)) then
-          //print("Array not found\n");
+        _ = match iVar
+        case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) equation
+          // store array dimensions and
+          // index of first element to indicate a contiguous array
+          arrayDimensions = List.map(List.lastN(numArrayElement, listLength(numArrayElement)), stringInt);
+          varIndices = arrayCreate(1, varIdx);
+          tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, (arrayDimensions, varIndices)), tmpVarToArrayIndexMapping);
+        then ();
+        else equation if (ComponentReference.crefEqual(arrayName, name)) then
+          // scalar variable
           varIndices = arrayCreate(1, varIdx);
           tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, ({1},varIndices)), tmpVarToArrayIndexMapping);
         else
+          // store array dimensions and build up list of indices for elements
           if(BaseHashTable.hasKey(arrayName, tmpVarToArrayIndexMapping)) then
             ((arrayDimensions,varIndices)) = BaseHashTable.get(arrayName, tmpVarToArrayIndexMapping);
           else
@@ -10390,7 +10399,8 @@ algorithm
           //print("VarIndices: " + intString(arrayLength(varIndices)) + " arrayIndex: " + intString(arrayIndex) + " varIndex: " + intString(varIdx) + "\n");
           varIndices = arrayUpdate(varIndices, arrayIndex, varIdx);
           tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, (arrayDimensions,varIndices)), tmpVarToArrayIndexMapping);
-        end if;
+        end if; then ();
+        end match;
       then ((tmpCurrentVarIndices, tmpVarToArrayIndexMapping, tmpVarToIndexMapping));
     else
       equation
@@ -10430,7 +10440,7 @@ algorithm
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NOALIAS()),_,tmpCurrentVarIndices)
       equation
         //print("getArrayIdxByVar: Handling common variable\n");
-        (varIdx,tmpCurrentVarIndices) = getVarToArrayIndexByType(iVarType, tmpCurrentVarIndices);
+        (varIdx,tmpCurrentVarIndices) = getVarToArrayIndexByType(iVar, iVarType, tmpCurrentVarIndices);
       then varIdx;
     case(SimCodeVar.SIMVAR(name=name, aliasvar=SimCodeVar.NEGATEDALIAS(varName)),_,_)
       equation
@@ -10458,13 +10468,21 @@ end getArrayIdxByVar;
 
 protected function getVarToArrayIndexByType "author: marcusw
   Return the the current variable index of the given tuple, regarding the given type. The index-tuple is incremented and returned."
+  input SimCodeVar.SimVar iVar;
   input Integer iVarType; //1 = real ; 2 = int ; 3 = bool ; 4 = string
   output Integer oVarIdx;
   input output array<Integer> iCurrentVarIndices;
 algorithm
   try
     oVarIdx := arrayGet(iCurrentVarIndices, iVarType);
-    arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx+1);
+    _ := match iVar
+      case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
+        arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx + getNumElems(iVar));
+        then ();
+      else algorithm
+        arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx + 1);
+        then ();
+    end match;
   else
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarToArrayIndexByType with unknown type called."});
     oVarIdx := -1;
@@ -10509,12 +10527,18 @@ protected
   list<DAE.Subscript> arraySubscripts;
   list<Integer> arrayDimensions, arrayDimensionsReverse;
   Boolean toColumnMajor;
+  Boolean isContiguous;
 algorithm
   arraySubscripts := ComponentReference.crefLastSubs(varName);
   varName := ComponentReference.crefStripLastSubs(varName);//removeSubscripts(varName);
   if(BaseHashTable.hasKey(varName, iVarToArrayIndexMapping)) then
     ((arrayDimensions,varIndices)) := BaseHashTable.get(varName, iVarToArrayIndexMapping); //varIndices are rowMajorOrder!
-    arraySize := arrayLength(varIndices);
+    isContiguous := arrayLength(varIndices) == 1;
+    if isContiguous then
+      arraySize := List.fold(arrayDimensions, intMul, 1);
+    else
+      arraySize := arrayLength(varIndices);
+    end if;
     concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
     toColumnMajor := iColumnMajor and listLength(arrayDimensions) > 1;
     if toColumnMajor then
@@ -10528,7 +10552,11 @@ algorithm
         // convert to row major so that column major access will give this idx
         idx := convertIndexToColumnMajor(idx, arrayDimensionsReverse);
       end if;
-      idx := arrayGet(varIndices, idx);
+      if isContiguous then
+        idx := arrayGet(varIndices, 1) + idx - 1;
+      else
+        idx := arrayGet(varIndices, idx);
+      end if;
       if(intLt(idx, 0)) then
         tmpVarIndexListNew := intString((intMul(idx, -1) - 1))::tmpVarIndexListNew;
         //print("SimCodeUtil.tmpVarIndexListNew: Warning, negativ aliases (" + ComponentReference.printComponentRefStr(iVarName) + ") are not supported at the moment!\n");
@@ -12210,6 +12238,54 @@ algorithm
     else then 1;
   end match;
 end getNumElems;
+
+public
+function getScalarElements
+  "Get scalar elements of an array in row major order. This is
+   needed by templates for XML files that only support scalar variables.
+   author: rfranke"
+  input SimCodeVar.SimVar var;
+  output list<SimCodeVar.SimVar> elts;
+protected
+  list<Integer> dims;
+  SimCodeVar.SimVar elt;
+  list<DAE.Subscript> subs;
+algorithm
+  elts := match var
+  case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
+    dims := List.map(List.lastN(var.numArrayElement, listLength(var.numArrayElement)), stringInt);
+    elt := var;
+    elt.type_ := Types.arrayElementType(var.type_);
+    subs := {};
+    elts := {};
+  then fillScalarElements(elt, dims, 1, subs, elts);
+  else then {var};
+  end match;
+end getScalarElements;
+
+protected
+function fillScalarElements
+  "Helper to getScalarElements.
+   author: rfranke"
+  input SimCodeVar.SimVar eltIn;
+  input list<Integer> dims;
+  input Integer dimIdx;
+  input list<DAE.Subscript> subsIn;
+  input output list<SimCodeVar.SimVar> elts;
+protected
+  SimCodeVar.SimVar elt = eltIn;
+  list<DAE.Subscript> subs;
+algorithm
+  for i in listGet(dims, dimIdx):-1:1 loop
+    subs := DAE.INDEX(DAE.ICONST(i))::subsIn;
+    if dimIdx < listLength(dims) then
+      elts := fillScalarElements(eltIn, dims, dimIdx + 1, subs, elts);
+    else
+      elt.name := ComponentReference.crefSetLastSubs(elt.name, listReverse(subs));
+      elts := elt::elts;
+    end if;
+  end for;
+end fillScalarElements;
 
 public function getVariableIndex
   input SimCodeVar.SimVar inVar;

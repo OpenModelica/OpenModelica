@@ -149,6 +149,11 @@ template ScalarVariable(SimVar simVar, SimCode simCode, list<SimVar> stateVars, 
  "Generates code for ScalarVariable file for FMU target."
 ::=
 match simVar
+case SIMVAR(type_ = T_ARRAY()) then
+  /* roll out array as XML file only supports scalars */
+  '<%getScalarElements(simVar) |> var =>
+    ScalarVariable(var, simCode, stateVars, FMUVersion)
+    ;separator="\n"%>'
 case SIMVAR(__) then
   if stringEq(crefStr(name),"$dummy") then
   <<>>

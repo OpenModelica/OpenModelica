@@ -118,6 +118,15 @@ template scalarVariableXML(SimCode simCode, SimVar simVar, HashTableCrIListArray
  "Generates code for ScalarVariable file for FMU target."
 ::=
   match simVar
+    case SIMVAR(type_ = T_ARRAY()) then
+      /* call ScalarVariableType for array to update complexStartExpressions */
+      let _ = if not generateFMUModelDescription then
+        ScalarVariableType(simCode, name, aliasvar, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, Types.arrayElementType(type_), complexStartExpressions, stateDerVectorName)
+      /* roll out array as XML file only supports scalars */
+      let &complexStartExpressionsForScalarsUnused = buffer ""
+      '<%getScalarElements(simVar) |> var =>
+        scalarVariableXML(simCode, var, varToArrayIndexMapping, indexForUndefinedReferences, generateFMUModelDescription, complexStartExpressionsForScalarsUnused, stateDerVectorName)
+        ;separator="\n"%>'
     case SIMVAR(__) then
       let variableCode = if generateFMUModelDescription then CodegenFMUCommon.ScalarVariableType(simVar) else
                                                              ScalarVariableType(simCode, name, aliasvar, unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_, complexStartExpressions, stateDerVectorName)
@@ -168,7 +177,8 @@ template ScalarVariableType(SimCode simCode, DAE.ComponentRef simVarCref, AliasV
 end ScalarVariableType;
 
 template ScalarVariableTypeStartAttribute(SimCode simCode, DAE.ComponentRef simVarCref, AliasVariable simVarAlias, Option<DAE.Exp> startValue, Text type, Text& complexStartExpressions, Text stateDerVectorName)
- "generates code for start attribute"
+ "generates code for start attribute,
+  adds non-constant start values to complexStartExpressions"
 ::=
   match startValue
     case SOME(exp) then

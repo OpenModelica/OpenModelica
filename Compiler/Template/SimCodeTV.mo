@@ -910,6 +910,11 @@ package SimCodeUtil
     output Integer outVariableIndex;
   end getStateSimVarIndexFromIndex;
 
+  function getScalarElements
+    input SimCodeVar.SimVar var;
+    output list<SimCodeVar.SimVar> elts;
+  end getScalarElements;
+
   function getVariableIndex
     input SimCodeVar.SimVar inVar;
     output Integer outVariableIndex;
@@ -3666,6 +3671,10 @@ package DAEUtil
 end DAEUtil;
 
 package Types
+  function arrayElementType
+    input DAE.Type inType;
+    output DAE.Type outType;
+  end arrayElementType;
   function getDimensionSizes
     input DAE.Type inType;
     output list<Integer> outIntegerLst;
