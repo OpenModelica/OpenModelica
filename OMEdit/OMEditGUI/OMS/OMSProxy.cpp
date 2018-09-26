@@ -401,9 +401,9 @@ bool OMSProxy::deleteSubModel(QString modelIdent, QString subModelIdent)
  */
 bool OMSProxy::loadModel(QString filename, QString* pModelName)
 {
-  char* ident = NULL;
-  oms_status_enu_t status = oms2_loadModel(filename.toStdString().c_str(), &ident);
-  *pModelName = QString(ident);
+  char* cref = NULL;
+  oms_status_enu_t status = oms3_import(filename.toStdString().c_str(), &cref);
+  *pModelName = QString(cref);
   return statusToBool(status);
 }
 

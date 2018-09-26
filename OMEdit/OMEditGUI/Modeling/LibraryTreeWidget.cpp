@@ -388,6 +388,39 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
   if (mLibraryType == LibraryTreeItem::CompositeModel) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::OMS) {
+    if (mpOMSConnector) {
+      switch (mpOMSConnector->type) {
+        case oms_signal_type_real:
+          switch (mpOMSConnector->causality) {
+            case oms_causality_input:
+              return QIcon(":/Resources/icons/real-input-connector.svg");
+            case oms_causality_output:
+              return QIcon(":/Resources/icons/real-output-connector.svg");
+            default:
+              break;
+          }
+        case oms_signal_type_integer:
+          switch (mpOMSConnector->causality) {
+            case oms_causality_input:
+              return QIcon(":/Resources/icons/integer-input-connector.svg");
+            case oms_causality_output:
+              return QIcon(":/Resources/icons/integer-output-connector.svg");
+            default:
+              break;
+          }
+        case oms_signal_type_boolean:
+          switch (mpOMSConnector->causality) {
+            case oms_causality_input:
+              return QIcon(":/Resources/icons/boolean-input-connector.svg");
+            case oms_causality_output:
+              return QIcon(":/Resources/icons/boolean-output-connector.svg");
+            default:
+              break;
+          }
+        default:
+          break;
+      }
+    }
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
@@ -1246,7 +1279,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString n
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
   LibraryTreeItem *pLibraryTreeItem = createOMSLibraryTreeItemImpl(name, nameStructure, path, isSaved, pParentLibraryTreeItem,
-                                                                   pOMSElement, pOMSConnector, row);
+                                                                   pOMSElement, pOMSConnector);
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
   endInsertRows();
   // create library tree items
@@ -1466,7 +1499,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     showModelWidget(pLibraryTreeItem, false);
   }
   GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-  if (pGraphicsView->hasAnnotation()) {
+  if (pGraphicsView && pGraphicsView->hasAnnotation()) {
     qreal left = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).x();
     qreal bottom = pGraphicsView->mCoOrdinateSystem.getExtent().at(0).y();
     qreal right = pGraphicsView->mCoOrdinateSystem.getExtent().at(1).x();
@@ -2333,10 +2366,16 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         for (int i = 0 ; pElements[i] ; i++) {
           QString name = QString(pElements[i]->name);
           createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-                                "", pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i], 0);
+                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, pElements[i], 0);
         }
       }
     } else if (pLibraryTreeItem->getOMSElement()) {
+      for (int i = 0 ; pLibraryTreeItem->getOMSElement()->elements[i] ; i++) {
+        QString name = QString(pLibraryTreeItem->getOMSElement()->elements[i]->name);
+        createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                              pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem,
+                              pLibraryTreeItem->getOMSElement()->elements[i], 0);
+      }
       createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
     }
   } else {
@@ -2475,12 +2514,11 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
  * \param pParentLibraryTreeItem
  * \param pOMSElement
  * \param pOMSConnector
- * \param row
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                                 LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
-                                                                oms_connector_t *pOMSConnector, int row)
+                                                                oms_connector_t *pOMSConnector)
 {
   OMCInterface::getClassInformation_res classInformation;
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);

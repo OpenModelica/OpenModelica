@@ -569,7 +569,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpInputOutputComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getInputOutputComponentPolygon(), this));
   } else {
     drawInheritedComponentsAndShapes();

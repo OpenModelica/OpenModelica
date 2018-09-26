@@ -5698,12 +5698,32 @@ void ModelWidget::drawOMSModelIconElements()
       mpIconGraphicsView->addShapeToList(pTextAnnotation);
       mpIconGraphicsView->addItem(pTextAnnotation);
     }
+    for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
+      LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
+      if (pChildLibraryTreeItem->getOMSConnector()) {
+        double x = 0.5;
+        double y = 0.5;
+        if (pChildLibraryTreeItem->getOMSConnector()->geometry) {
+          x = pChildLibraryTreeItem->getOMSConnector()->geometry->x;
+          y = pChildLibraryTreeItem->getOMSConnector()->geometry->y;
+        }
+        // No ModelWidget for connectors.
+        QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                             .arg(Utilities::mapToCoOrdinateSystem(x, 0, 1, -100, 100))
+                             .arg(Utilities::mapToCoOrdinateSystem(y, 0, 1, -100, 100));
+        AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
+                                                                            annotation, mpIconGraphicsView, true,
+                                                                            pChildLibraryTreeItem->getOMSConnector()->causality,
+                                                                            pChildLibraryTreeItem->getOMSConnector()->type);
+        mpUndoStack->push(pAddConnectorCommand);
+      }
+    }
   }
 }
 
 void ModelWidget::drawOMSModelDiagramElements()
 {
-  if (mpLibraryTreeItem->isTopLevel()) {
+  if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement()) {
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
       if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
@@ -5734,6 +5754,8 @@ void ModelWidget::drawOMSModelDiagramElements()
                                                                    annotation, mpDiagramGraphicsView, true,
                                                                    pChildLibraryTreeItem->getSystemType());
         mpUndoStack->push(pAddSystemCommand);
+      } else if (pChildLibraryTreeItem->getOMSConnector()) {
+        // connectors are already drawn as part of ModelWidget::drawOMSModelIconElements();
       }
     }
   }

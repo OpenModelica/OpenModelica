@@ -304,7 +304,7 @@ private:
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                 LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
-                                                oms_connector_t *pOMSConnector, int row = -1);
+                                                oms_connector_t *pOMSConnector);
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);

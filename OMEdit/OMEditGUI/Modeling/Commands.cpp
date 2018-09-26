@@ -1820,6 +1820,7 @@ void AddSystemCommand::redo()
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, "",
                                                                  pParentLibraryTreeItem->isSaved(), pParentLibraryTreeItem, pOMSElement, 0);
+    mpLibraryTreeItem->handleIconUpdated();
   }
   // add the FMU to view
   ComponentInfo *pComponentInfo = new ComponentInfo;
