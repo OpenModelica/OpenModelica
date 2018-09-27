@@ -81,6 +81,7 @@ LibraryTreeItem::LibraryTreeItem()
   setComponentType(oms3_component_fmu);
   setOMSConnector(0);
   setOMSBusConnector(0);
+  setOMSTLMBusConnector(0);
   setFMUInfo(0);
 }
 
@@ -140,6 +141,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setComponentType(oms3_component_fmu);
   setOMSConnector(0);
   setOMSBusConnector(0);
+  setOMSTLMBusConnector(0);
   setFMUInfo(0);
 }
 
@@ -377,6 +379,11 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg("Bus")
                 .arg(Helper::fileLocation).arg(mFileName);
+    } else if (mpOMSTLMBusConnector) {
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::type).arg("TLM Bus")
+                .arg(Helper::fileLocation).arg(mFileName);
     }
   } else {
     tooltip = QString("%1 %2\n%3: %4")
@@ -429,6 +436,8 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       }
     } else if (mpOMSBusConnector) {
       return QIcon(":/Resources/icons/bus-connector.svg");
+    } else if (mpOMSTLMBusConnector) {
+      return QIcon(":/Resources/icons/tlm-bus-connector.svg");
     }
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
@@ -1275,12 +1284,15 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
  * \param pParentLibraryTreeItem
  * \param pOMSElement
  * \param pOMSConnector
+ * \param pOMSBusConnector
+ * \param pOMSTLMBusConnector
  * \param row
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved,
                                                          LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
-                                                         oms_connector_t *pOMSConnector, oms3_busconnector_t *pOMSBusConnector, int row)
+                                                         oms_connector_t *pOMSConnector, oms3_busconnector_t *pOMSBusConnector,
+                                                         oms3_tlmbusconnector_t *pOMSTLMBusConnector, int row)
 {
   if (row == -1) {
     row = pParentLibraryTreeItem->childrenSize();
@@ -1288,7 +1300,7 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString n
   QModelIndex index = libraryTreeItemIndex(pParentLibraryTreeItem);
   beginInsertRows(index, row, row);
   LibraryTreeItem *pLibraryTreeItem = createOMSLibraryTreeItemImpl(name, nameStructure, path, isSaved, pParentLibraryTreeItem,
-                                                                   pOMSElement, pOMSConnector, pOMSBusConnector);
+                                                                   pOMSElement, pOMSConnector, pOMSBusConnector, pOMSTLMBusConnector);
   pParentLibraryTreeItem->insertChild(row, pLibraryTreeItem);
   endInsertRows();
   // create library tree items
@@ -2386,6 +2398,8 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
                               pLibraryTreeItem->getOMSElement()->elements[i]);
       }
       createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
+      createOMSBusConnectorLibraryTreeItems(pLibraryTreeItem);
+      createOMSTLMBusConnectorLibraryTreeItems(pLibraryTreeItem);
     }
   } else {
     qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
@@ -2523,11 +2537,14 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
  * \param pParentLibraryTreeItem
  * \param pOMSElement
  * \param pOMSConnector
+ * \param pOMSBusConnector
+ * \param pOMSTLMBusConnector
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                                 LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
-                                                                oms_connector_t *pOMSConnector, oms3_busconnector_t *pOMSBusConnector)
+                                                                oms_connector_t *pOMSConnector, oms3_busconnector_t *pOMSBusConnector,
+                                                                oms3_tlmbusconnector_t *pOMSTLMBusConnector)
 {
   OMCInterface::getClassInformation_res classInformation;
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);
@@ -2540,6 +2557,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   }
   pLibraryTreeItem->setOMSConnector(pOMSConnector);
   pLibraryTreeItem->setOMSBusConnector(pOMSBusConnector);
+  pLibraryTreeItem->setOMSTLMBusConnector(pOMSTLMBusConnector);
   if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
     const oms_fmu_info_t *pFMUInfo;
     if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
@@ -2576,11 +2594,41 @@ void LibraryTreeModel::createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibr
 {
   if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->connectors) {
     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->connectors[j] ; j++) {
-      QString name = StringHandler::getLastWordAfterDot(pLibraryTreeItem->getOMSElement()->connectors[j]->name);
-      name = name.split(':', QString::SkipEmptyParts).last();
-      createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-                            pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0,
-                            pLibraryTreeItem->getOMSElement()->connectors[j]);
+      QString name = pLibraryTreeItem->getOMSElement()->connectors[j]->name;
+      createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
+                            pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0, pLibraryTreeItem->getOMSElement()->connectors[j]);
+    }
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::createOMSBusConnectorLibraryTreeItems
+ * Creates the OMS bus connector LibraryTreeItems
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->busconnectors) {
+    for (int j = 0 ; pLibraryTreeItem->getOMSElement()->busconnectors[j] ; j++) {
+      QString name = pLibraryTreeItem->getOMSElement()->busconnectors[j]->name;
+      createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
+                            pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0, 0, pLibraryTreeItem->getOMSElement()->busconnectors[j]);
+    }
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems
+ * Creates the OMS tlm bus connector LibraryTreeItems
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->tlmbusconnectors) {
+    for (int j = 0 ; pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j] ; j++) {
+      QString name = pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]->name;
+      createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
+                            pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0, 0, 0, pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]);
     }
   }
 }

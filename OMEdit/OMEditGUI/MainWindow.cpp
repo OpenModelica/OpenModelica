@@ -3466,6 +3466,9 @@ void MainWindow::createActions()
   // Add bus action
   mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
   mpAddBusAction->setStatusTip(Helper::addBusTip);
+  // Add tlm bus action
+  mpAddTLMBusAction = new QAction(QIcon(":/Resources/icons/tlm-bus.svg"), Helper::addTLMBus, this);
+  mpAddTLMBusAction->setStatusTip(Helper::addTLMBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4130,6 +4133,7 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddConnectorAction);
   mpOMSimulatorToobar->addAction(mpAddBusAction);
+  mpOMSimulatorToobar->addAction(mpAddTLMBusAction);
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddSubModelAction);
   mpOMSimulatorToobar->addSeparator();

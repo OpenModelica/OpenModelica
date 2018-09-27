@@ -136,6 +136,8 @@ public:
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
   void setOMSBusConnector(oms3_busconnector_t *pOMSBusConnector) {mpOMSBusConnector = pOMSBusConnector;}
   oms3_busconnector_t* getOMSBusConnector() const {return mpOMSBusConnector;}
+  void setOMSTLMBusConnector(oms3_tlmbusconnector_t *pOMSTLMBusConnector) {mpOMSTLMBusConnector = pOMSTLMBusConnector;}
+  oms3_tlmbusconnector_t* getOMSTLMBusConnector() const {return mpOMSTLMBusConnector;}
   void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
   const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
   QString getTooltip() const;
@@ -193,6 +195,7 @@ private:
   oms3_component_enu_t mComponentType;
   oms_connector_t *mpOMSConnector;
   oms3_busconnector_t *mpOMSBusConnector;
+  oms3_tlmbusconnector_t *mpOMSTLMBusConnector;
   const oms_fmu_info_t *mpFMUInfo;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
@@ -259,7 +262,8 @@ public:
                                          LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved,
                                          LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement = 0,
-                                         oms_connector_t *pOMSConnector = 0, oms3_busconnector_t *pOMSBusConnector = 0, int row = -1);
+                                         oms_connector_t *pOMSConnector = 0, oms3_busconnector_t *pOMSBusConnector = 0,
+                                         oms3_tlmbusconnector_t *pOMSTLMBusConnector = 0, int row = -1);
   void checkIfAnyNonExistingClassLoaded();
   void addNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.append(pLibraryTreeItem);}
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
@@ -307,8 +311,11 @@ private:
                                              LibraryTreeItem *pParentLibraryTreeItem, int row = -1);
   LibraryTreeItem* createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
                                                 LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement = 0,
-                                                oms_connector_t *pOMSConnector = 0, oms3_busconnector_t *pOMSBusConnector = 0);
+                                                oms_connector_t *pOMSConnector = 0, oms3_busconnector_t *pOMSBusConnector = 0,
+                                                oms3_tlmbusconnector_t *pOMSTLMBusConnector = 0);
   void createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+  void createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+  void createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
   void unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);
   void unloadClassChildren(LibraryTreeItem *pLibraryTreeItem);
   void unloadFileHelper(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem *pParentLibraryTreeItem);

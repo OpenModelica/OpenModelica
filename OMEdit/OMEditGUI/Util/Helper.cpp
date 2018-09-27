@@ -360,6 +360,8 @@ QString Helper::addSubModel;
 QString Helper::addSubModelTip;
 QString Helper::addBus;
 QString Helper::addBusTip;
+QString Helper::addTLMBus;
+QString Helper::addTLMBusTip;
 QString Helper::addConnector;
 QString Helper::addConnectorTip;
 QString Helper::running;
@@ -636,6 +638,8 @@ void Helper::initHelperVariables()
   Helper::addSubModelTip = tr("Adds the SubModel i.e., FMU or Table");
   Helper::addBus = tr("Add Bus");
   Helper::addBusTip = tr("Adds the bus");
+  Helper::addTLMBus = tr("Add TLM Bus");
+  Helper::addTLMBusTip = tr("Adds the TLM bus");
   Helper::addConnector = tr("Add Connector");
   Helper::addConnectorTip = tr("Adds the connector");
   Helper::running = tr("Running");

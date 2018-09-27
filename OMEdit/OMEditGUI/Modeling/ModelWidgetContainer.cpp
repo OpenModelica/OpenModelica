@@ -2696,6 +2696,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         menu.addSeparator();
         menu.addAction(MainWindow::instance()->getAddConnectorAction());
         menu.addAction(MainWindow::instance()->getAddBusAction());
+        menu.addAction(MainWindow::instance()->getAddTLMBusAction());
         if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
           menu.addSeparator();
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
@@ -5707,7 +5708,6 @@ void ModelWidget::drawOMSModelIconElements()
           x = pChildLibraryTreeItem->getOMSConnector()->geometry->x;
           y = pChildLibraryTreeItem->getOMSConnector()->geometry->y;
         }
-        // No ModelWidget for connectors.
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                              .arg(Utilities::mapToCoOrdinateSystem(x, 0, 1, -100, 100))
                              .arg(Utilities::mapToCoOrdinateSystem(y, 0, 1, -100, 100));
@@ -5723,13 +5723,28 @@ void ModelWidget::drawOMSModelIconElements()
           x = pChildLibraryTreeItem->getOMSBusConnector()->geometry->x;
           y = pChildLibraryTreeItem->getOMSBusConnector()->geometry->y;
         }
-        // No ModelWidget for connectors.
         QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                              .arg(Utilities::mapToCoOrdinateSystem(x, 0, 1, -100, 100))
                              .arg(Utilities::mapToCoOrdinateSystem(y, 0, 1, -100, 100));
         AddBusCommand *pAddBusCommand = new AddBusCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
                                                           annotation, mpIconGraphicsView, true);
         mpUndoStack->push(pAddBusCommand);
+      } else if (pChildLibraryTreeItem->getOMSTLMBusConnector()) {
+        double x = 0.5;
+        double y = 0.5;
+        if (pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry) {
+          x = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->x;
+          y = pChildLibraryTreeItem->getOMSTLMBusConnector()->geometry->y;
+        }
+        QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                             .arg(Utilities::mapToCoOrdinateSystem(x, 0, 1, -100, 100))
+                             .arg(Utilities::mapToCoOrdinateSystem(y, 0, 1, -100, 100));
+        AddTLMBusCommand *pAddTLMBusCommand = new AddTLMBusCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
+                                                                   annotation, mpIconGraphicsView, true,
+                                                                   QString(pChildLibraryTreeItem->getOMSTLMBusConnector()->domain),
+                                                                   pChildLibraryTreeItem->getOMSTLMBusConnector()->dimensions,
+                                                                   pChildLibraryTreeItem->getOMSTLMBusConnector()->interpolation);
+        mpUndoStack->push(pAddTLMBusCommand);
       }
     }
   }
@@ -6288,6 +6303,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getDeleteIconAction(), SIGNAL(triggered()), SLOT(deleteIcon()));
   connect(MainWindow::instance()->getAddConnectorAction(), SIGNAL(triggered()), SLOT(addConnector()));
   connect(MainWindow::instance()->getAddBusAction(), SIGNAL(triggered()), SLOT(addBus()));
+  connect(MainWindow::instance()->getAddTLMBusAction(), SIGNAL(triggered()), SLOT(addTLMBus()));
   connect(MainWindow::instance()->getAddSubModelAction(), SIGNAL(triggered()), SLOT(addSubModel()));
 }
 
@@ -6791,6 +6807,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && (omsSystem));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && omsModel);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -7049,9 +7066,15 @@ void ModelWidgetContainer::addConnector()
 void ModelWidgetContainer::addBus()
 {
   ModelWidget *pModelWidget = getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+  if (pModelWidget) {
+    GraphicsView *pGraphicsView = 0;
+    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    }
     QList<Component*> components;
-    QList<QGraphicsItem*> selectedItems = pModelWidget->getDiagramGraphicsView()->scene()->selectedItems();
+    QList<QGraphicsItem*> selectedItems = pGraphicsView->scene()->selectedItems();
     for (int i = 0 ; i < selectedItems.size() ; i++) {
       // check the selected components.
       Component *pComponent = dynamic_cast<Component*>(selectedItems.at(i));
@@ -7059,8 +7082,27 @@ void ModelWidgetContainer::addBus()
         components.append(pComponent);
       }
     }
-    AddBusDialog *pAddBusDialog = new AddBusDialog(components, pModelWidget->getDiagramGraphicsView());
+    AddBusDialog *pAddBusDialog = new AddBusDialog(components, pGraphicsView);
     pAddBusDialog->exec();
+  }
+}
+
+/*!
+ * \brief ModelWidgetContainer::addTLMBus
+ * Opens the AddTLMBusDialog.
+ */
+void ModelWidgetContainer::addTLMBus()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget) {
+    GraphicsView *pGraphicsView = 0;
+    if (pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    }
+    AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(pGraphicsView);
+    pAddTLMBusDialog->exec();
   }
 }
 

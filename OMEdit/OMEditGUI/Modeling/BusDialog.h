@@ -39,6 +39,8 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QDialogButtonBox>
+#include <QSpinBox>
+#include <QComboBox>
 
 class Component;
 class ConnectorItem : public QObject
@@ -110,6 +112,30 @@ private:
   QDialogButtonBox *mpButtonBox;
 private slots:
   void addBus();
+};
+
+class AddTLMBusDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  AddTLMBusDialog(GraphicsView *pGraphicsView);
+private:
+  GraphicsView *mpGraphicsView;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpNameLabel;
+  QLineEdit *mpNameTextBox;
+  Label *mpDomainLabel;
+  QLineEdit *mpDomainTextBox;
+  Label *mpDimensionLabel;
+  QSpinBox *mpDimensionSpinBox;
+  Label *mpInterpolationLabel;
+  QComboBox *mpInterpolationComboBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void addTLMBus();
 };
 
 #endif // ADDBUSDIALOG_H

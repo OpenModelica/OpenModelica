@@ -341,6 +341,51 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
 }
 
 /*!
+ * \brief OMSProxy::addTLMBus
+ * Adds a tlm bus.
+ * \param cref
+ * \param domain
+ * \param dimensions
+ * \param interpolation
+ * \return
+ */
+bool OMSProxy::addTLMBus(QString cref, QString domain, int dimensions, const oms_tlm_interpolation_t interpolation)
+{
+  oms_status_enu_t status = oms3_addTLMBus(cref.toStdString().c_str(), domain.toStdString().c_str(), dimensions, interpolation);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getTLMBus
+ * Gets the bus.
+ * \param cref
+ * \param pTLMBusConnector
+ * \return
+ */
+bool OMSProxy::getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector)
+{
+  oms_status_enu_t status = oms3_getTLMBus(cref.toStdString().c_str(), pTLMBusConnector);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addConnectorToTLMBus
+ * Adds a connector to a tlm bus.
+ * \param busCref
+ * \param connectorCref
+ * \param type
+ * \return
+ */
+bool OMSProxy::addConnectorToTLMBus(QString busCref, QString connectorCref, QString type)
+{
+  oms_status_enu_t status = oms3_addConnectorToTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str(),
+                                                      type.toStdString().c_str());
+  return statusToBool(status);
+}
+
+
+
+/*!
  * \brief OMSProxy::newFMIModel
  * Creates a new FMI model.
  * \param ident

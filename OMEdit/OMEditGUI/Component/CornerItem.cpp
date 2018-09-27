@@ -58,7 +58,8 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
   if (mpShapeAnnotation->isInheritedShape()
       || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
           && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()))) {
+              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
+              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
     setFlag(QGraphicsItem::ItemIsMovable, false);
   }
   /* Only shapes manipulation via CornerItem's if the class is not a system library class
@@ -69,7 +70,8 @@ CornerItem::CornerItem(qreal x, qreal y, int connectedPointIndex, ShapeAnnotatio
       !mpShapeAnnotation->isInheritedShape() &&
       !(mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
         (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-         || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()))) {
+         || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
+         || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
     connect(this, SIGNAL(cornerItemMoved(int,QPointF)), mpShapeAnnotation, SLOT(updateCornerItemPoint(int,QPointF)));
     connect(this, SIGNAL(cornerItemPress()), mpShapeAnnotation, SLOT(cornerItemPressed()));
     connect(this, SIGNAL(cornerItemRelease()), mpShapeAnnotation, SLOT(cornerItemReleased()));
@@ -112,7 +114,8 @@ void CornerItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
   if (mpShapeAnnotation->isInheritedShape()
       || (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
           && (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
-              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()))) {
+              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()
+              || mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
     pen.setColor(Qt::darkRed);
   } else {
     pen.setColor(Qt::red);
@@ -253,7 +256,9 @@ void ResizerItem::setActive()
 {
   if (mpComponent->isInheritedComponent()
       || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && (mpComponent->getLibraryTreeItem()->getOMSConnector() || mpComponent->getLibraryTreeItem()->getOMSBusConnector()))) {
+          && (mpComponent->getLibraryTreeItem()->getOMSConnector()
+              || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
+              || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
     mPen = mInheritedActivePen;
   } else {
     mPen = mActivePen;
@@ -387,7 +392,9 @@ void OriginItem::setActive()
   setZValue(3000);
   if (mpComponent->isInheritedComponent()
       || (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-          && (mpComponent->getLibraryTreeItem()->getOMSConnector() || mpComponent->getLibraryTreeItem()->getOMSBusConnector()))) {
+          && (mpComponent->getLibraryTreeItem()->getOMSConnector()
+              || mpComponent->getLibraryTreeItem()->getOMSBusConnector()
+              || mpComponent->getLibraryTreeItem()->getOMSTLMBusConnector()))) {
     mPen = mInheritedActivePen;
   } else {
     mPen = mActivePen;

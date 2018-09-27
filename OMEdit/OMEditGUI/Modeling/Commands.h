@@ -522,7 +522,7 @@ class AddBusCommand : public QUndoCommand
 {
 public:
   AddBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
-                      bool openingClass, QUndoCommand *pParent = 0);
+                bool openingClass, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
@@ -546,6 +546,28 @@ public:
 private:
   QString mBus;
   QString mConnector;
+};
+
+class AddTLMBusCommand : public QUndoCommand
+{
+public:
+  AddTLMBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                   bool openingClass, QString domain, int dimension, oms_tlm_interpolation_t interpolation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mName;
+  LibraryTreeItem *mpLibraryTreeItem;
+  QString mAnnotation;
+  GraphicsView *mpIconGraphicsView;
+  GraphicsView *mpDiagramGraphicsView;
+  bool mOpeningClass;
+  GraphicsView *mpGraphicsView;
+  QString mDomain;
+  int mDimension;
+  oms_tlm_interpolation_t mInterpolation;
+  Component *mpIconComponent;
+  Component *mpDiagramComponent;
 };
 
 #endif // COMMANDS_H

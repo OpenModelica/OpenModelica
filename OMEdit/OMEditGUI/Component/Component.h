@@ -266,6 +266,7 @@ private:
   RectangleAnnotation *mpStateComponentRectangle;
   PolygonAnnotation *mpInputOutputComponentPolygon;
   RectangleAnnotation *mpBusComponentRectangle;
+  PolygonAnnotation *mpTLMBusComponentPolygon;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;

@@ -191,6 +191,7 @@ public:
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
   QAction* getAddBusAction() {return mpAddBusAction;}
+  QAction* getAddTLMBusAction() {return mpAddTLMBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getOMSSimulationSetupAction() {return mpOMSSimulationSetupAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
@@ -416,6 +417,7 @@ private:
   QAction *mpDeleteIconAction;
   QAction *mpAddConnectorAction;
   QAction *mpAddBusAction;
+  QAction *mpAddTLMBusAction;
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulationSetupAction;
   // Toolbars

@@ -412,6 +412,10 @@ AddBusDialog::AddBusDialog(QList<Component *> components, GraphicsView *pGraphic
   setLayout(pMainLayout);
 }
 
+/*!
+ * \brief AddBusDialog::addBus
+ * Adds the bus by calling AddBusCommand
+ */
 void AddBusDialog::addBus()
 {
   if (mpNameTextBox->text().isEmpty()) {
@@ -462,6 +466,99 @@ void AddBusDialog::addBus()
   }
   mpGraphicsView->getModelWidget()->updateModelText();
   mpGraphicsView->getModelWidget()->endMacro();
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  accept();
+}
+
+/*!
+ * \class AddTLMBusDialog
+ * \brief A dialog for creating a tlm bus.
+ */
+/*!
+ * \brief AddTLMBusDialog::AddTLMBusDialog
+ * \param pGraphicsView
+ */
+AddTLMBusDialog::AddTLMBusDialog(GraphicsView *pGraphicsView)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addTLMBus));
+  setMinimumWidth(400);
+  mpGraphicsView = pGraphicsView;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::addTLMBus);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // name
+  mpNameLabel = new Label(Helper::name);
+  mpNameTextBox = new QLineEdit;
+  // domain
+  mpDomainLabel = new Label(tr("Domain:"));
+  mpDomainTextBox = new QLineEdit;
+  // dimension
+  mpDimensionLabel = new Label(tr("Dimension:"));
+  mpDimensionSpinBox = new QSpinBox;
+  mpDimensionSpinBox->setRange(1, 3);
+  // interpolation
+  mpInterpolationLabel = new Label(tr("Interpolation:"));
+  mpInterpolationComboBox = new QComboBox;
+  mpInterpolationComboBox->addItem("No interpolation", oms_tlm_no_interpolation);
+  mpInterpolationComboBox->addItem("Coarse grained", oms_tlm_coarse_grained);
+  mpInterpolationComboBox->addItem("Fine grained", oms_tlm_fine_grained);
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addTLMBus()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpNameLabel, 2, 0);
+  pMainLayout->addWidget(mpNameTextBox, 2, 1);
+  pMainLayout->addWidget(mpDomainLabel, 3, 0);
+  pMainLayout->addWidget(mpDomainTextBox, 3, 1);
+  pMainLayout->addWidget(mpDimensionLabel, 4, 0);
+  pMainLayout->addWidget(mpDimensionSpinBox, 4, 1);
+  pMainLayout->addWidget(mpInterpolationLabel, 5, 0);
+  pMainLayout->addWidget(mpInterpolationComboBox, 5, 1);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief AddTLMBusDialog::addTLMBus
+ * Adds the tlm bus by calling AddTLMBusCommand
+ */
+void AddTLMBusDialog::addTLMBus()
+{
+  if (mpNameTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("TLM Bus")), Helper::ok);
+    return;
+  }
+
+  if (mpDomainTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("domain")), Helper::ok);
+    return;
+  }
+
+  QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
+                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
+  AddTLMBusCommand *pAddBusCommand = new AddTLMBusCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false, mpDomainTextBox->text(),
+                                                          mpDimensionSpinBox->value(),
+                                                          (oms_tlm_interpolation_t)mpInterpolationComboBox->itemData(mpInterpolationComboBox->currentIndex()).toInt());
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddBusCommand);
+  mpGraphicsView->getModelWidget()->updateModelText();
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   accept();
 }

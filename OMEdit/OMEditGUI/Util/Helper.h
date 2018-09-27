@@ -361,6 +361,8 @@ public:
   static QString addSubModelTip;
   static QString addBus;
   static QString addBusTip;
+  static QString addTLMBus;
+  static QString addTLMBusTip;
   static QString addConnector;
   static QString addConnectorTip;
   static QString running;

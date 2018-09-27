@@ -2608,3 +2608,89 @@ void AddConnectorToBusCommand::undo()
 {
 
 }
+
+/*!
+ * \brief AddTLMBusCommand::AddTLMBusCommand
+ * Adds a tlm bus.
+ * \param name
+ * \param pLibraryTreeItem
+ * \param annotation
+ * \param pGraphicsView
+ * \param openingClass
+ * \param causality
+ * \param type
+ * \param pParent
+ */
+AddTLMBusCommand::AddTLMBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                                   bool openingClass, QString domain, int dimension, oms_tlm_interpolation_t interpolation,
+                                   QUndoCommand *pParent)
+  : QUndoCommand(pParent)
+{
+  mName = name;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  mAnnotation = annotation;
+  mpGraphicsView = pGraphicsView;
+  mpIconGraphicsView = pGraphicsView->getModelWidget()->getIconGraphicsView();
+  mpDiagramGraphicsView = pGraphicsView->getModelWidget()->getDiagramGraphicsView();
+  mOpeningClass = openingClass;
+  mDomain = domain;
+  mDimension = dimension;
+  mInterpolation = interpolation;
+  setText(QString("Add tlm bus %1").arg(name));
+}
+
+/*!
+ * \brief AddTLMBusCommand::redo
+ * Redo the AddTLMBusCommand.
+ */
+void AddTLMBusCommand::redo()
+{
+  LibraryTreeItem *pParentLibraryTreeItem = mpIconGraphicsView->getModelWidget()->getLibraryTreeItem();
+  QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
+  if (!mOpeningClass) {
+    OMSProxy::instance()->addTLMBus(nameStructure, mDomain, mDimension, mInterpolation);
+  }
+  if (!mpLibraryTreeItem) {
+    // get oms3_busconnector_t
+    oms3_tlmbusconnector_t *pOMSTLMBusConnector = 0;
+    OMSProxy::instance()->getTLMBus(nameStructure, &pOMSTLMBusConnector);
+    // Create a LibraryTreeItem for bus connector
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
+                                                                 true, pParentLibraryTreeItem, 0, 0, 0, pOMSTLMBusConnector);
+  }
+  ComponentInfo *pComponentInfo = new ComponentInfo;
+  pComponentInfo->setName(mpLibraryTreeItem->getName());
+  pComponentInfo->setClassName(mpLibraryTreeItem->getNameStructure());
+  // add the connector to icon view
+  mpIconComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpIconGraphicsView);
+  mpIconGraphicsView->addItem(mpIconComponent);
+  mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
+  mpIconGraphicsView->addComponentToList(mpIconComponent);
+  // add the connector to diagram view
+  mpDiagramComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
+  mpDiagramGraphicsView->addItem(mpDiagramComponent);
+  mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
+  mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+  // only select the component of the active Icon/Diagram View
+  if (!mOpeningClass) {
+    // unselect all items
+    foreach (QGraphicsItem *pItem, mpGraphicsView->items()) {
+      pItem->setSelected(false);
+    }
+    if (mpGraphicsView->getViewType() == StringHandler::Icon) {
+      mpIconComponent->setSelected(true);
+    } else {
+      mpDiagramComponent->setSelected(true);
+    }
+  }
+}
+
+/*!
+ * \brief AddTLMBusCommand::undo
+ * Undo the AddTLMBusCommand.
+ */
+void AddTLMBusCommand::undo()
+{
+
+}
