@@ -291,7 +291,7 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
 
 /*!
  * \brief OMSProxy::getConnector
- * Gets the connector
+ * Gets the connector.
  * \param cref
  * \param pConnector
  * \return
@@ -299,6 +299,44 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
 bool OMSProxy::getConnector(QString cref, oms_connector_t** pConnector)
 {
   oms_status_enu_t status = oms3_getConnector(cref.toStdString().c_str(), pConnector);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addBus
+ * Adds a bus.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::addBus(QString cref)
+{
+  oms_status_enu_t status = oms3_addBus(cref.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getBus
+ * Gets the bus.
+ * \param cref
+ * \param pBusConnector
+ * \return
+ */
+bool OMSProxy::getBus(QString cref, oms3_busconnector_t **pBusConnector)
+{
+  oms_status_enu_t status = oms3_getBus(cref.toStdString().c_str(), pBusConnector);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addConnectorToBus
+ * Adds a connector to a bus.
+ * \param busCref
+ * \param connectorCref
+ * \return
+ */
+bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
+{
+  oms_status_enu_t status = oms3_addConnectorToBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -542,13 +580,26 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
 /*!
  * \brief OMSProxy::setConnectorGeometry
  * Sets the connector geometry.
- * \param connector
+ * \param cref
  * \param pGeometry
  * \return
  */
-bool OMSProxy::setConnectorGeometry(QString connector, const ssd_connector_geometry_t* pGeometry)
+bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
 {
-  oms_status_enu_t status = oms3_setConnectorGeometry(connector.toStdString().c_str(), pGeometry);
+  oms_status_enu_t status = oms3_setConnectorGeometry(cref.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setBusGeometry
+ * Sets the bus geometry.
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
+{
+  oms_status_enu_t status = oms3_setBusGeometry(cref.toStdString().c_str(), pGeometry);
   return statusToBool(status);
 }
 

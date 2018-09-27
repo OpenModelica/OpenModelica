@@ -980,7 +980,8 @@ void ShapeAnnotation::setShapeFlags(bool enable)
    */
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !isInheritedShape()
       && !(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-           && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector())) {
+           && (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSConnector()
+               || mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSBusConnector()))) {
     setFlag(QGraphicsItem::ItemIsMovable, enable);
     setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
   }

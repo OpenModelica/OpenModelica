@@ -66,6 +66,9 @@ public:
   bool getSystemType(QString cref, oms_system_enu_t *pType);
   bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
   bool getConnector(QString cref, oms_connector_t** pConnector);
+  bool addBus(QString cref);
+  bool getBus(QString cref, oms3_busconnector_t** pBusConnector);
+  bool addConnectorToBus(QString busCref, QString connectorCref);
 
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);
@@ -84,7 +87,8 @@ public:
   bool getElements(QString cref, oms3_element_t ***pElements);
   bool getSubModelPath(QString cref, QString* pPath);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
-  bool setConnectorGeometry(QString connector, const ssd_connector_geometry_t* pGeometry);
+  bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
+  bool setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool getConnections(QString cref, oms_connection_t*** pConnections);
   bool addConnection(QString cref, QString conA, QString conB);
   bool deleteConnection(QString cref, QString conA, QString conB);

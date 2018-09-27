@@ -36,6 +36,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Component/Component.h"
 #include "Modeling/ItemDelegate.h"
+#include "Modeling/Commands.h"
 
 #include <QMessageBox>
 
@@ -444,5 +445,23 @@ void AddBusDialog::addBus()
     return;
   }
 
+  mpGraphicsView->getModelWidget()->beginMacro("Add Bus");
+  QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
+                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
+  AddBusCommand *pAddBusCommand = new AddBusCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddBusCommand);
+  // add connectors to the bus
+  LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  QString bus = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
+  foreach (Component *pComponent, components) {
+    if (pComponent->getLibraryTreeItem()) {
+      AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, pComponent->getLibraryTreeItem()->getNameStructure());
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
+    }
+  }
+  mpGraphicsView->getModelWidget()->updateModelText();
+  mpGraphicsView->getModelWidget()->endMacro();
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   accept();
 }

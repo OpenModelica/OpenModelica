@@ -195,5 +195,6 @@
         <file>Resources/icons/integer-output-connector.svg</file>
         <file>Resources/icons/boolean-input-connector.svg</file>
         <file>Resources/icons/boolean-output-connector.svg</file>
+        <file>Resources/icons/bus-connector.svg</file>
     </qresource>
 </RCC>

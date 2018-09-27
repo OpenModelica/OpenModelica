@@ -458,6 +458,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   createDefaultComponent();
   createStateComponent();
   mpInputOutputComponentPolygon = 0;
+  mpBusComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
@@ -532,6 +533,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpDefaultComponentText = 0;
   mpStateComponentRectangle = 0;
   mpInputOutputComponentPolygon = 0;
+  mpBusComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   drawInheritedComponentsAndShapes();
@@ -567,6 +569,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpDefaultComponentText = 0;
   mpStateComponentRectangle = 0;
   mpInputOutputComponentPolygon = 0;
+  mpBusComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
@@ -621,6 +624,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   createDefaultComponent();
   createStateComponent();
   mpInputOutputComponentPolygon = 0;
+  mpBusComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
   drawComponent();
@@ -665,6 +669,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   createNonExistingComponent();
   createDefaultComponent();
   mpInputOutputComponentPolygon = 0;
+  mpBusComponentRectangle = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -1588,6 +1593,14 @@ void Component::drawOMSComponent()
           break;
       }
     }
+  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
+    mpBusComponentRectangle = new RectangleAnnotation(this);
+    QList<QPointF> extents;
+    extents << QPointF(-100, -100) << QPointF(100, 100);
+    mpBusComponentRectangle->setExtents(extents);
+    mpBusComponentRectangle->setLineColor(QColor(73, 151, 60));
+    mpBusComponentRectangle->setFillColor(QColor(73, 151, 60));
+    mpBusComponentRectangle->setFillPattern(StringHandler::FillSolid);
   }
   // return to avoid the old code. The code below should be removed later on.
   return;
@@ -1858,6 +1871,9 @@ void Component::createResizerItems()
   bool isOMSConnector = (mpLibraryTreeItem
                          && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
                          && mpLibraryTreeItem->getOMSConnector());
+  bool isOMSBusConnecor = (mpLibraryTreeItem
+                           && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+                           && mpLibraryTreeItem->getOMSBusConnector());
   qreal x1, y1, x2, y2;
   getResizerItemsPositions(&x1, &y1, &x2, &y2);
   //Bottom left resizer
@@ -1868,7 +1884,7 @@ void Component::createResizerItems()
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
+  mpBottomLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector || isOMSBusConnecor);
   //Top left resizer
   mpTopLeftResizerItem = new ResizerItem(this);
   mpTopLeftResizerItem->setPos(mapFromScene(x1, y2));
@@ -1877,7 +1893,7 @@ void Component::createResizerItems()
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopLeftResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
+  mpTopLeftResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector || isOMSBusConnecor);
   //Top Right resizer
   mpTopRightResizerItem = new ResizerItem(this);
   mpTopRightResizerItem->setPos(mapFromScene(x2, y2));
@@ -1886,7 +1902,7 @@ void Component::createResizerItems()
   connect(mpTopRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpTopRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
+  mpTopRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector || isOMSBusConnecor);
   //Bottom Right resizer
   mpBottomRightResizerItem = new ResizerItem(this);
   mpBottomRightResizerItem->setPos(mapFromScene(x2, y1));
@@ -1895,7 +1911,7 @@ void Component::createResizerItems()
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemMoved(QPointF)), SLOT(resizeComponent(QPointF)));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemReleased()), SLOT(finishResizeComponent()));
   connect(mpBottomRightResizerItem, SIGNAL(resizerItemPositionChanged()), SLOT(resizedComponent()));
-  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector);
+  mpBottomRightResizerItem->blockSignals(isSystemLibrary || isInheritedComponent() || isOMSConnector || isOMSBusConnecor);
 }
 
 void Component::getResizerItemsPositions(qreal *x1, qreal *y1, qreal *x2, qreal *y2)
@@ -2178,11 +2194,15 @@ void Component::updatePlacementAnnotation()
       elementGeometry.y2 = extent2.y();
       elementGeometry.rotation = mTransformation.getRotateAngle();
       OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
-    } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSConnector()) {
+    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector() || mpLibraryTreeItem->getOMSBusConnector())) {
       ssd_connector_geometry_t connectorGeometry;
       connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
       connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
-      OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+      if (mpLibraryTreeItem->getOMSConnector()) {
+        OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+      } else if (mpLibraryTreeItem->getOMSBusConnector()) {
+        OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+      }
       /* We have connector both on icon and diagram layer.
        * If one connector is updated then update the other connector automatically.
        */
@@ -2902,8 +2922,10 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
     pComponent->setSelected(true);
   }
 
-  // No context menu for component of type OMS connector i.e., input/output signal of fmu.
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getOMSConnector()) {
+  // No context menu for component of type OMS connector i.e., input/output signal or OMS bus connector.
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+      && (mpLibraryTreeItem->getOMSConnector()
+          || mpLibraryTreeItem->getOMSBusConnector())) {
     return;
   }
 

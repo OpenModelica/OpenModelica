@@ -521,15 +521,31 @@ private:
 class AddBusCommand : public QUndoCommand
 {
 public:
-  AddBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, bool openingClass, GraphicsView *pGraphicsView, QUndoCommand *pParent = 0);
+  AddBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
+                      bool openingClass, QUndoCommand *pParent = 0);
   void redo();
   void undo();
 private:
   QString mName;
   LibraryTreeItem *mpLibraryTreeItem;
+  QString mAnnotation;
+  GraphicsView *mpIconGraphicsView;
+  GraphicsView *mpDiagramGraphicsView;
   bool mOpeningClass;
-  Component *mpComponent;
   GraphicsView *mpGraphicsView;
+  Component *mpIconComponent;
+  Component *mpDiagramComponent;
+};
+
+class AddConnectorToBusCommand : public QUndoCommand
+{
+public:
+  AddConnectorToBusCommand(QString bus, QString connecotr, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
+private:
+  QString mBus;
+  QString mConnector;
 };
 
 #endif // COMMANDS_H

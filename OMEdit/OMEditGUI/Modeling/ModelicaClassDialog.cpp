@@ -2104,7 +2104,7 @@ void CreateModelDialog::createNewModel()
     if (OMSProxy::instance()->addSystem(systemNameStructure, (oms_system_enu_t)mpSystemWidget->getTypeComboBox()->itemData(mpSystemWidget->getTypeComboBox()->currentIndex()).toInt())) {
       LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
       LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false,
-                                                                                   pLibraryTreeModel->getRootLibraryTreeItem(), 0, 0);
+                                                                                   pLibraryTreeModel->getRootLibraryTreeItem());
       if (pLibraryTreeItem) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
       }
@@ -2225,6 +2225,7 @@ void AddSystemDialog::addSystem()
                                                              mpGraphicsView, false, systemType);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
+  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
   accept();
 }
 
@@ -2412,7 +2413,9 @@ void AddConnectorDialog::addConnector()
       return;
     }
   }
-  QString annotation = QString("Placement(true,0.0,0.0,-10.0,-10.0,10.0,10.0,0,0.0,0.0,-10.0,-10.0,10.0,10.0,)");
+  QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
+                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
   AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false,
                                                                       (oms_causality_enu_t)mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt(),
                                                                       (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
