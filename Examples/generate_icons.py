@@ -69,25 +69,33 @@ regex_type_value = re.compile("(\w+.\w+)*")
 regex_coordSys = re.compile('([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),(\w+),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),')
 
 # example: Rectangle(true, {35.0, 10.0}, 0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-15.0, -4.0}, {15.0, 4.0}}, 0
-regex_rectangle = re.compile('Rectangle\((\w+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), (\w+.\w+), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ([+-]?\d+(?:.\d+)?)')
+regex_rectangle = re.compile('Rectangle\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), (\w+.\w+), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ([+-]?\d+(?:.\d+)?)')
 
 # example: Line(true, {0.0, 0.0}, 0, {{-30, -120}, {-10, -100}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None
-regex_line = re.compile('Line\((\w+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?}(?:, {[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?})*}), {(\d+), (\d+), (\d+)}, (\w+.\w+), ([+-]?\d+(?:.\d+)?), {(\w+.\w+), (\w+.\w+)}, ([+-]?\d+(?:.\d+)?), (\w+.\w+)')
+regex_line = re.compile('Line\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?}(?:, {[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?})*}), {(\d+), (\d+), (\d+)}, (\w+.\w+), ([+-]?\d+(?:.\d+)?), {(\w+.\w+), (\w+.\w+)}, ([+-]?\d+(?:.\d+)?), (\w+.\w+)')
 
 # example: Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {95, 95, 95}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100, 100}, {100, -100}}, 0, 360)}}
-regex_ellipse = re.compile('Ellipse\((\w+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)')
+regex_ellipse = re.compile('Ellipse\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)')
 
 # example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, "%name", 0, TextAlignment.Center
-regex_text = re.compile('Text\((\w+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ("[^"]*"), ([+-]?\d+(?:.\d+)?)(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
+regex_text = re.compile('Text\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ("[^"]*"), ([+-]?\d+(?:.\d+)?)(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
+
+# example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, {"%name", y, 0}, 0, TextAlignment.Center
+regex_text2 = re.compile('Text\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, {("[^"]*"), [+-, \w\d]*}, ([+-]?\d+(?:.\d+)?)(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
 
 # example: Polygon(true, {0.0, 0.0}, 0, {0, 127, 255}, {0, 127, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-24, -34}, {-82, 40}, {-72, 46}, {-14, -26}, {-24, -34}}, Smooth.None
-regex_polygon = re.compile('Polygon\((\w+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?}(?:, {[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?})*}), (\w+.\w+)')
+#   Polygon(true, {-60, -40},90, {0, 0, 0}, {255, 128, 0}, LinePattern.Solid, FillPattern.VerticalCylinder, 0.25, {{-20.0, 10.0}, {0.0, -10.0}, {1.22465e-16, -50.0}, {-10.0, -60.0}, {-20.0, -60.0}, {-20.0, 10.0}}, Smooth.None
+regex_polygon = re.compile('Polygon\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?, [+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?}(?:, {[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?, [+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?})*}), (\w+.\w+)')
 
 # example: {{-100.0, -100.0}, {-100.0, -30.0}, {0.0, -30.0}, {0.0, 0.0}}
 regex_points = re.compile('{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}')
 
 # example: Bitmap(true, {0.0, 0.0}, 0, {{-98, 98}, {98, -98}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Visualizers/TorusIcon.png"
 # TODO: where is the imageSource?
+regex_bitmap = re.compile('Bitmap\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?}(?:, {[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?})*}), ("[^"]*")')
+
+# anything unknown that produces output should look like this: Trash(...
+regex_any = re.compile('(\w+)\(')
 
 omc_cache = {}
 
@@ -232,6 +240,8 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['smooth'] = g[14]
 
         r = regex_text.search(icon_line)
+        if not r:
+            r = regex_text2.search(icon_line)
         if r:
             graphicsObj['type'] = 'Text'
             g = r.groups()
@@ -244,7 +254,7 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['fillPattern'] = g[11]
             graphicsObj['lineThickness'] = float(g[12])
             graphicsObj['extent'] = [[float(g[13]), float(g[14])], [float(g[15]), float(g[16])]]
-            graphicsObj['textString'] = g[17].strip('"').decode('utf-8')
+            graphicsObj['textString'] = g[17].strip('"').encode('utf-8')
             graphicsObj['fontSize'] = float(g[18])
             graphicsObj['fontName'] = g[19]
             if graphicsObj['fontName']:
@@ -272,9 +282,34 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['startAngle'] = float(g[17])
             graphicsObj['endAngle'] = float(g[18])
 
+        r = regex_bitmap.search(icon_line)
+        if r:
+            g = r.groups()
+            graphicsObj['type'] = 'Bitmap'
+            # Bitmap(true, {0.0, 0.0}, 0, {{-98, 98}, {98, -98}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Visualizers/TorusIcon.png"
+
+            graphicsObj['visible'] = g[0]
+            graphicsObj['origin'] = [float(g[1]), float(g[2])]
+            graphicsObj['rotation'] = float(g[3])
+
+            points = []
+            gg = re.findall(regex_points, g[4])
+            for i in range(0, len(gg)):
+                points.append([float(gg[i][0]), float(gg[i][1])])
+            graphicsObj['points'] = points
+            graphicsObj['href'] = g[5].strip('"').encode('utf-8')
+
         if not 'type' in graphicsObj:
-            graphicsObj['type'] = 'Unknown'
-            # logger.error('Unknown graphicsObj: {0}'.format(icon_line))
+            r = regex_any.search(icon_line)
+            if r:
+                g = r.groups()
+                graphicsObj['type'] = 'Unknown'
+                logger.error('Unknown graphicsObj: {0}'.format(g[0]))
+            elif icon_line.strip() == '{}': # ignore empty icons
+                graphicsObj['type'] = 'Empty'
+            else: # assume others to be empty as well
+                graphicsObj['type'] = 'Empty'
+                logger.info('Treating graphicsObj as empty icon: {0}'.format(icon_line))
 
         result['graphics'].append(graphicsObj)
 
@@ -646,8 +681,17 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             shape.add(svgwrite.text.TSpan(("{0} {1} {2} {3}".format(xmin, ymin, xmax, ymax)), **extra))
             extra = {'class': "data-bind", 'display': "none"}
             shape.add(svgwrite.text.TSpan(graphics['textString'], **extra))
+
+    elif graphics['type'] == 'Bitmap':
+        logger.warning('Not supported: {0}'.format(graphics['type']))
+        shape = dwg.image(graphics['href']) # put in correct URL or base64 data "data:image/png;base64,", need width/height?
+        return shape, definitions
+
+    elif graphics['type'] == 'Empty':
+        return None
+
     else:
-        logger.error('Not handled: {0}'.format(graphics))
+        logger.warning('Not handled: {0}'.format(graphics))
         return None
 
     dot_size = 4
@@ -728,11 +772,11 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
     if 'fillPattern' in graphics:
         if graphics['fillPattern'] == 'FillPattern.None':
             if graphics['type'] == 'Text':
-                shape.fill("rgb(" + ','.join([str(v) for v in graphics['lineColor']]) + ")")
+                shape.fill("rgb(" + ','.join([str(v) for v in graphics['lineColor']]) + ")", opacity=1)
             else:
                 shape.fill('none', opacity=0)
         elif graphics['fillPattern'] == 'FillPattern.Solid':
-            shape.fill("rgb(" + ','.join([str(v) for v in graphics['fillColor']]) + ")")
+            shape.fill("rgb(" + ','.join([str(v) for v in graphics['fillColor']]) + ")", opacity=1)
         elif graphics['fillPattern'] == 'FillPattern.Horizontal':
             url_id = str(element_id)
             element_id += 1
