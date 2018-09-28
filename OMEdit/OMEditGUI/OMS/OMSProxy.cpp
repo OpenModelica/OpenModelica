@@ -649,6 +649,19 @@ bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeo
 }
 
 /*!
+ * \brief OMSProxy::setTLMBusGeometry
+ * Sets the tlm bus geometry.
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
+{
+  oms_status_enu_t status = oms3_setTLMBusGeometry(cref.toStdString().c_str(), pGeometry);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getConnections
  * Get the model connections
  * \param cref

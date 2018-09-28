@@ -576,7 +576,13 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mHasTransition = false;
   mIsInitialState = false;
   if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getInputOutputComponentPolygon(), this));
+    if (mpLibraryTreeItem->getOMSConnector() && mpReferenceComponent->getInputOutputComponentPolygon()) {
+      mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getInputOutputComponentPolygon(), this));
+    } else if (mpLibraryTreeItem->getOMSBusConnector() && mpReferenceComponent->getBusComponentRectangle()) {
+      mShapesList.append(new RectangleAnnotation(mpReferenceComponent->getBusComponentRectangle(), this));
+    } else if (mpLibraryTreeItem->getOMSTLMBusConnector() && mpReferenceComponent->getTLMBusComponentPolygon()) {
+      mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getTLMBusComponentPolygon(), this));
+    }
   } else {
     drawInheritedComponentsAndShapes();
   }
@@ -1532,10 +1538,10 @@ void Component::drawOMSComponent()
     // draw shapes first
     drawOMSComponentShapes();
     // draw connectors now
-//    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-//      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
-//      mComponentsList.append(pNewComponent);
-//    }
+    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
+      mComponentsList.append(pNewComponent);
+    }
   } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
     if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
       mpInputOutputComponentPolygon = new PolygonAnnotation(this);
@@ -2210,7 +2216,9 @@ void Component::updatePlacementAnnotation()
       elementGeometry.y2 = extent2.y();
       elementGeometry.rotation = mTransformation.getRotateAngle();
       OMSProxy::instance()->setElementGeometry(mpLibraryTreeItem->getNameStructure(), &elementGeometry);
-    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector() || mpLibraryTreeItem->getOMSBusConnector())) {
+    } else if (mpLibraryTreeItem && (mpLibraryTreeItem->getOMSConnector()
+                                     || mpLibraryTreeItem->getOMSBusConnector()
+                                     || mpLibraryTreeItem->getOMSTLMBusConnector())) {
       ssd_connector_geometry_t connectorGeometry;
       connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().x(), -100, 100, 0, 1);
       connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mTransformation.getOrigin().y(), -100, 100, 0, 1);
@@ -2218,6 +2226,8 @@ void Component::updatePlacementAnnotation()
         OMSProxy::instance()->setConnectorGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
       } else if (mpLibraryTreeItem->getOMSBusConnector()) {
         OMSProxy::instance()->setBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
+      } else if (mpLibraryTreeItem->getOMSTLMBusConnector()) {
+        OMSProxy::instance()->setTLMBusGeometry(mpLibraryTreeItem->getNameStructure(), &connectorGeometry);
       }
       /* We have connector both on icon and diagram layer.
        * If one connector is updated then update the other connector automatically.

@@ -3763,6 +3763,8 @@ void ModelWidget::createModelWidgetComponents()
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
         pMainLayout->addWidget(mpIconGraphicsView, 1);
       }
+      // show the diagram view
+      mpDiagramViewToolButton->setChecked(true);
     }
     if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
@@ -6346,17 +6348,12 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->getEditor()->show();
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel
-             || (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-                 && pModelWidget->getLibraryTreeItem()->isTopLevel())) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     if (pModelWidget->getModelWidgetContainer()->getPreviousViewType() != StringHandler::NoView) {
       loadPreviousViewType(pModelWidget);
     } else {
       pModelWidget->getDiagramViewToolButton()->setChecked(true);
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS
-             && !pModelWidget->getLibraryTreeItem()->isTopLevel()) {
-    pModelWidget->getDiagramViewToolButton()->setChecked(true);
   }
   pModelWidget->updateViewButtonsBasedOnAccess();
   if (!checkPreferedView || pModelWidget->getLibraryTreeItem()->getLibraryType() != LibraryTreeItem::Modelica) {
@@ -6665,8 +6662,7 @@ void ModelWidgetContainer::loadPreviousViewType(ModelWidget *pModelWidget)
         pModelWidget->getDiagramViewToolButton()->setChecked(true);
         break;
     }
-  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel
-             || pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     switch (pModelWidget->getModelWidgetContainer()->getPreviousViewType()) {
       case StringHandler::ModelicaText:
         pModelWidget->getTextViewToolButton()->setChecked(true);

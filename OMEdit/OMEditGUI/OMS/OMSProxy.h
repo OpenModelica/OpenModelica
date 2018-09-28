@@ -92,6 +92,7 @@ public:
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
+  bool setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool getConnections(QString cref, oms_connection_t*** pConnections);
   bool addConnection(QString cref, QString conA, QString conB);
   bool deleteConnection(QString cref, QString conA, QString conB);

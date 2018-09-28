@@ -198,6 +198,8 @@ public:
   void setChoicesAnnotation(QStringList choicesAnnotation) {mChoicesAnnotation = choicesAnnotation;}
   QStringList getChoicesAnnotation() {return mChoicesAnnotation;}
   PolygonAnnotation* getInputOutputComponentPolygon() {return mpInputOutputComponentPolygon;}
+  RectangleAnnotation* getBusComponentRectangle() {return mpBusComponentRectangle;}
+  PolygonAnnotation* getTLMBusComponentPolygon() {return mpTLMBusComponentPolygon;}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}

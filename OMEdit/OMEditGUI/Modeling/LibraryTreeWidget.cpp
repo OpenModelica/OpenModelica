@@ -3794,7 +3794,10 @@ void LibraryTreeView::mouseDoubleClickEvent(QMouseEvent *event)
         setExpandsOnDoubleClick(false);
         return;
       }
-    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && pLibraryTreeItem->getOMSConnector()) {
+    } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+               && (pLibraryTreeItem->getOMSConnector()
+                   || pLibraryTreeItem->getOMSBusConnector()
+                   || pLibraryTreeItem->getOMSTLMBusConnector())) {
       return;
     }
     mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
