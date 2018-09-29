@@ -36,12 +36,10 @@ The OMJulia package contains the following features:
 Test Commands
 ~~~~~~~~~~~~~
 
-To get started, create a omc OMJulia session object:
+To get started, create an OMJulia session object:
 
 >>> using OMJulia
 >>> omc= OMJulia.OMCSession()
->>> omc.sendExpression("getVersion()")
-"v1.13.0-dev-531-gde26b558a (64-bit)"
 >>> omc.sendExpression("loadModel(Modelica)")
 "True"
 >>> omc.sendExpression("model a Real s; equation s=sin(10*time); end a;")
