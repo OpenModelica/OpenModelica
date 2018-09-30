@@ -524,7 +524,18 @@ protected
   RangeIterator range_iter;
   Expression sub_exp;
   list<Subscript> subs;
+  list<Variable> vrs;
 algorithm
+  // if we don't scalarize flatten the class and then add dimensions to the types
+  if not Flags.isSet(Flags.NF_SCALARIZE) then
+    (vrs, sections) := flattenClass(cls, prefix, visibility, binding, {}, sections);
+    for v in vrs loop
+      v.ty := Type.liftArrayLeftList(v.ty, dimensions);
+      vars := v::vars;
+    end for;
+    return;
+  end if;
+
   if listEmpty(dimensions) then
     subs := listReverse(subscripts);
     sub_pre := ComponentRef.setSubscripts(subs, prefix);
