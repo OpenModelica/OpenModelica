@@ -254,7 +254,7 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['fillPattern'] = g[11]
             graphicsObj['lineThickness'] = float(g[12])
             graphicsObj['extent'] = [[float(g[13]), float(g[14])], [float(g[15]), float(g[16])]]
-            graphicsObj['textString'] = g[17].strip('"').encode('utf-8')
+            graphicsObj['textString'] = g[17].strip('"')
             graphicsObj['fontSize'] = float(g[18])
             graphicsObj['fontName'] = g[19]
             if graphicsObj['fontName']:
@@ -335,7 +335,7 @@ def getGraphicsWithPortsForClass(modelicaClass):
             try:
                 comp_annotation = ask_omc('getNthComponentAnnotation', modelicaClass + ', ' + str(comp_id))['SET2']['Set1']
             except KeyError as ex:
-                logger.error('KeyError: {0} componentName: {1} {2}'.format(modelicaClass, component_name, ex.message))
+                logger.error('KeyError: {0} componentName: {1} {2}'.format(modelicaClass, component_name, str(ex)))
                 continue
 
             # base class graphics for ports
