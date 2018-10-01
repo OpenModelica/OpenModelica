@@ -491,12 +491,8 @@ algorithm
       then
         DAE.Element.ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
-    // For equations should have been unrolled here.
     case Equation.FOR()
-      algorithm
-        Error.assertion(false, getInstanceName() + " got a for equation", sourceInfo());
-      then
-        fail();
+      then convertForEquation(eq) :: elements;
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.source, isInitial = false) :: elements;
@@ -528,6 +524,25 @@ algorithm
     else elements;
   end match;
 end convertEquation;
+
+function convertForEquation
+  input Equation forEquation;
+  output DAE.Element forDAE;
+protected
+  InstNode iterator;
+  Type ty;
+  Expression range;
+  list<Equation> body;
+  list<DAE.Element> dbody;
+  DAE.ElementSource source;
+algorithm
+  Equation.FOR(iterator = iterator, range = SOME(range), body = body, source = source) := forEquation;
+  dbody := convertEquations(body);
+  Component.ITERATOR(ty = ty) := InstNode.component(iterator);
+
+  forDAE := DAE.Element.FOR_EQUATION(Type.toDAE(ty), Type.isArray(ty),
+    InstNode.name(iterator), 0, Expression.toDAE(range), dbody, source);
+end convertForEquation;
 
 function convertIfEquation
   input list<Equation.Branch> ifBranches;
@@ -626,12 +641,8 @@ algorithm
       then
         DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
-    // For equations should have been unrolled here.
     case Equation.FOR()
-      algorithm
-        Error.assertion(false, getInstanceName() + " got a for equation", sourceInfo());
-      then
-        fail();
+      then convertForEquation(eq) :: elements;
 
     case Equation.IF()
       then convertIfEquation(eq.branches, eq.source, isInitial = true) :: elements;

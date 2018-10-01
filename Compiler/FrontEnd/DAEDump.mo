@@ -2996,6 +2996,17 @@ algorithm
       then
         str;
 
+    case (DAE.FOR_EQUATION(iter = s, range = e1, equations = xs1, source = src) :: xs, str)
+      equation
+        sourceStr = getSourceInformationStr(src);
+        s1 = ExpressionDump.printExpStr(e1);
+        str = IOStream.appendList(str, {"  for ", s, " in ", s1, " loop\n"});
+        str = dumpEquationsStream(xs1, str);
+        str = IOStream.appendList(str, {"  end for;\n"});
+        str = dumpEquationsStream(xs, str);
+      then
+        str;
+
     case ((DAE.IF_EQUATION(condition1 = {},equations2 = {},equations3 = {}) :: _), str)
       then
         str;

@@ -724,7 +724,13 @@ algorithm
         Equation.EQUALITY(e1, e2, eq.ty, eq.source) :: equations;
 
     case Equation.FOR()
-      then unrollForLoop(eq, prefix, equations);
+      algorithm
+        if Flags.isSet(Flags.NF_SCALARIZE) then
+          eql := unrollForLoop(eq, prefix, equations);
+        else
+          eql := eq :: equations;
+        end if;
+      then eql;
 
     case Equation.CONNECT()
       algorithm

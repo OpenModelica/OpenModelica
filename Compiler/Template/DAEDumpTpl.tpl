@@ -619,6 +619,7 @@ match lst
   case COMPLEX_EQUATION(__) then dumpEquation(lhs, rhs, source)
   case DEFINE(__) then dumpDefine(componentRef, exp, source)
   case WHEN_EQUATION(__) then dumpWhenEquation(lst)
+  case FOR_EQUATION(__) then dumpForEquation(lst)
   case IF_EQUATION(__) then dumpIfEquation(condition1, equations2, equations3, source)
   case ASSERT(__) then dumpAssert(condition, message, level, source)
   case INITIAL_ASSERT(__) then dumpAssert(condition, message, level, source)
@@ -728,6 +729,20 @@ match lst
     else<%elsewhen_str%>
     >>
 end dumpWhenEquation;
+
+template dumpForEquation(DAE.Element lst)
+::=
+match lst
+  case FOR_EQUATION(__) then
+    let range_str = dumpExp(range)
+    let body_str = (equations |> e => dumpEquationElement(e) ;separator="\n")
+    let src_str = dumpSource(source)
+    <<
+    for <%iter%> in <%range_str%> loop
+      <%body_str%>
+    end for<%src_str%>;
+    >>
+end dumpForEquation;
 
 template dumpIfEquation(list<DAE.Exp> conds, list<list<DAE.Element>> branches,
   list<DAE.Element> else_branch, DAE.ElementSource src)

@@ -424,6 +424,11 @@ algorithm
           DoubleEndedList.push_back(eqs, elt);
         then ();
 
+      case DAE.FOR_EQUATION()
+        algorithm
+          DoubleEndedList.push_back(eqs, elt);
+        then ();
+
       case DAE.IF_EQUATION()
         algorithm
           DoubleEndedList.push_back(eqs, elt);
@@ -4160,6 +4165,15 @@ algorithm
       then
         ();
 
+    case DAE.FOR_EQUATION(range = e1, equations = el)
+      algorithm
+        (new_e1, arg) := func(e1, arg);
+        if not referenceEq(e1, new_e1) then element.range := new_e1; end if;
+        (new_el, arg) := traverseDAEElementList(el, func, arg);
+        if not referenceEq(el, new_el) then element.equations := new_el; end if;
+      then
+        ();
+
     case DAE.COMP(dAElist = el)
       algorithm
         (new_el, arg) := traverseDAEElementList(el, func, arg);
@@ -5151,6 +5165,8 @@ algorithm
       case DAE.TERMINATE()
         algorithm equations := e :: equations; then ();
       case DAE.IF_EQUATION()
+        algorithm equations := e :: equations; then ();
+      case DAE.FOR_EQUATION()
         algorithm equations := e :: equations; then ();
       case DAE.WHEN_EQUATION()
         algorithm equations := e :: equations; then ();
