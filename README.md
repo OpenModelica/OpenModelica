@@ -5,6 +5,7 @@ A Modelica connection editor for OpenModelica.
 
 - [OpenModelica](https://openmodelica.org)
 - [OMPlot](../../../OMPlot)
+- [OMSimulator](../../../OMSimulator)
 
 ## Build instructions
 
