@@ -1,17 +1,18 @@
-OMJulia – OpenModelica Julia Interface
+OMJulia – OpenModelica Julia Scripting
 ======================================
 
-OMJulia – the OpenModelica Julia API is a free, open source, highly
-portable Julia based interactive session handler for Modelica
-scripting. It provides the modeler with components for creating a
-complete Modelica modeling, compilation and simulation environment based
-on the latest OpenModelica library standard available. OMPython is
-architectured to combine both the solving strategy and model building.
-So domain experts (people writing the models) and computational
+OMJulia – the OpenModelica Julia API is a free, open source, 
+highly portable Julia based interactive session handler for 
+Julia scripting of OpenModelica API functionality. It provides the modeler
+with components for creating a complete Julia-Modelica modeling, compilation 
+and simulation environment based on the latest OpenModelica implementation 
+and Modelica library standard available. OMJulia is architectured to 
+combine both the solving strategy and model building.
+Thus, domain experts (people writing the models) and computational
 engineers (people writing the solver code) can work on one unified tool
 that is industrially viable for optimization of Modelica models, while
 offering a flexible platform for algorithm development and research.
-OMJulia is not a standalone package, it depends upon the
+OMJulia is not a standalone package, it depends upon the 
 OpenModelica installation.
 
 OMJulia is implemented in Julia and depends on
@@ -208,7 +209,7 @@ Usage of Linearization methods
 
 >>> mod.setLinearizationOptions(["stopTime=2.0","tolerance=1e-06"])
 
->>> mod.linearize()  //returns a tuple of 2D arrays (matrices) A, B, C and D.
+>>> mod.linearize()  //returns a list 2D arrays (matrices) A, B, C and D.
 
 >>> mod.getLinearInputs()  //returns a list of strings of names of inputs used when forming matrices.
 
