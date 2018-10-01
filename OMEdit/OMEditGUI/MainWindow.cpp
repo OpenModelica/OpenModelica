@@ -864,7 +864,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   // set the folder as working directory
   MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
   // buildModelFMU parameters
-  double version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
+  QString version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
   QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
   QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
   QSettings *pSettings = Utilities::getApplicationSettings();

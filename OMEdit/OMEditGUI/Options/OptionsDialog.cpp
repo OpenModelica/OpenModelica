@@ -774,7 +774,7 @@ void OptionsDialog::readDebuggerSettings()
 void OptionsDialog::readFMISettings()
 {
   if (mpSettings->contains("FMIExport/Version")) {
-    mpFMIPage->setFMIExportVersion(mpSettings->value("FMIExport/Version").toDouble());
+    mpFMIPage->setFMIExportVersion(mpSettings->value("FMIExport/Version").toString());
   }
   if (mpSettings->contains("FMIExport/Type")) {
     mpFMIPage->setFMIExportType(mpSettings->value("FMIExport/Type").toString());
@@ -4516,9 +4516,9 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
  * Sets the FMI export version
  * \param version
  */
-void FMIPage::setFMIExportVersion(double version)
+void FMIPage::setFMIExportVersion(QString version)
 {
-  if (version == 1.0) {
+  if (version == "1.0" || version == "1") {
     mpVersion1RadioButton->setChecked(true);
   } else {
     mpVersion2RadioButton->setChecked(true);
@@ -4530,12 +4530,12 @@ void FMIPage::setFMIExportVersion(double version)
  * Gets the FMI export version
  * \return
  */
-double FMIPage::getFMIExportVersion()
+QString FMIPage::getFMIExportVersion()
 {
   if (mpVersion1RadioButton->isChecked()) {
-    return 1.0;
+    return "1.0";
   } else {
-    return 2.0;
+    return "2.0";
   }
 }
 

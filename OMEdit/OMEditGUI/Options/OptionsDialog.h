@@ -869,8 +869,8 @@ class FMIPage : public QWidget
   Q_OBJECT
 public:
   FMIPage(OptionsDialog *pOptionsDialog);
-  void setFMIExportVersion(double version);
-  double getFMIExportVersion();
+  void setFMIExportVersion(QString version);
+  QString getFMIExportVersion();
   void setFMIExportType(QString type);
   QString getFMIExportType();
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
