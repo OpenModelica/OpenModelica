@@ -58,41 +58,42 @@ def classToFileName(cl):
 #   fileName
 #   imageSource
 
+exp_float = '[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?'
+
 element_id = 0
 regex_equal_key_value = re.compile("([^ =]+) *= *(\"[^\"]*\"|[^ ]*)")
-regex_points = re.compile("{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}")
 
 regex_type_value = re.compile("(\w+.\w+)*")
 
 # Compile regular expressions ONLY once!
 # example: {-100.0,-100.0,100.0,100.0,true,0.16,2.0,2.0, {...
-regex_coordSys = re.compile('([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),(\w+),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),([+-]?\d+(?:.\d+)?),')
+regex_coordSys = re.compile('('+exp_float+'),('+exp_float+'),('+exp_float+'),('+exp_float+'),(\w+),('+exp_float+'),('+exp_float+'),('+exp_float+'),')
 
 # example: Rectangle(true, {35.0, 10.0}, 0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-15.0, -4.0}, {15.0, 4.0}}, 0
-regex_rectangle = re.compile('Rectangle\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), (\w+.\w+), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ([+-]?\d+(?:.\d+)?)')
+regex_rectangle = re.compile('Rectangle\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), (\w+.\w+), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ('+exp_float+')')
 
 # example: Line(true, {0.0, 0.0}, 0, {{-30, -120}, {-10, -100}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3, Smooth.None
-regex_line = re.compile('Line\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?}(?:, {[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?})*}), {(\d+), (\d+), (\d+)}, (\w+.\w+), ([+-]?\d+(?:.\d+)?), {(\w+.\w+), (\w+.\w+)}, ([+-]?\d+(?:.\d+)?), (\w+.\w+)')
+regex_line = re.compile('Line\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), ({{'+exp_float+', '+exp_float+'}(?:, {'+exp_float+', '+exp_float+'})*}), {(\d+), (\d+), (\d+)}, (\w+.\w+), ('+exp_float+'), {(\w+.\w+), (\w+.\w+)}, ('+exp_float+'), (\w+.\w+)')
 
 # example: Ellipse(true, {0.0, 0.0}, 0, {0, 0, 0}, {95, 95, 95}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100, 100}, {100, -100}}, 0, 360)}}
-regex_ellipse = re.compile('Ellipse\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)')
+regex_ellipse = re.compile('Ellipse\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ('+exp_float+'), ('+exp_float+')')
 
 # example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, "%name", 0, TextAlignment.Center
-regex_text = re.compile('Text\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, ("[^"]*"), ([+-]?\d+(?:.\d+)?)(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
+regex_text = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, ("[^"]*"), ('+exp_float+')(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
 
 # example: Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-150, 110}, {150, 70}}, {"%name", y, 0}, 0, TextAlignment.Center
-regex_text2 = re.compile('Text\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), {{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}}, {("[^"]*"), [+-, \w\d]*}, ([+-]?\d+(?:.\d+)?)(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
+regex_text2 = re.compile('Text\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), {{('+exp_float+'), ('+exp_float+')}, {('+exp_float+'), ('+exp_float+')}}, {("[^"]*"), [+-, \w\d]*}, ('+exp_float+')(?:, ("[^"]*"))?(?:, {([^}]*)})?, (\w+.\w+)')
 
 # example: Polygon(true, {0.0, 0.0}, 0, {0, 127, 255}, {0, 127, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-24, -34}, {-82, 40}, {-72, 46}, {-14, -26}, {-24, -34}}, Smooth.None
 #   Polygon(true, {-60, -40},90, {0, 0, 0}, {255, 128, 0}, LinePattern.Solid, FillPattern.VerticalCylinder, 0.25, {{-20.0, 10.0}, {0.0, -10.0}, {1.22465e-16, -50.0}, {-10.0, -60.0}, {-20.0, -60.0}, {-20.0, 10.0}}, Smooth.None
-regex_polygon = re.compile('Polygon\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?, [+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?}(?:, {[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?, [+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?})*}), (\w+.\w+)')
+regex_polygon = re.compile('Polygon\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), {(\d+), (\d+), (\d+)}, {(\d+), (\d+), (\d+)}, (\w+.\w+), (\w+.\w+), ('+exp_float+'), ({{'+exp_float+'(?:e[+-]?\d+)?, '+exp_float+'(?:e[+-]?\d+)?}(?:, {'+exp_float+', '+exp_float+'})*}), (\w+.\w+)')
 
 # example: {{-100.0, -100.0}, {-100.0, -30.0}, {0.0, -30.0}, {0.0, 0.0}}
-regex_points = re.compile('{([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}')
+regex_points = re.compile('{('+exp_float+'), ('+exp_float+')}')
 
 # example: Bitmap(true, {0.0, 0.0}, 0, {{-98, 98}, {98, -98}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Visualizers/TorusIcon.png"
 # TODO: where is the imageSource?
-regex_bitmap = re.compile('Bitmap\(([\w ]+), {([+-]?\d+(?:.\d+)?), ([+-]?\d+(?:.\d+)?)}, ([+-]?\d+(?:.\d+)?), ({{[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?}(?:, {[+-]?\d+(?:.\d+)?, [+-]?\d+(?:.\d+)?})*}), ("[^"]*")')
+regex_bitmap = re.compile('Bitmap\(([\w ]+), {('+exp_float+'), ('+exp_float+')}, ('+exp_float+'), ({{'+exp_float+', '+exp_float+'}(?:, {'+exp_float+', '+exp_float+'})*}), ("[^"]*")')
 
 # anything unknown that produces output should look like this: Trash(...
 regex_any = re.compile('(\w+)\(')
@@ -297,7 +298,7 @@ def getGraphicsForClass(modelicaClass):
             for i in range(0, len(gg)):
                 points.append([float(gg[i][0]), float(gg[i][1])])
             graphicsObj['points'] = points
-            graphicsObj['href'] = g[5].strip('"').encode('utf-8')
+            graphicsObj['href'] = g[5].strip('"')
 
         if not 'type' in graphicsObj:
             r = regex_any.search(icon_line)
@@ -624,7 +625,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
         extra['font_family'] = graphics['fontName'] or "Verdana"
 
         if graphics['fontSize'] == 0:
-            extra['font_size'] = "18"
+            extra['font_size'] = str(abs(y1-y0)) # fit text into extent according to 18.6.5.5
         else:
             extra['font_size'] = graphics['fontSize']
 
@@ -1025,7 +1026,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
 
 # generate svgs from graphics objects
-def generateSvg(filename, iconGraphics, includeInvisibleText):
+def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
     global element_id
     element_id = 0
 
@@ -1133,13 +1134,19 @@ def generateSvg(filename, iconGraphics, includeInvisibleText):
     hashName = hashlib.sha1(dwg.tostring().encode("utf-8")).hexdigest() + ".svg"
     hashPath = os.path.join(os.path.dirname(filename),hashName)
     if not os.path.exists(hashPath):
-      dwg.saveas(hashPath)
-    os.symlink(hashName, filename)
+        dwg.saveas(hashPath)
+    if not os.path.exists(filename):
+        os.symlink(hashName, filename)
+    else:
+        if warn_duplicates:
+            logger.warning('Target file {0} already exists'.format(filename))
+        else:
+            logger.error('Target file {0} already exists'.format(filename))
 
     return dwg
 
 
-def exportIcon(modelicaClass, base_classes, includeInvisbleText):
+def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates):
     # get all icons
     iconGraphics = []
 
@@ -1153,7 +1160,7 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText):
         json.dump(iconGraphics, f_p)
 
     # export svgs
-    dwg = generateSvg(os.path.join(output_dir, classToFileName(modelicaClass) + ".svg"), iconGraphics, includeInvisbleText)
+    dwg = generateSvg(os.path.join(output_dir, classToFileName(modelicaClass) + ".svg"), iconGraphics, includeInvisbleText, warn_duplicates)
     return dwg
 
 # Note: The order of the base classes matters
@@ -1173,6 +1180,7 @@ def main():
     parser.add_option("--with-html", help="Generate an HTML report with all SVG-files", action="store_true", dest="with_html", default=False)
     parser.add_option("--with-invisible-text", action="store_true", help="Includes invisible text containing the original text and bounding box, for debugging purposes", dest="includeInvisibleText", default=False)
     parser.add_option("--output-dir", help="Directory to generate SVG-files in", type="string", dest="output_dir", default=os.path.abspath('ModelicaIcons'))
+    parser.add_option("--warn-dup", help="Warn about duplicate files instead of generating an error", action="store_true", dest="warn_duplicates", default=False)
     parser.add_option("--quiet", help="Do not output to the console", action="store_true", dest="quiet", default=False)
     (options, args) = parser.parse_args()
     if len(args) == 0:
@@ -1182,6 +1190,7 @@ def main():
     output_dir = options.output_dir
     with_html = options.with_html
     includeInvisibleText = options.includeInvisibleText
+    warn_duplicates = options.warn_duplicates
 
     # create logger with 'spam_application'
     global logger
@@ -1251,7 +1260,7 @@ def main():
             # try:
             base_classes = []
             getBaseClasses(modelica_class, base_classes)
-            dwg = exportIcon(modelica_class, base_classes, includeInvisibleText)
+            dwg = exportIcon(modelica_class, base_classes, includeInvisibleText, warn_duplicates)
             dwgs.append(dwg)
 
             logger.info('Done: ' + modelica_class)
