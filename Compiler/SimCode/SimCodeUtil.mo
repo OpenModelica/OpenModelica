@@ -7979,7 +7979,7 @@ protected function setVariableIndexHelper2
   input SimCodeVar.SimVar inVar;
   input Integer inIndex;
   output SimCodeVar.SimVar outVar = inVar;
-  output Integer outIndex = inIndex + 1;
+  output Integer outIndex = inIndex + getNumElems(inVar);
 algorithm
   outVar.variable_index := SOME(inIndex);
 end setVariableIndexHelper2;
@@ -10395,7 +10395,7 @@ algorithm
             varIndices = arrayCreate(List.fold(arrayDimensions, intMul, 1), 0);
           end if;
           //print("Num of array elements {" + stringDelimitList(List.map(arrayDimensions, intString), ",") + "} : " + intString(listLength(arraySubscripts)) + "  arraySubs "+ExpressionDump.printSubscriptLstStr(arraySubscripts) + "  arrayDimensions[ "+stringDelimitList(List.map(arrayDimensions,intString),",")+"]\n");
-          arrayIndex = getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
+          arrayIndex = getScalarElementIndex(arraySubscripts, arrayDimensions);
           //print("VarIndices: " + intString(arrayLength(varIndices)) + " arrayIndex: " + intString(arrayIndex) + " varIndex: " + intString(varIdx) + "\n");
           varIndices = arrayUpdate(varIndices, arrayIndex, varIdx);
           tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, (arrayDimensions,varIndices)), tmpVarToArrayIndexMapping);
@@ -10539,7 +10539,7 @@ algorithm
     else
       arraySize := arrayLength(varIndices);
     end if;
-    concreteVarIndex := getUnrolledArrayIndex(arraySubscripts,arrayDimensions);
+    concreteVarIndex := getScalarElementIndex(arraySubscripts, arrayDimensions);
     toColumnMajor := iColumnMajor and listLength(arrayDimensions) > 1;
     if toColumnMajor then
       concreteVarIndex := convertIndexToColumnMajor(concreteVarIndex, arrayDimensions);
@@ -10652,7 +10652,7 @@ algorithm
   oIsConsecutive := consecutive;
 end isVarIndexListConsecutive;
 
-protected function getUnrolledArrayIndex
+protected function getScalarElementIndex
  "Calculate the one based memory offset for consecutive row major storage,
   author: rfranke"
   input list<DAE.Subscript> arraySubscripts;
@@ -10668,7 +10668,7 @@ algorithm
     arrayIndex := arrayIndex + (idx - 1) * fac;
     fac := fac * listGet(arrayDimensions, i);
   end for;
-end getUnrolledArrayIndex;
+end getScalarElementIndex;
 
 public function createIdxSCVarMapping "author: marcusw
   Create a mapping from the SCVar-Index (array-Index) to the SCVariable, as it is used in the c-runtime."
@@ -12218,7 +12218,7 @@ function getNumScalars
   input list<SimCodeVar.SimVar> vars;
   output Integer numScalars;
 algorithm
-  numScalars := List.fold(List.map(vars, getNumElems), intAdd, 0);
+  numScalars := List.applyAndFold(vars, intAdd, getNumElems, 0);
 end getNumScalars;
 
 protected
@@ -12250,7 +12250,9 @@ protected
   list<Integer> dims;
   SimCodeVar.SimVar elt;
   list<DAE.Subscript> subs;
+  Integer index = 0;
 algorithm
+  // create list of elements
   elts := match var
   case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
     dims := List.map(List.lastN(var.numArrayElement, listLength(var.numArrayElement)), stringInt);
@@ -12261,11 +12263,17 @@ algorithm
   then fillScalarElements(elt, dims, 1, subs, elts);
   else then {var};
   end match;
+  // set variable indices
+  (elts, index) := match var
+    case SimCodeVar.SIMVAR(variable_index = SOME(index))
+    then setVariableIndexHelper(elts, index);
+    else (elts, index);
+  end match;
 end getScalarElements;
 
 protected
 function fillScalarElements
-  "Helper to getScalarElements.
+  "Helper for getScalarElements, called recursively for each dimension.
    author: rfranke"
   input SimCodeVar.SimVar eltIn;
   input list<Integer> dims;
@@ -12277,12 +12285,25 @@ protected
   list<DAE.Subscript> subs;
 algorithm
   for i in listGet(dims, dimIdx):-1:1 loop
-    subs := DAE.INDEX(DAE.ICONST(i))::subsIn;
+    subs := DAE.INDEX(DAE.ICONST(i)) :: subsIn;
     if dimIdx < listLength(dims) then
       elts := fillScalarElements(eltIn, dims, dimIdx + 1, subs, elts);
     else
-      elt.name := ComponentReference.crefSetLastSubs(elt.name, listReverse(subs));
-      elts := elt::elts;
+      // add subscripts to array element
+      subs := listReverse(subs);
+      elt.name := ComponentReference.crefSetLastSubs(elt.name, subs);
+      // add subscripts to previousName
+      _ := match elt
+        local
+          DAE.ComponentRef cref;
+          Boolean fixed;
+        case SimCodeVar.SIMVAR(varKind = BackendDAE.CLOCKED_STATE(previousName = cref, isStartFixed = fixed))
+        algorithm
+          elt.varKind := BackendDAE.CLOCKED_STATE(ComponentReference.crefSetLastSubs(cref, subs), fixed);
+        then ();
+        else ();
+      end match;
+      elts := elt :: elts;
     end if;
   end for;
 end fillScalarElements;
@@ -12726,11 +12747,23 @@ algorithm
       SimCodeVar.SimVar sv;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
       String errstr;
-
+      list<DAE.Subscript> subs;
+      Integer index;
     case (cref, SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) )
-      equation
-        sv = BaseHashTable.get(cref, crefToSimVarHT);
-        sv = match sv.aliasvar
+      algorithm
+        if BaseHashTable.hasKey(cref, crefToSimVarHT) then
+          sv := BaseHashTable.get(cref, crefToSimVarHT);
+        else
+          // lookup array variable and add offset for array element
+          sv := BaseHashTable.get(ComponentReference.crefStripLastSubs(cref), crefToSimVarHT);
+          subs := ComponentReference.crefLastSubs(cref);
+          sv.name := ComponentReference.crefSetLastSubs(sv.name, subs);
+          sv.variable_index := match sv.variable_index
+            case SOME(index)
+            then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+          end match;
+        end if;
+        sv := match sv.aliasvar
           case SimCodeVar.NOALIAS() then sv;
           case SimCodeVar.ALIAS(varName=cref) then cref2simvar(cref, simCode); /* Possibly not needed; can't really hurt that much though */
           case SimCodeVar.NEGATEDALIAS() then sv;
