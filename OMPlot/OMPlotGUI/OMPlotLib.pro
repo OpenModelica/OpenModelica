@@ -12,7 +12,6 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 TARGET = OMPlot
 TEMPLATE = lib
 
-CONFIG += release
 win32 {
  CONFIG += staticlib
 }

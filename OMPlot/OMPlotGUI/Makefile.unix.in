@@ -7,17 +7,21 @@ NAME=OMPlot
 LIB=libOMPlot
 OMBUILDDIR=@OMBUILDDIR@
 
+ifeq ($(CONFIG),)
+CONFIG=release
+endif
+
 .PHONY: always $(NAME) $(LIB)
 
 all: build
 
 Makefile: OMPlotGUI.pro OMPlotGUI.config
 	@rm -f $@
-	$(QMAKE)
+	$(QMAKE) "CONFIG+=$(CONFIG)"
 
 Makefile.lib: Makefile OMPlotLib.pro OMPlotGUI.config
 	@rm -f $@
-	$(QMAKE) OMPlotLib.pro -o $@
+	$(QMAKE) "CONFIG+=$(CONFIG)" OMPlotLib.pro -o $@
 clean:
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	test ! -f Makefile.lib || $(MAKE) -f Makefile.lib clean

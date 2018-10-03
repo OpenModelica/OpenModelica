@@ -7,6 +7,9 @@ EXE=.exe
 NAME=OMPlot
 LIB=libOMPlot
 LIBEXE=.a
+ifeq ($(CONFIG),)
+CONFIG=release
+endif
 
 .PHONY: always $(NAME) $(LIB)
 
@@ -14,11 +17,11 @@ all: build
 
 Makefile: OMPlotGUI.pro
 	@rm -f $@
-	$(QMAKE) "CONFIG+=release"
+	$(QMAKE) "CONFIG+=$(CONFIG)"
 
 Makefile.lib: Makefile OMPlotLib.pro
 	@rm -f $@
-	$(QMAKE) "CONFIG+=release" OMPlotLib.pro -o $@
+	$(QMAKE) "CONFIG+=$(CONFIG)" OMPlotLib.pro -o $@
 
 clean: Makefile Makefile.lib
 	test ! -f Makefile || $(MAKE) -f Makefile clean
