@@ -210,6 +210,7 @@ pipeline {
             buildGUI('omc-clang')
           }
         }
+
         stage('build-gui-gcc-qt4') {
           agent {
             docker {
@@ -223,6 +224,40 @@ pipeline {
           }
           steps {
             buildGUI('omc-gcc')
+          }
+        }
+
+        stage('build-usersguide') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache'
+              label 'linux'
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/" // Dummy directory
+            LIBRARIES = "/cache/omlibrary"
+          }
+          steps {
+            standardSetup()
+            unstash 'omc-clang'
+            makeLibsAndCache()
+            sh '''
+            export OPENMODELICAHOME=$PWD/build
+            for target in html pdf epub; do
+              if ! make -C doc/UsersGuide $target; then
+                killall omc || true
+                exit 1
+              fi
+            done
+            '''
+            sh "tar --transform 's/^html/OpenModelicaUsersGuide/' -cJf OpenModelicaUsersGuide-${tagName()}.html.tar.xz -C doc/UsersGuide/build html"
+            sh "mv doc/UsersGuide/build/latex/OpenModelicaUsersGuide.pdf OpenModelicaUsersGuide-${tagName()}.pdf"
+            sh "mv doc/UsersGuide/build/epub/OpenModelicaUsersGuide.epub OpenModelicaUsersGuide-${tagName()}.epub"
+            archiveArtifacts "OpenModelicaUsersGuide-${tagName()}*.*"
+            stash name: 'usersguide', includes: "OpenModelicaUsersGuide-${tagName()}*.*"
           }
         }
 
@@ -515,6 +550,11 @@ void compliance() {
 
 def cacheBranch() {
   return "${env.CHANGE_TARGET ?: env.GIT_BRANCH}"
+}
+
+def tagName() {
+  def name = env.TAG_NAME ?: cacheBranch()
+  return name == "master" ? "latest" : name
 }
 
 /* Note: If getting "Unexpected end of /proc/mounts line" , flatten the docker image:
