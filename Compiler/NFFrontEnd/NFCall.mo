@@ -262,12 +262,8 @@ uniontype Call
       case UNTYPED_CALL()
         algorithm
           fnl := Function.typeRefCache(call.ref);
-          // Don't evaluate constants or structural parameters for external functions,
-          // the code generation can't handle it in some cases (see bug #4904).
-          // TODO: Remove this when #4904 is fixed.
-          is_external := if listEmpty(fnl) then false else Function.isExternal(listHead(fnl));
         then
-          typeArgs(call, not is_external, origin, info);
+          typeArgs(call, origin, info);
 
       else
         algorithm
@@ -862,6 +858,7 @@ protected
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
     ExpOrigin.Type next_origin;
+    Boolean is_structural;
   algorithm
     (call, ty, variability) := match call
       // This is always a call to the function array()/$array(). See instIteratorCall.
@@ -869,10 +866,18 @@ protected
       case UNTYPED_MAP_CALL()
         algorithm
           variability := Variability.CONSTANT;
+          // The size of the expression must be known unless we're in a function.
+          is_structural := ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION);
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, origin, structural = false);
+            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, origin, is_structural);
+
+            if is_structural then
+              range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
+              iter_ty := Expression.typeOf(range);
+            end if;
+
             dims := listAppend(Type.arrayDims(iter_ty), dims);
             variability := Variability.variabilityMax(variability, iter_var);
             iters := (iter, range) :: iters;
@@ -896,7 +901,6 @@ protected
 
   function typeArgs
     input output Call call;
-    input Boolean replaceConstants;
     input ExpOrigin.Type origin;
     input SourceInfo info;
   algorithm
@@ -913,7 +917,7 @@ protected
         algorithm
           typedArgs := {};
           for arg in call.arguments loop
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = replaceConstants);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
             typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
           end for;
 
@@ -922,7 +926,7 @@ protected
           typedNamedArgs := {};
           for narg in call.named_args loop
             (name,arg) := narg;
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info, replaceConstants = replaceConstants);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
             typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
           end for;
 

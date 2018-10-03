@@ -431,6 +431,7 @@ uniontype Component
     b := match component
       case UNTYPED_COMPONENT() then component.binding;
       case TYPED_COMPONENT() then component.binding;
+      case TYPE_ATTRIBUTE() then Modifier.binding(component.modifier);
     end match;
   end getBinding;
 
@@ -814,6 +815,15 @@ uniontype Component
     end match;
   end isDeleted;
 
+  function isTypeAttribute
+    input Component component;
+    output Boolean isAttribute;
+  algorithm
+    isAttribute := match component
+      case TYPE_ATTRIBUTE() then true;
+      else false;
+    end match;
+  end isTypeAttribute;
 end Component;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -49,6 +49,7 @@ import NFPrefixes.Variability;
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import Subscript = NFSubscript;
+import NFTyping.TypingError;
 
 protected
 import NFFunction.Function;
@@ -58,6 +59,7 @@ import System;
 import ExpressionIterator = NFExpressionIterator;
 import MetaModelica.Dangerous.*;
 import NFClass.Class;
+import TypeCheck = NFTypeCheck;
 
 public
 uniontype EvalTarget
@@ -118,6 +120,7 @@ uniontype EvalTarget
       case ATTRIBUTE() then Binding.getInfo(target.binding);
       case RANGE() then target.info;
       case CONDITION() then target.info;
+      else Absyn.dummyInfo;
     end match;
   end getInfo;
 end EvalTarget;
@@ -137,7 +140,6 @@ algorithm
       Option<Expression> oexp;
       ComponentRef cref;
       Dimension dim;
-      ExpOrigin.Type exp_origin;
 
     case Expression.CREF()
       then evalCref(exp.cref, exp, target);
@@ -156,9 +158,16 @@ algorithm
         exp1 := evalExp(exp.start, target);
         oexp := evalExpOpt(exp.step, target);
         exp3 := evalExp(exp.stop, target);
-      then
+
         if EvalTarget.isRange(target) then
-          Expression.RANGE(exp.ty, exp1, oexp, exp3) else evalRange(exp1, oexp, exp3);
+          exp1 := Expression.RANGE(
+            TypeCheck.getRangeType(exp1, oexp, exp3, Type.arrayElementType(exp.ty), EvalTarget.getInfo(target)),
+            exp1, oexp, exp3);
+        else
+          exp1 := evalRange(exp1, oexp, exp3);
+        end if;
+      then
+        exp1;
 
     case Expression.TUPLE()
       algorithm
@@ -173,21 +182,10 @@ algorithm
         exp;
 
     case Expression.CALL()
-      then
-        evalCall(exp.call, target);
-
-    case Expression.SIZE(dimIndex = SOME(exp1))
-      algorithm
-        dim := listGet(Type.arrayDims(Expression.typeOf(exp.exp)), Expression.toInteger(evalExp(exp1, target)));
-      then
-        if Dimension.isKnown(dim) then Expression.INTEGER(Dimension.size(dim)) else exp;
+      then evalCall(exp.call, target);
 
     case Expression.SIZE()
-      algorithm
-        expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(Expression.typeOf(exp.exp)));
-        dim := Dimension.INTEGER(listLength(expl), Variability.PARAMETER);
-      then
-        Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {dim}), expl);
+      then evalSize(exp.exp, exp.dimIndex, target);
 
     case Expression.BINARY()
       algorithm
@@ -267,19 +265,17 @@ function evalCref
   input ComponentRef cref;
   input Expression defaultExp;
   input EvalTarget target;
+  input Boolean evalSubscripts = true;
   output Expression exp;
 protected
   InstNode c;
+  Boolean evaled;
+  list<Subscript> subs;
 algorithm
   exp := match cref
-    // TODO: Rewrite this, we need to take all subscripts into account and not
-    //       just the ones on the last identifier.
     case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
                            origin = NFComponentRef.Origin.CREF)
-      algorithm
-        exp := evalComponentBinding(c, defaultExp, target);
-      then
-        Expression.applySubscripts(list(Subscript.eval(s, target) for s in cref.subscripts), exp);
+      then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts);
 
     else defaultExp;
   end match;
@@ -287,14 +283,19 @@ end evalCref;
 
 function evalComponentBinding
   input InstNode node;
+  input ComponentRef cref;
   input Expression defaultExp "The expression returned if the binding couldn't be evaluated";
   input EvalTarget target;
+  input Boolean evalSubscripts = true;
   output Expression exp;
-  output Boolean evaluated;
 protected
   ExpOrigin.Type exp_origin;
   Component comp;
   Binding binding;
+  Boolean evaluated;
+  list<Subscript> subs;
+  Variability var;
+  Option<Expression> start_exp;
 algorithm
   exp_origin := if Class.isFunction(InstNode.getClass(InstNode.parent(node)))
     then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
@@ -304,14 +305,18 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isUnbound(binding) then
-   // use the start value only if the component is a parameter(fixed=true)
-   if Component.getFixedAttribute(comp) and (Component.isParameter(comp) or Component.isStructuralParameter(comp)) then
-     binding := Class.lookupAttributeBinding("start", InstNode.getClass(node));
-   end if;
-  end if;
+    // If the component has no binding, try to use the start value if possible.
+    start_exp := evalComponentStartBinding(node, comp, cref, target, evalSubscripts);
 
-  if Binding.isUnbound(binding) then
-    binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
+    if isSome(start_exp) then
+      // The component had a valid start value, return it.
+      SOME(exp) := start_exp;
+      return;
+    else
+      // Otherwise we might need to construct a binding, for example when a
+      // record has bindings on the fields but not on the record instance as a whole.
+      binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
+    end if;
   end if;
 
   (exp, evaluated) := match binding
@@ -342,7 +347,94 @@ algorithm
         fail();
 
   end match;
+
+  // Apply subscripts from the cref to the binding expression as needed.
+  if evaluated then
+    exp := subscriptEvaluatedBinding(exp, cref, Binding.parentCount(binding), evalSubscripts);
+  end if;
 end evalComponentBinding;
+
+function subscriptEvaluatedBinding
+  input Expression exp;
+  input ComponentRef cref;
+  input Integer parents;
+  input Boolean evalSubscripts;
+  output Expression outExp;
+protected
+  list<Subscript> subs;
+algorithm
+  subs := List.flatten(ComponentRef.subscriptsN(cref, parents));
+
+  if evalSubscripts then
+    subs := list(Subscript.eval(s) for s in subs);
+  end if;
+
+  outExp := Expression.applySubscripts(subs, exp);
+end subscriptEvaluatedBinding;
+
+function evalComponentStartBinding
+  "Tries to evaluate the given component's start value. NONE() is returned if
+   the component isn't a fixed parameter or if it doesn't have a start value.
+   Otherwise the evaluated binding expression is returned if it could be
+   evaluated, or the function will fail if it couldn't be."
+  input InstNode node;
+  input Component comp;
+  input ComponentRef cref;
+  input EvalTarget target;
+  input Boolean evalSubscripts;
+  output Option<Expression> outExp = NONE();
+protected
+  Variability var;
+  InstNode start_node;
+  Component start_comp;
+  Binding binding;
+  Expression exp;
+  list<Subscript> subs;
+algorithm
+  // Only use the start value if the component is a fixed parameter.
+  var := Component.variability(comp);
+  if (var <> Variability.PARAMETER and var <> Variability.STRUCTURAL_PARAMETER) or
+     not Component.getFixedAttribute(comp) then
+    return;
+  end if;
+
+  // Look up "start" in the class.
+  try
+    start_node := Class.lookupElement("start", InstNode.getClass(node));
+  else
+    return;
+  end try;
+
+  // Make sure we have an actual start attribute, and didn't just find some
+  // other element named start in the class.
+  start_comp := InstNode.component(start_node);
+  if not Component.isTypeAttribute(start_comp) then
+    return;
+  end if;
+
+  // Try to evaluate the binding if one exists.
+  binding := Component.getBinding(start_comp);
+
+  outExp := match binding
+    case Binding.TYPED_BINDING()
+      algorithm
+        exp := evalExp(binding.bindingExp, target);
+
+        if not referenceEq(exp, binding.bindingExp) then
+          binding.bindingExp := exp;
+          start_comp := Component.setBinding(binding, start_comp);
+          InstNode.updateComponent(start_comp, start_node);
+        end if;
+
+        if not Binding.isEach(binding) then
+          exp := subscriptEvaluatedBinding(exp, cref, Binding.parentCount(binding) - 1, evalSubscripts);
+        end if;
+      then
+        SOME(exp);
+
+    else outExp;
+  end match;
+end evalComponentStartBinding;
 
 function makeComponentBinding
   input Component component;
@@ -364,7 +456,7 @@ algorithm
     case (Component.TYPED_COMPONENT(ty = Type.COMPLEX(complexTy = ComplexType.RECORD(rec_node))), _)
       algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
-        binding := Binding.CEVAL_BINDING(exp);
+        binding := Binding.CEVAL_BINDING(exp, {node});
         InstNode.updateComponent(Component.setBinding(binding, component), node);
       then
         binding;
@@ -375,7 +467,7 @@ algorithm
       algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
         exp := splitRecordArrayExp(exp);
-        binding := Binding.CEVAL_BINDING(exp);
+        binding := Binding.CEVAL_BINDING(exp, {node});
         InstNode.updateComponent(Component.setBinding(binding, component), node);
       then
         binding;
@@ -387,7 +479,7 @@ algorithm
       algorithm
         exp := evalCref(rest_cr, Expression.EMPTY(ty), target);
         exp := makeComponentBinding2(exp, InstNode.name(node));
-        binding := Binding.CEVAL_BINDING(exp);
+        binding := Binding.CEVAL_BINDING(exp, {node});
 
         // TODO: If the cref has subscripts we can't cache the binding, since it
         //       will have been evaluated with regards to the subscripts. We
@@ -1325,7 +1417,7 @@ algorithm
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
-          Expression.toString(Expression.IF(condition, trueBranch, falseBranch)), sourceInfo());
+          Expression.toString(Expression.IF(cond, trueBranch, falseBranch)), sourceInfo());
       then
         fail();
   end match;
@@ -2511,6 +2603,41 @@ algorithm
     result := Expression.ARRAY(ty, listReverseInPlace(expl));
   end if;
 end evalReduction2;
+
+function evalSize
+  input Expression exp;
+  input Option<Expression> optIndex;
+  input EvalTarget target;
+  output Expression outExp;
+protected
+  Expression index_exp;
+  Integer index;
+  TypingError ty_err;
+  Dimension dim;
+  Type ty;
+  list<Expression> expl;
+  SourceInfo info;
+algorithm
+  info := EvalTarget.getInfo(target);
+
+  if isSome(optIndex) then
+    // Evaluate the index.
+    index_exp := evalExp(Util.getOption(optIndex), target);
+    index := Expression.toInteger(index_exp);
+
+    // Get the index'd dimension of the expression.
+    (dim, _, ty_err) := Typing.typeExpDim(exp, index, ExpOrigin.CLASS, info);
+    Typing.checkSizeTypingError(ty_err, exp, index, info);
+
+    // Return the size expression for the found dimension.
+    outExp := Dimension.sizeExp(dim);
+  else
+    (outExp, ty) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+    expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(ty));
+    dim := Dimension.fromInteger(listLength(expl), Variability.PARAMETER);
+    outExp := Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {dim}), expl);
+  end if;
+end evalSize;
 
 function evalSubscriptedExp
   input Expression exp;

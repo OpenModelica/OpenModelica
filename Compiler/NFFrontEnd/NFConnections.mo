@@ -140,9 +140,11 @@ public
     output list<Connector> connectors;
   protected
     Expression cref_exp;
+    ComponentRef cr;
     Boolean expanded;
   algorithm
-    cref_exp := Expression.CREF(ty, ComponentRef.simplifySubscripts(cref));
+    cr := ComponentRef.evaluateSubscripts(cref);
+    cref_exp := Expression.CREF(ComponentRef.getSubscriptedType(cr), cr);
     (cref_exp, expanded) := ExpandExp.expand(cref_exp);
 
     if expanded then

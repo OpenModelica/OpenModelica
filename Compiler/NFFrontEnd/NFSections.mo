@@ -229,6 +229,37 @@ public
     end match;
   end map1;
 
+  function mapExp
+    input output Sections sections;
+    input MapFn mapFn;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+  protected
+    list<Equation> eq, ieq;
+    list<Algorithm> alg, ialg;
+  algorithm
+    sections := match sections
+      case SECTIONS()
+        algorithm
+          eq := Equation.mapExpList(sections.equations, mapFn);
+          ieq := Equation.mapExpList(sections.initialEquations, mapFn);
+          alg := Algorithm.mapExpList(sections.algorithms, mapFn);
+          ialg := Algorithm.mapExpList(sections.initialAlgorithms, mapFn);
+        then
+          SECTIONS(eq, ieq, alg, ialg);
+
+      case EXTERNAL()
+        algorithm
+          sections.args := list(mapFn(e) for e in sections.args);
+        then
+          sections;
+
+      else sections;
+    end match;
+  end mapExp;
+
   function apply
     input Sections sections;
     input EquationFn eqFn;

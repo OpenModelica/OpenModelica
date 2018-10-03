@@ -325,13 +325,13 @@ algorithm
             (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, ElementSource.getInfo(source));
             expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
 
-            (expRHS, ty, var) := Typing.typeExp(expRHS, origin, ElementSource.getInfo(source), true);
+            (expRHS, ty, var) := Typing.typeExp(expRHS, origin, ElementSource.getInfo(source));
 
             fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)));
             (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, ElementSource.getInfo(source));
             expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
 
-            (expLHS, ty, var) := Typing.typeExp(expLHS, origin, ElementSource.getInfo(source), true);
+            (expLHS, ty, var) := Typing.typeExp(expLHS, origin, ElementSource.getInfo(source));
 
             replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
 

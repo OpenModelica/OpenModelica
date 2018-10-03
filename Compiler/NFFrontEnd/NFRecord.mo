@@ -64,6 +64,7 @@ import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import ErrorExt;
+import NFFunction.FunctionStatus;
 
 public
 
@@ -74,7 +75,7 @@ function instDefaultConstructor
 protected
   list<InstNode> inputs, locals;
   DAE.FunctionAttributes attr;
-  Pointer<Boolean> collected;
+  Pointer<FunctionStatus> status;
   InstNode ctor_node, out_rec;
   Component out_comp;
   Class ctor_cls;
@@ -114,9 +115,9 @@ algorithm
 
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
-  collected := Pointer.create(false);
+  status := Pointer.create(FunctionStatus.INITIAL);
   InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
-    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, collected, Pointer.create(0)), false);
+    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, status, Pointer.create(0)), false);
 end instDefaultConstructor;
 
 function collectRecordParams

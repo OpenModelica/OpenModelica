@@ -228,6 +228,14 @@ uniontype MatchedFunction
 
 end MatchedFunction;
 
+type FunctionStatus = enumeration(
+  BUILTIN    "A builtin function.",
+  INITIAL    "The initial status.",
+  EVALUATED  "Constants in the function has been evaluated by EvalConstants.",
+  SIMPLIFIED "The function has been simplified by SimplifyModel.",
+  COLLECTED  "The function has been added to the function tree."
+);
+
 uniontype Function
 
   record FUNCTION
@@ -240,7 +248,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     list<FunctionDerivative> derivatives;
-    Pointer<Boolean> collected "Whether this function has already been added to the function tree or not.";
+    Pointer<FunctionStatus> status;
     Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
   end FUNCTION;
 
@@ -253,14 +261,14 @@ uniontype Function
     list<InstNode> inputs, outputs, locals;
     list<Slot> slots;
     DAE.FunctionAttributes attr;
-    Pointer<Boolean> collected;
+    FunctionStatus status;
   algorithm
     (inputs, outputs, locals) := collectParams(node);
     attr := makeAttributes(node, inputs, outputs);
     // Make sure builtin functions aren't added to the function tree.
-    collected := Pointer.create(isBuiltinAttr(attr));
+    status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
-      attr, {}, collected, Pointer.create(0));
+      attr, {}, Pointer.create(status), Pointer.create(0));
   end new;
 
   function lookupFunctionSimple
@@ -444,16 +452,54 @@ uniontype Function
     end match;
   end getCachedFuncs;
 
+  function isEvaluated
+    input Function fn;
+    output Boolean evaluated;
+  algorithm
+    evaluated := match Pointer.access(fn.status)
+      case FunctionStatus.BUILTIN then true;
+      case FunctionStatus.EVALUATED then true;
+      else false;
+    end match;
+  end isEvaluated;
+
+  function markEvaluated
+    input Function fn;
+  algorithm
+    if Pointer.access(fn.status) <> FunctionStatus.BUILTIN then
+      Pointer.update(fn.status, FunctionStatus.EVALUATED);
+    end if;
+  end markEvaluated;
+
+  function isSimplified
+    input Function fn;
+    output Boolean simplified;
+  algorithm
+    simplified := match Pointer.access(fn.status)
+      case FunctionStatus.BUILTIN then true;
+      case FunctionStatus.SIMPLIFIED then true;
+      else false;
+    end match;
+  end isSimplified;
+
+  function markSimplified
+    input Function fn;
+  algorithm
+    if Pointer.access(fn.status) <> FunctionStatus.BUILTIN then
+      Pointer.update(fn.status, FunctionStatus.COLLECTED);
+    end if;
+  end markSimplified;
+
   function isCollected
     "Returns true if this function has already been added to the function tree
      (or shouldn't be added, e.g. if it's builtin), otherwise false."
     input Function fn;
     output Boolean collected;
-  protected
-    Pointer<Boolean> coll;
   algorithm
-    collected := match fn
-      case FUNCTION(collected=coll) then Pointer.access(coll);
+    collected := match Pointer.access(fn.status)
+      case FunctionStatus.BUILTIN then true;
+      case FunctionStatus.COLLECTED then true;
+      else false;
     end match;
   end isCollected;
 
@@ -461,9 +507,9 @@ uniontype Function
     "Marks this function as collected for addition to the function tree."
     input Function fn;
   algorithm
-    if not Pointer.access(fn.collected) then
-      // Check if the pointer is false first; if they are true they might be immutable
-      Pointer.update(fn.collected, true);
+    // The pointer might be immutable, check before assigning to it.
+    if Pointer.access(fn.status) <> FunctionStatus.BUILTIN then
+      Pointer.update(fn.status, FunctionStatus.COLLECTED);
     end if;
   end collect;
 
@@ -856,7 +902,7 @@ uniontype Function
     Component comp;
     InstNode inputnode;
     list<InstNode> inputs;
-    Expression argexp, margexp;
+    Expression argexp, margexp, vect_arg;
     Type argty, compty, tmpty, mty;
     Variability var;
     list<TypedArg> checked_args;
@@ -867,13 +913,13 @@ uniontype Function
     list<Boolean> vectorized;
     FunctionMatchKind base_mk = EXACT_MATCH;
   algorithm
-
     checked_args := {};
     idx := 1;
     inputs := func.inputs;
     outvectdims := {};
     vectorized := {};
     has_cast := false;
+    vect_arg := Expression.INTEGER(0);
 
     for arg in args loop
       (argexp,argty,var) := arg;
@@ -891,16 +937,18 @@ uniontype Function
         vectorized := false::vectorized;
 
       elseif listLength(argdims) > listLength(compdims) then
-        // Try vectorized matching since  we have more dims in the actual argument.
+        // Try vectorized matching since we have more dims in the actual argument.
         (vectdims, tmpdims) := List.split(argdims, listLength(argdims)-listLength(compdims));
 
         // make sure the vectorization dims are consistent.
         if listEmpty(outvectdims) then
           outvectdims := vectdims;
-        elseif not Dimension.allEqualKnown(outvectdims, vectdims) then
-          // TODO: proper error message
-          Error.assertion(false, getInstanceName() + " vect dims not equal: " + Dimension.toStringList(outvectdims)
-            + " vs " + Dimension.toStringList(vectdims), sourceInfo());
+          vect_arg := argexp;
+        elseif not List.isEqualOnTrue(outvectdims, vectdims, Dimension.isEqual) then
+          Error.addSourceMessage(Error.VECTORIZE_CALL_DIM_MISMATCH,
+            {"", Expression.toString(vect_arg), "", Expression.toString(argexp),
+             Dimension.toStringList(outvectdims), Dimension.toStringList(vectdims)}, info);
+          fail();
         end if;
 
         tmpty := Type.arrayElementType(argty);
@@ -1387,6 +1435,60 @@ uniontype Function
     input SCode.Element component;
     output Boolean res = SCode.hasBooleanNamedAnnotationInComponent(component, "__OpenModelica_optionalArgument");
   end hasOptionalArgument;
+
+  function mapExp
+    input output Function fn;
+    input MapFunc mapFn;
+    input Boolean mapParameters = true;
+    input Boolean mapBody = true;
+
+    partial function MapFunc
+      input output Expression exp;
+    end MapFunc;
+  protected
+    Class cls;
+    ClassTree ctree;
+    array<InstNode> comps;
+    Sections sections;
+    Component comp;
+    Binding binding, binding2;
+  algorithm
+    cls := InstNode.getClass(fn.node);
+
+    if mapParameters then
+      ctree := Class.classTree(cls);
+      ClassTree.applyComponents(ctree, function mapExpParameter(mapFn = mapFn));
+    end if;
+
+    if mapBody then
+      sections := Sections.mapExp(Class.getSections(cls), mapFn);
+      cls := cls.setSections(sections, cls);
+      InstNode.updateClass(cls, fn.node);
+    end if;
+  end mapExp;
+
+  function mapExpParameter
+    input InstNode node;
+    input MapFunc mapFn;
+
+    partial function MapFunc
+      input output Expression exp;
+    end MapFunc;
+  protected
+    Component comp;
+    Binding binding, binding2;
+  algorithm
+    if not InstNode.isEmpty(node) then
+      comp := InstNode.component(node);
+      binding := Component.getBinding(comp);
+      binding2 := Binding.mapExp(binding, mapFn);
+
+      if not referenceEq(binding, binding2) then
+        comp := Component.setBinding(binding2, comp);
+        InstNode.updateComponent(comp, node);
+      end if;
+    end if;
+  end mapExpParameter;
 
 protected
   function collectParams

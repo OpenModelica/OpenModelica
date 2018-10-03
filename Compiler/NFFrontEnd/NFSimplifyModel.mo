@@ -45,6 +45,7 @@ import Sections = NFSections;
 import NFBinding.Binding;
 import Variable = NFVariable;
 import Algorithm = NFAlgorithm;
+import Dimension = NFDimension;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -56,15 +57,12 @@ import Ceval = NFCeval;
 public
 function simplify
   input output FlatModel flatModel;
-  input output FunctionTree functions;
 algorithm
   flatModel.variables := list(simplifyVariable(v) for v in flatModel.variables);
   flatModel.equations := simplifyEquations(flatModel.equations);
   flatModel.initialEquations := simplifyEquations(flatModel.initialEquations);
   flatModel.algorithms := simplifyAlgorithms(flatModel.algorithms);
   flatModel.initialAlgorithms := simplifyAlgorithms(flatModel.initialAlgorithms);
-
-  functions := FunctionTree.map(functions, simplifyFunction);
 
   execStat(getInstanceName());
 end simplify;
@@ -105,6 +103,24 @@ algorithm
   end if;
 end simplifyTypeAttribute;
 
+function simplifyDimension
+  input Dimension dim;
+  output Dimension outDim;
+algorithm
+  outDim := match dim
+    local
+      Expression e;
+
+    case Dimension.EXP()
+      algorithm
+        e := SimplifyExp.simplify(dim.exp);
+      then
+        if referenceEq(e, dim.exp) then dim else Dimension.fromExp(e, dim.var);
+
+    else dim;
+  end match;
+end simplifyDimension;
+
 function simplifyEquations
   input list<Equation> eql;
   output list<Equation> outEql = {};
@@ -122,20 +138,28 @@ function simplifyEquation
 algorithm
   equations := match eq
     local
-      Expression e;
+      Expression e, lhs, rhs;
+      Type ty;
 
     case Equation.EQUALITY()
       algorithm
-        eq.lhs := removeEmptyTupleElements(SimplifyExp.simplify(eq.lhs));
-        eq.rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
+        ty := Type.mapDims(eq.ty, simplifyDimension);
+
+        if not Type.isEmptyArray(ty) then
+          lhs := removeEmptyTupleElements(SimplifyExp.simplify(eq.lhs));
+          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
+          equations := Equation.EQUALITY(lhs, rhs, ty, eq.source) :: equations;
+        end if;
       then
-        eq :: equations;
+        equations;
 
     case Equation.ARRAY_EQUALITY()
       algorithm
-        if not Type.isEmptyArray(eq.ty) then
-          eq.rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
-          equations := eq :: equations;
+        ty := Type.mapDims(eq.ty, simplifyDimension);
+
+        if not Type.isEmptyArray(ty) then
+          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
+          equations := Equation.ARRAY_EQUALITY(eq.lhs, rhs, ty, eq.source) :: equations;
         end if;
       then
         equations;
@@ -223,14 +247,20 @@ function simplifyStatement
 algorithm
   statements := match stmt
     local
-      Expression e;
+      Expression e, lhs, rhs;
+      Type ty;
 
     case Statement.ASSIGNMENT()
       algorithm
-        stmt.lhs := removeEmptyTupleElements(SimplifyExp.simplify(stmt.lhs));
-        stmt.rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(stmt.rhs));
+        ty := Type.mapDims(stmt.ty, simplifyDimension);
+
+        if not Type.isEmptyArray(ty) then
+          lhs := removeEmptyTupleElements(SimplifyExp.simplify(stmt.lhs));
+          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(stmt.rhs));
+          statements := Statement.ASSIGNMENT(lhs, rhs, ty, stmt.source) :: statements;
+        end if;
       then
-        stmt :: statements;
+        statements;
 
     case Statement.FOR(range = SOME(e))
       algorithm
@@ -415,28 +445,38 @@ protected
   Algorithm fn_body;
   Sections sections;
 algorithm
-  cls := InstNode.getClass(func.node);
+  if not Function.isSimplified(func) then
+    Function.markSimplified(func);
+    Function.mapExp(func, SimplifyExp.simplify, mapBody = false);
 
-  () := match cls
-    case Class.INSTANCED_CLASS(sections = sections)
-      algorithm
-        () := match sections
-          case Sections.SECTIONS(algorithms = {fn_body})
-            algorithm
-              fn_body.statements := simplifyStatements(fn_body.statements);
-              sections.algorithms := {fn_body};
-              cls.sections := sections;
-              InstNode.updateClass(cls, func.node);
-            then
-              ();
+    cls := InstNode.getClass(func.node);
+    () := match cls
+      case Class.INSTANCED_CLASS(sections = sections)
+        algorithm
+          () := match sections
+            case Sections.SECTIONS(algorithms = {fn_body})
+              algorithm
+                fn_body.statements := simplifyStatements(fn_body.statements);
+                sections.algorithms := {fn_body};
+                cls.sections := sections;
+                InstNode.updateClass(cls, func.node);
+              then
+                ();
 
-          else ();
-        end match;
-      then
-        ();
+            else ();
+          end match;
+        then
+          ();
 
-    else ();
-  end match;
+      else ();
+    end match;
+
+    for fn_der in func.derivatives loop
+      for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+        simplifyFunction(Function.name(der_fn), der_fn);
+      end for;
+    end for;
+  end if;
 end simplifyFunction;
 
 annotation(__OpenModelica_Interface="frontend");

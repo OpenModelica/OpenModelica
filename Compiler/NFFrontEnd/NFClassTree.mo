@@ -999,6 +999,51 @@ public
       end match;
     end applyLocalComponents;
 
+    function applyComponents
+      input ClassTree tree;
+      input FuncT func;
+
+      partial function FuncT
+        input InstNode component;
+      end FuncT;
+    algorithm
+      () := match tree
+        case PARTIAL_TREE()
+          algorithm
+            for c in tree.components loop
+              func(c);
+            end for;
+          then
+            ();
+
+        case EXPANDED_TREE()
+          algorithm
+            for c in tree.components loop
+              func(c);
+            end for;
+          then
+            ();
+
+        case INSTANTIATED_TREE()
+          algorithm
+            for c in tree.components loop
+              func(Mutable.access(c));
+            end for;
+          then
+            ();
+
+        case FLAT_TREE()
+          algorithm
+            for c in tree.components loop
+              func(c);
+            end for;
+          then
+            ();
+
+        else ();
+      end match;
+    end applyComponents;
+
     function classCount
       input ClassTree tree;
       output Integer count;

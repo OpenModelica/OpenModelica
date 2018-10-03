@@ -34,6 +34,7 @@ protected
   import Dimension = NFDimension;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
+  import List;
 
 public
   import Absyn.{Exp, Path, Subscript};
@@ -106,7 +107,8 @@ public
 
   function fromInteger
     input Integer n;
-    output Dimension dim = INTEGER(n, Variability.CONSTANT);
+    input Variability var = Variability.CONSTANT;
+    output Dimension dim = INTEGER(n, var);
   end fromInteger;
 
   function fromExpList
@@ -190,21 +192,10 @@ public
     end match;
   end isEqualKnown;
 
-  public function allEqualKnown
+  function allEqualKnown
     input list<Dimension> dims1;
     input list<Dimension> dims2;
-    output Boolean allEqual;
-  algorithm
-    allEqual := match(dims1, dims2)
-      local
-        Dimension dim1, dim2;
-        list<Dimension> rest1, rest2;
-
-      case ({}, {}) then true;
-      case (dim1::rest1, dim2::rest2) guard isEqualKnown(dim1, dim2)
-        then allEqualKnown(rest1, rest2);
-      else false;
-    end match;
+    output Boolean allEqual = List.isEqualOnTrue(dims1, dims2, isEqualKnown);
   end allEqualKnown;
 
   function isKnown

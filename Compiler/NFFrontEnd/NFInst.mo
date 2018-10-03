@@ -98,6 +98,7 @@ import ElementSource;
 import SimplifyModel = NFSimplifyModel;
 import Record = NFRecord;
 import OperatorOverloading = NFOperatorOverloading;
+import EvalConstants = NFEvalConstants;
 
 public
 function instClassInProgram
@@ -150,8 +151,12 @@ algorithm
   Typing.typeClass(inst_cls, name);
 
   // Flatten and simplify the model.
-  (flat_model, funcs) := Flatten.flatten(inst_cls, name);
-  (flat_model, funcs) := SimplifyModel.simplify(flat_model, funcs);
+  flat_model := Flatten.flatten(inst_cls, name);
+  flat_model := EvalConstants.evaluate(flat_model);
+  flat_model := SimplifyModel.simplify(flat_model);
+  funcs := Flatten.collectFunctions(flat_model, name);
+  funcs := FunctionTree.map(funcs, SimplifyModel.simplifyFunction);
+  execStat("SimplifyModel.simplifyFunction");
 
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
@@ -2900,6 +2905,14 @@ algorithm
       then
         ();
 
+    case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
+      algorithm
+        for c in cls_tree.components loop
+          updateImplicitVariabilityComp(c);
+        end for;
+      then
+        ();
+
     else ();
   end match;
 end updateImplicitVariability;
@@ -2907,20 +2920,45 @@ end updateImplicitVariability;
 function updateImplicitVariabilityComp
   input InstNode component;
 protected
-  Component c = InstNode.component(InstNode.resolveOuter(component));
+  InstNode node = InstNode.resolveOuter(component);
+  Component c = InstNode.component(node);
 algorithm
   () := match c
-    case Component.UNTYPED_COMPONENT()
+    local
+      Binding binding, condition;
+
+    case Component.UNTYPED_COMPONENT(binding = binding, condition = condition)
       algorithm
+        // @adrpo: if Evaluate=true make the parameter a structural parameter
+        // only make it a structural parameter if is not constant, duh!, 1071 regressions :)
+        if Component.getEvaluateAnnotation(c) and (Component.variability(c) > Variability.STRUCTURAL_PARAMETER) then
+          InstNode.updateComponent(Component.setVariability(Variability.STRUCTURAL_PARAMETER, c), node);
+        end if;
+
         for dim in c.dimensions loop
           markStructuralParamsDim(dim);
         end for;
 
-        if Binding.isBound(c.binding) then
-          markStructuralParamsExpSize(Binding.getUntypedExp(c.binding));
+        if Binding.isBound(binding) then
+          markStructuralParamsExpSize(Binding.getUntypedExp(binding));
+        end if;
+
+        if Binding.isBound(condition) then
+          markStructuralParamsExp(Binding.getUntypedExp(condition));
         end if;
 
         updateImplicitVariability(c.classInst);
+      then
+        ();
+
+    case Component.TYPE_ATTRIBUTE()
+      guard listMember(InstNode.name(component), {"fixed", "stateSelect"})
+      algorithm
+        binding := Modifier.binding(c.modifier);
+
+        if Binding.isBound(binding) then
+          markStructuralParamsExp(Binding.getUntypedExp(binding));
+        end if;
       then
         ();
 

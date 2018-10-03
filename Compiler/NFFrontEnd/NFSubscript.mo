@@ -458,6 +458,43 @@ public
     end match;
   end mapFoldExp;
 
+  function mapFoldExpShallow<ArgT>
+    input Subscript subscript;
+    input MapFunc func;
+          output Subscript outSubscript;
+    input output ArgT arg;
+
+    partial function MapFunc
+      input output Expression e;
+      input output ArgT arg;
+    end MapFunc;
+  algorithm
+    outSubscript := match subscript
+      local
+        Expression exp;
+
+      case UNTYPED()
+        algorithm
+          (exp, arg) := func(subscript.exp, arg);
+        then
+          if referenceEq(subscript.exp, exp) then subscript else UNTYPED(exp);
+
+      case INDEX()
+        algorithm
+          (exp, arg) := func(subscript.index, arg);
+        then
+          if referenceEq(subscript.index, exp) then subscript else INDEX(exp);
+
+      case SLICE()
+        algorithm
+          (exp, arg) := func(subscript.slice, arg);
+        then
+          if referenceEq(subscript.slice, exp) then subscript else SLICE(exp);
+
+      else subscript;
+    end match;
+  end mapFoldExpShallow;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;

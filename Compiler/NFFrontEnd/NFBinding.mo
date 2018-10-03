@@ -91,6 +91,7 @@ uniontype Binding
      bindings constructed from the record fields) that should be discarded
      during flattening."
     Expression bindingExp;
+    list<InstNode> parents;
   end CEVAL_BINDING;
 
 
@@ -316,9 +317,15 @@ public
       case RAW_BINDING() then binding.parents;
       case UNTYPED_BINDING() then binding.parents;
       case TYPED_BINDING() then binding.parents;
+      case CEVAL_BINDING() then binding.parents;
       else {};
     end match;
   end parents;
+
+  function parentCount
+    input Binding binding;
+    output Integer count = listLength(parents(binding));
+  end parentCount;
 
   function addParent
     input InstNode parent;
@@ -344,6 +351,12 @@ public
           ();
 
       case TYPED_BINDING()
+        algorithm
+          binding.parents := parent :: binding.parents;
+        then
+          ();
+
+      case CEVAL_BINDING()
         algorithm
           binding.parents := parent :: binding.parents;
         then
@@ -467,6 +480,62 @@ public
           fail();
     end match;
   end toDAEExp;
+
+  function mapExp
+    input output Binding binding;
+    input MapFunc mapFn;
+
+    partial function MapFunc
+      input output Expression exp;
+    end MapFunc;
+  protected
+    Expression e1, e2;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING(bindingExp = e1)
+        algorithm
+          e2 := mapFn(e1);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      case TYPED_BINDING(bindingExp = e1)
+        algorithm
+          e2 := mapFn(e1);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      case FLAT_BINDING(bindingExp = e1)
+        algorithm
+          e2 := mapFn(e1);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      case CEVAL_BINDING(bindingExp = e1)
+        algorithm
+          e2 := mapFn(e1);
+
+          if not referenceEq(e1, e2) then
+            binding.bindingExp := e2;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end mapExp;
+
 end Binding;
 
 annotation(__OpenModelica_Interface="frontend");

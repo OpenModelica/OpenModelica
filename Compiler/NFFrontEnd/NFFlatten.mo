@@ -121,7 +121,6 @@ function flatten
   input InstNode classInst;
   input String name;
   output FlatModel flatModel;
-  output FunctionTree funcs;
 protected
   Sections sections;
   list<Variable> vars;
@@ -151,8 +150,21 @@ algorithm
 
   execStat(getInstanceName() + "(" + name + ")");
   flatModel := resolveConnections(flatModel, name);
-  funcs := flattenFunctions(flatModel, name);
 end flatten;
+
+function collectFunctions
+  input FlatModel flatModel;
+  input String name;
+  output FunctionTree funcs;
+algorithm
+  funcs := FunctionTree.new();
+  funcs := List.fold(flatModel.variables, collectComponentFuncs, funcs);
+  funcs := List.fold(flatModel.equations, collectEquationFuncs, funcs);
+  funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
+  funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
+  funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
+  execStat(getInstanceName() + "(" + name + ")");
+end collectFunctions;
 
 protected
 function flattenClass
@@ -250,7 +262,7 @@ algorithm
     case Component.TYPED_COMPONENT(condition = condition, ty = ty)
       algorithm
         // Delete the component if it has a condition that's false.
-        if Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition)) then
+        if isDeletedComponent(condition, prefix) then
           deleteComponent(component);
           return;
         end if;
@@ -279,6 +291,40 @@ algorithm
 
   // print("<-" + stringAppendList(List.fill("  ", ComponentRef.depth(prefix))) + ComponentRef.toString(prefix) + "." + InstNode.name(component) + "\n");
 end flattenComponent;
+
+function isDeletedComponent
+  input Binding condition;
+  input ComponentRef prefix;
+  output Boolean isDeleted;
+protected
+  Expression exp;
+  Binding cond;
+algorithm
+  if Binding.isBound(condition) then
+    // TODO: Flattening the condition works as intended here, but we can't yet
+    //       delete components inside array instances in a reliable way since
+    //       the components share the same node. I.e. we can't delete a[1].x
+    //       while keeping a[2].x. So for now we skip flattening the condition,
+    //       so that we get an error message in that case instead (because then
+    //       the expression will be an array instead of a scalar boolean).
+    cond := condition;
+    //cond := flattenBinding(condition, prefix);
+    exp := Binding.getTypedExp(cond);
+    exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
+
+    isDeleted := match exp
+      case Expression.BOOLEAN() then not exp.value;
+      else
+        algorithm
+          Error.addSourceMessage(Error.CONDITIONAL_EXP_WITHOUT_VALUE,
+            {Expression.toString(exp)}, Binding.getInfo(cond));
+        then
+          fail();
+    end match;
+  else
+    isDeleted := false;
+  end if;
+end isDeletedComponent;
 
 function deleteComponent
   "Recursively marks components as deleted."
@@ -463,7 +509,7 @@ protected
   Expression binding_exp;
   Equation eq;
   list<Expression> bindings;
-  Variability comp_var;
+  Variability comp_var, binding_var;
 algorithm
   dims := Type.arrayDims(ty);
   binding := Component.getBinding(comp);
@@ -472,9 +518,10 @@ algorithm
   if Binding.isExplicitlyBound(binding) then
     binding := flattenBinding(binding, prefix);
     binding_exp := Binding.getTypedExp(binding);
+    binding_var := Binding.variability(binding);
 
     comp_var := Component.variability(comp);
-    if comp_var <= Variability.STRUCTURAL_PARAMETER then
+    if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       binding_exp := Ceval.evalExp(binding_exp);
     else
       binding_exp := SimplifyExp.simplify(binding_exp);
@@ -999,20 +1046,6 @@ algorithm
         function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable))
     for eq in equations);
 end evaluateEquationsConnOp;
-
-function flattenFunctions
-  input FlatModel flatModel;
-  input String name;
-  output FunctionTree funcs;
-algorithm
-  funcs := FunctionTree.new();
-  funcs := List.fold(flatModel.variables, collectComponentFuncs, funcs);
-  funcs := List.fold(flatModel.equations, collectEquationFuncs, funcs);
-  funcs := List.fold(flatModel.initialEquations, collectEquationFuncs, funcs);
-  funcs := List.fold(flatModel.algorithms, collectAlgorithmFuncs, funcs);
-  funcs := List.fold(flatModel.initialAlgorithms, collectAlgorithmFuncs, funcs);
-  execStat(getInstanceName() + "(" + name + ")");
-end flattenFunctions;
 
 function collectComponentFuncs
   input Variable var;

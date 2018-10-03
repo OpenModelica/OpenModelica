@@ -419,6 +419,13 @@ public
     end match;
   end subscriptsAll;
 
+  function subscriptsAllFlat
+    "Returns all subscripts of a cref as a flat list in the correct order.
+     Ex: a[1, 2].b[4].c[6, 3] => {1, 2, 4, 6, 3}"
+    input ComponentRef cref;
+    output list<Subscript> subscripts = List.flattenReverse(subscriptsAll(cref));
+  end subscriptsAllFlat;
+
   function subscriptsN
     "Returns the subscripts of the N first parts of a cref in reverse order.
      Fails if the cref has fewer than N parts."
@@ -695,12 +702,23 @@ public
     input ComponentRef cref;
     output Boolean isPkgConst;
   algorithm
+    // TODO: This should really be CONSTANT and not PARAMETER, but that breaks
+    //       some models since we get some redeclared parameters that look like
+    //       package constants due to redeclare issues, and which need to e.g.
+    //       be collected by Package.collectConstants.
+    isPkgConst := nodeVariability(cref) <= Variability.PARAMETER and isPackageConstant2(cref);
+  end isPackageConstant;
+
+  function isPackageConstant2
+    input ComponentRef cref;
+    output Boolean isPkgConst;
+  algorithm
     isPkgConst := match cref
       case CREF(node = InstNode.CLASS_NODE()) then InstNode.isUserdefinedClass(cref.node);
-      case CREF(origin = Origin.CREF) then isPackageConstant(cref.restCref);
+      case CREF(origin = Origin.CREF) then isPackageConstant2(cref.restCref);
       else false;
     end match;
-  end isPackageConstant;
+  end isPackageConstant2;
 
   function stripSubscripts
     "Strips the subscripts from the last name in a cref, e.g. a[2].b[3] => a[2].b"
@@ -748,6 +766,29 @@ public
       else cref;
     end match;
   end simplifySubscripts;
+
+  function evaluateSubscripts
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        list<Subscript> subs;
+
+      case CREF(subscripts = {}, origin = Origin.CREF)
+        algorithm
+          cref.restCref := evaluateSubscripts(cref.restCref);
+        then
+          cref;
+
+      case CREF(origin = Origin.CREF)
+        algorithm
+          subs := list(Subscript.eval(s) for s in cref.subscripts);
+        then
+          CREF(cref.node, subs, cref.ty, cref.origin, evaluateSubscripts(cref.restCref));
+
+      else cref;
+    end match;
+  end evaluateSubscripts;
 
   function isDeleted
     input ComponentRef cref;

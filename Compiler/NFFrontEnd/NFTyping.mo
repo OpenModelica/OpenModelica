@@ -89,6 +89,7 @@ import StringUtil;
 import NFOCConnectionGraph;
 import System;
 
+public
 uniontype TypingError
   record NO_ERROR end NO_ERROR;
 
@@ -107,7 +108,6 @@ uniontype TypingError
   end isError;
 end TypingError;
 
-public
 package ExpOrigin
   // ExpOrigin is used to keep track of where an expression is coming from,
   // and is implemented as an integer bitfield.
@@ -454,7 +454,7 @@ algorithm
   (outRange, ty, var) := match c
     case Component.ITERATOR(info = info)
       algorithm
-        (exp, ty, var) := typeExp(range, intBitOr(origin, ExpOrigin.ITERATION_RANGE), info, replaceConstants = false);
+        (exp, ty, var) := typeExp(range, intBitOr(origin, ExpOrigin.ITERATION_RANGE), info);
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural and var > Variability.PARAMETER then
@@ -541,10 +541,7 @@ algorithm
       algorithm
         arrayUpdate(dimensions, index, Dimension.UNTYPED(dimension.dimension, true));
 
-        // Type the expressions without replacing constants, we want to ceval
-        // the expression ourselves to get better error messages.
-        (exp, ty, var) := typeExp(dimension.dimension, intBitOr(origin, ExpOrigin.DIMENSION),
-          info, replaceConstants = false);
+        (exp, ty, var) := typeExp(dimension.dimension, intBitOr(origin, ExpOrigin.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
 
         if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
@@ -620,6 +617,18 @@ algorithm
 
         end match;
 
+        // Make sure the dimension is constant evaluted, and also mark it as structural.
+        () := match dim
+          case Dimension.EXP(exp = exp)
+            algorithm
+              Inst.markStructuralParamsExp(exp);
+              dim.exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            then
+              ();
+
+          else ();
+        end match;
+
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -692,12 +701,6 @@ algorithm
 
   c := InstNode.component(node);
 
-  // @adrpo: if Evaluate=true make the parameter a structural parameter
-  // only make it a structural parameter if is not constant, duh!, 1071 regressions :)
-  if Component.getEvaluateAnnotation(c) and (Component.variability(c) > Variability.STRUCTURAL_PARAMETER) then
-      c := Component.setVariability(Variability.STRUCTURAL_PARAMETER, c);
-  end if;
-
   () := match c
     // A component with a binding that's already been typed.
     case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
@@ -735,18 +738,6 @@ algorithm
           fail();
         end if;
 
-        // Evaluate the binding if the component is a constant or has annotation(Evaluate=true)
-        if (comp_var <= Variability.STRUCTURAL_PARAMETER)
-        then
-          // TODO: Allow this to fail for now. Once constant evaluation has
-          // been improved we should print an error when a constant binding
-          // couldn't be evaluated instead.
-          try
-            binding := evalBinding(binding, origin);
-          else
-          end try;
-        end if;
-
         c.binding := binding;
 
         if Binding.isBound(c.condition) then
@@ -780,7 +771,6 @@ end typeComponentBinding;
 function typeBinding
   input output Binding binding;
   input ExpOrigin.Type origin;
-  input Boolean replaceConstants = true;
 algorithm
   binding := match binding
     local
@@ -792,7 +782,7 @@ algorithm
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
         info := Binding.getInfo(binding);
-        (exp, ty, var) := typeExp(exp, origin, info, replaceConstants);
+        (exp, ty, var) := typeExp(exp, origin, info);
       then
         Binding.TYPED_BINDING(exp, ty, var, binding.parents, binding.isEach, binding.info);
 
@@ -856,10 +846,8 @@ algorithm
             {Expression.toString(exp)}, info);
           fail();
         end if;
-
-        exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
       then
-        Binding.FLAT_BINDING(exp, var);
+        Binding.TYPED_BINDING(exp, ty, var, condition.parents, false, info);
 
   end match;
 end typeComponentCondition;
@@ -892,12 +880,6 @@ algorithm
           fail();
         end if;
 
-        binding := match name
-          case "fixed" then evalBinding(binding, origin);
-          case "stateSelect" then evalBinding(binding, origin);
-          else Package.replaceBindingConstants(binding);
-        end match;
-
         attribute.binding := binding;
       then
         ();
@@ -917,38 +899,12 @@ algorithm
   end match;
 end typeTypeAttribute;
 
-function evalBinding
-  input output Binding binding;
-  input ExpOrigin.Type origin;
-algorithm
-  () := match binding
-    case Binding.TYPED_BINDING()
-      algorithm
-        binding.bindingExp := Ceval.evalExp(binding.bindingExp, Ceval.EvalTarget.ATTRIBUTE(binding));
-      then
-        ();
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " failed for " + Binding.toString(binding), sourceInfo());
-      then
-        fail();
-  end match;
-end evalBinding;
-
 function typeExp
   "Types an untyped expression, returning the typed expression itself along with
-   its type and variability. The default behaviour is to replace any constants
-   found with their bound values (giving an error if they have none), but this
-   can be turned off with the replaceConstants parameter.
-
-   NOTE: replaceConstants is not propagated when typing subexpressions, because
-         this is so far only used when we need the whole expression to be kept
-         as a cref (like connectors)."
+   its type and variability."
   input output Expression exp;
   input ExpOrigin.Type origin;
   input SourceInfo info;
-  input Boolean replaceConstants = true;
         output Type ty;
         output Variability variability;
 algorithm
@@ -966,7 +922,7 @@ algorithm
     case Expression.STRING()       then (exp, Type.STRING(),  Variability.CONSTANT);
     case Expression.BOOLEAN()      then (exp, Type.BOOLEAN(), Variability.CONSTANT);
     case Expression.ENUM_LITERAL() then (exp, exp.ty,         Variability.CONSTANT);
-    case Expression.CREF()         then typeCrefExp(exp.cref, origin, info, replaceConstants);
+    case Expression.CREF()         then typeCrefExp(exp.cref, origin, info);
 
     case Expression.TYPENAME()
       algorithm
@@ -1272,7 +1228,6 @@ function typeCrefExp
   input ComponentRef cref;
   input ExpOrigin.Type origin;
   input SourceInfo info;
-  input Boolean replaceConstants;
   output Expression exp;
   output Type ty;
   output Variability variability;
@@ -1284,31 +1239,6 @@ algorithm
   (cr, ty, node_var, subs_var) := typeCref(cref, origin, info);
   exp := Expression.CREF(ty, cr);
   variability := Prefixes.variabilityMax(node_var, subs_var);
-
-  // Evaluate constants and structural parameters if replaceConstants = true.
-  if replaceConstants and node_var <= Variability.STRUCTURAL_PARAMETER then
-    // But don't try to evaluate iterators.
-    if ComponentRef.isIterator(cr) then
-      return;
-    end if;
-
-    // Also avoid evaluating local constants in functions, since they're handled
-    // just fine by the backend.
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
-       not ComponentRef.isPackageConstant(cr) then
-      return;
-    end if;
-
-    // Evaluate the binding of the node the cref is pointing to.
-    (exp, eval) := Ceval.evalComponentBinding(ComponentRef.node(cr), exp,
-      Ceval.EvalTarget.IGNORE_ERRORS());
-
-    // If it could be evaluated, apply the subscripts to it. Otherwise we just
-    // return the unevaluated expression and hope for the best.
-    if eval then
-      exp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), exp);
-    end if;
-  end if;
 end typeCrefExp;
 
 function typeCref
@@ -2379,14 +2309,14 @@ algorithm
   next_origin := intBitOr(origin, ExpOrigin.CONNECT);
 
   try // try the normal stuff first!
-    (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, next_origin, info, replaceConstants = false);
-    (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, next_origin, info, replaceConstants = false);
+    (lhs, lhs_ty, lhs_var) := typeExp(lhsConn, next_origin, info);
+    (rhs, rhs_ty, rhs_var) := typeExp(rhsConn, next_origin, info);
   else // either is an error or there are expandable connectors in there
     // check if any of them are expandable connectors!
     if InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(lhsConn))) or
        InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(rhsConn)))
     then // handle expandable
-      (lhs, rhs, lhs_ty, lhs_var, rhs_ty, rhs_var) := typeExpandableConnectors(lhsConn, rhsConn, next_origin, info, replaceConstants = false);
+      (lhs, rhs, lhs_ty, lhs_var, rhs_ty, rhs_var) := typeExpandableConnectors(lhsConn, rhsConn, next_origin, info);
     end if;
   end try;
 
@@ -2430,7 +2360,6 @@ function typeExpandableConnectors
   input output Expression rhs;
   input ExpOrigin.Type origin;
   input SourceInfo info;
-  input Boolean replaceConstants = true;
         output Type tyLHS;
         output Variability variabilityLHS;
         output Type tyRHS;
@@ -2438,8 +2367,8 @@ function typeExpandableConnectors
 algorithm
   // first, try to type both of them, they might already exist
   try
-    (lhs, tyLHS, variabilityLHS) := typeExp(lhs, origin, info, replaceConstants = false);
-    (rhs, tyRHS, variabilityRHS) := typeExp(rhs, origin, info, replaceConstants = false);
+    (lhs, tyLHS, variabilityLHS) := typeExp(lhs, origin, info);
+    (rhs, tyRHS, variabilityRHS) := typeExp(rhs, origin, info);
     return;
   else
     // do nothing, continue
@@ -2447,7 +2376,7 @@ algorithm
 
   // lhs existing, type it and use it!
   if InstNode.isConnector(ComponentRef.node(Expression.toCref(lhs))) then
-    (lhs, tyLHS, variabilityLHS) := typeExp(lhs, origin, info, replaceConstants = false);
+    (lhs, tyLHS, variabilityLHS) := typeExp(lhs, origin, info);
     tyRHS := tyLHS;
     variabilityRHS := variabilityLHS;
     rhs := updateVirtualCrefExp(rhs, lhs, tyLHS, variabilityLHS);
@@ -2455,7 +2384,7 @@ algorithm
   end if;
 
   // rhs existing, reuse the case above
-  (rhs, lhs, tyRHS, variabilityRHS, tyLHS, variabilityLHS) := typeExpandableConnectors(rhs, lhs, origin, info, replaceConstants = false);
+  (rhs, lhs, tyRHS, variabilityRHS, tyLHS, variabilityLHS) := typeExpandableConnectors(rhs, lhs, origin, info);
 
   if InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(rhs))) or
      InstNode.hasParentExpandableConnector(ComponentRef.node(Expression.toCref(rhs)))
@@ -2664,6 +2593,13 @@ algorithm
     case Statement.TERMINATE()
       algorithm
         info := ElementSource.getInfo(st.source);
+
+        // terminate is not allowed in a function context.
+        if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+          Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"terminate"}, info);
+          fail();
+        end if;
+
         e1 := typeOperatorArg(st.message, Type.STRING(), origin, "terminate", "message", 1, info);
       then
         Statement.TERMINATE(e1, st.source);
@@ -2840,7 +2776,7 @@ protected
   SourceInfo info;
 algorithm
   info := ElementSource.getInfo(source);
-  (crefExp, ty1, _) := typeExp(crefExp, origin, info, replaceConstants = false);
+  (crefExp, ty1, _) := typeExp(crefExp, origin, info);
   (exp, ty2, _) := typeExp(exp, origin, info);
 
   // The first argument must be a cref.

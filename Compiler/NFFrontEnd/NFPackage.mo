@@ -290,6 +290,14 @@ public
               then
                 ();
 
+            case Sections.EXTERNAL()
+              algorithm
+                sections.args := list(replaceExpConstants(arg) for arg in sections.args);
+                cls.sections := sections;
+                InstNode.updateClass(cls, func.node);
+              then
+                ();
+
             else ();
           end match;
         then

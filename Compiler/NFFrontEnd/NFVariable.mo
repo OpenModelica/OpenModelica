@@ -36,6 +36,7 @@ encapsulated uniontype NFVariable
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
+  import NFPrefixes.Variability;
   import Type = NFType;
 
 protected
@@ -76,6 +77,12 @@ public
     info := InstNode.info(node);
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, cmt, info);
   end fromCref;
+
+  function isStructural
+    input Variable variable;
+    output Boolean structural =
+      variable.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
+  end isStructural;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

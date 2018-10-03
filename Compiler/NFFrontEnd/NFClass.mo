@@ -215,7 +215,7 @@ uniontype Class
   algorithm
     try
       attr_node := ClassTree.lookupElement(name, classTree(cls));
-      binding := Modifier.binding(Component.getModifier(InstNode.component(attr_node)));
+      binding := Component.getBinding(InstNode.component(attr_node));
     else
       binding := NFBinding.EMPTY_BINDING;
     end try;

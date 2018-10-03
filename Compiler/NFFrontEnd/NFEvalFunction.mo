@@ -82,7 +82,7 @@ encapsulated package ReplTree
   annotation(__OpenModelica_Interface="util");
 end ReplTree;
 
-type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, FAIL);
+type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, ASSERTION);
 
 public
 function evaluate
@@ -132,7 +132,12 @@ algorithm
     //       sorted by dependencies first.
     fn_body := applyReplacements(repl, fn_body);
     ctrl := evaluateStatements(fn_body);
-    result := createResult(repl, fn.outputs);
+
+    if ctrl <> FlowControl.ASSERTION then
+      result := createResult(repl, fn.outputs);
+    else
+      fail();
+    end if;
   else
     // Make sure we always decrease the call counter even if the evaluation fails.
     Pointer.update(call_counter, call_count - 1);
@@ -438,7 +443,6 @@ algorithm
     case Statement.FOR()        then evaluateFor(stmt.iterator, stmt.range, stmt.body, stmt.source);
     case Statement.IF()         then evaluateIf(stmt.branches);
     case Statement.ASSERT()     then evaluateAssert(stmt.condition, stmt);
-    case Statement.TERMINATE()  then evaluateTerminate(stmt.message, stmt.source);
     case Statement.NORETCALL()  then evaluateNoRetCall(stmt.exp);
     case Statement.WHILE()      then evaluateWhile(stmt.condition, stmt.body, stmt.source);
     case Statement.RETURN()     then FlowControl.RETURN;
@@ -705,8 +709,9 @@ algorithm
       case (Expression.STRING(), Expression.ENUM_LITERAL(name = "error"))
         algorithm
           Error.addSourceMessage(Error.ASSERT_TRIGGERED_ERROR, {msg.value}, ElementSource.getInfo(source));
+          ctrl := FlowControl.ASSERTION;
         then
-          fail();
+          ();
 
       else
         algorithm
@@ -717,32 +722,6 @@ algorithm
     end match;
   end if;
 end evaluateAssert;
-
-function evaluateTerminate
-  input Expression message;
-  input DAE.ElementSource source;
-  output FlowControl dummy = FlowControl.NEXT;
-protected
-  Expression msg;
-algorithm
-  msg := Ceval.evalExp(message);
-
-  _ := match msg
-    case Expression.STRING()
-      algorithm
-        Error.addSourceMessage(Error.TERMINATE_TRIGGERED, {msg.value}, ElementSource.getInfo(source));
-      then
-        fail();
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " failed to evaluate terminate(" +
-          Expression.toString(msg) + ")", sourceInfo());
-      then
-        fail();
-
-  end match;
-end evaluateTerminate;
 
 function evaluateNoRetCall
   input Expression callExp;
