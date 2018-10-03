@@ -211,11 +211,13 @@ if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^7"; then
   RPATH_EXTRA="-Wl,--disable-new-dtags"
 fi
 
+AC_MSG_CHECKING([for flags to append to CFLAGS ($TRY_FLAGS)])
 for flag in $TRY_FLAGS; do
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
   AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
 done
+AC_MSG_RESULT([$CFLAGS])
 OLD_CFLAGS="$CFLAGS"
 for flag in -Wno-parentheses-equality -Wno-unused-variable; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
