@@ -491,6 +491,8 @@ algorithm
 
         // get the elements of the function and the algorithms
         SOME(func) = DAE.AvlTreePathFunction.get(funcsIn,path);
+        // fail if is an external function!
+        false = DAEUtil.isExtFunction(func);
         elements = DAEUtil.getFunctionElements(func);
 
         // get the input exps from the call
@@ -499,7 +501,7 @@ algorithm
         allInputExps = List.flatten(scalarExp);
           //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
-        if listEmpty(elements) then  // its a record
+        if listEmpty(elements) and DAEUtil.funcIsRecord(func) then  // its a record
         //-----------------------its a record-----------------------
           expOut = DAE.TUPLE(allInputExps);
           if Flags.isSet(Flags.EVAL_FUNC_DUMP) then print("\nIts a record.\n");
