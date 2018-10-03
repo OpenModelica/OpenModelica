@@ -20,13 +20,6 @@ model FuncDefaultArg1
 end FuncDefaultArg1;
 
 // Result:
-// function f
-//   input Real x;
-//   input Real y = 1.0;
-//   input Real z;
-//   output Real w = x + y + z;
-// end f;
-//
 // class FuncDefaultArg1
 //   Real x = 6.0;
 //   Real y = 7.0;

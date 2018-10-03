@@ -1,6 +1,6 @@
 // name: CevalFuncAssert2
 // keywords:
-// status: correct
+// status: incorrect
 // cflags: -d=newInst
 //
 //
@@ -18,17 +18,11 @@ model CevalFuncAssert2
 end CevalFuncAssert2;
 
 // Result:
-// function f
-//   input Integer n;
-//   output Integer res;
-// algorithm
-//   assert(n <= 2, "f got n larger than 2");
-//   res := n;
-// end f;
-//
-// class CevalFuncAssert2
-//   constant Real x = /*Real*/(f(10));
-// end CevalFuncAssert2;
+// Error processing file: CevalFuncAssert2.mo
 // [flattening/modelica/scodeinst/CevalFuncAssert2.mo:12:3-12:64:writable] Error: assert triggered: f got n larger than 2
 //
+// # Error encountered! Exiting...
+// # Please check the error message and the flags.
+//
+// Execution failed!
 // endResult

@@ -25,18 +25,6 @@ model ExtendsShort2
 end ExtendsShort2;
 
 // Result:
-// function ExtendsShort2.f
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := P.f2(x);
-// end ExtendsShort2.f;
-//
-// function P.f2
-//   input Real x;
-//   output Real y = x * 2.0;
-// end P.f2;
-//
 // class ExtendsShort2
 //   Real x = 4.0;
 // end ExtendsShort2;

@@ -16,11 +16,6 @@ model FuncSimple
 end FuncSimple;
 
 // Result:
-// function f
-//   input Real x;
-//   output Real y = x;
-// end f;
-//
 // class FuncSimple
 //   Real x = 1.0;
 // end FuncSimple;

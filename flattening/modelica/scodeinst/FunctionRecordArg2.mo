@@ -22,19 +22,6 @@ model M
 end M;
 
 // Result:
-// function R "Automatically generated record constructor for R"
-//   input Real x = 1.0;
-//   input Real y = 2.0;
-//   output R res;
-// end R;
-//
-// function f
-//   output Real x;
-//   protected R r;
-// algorithm
-//   x := r.x;
-// end f;
-//
 // class M
 //   Real x = 1.0;
 // end M;

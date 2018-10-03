@@ -1,4 +1,4 @@
-// name: Visibility1
+// name: VectorTest
 // keywords:
 // status: correct
 // cflags: -d=newInst,-nfScalarize --std=3.3

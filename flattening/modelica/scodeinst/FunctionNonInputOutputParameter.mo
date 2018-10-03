@@ -19,15 +19,6 @@ end FunctionNonInputOutputParameter;
 
 
 // Result:
-// function f
-//   input Real a;
-//   input Real b;
-//   output Real y;
-//   parameter Real z = 1.0;
-// algorithm
-//   y := a + b + z;
-// end f;
-//
 // class FunctionNonInputOutputParameter
 //   parameter Real p = 4.0;
 // end FunctionNonInputOutputParameter;

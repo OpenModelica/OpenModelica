@@ -19,13 +19,6 @@ model FuncWildcard
 end FuncWildcard;
 
 // Result:
-// function _
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := x;
-// end _;
-//
 // class FuncWildcard
 //   Real x = 3.0;
 // end FuncWildcard;

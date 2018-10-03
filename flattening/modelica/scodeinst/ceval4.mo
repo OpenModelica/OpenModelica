@@ -14,12 +14,13 @@ model A
 end A;
 
 // Result:
-// [OpenModelica/OMCompiler/Compiler/NFFrontEnd/NFSimplifyExp.mo:164:9-164:105:writable]Modelica Assert: Unimplemented case for f(1) in NFSimplifyExp.postSimplify!
-// Error processing file: ceval4.mo
-// Error: Internal error Instantiation of A failed with no error message.
-//
-// # Error encountered! Exiting...
-// # Please check the error message and the flags.
-//
-// Execution failed!
+// class A
+//   parameter Integer n = 1;
+//   parameter Integer m = 3;
+//   Real x[1];
+//   Real x[2];
+//   Real x[3];
+// equation
+//   x = {1.0, 1.0, 1.0};
+// end A;
 // endResult

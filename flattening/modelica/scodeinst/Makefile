@@ -57,6 +57,7 @@ CardinalityInvalidArg2.mo \
 ceval1.mo \
 ceval2.mo \
 ceval3.mo \
+ceval4.mo \
 ceval5.mo \
 CevalAbs1.mo \
 CevalAcos1.mo \
@@ -100,7 +101,6 @@ CevalFuncRecursive1.mo \
 CevalFuncRecursive2.mo \
 CevalFuncSubscript1.mo \
 CevalFuncSubscript2.mo \
-CevalFuncTerminate1.mo \
 CevalFuncWhile1.mo \
 CevalFuncWhile2.mo \
 CevalIdentity1.mo \
@@ -193,6 +193,8 @@ Condition5.mo \
 Condition6.mo \
 ConditionInvalid1.mo \
 ConditionInvalidType1.mo \
+conn9.mo \
+conngraph1.mo \
 Connect1.mo \
 Connect2.mo \
 Connect4.mo \
@@ -269,6 +271,7 @@ DuplicateElements1.mo \
 DuplicateElements2.mo \
 DuplicateElements3.mo \
 DuplicateElements4.mo \
+DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
 DuplicateElementsValid1.mo \
@@ -575,6 +578,7 @@ ModClass2.mo \
 ModClass3.mo \
 ModClass4.mo \
 ModClass5.mo \
+ModClass6.mo \
 ModScope1.mo \
 MultiInheritanceRedeclare1.mo \
 MultiInheritanceRedeclare2.mo \
@@ -712,6 +716,7 @@ SubscriptWrongType1.mo \
 SubscriptWrongType2.mo \
 Terminate1.mo \
 TerminateInvalid1.mo \
+TerminateInvalid2.mo \
 TestSampleNoClock.mos \
 Time1.mo \
 Time2.mo \
@@ -764,7 +769,6 @@ OCGTests.mos \
 # Run make testfailing
 FAILINGTESTFILES=\
 CevalRecordArray3.mo \
-ModClass6.mo \
 IfExpression6.mo \
 RedeclareConstant1.mo \
 InStreamInvalidArgument1.mo \
@@ -772,20 +776,16 @@ InStreamInvalidArgument2.mo \
 Connect3.mo \
 ProtectedMod1.mo \
 dim2.mo \
-DuplicateElements5.mo \
 DuplicateElements6.mo \
 DuplicateElements7.mo \
 DuplicateElements8.mo \
 DuplicateElementsValid2.mo \
 DuplicateElementsCond1.mo \
-ceval4.mo \
 cond3.mo \
 conn12.mo \
 conn13.mo \
 conn14.mo \
 conn8.mo \
-conn9.mo \
-conngraph1.mo \
 conngraph2.mo \
 enum6.mo \
 expconn1.mo \

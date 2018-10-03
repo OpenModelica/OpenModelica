@@ -18,13 +18,6 @@ algorithm
 end FunctionMultiOutput1;
 
 // Result:
-// function f
-//   input Real x;
-//   output Real a = x * 2.0;
-//   output Real b = x * 3.0;
-//   output Real c = x * 4.0;
-// end f;
-//
 // class FunctionMultiOutput1
 //   Real x;
 //   Real y;

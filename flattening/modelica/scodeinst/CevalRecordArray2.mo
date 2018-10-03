@@ -27,13 +27,6 @@ model CevalRecordArray2
 end CevalRecordArray2;
 
 // Result:
-// function P.f
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := x * 2.0;
-// end P.f;
-//
 // class CevalRecordArray2
 //   Real x = 2.0;
 // end CevalRecordArray2;

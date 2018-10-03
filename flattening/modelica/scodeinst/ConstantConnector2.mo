@@ -17,6 +17,6 @@ end ConstantConnector2;
 //   constant Real c1 = 1.0;
 //   constant Real c2 = 2.0;
 // equation
-//   assert(abs(c1 - c2) <= 0.0, "Connected constants/parameters must be equal");
+//   assert(false, "Connected constants/parameters must be equal");
 // end ConstantConnector2;
 // endResult

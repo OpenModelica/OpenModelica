@@ -21,13 +21,6 @@ end ImportUnqualified3;
 
 
 // Result:
-// function A.B.f
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := x;
-// end A.B.f;
-//
 // class ImportUnqualified3
 //   parameter Real x = 100.0;
 // end ImportUnqualified3;

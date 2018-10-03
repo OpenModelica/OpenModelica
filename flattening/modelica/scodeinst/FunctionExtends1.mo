@@ -20,13 +20,6 @@ model M
 end M;
 
 // Result:
-// function f2
-//   input Real x;
-//   output Real y;
-// algorithm
-//   y := x;
-// end f2;
-//
 // class M
 //   Real x = 1.0;
 // end M;

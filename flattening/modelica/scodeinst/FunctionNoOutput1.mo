@@ -10,9 +10,9 @@ end f;
 
 model FunctionNoOutput1
 algorithm
-  f(1.0);
+  f(time);
 equation
-  f(2.0);
+  f(time);
 end FunctionNoOutput1;
 
 // Result:
@@ -21,5 +21,9 @@ end FunctionNoOutput1;
 // end f;
 //
 // class FunctionNoOutput1
+// equation
+//   f(time);
+// algorithm
+//   f(time);
 // end FunctionNoOutput1;
 // endResult
