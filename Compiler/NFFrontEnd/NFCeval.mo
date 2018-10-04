@@ -296,6 +296,7 @@ protected
   list<Subscript> subs;
   Variability var;
   Option<Expression> start_exp;
+  Integer pcount;
 algorithm
   exp_origin := if Class.isFunction(InstNode.getClass(InstNode.parent(node)))
     then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
@@ -350,7 +351,8 @@ algorithm
 
   // Apply subscripts from the cref to the binding expression as needed.
   if evaluated then
-    exp := subscriptEvaluatedBinding(exp, cref, Binding.parentCount(binding), evalSubscripts);
+    pcount := if Binding.isEach(binding) then 1 else Binding.parentCount(binding);
+    exp := subscriptEvaluatedBinding(exp, cref, pcount, evalSubscripts);
   end if;
 end evalComponentBinding;
 
