@@ -1537,6 +1537,11 @@ algorithm
     case "intBitXor" then evalIntBitXor(args);
     case "intBitLShift" then evalIntBitLShift(args);
     case "intBitRShift" then evalIntBitRShift(args);
+    case "inferredClock" then evalInferredClock(args);
+    case "rationalClock" then evalRationalClock(args);
+    case "realClock" then evalRealClock(args);
+    case "booleanClock" then evalBooleanClock(args);
+    case "solverClock" then evalSolverClock(args);
     else
       algorithm
         Error.addInternalError(getInstanceName() + ": unimplemented case for " +
@@ -2549,6 +2554,78 @@ algorithm
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;
 end evalIntBitRShift;
+
+function evalInferredClock
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  result := match args
+    case {}
+      then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalInferredClock;
+
+function evalRationalClock
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  result := match args
+    local
+      Expression interval, resolution;
+
+    case {interval as Expression.INTEGER(), resolution as Expression.INTEGER()}
+      then Expression.CLKCONST(Expression.ClockKind.INTEGER_CLOCK(interval, resolution));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalRationalClock;
+
+function evalRealClock
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  result := match args
+    local
+      Expression interval;
+
+    case {interval as Expression.REAL()}
+      then Expression.CLKCONST(Expression.ClockKind.REAL_CLOCK(interval));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalRealClock;
+
+function evalBooleanClock
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  result := match args
+    local
+      Expression condition, interval;
+
+    case {condition as Expression.BOOLEAN(), interval as Expression.REAL()}
+      then Expression.CLKCONST(Expression.ClockKind.BOOLEAN_CLOCK(condition, interval));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalBooleanClock;
+
+function evalSolverClock
+  input list<Expression> args;
+  output Expression result;
+algorithm
+  result := match args
+    local
+      Expression c, solver;
+
+    case {c as Expression.CLKCONST(), solver as Expression.STRING()}
+      then Expression.CLKCONST(Expression.ClockKind.SOLVER_CLOCK(c, solver));
+
+    else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
+  end match;
+end evalSolverClock;
 
 function evalReduction
   input Expression exp;
