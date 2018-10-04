@@ -430,11 +430,11 @@ algorithm
   end for;
   for i in 1:BackendEquation.getNumberOfEquations(inSyst.orderedEqs) loop
     eq := BackendEquation.get(inSyst.orderedEqs, i);
-    (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
+    (_, (prevVars, _)) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, (prevVars, BackendEquation.getForEquationIterIdent(eq)));
   end for;
   for i in 1:BackendEquation.getNumberOfEquations(inSyst.removedEqs) loop
     eq := BackendEquation.get(inSyst.removedEqs, i);
-    (_, prevVars) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, prevVars);
+    (_, (prevVars, _)) := BackendEquation.traverseExpsOfEquation(eq, collectPrevVars, (prevVars, BackendEquation.getForEquationIterIdent(eq)));
   end for;
   for cr in prevVars loop
     varIxs := getVarIxs(cr, inSyst.orderedVars);
@@ -461,25 +461,39 @@ end markClockedStates;
 
 protected function collectPrevVars
   input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inPrevVars;
+  input tuple<list<DAE.ComponentRef>, Option<DAE.Ident>> inPrevVars;
   output DAE.Exp outExp;
-  output list<DAE.ComponentRef> outPrevVars;
+  output tuple<list<DAE.ComponentRef>, Option<DAE.Ident>> outPrevVars;
 algorithm
   (outExp, outPrevVars) := Expression.traverseExpBottomUp(inExp, collectPrevVars1, inPrevVars);
 end collectPrevVars;
 
 protected function collectPrevVars1
+ "Append cref found in previous(cref) to outPrevVars.
+  Optionally strip for iterator to get array variable (no NF_SCALARIZE)."
   input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inPrevCompRefs;
+  input tuple<list<DAE.ComponentRef>, Option<DAE.Ident>> inPrevVars;
   output DAE.Exp outExp = inExp;
-  output list<DAE.ComponentRef> outPrevCompRefs;
+  output tuple<list<DAE.ComponentRef>, Option<DAE.Ident>> outPrevVars;
 algorithm
-  outPrevCompRefs := match inExp
+  outPrevVars := match inExp
     local
+      list<DAE.ComponentRef> inPrevCompRefs;
+      Option<DAE.Ident> inForIter;
+      DAE.Ident forIter;
       DAE.ComponentRef cr;
     case DAE.CALL(path=Absyn.IDENT("previous"), expLst={DAE.CREF(cr, _)})
-      then cr::inPrevCompRefs;
-    else inPrevCompRefs;
+      algorithm
+        (inPrevCompRefs, inForIter) := inPrevVars;
+        _ := match inForIter
+          case SOME(forIter)
+          algorithm
+            cr := ComponentReference.crefStripIterSub(cr, forIter);
+          then ();
+          else ();
+        end match;
+      then (cr :: inPrevCompRefs, inForIter);
+    else inPrevVars;
   end match;
 end collectPrevVars1;
 
@@ -2676,6 +2690,7 @@ algorithm
       SourceInfo info;
     case BackendDAE.EQUATION(scalar = e) then isClockExp(e);
     case BackendDAE.ARRAY_EQUATION(right = e) then isClockExp(e);
+    case BackendDAE.FOR_EQUATION(right = e) then isClockExp(e);
     case BackendDAE.SOLVED_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.RESIDUAL_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.ALGORITHM() then false;
