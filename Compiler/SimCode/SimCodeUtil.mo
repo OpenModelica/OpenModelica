@@ -2109,6 +2109,11 @@ algorithm
       then
         ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
 
+    // for equation that may result from -d=-nfScalarize and is assumed solved
+    case BackendDAE.FOR_EQUATION(iter = varexp, start = e1, stop = e2, left = DAE.CREF(componentRef = cr), right = right, source = source, attr = eqAttr)
+      then
+        ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, e1, e2, cr, right, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
+
     // solved equation
     case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
       algorithm
