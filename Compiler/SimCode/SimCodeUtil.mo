@@ -12047,15 +12047,18 @@ else
   // create empty model structure
   try
     // create empty derivatives dependencies
-    derivatives := list(createFmiUnknownFromSimVar(v,1) for v in inModelInfo.vars.derivativeVars);
+    derivatives := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+                        for v in getScalarVars(inModelInfo.vars.derivativeVars));
 
     // create empty output dependencies
     varsA := List.filterOnTrue(inModelInfo.vars.algVars, isOutputSimVar);
-    outputs := list(createFmiUnknownFromSimVar(v,1) for v in varsA);
+    outputs := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+                    for v in getScalarVars(varsA));
 
     // create empty clockedStates dependencies
     clockedStates := List.filterOnTrue(inModelInfo.vars.algVars, isClockedStateSimVar);
-    discreteStates := list(createFmiUnknownFromSimVar(v,1) for v in clockedStates);
+    discreteStates := list(SimCode.FMIUNKNOWN(getVariableIndex(v), {}, {})
+                           for v in getScalarVars(clockedStates));
 
     contPartSimDer := NONE();
 
@@ -12108,15 +12111,6 @@ algorithm
     else false;
   end match;
 end isFmiUnknown;
-
-protected function createFmiUnknownFromSimVar
-"create a basic FMIUNKNOWN without dependencies from a SimVar"
-  input SimCodeVar.SimVar var;
-  input Integer indexOffset;
-  output SimCode.FmiUnknown unknown;
-algorithm
-  unknown := SimCode.FMIUNKNOWN(var.index + indexOffset, {}, {});
-end createFmiUnknownFromSimVar;
 
 protected function translateSparsePatterInts2FMIUnknown
 "function translates simVar integers to fmi unknowns."
@@ -12235,7 +12229,7 @@ algorithm
         numElems := numElems * stringInt(listGet(var.numArrayElement, i));
       end for;
       then numElems;
-    else then 1;
+    else 1;
   end match;
 end getNumElems;
 
@@ -12249,25 +12243,18 @@ function getScalarElements
 protected
   list<Integer> dims;
   SimCodeVar.SimVar elt;
-  list<DAE.Subscript> subs;
-  Integer index = 0;
+  Integer index;
 algorithm
   // create list of elements
   elts := match var
-  case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
+  case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY(), variable_index = SOME(index)) algorithm
     dims := List.map(List.lastN(var.numArrayElement, listLength(var.numArrayElement)), stringInt);
     elt := var;
     elt.type_ := Types.arrayElementType(var.type_);
-    subs := {};
-    elts := {};
-  then fillScalarElements(elt, dims, 1, subs, elts);
-  else then {var};
-  end match;
-  // set variable indices
-  (elts, index) := match var
-    case SimCodeVar.SIMVAR(variable_index = SOME(index))
-    then setVariableIndexHelper(elts, index);
-    else (elts, index);
+    elts := fillScalarElements(elt, dims, 1, {}, {});
+    elts := setVariableIndexHelper(elts, index);
+  then elts;
+  else {var};
   end match;
 end getScalarElements;
 
@@ -12307,6 +12294,18 @@ algorithm
     end if;
   end for;
 end fillScalarElements;
+
+protected
+function getScalarVars
+"Expand all arrays in a vector of SimVars. author: rfranke"
+  input list<SimCodeVar.SimVar> inVars;
+  output list<SimCodeVar.SimVar> outVars;
+algorithm
+  outVars := {};
+  for var in inVars loop
+    outVars := listAppend(outVars, getScalarElements(var));
+  end for;
+end getScalarVars;
 
 public function getVariableIndex
   input SimCodeVar.SimVar inVar;

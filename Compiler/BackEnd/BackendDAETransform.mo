@@ -104,13 +104,8 @@ algorithm
     then (syst, comps);
 
     else algorithm
-      if Flags.isSet(Flags.NF_SCALARIZE) then
-        Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
-        fail();
-      else
-        Error.addCompilerWarning("BackendDAETransform.strongComponentsScalar failed (sorting strong components)");
-      end if;
-    then (inSystem, {});
+      Error.addInternalError("function strongComponentsScalar failed (sorting strong components)", sourceInfo());
+    then fail();
   end matchcontinue;
 end strongComponentsScalar;
 
