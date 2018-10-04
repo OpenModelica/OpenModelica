@@ -18,6 +18,7 @@ functionPointerTest.mos \
 recordTupleReturnTest.mos \
 RefArrayDim2.mos \
 solveTest.mos \
+testArrayEquations.mos \
 testMatrixIO.mos \
 trapezoidTest.mos
 
