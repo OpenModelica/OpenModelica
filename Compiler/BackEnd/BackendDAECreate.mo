@@ -424,6 +424,13 @@ algorithm
         then
           ();
 
+      // for equation
+      case DAE.FOR_EQUATION()
+        algorithm
+          (outEqns, outREqns, outIEqns) := lowerEqn(el, inFunctions, outEqns, outREqns, outIEqns, false);
+        then
+          ();
+
       // initial array equations
       case DAE.INITIAL_ARRAY_EQUATION()
         algorithm
@@ -1356,6 +1363,16 @@ algorithm
       then
         (inEquations,inREquations,eqns);
 
+    case DAE.FOR_EQUATION(iter = s, range = e1, equations = eqnslst, source = source)
+      equation
+        // create one backend for-equation for each equation element in the loop
+        (eqns, reqns, ieqns) = lowerEqns(eqnslst, functionTree, {}, {}, {}, inInitialization);
+        eqns = listAppend(List.map2(eqns, lowerForEquation, s, e1), inEquations);
+        reqns = listAppend(List.map2(reqns, lowerForEquation, s, e1), inREquations);
+        ieqns = listAppend(List.map2(ieqns, lowerForEquation, s, e1), inIEquations);
+      then
+        (eqns, reqns, ieqns);
+
    // if equation that cannot be translated to if expression but have initial() as condition
     case DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))},equations2={eqnslst},equations3={})
       equation
@@ -1424,6 +1441,32 @@ algorithm
 
   end match;
 end lowerEqn;
+
+protected
+function lowerForEquation
+"Wrap one equation into a for-equation.
+ author: rfranke"
+  input BackendDAE.Equation eq;
+  input DAE.Ident iter;
+  input DAE.Exp range;
+  output BackendDAE.Equation forEq;
+protected
+  DAE.Exp iterExp, start, stop;
+  DAE.Type ty;
+  DAE.Exp left, right;
+  DAE.ElementSource source;
+  BackendDAE.EquationAttributes attr;
+algorithm
+  DAE.RANGE(ty=ty, start=start, stop=stop) := range;
+  iterExp := DAE.CREF(DAE.CREF_IDENT(iter, ty, {}), ty);
+  forEq := match eq
+    case BackendDAE.EQUATION(exp=left, scalar=right, source=source, attr=attr)
+    then BackendDAE.FOR_EQUATION(iterExp, start, stop, left, right, source, attr);
+  else algorithm
+    Error.addSourceMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.lowerForEquation: unsupported equation " + BackendDump.equationString(eq)}, sourceInfo());
+  then fail();
+  end match;
+end lowerForEquation;
 
 protected function lowerIfEquation
   input list<DAE.Exp> conditions;
