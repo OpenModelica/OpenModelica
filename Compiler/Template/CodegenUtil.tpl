@@ -124,12 +124,13 @@ end subscriptsStr;
 
 template subscriptStr(Subscript subscript)
  "Generates a single subscript.
-  Only works for constant integer indicies."
+  Only works for constant integer and cref indicies."
 
 ::=
   match subscript
   case INDEX(exp=ICONST(integer=i)) then i
   case INDEX(exp=ENUM_LITERAL(name=n)) then dotPath(n)
+  case INDEX(exp=CREF()) then printExpStr(exp)
   case SLICE(exp=ICONST(integer=i)) then i
   case INDEX(__)
   case SLICE(__) then 'UNKNOWN_SUBSCRIPT /* <%escapeCComments(printExpStr(exp))%> */'

@@ -11577,32 +11577,13 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let expPart = daeExp(exp, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let crefPart = daeExp(crefExp(cref), context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
-      let crefWithIdx = crefWithIndex(cref, context, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName /*=__zDot*/, useFlatArrayNotation)
-      let lhs = getLHS(cref, startExp, useFlatArrayNotation)
       <<
-      <%preExp%>
-      //double *result = &<%cref(cref, false)%>[0];
-      double *result = &<%lhs%>;
-      for(int <%iterExp%> = <%startExp%>; <%iterExp%> != <%endExp%>+1; <%iterExp%>++)
-        result[i] = <%expPart%>;
+      for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
+        <%preExp%>
+        <%crefPart%> = <%expPart%>;
+      }
       >>
 end equationForLoop;
-
-
-template getLHS(ComponentRef cr, Text startExp, Boolean useFlatArrayNotation)
- "Returns the left hand side of a for loop with the right var index, e.g., _resistor1_P_i.
-  Assumption: lhs = 'cref' + 'startIndex of for loop'."
-::=
-  match cr
-    case CREF_QUAL(__) then
-      //"_" + '<%ident%><%startExp%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
-      "_" + '<%crefAppendedSubs(cr)%>'
-    else "CREF_NOT_QUAL"
-  end match
-end getLHS;
-
-
-
 
 
 template testDaeDimensionExp(Exp exp)

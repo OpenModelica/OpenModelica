@@ -53,6 +53,7 @@ template subscriptToCStr(Subscript subscript)
    match exp
     case ICONST(integer=i) then i
     case ENUM_LITERAL(index=i) then i
+    case CREF(componentRef=cr) then crefToCStr(cr, false)
     end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptToCStr;
