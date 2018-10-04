@@ -115,7 +115,6 @@ OMSProxy::OMSProxy()
   // OMSimulator global settings
   setLogFile(QString(Utilities::tempDirectory() + "/omsllog.txt").toStdString().c_str());
   setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
-  oms2_setLoggingCallback(loggingCallback);
 }
 
 /*!
@@ -793,6 +792,15 @@ void OMSProxy::setTempDirectory(QString path)
 void OMSProxy::setWorkingDirectory(QString path)
 {
   oms3_setWorkingDirectory(path.toStdString().c_str());
+}
+
+/*!
+ * \brief OMSProxy::setLoggingCallback
+ * Sets the logging callback.
+ */
+void OMSProxy::setLoggingCallback()
+{
+  oms2_setLoggingCallback(loggingCallback);
 }
 
 /*!

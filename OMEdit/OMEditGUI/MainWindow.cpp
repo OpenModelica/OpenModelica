@@ -153,13 +153,15 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   SplashScreen::instance()->showMessage(tr("Reading Settings"), Qt::AlignRight, Qt::white);
   // Get the number of processors.
   mNumberOfProcessors = mpOMCProxy->numProcessors();
+  // create an object of OMSProxy
+  OMSProxy::create();
   // Create an object of OptionsDialog
   OptionsDialog::create();
+  // We set the logging callback for OMS API here after creating OptionsDialog so don't get annoying temp directory message.
+  OMSProxy::instance()->setLoggingCallback();
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
-  // create an object of OMSProxy
-  OMSProxy::create();
   // Create an object of QProgressBar
   mpProgressBar = new QProgressBar;
   mpProgressBar->setMaximumWidth(300);

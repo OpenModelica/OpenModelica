@@ -104,6 +104,7 @@ public:
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
   void setWorkingDirectory(QString path);
+  void setLoggingCallback();
   bool getReal(QString signal, double* value);
   bool setReal(QString signal, double value);
   bool getRealParameter(QString signal, double* pValue);
