@@ -1484,6 +1484,34 @@ void GraphicsView::addConnection(Component *pComponent)
            (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray()))) {
         mpConnectionLineAnnotation->setLineThickness(0.5);
       } else {
+        /* Ticket:4956
+         * If the start connector is either expandable or array and the end connector is not then change the line color to end connector.
+         */
+        if (((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+             (pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+             (!pStartComponent->getParentComponent() && pStartComponent->getRootParentComponent()->getLibraryTreeItem() && pStartComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+             (pStartComponent->getParentComponent() && pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+             (pStartComponent->getComponentInfo() && pStartComponent->getComponentInfo()->isArray())) &&
+            (!(pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+             (pComponent->getParentComponent() && pComponent->getRootParentComponent()->getComponentInfo()->isArray()) ||
+             (!pComponent->getParentComponent() && pComponent->getRootParentComponent()->getLibraryTreeItem() && pComponent->getRootParentComponent()->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+             (pComponent->getParentComponent() && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getRestriction() == StringHandler::ExpandableConnector) ||
+             (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray()))) {
+          if (pComponent->getLibraryTreeItem()) {
+            if (!pComponent->getLibraryTreeItem()->getModelWidget()) {
+              MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pComponent->getLibraryTreeItem(), false);
+            }
+            ShapeAnnotation *pShapeAnnotation;
+            if (pComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
+                && pComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
+              pShapeAnnotation = pComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
+              mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
+            } else if (pComponent->getShapesList().size() > 0) {
+              ShapeAnnotation *pShapeAnnotation = pComponent->getShapesList().at(0);
+              mpConnectionLineAnnotation->setLineColor(pShapeAnnotation->getLineColor());
+            }
+          }
+        }
         mpConnectionLineAnnotation->setLineThickness(0.25);
       }
       // check of any of starting or ending components are array
