@@ -2538,6 +2538,18 @@ algorithm
       then
         (res,size);
 
+    // FOR_EQUATION
+    case BackendDAE.FOR_EQUATION(left = e1, right = e2, start = e, stop = cond,
+             iter = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = str)))
+      equation
+        // assume one equation defining a whole array var (no NF_SCALARIZE)
+        e1 = Expression.traverseExpTopDown(e1, stripIterSub, str);
+        e2 = Expression.traverseExpTopDown(e2, stripIterSub, str);
+        lst1 = incidenceRowExp(e1, vars, iRow, functionTree, inIndexType);
+        res = incidenceRowExp(e2, vars, lst1, functionTree, inIndexType);
+      then
+        (res,1);
+
     // SOLVED_EQUATION
     case BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)
       equation
@@ -2585,13 +2597,34 @@ algorithm
     else
       equation
         eqnstr = BackendDump.equationString(inEquation);
-        str = "- BackendDAE.incidenceRow failed for equation: " + eqnstr;
+        str = "- BackendDAEUtil.incidenceRow failed for equation: " + eqnstr;
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;
   outIntegerLst := AvlSetInt.addList(outIntegerLst, whenIntegerLst);
 end incidenceRow;
+
+protected
+function stripIterSub
+"Strips the last subscript if it is equal to given inIter ident.
+ This enables incicence analysis for array variables defined in for loops.
+ author: rfranke"
+  input DAE.Exp inExp;
+  input DAE.Ident inIter;
+  output DAE.Exp outExp;
+  output Boolean cont;
+  output DAE.Ident outIter = inIter;
+algorithm
+  (outExp, cont) := match inExp
+    local
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+    case DAE.CREF(componentRef = cr, ty = ty)
+    then (DAE.CREF(ComponentReference.crefStripIterSub(cr, inIter), ty), false);
+    else (inExp, true);
+  end match;
+end stripIterSub;
 
 protected function incidenceRowLst
 "author: Frenkel TUD

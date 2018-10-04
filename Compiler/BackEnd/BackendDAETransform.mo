@@ -565,6 +565,7 @@ algorithm
   (outEquation, outTypeA) := matchcontinue (inEquation)
     local
       DAE.Exp e1_1, e2_1, e1, e2, cond;
+      DAE.Exp iter, start, stop;
       DAE.ComponentRef cr, cr1;
       Integer size;
       list<DAE.Exp> expl;
@@ -595,6 +596,12 @@ algorithm
       (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
       source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr), ext_arg_2);
+
+    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, left = e1, right = e2, source = source, attr = eqAttr) equation
+      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
+      (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
+      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
+    then (BackendDAE.FOR_EQUATION(iter, start, stop, e1_1, e2_1, source, eqAttr), ext_arg_2);
 
     case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source=source, attr=eqAttr) equation
       e1 = Expression.crefExp(cr);

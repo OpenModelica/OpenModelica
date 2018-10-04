@@ -283,6 +283,22 @@ algorithm
   end for;
 end traverseEquationArray_WithUpdate;
 
+public
+function getForEquationIterIdent
+ "Get the iterator of a for-equation
+  author: rfranke"
+  input BackendDAE.Equation inEquation;
+  output Option<DAE.Ident> forIter;
+algorithm
+  forIter := match inEquation
+    local
+      DAE.Ident iter;
+    case BackendDAE.FOR_EQUATION(iter = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)))
+    then SOME(iter);
+    else NONE();
+  end match;
+end getForEquationIterIdent;
+
 public function getWhenEquationExpr "Get the left and right hand parts from an equation appearing in a when clause"
   input BackendDAE.WhenEquation inWhenEquation;
   output DAE.ComponentRef outComponentRef;
@@ -1614,6 +1630,7 @@ algorithm
   source := match eq
     case BackendDAE.EQUATION(source=source) then source;
     case BackendDAE.ARRAY_EQUATION(source=source) then source;
+    case BackendDAE.FOR_EQUATION(source=source) then source;
     case BackendDAE.SOLVED_EQUATION(source=source) then source;
     case BackendDAE.RESIDUAL_EQUATION(source=source) then source;
     case BackendDAE.WHEN_EQUATION(source=source) then source;
@@ -1647,6 +1664,7 @@ algorithm
   osize := match eq
     local
       list<Integer> ds;
+      DAE.Exp e1, e2;
       Integer size, start, stop;
       list<BackendDAE.Equation> eqnsfalse;
 
@@ -1676,8 +1694,14 @@ algorithm
       size = equationLstSize(eqnsfalse);
     then size;
 
-    case BackendDAE.FOR_EQUATION(start=DAE.ICONST(start), stop=DAE.ICONST(stop)) equation
-      size = stop-start+1;
+    case BackendDAE.FOR_EQUATION(start = e1, stop = e2) equation
+      if Flags.isSet(Flags.NF_SCALARIZE) then
+        DAE.ICONST(start) = e1;
+        DAE.ICONST(stop) = e2;
+        size = stop - start + 1;
+      else
+        size = 1;
+      end if;
     then size;
 
     else equation
@@ -1774,6 +1798,7 @@ algorithm
 
     case BackendDAE.EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.ARRAY_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
+    case BackendDAE.FOR_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.SOLVED_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.RESIDUAL_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
     case BackendDAE.WHEN_EQUATION(attr=BackendDAE.EQUATION_ATTRIBUTES(kind=kind)) then kind;
@@ -1952,6 +1977,7 @@ algorithm
       list<Integer> dimSize;
       DAE.Exp lhs;
       DAE.Exp rhs;
+      DAE.Exp iter, start, stop;
       DAE.ComponentRef componentRef;
       Integer size;
       DAE.Algorithm alg;
@@ -1966,6 +1992,9 @@ algorithm
 
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source), _)
     then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr);
+
+    case (BackendDAE.FOR_EQUATION(iter=iter, start=start, stop=stop, left=lhs, right=rhs, source=source), _)
+    then BackendDAE.FOR_EQUATION(iter, start, stop, lhs, rhs, source, inAttr);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=rhs, source=source), _)
     then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, inAttr);

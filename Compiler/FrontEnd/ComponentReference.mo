@@ -2770,6 +2770,29 @@ algorithm
   end match;
 end crefStripLastSubs;
 
+public function crefStripIterSub
+  "Strips the last sub if it is equal to the given iter ident.
+   This gives an array variable that is defined in a for loop (no NF_SCALARIZE).
+   author: rfranke"
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Ident iter;
+  output DAE.ComponentRef outComponentRef;
+protected
+  DAE.Ident index;
+algorithm
+  outComponentRef := match crefLastSubs(inComponentRef)
+    case {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))}
+    algorithm
+      if index == iter then
+        outComponentRef := crefStripLastSubs(inComponentRef);
+      else
+        outComponentRef := inComponentRef;
+      end if;
+    then outComponentRef;
+    else inComponentRef;
+  end match;
+end crefStripIterSub;
+
 public function crefStripFirstIdent
 "Strips the first part of a component reference,
 i.e the identifier and eventual subscripts"
