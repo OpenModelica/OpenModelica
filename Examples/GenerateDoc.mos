@@ -499,7 +499,7 @@ def makeCaseSensitive():
       print('Renaming file %s to %s' % (file,nfile))
       if os.path.isfile(nfile):
         raise Exception('File already exists: ' + nfile)
-      call(['sed','-i','s/%s/%s/' % (file,nfile)] + files)
+      call(['sed','-i','s/%s/%s/g' % (file,nfile)] + files)
       os.rename(file,nfile)
       return False
     visited[upper] = file
