@@ -1279,6 +1279,7 @@ algorithm
       Type node_ty;
       list<Subscript> subs;
       Variability subs_var, rest_var;
+      ExpOrigin.Type node_origin;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
@@ -1288,7 +1289,13 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
-        node_ty := typeComponent(cref.node, origin);
+        // The origin used when typing a component node depends on where the
+        // component was declared, not where it's used. This can be different to
+        // the given origin, e.g. for package constants used in a function.
+        node_origin := if InstNode.isFunction(InstNode.explicitParent(cref.node)) then
+          ExpOrigin.FUNCTION else ExpOrigin.CLASS;
+        node_ty := typeComponent(cref.node, node_origin);
+
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, origin, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, origin, info);
         subsVariability := Prefixes.variabilityMax(subs_var, rest_var);

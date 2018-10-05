@@ -298,7 +298,7 @@ protected
   Option<Expression> start_exp;
   Integer pcount;
 algorithm
-  exp_origin := if Class.isFunction(InstNode.getClass(InstNode.parent(node)))
+  exp_origin := if InstNode.isFunction(InstNode.explicitParent(node))
     then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
 
   Typing.typeComponentBinding(node, exp_origin);

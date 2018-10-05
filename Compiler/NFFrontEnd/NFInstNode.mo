@@ -347,6 +347,16 @@ uniontype InstNode
     end match;
   end isUserdefinedClass;
 
+  function isFunction
+    input InstNode node;
+    output Boolean isFunc;
+  algorithm
+    isFunc := match node
+      case CLASS_NODE() then Class.isFunction(Pointer.access(node.cls));
+      else false;
+    end match;
+  end isFunction;
+
   function isComponent
     input InstNode node;
     output Boolean isComponent;
@@ -502,6 +512,11 @@ uniontype InstNode
       else EMPTY_NODE();
     end match;
   end parent;
+
+  function explicitParent
+    input InstNode node;
+    output InstNode parentNode = explicitScope(parent(node));
+  end explicitParent;
 
   function classParent
     input InstNode node;
@@ -1120,6 +1135,18 @@ uniontype InstNode
       else IMPLICIT_SCOPE(scope, {});
     end match;
   end openImplicitScope;
+
+  function explicitScope
+    "Returns the first parent of the node that's not an implicit scope, or the
+     node itself if it's not an implicit scope."
+    input InstNode node;
+    output InstNode scope;
+  algorithm
+    scope := match node
+      case IMPLICIT_SCOPE() then explicitScope(node.parentScope);
+      else node;
+    end match;
+  end explicitScope;
 
   function addIterator
     input InstNode iterator;
