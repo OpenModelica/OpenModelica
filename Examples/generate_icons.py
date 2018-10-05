@@ -36,6 +36,7 @@ import logging
 import sys
 import time
 import hashlib
+import base64
 from optparse import OptionParser
 
 import svgwrite
@@ -287,18 +288,16 @@ def getGraphicsForClass(modelicaClass):
         if r:
             g = r.groups()
             graphicsObj['type'] = 'Bitmap'
-            # Bitmap(true, {0.0, 0.0}, 0, {{-98, 98}, {98, -98}}, "modelica://Modelica/Resources/Images/Mechanics/MultiBody/Visualizers/TorusIcon.png"
-
             graphicsObj['visible'] = g[0]
             graphicsObj['origin'] = [float(g[1]), float(g[2])]
             graphicsObj['rotation'] = float(g[3])
             graphicsObj['extent'] = [[float(g[4]), float(g[5])], [float(g[6]), float(g[7])]]
-            print icon_line
             if g[9] is not None:
                 graphicsObj['href'] = "data:image;base64,"+g[9].strip('"')
             else:
-                logger.warning('Not yet supported: {0} with URL'.format(graphics['type']))
-                graphicsObj['href'] = g[8].strip('"')
+                fname = ask_omc('uriToFilename', g[8], parsed=False).strip().strip('"')
+                fdata = open(fname, "rb").read()
+                graphicsObj['href'] = "data:image;base64,"+base64.b64encode(fdata)
 
         if not 'type' in graphicsObj:
             r = regex_any.search(icon_line)
