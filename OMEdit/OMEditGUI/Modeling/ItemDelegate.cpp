@@ -292,20 +292,33 @@ bool ItemDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const Q
  */
 QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
-  if (parent() && qobject_cast<VariablesTreeView*>(parent()) && index.column() == 3) {
+  if (parent() && qobject_cast<VariablesTreeView*>(parent())) {
     VariablesTreeView *pVariablesTreeView = qobject_cast<VariablesTreeView*>(parent());
     VariableTreeProxyModel *pVariableTreeProxyModel = pVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel();
     QModelIndex sourceIndex = pVariableTreeProxyModel->mapToSource(index);
     VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(sourceIndex.internalPointer());
-    // create the display units combobox
-    QComboBox *pComboBox = new QComboBox(pParent);
-    pComboBox->setEnabled(!pVariablesTreeItem->getDisplayUnits().isEmpty());
-    pComboBox->addItems(pVariablesTreeItem->getDisplayUnits());
-    connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
-    return pComboBox;
-  } else {
-    return QItemDelegate::createEditor(pParent, option, index);
+
+    if (index.column() == 1) { // value column
+      QLineEdit *pValueTextBox = new QLineEdit(pParent);
+      pValueTextBox->setText(index.data(Qt::DisplayRole).toString());
+      QFont font = option.font;
+      if (pVariablesTreeItem->isParameter()) {
+        font.setItalic(true);
+      }
+      pValueTextBox->setFont(font);
+      pValueTextBox->selectAll();
+      pValueTextBox->setFocusPolicy(Qt::WheelFocus);
+      return pValueTextBox;
+    } else if (index.column() == 3) { // unit column
+      // create the display units combobox
+      QComboBox *pComboBox = new QComboBox(pParent);
+      pComboBox->setEnabled(!pVariablesTreeItem->getDisplayUnits().isEmpty());
+      pComboBox->addItems(pVariablesTreeItem->getDisplayUnits());
+      connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
+      return pComboBox;
+    }
   }
+  return QItemDelegate::createEditor(pParent, option, index);
 }
 
 /*!
@@ -336,7 +349,7 @@ void ItemDelegate::unitComboBoxChanged(QString text)
   Q_UNUSED(text);
   QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
   if (pComboBox) {
-    commitData(pComboBox);
-    closeEditor(pComboBox);
+    emit commitData(pComboBox);
+    emit closeEditor(pComboBox);
   }
 }

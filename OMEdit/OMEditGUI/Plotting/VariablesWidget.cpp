@@ -85,6 +85,7 @@ VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, 
   mToolTip = variableItemData[9].toString();
   mChecked = false;
   mEditable = false;
+  mVariability = "";
   mIsMainArray = variableItemData[10].toBool();
 }
 
@@ -196,6 +197,14 @@ QVariant VariablesTreeItem::data(int column, int role) const
         case Qt::ToolTipRole:
         case Qt::EditRole:
           return mValue;
+        case Qt::FontRole:
+          if (isParameter()) {
+            QFont font;
+            font.setItalic(true);
+            return font;
+          } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }
@@ -480,6 +489,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   scalarVariable["name"] = attributes.value("name").toString();
   scalarVariable["description"] = attributes.value("description").toString();
   scalarVariable["isValueChangeable"] = attributes.value("isValueChangeable").toString();
+  scalarVariable["variability"] = attributes.value("variability").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
   while(!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable"))
@@ -655,9 +665,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QString variableToFind = variableData[2].toString();
       variableToFind.remove(QRegExp(pTopVariablesTreeItem->getVariableName() + "."));
       /* get the variable information i.e value, unit, displayunit, description */
-      QString value, unit, displayUnit, description;
+      QString value, variability, unit, displayUnit, description;
       bool changeAble = false;
-      getVariableInformation(&matReader, variableToFind, &value, &changeAble, &unit, &displayUnit, &description);
+      getVariableInformation(&matReader, variableToFind, &value, &changeAble, &variability, &unit, &displayUnit, &description);
       variableData << StringHandler::unparse(QString("\"").append(value).append("\""));
       /* set the variable unit */
       variableData << StringHandler::unparse(QString("\"").append(unit).append("\""));
@@ -690,20 +700,20 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       /* set the variable description */
       variableData << StringHandler::unparse(QString("\"").append(description).append("\""));
       /* construct tooltip text */
-      variableData << tr("File: %1/%2\nVariable: %3").arg(filePath).arg(fileName).arg(variableToFind);
-      /*is main array*/
-      if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last()))
-          variableData << true;
-      else
-          variableData << false;
       if (simulationOptions.isInteractiveSimulation()) {
-        variableData << tr("Variable: %1").arg(variableToFind);
+        variableData << tr("Variable: %1\nVariability: %2").arg(variableToFind).arg(variability);
       } else {
-        variableData << tr("File: %1/%2\nVariable: %3").arg(filePath).arg(fileName).arg(variableToFind);
+        variableData << tr("File: %1/%2\nVariable: %3\nVariability: %4").arg(filePath).arg(fileName).arg(variableToFind).arg(variability);
+      }
+      /*is main array*/
+      if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())) {
+        variableData << true;
+      } else {
+        variableData << false;
       }
       VariablesTreeItem *pVariablesTreeItem = new VariablesTreeItem(variableData, pParentVariablesTreeItem);
       pVariablesTreeItem->setEditable(changeAble);
-      pVariablesTreeItem->setEnabled(changeAble);
+      pVariablesTreeItem->setVariability(variability);
       int row = rowCount(index);
       beginInsertRows(index, row, row);
       pParentVariablesTreeItem->insertChild(row, pVariablesTreeItem);
@@ -812,16 +822,18 @@ void VariablesTreeModel::plotAllVariables(VariablesTreeItem *pVariablesTreeItem,
  * \param variableToFind
  * \param value
  * \param changeAble
+ * \param variability
  * \param unit
  * \param displayUnit
  * \param description
  */
 void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble,
-                                                QString *unit, QString *displayUnit, QString *description)
+                                                QString *variability, QString *unit, QString *displayUnit, QString *description)
 {
   QHash<QString, QString> hash = mScalarVariablesList.value(variableToFind);
   if (hash["name"].compare(variableToFind) == 0) {
     *changeAble = (hash["isValueChangeable"].compare("true") == 0) ? true : false;
+    *variability = hash["variability"];
     if (*changeAble) {
       *value = hash["start"];
     } else { /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */

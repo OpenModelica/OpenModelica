@@ -64,9 +64,9 @@ public:
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
   void setEditable(bool set) {mEditable = set;}
+  void setVariability(QString variability) {mVariability = variability;}
+  bool isParameter() const {return mVariability.compare("parameter") == 0;}
   bool isMainArray() const {return mIsMainArray;}
-  bool isEnabled() const {return mEnabled;}
-  void setEnabled(bool set) {mEnabled = set;}
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
   QIcon getVariableTreeItemIcon(QString name) const;
@@ -100,8 +100,8 @@ private:
   QString mToolTip;
   bool mChecked;
   bool mEditable;
+  QString mVariability;
   bool mIsMainArray;
-  bool mEnabled;
   SimulationOptions mSimulationOptions;
 };
 
@@ -134,8 +134,8 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
-  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *unit,
-                              QString *displayUnit, QString *description);
+  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *variability,
+                              QString *unit, QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
   void unitChanged(const QModelIndex &index);
