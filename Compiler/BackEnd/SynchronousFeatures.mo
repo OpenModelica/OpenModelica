@@ -1372,6 +1372,7 @@ algorithm
       DAE.ElementSource source;
       list<BackendDAE.Equation> newEqs;
       list<BackendDAE.Var> newVars;
+      list<Integer> dimSize;
     case(BackendDAE.EQUATION(e1, e2, source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=BackendDAE.DYNAMIC_EQUATION())),(vars, suffixIdx0, newEqs, newVars))
       algorithm
         (e1,(newEqs, newVars, suffixIdx)) := Expression.traverseExpTopDown(e1, replaceSampledClocks2, (newEqs, newVars, suffixIdx0));
@@ -1382,6 +1383,16 @@ algorithm
           attr := BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC;
         end if;
       then (BackendDAE.EQUATION(e1,e2,source,attr),(vars, suffixIdx, newEqs, newVars));
+    case(BackendDAE.ARRAY_EQUATION(dimSize, e1, e2, source, attr=BackendDAE.EQUATION_ATTRIBUTES(kind=BackendDAE.DYNAMIC_EQUATION())),(vars, suffixIdx0, newEqs, newVars))
+      algorithm
+        (e1,(newEqs, newVars, suffixIdx)) := Expression.traverseExpTopDown(e1, replaceSampledClocks2, (newEqs, newVars, suffixIdx0));
+        (e2,(newEqs, newVars, suffixIdx)) := Expression.traverseExpTopDown(e2, replaceSampledClocks2, (newEqs, newVars, suffixIdx));
+        if intEq(suffixIdx - suffixIdx0, 1) then
+          attr := BackendEquation.defaultClockedEqAttr(suffixIdx0);
+        else
+          attr := BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC;
+        end if;
+      then (BackendDAE.ARRAY_EQUATION(dimSize, e1, e2, source, attr), (vars, suffixIdx, newEqs, newVars));
     else
       algorithm
       then (eqIn,tplIn);
