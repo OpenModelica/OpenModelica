@@ -5,7 +5,6 @@
 
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize,dumpSimCode"); getErrorString();
-setCommandLineOptions("--postOptModules-=collapseArrayExpressions"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
 
 loadString("
@@ -26,7 +25,8 @@ model ArrayEquationsTest
   Real[n] x1(each start = 1);
   Real[n] x2(each start = 2);
   Real[n] x3(each start = 3);
-  output Real y1, y2, y3;
+  Real[n] x4(each start = 4);
+  output Real y1, y2, y3, y4;
 equation
   when Clock(0.1) then
     // for eqation
@@ -38,9 +38,14 @@ equation
     // array equation
     x3 = if firstTick(x3) then previous(x3) else previous(x3) + u;
   end when;
+  // for equation requiring inline integration
+  for i in 1:n loop
+    der(x4[i]) = x3[i];
+  end for;
   y1 = sum(x1);
   y2 = sum(x2);
   y3 = sum(x3);
+  y4 = sum(x4);
 end ArrayEquationsTest;
 "); getErrorString();
 
@@ -49,10 +54,9 @@ simulate(ArrayEquationsTest); getErrorString();
 val(y1, 1.0);
 val(y2, 1.0);
 val(y3, 1.0);
+val(y4, 1.0);
 
 // Result:
-// true
-// ""
 // true
 // ""
 // true
@@ -95,25 +99,36 @@ val(y3, 1.0);
 //
 // SubPartition Vars:
 // ========================================
+// index: -1: $DER.x4 (no alias)  initial: 	no arrCref index:() [10]  
 // index: -1: x1 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
 // index: -1: x2 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
 // index: -1: x3 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
+// index: -1: x4 (no alias)  initial: 	no arrCref index:() [10]  (PREVIOUS)
 // index: -1: y1 (no alias)  initial: 	no arrCref index:() []  
 // index: -1: y2 (no alias)  initial: 	no arrCref index:() []  
 // index: -1: y3 (no alias)  initial: 	no arrCref index:() []  
+// index: -1: y4 (no alias)  initial: 	no arrCref index:() []  
 // partition equations:
 // ========================================
-// 18: $CLKPRE.x1=x1 [Real[10] ]
-// 17: $CLKPRE.x2=x2 [Real[10] ]
-// 16: $CLKPRE.x3=x3 [Real[10] ]
-// 10 FOR-LOOP:  for i in (1:n) loop
+// 26: $CLKPRE.x1=x1 [Real[10] ]
+// 25: $CLKPRE.x2=x2 [Real[10] ]
+// 24: $CLKPRE.x3=x3 [Real[10] ]
+// 23: $CLKPRE.x4=x4 [Real[10] ]
+// 14 FOR-LOOP:  for i in (1:n) loop
 // x1[i]=if firstTick() then previous(x1[i]) else previous(x1[i]) + u[i][Real ]
 // end for;
-// 11: y1=sum(x1) [Real ]
-// 12: x2=ArrayEquationsTest.myfor(u, previous(x2), firstTick()) [Real[10] ]
-// 13: y2=sum(x2) [Real ]
-// 14: x3=if firstTick() then previous(x3) else previous(x3) + u [Real[10] ]
-// 15: y3=sum(x3) [Real ]removedEquations equations:
+// 15: y1=sum(x1) [Real ]
+// 16: x2=ArrayEquationsTest.myfor(u, previous(x2), firstTick()) [Real[10] ]
+// 17: y2=sum(x2) [Real ]
+// 18: x3=if firstTick() then previous(x3) else previous(x3) + u [Real[10] ]
+// 19 FOR-LOOP:  for i in (1:n) loop
+// $DER.x4[i]=x3[i][Real ]
+// end for;
+// 20 FOR-LOOP:  for i in (1:10) loop
+// x4[i]=(if firstTick() then 0.0 else $DER.x4[i]) * interval() + previous(x4[i])[Real ]
+// end for;
+// 21: y4=sum(x4) [Real ]
+// 22: y3=sum(x3) [Real ]removedEquations equations:
 // ========================================
 // SubClock:
 // factor(1/1) shift(0/1) Hold Events: false
@@ -122,17 +137,21 @@ val(y3, 1.0);
 //
 //
 //
-// initialEquations: (9)
+// initialEquations: (13)
 // ========================================
-// 1: x1=1.0 [Real ]
-// 2: $CLKPRE.x1=x1 [Real[10] ]
-// 3: x2=2.0 [Real ]
-// 4: $CLKPRE.x2=x2 [Real[10] ]
-// 5: x3=3.0 [Real ]
-// 6: $CLKPRE.x3=x3 [Real[10] ]
-// 7: y1=0.0 [Real ]
-// 8: y2=0.0 [Real ]
-// 9: y3=0.0 [Real ]
+// 1: $DER.x4=0.0 [Real ]
+// 2: x1=1.0 [Real ]
+// 3: $CLKPRE.x1=x1 [Real[10] ]
+// 4: x2=2.0 [Real ]
+// 5: $CLKPRE.x2=x2 [Real[10] ]
+// 6: x3=3.0 [Real ]
+// 7: $CLKPRE.x3=x3 [Real[10] ]
+// 8: x4=4.0 [Real ]
+// 9: $CLKPRE.x4=x4 [Real[10] ]
+// 10: y1=0.0 [Real ]
+// 11: y2=0.0 [Real ]
+// 12: y3=0.0 [Real ]
+// 13: y4=0.0 [Real ]
 // ========================================
 //
 //
@@ -183,21 +202,25 @@ val(y3, 1.0);
 //
 // modelInfo: 
 // ========================================
-// algVars (73)
+// algVars (104)
 // ----------------------
 // index: 0: $CLKPRE.x1 (no alias)  initial: x1	no arrCref index:(1) [10] 
 // index: 1: $CLKPRE.x2 (no alias)  initial: x2	no arrCref index:(11) [10] 
 // index: 2: $CLKPRE.x3 (no alias)  initial: x3	no arrCref index:(21) [10] 
-// index: 3: u (no alias)  initial: 1.0:10.0	no arrCref index:(31) [10] 
-// index: 4: x1 (no alias)  initial: 	no arrCref index:(41) [10] 
-// index: 5: x2 (no alias)  initial: 	no arrCref index:(51) [10] 
-// index: 6: x3 (no alias)  initial: 	no arrCref index:(61) [10] 
-// index: 7: y1 (no alias)  initial: 	no arrCref index:(71) [] 
-// index: 8: y2 (no alias)  initial: 	no arrCref index:(72) [] 
-// index: 9: y3 (no alias)  initial: 	no arrCref index:(73) [] 
+// index: 3: $CLKPRE.x4 (no alias)  initial: x4	no arrCref index:(31) [10] 
+// index: 4: $DER.x4 (no alias)  initial: 	no arrCref index:(41) [10] 
+// index: 5: u (no alias)  initial: 1.0:10.0	no arrCref index:(51) [10] 
+// index: 6: x1 (no alias)  initial: 	no arrCref index:(61) [10] 
+// index: 7: x2 (no alias)  initial: 	no arrCref index:(71) [10] 
+// index: 8: x3 (no alias)  initial: 	no arrCref index:(81) [10] 
+// index: 9: x4 (no alias)  initial: 	no arrCref index:(91) [10] 
+// index: 10: y1 (no alias)  initial: 	no arrCref index:(101) [] 
+// index: 11: y2 (no alias)  initial: 	no arrCref index:(102) [] 
+// index: 12: y3 (no alias)  initial: 	no arrCref index:(103) [] 
+// index: 13: y4 (no alias)  initial: 	no arrCref index:(104) [] 
 // intParamVars
 // ----------------------
-// index: 0: n (no alias)  initial: 10	no arrCref index:(74) [] 
+// index: 0: n (no alias)  initial: 10	no arrCref index:(105) [] 
 // functions:
 // -----------
 //
@@ -210,11 +233,9 @@ val(y3, 1.0);
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayEquationsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
-// "[BackEnd/BackendDAETransform.mo:0:0-0:0:writable] Error: Internal error function strongComponentsScalar failed (sorting strong components)
-// [BackEnd/BackendDAEUtil.mo:0:0-0:0:writable] Error: Internal error Transformation module sort components failed
-// Warning: The optimization module detectJacobianSparsePattern failed. This module will be skipped and the transformation process continued.
-// "
+// ""
 // 560.0
 // 570.0
 // 580.0
+// 372.5
 // endResult
