@@ -2532,7 +2532,7 @@ algorithm
     // ARRAY_EQUATION
     case BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2)
       equation
-        size = List.reduce(dimsize, intMul);
+        size = if Flags.isSet(Flags.NF_SCALARIZE) then List.reduce(dimsize, intMul) else 1;
         lst1 = incidenceRowExp(e1, vars, iRow, functionTree, inIndexType);
         res = incidenceRowExp(e2, vars, lst1, functionTree, inIndexType);
       then
