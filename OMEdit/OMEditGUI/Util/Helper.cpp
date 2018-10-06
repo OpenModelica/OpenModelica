@@ -90,6 +90,7 @@ QString Helper::subWindow = "SubWindow";
 QString Helper::structuredOutput = "Structured";
 QString Helper::textOutput = "Text";
 QString Helper::utf8 = "UTF-8";
+const char * const Helper::fmuPlatformNamePropertyId = "fmu-platform-name";
 QFontInfo Helper::systemFontInfo = QFontInfo(QFont());
 QFontInfo Helper::monospacedFontInfo = QFontInfo(QFont());
 #ifdef Q_OS_MAC

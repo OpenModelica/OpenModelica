@@ -800,7 +800,7 @@ void OptionsDialog::readFMISettings()
       while (QLayoutItem* pLayoutItem = mpFMIPage->getPlatformsGroupBox()->layout()->itemAt(i)) {
         if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
           QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
-          if (pPlatformCheckBox->text().compare(platform) == 0) {
+          if (pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString().compare(platform) == 0) {
             pPlatformCheckBox->setChecked(true);
             break;
           }
@@ -1299,7 +1299,7 @@ void OptionsDialog::saveFMISettings()
     if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
       QCheckBox *pPlatformCheckBox = dynamic_cast<QCheckBox*>(pLayoutItem->widget());
       if (pPlatformCheckBox->isChecked()) {
-        platforms.append(pPlatformCheckBox->text());
+        platforms.append(pPlatformCheckBox->property(Helper::fmuPlatformNamePropertyId).toString());
       }
     }
     i++;
@@ -4533,7 +4533,10 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pPlatformsLayout->addWidget(pPlatformNoteLabel);
   pPlatformsLayout->addWidget(mpLinkingComboBox);
   foreach (QString compiler, compilers) {
-    pPlatformsLayout->addWidget(new QCheckBox(compiler.left(compiler.lastIndexOf('-'))));
+    QString platformName = compiler.left(compiler.lastIndexOf('-'));
+    QCheckBox *pCheckBox = new QCheckBox(platformName);
+    pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, platformName);
+    pPlatformsLayout->addWidget(pCheckBox);
   }
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
   // set the export group box layout
