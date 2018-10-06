@@ -235,6 +235,24 @@ algorithm
   end match;
 end expTypeArrayDimensions;
 
+public function dimExp
+ "Converts a dimension to an expression, covering constants and paramters."
+  input DAE.Dimension dim;
+  output DAE.Exp exp;
+algorithm
+  exp := match dim
+    local
+      Integer iconst;
+    case DAE.DIM_INTEGER(iconst) then
+      DAE.ICONST(iconst);
+    case DAE.DIM_EXP(exp) then
+      exp;
+    else algorithm
+      Error.addMessage(Error.DIMENSION_NOT_KNOWN, {anyString(dim)});
+    then fail();
+  end match;
+end dimExp;
+
 public function derivativeOrder "
 Function to sort derivatives.
 Used for Util.sort"

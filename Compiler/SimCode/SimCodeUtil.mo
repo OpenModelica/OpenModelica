@@ -2084,7 +2084,8 @@ algorithm
       list<DAE.ComponentRef> conditions, solveCr;
       list<SimCode.SimEqSystem> resEqs;
       DAE.ComponentRef left, varOutput;
-      DAE.Exp e1, e2, varexp, exp_, right, cond, prevarexp;
+      DAE.Exp e1, e2, varexp, exp_, start, cond, prevarexp;
+      DAE.Ident iter;
       BackendDAE.WhenEquation whenEquation, elseWhen;
       Option<BackendDAE.WhenEquation> oelseWhen;
       String algStr, message, eqStr;
@@ -2109,10 +2110,15 @@ algorithm
       then
         ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
 
-    // for equation that may result from -d=-nfScalarize and is assumed solved
-    case BackendDAE.FOR_EQUATION(iter = varexp, start = e1, stop = e2, left = DAE.CREF(componentRef = cr), right = right, source = source, attr = eqAttr)
+    // for equation that may result from -d=-nfScalarize
+    case BackendDAE.FOR_EQUATION(iter = varexp, start = start, stop = cond, left = e1, right = e2, source = source, attr = eqAttr)
+      algorithm
+        DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)) := varexp;
+        cr := ComponentReference.crefSetLastSubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
+        BackendDAE.SHARED(functionTree = funcs) := shared;
+        (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, Expression.crefExp(cr), SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
       then
-        ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, e1, e2, cr, right, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
+        ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, start, cond, cr, exp_, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
 
     // solved equation
     case BackendDAE.SOLVED_EQUATION(exp=e2, source=source, attr=eqAttr)
