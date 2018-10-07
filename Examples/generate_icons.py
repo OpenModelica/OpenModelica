@@ -1155,7 +1155,7 @@ def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
     return dwg
 
 
-def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates):
+def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates, with_json):
     # get all icons
     iconGraphics = []
 
@@ -1165,8 +1165,9 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates
     graphics = getGraphicsWithPortsForClass(modelicaClass)
     iconGraphics.append(graphics)
 
-    with open(os.path.join(output_dir, classToFileName(modelicaClass) + '.json'), 'w') as f_p:
-        json.dump(iconGraphics, f_p)
+    if with_json:
+        with open(os.path.join(output_dir, classToFileName(modelicaClass) + '.json'), 'w') as f_p:
+            json.dump(iconGraphics, f_p)
 
     # export svgs
     dwg = generateSvg(os.path.join(output_dir, classToFileName(modelicaClass) + ".svg"), iconGraphics, includeInvisbleText, warn_duplicates)
@@ -1190,6 +1191,7 @@ def main():
     parser.add_option("--with-invisible-text", action="store_true", help="Includes invisible text containing the original text and bounding box, for debugging purposes", dest="includeInvisibleText", default=False)
     parser.add_option("--output-dir", help="Directory to generate SVG-files in", type="string", dest="output_dir", default=os.path.abspath('ModelicaIcons'))
     parser.add_option("--warn-dup", help="Warn about duplicate files instead of generating an error", action="store_true", dest="warn_duplicates", default=False)
+    parser.add_option("--with-json", help="Output icon annotation as json", action="store_true", dest="with_json", default=False)
     parser.add_option("--quiet", help="Do not output to the console", action="store_true", dest="quiet", default=False)
     (options, args) = parser.parse_args()
     if len(args) == 0:
@@ -1200,6 +1202,7 @@ def main():
     with_html = options.with_html
     includeInvisibleText = options.includeInvisibleText
     warn_duplicates = options.warn_duplicates
+    with_json = options.with_json
 
     # create logger with 'spam_application'
     global logger
@@ -1269,7 +1272,7 @@ def main():
             # try:
             base_classes = []
             getBaseClasses(modelica_class, base_classes)
-            dwg = exportIcon(modelica_class, base_classes, includeInvisibleText, warn_duplicates)
+            dwg = exportIcon(modelica_class, base_classes, includeInvisibleText, warn_duplicates, with_json)
             dwgs.append(dwg)
 
             logger.info('Done: ' + modelica_class)

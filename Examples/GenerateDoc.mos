@@ -83,7 +83,7 @@ if getEnvironmentVar("GenerateDocTest") == "YES" then
 else
   commands:={"(ulimit -t 1200 ; python "+py+" --quiet --output-dir Icons "+typeNameString(cl)+" )" for cl in getClassNames(builtin=false)};getErrorString();
   res:=system_parallel(commands);getErrorString();
-  system("rm -f *.json");getErrorString();
+  //system("rm -f *.json");getErrorString();
 end if;
 /* if max(res) <> 0 then
   exit(1);
