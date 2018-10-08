@@ -2931,7 +2931,7 @@ algorithm
       algorithm
         // @adrpo: if Evaluate=true make the parameter a structural parameter
         // only make it a structural parameter if is not constant, duh!, 1071 regressions :)
-        if Component.getEvaluateAnnotation(c) and (Component.variability(c) > Variability.STRUCTURAL_PARAMETER) then
+        if c.attributes.variability == Variability.PARAMETER and Component.getEvaluateAnnotation(c) then
           InstNode.updateComponent(Component.setVariability(Variability.STRUCTURAL_PARAMETER, c), node);
         end if;
 
