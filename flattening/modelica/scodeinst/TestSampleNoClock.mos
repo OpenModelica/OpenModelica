@@ -27,7 +27,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 // algorithm
 //   if size(table, 1) == 0 then
 //     index := 0;
-//     nextTime := 1e+060;
+//     nextTime := 9.999999999999999e+59;
 //     y := startValue;
 //   elseif size(table, 1) == 1 then
 //     index := 1;
@@ -35,7 +35,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //       nextTime := table[1];
 //       y := startValue;
 //     else
-//       nextTime := 1e+060;
+//       nextTime := 9.999999999999999e+59;
 //       y := not startValue;
 //     end if;
 //   else
@@ -49,7 +49,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //       j := j + 1;
 //     end while;
 //     if j > n then
-//       nextTime := 1e+060;
+//       nextTime := 9.999999999999999e+59;
 //     else
 //       nextTime := table[j];
 //     end if;
@@ -81,7 +81,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   input Boolean[:] b \"Boolean vector\";
 //   output Integer n \"Number of true entries\";
 // algorithm
-//   n := sum(array(if b[i] then 1 else 0 for i in 1:size(b, 1)));
+//   n := sum(if b[i] then 1 else 0 for i in 1:size(b, 1));
 // end Modelica.Math.BooleanVectors.countTrue;
 //
 // function Modelica.Math.BooleanVectors.firstTrueIndex \"Returns the index of the first true element of a Boolean vector\"
@@ -114,14 +114,14 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   Boolean and1.u[2] \"Vector of Boolean input signals\";
 //   Boolean and1.u[3] \"Vector of Boolean input signals\";
 //   Boolean and1.y \"Boolean output signal\";
-//   parameter Real booleanPulse1.width(min = 1e-060, max = 100.0) = 20.0 \"Width of pulse in % of period\";
-//   parameter Real booleanPulse1.period(quantity = \"Time\", unit = \"s\", min = 1e-060, start = 1.0) = 1.0 \"Time for one period\";
+//   parameter Real booleanPulse1.width(min = 1e-60, max = 100.0) = 20.0 \"Width of pulse in % of period\";
+//   parameter Real booleanPulse1.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 1.0) = 1.0 \"Time for one period\";
 //   parameter Real booleanPulse1.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first pulse\";
 //   Boolean booleanPulse1.y \"Connector of Boolean output signal\";
 //   protected parameter Real booleanPulse1.Twidth(quantity = \"Time\", unit = \"s\") = booleanPulse1.period * booleanPulse1.width / 100.0 \"width of one pulse\";
 //   protected discrete Real booleanPulse1.pulsStart(quantity = \"Time\", unit = \"s\") \"Start time of pulse\";
-//   parameter Real booleanPulse2.width(min = 1e-060, max = 100.0) = 80.0 \"Width of pulse in % of period\";
-//   parameter Real booleanPulse2.period(quantity = \"Time\", unit = \"s\", min = 1e-060, start = 1.0) = 1.0 \"Time for one period\";
+//   parameter Real booleanPulse2.width(min = 1e-60, max = 100.0) = 80.0 \"Width of pulse in % of period\";
+//   parameter Real booleanPulse2.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 1.0) = 1.0 \"Time for one period\";
 //   parameter Real booleanPulse2.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first pulse\";
 //   Boolean booleanPulse2.y \"Connector of Boolean output signal\";
 //   protected parameter Real booleanPulse2.Twidth(quantity = \"Time\", unit = \"s\") = booleanPulse2.period * booleanPulse2.width / 100.0 \"width of one pulse\";
@@ -231,10 +231,10 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   Boolean rSFlipFlop.pre.y \"Connector of Boolean output signal\";
 //   Boolean rSFlipFlop.S;
 //   Boolean rSFlipFlop.R;
-//   parameter Real sampleTriggerSet.period(quantity = \"Time\", unit = \"s\", min = 1e-060, start = 0.01) = 0.5 \"Sample period\";
+//   parameter Real sampleTriggerSet.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 0.01) = 0.5 \"Sample period\";
 //   parameter Real sampleTriggerSet.startTime(quantity = \"Time\", unit = \"s\") = 0.0 \"Time instant of first sample trigger\";
 //   Boolean sampleTriggerSet.y \"Connector of Boolean output signal\";
-//   parameter Real sampleTriggerReset.period(quantity = \"Time\", unit = \"s\", min = 1e-060, start = 0.01) = 0.5 \"Sample period\";
+//   parameter Real sampleTriggerReset.period(quantity = \"Time\", unit = \"s\", min = 1e-60, start = 0.01) = 0.5 \"Sample period\";
 //   parameter Real sampleTriggerReset.startTime(quantity = \"Time\", unit = \"s\") = 0.3 \"Time instant of first sample trigger\";
 //   Boolean sampleTriggerReset.y \"Connector of Boolean output signal\";
 // initial equation

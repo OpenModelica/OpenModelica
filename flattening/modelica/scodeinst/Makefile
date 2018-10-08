@@ -67,6 +67,8 @@ CevalArray1.mo \
 CevalArrayConstant1.mo \
 CevalArrayConstant2.mo \
 CevalArrayConstant3.mo \
+CevalArrayConstructor1.mo \
+CevalArrayConstructor2.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
@@ -135,8 +137,6 @@ CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
-CevalReduction1.mo \
-CevalReduction2.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -411,6 +411,7 @@ FuncBuiltinOnes.mo \
 FuncBuiltinOuterProduct.mo \
 FuncBuiltinPre.mo \
 FuncBuiltinProduct.mo \
+FuncBuiltinReduction.mo \
 FuncBuiltinRem.mo \
 FuncBuiltinSample.mo \
 FuncBuiltinScalar.mo \
@@ -797,7 +798,6 @@ expconn6.mo \
 expconn7.mo \
 func1.mo \
 FuncBuiltinEnumTypeName.mo \
-FuncBuiltinReduction.mo \
 ImportShadowing1.mo \
 InnerOuterExtends1.mo \
 inst1.mo \

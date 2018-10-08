@@ -25,7 +25,7 @@ end Subscript5;
 //   input Real[:, :] y;
 //   output Real z;
 // algorithm
-//   z := x[1,:] * y[2,:];
+//   z := x[1] * y[2];
 // end f;
 //
 // class Subscript5
