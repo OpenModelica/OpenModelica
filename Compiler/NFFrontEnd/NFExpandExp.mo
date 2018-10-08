@@ -68,6 +68,7 @@ public
           (exp, expanded);
 
       case Expression.ARRAY() then (exp, true);
+      case Expression.TYPENAME() then (expandTypename(exp.ty), true);
       case Expression.RANGE() then expandRange(exp);
       case Expression.CALL() then expandCall(exp.call, exp);
       case Expression.SIZE() then expandSize(exp);
@@ -198,6 +199,31 @@ public
     end match;
   end expandCref4;
 
+  function expandTypename
+    input Type ty;
+    output Expression outExp;
+  algorithm
+    outExp := match ty
+      local
+        list<Expression> lits;
+
+      case Type.ARRAY(elementType = Type.BOOLEAN())
+        then Expression.ARRAY(ty, {Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
+
+      case Type.ARRAY(elementType = Type.ENUMERATION())
+        algorithm
+          lits := Expression.makeEnumLiterals(ty.elementType);
+        then
+          Expression.ARRAY(ty, lits);
+
+      else
+        algorithm
+          Error.addInternalError(getInstanceName() + " got invalid typename", sourceInfo());
+        then
+          fail();
+    end match;
+  end expandTypename;
+
   function expandRange
     input Expression exp;
     output Expression outExp;
@@ -227,8 +253,8 @@ public
         guard Function.isBuiltin(call.fn) and not Function.isImpure(call.fn)
         then expandBuiltinCall(call.fn, call.arguments, call);
 
-      case Call.TYPED_MAP_CALL()
-        then expandReduction(call.exp, call.ty, call.iters);
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
+        then expandArrayConstructor(call.exp, call.ty, call.iters);
 
       else expandGeneric(exp);
     end matchcontinue;
@@ -340,7 +366,7 @@ public
     end match;
   end expandBuiltinGeneric2;
 
-  function expandReduction
+  function expandArrayConstructor
     input Expression exp;
     input Type ty;
     input list<tuple<InstNode, Expression>> iterators;
@@ -362,10 +388,10 @@ public
       ranges := range :: ranges;
     end for;
 
-    result := expandReduction2(e, ty, ranges, iters);
-  end expandReduction;
+    result := expandArrayConstructor2(e, ty, ranges, iters);
+  end expandArrayConstructor;
 
-  function expandReduction2
+  function expandArrayConstructor2
     input Expression exp;
     input Type ty;
     input list<Expression> ranges;
@@ -384,8 +410,8 @@ public
       // Normally it wouldn't be the expansion's task to simplify expressions,
       // but we make an exception here since the generated expressions contain
       // MUTABLE expressions that we need to get rid of. Also, expansion of
-      // reductions is often done during the scalarization phase, after the
-      // simplification phase, so they wouldn't otherwise be simplified.
+      // array constructors is often done during the scalarization phase, after
+      // the simplification phase, so they wouldn't otherwise be simplified.
       result := expand(SimplifyExp.simplify(exp));
     else
       range :: ranges_rest := ranges;
@@ -396,12 +422,12 @@ public
       while ExpressionIterator.hasNext(range_iter) loop
         (range_iter, value) := ExpressionIterator.next(range_iter);
         Mutable.update(iter, value);
-        expl := expandReduction2(exp, el_ty, ranges_rest, iters_rest) :: expl;
+        expl := expandArrayConstructor2(exp, el_ty, ranges_rest, iters_rest) :: expl;
       end while;
 
       result := Expression.ARRAY(ty, listReverseInPlace(expl));
     end if;
-  end expandReduction2;
+  end expandArrayConstructor2;
 
   function expandSize
     input Expression exp;

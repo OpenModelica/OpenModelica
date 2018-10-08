@@ -3036,7 +3036,7 @@ algorithm
     local
       list<tuple<InstNode, Expression>> iters;
 
-    case Expression.CALL(call = Call.UNTYPED_MAP_CALL(iters = iters))
+    case Expression.CALL(call = Call.UNTYPED_ARRAY_CONSTRUCTOR(iters = iters))
       algorithm
         for iter in iters loop
           markStructuralParamsExp(Util.tuple22(iter));

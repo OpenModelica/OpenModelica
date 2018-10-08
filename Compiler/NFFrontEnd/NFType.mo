@@ -766,5 +766,12 @@ public
     end match;
   end lookupRecordFieldType;
 
+  function enumName
+    input Type ty;
+    output Absyn.Path name;
+  algorithm
+    ENUMERATION(typePath = name) := ty;
+  end enumName;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

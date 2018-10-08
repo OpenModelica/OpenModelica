@@ -455,14 +455,12 @@ function cardinality "Number of connectors in connection"
 </html>"),version="Deprecated");
 end cardinality;
 
-/*
 function array "Constructs an array"
   external "builtin";
   annotation(Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'array()'\">array()</a>
 </html>"));
 end array;
-*/
 
 function zeros "Returns a zero array"
   external "builtin";

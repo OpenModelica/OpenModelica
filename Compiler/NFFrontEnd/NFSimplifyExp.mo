@@ -172,7 +172,14 @@ algorithm
       then
         callExp;
 
-    case Call.TYPED_MAP_CALL()
+    case Call.TYPED_ARRAY_CONSTRUCTOR()
+      algorithm
+        call.exp := simplify(call.exp);
+        call.iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);
+      then
+        Expression.CALL(call);
+
+    case Call.TYPED_REDUCTION()
       algorithm
         call.exp := simplify(call.exp);
         call.iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);

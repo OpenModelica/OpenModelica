@@ -34,6 +34,7 @@ protected
   import Util;
   import Absyn;
   import List;
+  import System;
 
   import Builtin = NFBuiltin;
   import BuiltinCall = NFBuiltinCall;
@@ -436,6 +437,17 @@ public
           BOOLEAN(value = b) := exp2;
         then
           Util.boolCompare(exp1.value, b);
+
+      case ENUM_LITERAL()
+        algorithm
+          ENUM_LITERAL(ty = ty, index = i) := exp2;
+          comp := Absyn.pathCompare(Type.enumName(exp1.ty), Type.enumName(ty));
+
+          if comp == 0 then
+            comp := Util.intCompare(exp1.index, i);
+          end if;
+        then
+          comp;
 
       case CLKCONST(clk1)
         algorithm
@@ -853,8 +865,8 @@ public
       case RANGE() guard listEmpty(restSubscripts)
         then applySubscriptRange(subscript, exp);
 
-      case CALL(call = Call.TYPED_MAP_CALL())
-        then applySubscriptReduction(subscript, exp.call, restSubscripts);
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR())
+        then applySubscriptArrayConstructor(subscript, exp.call, restSubscripts);
 
       case IF() then applySubscriptIf(subscript, exp, restSubscripts);
 
@@ -1083,21 +1095,21 @@ public
     end match;
   end applyIndexSubscriptRange2;
 
-  function applySubscriptReduction
+  function applySubscriptArrayConstructor
     input Subscript subscript;
     input Call call;
     input list<Subscript> restSubscripts;
     output Expression outExp;
   algorithm
     if Subscript.isIndex(subscript) and listEmpty(restSubscripts) then
-      outExp := applyIndexSubscriptReduction(call, subscript);
+      outExp := applyIndexSubscriptArrayConstructor(call, subscript);
     else
       // TODO: Handle slicing and multiple subscripts better.
       outExp := makeSubscriptedExp(subscript :: restSubscripts, CALL(call));
     end if;
-  end applySubscriptReduction;
+  end applySubscriptArrayConstructor;
 
-  function applyIndexSubscriptReduction
+  function applyIndexSubscriptArrayConstructor
     input Call call;
     input Subscript index;
     output Expression subscriptedExp;
@@ -1108,15 +1120,15 @@ public
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
   algorithm
-    Call.TYPED_MAP_CALL(ty, var, exp, iters) := call;
+    Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
     ((iter, iter_exp), iters) := List.splitLast(iters);
     iter_exp := applySubscript(index, iter_exp);
     subscriptedExp := replaceIterator(exp, iter, iter_exp);
 
     if not listEmpty(iters) then
-      subscriptedExp := CALL(Call.TYPED_MAP_CALL(Type.unliftArray(ty), var, subscriptedExp, iters));
+      subscriptedExp := CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.unliftArray(ty), var, subscriptedExp, iters));
     end if;
-  end applyIndexSubscriptReduction;
+  end applyIndexSubscriptArrayConstructor;
 
   function applySubscriptIf
     input Subscript subscript;
@@ -1422,8 +1434,8 @@ public
       case CREF()
         then DAE.CREF(ComponentRef.toDAE(exp.cref), Type.toDAE(exp.ty));
 
-      // TYPENAME() doesn't have a DAE representation, and shouldn't need to be
-      // converted anyway.
+      case TYPENAME()
+        then toDAE(ExpandExp.expandTypename(exp.ty));
 
       case ARRAY()
         then DAE.ARRAY(Type.toDAE(exp.ty), Type.isScalarArray(exp.ty),
@@ -1769,19 +1781,33 @@ public
         then
           Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_MAP_CALL()
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
         then
-          Call.UNTYPED_MAP_CALL(e, iters);
+          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
-      case Call.TYPED_MAP_CALL()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := map(call.exp, func);
           iters := mapCallIterators(call.iters, func);
         then
-          Call.TYPED_MAP_CALL(call.ty, call.var, e, iters);
+          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+
+      case Call.UNTYPED_REDUCTION()
+        algorithm
+          e := map(call.exp, func);
+          iters := mapCallIterators(call.iters, func);
+        then
+          Call.UNTYPED_REDUCTION(call.ref, e, iters);
+
+      case Call.TYPED_REDUCTION()
+        algorithm
+          e := map(call.exp, func);
+          iters := mapCallIterators(call.iters, func);
+        then
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters);
 
     end match;
   end mapCall;
@@ -2086,18 +2112,29 @@ public
         then
           Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_MAP_CALL()
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
         then
-          Call.UNTYPED_MAP_CALL(e, call.iters);
+          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
 
-      case Call.TYPED_MAP_CALL()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           e := func(call.exp);
         then
-          Call.TYPED_MAP_CALL(call.ty, call.var, e, call.iters);
+          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
 
+      case Call.UNTYPED_REDUCTION()
+        algorithm
+          e := func(call.exp);
+        then
+          Call.UNTYPED_REDUCTION(call.ref, e, call.iters);
+
+      case Call.TYPED_REDUCTION()
+        algorithm
+          e := func(call.exp);
+        then
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, call.iters);
     end match;
   end mapCallShallow;
 
@@ -2330,7 +2367,7 @@ public
         then
           ();
 
-      case Call.UNTYPED_MAP_CALL()
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
 
@@ -2340,7 +2377,7 @@ public
         then
           ();
 
-      case Call.TYPED_MAP_CALL()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           foldArg := fold(call.exp, func, foldArg);
 
@@ -2350,6 +2387,25 @@ public
         then
           ();
 
+      case Call.UNTYPED_REDUCTION()
+        algorithm
+          foldArg := fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := fold(Util.tuple22(i), func, foldArg);
+          end for;
+        then
+          ();
+
+      case Call.TYPED_REDUCTION()
+        algorithm
+          foldArg := fold(call.exp, func, foldArg);
+
+          for i in call.iters loop
+            foldArg := fold(Util.tuple22(i), func, foldArg);
+          end for;
+        then
+          ();
     end match;
   end foldCall;
 
@@ -2564,7 +2620,7 @@ public
         then
           ();
 
-      case Call.UNTYPED_MAP_CALL()
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           apply(call.exp, func);
 
@@ -2574,7 +2630,7 @@ public
         then
           ();
 
-      case Call.TYPED_MAP_CALL()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           apply(call.exp, func);
 
@@ -2584,6 +2640,25 @@ public
         then
           ();
 
+      case Call.UNTYPED_REDUCTION()
+        algorithm
+          apply(call.exp, func);
+
+          for i in call.iters loop
+            apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
+
+      case Call.TYPED_REDUCTION()
+        algorithm
+          apply(call.exp, func);
+
+          for i in call.iters loop
+            apply(Util.tuple22(i), func);
+          end for;
+        then
+          ();
     end match;
   end applyCall;
 
@@ -2903,18 +2978,29 @@ public
         then
           Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_MAP_CALL()
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.UNTYPED_MAP_CALL(e, call.iters);
+          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
 
-      case Call.TYPED_MAP_CALL()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := mapFold(call.exp, func, foldArg);
         then
-          Call.TYPED_MAP_CALL(call.ty, call.var, e, call.iters);
+          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
 
+      case Call.UNTYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := mapFold(call.exp, func, foldArg);
+        then
+          Call.UNTYPED_REDUCTION(call.ref, e, call.iters);
+
+      case Call.TYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := mapFold(call.exp, func, foldArg);
+        then
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, call.iters);
     end match;
   end mapFoldCall;
 
@@ -3260,19 +3346,33 @@ public
         then
           Call.TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
 
-      case Call.UNTYPED_MAP_CALL()
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
         then
-          Call.UNTYPED_MAP_CALL(e, iters);
+          Call.UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
-      case Call.TYPED_MAP_CALL()
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
         then
-          Call.TYPED_MAP_CALL(call.ty, call.var, e, iters);
+          Call.TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+
+      case Call.UNTYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := func(call.exp, foldArg);
+          iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
+        then
+          Call.UNTYPED_REDUCTION(call.ref, e, iters);
+
+      case Call.TYPED_REDUCTION()
+        algorithm
+          (e, foldArg) := func(call.exp, foldArg);
+          iters := mapFoldCallIteratorsShallow(call.iters, func, foldArg);
+        then
+          Call.TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters);
 
     end match;
   end mapFoldCallShallow;
@@ -3510,8 +3610,10 @@ public
           false;
 
       case Call.TYPED_CALL() then listContains(call.arguments, func);
-      case Call.UNTYPED_MAP_CALL() then contains(call.exp, func);
-      case Call.TYPED_MAP_CALL() then contains(call.exp, func);
+      case Call.UNTYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
+      case Call.TYPED_ARRAY_CONSTRUCTOR() then contains(call.exp, func);
+      case Call.UNTYPED_REDUCTION() then contains(call.exp, func);
+      case Call.TYPED_REDUCTION() then contains(call.exp, func);
     end match;
   end callContains;
 
@@ -3736,6 +3838,36 @@ public
                                  Dimension.size(listHead(ty.dimensions))));
     end match;
   end makeOne;
+
+  function makeMaxValue
+    input Type ty;
+    output Expression exp;
+  algorithm
+    exp := match ty
+      case Type.REAL() then REAL(System.realMaxLit());
+      case Type.INTEGER() then INTEGER(System.intMaxLit());
+      case Type.BOOLEAN() then BOOLEAN(true);
+      case Type.ENUMERATION() then ENUM_LITERAL(ty, List.last(ty.literals), listLength(ty.literals));
+      case Type.ARRAY()
+        then ARRAY(ty, List.fill(makeMaxValue(Type.unliftArray(ty)),
+                                 Dimension.size(listHead(ty.dimensions))));
+    end match;
+  end makeMaxValue;
+
+  function makeMinValue
+    input Type ty;
+    output Expression exp;
+  algorithm
+    exp := match ty
+      case Type.REAL() then REAL(-System.realMaxLit());
+      case Type.INTEGER() then INTEGER(-System.intMaxLit());
+      case Type.BOOLEAN() then BOOLEAN(false);
+      case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
+      case Type.ARRAY()
+        then ARRAY(ty, List.fill(makeMaxValue(Type.unliftArray(ty)),
+                                 Dimension.size(listHead(ty.dimensions))));
+    end match;
+  end makeMinValue;
 
   function unbox
     input Expression boxedExp;
@@ -4186,8 +4318,6 @@ public
             typeOf(exp.start), Absyn.dummyInfo);
         then
           ();
-
-      //case CALL(call = Call.TYPED_MAP_CALL())
 
       else ();
     end match;
