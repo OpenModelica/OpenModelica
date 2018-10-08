@@ -648,7 +648,7 @@ algorithm
         inside := removeStreamSetElement(streamCref, inside);
         exp := streamSumEquationExp(outside, inside, Expression.REAL(flowThreshold));
         // Evaluate any inStream calls that were generated.
-        exp := evaluateOperatorExp(exp, sets, setsArray, ctable);
+        exp := evaluateOperators(exp, sets, setsArray, ctable);
       then
         exp;
 
