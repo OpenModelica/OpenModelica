@@ -702,7 +702,7 @@ uniontype Call
             Function.name(call.fn),
             Absyn.COMBINE(),
             Type.toDAE(call.ty),
-            NONE(),
+            SOME(Expression.toDAEValue(reductionDefaultValue(call))),
             String(Util.getTempVariableIndex()),
             String(Util.getTempVariableIndex()),
             NONE()),
@@ -716,6 +716,23 @@ uniontype Call
           fail();
     end match;
   end toDAE;
+
+  function reductionDefaultValue
+    input Call call;
+    output Expression defaultValue;
+  protected
+    Function fn;
+    Type ty;
+  algorithm
+    TYPED_REDUCTION(fn = fn, ty = ty) := call;
+
+    defaultValue := match Absyn.pathFirstIdent(Function.name(fn))
+      case "sum" then Expression.makeZero(ty);
+      case "product" then Expression.makeOne(ty);
+      case "min" then Expression.makeMaxValue(ty);
+      case "max" then Expression.makeMinValue(ty);
+    end match;
+  end reductionDefaultValue;
 
   function isVectorizeable
     input Call call;
@@ -1094,7 +1111,7 @@ protected
   algorithm
     (iter_node, iter_range) := iter;
     diter := DAE.REDUCTIONITER(InstNode.name(iter_node), Expression.toDAE(iter_range), NONE(),
-      Type.toDAE(Expression.typeOf(iter_range)));
+      Type.toDAE(InstNode.getType(iter_node)));
   end iteratorToDAE;
 
   function matchFunction

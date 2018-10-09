@@ -46,6 +46,7 @@ protected
   import ComplexType = NFComplexType;
   import ExpandExp = NFExpandExp;
   import TypeCheck = NFTypeCheck;
+  import ValuesUtil;
   import MetaModelica.Dangerous.listReverseInPlace;
 
 public
@@ -65,6 +66,7 @@ public
   import NFComponentRef.Origin;
   import NFTyping.ExpOrigin;
   import ExpressionSimplify;
+  import Values;
 
 	uniontype ClockKind
 	  record INFERRED_CLOCK
@@ -1507,12 +1509,37 @@ public
           fail();
 
     end match;
-
-    //(dexp, changed) := ExpressionSimplify.simplify(dexp);
-    //if changed then
-    //  (dexp, changed) := ExpressionSimplify.simplify(dexp);
-    //end if;
   end toDAE;
+
+  function toDAEValue
+    input Expression exp;
+    output Values.Value value;
+  algorithm
+    value := match exp
+      local
+        Type ty;
+        list<Values.Value> vals;
+
+      case INTEGER() then Values.INTEGER(exp.value);
+      case REAL() then Values.REAL(exp.value);
+      case STRING() then Values.STRING(exp.value);
+      case BOOLEAN() then Values.BOOL(exp.value);
+      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
+        then Values.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
+
+      case ARRAY()
+        algorithm
+          vals := list(toDAEValue(e) for e in exp.elements);
+        then
+          ValuesUtil.makeArray(vals);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unhandled expression " + toString(exp), sourceInfo());
+        then
+          fail();
+    end match;
+  end toDAEValue;
 
   function dimensionCount
     input Expression exp;
