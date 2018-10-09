@@ -1378,13 +1378,17 @@ algorithm
         if Type.isArray(ty) then
           outSubscript := Subscript.SLICE(e);
           ty := Type.unliftArray(ty);
+
+          if ExpOrigin.flagSet(origin, ExpOrigin.EQUATION) then
+            Inst.markStructuralParamsExp(e);
+          end if;
         else
           outSubscript := Subscript.INDEX(e);
         end if;
       then
         (ty, variability);
 
-    //// Other subscripts have already been typed, but still need to be type checked.
+    // Other subscripts have already been typed, but still need to be type checked.
     case Subscript.INDEX(index = e) then (Expression.typeOf(e), Expression.variability(e));
     case Subscript.SLICE(slice = e) then (Type.unliftArray(Expression.typeOf(e)), Expression.variability(e));
     case Subscript.WHOLE() then (Type.UNKNOWN(), Dimension.variability(dimension));

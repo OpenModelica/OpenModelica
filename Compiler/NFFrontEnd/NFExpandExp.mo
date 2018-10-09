@@ -271,10 +271,11 @@ public
   algorithm
     (outExp, expanded) := match Absyn.pathFirstIdent(fn_path)
       case "cat" then expandBuiltinCat(args, call);
-      case "promote" then expandBuiltinPromote(args);
       case "der" then expandBuiltinGeneric(call);
+      case "diagonal" then expandBuiltinDiagonal(listHead(args));
       case "pre" then expandBuiltinGeneric(call);
       case "previous" then expandBuiltinGeneric(call);
+      case "promote" then expandBuiltinPromote(args);
       case "transpose" then expandBuiltinTranspose(listHead(args));
     end match;
   end expandBuiltinCall;
@@ -312,6 +313,18 @@ public
     (eexp, expanded) := expand(eexp);
     exp := Expression.promote(eexp, Expression.typeOf(eexp), n);
   end expandBuiltinPromote;
+
+  function expandBuiltinDiagonal
+    input Expression arg;
+    output Expression outExp;
+    output Boolean expanded;
+  algorithm
+    (outExp, expanded) := expand(arg);
+
+    if expanded then
+      outExp := Ceval.evalBuiltinDiagonal(outExp);
+    end if;
+  end expandBuiltinDiagonal;
 
   function expandBuiltinTranspose
     input Expression arg;
