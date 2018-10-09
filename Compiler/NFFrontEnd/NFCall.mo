@@ -234,6 +234,13 @@ uniontype Call
         then
           Expression.CALL(ty_call);
 
+      case TYPED_CALL()
+        algorithm
+          ty := call.ty;
+          var := call.var;
+        then
+          callExp;
+
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           ty := call.ty;
