@@ -1047,26 +1047,38 @@ void LineAnnotation::updateOMSConnection()
 {
   // connection geometry
   ssd_connection_geometry_t* pConnectionGeometry = new ssd_connection_geometry_t;
-  pConnectionGeometry->n = mPoints.size();
-  pConnectionGeometry->pointsX = new double[mPoints.size()];
-  pConnectionGeometry->pointsY = new double[mPoints.size()];
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pConnectionGeometry->pointsX[i] = mPoints.at(i).x();
-    pConnectionGeometry->pointsY[i] = mPoints.at(i).y();
+  QList<QPointF> points = mPoints;
+  if (points.size() >= 2) {
+    points.removeFirst();
+    points.removeLast();
+  }
+  pConnectionGeometry->n = points.size();
+  if (points.size() == 0) {
+    pConnectionGeometry->pointsX = NULL;
+    pConnectionGeometry->pointsY = NULL;
+  } else {
+    pConnectionGeometry->pointsX = new double[points.size()];
+    pConnectionGeometry->pointsY = new double[points.size()];
+  }
+  for (int i = 0 ; i < points.size() ; i++) {
+    pConnectionGeometry->pointsX[i] = points.at(i).x();
+    pConnectionGeometry->pointsY[i] = points.at(i).y();
   }
   // connection
-  oms_connection_t connection;
-  connection.type = oms_connection_fmi;
-  connection.parent = new char[mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure().toStdString().size() + 1];
-  strcpy(connection.parent, mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure().toStdString().c_str());
-  connection.conA = new char[getStartComponentName().toStdString().size() + 1];
-  strcpy(connection.conA, getStartComponentName().toStdString().c_str());
-  connection.conB = new char[getEndComponentName().toStdString().size() + 1];
-  strcpy(connection.conB, getEndComponentName().toStdString().c_str());
+  oms3_connection_t connection;
+  connection.type = oms3_connection_single;
+  QString conA = QString("%1.%2").arg(StringHandler::getLastWordAfterDot(StringHandler::removeLastWordAfterDot(getStartComponentName())))
+                 .arg(StringHandler::getLastWordAfterDot(getStartComponentName()));
+  connection.conA = new char[conA.toStdString().size() + 1];
+  strcpy(connection.conA, conA.toStdString().c_str());
+  QString conB = QString("%1.%2").arg(StringHandler::getLastWordAfterDot(StringHandler::removeLastWordAfterDot(getEndComponentName())))
+                 .arg(StringHandler::getLastWordAfterDot(getEndComponentName()));
+  connection.conB = new char[conB.toStdString().size() + 1];
+  strcpy(connection.conB, conB.toStdString().c_str());
   connection.geometry = pConnectionGeometry;
-  OMSProxy::instance()->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(),
-                                         getStartComponentName(), getEndComponentName(), &connection);
-  delete[] connection.parent;
+  connection.tlmparameters = NULL;
+  OMSProxy::instance()->updateConnection(getStartComponentName(), getEndComponentName(), &connection);
+
   delete[] connection.conA;
   delete[] connection.conB;
   delete[] pConnectionGeometry->pointsX;

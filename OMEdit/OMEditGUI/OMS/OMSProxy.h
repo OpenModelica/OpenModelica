@@ -48,8 +48,15 @@ private:
   static void create();
   static void destroy();
   OMSProxy();
+  ~OMSProxy();
 
   static OMSProxy *mpInstance;
+
+  FILE *mpCommunicationLogFile;
+  double mTotalOMSCallsTime;
+
+  void logCommand(QTime *commandTime, QString command);
+  void logResponse(QString command, oms_status_enu_t status, QTime *responseTime);
 public:
   static OMSProxy* instance() {return mpInstance;}
 
@@ -84,7 +91,7 @@ public:
   bool parseString(QString contents, QString* pModelName);
   bool loadString(QString contents, QString* pModelName);
   bool saveModel(QString cref, QString filename);
-  bool list(QString ident, QString *pContents);
+  bool list(QString cref, QString *pContents);
   bool getElement(QString cref, oms3_element_t **pElement);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
   bool getElements(QString cref, oms3_element_t ***pElements);
@@ -93,10 +100,10 @@ public:
   bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
-  bool getConnections(QString cref, oms_connection_t*** pConnections);
-  bool addConnection(QString cref, QString conA, QString conB);
+  bool getConnections(QString cref, oms3_connection_t ***pConnections);
+  bool addConnection(QString crefA, QString crefB);
   bool deleteConnection(QString cref, QString conA, QString conB);
-  bool updateConnection(QString cref, QString conA, QString conB, const oms_connection_t* pConnection);
+  bool updateConnection(QString crefA, QString crefB, const oms3_connection_t *pConnection);
   bool initialize(QString ident);
   bool simulate_asynchronous(QString ident/*, int* terminate*/);
   bool reset(QString ident);
