@@ -524,23 +524,53 @@ function assignArrayElement
   input Expression value;
   output Expression result;
 protected
-  Expression sub;
+  Expression sub, val;
   list<Subscript> rest_subs;
   Integer idx;
+  list<Expression> subs, vals;
 algorithm
   result := match (arrayExp, subscripts)
-    case (Expression.ARRAY(), {Subscript.INDEX(sub)}) guard Expression.isScalarLiteral(sub)
-      algorithm
-        idx := Expression.toInteger(sub);
-        arrayExp.elements := List.set(arrayExp.elements, idx, value);
-      then
-        arrayExp;
-
     case (Expression.ARRAY(), Subscript.INDEX(sub) :: rest_subs) guard Expression.isScalarLiteral(sub)
       algorithm
         idx := Expression.toInteger(sub);
-        arrayExp.elements := List.set(arrayExp.elements, idx,
-          assignArrayElement(listGet(arrayExp.elements, idx), rest_subs, value));
+
+        if listEmpty(rest_subs) then
+          arrayExp.elements := List.set(arrayExp.elements, idx, value);
+        else
+          arrayExp.elements := List.set(arrayExp.elements, idx,
+            assignArrayElement(listGet(arrayExp.elements, idx), rest_subs, value));
+        end if;
+      then
+        arrayExp;
+
+    case (Expression.ARRAY(), Subscript.SLICE(sub) :: rest_subs)
+      algorithm
+        subs := Expression.arrayElements(sub);
+        vals := Expression.arrayElements(value);
+
+        if listEmpty(rest_subs) then
+          for s in subs loop
+            val :: vals := vals;
+            idx := Expression.toInteger(s);
+            arrayExp.elements := List.set(arrayExp.elements, idx, val);
+          end for;
+        else
+          for s in subs loop
+            val :: vals := vals;
+            idx := Expression.toInteger(s);
+            arrayExp.elements := List.set(arrayExp.elements, idx,
+              assignArrayElement(listGet(arrayExp.elements, idx), rest_subs, val));
+          end for;
+        end if;
+      then
+        arrayExp;
+
+    case (Expression.ARRAY(), Subscript.WHOLE() :: rest_subs)
+      algorithm
+        if not listEmpty(rest_subs) then
+          arrayExp.elements := list(assignArrayElement(e, rest_subs, v) threaded for
+            e in arrayExp.elements, v in Expression.arrayElements(value));
+        end if;
       then
         arrayExp;
 
