@@ -101,7 +101,7 @@ public
                 fail();
           end match;
 
-      else Dimension.EXP(exp, var);
+      else EXP(exp, var);
     end match;
   end fromExp;
 

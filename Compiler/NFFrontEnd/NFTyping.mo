@@ -618,15 +618,15 @@ algorithm
         end match;
 
         // Make sure the dimension is constant evaluted, and also mark it as structural.
-        () := match dim
+        dim := match dim
           case Dimension.EXP(exp = exp)
             algorithm
               Inst.markStructuralParamsExp(exp);
-              dim.exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+              exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
             then
-              ();
+              Dimension.fromExp(exp, dim.var);
 
-          else ();
+          else dim;
         end match;
 
         arrayUpdate(dimensions, index, dim);
