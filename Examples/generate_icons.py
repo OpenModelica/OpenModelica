@@ -53,12 +53,6 @@ def classToFileName(cl):
   """
   return cl.replace("/","Division").replace("*","Multiplication")
 
-# Bitmap
-#   extends GraphicItem
-#   extent
-#   fileName
-#   imageSource
-
 exp_float = '[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?'
 
 element_id = 0
@@ -296,7 +290,11 @@ def getGraphicsForClass(modelicaClass):
                 graphicsObj['href'] = "data:image;base64,"+g[9].strip('"')
             else:
                 fname = ask_omc('uriToFilename', g[8], parsed=False).strip().strip('"')
-                fdata = open(fname, "rb").read()
+                if os.path.exists(fname):
+                    fdata = open(fname, "rb").read()
+                else:
+                    fname = os.path.join(baseDir, g[8].strip('"'))
+                    fdata = open(fname, "rb").read()
                 graphicsObj['href'] = "data:image;base64,"+base64.b64encode(fdata)
 
         if not 'type' in graphicsObj:
@@ -1141,11 +1139,14 @@ def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
 
             dwg.add(group)
     hashName = hashlib.sha1(dwg.tostring().encode("utf-8")).hexdigest() + ".svg"
-    hashPath = os.path.join(os.path.dirname(filename),hashName)
+    hashPath = os.path.join(os.path.dirname(filename),hashName[:1],hashName)
     if not os.path.exists(hashPath):
         dwg.saveas(hashPath)
     if not os.path.exists(filename):
-        os.symlink(hashName, filename)
+        try:
+            os.symlink(hashName, filename)
+        except OSError as e:
+            logger.error(filename + " already exists")
     else:
         if warn_duplicates:
             logger.warning('Target file {0} already exists'.format(filename))
@@ -1185,6 +1186,7 @@ def getBaseClasses(modelica_class, base_classes):
 
 
 def main():
+    global baseDir
     t = time.time()
     parser = OptionParser()
     parser.add_option("--with-html", help="Generate an HTML report with all SVG-files", action="store_true", dest="with_html", default=False)
@@ -1232,8 +1234,10 @@ def main():
     logger.info('Application started')
     logger.info('Output directory: ' + output_dir)
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    for f in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
+        output_dirx = os.path.join(output_dir, f)
+        if not os.path.exists(output_dirx):
+            os.makedirs(output_dirx)
 
     success = True
 
@@ -1265,6 +1269,8 @@ def main():
         fh.setFormatter(formatter)
         logger.addHandler(fh)
 
+        classInfo  = omc.sendExpression('getClassInformation({0})'.format(package))
+        baseDir = os.path.dirname(classInfo[5])
         modelica_classes = omc.sendExpression('getClassNames(' + package + ', recursive=true, qualified=true, sort=true)')
         for modelica_class in modelica_classes:
             logger.info('Exporting: ' + modelica_class)
