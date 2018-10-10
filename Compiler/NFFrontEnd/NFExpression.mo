@@ -970,7 +970,7 @@ public
     input list<Subscript> restSubscripts;
     output Expression outExp;
   protected
-    Subscript sub;
+    Subscript sub, s;
     list<Subscript> rest_subs;
     list<Expression> expl;
     Type ty;
@@ -987,6 +987,8 @@ public
             outExp := exp;
           else
             ARRAY(ty = ty, elements = expl) := exp;
+            s :: rest_subs := restSubscripts;
+            expl := list(applySubscript(s, e, rest_subs) for e in expl);
 
             el_count := listLength(expl);
             ty := if el_count > 0 then typeOf(listHead(expl)) else
