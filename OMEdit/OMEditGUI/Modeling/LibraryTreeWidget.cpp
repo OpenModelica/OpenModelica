@@ -1294,6 +1294,9 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
       pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    /* We don't use the editor undo/redo in MainWindow::undo/redo for OMSimulator.
+     * So always update the text and don't use the updateText flag.
+     */
     if (!pLibraryTreeItem->getModelWidget()) {
       showModelWidget(pLibraryTreeItem, false);
     }
@@ -2191,7 +2194,7 @@ void LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLi
        *      end M2; end Q;
        *   end P;
        *
-       * So we need to conside column start and end.
+       * So we need to consider column start and end.
        */
       if (lineNumber == pLibraryTreeItem->mClassInformation.lineNumberStart) {
         QString leftStr = currentLine.left(pLibraryTreeItem->mClassInformation.columnNumberStart - 1);
@@ -2206,7 +2209,9 @@ void LibraryTreeModel::readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLi
         }
       } else if (lineNumber == pLibraryTreeItem->mClassInformation.lineNumberEnd) {
         text += currentLine.left(pLibraryTreeItem->mClassInformation.columnNumberEnd);
-        after += currentLine.mid(pLibraryTreeItem->mClassInformation.columnNumberEnd) + "\n";
+        if (!currentLine.mid(pLibraryTreeItem->mClassInformation.columnNumberEnd).isEmpty()) {
+          after += currentLine.mid(pLibraryTreeItem->mClassInformation.columnNumberEnd) + "\n";
+        }
       } else {
         text += currentLine + "\n";
       }

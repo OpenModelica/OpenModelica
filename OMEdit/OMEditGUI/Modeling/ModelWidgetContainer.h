@@ -423,7 +423,7 @@ public:
   bool omsimulatorEditorTextChanged();
   void clearSelection();
   void updateClassAnnotationIfNeeded();
-  void updateModelText(bool updateText = true);
+  void updateModelText();
   void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
   void updateDynamicResults(QString resultFileName);

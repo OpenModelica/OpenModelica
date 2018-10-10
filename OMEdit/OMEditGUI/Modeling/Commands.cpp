@@ -293,14 +293,6 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Com
                                                                              const Transformation &newTransformation, QUndoCommand *pParent)
   : QUndoCommand(pParent)
 {
-  pComponent->emitTransformChanging(this);
-  new UpdateComponentTransformationsCommandInternal(pComponent, oldTransformation, newTransformation, this);
-}
-
-UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::UpdateComponentTransformationsCommandInternal
-(Component *pComponent, const Transformation &oldTransformation, const Transformation &newTransformation, QUndoCommand *pParent)
-  : QUndoCommand(pParent)
-{
   mpComponent = pComponent;
   mpIconOrDiagramComponent = 0;
   mOldTransformation = oldTransformation;
@@ -309,10 +301,10 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInte
 }
 
 /*!
- * \brief UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::redo
- * Redo the UpdateComponentTransformationsCommandInternal.
+ * \brief UpdateComponentTransformationsCommand::redo
+ * Redo the UpdateComponentTransformationsCommand.
  */
-void UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::redo()
+void UpdateComponentTransformationsCommand::redo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
@@ -342,10 +334,10 @@ void UpdateComponentTransformationsCommand::UpdateComponentTransformationsComman
 }
 
 /*!
- * \brief UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::undo
- * Undo the UpdateComponentTransformationsCommandInternal.
+ * \brief UpdateComponentTransformationsCommand::undo
+ * Undo the UpdateComponentTransformationsCommand.
  */
-void UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommandInternal::undo()
+void UpdateComponentTransformationsCommand::undo()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&

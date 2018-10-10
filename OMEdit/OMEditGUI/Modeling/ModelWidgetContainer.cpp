@@ -2309,8 +2309,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         Transformation oldTransformation = pComponent->mTransformation;
         QPointF positionDifference = pComponent->scenePos() - pComponent->getOldScenePosition();
         pComponent->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        mpModelWidget->getUndoStack()->push(new UpdateComponentTransformationsCommand(pComponent, oldTransformation,
-                                                                                      pComponent->mTransformation));
+        pComponent->updateComponentTransformations(oldTransformation);
         hasComponentMoved = true;
       }
     }
@@ -3962,7 +3961,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
     if (mpLibraryTreeItem->isInPackageOneFile()) {
-      updateModelicaTextManually(stringToLoad);
+      mpLibraryTreeItem->setClassText(stringToLoad);
+      updateModelText();
     }
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
@@ -3996,7 +3996,8 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     setModelFilePathLabel(pNewLibraryTreeItem->getFileName());
     reDrawModelWidget();
     if (pNewLibraryTreeItem->isInPackageOneFile()) {
-      updateModelicaTextManually(stringToLoad);
+      pNewLibraryTreeItem->setClassText(stringToLoad);
+      updateModelText();
     }
     *pLibraryTreeItem = pNewLibraryTreeItem;
   }
@@ -4148,31 +4149,22 @@ void ModelWidget::updateClassAnnotationIfNeeded()
 /*!
  * \brief ModelWidget::updateModelText
  * Updates the Text of the class.
- * \param updateText
  */
-void ModelWidget::updateModelText(bool updateText)
+void ModelWidget::updateModelText()
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Don't allow updating the child LibraryTreeItems of OMS model
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
       && mpLibraryTreeItem->parent() != pLibraryTreeModel->getRootLibraryTreeItem()) {
     if (mpLibraryTreeItem->parent()->getModelWidget()) {
-      mpLibraryTreeItem->parent()->getModelWidget()->updateModelText(updateText);
+      mpLibraryTreeItem->parent()->getModelWidget()->updateModelText();
     } else {
       pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem->parent());
     }
     return;
   }
   setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
-  /* We don't use the editor undo/redo in MainWindow::undo/redo for OMSimulator.
-   * So always call LibraryTreeModel::updateLibraryTreeItemClassText() to get the updated text.
-   */
-  if (updateText || mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
-  } else {
-    mpLibraryTreeItem->setIsSaved(false);
-    pLibraryTreeModel->updateLibraryTreeItem(mpLibraryTreeItem);
-  }
+  pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {

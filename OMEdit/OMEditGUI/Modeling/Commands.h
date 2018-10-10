@@ -96,20 +96,13 @@ class UpdateComponentTransformationsCommand : public QUndoCommand
 public:
   UpdateComponentTransformationsCommand(Component *pComponent, const Transformation &oldTransformation,
                                         const Transformation &newTransformation, QUndoCommand *pParent = 0);
+  void redo();
+  void undo();
 private:
-  class UpdateComponentTransformationsCommandInternal : public QUndoCommand
-  {
-  public:
-    UpdateComponentTransformationsCommandInternal(Component *pComponent, const Transformation &oldTransformation,
-                                                  const Transformation &newTransformation, QUndoCommand *pParent = 0);
-    void redo();
-    void undo();
-  private:
-    Component *mpComponent;
-    Component *mpIconOrDiagramComponent;
-    Transformation mOldTransformation;
-    Transformation mNewTransformation;
-  };
+  Component *mpComponent;
+  Component *mpIconOrDiagramComponent;
+  Transformation mOldTransformation;
+  Transformation mNewTransformation;
 };
 
 class UpdateComponentAttributesCommand : public QUndoCommand

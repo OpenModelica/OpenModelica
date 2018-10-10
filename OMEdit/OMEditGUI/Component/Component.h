@@ -231,7 +231,6 @@ public:
   void emitAdded();
   void emitTransformChange() {emit transformChange();}
   void emitTransformHasChanged();
-  void emitTransformChanging(QUndoCommand *pUndoCommand) {emit transformChanging(pUndoCommand);}
   void emitChanged();
   void emitDeleted();
   void componentParameterHasChanged();
@@ -243,6 +242,7 @@ public:
   void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
   void removeInterfacePoint(QString interfaceName);
   void adjustInterfacePoints();
+  void updateComponentTransformations(const Transformation &oldTransformation);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
@@ -318,7 +318,7 @@ signals:
   void added();
   void transformChange();
   void transformHasChanged();
-  void transformChanging(QUndoCommand *pUndoCommand);
+  void transformChanging();
   void displayTextChanged();
   void changed();
   void deleted();

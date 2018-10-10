@@ -1713,35 +1713,10 @@ void MainWindow::undo()
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->undo();
     pModelWidget->updateClassAnnotationIfNeeded();
-    pModelWidget->updateModelText(false);
-    /* We don't use the editor undo/redo for OMSimulator.
-     * So simply return from here now.
-     */
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      return;
-    }
-  }
-  if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable())) {
-    if (pModelWidget &&
-        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
-         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
-      pModelWidget->getEditor()->setForceSetPlainText(true);
-    }
+    pModelWidget->updateModelText();
+  } else if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()
+             && pModelWidget->getEditor()->getPlainTextEdit()->document()->isUndoAvailable()) {
     pModelWidget->getEditor()->getPlainTextEdit()->document()->undo();
-//    if (pModelWidget->getEditor()->isVisible() &&
-//        pModelWidget->getEditor()->getPlainTextEdit()->document()->availableUndoSteps() + 1 == pModelWidget->getUndoStack()->index()) {
-//      pModelWidget->clearSelection();
-//      pModelWidget->getUndoStack()->undo();
-//      pModelWidget->updateClassAnnotationIfNeeded();
-//    } else {
-//      pModelWidget->getEditor()->setTextChanged(true);
-//    }
-//    pModelWidget->updateModelText(false);
-    if (pModelWidget &&
-        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
-         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
-      pModelWidget->getEditor()->setForceSetPlainText(false);
-    }
   }
 }
 
@@ -1758,35 +1733,10 @@ void MainWindow::redo()
     pModelWidget->clearSelection();
     pModelWidget->getUndoStack()->redo();
     pModelWidget->updateClassAnnotationIfNeeded();
-    pModelWidget->updateModelText(false);
-    /* We don't use the editor undo/redo for OMSimulator.
-     * So simply return from here now.
-     */
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      return;
-    }
-  }
-  if (pModelWidget && pModelWidget->getEditor() && (pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable())) {
-    if (pModelWidget &&
-        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
-         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
-      pModelWidget->getEditor()->setForceSetPlainText(true);
-    }
+    pModelWidget->updateModelText();
+  } else if (pModelWidget && pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible()
+             && pModelWidget->getEditor()->getPlainTextEdit()->document()->isRedoAvailable()) {
     pModelWidget->getEditor()->getPlainTextEdit()->document()->redo();
-//    if (pModelWidget->getEditor()->isVisible() &&
-//        pModelWidget->getEditor()->getPlainTextEdit()->document()->availableRedoSteps() == pModelWidget->getUndoStack()->index()) {
-//      pModelWidget->clearSelection();
-//      pModelWidget->getUndoStack()->redo();
-//      pModelWidget->updateClassAnnotationIfNeeded();
-//    } else {
-//      pModelWidget->getEditor()->setTextChanged(true);
-//    }
-//    pModelWidget->updateModelText(false);
-    if (pModelWidget &&
-        ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) ||
-         (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()))) {
-      pModelWidget->getEditor()->setForceSetPlainText(false);
-    }
   }
 }
 

@@ -154,7 +154,7 @@ protected:
 public slots:
   void handleComponentMoved();
   void updateConnectionAnnotation();
-  void updateConnectionTransformation(QUndoCommand *pUndoCommand);
+  void updateConnectionTransformation();
   void updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority);
   void updateInitialStateAnnotation();
   void duplicate();

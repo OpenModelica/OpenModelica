@@ -1177,16 +1177,23 @@ void LineAnnotation::updateConnectionAnnotation()
   }
 }
 
-void LineAnnotation::updateConnectionTransformation(QUndoCommand *pUndoCommand)
+/*!
+ * \brief LineAnnotation::updateConnectionTransformation
+ * Slot activated when Component transformChanging SIGNAL is emitted.\n
+ * Updates the connection.
+ */
+void LineAnnotation::updateConnectionTransformation()
 {
   assert(!mOldAnnotation.isEmpty());
   if (mLineType == LineAnnotation::ConnectionType) {
-    new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation(), pUndoCommand);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
   } else if (mLineType == LineAnnotation::TransitionType) {
-    new UpdateTransitionCommand(this, mCondition, mImmediate, mReset, mSynchronize, mPriority, mOldAnnotation,
-                                mCondition, mImmediate, mReset, mSynchronize, mPriority, getOMCShapeAnnotation(), pUndoCommand);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
+                                                                                       mSynchronize, mPriority, mOldAnnotation,
+                                                                                       mCondition, mImmediate, mReset, mSynchronize,
+                                                                                       mPriority, getOMCShapeAnnotation()));
   } else if (mLineType == LineAnnotation::InitialStateType) {
-    new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation(), pUndoCommand);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
   }
 }
 

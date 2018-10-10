@@ -1091,7 +1091,7 @@ void Component::applyRotation(qreal angle)
     angle = 0;
   }
   mTransformation.setRotateAngle(angle);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
@@ -1099,8 +1099,7 @@ void Component::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
   // handle component position, rotation and scale changes
   connect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()), Qt::UniqueConnection);
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    connect(this, SIGNAL(transformChanging(QUndoCommand*)), pConnectorLineAnnotation,
-            SLOT(updateConnectionTransformation(QUndoCommand*)), Qt::UniqueConnection);
+    connect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()), Qt::UniqueConnection);
   }
 }
 
@@ -1108,7 +1107,7 @@ void Component::removeConnectionDetails(LineAnnotation *pConnectorLineAnnotation
 {
   disconnect(this, SIGNAL(transformChange()), pConnectorLineAnnotation, SLOT(handleComponentMoved()));
   if (!pConnectorLineAnnotation->isInheritedShape()) {
-    disconnect(this, SIGNAL(transformChanging(QUndoCommand*)), pConnectorLineAnnotation, SLOT(updateConnectionTransformation(QUndoCommand*)));
+    disconnect(this, SIGNAL(transformChanging()), pConnectorLineAnnotation, SLOT(updateConnectionTransformation()));
   }
 }
 
@@ -1424,6 +1423,19 @@ void Component::adjustInterfacePoints()
       }
     }
   }
+}
+
+/*!
+ * \brief Component::updateComponentTransformations
+ * Creates a UpdateComponentTransformationsCommand and emits the Component::transformChanging() SIGNAL.
+ * \param oldTransformation
+ */
+void Component::updateComponentTransformations(const Transformation &oldTransformation)
+{
+  mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  emit transformChanging();
+  mpGraphicsView->getModelWidget()->endMacro();
 }
 
 /*!
@@ -2317,9 +2329,7 @@ void Component::finishResizeComponent()
  */
 void Component::resizedComponent()
 {
-  UpdateComponentTransformationsCommand *pUpdateComponentCommand = new UpdateComponentTransformationsCommand(this, mOldTransformation,
-                                                                                                             mTransformation);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateComponentCommand);
+  updateComponentTransformations(mOldTransformation);
   mpGraphicsView->getModelWidget()->updateModelText();
 }
 
@@ -2459,7 +2469,7 @@ void Component::flipHorizontal()
     mTransformation.setExtent1(QPointF(extent1.x(), extent2.y()));
     mTransformation.setExtent2(QPointF(extent2.x(), extent1.y()));
   }
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
   showResizerItems();
 }
 
@@ -2482,7 +2492,7 @@ void Component::flipVertical()
     mTransformation.setExtent1(QPointF(extent2.x(), extent1.y()));
     mTransformation.setExtent2(QPointF(extent1.x(), extent2.y()));
   }
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+updateComponentTransformations(oldTransformation);
   showResizerItems();
 }
 
@@ -2496,7 +2506,7 @@ void Component::moveUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2509,7 +2519,7 @@ void Component::moveShiftUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2522,7 +2532,7 @@ void Component::moveCtrlUp()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, 1);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2535,7 +2545,7 @@ void Component::moveDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep());
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2548,7 +2558,7 @@ void Component::moveShiftDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -(mpGraphicsView->mCoOrdinateSystem.getVerticalGridStep() * 5));
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2561,7 +2571,7 @@ void Component::moveCtrlDown()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(0, -1);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2574,7 +2584,7 @@ void Component::moveLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2587,7 +2597,7 @@ void Component::moveShiftLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2600,7 +2610,7 @@ void Component::moveCtrlLeft()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(-1, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2613,7 +2623,7 @@ void Component::moveRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep(), 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2626,7 +2636,7 @@ void Component::moveShiftRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(mpGraphicsView->mCoOrdinateSystem.getHorizontalGridStep() * 5, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 /*!
@@ -2639,7 +2649,7 @@ void Component::moveCtrlRight()
 {
   Transformation oldTransformation = mTransformation;
   mTransformation.adjustPosition(1, 0);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation));
+  updateComponentTransformations(oldTransformation);
 }
 
 //! Slot that opens up the component parameters dialog.
