@@ -239,6 +239,9 @@ algorithm
       then
         Expression.tupleElement(exp1, exp.ty, exp.index);
 
+    case Expression.RECORD_ELEMENT()
+      then evalRecordElement(exp, target);
+
     case Expression.MUTABLE()
       algorithm
         exp1 := evalExp(Mutable.access(exp.exp), target);
@@ -2799,6 +2802,30 @@ algorithm
   subs := list(Subscript.mapShallowExp(s, function evalExp(target = target)) for s in subscripts);
   result := Expression.applySubscripts(subs, result);
 end evalSubscriptedExp;
+
+function evalRecordElement
+  input Expression exp;
+  input EvalTarget target;
+  output Expression result;
+protected
+  Expression e;
+  Integer index;
+algorithm
+  Expression.RECORD_ELEMENT(recordExp = e, index = index) := exp;
+  e := evalExp(e, target);
+
+  result := match e
+    case Expression.RECORD()
+      then listGet(e.elements, index);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " could not evaluate " +
+          Expression.toString(exp), sourceInfo());
+      then
+        fail();
+  end match;
+end evalRecordElement;
 
 protected
 

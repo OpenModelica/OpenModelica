@@ -283,6 +283,13 @@ public
     Type ty;
   end TUPLE_ELEMENT;
 
+  record RECORD_ELEMENT
+    Expression recordExp;
+    Integer index;
+    String fieldName;
+    Type ty;
+  end RECORD_ELEMENT;
+
   record BOX "MetaModelica boxed value"
     Expression exp;
   end BOX;
@@ -613,6 +620,17 @@ public
         then
           comp;
 
+      case RECORD_ELEMENT()
+        algorithm
+          RECORD_ELEMENT(recordExp = e1, index = i) := exp2;
+          comp := Util.intCompare(exp1.index, i);
+
+          if comp == 0 then
+            comp := compare(exp1.recordExp, e1);
+          end if;
+        then
+          comp;
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -694,6 +712,7 @@ public
       case UNBOX()           then exp.ty;
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
+      case RECORD_ELEMENT()   then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case EMPTY()           then exp.ty;
@@ -723,6 +742,7 @@ public
       case UNBOX()           algorithm exp.ty := ty; then ();
       case SUBSCRIPTED_EXP() algorithm exp.ty := ty; then ();
       case TUPLE_ELEMENT()   algorithm exp.ty := ty; then ();
+      case RECORD_ELEMENT()   algorithm exp.ty := ty; then ();
       else ();
     end match;
   end setType;
@@ -1351,6 +1371,7 @@ public
       case CAST() then "CAST(" + Type.toString(exp.ty) + ", " + toString(exp.exp) + ")";
       case SUBSCRIPTED_EXP() then toString(exp.exp) + Subscript.toStringList(exp.subscripts);
       case TUPLE_ELEMENT() then toString(exp.tupleExp) + "[" + intString(exp.index) + "]";
+      case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
       case EMPTY() then "#EMPTY#";
 
@@ -1501,6 +1522,9 @@ public
 
       case TUPLE_ELEMENT()
         then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
+
+      case RECORD_ELEMENT()
+        then DAE.RSUB(toDAE(exp.recordExp), exp.index, exp.fieldName, Type.toDAE(exp.ty));
 
       else
         algorithm
@@ -1713,6 +1737,12 @@ public
           e1 := map(exp.tupleExp, func);
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
+
+      case RECORD_ELEMENT()
+        algorithm
+          e1 := map(exp.recordExp, func);
+        then
+          if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
 
       case BOX()
         algorithm
@@ -2040,6 +2070,12 @@ public
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
 
+      case RECORD_ELEMENT()
+        algorithm
+          e1 := func(exp.recordExp);
+        then
+          if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
+
       case BOX()
         algorithm
           e1 := func(exp.exp);
@@ -2341,6 +2377,7 @@ public
           List.fold(exp.subscripts, function Subscript.foldExp(func = func), result);
 
       case TUPLE_ELEMENT() then fold(exp.tupleExp, func, arg);
+      case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
       case BOX() then fold(exp.exp, func, arg);
       case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
       else arg;
@@ -2596,6 +2633,7 @@ public
           ();
 
       case TUPLE_ELEMENT() algorithm apply(exp.tupleExp, func); then ();
+      case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
       case BOX() algorithm apply(exp.exp, func); then ();
       case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
       else ();
@@ -2912,6 +2950,12 @@ public
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
 
+      case RECORD_ELEMENT()
+        algorithm
+          (e1, arg) := mapFold(exp.recordExp, func, arg);
+        then
+          if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
+
       case MUTABLE()
         algorithm
           (e1, arg) := mapFold(Mutable.access(exp.exp), func, arg);
@@ -3225,6 +3269,12 @@ public
         then
           if referenceEq(exp.tupleExp, e1) then exp else TUPLE_ELEMENT(e1, exp.index, exp.ty);
 
+      case RECORD_ELEMENT()
+        algorithm
+          (e1, arg) := func(exp.recordExp, arg);
+        then
+          if referenceEq(exp.recordExp, e1) then exp else RECORD_ELEMENT(e1, exp.index, exp.fieldName, exp.ty);
+
       case MUTABLE()
         algorithm
           (e1, arg) := func(Mutable.access(exp.exp), arg);
@@ -3534,6 +3584,9 @@ public
 
       case TUPLE_ELEMENT()
         then contains(exp.tupleExp, func);
+
+      case RECORD_ELEMENT()
+        then contains(exp.recordExp, func);
 
       case BOX() then contains(exp.exp, func);
       else false;
@@ -4171,6 +4224,7 @@ public
       case SUBSCRIPTED_EXP()
         then Prefixes.variabilityMax(variability(exp.exp), Subscript.variabilityList(exp.subscripts));
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
+      case RECORD_ELEMENT() then variability(exp.recordExp);
       case BOX() then variability(exp.exp);
       else
         algorithm
@@ -4302,6 +4356,37 @@ public
       else Expression.TUPLE_ELEMENT(exp, index, ty);
     end match;
   end tupleElement;
+
+  function recordElement
+    input String elementName;
+    input Expression recordExp;
+    output Expression outExp;
+  algorithm
+    outExp := match recordExp
+      local
+        InstNode node;
+        Class cls;
+        Type ty;
+        Integer index;
+
+      case RECORD(ty = Type.COMPLEX(cls = node))
+        algorithm
+          cls := InstNode.getClass(node);
+          index := Class.lookupComponentIndex(elementName, cls);
+        then
+          listGet(recordExp.elements, index);
+
+      else
+        algorithm
+          Type.COMPLEX(cls = node) := typeOf(recordExp);
+          cls := InstNode.getClass(node);
+          index := Class.lookupComponentIndex(elementName, cls);
+          ty := InstNode.getType(Class.nthComponent(index, cls));
+        then
+          RECORD_ELEMENT(recordExp, index, elementName, ty);
+
+    end match;
+  end recordElement;
 
   function splitRecord
     input Expression recordExp;

@@ -250,6 +250,46 @@ public
     end match;
   end isRecordExp;
 
+  function recordFieldBinding
+    input String fieldName;
+    input Binding recordBinding;
+    output Binding fieldBinding = recordBinding;
+  protected
+    Expression exp;
+    Type ty;
+    Variability var;
+  algorithm
+    fieldBinding := match fieldBinding
+      case UNTYPED_BINDING()
+        algorithm
+          fieldBinding.bindingExp := Expression.recordElement(fieldName, fieldBinding.bindingExp);
+        then
+          fieldBinding;
+
+      case TYPED_BINDING()
+        algorithm
+          exp := Expression.recordElement(fieldName, fieldBinding.bindingExp);
+          ty := Expression.typeOf(exp);
+          var := Expression.variability(exp);
+        then
+          TYPED_BINDING(exp, ty, var, fieldBinding.parents, fieldBinding.isEach, fieldBinding.info);
+
+      case FLAT_BINDING()
+        algorithm
+          exp := Expression.recordElement(fieldName, fieldBinding.bindingExp);
+          var := Expression.variability(exp);
+        then
+          FLAT_BINDING(exp, var);
+
+      case CEVAL_BINDING()
+        algorithm
+          fieldBinding.bindingExp := Expression.recordElement(fieldName, fieldBinding.bindingExp);
+        then
+          fieldBinding;
+
+    end match;
+  end recordFieldBinding;
+
   function variability
     input Binding binding;
     output Variability var;

@@ -861,6 +861,19 @@ public
         LookupTree.get(lookupTree(tree), name);
     end lookupComponentIndex;
 
+    function nthComponent
+      input Integer index;
+      input ClassTree tree;
+      output InstNode component;
+    algorithm
+      component := match tree
+        case PARTIAL_TREE() then arrayGet(tree.components, index);
+        case EXPANDED_TREE() then arrayGet(tree.components, index);
+        case INSTANTIATED_TREE() then Mutable.access(arrayGet(tree.components, index));
+        case FLAT_TREE() then arrayGet(tree.components, index);
+      end match;
+    end nthComponent;
+
     function mapClasses
       input ClassTree tree;
       input FuncT func;

@@ -206,6 +206,22 @@ uniontype Class
     (node, isImport) := ClassTree.lookupElement(name, classTree(cls));
   end lookupElement;
 
+  function lookupComponentIndex
+    input String name;
+    input Class cls;
+    output Integer index;
+  algorithm
+    index := ClassTree.lookupComponentIndex(name, classTree(cls));
+  end lookupComponentIndex;
+
+  function nthComponent
+    input Integer index;
+    input Class cls;
+    output InstNode component;
+  algorithm
+    component := ClassTree.nthComponent(index, classTree(cls));
+  end nthComponent;
+
   function lookupAttributeBinding
     input String name;
     input Class cls;

@@ -583,12 +583,19 @@ algorithm
     // If the dimension is unknown in a class, try to infer it from the components binding.
     case Dimension.UNKNOWN()
       algorithm
-        // If the component doesn't have a binding, try to use the start attribute instead.
-        // TODO: Any attribute should actually be fine to use here.
-        b := if Binding.isUnbound(binding) then
-          Class.lookupAttributeBinding("start", InstNode.getClass(component))
-        else
-          binding;
+        b := binding;
+
+        if Binding.isUnbound(binding) then
+          // If the component has no binding, try to use its parent's binding
+          // (i.e. for record fields where the record instance has a binding).
+          b := getRecordElementBinding(component);
+
+          if Binding.isUnbound(b) then
+            // If the component still doesn't have a binding, try to use the start attribute instead.
+            // TODO: Any attribute should actually be fine to use here.
+            b := Class.lookupAttributeBinding("start", InstNode.getClass(component));
+          end if;
+        end if;
 
         dim := match b
           // Print an error if there's no binding.
@@ -637,6 +644,45 @@ algorithm
     else dimension;
   end match;
 end typeDimension;
+
+function getRecordElementBinding
+  "Tries to fetch the binding for a given record field by using the binding of
+   the record instance."
+  input InstNode component;
+  output Binding binding;
+protected
+  InstNode parent;
+  Expression exp;
+  Binding parent_binding;
+algorithm
+  parent := InstNode.parent(component);
+
+  if InstNode.isComponent(parent) then
+    // Get the binding of the component's parent.
+    parent_binding := Component.getBinding(InstNode.component(parent));
+
+    if Binding.isUnbound(parent_binding) then
+      // If the parent has no binding, try the parent's parent.
+      binding := getRecordElementBinding(parent);
+    else
+      // Otherwise type the binding, so we can safely look up the field name.
+      binding := typeBinding(parent_binding, ExpOrigin.CLASS);
+
+      // If the binding wasn't typed before, update the parent component with it
+      // so we don't have to type it again.
+      if not referenceEq(parent_binding, binding) then
+        InstNode.componentApply(parent, Component.setBinding, binding);
+      end if;
+    end if;
+
+    // If we found a binding, get the binding for the field from it.
+    if Binding.isBound(binding) then
+      binding := Binding.recordFieldBinding(InstNode.name(component), binding);
+    end if;
+  else
+    binding := NFBinding.EMPTY_BINDING;
+  end if;
+end getRecordElementBinding;
 
 function typeBindings
   input InstNode cls;
@@ -702,23 +748,6 @@ algorithm
   c := InstNode.component(node);
 
   () := match c
-    // A component with a binding that's already been typed.
-    case Component.TYPED_COMPONENT(binding = Binding.TYPED_BINDING()) then ();
-    case Component.TYPED_COMPONENT(binding = Binding.CEVAL_BINDING()) then ();
-
-    case Component.TYPED_COMPONENT(binding = Binding.UNBOUND())
-      algorithm
-        checkBindingEach(c.binding);
-
-        if Binding.isBound(c.condition) then
-          c.condition := typeComponentCondition(c.condition, origin);
-          InstNode.updateComponent(c, node);
-        end if;
-
-        typeBindings(c.classInst, component, origin);
-      then
-        ();
-
     case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING())
       algorithm
         name := InstNode.name(component);
@@ -745,6 +774,20 @@ algorithm
         end if;
 
         InstNode.updateComponent(c, node);
+        typeBindings(c.classInst, component, origin);
+      then
+        ();
+
+    // A component without a binding, or with a binding that's already been typed.
+    case Component.TYPED_COMPONENT()
+      algorithm
+        checkBindingEach(c.binding);
+
+        if Binding.isBound(c.condition) then
+          c.condition := typeComponentCondition(c.condition, origin);
+          InstNode.updateComponent(c, node);
+        end if;
+
         typeBindings(c.classInst, component, origin);
       then
         ();
