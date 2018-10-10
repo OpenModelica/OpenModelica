@@ -7076,6 +7076,8 @@ algorithm
       elseif isConst then
         addSimVar(simVar, SimVarsIndex.stringConst, simVars);
       end if;
+    else
+      Error.addInternalError("Failed to find SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
     end if;
   // external objects
   elseif BackendVariable.isExtObj(dlowVar) then
