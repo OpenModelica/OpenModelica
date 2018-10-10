@@ -122,6 +122,35 @@ public
     end match;
   end prependEquation;
 
+  function prependAlgorithm
+    input Algorithm alg;
+    input output Sections sections;
+    input Boolean isInitial = false;
+  algorithm
+    sections := match sections
+      case SECTIONS()
+        algorithm
+          if isInitial then
+            sections.initialAlgorithms := alg :: sections.initialAlgorithms;
+          else
+            sections.algorithms := alg :: sections.algorithms;
+          end if;
+        then
+          sections;
+
+      case EMPTY()
+        then if isInitial then SECTIONS({}, {}, {}, {alg}) else SECTIONS({}, {}, {alg}, {});
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() +
+            " got invalid Sections to prepend algorithm to", sourceInfo());
+        then
+          fail();
+
+    end match;
+  end prependAlgorithm;
+
   function append
     input list<Equation> equations;
     input list<Equation> initialEquations;

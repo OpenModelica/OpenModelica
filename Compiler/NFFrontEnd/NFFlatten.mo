@@ -572,14 +572,34 @@ protected
   Expression sub_exp;
   list<Subscript> subs;
   list<Variable> vrs;
+  Sections sects;
 algorithm
-  // if we don't scalarize flatten the class and then add dimensions to the types
+  // if we don't scalarize flatten the class and vectorize it
   if not Flags.isSet(Flags.NF_SCALARIZE) then
-    (vrs, sections) := flattenClass(cls, prefix, visibility, binding, {}, sections);
+    (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}));
+    // add dimensions to the types
     for v in vrs loop
       v.ty := Type.liftArrayLeftList(v.ty, dimensions);
       vars := v::vars;
     end for;
+    // vectorize equations
+    () := match sects
+      case Sections.SECTIONS()
+        algorithm
+          for eqn in listReverse(sects.equations) loop
+            sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix), sections);
+          end for;
+          for eqn in listReverse(sects.initialEquations) loop
+            sections := Sections.prependEquation(vectorizeEquation(eqn, dimensions, prefix), sections, true);
+          end for;
+          for alg in listReverse(sects.algorithms) loop
+            sections := Sections.prependAlgorithm(vectorizeAlgorithm(alg, dimensions, prefix), sections);
+          end for;
+          for alg in listReverse(sects.initialAlgorithms) loop
+            sections := Sections.prependAlgorithm(vectorizeAlgorithm(alg, dimensions, prefix), sections, true);
+          end for;
+        then ();
+    end match;
     return;
   end if;
 
@@ -600,6 +620,92 @@ algorithm
     end while;
   end if;
 end flattenArray;
+
+function vectorizeEquation
+  input Equation eqn;
+  input list<Dimension> dimensions;
+  input ComponentRef prefix;
+  output Equation veqn;
+algorithm
+  veqn := match eqn
+    local
+      InstNode prefix_node, iter;
+      Integer stop;
+      Expression range;
+    case Equation.EQUALITY(lhs = Expression.CREF(), rhs = Expression.CREF())
+      // let simple equality as is
+      then eqn;
+    else
+      // wrap general equation into for loop
+      algorithm
+        iter := match ComponentRef.node(prefix)
+          case prefix_node as InstNode.COMPONENT_NODE()
+            then InstNode.COMPONENT_NODE("$i", prefix_node.visibility, Pointer.create(Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE, Component.info(Pointer.access(prefix_node.component)))), prefix_node.parent);
+        end match;
+        {Dimension.INTEGER(size = stop)} := dimensions;
+        range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
+        veqn := Equation.mapExp(eqn, function addIterator(prefix = prefix, subscript = Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())))));
+      then
+        Equation.FOR(iter, SOME(range), {veqn}, Equation.source(eqn));
+  end match;
+end vectorizeEquation;
+
+function vectorizeAlgorithm
+  input Algorithm alg;
+  input list<Dimension> dimensions;
+  input ComponentRef prefix;
+  output Algorithm valg;
+algorithm
+  valg := match alg
+    local
+      InstNode prefix_node, iter;
+      Integer stop;
+      Expression range;
+      list<Statement> body;
+    case Algorithm.ALGORITHM(statements = {Statement.ASSIGNMENT(lhs = Expression.CREF(), rhs = Expression.CREF())})
+      // let simple assignment as is
+      then alg;
+    else
+      // wrap general algorithm into for loop
+      algorithm
+        iter := match ComponentRef.node(prefix)
+          case prefix_node as InstNode.COMPONENT_NODE()
+            then InstNode.COMPONENT_NODE("$i", prefix_node.visibility, Pointer.create(Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE, Component.info(Pointer.access(prefix_node.component)))), prefix_node.parent);
+        end match;
+        {Dimension.INTEGER(size = stop)} := dimensions;
+        range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
+        body := Statement.mapExpList(alg.statements, function addIterator(prefix = prefix, subscript = Subscript.INDEX(Expression.CREF(Type.INTEGER(), ComponentRef.makeIterator(iter, Type.INTEGER())))));
+      then
+        Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.source);
+  end match;
+end vectorizeAlgorithm;
+
+function addIterator
+  input output Expression exp;
+  input ComponentRef prefix;
+  input Subscript subscript;
+algorithm
+  exp := Expression.map(exp, function addIterator_traverse(prefix = prefix, subscript = subscript));
+end addIterator;
+
+function addIterator_traverse
+  input output Expression exp;
+  input ComponentRef prefix;
+  input Subscript subscript;
+algorithm
+  exp := match exp
+    local
+      ComponentRef restCref;
+    case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
+      algorithm
+        if ComponentRef.isEqual(restCref, prefix) then
+          exp.cref := ComponentRef.addSubscript(subscript, exp.cref);
+        end if;
+      then
+        exp;
+    else exp;
+  end match;
+end addIterator_traverse;
 
 function subscriptBindingOpt
   input list<Subscript> subscripts;
