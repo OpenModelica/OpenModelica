@@ -144,6 +144,12 @@ public
     Boolean expanded;
   algorithm
     cr := ComponentRef.evaluateSubscripts(cref);
+
+    if not Flags.isSet(Flags.NF_SCALARIZE) then
+      connectors := {Connector.fromCref(cr, ComponentRef.getSubscriptedType(cr), source)};
+      return;
+    end if;
+
     cref_exp := Expression.CREF(ComponentRef.getSubscriptedType(cr), cr);
     (cref_exp, expanded) := ExpandExp.expand(cref_exp);
 

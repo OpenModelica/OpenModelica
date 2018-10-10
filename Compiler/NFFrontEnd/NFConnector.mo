@@ -230,10 +230,14 @@ protected
 
       case Type.ARRAY()
         algorithm
-          t := Type.arrayElementType(ty);
-          for c in ComponentRef.scalarize(name) loop
-            conns := splitImpl(c, t, face, source, cty, conns);
-          end for;
+          if Flags.isSet(Flags.NF_SCALARIZE) then
+            t := Type.arrayElementType(ty);
+            for c in ComponentRef.scalarize(name) loop
+              conns := splitImpl(c, t, face, source, cty, conns);
+            end for;
+          else
+            conns := CONNECTOR(name, ty, face, cty, source) :: conns;
+          end if;
         then
           conns;
 
