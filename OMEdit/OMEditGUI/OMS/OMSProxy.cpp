@@ -131,13 +131,13 @@ QString OMSProxy::getElementTypeString(oms_element_type_enu_t type)
       return "TLM model";
     case oms_component_fmi:
       return "FMI model";
-    case oms_component_fmu:
+    case oms_component_fmu_old:
       return "FMU";
-    case oms_component_table:
+    case oms_component_table_old:
       return "Table";
     case oms_component_port:
       return "Port";
-    case oms_component_none:
+    case oms_component_none_old:
     default:
       // should never be reached
       return "";

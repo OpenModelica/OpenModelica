@@ -1324,8 +1324,8 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
   }
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     if (mpModelWidget->getLibraryTreeItem()->getOMSElement()
-        && (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu
-            || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table)) {
+        && (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu_old
+            || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old)) {
       switch (key) {
         case Qt::Key_Delete:
         case Qt::Key_R: // rotate
@@ -2679,8 +2679,8 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
         if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmi) {
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
-        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu
-                   || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table) {
+        } else if (mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_fmu_old
+                   || mpModelWidget->getLibraryTreeItem()->getOMSElement()->type == oms_component_table_old) {
           menu.addAction(MainWindow::instance()->getAddOrEditSubModelIconAction());
         }
       }
@@ -3087,8 +3087,8 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
       mpUndoView = new QUndoView(mpUndoStack);
     }
     mpEditor = 0;
-    if ((mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu)
-        || (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_table)
+    if ((mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old)
+        || (mpLibraryTreeItem->getOMSElement() && mpLibraryTreeItem->getOMSElement()->type == oms_component_table_old)
         || mpLibraryTreeItem->getOMSConnector()) {
       mpUndoStack->setEnabled(false);
       drawOMSModelElements();
@@ -5683,7 +5683,7 @@ void ModelWidget::drawOMSModelElements()
           mpUndoStack->push(pAddSubModelCommand);
         }
       }
-    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu || mpLibraryTreeItem->getOMSElement()->type == oms_component_table) {
+    } else if (mpLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old || mpLibraryTreeItem->getOMSElement()->type == oms_component_table_old) {
       if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
         // Draw bitmap with icon source
         QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
@@ -6591,8 +6591,8 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
       oms = true;
       oms_submodel = false;
       oms_connector = false;
-      if (pLibraryTreeItem->getOMSElement() && (pLibraryTreeItem->getOMSElement()->type == oms_component_fmu
-                                                || pLibraryTreeItem->getOMSElement()->type == oms_component_table)) {
+      if (pLibraryTreeItem->getOMSElement() && (pLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old
+                                                || pLibraryTreeItem->getOMSElement()->type == oms_component_table_old)) {
         oms_submodel = true;
       }
       if (pLibraryTreeItem->getOMSConnector()) {

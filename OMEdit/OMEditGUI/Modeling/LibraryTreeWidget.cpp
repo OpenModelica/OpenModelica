@@ -317,7 +317,7 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
                 .arg(Helper::fileLocation).arg(mFileName);
-    } else if (mpOMSElement && mpOMSElement->type == oms_component_fmu) {
+    } else if (mpOMSElement && mpOMSElement->type == oms_component_fmu_old) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
@@ -325,7 +325,7 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
                 .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
                 .arg(Helper::fileLocation).arg(mFileName);
-    } else if (mpOMSElement && mpOMSElement->type == oms_component_table) {
+    } else if (mpOMSElement && mpOMSElement->type == oms_component_table_old) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
@@ -2441,7 +2441,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   }
   pLibraryTreeItem->setOMSElement(pOMSElement);
   pLibraryTreeItem->setOMSConnector(pOMSConnector);
-  if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu) {
+  if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_fmu_old) {
     const oms_fmu_info_t *pFMUInfo;
     if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
       pLibraryTreeItem->setFMUInfo(pFMUInfo);
@@ -2453,7 +2453,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
         pLibraryTreeItem->setFileName(QString(pFMUInfo->path));
       }
     }
-  } else if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_table) {
+  } else if (pParentLibraryTreeItem && pLibraryTreeItem->getOMSElement() && pLibraryTreeItem->getOMSElement()->type == oms_component_table_old) {
     QString path;
     if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
       QFileInfo tableFileInfo(path);
