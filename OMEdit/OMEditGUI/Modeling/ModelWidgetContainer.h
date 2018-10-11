@@ -201,7 +201,7 @@ public:
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
   QList<LineAnnotation*> getInheritedConnectionsList() {return mInheritedConnectionsList;}
-  void addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
+  bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
   void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
@@ -361,12 +361,13 @@ private slots:
   void openLatestNewsItem(QListWidgetItem *pItem);
 };
 
+class UndoCommand;
 class UndoStack : public QUndoStack
 {
   Q_OBJECT
 public:
   UndoStack(QObject *parent = 0);
-  void push(QUndoCommand *cmd);
+  void push(UndoCommand *cmd);
 
   bool isEnabled() {return mEnabled;}
   void setEnabled(bool enable) {mEnabled = enable;}

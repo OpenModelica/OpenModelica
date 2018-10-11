@@ -585,11 +585,12 @@ bool GraphicsView::checkComponentName(QString componentName)
 }
 
 /*!
- * \brief GraphicsView::addConnectionToOMC
+ * \brief GraphicsView::addConnectionToClass
  * Adds the connection to class.
  * \param pConnectionLineAnnotation - the connection to add.
+ * \return
  */
-void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
+bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotation)
 {
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
@@ -600,6 +601,10 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
     if (OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
                                             pConnectionLineAnnotation->getEndComponentName())) {
       pConnectionLineAnnotation->updateOMSConnection();
+      return true;
+    } else {
+      removeCurrentConnection();
+      return false;
     }
   } else {
     MainWindow *pMainWindow = MainWindow::instance();
@@ -613,6 +618,7 @@ void GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
       //pMainWindow->getOMCProxy()->instantiateModelSucceeds(mpModelWidget->getNameStructure());
     }
   }
+  return true;
 }
 
 /*!
@@ -3035,7 +3041,7 @@ UndoStack::UndoStack(QObject *parent)
  * \brief UndoStack::push
  * \param cmd
  */
-void UndoStack::push(QUndoCommand *cmd)
+void UndoStack::push(UndoCommand *cmd)
 {
   /* We only push the commands to the stack when its enabled.
    * When the stack is not enabled we don't push the command but we do execute the command.
@@ -3043,7 +3049,20 @@ void UndoStack::push(QUndoCommand *cmd)
    * This is needed since we don't want to call clear on the stack.
    */
   if (isEnabled()) {
-    QUndoStack::push(cmd);
+    /* If the stack is enabled then call the command redo function to check if the command fails or not.
+     * If the command fails then delete it and don't push to the stack.
+     * If the command doesn't fail then disable it and push to the stack. We need to disable it since QUndoStack::push() calls the
+     * command redo function and we already called redo once so we don't want to call it here.
+     * Enable the command after the push is done.
+     */
+    cmd->redo();
+    if (cmd->isFailed()) {
+      delete cmd;
+    } else {
+      cmd->setEnabled(false);
+      QUndoStack::push(cmd);
+      cmd->setEnabled(true);
+    }
   } else {
     cmd->redo();
   }
