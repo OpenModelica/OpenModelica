@@ -293,8 +293,8 @@ def getGraphicsForClass(modelicaClass):
                 if not os.path.exists(fname):
                     fname = os.path.join(baseDir, g[8].strip('"'))
                 if os.path.exists(fname):
-                    fdata = open(fname, "rb").read()
-                    graphicsObj['href'] = "data:image;base64,"+base64.b64encode(fdata)
+                    with open(fname, "rb") as f_p:
+                        graphicsObj['href'] = "data:image;base64,"+base64.b64encode(f_p.read())
                 else:
                     logger.error("Could not find bitmap file {0}".format(g[8]))
                     graphicsObj['href'] = g[8].strip('"')
