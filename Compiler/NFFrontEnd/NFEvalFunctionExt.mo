@@ -181,6 +181,41 @@ algorithm
   assignVariable(info, Expression.makeInteger(INFO));
 end Lapack_dgelsx;
 
+function Lapack_dgelsy
+  input list<Expression> args;
+protected
+  Expression m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, info;
+  Integer M, N, NRHS, LDA, LDB, RANK, LWORK, INFO;
+  list<list<Real>> A, B;
+  list<Integer> JPVT;
+  Real RCOND;
+  list<Real> WORK;
+algorithm
+  {m, n, nrhs, a, lda, b, ldb, jpvt, rcond, rank, work, lwork, info} := args;
+
+  M := evaluateExtIntArg(m);
+  N := evaluateExtIntArg(n);
+  NRHS := evaluateExtIntArg(nrhs);
+  A := evaluateExtRealMatrixArg(a);
+  LDA := evaluateExtIntArg(lda);
+  B := evaluateExtRealMatrixArg(b);
+  LDB := evaluateExtIntArg(ldb);
+  JPVT := evaluateExtIntArrayArg(jpvt);
+  RCOND := evaluateExtRealArg(rcond);
+  WORK := evaluateExtRealArrayArg(work);
+  LWORK := evaluateExtIntArg(lwork);
+
+  (A, B, JPVT, RANK, WORK, INFO) :=
+    Lapack.dgelsy(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK, LWORK);
+
+  assignVariableExt(a, Expression.makeRealMatrix(A));
+  assignVariableExt(b, Expression.makeRealMatrix(B));
+  assignVariable(jpvt, Expression.makeIntegerArray(JPVT));
+  assignVariable(rank, Expression.makeInteger(RANK));
+  assignVariable(work, Expression.makeRealArray(WORK));
+  assignVariable(info, Expression.makeInteger(INFO));
+end Lapack_dgelsy;
+
 function Lapack_dgesv
   input list<Expression> args;
 protected

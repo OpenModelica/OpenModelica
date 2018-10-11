@@ -2610,6 +2610,7 @@ algorithm
       case "dgegv" then ();
       case "dgels" then ();
       case "dgelsx" then ();
+      case "dgelsy" then ();
       case "dgeqpf" then ();
       case "dgesv" then ();
       case "dgesvd" then ();

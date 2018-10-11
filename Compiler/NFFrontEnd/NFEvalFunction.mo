@@ -193,13 +193,21 @@ protected
 algorithm
   repl := ReplTree.new();
 
+  // Add inputs to the replacement tree. Since they can't be assigned to the
+  // replacements don't need to be mutable.
   for i in fn.inputs loop
     arg :: rest_args := rest_args;
     repl := addInputReplacement(i, "", arg, repl);
   end for;
 
+  // Add outputs and local variables to the replacement tree. These do need to
+  // be mutable to allow assigning to them.
   repl := List.fold(fn.outputs, function addMutableReplacement(prefix = ""), repl);
   repl := List.fold(fn.locals, function addMutableReplacement(prefix = ""), repl);
+
+  // Apply the replacements to the replacements themselves. This is done after
+  // building the tree to make sure all the replacements are available.
+  repl := ReplTree.map(repl, function applyBindingReplacement(repl = repl));
 end createReplacements;
 
 function addMutableReplacement
@@ -211,7 +219,6 @@ protected
   Expression repl_exp;
 algorithm
   repl_exp := getBindingExp(node, repl);
-  repl_exp := Expression.map(repl_exp, function applyReplacements2(repl = repl));
   repl_exp := Expression.makeMutable(repl_exp);
   repl := ReplTree.add(repl, prefix + InstNode.name(node), repl_exp);
 end addMutableReplacement;
@@ -302,6 +309,15 @@ function addInputReplacement
 algorithm
   repl := ReplTree.add(repl, prefix + InstNode.name(node), argument);
 end addInputReplacement;
+
+function applyBindingReplacement
+  input String name;
+  input Expression exp;
+  input ReplTree.Tree repl;
+  output Expression outExp;
+algorithm
+  outExp := Expression.map(exp, function applyReplacements2(repl = repl));
+end applyBindingReplacement;
 
 function applyReplacements
   input ReplTree.Tree repl;
@@ -987,6 +1003,7 @@ algorithm
     case "dgegv"  algorithm EvalFunctionExt.Lapack_dgegv(args);  then ();
     case "dgels"  algorithm EvalFunctionExt.Lapack_dgels(args);  then ();
     case "dgelsx" algorithm EvalFunctionExt.Lapack_dgelsx(args); then ();
+    case "dgelsy" algorithm EvalFunctionExt.Lapack_dgelsy(args); then ();
     case "dgesv"  algorithm EvalFunctionExt.Lapack_dgesv(args);  then ();
     case "dgglse" algorithm EvalFunctionExt.Lapack_dgglse(args); then ();
     case "dgtsv"  algorithm EvalFunctionExt.Lapack_dgtsv(args);  then ();

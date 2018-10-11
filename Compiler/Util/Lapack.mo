@@ -128,6 +128,29 @@ public function dgelsx
     annotation(Library = {"omcruntime", "Lapack"});
 end dgelsx;
 
+public function dgelsy
+  input Integer inM;
+  input Integer inN;
+  input Integer inNRHS;
+  input list<list<Real>> inA;
+  input Integer inLDA;
+  input list<list<Real>> inB;
+  input Integer inLDB;
+  input list<Integer> inJPVT;
+  input Real inRCOND;
+  input list<Real> inWORK;
+  input Integer inLWORK;
+  output list<list<Real>> outA;
+  output list<list<Real>> outB;
+  output list<Integer> outJPVT;
+  output Integer outRANK;
+  output list<Real> outWORK;
+  output Integer outINFO;
+  external "C" LapackImpl__dgelsy(inM, inN, inNRHS, inA, inLDA, inB, inLDB,
+      inJPVT, inRCOND, inWORK, inLWORK, outA, outB, outJPVT, outRANK, outWORK, outINFO)
+    annotation(Library = {"omcruntime", "Lapack"});
+end dgelsy;
+
 public function dgesv
   input Integer inN;
   input Integer inNRHS;

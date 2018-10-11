@@ -724,6 +724,35 @@ algorithm
       then
         (cache, env);
 
+    case("dgelsy", {arg_M, arg_N, arg_NRHS, arg_A, arg_LDA, arg_B, arg_LDB,
+                    arg_JPVT, arg_RCOND, arg_RANK, arg_WORK, arg_LWORK, arg_INFO},
+        cache, env)
+      equation
+        (M, cache) = evaluateExtIntArg(arg_M, cache, env);
+        (N, cache) = evaluateExtIntArg(arg_N, cache, env);
+        (NRHS, cache) = evaluateExtIntArg(arg_NRHS, cache, env);
+        (A, cache) = evaluateExtRealMatrixArg(arg_A, cache, env);
+        (LDA, cache) = evaluateExtIntArg(arg_LDA, cache, env);
+        (B, cache) = evaluateExtRealMatrixArg(arg_B, cache, env);
+        (LDB, cache) = evaluateExtIntArg(arg_LDB, cache, env);
+        (JPVT, cache) = evaluateExtIntArrayArg(arg_JPVT, cache, env);
+        (RCOND, cache) = evaluateExtRealArg(arg_RCOND, cache, env);
+        (WORK, cache) = evaluateExtRealArrayArg(arg_WORK, cache, env);
+        (LWORK, cache) = evaluateExtIntArg(arg_LWORK, cache, env);
+        (A, B, JPVT, RANK, WORK, INFO) =
+          Lapack.dgelsy(M, N, NRHS, A, LDA, B, LDB, JPVT, RCOND, WORK, LWORK);
+        val_A = ValuesUtil.makeRealMatrix(A);
+        val_B = ValuesUtil.makeRealMatrix(B);
+        val_JPVT = ValuesUtil.makeIntArray(JPVT);
+        val_RANK = ValuesUtil.makeInteger(RANK);
+        val_WORK = ValuesUtil.makeRealArray(WORK);
+        val_INFO = ValuesUtil.makeInteger(INFO);
+        arg_out = {arg_A, arg_B, arg_JPVT, arg_RANK, arg_WORK, arg_INFO};
+        val_out = {val_A, val_B, val_JPVT, val_RANK, val_WORK, val_INFO};
+        (cache, env) = assignExtOutputs(arg_out, val_out, cache, env);
+      then
+        (cache, env);
+
     case("dgesv", {arg_N, arg_NRHS, arg_A, arg_LDA, arg_IPIV, arg_B, arg_LDB,
                    arg_INFO},
         cache, env)

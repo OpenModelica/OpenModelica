@@ -100,6 +100,10 @@ extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a,
   integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
   integer *rank, doublereal *work, integer *info);
 
+extern int dgelsy_(integer *m, integer *n, integer *nrhs, doublereal *a,
+  integer *lda, doublereal *b, integer *ldb, integer *jpvt, doublereal *rcond,
+  integer *rank, doublereal *work, integer *lwork, integer *info);
+
 extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda,
   integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
@@ -456,6 +460,45 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
   *outB = mk_rml_real_matrix(lda, nrhs, b);
   *outJPVT = mk_rml_int_vector(n, jpvt);
   *RANK = rank;
+  *INFO = info;
+
+  free(a);
+  free(b);
+  free(work);
+  free(jpvt);
+#else
+  MMC_THROW();
+#endif
+}
+
+void LapackImpl__dgelsy(int M, int N, int NRHS, void *inA, int LDA,
+    void *inB, int LDB, void *inJPVT, double rcond, void *inWORK, int LWORK,
+    void **outA, void **outB, void **outJPVT, int *RANK, void **outWORK, int *INFO)
+{
+#ifndef NO_LAPACK
+  integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
+  double *a, *b, *work;
+  integer *jpvt;
+
+  m = M;
+  n = N;
+  nrhs = NRHS;
+  lda = LDA;
+  ldb = LDB;
+  lwork = LWORK;
+
+  a = alloc_real_matrix(lda, n, inA);
+  b = alloc_real_matrix(ldb, nrhs, inB);
+  work = alloc_real_vector(lwork, inWORK);
+  jpvt = alloc_int_vector(n, inJPVT);
+
+  dgelsy_(&m, &n, &nrhs, a, &lda, b, &ldb, jpvt, &rcond, &rank, work, &lwork, &info);
+
+  *outA = mk_rml_real_matrix(lda, n, a);
+  *outB = mk_rml_real_matrix(lda, nrhs, b);
+  *outJPVT = mk_rml_int_vector(n, jpvt);
+  *RANK = rank;
+  *outWORK = mk_rml_real_vector(lwork, work);
   *INFO = info;
 
   free(a);
