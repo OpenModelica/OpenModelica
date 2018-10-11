@@ -3954,7 +3954,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
     openModelicaFile(fileName, encoding, showProgress);
   } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
     openEncrytpedModelicaLibrary(fileName, encoding, showProgress);
-  } else if (fileInfo.suffix().compare("ssd") == 0 && !loadExternalModel) {
+  } else if (fileInfo.suffix().compare("ssp") == 0 && !loadExternalModel) {
     openOMSModelFile(fileInfo, showProgress);
   } else if (fileInfo.isDir()) {
     openDirectory(fileInfo, showProgress);
@@ -4780,7 +4780,7 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   if (pLibraryTreeItem->getFileName().isEmpty()) {
     QString name = pLibraryTreeItem->getName();
     fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
-                                              Helper::omsFileTypes, NULL, "ssd", &name);
+                                              Helper::omsFileTypes, NULL, "ssp", &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
