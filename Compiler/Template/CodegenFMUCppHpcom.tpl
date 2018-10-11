@@ -98,8 +98,7 @@ template translateModel(SimCode simCode, String FMUVersion, String FMUType)
                       "",
                       additionalHpcomProtectedMemberDeclaration(simCode, &extraFuncs, &extraFuncsDecl, "", false),
                       CodegenCpp.memberVariableDefine(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false),
-                      CodegenCpp.memberVariableDefinePreVariables(modelInfo, varToArrayIndexMapping, '<%numRealVars%>-1', '<%numIntVars%>-1', '<%numBoolVars%>-1', '<%numStringVars%>-1', Flags.isSet(Flags.GEN_DEBUG_SYMBOLS), false), false),
-                      'OMCpp<%fileNamePrefix%>.h')
+                      false), 'OMCpp<%fileNamePrefix%>.h')
       ""
       // empty result of the top-level template .., only side effects
   end match
