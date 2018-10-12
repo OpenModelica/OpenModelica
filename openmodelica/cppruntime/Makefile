@@ -20,6 +20,7 @@ RefArrayDim2.mos \
 solveTest.mos \
 testArrayEquations.mos \
 testMatrixIO.mos \
+testVectorizedBlocks.mos \
 trapezoidTest.mos
 
 FAILINGTESTFILES= \
