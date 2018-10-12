@@ -11008,7 +11008,7 @@ template assignDerArray(Context context, String arr, Exp lhs_ecr, SimCode simCod
  "Assign array considering special treatment of states and Jacobian vars"
 ::=
 match lhs_ecr
-case CREF(componentRef=c, ty=ty as DAE.T_ARRAY(ty=elty, dims=dims)) then
+case CREF(componentRef = c, ty = ty) then
   let &varDeclsCref = buffer "" /*BUFD*/
   let lhsStr = cref1(c, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)
   match cref2simvar(c, simCode)

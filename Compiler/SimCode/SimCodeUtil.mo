@@ -5542,7 +5542,6 @@ algorithm
     equation
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
-      (e1, e2) = solveTrivialArrayEquation(cr_1, e1, e2);
       equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e1, e2, source, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
@@ -5554,7 +5553,6 @@ algorithm
     equation
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
       (e2, _) = BackendDAEUtil.collateArrExp(e2, NONE());
-      (e2, e1) = solveTrivialArrayEquation(cr_1, e2, e1);
       equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e2, e1, source, eqAttr);
       uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
@@ -8181,119 +8179,6 @@ algorithm
     else "";
   end match;
 end unparseCommentOptionNoAnnotationNoQuote;
-
-// =============================================================================
-// section for ???
-//
-// =============================================================================
-
-protected function solveTrivialArrayEquation "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
-  input DAE.ComponentRef v;
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output DAE.Exp outE1;
-  output DAE.Exp outE2;
-algorithm
-  (outE1, outE2) := matchcontinue(v, e1, e2)
-    local
-      DAE.Exp e, e12, e22, vTerm, res, rhs, f;
-      list<DAE.Exp> exps, exps_1;
-      DAE.Type tp;
-      Boolean b;
-      DAE.ComponentRef c;
-
-    case (_, DAE.ARRAY( tp, _, exps as ((DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=c)) :: _))), _)
-      equation
-        (f::exps_1) = List.map(exps, Expression.expStripLastSubs); // Strip last subscripts
-        List.map1AllValue(exps_1, Expression.expEqual, true, f);
-        c = ComponentReference.crefStripLastSubs(c);
-        (e12, e22) = solveTrivialArrayEquation(v, Expression.makeCrefExp(c, tp), Expression.negate(e2));
-      then
-        (e12, e22);
-
-    case (_, _, DAE.ARRAY( tp, _, exps as ((DAE.UNARY(DAE.UMINUS(_), DAE.CREF(componentRef=c)) :: _))))
-      equation
-        (f::exps_1) = List.map(exps, Expression.expStripLastSubs); // Strip last subscripts
-        List.map1AllValue(exps_1, Expression.expEqual, true, f);
-        c = ComponentReference.crefStripLastSubs(c);
-        (e12, e22) = solveTrivialArrayEquation(v, Expression.negate(e2), Expression.makeCrefExp(c, tp));
-      then
-        (e12, e22);
-
-        // Solve simple linear equations.
-    case(_, _, _)
-      equation
-        e = Expression.expSub(e1, e2);
-        (res, _) = ExpressionSimplify.simplify(e);
-        (f, rhs) = Expression.getTermsContainingX(res, Expression.crefExp(v));
-        (vTerm, _) = ExpressionSimplify.simplify(f);
-        (e22, rhs) = solveTrivialArrayEquation2(vTerm, rhs);
-      then
-        (e22, rhs);
-
-        // not succeded to solve, return unsolved equation., catched later.
-    else (e1, e2);
-  end matchcontinue;
-end solveTrivialArrayEquation;
-
-protected function solveTrivialArrayEquation2
-"author: Frenkel TUD - 2012-07
-  helper for solveTrivialArrayEquation"
-  input DAE.Exp e1;
-  input DAE.Exp e2;
-  output DAE.Exp outE1;
-  output DAE.Exp outE2;
-algorithm
-  (outE1, outE2) := match(e1, e2)
-    local
-      DAE.Exp lhs, rhs;
-    case(DAE.CREF(), _)
-      equation
-        (rhs, _) = ExpressionSimplify.simplify(Expression.negate(e2));
-      then
-        (e1, rhs);
-
-    case(DAE.UNARY(exp=lhs as DAE.CREF()), _)
-      equation
-        (rhs, _) = ExpressionSimplify.simplify(e2);
-      then
-        (lhs, rhs);
-
-  end match;
-end solveTrivialArrayEquation2;
-
-protected function getVectorizedCrefFromExp "author: PA
-  Returns the component ref v if expression is on form
-   {v{1}, v{2}, ...v{n}}  for some n.
-  TODO: implement for 2D as well."
-  input DAE.Exp inExp;
-  output DAE.ComponentRef outComponentRef;
-algorithm
-  outComponentRef := match (inExp)
-    local
-      list<DAE.ComponentRef> crefs, crefs_1;
-      DAE.ComponentRef cr;
-      list<DAE.Exp> expl;
-      list<list<DAE.Exp>> column;
-
-    case (DAE.ARRAY(array = expl))
-      equation
-        ((crefs as (cr :: _))) = List.map(expl, Expression.expCref); // Get all CRefs from exp1.
-        crefs_1 = List.map(crefs, ComponentReference.crefStripLastSubs); // Strip last subscripts
-        List.reduce(crefs_1, ComponentReference.crefEqualReturn); // Check if elements are equal, remove one
-      then
-        cr;
-
-    case (DAE.MATRIX(matrix = column))
-      equation
-        expl = List.flatten(column);
-        ((crefs as (cr :: _))) = List.map(expl, Expression.expCref); // Get all CRefs from exp1.
-        crefs_1 = List.map(crefs, ComponentReference.crefStripLastSubs); // Strip last subscripts
-        List.reduce(crefs_1, ComponentReference.crefEqualReturn); // Check if elements are equal, remove one
-      then
-        cr;
-  end match;
-end getVectorizedCrefFromExp;
 
 // =============================================================================
 // section for ???
