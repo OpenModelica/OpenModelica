@@ -114,14 +114,14 @@ val(y4, 1.0);
 // 25: $CLKPRE.x2=x2 [Real[10] ]
 // 24: $CLKPRE.x3=x3 [Real[10] ]
 // 23: $CLKPRE.x4=x4 [Real[10] ]
-// 14 FOR-LOOP:  for i in (1:n) loop
+// 14 FOR-LOOP:  for i in (1:10) loop
 // x1[i]=if firstTick() then previous(x1[i]) else previous(x1[i]) + u[i][Real ]
 // end for;
 // 15: y1=sum(x1) [Real ]
 // 16: x2=ArrayEquationsTest.myfor(u, previous(x2), firstTick()) [Real[10] ]
 // 17: y2=sum(x2) [Real ]
 // 18: x3=if firstTick() then previous(x3) else previous(x3) + u [Real[10] ]
-// 19 FOR-LOOP:  for i in (1:n) loop
+// 19 FOR-LOOP:  for i in (1:10) loop
 // $DER.x4[i]=x3[i][Real ]
 // end for;
 // 20 FOR-LOOP:  for i in (1:10) loop
