@@ -6971,9 +6971,9 @@ match modelInfo
       /// Clocked synchronous equations
       void evaluateClocked(int index);
       <%clockedfuncs%>
-    <%additionalProtectedMembers%>
+      <%additionalProtectedMembers%>
       /*Additional member functions*/
-    <%extraFuncsDecl%>
+      <%extraFuncsDecl%>
    };
   >>
    /*! Equations Array. pointers to all the equation functions listed above stored in this
@@ -7842,7 +7842,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
       <<
       //StateVars
       <%List.partition(vars.stateVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineStateVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalStateVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+        memberVariableInitializeWithSplit(varPartition, i0, "initStateVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalStateVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
 
       void <%classname%>::initStateVars()
       {
@@ -7851,7 +7851,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //DerivativeVars
       <%List.partition(vars.derivativeVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineDerivativeVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalDerivativeVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
+        memberVariableInitializeWithSplit(varPartition, i0, "initDerivativeVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real", additionalDerivativeVarFunctionCalls, additionalConstructorVariables, additionalFunctionDefinitions) ;separator="\n"%>
 
       void <%classname%>::initDerivativeVars()
       {
@@ -7860,7 +7860,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //AlgVars
       <%List.partition(vars.algVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
+        memberVariableInitializeWithSplit(varPartition, i0, "initAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
                                           additionalAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
 
       void <%classname%>::initAlgVars()
@@ -7870,7 +7870,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //DiscreteAlgVars
       <%List.partition(vars.discreteAlgVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineDiscreteAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
+        memberVariableInitializeWithSplit(varPartition, i0, "initDiscreteAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
                                           additionalDiscreteAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
 
       void <%classname%>::initDiscreteAlgVars()
@@ -7880,7 +7880,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //IntAlgVars
       <%List.partition(vars.intAlgVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineIntAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
+        memberVariableInitializeWithSplit(varPartition, i0, "initIntAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
                                           additionalIntAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initIntAlgVars()
       {
@@ -7889,7 +7889,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //BoolAlgVars
       <%List.partition(vars.boolAlgVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineBoolAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
+        memberVariableInitializeWithSplit(varPartition, i0, "initBoolAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
                                           additionalBoolAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initBoolAlgVars()
       {
@@ -7898,7 +7898,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //StringAlgVars
       <%List.partition(vars.stringAlgVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineStringAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
+        memberVariableInitializeWithSplit(varPartition, i0, "initStringAlgVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
                                           additionalStringAlgVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initStringAlgVars()
       {
@@ -7907,7 +7907,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //ParameterRealVars
       <%List.partition(vars.paramVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
+        memberVariableInitializeWithSplit(varPartition, i0, "initParameterRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
                                           additionalParameterRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initParameterRealVars()
       {
@@ -7916,7 +7916,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //ParameterIntVars
       <%List.partition(vars.intParamVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
+        memberVariableInitializeWithSplit(varPartition, i0, "initParameterIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
                                           additionalParameterIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initParameterIntVars()
       {
@@ -7925,7 +7925,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //ParameterBoolVars
       <%List.partition(vars.boolParamVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
+        memberVariableInitializeWithSplit(varPartition, i0, "initParameterBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
                                           additionalParameterBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initParameterBoolVars()
       {
@@ -7934,7 +7934,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //ParameterStringVars
       <%List.partition(vars.stringParamVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineParameterStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
+        memberVariableInitializeWithSplit(varPartition, i0, "initParameterStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
                                           additionalParameterStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initParameterStringVars()
       {
@@ -7943,7 +7943,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //AliasRealVars
       <%List.partition(vars.aliasVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
+        memberVariableInitializeWithSplit(varPartition, i0, "initAliasRealVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesReal, useFlatArrayNotation, createDebugCode, "Real",
                                           additionalAliasRealVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initAliasRealVars()
       {
@@ -7952,7 +7952,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //AliasIntVars
       <%List.partition(vars.intAliasVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
+        memberVariableInitializeWithSplit(varPartition, i0, "initAliasIntVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesInt, useFlatArrayNotation, createDebugCode, "Int",
                                           additionalAliasIntVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initAliasIntVars()
       {
@@ -7961,7 +7961,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //AliasBoolVars
       <%List.partition(vars.boolAliasVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
+        memberVariableInitializeWithSplit(varPartition, i0, "initAliasBoolVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesBool, useFlatArrayNotation, createDebugCode, "Bool",
                                           additionalAliasBoolVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initAliasBoolVars()
       {
@@ -7970,7 +7970,7 @@ template memberVariableInitialize(ModelInfo modelInfo, HashTableCrIListArray.Has
 
       //AliasStringVars
       <%List.partition(vars.stringAliasVars, 100) |> varPartition hasindex i0 =>
-        memberVariableInitializeWithSplit(varPartition, i0, "defineAliasStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
+        memberVariableInitializeWithSplit(varPartition, i0, "initAliasStringVars", classname, varToArrayIndexMapping, indexForUndefinedReferencesString, useFlatArrayNotation, createDebugCode, "String",
                                           additionalAliasStringVarFunctionCalls,additionalConstructorVariables,additionalFunctionDefinitions) ;separator="\n"%>
       void <%classname%>::initAliasStringVars()
       {
