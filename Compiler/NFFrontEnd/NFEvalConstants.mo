@@ -211,6 +211,13 @@ algorithm
       then
         Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.source);
 
+    case Equation.FOR()
+      algorithm
+        eq.range := Util.applyOption(eq.range, evaluateExp);
+        eq.body := evaluateEquations(eq.body);
+      then
+        eq;
+
     case Equation.IF()
       algorithm
         eq.branches := list(evaluateEqBranch(b) for b in eq.branches);
