@@ -37,6 +37,7 @@ import sys
 import time
 import hashlib
 import base64
+import datetime
 from optparse import OptionParser
 
 import svgwrite
@@ -1235,6 +1236,7 @@ def main():
 
     logger.info('Application started')
     logger.info('Output directory: ' + output_dir)
+    print("%s Generating SVGs for package(s) %s" % (datetime.datetime.now(),PACKAGES_TO_GENERATE))
 
     for f in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
         output_dirx = os.path.join(output_dir, f)
@@ -1312,7 +1314,7 @@ def main():
           f_p.write('</html>\n')
 
       logger.info('HTML file is ready.')
-    print("Generated svg's for %d models in packages %s in %.1f seconds" % (len(dwgs),PACKAGES_TO_GENERATE,time.time()-t))
+    print("%s Generated SVGs for %d models in package(s) %s in %.1f seconds" % (datetime.datetime.now(),len(dwgs),PACKAGES_TO_GENERATE,time.time()-t))
 
     logger.info('End of application')
     return 0 if success else 1
