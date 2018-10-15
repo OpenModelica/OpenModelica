@@ -2629,7 +2629,7 @@ algorithm
       algs = List.filterOnTrue(elements,DAEUtil.isAlgorithm);
       stmtLstLst = List.map(algs,DAEUtil.getStatement);
       stmtLst1 = List.flatten(stmtLstLst);
-      expLst = List.fold1(stmtLst1,getStatementLHSScalar,funcTree,expsIn);
+      expLst = List.fold1(stmtLst1,getStatementLHSScalar,funcTree,{});
       outputCrefs = List.map(expLst,Expression.expCref);
 
       lhsCref = Expression.expCref(exp);
@@ -2638,18 +2638,21 @@ algorithm
       outputCrefs = List.map1(outputCrefs,ComponentReference.joinCrefsR,lhsCref);
 
       expLst = List.map(outputCrefs,Expression.crefExp);
-      expLst = listAppend(expLst,expsIn);
     then
-      expLst;
+      listAppend(expLst,expsIn);
+
   case(DAE.STMT_ASSIGN_ARR(lhs=exp),_,_)
     equation
       expLst = Expression.getComplexContents(exp);
-      expLst = listAppend(expLst,expsIn);
-    then expLst;
+    then
+      listAppend(expLst, expsIn);
+
   else
     equation
-      expLst = getStatementLHS(stmt,expsIn);
-    then expLst;
+      expLst = getStatementLHS(stmt,{});
+    then
+      listAppend(expLst, expsIn);
+
   end matchcontinue;
 end getStatementLHSScalar;
 
