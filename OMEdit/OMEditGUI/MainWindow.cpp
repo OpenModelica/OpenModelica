@@ -870,10 +870,21 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
   QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
   QSettings *pSettings = Utilities::getApplicationSettings();
-  QList<QString> platforms = pSettings->value("FMIExport/Platforms").toStringList();
+  QList<QString> platforms;
+  if (!pSettings->contains("FMIExport/Platforms")) {
+    QComboBox *pLinkingComboBox = OptionsDialog::instance()->getFMIPage()->getLinkingComboBox();
+    platforms.append(pLinkingComboBox->itemData(pLinkingComboBox->currentIndex()).toString());
+  } else {
+    platforms = pSettings->value("FMIExport/Platforms").toStringList();
+  }
   int index = platforms.indexOf("none");
   if (index > -1) {
     platforms.removeAt(index);
+  }
+  if (platforms.empty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                          GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
+                                                          Helper::scriptingKind, Helper::warningLevel));
   }
   QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
   if (!fmuFileName.isEmpty()) {

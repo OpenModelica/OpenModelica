@@ -760,6 +760,8 @@ QString GUIMessages::getMessage(int type)
       return tr("A component with the name <b>%1</b> already exists. The name is changed from <b>%1</b> to <b>%2</b>.<br /><br />This is probably wrong because the component is declared as <b>inner</b>.");
     case FMU_GENERATED:
       return tr("The FMU is generated at <b>%1</b>.");
+    case FMU_EMPTY_PLATFORMS:
+      return tr("A source-only FMU will be generated because an empty list of platforms is selected. If this is not intended, check settings in <b>%1->FMI->Platforms</b>.");
     case XML_GENERATED:
       return tr("The XML is generated at <b>%1</b>.");
     case FIGARO_GENERATED:
