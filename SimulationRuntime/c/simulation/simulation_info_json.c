@@ -375,7 +375,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 #if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_read mmap_reader = {0};
 #endif
-  rt_tick(0);
+  //rt_tick(0);
 #if !defined(OMC_NO_FILESYSTEM)
   if (!xml->infoXMLData) {
     const char *filename;

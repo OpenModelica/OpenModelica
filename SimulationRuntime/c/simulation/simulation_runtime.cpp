@@ -416,6 +416,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     rt_measure_overhead(SIM_TIMER_TOTAL);
     rt_clear(SIM_TIMER_TOTAL);
     rt_tick(SIM_TIMER_TOTAL);
+    rt_clear(SIM_TIMER_PREINIT);
     rt_tick(SIM_TIMER_PREINIT);
     rt_clear(SIM_TIMER_OUTPUT);
     rt_clear(SIM_TIMER_EVENT);
