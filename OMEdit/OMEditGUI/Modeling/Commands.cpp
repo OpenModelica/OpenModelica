@@ -36,6 +36,25 @@
 
 #include <QMessageBox>
 
+UndoCommand::UndoCommand(QUndoCommand *pParent)
+  : QUndoCommand(pParent), mFailed(false), mEnabled(true)
+{
+  setFailed(false);
+  setEnabled(true);
+}
+
+/*!
+ * \brief UndoCommand::redo
+ * Redo the command.
+ */
+void UndoCommand::redo()
+{
+  if (!isEnabled()) {
+    return;
+  }
+  redoInternal();
+}
+
 AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
@@ -57,10 +76,10 @@ AddShapeCommand::AddShapeCommand(ShapeAnnotation *pShapeAnnotation, UndoCommand 
 }
 
 /*!
- * \brief AddShapeCommand::redo
- * Redo the AddShapeCommand.
+ * \brief AddShapeCommand::redoInternal
+ * redoInternal the AddShapeCommand.
  */
-void AddShapeCommand::redo()
+void AddShapeCommand::redoInternal()
 {
   mpShapeAnnotation->getGraphicsView()->addShapeToList(mpShapeAnnotation, mIndex);
   mpShapeAnnotation->getGraphicsView()->addItem(mpShapeAnnotation);
@@ -104,10 +123,10 @@ UpdateShapeCommand::UpdateShapeCommand(ShapeAnnotation *pShapeAnnotation, QStrin
 }
 
 /*!
- * \brief UpdateShapeCommand::redo
- * Redo the UpdateShapeCommand.
+ * \brief UpdateShapeCommand::redoInternal
+ * redoInternal the UpdateShapeCommand.
  */
-void UpdateShapeCommand::redo()
+void UpdateShapeCommand::redoInternal()
 {
   mpShapeAnnotation->parseShapeAnnotation(mNewAnnotation);
   mpShapeAnnotation->initializeTransformation();
@@ -141,10 +160,10 @@ DeleteShapeCommand::DeleteShapeCommand(ShapeAnnotation *pShapeAnnotation, UndoCo
 }
 
 /*!
- * \brief DeleteShapeCommand::redo
- * Redo the DeleteShapeCommand.
+ * \brief DeleteShapeCommand::redoInternal
+ * redoInternal the DeleteShapeCommand.
  */
-void DeleteShapeCommand::redo()
+void DeleteShapeCommand::redoInternal()
 {
   mIndex = mpShapeAnnotation->getGraphicsView()->deleteShapeFromList(mpShapeAnnotation);
   mpShapeAnnotation->getGraphicsView()->removeItem(mpShapeAnnotation);
@@ -212,10 +231,10 @@ AddComponentCommand::AddComponentCommand(QString name, LibraryTreeItem *pLibrary
 }
 
 /*!
- * \brief AddComponentCommand::redo
- * Redo the AddComponentCommand.
+ * \brief AddComponentCommand::redoInternal
+ * redoInternal the AddComponentCommand.
  */
-void AddComponentCommand::redo()
+void AddComponentCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
@@ -301,10 +320,10 @@ UpdateComponentTransformationsCommand::UpdateComponentTransformationsCommand(Com
 }
 
 /*!
- * \brief UpdateComponentTransformationsCommand::redo
- * Redo the UpdateComponentTransformationsCommand.
+ * \brief UpdateComponentTransformationsCommand::redoInternal
+ * redoInternal the UpdateComponentTransformationsCommand.
  */
-void UpdateComponentTransformationsCommand::redo()
+void UpdateComponentTransformationsCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   if (mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isConnector() &&
@@ -378,10 +397,10 @@ UpdateComponentAttributesCommand::UpdateComponentAttributesCommand(Component *pC
 }
 
 /*!
- * \brief UpdateComponentAttributesCommand::redo
- * Redo the UpdateComponentAttributesCommand.
+ * \brief UpdateComponentAttributesCommand::redoInternal
+ * redoInternal the UpdateComponentAttributesCommand.
  */
-void UpdateComponentAttributesCommand::redo()
+void UpdateComponentAttributesCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
   QString modelName = pModelWidget->getLibraryTreeItem()->getNameStructure();
@@ -657,10 +676,10 @@ UpdateComponentParametersCommand::UpdateComponentParametersCommand(Component *pC
 }
 
 /*!
- * \brief UpdateComponentParametersCommand::redo
- * Redo the UpdateComponentParametersCommand.
+ * \brief UpdateComponentParametersCommand::redoInternal
+ * redoInternal the UpdateComponentParametersCommand.
  */
-void UpdateComponentParametersCommand::redo()
+void UpdateComponentParametersCommand::redoInternal()
 {
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
@@ -745,10 +764,10 @@ DeleteComponentCommand::DeleteComponentCommand(Component *pComponent, GraphicsVi
 }
 
 /*!
- * \brief DeleteComponentCommand::redo
- * Redo the DeleteComponentCommand.
+ * \brief DeleteComponentCommand::redoInternal
+ * redoInternal the DeleteComponentCommand.
  */
-void DeleteComponentCommand::redo()
+void DeleteComponentCommand::redoInternal()
 {
   ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
   // if component is of connector type && containing class is Modelica type.
@@ -835,14 +854,11 @@ AddConnectionCommand::AddConnectionCommand(LineAnnotation *pConnectionLineAnnota
 }
 
 /*!
- * \brief AddConnectionCommand::redo
- * Redo the AddConnectionCommand.
+ * \brief AddConnectionCommand::redoInternal
+ * redoInternal the AddConnectionCommand.
  */
-void AddConnectionCommand::redo()
+void AddConnectionCommand::redoInternal()
 {
-  if (!isEnabled()) {
-    return;
-  }
   if (mAddConnection) {
     if (!mpConnectionLineAnnotation->getGraphicsView()->addConnectionToClass(mpConnectionLineAnnotation)) {
       setFailed(true);
@@ -906,10 +922,10 @@ UpdateConnectionCommand::UpdateConnectionCommand(LineAnnotation *pConnectionLine
 }
 
 /*!
- * \brief UpdateConnectionCommand::redo
- * Redo the UpdateConnectionCommand.
+ * \brief UpdateConnectionCommand::redoInternal
+ * redoInternal the UpdateConnectionCommand.
  */
-void UpdateConnectionCommand::redo()
+void UpdateConnectionCommand::redoInternal()
 {
   mpConnectionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
   mpConnectionLineAnnotation->initializeTransformation();
@@ -952,10 +968,10 @@ UpdateCompositeModelConnection::UpdateCompositeModelConnection(LineAnnotation *p
 }
 
 /*!
- * \brief UpdateCompositeModelConnection::redo
- * Redo the UpdateCompositeModelConnection.
+ * \brief UpdateCompositeModelConnection::redoInternal
+ * redoInternal the UpdateCompositeModelConnection.
  */
-void UpdateCompositeModelConnection::redo()
+void UpdateCompositeModelConnection::redoInternal()
 {
   mpConnectionLineAnnotation->setDelay(mNewCompositeModelConnection.mDelay);
   mpConnectionLineAnnotation->setZf(mNewCompositeModelConnection.mZf);
@@ -984,10 +1000,10 @@ DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLine
 }
 
 /*!
- * \brief DeleteConnectionCommand::redo
- * Redo the DeleteConnectionCommand.
+ * \brief DeleteConnectionCommand::redoInternal
+ * redoInternal the DeleteConnectionCommand.
  */
-void DeleteConnectionCommand::redo()
+void DeleteConnectionCommand::redoInternal()
 {
   // Remove the start component connection details.
   Component *pStartComponent = mpConnectionLineAnnotation->getStartComponent();
@@ -1056,10 +1072,10 @@ AddTransitionCommand::AddTransitionCommand(LineAnnotation *pTransitionLineAnnota
 }
 
 /*!
- * \brief AddTransitionCommand::redo
- * Redo the AddTransitionCommand.
+ * \brief AddTransitionCommand::redoInternal
+ * redoInternal the AddTransitionCommand.
  */
-void AddTransitionCommand::redo()
+void AddTransitionCommand::redoInternal()
 {
   mpTransitionLineAnnotation->getGraphicsView()->addTransitionToList(mpTransitionLineAnnotation);
   // Add the start component transition details.
@@ -1147,10 +1163,10 @@ UpdateTransitionCommand::UpdateTransitionCommand(LineAnnotation *pTransitionLine
 }
 
 /*!
- * \brief UpdateTransitionCommand::redo
- * Redo the UpdateTransitionCommand.
+ * \brief UpdateTransitionCommand::redoInternal
+ * redoInternal the UpdateTransitionCommand.
  */
-void UpdateTransitionCommand::redo()
+void UpdateTransitionCommand::redoInternal()
 {
   mpTransitionLineAnnotation->parseShapeAnnotation(mNewAnnotation);
   mpTransitionLineAnnotation->initializeTransformation();
@@ -1219,10 +1235,10 @@ DeleteTransitionCommand::DeleteTransitionCommand(LineAnnotation *pTransitionLine
 }
 
 /*!
- * \brief DeleteTransitionCommand::redo
- * Redo the DeleteTransitionCommand.
+ * \brief DeleteTransitionCommand::redoInternal
+ * redoInternal the DeleteTransitionCommand.
  */
-void DeleteTransitionCommand::redo()
+void DeleteTransitionCommand::redoInternal()
 {
   mpTransitionLineAnnotation->getGraphicsView()->deleteTransitionFromList(mpTransitionLineAnnotation);
   // Remove the start component connection details.
@@ -1291,10 +1307,10 @@ AddInitialStateCommand::AddInitialStateCommand(LineAnnotation *pInitialStateLine
 }
 
 /*!
- * \brief AddInitialStateCommand::redo
- * Redo the AddInitialStateCommand.
+ * \brief AddInitialStateCommand::redoInternal
+ * redoInternal the AddInitialStateCommand.
  */
-void AddInitialStateCommand::redo()
+void AddInitialStateCommand::redoInternal()
 {
   mpInitialStateLineAnnotation->getGraphicsView()->addInitialStateToList(mpInitialStateLineAnnotation);
   // Add the start component transition details.
@@ -1345,10 +1361,10 @@ UpdateInitialStateCommand::UpdateInitialStateCommand(LineAnnotation *pInitialSta
 }
 
 /*!
- * \brief UpdateInitialStateCommand::redo
- * Redo the UpdateInitialStateCommand.
+ * \brief UpdateInitialStateCommand::redoInternal
+ * redoInternal the UpdateInitialStateCommand.
  */
-void UpdateInitialStateCommand::redo()
+void UpdateInitialStateCommand::redoInternal()
 {
   mpInitialStateLineAnnotation->parseShapeAnnotation(mNewAnnotation);
   mpInitialStateLineAnnotation->initializeTransformation();
@@ -1385,10 +1401,10 @@ DeleteInitialStateCommand::DeleteInitialStateCommand(LineAnnotation *pInitialSta
 }
 
 /*!
- * \brief DeleteInitialStateCommand::redo
- * Redo the DeleteInitialStateCommand.
+ * \brief DeleteInitialStateCommand::redoInternal
+ * redoInternal the DeleteInitialStateCommand.
  */
-void DeleteInitialStateCommand::redo()
+void DeleteInitialStateCommand::redoInternal()
 {
   mpInitialStateLineAnnotation->getGraphicsView()->deleteInitialStateFromList(mpInitialStateLineAnnotation);
   // Remove the start component connection details.
@@ -1447,10 +1463,10 @@ UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGrap
 }
 
 /*!
- * \brief UpdateClassCoOrdinateSystemCommand::redo
- * Redo the UpdateClassCoOrdinateSystemCommand.
+ * \brief UpdateClassCoOrdinateSystemCommand::redoInternal
+ * redoInternal the UpdateClassCoOrdinateSystemCommand.
  */
-void UpdateCoOrdinateSystemCommand::redo()
+void UpdateCoOrdinateSystemCommand::redoInternal()
 {
   mpGraphicsView->mCoOrdinateSystem = mNewCoOrdinateSystem;
   qreal left = mNewCoOrdinateSystem.getExtent().at(0).x();
@@ -1567,10 +1583,10 @@ UpdateClassAnnotationCommand::UpdateClassAnnotationCommand(LibraryTreeItem *pLib
 }
 
 /*!
- * \brief UpdateClassAnnotationCommand::redo
- * Redo the UpdateClassAnnotationCommand.
+ * \brief UpdateClassAnnotationCommand::redoInternal
+ * redoInternal the UpdateClassAnnotationCommand.
  */
-void UpdateClassAnnotationCommand::redo()
+void UpdateClassAnnotationCommand::redoInternal()
 {
   MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewAnnotation);
 }
@@ -1596,10 +1612,10 @@ UpdateClassSimulationFlagsAnnotationCommand::UpdateClassSimulationFlagsAnnotatio
 }
 
 /*!
- * \brief UpdateClassSimulationFlagsAnnotationCommand::redo
- * Redo the UpdateClassSimulationFlagsAnnotationCommand.
+ * \brief UpdateClassSimulationFlagsAnnotationCommand::redoInternal
+ * redoInternal the UpdateClassSimulationFlagsAnnotationCommand.
  */
-void UpdateClassSimulationFlagsAnnotationCommand::redo()
+void UpdateClassSimulationFlagsAnnotationCommand::redoInternal()
 {
   MainWindow::instance()->getOMCProxy()->addClassAnnotation(mpLibraryTreeItem->getNameStructure(), mNewSimulationFlags);
 }
@@ -1631,10 +1647,10 @@ UpdateSubModelAttributesCommand::UpdateSubModelAttributesCommand(Component *pCom
 }
 
 /*!
- * \brief UpdateSubModelAttributesCommand::redo
- * Redo the UpdateSubModelAttributesCommand.
+ * \brief UpdateSubModelAttributesCommand::redoInternal
+ * redoInternal the UpdateSubModelAttributesCommand.
  */
-void UpdateSubModelAttributesCommand::redo()
+void UpdateSubModelAttributesCommand::redoInternal()
 {
   CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpComponent->getGraphicsView()->getModelWidget()->getEditor());
   pCompositeModelEditor->updateSubModelParameters(mpComponent->getName(), mNewComponentInfo.getStartCommand(),
@@ -1683,10 +1699,10 @@ UpdateSimulationParamsCommand::UpdateSimulationParamsCommand(LibraryTreeItem *pL
 }
 
 /*!
- * \brief UpdateSimulationParamsCommand::redo
- * Redo the UpdateSimulationParamsCommand.
+ * \brief UpdateSimulationParamsCommand::redoInternal
+ * redoInternal the UpdateSimulationParamsCommand.
  */
-void UpdateSimulationParamsCommand::redo()
+void UpdateSimulationParamsCommand::redoInternal()
 {
   CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpLibraryTreeItem->getModelWidget()->getEditor());
   pCompositeModelEditor->updateSimulationParams(mNewStartTime, mNewStopTime);
@@ -1726,10 +1742,10 @@ AlignInterfacesCommand::AlignInterfacesCommand(CompositeModelEditor *pCompositeM
 }
 
 /*!
- * \brief AlignInterfacesCommand::redo
- * Redo the align interfaces command
+ * \brief AlignInterfacesCommand::redoInternal
+ * redoInternal the align interfaces command
  */
-void AlignInterfacesCommand::redo()
+void AlignInterfacesCommand::redoInternal()
 {
   mpCompositeModelEditor->updateSubModelOrientation(mFromInterface.split(".").first(), mNewPos, mNewRot);
   //qDebug() << mpCompositeModelEditor->interfacesAligned(mFromInterface, mToInterface);
@@ -1762,10 +1778,10 @@ RenameCompositeModelCommand::RenameCompositeModelCommand(CompositeModelEditor *p
 }
 
 /*!
- * \brief RenameCompositeModelCommand::redo
- * Redo the rename CompositeModel command
+ * \brief RenameCompositeModelCommand::redoInternal
+ * redoInternal the rename CompositeModel command
  */
-void RenameCompositeModelCommand::redo()
+void RenameCompositeModelCommand::redoInternal()
 {
   mpCompositeModelEditor->setCompositeModelName(mNewCompositeModelName);
   mpCompositeModelEditor->getModelWidget()->getLibraryTreeItem()->setName(mNewCompositeModelName);
@@ -1795,7 +1811,7 @@ void RenameCompositeModelCommand::undo()
  * \param pParent
  */
 AddSystemCommand::AddSystemCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
-                                         bool openingClass, oms_system_enu_t type, UndoCommand *pParent)
+                                   bool openingClass, oms_system_enu_t type, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mName = name;
@@ -1808,14 +1824,11 @@ AddSystemCommand::AddSystemCommand(QString name, LibraryTreeItem *pLibraryTreeIt
 }
 
 /*!
- * \brief AddSystemCommand::redo
- * Redo the AddSystemCommand.
+ * \brief AddSystemCommand::redoInternal
+ * redoInternal the AddSystemCommand.
  */
-void AddSystemCommand::redo()
+void AddSystemCommand::redoInternal()
 {
-  if (!isEnabled()) {
-    return;
-  }
   LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {
@@ -1895,10 +1908,10 @@ AddSubModelCommand::AddSubModelCommand(QString name, QString path, LibraryTreeIt
 }
 
 /*!
- * \brief AddSubModelCommand::redo
- * Redo the AddSubModelCommand.
+ * \brief AddSubModelCommand::redoInternal
+ * redoInternal the AddSubModelCommand.
  */
-void AddSubModelCommand::redo()
+void AddSubModelCommand::redoInternal()
 {
   if (!mOpeningClass) {
     mpGraphicsView->addSubModel(mName, mPath);
@@ -1969,10 +1982,10 @@ DeleteSubModelCommand::DeleteSubModelCommand(Component *pComponent, GraphicsView
 }
 
 /*!
- * \brief DeleteSubModelCommand::redo
- * Redo the DeleteSubModelCommand.
+ * \brief DeleteSubModelCommand::redoInternal
+ * redoInternal the DeleteSubModelCommand.
  */
-void DeleteSubModelCommand::redo()
+void DeleteSubModelCommand::redoInternal()
 {
   // delete the submodel
   mpGraphicsView->deleteSubModel(mpComponent->getName());
@@ -2042,14 +2055,11 @@ AddConnectorCommand::AddConnectorCommand(QString name, LibraryTreeItem *pLibrary
 }
 
 /*!
- * \brief AddConnectorCommand::redo
- * Redo the AddConnectorCommand.
+ * \brief AddConnectorCommand::redoInternal
+ * redoInternal the AddConnectorCommand.
  */
-void AddConnectorCommand::redo()
+void AddConnectorCommand::redoInternal()
 {
-  if (!isEnabled()) {
-    return;
-  }
   LibraryTreeItem *pParentLibraryTreeItem = mpIconGraphicsView->getModelWidget()->getLibraryTreeItem();
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {
@@ -2125,10 +2135,10 @@ FMUPropertiesCommand::FMUPropertiesCommand(Component *pComponent, QString name, 
 }
 
 /*!
- * \brief FMUPropertiesCommand::redo
- * Redo the FMUPropertiesCommand
+ * \brief FMUPropertiesCommand::redoInternal
+ * redoInternal the FMUPropertiesCommand
  */
-void FMUPropertiesCommand::redo()
+void FMUPropertiesCommand::redoInternal()
 {
   // Parameters
   int parametersIndex = 0;
@@ -2150,13 +2160,13 @@ void FMUPropertiesCommand::redo()
           OMSProxy::instance()->setBooleanParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
                                                                          name).toStdString().c_str(), parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() oms_signal_type_enum not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_bus) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() oms_signal_type_bus not implemented yet.";
         } else {
-          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() unknown oms_signal_type_enu_t.";
         }
       } else if (pInterfaces[i]->causality == oms_causality_input) {
         QString inputValue = mNewFMUProperties.mInputValues.at(inputsIndex);
@@ -2171,13 +2181,13 @@ void FMUPropertiesCommand::redo()
           OMSProxy::instance()->setBoolean(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
                                                                 name).toStdString().c_str(), inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() oms_signal_type_enum not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_bus) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() oms_signal_type_bus not implemented yet.";
         } else {
-          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+          qDebug() << "FMUPropertiesCommand::redoInternal() unknown oms_signal_type_enu_t.";
         }
       }
     }
@@ -2210,13 +2220,13 @@ void FMUPropertiesCommand::undo()
           OMSProxy::instance()->setBooleanParameter(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
                                                                          name).toStdString().c_str(), parameterValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::undo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::undo() oms_signal_type_enum not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_bus) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::undo() oms_signal_type_bus not implemented yet.";
         } else {
-          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+          qDebug() << "FMUPropertiesCommand::undo() unknown oms_signal_type_enu_t.";
         }
       } else if (pInterfaces[i]->causality == oms_causality_input) {
         QString inputValue = mOldFMUProperties.mInputValues.at(inputsIndex);
@@ -2231,13 +2241,13 @@ void FMUPropertiesCommand::undo()
           OMSProxy::instance()->setBoolean(QString("%1:%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(),
                                                                 name).toStdString().c_str(), inputValue.toInt());
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_string not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::undo() oms_signal_type_string not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_enum not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::undo() oms_signal_type_enum not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_bus) {
-          qDebug() << "FMUPropertiesCommand::redo() oms_signal_type_bus not implemented yet.";
+          qDebug() << "FMUPropertiesCommand::undo() oms_signal_type_bus not implemented yet.";
         } else {
-          qDebug() << "FMUPropertiesCommand::redo() unknown oms_signal_type_enu_t.";
+          qDebug() << "FMUPropertiesCommand::undo() unknown oms_signal_type_enu_t.";
         }
       }
     }
@@ -2253,10 +2263,10 @@ AddIconCommand::AddIconCommand(QString icon, GraphicsView *pGraphicsView, UndoCo
 }
 
 /*!
- * \brief AddIconCommand::redo
- * Redo the AddIconCommand
+ * \brief AddIconCommand::redoInternal
+ * redoInternal the AddIconCommand
  */
-void AddIconCommand::redo()
+void AddIconCommand::redoInternal()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2338,10 +2348,10 @@ UpdateIconCommand::UpdateIconCommand(QString oldIcon, QString newIcon, ShapeAnno
 }
 
 /*!
- * \brief UpdateIconCommand::redo
- * Redo the UpdateIconCommand
+ * \brief UpdateIconCommand::redoInternal
+ * redoInternal the UpdateIconCommand
  */
-void UpdateIconCommand::redo()
+void UpdateIconCommand::redoInternal()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem();
@@ -2404,10 +2414,10 @@ DeleteIconCommand::DeleteIconCommand(QString icon, GraphicsView *pGraphicsView, 
 }
 
 /*!
- * \brief DeleteIconCommand::redo
- * Redo the DeleteIconCommand
+ * \brief DeleteIconCommand::redoInternal
+ * redoInternal the DeleteIconCommand
  */
-void DeleteIconCommand::redo()
+void DeleteIconCommand::redoInternal()
 {
   // update element ssd_element_geometry_t
   LibraryTreeItem *pElementLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
@@ -2489,10 +2499,10 @@ OMSRenameCommand::OMSRenameCommand(LibraryTreeItem *pLibraryTreeItem, QString na
 }
 
 /*!
- * \brief OMSRenameCommand::redo
- * Redo the OMSRenameCommand
+ * \brief OMSRenameCommand::redoInternal
+ * redoInternal the OMSRenameCommand
  */
-void OMSRenameCommand::redo()
+void OMSRenameCommand::redoInternal()
 {
   QString identOld = mpLibraryTreeItem->getNameStructure();
   QString identNew = mpLibraryTreeItem->parent()->getNameStructure().isEmpty() ? mNewName : mpLibraryTreeItem->parent()->getNameStructure() + "." + mNewName;
@@ -2547,14 +2557,11 @@ AddBusCommand::AddBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QS
 }
 
 /*!
- * \brief AddBusCommand::redo
- * Redo the AddBusCommand.
+ * \brief AddBusCommand::redoInternal
+ * redoInternal the AddBusCommand.
  */
-void AddBusCommand::redo()
+void AddBusCommand::redoInternal()
 {
-  if (!isEnabled()) {
-    return;
-  }
   LibraryTreeItem *pParentLibraryTreeItem = mpIconGraphicsView->getModelWidget()->getLibraryTreeItem();
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {
@@ -2608,20 +2615,26 @@ void AddBusCommand::undo()
 
 }
 
-AddConnectorToBusCommand::AddConnectorToBusCommand(QString bus, QString connecotr, UndoCommand *pParent)
+AddConnectorToBusCommand::AddConnectorToBusCommand(QString bus, QString connector, GraphicsView *pGraphicsView, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mBus = bus;
-  mConnector = connecotr;
+  mConnector = connector;
+  mpGraphicsView = pGraphicsView;
 }
 
 /*!
- * \brief AddConnectorToBusCommand::redo
- * Redo the AddConnectorToBusCommand.
+ * \brief AddConnectorToBusCommand::redoInternal
+ * redoInternal the AddConnectorToBusCommand.
  */
-void AddConnectorToBusCommand::redo()
+void AddConnectorToBusCommand::redoInternal()
 {
-  OMSProxy::instance()->addConnectorToBus(mBus.toStdString().c_str(), mConnector.toStdString().c_str());
+  if (!OMSProxy::instance()->addConnectorToBus(mBus.toStdString().c_str(), mConnector.toStdString().c_str())) {
+    setFailed(true);
+    return;
+  }
+  mpGraphicsView->getModelWidget()->associateBusWithConnector(StringHandler::getLastWordAfterDot(mBus),
+                                                              StringHandler::getLastWordAfterDot(mConnector));
 }
 
 /*!
@@ -2630,7 +2643,42 @@ void AddConnectorToBusCommand::redo()
  */
 void AddConnectorToBusCommand::undo()
 {
+  OMSProxy::instance()->deleteConnectorFromBus(mBus.toStdString().c_str(), mConnector.toStdString().c_str());
+  mpGraphicsView->getModelWidget()->dissociateBusWithConnector(StringHandler::getLastWordAfterDot(mBus),
+                                                               StringHandler::getLastWordAfterDot(mConnector));
+}
 
+DeleteConnectorFromBusCommand::DeleteConnectorFromBusCommand(QString bus, QString connector, GraphicsView *pGraphicsView, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mBus = bus;
+  mConnector = connector;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief DeleteConnectorFromBusCommand::redoInternal
+ * redoInternal the DeleteConnectorFromBusCommand.
+ */
+void DeleteConnectorFromBusCommand::redoInternal()
+{
+  if (!OMSProxy::instance()->deleteConnectorFromBus(mBus.toStdString().c_str(), mConnector.toStdString().c_str())) {
+    setFailed(true);
+    return;
+  }
+  mpGraphicsView->getModelWidget()->dissociateBusWithConnector(StringHandler::getLastWordAfterDot(mBus),
+                                                               StringHandler::getLastWordAfterDot(mConnector));
+}
+
+/*!
+ * \brief DeleteConnectorFromBusCommand::undo
+ * Undo the DeleteConnectorFromBusCommand.
+ */
+void DeleteConnectorFromBusCommand::undo()
+{
+  OMSProxy::instance()->addConnectorToBus(mBus.toStdString().c_str(), mConnector.toStdString().c_str());
+  mpGraphicsView->getModelWidget()->associateBusWithConnector(StringHandler::getLastWordAfterDot(mBus),
+                                                              StringHandler::getLastWordAfterDot(mConnector));
 }
 
 /*!
@@ -2664,14 +2712,11 @@ AddTLMBusCommand::AddTLMBusCommand(QString name, LibraryTreeItem *pLibraryTreeIt
 }
 
 /*!
- * \brief AddTLMBusCommand::redo
- * Redo the AddTLMBusCommand.
+ * \brief AddTLMBusCommand::redoInternal
+ * redoInternal the AddTLMBusCommand.
  */
-void AddTLMBusCommand::redo()
+void AddTLMBusCommand::redoInternal()
 {
-  if (!isEnabled()) {
-    return;
-  }
   LibraryTreeItem *pParentLibraryTreeItem = mpIconGraphicsView->getModelWidget()->getLibraryTreeItem();
   QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {

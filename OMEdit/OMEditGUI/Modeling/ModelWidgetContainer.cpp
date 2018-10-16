@@ -2439,7 +2439,7 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
           return;
         } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
           removeCurrentConnection();
-          pRootComponent->showFMUPropertiesDialog();
+          pRootComponent->handleOMSComponentDoubleClick();
           return;
         } else {
           removeCurrentConnection();
@@ -3055,7 +3055,7 @@ void UndoStack::push(UndoCommand *cmd)
      * command redo function and we already called redo once so we don't want to call it here.
      * Enable the command after the push is done.
      */
-    cmd->redo();
+    cmd->redoInternal();
     if (cmd->isFailed()) {
       delete cmd;
     } else {
@@ -4971,6 +4971,44 @@ void ModelWidget::updateViewButtonsBasedOnAccess()
 }
 
 /*!
+ * \brief ModelWidget::associateBusWithConnector
+ * Associates the bus component with the connector component.
+ * \param busName
+ * \param connectorName
+ */
+void ModelWidget::associateBusWithConnector(QString busName, QString connectorName)
+{
+  associateBusWithConnector(busName, connectorName, mpIconGraphicsView);
+  associateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
+}
+
+/*!
+ * \brief ModelWidget::dissociateBusWithConnector
+ * Dissociate the bus component with the connector component.
+ * \param busName
+ * \param connectorName
+ */
+void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorName)
+{
+  dissociateBusWithConnector(busName, connectorName, mpIconGraphicsView);
+  dissociateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
+}
+
+/*!
+ * \brief ModelWidget::associateBusWithConnectors
+ * Associates the bus component with each of its connector component.
+ * \param busName
+ */
+void ModelWidget::associateBusWithConnectors(QString busName)
+{
+  // get the bus component
+  Component *pIconBusComponent = mpIconGraphicsView->getComponentObject(busName);
+  associateBusWithConnectors(pIconBusComponent, mpIconGraphicsView);
+  Component *pDiagramBusComponent = mpDiagramGraphicsView->getComponentObject(busName);
+  associateBusWithConnectors(pDiagramBusComponent, mpDiagramGraphicsView);
+}
+
+/*!
  * \brief ModelWidget::getModelInheritedClasses
  * Gets the class inherited classes.
  */
@@ -5750,6 +5788,8 @@ void ModelWidget::drawOMSModelIconElements()
         AddBusCommand *pAddBusCommand = new AddBusCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
                                                           annotation, mpIconGraphicsView, true);
         mpUndoStack->push(pAddBusCommand);
+        // assoicated the bus component with each of its connector component
+        associateBusWithConnectors(pChildLibraryTreeItem->getName());
       } else if (pChildLibraryTreeItem->getOMSTLMBusConnector()) {
         double x = 0.5;
         double y = 0.5;
@@ -6059,6 +6099,61 @@ void ModelWidget::drawOMSModelConnections()
           pConnectionLineAnnotation->setEndComponentName(pEndConnectorComponent->getLibraryTreeItem()->getNameStructure());
         }
         mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
+      }
+    }
+  }
+}
+
+/*!
+ * \brief ModelWidget::associateBusWithConnector
+ * Helper function for ModelWidget::associateBusWithConnector(busName, connectorName)
+ * \param busName
+ * \param connectorName
+ * \param pGraphicsView
+ */
+void ModelWidget::associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView)
+{
+  // get the bus component
+  Component *pBusComponent = pGraphicsView->getComponentObject(busName);
+  Component *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
+  if (pBusComponent && pConnectorComponent) {
+    pConnectorComponent->addBusComponent(pBusComponent);
+  }
+}
+
+/*!
+ * \brief ModelWidget::dissociateBusWithConnector
+ * Helper function for ModelWidget::dissociateBusWithConnector(busName, connectorName)
+ * \param busName
+ * \param connectorName
+ * \param pGraphicsView
+ */
+void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView)
+{
+  // get the bus component
+  Component *pBusComponent = pGraphicsView->getComponentObject(busName);
+  Component *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
+  if (pBusComponent && pConnectorComponent) {
+    pConnectorComponent->removeBusComponent(pBusComponent);
+  }
+}
+
+/*!
+ * \brief ModelWidget::associateBusWithConnectors
+ * Helper function for ModelWidget::associateBusWithConnectors(busName)
+ * \param pBusComponent
+ * \param pGraphicsView
+ */
+void ModelWidget::associateBusWithConnectors(Component *pBusComponent, GraphicsView *pGraphicsView)
+{
+  if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSBusConnector()) {
+    oms3_busconnector_t *pBusConnector = pBusComponent->getLibraryTreeItem()->getOMSBusConnector();
+    if (pBusConnector->connectors) {
+      for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
+        Component *pConnectorComponent = pGraphicsView->getComponentObject(QString(pBusConnector->connectors[i]));
+        if (pConnectorComponent) {
+          pConnectorComponent->addBusComponent(pBusComponent);
+        }
       }
     }
   }
@@ -7099,7 +7194,7 @@ void ModelWidgetContainer::addBus()
         components.append(pComponent);
       }
     }
-    AddBusDialog *pAddBusDialog = new AddBusDialog(components, pGraphicsView);
+    AddBusDialog *pAddBusDialog = new AddBusDialog(components, 0, pGraphicsView);
     pAddBusDialog->exec();
   }
 }

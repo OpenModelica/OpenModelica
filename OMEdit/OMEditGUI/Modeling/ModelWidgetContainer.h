@@ -435,6 +435,9 @@ public:
   void beginMacro(const QString &text);
   void endMacro();
   void updateViewButtonsBasedOnAccess();
+  void associateBusWithConnector(QString busName, QString connectorName);
+  void dissociateBusWithConnector(QString busName, QString connectorName);
+  void associateBusWithConnectors(QString busName);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
@@ -492,6 +495,9 @@ private:
   void drawOMSModelIconElements();
   void drawOMSModelDiagramElements();
   void drawOMSModelConnections();
+  void associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
+  void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
+  void associateBusWithConnectors(Component *pBusComponent, GraphicsView *pGraphicsView);
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);

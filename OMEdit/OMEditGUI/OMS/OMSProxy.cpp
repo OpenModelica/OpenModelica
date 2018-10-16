@@ -437,6 +437,24 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
 }
 
 /*!
+ * \brief OMSProxy::deleteConnectorFromBus
+ * Deletes a connector from a bus.
+ * \param busCref
+ * \param connectorCref
+ * \return
+ */
+bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
+{
+  QString command = "oms3_deleteConnectorFromBus";
+  QStringList args;
+  args << busCref << connectorCref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_deleteConnectorFromBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::addTLMBus
  * Adds a tlm bus.
  * \param cref

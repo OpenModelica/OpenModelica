@@ -76,6 +76,7 @@ public:
   bool addBus(QString cref);
   bool getBus(QString cref, oms3_busconnector_t** pBusConnector);
   bool addConnectorToBus(QString busCref, QString connectorCref);
+  bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool addTLMBus(QString cref, QString domain, int dimensions, const oms_tlm_interpolation_t interpolation);
   bool getTLMBus(QString cref, oms3_tlmbusconnector_t** pTLMBusConnector);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);

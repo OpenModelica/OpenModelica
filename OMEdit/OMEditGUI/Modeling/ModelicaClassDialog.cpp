@@ -2195,9 +2195,11 @@ void AddSystemDialog::addSystem()
   AddSystemCommand *pAddSystemCommand = new AddSystemCommand(mpSystemWidget->getNameTextBox()->text(), 0, annotation,
                                                              mpGraphicsView, false, systemType);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSystemCommand);
-  mpGraphicsView->getModelWidget()->updateModelText();
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  accept();
+  if (!pAddSystemCommand->isFailed()) {
+    mpGraphicsView->getModelWidget()->updateModelText();
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+    accept();
+  }
 }
 
 /*!
@@ -2391,7 +2393,9 @@ void AddConnectorDialog::addConnector()
                                                                       (oms_causality_enu_t)mpCausalityComboBox->itemData(mpCausalityComboBox->currentIndex()).toInt(),
                                                                       (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorCommand);
-  mpGraphicsView->getModelWidget()->updateModelText();
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  accept();
+  if (!pAddConnectorCommand->isFailed()) {
+    mpGraphicsView->getModelWidget()->updateModelText();
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+    accept();
+  }
 }

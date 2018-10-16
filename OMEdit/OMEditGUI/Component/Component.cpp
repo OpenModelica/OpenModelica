@@ -38,6 +38,7 @@
 #include "FMUProperties.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
+#include "Modeling/BusDialog.h"
 
 #include <QMessageBox>
 #include <QMenu>
@@ -462,6 +463,7 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mBusComponents.clear();
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
@@ -538,6 +540,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mBusComponents.clear();
   drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
   setChoicesAnnotation(QStringList());
@@ -575,6 +578,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mBusComponents.clear();
   if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     if (mpLibraryTreeItem->getOMSConnector() && mpReferenceComponent->getInputOutputComponentPolygon()) {
       mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getInputOutputComponentPolygon(), this));
@@ -637,6 +641,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mBusComponents.clear();
   drawComponent();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -684,6 +689,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
+  mBusComponents.clear();
 
   if (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
     if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Mechanical)) {
@@ -1461,6 +1467,20 @@ void Component::updateComponentTransformations(const Transformation &oldTransfor
 }
 
 /*!
+ * \brief Component::handleOMSComponentDoubleClick
+ * Handles the mouse double click for OMS component.
+ */
+void Component::handleOMSComponentDoubleClick()
+{
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSBusConnector()) {
+    AddBusDialog *pAddBusDialog = new AddBusDialog(QList<Component*>(), mpLibraryTreeItem, mpGraphicsView);
+    pAddBusDialog->exec();
+  } else if (mpLibraryTreeItem && mpLibraryTreeItem->getFMUInfo()) {
+    showFMUPropertiesDialog();
+  }
+}
+
+/*!
  * \brief Component::createNonExistingComponent
  * Creates a non-existing component.
  */
@@ -1539,8 +1559,10 @@ void Component::drawOMSComponent()
     drawOMSComponentShapes();
     // draw connectors now
     foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
-      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
-      mComponentsList.append(pNewComponent);
+      if (!pComponent->isInBus()) {
+        Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
+        mComponentsList.append(pNewComponent);
+      }
     }
   } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
     if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {

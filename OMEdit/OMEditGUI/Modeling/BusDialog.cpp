@@ -56,6 +56,25 @@ ConnectorItem::ConnectorItem(Component *pComponent, ConnectorItem *pParent)
   mChecked = false;
 }
 
+Qt::CheckState ConnectorItem::checkState() const
+{
+  if (mpComponent) {
+    return isChecked() ? Qt::Checked : Qt::Unchecked;
+  } else {
+    if (mChildren.isEmpty()) {
+      return Qt::Unchecked;
+    }
+    Qt::CheckState state = mChildren.first()->checkState();
+    foreach (ConnectorItem *pConnectorItem, mChildren) {
+      Qt::CheckState connectorState = pConnectorItem->checkState();
+      if (connectorState != state) {
+        return Qt::PartiallyChecked;
+      }
+    }
+    return state;
+  }
+}
+
 /*!
  * \brief ConnectorItem::row
  * Returns the row number corresponding to ConnectorItem.
@@ -68,53 +87,6 @@ int ConnectorItem::row() const
   }
 
   return 0;
-}
-
-/*!
- * \brief ConnectorItem::setData
- * Updates the item data.
- * \param column
- * \param value
- * \param role
- * \return
- */
-bool ConnectorItem::setData(int column, const QVariant &value, int role)
-{
-  if (column == 0 && role == Qt::CheckStateRole) {
-    if (value.toInt() == Qt::Checked) {
-      setChecked(true);
-    } else if (value.toInt() == Qt::Unchecked) {
-      setChecked(false);
-    }
-    return true;
-  }
-  return false;
-}
-
-/*!
- * \brief ConnectorItem::data
- * Returns the data stored under the given role for the item referred to by the column.
- * \param column
- * \param role
- * \return
- */
-QVariant ConnectorItem::data(int column, int role) const
-{
-  switch (column) {
-    case 0:
-      switch (role) {
-        case Qt::DisplayRole:
-          return mpComponent->getLibraryTreeItem() ? mpComponent->getLibraryTreeItem()->getNameStructure() : "";
-        case Qt::ToolTipRole:
-          return mpComponent->getLibraryTreeItem() ? mpComponent->getLibraryTreeItem()->getNameStructure() : "";
-        case Qt::CheckStateRole:
-          return isChecked() ? Qt::Checked : Qt::Unchecked;
-        default:
-          return QVariant();
-      }
-    default:
-      return QVariant();
-  }
 }
 
 /*!
@@ -163,23 +135,6 @@ int ConnectorsModel::rowCount(const QModelIndex &parent) const
     pParentConnectorItem = static_cast<ConnectorItem*>(parent.internalPointer());
   }
   return pParentConnectorItem->childrenSize();
-}
-
-/*!
- * \brief ConnectorsModel::headerData
- * Returns the data for the given role and section in the header with the specified orientation.
- * \param section
- * \param orientation
- * \param role
- * \return
- */
-QVariant ConnectorsModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
-  Q_UNUSED(section);
-  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
-    return Helper::libraries;
-  }
-  return QVariant();
 }
 
 /*!
@@ -245,9 +200,27 @@ bool ConnectorsModel::setData(const QModelIndex &index, const QVariant &value, i
   if (!pConnectorItem) {
     return false;
   }
-  bool result = pConnectorItem->setData(index.column(), value, role);
-  emit dataChanged(index, index);
-  return result;
+
+  if (index.column() == 0 && role == Qt::CheckStateRole) {
+    if (pConnectorItem->getComponent()) {
+      if (value.toInt() == Qt::Checked) {
+        pConnectorItem->setChecked(true);
+      } else if (value.toInt() == Qt::Unchecked) {
+        pConnectorItem->setChecked(false);
+      }
+      emit dataChanged(index, index);
+      const QModelIndex parentIndex = createIndex(pConnectorItem->parent()->row(), 0, pConnectorItem->parent());
+      emit dataChanged(parentIndex, parentIndex);
+    } else {
+      for (int i = 0 ; i < pConnectorItem->childrenSize() ; i++) {
+        ConnectorItem *pChildConnectorItem = pConnectorItem->childAt(i);
+        QModelIndex childIndex = createIndex(pChildConnectorItem->row(), 0, pChildConnectorItem);
+        setData(childIndex, value, role);
+      }
+    }
+    return true;
+  }
+  return QAbstractItemModel::setData(index, value, role);
 }
 
 /*!
@@ -264,7 +237,38 @@ QVariant ConnectorsModel::data(const QModelIndex &index, int role) const
   }
 
   ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());
-  return pConnectorItem->data(index.column(), role);
+
+  switch (index.column()) {
+    case 0:
+      switch (role) {
+        case Qt::DisplayRole:
+          if (pConnectorItem->getComponent()) {
+            if (pConnectorItem->getComponent()->getLibraryTreeItem()) {
+              return pConnectorItem->getComponent()->getLibraryTreeItem()->getName();
+            } else {
+              return "";
+            }
+          } else {
+            return pConnectorItem->getText();
+          }
+        case Qt::ToolTipRole:
+          if (pConnectorItem->getComponent()) {
+            if (pConnectorItem->getComponent()->getLibraryTreeItem()) {
+              return pConnectorItem->getComponent()->getLibraryTreeItem()->getNameStructure();
+            } else {
+              return "";
+            }
+          } else {
+            return pConnectorItem->getText();
+          }
+        case Qt::CheckStateRole:
+          return pConnectorItem->checkState();
+        default:
+          return QVariant();
+      }
+    default:
+      return QVariant();
+  }
 }
 
 /*!
@@ -297,14 +301,15 @@ QModelIndex ConnectorsModel::connectorItemIndex(const ConnectorItem *pConnectorI
  * \brief ConnectorsModel::createConnectorItem
  * Creates the ConnectorItem and returns it.
  * \param pComponent
+ * \param pParent
  * \return
  */
-ConnectorItem* ConnectorsModel::createConnectorItem(Component *pComponent)
+ConnectorItem* ConnectorsModel::createConnectorItem(Component *pComponent, ConnectorItem *pParent)
 {
-  int row = mpRootConnectorItem->childrenSize();
-  beginInsertRows(connectorItemIndex(mpRootConnectorItem), row, row);
-  ConnectorItem *pConnectorItem = new ConnectorItem(pComponent, mpRootConnectorItem);
-  mpRootConnectorItem->insertChild(row, pConnectorItem);
+  int row = pParent->childrenSize();
+  beginInsertRows(connectorItemIndex(pParent), row, row);
+  ConnectorItem *pConnectorItem = new ConnectorItem(pComponent, pParent);
+  pParent->insertChild(row, pConnectorItem);
   endInsertRows();
   return pConnectorItem;
 }
@@ -341,51 +346,68 @@ QModelIndex ConnectorsModel::connectorItemIndexHelper(const ConnectorItem *pConn
 /*!
  * \brief AddBusDialog::AddBusDialog
  * \param components
+ * \param pLibraryTreeItem
  * \param pGraphicsView
  */
-AddBusDialog::AddBusDialog(QList<Component *> components, GraphicsView *pGraphicsView)
+AddBusDialog::AddBusDialog(QList<Component *> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::addBus));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(pLibraryTreeItem ? Helper::editBus : Helper::addBus));
   setMinimumWidth(400);
+  mpLibraryTreeItem = pLibraryTreeItem;
   mpGraphicsView = pGraphicsView;
   // set heading
-  mpHeading = Utilities::getHeadingLabel(Helper::addBus);
+  mpHeading = mpLibraryTreeItem ? Utilities::getHeadingLabel(Helper::editBus) : Utilities::getHeadingLabel(Helper::addBus);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // name
   mpNameLabel = new Label(Helper::name);
-  mpNameTextBox = new QLineEdit;
+  mpNameTextBox = new QLineEdit(mpLibraryTreeItem ? mpLibraryTreeItem->getName() : "");
   // input connectors
-  mpInputConnectorsLabel = new Label(tr("Input Connectors"));
   mpInputConnectorsTreeModel = new ConnectorsModel(this);
-  mpInputConnectorsListView = new QListView;
-  mpInputConnectorsListView->setModel(mpInputConnectorsTreeModel);
-  mpInputConnectorsListView->setItemDelegate(new ItemDelegate(mpInputConnectorsListView));
-  mpInputConnectorsListView->setTextElideMode(Qt::ElideMiddle);
+  mpInputConnectorsTreeView = new QTreeView;
+  mpInputConnectorsTreeView->setModel(mpInputConnectorsTreeModel);
+  mpInputConnectorsTreeView->setItemDelegate(new ItemDelegate(mpInputConnectorsTreeView));
+  mpInputConnectorsTreeView->setHeaderHidden(true);
+  mpInputConnectorsTreeView->setIndentation(Helper::treeIndentation);
+  mpInputConnectorsTreeView->setTextElideMode(Qt::ElideMiddle);
+  mpInputConnectorsTreeView->setUniformRowHeights(true);
+  // inputs item
+  ConnectorItem *pInputsConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(0, mpInputConnectorsTreeModel->getRootConnectorItem());
+  pInputsConnectorItem->setText("Input Connectors");
   // output connectors
-  mpOutputConnectorsLabel = new Label(tr("Output Connectors"));
   mpOutputConnectorsTreeModel = new ConnectorsModel(this);
-  mpOutputConnectorsListView = new QListView;
-  mpOutputConnectorsListView->setModel(mpOutputConnectorsTreeModel);
-  mpOutputConnectorsListView->setItemDelegate(new ItemDelegate(mpOutputConnectorsListView));
-  mpOutputConnectorsListView->setTextElideMode(Qt::ElideMiddle);
-  // add the connectors to input and output connectors list views
+  mpOutputConnectorsTreeView = new QTreeView;
+  mpOutputConnectorsTreeView->setModel(mpOutputConnectorsTreeModel);
+  mpOutputConnectorsTreeView->setItemDelegate(new ItemDelegate(mpOutputConnectorsTreeView));
+  mpOutputConnectorsTreeView->setHeaderHidden(true);
+  mpOutputConnectorsTreeView->setIndentation(Helper::treeIndentation);
+  mpOutputConnectorsTreeView->setTextElideMode(Qt::ElideMiddle);
+  mpOutputConnectorsTreeView->setUniformRowHeights(true);
+  // outputs item
+  ConnectorItem *pOutputsConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(0, mpOutputConnectorsTreeModel->getRootConnectorItem());
+  pOutputsConnectorItem->setText("Output Connectors");
+  // add the connectors to input and output connectors tree views
   foreach (Component* pComponent, mpGraphicsView->getComponentsList()) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()) {
       ConnectorItem *pConnectorItem = 0;
       if (pComponent->getLibraryTreeItem()->getOMSConnector()->causality == oms_causality_input) {
-        pConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(pComponent);
+        pConnectorItem = mpInputConnectorsTreeModel->createConnectorItem(pComponent, pInputsConnectorItem);
       } else if (pComponent->getLibraryTreeItem()->getOMSConnector()->causality == oms_causality_output) {
-        pConnectorItem = mpOutputConnectorsTreeModel->createConnectorItem(pComponent);
-      }
-      if (pConnectorItem && components.contains(pConnectorItem->getComponent())) {
-        pConnectorItem->setChecked(true);
-        components.removeOne(pComponent);
+        pConnectorItem = mpOutputConnectorsTreeModel->createConnectorItem(pComponent, pOutputsConnectorItem);
+      } else {
+        qDebug() << "AddBusDialog::AddBusDialog() unknown causality" << pComponent->getLibraryTreeItem()->getOMSConnector()->causality;
+        Q_UNUSED(pConnectorItem);
       }
     }
   }
+  // check which input connectors are already part of the bus
+  markExistingBusConnectors(pInputsConnectorItem, components);
+  // check which input connectors are already part of the bus
+  markExistingBusConnectors(pOutputsConnectorItem, components);
+  mpInputConnectorsTreeView->expandAll();
+  mpOutputConnectorsTreeView->expandAll();
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -404,12 +426,34 @@ AddBusDialog::AddBusDialog(QList<Component *> components, GraphicsView *pGraphic
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
   pMainLayout->addWidget(mpNameLabel, 2, 0);
   pMainLayout->addWidget(mpNameTextBox, 2, 1);
-  pMainLayout->addWidget(mpInputConnectorsLabel, 3, 0, 1, 2);
-  pMainLayout->addWidget(mpInputConnectorsListView, 4, 0, 1, 2);
-  pMainLayout->addWidget(mpOutputConnectorsLabel, 5, 0, 1, 2);
-  pMainLayout->addWidget(mpOutputConnectorsListView, 6, 0, 1, 2);
-  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpInputConnectorsTreeView, 3, 0, 1, 2);
+  pMainLayout->addWidget(mpOutputConnectorsTreeView, 4, 0, 1, 2);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief AddBusDialog::markExistingBusConnectors
+ * Mark the existing bus connectors checked.
+ * \param pParentConnectorItem
+ * \param components
+ */
+void AddBusDialog::markExistingBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component *> components)
+{
+  for (int i = 0 ; i < pParentConnectorItem->childrenSize() ; i++) {
+    ConnectorItem *pConnectorItem = pParentConnectorItem->childAt(i);
+    if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSBusConnector() && mpLibraryTreeItem->getOMSBusConnector()->connectors) {
+      for (int j = 0 ; mpLibraryTreeItem->getOMSBusConnector()->connectors[j] ; j++) {
+        if (pConnectorItem->getComponent()->getName().compare(QString(mpLibraryTreeItem->getOMSBusConnector()->connectors[j])) == 0) {
+          pConnectorItem->setChecked(true);
+          break;
+        }
+      }
+    } else if (pConnectorItem && components.contains(pConnectorItem->getComponent())) {
+      pConnectorItem->setChecked(true);
+      components.removeOne(pConnectorItem->getComponent());
+    }
+  }
 }
 
 /*!
@@ -424,22 +468,28 @@ void AddBusDialog::addBus()
     return;
   }
 
-  QList<Component*> components;
+  QStringList connectors;
   bool inputConnectorChecked = false;
-  for (int i = 0 ; i < mpInputConnectorsTreeModel->getRootConnectorItem()->childrenSize() ; i++) {
-    ConnectorItem *pConnectorItem = mpInputConnectorsTreeModel->getRootConnectorItem()->child(i);
-    if (pConnectorItem && pConnectorItem->isChecked()) {
-      inputConnectorChecked = true;
-      components.append(pConnectorItem->getComponent());
+  ConnectorItem *pInputConnectorsItem = mpInputConnectorsTreeModel->getRootConnectorItem()->childAt(0);
+  if (pInputConnectorsItem) {
+    for (int i = 0 ; i < pInputConnectorsItem->childrenSize() ; i++) {
+      ConnectorItem *pConnectorItem = pInputConnectorsItem->childAt(i);
+      if (pConnectorItem && pConnectorItem->isChecked()) {
+        inputConnectorChecked = true;
+        connectors.append(pConnectorItem->getComponent()->getLibraryTreeItem()->getNameStructure());
+      }
     }
   }
 
   bool outputConnectorChecked = false;
-  for (int i = 0 ; i < mpOutputConnectorsTreeModel->getRootConnectorItem()->childrenSize() ; i++) {
-    ConnectorItem *pConnectorItem = mpOutputConnectorsTreeModel->getRootConnectorItem()->child(i);
-    if (pConnectorItem && pConnectorItem->isChecked()) {
-      outputConnectorChecked = true;
-      components.append(pConnectorItem->getComponent());
+  ConnectorItem *pOutputConnectorsItem = mpOutputConnectorsTreeModel->getRootConnectorItem()->childAt(0);
+  if (pOutputConnectorsItem) {
+    for (int i = 0 ; i < pOutputConnectorsItem->childrenSize() ; i++) {
+      ConnectorItem *pConnectorItem = pOutputConnectorsItem->childAt(i);
+      if (pConnectorItem && pConnectorItem->isChecked()) {
+        outputConnectorChecked = true;
+        connectors.append(pConnectorItem->getComponent()->getLibraryTreeItem()->getNameStructure());
+      }
     }
   }
 
@@ -449,25 +499,57 @@ void AddBusDialog::addBus()
     return;
   }
 
-  mpGraphicsView->getModelWidget()->beginMacro("Add Bus");
-  QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
-                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
-                       .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
-  AddBusCommand *pAddBusCommand = new AddBusCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false);
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddBusCommand);
-  // add connectors to the bus
   LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   QString bus = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
-  foreach (Component *pComponent, components) {
-    if (pComponent->getLibraryTreeItem()) {
-      AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, pComponent->getLibraryTreeItem()->getNameStructure());
+
+  if (mpLibraryTreeItem) {  // edit case
+    mpGraphicsView->getModelWidget()->beginMacro("Edit Bus");
+
+    /*! @todo Rename the bus here.
+     */
+
+    QStringList existingConnectors;
+    if (mpLibraryTreeItem->getOMSBusConnector() && mpLibraryTreeItem->getOMSBusConnector()->connectors) {
+      for (int i = 0 ; mpLibraryTreeItem->getOMSBusConnector()->connectors[i] ; i++) {
+        existingConnectors.append(QString("%1.%2").arg(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure())
+                                  .arg(QString(mpLibraryTreeItem->getOMSBusConnector()->connectors[i])));
+      }
+    }
+
+    // add connectors to the bus
+    QSet<QString> addConnectors = connectors.toSet().subtract(existingConnectors.toSet());
+    foreach (QString connector, addConnectors) {
+      AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, connector, mpGraphicsView);
       mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
     }
+    // delete connectors from the bus
+    QSet<QString> deleteConnectors = existingConnectors.toSet().subtract(connectors.toSet());
+    foreach (QString connector, deleteConnectors) {
+      DeleteConnectorFromBusCommand *pDeleteConnectorFromBusCommand = new DeleteConnectorFromBusCommand(bus, connector, mpGraphicsView);
+      mpGraphicsView->getModelWidget()->getUndoStack()->push(pDeleteConnectorFromBusCommand);
+    }
+    accept();
+    mpGraphicsView->getModelWidget()->endMacro();
+  } else {  // add case
+    mpGraphicsView->getModelWidget()->beginMacro("Add Bus");
+    QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
+                         .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
+                         .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
+    AddBusCommand *pAddBusCommand = new AddBusCommand(mpNameTextBox->text(), 0, annotation, mpGraphicsView, false);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddBusCommand);
+    if (!pAddBusCommand->isFailed()) {
+      // add connectors to the bus
+      foreach (QString connector, connectors) {
+        AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, connector, mpGraphicsView);
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
+      }
+      mpGraphicsView->getModelWidget()->associateBusWithConnectors(mpNameTextBox->text());
+      mpGraphicsView->getModelWidget()->updateModelText();
+      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+      accept();
+    }
+    mpGraphicsView->getModelWidget()->endMacro();
   }
-  mpGraphicsView->getModelWidget()->updateModelText();
-  mpGraphicsView->getModelWidget()->endMacro();
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
-  accept();
 }
 
 /*!

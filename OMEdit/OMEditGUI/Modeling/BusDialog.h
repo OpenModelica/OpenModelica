@@ -37,7 +37,7 @@
 #include <QDialog>
 #include <QFrame>
 #include <QLineEdit>
-#include <QListWidget>
+#include <QTreeView>
 #include <QDialogButtonBox>
 #include <QSpinBox>
 #include <QComboBox>
@@ -48,18 +48,20 @@ class ConnectorItem : public QObject
   Q_OBJECT
 public:
   ConnectorItem(Component *pComponent, ConnectorItem *pParent);
+  QString getText() const {return mText;}
+  void setText(const QString &text) {mText = text;}
   Component* getComponent() {return mpComponent;}
   ConnectorItem* parent() const {return mpParentConnectorItem;}
   int childrenSize() const {return mChildren.size();}
   void insertChild(int row, ConnectorItem *pConnectorItem) {mChildren.insert(row, pConnectorItem);}
   ConnectorItem* child(int row) {return mChildren.value(row);}
   ConnectorItem* childAt(int index) const {return mChildren.at(index);}
+  Qt::CheckState checkState() const;
   bool isChecked() const {return mChecked;}
   void setChecked(bool checked) {mChecked = checked;}
   int row() const;
-  bool setData(int column, const QVariant &value, int role = Qt::EditRole);
-  QVariant data(int column, int role = Qt::DisplayRole) const;
 private:
+  QString mText;
   Component *mpComponent;
   ConnectorItem *mpParentConnectorItem;
   QList<ConnectorItem*> mChildren;
@@ -73,7 +75,6 @@ public:
   ConnectorsModel(QObject *parent = 0);
   int columnCount(const QModelIndex &parent = QModelIndex()) const;
   int rowCount(const QModelIndex &parent = QModelIndex()) const;
-  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
   QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
   QModelIndex parent(const QModelIndex & index) const;
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
@@ -81,35 +82,36 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const;
   QModelIndex connectorItemIndex(const ConnectorItem *pConnectorItem) const;
   ConnectorItem* getRootConnectorItem() {return mpRootConnectorItem;}
-  ConnectorItem* createConnectorItem(Component *pComponent);
+  ConnectorItem* createConnectorItem(Component *pComponent, ConnectorItem *pParent);
 private:
   ConnectorItem *mpRootConnectorItem;
   QModelIndex connectorItemIndexHelper(const ConnectorItem *pConnectorItem, const ConnectorItem *pParentConnectorItem,
                                        const QModelIndex &parentIndex) const;
 };
 
+class LibraryTreeItem;
 class GraphicsView;
 class Label;
 class AddBusDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddBusDialog(QList<Component*> components, GraphicsView *pGraphicsView);
+  AddBusDialog(QList<Component*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
 private:
+  LibraryTreeItem *mpLibraryTreeItem;
   GraphicsView *mpGraphicsView;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
-  Label *mpInputConnectorsLabel;
   ConnectorsModel *mpInputConnectorsTreeModel;
-  QListView *mpInputConnectorsListView;
-  Label *mpOutputConnectorsLabel;
+  QTreeView *mpInputConnectorsTreeView;
   ConnectorsModel *mpOutputConnectorsTreeModel;
-  QListView *mpOutputConnectorsListView;
+  QTreeView *mpOutputConnectorsTreeView;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  void markExistingBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component*> components);
 private slots:
   void addBus();
 };
