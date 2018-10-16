@@ -558,13 +558,16 @@ protected function findZeroCrossings1 "
   This function finds all zero-crossings in the list of equations and the list of when clauses."
   input BackendDAE.EqSystem inSyst;
   input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outSyst;
+  output BackendDAE.EqSystem outSyst = inSyst;
   output BackendDAE.Shared outShared;
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
+  BackendDAE.StrongComponents comps;
+  array<Integer> ass1, ass2;
+  BackendDAE.Matching matching;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns) := inSyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns, matching=matching ) := inSyst;
   (outSyst, outShared) := match BackendDAEUtil.getSubClock(inSyst, inShared)
     local
       BackendDAE.Variables globalKnownVars;
@@ -591,14 +594,22 @@ algorithm
         findZeroCrossings2( vars, globalKnownVars, eqs_lst, 0,
                             countMathFunctions, zero_crossings, relations, sampleLst, {});
         eqs_lst1 := listReverse(eqs_lst1);
+        eqns1 := BackendEquation.listEquation(eqs_lst1);
         if Flags.isSet(Flags.RELIDX) then
           print("findZeroCrossings1 number of relations: " + intString(DoubleEndedList.length(relations)) + "\n");
           print("findZeroCrossings1 sample index: " + intString(ZeroCrossings.length(sampleLst)) + "\n");
         end if;
-        eqns1 := BackendEquation.listEquation(eqs_lst1);
+        // replace zerocrossing expressions also in jacobian matrices
+        try
+          BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2) := matching;
+          comps := findZeroCrossingsinJacobians(comps, zero_crossings, relations, sampleLst, vars, globalKnownVars);
+          outSyst.orderedEqs := eqns1;
+          outSyst.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+        else
+        end try;
         einfo := BackendDAE.EVENT_INFO( timeEvents, zero_crossings, relations, sampleLst,
                                            countMathFunctions );
-      then (BackendDAEUtil.setEqSystEqs(inSyst, eqns1), BackendDAEUtil.setSharedEventInfo(inShared, einfo));
+      then (outSyst, BackendDAEUtil.setSharedEventInfo(inShared, einfo));
   end match;
 end findZeroCrossings1;
 
@@ -798,6 +809,130 @@ algorithm
     then (BackendDAE.IF_EQUATION(conditions, eqnsTrueLst, elseeqns, source_, eqAttr), countMathFunctions, zc, relations, samples);
   end match;
 end findZeroCrossingsIfEqns;
+
+protected function findZeroCrossingsinJacobians
+  input BackendDAE.StrongComponents inStrongComponents;
+  input BackendDAE.ZeroCrossingSet zeroCrossingLst;
+  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input BackendDAE.ZeroCrossingSet samplesLst;
+  input BackendDAE.Variables allVariables;
+  input BackendDAE.Variables globalKnownVars;
+  output BackendDAE.StrongComponents strongComponents = {};
+protected
+  BackendDAE.StrongComponent outComponent;
+algorithm
+  for component in inStrongComponents loop
+    outComponent := matchcontinue (component)
+      local
+        BackendDAE.StrongComponent comp;
+        BackendDAE.Jacobian jacobian;
+        BackendDAE.FullJacobian fullJacobian;
+        BackendDAE.SymbolicJacobian symJacobian;
+        BackendDAE.SparsePattern sparsePattern;
+        BackendDAE.SparseColoring coloring;
+        BackendDAE.TearingSet tearingSet;
+      case comp as BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN(jacobian=fullJacobian))
+        equation
+          fullJacobian = replaceZCExpinFullJacobian(fullJacobian, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
+          comp.jac = BackendDAE.FULL_JACOBIAN(jacobian=fullJacobian);
+        then comp;
+      case comp as BackendDAE.EQUATIONSYSTEM(jac=jacobian as BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern, coloring=coloring))
+        equation
+          symJacobian = replaceZCExpinSymJacobian(symJacobian, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
+          comp.jac = BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern,coloring=coloring);
+        then comp;
+      case comp as BackendDAE.TORNSYSTEM(strictTearingSet=tearingSet as BackendDAE.TEARINGSET(jac=jacobian as BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern, coloring=coloring)))
+        equation
+          symJacobian = replaceZCExpinSymJacobian(symJacobian, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
+          tearingSet.jac = BackendDAE.GENERIC_JACOBIAN(jacobian=SOME(symJacobian),sparsePattern=sparsePattern,coloring=coloring);
+          comp.strictTearingSet = tearingSet;
+        then comp;
+      else then component;
+    end matchcontinue;
+    strongComponents := outComponent::strongComponents;
+  end for;
+  strongComponents := listReverse(strongComponents);
+end findZeroCrossingsinJacobians;
+
+protected function replaceZCExpinFullJacobian
+  input BackendDAE.FullJacobian fullJac;
+  input BackendDAE.ZeroCrossingSet zeroCrossingLst;
+  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input BackendDAE.ZeroCrossingSet samplesLst;
+  input BackendDAE.Variables allVariables;
+  input BackendDAE.Variables globalKnownVars;
+  output BackendDAE.FullJacobian outFullJac;
+protected
+  list<tuple<Integer, Integer, BackendDAE.Equation>> jac, outJac = {};
+  Integer i,j;
+  BackendDAE.Equation eqn;
+  tuple<Integer, Integer, BackendDAE.Equation> element;
+algorithm
+  jac := Util.getOption(fullJac);
+  for element in jac loop
+    (i,j,eqn) := element;
+    (_, {eqn}, _, _, _) :=
+        findZeroCrossings2( allVariables, globalKnownVars, {eqn}, 0,
+                            0, zeroCrossingLst, relationsLst, samplesLst, {});
+    outJac := (i,j,eqn)::outJac;
+  end for;
+  outJac := listReverse(outJac);
+  outFullJac := SOME(outJac);
+end replaceZCExpinFullJacobian;
+
+protected function replaceZCExpinSymJacobian
+  input BackendDAE.SymbolicJacobian symJac;
+  input BackendDAE.ZeroCrossingSet zeroCrossingLst;
+  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input BackendDAE.ZeroCrossingSet samplesLst;
+  input BackendDAE.Variables allVariables;
+  input BackendDAE.Variables globalKnownVars;
+  output BackendDAE.SymbolicJacobian outSymJac;
+protected
+  BackendDAE.BackendDAE jacBDAE;
+  String name;
+  list<BackendDAE.Var> seedVars, tmpVars, resultVars;
+algorithm
+  (jacBDAE, name, seedVars, tmpVars, resultVars) := symJac;
+  jacBDAE := replaceZeroCrossingsJacBackend(jacBDAE, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
+  outSymJac := (jacBDAE, name, seedVars, tmpVars, resultVars);
+end replaceZCExpinSymJacobian;
+
+protected function replaceZeroCrossingsJacBackend
+  input BackendDAE.BackendDAE inBackendDAE;
+  input BackendDAE.ZeroCrossingSet zeroCrossingLst;
+  input DoubleEndedList<BackendDAE.ZeroCrossing> relationsLst;
+  input BackendDAE.ZeroCrossingSet samplesLst;
+  input BackendDAE.Variables allVariables;
+  input BackendDAE.Variables globalKnownVars;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.EqSystems eqs, outEqs = {};
+  list<BackendDAE.Equation> eqs_lst;
+  BackendDAE.Shared shared;
+  BackendDAE.StrongComponents comps;
+  array<Integer> ass1, ass2;
+  BackendDAE.Matching matching;
+algorithm
+  BackendDAE.DAE(eqs, shared) := inBackendDAE;
+  for system in eqs loop
+    eqs_lst := BackendEquation.equationList(system.orderedEqs);
+    (_, eqs_lst, _, _, _) :=
+       findZeroCrossings2(allVariables, globalKnownVars, eqs_lst, 0, 0, zeroCrossingLst, relationsLst, samplesLst, {});
+     eqns := BackendEquation.listEquation(listReverse(eqs_lst));
+     system.orderedEqs := eqns;
+     // componenents of the jacobian
+     BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2) := system.matching;
+     comps := findZeroCrossingsinJacobians(comps, zeroCrossingLst, relationsLst, samplesLst, allVariables, globalKnownVars);
+     matching := BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2);
+     system.matching := matching;
+     outEqs := system::outEqs;
+  end for;
+  outEqs := listReverse(outEqs);
+  outBackendDAE := BackendDAE.DAE(outEqs, shared);
+end replaceZeroCrossingsJacBackend;
 
 protected function findZeroCrossings3
   input DAE.Exp e;
