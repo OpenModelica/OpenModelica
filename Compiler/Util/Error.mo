@@ -1358,6 +1358,24 @@ algorithm
   end match;
 end addMessageOrSourceMessage;
 
+function addTotalMessage
+  input TotalMessage message;
+protected
+  Message msg;
+  SourceInfo info;
+algorithm
+  TOTALMESSAGE(msg = msg, info = info) := message;
+  addSourceMessage(msg, {}, info);
+end addTotalMessage;
+
+function addTotalMessages
+  input list<TotalMessage> messages;
+algorithm
+  for msg in messages loop
+    addTotalMessage(msg);
+  end for;
+end addTotalMessages;
+
 public function printMessagesStr "Relations for pretty printing.
   function: printMessagesStr
   Prints messages to a string."

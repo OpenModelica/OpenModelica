@@ -37,6 +37,7 @@ encapsulated uniontype NFEquation
   import DAE;
   import ComponentRef = NFComponentRef;
   import NFPrefixes.Variability;
+  import Error;
 
 protected
   import Equation = NFEquation;
@@ -52,12 +53,37 @@ public
       list<Equation> body;
     end BRANCH;
 
+    record INVALID_BRANCH
+      Branch branch;
+      list<Error.TotalMessage> errors;
+    end INVALID_BRANCH;
+
     function toString
       input Branch branch;
       output String str;
     algorithm
-      str := Expression.toString(branch.condition) + " then\n" + toStringList(branch.body);
+      str := match branch
+        case BRANCH()
+          then Expression.toString(branch.condition) + " then\n" + toStringList(branch.body);
+
+        case INVALID_BRANCH()
+          then toString(branch.branch);
+      end match;
     end toString;
+
+    function triggerErrors
+      input Branch branch;
+    algorithm
+      () := match branch
+        case INVALID_BRANCH()
+          algorithm
+            Error.addTotalMessages(branch.errors);
+          then
+            fail();
+
+        else ();
+      end match;
+    end triggerErrors;
   end Branch;
 
   record EQUALITY
@@ -524,6 +550,96 @@ public
       else ();
     end match;
   end foldExp;
+
+  function contains
+    input Equation eq;
+    input PredFn func;
+    output Boolean res;
+
+    partial function PredFn
+      input Equation eq;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    if func(eq) then
+      res := true;
+      return;
+    end if;
+
+    res := match eq
+      case FOR() then containsList(eq.body, func);
+
+      case IF()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  if containsList(b.body, func) then
+                    res := true;
+                    return;
+                  end if;
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          false;
+
+      case WHEN()
+        algorithm
+          for b in eq.branches loop
+            () := match b
+              case Branch.BRANCH()
+                algorithm
+                  if containsList(b.body, func) then
+                    res := true;
+                    return;
+                  end if;
+                then
+                  ();
+
+              else ();
+            end match;
+          end for;
+        then
+          false;
+
+      else false;
+    end match;
+  end contains;
+
+  function containsList
+    input list<Equation> eql;
+    input PredFn func;
+    output Boolean res;
+
+    partial function PredFn
+      input Equation eq;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for eq in eql loop
+      if contains(eq, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end containsList;
+
+  function isConnect
+    input Equation eq;
+    output Boolean isConnect;
+  algorithm
+    isConnect := match eq
+      case CONNECT() then true;
+      else false;
+    end match;
+  end isConnect;
 
   function toString
     input Equation eq;

@@ -334,7 +334,7 @@ public
         ComponentRef rest_cref;
         list<Subscript> cref_subs;
 
-      case CREF(origin = Origin.CREF, subscripts = cref_subs)
+      case CREF(subscripts = cref_subs)
         algorithm
           (subscripts, rest_cref) := applySubscripts2(subscripts, cref.restCref);
 

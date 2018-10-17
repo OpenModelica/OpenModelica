@@ -548,6 +548,12 @@ algorithm
     (conds, branches) := match branch
       case Equation.Branch.BRANCH()
         then (branch.condition :: conds, branch.body :: branches);
+
+      case Equation.Branch.INVALID_BRANCH()
+        algorithm
+          Equation.Branch.triggerErrors(branch);
+        then
+          fail();
     end match;
   end for;
 
@@ -564,6 +570,8 @@ algorithm
   end if;
 
   dconds := listReverse(Expression.toDAE(c) for c in conds);
+  dbranches := listReverseInPlace(dbranches);
+
   ifEquation := if isInitial then
     DAE.Element.INITIAL_IF_EQUATION(dconds, dbranches, else_branch, source) else
     DAE.Element.IF_EQUATION(dconds, dbranches, else_branch, source);
@@ -596,7 +604,7 @@ function convertInitialEquations
   input list<Equation> equations;
   input output list<DAE.Element> elements = {};
 algorithm
-  for eq in equations loop
+  for eq in listReverse(equations) loop
     elements := convertInitialEquation(eq, elements);
   end for;
 end convertInitialEquations;

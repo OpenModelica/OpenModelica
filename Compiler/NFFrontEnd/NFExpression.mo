@@ -3854,6 +3854,16 @@ public
     end match;
   end isInteger;
 
+  function isBoolean
+    input Expression exp;
+    output Boolean isBool;
+  algorithm
+    isBool := match exp
+      case BOOLEAN() then true;
+      else false;
+    end match;
+  end isBoolean;
+
   function isRecord
     input Expression exp;
     output Boolean isRecord;

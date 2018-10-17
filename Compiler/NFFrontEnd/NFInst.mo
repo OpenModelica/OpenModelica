@@ -2994,6 +2994,7 @@ end markStructuralParamsExp;
 
 function markStructuralParamsExp_traverser
   input Expression exp;
+  import NFComponentRef.Origin;
 algorithm
   () := match exp
     local
@@ -3001,7 +3002,7 @@ algorithm
       Component comp;
       Option<Expression> binding;
 
-    case Expression.CREF(cref = ComponentRef.CREF(node = node))
+    case Expression.CREF(cref = ComponentRef.CREF(node = node, origin = Origin.CREF))
       algorithm
         if InstNode.isComponent(node) then
           comp := InstNode.component(node);

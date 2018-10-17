@@ -381,6 +381,21 @@ algorithm
         then
           accum;
 
+      case Equation.INVALID_BRANCH(branch =
+          Equation.Branch.BRANCH(condition = cond, conditionVar = var))
+        algorithm
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            cond := Ceval.evalExp(cond);
+          end if;
+
+          // An invalid branch that can't be removed will trigger the errors
+          // stored in it.
+          if not Expression.isFalse(cond) then
+            Equation.Branch.triggerErrors(branch);
+          end if;
+        then
+          accum;
+
       else branch :: accum;
     end match;
   end for;

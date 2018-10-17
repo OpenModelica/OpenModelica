@@ -5601,8 +5601,8 @@ public function exist<T>
   "Returns true if a certain element exists in the given list as indicated by
    the given predicate function.
      Example:
-       filter({1,2}, isEven) => true
-       filter({1,3,5,7}, isEven) => false"
+       exist({1,2}, isEven) => true
+       exist({1,3,5,7}, isEven) => false"
   input list<T> inList;
   input FindFunc inFindFunc;
   output Boolean outExists;

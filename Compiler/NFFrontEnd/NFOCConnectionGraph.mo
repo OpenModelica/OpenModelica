@@ -1250,9 +1250,9 @@ algorithm
         rooted = setRootDistance(inRoots,table,0,{},NFHashTable.emptyHashTable());
         //  BaseHashTable.dumpHashTable(rooted);
         outEquations =
-        list(Equation.mapExp(eq,
-          function evaluateOperators(inRoots = (rooted,inRoots,graph)))
-          for eq in inEquations);
+          list(Equation.mapExp(eq,
+            function evaluateOperators(inRoots = (rooted,inRoots,graph), info = Equation.info(eq)))
+            for eq in inEquations);
       then outEquations;
 
   end matchcontinue;
@@ -1261,15 +1261,17 @@ end evalConnectionsOperators;
 function evaluateOperators
   input output Expression exp;
   input tuple<NFHashTable.HashTable,list<ComponentRef>, NFOCConnectionGraph> inRoots;
+  input SourceInfo info;
 algorithm
   exp := Expression.map(exp,
-    function evalConnectionsOperatorsHelper(inRoots = inRoots));
+    function evalConnectionsOperatorsHelper(inRoots = inRoots, info = info));
 end evaluateOperators;
 
 protected function evalConnectionsOperatorsHelper
 "Helper function for evaluation of Connections.rooted, Connections.isRoot, Connections.uniqueRootIndices"
   input Expression inExp;
   input tuple<NFHashTable.HashTable,list<ComponentRef>, NFOCConnectionGraph> inRoots;
+  input SourceInfo info;
   output Expression outExp;
 algorithm
   outExp := matchcontinue (inExp,inRoots)
@@ -1321,7 +1323,7 @@ algorithm
                end if;
               else // add an error message:
                 str := ComponentRef.toString(cref);
-                Error.addMessage(Error.OCG_MISSING_BRANCH, {str, str, str});
+                Error.addSourceMessage(Error.OCG_MISSING_BRANCH, {str, str, str}, info);
                 result := false;
               end try;
             then

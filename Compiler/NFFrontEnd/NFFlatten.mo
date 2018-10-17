@@ -894,7 +894,7 @@ algorithm
         Equation.CONNECT(e1, e2, eql, eq.source) :: equations;
 
     case Equation.IF()
-      then flattenIfEquation(eq.branches, prefix, eq.source, equations);
+      then flattenIfEquation(eq, prefix, equations);
 
     case Equation.WHEN()
       algorithm
@@ -934,24 +934,39 @@ algorithm
 end flattenEquation;
 
 function flattenIfEquation
-  input list<Equation.Branch> branches;
+  input Equation eq;
   input ComponentRef prefix;
-  input DAE.ElementSource source;
   input output list<Equation> equations;
 protected
-  list<Equation.Branch> bl = {};
+  list<Equation.Branch> branches, bl = {};
   Expression cond;
   list<Equation> eql;
   Variability var;
+  Boolean has_connect;
+  DAE.ElementSource src;
 algorithm
+  Equation.IF(branches = branches, source = src) := eq;
+  has_connect := Equation.contains(eq, isConnectEq);
+
   for b in branches loop
     bl := match b
       case Equation.Branch.BRANCH(cond, var, eql)
         algorithm
-          // flatten the condition first
+          // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
-          // flatten the equations
           eql := flattenEquations(eql, prefix);
+
+          // Force branch selection if the if-equation contains connects.
+          if has_connect then
+            cond := Ceval.evalExp(cond);
+
+            if not Expression.isBoolean(cond) then
+              Error.addInternalError(
+                "Failed to evaluate branch condition in if equation containing connect equations: `" +
+                Expression.toString(cond) + "`", Equation.info(eq));
+              fail();
+            end if;
+          end if;
 
           if Expression.isTrue(cond) and listEmpty(bl) then
             // If the condition is literal true and we haven't collected any other
@@ -966,6 +981,19 @@ algorithm
         then
           bl;
 
+      // An invalid branch must have a false condition if the if-equation
+      // contains connects, anything else is an error.
+      case Equation.Branch.INVALID_BRANCH(branch = Equation.Branch.BRANCH(condition = cond))
+        guard has_connect
+        algorithm
+          cond := Ceval.evalExp(cond);
+
+          if not Expression.isFalse(cond) then
+            Equation.Branch.triggerErrors(b);
+          end if;
+        then
+          bl;
+
       else b :: bl;
     end match;
   end for;
@@ -973,9 +1001,24 @@ algorithm
   // Add the flattened if equation to the list of equations if we got this far,
   // and there are any branches still remaining.
   if not listEmpty(bl) then
-    equations := Equation.IF(listReverseInPlace(bl), source) :: equations;
+    equations := Equation.IF(listReverseInPlace(bl), src) :: equations;
   end if;
 end flattenIfEquation;
+
+function isConnectEq
+  input Equation eq;
+  output Boolean isConnect;
+algorithm
+  isConnect := match eq
+    local
+      Function fn;
+
+    case Equation.CONNECT() then true;
+    case Equation.NORETCALL(exp = Expression.CALL(call = Call.TYPED_CALL(fn = fn)))
+      then Absyn.pathFirstIdent(Function.name(fn)) == "Connections";
+    else false;
+  end match;
+end isConnectEq;
 
 function flattenEqBranch
   input output Equation.Branch branch;

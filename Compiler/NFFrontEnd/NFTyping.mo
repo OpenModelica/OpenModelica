@@ -88,6 +88,7 @@ import ElementSource;
 import StringUtil;
 import NFOCConnectionGraph;
 import System;
+import ErrorExt;
 
 public
 uniontype TypingError
@@ -2720,56 +2721,98 @@ protected
   Expression cond;
   list<Equation> eql;
   Variability accum_var = Variability.CONSTANT, var;
-  list<Equation.Branch> bl = {};
+  list<Equation.Branch> bl = {}, bl2 = {};
   Integer next_origin = origin;
 algorithm
+  // Type the conditions of all the branches.
   for b in branches loop
-    Equation.Branch.BRANCH(condition = cond, body = eql) := b;
-    (cond, var) := typeCondition(cond, next_origin, source, Error.IF_CONDITION_TYPE_ERROR);
+    Equation.Branch.BRANCH(cond, _, eql) := b;
+    (cond, var) := typeCondition(cond, origin, source, Error.IF_CONDITION_TYPE_ERROR);
+
+    if ExpOrigin.flagNotSet(next_origin, ExpOrigin.NONEXPANDABLE) and
+       (var > Variability.PARAMETER or isNonExpandableExp(cond)) then
+      // If the condition doesn't fulfill the requirements for allowing
+      // connections in the branch, mark the origin so we can check that when
+      // typing the body of the branch.
+      next_origin := intBitOr(next_origin, ExpOrigin.NONEXPANDABLE);
+    elseif var == Variability.PARAMETER and accum_var <= Variability.PARAMETER then
+      // If all conditions up to and including this one are parameter
+      // expressions, consider the condition to be structural.
+      var := Variability.STRUCTURAL_PARAMETER;
+      Inst.markStructuralParamsExp(cond);
+    end if;
+
     accum_var := Prefixes.variabilityMax(accum_var, var);
-
-    if var <= Variability.PARAMETER and
-      not Expression.contains(cond, isNonConstantIfCondition) then
-      // If the condition is a parameter expression, evaluate it so we can do
-      // branch selection later on.
-      cond := Ceval.evalExp(cond, Ceval.EvalTarget.IGNORE_ERRORS());
-    else
-      // Otherwise, set the non-expandable bit in the origin, so we can check
-      // that e.g. connect isn't used in any branches from here on.
-      next_origin := intBitOr(origin, ExpOrigin.NONEXPANDABLE);
-    end if;
-
-    if not Expression.isFalse(cond) then
-      eql := list(typeEquation(e, next_origin) for e in eql);
-      bl := Equation.makeBranch(cond, eql, var) :: bl;
-
-      if Expression.isTrue(cond) then
-        break;
-      end if;
-    end if;
+    bl := Equation.Branch.BRANCH(cond, var, eql) :: bl;
   end for;
 
-  // If all conditions are parameter expressions, mark all of them as structural.
-  // (If accum_var < Variability.PARAMETER then they're already all structural.)
-  if accum_var == Variability.PARAMETER then
-    bl := list(
-      match b
-        // Only non-structural parameters needs to be changed.
-        case Equation.Branch.BRANCH(conditionVar = Variability.PARAMETER)
-          algorithm
-            b.conditionVar := Variability.STRUCTURAL_PARAMETER;
-          then
-            b;
+  // Type the bodies of all the branches.
+  for b in bl loop
+    Equation.Branch.BRANCH(cond, var, eql) := b;
 
-        else b;
-      end match
-    for b in bl);
+    ErrorExt.setCheckpoint(getInstanceName());
+    try
+      eql := list(typeEquation(e, next_origin) for e in eql);
+      bl2 := Equation.makeBranch(cond, eql, var) :: bl2;
+    else
+      bl2 := Equation.INVALID_BRANCH(Equation.makeBranch(cond, eql, var),
+                                     ErrorExt.getMessages()) :: bl2;
+    end try;
+    ErrorExt.delCheckpoint(getInstanceName());
+  end for;
+
+  // Do branch selection anyway if -d=-nfScalarize is set, otherwise turning of
+  // scalarization breaks currently.
+  if not Flags.isSet(Flags.NF_SCALARIZE) then
+    bl := bl2;
+    bl2 := {};
+
+    for b in bl loop
+      bl2 := match b
+        case Equation.Branch.BRANCH()
+          guard b.conditionVar <= Variability.STRUCTURAL_PARAMETER
+          algorithm
+            b.condition := Ceval.evalExp(b.condition);
+          then
+            if Expression.isFalse(b.condition) then bl2 else b :: bl2;
+
+        else b :: bl2;
+      end match;
+    end for;
+
+    bl2 := listReverseInPlace(bl2);
   end if;
 
-  // TODO: If accum_var <= PARAMETER, then each branch must have the same number
-  //       of equations.
-  ifEq := Equation.IF(listReverseInPlace(bl), source);
+  ifEq := Equation.IF(bl2, source);
 end typeIfEquation;
+
+function isNonExpandableExp
+  input Expression exp;
+  output Boolean isNonExpandable;
+algorithm
+  isNonExpandable := Expression.contains(exp, isNonExpandableExp_traverser);
+end isNonExpandableExp;
+
+function isNonExpandableExp_traverser
+  input Expression exp;
+  output Boolean isNonExpandable;
+algorithm
+  isNonExpandable := match exp
+    local
+      Function fn;
+
+    case Expression.CALL(call = Call.TYPED_CALL(fn = fn))
+      then
+        match fn.path
+          case Absyn.IDENT(name = "cardinality") then true;
+          case Absyn.QUALIFIED(name = "Connections", path = Absyn.IDENT(name = "isRoot")) then true;
+          case Absyn.QUALIFIED(name = "Connections", path = Absyn.IDENT(name = "rooted")) then true;
+          else Call.isImpure(exp.call);
+        end match;
+
+    else false;
+  end match;
+end isNonExpandableExp_traverser;
 
 function isNonConstantIfCondition
   input Expression exp;
