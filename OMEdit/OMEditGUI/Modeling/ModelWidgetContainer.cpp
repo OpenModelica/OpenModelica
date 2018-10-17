@@ -4980,6 +4980,11 @@ void ModelWidget::associateBusWithConnector(QString busName, QString connectorNa
 {
   associateBusWithConnector(busName, connectorName, mpIconGraphicsView);
   associateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
+  // get the connector component
+  Component *pConnectorComponent = mpIconGraphicsView->getComponentObject(connectorName);
+  if (pConnectorComponent) {
+    pConnectorComponent->emitDeleted();
+  }
 }
 
 /*!
@@ -4992,6 +4997,11 @@ void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorN
 {
   dissociateBusWithConnector(busName, connectorName, mpIconGraphicsView);
   dissociateBusWithConnector(busName, connectorName, mpDiagramGraphicsView);
+  // get the connector component
+  Component *pConnectorComponent = mpIconGraphicsView->getComponentObject(connectorName);
+  if (pConnectorComponent) {
+    pConnectorComponent->emitAdded();
+  }
 }
 
 /*!
@@ -6115,6 +6125,7 @@ void ModelWidget::associateBusWithConnector(QString busName, QString connectorNa
 {
   // get the bus component
   Component *pBusComponent = pGraphicsView->getComponentObject(busName);
+  // get the connector component
   Component *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
   if (pBusComponent && pConnectorComponent) {
     pConnectorComponent->addBusComponent(pBusComponent);

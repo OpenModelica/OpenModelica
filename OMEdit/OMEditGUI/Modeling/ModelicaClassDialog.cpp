@@ -2394,6 +2394,7 @@ void AddConnectorDialog::addConnector()
                                                                       (oms_signal_type_enu_t)mpTypeComboBox->itemData(mpTypeComboBox->currentIndex()).toInt());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorCommand);
   if (!pAddConnectorCommand->isFailed()) {
+    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitComponentAddedForComponent();
     mpGraphicsView->getModelWidget()->updateModelText();
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     accept();

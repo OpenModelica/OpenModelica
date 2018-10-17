@@ -801,6 +801,7 @@ void LibraryTreeItem::handleShapeAdded(ShapeAnnotation *pShapeAnnotation, Graphi
  */
 void LibraryTreeItem::handleComponentAdded(Component *pComponent)
 {
+  qDebug() << "LibraryTreeItem::handleComponentAdded";
   if (mpModelWidget) {
     if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) {
       mpModelWidget->getIconGraphicsView()->addInheritedComponentToList(mpModelWidget->createInheritedComponent(pComponent, mpModelWidget->getIconGraphicsView()));

@@ -161,6 +161,7 @@ public:
   void emitUnLoaded();
   void emitShapeAdded(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void emitComponentAdded(Component *pComponent);
+  void emitComponentAddedForComponent() {emit componentAddedForComponent();}
   void emitNameChanged() {emit nameChanged();}
   void updateChildrenNameStructure();
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}

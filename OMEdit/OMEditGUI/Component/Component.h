@@ -197,9 +197,6 @@ public:
   QStringList getDialogAnnotation() {return mDialogAnnotation;}
   void setChoicesAnnotation(QStringList choicesAnnotation) {mChoicesAnnotation = choicesAnnotation;}
   QStringList getChoicesAnnotation() {return mChoicesAnnotation;}
-  PolygonAnnotation* getInputOutputComponentPolygon() {return mpInputOutputComponentPolygon;}
-  RectangleAnnotation* getBusComponentRectangle() {return mpBusComponentRectangle;}
-  PolygonAnnotation* getTLMBusComponentPolygon() {return mpTLMBusComponentPolygon;}
   CoOrdinateSystem getCoOrdinateSystem() const;
   OriginItem* getOriginItem() {return mpOriginItem;}
   QAction* getParametersAction() {return mpParametersAction;}
@@ -270,9 +267,6 @@ private:
   RectangleAnnotation *mpDefaultComponentRectangle;
   TextAnnotation *mpDefaultComponentText;
   RectangleAnnotation *mpStateComponentRectangle;
-  PolygonAnnotation *mpInputOutputComponentPolygon;
-  RectangleAnnotation *mpBusComponentRectangle;
-  PolygonAnnotation *mpTLMBusComponentPolygon;
   QAction *mpParametersAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpAttributesAction;
@@ -304,9 +298,9 @@ private:
   void createDefaultComponent();
   void createStateComponent();
   void drawInterfacePoints();
-  void drawOMSComponent();
-  void drawOMSComponentShapes();
   void drawComponent();
+  void drawModelicaComponent();
+  void drawOMSComponent();
   void drawInheritedComponentsAndShapes();
   void showNonExistingOrDefaultComponentIfNeeded();
   void createClassInheritedComponents();

@@ -543,6 +543,7 @@ void AddBusDialog::addBus()
         AddConnectorToBusCommand *pAddConnectorToBusCommand = new AddConnectorToBusCommand(bus, connector, mpGraphicsView);
         mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectorToBusCommand);
       }
+      mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitComponentAddedForComponent();
       mpGraphicsView->getModelWidget()->associateBusWithConnectors(mpNameTextBox->text());
       mpGraphicsView->getModelWidget()->updateModelText();
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();

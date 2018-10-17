@@ -458,9 +458,6 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   createNonExistingComponent();
   createDefaultComponent();
   createStateComponent();
-  mpInputOutputComponentPolygon = 0;
-  mpBusComponentRectangle = 0;
-  mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mBusComponents.clear();
@@ -535,9 +532,6 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
   mpStateComponentRectangle = 0;
-  mpInputOutputComponentPolygon = 0;
-  mpBusComponentRectangle = 0;
-  mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mBusComponents.clear();
@@ -573,23 +567,10 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpDefaultComponentRectangle = 0;
   mpDefaultComponentText = 0;
   mpStateComponentRectangle = 0;
-  mpInputOutputComponentPolygon = 0;
-  mpBusComponentRectangle = 0;
-  mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mBusComponents.clear();
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    if (mpLibraryTreeItem->getOMSConnector() && mpReferenceComponent->getInputOutputComponentPolygon()) {
-      mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getInputOutputComponentPolygon(), this));
-    } else if (mpLibraryTreeItem->getOMSBusConnector() && mpReferenceComponent->getBusComponentRectangle()) {
-      mShapesList.append(new RectangleAnnotation(mpReferenceComponent->getBusComponentRectangle(), this));
-    } else if (mpLibraryTreeItem->getOMSTLMBusConnector() && mpReferenceComponent->getTLMBusComponentPolygon()) {
-      mShapesList.append(new PolygonAnnotation(mpReferenceComponent->getTLMBusComponentPolygon(), this));
-    }
-  } else {
-    drawInheritedComponentsAndShapes();
-  }
+  drawInheritedComponentsAndShapes();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
   mpOriginItem = 0;
@@ -598,6 +579,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpTopRightResizerItem = 0;
   mpBottomRightResizerItem = 0;
   updateToolTip();
+  setVisible(!mpReferenceComponent->isInBus());
   if (mpLibraryTreeItem) {
     connect(mpLibraryTreeItem, SIGNAL(loadedForComponent()), SLOT(handleLoaded()));
     connect(mpLibraryTreeItem, SIGNAL(unLoadedForComponent()), SLOT(handleUnloaded()));
@@ -636,9 +618,6 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   createNonExistingComponent();
   createDefaultComponent();
   createStateComponent();
-  mpInputOutputComponentPolygon = 0;
-  mpBusComponentRectangle = 0;
-  mpTLMBusComponentPolygon = 0;
   mHasTransition = false;
   mIsInitialState = false;
   mBusComponents.clear();
@@ -683,9 +662,6 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpResizerRectangle = 0;
   createNonExistingComponent();
   createDefaultComponent();
-  mpInputOutputComponentPolygon = 0;
-  mpBusComponentRectangle = 0;
-  mpTLMBusComponentPolygon = 0;
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
@@ -1546,213 +1522,23 @@ void Component::drawInterfacePoints()
 }
 
 /*!
- * \brief Component::drawOMSComponent
- * Draws the OMSimulator component.
- */
-void Component::drawOMSComponent()
-{
-  if (mpLibraryTreeItem->isSystemElement()) {
-    if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
-    }
-    // draw shapes first
-    drawOMSComponentShapes();
-    // draw connectors now
-    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
-      if (!pComponent->isInBus()) {
-        Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
-        mComponentsList.append(pNewComponent);
-      }
-    }
-  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
-    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
-      mpInputOutputComponentPolygon = new PolygonAnnotation(this);
-      QList<QPointF> points;
-      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
-      mpInputOutputComponentPolygon->setPoints(points);
-      mpInputOutputComponentPolygon->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255,127,0));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255,127,0));
-          break;
-        case oms_signal_type_boolean:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255,0,255));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255,0,255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
-          mpInputOutputComponentPolygon->setFillColor(QColor(0, 0, 127));
-          break;
-      }
-    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
-      mpInputOutputComponentPolygon = new PolygonAnnotation(this);
-      QList<QPointF> points;
-      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
-      mpInputOutputComponentPolygon->setPoints(points);
-      mpInputOutputComponentPolygon->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255, 127, 0));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
-          break;
-        case oms_signal_type_boolean:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255, 0, 255));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
-          break;
-      }
-    }
-  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
-    mpBusComponentRectangle = new RectangleAnnotation(this);
-    QList<QPointF> extents;
-    extents << QPointF(-100, -100) << QPointF(100, 100);
-    mpBusComponentRectangle->setExtents(extents);
-    mpBusComponentRectangle->setLineColor(QColor(73, 151, 60));
-    mpBusComponentRectangle->setFillColor(QColor(73, 151, 60));
-    mpBusComponentRectangle->setFillPattern(StringHandler::FillSolid);
-  } else if (mpLibraryTreeItem->getOMSTLMBusConnector()) { // if component is a tlm bus
-    mpTLMBusComponentPolygon = new PolygonAnnotation(this);
-    QList<QPointF> points;
-    points << QPointF(-100.0, 0.0) << QPointF(0.0, 100.0) << QPointF(100.0, 0.0) << QPointF(0.0, -100.0) << QPointF(-100.0, 0.0);
-    mpTLMBusComponentPolygon->setPoints(points);
-    mpTLMBusComponentPolygon->setLineColor(QColor(100, 100, 255));
-    mpTLMBusComponentPolygon->setFillColor(QColor(100, 100, 255));
-    mpTLMBusComponentPolygon->setFillPattern(StringHandler::FillSolid);
-  }
-  // return to avoid the old code. The code below should be removed later on.
-  return;
-
-  if (mpLibraryTreeItem->getOMSElement()) { // if component is fmu
-    if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
-    }
-    // draw shapes first
-    drawOMSComponentShapes();
-    // draw components now
-    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentsList()) {
-      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
-      mComponentsList.append(pNewComponent);
-    }
-    //adjustOMSSignals();
-  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
-    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
-      mpInputOutputComponentPolygon = new PolygonAnnotation(this);
-      QList<QPointF> points;
-      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
-      mpInputOutputComponentPolygon->setPoints(points);
-      mpInputOutputComponentPolygon->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255,127,0));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255,127,0));
-          break;
-        case oms_signal_type_boolean:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255,0,255));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255,0,255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
-          mpInputOutputComponentPolygon->setFillColor(QColor(0, 0, 127));
-          break;
-      }
-    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
-      mpInputOutputComponentPolygon = new PolygonAnnotation(this);
-      QList<QPointF> points;
-      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
-      mpInputOutputComponentPolygon->setPoints(points);
-      mpInputOutputComponentPolygon->setFillPattern(StringHandler::FillSolid);
-      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-        case oms_signal_type_integer:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255, 127, 0));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
-          break;
-        case oms_signal_type_boolean:
-          mpInputOutputComponentPolygon->setLineColor(QColor(255, 0, 255));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
-          break;
-        case oms_signal_type_string:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
-          break;
-        case oms_signal_type_bus:
-          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
-          break;
-        case oms_signal_type_real:
-        default:
-          mpInputOutputComponentPolygon->setLineColor(QColor(0, 0, 127));
-          mpInputOutputComponentPolygon->setFillColor(QColor(255, 255, 255));
-          break;
-      }
-    }
-//    if (!mpLibraryTreeItem->getModelWidget()) {
-//      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
-//    }
-//    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getShapesList()) {
-//      if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-//        mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
-//      }
-//    }
-  }
-}
-
-/*!
- * \brief Component::drawOMSComponentShapes
- * Draws the shapes for OMSimulator component.
- */
-void Component::drawOMSComponentShapes()
-{
-  foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
-    if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
-      mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
-    } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
-      mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
-    } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
-      mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
-    }
-  }
-}
-
-/*!
  * \brief Component::drawComponent
  * Draws the Component.
  */
 void Component::drawComponent()
+{
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    drawModelicaComponent();
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    drawOMSComponent();
+  }
+}
+
+/*!
+ * \brief Component::drawModelicaComponent
+ * Draws the Modelica component.
+ */
+void Component::drawModelicaComponent()
 {
   if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
     if (mComponentType == Component::Root) {
@@ -1770,24 +1556,138 @@ void Component::drawComponent()
 }
 
 /*!
+ * \brief Component::drawOMSComponent
+ * Draws the OMSimulator component.
+ */
+void Component::drawOMSComponent()
+{
+  if (mpLibraryTreeItem->isSystemElement()) {
+    if (!mpLibraryTreeItem->getModelWidget()) {
+      MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+    }
+    // draw shapes first
+    createClassShapes();
+    // draw connectors now
+    foreach (Component *pComponent, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getComponentsList()) {
+      Component *pNewComponent = new Component(pComponent, this, getRootParentComponent());
+      mComponentsList.append(pNewComponent);
+    }
+  } else if (mpLibraryTreeItem->getOMSConnector()) { // if component is a signal i.e., input/output
+    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+      PolygonAnnotation *pInputPolygonAnnotation = new PolygonAnnotation(this);
+      QList<QPointF> points;
+      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
+      pInputPolygonAnnotation->setPoints(points);
+      pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+        case oms_signal_type_integer:
+          pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
+          pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
+          break;
+        case oms_signal_type_boolean:
+          pInputPolygonAnnotation->setLineColor(QColor(255,0,255));
+          pInputPolygonAnnotation->setFillColor(QColor(255,0,255));
+          break;
+        case oms_signal_type_string:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
+          break;
+        case oms_signal_type_enum:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
+          break;
+        case oms_signal_type_bus:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
+          break;
+        case oms_signal_type_real:
+        default:
+          pInputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+          pInputPolygonAnnotation->setFillColor(QColor(0, 0, 127));
+          break;
+      }
+      mShapesList.append(pInputPolygonAnnotation);
+    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+      PolygonAnnotation *pOutputPolygonAnnotation = new PolygonAnnotation(this);
+      QList<QPointF> points;
+      points << QPointF(-100.0, 100.0) << QPointF(100.0, 0.0) << QPointF(-100.0, -100.0) << QPointF(-100.0, 100.0);
+      pOutputPolygonAnnotation->setPoints(points);
+      pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+      switch (mpLibraryTreeItem->getOMSConnector()->type) {
+        case oms_signal_type_integer:
+          pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
+          pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+          break;
+        case oms_signal_type_boolean:
+          pOutputPolygonAnnotation->setLineColor(QColor(255, 0, 255));
+          pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+          break;
+        case oms_signal_type_string:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_string not implemented yet.";
+          break;
+        case oms_signal_type_enum:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_enum not implemented yet.";
+          break;
+        case oms_signal_type_bus:
+          qDebug() << "Component::drawOMSComponent oms_signal_type_bus not implemented yet.";
+          break;
+        case oms_signal_type_real:
+        default:
+          pOutputPolygonAnnotation->setLineColor(QColor(0, 0, 127));
+          pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
+          break;
+      }
+      mShapesList.append(pOutputPolygonAnnotation);
+    }
+  } else if (mpLibraryTreeItem->getOMSBusConnector()) { // if component is a bus
+    RectangleAnnotation *pBusRectangleAnnotation = new RectangleAnnotation(this);
+    QList<QPointF> extents;
+    extents << QPointF(-100, -100) << QPointF(100, 100);
+    pBusRectangleAnnotation->setExtents(extents);
+    pBusRectangleAnnotation->setLineColor(QColor(73, 151, 60));
+    pBusRectangleAnnotation->setFillColor(QColor(73, 151, 60));
+    pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
+    mShapesList.append(pBusRectangleAnnotation);
+  } else if (mpLibraryTreeItem->getOMSTLMBusConnector()) { // if component is a tlm bus
+    PolygonAnnotation *pTLMBusPolygonAnnotation = new PolygonAnnotation(this);
+    QList<QPointF> points;
+    points << QPointF(-100.0, 0.0) << QPointF(0.0, 100.0) << QPointF(100.0, 0.0) << QPointF(0.0, -100.0) << QPointF(-100.0, 0.0);
+    pTLMBusPolygonAnnotation->setPoints(points);
+    pTLMBusPolygonAnnotation->setLineColor(QColor(100, 100, 255));
+    pTLMBusPolygonAnnotation->setFillColor(QColor(100, 100, 255));
+    pTLMBusPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
+    mShapesList.append(pTLMBusPolygonAnnotation);
+  }
+}
+
+/*!
  * \brief Component::drawInheritedComponentsAndShapes
  * Draws the inherited components and their shapes.
  */
 void Component::drawInheritedComponentsAndShapes()
 {
-  if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
-    if (mComponentType == Component::Root) {
-      assert(mpDefaultComponentRectangle);
-      assert(mpDefaultComponentText);
-      mpDefaultComponentRectangle->setVisible(true);
-      mpDefaultComponentText->setVisible(true);
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (!mpLibraryTreeItem) { // if built in type e.g Real, Boolean etc.
+      if (mComponentType == Component::Root) {
+        assert(mpDefaultComponentRectangle);
+        assert(mpDefaultComponentText);
+        mpDefaultComponentRectangle->setVisible(true);
+        mpDefaultComponentText->setVisible(true);
+      }
+    } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
+      assert(mpNonExistingComponentLine);
+      mpNonExistingComponentLine->setVisible(true);
+    } else {
+      createClassInheritedComponents();
+      createClassShapes();
     }
-  } else if (mpLibraryTreeItem->isNonExisting()) { // if class is non existing
-    assert(mpNonExistingComponentLine);
-    mpNonExistingComponentLine->setVisible(true);
-  } else {
-    createClassInheritedComponents();
-    createClassShapes();
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (mpReferenceComponent) {
+      foreach (ShapeAnnotation *pShapeAnnotation, mpReferenceComponent->getShapesList()) {
+        if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+        }
+      }
+    }
   }
 }
 
@@ -1840,30 +1740,42 @@ void Component::createClassInheritedComponents()
  */
 void Component::createClassShapes()
 {
-  if (!mpLibraryTreeItem->isNonExisting()) {
-    if (!mpLibraryTreeItem->getModelWidget()) {
-      MainWindow *pMainWindow = MainWindow::instance();
-      pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
-    }
-    GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    /* ticket:4505
-       * Only use the diagram annotation when connector is inside the component instance.
-       */
-    if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
-      mpLibraryTreeItem->getModelWidget()->loadDiagramView();
-      if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
-        pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (!mpLibraryTreeItem->isNonExisting()) {
+      if (!mpLibraryTreeItem->getModelWidget()) {
+        MainWindow *pMainWindow = MainWindow::instance();
+        pMainWindow->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
+      }
+      GraphicsView *pGraphicsView = mpLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+      /* ticket:4505
+         * Only use the diagram annotation when connector is inside the component instance.
+         */
+      if (mpLibraryTreeItem->isConnector() && mpGraphicsView->getViewType() == StringHandler::Diagram && canUseDiagramAnnotation()) {
+        mpLibraryTreeItem->getModelWidget()->loadDiagramView();
+        if (mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->hasAnnotation()) {
+          pGraphicsView = mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+        }
+      }
+      foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
+        if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new EllipseAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
+        } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
+          mShapesList.append(new BitmapAnnotation(pShapeAnnotation, this));
+        }
       }
     }
-    foreach (ShapeAnnotation *pShapeAnnotation, pGraphicsView->getShapesList()) {
-      if (dynamic_cast<LineAnnotation*>(pShapeAnnotation)) {
-        mShapesList.append(new LineAnnotation(pShapeAnnotation, this));
-      } else if (dynamic_cast<PolygonAnnotation*>(pShapeAnnotation)) {
-        mShapesList.append(new PolygonAnnotation(pShapeAnnotation, this));
-      } else if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    foreach (ShapeAnnotation *pShapeAnnotation, mpLibraryTreeItem->getModelWidget()->getIconGraphicsView()->getShapesList()) {
+      if (dynamic_cast<RectangleAnnotation*>(pShapeAnnotation)) {
         mShapesList.append(new RectangleAnnotation(pShapeAnnotation, this));
-      } else if (dynamic_cast<EllipseAnnotation*>(pShapeAnnotation)) {
-        mShapesList.append(new EllipseAnnotation(pShapeAnnotation, this));
       } else if (dynamic_cast<TextAnnotation*>(pShapeAnnotation)) {
         mShapesList.append(new TextAnnotation(pShapeAnnotation, this));
       } else if (dynamic_cast<BitmapAnnotation*>(pShapeAnnotation)) {
@@ -2264,6 +2176,12 @@ void Component::updatePlacementAnnotation()
       if (pComponent) {
         pComponent->mTransformation.setOrigin(mTransformation.getOrigin());
         pComponent->setTransform(pComponent->mTransformation.getTransformationMatrix());
+        /* Disconnect the signal so we don't go into the recursion for updatePlacementAnnotation();
+         * Connect again after emitting the signal.
+         */
+        disconnect(pComponent, SIGNAL(transformHasChanged()), pComponent, SLOT(updatePlacementAnnotation()));
+        pComponent->emitTransformHasChanged();
+        connect(pComponent, SIGNAL(transformHasChanged()), pComponent, SLOT(updatePlacementAnnotation()));
       }
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     }
@@ -2324,22 +2242,10 @@ void Component::handleUnloaded()
 void Component::handleShapeAdded()
 {
   Component *pComponent = getRootParentComponent();
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    // remove all shapes
-    foreach (ShapeAnnotation *pShapeAnnotation, mShapesList) {
-      pShapeAnnotation->setParentItem(0);
-      mpGraphicsView->removeItem(pShapeAnnotation);
-      delete pShapeAnnotation;
-    }
-    mShapesList.clear();
-    // draw shapes
-    pComponent->drawOMSComponentShapes();
-  } else {
-    pComponent->removeChildren();
-    pComponent->drawComponent();
-    pComponent->emitChanged();
-    pComponent->updateConnections();
-  }
+  pComponent->removeChildren();
+  pComponent->drawComponent();
+  pComponent->emitChanged();
+  pComponent->updateConnections();
 }
 
 void Component::handleComponentAdded()

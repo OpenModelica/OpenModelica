@@ -2085,11 +2085,17 @@ void AddConnectorCommand::redoInternal()
   mpIconGraphicsView->addItem(mpIconComponent);
   mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
   mpIconGraphicsView->addComponentToList(mpIconComponent);
+  if (!mOpeningClass) {
+    mpIconComponent->emitAdded();
+  }
   // add the connector to diagram view
   mpDiagramComponent = new Component(mName, mpLibraryTreeItem, mAnnotation, QPointF(0, 0), pComponentInfo, mpDiagramGraphicsView);
   mpDiagramGraphicsView->addItem(mpDiagramComponent);
   mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
   mpDiagramGraphicsView->addComponentToList(mpDiagramComponent);
+  if (!mOpeningClass) {
+    mpDiagramComponent->emitAdded();
+  }
   // only select the component of the active Icon/Diagram View
   if (!mOpeningClass) {
     // unselect all items
