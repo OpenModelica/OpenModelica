@@ -527,6 +527,8 @@ algorithm
       binding_exp := SimplifyExp.simplify(binding_exp);
     end if;
 
+    binding_exp := Expression.splitRecordCref(binding_exp);
+
     // TODO: This will probably not work so well if the binding is an array that
     //       contains record non-literals. In that case we should probably
     //       create an equation for each non-literal in the array, and pass the
