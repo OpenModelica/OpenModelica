@@ -1452,7 +1452,12 @@ void GraphicsView::addConnection(Component *pComponent)
 {
   // When clicking the start component
   if (!isCreatingConnection()) {
-    QPointF startPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+    QPointF startPos;
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      startPos = roundPoint(pComponent->mapToScene(pComponent->boundingRect().center()));
+    } else {
+      startPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+    }
     mpConnectionLineAnnotation = new LineAnnotation(LineAnnotation::ConnectionType, pComponent, this);
     setIsCreatingConnection(true);
     mpConnectionLineAnnotation->addPoint(startPos);
@@ -1472,7 +1477,12 @@ void GraphicsView::addConnection(Component *pComponent)
   } else if (isCreatingConnection()) { // When clicking the end component
     mpConnectionLineAnnotation->setEndComponent(pComponent);
     // update the last point to the center of component
-    QPointF newPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+    QPointF newPos;
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      newPos = roundPoint(pComponent->mapToScene(pComponent->boundingRect().center()));
+    } else {
+      newPos = snapPointToGrid(pComponent->mapToScene(pComponent->boundingRect().center()));
+    }
     mpConnectionLineAnnotation->updateEndPoint(newPos);
     mpConnectionLineAnnotation->update();
     // check if connection is valid
@@ -2144,7 +2154,11 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
   bool eventConsumed = false;
   // if left button presses and we are creating a connector
   if (isCreatingConnection()) {
-    mpConnectionLineAnnotation->addPoint(snappedPoint);
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpConnectionLineAnnotation->addPoint(roundPoint(mapToScene(event->pos())));
+    } else {
+      mpConnectionLineAnnotation->addPoint(snappedPoint);
+    }
     eventConsumed = true;
   } else if (isCreatingTransition()) {
     mpTransitionLineAnnotation->addPoint(snappedPoint);
@@ -2264,7 +2278,11 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
   }
   //If creating connector, the end port shall be updated to the mouse position.
   if (isCreatingConnection()) {
-    mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
+    if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpConnectionLineAnnotation->updateEndPoint(roundPoint(mapToScene(event->pos())));
+    } else {
+      mpConnectionLineAnnotation->updateEndPoint(snappedPoint);
+    }
     mpConnectionLineAnnotation->update();
   } else if (isCreatingTransition()) {
     mpTransitionLineAnnotation->updateEndPoint(snappedPoint);
@@ -3781,8 +3799,6 @@ void ModelWidget::createModelWidgetComponents()
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
         pMainLayout->addWidget(mpIconGraphicsView, 1);
       }
-      // show the diagram view
-      mpDiagramViewToolButton->setChecked(true);
     }
     if (mpEditor) {
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(undoAvailable(bool)), SLOT(handleCanUndoChanged(bool)));
@@ -6468,6 +6484,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
       pModelWidget->setWindowState(Qt::WindowMaximized);
     }
     setActiveSubWindow(pSubWindow);
+    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      pModelWidget->getDiagramViewToolButton()->setChecked(true);
+    }
   }
   if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
     pModelWidget->getTextViewToolButton()->setChecked(true);
