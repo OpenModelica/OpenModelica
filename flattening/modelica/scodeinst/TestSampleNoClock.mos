@@ -238,16 +238,16 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   parameter Real sampleTriggerReset.startTime(quantity = \"Time\", unit = \"s\") = 0.3 \"Time instant of first sample trigger\";
 //   Boolean sampleTriggerReset.y \"Connector of Boolean output signal\";
 // initial equation
-//   pre(rSFlipFlop.pre.u) = rSFlipFlop.pre.pre_u_start;
-//   pre(triggeredAdd.y) = triggeredAdd.y_start;
-//   pre(changing.u) = changing.pre_u_start;
-//   pre(falling.not_u) = not falling.pre_u_start;
-//   pre(set1.y) = set1.y_default;
-//   pre(rising.u) = rising.pre_u_start;
-//   pre(onDelay.t_next) = time - 1.0;
-//   pre(onDelay.u) = false;
-//   booleanPulse2.pulsStart = booleanPulse2.startTime;
 //   booleanPulse1.pulsStart = booleanPulse1.startTime;
+//   booleanPulse2.pulsStart = booleanPulse2.startTime;
+//   pre(onDelay.u) = false;
+//   pre(onDelay.t_next) = time - 1.0;
+//   pre(rising.u) = rising.pre_u_start;
+//   pre(set1.y) = set1.y_default;
+//   pre(falling.not_u) = not falling.pre_u_start;
+//   pre(changing.u) = changing.pre_u_start;
+//   pre(triggeredAdd.y) = triggeredAdd.y_start;
+//   pre(rSFlipFlop.pre.u) = rSFlipFlop.pre.pre_u_start;
 // initial algorithm
 //   (booleanTable.index, booleanTable.nextTime, booleanTable.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex(booleanTable.table, time, booleanTable.startValue);
 // equation

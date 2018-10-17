@@ -49,8 +49,8 @@ end ExtendSections;
 //   Real z;
 //   Real w;
 // initial equation
-//   y = 2.0;
 //   b = 2.0;
+//   y = 2.0;
 // initial algorithm
 //   w := 5.0;
 // initial algorithm
