@@ -641,6 +641,7 @@ RealRangeBinding1.mo \
 RecordBinding1.mo \
 RecordBinding2.mo \
 RecordBinding3.mo \
+RecordBinding4.mo \
 RecursiveExtends1.mo \
 RecursiveExtends3.mo \
 RedeclareClass1.mo \
