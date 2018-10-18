@@ -493,6 +493,9 @@ IfEquation3.mo \
 IfEquation4.mo \
 IfEquation5.mo \
 IfEquation6.mo \
+IfEquationEval1.mo \
+IfEquationEval2.mo \
+IfEquationEval3.mo \
 IfExpression1.mo \
 IfExpression2.mo \
 IfExpression3.mo \
