@@ -356,11 +356,7 @@ algorithm
     accum := match branch
       case Equation.Branch.BRANCH(cond, var, body)
         algorithm
-          if var <= Variability.STRUCTURAL_PARAMETER then
-            cond := Ceval.evalExp(cond);
-          else
-            cond := SimplifyExp.simplify(cond);
-          end if;
+          cond := SimplifyExp.simplify(cond);
 
           // A branch with condition true will always be selected when encountered.
           if Expression.isTrue(cond) then

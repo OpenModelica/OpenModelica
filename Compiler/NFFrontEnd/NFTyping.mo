@@ -2729,8 +2729,7 @@ algorithm
     Equation.Branch.BRANCH(cond, _, eql) := b;
     (cond, var) := typeCondition(cond, origin, source, Error.IF_CONDITION_TYPE_ERROR);
 
-    if ExpOrigin.flagNotSet(next_origin, ExpOrigin.NONEXPANDABLE) and
-       (var > Variability.PARAMETER or isNonExpandableExp(cond)) then
+    if var > Variability.PARAMETER or isNonExpandableExp(cond) then
       // If the condition doesn't fulfill the requirements for allowing
       // connections in the branch, mark the origin so we can check that when
       // typing the body of the branch.

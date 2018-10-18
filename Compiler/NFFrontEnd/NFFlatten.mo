@@ -940,29 +940,41 @@ function flattenIfEquation
   input ComponentRef prefix;
   input output list<Equation> equations;
 protected
+  Equation.Branch branch;
   list<Equation.Branch> branches, bl = {};
   Expression cond;
   list<Equation> eql;
   Variability var;
   Boolean has_connect;
   DAE.ElementSource src;
+  SourceInfo info;
+  Ceval.EvalTarget target;
 algorithm
   Equation.IF(branches = branches, source = src) := eq;
   has_connect := Equation.contains(eq, isConnectEq);
 
-  for b in branches loop
-    bl := match b
+  // Print errors for unbound constants/parameters if the if-equation contains
+  // connects, since we must select a branch in that case.
+  target := if has_connect then
+    Ceval.EvalTarget.GENERIC(Equation.info(eq)) else
+    Ceval.EvalTarget.IGNORE_ERRORS();
+
+  while not listEmpty(branches) loop
+    branch :: branches := branches;
+
+    bl := match branch
       case Equation.Branch.BRANCH(cond, var, eql)
         algorithm
           // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
           eql := flattenEquations(eql, prefix);
 
-          // Force branch selection if the if-equation contains connects.
-          if has_connect then
-            cond := Ceval.evalExp(cond);
+          // Evaluate structural conditions.
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            cond := Ceval.evalExp(cond, target);
 
-            if not Expression.isBoolean(cond) then
+            // Conditions in an if-equation that contains connects must be possible to evaluate.
+            if not Expression.isBoolean(cond) and has_connect then
               Error.addInternalError(
                 "Failed to evaluate branch condition in if equation containing connect equations: `" +
                 Expression.toString(cond) + "`", Equation.info(eq));
@@ -970,11 +982,18 @@ algorithm
             end if;
           end if;
 
-          if Expression.isTrue(cond) and listEmpty(bl) then
-            // If the condition is literal true and we haven't collected any other
-            // branches yet, replace the if equation with this branch.
-            equations := listAppend(eql, equations);
-            return;
+          if Expression.isTrue(cond) then
+            // The condition is true and the branch will thus always be selected
+            // if reached, so we can discard the remaining branches.
+            branches := {};
+
+            if listEmpty(bl) then
+              // If we haven't collected any other branches yet, replace the if-equation with this branch.
+              equations := listAppend(eql, equations);
+            else
+              // Otherwise, append this branch.
+              bl := Equation.makeBranch(cond, eql, var) :: bl;
+            end if;
           elseif not Expression.isFalse(cond) then
             // Only add the branch to the list of branches if the condition is not
             // literal false, otherwise just drop it since it will never trigger.
@@ -983,25 +1002,27 @@ algorithm
         then
           bl;
 
-      // An invalid branch must have a false condition if the if-equation
-      // contains connects, anything else is an error.
-      case Equation.Branch.INVALID_BRANCH(branch = Equation.Branch.BRANCH(condition = cond))
+      // An invalid branch must have a false condition, anything else is an error.
+      case Equation.Branch.INVALID_BRANCH(branch =
+          Equation.Branch.BRANCH(condition = cond, conditionVar = var))
         guard has_connect
         algorithm
-          cond := Ceval.evalExp(cond);
+          if var <= Variability.STRUCTURAL_PARAMETER then
+            cond := Ceval.evalExp(cond, target);
+          end if;
 
           if not Expression.isFalse(cond) then
-            Equation.Branch.triggerErrors(b);
+            Equation.Branch.triggerErrors(branch);
           end if;
         then
           bl;
 
-      else b :: bl;
+      else branch :: bl;
     end match;
-  end for;
+  end while;
 
-  // Add the flattened if equation to the list of equations if we got this far,
-  // and there are any branches still remaining.
+  // Add the flattened if-equation to the list of equations if there are any
+  // branches still remaining.
   if not listEmpty(bl) then
     equations := Equation.IF(listReverseInPlace(bl), src) :: equations;
   end if;

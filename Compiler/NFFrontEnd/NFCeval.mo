@@ -108,6 +108,7 @@ uniontype EvalTarget
       case ATTRIBUTE() then true;
       case RANGE() then true;
       case CONDITION() then true;
+      case GENERIC() then true;
       else false;
     end match;
   end hasInfo;
@@ -121,6 +122,7 @@ uniontype EvalTarget
       case ATTRIBUTE() then Binding.getInfo(target.binding);
       case RANGE() then target.info;
       case CONDITION() then target.info;
+      case GENERIC() then target.info;
       else Absyn.dummyInfo;
     end match;
   end getInfo;
