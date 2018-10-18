@@ -81,7 +81,7 @@ py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.p
 if getEnvironmentVar("GenerateDocTest") == "YES" then
   system("mkdir -p Icons");
 else
-  commands:={"(ulimit -t 1200 ; python "+py+" --quiet --output-dir Icons "+typeNameString(cl)+" )" for cl in getClassNames(builtin=false)};getErrorString();
+  commands:={"python "+py+" --quiet --output-dir Icons "+typeNameString(cl) for cl in getClassNames(builtin=false)};getErrorString();
   res:=system_parallel(commands);getErrorString();
   //system("rm -f *.json");getErrorString();
 end if;
