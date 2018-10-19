@@ -241,10 +241,9 @@ void OMSimulatorHighlighter::initializeSettings()
                   << "\\bssd:Annotation\\b"
                   << "\\btlm:Master\\b"
                   << "\\bssd:Elements\\b"
-                  << "\\bOMSimulator:Bus\\b"
-                  << "\\bSignals\\b"
-                  << "\\bSignal\\b"
-                  << "\\bSignal\\b"
+                  << "\\boms:Bus\\b"
+                  << "\\boms:Signals\\b"
+                  << "\\boms:Signal\\b"
                   << "\\bssd:Component\\b"
                   << "\\bssd:ElementGeometry\\b"
                   << "\\bssd:Connectors\\b"
@@ -252,7 +251,9 @@ void OMSimulatorHighlighter::initializeSettings()
                   << "\\bssd:ConnectorGeometry\\b"
                   << "\\bParameter\\b"
                   << "\\bssd:Connections\\b"
+                  << "\\boms:Connections\\b"
                   << "\\bssd:Connection\\b"
+                  << "\\boms:Connection\\b"
                   << "\\bssd:ConnectionGeometry\\b"
                   << "\\bssd:DefaultExperiment\\b";
   foreach (const QString &elementPattern, elementPatterns)

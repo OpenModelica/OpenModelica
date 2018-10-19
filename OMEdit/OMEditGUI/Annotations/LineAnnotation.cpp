@@ -128,19 +128,21 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
      * We are also doing it the same way except that we will use the diagram layer shape if there is no shape in the icon layer.
      * If there is no shape even in diagram layer then use the default black color.
      */
-    if (pStartComponent->getShapesList().size() > 0) {
-      ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
-      mLineColor = pShapeAnnotation->getLineColor();
-    }
-    if (pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-      if (!pStartComponent->getLibraryTreeItem()->getModelWidget()) {
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pStartComponent->getLibraryTreeItem(), false);
-      }
-      ShapeAnnotation *pShapeAnnotation;
-      if (pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
-          && pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
-        pShapeAnnotation = pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+      if (pStartComponent->getShapesList().size() > 0) {
+        ShapeAnnotation *pShapeAnnotation = pStartComponent->getShapesList().at(0);
         mLineColor = pShapeAnnotation->getLineColor();
+      }
+      if (pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        if (!pStartComponent->getLibraryTreeItem()->getModelWidget()) {
+          MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pStartComponent->getLibraryTreeItem(), false);
+        }
+        ShapeAnnotation *pShapeAnnotation;
+        if (pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()
+            && pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().size() > 0) {
+          pShapeAnnotation = pStartComponent->getLibraryTreeItem()->getModelWidget()->getIconGraphicsView()->getShapesList().at(0);
+          mLineColor = pShapeAnnotation->getLineColor();
+        }
       }
     }
     mpTextAnnotation = 0;
@@ -1066,7 +1068,16 @@ void LineAnnotation::updateOMSConnection()
   }
   // connection
   oms3_connection_t connection;
-  connection.type = oms3_connection_single;
+  // find connection type
+  oms3_connection_type_enu_t connectionType;
+  if (mpStartComponent->getLibraryTreeItem()->getOMSBusConnector() || mpEndComponent->getLibraryTreeItem()->getOMSBusConnector()) {
+    connectionType = oms3_connection_bus;
+  } else if (mpStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector() || mpEndComponent->getLibraryTreeItem()->getOMSTLMBusConnector()) {
+    connectionType = oms3_connection_tlm;
+  } else {
+    connectionType = oms3_connection_single;
+  }
+  connection.type = connectionType;
   QString conA = QString("%1.%2").arg(StringHandler::getLastWordAfterDot(StringHandler::removeLastWordAfterDot(getStartComponentName())))
                  .arg(StringHandler::getLastWordAfterDot(getStartComponentName()));
   connection.conA = new char[conA.toStdString().size() + 1];

@@ -41,6 +41,7 @@
 #include <QDialogButtonBox>
 #include <QSpinBox>
 #include <QComboBox>
+#include <QTableView>
 
 class Component;
 class ConnectorItem : public QObject
@@ -138,6 +139,86 @@ private:
   QDialogButtonBox *mpButtonBox;
 private slots:
   void addTLMBus();
+};
+
+class LineAnnotation;
+class ConnectionItem : public QObject
+{
+  Q_OBJECT
+public:
+  ConnectionItem(QString start, QString end, ConnectionItem *pParent);
+  QString getStart() const {return mStart;}
+  void setStart(const QString &start) {mStart = start;}
+  QString getEnd() const {return mEnd;}
+  void setEnd(const QString &end) {mEnd = end;}
+  ConnectionItem* parent() const {return mpParentConnectionItem;}
+  int childrenSize() const {return mChildren.size();}
+  void insertChild(int row, ConnectionItem *pConnectionItem) {mChildren.insert(row, pConnectionItem);}
+  ConnectionItem* child(int row) {return mChildren.value(row);}
+  ConnectionItem* childAt(int index) const {return mChildren.at(index);}
+  bool isChecked() const {return mChecked;}
+  void setChecked(bool checked) {mChecked = checked;}
+  int row() const;
+private:
+  QString mStart;
+  QString mEnd;
+  ConnectionItem *mpParentConnectionItem;
+  QList<ConnectionItem*> mChildren;
+  bool mChecked;
+};
+
+class ConnectionsModel : public QAbstractItemModel
+{
+  Q_OBJECT
+public:
+  ConnectionsModel(LineAnnotation *pConnectionLineAnnotation, QObject *parent = 0);
+
+  int columnCount(const QModelIndex &parent = QModelIndex()) const;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+  QModelIndex parent(const QModelIndex & index) const;
+  bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  QStringList mimeTypes() const;
+  QMimeData* mimeData(const QModelIndexList &indexes) const;
+  bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const;
+  bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
+  Qt::DropActions supportedDropActions() const;
+  Qt::ItemFlags flags(const QModelIndex &index) const;
+  QModelIndex connectionItemIndex(const ConnectionItem *pConnectionItem) const;
+
+  ConnectionItem* getRootConnectionItem() {return mpRootConnectionItem;}
+  void setHeaderLabels(const QStringList &headerLabels) {mHeaderLabels = headerLabels;}
+
+  ConnectionItem* createConnectionItem(QString start, QString end, ConnectionItem *pParent);
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  ConnectionItem *mpRootConnectionItem;
+  QStringList mHeaderLabels;
+  QModelIndex connectionItemIndexHelper(const ConnectionItem *pConnectionItem, const ConnectionItem *pParentConnectionItem,
+                                        const QModelIndex &parentIndex) const;
+};
+
+class BusConnectionDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation);
+private:
+  GraphicsView *mpGraphicsView;
+  LineAnnotation *mpConnectionLineAnnotation;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  ConnectionsModel *mpInputOutputConnectionsModel;
+  QTableView *mpInputOutputConnectionsTableView;
+  ConnectionsModel *mpOutputInputConnectionsModel;
+  QTableView *mpOutputInputConnectionsTableView;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void addBusConnection();
 };
 
 #endif // ADDBUSDIALOG_H

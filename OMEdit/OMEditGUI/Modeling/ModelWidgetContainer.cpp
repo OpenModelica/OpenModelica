@@ -1551,10 +1551,22 @@ void GraphicsView::addConnection(Component *pComponent)
           (pComponent->getComponentInfo() && pComponent->getComponentInfo()->isArray())) {
         showConnectionArrayDialog = true;
       }
+      // check if any starting or ending components are bus
+      bool showBusConnectionDialog = false;
+      if ((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getOMSBusConnector())
+        || (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSBusConnector())) {
+        showBusConnectionDialog = true;
+      }
       if (showConnectionArrayDialog) {
         CreateConnectionDialog *pConnectionArray = new CreateConnectionDialog(this, mpConnectionLineAnnotation, MainWindow::instance());
         // if user cancels the array connection
         if (!pConnectionArray->exec()) {
+          removeCurrentConnection();
+        }
+      } else if (showBusConnectionDialog) {
+        BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(this, mpConnectionLineAnnotation);
+        // if user cancels the bus connection
+        if (!pBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
       } else {

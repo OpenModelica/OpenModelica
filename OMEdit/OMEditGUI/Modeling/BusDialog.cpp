@@ -282,7 +282,12 @@ Qt::ItemFlags ConnectorsModel::flags(const QModelIndex &index) const
   if (!index.isValid()) {
     return Qt::ItemIsEnabled;
   } else {
-    return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
+    ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());
+    if (!pConnectorItem->getComponent() && pConnectorItem->childrenSize() == 0) {
+      return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+    } else {
+      return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
+    }
   }
 }
 
@@ -428,7 +433,7 @@ AddBusDialog::AddBusDialog(QList<Component *> components, LibraryTreeItem *pLibr
   pMainLayout->addWidget(mpNameTextBox, 2, 1);
   pMainLayout->addWidget(mpInputConnectorsTreeView, 3, 0, 1, 2);
   pMainLayout->addWidget(mpOutputConnectorsTreeView, 4, 0, 1, 2);
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -469,41 +474,31 @@ void AddBusDialog::addBus()
   }
 
   QStringList connectors;
-  bool inputConnectorChecked = false;
   ConnectorItem *pInputConnectorsItem = mpInputConnectorsTreeModel->getRootConnectorItem()->childAt(0);
   if (pInputConnectorsItem) {
     for (int i = 0 ; i < pInputConnectorsItem->childrenSize() ; i++) {
       ConnectorItem *pConnectorItem = pInputConnectorsItem->childAt(i);
       if (pConnectorItem && pConnectorItem->isChecked()) {
-        inputConnectorChecked = true;
         connectors.append(pConnectorItem->getComponent()->getLibraryTreeItem()->getNameStructure());
       }
     }
   }
 
-  bool outputConnectorChecked = false;
   ConnectorItem *pOutputConnectorsItem = mpOutputConnectorsTreeModel->getRootConnectorItem()->childAt(0);
   if (pOutputConnectorsItem) {
     for (int i = 0 ; i < pOutputConnectorsItem->childrenSize() ; i++) {
       ConnectorItem *pConnectorItem = pOutputConnectorsItem->childAt(i);
       if (pConnectorItem && pConnectorItem->isChecked()) {
-        outputConnectorChecked = true;
         connectors.append(pConnectorItem->getComponent()->getLibraryTreeItem()->getNameStructure());
       }
     }
-  }
-
-  if (inputConnectorChecked && outputConnectorChecked) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("You can't select both input and output connectors for the bus."), Helper::ok);
-    return;
   }
 
   LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
   QString bus = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mpNameTextBox->text());
 
   if (mpLibraryTreeItem) {  // edit case
-    mpGraphicsView->getModelWidget()->beginMacro("Edit Bus");
+    mpGraphicsView->getModelWidget()->beginMacro("Edit bus");
 
     /*! @todo Rename the bus here.
      */
@@ -531,7 +526,7 @@ void AddBusDialog::addBus()
     accept();
     mpGraphicsView->getModelWidget()->endMacro();
   } else {  // add case
-    mpGraphicsView->getModelWidget()->beginMacro("Add Bus");
+    mpGraphicsView->getModelWidget()->beginMacro("Add bus");
     QString annotation = QString("Placement(true,%1,%2,-10.0,-10.0,10.0,10.0,0,%1,%2,-10.0,-10.0,10.0,10.0,)")
                          .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100))
                          .arg(Utilities::mapToCoOrdinateSystem(0.5, 0, 1, -100, 100));
@@ -643,5 +638,615 @@ void AddTLMBusDialog::addTLMBus()
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddBusCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
   mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  accept();
+}
+
+/*!
+ * \class ConnectionItem
+ * \brief Contains the information about the connection.
+ */
+/*!
+ * \brief ConnectionItem::ConnectionItem
+ * \param start
+ * \param end
+ * \param pParent
+ */
+ConnectionItem::ConnectionItem(QString start, QString end, ConnectionItem *pParent)
+{
+  mStart = start;
+  mEnd = end;
+  mpParentConnectionItem = pParent;
+  mChecked = true;
+}
+
+/*!
+ * \brief ConnectionItem::row
+ * Returns the row number corresponding to ConnectorItem.
+ * \return
+ */
+int ConnectionItem::row() const
+{
+  if (mpParentConnectionItem) {
+    return mpParentConnectionItem->mChildren.indexOf(const_cast<ConnectionItem*>(this));
+  }
+
+  return 0;
+}
+
+/*!
+ * \class ConnectionsModel
+ * \brief A model for connections.
+ */
+/*!
+ * \brief ConnectionsModel::ConnectionsModel
+ * \param pConnectionLineAnnotation
+ * \param parent
+ */
+ConnectionsModel::ConnectionsModel(LineAnnotation *pConnectionLineAnnotation, QObject *parent)
+  : QAbstractItemModel(parent)
+{
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  mpRootConnectionItem = new ConnectionItem("", "", 0);
+}
+
+/*!
+ * \brief ConnectionsModel::columnCount
+ * Returns the number of columns for the children of the given parent.
+ * \param parent
+ * \return
+ */
+int ConnectionsModel::columnCount(const QModelIndex &parent) const
+{
+  Q_UNUSED(parent);
+  return 3;
+}
+
+/*!
+ * \brief ConnectionsModel::rowCount
+ * Returns the number of rows under the given parent.
+ * When the parent is valid it means that rowCount is returning the number of children of parent.
+ * \param parent
+ * \return
+ */
+int ConnectionsModel::rowCount(const QModelIndex &parent) const
+{
+  ConnectionItem *pParentConnectionItem;
+  if (parent.column() > 0) {
+    return 0;
+  }
+
+  if (!parent.isValid()) {
+    pParentConnectionItem = mpRootConnectionItem;
+  } else {
+    pParentConnectionItem = static_cast<ConnectionItem*>(parent.internalPointer());
+  }
+  return pParentConnectionItem->childrenSize();
+}
+
+QVariant ConnectionsModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+  Q_UNUSED(orientation);
+  if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
+    switch (section) {
+      case 0:
+        return mHeaderLabels.size() > 0 ? mHeaderLabels.at(0) : "";
+      case 1:
+        return mHeaderLabels.size() > 1 ? mHeaderLabels.at(1) : "";
+      case 2:
+        return "ssd:Connection";
+      default:
+        break;
+    }
+  }
+  return QAbstractItemModel::headerData(section, orientation, role);
+}
+
+/*!
+ * \brief ConnectionsModel::index
+ * Returns the index of the item in the model specified by the given row, column and parent index.
+ * \param row
+ * \param column
+ * \param parent
+ * \return
+ */
+QModelIndex ConnectionsModel::index(int row, int column, const QModelIndex &parent) const
+{
+  if (!hasIndex(row, column, parent)) {
+    return QModelIndex();
+  }
+
+  ConnectionItem *pParentConnectionItem;
+  if (!parent.isValid()) {
+    pParentConnectionItem = mpRootConnectionItem;
+  } else {
+    pParentConnectionItem = static_cast<ConnectionItem*>(parent.internalPointer());
+  }
+
+  ConnectionItem *pChildConnectionItem = pParentConnectionItem->child(row);
+  if (pChildConnectionItem) {
+    return createIndex(row, column, pChildConnectionItem);
+  } else {
+    return QModelIndex();
+  }
+}
+
+/*!
+ * \brief ConnectionsModel::parent
+ * Finds the parent for QModelIndex
+ * \param index
+ * \return
+ */
+QModelIndex ConnectionsModel::parent(const QModelIndex &index) const
+{
+  if (!index.isValid()) {
+    return QModelIndex();
+  }
+
+  ConnectionItem *pChildConnectionItem = static_cast<ConnectionItem*>(index.internalPointer());
+  ConnectionItem *pParentConnectionItem = pChildConnectionItem->parent();
+  if (pParentConnectionItem == mpRootConnectionItem)
+    return QModelIndex();
+
+  return createIndex(pParentConnectionItem->row(), 0, pParentConnectionItem);
+}
+
+/*!
+ * \brief ConnectionsModel::setData
+ * Updates the model data.
+ * \param index
+ * \param value
+ * \param role
+ * \return
+ */
+bool ConnectionsModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+  ConnectionItem *pConnectionItem = static_cast<ConnectionItem*>(index.internalPointer());
+  if (!pConnectionItem) {
+    return false;
+  }
+
+  if (index.column() == 0 && role == Qt::CheckStateRole) {
+    if (value.toInt() == Qt::Checked) {
+      pConnectionItem->setChecked(true);
+    } else if (value.toInt() == Qt::Unchecked) {
+      pConnectionItem->setChecked(false);
+    }
+    emit dataChanged(index, index);
+    return true;
+  }
+
+  return QAbstractItemModel::setData(index, value, role);
+}
+
+/*!
+ * \brief ConnectionsModel::data
+ * Returns the ConnectionItem data.
+ * \param index
+ * \param role
+ * \return
+ */
+QVariant ConnectionsModel::data(const QModelIndex &index, int role) const
+{
+  if (!index.isValid()) {
+    return QVariant();
+  }
+
+  ConnectionItem *pConnectionItem = static_cast<ConnectionItem*>(index.internalPointer());
+
+  switch (index.column()) {
+    case 0:
+      switch (role) {
+        case Qt::CheckStateRole:
+          if (pConnectionItem->getStart().isEmpty() || pConnectionItem->getEnd().isEmpty()) {
+            return Qt::Unchecked;
+          }
+          return pConnectionItem->isChecked() ? Qt::Checked : Qt::Unchecked;;
+        case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+          return pConnectionItem->getStart();
+        default:
+          return QVariant();
+      }
+    case 1:
+      switch (role) {
+        case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+          return pConnectionItem->getEnd();
+        default:
+          return QVariant();
+      }
+    case 2:
+      switch (role) {
+        case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+        {
+          LibraryTreeItem *pStartElement = mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->parent();
+          LibraryTreeItem *pEndElement = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->parent();
+          if (pStartElement && pEndElement && !pConnectionItem->getStart().isEmpty() && !pConnectionItem->getEnd().isEmpty()) {
+            return QString("<ssd:Connection startElement=\"%1\" startConnector=\"%2\" endElement=\"%3\" endConnector=\"%4\" />")
+                .arg(pStartElement->getName(), pConnectionItem->getStart(), pEndElement->getName(), pConnectionItem->getEnd());
+          } else {
+            return QVariant();
+          }
+        }
+        default:
+          return QVariant();
+      }
+    default:
+      return QVariant();
+  }
+}
+
+/*!
+ * \brief ConnectionsModel::mimeTypes
+ * \return
+ */
+QStringList ConnectionsModel::mimeTypes() const
+{
+  QStringList types;
+  types << Helper::busConnectorFormat;
+  return types;
+}
+
+/*!
+ * \brief ConnectionsModel::mimeData
+ * \param indexes
+ * \return
+ */
+QMimeData* ConnectionsModel::mimeData(const QModelIndexList &indexes) const
+{
+  QMimeData *mimeData = new QMimeData();
+  QByteArray encodedData;
+  QDataStream stream(&encodedData, QIODevice::WriteOnly);
+
+  if (!indexes.isEmpty()) {
+    const QModelIndex &index = indexes.at(0); // single selection model
+    if (index.isValid()) {
+      stream << index.row();
+      stream << index.column();
+      stream << data(index, Qt::DisplayRole).toString();
+    }
+  }
+
+  mimeData->setData(Helper::busConnectorFormat, encodedData);
+  return mimeData;
+}
+
+bool ConnectionsModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
+{
+  Q_UNUSED(action);
+  Q_UNUSED(row);
+  Q_UNUSED(parent);
+
+  if (!data->hasFormat(Helper::busConnectorFormat)) {
+    return false;
+  }
+
+  int sourceRow, sourceColumn;
+  QByteArray encodedData = data->data(Helper::busConnectorFormat);
+  QDataStream stream(&encodedData, QIODevice::ReadOnly);
+
+  stream >> sourceRow;
+  stream >> sourceColumn;
+
+  // move is only allowed in the same column
+  if (sourceColumn != parent.column()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool ConnectionsModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+  int sourceRow, sourceColumn;
+  QByteArray encodedData = data->data(Helper::busConnectorFormat);
+  QDataStream stream(&encodedData, QIODevice::ReadOnly);
+
+  stream >> sourceRow;
+  stream >> sourceColumn;
+
+  QModelIndex sourceIndex = index(sourceRow, sourceColumn);
+  ConnectionItem *pSourceConnectionItem = static_cast<ConnectionItem*>(sourceIndex.internalPointer());
+
+  ConnectionItem *pDestinationConnectionItem = static_cast<ConnectionItem*>(parent.internalPointer());
+
+  QString sourceValue = "";
+  QString destinationValue = "";
+  if (sourceColumn == 0) {
+    sourceValue = pSourceConnectionItem->getStart();
+    destinationValue = pDestinationConnectionItem->getStart();
+    pSourceConnectionItem->setStart(destinationValue);
+    pDestinationConnectionItem->setStart(sourceValue);
+  } else if (sourceColumn == 1) {
+    sourceValue = pSourceConnectionItem->getEnd();
+    destinationValue = pDestinationConnectionItem->getEnd();
+    pSourceConnectionItem->setEnd(destinationValue);
+    pDestinationConnectionItem->setEnd(sourceValue);
+  }
+
+  return true;
+}
+
+/*!
+ * \brief ConnectionsModel::supportedDropActions
+ * \return
+ */
+Qt::DropActions ConnectionsModel::supportedDropActions() const
+{
+  return Qt::MoveAction;
+}
+
+/*!
+ * \brief ConnectionsModel::flags
+ * Returns the ConnectionItem flags.
+ * \param index
+ * \return
+ */
+Qt::ItemFlags ConnectionsModel::flags(const QModelIndex &index) const
+{
+  if (!index.isValid()) {
+    return Qt::ItemIsEnabled;
+  } else {
+    switch (index.column()) {
+      case 0:
+        return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable;
+      case 1:
+        return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled;
+      case 2:
+      default:
+        return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+
+    }
+  }
+}
+
+/*!
+ * \brief ConnectionsModel::connectionItemIndex
+ * Finds the QModelIndex attached to ConnectionItem.
+ * \param pConnectionItem
+ * \return
+ */
+QModelIndex ConnectionsModel::connectionItemIndex(const ConnectionItem *pConnectionItem) const
+{
+  return connectionItemIndexHelper(pConnectionItem, mpRootConnectionItem, QModelIndex());
+}
+
+/*!
+ * \brief ConnectionsModel::createConnectionItem
+ * Creates the ConnectionItem and returns it.
+ * \param start
+ * \param end
+ * \param pParent
+ * \return
+ */
+ConnectionItem* ConnectionsModel::createConnectionItem(QString start, QString end, ConnectionItem *pParent)
+{
+  int row = pParent->childrenSize();
+  beginInsertRows(connectionItemIndex(pParent), row, row);
+  ConnectionItem *pConnectionItem = new ConnectionItem(start, end, pParent);
+  pParent->insertChild(row, pConnectionItem);
+  endInsertRows();
+  return pConnectionItem;
+}
+
+/*!
+ * \brief ConnectionsModel::connectionItemIndexHelper
+ * Helper function for ConnectionsModel::connectionItemIndex()
+ * \param pConnectionItem
+ * \param pParentConnectionItem
+ * \param parentIndex
+ * \return
+ */
+QModelIndex ConnectionsModel::connectionItemIndexHelper(const ConnectionItem *pConnectionItem,
+                                                        const ConnectionItem *pParentConnectionItem, const QModelIndex &parentIndex) const
+{
+  if (pConnectionItem == pParentConnectionItem) {
+    return parentIndex;
+  }
+  for (int i = pParentConnectionItem->childrenSize(); --i >= 0; ) {
+    const ConnectionItem *childItem = pParentConnectionItem->childAt(i);
+    QModelIndex childIndex = index(i, 0, parentIndex);
+    QModelIndex index = connectionItemIndexHelper(pConnectionItem, childItem, childIndex);
+    if (index.isValid()) {
+      return index;
+    }
+  }
+  return QModelIndex();
+}
+
+/*!
+ * \class BusConnectionDialog
+ * \brief A dialog for creating a bus connection.
+ */
+/*!
+ * \brief BusConnectionDialog::BusConnectionDialog
+ * \param pGraphicsView
+ * \param pConnectionLineAnnotation
+ */
+BusConnectionDialog::BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::busConnection));
+  resize(800, 600);
+  mpGraphicsView = pGraphicsView;
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::busConnection);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // input output label
+  LibraryTreeItem *pStartLibraryTreeItem = mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem();
+  LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
+  Label *pInputOutputLabel = new Label(QString("Connect <b>%1</b> input connectors to <b>%2</b> output connectors")
+                                       .arg(pStartLibraryTreeItem->getName())
+                                       .arg(pEndLibraryTreeItem->getName()));
+  // input output connections
+  mpInputOutputConnectionsModel = new ConnectionsModel(mpConnectionLineAnnotation, this);
+  QStringList headerLabels;
+  headerLabels << QString("%1 inputs").arg(pStartLibraryTreeItem->getName())
+               << QString("%1 outputs").arg(pEndLibraryTreeItem->getName());
+  mpInputOutputConnectionsModel->setHeaderLabels(headerLabels);
+  mpInputOutputConnectionsTableView = new QTableView;
+  mpInputOutputConnectionsTableView->setModel(mpInputOutputConnectionsModel);
+  mpInputOutputConnectionsTableView->setTextElideMode(Qt::ElideMiddle);
+  mpInputOutputConnectionsTableView->setDragDropMode(QAbstractItemView::InternalMove);
+  mpInputOutputConnectionsTableView->setDropIndicatorShown(true);
+  mpInputOutputConnectionsTableView->setSelectionBehavior(QAbstractItemView::SelectItems);
+  mpInputOutputConnectionsTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+  // output input label
+  Label *pOutputInputLabel = new Label(QString("Connect <b>%1</b> output connectors to <b>%2</b> input connectors")
+                                       .arg(pStartLibraryTreeItem->getName())
+                                       .arg(pEndLibraryTreeItem->getName()));
+  // output input connections
+  mpOutputInputConnectionsModel = new ConnectionsModel(mpConnectionLineAnnotation, this);
+  headerLabels.clear();
+  headerLabels << QString("%1 outputs").arg(pStartLibraryTreeItem->getName())
+               << QString("%1 inputs").arg(pEndLibraryTreeItem->getName());
+  mpOutputInputConnectionsModel->setHeaderLabels(headerLabels);
+  mpOutputInputConnectionsTableView = new QTableView;
+  mpOutputInputConnectionsTableView->setModel(mpOutputInputConnectionsModel);
+  mpOutputInputConnectionsTableView->setTextElideMode(Qt::ElideMiddle);
+  mpOutputInputConnectionsTableView->setDragDropMode(QAbstractItemView::InternalMove);
+  mpOutputInputConnectionsTableView->setDropIndicatorShown(true);
+  mpOutputInputConnectionsTableView->setSelectionBehavior(QAbstractItemView::SelectItems);
+  mpOutputInputConnectionsTableView->setSelectionMode(QAbstractItemView::SingleSelection);
+  // start bus input output connectors
+  oms3_busconnector_t *pStartBus = pStartLibraryTreeItem->getOMSBusConnector();
+  QStringList startBusInputConnectors, startBusOutputConnectors;
+  if (pStartBus->connectors) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pParentLibraryTreeItem = pStartLibraryTreeItem->parent();
+    for (int i = 0; pStartBus->connectors[i] ; ++i) {
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(QString("%1.%2")
+                                                                                 .arg(pParentLibraryTreeItem->getNameStructure())
+                                                                                 .arg(pStartBus->connectors[i]), pParentLibraryTreeItem);
+      if (pLibraryTreeItem && pLibraryTreeItem->getOMSConnector()) {
+        if (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+          startBusInputConnectors.append(QString(pStartBus->connectors[i]));
+        } else if (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+          startBusOutputConnectors.append(QString(pStartBus->connectors[i]));
+        }
+      }
+    }
+  }
+  startBusInputConnectors.sort();
+  startBusOutputConnectors.sort();
+  // end bus input output connectors
+  oms3_busconnector_t *pEndBus = pEndLibraryTreeItem->getOMSBusConnector();
+  QStringList endBusInputConnectors, endBusOutputConnectors;
+  if (pEndBus->connectors) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pParentLibraryTreeItem = pEndLibraryTreeItem->parent();
+    for (int i = 0; pEndBus->connectors[i] ; ++i) {
+      LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(QString("%1.%2")
+                                                                                 .arg(pParentLibraryTreeItem->getNameStructure())
+                                                                                 .arg(pEndBus->connectors[i]), pParentLibraryTreeItem);
+      if (pLibraryTreeItem && pLibraryTreeItem->getOMSConnector()) {
+        if (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
+          endBusInputConnectors.append(QString(pEndBus->connectors[i]));
+        } else if (pLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
+          endBusOutputConnectors.append(QString(pEndBus->connectors[i]));
+        }
+      }
+    }
+  }
+  endBusInputConnectors.sort();
+  endBusOutputConnectors.sort();
+
+  int size = qMax(startBusInputConnectors.size(), endBusOutputConnectors.size());
+
+  for (int i = 0; i < size ; ++i) {
+    QString start = i < startBusInputConnectors.size() ? startBusInputConnectors.at(i) : "";
+    QString end = i < endBusOutputConnectors.size() ? endBusOutputConnectors.at(i) : "";
+    mpInputOutputConnectionsModel->createConnectionItem(start, end, mpInputOutputConnectionsModel->getRootConnectionItem());
+  }
+  mpInputOutputConnectionsTableView->resizeColumnToContents(2);
+
+  size = qMax(startBusOutputConnectors.size(), endBusInputConnectors.size());
+
+  for (int i = 0; i < size ; ++i) {
+    QString start = i < startBusOutputConnectors.size() ? startBusOutputConnectors.at(i) : "";
+    QString end = i < endBusInputConnectors.size() ? endBusInputConnectors.at(i) : "";
+    mpOutputInputConnectionsModel->createConnectionItem(start, end, mpOutputInputConnectionsModel->getRootConnectionItem());
+  }
+  mpOutputInputConnectionsTableView->resizeColumnToContents(2);
+
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addBusConnection()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0);
+  pMainLayout->addWidget(pInputOutputLabel, 2, 0);
+  pMainLayout->addWidget(mpInputOutputConnectionsTableView, 3, 0);
+  pMainLayout->addWidget(pOutputInputLabel, 4, 0);
+  pMainLayout->addWidget(mpOutputInputConnectionsTableView, 5, 0);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void BusConnectionDialog::addBusConnection()
+{
+  mpGraphicsView->getModelWidget()->beginMacro("Add bus connection");
+
+  LibraryTreeItem *pStartLibraryTreeItem = mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem();
+  LibraryTreeItem *pStartParentLibraryTreeItem = pStartLibraryTreeItem->parent();
+  LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
+  LibraryTreeItem *pEndParentLibraryTreeItem = pEndLibraryTreeItem->parent();
+
+  for (int i = 0; i < mpInputOutputConnectionsModel->getRootConnectionItem()->childrenSize() ; ++i) {
+    ConnectionItem *pConnectionItem = mpInputOutputConnectionsModel->getRootConnectionItem()->childAt(i);
+    if (pConnectionItem->isChecked()) {
+      Component *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pConnectionItem->getStart());
+      Component *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pConnectionItem->getEnd());
+      if (pStartComponent && pEndComponent) {
+        LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation("", 0, 0, mpGraphicsView);
+        pNewConnectionLineAnnotation->updateShape(mpConnectionLineAnnotation);
+        pNewConnectionLineAnnotation->setStartComponent(pStartComponent);
+        pNewConnectionLineAnnotation->setStartComponentName(pStartComponent->getLibraryTreeItem()->getNameStructure());
+        pNewConnectionLineAnnotation->setEndComponent(pEndComponent);
+        pNewConnectionLineAnnotation->setEndComponentName(pEndComponent->getLibraryTreeItem()->getNameStructure());
+        AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(pNewConnectionLineAnnotation, true);
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
+      }
+    }
+  }
+
+  for (int i = 0; i < mpOutputInputConnectionsModel->getRootConnectionItem()->childrenSize() ; ++i) {
+    ConnectionItem *pConnectionItem = mpOutputInputConnectionsModel->getRootConnectionItem()->childAt(i);
+    if (pConnectionItem->isChecked()) {
+      Component *pStartComponent = pStartParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pConnectionItem->getStart());
+      Component *pEndComponent = pEndParentLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getComponentObject(pConnectionItem->getEnd());
+      if (pStartComponent && pEndComponent) {
+        LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation("", 0, 0, mpGraphicsView);
+        pNewConnectionLineAnnotation->updateShape(mpConnectionLineAnnotation);
+        pNewConnectionLineAnnotation->setStartComponent(pStartComponent);
+        pNewConnectionLineAnnotation->setStartComponentName(pStartComponent->getLibraryTreeItem()->getNameStructure());
+        pNewConnectionLineAnnotation->setEndComponent(pEndComponent);
+        pNewConnectionLineAnnotation->setEndComponentName(pEndComponent->getLibraryTreeItem()->getNameStructure());
+        AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(pNewConnectionLineAnnotation, true);
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
+      }
+    }
+  }
+
+  mpConnectionLineAnnotation->setStartComponentName(pStartLibraryTreeItem->getNameStructure());
+  mpConnectionLineAnnotation->setEndComponentName(pEndLibraryTreeItem->getNameStructure());
+  AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
+  mpGraphicsView->getModelWidget()->updateModelText();
+  mpGraphicsView->getModelWidget()->endMacro();
   accept();
 }

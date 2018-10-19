@@ -2197,7 +2197,6 @@ void AddSystemDialog::addSystem()
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddSystemCommand);
   if (!pAddSystemCommand->isFailed()) {
     mpGraphicsView->getModelWidget()->updateModelText();
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
     accept();
   }
 }

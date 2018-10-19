@@ -77,6 +77,7 @@ public:
   static int tabWidth;
   static QString modelicaComponentFormat;
   static QString modelicaFileFormat;
+  static QString busConnectorFormat;
   static qreal shapesStrokeWidth;
   static int headingFontSize;
   static QString ModelicaSimulationOutputFormats;
@@ -366,6 +367,7 @@ public:
   static QString addTLMBusTip;
   static QString addConnector;
   static QString addConnectorTip;
+  static QString busConnection;
   static QString running;
   static QString finished;
   static QString newVariable;

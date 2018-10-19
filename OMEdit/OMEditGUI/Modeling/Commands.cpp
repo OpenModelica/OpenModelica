@@ -1845,6 +1845,9 @@ void AddSystemCommand::redoInternal()
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
                                                                  pParentLibraryTreeItem->isSaved(), pParentLibraryTreeItem, pOMSElement);
+    if (!mOpeningClass) {
+      mpLibraryTreeItem->handleIconUpdated();
+    }
   }
   // add the FMU to view
   ComponentInfo *pComponentInfo = new ComponentInfo;
