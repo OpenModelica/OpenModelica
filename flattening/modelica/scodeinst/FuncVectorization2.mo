@@ -62,6 +62,6 @@ end FuncVectorization2;
 //   Integer g[2,2];
 //   Integer g[2,3];
 // equation
-//   g = array(FuncVectorization2.F(b[$i1,$i2], 1) for $i2 in 1:3, $i1 in 1:2);
+//   g = array(FuncVectorization2.F({b[$i1,$i2,1], b[$i1,$i2,2], b[$i1,$i2,3], b[$i1,$i2,4]}, 1) for $i2 in 1:3, $i1 in 1:2);
 // end FuncVectorization2;
 // endResult

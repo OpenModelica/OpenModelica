@@ -371,7 +371,7 @@ end OperatorOverloadComplex;
 //   c6 = Complex.'*'.multiply(c5, c4);
 //   c7 = Complex.'-'.subtract(Complex.'+'(Complex.'*'.multiply(Complex.'*'.multiply(Complex.'/'(c6, c5), Complex.'^'(c4, c3)), Complex.'constructor'.fromReal(1.0, 0.0)), c2), c1);
 //   c8 = Complex.'0'();
-//   ca1 = Complex.'-'.negateArr(ca2);
-//   c1 = Complex.'*'.scalarProduct(ca2, ca3);
+//   ca1 = Complex.'-'.negateArr({ca2[1], ca2[2], ca2[3]});
+//   c1 = Complex.'*'.scalarProduct({ca2[1], ca2[2], ca2[3]}, {ca3[1], ca3[2], ca3[3]});
 // end OperatorOverloadComplex;
 // endResult
