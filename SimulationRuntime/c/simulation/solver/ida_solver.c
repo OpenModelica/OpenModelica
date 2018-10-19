@@ -450,7 +450,14 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
         flag = IDADense(idaData->ida_mem, idaData->N);
         warningStreamPrint(LOG_STDOUT, 0, "IDA linear solver method also switched back to %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
       }
+    } else {
+      ANALYTIC_JACOBIAN* jac = &data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A];
+      infoStreamPrint(LOG_SIMULATION, 1, "Initialized colored Jacobian:");
+      infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jac->sizeCols, jac->sizeRows);
+      infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jac->sparsePattern.numberOfNoneZeros, jac->sparsePattern.maxColors);
+      messageClose(LOG_SIMULATION);
     }
+
   }
   /* set up the appropriate function pointer */
   if (idaData->linearSolverMethod == IDA_LS_KLU)
