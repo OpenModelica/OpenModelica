@@ -76,6 +76,7 @@ public
       case Expression.UNARY() then expandUnary(exp.exp, exp.operator);
       case Expression.LBINARY() then expandLogicalBinary(exp);
       case Expression.LUNARY() then expandLogicalUnary(exp.exp, exp.operator);
+      case Expression.RELATION() then (exp, true);
       case Expression.CAST() then expandCast(exp.exp, exp.ty);
       else expandGeneric(exp);
     end match;
@@ -880,16 +881,22 @@ public
     Operator op;
   algorithm
     Expression.LBINARY(exp1 = exp1, operator = op, exp2 = exp2) := exp;
-    (exp1, expanded) := expand(exp1);
 
-    if expanded then
-      (exp2, expanded) := expand(exp2);
-    end if;
+    if Type.isArray(Operator.typeOf(op)) then
+      (exp1, expanded) := expand(exp1);
 
-    if expanded then
-      outExp := expandBinaryElementWise2(exp1, op, exp2, makeLBinaryOp);
+      if expanded then
+        (exp2, expanded) := expand(exp2);
+      end if;
+
+      if expanded then
+        outExp := expandBinaryElementWise2(exp1, op, exp2, makeLBinaryOp);
+      else
+        outExp := exp;
+      end if;
     else
       outExp := exp;
+      expanded := true;
     end if;
   end expandLogicalBinary;
 

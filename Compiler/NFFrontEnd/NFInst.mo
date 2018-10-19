@@ -119,6 +119,7 @@ algorithm
   if not Flags.isSet(Flags.NF_SCALARIZE) then
     // make sure we don't expand anything
     Flags.set(Flags.NF_EXPAND_OPERATIONS, false);
+    Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
   end if;
 
   // Create a root node from the given top-level classes.

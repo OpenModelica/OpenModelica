@@ -145,9 +145,13 @@ algorithm
   Expression.CALL(call = call) := callExp;
 
   callExp := match call
-    case Call.TYPED_CALL() guard not Call.isExternal(call)
+    case Call.TYPED_CALL(arguments = args) guard not Call.isExternal(call)
       algorithm
-        args := list(simplify(arg) for arg in call.arguments);
+        if Flags.isSet(Flags.NF_EXPAND_FUNC_ARGS) then
+          args := list(if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg) for arg in args);
+        end if;
+
+        args := list(simplify(arg) for arg in args);
         call.arguments := args;
         builtin := Function.isBuiltin(call.fn);
         is_pure := not Function.isImpure(call.fn);
