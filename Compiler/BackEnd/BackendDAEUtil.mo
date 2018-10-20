@@ -7810,9 +7810,9 @@ algorithm
 
   if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
-
     enabledModules := deprecatedDebugFlag(Flags.SORT_EQNS_AND_VARS, enabledModules, "sortEqnsVars", "preOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ADD_DER_ALIASES, enabledModules, "introduceDerAlias", "preOptModules+");
+
     if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "inputDerivativesForDynOpt"::enabledModules;
       enabledModules := "createDynamicOptimization"::enabledModules;
@@ -7821,15 +7821,19 @@ algorithm
     // handle special flags, which disable modules
     disabledModules := deprecatedDebugFlag(Flags.NO_PARTITIONING, disabledModules, "clockPartitioning", "preOptModules-");
     disabledModules := deprecatedDebugFlag(Flags.DISABLE_COMSUBEXP, disabledModules, "comSubExp", "preOptModules-");
+
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "causal" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
       disabledModules := "removeSimpleEquations"::disabledModules;
     end if;
 
-
     if not Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
       disabledModules := "evalFunc"::disabledModules;
       Error.addCompilerWarning("Deprecated debug flag --d=evalConstFuncs=false detected. Use --preOptModules-=evalFunc instead.");
+    end if;
+
+    if not Flags.isSet(Flags.NF_SCALARIZE) then
+      disabledModules := "inlineArrayEqn"::disabledModules;
     end if;
   end if;
 
@@ -7934,6 +7938,10 @@ algorithm
 
     if Config.getTearingMethod() == "noTearing" then
       disabledModules := "tearingSystem"::disabledModules;
+    end if;
+
+    if not Flags.isSet(Flags.NF_SCALARIZE) then
+      disabledModules := "inlineArrayEqn"::disabledModules;
     end if;
   end if;
 
