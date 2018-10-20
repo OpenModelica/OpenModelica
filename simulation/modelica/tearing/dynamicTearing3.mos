@@ -320,7 +320,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // Adjacency Matrix Enhanced (row == equation)
 // ====================================
 // number of rows: 4
-// 1:(3,variable(false),abs(g * x) > 1e-12 (local)) (4,variable(false),abs(g * a) > 1e-12 (local)) (1,solvable,time + g * a * x >= 0.0 (local)) 
+// 1:(3,variable(false),abs(g * x) > 1e-12 (local)) (4,variable(false),abs(g * a) > 1e-12 (local)) (1,solvable,g * a * x + time >= 0.0 (local)) 
 // 2:(4,unsolvable) (3,solved) 
 // 3:(3,param(false),abs(g) > 1e-12 (global)) (4,solvable,abs(z) > 1e-12 (local)) (2,solvable,abs(x) > 1e-12 (local)) (1,solvable) 
 // 4:(3,solvable) (1,solvable) (2,solvable,abs(k) > 1e-12 (global)) 
@@ -329,7 +329,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
 // number of rows: 4
-// 1:(4,solvable) (3,solvable) (1,solvable,time + g * a * x >= 0.0 (local)) 
+// 1:(4,solvable) (3,solvable) (1,solvable,g * a * x + time >= 0.0 (local)) 
 // 2:(4,solvable,abs(k) > 1e-12 (global)) (3,solvable,abs(x) > 1e-12 (local)) 
 // 3:(4,solvable) (3,param(false),abs(g) > 1e-12 (global)) (2,solved) (1,variable(false),abs(g * x) > 1e-12 (local)) 
 // 4:(3,solvable,abs(z) > 1e-12 (local)) (2,unsolvable) (1,variable(false),abs(g * a) > 1e-12 (local)) 
@@ -375,7 +375,7 @@ simulate(dynamicTearing3,startTime=0,stopTime=2,numberOfIntervals=500,simflags="
 // Single Equation with constraint:
 // g * a * x + time - y ^ 2.0 = 0.0
 // Constraints:
-// time + g * a * x >= 0.0 (local)
+// g * a * x + time >= 0.0 (local)
 //
 // Single Equation with constraint:
 // g * a + x * z - y = 0.0

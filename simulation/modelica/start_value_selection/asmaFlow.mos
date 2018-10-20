@@ -1067,7 +1067,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 39/39 (1): aimc.rs.plug_n.pin[2].v = (-sinevoltage1.v[2]) - aimc.rs.v[2]   [dynamic |0|0|0|0|]
 // 40/40 (1): aimc.rs.v[1] = aimc.rs.resistor[1].R_actual * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
 // 41/41 (1): aimc.rs.resistor[1].LossPower = aimc.rs.v[1] * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
-// 42/42 (1): aimc.thermalAmbient.Q_flowStatorWinding = aimc.rs.resistor[3].LossPower - ((-aimc.rs.resistor[1].LossPower) - aimc.rs.resistor[2].LossPower)   [dynamic |0|0|0|0|]
+// 42/42 (1): aimc.thermalAmbient.Q_flowStatorWinding = aimc.rs.resistor[1].LossPower + aimc.rs.resistor[2].LossPower + aimc.rs.resistor[3].LossPower   [dynamic |0|0|0|0|]
 // 43/43 (1): aimc.thermalAmbient.Q_flowTotal = aimc.thermalAmbient.Q_flowStatorWinding + aimc.thermalAmbient.Q_flowRotorWinding   [binding |0|0|0|0|]
 // 44/44 (1): aimc.rs.plug_n.pin[1].v = (-sinevoltage1.v[1]) - aimc.rs.v[1]   [dynamic |0|0|0|0|]
 // 45/45 (1): aimc.inertiaRotor.a = (aimc.tauElectrical + const.k) / aimc.inertiaRotor.J   [dynamic |0|0|0|0|]
