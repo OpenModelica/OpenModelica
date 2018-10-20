@@ -584,13 +584,15 @@ algorithm
     // -f(a) = b => f(a) = -b
     case DAE.UNARY(op as DAE.UMINUS(), fa)
       guard expHasCref(fa, inExp3) and not expHasCref(inExp2, inExp3)
-    then(fa, DAE.UNARY(op, inExp2), true);
+      equation
+        b = Expression.negate(inExp2);
+      then (fa, b, true);
 
     case DAE.UNARY(op as DAE.UMINUS_ARR(), fa)
       guard expHasCref(fa, inExp3) and not expHasCref(inExp2, inExp3)
       equation
-        b = DAE.UNARY(op, inExp2);
-    then(fa, b, true);
+        b = Expression.negate(inExp2);
+      then (fa, b, true);
 
     // b/f(a) = rhs  => f(a) = b/rhs solve for a
     case DAE.BINARY(b,DAE.DIV(_),fa)
