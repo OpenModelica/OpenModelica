@@ -2002,9 +2002,10 @@ void ComponentNameDialog::updateComponentName()
  */
 /*!
  * \brief SystemWidget::SystemWidget
+ * \param pLibraryTreeItem
  * \param pParent
  */
-SystemWidget::SystemWidget(QWidget *pParent)
+SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   : QWidget(pParent)
 {
   // name
@@ -2013,9 +2014,17 @@ SystemWidget::SystemWidget(QWidget *pParent)
   // type
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
-  mpTypeComboBox->addItem(Helper::systemTLM, oms_system_tlm);
-  mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
-  mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
+  if (!pLibraryTreeItem || pLibraryTreeItem->isTopLevel()) {
+    mpTypeComboBox->addItem(Helper::systemTLM, oms_system_tlm);
+    mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
+    mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
+  } else if (pLibraryTreeItem->isSystemElement()) {
+    if (pLibraryTreeItem->getSystemType() == oms_system_tlm) {
+      mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
+    } else if (pLibraryTreeItem->getSystemType() == oms_system_wc) {
+      mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
+    }
+  }
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -2051,7 +2060,7 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
   // Root system groupbox
   mpRootSystemGroupBox = new QGroupBox(tr("Root System"));
   // system widget
-  mpSystemWidget = new SystemWidget(this);
+  mpSystemWidget = new SystemWidget(0, this);
   mpSystemWidget->getNameTextBox()->setText("Root");
   QHBoxLayout *pSystemGroupBoxLayout = new QHBoxLayout;
   pSystemGroupBoxLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -2136,7 +2145,7 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
   // system widget
-  mpSystemWidget = new SystemWidget(this);
+  mpSystemWidget = new SystemWidget(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), this);
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
