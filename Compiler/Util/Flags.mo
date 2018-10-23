@@ -542,7 +542,7 @@ constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(183, "disableFMIDependency", 
   Util.gettext("Disables the dependency analysis and generation for FMI 2.0."));
 constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(184, "warnMinMax", true,
   Util.gettext("Makes a warning assert from min/max variable attributes instead of error."));
-constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(185, "nfExpandFuncArgs", true,
+constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(185, "nfExpandFuncArgs", false,
   Util.gettext("Expand all function arguments in the new frontend."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
