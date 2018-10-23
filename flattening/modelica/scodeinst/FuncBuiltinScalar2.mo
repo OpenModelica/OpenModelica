@@ -27,7 +27,7 @@ end FuncBuiltinScalar2;
 //
 // class FuncBuiltinScalar2
 //   Real x[1];
-//   Real y = FuncBuiltinScalar2.f({x[1]});
+//   Real y = FuncBuiltinScalar2.f(x);
 // equation
 //   x = {1.0};
 // end FuncBuiltinScalar2;

@@ -30,7 +30,7 @@ end End3;
 //   Real x[1];
 //   Real x[2];
 //   Real x[3];
-//   Real y = last({x[1], x[2], x[3]});
+//   Real y = last(x);
 // equation
 //   x = {1.0, 2.0, 3.0};
 // end End3;

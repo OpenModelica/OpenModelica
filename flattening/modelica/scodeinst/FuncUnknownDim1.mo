@@ -24,6 +24,6 @@ end FuncUnknownDim1;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   f({x[1], x[2], x[3]});
+//   f(x);
 // end FuncUnknownDim1;
 // endResult

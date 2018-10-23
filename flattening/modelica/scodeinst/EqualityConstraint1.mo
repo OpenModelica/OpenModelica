@@ -38,6 +38,6 @@ end EqualityConstraint1;
 //   Real oc2[2];
 //   Real oc2[3];
 // equation
-//   OC.equalityConstraint({oc1[1], oc1[2], oc1[3]}, {oc2[1], oc2[2], oc2[3]});
+//   OC.equalityConstraint(oc1, oc2);
 // end EqualityConstraint1;
 // endResult

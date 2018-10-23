@@ -249,7 +249,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   pre(triggeredAdd.y) = triggeredAdd.y_start;
 //   pre(rSFlipFlop.pre.u) = rSFlipFlop.pre.pre_u_start;
 // initial algorithm
-//   (booleanTable.index, booleanTable.nextTime, booleanTable.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex({booleanTable.table[1], booleanTable.table[2], booleanTable.table[3], booleanTable.table[4], booleanTable.table[5], booleanTable.table[6], booleanTable.table[7]}, time, booleanTable.startValue);
+//   (booleanTable.index, booleanTable.nextTime, booleanTable.y) := Modelica.Blocks.Sources.BooleanTable.getFirstIndex(booleanTable.table, time, booleanTable.startValue);
 // equation
 //   showValue.activePort = showValue.showActive;
 //   showValue2.activePort = showValue2.showActive;
@@ -294,7 +294,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   onDelay.y = showValue6.activePort;
 //   sampleTriggerSet.y = rSFlipFlop.S;
 //   sampleTriggerReset.y = rSFlipFlop.R;
-//   and1.y = Modelica.Math.BooleanVectors.allTrue({and1.u[1], and1.u[2], and1.u[3]});
+//   and1.y = Modelica.Math.BooleanVectors.allTrue(and1.u);
 //   when sample(booleanPulse1.startTime, booleanPulse1.period) then
 //     booleanPulse1.pulsStart = time;
 //   end when;
@@ -304,10 +304,10 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   end when;
 //   booleanPulse2.y = time >= booleanPulse2.pulsStart and time < booleanPulse2.pulsStart + booleanPulse2.Twidth;
 //   booleanStep.y = if time >= booleanStep.startTime then not booleanStep.startValue else booleanStep.startValue;
-//   or1.y = Modelica.Math.BooleanVectors.anyTrue({or1.u[1], or1.u[2]});
-//   xor1.y = Modelica.Math.BooleanVectors.oneTrue({xor1.u[1], xor1.u[2]});
-//   nand1.y = not Modelica.Math.BooleanVectors.allTrue({nand1.u[1], nand1.u[2]});
-//   or2.y = not Modelica.Math.BooleanVectors.anyTrue({or2.u[1], or2.u[2]});
+//   or1.y = Modelica.Math.BooleanVectors.anyTrue(or1.u);
+//   xor1.y = Modelica.Math.BooleanVectors.oneTrue(xor1.u);
+//   nand1.y = not Modelica.Math.BooleanVectors.allTrue(nand1.u);
+//   or2.y = not Modelica.Math.BooleanVectors.anyTrue(or2.u);
 //   nor1.y = not nor1.u;
 //   if onDelay.delaySignal then
 //     onDelay.y = time >= onDelay.t_next;
@@ -316,7 +316,7 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   end if;
 //   rising.y = edge(rising.u);
 //   set1.expr = {false, true};
-//   set1.firstActiveIndex = Modelica.Math.BooleanVectors.firstTrueIndex({set1.u[1], set1.u[2]});
+//   set1.firstActiveIndex = Modelica.Math.BooleanVectors.firstTrueIndex(set1.u);
 //   set1.y = if set1.firstActiveIndex == 0 then if set1.use_pre_as_default then pre(set1.y) else set1.y_default else set1.expr[set1.firstActiveIndex];
 //   falling.y = edge(falling.not_u);
 //   changing.y = change(changing.u);

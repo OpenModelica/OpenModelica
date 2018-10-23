@@ -64,8 +64,8 @@ end FuncVectorizationMap1;
 //   Real g[2,2];
 //   Real g[2,3];
 // equation
-//   g = array(FuncVectorizationMap1.F({b[$i1,$i2,1], b[$i1,$i2,2], b[$i1,$i2,3], b[$i1,$i2,4]}, 1.0) for $i2 in 1:3, $i1 in 1:2);
-//   g = array(array(FuncVectorizationMap1.F({b[i,$i1,1], b[i,$i1,2], b[i,$i1,3], b[i,$i1,4]}, 1.0) for $i1 in 1:3) for i in 1:2);
-//   g = array(FuncVectorizationMap1.F({b[i,j,1], b[i,j,2], b[i,j,3], b[i,j,4]}, 1.0) for j in 1:3, i in 1:2);
+//   g = array(FuncVectorizationMap1.F(b[$i1,$i2], 1.0) for $i2 in 1:3, $i1 in 1:2);
+//   g = array(array(FuncVectorizationMap1.F(b[i,$i1], 1.0) for $i1 in 1:3) for i in 1:2);
+//   g = array(FuncVectorizationMap1.F(b[i,j], 1.0) for j in 1:3, i in 1:2);
 // end FuncVectorizationMap1;
 // endResult
