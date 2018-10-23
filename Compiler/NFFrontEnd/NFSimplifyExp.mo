@@ -273,11 +273,15 @@ function simplifyTranspose
   input Expression arg;
   input Call call;
   output Expression exp;
+protected
+  Expression e;
 algorithm
-  exp := match arg
+  e := if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg);
+
+  exp := match e
     case Expression.ARRAY()
-      guard List.all(arg.elements, Expression.isArray)
-      then Expression.transposeArray(arg);
+      guard List.all(e.elements, Expression.isArray)
+      then Expression.transposeArray(e);
 
     else Expression.CALL(call);
   end match;
