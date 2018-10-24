@@ -635,8 +635,8 @@ algorithm
       Integer stop;
       Expression range;
     case Equation.EQUALITY(lhs = Expression.CREF(), rhs = Expression.CREF())
-      // let simple equality as is
-      then eqn;
+      // convert simple equality of crefs to array equality
+      then Equation.ARRAY_EQUALITY(eqn.lhs, eqn.rhs, Type.liftArrayLeftList(eqn.ty, dimensions), eqn.source);
     else
       // wrap general equation into for loop
       algorithm

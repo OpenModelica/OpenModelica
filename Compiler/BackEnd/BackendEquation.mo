@@ -1664,7 +1664,6 @@ algorithm
   osize := match eq
     local
       list<Integer> ds;
-      DAE.Exp e1, e2;
       Integer size, start, stop;
       list<BackendDAE.Equation> eqnsfalse;
 
@@ -1694,14 +1693,8 @@ algorithm
       size = equationLstSize(eqnsfalse);
     then size;
 
-    case BackendDAE.FOR_EQUATION(start = e1, stop = e2) equation
-      if Flags.isSet(Flags.NF_SCALARIZE) then
-        DAE.ICONST(start) = e1;
-        DAE.ICONST(stop) = e2;
-        size = stop - start + 1;
-      else
-        size = 1;
-      end if;
+    case BackendDAE.FOR_EQUATION(start = DAE.ICONST(start), stop = DAE.ICONST(stop)) equation
+      size = stop - start + 1;
     then size;
 
     else equation
