@@ -13,7 +13,7 @@
    height="32px"
    id="svg2985"
    version="1.1"
-   inkscape:version="0.92.1 r15371"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
    sodipodi:docname="fmu-icon.svg">
   <defs
      id="defs2987" />
@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="11.197802"
-     inkscape:cx="23.719491"
-     inkscape:cy="16"
+     inkscape:zoom="16"
+     inkscape:cx="20.9375"
+     inkscape:cy="11.8125"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:grid-bbox="true"
@@ -66,15 +66,46 @@
        y="0.92280996" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:6.47398663px;line-height:0%;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.94117647;stroke:none;stroke-width:0.53949898"
-       x="2.9651115"
-       y="17.685886"
+       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:4.70188236px;line-height:0%;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:0.94117647;stroke:none;stroke-width:0.39182359"
+       x="3.39431"
+       y="24.605795"
        id="text3782"
-       transform="scale(0.78041666,1.2813668)"><tspan
+       transform="scale(0.99189229,1.008174)"><tspan
          sodipodi:role="line"
          id="tspan3784"
-         x="2.9651115"
-         y="17.685886"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:18.00169373px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';letter-spacing:0.98539293px;fill:#000000;fill-opacity:0.94117647;stroke-width:0.53949898">FMU</tspan></text>
+         x="3.39431"
+         y="25.790125"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:13.07414627px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';letter-spacing:0.71566427px;fill:#000000;fill-opacity:0.94117647;stroke-width:0.39182359" /></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       x="38.3125"
+       y="13.375"
+       id="text821"><tspan
+         sodipodi:role="line"
+         id="tspan819"
+         x="38.3125"
+         y="49.868214"></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       x="6.9375"
+       y="18.0625"
+       id="text825"><tspan
+         sodipodi:role="line"
+         id="tspan823"
+         x="6.9375"
+         y="54.555714"></tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
+       x="2.5625"
+       y="20.125"
+       id="text829"><tspan
+         sodipodi:role="line"
+         id="tspan827"
+         x="2.5625"
+         y="20.125"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:14.66666698px;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold'">FMU</tspan></text>
   </g>
 </svg>

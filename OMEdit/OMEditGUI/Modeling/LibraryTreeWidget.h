@@ -127,10 +127,11 @@ public:
   oms3_element_t* getOMSElement() const {return mpOMSElement;}
   bool isSystemElement() const;
   bool isComponentElement() const;
+  bool isFMUComponent() const;
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
   oms_system_enu_t getSystemType() {return mSystemType;}
-  void setComponentType(oms3_component_enu_t type) {mComponentType = type;}
-  oms3_component_enu_t getComponentType() {return mComponentType;}
+  void setComponentType(oms_component_enu_t type) {mComponentType = type;}
+  oms_component_enu_t getComponentType() {return mComponentType;}
   ssd_element_geometry_t getOMSElementGeometry();
   void setOMSConnector(oms_connector_t *pOMSConnector) {mpOMSConnector = pOMSConnector;}
   oms_connector_t* getOMSConnector() const {return mpOMSConnector;}
@@ -140,6 +141,8 @@ public:
   oms3_tlmbusconnector_t* getOMSTLMBusConnector() const {return mpOMSTLMBusConnector;}
   void setFMUInfo(const oms_fmu_info_t *pFMUInfo) {mpFMUInfo = pFMUInfo;}
   const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
+  void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
+  QString getSubModelPath() const {return mSubModelPath;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -193,11 +196,12 @@ private:
   bool mNonExisting;
   oms3_element_t *mpOMSElement;
   oms_system_enu_t mSystemType;
-  oms3_component_enu_t mComponentType;
+  oms_component_enu_t mComponentType;
   oms_connector_t *mpOMSConnector;
   oms3_busconnector_t *mpOMSBusConnector;
   oms3_tlmbusconnector_t *mpOMSTLMBusConnector;
   const oms_fmu_info_t *mpFMUInfo;
+  QString mSubModelPath;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();

@@ -372,7 +372,7 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
  * \param pConnector
  * \return
  */
-bool OMSProxy::getConnector(QString cref, oms_connector_t** pConnector)
+bool OMSProxy::getConnector(QString cref, oms_connector_t **pConnector)
 {
   QString command = "oms3_getConnector";
   QStringList args;
@@ -508,6 +508,43 @@ bool OMSProxy::addConnectorToTLMBus(QString busCref, QString connectorCref, QStr
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addConnectorToTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str(),
                                                       type.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addSubModel
+ * Adds the submodel to the system
+ * \param busCref
+ * \param connectorCref
+ * \param type
+ * \return
+ */
+bool OMSProxy::addSubModel(QString cref, QString fmuPath)
+{
+  QString command = "oms3_addSubModel";
+  QStringList args;
+  args << cref << fmuPath;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_addSubModel(cref.toStdString().c_str(), fmuPath.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getComponentType
+ * Get the component type.
+ * \param cref
+ * \param pType
+ * \return
+ */
+bool OMSProxy::getComponentType(QString cref, oms_component_enu_t *pType)
+{
+  QString command = "oms3_getComponentType";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getComponentType(cref.toStdString().c_str(), pType);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -777,7 +814,12 @@ bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
  */
 bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
 {
-  oms_status_enu_t status = oms2_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
+  QString command = "oms3_getFMUInfo";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 

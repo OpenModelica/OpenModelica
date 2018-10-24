@@ -1841,7 +1841,7 @@ void AddSystemCommand::redoInternal()
     // get the oms_element_t
     oms3_element_t *pOMSElement = 0;
     OMSProxy::instance()->getElement(nameStructure, &pOMSElement);
-    // Create a LibraryTreeItem for connector
+    // Create a LibraryTreeItem for system
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
     mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
                                                                  pParentLibraryTreeItem->isSaved(), pParentLibraryTreeItem, pOMSElement);
@@ -1916,19 +1916,27 @@ AddSubModelCommand::AddSubModelCommand(QString name, QString path, LibraryTreeIt
  */
 void AddSubModelCommand::redoInternal()
 {
+  LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
+  QString nameStructure = QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure()).arg(mName);
   if (!mOpeningClass) {
-    mpGraphicsView->addSubModel(mName, mPath);
+    QFileInfo fileInfo(mPath);
+    if (!OMSProxy::instance()->addSubModel(nameStructure, fileInfo.absoluteFilePath())) {
+      setFailed(true);
+      return;
+    }
+    //mpGraphicsView->addSubModel(mName, mPath);
   }
   if (!mpLibraryTreeItem) {
-    // Create a LibraryTreeItem for FMU
+    // get the oms_element_t
+    oms3_element_t *pOMSElement = 0;
+    OMSProxy::instance()->getElement(nameStructure, &pOMSElement);
+    // Create a LibraryTreeItem for system
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pParentLibraryTreeItem = mpGraphicsView->getModelWidget()->getLibraryTreeItem();
-    LibraryTreeItem *pFMULibraryTreeItem;
-    pFMULibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, QString("%1.%2").arg(pParentLibraryTreeItem->getNameStructure())
-                                                                   .arg(mName), mPath, true, pParentLibraryTreeItem);
-    // Create ModelWidget for FMU so that its input/output signals are fetched
-    pLibraryTreeModel->loadLibraryTreeItemPixmap(pFMULibraryTreeItem);
-    mpLibraryTreeItem = pFMULibraryTreeItem;
+    mpLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mName, nameStructure, pParentLibraryTreeItem->getFileName(),
+                                                                 mOpeningClass, pParentLibraryTreeItem, pOMSElement);
+    if (!mOpeningClass) {
+      mpLibraryTreeItem->handleIconUpdated();
+    }
   }
   // add the FMU to view
   ComponentInfo *pComponentInfo = new ComponentInfo;

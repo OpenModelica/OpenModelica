@@ -1561,7 +1561,7 @@ void Component::drawModelicaComponent()
  */
 void Component::drawOMSComponent()
 {
-  if (mpLibraryTreeItem->isSystemElement()) {
+  if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }

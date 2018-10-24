@@ -72,14 +72,16 @@ public:
   bool addSystem(QString cref, oms_system_enu_t type);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
   bool addConnector(QString cref, oms_causality_enu_t causality, oms_signal_type_enu_t type);
-  bool getConnector(QString cref, oms_connector_t** pConnector);
+  bool getConnector(QString cref, oms_connector_t **pConnector);
   bool addBus(QString cref);
-  bool getBus(QString cref, oms3_busconnector_t** pBusConnector);
+  bool getBus(QString cref, oms3_busconnector_t **pBusConnector);
   bool addConnectorToBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool addTLMBus(QString cref, QString domain, int dimensions, const oms_tlm_interpolation_t interpolation);
-  bool getTLMBus(QString cref, oms3_tlmbusconnector_t** pTLMBusConnector);
+  bool getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);
+  bool addSubModel(QString cref, QString fmuPath);
+  bool getComponentType(QString cref, oms_component_enu_t *pType);
 
   bool newFMIModel(QString ident);
   bool newTLMModel(QString ident);

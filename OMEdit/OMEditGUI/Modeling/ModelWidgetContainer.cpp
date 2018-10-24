@@ -2452,6 +2452,11 @@ void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
         pShapeAnnotation->showShapeProperties();
       }
       return;
+    } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      LineAnnotation *pConnectionLineAnnotation = dynamic_cast<LineAnnotation*>(pShapeAnnotation);
+      if (pConnectionLineAnnotation && pConnectionLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        pConnectionLineAnnotation->showOMSConnection();
+      }
     } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
       pShapeAnnotation->showShapeAttributes();
       return;
@@ -5769,7 +5774,7 @@ void ModelWidget::drawOMSModelIconElements()
 {
   if (mpLibraryTreeItem->isTopLevel()) {
     return;
-  } else if (mpLibraryTreeItem->isSystemElement()) {
+  } else if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
     if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
       // Draw bitmap with icon source
       QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
@@ -5881,10 +5886,17 @@ void ModelWidget::drawOMSModelDiagramElements()
                              .arg(x1).arg(y1)
                              .arg(x2).arg(y2)
                              .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
-        AddSystemCommand *pAddSystemCommand = new AddSystemCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
-                                                                   annotation, mpDiagramGraphicsView, true,
-                                                                   pChildLibraryTreeItem->getSystemType());
-        mpUndoStack->push(pAddSystemCommand);
+
+        if (pChildLibraryTreeItem->isSystemElement()) {
+          AddSystemCommand *pAddSystemCommand = new AddSystemCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
+                                                                     annotation, mpDiagramGraphicsView, true,
+                                                                     pChildLibraryTreeItem->getSystemType());
+          mpUndoStack->push(pAddSystemCommand);
+        } else if (pChildLibraryTreeItem->isComponentElement()) {
+          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", pChildLibraryTreeItem,
+                                                                           annotation, true, mpDiagramGraphicsView);
+          mpUndoStack->push(pAddSubModelCommand);
+        }
       }
     }
   }
@@ -6959,7 +6971,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (pLibraryTreeItem->getSystemType() != oms_system_sc))));
   MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem));
   MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && (omsSystem));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);

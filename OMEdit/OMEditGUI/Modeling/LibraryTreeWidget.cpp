@@ -78,11 +78,12 @@ LibraryTreeItem::LibraryTreeItem()
   setNonExisting(true);
   setOMSElement(0);
   setSystemType(oms_system_none);
-  setComponentType(oms3_component_fmu);
+  setComponentType(oms_component_none);
   setOMSConnector(0);
   setOMSBusConnector(0);
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
+  setSubModelPath("");
 }
 
 /*!
@@ -138,11 +139,12 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setNonExisting(false);
   setOMSElement(0);
   setSystemType(oms_system_none);
-  setComponentType(oms3_component_fmu);
+  setComponentType(oms_component_none);
   setOMSConnector(0);
   setOMSBusConnector(0);
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
+  setSubModelPath("");
 }
 
 /*!
@@ -296,6 +298,15 @@ bool LibraryTreeItem::isComponentElement() const
 }
 
 /*!
+ * \brief LibraryTreeItem::isFMUComponent
+ * \return
+ */
+bool LibraryTreeItem::isFMUComponent() const
+{
+  return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));
+}
+
+/*!
  * \brief LibraryTreeItem::getOMSElementGeometry
  * \return
  */
@@ -355,35 +366,31 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
                 .arg(Helper::fileLocation).arg(mFileName);
-//    } else if (mpOMSElement && mpOMSElement->type == oms_element_system) {
-//      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
-//                .arg(Helper::name).arg(mName)
-//                .arg(Helper::type).arg(OMSProxy::getSystemTypeString(mSystemType))
-//                .arg(Helper::description).arg(QString(mpFMUInfo->description))
-//                .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
-//                .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
-//                .arg(Helper::fileLocation).arg(mFileName);
+    } else if (isFMUComponent()) {
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::description).arg(QString(mpFMUInfo->description))
+                .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
+                .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
+                .arg(Helper::fileLocation).arg(mSubModelPath);
 //    } else if (mpOMSElement && mpOMSElement->type == oms_element_table) {
 //      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
 //                .arg(Helper::name).arg(mName)
 //                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
 //                .arg(Helper::fileLocation).arg(mFileName);
     } else if (mpOMSConnector) {
-      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8")
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpOMSConnector->type))
-                .arg(QObject::tr("Causality")).arg(OMSProxy::getCausalityString(mpOMSConnector->causality))
-                .arg(Helper::fileLocation).arg(mFileName);
+                .arg(QObject::tr("Causality")).arg(OMSProxy::getCausalityString(mpOMSConnector->causality));
     } else if (mpOMSBusConnector) {
-      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
+      tooltip = QString("%1 %2<br />%3: %4")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg("Bus")
-                .arg(Helper::fileLocation).arg(mFileName);
+                .arg(Helper::type).arg("Bus");
     } else if (mpOMSTLMBusConnector) {
-      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
+      tooltip = QString("%1 %2<br />%3: %4")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg("TLM Bus")
-                .arg(Helper::fileLocation).arg(mFileName);
+                .arg(Helper::type).arg("TLM Bus");
     }
   } else {
     tooltip = QString("%1 %2\n%3: %4")
@@ -402,7 +409,22 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
   if (mLibraryType == LibraryTreeItem::CompositeModel) {
     return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::OMS) {
-    if (mpOMSConnector) {
+    if (isTopLevel()) {
+      return QIcon(":/Resources/icons/model-icon.svg");
+    } else if (isSystemElement()) {
+      switch (mSystemType) {
+        case oms_system_tlm:
+          return QIcon(":/Resources/icons/tlm-system-icon.svg");
+        case oms_system_wc:
+          return QIcon(":/Resources/icons/wc-system-icon.svg");
+        case oms_system_sc:
+          return QIcon(":/Resources/icons/sc-system-icon.svg");
+        default:
+          break;
+      }
+    } else if (isFMUComponent()) {
+      return QIcon(":/Resources/icons/fmu-icon.svg");
+    } else if (mpOMSConnector) {
       switch (mpOMSConnector->type) {
         case oms_signal_type_real:
           switch (mpOMSConnector->causality) {
@@ -411,7 +433,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
             case oms_causality_output:
               return QIcon(":/Resources/icons/real-output-connector.svg");
             default:
-              break;
+              return QIcon(":/Resources/icons/package-icon.svg");
           }
         case oms_signal_type_integer:
           switch (mpOMSConnector->causality) {
@@ -420,7 +442,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
             case oms_causality_output:
               return QIcon(":/Resources/icons/integer-output-connector.svg");
             default:
-              break;
+              return QIcon(":/Resources/icons/package-icon.svg");
           }
         case oms_signal_type_boolean:
           switch (mpOMSConnector->causality) {
@@ -429,9 +451,10 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
             case oms_causality_output:
               return QIcon(":/Resources/icons/boolean-output-connector.svg");
             default:
-              break;
+              return QIcon(":/Resources/icons/package-icon.svg");
           }
         default:
+          qDebug() << "Unhanled connector type" << mpOMSConnector->type;
           break;
       }
     } else if (mpOMSBusConnector) {
@@ -439,7 +462,6 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     } else if (mpOMSTLMBusConnector) {
       return QIcon(":/Resources/icons/tlm-bus-connector.svg");
     }
-    return QIcon(":/Resources/icons/tlm-icon.svg");
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {
       case StringHandler::Model:
@@ -468,9 +490,8 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       default:
         return QIcon(":/Resources/icons/type-icon.svg");
     }
-  } else {
-    return QIcon();
   }
+  return QIcon();
 }
 
 /*!
@@ -1461,28 +1482,35 @@ void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *p
  */
 void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (!pLibraryTreeItem->isFilePathValid()) {
-    // If class is nested in a class and nested class is saved in the same file as parent.
-    if (pLibraryTreeItem->isInPackageOneFile()) {
-      updateLibraryTreeItemClassText(pLibraryTreeItem);
-    } else {
-      if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
-        pLibraryTreeItem->setClassText(MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
-      }
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    QString contents;
+    if (OMSProxy::instance()->list(pLibraryTreeItem->getNameStructure(), &contents)) {
+      pLibraryTreeItem->setClassText(contents);
     }
   } else {
-    // If class is top level then simply read its file contents.
-    if (pLibraryTreeItem->isTopLevel()) {
-      pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
-    } else {
+    if (!pLibraryTreeItem->isFilePathValid()) {
       // If class is nested in a class and nested class is saved in the same file as parent.
       if (pLibraryTreeItem->isInPackageOneFile()) {
-        LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-        if (pParentLibraryTreeItem) {
-          readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this));
-        }
+        updateLibraryTreeItemClassText(pLibraryTreeItem);
       } else {
+        if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+          pLibraryTreeItem->setClassText(MainWindow::instance()->getOMCProxy()->listFile(pLibraryTreeItem->getNameStructure()));
+        }
+      }
+    } else {
+      // If class is top level then simply read its file contents.
+      if (pLibraryTreeItem->isTopLevel()) {
         pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
+      } else {
+        // If class is nested in a class and nested class is saved in the same file as parent.
+        if (pLibraryTreeItem->isInPackageOneFile()) {
+          LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
+          if (pParentLibraryTreeItem) {
+            readLibraryTreeItemClassTextFromText(pLibraryTreeItem, pParentLibraryTreeItem->getClassText(this));
+          }
+        } else {
+          pLibraryTreeItem->setClassText(readLibraryTreeItemClassTextFromFile(pLibraryTreeItem));
+        }
       }
     }
   }
@@ -1514,7 +1542,7 @@ LibraryTreeItem* LibraryTreeModel::getContainingFileParentLibraryTreeItem(Librar
 void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeItem)
 {
   // Return if the class is OMSimulator connector.
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && pLibraryTreeItem->getOMSConnector()) {
+  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS /*&& pLibraryTreeItem->getOMSConnector()*/) {
     return;
   }
   if (!pLibraryTreeItem->getModelWidget()) {
@@ -2392,11 +2420,13 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
         }
       }
     } else if (pLibraryTreeItem->getOMSElement()) {
-      for (int i = 0 ; pLibraryTreeItem->getOMSElement()->elements[i] ; i++) {
-        QString name = QString(pLibraryTreeItem->getOMSElement()->elements[i]->name);
-        createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
-                              pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem,
-                              pLibraryTreeItem->getOMSElement()->elements[i]);
+      if (pLibraryTreeItem->getOMSElement()->elements) {
+        for (int i = 0 ; pLibraryTreeItem->getOMSElement()->elements[i] ; i++) {
+          QString name = QString(pLibraryTreeItem->getOMSElement()->elements[i]->name);
+          createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name),
+                                pLibraryTreeItem->getFileName(), pLibraryTreeItem->isSaved(), pLibraryTreeItem,
+                                pLibraryTreeItem->getOMSElement()->elements[i]);
+        }
       }
       createOMSConnectorLibraryTreeItems(pLibraryTreeItem);
       createOMSBusConnectorLibraryTreeItems(pLibraryTreeItem);
@@ -2548,7 +2578,8 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
                                                                 oms3_tlmbusconnector_t *pOMSTLMBusConnector)
 {
   OMCInterface::getClassInformation_res classInformation;
-  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);
+  LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation,
+                                                          path, isSaved, pParentLibraryTreeItem);
   pLibraryTreeItem->setOMSElement(pOMSElement);
   if (pLibraryTreeItem->isSystemElement()) {
     oms_system_enu_t systemType;
@@ -2560,26 +2591,20 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   pLibraryTreeItem->setOMSBusConnector(pOMSBusConnector);
   pLibraryTreeItem->setOMSTLMBusConnector(pOMSTLMBusConnector);
   if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
-    const oms_fmu_info_t *pFMUInfo;
-    if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
-      pLibraryTreeItem->setFMUInfo(pFMUInfo);
-      QFileInfo fmuFileInfo(pFMUInfo->path);
-      if (fmuFileInfo.isRelative()) {
-        QFileInfo fileInfo(pParentLibraryTreeItem->getFileName());
-        pLibraryTreeItem->setFileName(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath(), pFMUInfo->path));
-      } else {
-        pLibraryTreeItem->setFileName(QString(pFMUInfo->path));
-      }
+    oms_component_enu_t componentType;
+    if (OMSProxy::instance()->getComponentType(pLibraryTreeItem->getNameStructure(), &componentType)) {
+      pLibraryTreeItem->setComponentType(componentType);
     }
-  } else if (pParentLibraryTreeItem && pLibraryTreeItem->isComponentElement()) {
-    QString path;
-    if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
-      QFileInfo tableFileInfo(path);
-      if (tableFileInfo.isRelative()) {
-        QFileInfo fileInfo(pParentLibraryTreeItem->getFileName());
-        pLibraryTreeItem->setFileName(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath(), path));
-      } else {
-        pLibraryTreeItem->setFileName(path);
+    if (pLibraryTreeItem->isFMUComponent()) {
+      const oms_fmu_info_t *pFMUInfo;
+      if (OMSProxy::instance()->getFMUInfo(pLibraryTreeItem->getNameStructure(), &pFMUInfo)) {
+        pLibraryTreeItem->setFMUInfo(pFMUInfo);
+        pLibraryTreeItem->setSubModelPath(QString(pFMUInfo->path));
+      }
+    } else if (pLibraryTreeItem->getComponentType() == oms_component_table) {
+      QString path;
+      if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
+        pLibraryTreeItem->setSubModelPath(path);
       }
     }
   }

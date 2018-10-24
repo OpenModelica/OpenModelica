@@ -36,6 +36,7 @@
 #include "LineAnnotation.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
+#include "Modeling/BusDialog.h"
 
 #include <QMessageBox>
 
@@ -1095,6 +1096,15 @@ void LineAnnotation::updateOMSConnection()
   delete[] pConnectionGeometry->pointsX;
   delete[] pConnectionGeometry->pointsY;
   delete pConnectionGeometry;
+}
+
+void LineAnnotation::showOMSConnection()
+{
+  if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSBusConnector())
+      || (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSBusConnector())) {
+    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this);
+    pBusConnectionDialog->exec();
+  }
 }
 
 QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)

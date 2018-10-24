@@ -14,7 +14,7 @@
    id="svg2985"
    version="1.1"
    inkscape:version="0.92.3 (2405546, 2018-03-11)"
-   sodipodi:docname="model-icon.svg">
+   sodipodi:docname="wc-system-icon.svg">
   <defs
      id="defs2987" />
   <sodipodi:namedview
@@ -24,9 +24,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="11.197802"
-     inkscape:cx="-10.612857"
-     inkscape:cy="9.7448474"
+     inkscape:zoom="15.836083"
+     inkscape:cx="18.658237"
+     inkscape:cy="16.317475"
      inkscape:current-layer="layer1"
      showgrid="true"
      inkscape:grid-bbox="true"
@@ -58,7 +58,7 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer">
     <rect
-       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#1439f2;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
+       style="fill:#ffffff;fill-opacity:1;fill-rule:nonzero;stroke:#808000;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;stroke-dashoffset:0"
        id="rect3012"
        width="30.005886"
        height="30.09519"
@@ -66,14 +66,14 @@
        y="0.92247248" />
     <text
        xml:space="preserve"
-       style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;line-height:0%;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
-       x="5.4474978"
-       y="26.641806"
-       id="text3782"><tspan
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:16px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New';letter-spacing:0px;word-spacing:0px;fill:#808000;fill-opacity:1;stroke:none"
+       x="3.6740959"
+       y="22.356985"
+       id="text829"><tspan
          sodipodi:role="line"
-         id="tspan3784"
-         x="5.4474978"
-         y="26.641806"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:36px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';fill:#1439f2;fill-opacity:1">M</tspan></text>
+         id="tspan827"
+         x="3.6740959"
+         y="22.356985"
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:21.33333397px;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';fill:#808000;fill-opacity:1">WC</tspan></text>
   </g>
 </svg>

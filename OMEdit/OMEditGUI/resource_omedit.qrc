@@ -184,6 +184,9 @@
         <file>Resources/icons/completerCodeSnippets.svg</file>
         <file>Resources/icons/array-parametric-plot-window.svg</file>
         <file>Resources/icons/update.svg</file>
+        <file>Resources/icons/tlm-system-icon.svg</file>
+        <file>Resources/icons/wc-system-icon.svg</file>
+        <file>Resources/icons/sc-system-icon.svg</file>
         <file>Resources/icons/fmu-icon.svg</file>
         <file>Resources/icons/add-system.svg</file>
         <file>Resources/icons/bitmap-delete.svg</file>
