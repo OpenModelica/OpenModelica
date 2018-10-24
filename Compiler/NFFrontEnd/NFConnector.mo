@@ -236,7 +236,9 @@ protected
               conns := splitImpl(c, t, face, source, cty, conns);
             end for;
           else
-            conns := CONNECTOR(name, ty, face, cty, source) :: conns;
+            if not Type.isEmptyArray(ty) then
+              conns := CONNECTOR(name, ty, face, cty, source) :: conns;
+            end if;
           end if;
         then
           conns;

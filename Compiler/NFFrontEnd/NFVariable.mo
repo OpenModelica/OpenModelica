@@ -84,5 +84,10 @@ public
       variable.attributes.variability <= Variability.STRUCTURAL_PARAMETER;
   end isStructural;
 
+  function isEmptyArray
+    input Variable variable;
+    output Boolean isEmpty = Type.isEmptyArray(variable.ty);
+  end isEmptyArray;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

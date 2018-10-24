@@ -97,6 +97,7 @@ import FlatModel = NFFlatModel;
 import ElementSource;
 import SimplifyModel = NFSimplifyModel;
 import Record = NFRecord;
+import Variable = NFVariable;
 import OperatorOverloading = NFOperatorOverloading;
 import EvalConstants = NFEvalConstants;
 
@@ -167,6 +168,9 @@ algorithm
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
     flat_model := Scalarize.scalarize(flat_model, name);
+  else
+    // Remove empty arrays from variables
+    flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
   end if;
 
   // Convert the flat model to a DAE.
