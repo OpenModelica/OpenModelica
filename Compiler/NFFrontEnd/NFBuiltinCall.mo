@@ -1619,84 +1619,46 @@ protected
     input ExpOrigin.Type origin;
     input SourceInfo info;
     output Expression callExp;
-    output Type outType;
-    output Variability var;
+    output Type outType = Type.CLOCK();
+    output Variability var = Variability.PARAMETER;
   protected
-    Type arg_ty;
-    list<TypedArg> args;
-    list<TypedNamedArg> named_args;
     Call ty_call;
-    Expression e, e1, e2;
-    Type t, t1, t2;
-    Variability v, v1, v2;
+    list<Expression> args;
+    Integer args_count;
+    Expression e1, e2;
   algorithm
-    ty_call as Call.ARG_TYPED_CALL(_, args, named_args) := Call.typeNormalCall(call, origin, info);
-    (callExp, outType, var) := match(args, named_args)
-      // Clock() - inferred clock
-      case ({}, {})
-        then (Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK()), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(intervalCounter) - integer clock
-      case ({(e, Type.INTEGER(), v)}, {})
-        then (Expression.CLKCONST(Expression.INTEGER_CLOCK(e, Expression.INTEGER(1))), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(intervalCounter, resolution) - integer clock
-      case ({(e, Type.INTEGER(), v), (e1, Type.REAL(), v1)}, {})
-        algorithm
-          e2 := Ceval.evalExp(e1);
-          Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
-            Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", Expression.toString(e2), ">= 1"}, info);
-        then
-          (Expression.CLKCONST(Expression.INTEGER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(intervalCounter, resolution=expression) - integer clock
-      case ({(e, Type.INTEGER(), v)}, {("resolution", e1, Type.REAL(), v1)})
-        algorithm
-          e2 := Ceval.evalExp(e1);
-          Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
-            Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", Expression.toString(e2), ">= 1"}, info);
-        then
-          (Expression.CLKCONST(Expression.INTEGER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(interval) - real clock
-      case ({(e, Type.REAL(), v)}, {})
-        then
-          (Expression.CLKCONST(Expression.REAL_CLOCK(e)), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(condition) - boolean clock
-      case ({(e, Type.BOOLEAN(), v)}, {})
-        then
-          (Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e, Expression.REAL(0.0))), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(condition, startInterval) - boolean clock
-      case ({(e, Type.BOOLEAN(), v), (e1, Type.REAL(), v1)}, {})
-        algorithm
-          e2 := Ceval.evalExp(e1);
-          Error.assertionOrAddSourceMessage(Expression.realValue(e2) > 0.0,
-            Error.WRONG_VALUE_OF_ARG, {"Clock", "startInterval", Expression.toString(e2), "> 0.0"}, info);
-        then
-          (Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(condition, startInterval=expression) - boolean clock
-      case ({(e, Type.BOOLEAN(), v)}, {("startInterval", e1, Type.REAL(), v1)})
-        algorithm
-          e2 := Ceval.evalExp(e1);
-          Error.assertionOrAddSourceMessage(Expression.realValue(e2) > 0.0,
-            Error.WRONG_VALUE_OF_ARG, {"Clock", "startInterval", Expression.toString(e2), "> 0.0"}, info);
-        then
-          (Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
-      // Clock(c, solverMethod) - solver clock
-      case ({(e, Type.CLOCK(), v), (e1, Type.STRING(), v1)}, {})
-        algorithm
-          e2 := Ceval.evalExp(e1);
-        then
-          (Expression.CLKCONST(Expression.SOLVER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+    Call.TYPED_CALL(arguments = args) := Call.typeMatchNormalCall(call, origin, info);
+    args_count := listLength(args);
 
-      // Clock(c, solverMethod=string) - solver clock
-      case ({(e, Type.CLOCK(), v)}, {("solverMethod", e1, Type.STRING(), v1)})
+    callExp := match args
+      // Clock() - inferred clock.
+      case {} then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+      // Clock(interval) - real clock.
+      case {e1} then Expression.CLKCONST(Expression.ClockKind.REAL_CLOCK(e1));
+      case {e1, e2}
         algorithm
-          e2 := Ceval.evalExp(e1);
-        then
-          (Expression.CLKCONST(Expression.SOLVER_CLOCK(e, e2)), Type.CLOCK(), Variability.PARAMETER);
+          e2 := Ceval.evalExp(e2);
 
-      else
-        algorithm
-          Error.addSourceMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {Call.toString(call), "<NO COMPONENT>"}, info);
+          callExp := match Expression.typeOf(e2)
+            // Clock(intervalCounter, resolution) - integer clock.
+            case Type.INTEGER()
+              algorithm
+                Error.assertionOrAddSourceMessage(Expression.integerValue(e2) >= 1,
+                  Error.WRONG_VALUE_OF_ARG, {"Clock", "resolution", Expression.toString(e2), "=> 1"}, info);
+              then
+                Expression.CLKCONST(Expression.INTEGER_CLOCK(e1, e2));
+
+            // Clock(condition, startInterval) - boolean clock.
+            case Type.REAL()
+              then Expression.CLKCONST(Expression.BOOLEAN_CLOCK(e1, e2));
+
+            // Clock(c, solverMethod) - solver clock.
+            case Type.STRING()
+              then Expression.CLKCONST(Expression.SOLVER_CLOCK(e1, e2));
+          end match;
         then
-          fail();
+          callExp;
+
     end match;
   end typeClockCall;
 

@@ -300,48 +300,34 @@ constant Function CLOCK_INFERED = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {}, {CLOCK_PARAM}, {}, {}, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-// Clock(intervalCounter) - clock with Integer interval
+// Clock(intervalCounter, resolution = 1) - clock with Integer interval
 constant Function CLOCK_INT = Function.FUNCTION(Path.IDENT("Clock"),
-  CLOCK_DUMMY_NODE, {INT_PARAM}, {CLOCK_PARAM}, {}, {
-    Slot.SLOT("intervalCounter", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
-  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
-  Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
-
-// Clock(intervalCounter, resolution) - clock with Integer interval
-constant Function CLOCK_INT_RESOLUTION = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {INT_PARAM, INT_PARAM}, {CLOCK_PARAM}, {}, {
-    Slot.SLOT("intervalCounter", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
-    Slot.SLOT("resolution", SlotType.NAMED, SOME(Expression.INTEGER(1)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
+    Slot.SLOT("intervalCounter", SlotType.GENERIC, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("resolution", SlotType.GENERIC, SOME(Expression.INTEGER(1)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 // Clock(interval) - clock with Real interval
 constant Function CLOCK_REAL = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {REAL_PARAM}, {CLOCK_PARAM}, {}, {
-    Slot.SLOT("interval", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
+    Slot.SLOT("interval", SlotType.GENERIC, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-// Clock(condition) - Boolean clock, triggered by zero-crossing events
+// Clock(condition, startInterval = 0.0) - Boolean clock, triggered by zero-crossing events
 constant Function CLOCK_BOOL = Function.FUNCTION(Path.IDENT("Clock"),
-  CLOCK_DUMMY_NODE, {BOOL_PARAM}, {CLOCK_PARAM}, {}, {
-    Slot.SLOT("condition", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED)
-  }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
-  Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
-
-// Clock(condition, startInterval) - Boolean clock, triggered by zero-crossing events
-constant Function CLOCK_BOOL_INTERVAL = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {BOOL_PARAM, REAL_PARAM}, {CLOCK_PARAM}, {}, {
-    Slot.SLOT("condition", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
-    Slot.SLOT("startInterval", SlotType.NAMED, SOME(Expression.REAL(0.0)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
+    Slot.SLOT("condition", SlotType.GENERIC, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("startInterval", SlotType.GENERIC, SOME(Expression.REAL(0.0)), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 // Clock(c, solverMethod) - Solver clock
 constant Function CLOCK_SOLVER = Function.FUNCTION(Path.IDENT("Clock"),
   CLOCK_DUMMY_NODE, {CLOCK_PARAM, STRING_PARAM}, {CLOCK_PARAM}, {}, {
-    Slot.SLOT("condition", SlotType.POSITIONAL, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
-    Slot.SLOT("solverMethod", SlotType.NAMED, NONE(), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
+    Slot.SLOT("c", SlotType.GENERIC, NONE(), NONE(), 1, SlotEvalStatus.NOT_EVALUATED),
+    Slot.SLOT("solverMethod", SlotType.GENERIC, NONE(), NONE(), 2, SlotEvalStatus.NOT_EVALUATED)
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
@@ -354,10 +340,8 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
     NFInstNode.CachedData.FUNCTION({
         CLOCK_INFERED,
         CLOCK_INT,
-        CLOCK_INT_RESOLUTION,
         CLOCK_REAL,
         CLOCK_BOOL,
-        CLOCK_BOOL_INTERVAL,
         CLOCK_SOLVER
         },
       true, true),
