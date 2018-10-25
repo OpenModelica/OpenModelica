@@ -796,6 +796,12 @@ algorithm
     // evaluation and no longer needed after flattening.
     case Binding.CEVAL_BINDING() then NFBinding.EMPTY_BINDING;
 
+    case Binding.INVALID_BINDING()
+      algorithm
+        Error.addTotalMessages(binding.errors);
+      then
+        fail();
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got untyped binding.", sourceInfo());

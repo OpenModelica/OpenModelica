@@ -37,6 +37,7 @@ public
   import SCode;
   import Type = NFType;
   import NFPrefixes.Variability;
+  import Error;
 
 protected
   import Dump;
@@ -94,6 +95,10 @@ uniontype Binding
     list<InstNode> parents;
   end CEVAL_BINDING;
 
+  record INVALID_BINDING
+    Binding binding;
+    list<Error.TotalMessage> errors;
+  end INVALID_BINDING;
 
 public
   function fromAbsyn
@@ -449,6 +454,9 @@ public
       case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
       case UNTYPED_BINDING() then prefix + Expression.toString(binding.bindingExp);
       case TYPED_BINDING() then prefix + Expression.toString(binding.bindingExp);
+      case FLAT_BINDING() then prefix + Expression.toString(binding.bindingExp);
+      case CEVAL_BINDING() then prefix + Expression.toString(binding.bindingExp);
+      case INVALID_BINDING() then toString(binding.binding, prefix);
     end match;
   end toString;
 
@@ -483,6 +491,11 @@ public
       case TYPED_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
       case FLAT_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
       case CEVAL_BINDING() then DAE.UNBOUND();
+      case INVALID_BINDING()
+        algorithm
+          Error.addTotalMessages(binding.errors);
+        then
+          fail();
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got untyped binding", sourceInfo());

@@ -752,21 +752,33 @@ algorithm
     case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING())
       algorithm
         name := InstNode.name(component);
-        checkBindingEach(c.binding);
-        binding := typeBinding(c.binding, intBitOr(origin, ExpOrigin.BINDING));
+        binding := c.binding;
 
-        binding := TypeCheck.matchBinding(binding, c.ty, name, node);
-        comp_var := Component.variability(c);
-        comp_eff_var := Prefixes.effectiveVariability(comp_var);
-        bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
+        ErrorExt.setCheckpoint(getInstanceName());
+        try
+          checkBindingEach(c.binding);
+          binding := typeBinding(binding, intBitOr(origin, ExpOrigin.BINDING));
 
-        if bind_var > comp_eff_var and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
-          Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
-            name, Prefixes.variabilityString(comp_eff_var),
-            "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
-            Binding.getInfo(binding));
-          fail();
-        end if;
+          binding := TypeCheck.matchBinding(binding, c.ty, name, node);
+          comp_var := Component.variability(c);
+          comp_eff_var := Prefixes.effectiveVariability(comp_var);
+          bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
+
+          if bind_var > comp_eff_var and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+            Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
+              name, Prefixes.variabilityString(comp_eff_var),
+              "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
+              Binding.getInfo(binding));
+            fail();
+          end if;
+        else
+          if Binding.isBound(c.condition) then
+            binding := Binding.INVALID_BINDING(binding, ErrorExt.getMessages());
+          else
+            fail();
+          end if;
+        end try;
+        ErrorExt.delCheckpoint(getInstanceName());
 
         c.binding := binding;
 
