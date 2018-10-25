@@ -193,6 +193,8 @@ Condition4.mo \
 Condition5.mo \
 Condition6.mo \
 ConditionInvalid1.mo \
+ConditionInvalidBinding1.mo \
+ConditionInvalidBinding2.mo \
 ConditionInvalidType1.mo \
 conn9.mo \
 conngraph1.mo \
