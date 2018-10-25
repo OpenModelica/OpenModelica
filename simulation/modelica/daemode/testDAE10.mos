@@ -1,0 +1,41 @@
+// name: testDAE10
+// status: correct
+// teardown_command: rm -f testDAE.p9* output.log
+// tests case for no states in the models
+
+loadString("
+model Test10
+  Real x,y; 
+equation
+  -time = 10000*x*y-1;
+  time = exp(-x) + exp(-y) - 1.0001;
+end Test10;
+
+");
+getErrorString();
+
+setCommandLineOptions("+daeMode=new");
+simulate(Test10);
+getErrorString();
+
+
+val(x,0.0);
+val(x,1.0);
+
+
+// Result:
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "Test10_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'ida', fileNamePrefix = 'Test10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// 1.09815932969972e-05
+// -1.209895926295427e-11
+// endResult

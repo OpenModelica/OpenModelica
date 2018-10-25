@@ -12,6 +12,7 @@ testDAEp8.mos \
 testDAEp9.mos \
 testDAEmodeDrumBoiler.mos \
 testDAEScaling.mos
+testDAE10.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
