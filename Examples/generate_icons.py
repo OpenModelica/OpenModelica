@@ -1147,7 +1147,7 @@ def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
         dwg.saveas(hashPath)
     if not os.path.islink(filename):
         try:
-            os.symlink(hashName, filename)
+            os.symlink(hashPath, filename)
         except OSError as e:
             logger.error('Target file {0} already exists'.format(filename))
     else:
