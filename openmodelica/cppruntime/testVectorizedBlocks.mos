@@ -5,6 +5,7 @@
 
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();
+setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
 setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
 
@@ -42,6 +43,115 @@ val(y[10], 1.0);
 // ""
 // true
 // ""
+// true
+// ""
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (5)
+// ========================================
+// 1: output y:VARIABLE(flow=false )  type: Real[10]  [10]
+// 2: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10]  [10]
+// 3: integrator1.y:VARIABLE(flow=false start = integrator1.y_start )  "Connector of Real output signal" type: Real[10]  [10]
+// 4: assignClock1.y:VARIABLE(flow=false )  "Connector of clocked, Real output signal" type: Real[10]  [10]
+// 5: assignClock1.u:VARIABLE(flow=false )  "Connector of clocked, Real input signal" type: Real[10]  [10]
+//
+//
+// Equations (5, 5)
+// ========================================
+// 1/1 (10): u = assignClock1.u   [dynamic |0|0|0|0|]
+// 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
+// 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
+// 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
+// 5/41 (10): for $i in 1 : 10 loop 
+//     der(integrator1.y[$i])=integrator1.k[$i] * integrator1.u[$i]; end for;    [dynamic |0|0|0|0|]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (9)
+// ========================================
+// 1: n:PARAM(flow=false )  = 10  type: Integer 
+// 2: input u:VARIABLE(flow=false start = /*Real[n]*/(1:10) )  type: Real[10]  [10]
+// 3: periodicClock1.period:PARAM(flow=false unit = "s" final = true )  = 0.1  "Period of clock (defined as Real number)" type: Real 
+// 4: periodicClock1.useSolver:PARAM(flow=false final = true )  = true  "= true, if solverMethod shall be explicitly defined" type: Boolean 
+// 5: periodicClock1.solverMethod:PARAM(flow=false )  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String 
+// 6: assignClock1.n:PARAM(flow=false min = 1 )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer 
+// 7: integrator1.y_start:PARAM(flow=false )  = /*Real[n]*/(1:10)  "Initial or guess value of output (= state)" type: Real[10]  [10]
+// 8: integrator1.initType:PARAM(flow=false final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10]  [10]
+// 9: integrator1.k:PARAM(flow=false unit = "1" )  = 1.0  "Integrator gain" type: Real[10]  [10]
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (1, 1)
+// ========================================
+// 1/1 (10): integrator1.y = integrator1.y_start   [dynamic |0|0|0|0|]
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Samples (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (1)
+// ========================================
+// 1: Clock(0.1)[1]
+//
+//
+// Sub partitions (1)
+// ========================================
+// 1: factor(1/1) shift(0/1) solver(ImplicitEuler) event(false)
+//
+//
 //
 // ########################################
 // dumpDAE
@@ -65,7 +175,7 @@ val(y[10], 1.0);
 // ========================================
 // 1/1 (10): u = assignClock1.u   [dynamic |0|0|0|0|]
 // 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
-// 3/21 (10): y = integrator1.y   [dynamic |0|0|0|0|]
+// 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
 // 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
 // 5/41 (10): for $i in 1 : 10 loop 
 //     $DER.integrator1.y[$i]=integrator1.k[$i] * integrator1.u[$i]; end for;    [dynamic |0|0|0|0|]
@@ -95,11 +205,11 @@ val(y[10], 1.0);
 // StrongComponents
 // ========================================
 // Array  {{1:5}}
-// {4:4}
+// Array  {{4:4}}
 // Array  {{2:2}}
 // {5:6}
 // {6:3}
-// {3:1}
+// Array  {{3:1}}
 //
 //
 //
