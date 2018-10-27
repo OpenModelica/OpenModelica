@@ -1302,8 +1302,14 @@ algorithm
 
     case DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source)
       equation
-        e1 = Expression.crefExp(cr1);
-        e2 = Expression.crefExp(cr2);
+        if Flags.isSet(Flags.NF_SCALARIZE) then
+          e1 = Expression.crefExp(cr1);
+          e2 = Expression.crefExp(cr2);
+        else
+          // consider array dimensions
+          e1 = Expression.crefToExp(cr1);
+          e2 = Expression.crefToExp(cr2);
+        end if;
         eqns = lowerExtendedRecordEqn(e1,e2,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inEquations);
       then
        (eqns,inREquations,inIEquations);
