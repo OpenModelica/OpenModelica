@@ -240,6 +240,8 @@ sub runone
       }
       if ($str =~ /^Unexpected end of \/proc\/mounts line/) {
         # Ignore; sometimes comes from libhwloc when running docker
+      } elsif ($str =~ /^GC Warning:/) {
+        # Ignore; comes from libgc
       } else {
         print RES $str;
       }
