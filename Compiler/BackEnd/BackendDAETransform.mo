@@ -569,7 +569,7 @@ algorithm
       DAE.ComponentRef cr, cr1;
       Integer size;
       list<DAE.Exp> expl;
-      BackendDAE.Equation res;
+      BackendDAE.Equation eqn;
       BackendDAE.WhenEquation elsepartRes;
       BackendDAE.WhenEquation elsepart;
       Option<BackendDAE.WhenEquation> oelsepart;
@@ -597,11 +597,9 @@ algorithm
       source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
     then (BackendDAE.ARRAY_EQUATION(dimSize, e1_1, e2_1, source, eqAttr), ext_arg_2);
 
-    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, left = e1, right = e2, source = source, attr = eqAttr) equation
-      (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));
-      (e2_1, (ops, ext_arg_2)) = func(e2, (ops, ext_arg_1));
-      source = List.foldr(ops, ElementSource.addSymbolicTransformation, source);
-    then (BackendDAE.FOR_EQUATION(iter, start, stop, e1_1, e2_1, source, eqAttr), ext_arg_2);
+    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn, source = source, attr = eqAttr) equation
+      (eqn, outTypeA) = traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, func, inTypeA);
+    then (BackendDAE.FOR_EQUATION(iter, start, stop, eqn, source, eqAttr), outTypeA);
 
     case BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2, source=source, attr=eqAttr) equation
       e1 = Expression.crefExp(cr);
@@ -633,8 +631,8 @@ algorithm
         oelsepart = NONE();
         ext_arg_3 = ext_arg_2;
       end if;
-      res = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsepart), source, eqAttr);
-   then (res, ext_arg_3);
+      eqn = BackendDAE.WHEN_EQUATION(size, BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsepart), source, eqAttr);
+   then (eqn, ext_arg_3);
 
     case BackendDAE.COMPLEX_EQUATION(size=size, left = e1, right = e2, source = source, attr=eqAttr) equation
       (e1_1, (ops, ext_arg_1)) = func(e1, ({}, inTypeA));

@@ -2111,8 +2111,17 @@ algorithm
         ({SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e2, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
 
     // for equation that may result from -d=-nfScalarize
-    case BackendDAE.FOR_EQUATION(iter = varexp, start = start, stop = cond, left = e1, right = e2, source = source, attr = eqAttr)
+    case BackendDAE.FOR_EQUATION(iter = varexp, start = start, stop = cond, source = source, attr = eqAttr)
       algorithm
+        (e1, e2) := match eqn.body
+          case BackendDAE.EQUATION(exp = e1, scalar = e2) then
+            (e1, e2);
+          case BackendDAE.ARRAY_EQUATION(left = e1, right = e2) then
+            (e1, e2);
+          else algorithm
+            Error.addInternalError("Unsupported FOR_EQUATION: " + BackendDump.equationString(eqn)  + " ToDo: generalize SimEqSystem.SES_FOR_LOOP with embedded SimEqSystem.", sourceInfo());
+          then fail();
+        end match;
         DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)) := varexp;
         cr := ComponentReference.crefSetLastSubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
         BackendDAE.SHARED(functionTree = funcs) := shared;

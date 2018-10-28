@@ -732,7 +732,7 @@ case(eq::rest,_)
       iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
       //lhs := BackendArrayVarTransform.replaceSubExp(Expression.crefExp(cref1),DAE.INDEX(iterator));
       //rhs := BackendArrayVarTransform.replaceSubExp(Expression.crefExp(cref1),DAE.INDEX(DAE.ICONST(listLength(similarEqs)+1)));
-      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(1),DAE.ICONST(listLength(similarEqs)),lhs,rhs,source,attr);
+      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(1),DAE.ICONST(listLength(similarEqs)),BackendDAE.EQUATION(lhs,rhs,source,attr),source,attr);
         //BackendDump.dumpEquationList({eq},"got eq assignment");
       foldEqs := buildBackendDAEForEquations(rest,(eq::foldIn));
     then
@@ -761,7 +761,7 @@ case(eq::rest,_)
       // update crefs in equation
       iterator := DAE.CREF(DAE.CREF_IDENT("i",DAE.T_INTEGER_DEFAULT,{}),DAE.T_INTEGER_DEFAULT);
       (BackendDAE.EQUATION(exp=lhs,scalar=rhs),_) := BackendEquation.traverseExpsOfEquation(eq,setIteratorSubscriptCrefinEquation,(crefMinMax,iterator,crefs2));
-      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(min),DAE.ICONST(max),lhs,rhs,source,attr);
+      eq := BackendDAE.FOR_EQUATION(iterator,DAE.ICONST(min),DAE.ICONST(max),BackendDAE.EQUATION(lhs,rhs,source,attr),source,attr);
         //BackendDump.dumpEquationList({eq},"got eq");
       foldEqs := buildBackendDAEForEquations(rest,(eq::foldIn));
     then

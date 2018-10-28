@@ -2511,6 +2511,7 @@ algorithm
       list<DAE.Statement> statementLst;
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
+      BackendDAE.Equation eqn;
       list<BackendDAE.WhenOperator> whenStmtLst;
 
     // EQUATION
@@ -2539,16 +2540,12 @@ algorithm
         (res,size);
 
     // FOR_EQUATION
-    case BackendDAE.FOR_EQUATION(left = e1, right = e2, start = e, stop = cond,
-             iter = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = str)))
+    case BackendDAE.FOR_EQUATION(body = eqn, iter = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = str)))
       equation
         // assume one equation defining a whole array var (no NF_SCALARIZE)
-        e1 = Expression.traverseExpTopDown(e1, stripIterSub, str);
-        e2 = Expression.traverseExpTopDown(e2, stripIterSub, str);
-        lst1 = incidenceRowExp(e1, vars, iRow, functionTree, inIndexType);
-        res = incidenceRowExp(e2, vars, lst1, functionTree, inIndexType);
+        eqn = BackendEquation.traverseExpsOfEquation(eqn, function Expression.traverseExpTopDown(func = stripIterSub), str);
       then
-        (res,1);
+        incidenceRow(eqn, vars, inIndexType, functionTree, iRow);
 
     // SOLVED_EQUATION
     case BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e)

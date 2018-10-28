@@ -275,7 +275,8 @@ algorithm
               then BackendDAE.FOR_EQUATION(
                 DAE.CREF(DAE.CREF_IDENT("i", DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT),
                 DAE.ICONST(1), DAEUtil.dimExp(dim),
-                exp, exp2, var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+                BackendDAE.EQUATION(exp, exp2, var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC),
+                var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
               else BackendDAE.EQUATION(exp, exp2, var.source, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
             end match;
             lstEqs := eq :: lstEqs;
@@ -2735,7 +2736,7 @@ algorithm
       SourceInfo info;
     case BackendDAE.EQUATION(scalar = e) then isClockExp(e);
     case BackendDAE.ARRAY_EQUATION(right = e) then isClockExp(e);
-    case BackendDAE.FOR_EQUATION(right = e) then isClockExp(e);
+    case BackendDAE.FOR_EQUATION(body = eq) then isClockEquation(eq);
     case BackendDAE.SOLVED_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.RESIDUAL_EQUATION(exp = e) then isClockExp(e);
     case BackendDAE.ALGORITHM() then false;

@@ -394,8 +394,7 @@ uniontype Equation
     .DAE.Exp iter "the iterator variable";
     .DAE.Exp start "start of iteration";
     .DAE.Exp stop "end of iteration";
-    .DAE.Exp left;
-    .DAE.Exp right;
+    Equation body "iterated equation";
     .DAE.ElementSource source "origin of equation";
     EquationAttributes attr;
   end FOR_EQUATION;

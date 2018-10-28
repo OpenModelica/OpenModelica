@@ -796,6 +796,7 @@ algorithm
       list<DAE.Exp> expl;
       DAE.Type tp;
       DAE.ComponentRef cr, cr1;
+      BackendDAE.Equation eqn;
       BackendDAE.WhenEquation we, we_1;
       DAE.ElementSource source;
       Integer size;
@@ -848,10 +849,9 @@ algorithm
       (eqns, extArg) = List.map1Fold(eqns, traverseExpsOfEquation, inFunc, extArg);
     then (BackendDAE.IF_EQUATION(expl, eqnslst, eqns, source, attr), extArg);
 
-    case BackendDAE.FOR_EQUATION(iter=iter,start=start,stop=stop,left=e1, right=e2, source=source, attr=attr) equation
-      (e_1, extArg) = inFunc(e1, inTypeA);
-      (e_2, extArg) = inFunc(e2, extArg);
-    then (if referenceEq(e1,e_1) and referenceEq(e2,e_2) then inEquation else BackendDAE.FOR_EQUATION(iter,start,stop,e_1,e_2,source,attr), extArg);
+    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, source = source, attr = attr) equation
+      (eqn, extArg) = traverseExpsOfEquation(inEquation.body, inFunc, inTypeA);
+    then (BackendDAE.FOR_EQUATION(iter, start, stop, eqn, source, attr), extArg);
   end match;
 end traverseExpsOfEquation;
 
@@ -1694,7 +1694,7 @@ algorithm
     then size;
 
     case BackendDAE.FOR_EQUATION(start = DAE.ICONST(start), stop = DAE.ICONST(stop)) equation
-      size = stop - start + 1;
+      size = (stop - start + 1) * equationSize(eq.body);
     then size;
 
     else equation
@@ -1970,7 +1970,6 @@ algorithm
       list<Integer> dimSize;
       DAE.Exp lhs;
       DAE.Exp rhs;
-      DAE.Exp iter, start, stop;
       DAE.ComponentRef componentRef;
       Integer size;
       DAE.Algorithm alg;
@@ -1986,8 +1985,8 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize, left=lhs, right=rhs, source=source), _)
     then BackendDAE.ARRAY_EQUATION(dimSize, lhs, rhs, source, inAttr);
 
-    case (BackendDAE.FOR_EQUATION(iter=iter, start=start, stop=stop, left=lhs, right=rhs, source=source), _)
-    then BackendDAE.FOR_EQUATION(iter, start, stop, lhs, rhs, source, inAttr);
+    case (BackendDAE.FOR_EQUATION(), _)
+    then BackendDAE.FOR_EQUATION(inEqn.iter, inEqn.start, inEqn.stop, inEqn.body, inEqn.source, inAttr);
 
     case (BackendDAE.SOLVED_EQUATION(componentRef=componentRef, exp=rhs, source=source), _)
     then BackendDAE.SOLVED_EQUATION(componentRef, rhs, source, inAttr);

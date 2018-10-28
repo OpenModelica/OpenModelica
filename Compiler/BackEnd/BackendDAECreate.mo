@@ -1459,19 +1459,12 @@ function lowerForEquation
 protected
   DAE.Exp iterExp, start, stop;
   DAE.Type ty;
-  DAE.Exp left, right;
-  DAE.ElementSource source;
-  BackendDAE.EquationAttributes attr;
 algorithm
   DAE.RANGE(ty=ty, start=start, stop=stop) := range;
   iterExp := DAE.CREF(DAE.CREF_IDENT(iter, ty, {}), ty);
-  forEq := match eq
-    case BackendDAE.EQUATION(exp=left, scalar=right, source=source, attr=attr)
-    then BackendDAE.FOR_EQUATION(iterExp, start, stop, left, right, source, attr);
-  else algorithm
-    Error.addSourceMessage(Error.INTERNAL_ERROR, {"BackendDAECreate.lowerForEquation: unsupported equation " + BackendDump.equationString(eq)}, sourceInfo());
-  then fail();
-  end match;
+  forEq := BackendDAE.FOR_EQUATION(iterExp, start, stop, eq,
+                                   BackendEquation.equationSource(eq),
+                                   BackendEquation.getEquationAttributes(eq));
 end lowerForEquation;
 
 protected function lowerIfEquation

@@ -1582,6 +1582,7 @@ algorithm
       DAE.Exp e1,e2,e,cond, start, stop, iter;
       list<DAE.Exp> expl;
       DAE.ComponentRef cr;
+      BackendDAE.Equation eqn;
       BackendDAE.WhenEquation weqn;
       BackendDAE.EquationAttributes attr;
       DAE.Algorithm alg;
@@ -1641,11 +1642,11 @@ algorithm
         res = ifequationString(expl,eqnstrue,eqnsfalse,s3);
       then
         res;
-    case (BackendDAE.FOR_EQUATION(iter=iter, start=start, stop=stop, left=e1, right=e2))
+    case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn)
       equation
         s1 = ExpressionDump.printExpStr(iter) + " in " + ExpressionDump.printExpStr(start) + " : " + ExpressionDump.printExpStr(stop);
-        s2 = ExpressionDump.printExpStr(e1) + "=" + ExpressionDump.printExpStr(e2);
-        res = stringAppendList({"for ",s1," loop \n    ",s2, "; end for; "});
+        s2 = equationString(eqn);
+        res = stringAppendList({"for ", s1, " loop \n    ", s2, "; end for; "});
       then
         res;
   end match;
