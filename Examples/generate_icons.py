@@ -1037,7 +1037,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
 
 # generate svgs from graphics objects
 def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
-    global element_id
+    global element_id, use_subdirs
     element_id = 0
 
     width = 100
@@ -1142,12 +1142,14 @@ def generateSvg(filename, iconGraphics, includeInvisibleText, warn_duplicates):
 
             dwg.add(group)
     hashName = hashlib.sha1(dwg.tostring().encode("utf-8")).hexdigest() + ".svg"
-    hashPath = os.path.join(os.path.dirname(filename),hashName[:1],hashName)
+    if use_subdirs:
+        hashName = os.path.join(hashName[:1],hashName)
+    hashPath = os.path.join(os.path.dirname(filename),hashName)
     if not os.path.exists(hashPath):
         dwg.saveas(hashPath)
     if not os.path.islink(filename):
         try:
-            os.symlink(hashPath, filename)
+            os.symlink(hashName, filename)
         except OSError as e:
             logger.error('Target file {0} already exists'.format(filename))
     else:
@@ -1189,7 +1191,7 @@ def getBaseClasses(modelica_class, base_classes):
 
 
 def main():
-    global baseDir
+    global baseDir, use_subdirs
     t = time.time()
     parser = OptionParser()
     parser.add_option("--with-html", help="Generate an HTML report with all SVG-files", action="store_true", dest="with_html", default=False)
@@ -1197,6 +1199,7 @@ def main():
     parser.add_option("--output-dir", help="Directory to generate SVG-files in", type="string", dest="output_dir", default=os.path.abspath('ModelicaIcons'))
     parser.add_option("--warn-dup", help="Warn about duplicate files instead of generating an error", action="store_true", dest="warn_duplicates", default=False)
     parser.add_option("--with-json", help="Output icon annotation as json", action="store_true", dest="with_json", default=False)
+    parser.add_option("--with-subdirs", help="Output hashed icon files in subdirs", action="store_true", dest="use_subdirs", default=False)
     parser.add_option("--quiet", help="Do not output to the console", action="store_true", dest="quiet", default=False)
     (options, args) = parser.parse_args()
     if len(args) == 0:
@@ -1208,6 +1211,7 @@ def main():
     includeInvisibleText = options.includeInvisibleText
     warn_duplicates = options.warn_duplicates
     with_json = options.with_json
+    use_subdirs = options.use_subdirs
 
     # create logger with 'spam_application'
     global logger
@@ -1238,11 +1242,18 @@ def main():
     logger.info('Output directory: ' + output_dir)
     print("%s Generating SVGs for package(s) %s" % (datetime.datetime.now(),PACKAGES_TO_GENERATE))
 
-    for f in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
-        output_dirx = os.path.join(output_dir, f)
-        if not os.path.exists(output_dirx):
+    if use_subdirs:
+        for f in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
+            output_dirx = os.path.join(output_dir, f)
+            if not os.path.exists(output_dirx):
+                try:
+                    os.makedirs(output_dirx)
+                except:
+                    pass
+    else:
+        if not os.path.exists(output_dir):
             try:
-                os.makedirs(output_dirx)
+                os.makedirs(output_dir)
             except:
                 pass
 
