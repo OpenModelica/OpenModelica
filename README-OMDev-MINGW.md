@@ -24,7 +24,8 @@
   - start `$OMDEV\tools\msys\mingw64_shell.bat` or `$OMDEV\tools\msys\mingw32_shell.bat` and type:
 
 		```bash
-		cd /path/to/
+		# change the directory to where you want the OpenModelica repository on your hard drive
+		cd /path/to/where/you/want/to/clone/the/repository
 		# export the path to your tools: git, svn, java/javac
 		# note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
 		export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
