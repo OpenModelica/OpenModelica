@@ -41,6 +41,8 @@
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
 
+import shutil
+
 // rmSymlinks
 // (false) should we keep readable names (nice online, if the server handles symbolic links), or
 // (true) use the hashed names in the links (nice if you want a zipped version to work on Windows). This removes the readable names, keeping only the hashed and de-duped images.
@@ -79,9 +81,10 @@ py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.p
 
 // adrpo: do not run the python stuff when running the testsuite
 if getEnvironmentVar("GenerateDocTest") == "YES" then
-  system("mkdir -p Icons");
+  if not os.path.exists("Icons"):
+    os.mkdir("Icons")
 else
-  commands:={"python "+py+" --quiet --output-dir Icons "+typeNameString(cl) for cl in getClassNames(builtin=false)};getErrorString();
+  commands:={"python "+py+" --quiet --output-dir Icons "+typeNameString(cl) for cl in reversed(getClassNames(builtin=false))};getErrorString();
   res:=system_parallel(commands);getErrorString();
   //system("rm -f *.json");getErrorString();
 end if;
@@ -456,8 +459,11 @@ echo(shouldEcho);
 system("rm -f tidy.links tidy.out tidy.err tidy.filtered");
 
 "Copying original HTML files to 'old-html-tmp'";
-system("mkdir -p old-html-tmp");
-system("cp *.html old-html-tmp/");
+oldtmp = "old-html-tmp"
+if not os.path.exists(oldtmp):
+  os.mkdir(oldtmp)
+for file in glob.glob('*.html'):
+  shutil.copy(file, oldtmp)
 
 "Tidy.py";
 system("python Tidy.py 2> tidy.err");
@@ -499,7 +505,8 @@ def makeCaseSensitive():
       print('Renaming file %s to %s' % (file,nfile))
       if os.path.isfile(nfile):
         raise Exception('File already exists: ' + nfile)
-      call(['sed','-i','s/%s/%s/g' % (file,nfile)] + files)
+      for f in getFiles():
+        call(['sed','-i','s/%s/%s/g' % (file,nfile)] + f)
       os.rename(file,nfile)
       return False
     visited[upper] = file
