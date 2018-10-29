@@ -427,7 +427,7 @@ pipeline {
           emailext subject: '$DEFAULT_SUBJECT',
           body: '$DEFAULT_CONTENT',
           replyTo: '$DEFAULT_REPLYTO',
-          to: 'DEFAULT_TO'
+          to: '$DEFAULT_TO'
         }
       }
     }
@@ -490,6 +490,11 @@ void partest(cache=true, extraArgs='') {
   junit 'testsuite/partest/result.xml'
 }
 
+void patchConfigStatus() {
+  // Running on nodes with different paths for the workspace
+  sh 'sed -i "s,--with-ombuilddir=[A-Za-z0-9/_-]*,--with-ombuilddir=`pwd`/build," config.status'
+}
+
 void makeLibsAndCache(libs='core') {
   // If we don't have any result, copy to the master to get a somewhat decent cache
   sh "cp -f ${env.RUNTESTDB}/${cacheBranch()}/runtest.db.* testsuite/ || " +
@@ -498,6 +503,7 @@ void makeLibsAndCache(libs='core') {
   sh "mkdir -p '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git'"
   sh "find libraries"
   sh "ln -s '${env.LIBRARIES}/svn' '${env.LIBRARIES}/git' libraries/"
+  patchConfigStatus()
   sh "./config.status"
   sh "make -j${numLogicalCPU()} --output-sync omlibrary-${libs} ReferenceFiles"
   generateTemplates()
@@ -516,6 +522,7 @@ void buildGUI(stash) {
   standardSetup()
   unstash stash
   sh 'autoconf'
+  patchConfigStatus()
   sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
   sh 'touch omc omc-diff ReferenceFiles && make -q omc omc-diff ReferenceFiles' // Pretend we already built omc since we already did so
   // OMSimulator requires HOME to be set and writeable
