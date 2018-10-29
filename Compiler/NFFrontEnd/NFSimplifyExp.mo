@@ -37,6 +37,8 @@ import Type = NFType;
 import NFCall.Call;
 import Subscript = NFSubscript;
 import NFOperator.Op;
+import NFPrefixes.Variability;
+import NFInstNode.InstNode;
 
 protected
 
@@ -176,12 +178,7 @@ algorithm
       then
         callExp;
 
-    case Call.TYPED_ARRAY_CONSTRUCTOR()
-      algorithm
-        call.exp := simplify(call.exp);
-        call.iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in call.iters);
-      then
-        Expression.CALL(call);
+    case Call.TYPED_ARRAY_CONSTRUCTOR() then simplifyArrayConstructor(call);
 
     case Call.TYPED_REDUCTION()
       algorithm
@@ -286,6 +283,51 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyTranspose;
+
+function simplifyArrayConstructor
+  input Call call;
+  output Expression outExp;
+protected
+  Type ty;
+  Variability var;
+  Expression exp, e;
+  list<tuple<InstNode, Expression>> iters;
+  InstNode iter;
+  Dimension dim;
+  Integer dim_size;
+  Boolean expanded;
+algorithm
+  Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
+  iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
+
+  outExp := matchcontinue (iters)
+    case {(iter, e)}
+      algorithm
+        Type.ARRAY(dimensions = {dim}) := Expression.typeOf(e);
+        dim_size := Dimension.size(dim);
+
+        if dim_size == 0 then
+          // Result is Array[0], return empty array expression.
+          outExp := Expression.ARRAY(ty, {});
+        elseif dim_size == 1 then
+          // Result is Array[1], return array with the single element.
+          (Expression.ARRAY(elements = {e}), _) := ExpandExp.expand(e);
+          exp := Expression.replaceIterator(exp, iter, e);
+          exp := Expression.ARRAY(ty, {exp});
+          outExp := simplify(exp);
+        else
+          fail();
+        end if;
+      then
+        outExp;
+
+    else
+      algorithm
+        exp := simplify(exp);
+      then
+        Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters));
+  end matchcontinue;
+end simplifyArrayConstructor;
 
 function simplifySize
   input output Expression sizeExp;
