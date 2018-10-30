@@ -2937,7 +2937,7 @@ algorithm
         // @adrpo: if Evaluate=true make the parameter a structural parameter
         // only make it a structural parameter if is not constant, duh!, 1071 regressions :)
         if c.attributes.variability == Variability.PARAMETER and Component.getEvaluateAnnotation(c) then
-          InstNode.updateComponent(Component.setVariability(Variability.STRUCTURAL_PARAMETER, c), node);
+          markStructuralParamsComp(c, node);
         end if;
 
         for dim in c.dimensions loop
@@ -3013,13 +3013,7 @@ algorithm
           comp := InstNode.component(node);
 
           if Component.variability(comp) == Variability.PARAMETER then
-            comp := Component.setVariability(Variability.STRUCTURAL_PARAMETER, comp);
-            InstNode.updateComponent(comp, node);
-
-            binding := Binding.untypedExp(Component.getBinding(comp));
-            if isSome(binding) then
-              markStructuralParamsExp(Util.getOption(binding));
-            end if;
+            markStructuralParamsComp(comp, node);
           end if;
         end if;
       then
@@ -3028,6 +3022,22 @@ algorithm
     else ();
   end match;
 end markStructuralParamsExp_traverser;
+
+function markStructuralParamsComp
+  input Component component;
+  input InstNode node;
+protected
+  Component comp;
+  Option<Expression> binding;
+algorithm
+  comp := Component.setVariability(Variability.STRUCTURAL_PARAMETER, component);
+  InstNode.updateComponent(comp, node);
+
+  binding := Binding.untypedExp(Component.getBinding(comp));
+  if isSome(binding) then
+    markStructuralParamsExp(Util.getOption(binding));
+  end if;
+end markStructuralParamsComp;
 
 function markStructuralParamsExpSize
   input Expression exp;
