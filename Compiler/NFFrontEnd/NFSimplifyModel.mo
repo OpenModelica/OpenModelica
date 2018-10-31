@@ -82,6 +82,7 @@ algorithm
   if Binding.isBound(binding) then
     exp := Binding.getTypedExp(binding);
     sexp := SimplifyExp.simplify(exp);
+    sexp := removeEmptyFunctionArguments(sexp);
 
     if not referenceEq(exp, sexp) then
       binding := Binding.setTypedExp(sexp, binding);
