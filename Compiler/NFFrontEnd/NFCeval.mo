@@ -329,12 +329,17 @@ algorithm
   (exp, evaluated) := match binding
     case Binding.TYPED_BINDING()
       algorithm
-        exp := evalExp(binding.bindingExp, target);
+        if binding.evaluated then
+          exp := binding.bindingExp;
+        else
+          exp := evalExp(binding.bindingExp, target);
 
-        if not referenceEq(exp, binding.bindingExp) then
-          binding.bindingExp := exp;
-          comp := Component.setBinding(binding, comp);
-          InstNode.updateComponent(comp, node);
+          if not referenceEq(exp, binding.bindingExp) then
+            binding.bindingExp := exp;
+            binding.evaluated := true;
+            comp := Component.setBinding(binding, comp);
+            InstNode.updateComponent(comp, node);
+          end if;
         end if;
       then
         (exp, true);

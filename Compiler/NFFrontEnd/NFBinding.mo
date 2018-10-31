@@ -79,6 +79,7 @@ uniontype Binding
     Variability variability;
     list<InstNode> parents;
     Boolean isEach;
+    Boolean evaluated;
     SourceInfo info;
   end TYPED_BINDING;
 
@@ -277,7 +278,7 @@ public
           ty := Expression.typeOf(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldBinding.parents, fieldBinding.isEach, fieldBinding.info);
+          TYPED_BINDING(exp, ty, var, fieldBinding.parents, fieldBinding.isEach, fieldBinding.evaluated, fieldBinding.info);
 
       case FLAT_BINDING()
         algorithm

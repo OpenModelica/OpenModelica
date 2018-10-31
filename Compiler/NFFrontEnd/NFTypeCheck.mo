@@ -2279,7 +2279,7 @@ algorithm
              Type.toString(binding.bindingType)}, {Binding.getInfo(binding), InstNode.info(component)});
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.parents, binding.isEach, binding.info);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.parents, binding.isEach, binding.evaluated, binding.info);
         end if;
       then
         ();
