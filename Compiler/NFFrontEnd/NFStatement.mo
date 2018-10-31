@@ -196,10 +196,55 @@ public
           end for;
         then
           ();
+
+      else ();
     end match;
 
     func(stmt);
   end apply;
+
+  function map
+    input output Statement stmt;
+    input MapFn func;
+
+    partial function MapFn
+      input output Statement stmt;
+    end MapFn;
+  algorithm
+    () := match stmt
+      case FOR()
+        algorithm
+          stmt.body := list(map(s, func) for s in stmt.body);
+        then
+          ();
+
+      case IF()
+        algorithm
+          stmt.branches := list(
+            (Util.tuple21(b),
+             list(map(s, func) for s in Util.tuple22(b))) for b in stmt.branches);
+        then
+          ();
+
+      case WHEN()
+        algorithm
+          stmt.branches := list(
+            (Util.tuple21(b),
+             list(map(s, func) for s in Util.tuple22(b))) for b in stmt.branches);
+        then
+          ();
+
+      case WHILE()
+        algorithm
+          stmt.body := list(map(s, func) for s in stmt.body);
+        then
+          ();
+
+      else ();
+    end match;
+
+    stmt := func(stmt);
+  end map;
 
   function mapExpList
     input output list<Statement> stmtl;

@@ -131,6 +131,7 @@ algorithm
     //       bindings of the function parameters. But they probably need to be
     //       sorted by dependencies first.
     fn_body := applyReplacements(repl, fn_body);
+    fn_body := optimizeBody(fn_body);
     ctrl := evaluateStatements(fn_body);
 
     if ctrl <> FlowControl.ASSERTION then
@@ -388,6 +389,39 @@ algorithm
     end if;
   end if;
 end applyReplacementCref;
+
+function optimizeBody
+  input output list<Statement> body;
+algorithm
+  body := list(Statement.map(s, optimizeStatement) for s in body);
+end optimizeBody;
+
+function optimizeStatement
+  input output Statement stmt;
+algorithm
+  () := match stmt
+    local
+      Expression iter_exp;
+
+    // Replace iterators in for loops with mutable expressions, so we don't need
+    // to do it each time we enter a for loop during evaluation.
+    case Statement.FOR()
+      algorithm
+        // Make a mutable expression with a placeholder value.
+        iter_exp := Expression.makeMutable(Expression.EMPTY(Type.UNKNOWN()));
+        // Replace the iterator with the expression in the body of the for loop.
+        stmt.body := list(
+          Statement.mapExp(s, function Expression.replaceIterator(
+            iterator = stmt.iterator, iteratorValue = iter_exp))
+          for s in stmt.body);
+        // Replace the iterator node with the mutable expression too.
+        stmt.iterator := InstNode.EXP_NODE(iter_exp);
+      then
+        ();
+
+    else ();
+  end match;
+end optimizeStatement;
 
 function createResult
   input ReplTree.Tree repl;
@@ -679,14 +713,7 @@ algorithm
   range_iter := RangeIterator.fromExp(range_exp);
 
   if RangeIterator.hasNext(range_iter) then
-    // Replace the iterator with a mutable expression.
-    // TODO: If each iterator contained a mutable binding that we could update
-    //       this wouldn't be necessary, but the handling of for loops needs to
-    //       be fixed so we don't try to evaluate iterators when we shouldn't.
-    iter_exp := Mutable.create(Expression.INTEGER(0));
-    value := Expression.MUTABLE(iter_exp);
-    body := Statement.mapExpList(forBody,
-      function Expression.replaceIterator(iterator = iterator, iteratorValue = value));
+    InstNode.EXP_NODE(exp = Expression.MUTABLE(exp = iter_exp)) := iterator;
 
     // Loop through each value in the iteration range.
     while RangeIterator.hasNext(range_iter) loop

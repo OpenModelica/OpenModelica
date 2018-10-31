@@ -44,6 +44,7 @@ import Visibility = NFPrefixes.Visibility;
 import NFModifier.Modifier;
 import SCodeDump;
 import DAE;
+import Expression = NFExpression;
 
 protected
 import List;
@@ -244,6 +245,10 @@ uniontype InstNode
     InstNode parentScope;
     list<InstNode> locals;
   end IMPLICIT_SCOPE;
+
+  record EXP_NODE
+    Expression exp;
+  end EXP_NODE;
 
   record EMPTY_NODE end EMPTY_NODE;
 
