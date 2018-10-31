@@ -457,6 +457,7 @@ system("rm -f tidy.links tidy.out tidy.err tidy.filtered");
 
 "Copying original HTML files to 'old-html-tmp'";
 writeFile("copyold.py","#!/usr/bin/env python
+import os
 import shutil
 oldtmp = 'old-html-tmp'
 if not os.path.exists(oldtmp):
@@ -507,7 +508,7 @@ def makeCaseSensitive():
       if os.path.isfile(nfile):
         raise Exception('File already exists: ' + nfile)
       for f in getFiles():
-        call(['sed','-i','s/%s/%s/g' % (file,nfile)] + f)
+        call(['sed','-i','s/%s/%s/g' % (file,nfile), f])
       os.rename(file,nfile)
       return False
     visited[upper] = file
