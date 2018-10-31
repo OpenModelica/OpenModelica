@@ -539,6 +539,9 @@ algorithm
       then
         Expression.ARRAY(ty, expl);
 
+    case Expression.SUBSCRIPTED_EXP()
+      then Expression.SUBSCRIPTED_EXP(makeComponentBinding2(exp.exp, name), exp.subscripts, exp.ty);
+
   end match;
 end makeComponentBinding2;
 

@@ -1237,15 +1237,26 @@ algorithm
     local
       Dimension d;
       Type ty;
-      Integer index;
+      Integer index, dim_count;
 
     // An untyped component, get the requested dimension from the component and type it.
     case Component.UNTYPED_COMPONENT()
       algorithm
         index := dimIndex + offset;
-        if index < 1 or index > arrayLength(c.dimensions) then
-          error := TypingError.OUT_OF_BOUNDS(max(arrayLength(c.dimensions) - offset, 0));
+        dim_count := arrayLength(c.dimensions);
+
+        if index < 1 then
+          error := TypingError.OUT_OF_BOUNDS(max(dim_count - offset, 0));
           d := Dimension.UNKNOWN();
+        elseif index > dim_count then
+          node := InstNode.parent(node);
+
+          if InstNode.isComponent(node) then
+            (d, error) := typeComponentDim(node, dimIndex - dim_count, offset - dim_count, origin, info);
+          else
+            error := TypingError.OUT_OF_BOUNDS(max(dim_count - offset, 0));
+            d := Dimension.UNKNOWN();
+          end if;
         else
           error := TypingError.NO_ERROR();
           d := typeDimension(c.dimensions, index, node, c.binding, origin, c.info);
