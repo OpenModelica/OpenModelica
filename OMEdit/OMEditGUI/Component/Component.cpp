@@ -460,13 +460,11 @@ Component::Component(QString name, LibraryTreeItem *pLibraryTreeItem, QString an
   createStateComponent();
   mHasTransition = false;
   mIsInitialState = false;
-  mBusComponents.clear();
+  mpBusComponent = 0;
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
     mpDefaultComponentRectangle->setVisible(true);
     mpDefaultComponentText->setVisible(true);
     drawInterfacePoints();
-  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    drawOMSComponent();
   } else {
     drawComponent();
   }
@@ -534,7 +532,7 @@ Component::Component(LibraryTreeItem *pLibraryTreeItem, Component *pParentCompon
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
-  mBusComponents.clear();
+  mpBusComponent = 0;
   drawInheritedComponentsAndShapes();
   setDialogAnnotation(QStringList());
   setChoicesAnnotation(QStringList());
@@ -569,7 +567,7 @@ Component::Component(Component *pComponent, Component *pParentComponent, Compone
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
-  mBusComponents.clear();
+  mpBusComponent = mpReferenceComponent->getBusComponent();
   drawInheritedComponentsAndShapes();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -620,7 +618,7 @@ Component::Component(Component *pComponent, GraphicsView *pGraphicsView)
   createStateComponent();
   mHasTransition = false;
   mIsInitialState = false;
-  mBusComponents.clear();
+  mpBusComponent = 0;
   drawComponent();
   mTransformation = Transformation(mpReferenceComponent->mTransformation);
   setTransform(mTransformation.getTransformationMatrix());
@@ -665,7 +663,7 @@ Component::Component(ComponentInfo *pComponentInfo, Component *pParentComponent)
   mpStateComponentRectangle = 0;
   mHasTransition = false;
   mIsInitialState = false;
-  mBusComponents.clear();
+  mpBusComponent = 0;
 
   if (mpComponentInfo->getTLMCausality() == StringHandler::getTLMCausality(StringHandler::TLMBidirectional)) {
     if (mpComponentInfo->getDomain() == StringHandler::getTLMDomain(StringHandler::Mechanical)) {
@@ -1454,6 +1452,17 @@ void Component::handleOMSComponentDoubleClick()
   } else if (mpLibraryTreeItem && mpLibraryTreeItem->getFMUInfo()) {
     showFMUPropertiesDialog();
   }
+}
+
+/*!
+ * \brief Component::setBusComponent
+ * Sets the bus component.
+ * \param pBusComponent
+ */
+void Component::setBusComponent(Component *pBusComponent)
+{
+  mpBusComponent = pBusComponent;
+  setVisible(!isInBus());
 }
 
 /*!
@@ -2282,12 +2291,30 @@ void Component::referenceComponentAdded()
 {
   if (mComponentType == Component::Port) {
     setVisible(true);
+    if (mpReferenceComponent && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpBusComponent = mpReferenceComponent->getBusComponent();
+    }
   } else {
     mpGraphicsView->addItem(this);
     mpGraphicsView->addItem(mpOriginItem);
   }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  } else if (!isInBus() && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
+      // if start connector moved out of bus
+      if (pConnectionLineAnnotation->getStartComponentName().compare(mpLibraryTreeItem->getNameStructure()) == 0) {
+        pConnectionLineAnnotation->setStartComponent(this);
+        pConnectionLineAnnotation->updateStartPoint(mapToScene(boundingRect().center()));
+        pConnectionLineAnnotation->setVisible(true);
+      }
+      // if end connector moved out of bus
+      if (pConnectionLineAnnotation->getEndComponentName().compare(mpLibraryTreeItem->getNameStructure()) == 0) {
+        pConnectionLineAnnotation->setEndComponent(this);
+        pConnectionLineAnnotation->updateEndPoint(mapToScene(boundingRect().center()));
+        pConnectionLineAnnotation->setVisible(true);
+      }
+    }
   }
 }
 
@@ -2327,12 +2354,34 @@ void Component::referenceComponentDeleted()
 {
   if (mComponentType == Component::Port) {
     setVisible(false);
+    if (mpReferenceComponent && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      mpBusComponent = mpReferenceComponent->getBusComponent();
+    }
   } else {
     mpGraphicsView->removeItem(this);
     mpGraphicsView->removeItem(mpOriginItem);
   }
   if (mpGraphicsView->getViewType() == StringHandler::Icon) {
     mpGraphicsView->getModelWidget()->getLibraryTreeItem()->handleIconUpdated();
+  } else if (isInBus() && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    foreach (LineAnnotation *pConnectionLineAnnotation, mpGraphicsView->getConnectionsList()) {
+      // if start connector and end connector is bus
+      if (((pConnectionLineAnnotation->getStartComponentName().compare(mpLibraryTreeItem->getNameStructure()) == 0)
+           && pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector())) {
+        Component *pStartBusConnector = mpGraphicsView->getModelWidget()->getConnectorComponent(pConnectionLineAnnotation->getStartComponent()->getRootParentComponent(),
+                                                                                                mpBusComponent->getName());
+        pConnectionLineAnnotation->setStartComponent(pStartBusConnector);
+        pConnectionLineAnnotation->setVisible(false);
+      }
+      // if end connector and start connector is bus
+      if ((pConnectionLineAnnotation->getEndComponentName().compare(mpLibraryTreeItem->getNameStructure()) == 0)
+          && pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector()) {
+        Component *pEndBusConnector = mpGraphicsView->getModelWidget()->getConnectorComponent(pConnectionLineAnnotation->getEndComponent()->getRootParentComponent(),
+                                                                                              mpBusComponent->getName());
+        pConnectionLineAnnotation->setEndComponent(pEndBusConnector);
+        pConnectionLineAnnotation->setVisible(false);
+      }
+    }
   }
 }
 

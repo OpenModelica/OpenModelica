@@ -307,6 +307,15 @@ bool LibraryTreeItem::isFMUComponent() const
 }
 
 /*!
+ * \brief LibraryTreeItem::isTableComponent
+ * \return
+ */
+bool LibraryTreeItem::isTableComponent() const
+{
+  return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));
+}
+
+/*!
  * \brief LibraryTreeItem::getOMSElementGeometry
  * \return
  */
@@ -373,11 +382,10 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(QObject::tr("FMU Kind")).arg(OMSProxy::getFMUKindString(mpFMUInfo->fmiKind))
                 .arg(QObject::tr("FMI Version")).arg(QString(mpFMUInfo->fmiVersion))
                 .arg(Helper::fileLocation).arg(mSubModelPath);
-//    } else if (mpOMSElement && mpOMSElement->type == oms_element_table) {
-//      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
-//                .arg(Helper::name).arg(mName)
-//                .arg(Helper::type).arg(OMSProxy::getElementTypeString(mpOMSElement->type))
-//                .arg(Helper::fileLocation).arg(mFileName);
+    } else if (isTableComponent()) {
+      tooltip = QString("%1 %2<br />%3: %4")
+                .arg(Helper::name).arg(mName)
+                .arg(Helper::fileLocation).arg(mSubModelPath);
     } else if (mpOMSConnector) {
       tooltip = QString("%1 %2<br />%3: %4<br />%5: %6")
                 .arg(Helper::name).arg(mName)
@@ -424,6 +432,12 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
       }
     } else if (isFMUComponent()) {
       return QIcon(":/Resources/icons/fmu-icon.svg");
+    } else if (isTableComponent()) {
+      if (mSubModelPath.endsWith(".csv")) {
+        return QIcon(":/Resources/icons/csv.svg");
+      } else {
+        return QIcon(":/Resources/icons/mat.svg");
+      }
     } else if (mpOMSConnector) {
       switch (mpOMSConnector->type) {
         case oms_signal_type_real:
@@ -2601,7 +2615,7 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
         pLibraryTreeItem->setFMUInfo(pFMUInfo);
         pLibraryTreeItem->setSubModelPath(QString(pFMUInfo->path));
       }
-    } else if (pLibraryTreeItem->getComponentType() == oms_component_table) {
+    } else if (pLibraryTreeItem->isTableComponent()) {
       QString path;
       if (OMSProxy::instance()->getSubModelPath(pLibraryTreeItem->getNameStructure(), &path)) {
         pLibraryTreeItem->setSubModelPath(path);

@@ -128,6 +128,7 @@ public:
   bool isSystemElement() const;
   bool isComponentElement() const;
   bool isFMUComponent() const;
+  bool isTableComponent() const;
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
   oms_system_enu_t getSystemType() {return mSystemType;}
   void setComponentType(oms_component_enu_t type) {mComponentType = type;}

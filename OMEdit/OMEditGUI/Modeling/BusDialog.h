@@ -34,6 +34,8 @@
 #ifndef ADDBUSDIALOG_H
 #define ADDBUSDIALOG_H
 
+#include "OMSimulator.h"
+
 #include <QDialog>
 #include <QFrame>
 #include <QLineEdit>
@@ -146,11 +148,13 @@ class ConnectionItem : public QObject
 {
   Q_OBJECT
 public:
-  ConnectionItem(QString start, QString end, ConnectionItem *pParent);
+  ConnectionItem(QString start, QString end, bool checked, ConnectionItem *pParent);
   QString getStart() const {return mStart;}
   void setStart(const QString &start) {mStart = start;}
+  QString getInitialStart() const {return mInitialStart;}
   QString getEnd() const {return mEnd;}
   void setEnd(const QString &end) {mEnd = end;}
+  QString getInitialEnd() const {return mInitialEnd;}
   ConnectionItem* parent() const {return mpParentConnectionItem;}
   int childrenSize() const {return mChildren.size();}
   void insertChild(int row, ConnectionItem *pConnectionItem) {mChildren.insert(row, pConnectionItem);}
@@ -158,13 +162,18 @@ public:
   ConnectionItem* childAt(int index) const {return mChildren.at(index);}
   bool isChecked() const {return mChecked;}
   void setChecked(bool checked) {mChecked = checked;}
+  bool isExisting() const {return mExisting;}
+  void setExisting(bool existing) {mExisting = existing;}
   int row() const;
 private:
   QString mStart;
+  QString mInitialStart;
   QString mEnd;
+  QString mInitialEnd;
   ConnectionItem *mpParentConnectionItem;
   QList<ConnectionItem*> mChildren;
   bool mChecked;
+  bool mExisting;
 };
 
 class ConnectionsModel : public QAbstractItemModel
@@ -191,7 +200,7 @@ public:
   ConnectionItem* getRootConnectionItem() {return mpRootConnectionItem;}
   void setHeaderLabels(const QStringList &headerLabels) {mHeaderLabels = headerLabels;}
 
-  ConnectionItem* createConnectionItem(QString start, QString end, ConnectionItem *pParent);
+  ConnectionItem* createConnectionItem(QString start, QString end, bool checked, ConnectionItem *pParent);
 private:
   LineAnnotation *mpConnectionLineAnnotation;
   ConnectionItem *mpRootConnectionItem;
@@ -204,10 +213,11 @@ class BusConnectionDialog : public QDialog
 {
   Q_OBJECT
 public:
-  BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation);
+  BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool addCase = true);
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
+  bool mAddCase;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   ConnectionsModel *mpInputOutputConnectionsModel;
@@ -217,6 +227,11 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  void addOrDeleteAtomicConnections(ConnectionsModel *pConnectionsModel);
+  void deleteAtomicConnection(QString startConnectorName, QString endConnectorName);
+  void addAtomicConnection(QString startConnectorName, QString endConnectorName);
+
 private slots:
   void addBusConnection();
 };

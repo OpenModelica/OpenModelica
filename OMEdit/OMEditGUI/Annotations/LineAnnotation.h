@@ -36,6 +36,7 @@
 #define LINEANNOTATION_H
 
 #include "ShapeAnnotation.h"
+#include "OMSimulator.h"
 
 #include <QTreeView>
 #include <QSortFilterProxyModel>
@@ -129,6 +130,8 @@ public:
   void updateShape(ShapeAnnotation *pShapeAnnotation);
   void setAligned(bool aligned);
   void updateOMSConnection();
+  void setOMSConnectionType(oms3_connection_type_enu_t connectionType) {mOMSConnectionType = connectionType;}
+  oms3_connection_type_enu_t getOMSConnectionType() {return mOMSConnectionType;}
   void showOMSConnection();
 protected:
   QVariant itemChange(GraphicsItemChange change, const QVariant &value);
@@ -152,6 +155,7 @@ protected:
   QString mZf;
   QString mZfr;
   QString mAlpha;
+  oms3_connection_type_enu_t mOMSConnectionType;
 public slots:
   void handleComponentMoved();
   void updateConnectionAnnotation();

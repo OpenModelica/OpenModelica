@@ -799,9 +799,14 @@ bool OMSProxy::getElements(QString cref, oms3_element_t*** pElements)
  */
 bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
 {
+  QString command = "oms3_getSubModelPath";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
   char* path = NULL;
-  oms_status_enu_t status = oms2_getSubModelPath(cref.toStdString().c_str(), &path);
+  oms_status_enu_t status = oms3_getSubModelPath(cref.toStdString().c_str(), &path);
   *pPath = QString(path);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
@@ -916,14 +921,18 @@ bool OMSProxy::addConnection(QString crefA, QString crefB)
 /*!
  * \brief OMSProxy::deleteConnection
  * Deletes the connection
- * \param cref
- * \param conA
- * \param conB
+ * \param crefA
+ * \param crefB
  * \return
  */
-bool OMSProxy::deleteConnection(QString cref, QString conA, QString conB)
+bool OMSProxy::deleteConnection(QString crefA, QString crefB)
 {
-  oms_status_enu_t status = oms2_deleteConnection(cref.toStdString().c_str(), conA.toStdString().c_str(), conB.toStdString().c_str());
+  QString command = "oms3_deleteConnection";
+  QStringList args;
+  args << crefA << crefB;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_deleteConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 

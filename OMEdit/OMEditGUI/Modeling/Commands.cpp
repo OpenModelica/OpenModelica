@@ -997,6 +997,8 @@ DeleteConnectionCommand::DeleteConnectionCommand(LineAnnotation *pConnectionLine
   : UndoCommand(pParent)
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  setText(QString("Delete Connection connect(%1, %2)").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                           mpConnectionLineAnnotation->getEndComponentName()));
 }
 
 /*!

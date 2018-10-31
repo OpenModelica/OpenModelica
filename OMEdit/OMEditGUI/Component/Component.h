@@ -244,9 +244,9 @@ public:
   void adjustInterfacePoints();
   void updateComponentTransformations(const Transformation &oldTransformation);
   void handleOMSComponentDoubleClick();
-  void addBusComponent(Component *pBusComponent) {mBusComponents.append(pBusComponent);}
-  void removeBusComponent(Component *pBusComponent) {mBusComponents.removeOne(pBusComponent);}
-  bool isInBus() {return !mBusComponents.isEmpty();}
+  bool isInBus() {return mpBusComponent != 0;}
+  void setBusComponent(Component *pBusComponent);
+  Component* getBusComponent() {return mpBusComponent;}
 
   Transformation mTransformation;
   Transformation mOldTransformation;
@@ -293,7 +293,7 @@ private:
   QPointF mOldPosition;
   bool mHasTransition;
   bool mIsInitialState;
-  QList<Component*> mBusComponents;
+  Component *mpBusComponent;
   void createNonExistingComponent();
   void createDefaultComponent();
   void createStateComponent();

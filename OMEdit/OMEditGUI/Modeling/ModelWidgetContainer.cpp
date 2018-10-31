@@ -633,8 +633,7 @@ void GraphicsView::deleteConnectionFromClass(LineAnnotation *pConnectionLineAnno
     CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpModelWidget->getEditor());
     pCompositeModelEditor->deleteConnection(pConnectionLineAnnotation->getStartComponentName(), pConnectionLineAnnotation->getEndComponentName());
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    OMSProxy::instance()->deleteConnection(mpModelWidget->getLibraryTreeItem()->getNameStructure(),
-                                           pConnectionLineAnnotation->getStartComponentName(),
+    OMSProxy::instance()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
                                            pConnectionLineAnnotation->getEndComponentName());
   } else {
     pMainWindow->getOMCProxy()->deleteConnection(pConnectionLineAnnotation->getStartComponentName(),
@@ -1340,7 +1339,7 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
     return false;
   }
   if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    if (mpModelWidget->getLibraryTreeItem()->getOMSElement()) {
+    if (mpModelWidget->getLibraryTreeItem()->isComponentElement()) {
       switch (key) {
         case Qt::Key_Delete:
         case Qt::Key_R: // rotate
@@ -1350,8 +1349,6 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
         default:
           break;
       }
-    } else if (mpModelWidget->getLibraryTreeItem()->getOMSConnector()) {
-      return false;
     }
   }
   bool selectedAndEditable = false;
@@ -1711,6 +1708,45 @@ void GraphicsView::removeCurrentTransition()
 void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
 {
   pConnectionLineAnnotation->setSelected(false);
+  // if deleting a bus connection
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()
+        && pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector()
+        && pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()
+        && pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector()) {
+      oms3_busconnector_t *pStartBus = pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector();
+      oms3_busconnector_t *pEndBus = pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector();
+      // start bus connectors
+      QStringList startBusConnectors;
+      if (pStartBus->connectors) {
+        for (int i = 0; pStartBus->connectors[i] ; ++i) {
+          startBusConnectors.append(QString(pStartBus->connectors[i]));
+        }
+      }
+      // end bus connectors
+      QStringList endBusConnectors;
+      if (pEndBus->connectors) {
+        for (int i = 0; pEndBus->connectors[i] ; ++i) {
+          endBusConnectors.append(QString(pEndBus->connectors[i]));
+        }
+      }
+      // Delete the atomic connections before deleting the actual bus connection.
+      foreach (LineAnnotation *pAtomicConnectionLineAnnotation, mConnectionsList) {
+        if (pAtomicConnectionLineAnnotation->getOMSConnectionType() == oms3_connection_single) {
+          if (pStartBus->connectors) {
+            for (int i = 0; pStartBus->connectors[i] ; ++i) {
+              if (startBusConnectors.contains(pAtomicConnectionLineAnnotation->getStartComponent()->getName())
+                  && endBusConnectors.contains(pAtomicConnectionLineAnnotation->getEndComponent()->getName())) {
+                mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pAtomicConnectionLineAnnotation));
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  // Delete the connection
   mpModelWidget->getUndoStack()->push(new DeleteConnectionCommand(pConnectionLineAnnotation));
 }
 
@@ -6115,6 +6151,17 @@ void ModelWidget::drawOMSModelConnections()
                                                      Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
+        // if the connector is part of a bus connector
+        Component *pStartBusConnectorComponent = pStartConnectorComponent;
+        if (pStartConnectorComponent->isInBus()) {
+          pStartBusConnectorComponent = getConnectorComponent(pStartComponent, pStartConnectorComponent->getBusComponent()->getName());
+        }
+
+        Component *pEndBusConnectorComponent = pEndConnectorComponent;
+        if (pEndConnectorComponent->isInBus()) {
+          pEndBusConnectorComponent = getConnectorComponent(pEndComponent, pEndConnectorComponent->getBusComponent()->getName());
+        }
+
         // default connection annotation
         QString annotation = QString("{Line(true,{0.0,0.0},0,%1,{0,0,0},LinePattern.Solid,0.25,{Arrow.None,Arrow.None},3,Smooth.None)}");
         QStringList shapesList;
@@ -6125,9 +6172,9 @@ void ModelWidget::drawOMSModelConnections()
             points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
           }
         }
-        QPointF startPoint = pStartConnectorComponent->mapToScene(pStartConnectorComponent->boundingRect().center());
+        QPointF startPoint = pStartBusConnectorComponent->mapToScene(pStartBusConnectorComponent->boundingRect().center());
         points.prepend(point.arg(startPoint.x()).arg(startPoint.y()));
-        QPointF endPoint = pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center());
+        QPointF endPoint = pEndBusConnectorComponent->mapToScene(pEndBusConnectorComponent->boundingRect().center());
         points.append(point.arg(endPoint.x()).arg(endPoint.y()));
         QString pointsString = QString("{%1}").arg(points.join(","));
         shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
@@ -6140,15 +6187,25 @@ void ModelWidget::drawOMSModelConnections()
             break;  // break the loop once we have got the line annotation.
           }
         }
-        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartConnectorComponent, pEndConnectorComponent,
-                                                                       mpDiagramGraphicsView);
+
+        LineAnnotation *pConnectionLineAnnotation = new LineAnnotation(lineShape, pStartBusConnectorComponent,
+                                                                       pEndBusConnectorComponent, mpDiagramGraphicsView);
         if (pStartConnectorComponent->getLibraryTreeItem()) {
           pConnectionLineAnnotation->setStartComponentName(pStartConnectorComponent->getLibraryTreeItem()->getNameStructure());
         }
         if (pEndConnectorComponent->getLibraryTreeItem()) {
           pConnectionLineAnnotation->setEndComponentName(pEndConnectorComponent->getLibraryTreeItem()->getNameStructure());
         }
+        pConnectionLineAnnotation->setOMSConnectionType(pConnections[i]->type);
         mpUndoStack->push(new AddConnectionCommand(pConnectionLineAnnotation, false));
+        // Check if the connectors of the connection belongs to a bus
+        if (pStartConnectorComponent->isInBus() && pEndConnectorComponent->isInBus()) {
+          pConnectionLineAnnotation->setVisible(false);
+        }
+        // Check if bus connection
+        if (pConnections[i]->type == oms3_connection_bus || pConnections[i]->type == oms3_connection_tlm) {
+          pConnectionLineAnnotation->setLineThickness(0.5);
+        }
       }
     }
   }
@@ -6168,7 +6225,7 @@ void ModelWidget::associateBusWithConnector(QString busName, QString connectorNa
   // get the connector component
   Component *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
   if (pBusComponent && pConnectorComponent) {
-    pConnectorComponent->addBusComponent(pBusComponent);
+    pConnectorComponent->setBusComponent(pBusComponent);
   }
 }
 
@@ -6185,7 +6242,7 @@ void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorN
   Component *pBusComponent = pGraphicsView->getComponentObject(busName);
   Component *pConnectorComponent = pGraphicsView->getComponentObject(connectorName);
   if (pBusComponent && pConnectorComponent) {
-    pConnectorComponent->removeBusComponent(pBusComponent);
+    pConnectorComponent->setBusComponent(0);
   }
 }
 
@@ -6203,7 +6260,7 @@ void ModelWidget::associateBusWithConnectors(Component *pBusComponent, GraphicsV
       for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
         Component *pConnectorComponent = pGraphicsView->getComponentObject(QString(pBusConnector->connectors[i]));
         if (pConnectorComponent) {
-          pConnectorComponent->addBusComponent(pBusComponent);
+          pConnectorComponent->setBusComponent(pBusComponent);
         }
       }
     }

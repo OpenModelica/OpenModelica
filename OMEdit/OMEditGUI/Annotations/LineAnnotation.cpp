@@ -57,6 +57,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -85,6 +86,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   setPos(mOrigin);
   setRotation(mRotation);
   connect(pShapeAnnotation, SIGNAL(updateReferenceShapes()), pShapeAnnotation, SIGNAL(changed()));
@@ -122,6 +124,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   setReset(true);
   setSynchronize(false);
   setPriority(1);
+  setOMSConnectionType(oms3_connection_single);
   if (mLineType == LineAnnotation::ConnectionType) {
     /* Use the linecolor of the first shape from icon layer of start component for the connection line.
      * Or use black color if there is no shape in the icon layer
@@ -206,6 +209,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -243,6 +247,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -281,6 +286,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, Graphi
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
   QList<QPointF> points;
@@ -311,6 +317,7 @@ LineAnnotation::LineAnnotation(Component *pParent)
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -346,6 +353,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
+  setOMSConnectionType(oms3_connection_single);
   // set the default values
   GraphicItem::setDefaults();
   ShapeAnnotation::setDefaults();
@@ -1017,6 +1025,7 @@ void LineAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
   setZf(pLineAnnotation->getZf());
   setZfr(pLineAnnotation->getZfr());
   setAlpha(pLineAnnotation->getAlpha());
+  setOMSConnectionType(pLineAnnotation->getOMSConnectionType());
   // set the default values
   GraphicItem::setDefaults(pShapeAnnotation);
   mPoints.clear();
@@ -1069,16 +1078,8 @@ void LineAnnotation::updateOMSConnection()
   }
   // connection
   oms3_connection_t connection;
-  // find connection type
-  oms3_connection_type_enu_t connectionType;
-  if (mpStartComponent->getLibraryTreeItem()->getOMSBusConnector() || mpEndComponent->getLibraryTreeItem()->getOMSBusConnector()) {
-    connectionType = oms3_connection_bus;
-  } else if (mpStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector() || mpEndComponent->getLibraryTreeItem()->getOMSTLMBusConnector()) {
-    connectionType = oms3_connection_tlm;
-  } else {
-    connectionType = oms3_connection_single;
-  }
-  connection.type = connectionType;
+  // connection type
+  connection.type = getOMSConnectionType();
   QString conA = QString("%1.%2").arg(StringHandler::getLastWordAfterDot(StringHandler::removeLastWordAfterDot(getStartComponentName())))
                  .arg(StringHandler::getLastWordAfterDot(getStartComponentName()));
   connection.conA = new char[conA.toStdString().size() + 1];
@@ -1101,8 +1102,8 @@ void LineAnnotation::updateOMSConnection()
 void LineAnnotation::showOMSConnection()
 {
   if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSBusConnector())
-      || (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSBusConnector())) {
-    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this);
+      && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSBusConnector())) {
+    BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
     pBusConnectionDialog->exec();
   }
 }
