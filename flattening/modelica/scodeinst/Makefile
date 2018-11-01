@@ -317,6 +317,7 @@ eq8.mo \
 eq10.mo \
 EqualityConstraint1.mo \
 EquationInvalidType1.mo \
+EvaluateAllParams.mo \
 Extends1.mo \
 Extends2.mo \
 Extends3.mo \
