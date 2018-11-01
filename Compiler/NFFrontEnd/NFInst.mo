@@ -146,7 +146,7 @@ algorithm
   execStat("NFInst.instExpressions("+ name +")");
 
   // Mark structural parameters.
-  updateImplicitVariability(inst_cls);
+  updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
   execStat("NFInst.updateImplicitVariability");
 
   // Type the class.
@@ -2881,6 +2881,7 @@ end insertGeneratedInners;
 
 function updateImplicitVariability
   input InstNode node;
+  input Boolean evalAllParams;
 protected
   Class cls = InstNode.getClass(node);
   ClassTree cls_tree;
@@ -2890,7 +2891,7 @@ algorithm
       algorithm
         for c in cls_tree.components loop
           if not InstNode.isEmpty(c) then
-            updateImplicitVariabilityComp(c);
+          updateImplicitVariabilityComp(c, evalAllParams);
           end if;
         end for;
 
@@ -2906,14 +2907,14 @@ algorithm
           markStructuralParamsDim(dim);
         end for;
 
-        updateImplicitVariability(cls.baseClass);
+        updateImplicitVariability(cls.baseClass, evalAllParams);
       then
         ();
 
     case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-          updateImplicitVariabilityComp(c);
+        updateImplicitVariabilityComp(c, evalAllParams);
         end for;
       then
         ();
@@ -2924,6 +2925,7 @@ end updateImplicitVariability;
 
 function updateImplicitVariabilityComp
   input InstNode component;
+  input Boolean evalAllParams;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c = InstNode.component(node);
@@ -2936,7 +2938,8 @@ algorithm
       algorithm
         // @adrpo: if Evaluate=true make the parameter a structural parameter
         // only make it a structural parameter if is not constant, duh!, 1071 regressions :)
-        if c.attributes.variability == Variability.PARAMETER and Component.getEvaluateAnnotation(c) then
+        if c.attributes.variability == Variability.PARAMETER and
+           (Component.getEvaluateAnnotation(c) or evalAllParams) then
           markStructuralParamsComp(c, node);
         end if;
 
@@ -2952,7 +2955,7 @@ algorithm
           markStructuralParamsExp(Binding.getUntypedExp(condition));
         end if;
 
-        updateImplicitVariability(c.classInst);
+        updateImplicitVariability(c.classInst, evalAllParams);
       then
         ();
 
