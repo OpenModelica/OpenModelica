@@ -396,6 +396,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 
     comp->instanceName = (fmi2String)functions->allocateMemory(1 + strlen(instanceName), sizeof(char));
     comp->GUID = (fmi2String)functions->allocateMemory(1 + strlen(fmuGUID), sizeof(char));
+    comp->functions = (fmi2CallbackFunctions*)functions->allocateMemory(1, sizeof(fmi2CallbackFunctions));
     fmudata = (DATA *)functions->allocateMemory(1, sizeof(DATA));
     modelData = (MODEL_DATA *)functions->allocateMemory(1, sizeof(MODEL_DATA));
     simInfo = (SIMULATION_INFO *)functions->allocateMemory(1, sizeof(SIMULATION_INFO));
@@ -423,7 +424,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     }
   }
 
-  if (!comp || !comp->instanceName || !comp->GUID) {
+  if (!comp || !comp->instanceName || !comp->GUID || !comp->functions) {
     functions->logger(functions->componentEnvironment, instanceName, fmi2Error, "error", "fmi2Instantiate: Out of memory.");
     return NULL;
   }
@@ -435,7 +436,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   strcpy((char*)comp->instanceName, (const char*)instanceName);
   comp->type = fmuType;
   strcpy((char*)comp->GUID, (const char*)fmuGUID);
-  comp->functions = functions;
+  memcpy((void*)comp->functions, (void*)functions, sizeof(fmi2CallbackFunctions));
   comp->componentEnvironment = functions->componentEnvironment;
   comp->loggingOn = loggingOn;
   comp->state = modelInstantiated;
@@ -500,6 +501,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 void fmi2FreeInstance(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
+  fmi2CallbackFreeMemory freeMemory = comp->functions->freeMemory;
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
 
@@ -537,8 +539,9 @@ void fmi2FreeInstance(fmi2Component c)
   /* free instanceName & GUID */
   if (comp->instanceName) comp->functions->freeMemory((void*)comp->instanceName);
   if (comp->GUID) comp->functions->freeMemory((void*)comp->GUID);
+  if (comp->functions) comp->functions->freeMemory((void*)comp->functions);
   /* free comp */
-  comp->functions->freeMemory(comp);
+  freeMemory(comp);
 }
 
 fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fmi2Real tolerance, fmi2Real startTime, fmi2Boolean stopTimeDefined, fmi2Real stopTime)

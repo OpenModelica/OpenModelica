@@ -38,6 +38,11 @@
 extern "C" {
 #endif
 
+/* make sure all compiler use the same alignment policies for structures */
+#if defined _MSC_VER || defined __GNUC__
+#pragma pack(push,8)
+#endif
+
 // categories of logging supported by model.
 // Value is the index in logCategories of a ModelInstance.
 #define LOG_EVENTS                      0
@@ -87,6 +92,11 @@ typedef struct {
   int _has_jacobian;
   ANALYTIC_JACOBIAN* fmiDerJac;
 } ModelInstance;
+
+/* reset alignment policy to the one set before reading this file */
+#if defined _MSC_VER || defined __GNUC__
+#pragma pack(pop)
+#endif
 
 #ifdef __cplusplus
 }
