@@ -106,6 +106,7 @@ public:
   bool setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool getConnections(QString cref, oms3_connection_t ***pConnections);
   bool addConnection(QString crefA, QString crefB);
+  bool addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance);
   bool deleteConnection(QString crefA, QString crefB);
   bool updateConnection(QString crefA, QString crefB, const oms3_connection_t *pConnection);
   bool initialize(QString ident);

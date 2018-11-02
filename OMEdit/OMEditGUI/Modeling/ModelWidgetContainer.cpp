@@ -598,8 +598,20 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
       pCompositeModelEditor->createConnection(pConnectionLineAnnotation);
     }
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
-    if (OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
-                                            pConnectionLineAnnotation->getEndComponentName())) {
+    // if TLM connection
+    bool connectionSuccessful = false;
+    if (pConnectionLineAnnotation->getOMSConnectionType() == oms3_connection_tlm) {
+      connectionSuccessful = OMSProxy::instance()->addTLMConnection(pConnectionLineAnnotation->getStartComponentName(),
+                                                                    pConnectionLineAnnotation->getEndComponentName(),
+                                                                    pConnectionLineAnnotation->getDelay().toDouble(),
+                                                                    pConnectionLineAnnotation->getAlpha().toDouble(),
+                                                                    pConnectionLineAnnotation->getZf().toDouble(),
+                                                                    pConnectionLineAnnotation->getZfr().toDouble());
+    } else {
+      connectionSuccessful = OMSProxy::instance()->addConnection(pConnectionLineAnnotation->getStartComponentName(),
+                                                                 pConnectionLineAnnotation->getEndComponentName());
+    }
+    if (connectionSuccessful) {
       pConnectionLineAnnotation->updateOMSConnection();
       return true;
     } else {
@@ -1564,6 +1576,13 @@ void GraphicsView::addConnection(Component *pComponent)
         BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(this, mpConnectionLineAnnotation);
         // if user cancels the bus connection
         if (!pBusConnectionDialog->exec()) {
+          removeCurrentConnection();
+        }
+      } else if ((pStartComponent->getLibraryTreeItem() && pStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector())
+                 && (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+        TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(this, mpConnectionLineAnnotation);
+        // if user cancels the tlm bus connection
+        if (!pTLMBusConnectionDialog->exec()) {
           removeCurrentConnection();
         }
       } else {

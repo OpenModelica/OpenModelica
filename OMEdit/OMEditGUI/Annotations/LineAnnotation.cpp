@@ -1089,11 +1089,22 @@ void LineAnnotation::updateOMSConnection()
   connection.conB = new char[conB.toStdString().size() + 1];
   strcpy(connection.conB, conB.toStdString().c_str());
   connection.geometry = pConnectionGeometry;
-  connection.tlmparameters = NULL;
+  if (connection.type == oms3_connection_tlm) {
+    connection.tlmparameters = new oms3_tlm_connection_parameters_t;
+    connection.tlmparameters->delay = mDelay.toDouble();
+    connection.tlmparameters->alpha = mAlpha.toDouble();
+    connection.tlmparameters->linearimpedance = mZf.toDouble();
+    connection.tlmparameters->angularimpedance = mZfr.toDouble();
+  } else {
+    connection.tlmparameters = NULL;
+  }
   OMSProxy::instance()->updateConnection(getStartComponentName(), getEndComponentName(), &connection);
 
   delete[] connection.conA;
   delete[] connection.conB;
+  if (connection.tlmparameters) {
+    delete connection.tlmparameters;
+  }
   delete[] pConnectionGeometry->pointsX;
   delete[] pConnectionGeometry->pointsY;
   delete pConnectionGeometry;

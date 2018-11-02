@@ -937,6 +937,30 @@ bool OMSProxy::addConnection(QString crefA, QString crefB)
 }
 
 /*!
+ * \brief OMSProxy::addTLMConnection
+ * Adds a TLM connection.
+ * \param crefA
+ * \param crefB
+ * \param delay
+ * \param alpha
+ * \param linearimpedance
+ * \param angularimpedance
+ * \return
+ */
+bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance)
+{
+  QString command = "oms3_addTLMConnection";
+  QStringList args;
+  args << crefA << crefB << QString::number(delay) << QString::number(alpha)
+       << QString::number(linearimpedance) << QString::number(angularimpedance);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_addTLMConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), delay, alpha,
+                                                  linearimpedance, angularimpedance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::deleteConnection
  * Deletes the connection
  * \param crefA

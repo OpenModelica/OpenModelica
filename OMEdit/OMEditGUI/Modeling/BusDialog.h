@@ -132,17 +132,6 @@ private slots:
   void addBus();
 };
 
-class TLMConnector {
-public:
-  QString mName;
-  QString mType;
-
-  TLMConnector();
-  TLMConnector(QString name, QString type);
-
-  bool operator==(const TLMConnector &tlmConnector) const;
-};
-
 class AddTLMBusDialog : public QDialog
 {
   Q_OBJECT
@@ -264,6 +253,32 @@ private:
 
 private slots:
   void addBusConnection();
+};
+
+class TLMConnectionDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  TLMConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool addCase = true);
+private:
+  GraphicsView *mpGraphicsView;
+  LineAnnotation *mpConnectionLineAnnotation;
+  bool mAddCase;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpDelayLabel;
+  QLineEdit *mpDelayTextBox;
+  Label *mpAlphaLabel;
+  QLineEdit *mpAlphaTextBox;
+  Label *mpLinearImpedanceLabel;
+  QLineEdit *mpLinearImpedanceTextBox;
+  Label *mpAngularImpedanceLabel;
+  QLineEdit *mpAngularImpedanceTextBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void addTLMConnection();
 };
 
 #endif // ADDBUSDIALOG_H

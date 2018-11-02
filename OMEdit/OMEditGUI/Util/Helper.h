@@ -370,6 +370,8 @@ public:
   static QString addConnectorTip;
   static QString addBusConnection;
   static QString editBusConnection;
+  static QString addTLMConnection;
+  static QString editTLMConnection;
   static QString running;
   static QString finished;
   static QString newVariable;

@@ -584,23 +584,6 @@ void AddBusDialog::addBus()
   }
 }
 
-TLMConnector::TLMConnector()
-{
-  mName = "";
-  mType = "";
-}
-
-TLMConnector::TLMConnector(QString name, QString type)
-{
-  mName = name;
-  mType = type;
-}
-
-bool TLMConnector::operator==(const TLMConnector &tlmConnector) const
-{
-  return (mName == tlmConnector.mName && mType == tlmConnector.mType);
-}
-
 /*!
  * \class AddTLMBusDialog
  * \brief A dialog for creating a tlm bus.
@@ -755,7 +738,7 @@ void AddTLMBusDialog::addTLMBus()
 
   if (mpDomainTextBox->text().isEmpty()) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("domain")), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("domain")), Helper::ok);
     return;
   }
 
@@ -1284,8 +1267,7 @@ BusConnectionDialog::BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName)
-                 .arg(addCase ? Helper::addBusConnection : Helper::editBusConnection));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(addCase ? Helper::addBusConnection : Helper::editBusConnection));
   resize(800, 600);
   mpGraphicsView = pGraphicsView;
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
@@ -1601,5 +1583,116 @@ void BusConnectionDialog::addBusConnection()
 
   mpGraphicsView->getModelWidget()->updateModelText();
   mpGraphicsView->getModelWidget()->endMacro();
+  accept();
+}
+
+/*!
+ * \class TLMBusConnectionDialog
+ * \brief A dialog for creating a tlm bus connection.
+ */
+/*!
+ * \brief TLMBusConnectionDialog::TLMBusConnectionDialog
+ * \param pGraphicsView
+ * \param pConnectionLineAnnotation
+ */
+TLMConnectionDialog::TLMConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool addCase)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(addCase ? Helper::addTLMConnection : Helper::editTLMConnection));
+  mpGraphicsView = pGraphicsView;
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  mAddCase = addCase;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(addCase ? Helper::addTLMConnection : Helper::editTLMConnection);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // delay
+  mpDelayLabel = new Label(tr("Delay:"));
+  mpDelayTextBox = new QLineEdit(addCase ? "" : pConnectionLineAnnotation->getDelay());
+  // alpha
+  mpAlphaLabel = new Label(tr("Alpha:"));
+  mpAlphaTextBox = new QLineEdit(addCase ? "" : pConnectionLineAnnotation->getAlpha());
+  // Linear Impedance
+  mpLinearImpedanceLabel = new Label(tr("Linear Impedance:"));
+  mpLinearImpedanceTextBox = new QLineEdit(addCase ? "" : pConnectionLineAnnotation->getZf());
+  // Angular Impedance
+  mpAngularImpedanceLabel = new Label(tr("Angular Impedance:"));
+  mpAngularImpedanceTextBox = new QLineEdit(addCase ? "" : pConnectionLineAnnotation->getZfr());
+  // Add the validator
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+  mpDelayTextBox->setValidator(pDoubleValidator);
+  mpAlphaTextBox->setValidator(pDoubleValidator);
+  mpLinearImpedanceTextBox->setValidator(pDoubleValidator);
+  mpAngularImpedanceTextBox->setValidator(pDoubleValidator);
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(addTLMConnection()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpDelayLabel, 2, 0);
+  pMainLayout->addWidget(mpDelayTextBox, 2, 1);
+  pMainLayout->addWidget(mpAlphaLabel, 3, 0);
+  pMainLayout->addWidget(mpAlphaTextBox, 3, 1);
+  pMainLayout->addWidget(mpLinearImpedanceLabel, 4, 0);
+  pMainLayout->addWidget(mpLinearImpedanceTextBox, 4, 1);
+  pMainLayout->addWidget(mpAngularImpedanceLabel, 5, 0);
+  pMainLayout->addWidget(mpAngularImpedanceTextBox, 5, 1);
+  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+void TLMConnectionDialog::addTLMConnection()
+{
+  if (mpDelayTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Delay")), Helper::ok);
+    return;
+  }
+
+  if (mpAlphaTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Alpha")), Helper::ok);
+    return;
+  }
+
+  if (mpLinearImpedanceTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Linear Impedance")), Helper::ok);
+    return;
+  }
+
+  if (mpAngularImpedanceTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("Angular Impedance")), Helper::ok);
+    return;
+  }
+
+  if (mAddCase) {
+    mpConnectionLineAnnotation->setStartComponentName(mpConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getNameStructure());
+    mpConnectionLineAnnotation->setEndComponentName(mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getNameStructure());
+    mpConnectionLineAnnotation->setDelay(mpDelayTextBox->text());
+    mpConnectionLineAnnotation->setAlpha(mpAlphaTextBox->text());
+    mpConnectionLineAnnotation->setZf(mpLinearImpedanceTextBox->text());
+    mpConnectionLineAnnotation->setZfr(mpAngularImpedanceTextBox->text());
+    mpConnectionLineAnnotation->setOMSConnectionType(oms3_connection_tlm);
+
+    AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
+  } else {
+    /*! @todo Edit the TLM connection */
+  }
+  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }

@@ -369,6 +369,8 @@ QString Helper::addConnector;
 QString Helper::addConnectorTip;
 QString Helper::addBusConnection;
 QString Helper::editBusConnection;
+QString Helper::addTLMConnection;
+QString Helper::editTLMConnection;
 QString Helper::running;
 QString Helper::finished;
 QString Helper::newVariable;
@@ -651,6 +653,8 @@ void Helper::initHelperVariables()
   Helper::addConnectorTip = tr("Adds the connector");
   Helper::addBusConnection = tr("Add Bus Connection");
   Helper::editBusConnection = tr("Edit Bus Connection");
+  Helper::addTLMConnection = tr("Add TLM Connection");
+  Helper::editTLMConnection = tr("Edit TLM Connection");
   Helper::running = tr("Running");
   Helper::finished = tr("Finished");
   Helper::newVariable = tr("<New Variable>");
