@@ -80,6 +80,7 @@ public:
   bool addTLMBus(QString cref, QString domain, int dimensions, const oms_tlm_interpolation_t interpolation);
   bool getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);
+  bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
   bool addSubModel(QString cref, QString fmuPath);
   bool getComponentType(QString cref, oms_component_enu_t *pType);
 

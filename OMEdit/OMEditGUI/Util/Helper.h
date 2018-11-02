@@ -365,6 +365,7 @@ public:
   static QString editBus;
   static QString addTLMBus;
   static QString addTLMBusTip;
+  static QString editTLMBus;
   static QString addConnector;
   static QString addConnectorTip;
   static QString addBusConnection;

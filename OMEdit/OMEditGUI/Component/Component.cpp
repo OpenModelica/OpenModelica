@@ -1449,6 +1449,9 @@ void Component::handleOMSComponentDoubleClick()
   if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSBusConnector()) {
     AddBusDialog *pAddBusDialog = new AddBusDialog(QList<Component*>(), mpLibraryTreeItem, mpGraphicsView);
     pAddBusDialog->exec();
+  } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSTLMBusConnector()) {
+    AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(QList<Component*>(), mpLibraryTreeItem, mpGraphicsView);
+    pAddTLMBusDialog->exec();
   } else if (mpLibraryTreeItem && mpLibraryTreeItem->getFMUInfo()) {
     showFMUPropertiesDialog();
   }
@@ -1655,14 +1658,14 @@ void Component::drawOMSComponent()
     pBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
     mShapesList.append(pBusRectangleAnnotation);
   } else if (mpLibraryTreeItem->getOMSTLMBusConnector()) { // if component is a tlm bus
-    PolygonAnnotation *pTLMBusPolygonAnnotation = new PolygonAnnotation(this);
-    QList<QPointF> points;
-    points << QPointF(-100.0, 0.0) << QPointF(0.0, 100.0) << QPointF(100.0, 0.0) << QPointF(0.0, -100.0) << QPointF(-100.0, 0.0);
-    pTLMBusPolygonAnnotation->setPoints(points);
-    pTLMBusPolygonAnnotation->setLineColor(QColor(100, 100, 255));
-    pTLMBusPolygonAnnotation->setFillColor(QColor(100, 100, 255));
-    pTLMBusPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
-    mShapesList.append(pTLMBusPolygonAnnotation);
+    RectangleAnnotation *pTLMBusRectangleAnnotation = new RectangleAnnotation(this);
+    QList<QPointF> extents;
+    extents << QPointF(-100, -100) << QPointF(100, 100);
+    pTLMBusRectangleAnnotation->setExtents(extents);
+    pTLMBusRectangleAnnotation->setLineColor(QColor(100, 100, 255));
+    pTLMBusRectangleAnnotation->setFillColor(QColor(100, 100, 255));
+    pTLMBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
+    mShapesList.append(pTLMBusRectangleAnnotation);
   }
 }
 

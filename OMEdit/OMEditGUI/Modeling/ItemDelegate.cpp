@@ -35,6 +35,7 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
+#include "Modeling/BusDialog.h"
 
 #include <QPainter>
 
@@ -192,7 +193,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   } else {
     drawDecoration(painter, opt, decorationRect, pixmap);
   }
-  if (parent() && qobject_cast<VariablesTreeView*>(parent())) {
+  if (parent() && (qobject_cast<VariablesTreeView*>(parent()) || qobject_cast<ConnectorsTreeView*>(parent()))) {
     if ((index.column() == 1) && (index.flags() & Qt::ItemIsEditable)) {
       /* The display rect is slightly larger than the area because it include the outer line. */
       painter->drawRect(displayRect.adjusted(0, 0, -1, -1));
@@ -317,6 +318,11 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
       return pComboBox;
     }
+  } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent())) {
+    if (index.column() == 1) { // value column
+      QLineEdit *pValueTextBox = new QLineEdit(pParent);
+      return pValueTextBox;
+    }
   }
   return QItemDelegate::createEditor(pParent, option, index);
 }
@@ -334,6 +340,11 @@ void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) cons
     QComboBox* comboBox = static_cast<QComboBox*>(editor);
     //set the index of the combo box
     comboBox->setCurrentIndex(comboBox->findText(value, Qt::MatchExactly));
+  } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent()) && index.column() == 1) {
+    QLineEdit *pValueTextBox = static_cast<QLineEdit*>(editor);
+    pValueTextBox->setText(index.data(Qt::DisplayRole).toString());
+    pValueTextBox->selectAll();
+    pValueTextBox->setFocusPolicy(Qt::WheelFocus);
   } else {
     QItemDelegate::setEditorData(editor, index);
   }

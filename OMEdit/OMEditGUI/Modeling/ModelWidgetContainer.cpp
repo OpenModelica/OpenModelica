@@ -5885,6 +5885,8 @@ void ModelWidget::drawOMSModelIconElements()
                                                                    pChildLibraryTreeItem->getOMSTLMBusConnector()->dimensions,
                                                                    pChildLibraryTreeItem->getOMSTLMBusConnector()->interpolation);
         mpUndoStack->push(pAddTLMBusCommand);
+        // assoicated the bus component with each of its connector component
+        associateBusWithConnectors(pChildLibraryTreeItem->getName());
       }
     }
   }
@@ -6259,6 +6261,16 @@ void ModelWidget::associateBusWithConnectors(Component *pBusComponent, GraphicsV
     if (pBusConnector->connectors) {
       for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
         Component *pConnectorComponent = pGraphicsView->getComponentObject(QString(pBusConnector->connectors[i]));
+        if (pConnectorComponent) {
+          pConnectorComponent->setBusComponent(pBusComponent);
+        }
+      }
+    }
+  } else if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector()) {
+    oms3_tlmbusconnector_t *pTLMBusConnector = pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector();
+    if (pTLMBusConnector->connectornames) {
+      for (int i = 0 ; pTLMBusConnector->connectornames[i] ; i++) {
+        Component *pConnectorComponent = pGraphicsView->getComponentObject(QString(pTLMBusConnector->connectornames[i]));
         if (pConnectorComponent) {
           pConnectorComponent->setBusComponent(pBusComponent);
         }
@@ -7324,7 +7336,16 @@ void ModelWidgetContainer::addTLMBus()
     } else if (pModelWidget->getDiagramGraphicsView() && pModelWidget->getDiagramGraphicsView()->isVisible()) {
       pGraphicsView = pModelWidget->getDiagramGraphicsView();
     }
-    AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(pGraphicsView);
+    QList<Component*> components;
+    QList<QGraphicsItem*> selectedItems = pGraphicsView->scene()->selectedItems();
+    for (int i = 0 ; i < selectedItems.size() ; i++) {
+      // check the selected components.
+      Component *pComponent = dynamic_cast<Component*>(selectedItems.at(i));
+      if (pComponent && pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getOMSConnector()) {
+        components.append(pComponent);
+      }
+    }
+    AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(components, 0, pGraphicsView);
     pAddTLMBusDialog->exec();
   }
 }

@@ -54,6 +54,8 @@ public:
   QString getText() const {return mText;}
   void setText(const QString &text) {mText = text;}
   Component* getComponent() {return mpComponent;}
+  QString getTLMType() const {return mTLMType;}
+  void setTLMType(const QString &tlmType) {mTLMType = tlmType;}
   ConnectorItem* parent() const {return mpParentConnectorItem;}
   int childrenSize() const {return mChildren.size();}
   void insertChild(int row, ConnectorItem *pConnectorItem) {mChildren.insert(row, pConnectorItem);}
@@ -66,6 +68,7 @@ public:
 private:
   QString mText;
   Component *mpComponent;
+  QString mTLMType;
   ConnectorItem *mpParentConnectorItem;
   QList<ConnectorItem*> mChildren;
   bool mChecked;
@@ -86,10 +89,20 @@ public:
   QModelIndex connectorItemIndex(const ConnectorItem *pConnectorItem) const;
   ConnectorItem* getRootConnectorItem() {return mpRootConnectorItem;}
   ConnectorItem* createConnectorItem(Component *pComponent, ConnectorItem *pParent);
+  void setColumnCount(int columnCount) {mColumnCount = columnCount;}
+
 private:
   ConnectorItem *mpRootConnectorItem;
+  int mColumnCount;
   QModelIndex connectorItemIndexHelper(const ConnectorItem *pConnectorItem, const ConnectorItem *pParentConnectorItem,
                                        const QModelIndex &parentIndex) const;
+};
+
+class ConnectorsTreeView : public QTreeView
+{
+  Q_OBJECT
+public:
+  ConnectorsTreeView(QWidget *pParent = 0);
 };
 
 class LibraryTreeItem;
@@ -108,9 +121,9 @@ private:
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   ConnectorsModel *mpInputConnectorsTreeModel;
-  QTreeView *mpInputConnectorsTreeView;
+  ConnectorsTreeView *mpInputConnectorsTreeView;
   ConnectorsModel *mpOutputConnectorsTreeModel;
-  QTreeView *mpOutputConnectorsTreeView;
+  ConnectorsTreeView *mpOutputConnectorsTreeView;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
@@ -119,12 +132,24 @@ private slots:
   void addBus();
 };
 
+class TLMConnector {
+public:
+  QString mName;
+  QString mType;
+
+  TLMConnector();
+  TLMConnector(QString name, QString type);
+
+  bool operator==(const TLMConnector &tlmConnector) const;
+};
+
 class AddTLMBusDialog : public QDialog
 {
   Q_OBJECT
 public:
-  AddTLMBusDialog(GraphicsView *pGraphicsView);
+  AddTLMBusDialog(QList<Component*> components, LibraryTreeItem *pLibraryTreeItem, GraphicsView *pGraphicsView);
 private:
+  LibraryTreeItem *mpLibraryTreeItem;
   GraphicsView *mpGraphicsView;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
@@ -136,9 +161,14 @@ private:
   QSpinBox *mpDimensionSpinBox;
   Label *mpInterpolationLabel;
   QComboBox *mpInterpolationComboBox;
+  ConnectorsModel *mpInputConnectorsTreeModel;
+  ConnectorsTreeView *mpInputConnectorsTreeView;
+  ConnectorsModel *mpOutputConnectorsTreeModel;
+  ConnectorsTreeView *mpOutputConnectorsTreeView;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  void markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component*> components);
 private slots:
   void addTLMBus();
 };

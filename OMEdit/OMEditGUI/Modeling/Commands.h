@@ -598,4 +598,32 @@ private:
   Component *mpDiagramComponent;
 };
 
+class AddConnectorToTLMBusCommand : public UndoCommand
+{
+public:
+  AddConnectorToTLMBusCommand(QString tlmBus, QString connectorName, QString connectorType, GraphicsView *pGraphicsView,
+                              UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  QString mTLMBus;
+  QString mConnectorName;
+  QString mConnectorType;
+  GraphicsView *mpGraphicsView;
+};
+
+class DeleteConnectorFromTLMBusCommand : public UndoCommand
+{
+public:
+  DeleteConnectorFromTLMBusCommand(QString bus, QString connectorName, QString connectorType, GraphicsView *pGraphicsView,
+                                   UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  QString mTLMBus;
+  QString mConnectorName;
+  QString mConnectorType;
+  GraphicsView *mpGraphicsView;
+};
+
 #endif // COMMANDS_H

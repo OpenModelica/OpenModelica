@@ -2788,3 +2788,75 @@ void AddTLMBusCommand::undo()
 {
 
 }
+
+AddConnectorToTLMBusCommand::AddConnectorToTLMBusCommand(QString tlmBus, QString connectorName, QString connectorType,
+                                                         GraphicsView *pGraphicsView, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mTLMBus = tlmBus;
+  mConnectorName = connectorName;
+  mConnectorType = connectorType;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief AddConnectorToTLMBusCommand::redoInternal
+ * redoInternal the AddConnectorToTLMBusCommand.
+ */
+void AddConnectorToTLMBusCommand::redoInternal()
+{
+  if (!OMSProxy::instance()->addConnectorToTLMBus(mTLMBus.toStdString().c_str(), mConnectorName.toStdString().c_str(),
+                                                  mConnectorType.toStdString().c_str())) {
+    setFailed(true);
+    return;
+  }
+  mpGraphicsView->getModelWidget()->associateBusWithConnector(StringHandler::getLastWordAfterDot(mTLMBus),
+                                                              StringHandler::getLastWordAfterDot(mConnectorName));
+}
+
+/*!
+ * \brief AddConnectorToTLMBusCommand::undo
+ * Undo the AddConnectorToTLMBusCommand.
+ */
+void AddConnectorToTLMBusCommand::undo()
+{
+  OMSProxy::instance()->deleteConnectorFromTLMBus(mTLMBus.toStdString().c_str(), mConnectorName.toStdString().c_str());
+  mpGraphicsView->getModelWidget()->dissociateBusWithConnector(StringHandler::getLastWordAfterDot(mTLMBus),
+                                                               StringHandler::getLastWordAfterDot(mConnectorName));
+}
+
+DeleteConnectorFromTLMBusCommand::DeleteConnectorFromTLMBusCommand(QString bus, QString connectorName, QString connectorType,
+                                                                   GraphicsView *pGraphicsView, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mTLMBus = bus;
+  mConnectorName = connectorName;
+  mConnectorType = connectorType;
+  mpGraphicsView = pGraphicsView;
+}
+
+/*!
+ * \brief DeleteConnectorFromTLMBusCommand::redoInternal
+ * redoInternal the DeleteConnectorFromTLMBusCommand.
+ */
+void DeleteConnectorFromTLMBusCommand::redoInternal()
+{
+  if (!OMSProxy::instance()->deleteConnectorFromTLMBus(mTLMBus.toStdString().c_str(), mConnectorName.toStdString().c_str())) {
+    setFailed(true);
+    return;
+  }
+  mpGraphicsView->getModelWidget()->dissociateBusWithConnector(StringHandler::getLastWordAfterDot(mTLMBus),
+                                                               StringHandler::getLastWordAfterDot(mConnectorName));
+}
+
+/*!
+ * \brief DeleteConnectorFromTLMBusCommand::undo
+ * Undo the DeleteConnectorFromTLMBusCommand.
+ */
+void DeleteConnectorFromTLMBusCommand::undo()
+{
+  OMSProxy::instance()->addConnectorToTLMBus(mTLMBus.toStdString().c_str(), mConnectorName.toStdString().c_str(),
+                                             mConnectorType.toStdString().c_str());
+  mpGraphicsView->getModelWidget()->associateBusWithConnector(StringHandler::getLastWordAfterDot(mTLMBus),
+                                                              StringHandler::getLastWordAfterDot(mConnectorName));
+}
