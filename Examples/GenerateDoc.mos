@@ -81,6 +81,9 @@ py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.p
 if getEnvironmentVar("GenerateDocTest") == "YES" then
   system("mkdir -p Icons");
 else
+  system("find . -maxdepth 1 -name '*.html' -delete");
+  system("find Icons -maxdepth 1 -name '*.svg' -delete");
+
   commands:={"python "+py+" --quiet --output-dir Icons "+typeNameString(cl) for cl in getClassNames(builtin=false)};getErrorString();
   res:=system_parallel(commands);getErrorString();
   //system("rm -f *.json");getErrorString();
@@ -527,7 +530,7 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . -maxdepth 1 -name '*.html' -print0 | tar cJf ModelicaDocumentation.tar.xz --dereference --null style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
+cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print0 | tar cJf ModelicaDocumentation.tar.xz --dereference --null style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
 system(cmd);
 getErrorString();
 
@@ -540,6 +543,6 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o '*.svg' \\) -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
