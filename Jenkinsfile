@@ -129,7 +129,7 @@ pipeline {
                 script {
                   def deps = docker.build('testsuite-fmu-crosscompile', '--pull .CI/cache')
                   // deps.pull() // Already built...
-                  def dockergid = sh (script: 'getent group docker | cut -d: -f3', returnStdout: true).trim()
+                  def dockergid = sh (script: 'stat -c %g /var/run/docker.sock', returnStdout: true).trim()
                   deps.inside("-v /var/run/docker.sock:/var/run/docker.sock --group-add '${dockergid}'") {
                     standardSetup()
                     unstash 'omc-clang'
