@@ -1419,7 +1419,7 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
                (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
                 pComponent->getComponentType() == Component::Port) ||
                (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
-                pComponent->getComponentType() == Component::Port))) {
+                (pComponent->getLibraryTreeItem()->getOMSConnector() || pComponent->getComponentType() == Component::Port)))) {
             return pComponent;
           }
         }
