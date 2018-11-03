@@ -1,8 +1,8 @@
 #!/bin/bash -x
 
 ARCH="$1"
-shift
 VERSION="$2"
+shift
 shift
 
 CMD="$@"
