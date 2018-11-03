@@ -6142,11 +6142,12 @@ void ModelWidget::drawOMSModelConnections()
           continue;
         }
         // get start connector component
-        Component *pStartConnectorComponent = getConnectorComponent(pStartComponent, startConnectionList.at(1));
+        QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
+        Component *pStartConnectorComponent = getConnectorComponent(pStartComponent, startConnectorName);
         if (!pStartConnectorComponent) {
           pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                      GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                     .arg(startConnectionList.at(1)).arg(pConnections[i]->conA),
+                                                     .arg(startConnectorName).arg(pConnections[i]->conA),
                                                      Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
@@ -6164,11 +6165,12 @@ void ModelWidget::drawOMSModelConnections()
           continue;
         }
         // get end connector component
-        Component *pEndConnectorComponent = getConnectorComponent(pEndComponent, endConnectionList.at(1));
+        QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
+        Component *pEndConnectorComponent = getConnectorComponent(pEndComponent, endConnectorName);
         if (!pEndConnectorComponent) {
           pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                      GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                     .arg(endConnectionList.at(1)).arg(pConnections[i]->conB),
+                                                     .arg(endConnectorName).arg(pConnections[i]->conB),
                                                      Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
