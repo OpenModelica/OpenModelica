@@ -637,7 +637,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
             elif style == "TextStyle.UnderLine":
                 extra['text-decoration'] = 'underline'
 
-        extra['alignment_baseline'] = "middle"
+        extra['dominant_baseline'] = "middle"
 
         if graphics['horizontalAlignment'] == "TextAlignment.Left":
             extra['text_anchor'] = "start"
