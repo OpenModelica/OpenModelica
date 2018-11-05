@@ -64,6 +64,7 @@ import NFFunction.Function;
 import Global;
 import BuiltinCall = NFBuiltinCall;
 import ComplexType = NFComplexType;
+import ExpandExp = NFExpandExp;
 
 constant Expression EQ_ASSERT_STR =
   Expression.STRING("Connected constants/parameters must be equal");
@@ -101,13 +102,48 @@ algorithm
 end generateEquations;
 
 function evaluateOperators
-  input output Expression exp;
+  input Expression exp;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
   input CardinalityTable.Table ctable;
+  output Expression evalExp;
 algorithm
-  exp := Expression.map(exp,
-    function evaluateOperatorExp(sets = sets, setsArray = setsArray, ctable = ctable));
+  evalExp := match exp
+    local
+      Call call;
+      Boolean expanded;
+
+    case Expression.CALL(call = call)
+      then match call
+        case Call.TYPED_CALL()
+          then match Function.name(call.fn)
+            case Absyn.IDENT("inStream")
+              then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
+            case Absyn.IDENT("actualStream")
+              then evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
+            case Absyn.IDENT("cardinality")
+              then CardinalityTable.evaluateCardinality(listHead(call.arguments), ctable);
+            else Expression.mapShallow(exp,
+              function evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable));
+          end match;
+
+        // inStream/actualStream can't handle non-literal subscripts, so reductions and array
+        // constructors containing such calls needs to expanded to get rid of the iterators.
+        case Call.TYPED_REDUCTION()
+          guard Expression.contains(call.exp, isStreamCall)
+          then evaluateOperatorIteratorExp(exp, sets, setsArray, ctable);
+
+        case Call.TYPED_ARRAY_CONSTRUCTOR()
+          guard Expression.contains(call.exp, isStreamCall)
+          then evaluateOperatorIteratorExp(exp, sets, setsArray, ctable);
+
+        else Expression.mapShallow(exp,
+          function evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable));
+      end match;
+
+    else Expression.mapShallow(exp,
+      function evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable));
+  end match;
 end evaluateOperators;
 
 protected
@@ -545,31 +581,44 @@ algorithm
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
 
-function evaluateOperatorExp
+function isStreamCall
+  input Expression exp;
+  output Boolean streamCall;
+algorithm
+  streamCall := match exp
+    local
+      String name;
+
+    case Expression.CALL()
+      then match Function.name(Call.typedFunction(exp.call))
+        case Absyn.IDENT("inStream") then true;
+        case Absyn.IDENT("actualStream") then true;
+        else false;
+      end match;
+
+    else false;
+  end match;
+end isStreamCall;
+
+function evaluateOperatorIteratorExp
   input Expression exp;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
   input CardinalityTable.Table ctable;
   output Expression evalExp;
+protected
+  Boolean expanded;
 algorithm
-  evalExp := match exp
-    local
-      Call call;
+  (evalExp, expanded) := ExpandExp.expand(exp);
 
-    case Expression.CALL(call = call as Call.TYPED_CALL())
-      then match Function.name(call.fn)
-        case Absyn.IDENT("inStream")
-          then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
-        case Absyn.IDENT("actualStream")
-          then evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, ctable);
-        case Absyn.IDENT("cardinality")
-          then CardinalityTable.evaluateCardinality(listHead(call.arguments), ctable);
-        else exp;
-      end match;
+  if not expanded then
+    Error.addInternalError(getInstanceName() +
+      " failed to expand call containing stream operator: " +
+      Expression.toString(exp), sourceInfo());
+  end if;
 
-    else exp;
-  end match;
-end evaluateOperatorExp;
+  evalExp := evaluateOperators(evalExp, sets, setsArray, ctable);
+end evaluateOperatorIteratorExp;
 
 function evaluateInStream
   "Evaluates the inStream operator with the given cref as argument."
