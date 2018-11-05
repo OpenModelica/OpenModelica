@@ -37,6 +37,7 @@
 #include "OMSimulator.h"
 
 #include <QObject>
+#include <QTime>
 
 class OMSProxy : public QObject
 {
