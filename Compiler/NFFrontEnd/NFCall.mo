@@ -65,6 +65,7 @@ import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
 import Subscript = NFSubscript;
+import Operator = NFOperator;
 
 public
   uniontype CallAttributes
@@ -677,6 +678,9 @@ uniontype Call
     output DAE.Exp daeCall;
   algorithm
     daeCall := match call
+      local
+        String fold_id, res_id;
+
       case TYPED_CALL()
         then DAE.CALL(
           Function.nameConsiderBuiltin(call.fn),
@@ -684,30 +688,38 @@ uniontype Call
           CallAttributes.toDAE(call.attributes));
 
       case TYPED_ARRAY_CONSTRUCTOR()
-        then DAE.REDUCTION(
-          DAE.REDUCTIONINFO(
-            Function.name(NFBuiltinFuncs.ARRAY_FUNC),
-            Absyn.COMBINE(),
-            Type.toDAE(call.ty),
-            NONE(),
-            String(Util.getTempVariableIndex()),
-            String(Util.getTempVariableIndex()),
-            NONE()),
-          Expression.toDAE(call.exp),
-          list(iteratorToDAE(iter) for iter in call.iters));
+        algorithm
+          fold_id := Util.getTempVariableIndex();
+          res_id := Util.getTempVariableIndex();
+        then
+          DAE.REDUCTION(
+            DAE.REDUCTIONINFO(
+              Function.name(NFBuiltinFuncs.ARRAY_FUNC),
+              Absyn.COMBINE(),
+              Type.toDAE(call.ty),
+              NONE(),
+              fold_id,
+              res_id,
+              NONE()),
+            Expression.toDAE(call.exp),
+            list(iteratorToDAE(iter) for iter in call.iters));
 
       case TYPED_REDUCTION()
-        then DAE.REDUCTION(
-          DAE.REDUCTIONINFO(
-            Function.name(call.fn),
-            Absyn.COMBINE(),
-            Type.toDAE(call.ty),
-            SOME(Expression.toDAEValue(reductionDefaultValue(call))),
-            String(Util.getTempVariableIndex()),
-            String(Util.getTempVariableIndex()),
-            NONE()),
-          Expression.toDAE(call.exp),
-          list(iteratorToDAE(iter) for iter in call.iters));
+        algorithm
+          fold_id := Util.getTempVariableIndex();
+          res_id := Util.getTempVariableIndex();
+        then
+          DAE.REDUCTION(
+            DAE.REDUCTIONINFO(
+              Function.name(call.fn),
+              Absyn.COMBINE(),
+              Type.toDAE(call.ty),
+              SOME(Expression.toDAEValue(reductionDefaultValue(call))),
+              fold_id,
+              res_id,
+              Expression.toDAEOpt(reductionFoldExpression(call.fn, call.ty, call.var, fold_id, res_id))),
+            Expression.toDAE(call.exp),
+            list(iteratorToDAE(iter) for iter in call.iters));
 
       else
         algorithm
@@ -733,6 +745,51 @@ uniontype Call
       case "max" then Expression.makeMinValue(ty);
     end match;
   end reductionDefaultValue;
+
+  function reductionFoldExpression
+    input Function reductionFn;
+    input Type reductionType;
+    input Variability reductionVar;
+    input String foldId;
+    input String resultId;
+    output Option<Expression> foldExp;
+  protected
+    Type ty;
+  algorithm
+    foldExp := match Absyn.pathFirstIdent(Function.name(reductionFn))
+      case "sum"
+        then SOME(Expression.BINARY(
+          reductionFoldIterator(resultId, reductionType),
+          Operator.makeAdd(reductionType),
+          reductionFoldIterator(foldId, reductionType)));
+
+      case "product"
+        then SOME(Expression.BINARY(
+          reductionFoldIterator(resultId, reductionType),
+          Operator.makeMul(reductionType),
+          reductionFoldIterator(foldId, reductionType)));
+
+      case "$array" then NONE();
+      case "array" then NONE();
+      case "list" then NONE();
+      case "listReverse" then NONE();
+
+      else
+        SOME(Expression.CALL(Call.makeTypedCall(reductionFn,
+          {reductionFoldIterator(foldId, reductionType),
+           reductionFoldIterator(resultId, reductionType)},
+          reductionVar, reductionType)));
+
+    end match;
+  end reductionFoldExpression;
+
+  function reductionFoldIterator
+    input String name;
+    input Type ty;
+    output Expression iterExp;
+  algorithm
+    iterExp := Expression.CREF(ty, ComponentRef.makeIterator(InstNode.NAME_NODE(name), ty));
+  end reductionFoldIterator;
 
   function isVectorizeable
     input Call call;

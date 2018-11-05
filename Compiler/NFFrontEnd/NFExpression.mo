@@ -1431,6 +1431,19 @@ public
     end match;
   end isAssociativeExp;
 
+  function toDAEOpt
+    input Option<Expression> exp;
+    output Option<DAE.Exp> dexp;
+  algorithm
+    dexp := match exp
+      local
+        Expression e;
+
+      case SOME(e) then SOME(toDAE(e));
+      else NONE();
+    end match;
+  end toDAEOpt;
+
   function toDAE
     input Expression exp;
     output DAE.Exp dexp;
