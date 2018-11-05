@@ -471,6 +471,9 @@ FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
 FuncWildcard.mo \
 FuncWrongType.mo \
+FunctionalArg1.mo \
+FunctionalArg2.mo \
+FunctionalArgInvalidType1.mo \
 FunctionDerivative1.mo \
 FunctionDerivativeInvalidInput1.mo \
 FunctionDerivativeInvalidOrder1.mo \
