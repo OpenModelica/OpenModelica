@@ -1931,8 +1931,13 @@ void GraphicsView::addClassAnnotation(bool alwaysAdd)
  */
 void GraphicsView::showGraphicsViewProperties()
 {
-  GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
-  pGraphicsViewProperties->exec();
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
+    pGraphicsViewProperties->exec();
+  } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    SystemSimulationInformationDialog *pSystemSimulationInformationDialog = new SystemSimulationInformationDialog(this);
+    pSystemSimulationInformationDialog->exec();
+  }
 }
 
 /*!
@@ -2795,6 +2800,10 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
         if (mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
           menu.addSeparator();
           menu.addAction(MainWindow::instance()->getAddSubModelAction());
+          menu.addSeparator();
+          menu.addAction(MainWindow::instance()->getAddSubModelAction());
+          menu.addSeparator();
+          menu.addAction(mpPropertiesAction);
         }
       }
     }
@@ -6910,7 +6919,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && (omsSystem));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
-  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && omsModel);
+  MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && omsModel);
+  MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(pLibraryTreeItem && pLibraryTreeItem->isInstantiated());
+  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && omsModel && MainWindow::instance()->getOMSInstantiateModelAction()->isChecked());
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);

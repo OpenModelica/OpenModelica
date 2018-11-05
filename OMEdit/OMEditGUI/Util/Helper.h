@@ -394,13 +394,17 @@ public:
   static QString priority;
   static QString secs;
   static QString saveContentsInOneFile;
-  static QString OMSSimulationSetup;
-  static QString OMSSimulationSetupTip;
+  static QString OMSSimulateTip;
   static QString dateTime;
   static QString startTime;
   static QString stopTime;
   static QString status;
   static QString fmuProperties;
+  static QString instantiateOMSModelTip;
+  static QString terminateInstantiation;
+  static QString terminateInstantiationTip;
+  static QString archivedSimulations;
+  static QString systemSimulationInformation;
 };
 
 class GUIMessages : public QObject

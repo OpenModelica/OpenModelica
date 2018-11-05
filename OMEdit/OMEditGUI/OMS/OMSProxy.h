@@ -111,8 +111,11 @@ public:
   bool deleteConnection(QString crefA, QString crefB);
   bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
   bool setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters);
-  bool initialize(QString ident);
-  bool simulate_asynchronous(QString ident/*, int* terminate*/);
+  bool instantiate(QString cref);
+  bool initialize(QString cref);
+  bool simulate_asynchronous(QString cref);
+  bool cancelSimulation_asynchronous(QString cref);
+  bool terminate(QString cref);
   bool reset(QString ident);
   void setLoggingLevel(int logLevel);
   bool setCommandLineOption(QString cmd);
@@ -136,8 +139,8 @@ public:
   bool setStartTime(QString cref, double startTime);
   bool getStopTime(QString cref, double* stopTime);
   bool setStopTime(QString cref, double stopTime);
-  bool setCommunicationInterval(QString cref, double communicationInterval);
-  bool setResultFile(QString cref, QString filename);
+  bool setFixedStepSize(QString cref, double stepSize);
+  bool setResultFile(QString cref, QString filename, int bufferSize);
   bool setMasterAlgorithm(QString cref, QString masterAlgorithm);
   bool exists(QString cref);
 };

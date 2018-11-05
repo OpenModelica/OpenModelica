@@ -52,8 +52,8 @@ public:
   ArchivedOMSSimulationItem(OMSSimulationOptions omsSimulationOptions, OMSSimulationOutputWidget *pOMSSimulationOutputWidget)
     : mpOMSSimulationOutputWidget(pOMSSimulationOutputWidget)
   {
-    setText(0, omsSimulationOptions.getCompositeModelName());
-    setToolTip(0, omsSimulationOptions.getCompositeModelName());
+    setText(0, omsSimulationOptions.getModelName());
+    setToolTip(0, omsSimulationOptions.getModelName());
     setText(1, QDateTime::currentDateTime().toString());
     setToolTip(1, QDateTime::currentDateTime().toString());
     setText(2, QString::number(omsSimulationOptions.getStartTime()));
@@ -77,42 +77,22 @@ class OMSSimulationDialog : public QDialog
 public:
   OMSSimulationDialog(QWidget *pParent = 0);
   ~OMSSimulationDialog();
-  void show(LibraryTreeItem *pLibraryTreeItem);
-  OMSSimulationOptions createOMSSimulationOptions();
   void simulationFinished(OMSSimulationOptions omsSimulationOptions, QDateTime resultFileLastModifiedDateTime);
 
   QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
   QList<OMSSimulationOutputWidget*> getOMSSimulationOutputWidgetsList() {return mOMSSimulationOutputWidgetsList;}
 private:
-  LibraryTreeItem *mpLibraryTreeItem;
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
-  QTabWidget *mpSimulationTabWidget;
-  // General Tab
-  QWidget *mpGeneralTab;
-  Label *mpStartTimeLabel;
-  QLineEdit *mpStartTimeTextBox;
-  Label *mpStopTimeLabel;
-  QLineEdit *mpStopTimeTextBox;
-  Label *mpCommunicationIntervalLabel;
-  QLineEdit *mpCommunicationIntervalTextBox;
-  Label *mpMasterAlgorithmLabel;
-  QComboBox *mpMasterAlgorithmComboBox;
-  Label *mpResultFileLabel;
-  QLineEdit *mpResultFileTextBox;
-  // Archived Simulation Flags Tab
-  QWidget *mpArchivedSimulationsTab;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
   // buttons
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
   QList<OMSSimulationOutputWidget*> mOMSSimulationOutputWidgetsList;
-
-  void initializeFields();
 public slots:
   void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
-  void simulate();
+  void simulate(LibraryTreeItem *pLibraryTreeItem);
 };
 
 #endif // OMSSIMULATIONDIALOG_H

@@ -393,13 +393,17 @@ QString Helper::synchronize;
 QString Helper::priority;
 QString Helper::secs;
 QString Helper::saveContentsInOneFile;
-QString Helper::OMSSimulationSetup;
-QString Helper::OMSSimulationSetupTip;
+QString Helper::OMSSimulateTip;
 QString Helper::dateTime;
 QString Helper::startTime;
 QString Helper::stopTime;
 QString Helper::status;
 QString Helper::fmuProperties;
+QString Helper::instantiateOMSModelTip;
+QString Helper::terminateInstantiation;
+QString Helper::terminateInstantiationTip;
+QString Helper::archivedSimulations;
+QString Helper::systemSimulationInformation;
 
 void Helper::initHelperVariables()
 {
@@ -677,13 +681,17 @@ void Helper::initHelperVariables()
   Helper::priority = tr("Priority:");
   Helper::secs = tr("secs");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
-  Helper::OMSSimulationSetup = tr("OMSimulator Simulation Setup");
-  Helper::OMSSimulationSetupTip = tr("Opens the OMSimulator simulation setup");
+  Helper::OMSSimulateTip = tr("Simulates the OMSimulator model");
   Helper::dateTime = tr("DateTime");
   Helper::startTime = tr("Start Time");
   Helper::stopTime = tr("Stop Time");
   Helper::status = tr("Status");
   Helper::fmuProperties = tr("FMU Properties");
+  Helper::instantiateOMSModelTip = tr("Instantiates the OMSimulator model");
+  Helper::terminateInstantiation = tr("Terminate Instantiation");
+  Helper::terminateInstantiationTip = tr("Terminates the model instantiation");
+  Helper::archivedSimulations = tr("Archived Simulations");
+  Helper::systemSimulationInformation = tr("System Simulation Information");
 }
 
 QString GUIMessages::getMessage(int type)

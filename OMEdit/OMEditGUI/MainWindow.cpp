@@ -64,6 +64,7 @@
 #include "Simulation/SimulationDialog.h"
 #include "TLM/TLMCoSimulationDialog.h"
 #include "FMI/ImportFMUDialog.h"
+#include "OMS/InstantiateDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
 #include "Git/CommitChangesDialog.h"
 #include "Git/RevertCommitsDialog.h"
@@ -734,16 +735,42 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
- * \brief MainWindow::OMSSimulationSetup
- * Opens the OMSimulator simulation setup
+ * \brief MainWindow::instantiateOMSModel
+ * Instantiates the OMSimulator model.
+ * \param pLibraryTreeItem
+ * \param checked
+ */
+void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked)
+{
+  if (checked) {
+    InstantiateDialog *pInstantiateDialog = new InstantiateDialog(pLibraryTreeItem);
+    // if user cancels the instantiation
+    if (!pInstantiateDialog->exec()) {
+      mpOMSInstantiateModelAction->setChecked(false);
+    }
+  } else {
+    if (!OMSProxy::instance()->terminate(pLibraryTreeItem->getNameStructure())) {
+      mpOMSInstantiateModelAction->setChecked(true);
+    } else {
+      mpOMSInstantiateModelAction->setText(Helper::instantiateModel);
+      mpOMSInstantiateModelAction->setText(Helper::instantiateOMSModelTip);
+      mpOMSSimulateAction->setEnabled(false);
+      pLibraryTreeItem->setModelState(oms_modelState_terminated);
+    }
+  }
+}
+
+/*!
+ * \brief MainWindow::simulateOMSModel
+ * Simulates the OMSimulator model.
  * \param pLibraryTreeItem
  */
-void MainWindow::OMSSimulationSetup(LibraryTreeItem *pLibraryTreeItem)
+void MainWindow::simulateOMSModel(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!mpOMSSimulationDialog) {
     mpOMSSimulationDialog = new OMSSimulationDialog(this);
   }
-  mpOMSSimulationDialog->show(pLibraryTreeItem);
+  mpOMSSimulationDialog->simulate(pLibraryTreeItem);
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -2334,16 +2361,42 @@ void MainWindow::TLMSimulate()
 }
 
 /*!
- * \brief MainWindow::openOMSSimulationDialog
- * Slot activated when mpOMSSimulationSetupAction triggered signal is raised.
- * Opens the OMSimulator Simulation Dialog
+ * \brief MainWindow::instantiateOMSModel
+ * Slot activated when mpOMSInstantiateModelAction triggered signal is raised.
+ * Calls MainWindow::instantiateOMSModel(LibraryTreeItem*)
+ * \param checked
  */
-void MainWindow::openOMSSimulationDialog()
+void MainWindow::instantiateOMSModel(bool checked)
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
-    OMSSimulationSetup(pModelWidget->getLibraryTreeItem());
+    instantiateOMSModel(pModelWidget->getLibraryTreeItem(), checked);
   }
+}
+
+/*!
+ * \brief MainWindow::simulateOMSModel
+ * Slot activated when mpOMSSimulationSetupAction triggered signal is raised.
+ * Calls MainWindow::simulateOMSModel(LibraryTreeItem*)
+ */
+void MainWindow::simulateOMSModel()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget) {
+    simulateOMSModel(pModelWidget->getLibraryTreeItem());
+  }
+}
+
+/*!
+ * \brief MainWindow::showOMSArchivedSimulations
+ * Shows the archived simulations.
+ */
+void MainWindow::showOMSArchivedSimulations()
+{
+  if (!mpOMSSimulationDialog) {
+    mpOMSSimulationDialog = new OMSSimulationDialog(this);
+  }
+  mpOMSSimulationDialog->show();
 }
 
 /*!
@@ -3469,6 +3522,12 @@ void MainWindow::createActions()
   // Add System Action
   mpAddSystemAction = new QAction(QIcon(":/Resources/icons/add-system.svg"), Helper::addSystem, this);
   mpAddSystemAction->setStatusTip(Helper::addSystemTip);
+  // Add or Edit icon Action
+  mpAddOrEditIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit Icon"), this);
+  mpAddOrEditIconAction->setStatusTip(tr("Adds/Edits an icon"));
+  // delete icon action
+  mpDeleteIconAction = new QAction(QIcon(":/Resources/icons/bitmap-delete.svg"), tr("Delete Icon"), this);
+  mpDeleteIconAction->setStatusTip(tr("Deletes an icon"));
   // Add connector action
   mpAddConnectorAction = new QAction(QIcon(":/Resources/icons/add-connector.svg"), Helper::addConnector, this);
   mpAddConnectorAction->setStatusTip(Helper::addConnectorTip);
@@ -3481,16 +3540,19 @@ void MainWindow::createActions()
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
-  // Add or Edit icon Action
-  mpAddOrEditIconAction = new QAction(QIcon(":/Resources/icons/bitmap-shape.svg"), tr("Add/Edit Icon"), this);
-  mpAddOrEditIconAction->setStatusTip(tr("Adds/Edits an icon"));
-  // delete icon action
-  mpDeleteIconAction = new QAction(QIcon(":/Resources/icons/bitmap-delete.svg"), tr("Delete Icon"), this);
-  mpDeleteIconAction->setStatusTip(tr("Deletes an icon"));
   // OMSimulator simulation setup action
-  mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
-  mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
-  connect(mpOMSSimulationSetupAction, SIGNAL(triggered()), SLOT(openOMSSimulationDialog()));
+  mpOMSInstantiateModelAction = new QAction(QIcon(":/Resources/icons/instantiate.svg"), Helper::instantiateModel, this);
+  mpOMSInstantiateModelAction->setStatusTip(Helper::instantiateOMSModelTip);
+  mpOMSInstantiateModelAction->setCheckable(true);
+  connect(mpOMSInstantiateModelAction, SIGNAL(triggered(bool)), SLOT(instantiateOMSModel(bool)));
+  // OMSimulator simulation setup action
+  mpOMSSimulateAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
+  mpOMSSimulateAction->setStatusTip(Helper::OMSSimulateTip);
+  connect(mpOMSSimulateAction, SIGNAL(triggered()), SLOT(simulateOMSModel()));
+  // Archived simulations
+  mpOMSArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
+  mpOMSArchivedSimulationsAction->setStatusTip(Helper::archivedSimulations);
+  connect(mpOMSArchivedSimulationsAction, SIGNAL(triggered()), SLOT(showOMSArchivedSimulations()));
 }
 
 //! Creates the menus
@@ -3514,9 +3576,6 @@ void MainWindow::createMenus()
   pFileMenu->addAction(mpNewCompositeModelFileAction);
   pFileMenu->addAction(mpOpenCompositeModelFileAction);
   pFileMenu->addAction(mpLoadExternModelAction);
-  pFileMenu->addSeparator();
-  pFileMenu->addAction(mpNewOMSimulatorModelAction);
-  pFileMenu->addAction(mpOpenOMSModelFileAction);
   pFileMenu->addSeparator();
   pFileMenu->addAction(mpOpenDirectoryAction);
   pFileMenu->addSeparator();
@@ -3669,6 +3728,29 @@ void MainWindow::createMenus()
   pDebugMenu->addAction(mpAttachDebuggerToRunningProcessAction);
   // add Debug menu to menu bar
   menuBar()->addAction(pDebugMenu->menuAction());
+  // OMSimulator menu
+  QMenu *pOMSimulatorMenu = new QMenu(menuBar());
+  pOMSimulatorMenu->setTitle(tr("&OMSimulator"));
+  // add actions to OMSimulator menu
+  pOMSimulatorMenu->addAction(mpNewOMSimulatorModelAction);
+  pOMSimulatorMenu->addAction(mpOpenOMSModelFileAction);
+  pOMSimulatorMenu->addSeparator();
+  pOMSimulatorMenu->addAction(mpAddSystemAction);
+  pOMSimulatorMenu->addSeparator();
+  pOMSimulatorMenu->addAction(mpAddOrEditIconAction);
+  pOMSimulatorMenu->addAction(mpDeleteIconAction);
+  pOMSimulatorMenu->addSeparator();
+  pOMSimulatorMenu->addAction(mpAddConnectorAction);
+  pOMSimulatorMenu->addAction(mpAddBusAction);
+  pOMSimulatorMenu->addAction(mpAddTLMBusAction);
+  pOMSimulatorMenu->addSeparator();
+  pOMSimulatorMenu->addAction(mpAddSubModelAction);
+  pOMSimulatorMenu->addSeparator();
+  pOMSimulatorMenu->addAction(mpOMSInstantiateModelAction);
+  pOMSimulatorMenu->addAction(mpOMSSimulateAction);
+  pOMSimulatorMenu->addAction(mpOMSArchivedSimulationsAction);
+  // add OMSimulator menu to menu bar
+  menuBar()->addAction(pOMSimulatorMenu->menuAction());
   // Git menu
   QMenu *pGitMenu = new QMenu(menuBar());
   pGitMenu->setTitle(tr("&Git"));
@@ -4146,7 +4228,8 @@ void MainWindow::createToolbars()
   mpOMSimulatorToobar->addSeparator();
   mpOMSimulatorToobar->addAction(mpAddSubModelAction);
   mpOMSimulatorToobar->addSeparator();
-  mpOMSimulatorToobar->addAction(mpOMSSimulationSetupAction);
+  mpOMSimulatorToobar->addAction(mpOMSInstantiateModelAction);
+  mpOMSimulatorToobar->addAction(mpOMSSimulateAction);
 }
 
 //! when the dragged object enters the main window

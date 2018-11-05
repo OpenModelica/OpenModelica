@@ -2909,3 +2909,34 @@ void UpdateTLMParametersCommand::undo()
   mpConnectionLineAnnotation->setZf(QString::number(mOldTLMParameters.linearimpedance));
   mpConnectionLineAnnotation->setZfr(QString::number(mOldTLMParameters.angularimpedance));
 }
+
+
+SystemSimulationInformationCommand::SystemSimulationInformationCommand(QString fixedStepSize,
+                                                                       LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mFixedStepSize = fixedStepSize;
+  mpLibraryTreeItem = pLibraryTreeItem;
+  setText(QString("System %1 simulation information").arg(mpLibraryTreeItem->getNameStructure()));
+}
+
+/*!
+ * \brief SystemSimulationInformationCommand::redoInternal
+ * redoInternal the SystemSimulationInformationCommand.
+ */
+void SystemSimulationInformationCommand::redoInternal()
+{
+  if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(), mFixedStepSize.toDouble())) {
+    setFailed(true);
+    return;
+  }
+}
+
+/*!
+ * \brief SystemSimulationInformationCommand::undo
+ * Undo the SystemSimulationInformationCommand.
+ */
+void SystemSimulationInformationCommand::undo()
+{
+
+}

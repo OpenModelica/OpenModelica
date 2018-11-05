@@ -199,6 +199,7 @@ SOURCES += main.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   OMS/OMSProxy.cpp \
   Component/FMUProperties.cpp \
+  OMS/InstantiateDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
   OMS/OMSSimulationOutputWidget.cpp
 
@@ -284,6 +285,7 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityInformationURI.h \
   OMS/OMSProxy.h \
   Component/FMUProperties.h \
+  OMS/InstantiateDialog.h \
   OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \
   OMS/OMSSimulationOutputWidget.h

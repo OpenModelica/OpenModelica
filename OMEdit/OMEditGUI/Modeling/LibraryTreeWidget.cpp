@@ -84,6 +84,7 @@ LibraryTreeItem::LibraryTreeItem()
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
   setSubModelPath("");
+  setModelState(oms_modelState_terminated);
 }
 
 /*!
@@ -145,6 +146,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
   setSubModelPath("");
+  setModelState(oms_modelState_terminated);
 }
 
 /*!
@@ -760,6 +762,16 @@ void LibraryTreeItem::updateChildrenNameStructure()
       pChildLibraryTreeItem->updateChildrenNameStructure();
     }
   }
+}
+
+/*!
+ * \brief LibraryTreeItem::canInstantiate
+ * Returns true if OMSimulator model can be instantiated.
+ * \return
+ */
+bool LibraryTreeItem::isInstantiated()
+{
+  return mModelState == oms_modelState_instantiated;
 }
 
 /*!
@@ -3030,8 +3042,8 @@ void LibraryTreeView::createActions()
   mpOMSRenameAction->setStatusTip(Helper::OMSRenameTip);
   connect(mpOMSRenameAction, SIGNAL(triggered()), SLOT(OMSRename()));
   // OMSimulator simulation setup action
-  mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::OMSSimulationSetup, this);
-  mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulationSetupTip);
+  mpOMSSimulationSetupAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::simulate, this);
+  mpOMSSimulationSetupAction->setStatusTip(Helper::OMSSimulateTip);
   connect(mpOMSSimulationSetupAction, SIGNAL(triggered(bool)), SLOT(openOMSSimulationDialog()));
   // unload OMSimulator model Action
   mpUnloadOMSModelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);
@@ -3234,6 +3246,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSaveAction);
             menu.addAction(mpSaveAsAction);
             menu.addSeparator();
+            mpOMSSimulationSetupAction->setEnabled(pLibraryTreeItem->isInstantiated());
             menu.addAction(mpOMSSimulationSetupAction);
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
@@ -3785,7 +3798,7 @@ void LibraryTreeView::openOMSSimulationDialog()
 {
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
-    MainWindow::instance()->OMSSimulationSetup(pLibraryTreeItem);
+    MainWindow::instance()->simulateOMSModel(pLibraryTreeItem);
   }
 }
 

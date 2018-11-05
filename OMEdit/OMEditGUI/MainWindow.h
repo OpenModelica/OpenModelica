@@ -193,7 +193,8 @@ public:
   QAction* getAddBusAction() {return mpAddBusAction;}
   QAction* getAddTLMBusAction() {return mpAddTLMBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
-  QAction* getOMSSimulationSetupAction() {return mpOMSSimulationSetupAction;}
+  QAction* getOMSInstantiateModelAction() {return mpOMSInstantiateModelAction;}
+  QAction* getOMSSimulationSetupAction() {return mpOMSSimulateAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
   QAction* getUnstageCurrentFileFromCommitAction() {return mpUnstageCurrentFileFromCommitAction;}
@@ -214,7 +215,8 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
-  void OMSSimulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked);
+  void simulateOMSModel(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -419,7 +421,9 @@ private:
   QAction *mpAddBusAction;
   QAction *mpAddTLMBusAction;
   QAction *mpAddSubModelAction;
-  QAction *mpOMSSimulationSetupAction;
+  QAction *mpOMSInstantiateModelAction;
+  QAction *mpOMSSimulateAction;
+  QAction *mpOMSArchivedSimulationsAction;
   // Toolbars
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
@@ -497,7 +501,9 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
-  void openOMSSimulationDialog();
+  void instantiateOMSModel(bool checked);
+  void simulateOMSModel();
+  void showOMSArchivedSimulations();
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();

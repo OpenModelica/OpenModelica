@@ -55,79 +55,26 @@
 OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   : QDialog(pParent)
 {
-  mpLibraryTreeItem = 0;
-  // simulation widget heading
-  mpSimulationHeading = Utilities::getHeadingLabel("");
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::archivedSimulations));
+  // heading
+  mpSimulationHeading = Utilities::getHeadingLabel(Helper::archivedSimulations);
   mpSimulationHeading->setElideMode(Qt::ElideMiddle);
   // Horizontal separator
   mpHorizontalLine = Utilities::getHeadingLine();
-  // simulation tab widget
-  mpSimulationTabWidget = new QTabWidget;
-  // General Tab
-  mpGeneralTab = new QWidget;
-  // Simulation settings
-  // start time
-  mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
-  mpStartTimeTextBox = new QLineEdit("0");
-  // stop time
-  mpStopTimeLabel = new Label(QString("%1:").arg(Helper::stopTime));
-  mpStopTimeTextBox = new QLineEdit("1");
-  // communication interval
-  mpCommunicationIntervalLabel = new Label(tr("Communication Interval"));
-  mpCommunicationIntervalTextBox = new QLineEdit("1e-4");
-  // master algorithm
-  mpMasterAlgorithmLabel = new Label(tr("Master Algorithm:"));
-  mpMasterAlgorithmComboBox = new QComboBox;
-  mpMasterAlgorithmComboBox->addItem("standard", "standard");
-  mpMasterAlgorithmComboBox->addItem("pctpl (experimental)", "pctpl");
-  mpMasterAlgorithmComboBox->addItem("pmrchannela (experimental)", "pmrchannela");
-  mpMasterAlgorithmComboBox->addItem("pmrchannelcv (experimental)", "pmrchannelcv");
-  mpMasterAlgorithmComboBox->addItem("pmrchannelm (experimental)", "pmrchannelm");
-  // result file
-  mpResultFileLabel = new Label(tr("Result File:"));
-  mpResultFileTextBox = new QLineEdit;
-  // Add the validators
-  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
-  mpStartTimeTextBox->setValidator(pDoubleValidator);
-  mpStopTimeTextBox->setValidator(pDoubleValidator);
-  mpCommunicationIntervalTextBox->setValidator(pDoubleValidator);
-  // set General Tab Layout
-  QGridLayout *pGeneralTabLayout = new QGridLayout;
-  pGeneralTabLayout->setAlignment(Qt::AlignTop);
-  pGeneralTabLayout->addWidget(mpStartTimeLabel, 0, 0);
-  pGeneralTabLayout->addWidget(mpStartTimeTextBox, 0, 1);
-  pGeneralTabLayout->addWidget(mpStopTimeLabel, 1, 0);
-  pGeneralTabLayout->addWidget(mpStopTimeTextBox, 1, 1);
-  pGeneralTabLayout->addWidget(mpCommunicationIntervalLabel, 2, 0);
-  pGeneralTabLayout->addWidget(mpCommunicationIntervalTextBox, 2, 1);
-  pGeneralTabLayout->addWidget(mpMasterAlgorithmLabel, 3, 0);
-  pGeneralTabLayout->addWidget(mpMasterAlgorithmComboBox, 3, 1);
-  pGeneralTabLayout->addWidget(mpResultFileLabel, 4, 0);
-  pGeneralTabLayout->addWidget(mpResultFileTextBox, 4, 1);
-  mpGeneralTab->setLayout(pGeneralTabLayout);
-  // add General Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpGeneralTab, Helper::general);
-  // Archived Simulations tab
-  mpArchivedSimulationsTab = new QWidget;
+  // archived simulation tree widget
   mpArchivedSimulationsTreeWidget = new QTreeWidget;
   mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
   mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
   mpArchivedSimulationsTreeWidget->setColumnCount(4);
   QStringList headers;
-  headers << tr("Composite Model") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
+  headers << tr("Model") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
   mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
   mpArchivedSimulationsTreeWidget->setIndentation(0);
   connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
-  QGridLayout *pArchivedSimulationsTabLayout = new QGridLayout;
-  pArchivedSimulationsTabLayout->setAlignment(Qt::AlignTop);
-  pArchivedSimulationsTabLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
-  mpArchivedSimulationsTab->setLayout(pArchivedSimulationsTabLayout);
-  // add Archived simulations Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpArchivedSimulationsTab, tr("Archived Simulations"));
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(simulate()));
+  connect(mpOkButton, SIGNAL(clicked()), this, SLOT(accept()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), this, SLOT(reject()));
@@ -137,9 +84,10 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   // Create a layout
   QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpSimulationHeading, 0, 0);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0);
-  pMainLayout->addWidget(mpSimulationTabWidget, 2, 0);
+  pMainLayout->addWidget(mpArchivedSimulationsTreeWidget, 2, 0);
   pMainLayout->addWidget(mpButtonBox, 3, 0);
   setLayout(pMainLayout);
 }
@@ -154,34 +102,6 @@ OMSSimulationDialog::~OMSSimulationDialog()
     delete pOMSSimulationOutputWidget;
   }
   mOMSSimulationOutputWidgetsList.clear();
-}
-
-/*!
- * \brief OMSSimulationDialog::show
- * Shows the OMSimulator simulation setup.
- * \param pLibraryTreeItem
- */
-void OMSSimulationDialog::show(LibraryTreeItem *pLibraryTreeItem)
-{
-  mpLibraryTreeItem = pLibraryTreeItem;
-  initializeFields();
-  setVisible(true);
-}
-
-/*!
- * \brief OMSSimulationDialog::createOMSSimulationOptions
- * Creates a OMSSimulationOptions object.
- */
-OMSSimulationOptions OMSSimulationDialog::createOMSSimulationOptions()
-{
-  OMSSimulationOptions omsSimulationOptions;
-  omsSimulationOptions.setCompositeModelName(mpLibraryTreeItem->getNameStructure());
-  omsSimulationOptions.setStartTime(mpStartTimeTextBox->text().toDouble());
-  omsSimulationOptions.setStopTime(mpStopTimeTextBox->text().toDouble());
-  omsSimulationOptions.setMasterAlgorithm(mpMasterAlgorithmComboBox->currentText());
-  omsSimulationOptions.setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
-  omsSimulationOptions.setResultFileName(mpResultFileTextBox->text());
-  return omsSimulationOptions;
 }
 
 /*!
@@ -211,27 +131,6 @@ void OMSSimulationDialog::simulationFinished(OMSSimulationOptions omsSimulationO
 }
 
 /*!
- * \brief OMSSimulationDialog::initializeFields
- * Initialize the fields with the default values.
- */
-void OMSSimulationDialog::initializeFields()
-{
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::OMSSimulationSetup, mpLibraryTreeItem->getNameStructure()));
-  mpSimulationHeading->setText(QString("%1 - %2").arg(Helper::OMSSimulationSetup, mpLibraryTreeItem->getNameStructure()));
-  // read the simulation start and stop time
-  double startTime = 0;
-  if (OMSProxy::instance()->getStartTime(mpLibraryTreeItem->getNameStructure(), &startTime)) {
-    mpStartTimeTextBox->setText(QString::number(startTime));
-  }
-  double stopTime = 1;
-  if (OMSProxy::instance()->getStopTime(mpLibraryTreeItem->getNameStructure(), &stopTime)) {
-    mpStopTimeTextBox->setText(QString::number(stopTime));
-  }
-  // set the result file
-  mpResultFileTextBox->setText(QString("%1_res.mat").arg(mpLibraryTreeItem->getNameStructure()));
-}
-
-/*!
  * \brief OMSSimulationDialog::showArchivedSimulation
  * Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
  * Shows the archived OMSSimulationOutputWidget.
@@ -250,48 +149,15 @@ void OMSSimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetIte
 
 /*!
  * \brief OMSSimulationDialog::simulate
- * Slot activated when mpOkButton clicked SIGNAL is triggered.
- * Simulate the OMSimulator composite model.
+ * Simulates the OMSimulator model.
+ * \param pLibraryTreeItem
  */
-void OMSSimulationDialog::simulate()
+void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (mpStartTimeTextBox->text().isEmpty()) {
-    mpStartTimeTextBox->setText("0");
-  }
-  if (mpStopTimeTextBox->text().isEmpty()) {
-    mpStopTimeTextBox->setText("1");
-  }
-  if (mpCommunicationIntervalTextBox->text().isEmpty()) {
-    mpCommunicationIntervalTextBox->setText("1e-4");
-  }
-  if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
-    return;
-  }
-  bool failed = false;
-  // set the simulation settings
-  if (OMSProxy::instance()->setStartTime(mpLibraryTreeItem->getNameStructure(), mpStartTimeTextBox->text().toDouble())
-      && OMSProxy::instance()->setStopTime(mpLibraryTreeItem->getNameStructure(), mpStopTimeTextBox->text().toDouble())
-      && OMSProxy::instance()->setCommunicationInterval(mpLibraryTreeItem->getNameStructure(), mpCommunicationIntervalTextBox->text().toDouble())
-      && OMSProxy::instance()->setMasterAlgorithm(mpLibraryTreeItem->getNameStructure(), mpMasterAlgorithmComboBox->currentText())
-      && OMSProxy::instance()->setResultFile(mpLibraryTreeItem->getNameStructure(), mpResultFileTextBox->text()))
-  {
-    OMSSimulationOptions omsSimulationOptions = createOMSSimulationOptions();
-    OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(omsSimulationOptions);
-    mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-    int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-    pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
-    pOMSSimulationOutputWidget->show();
-    accept();
-  } else {
-    failed = true;
-  }
-  if (failed) {
-    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          QString("%1 %2").arg(tr("Simulation failed."), GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)),
-                          Helper::ok);
-    reject();
-  }
+  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->mOMSSimulationOptions);
+  mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
+  int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+  int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
+  pOMSSimulationOutputWidget->show();
 }

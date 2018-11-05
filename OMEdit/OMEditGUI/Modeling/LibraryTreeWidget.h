@@ -39,6 +39,7 @@
 #include "Util/StringHandler.h"
 #include "Simulation/SimulationOptions.h"
 #include "OMS/OMSProxy.h"
+#include "OMS/OMSSimulationOptions.h"
 
 #include <QTreeView>
 #include <QSortFilterProxyModel>
@@ -144,6 +145,8 @@ public:
   const oms_fmu_info_t* getFMUInfo() const {return mpFMUInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
+  oms_modelState_enu_t getModelState() const {return mModelState;}
+  void setModelState(const oms_modelState_enu_t &modelState) {mModelState = modelState;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -170,9 +173,11 @@ public:
   void updateChildrenNameStructure();
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
   void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView) {emit coOrdinateSystemUpdated(pGraphicsView);}
+  bool isInstantiated();
 
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
+  OMSSimulationOptions mOMSSimulationOptions;
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -203,6 +208,7 @@ private:
   oms3_tlmbusconnector_t *mpOMSTLMBusConnector;
   const oms_fmu_info_t *mpFMUInfo;
   QString mSubModelPath;
+  oms_modelState_enu_t mModelState;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();

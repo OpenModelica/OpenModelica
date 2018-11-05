@@ -447,4 +447,24 @@ private slots:
   void addConnector();
 };
 
+class SystemSimulationInformationDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  SystemSimulationInformationDialog(GraphicsView *pGraphicsView);
+private:
+  GraphicsView *mpGraphicsView;
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  Label *mpFixedStepSizeLabel;
+  QLineEdit *mpFixedStepSizeTextBox;
+  Label *mpToleranceLabel;
+  QLineEdit *mpToleranceTextBox;
+  QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
+private slots:
+  void setSystemSimulationInformation();
+};
+
 #endif // MODELICACLASSDIALOG_H

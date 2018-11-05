@@ -80,7 +80,7 @@ void simulateCallback(const char* ident, double time, oms_status_enu_t status)
   OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
     if (pOMSSimulationOutputWidget->isSimulationRunning()
-        && pOMSSimulationOutputWidget->getOMSSimulationOptions().getCompositeModelName().compare(QString(ident)) == 0) {
+        && pOMSSimulationOutputWidget->getOMSSimulationOptions().getModelName().compare(QString(ident)) == 0) {
       pOMSSimulationOutputWidget->simulateCallback(ident, time, status);
       break;
     }
@@ -734,7 +734,7 @@ bool OMSProxy::saveModel(QString cref, QString filename)
 
 /*!
  * \brief OMSProxy::list
- * Lists the contents of a composite model.
+ * Lists the contents of a model.
  * Since memory is allocated so we need to call free.
  * \param cref
  * \param pContents
@@ -1019,33 +1019,93 @@ bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const om
 }
 
 /*!
- * \brief OMSProxy::initialize
- * Initializes a composite model (works for both FMI and TLM).
- * \param ident
+ * \brief OMSProxy::instantiate
+ * Instantiates the model and enter the instantiated state.
+ * \param cref
  * \return
  */
-bool OMSProxy::initialize(QString ident)
+bool OMSProxy::instantiate(QString cref)
 {
-  oms_status_enu_t status = oms2_initialize(ident.toStdString().c_str());
+  QString command = "oms3_instantiate";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_instantiate(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::initialize
+ * Initializes a model (works for both FMI and TLM).
+ * \param cref
+ * \return
+ */
+bool OMSProxy::initialize(QString cref)
+{
+  QString command = "oms3_initialize";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_initialize(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::simulate_asynchronous
  * Starts the asynchronous simulation.
- * \param ident
- * \param terminate
+ * \param cref
  * \return
  */
-bool OMSProxy::simulate_asynchronous(QString ident/*, int* terminate*/)
+bool OMSProxy::simulate_asynchronous(QString cref)
 {
-  oms_status_enu_t status = oms2_simulate_asynchronous(ident.toStdString().c_str(), /*terminate,*/ simulateCallback);
+  QString command = "oms3_simulate_asynchronous";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_simulate_asynchronous(cref.toStdString().c_str(), simulateCallback);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::cancelSimulation_asynchronous
+ * Cancels the current model asynchronous simulation.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::cancelSimulation_asynchronous(QString cref)
+{
+  QString command = "oms3_cancelSimulation_asynchronous";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_cancelSimulation_asynchronous(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::terminate
+ * Terminates the model.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::terminate(QString cref)
+{
+  QString command = "oms3_terminate";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_terminate(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::reset
- * Reset the composite model after a simulation run.
+ * Reset the model after a simulation run.
  * \param ident
  * \return
  */
@@ -1310,7 +1370,12 @@ bool OMSProxy::setBooleanParameter(const char* signal, bool value)
  */
 bool OMSProxy::getStartTime(QString cref, double* startTime)
 {
-  oms_status_enu_t status = oms2_getStartTime(cref.toStdString().c_str(), startTime);
+  QString command = "oms3_getStartTime";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getStartTime(cref.toStdString().c_str(), startTime);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
@@ -1323,7 +1388,12 @@ bool OMSProxy::getStartTime(QString cref, double* startTime)
  */
 bool OMSProxy::setStartTime(QString cref, double startTime)
 {
-  oms_status_enu_t status = oms2_setStartTime(cref.toStdString().c_str(), startTime);
+  QString command = "oms3_setStartTime";
+  QStringList args;
+  args << cref << QString::number(startTime);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setStartTime(cref.toStdString().c_str(), startTime);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
@@ -1336,7 +1406,12 @@ bool OMSProxy::setStartTime(QString cref, double startTime)
  */
 bool OMSProxy::getStopTime(QString cref, double* stopTime)
 {
-  oms_status_enu_t status = oms2_getStopTime(cref.toStdString().c_str(), stopTime);
+  QString command = "oms3_getStopTime";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getStopTime(cref.toStdString().c_str(), stopTime);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
@@ -1349,33 +1424,50 @@ bool OMSProxy::getStopTime(QString cref, double* stopTime)
  */
 bool OMSProxy::setStopTime(QString cref, double stopTime)
 {
-  oms_status_enu_t status = oms2_setStopTime(cref.toStdString().c_str(), stopTime);
+  QString command = "oms3_setStopTime";
+  QStringList args;
+  args << cref << QString::number(stopTime);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setStopTime(cref.toStdString().c_str(), stopTime);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::setCommunicationInterval
- * Set the communication interval of the simulation.
+ * Set the fixed step size for the simulation.
  * \param cref
- * \param communicationInterval
+ * \param stepSize
  * \return
  */
-bool OMSProxy::setCommunicationInterval(QString cref, double communicationInterval)
+bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
 {
-  oms_status_enu_t status = oms2_setCommunicationInterval(cref.toStdString().c_str(), communicationInterval);
+  ;
+  QString command = "oms3_setFixedStepSize";
+  QStringList args;
+  args << cref << QString::number(stepSize);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setFixedStepSize(cref.toStdString().c_str(), stepSize);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::setResultFile
- * Set the result file of the simulation.
+ * Set the result file for the simulation.
  * \param cref
  * \param filename
+ * \param bufferSize
  * \return
  */
-bool OMSProxy::setResultFile(QString cref, QString filename)
+bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
 {
-  oms_status_enu_t status = oms2_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), 1);
+  QString command = "oms3_setResultFile";
+  QStringList args;
+  args << cref << "\"" + filename + "\"" << QString::number(bufferSize);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), bufferSize);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
@@ -1400,7 +1492,7 @@ bool OMSProxy::setMasterAlgorithm(QString cref, QString masterAlgorithm)
 /*!
  * \brief OMSProxy::exists
  * This function returns 1 if a given cref exists in the scope,
- * otherwise 0. It can be used to check for composite models, sub-models such
+ * otherwise 0. It can be used to check for models, sub-models such
  * as FMUs, and solver instances.
  * \param cref
  * \return

@@ -639,4 +639,15 @@ private:
   oms3_tlm_connection_parameters_t mNewTLMParameters;
 };
 
+class SystemSimulationInformationCommand : public UndoCommand
+{
+public:
+  SystemSimulationInformationCommand(QString fixedStepSize, LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  QString mFixedStepSize;
+  LibraryTreeItem *mpLibraryTreeItem;
+};
+
 #endif // COMMANDS_H

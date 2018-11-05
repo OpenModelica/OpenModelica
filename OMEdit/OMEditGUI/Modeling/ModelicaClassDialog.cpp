@@ -2408,3 +2408,73 @@ void AddConnectorDialog::addConnector()
     accept();
   }
 }
+
+/*!
+ * \class SystemSimulationInformationDialog
+ * \brief A dialog for system simulation information.
+ */
+/*!
+ * \brief SystemSimulationInformationDialog::SystemSimulationInformationDialog
+ * \param pGraphicsView
+ */
+SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsView *pGraphicsView)
+  : QDialog(pGraphicsView)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::systemSimulationInformation));
+  mpGraphicsView = pGraphicsView;
+  // set heading
+  mpHeading = Utilities::getHeadingLabel(Helper::systemSimulationInformation);
+  // set separator line
+  mpHorizontalLine = Utilities::getHeadingLine();
+  // fixed step size
+  mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
+  mpFixedStepSizeTextBox = new QLineEdit;
+  // tolerance
+  mpToleranceLabel = new Label("Tolerance:");
+  mpToleranceTextBox = new QLineEdit;
+  // buttons
+  mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
+  connect(mpOkButton, SIGNAL(clicked()), SLOT(setSystemSimulationInformation()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons to the button box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // set the layout
+  QGridLayout *pMainLayout = new QGridLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpFixedStepSizeLabel, 2, 0);
+  pMainLayout->addWidget(mpFixedStepSizeTextBox, 2, 1);
+  pMainLayout->addWidget(mpToleranceLabel, 3, 0);
+  pMainLayout->addWidget(mpToleranceTextBox, 3, 1);
+  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief SystemSimulationInformationDialog::setSystemSimulationInformation
+ * Sets the simulation information of the system.
+ */
+void SystemSimulationInformationDialog::setSystemSimulationInformation()
+{
+  if (mpFixedStepSizeTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), Helper::ok);
+    return;
+  }
+
+  SystemSimulationInformationCommand *pSystemSimulationInformationCommand;
+  pSystemSimulationInformationCommand = new SystemSimulationInformationCommand(mpFixedStepSizeTextBox->text(),
+                                                                               mpGraphicsView->getModelWidget()->getLibraryTreeItem());
+  mpGraphicsView->getModelWidget()->getUndoStack()->push(pSystemSimulationInformationCommand);
+  if (!pSystemSimulationInformationCommand->isFailed()) {
+    mpGraphicsView->getModelWidget()->updateModelText();
+    accept();
+  }
+}

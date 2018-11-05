@@ -575,7 +575,7 @@ void SimulationDialog::setUpForm()
   pArchivedSimulationsTabLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
   mpArchivedSimulationsTab->setLayout(pArchivedSimulationsTabLayout);
   // add Archived simulations Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpArchivedSimulationsTab, tr("Archived Simulations"));
+  mpSimulationTabWidget->addTab(mpArchivedSimulationsTab, Helper::archivedSimulations);
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);

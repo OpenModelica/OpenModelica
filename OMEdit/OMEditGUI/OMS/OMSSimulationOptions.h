@@ -41,36 +41,38 @@ class OMSSimulationOptions
 {
 public:
   OMSSimulationOptions() {
-    setIsValid(true);
-    setCompositeModelName("");
+    setIsValid(false);
+    setModelName("");
     setStartTime(0);
     setStopTime(1);
+    setWorkingDirectory("");
     setResultFileName("");
+    setResultFileBufferSize(1);
   }
 
   void setIsValid(bool isValid) {mValid = isValid;}
   bool isValid() {return mValid;}
-  void setCompositeModelName(QString className) {mCompositeModelName = className;}
-  QString getCompositeModelName() {return mCompositeModelName;}
+  void setModelName(QString className) {mModelName = className;}
+  QString getModelName() {return mModelName;}
   void setStartTime(double startTime) {mStartTime = startTime;}
   double getStartTime() {return mStartTime;}
   void setStopTime(double stopTime) {mStopTime = stopTime;}
   double getStopTime() {return mStopTime;}
-  void setMasterAlgorithm(QString masterAlgorithm) {mMasterAlgorithm = masterAlgorithm;}
-  QString getMasterAlgorithm() {return mMasterAlgorithm;}
   void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
   QString getWorkingDirectory() {return mWorkingDirectory;}
   void setResultFileName(QString fileName) {mResultFileName = fileName;}
   QString getResultFileName() {return mResultFileName;}
+  int getResultFileBufferSize() const {return mResultFileBufferSize;}
+  void setResultFileBufferSize(int bufferSize) {mResultFileBufferSize = bufferSize;}
 
 private:
   bool mValid;
-  QString mCompositeModelName;
+  QString mModelName;
   double mStartTime;
   double mStopTime;
-  QString mMasterAlgorithm;
   QString mWorkingDirectory;
   QString mResultFileName;
+  int mResultFileBufferSize;
 };
 
 #endif // OMSSIMULATIONOPTIONS_H
