@@ -491,7 +491,6 @@ private:
   QString getCompositeModelName();
   void getCompositeModelSubModels();
   void getCompositeModelConnections();
-  void drawOMSModelElements();
   void drawOMSModelIconElements();
   void drawOMSModelDiagramElements();
   void drawOMSModelConnections();

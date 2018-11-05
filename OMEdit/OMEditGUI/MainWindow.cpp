@@ -1552,9 +1552,7 @@ void MainWindow::openOMSModelFile()
       pMessageBox->setStandardButtons(QMessageBox::Ok);
       pMessageBox->exec();
     } else {
-      /*! @todo Call LibraryWidget::openFile once we replace the TLM Composite modeling with OMSimulator. */
-      QFileInfo fileInfo(file);
-      mpLibraryWidget->openOMSModelFile(fileInfo);
+      mpLibraryWidget->openFile(file, Helper::utf8);
     }
   }
   mpStatusBar->clearMessage();

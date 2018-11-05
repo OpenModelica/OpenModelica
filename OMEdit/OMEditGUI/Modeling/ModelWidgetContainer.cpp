@@ -3838,6 +3838,7 @@ void ModelWidget::createModelWidgetComponents()
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
         // create an xml editor for CompositeModel
         mpEditor = new OMSimulatorEditor(this);
+        mpEditor->getPlainTextEdit()->setReadOnly(true);
         OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
         if (mpLibraryTreeItem->getFileName().isEmpty()) {
           QString contents;
@@ -5858,7 +5859,9 @@ void ModelWidget::drawOMSModelIconElements()
     }
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-      if (pChildLibraryTreeItem->getOMSConnector()) {
+      if (pChildLibraryTreeItem->getOMSConnector()
+          && (pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_input
+              || pChildLibraryTreeItem->getOMSConnector()->causality == oms_causality_output)) {
         double x = 0.5;
         double y = 0.5;
         if (pChildLibraryTreeItem->getOMSConnector()->geometry) {
@@ -5956,164 +5959,6 @@ void ModelWidget::drawOMSModelDiagramElements()
         }
       }
     }
-  }
-}
-
-/*!
- * \brief ModelWidget::drawOMSModelElements
- * Draws the OMSimulator model elements.
- */
-void ModelWidget::drawOMSModelElements()
-{
-  if (mpLibraryTreeItem->getOMSElement()) {
-    if (mpLibraryTreeItem->isSystemElement()) {
-      for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
-        LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-        if (pChildLibraryTreeItem->getOMSElement() && pChildLibraryTreeItem->getOMSElement()->geometry) {
-          // check if we have zero width and height
-          double x1, y1, x2, y2;
-          x1 = pChildLibraryTreeItem->getOMSElement()->geometry->x1;
-          y1 = pChildLibraryTreeItem->getOMSElement()->geometry->y1;
-          x2 = pChildLibraryTreeItem->getOMSElement()->geometry->x2;
-          y2 = pChildLibraryTreeItem->getOMSElement()->geometry->y2;
-          double width = x2 - x1;
-          double height = y2 - y1;
-          if (width <= 0 && height <= 0) {
-            x1 = -10.0;
-            y1 = -10.0;
-            x2 = 10.0;
-            y2 = 10.0;
-          }
-          // Load the ModelWidget if not loaded already
-          if (!pChildLibraryTreeItem->getModelWidget()) {
-            MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(pChildLibraryTreeItem, false);
-          }
-
-          QString annotation = QString("Placement(true,-,-,%1,%2,%3,%4,%5,-,-,-,-,-,-,)")
-                               .arg(x1).arg(y1)
-                               .arg(x2).arg(y2)
-                               .arg(pChildLibraryTreeItem->getOMSElement()->geometry->rotation);
-          AddSubModelCommand *pAddSubModelCommand = new AddSubModelCommand(pChildLibraryTreeItem->getName(), "", pChildLibraryTreeItem,
-                                                                           annotation, true, mpDiagramGraphicsView);
-          mpUndoStack->push(pAddSubModelCommand);
-        }
-      }
-    } else if (mpLibraryTreeItem->isComponentElement()) {
-      if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
-        // Draw bitmap with icon source
-        QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
-        QFileInfo fileInfo(url.toLocalFile());
-        BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpDiagramGraphicsView);
-        pBitmapAnnotation->initializeTransformation();
-        pBitmapAnnotation->drawCornerItems();
-        pBitmapAnnotation->setCornerItemsActiveOrPassive();
-        mpDiagramGraphicsView->addShapeToList(pBitmapAnnotation);
-        mpDiagramGraphicsView->addItem(pBitmapAnnotation);
-      } else {
-        // Rectangle shape as base
-        RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpDiagramGraphicsView);
-        pRectangleAnnotation->initializeTransformation();
-        pRectangleAnnotation->drawCornerItems();
-        pRectangleAnnotation->setCornerItemsActiveOrPassive();
-        mpDiagramGraphicsView->addShapeToList(pRectangleAnnotation);
-        mpDiagramGraphicsView->addItem(pRectangleAnnotation);
-        // Text for name
-        TextAnnotation *pTextAnnotation = new TextAnnotation(mpDiagramGraphicsView);
-        pTextAnnotation->initializeTransformation();
-        pTextAnnotation->drawCornerItems();
-        pTextAnnotation->setCornerItemsActiveOrPassive();
-        mpDiagramGraphicsView->addShapeToList(pTextAnnotation);
-        mpDiagramGraphicsView->addItem(pTextAnnotation);
-      }
-      for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
-        LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
-        if (pChildLibraryTreeItem->getOMSConnector() && pChildLibraryTreeItem->getOMSConnector()->geometry) {
-          QString annotation = QString("Placement(true,%1,%2,-10,-10,10,10,-,-,-,-,-,-,-,)")
-                               .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->x, 0, 1, -100, 100))
-                               .arg(Utilities::mapToCoOrdinateSystem(pChildLibraryTreeItem->getOMSConnector()->geometry->y, 0, 1, -100, 100));
-          AddConnectorCommand *pAddConnectorCommand = new AddConnectorCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
-                                                                              annotation, mpDiagramGraphicsView, true,
-                                                                              pChildLibraryTreeItem->getOMSConnector()->causality,
-                                                                              pChildLibraryTreeItem->getOMSConnector()->type);
-          mpUndoStack->push(pAddConnectorCommand);
-        }
-      }
-    }
-  } else if (mpLibraryTreeItem->getOMSConnector()) {
-    qDebug() << "we should not reach here.";
-//    if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_input) {
-//      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {0, 0, 127}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
-//      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
-//      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-//        case oms_signal_type_integer:
-//          pPolygonAnnotation->setLineColor(QColor(255,127,0));
-//          pPolygonAnnotation->setFillColor(QColor(255,127,0));
-//          break;
-//        case oms_signal_type_boolean:
-//          pPolygonAnnotation->setLineColor(QColor(255,0,255));
-//          pPolygonAnnotation->setFillColor(QColor(255,0,255));
-//          break;
-//        case oms_signal_type_string:
-//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
-//          break;
-//        case oms_signal_type_enum:
-//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
-//          break;
-//        case oms_signal_type_bus:
-//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
-//          break;
-//        case oms_signal_type_real:
-//        default:
-//          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
-//          pPolygonAnnotation->setFillColor(QColor(0, 0, 127));
-//          break;
-//      }
-//      pPolygonAnnotation->initializeTransformation();
-//      pPolygonAnnotation->drawCornerItems();
-//      pPolygonAnnotation->setCornerItemsActiveOrPassive();
-//      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
-//                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
-//                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
-//                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
-//      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
-//      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
-//    } else if (mpLibraryTreeItem->getOMSConnector()->causality == oms_causality_output) {
-//      QString annotation = "true, {0.0, 0.0}, 0, {0, 0, 127}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 100.0}, {100.0, 0.0}, {-100.0, -100.0}}, Smooth.None";
-//      PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation(annotation, mpDiagramGraphicsView);
-//      switch (mpLibraryTreeItem->getOMSConnector()->type) {
-//        case oms_signal_type_integer:
-//          pPolygonAnnotation->setLineColor(QColor(255,127,0));
-//          pPolygonAnnotation->setFillColor(QColor(255,255,255));
-//          break;
-//        case oms_signal_type_boolean:
-//          pPolygonAnnotation->setLineColor(QColor(255,0,255));
-//          pPolygonAnnotation->setFillColor(QColor(255,255,255));
-//          break;
-//        case oms_signal_type_string:
-//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_string not implemented yet.";
-//          break;
-//        case oms_signal_type_enum:
-//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_enum not implemented yet.";
-//          break;
-//        case oms_signal_type_bus:
-//          qDebug() << "ModelWidget::drawOMSModelElements oms_signal_type_bus not implemented yet.";
-//          break;
-//        case oms_signal_type_real:
-//        default:
-//          pPolygonAnnotation->setLineColor(QColor(0, 0, 127));
-//          pPolygonAnnotation->setFillColor(QColor(255, 255, 255));
-//          break;
-//      }
-//      pPolygonAnnotation->initializeTransformation();
-//      pPolygonAnnotation->drawCornerItems();
-//      pPolygonAnnotation->setCornerItemsActiveOrPassive();
-//      pPolygonAnnotation->setToolTip(QString("%1 %2<br />%3: %4<br />%5: %6")
-//                                     .arg(Helper::name).arg(mpLibraryTreeItem->getOMSConnector()->name)
-//                                     .arg(Helper::type).arg(OMSProxy::getSignalTypeString(mpLibraryTreeItem->getOMSConnector()->type))
-//                                     .arg(tr("Causality")).arg(OMSProxy::getCausalityString(mpLibraryTreeItem->getOMSConnector()->causality)));
-//      mpDiagramGraphicsView->addShapeToList(pPolygonAnnotation);
-//      mpDiagramGraphicsView->addItem(pPolygonAnnotation);
-//    }
   }
 }
 
