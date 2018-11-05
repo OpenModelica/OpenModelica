@@ -73,6 +73,7 @@ import Algorithm = NFAlgorithm;
 import OperatorOverloading = NFOperatorOverloading;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Array;
+import ElementSource;
 
 
 public
@@ -297,6 +298,7 @@ uniontype Function
     LookupState state;
     Absyn.Path functionPath;
     ComponentRef prefix;
+    Boolean is_class;
   algorithm
     try
       // Make sure the name is a path.
@@ -307,7 +309,10 @@ uniontype Function
     end try;
 
     (functionRef, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
-    prefix := ComponentRef.fromNodeList(InstNode.scopeList(InstNode.classScope(found_scope), includeRoot = true));
+    // If we found a function class we include the root in the prefix, but if we
+    // instead found a component (i.e. a functional parameter) we don't.
+    is_class := InstNode.isClass(ComponentRef.node(functionRef));
+    prefix := ComponentRef.fromNodeList(InstNode.scopeList(InstNode.classScope(found_scope), includeRoot = is_class));
     functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunction;
 
@@ -518,6 +523,13 @@ uniontype Function
     output Absyn.Path path = fn.path;
   end name;
 
+  function setName
+    input Absyn.Path name;
+    input output Function fn;
+  algorithm
+    fn.path := name;
+  end setName;
+
   function nameConsiderBuiltin "Handles the DAE.mo structure where builtin calls are replaced by their simpler name"
     input Function fn;
     output Absyn.Path path;
@@ -606,6 +618,22 @@ uniontype Function
 
     str := Absyn.pathString(fn.path) + "(" + str + ")";
   end callString;
+
+  function typeString
+    "Constructs a string representing the type of the function, on the form
+     function_name<function>(input types) => output type"
+    input Function fn;
+    output String str;
+  algorithm
+    str := List.toString(fn.inputs, paramTypeString,
+      Absyn.pathString(name(fn)) + "<function>",
+      "(", ", ", ") => " + Type.toString(fn.returnType), true);
+  end typeString;
+
+  function paramTypeString
+    input InstNode param;
+    output String str = Type.toString(InstNode.getType(param));
+  end paramTypeString;
 
   function instance
     input Function fn;
@@ -1190,10 +1218,14 @@ uniontype Function
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
-      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, ExpOrigin.FUNCTION);
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, ExpOrigin.FUNCTION, node);
       Typing.typeComponents(node, ExpOrigin.FUNCTION);
 
-      // Type the binding of the inputs only. This is done because they are
+      if InstNode.isPartial(node) then
+        ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
+      end if;
+
+      // Type the bindings of the inputs only. This is done because they are
       // needed when type checking a function call. The outputs are not needed
       // for that and can contain recursive calls to the function, so we leave
       // them for later.
@@ -1230,6 +1262,16 @@ uniontype Function
       FunctionDerivative.typeDerivative(fn_der);
     end for;
   end typeFunctionBody;
+
+  function boxFunctionParameter
+    input InstNode component;
+  protected
+    Component comp;
+  algorithm
+    comp := InstNode.component(component);
+    comp := Component.setType(Type.box(Component.getType(comp)), comp);
+    InstNode.updateComponent(comp, component);
+  end boxFunctionParameter;
 
   function isBuiltin
     input Function fn;
@@ -1346,6 +1388,18 @@ uniontype Function
     output Boolean isPointer = fn.attributes.isFunctionPointer;
   end isFunctionPointer;
 
+  function setFunctionPointer
+    input Boolean isPointer;
+    input output Function fn;
+  protected
+    DAE.FunctionAttributes attr = fn.attributes;
+  algorithm
+    attr.isFunctionPointer := isPointer;
+    fn.attributes := attr;
+    // The whole function should just be this, but it doesn't compile yet.
+    //fn.attributes.isFunctionPointer := isPointer;
+  end setFunctionPointer;
+
   function isExternal
     input Function fn;
     output Boolean isExternal = not InstNode.isEmpty(fn.node) and
@@ -1391,7 +1445,8 @@ uniontype Function
     ty := makeDAEType(fn);
     defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
     daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity,
-      DAE.emptyElementSource, SCode.getElementComment(InstNode.definition(fn.node)));
+      ElementSource.createElementSource(InstNode.info(fn.node)),
+      SCode.getElementComment(InstNode.definition(fn.node)));
   end toDAE;
 
   function makeDAEType
@@ -1426,10 +1481,22 @@ uniontype Function
   end getBody;
 
   function hasUnboxArgs
+    "Returns true if the function has the __OpenModelica_UnboxArguments annotation, otherwise false."
+    input Function fn;
+    output Boolean res;
+  algorithm
+    res := match fn.attributes
+      case DAE.FunctionAttributes.FUNCTION_ATTRIBUTES(
+        isBuiltin = DAE.FunctionBuiltin.FUNCTION_BUILTIN(unboxArgs = res)) then res;
+      else false;
+    end match;
+  end hasUnboxArgs;
+
+  function hasUnboxArgsAnnotation
     input SCode.Element def;
     output Boolean res =
       SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments");
-  end hasUnboxArgs;
+  end hasUnboxArgsAnnotation;
 
   function hasOptionalArgument
     input SCode.Element component;
@@ -1489,6 +1556,11 @@ uniontype Function
       end if;
     end if;
   end mapExpParameter;
+
+  function isPartial
+    input Function fn;
+    output Boolean isPartial = InstNode.isPartial(fn.node);
+  end isPartial;
 
 protected
   function collectParams
@@ -1661,6 +1733,7 @@ protected
     array<InstNode> params;
     SCode.Restriction res;
     SCode.FunctionRestriction fres;
+    Boolean is_partial;
   algorithm
     def := InstNode.definition(node);
     res := SCode.getClassRestriction(def);
@@ -1668,10 +1741,11 @@ protected
     Error.assertion(SCode.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
 
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
+    is_partial := SCode.isPartial(def);
 
     attr := matchcontinue fres
       local
-        Boolean is_impure, is_om_pure, has_out_params;
+        Boolean is_impure, is_om_pure, has_out_params, has_unbox_args;
         String name;
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
@@ -1685,9 +1759,10 @@ protected
           name := SCode.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.classIsInlineFunc(def);
           is_impure := is_impure or hasImpure(def);
+          has_unbox_args := hasUnboxArgsAnnotation(def);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, false,
-            DAE.FUNCTION_BUILTIN(SOME(name), hasUnboxArgs(def)), DAE.FP_NON_PARALLEL());
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, is_partial,
+            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL());
 
       // Parallel function: there are some builtin functions.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
@@ -1696,21 +1771,22 @@ protected
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCode.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.classIsInlineFunc(def);
+          has_unbox_args := hasUnboxArgsAnnotation(def);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, false,
-            DAE.FUNCTION_BUILTIN(SOME(name), hasUnboxArgs(def)), DAE.FP_PARALLEL_FUNCTION());
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, is_partial,
+            DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION());
 
       // Parallel function: non-builtin.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
           inline_ty := InstUtil.classIsInlineFunc(def);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, false,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, is_partial,
             getBuiltin(def), DAE.FP_PARALLEL_FUNCTION());
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
-        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, false,
+        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION());
 
       // Normal function.
@@ -1724,7 +1800,7 @@ protected
               not listEmpty(outputs)) or
             SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, false,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, is_partial,
             getBuiltin(def), DAE.FP_NON_PARALLEL());
 
     end matchcontinue;
@@ -1771,6 +1847,8 @@ protected
       case Type.POLYMORPHIC() then true;
       case Type.ARRAY() then isValidParamType(ty.elementType);
       case Type.COMPLEX() then isValidParamState(ty.cls);
+      case Type.FUNCTION() then true;
+      case Type.METABOXED() then isValidParamType(ty.ty);
       else false;
     end match;
   end isValidParamType;

@@ -1444,6 +1444,16 @@ uniontype InstNode
       else false;
     end match;
   end isBuiltin;
+
+  function isPartial
+    input InstNode node;
+    output Boolean isPartial;
+  algorithm
+    isPartial := match node
+      case CLASS_NODE() then SCode.isPartial(node.definition);
+      else false;
+    end match;
+  end isPartial;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

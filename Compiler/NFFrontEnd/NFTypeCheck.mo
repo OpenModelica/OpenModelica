@@ -77,6 +77,7 @@ import SimplifyExp = NFSimplifyExp;
 import MetaModelica.Dangerous.*;
 import OperatorOverloading = NFOperatorOverloading;
 import ExpandExp = NFExpandExp;
+import NFFunction.Slot;
 
 public
 type MatchKind = enumeration(
@@ -1639,13 +1640,6 @@ algorithm
   // The types are of the same kind, so we only need to match on one of them.
   matchKind := MatchKind.EXACT;
   compatibleType := match (actualType)
-    local
-      list<Dimension> dims1, dims2;
-      Dimension dim1, dim2;
-      Type ety1, ety2;
-      Boolean compat;
-      InstNode cls;
-
     case Type.INTEGER() then actualType;
     case Type.REAL() then actualType;
     case Type.STRING() then actualType;
@@ -1683,6 +1677,22 @@ algorithm
       algorithm
         (expression, compatibleType, matchKind) :=
           matchComplexTypes(actualType, expectedType, expression, allowUnknown);
+      then
+        compatibleType;
+
+    case Type.FUNCTION()
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchFunctionTypes(actualType, expectedType, expression, allowUnknown);
+      then
+        compatibleType;
+
+    case Type.METABOXED()
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchTypes(actualType.ty, Type.unbox(expectedType), Expression.unbox(expression), allowUnknown);
+        expression := Expression.box(expression);
+        compatibleType := Type.box(compatibleType);
       then
         compatibleType;
 
@@ -1834,6 +1844,97 @@ algorithm
   matchKind := MatchKind.PLUG_COMPATIBLE;
 end matchComponentList;
 
+function matchFunctionTypes
+  input Type actualType;
+  input Type expectedType;
+  input output Expression expression;
+  input Boolean allowUnknown;
+        output Type compatibleType = actualType;
+        output MatchKind matchKind = MatchKind.EXACT;
+protected
+  list<InstNode> inputs1, inputs2, remaining_inputs, outputs1, outputs2;
+  list<Slot> slots1, slots2;
+  InstNode input2, output2;
+  Slot slot1, slot2;
+  Boolean matching;
+algorithm
+  Type.FUNCTION(fn =
+    Function.FUNCTION(inputs = inputs1, outputs = outputs1, slots = slots1)) := actualType;
+  Type.FUNCTION(fn =
+    Function.FUNCTION(inputs = inputs2, outputs = outputs2, slots = slots2)) := expectedType;
+
+  // The functions must have the same number of outputs.
+  if listLength(outputs1) <> listLength(outputs2) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    return;
+  end if;
+
+  if not matchFunctionParameters(outputs1, outputs2, allowUnknown) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    return;
+  end if;
+
+  if not matchFunctionParameters(inputs1, inputs2, allowUnknown) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    return;
+  end if;
+
+  // An input in the actual type must have a default argument if the
+  // corresponding input in the expected type has one.
+  for i in inputs2 loop
+    slot1 :: slots1 := slots1;
+    slot2 :: slots2 := slots2;
+
+    if isSome(slot2.default) and not isSome(slot1.default) then
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      return;
+    end if;
+  end for;
+
+  // The actual type can have more inputs than expected if the extra inputs have
+  // default arguments.
+  for slot in slots1 loop
+    if not isSome(slot.default) then
+      matchKind := MatchKind.NOT_COMPATIBLE;
+      return;
+    end if;
+  end for;
+end matchFunctionTypes;
+
+function matchFunctionParameters
+  input list<InstNode> params1;
+  input list<InstNode> params2;
+  input Boolean allowUnknown;
+  output Boolean matching = true;
+protected
+  list<InstNode> pl1 = params1, pl2 = params2;
+  InstNode p1;
+  Expression dummy = Expression.INTEGER(0);
+  MatchKind mk;
+algorithm
+  for p2 in pl2 loop
+    if listEmpty(pl1) then
+      matching := false;
+      break;
+    end if;
+
+    p1 :: pl1 := pl1;
+
+    if InstNode.name(p1) <> InstNode.name(p2) then
+      matching := false;
+      break;
+    end if;
+
+    (_, _, mk) := matchTypes(Type.unbox(InstNode.getType(p1)),
+      Type.unbox(InstNode.getType(p2)), dummy, allowUnknown);
+
+    if mk <> MatchKind.EXACT then
+      matching := false;
+      break;
+    end if;
+  end for;
+end matchFunctionParameters;
+
 function matchArrayTypes
   input Type arrayType1;
   input Type arrayType2;
@@ -1984,6 +2085,23 @@ algorithm
     case (_, Type.UNKNOWN())
       then (actualType,
         if allowUnknown then MatchKind.UNKNOWN_EXPECTED else MatchKind.NOT_COMPATIBLE);
+
+    case (Type.METABOXED(), _)
+      algorithm
+        expression := Expression.unbox(expression);
+        (expression, compatibleType, matchKind) :=
+          matchTypes(actualType.ty, expectedType, expression, allowUnknown);
+      then
+        (compatibleType, if isCompatibleMatch(matchKind) then MatchKind.CAST else matchKind);
+
+    case (_, Type.METABOXED())
+      algorithm
+        (expression, compatibleType, matchKind) :=
+          matchTypes(actualType, expectedType.ty, expression, allowUnknown);
+        expression := Expression.box(expression);
+        compatibleType := Type.box(compatibleType);
+      then
+        (compatibleType, if isCompatibleMatch(matchKind) then MatchKind.CAST else matchKind);
 
     case (_, Type.POLYMORPHIC())
       algorithm

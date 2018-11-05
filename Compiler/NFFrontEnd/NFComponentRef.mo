@@ -275,7 +275,8 @@ public
     output Variability var;
   algorithm
     var := match cref
-      case CREF() then Component.variability(InstNode.component(cref.node));
+      case CREF(node = InstNode.COMPONENT_NODE())
+        then Component.variability(InstNode.component(cref.node));
       else Variability.CONTINUOUS;
     end match;
   end nodeVariability;

@@ -181,7 +181,7 @@ function typeClass
   input InstNode cls;
   input String name;
 algorithm
-  typeClassType(cls, NFBinding.EMPTY_BINDING, ExpOrigin.CLASS);
+  typeClassType(cls, NFBinding.EMPTY_BINDING, ExpOrigin.CLASS, cls);
   typeComponents(cls, ExpOrigin.CLASS);
   execStat("NFTyping.typeComponents(" + name + ")");
   typeBindings(cls, cls, ExpOrigin.CLASS);
@@ -282,10 +282,12 @@ function typeClassType
   input InstNode clsNode;
   input Binding componentBinding;
   input ExpOrigin.Type origin;
+  input InstNode instanceNode;
   output Type ty;
 protected
   Class cls, ty_cls;
   InstNode node;
+  Function fn;
 algorithm
   cls := InstNode.getClass(clsNode);
 
@@ -301,7 +303,25 @@ algorithm
     // A long class declaration of a type extending from a type has the type of the base class.
     case Class.INSTANCED_CLASS(ty = Type.COMPLEX(complexTy = ComplexType.EXTENDS_TYPE(node)))
       algorithm
-        ty := typeClassType(node, componentBinding, origin);
+        ty := typeClassType(node, componentBinding, origin, instanceNode);
+        cls.ty := ty;
+        InstNode.updateClass(cls, clsNode);
+      then
+        ty;
+
+    // A component of function type, i.e. a functional input parameter.
+    case Class.INSTANCED_CLASS(restriction = Restriction.FUNCTION())
+        guard InstNode.isComponent(instanceNode)
+      algorithm
+        fn :: _ := Function.typeNodeCache(clsNode);
+
+        if not Function.isPartial(fn) then
+          Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX,
+            {Absyn.pathString(Function.name(fn))}, InstNode.info(instanceNode));
+          fail();
+        end if;
+
+        ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_PARAMETER);
         cls.ty := ty;
         InstNode.updateClass(cls, clsNode);
       then
@@ -312,7 +332,7 @@ algorithm
     case Class.EXPANDED_DERIVED()
       algorithm
         typeDimensions(cls.dims, clsNode, componentBinding, origin, InstNode.info(clsNode));
-        ty := typeClassType(cls.baseClass, componentBinding, origin);
+        ty := typeClassType(cls.baseClass, componentBinding, origin, instanceNode);
         ty := Type.liftArrayLeftList(ty, arrayList(cls.dims));
         ty_cls := Class.TYPED_DERIVED(ty, cls.baseClass, cls.restriction);
         InstNode.updateClass(ty_cls, clsNode);
@@ -370,7 +390,7 @@ algorithm
         typeDimensions(c.dimensions, node, c.binding, origin, c.info);
 
         // Construct the type of the component and update the node with it.
-        ty := typeClassType(c.classInst, c.binding, origin);
+        ty := typeClassType(c.classInst, c.binding, origin, component);
         ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
         InstNode.updateComponent(Component.setType(ty, c), node);
 
@@ -1336,6 +1356,7 @@ function typeCref2
   input output ComponentRef cref;
   input ExpOrigin.Type origin;
   input SourceInfo info;
+  input Boolean firstPart = true;
         output Variability subsVariability;
 
   import NFComponentRef.Origin;
@@ -1347,6 +1368,7 @@ algorithm
       list<Subscript> subs;
       Variability subs_var, rest_var;
       ExpOrigin.Type node_origin;
+      Function fn;
 
     case ComponentRef.CREF(origin = Origin.SCOPE)
       algorithm
@@ -1364,10 +1386,19 @@ algorithm
         node_ty := typeComponent(cref.node, node_origin);
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, cref, origin, info);
-        (rest_cr, rest_var) := typeCref2(cref.restCref, origin, info);
+        (rest_cr, rest_var) := typeCref2(cref.restCref, origin, info, false);
         subsVariability := Prefixes.variabilityMax(subs_var, rest_var);
       then
         (ComponentRef.CREF(cref.node, subs, node_ty, cref.origin, rest_cr), subsVariability);
+
+    case ComponentRef.CREF(node = InstNode.CLASS_NODE())
+      guard firstPart and InstNode.isFunction(cref.node)
+      algorithm
+        fn :: _ := Function.typeNodeCache(cref.node);
+        cref.ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTION_REFERENCE);
+        cref.restCref := typeCref2(cref.restCref, origin, info, false);
+      then
+        (cref, Variability.CONTINUOUS);
 
     case ComponentRef.CREF(node = InstNode.CLASS_NODE())
       algorithm

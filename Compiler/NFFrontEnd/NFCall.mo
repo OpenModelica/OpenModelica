@@ -211,7 +211,7 @@ uniontype Call
             if isRecordConstructor(ty_call) then
               outExp := toRecordExpression(ty_call, ty);
             else
-              if Function.hasUnboxArgs(InstNode.definition(ComponentRef.node(cref))) then
+              if Function.hasUnboxArgs(Call.typedFunction(ty_call)) then
                 outExp := Expression.CALL(Call.unboxArgs(ty_call));
               else
                 outExp := Expression.CALL(ty_call);

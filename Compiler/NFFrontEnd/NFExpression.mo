@@ -3961,13 +3961,32 @@ public
     end match;
   end makeMinValue;
 
+  function box
+    input Expression exp;
+    output Expression boxedExp;
+  algorithm
+    boxedExp := match exp
+      case Expression.BOX() then exp;
+      else Expression.BOX(exp);
+    end match;
+  end box;
+
   function unbox
     input Expression boxedExp;
     output Expression exp;
   algorithm
     exp := match boxedExp
+      local
+        Type ty;
+
       case Expression.BOX() then boxedExp.exp;
-      else boxedExp;
+
+      else
+        algorithm
+          ty := Expression.typeOf(boxedExp);
+        then
+          if Type.isBoxed(ty) then Expression.UNBOX(boxedExp, Type.unbox(ty)) else boxedExp;
+
     end match;
   end unbox;
 

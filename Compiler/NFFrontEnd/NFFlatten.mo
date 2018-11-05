@@ -1477,9 +1477,18 @@ function collectExpFuncs_traverse
   input output FunctionTree funcs;
 algorithm
   () := match exp
+    local
+      Function fn;
+
     case Expression.CALL()
       algorithm
         funcs := flattenFunction(Call.typedFunction(exp.call), funcs);
+      then
+        ();
+
+    case Expression.CREF(ty = Type.FUNCTION(fn = fn))
+      algorithm
+        funcs := flattenFunction(fn, funcs);
       then
         ();
 
@@ -1493,14 +1502,17 @@ function flattenFunction
 algorithm
   if not Function.isCollected(fn) then
     Function.collect(fn);
-    funcs := FunctionTree.add(funcs, Function.name(fn), fn);
-    funcs := collectClassFunctions(fn.node, funcs);
 
-    for fn_der in fn.derivatives loop
-      for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
-        funcs := flattenFunction(der_fn, funcs);
+    if not InstNode.isPartial(fn.node) then
+      funcs := FunctionTree.add(funcs, Function.name(fn), fn);
+      funcs := collectClassFunctions(fn.node, funcs);
+
+      for fn_der in fn.derivatives loop
+        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+          funcs := flattenFunction(der_fn, funcs);
+        end for;
       end for;
-    end for;
+    end if;
   end if;
 end flattenFunction;
 
