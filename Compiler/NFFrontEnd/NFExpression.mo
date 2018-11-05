@@ -4389,6 +4389,9 @@ public
   end tupleElement;
 
   function recordElement
+    "Returns the field with the given name in a record expression. If the
+     expression is an array it will return the equivalent of calling the
+     function on each element of the array."
     input String elementName;
     input Expression recordExp;
     output Expression outExp;
@@ -4407,17 +4410,69 @@ public
         then
           listGet(recordExp.elements, index);
 
-      else
+      case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
-          Type.COMPLEX(cls = node) := typeOf(recordExp);
           cls := InstNode.getClass(node);
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
+        then
+          ARRAY(ty, {});
+
+      case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+        algorithm
+          index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
+          recordExp.elements := list(nthRecordElement(index, e) for e in recordExp.elements);
+        then
+          recordExp;
+
+      else
+        algorithm
+          ty := typeOf(recordExp);
+          Type.COMPLEX(cls = node) := Type.arrayElementType(ty);
+          cls := InstNode.getClass(node);
+          index := Class.lookupComponentIndex(elementName, cls);
+          ty := Type.liftArrayRightList(
+            InstNode.getType(Class.nthComponent(index, cls)),
+            Type.arrayDims(ty));
         then
           RECORD_ELEMENT(recordExp, index, elementName, ty);
 
     end match;
   end recordElement;
+
+  function nthRecordElement
+    "Returns the nth field of a record expression. If the expression is an array
+     it will return an array with the nth field in each array element."
+    input Integer index;
+    input Expression recordExp;
+    output Expression outExp;
+  algorithm
+    outExp := match recordExp
+      local
+        InstNode node;
+        list<Expression> expl;
+
+      case RECORD() then listGet(recordExp.elements, index);
+
+      case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
+        then ARRAY(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))), {});
+
+      case ARRAY()
+        algorithm
+          expl := list(nthRecordElement(index, e) for e in recordExp.elements);
+        then
+          ARRAY(Type.setArrayElementType(recordExp.ty, Expression.typeOf(listHead(expl))), expl);
+
+      else
+        algorithm
+          Type.COMPLEX(cls = node) := typeOf(recordExp);
+          node := Class.nthComponent(index, InstNode.getClass(node));
+        then
+          RECORD_ELEMENT(recordExp, index, InstNode.name(node), InstNode.getType(node));
+
+    end match;
+  end nthRecordElement;
+
 
   function splitRecordCref
     input Expression exp;
