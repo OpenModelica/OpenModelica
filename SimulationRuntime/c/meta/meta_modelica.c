@@ -244,7 +244,7 @@ void initializeStringBuffer(void)
   *anyStringBuf = '\0';
 }
 
-inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
+inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix, modelica_metatype stack)
 {
   mmc_uint_t hdr;
   mmc_sint_t numslots;
@@ -307,7 +307,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
     ix += sprintf(anyStringBuf+ix, "MetaArray(");
     for (i = 1; i <= numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-      ix = anyStringWork(data, ix);
+      ix = anyStringWork(data, ix, mmc_mk_cons(data, stack));
       if (i!=numslots) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -325,7 +325,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       checkAnyStringBufSize(ix,strlen(desc->fieldNames[i-2])+3);
       ix += sprintf(anyStringBuf+ix, "%s = ", desc->fieldNames[i-2]);
-      ix = anyStringWork(data,ix);
+      ix = anyStringWork(data, ix, mmc_mk_cons(any, mmc_mk_cons(data, stack)));
       if (i!=numslots) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -337,10 +337,19 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
   }
 
   if (numslots > 0 && ctor == 0) { /* TUPLE */
+	/* Pointers.mo, pointer are saved as tuples, check if we have it in the stack so we break the cycle */
+	data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+	if (listMember(data, stack))
+	{
+      checkAnyStringBufSize(ix,12);
+      ix += sprintf(anyStringBuf+ix, "(Pointer())");
+      return ix;
+	}
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, "(");
     for (i = 0; i < numslots; i++) {
-      ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)),ix);
+      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1));
+      ix = anyStringWork(data, ix, mmc_mk_cons(any, mmc_mk_cons(data, stack)));
       if (i != numslots-1) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -360,7 +369,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
   if (numslots==1 && ctor==1) /* SOME(x) */ {
     checkAnyStringBufSize(ix,6);
     ix += sprintf(anyStringBuf+ix, "SOME(");
-    ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)),ix);
+    ix = anyStringWork(data, ix, stack);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ")");
     return ix;
@@ -369,12 +378,12 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, "{");
-    ix = anyStringWork(MMC_CAR(any),ix);
+    ix = anyStringWork(MMC_CAR(any), ix, mmc_mk_cons(any, mmc_mk_cons(MMC_CAR(any), stack)));
     any = MMC_CDR(any);
     while (!MMC_NILTEST(any)) {
       checkAnyStringBufSize(ix,3);
       ix += sprintf(anyStringBuf+ix, ", ");
-      ix = anyStringWork(MMC_CAR(any),ix);
+      ix = anyStringWork(MMC_CAR(any), ix, mmc_mk_cons(any, mmc_mk_cons(MMC_CAR(any), stack)));
       any = MMC_CDR(any);
     }
     checkAnyStringBufSize(ix,2);
@@ -389,7 +398,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
   for (i=1; i<=numslots; i++)
   {
     data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-    ix = anyStringWork(data,ix);
+    ix = anyStringWork(data, ix, mmc_mk_cons(any, mmc_mk_cons(data, stack)));
     /* fprintf(stderr, "%032s|", ltoa((int)data, buf, 2)); */
   }
   checkAnyStringBufSize(ix,2);
@@ -402,14 +411,14 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix)
 char* anyString(void* any)
 {
   initializeStringBuffer();
-  anyStringWork(any,0);
+  anyStringWork(any, 0, mmc_mk_nil());
   return anyStringBuf;
 }
 
 void* mmc_anyString(void* any)
 {
   initializeStringBuffer();
-  anyStringWork(any,0);
+  anyStringWork(any, 0, mmc_mk_nil());
   return mmc_mk_scon(anyStringBuf);
 }
 
@@ -426,13 +435,13 @@ modelica_metatype mmc_gdb_arrayGet(threadData_t* threadData, modelica_metatype a
 void printAny(void* any)
 {
   initializeStringBuffer();
-  anyStringWork(any,0);
+  anyStringWork(any, 0, mmc_mk_nil());
   fputs(anyStringBuf, stderr);
 }
 
 static int globalId;
 
-inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t id)
+inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t id, modelica_metatype stack)
 {
   mmc_uint_t hdr;
   mmc_sint_t numslots;
@@ -506,7 +515,7 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
     globalId += numslots-1;
     for (i=2; i<=numslots; i++) {
       data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-      ix = anyStringWorkCode(data,ix,base_id+i-1);
+      ix = anyStringWorkCode(data, ix, base_id+i-1, stack);
     }
     checkAnyStringBufSize(ix,numslots*100+400);
     ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%ld_data,%ld,%lu) {&%s__desc", (long) id, (long) numslots, (unsigned long) ctor, desc->path);
@@ -522,7 +531,7 @@ inline static mmc_sint_t anyStringWorkCode(void* any, mmc_sint_t ix, mmc_sint_t 
   globalId += numslots;
   for (i=1; i<=numslots; i++) {
     data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
-    ix = anyStringWorkCode(data,ix,base_id+i);
+    ix = anyStringWorkCode(data, ix, base_id+i, stack);
   }
   checkAnyStringBufSize(ix,numslots*100+400);
   ix += sprintf(anyStringBuf+ix, "static const MMC_DEFSTRUCTLIT(omc_tmp%ld_data,%ld,%lu) {", (long) id, (long) numslots, (unsigned long) ctor);
@@ -538,7 +547,7 @@ void* mmc_anyStringCode(void* any)
 {
   initializeStringBuffer();
   globalId = 0;
-  anyStringWorkCode(any,0,globalId++);
+  anyStringWorkCode(any, 0, globalId++, mmc_mk_nil());
   return mmc_mk_scon(anyStringBuf);
 }
 
@@ -546,7 +555,7 @@ const char* anyStringCode(void* any)
 {
   initializeStringBuffer();
   globalId = 0;
-  anyStringWorkCode(any,0,globalId++);
+  anyStringWorkCode(any, 0, globalId++, mmc_mk_nil());
   fprintf(stderr, "%s", anyStringBuf);
   return anyStringBuf;
 }
@@ -646,7 +655,7 @@ void printTypeOfAny(void* any) /* for debugging */
   EXIT(1);
 }
 
-inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debugging */
+inline static int getTypeOfAnyWork(void* any, int ix, int inRecord, modelica_metatype stack)  /* for debugging */
 {
   mmc_uint_t hdr;
   int numslots;
@@ -700,7 +709,7 @@ inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debu
   if (numslots>0 && ctor == MMC_ARRAY_TAG) {
     checkAnyStringBufSize(ix,7);
     ix += sprintf(anyStringBuf+ix, "Array<");
-    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix, inRecord);
+    ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)), ix, inRecord, stack);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
     return ix;
@@ -717,7 +726,7 @@ inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debu
     checkAnyStringBufSize(ix,7);
     ix += sprintf(anyStringBuf+ix, "tuple<");
     for (i=0; i<numslots; i++) {
-      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix, inRecord);
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix, inRecord, stack);
       if (i!=numslots-1) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -738,7 +747,7 @@ inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debu
     checkAnyStringBufSize(ix,8);
     ix += sprintf(anyStringBuf+ix, "Option<");
     for (i=0; i<numslots; i++) {
-      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix, inRecord);
+      ix = getTypeOfAnyWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)), ix, inRecord, stack);
       if (i!=numslots-1) {
         checkAnyStringBufSize(ix,3);
         ix += sprintf(anyStringBuf+ix, ", ");
@@ -752,7 +761,7 @@ inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debu
   if (numslots==2 && ctor==1) { /* CONS-PAIR */
     checkAnyStringBufSize(ix,6);
     ix += sprintf(anyStringBuf+ix, "list<");
-    ix = getTypeOfAnyWork(MMC_CAR(any), ix, inRecord);
+    ix = getTypeOfAnyWork(MMC_CAR(any), ix, inRecord, stack);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ">");
     return ix;
@@ -765,7 +774,7 @@ inline static int getTypeOfAnyWork(void* any, int ix, int inRecord)  /* for debu
 char* getTypeOfAny(void* any, int inRecord) /* for debugging */
 {
   initializeStringBuffer();
-  getTypeOfAnyWork(any,0, inRecord);
+  getTypeOfAnyWork(any,0, inRecord, mmc_mk_nil());
   return anyStringBuf;
 }
 
