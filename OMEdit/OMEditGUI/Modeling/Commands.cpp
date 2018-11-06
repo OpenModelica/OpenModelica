@@ -2640,6 +2640,7 @@ AddConnectorToBusCommand::AddConnectorToBusCommand(QString bus, QString connecto
   mBus = bus;
   mConnector = connector;
   mpGraphicsView = pGraphicsView;
+  setText(QString("Add connector %1 to bus %2").arg(mConnector, mBus));
 }
 
 /*!
@@ -2673,6 +2674,7 @@ DeleteConnectorFromBusCommand::DeleteConnectorFromBusCommand(QString bus, QStrin
   mBus = bus;
   mConnector = connector;
   mpGraphicsView = pGraphicsView;
+  setText(QString("Delete connector %1 from bus %2").arg(mConnector, mBus));
 }
 
 /*!
@@ -2797,6 +2799,7 @@ AddConnectorToTLMBusCommand::AddConnectorToTLMBusCommand(QString tlmBus, QString
   mConnectorName = connectorName;
   mConnectorType = connectorType;
   mpGraphicsView = pGraphicsView;
+  setText(QString("Add connector %1 to tlm bus %2").arg(mConnectorName, mTLMBus));
 }
 
 /*!
@@ -2833,6 +2836,7 @@ DeleteConnectorFromTLMBusCommand::DeleteConnectorFromTLMBusCommand(QString bus, 
   mConnectorName = connectorName;
   mConnectorType = connectorType;
   mpGraphicsView = pGraphicsView;
+  setText(QString("Delete connector %1 from tlm bus %2").arg(mConnectorName, mTLMBus));
 }
 
 /*!
@@ -2869,6 +2873,8 @@ UpdateTLMParametersCommand::UpdateTLMParametersCommand(LineAnnotation *pConnecti
   mpConnectionLineAnnotation = pConnectionLineAnnotation;
   mOldTLMParameters = oldTLMParameters;
   mNewTLMParameters = newTLMParameters;
+  setText(QString("Update TLM connection connect(%1, %2) parameters").arg(mpConnectionLineAnnotation->getStartComponentName(),
+                                                                            mpConnectionLineAnnotation->getEndComponentName()));
 }
 
 /*!
