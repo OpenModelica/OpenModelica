@@ -195,6 +195,7 @@ algorithm
       Boolean b1,b2,b3;
       DAE.Expand crefExpand;
       BackendDAE.EquationAttributes attr;
+      BackendDAE.Equation eqn;
 
     case(BackendDAE.EQUATION(e1,e2,source,attr),_)
       equation
@@ -211,6 +212,12 @@ algorithm
         true = b1 or b2;
       then
         (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr),true);
+
+    case(BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), _)
+      equation
+        (eqn, true) = inlineEq(eqn, fns);
+      then
+        (BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), true);
 
     case(BackendDAE.SOLVED_EQUATION(cref,e,source,attr),_)
       equation
