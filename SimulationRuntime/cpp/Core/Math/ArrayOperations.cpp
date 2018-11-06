@@ -447,12 +447,12 @@ void add_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& outputA
 template <typename T>
 void usub_array(const BaseArray<T>& a, BaseArray<T>& b)
 {
+  const T* src_data = a.getData();
+  T* dst_data = b.getData();
+  size_t numElems =  a.getNumElems();
   b.setDims(a.getDims());
-  size_t numEle =  a.getNumElems();
-  for (size_t i = 1; i <= numEle; i++)
-  {
-    b(i) = -a(i);
-  }
+  for (size_t i = 0; i < numElems; i++)
+    dst_data[i] = -src_data[i];
 }
 
 template <typename T>

@@ -11567,7 +11567,7 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       <<
       for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
         <%preExp%>
-        <%crefPart%> = <%expPart%>;
+        <%if crefSubIsScalar(cref) then '<%crefPart%> = <%expPart%>' else '<%crefPart%>.assign(<%expPart%>)'%>;
       }
       >>
 end equationForLoop;
@@ -13633,29 +13633,12 @@ match stmt
 case STMT_ASSIGN_ARR(exp=e, lhs=lhsexp as CREF(componentRef=cr), type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  let dest = algStmtAssignArrCref(lhsexp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let dest = daeExp(lhsexp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   <%preExp%>
   <%dest%>.assign(<%expPart%>);
   >>
 end algStmtAssignArr;
-
-
-template algStmtAssignArrCref(DAE.Exp exp, Context context,
-  Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/, SimCode simCode,
-  Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
-  Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generates a component reference to an array or a slice of it."
-::=
-match exp
-  case CREF(componentRef=cr, ty = T_ARRAY(ty=basety, dims=dims)) then
-    let typeStr = expTypeShort(ty)
-    let slice = if crefSubs(cr) then daeExpCrefIndexSpec(crefSubs(cr), context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    if slice then
-      'ArraySlice<<%typeStr%>>(<%contextArrayCref(cr, context)%>, <%slice%>)'
-    else
-      '<%contextArrayCref(cr, context)%>'
-end algStmtAssignArrCref;
 
 
 template functionInitDelay(DelayedExpression delayed,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)

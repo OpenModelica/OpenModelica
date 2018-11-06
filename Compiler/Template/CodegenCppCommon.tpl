@@ -59,13 +59,14 @@ template subscriptToCStr(Subscript subscript)
 end subscriptToCStr;
 
 template crefToCStrForArray(ComponentRef cr, Text& dims)
+ "Convert array cref to cstr without subscripts at idents."
 ::=
   match cr
   case CREF_IDENT(__) then
     let &dims+=listLength(subscriptLst)
     '<%ident%>_'
   case CREF_QUAL(__) then
-    '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStrForArray(componentRef,dims)%>'
+    '<%ident%>_P_<%crefToCStrForArray(componentRef,dims)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStrForArray;
@@ -467,7 +468,7 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
                   >>
                 '<%arr%>_pre'
               else
-                arrayCrefCStr(cr,context)
+                ''
             else ''
 end daeExpCrefRhsArrayBox;
 

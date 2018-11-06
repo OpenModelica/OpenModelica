@@ -1064,7 +1064,8 @@ class StatArrayDim2 : public StatArray<T, size1*size2, external>
    * @param i row number
    * @param n optional number of rows not needed for static arrays
    */
-  void append(size_t i, const StatArrayDim1<T, size2, external>& b, size_t n = 0)
+  template<bool anybool>
+  void append(size_t i, const StatArrayDim1<T, size2, anybool>& b, size_t n = 0)
   {
     const T* data = b.getData();
     T *array_data = StatArray<T, size1*size2, external>::getData() + i-1;
@@ -1248,7 +1249,8 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
    * @param i row number
    * @param n optional number of rows not needed for static arrays
    */
-  void append(size_t i, const StatArrayDim2<T,size2,size3>& b, size_t n = 0)
+  template<bool anybool>
+  void append(size_t i, const StatArrayDim2<T, size2, size3, anybool>& b, size_t n = 0)
   {
     const T* data = b.getData();
     T *array_data = StatArray<T, size1*size2*size3, external>::getData() + i-1;
