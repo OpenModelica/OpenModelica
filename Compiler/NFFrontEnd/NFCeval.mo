@@ -492,17 +492,8 @@ algorithm
       algorithm
         exp := evalCref(rest_cr, Expression.EMPTY(ty), target);
         exp := makeComponentBinding2(exp, InstNode.name(node));
-        binding := Binding.CEVAL_BINDING(exp, {node});
-
-        // TODO: If the cref has subscripts we can't cache the binding, since it
-        //       will have been evaluated with regards to the subscripts. We
-        //       should create the complete binding and cache it first, then
-        //       subscript it.
-        if not ComponentRef.hasSubscripts(cref) then
-          InstNode.updateComponent(Component.setBinding(binding, component), node);
-        end if;
       then
-        binding;
+        Binding.CEVAL_BINDING(exp, {node});
 
     else NFBinding.EMPTY_BINDING;
   end matchcontinue;
