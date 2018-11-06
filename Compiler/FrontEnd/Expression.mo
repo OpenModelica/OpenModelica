@@ -2759,6 +2759,26 @@ algorithm
       then
         (resx,res);
 
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(),exp2 = e2))
+      equation
+        (fx1,f1) = allTermsForCref(e1, cr, inFunc);
+        (fx2,f2) = allTermsForCref(e2, cr, inFunc);
+        res = listAppend(f1, f2);
+        resx = listAppend(fx1, fx2);
+      then
+        (resx, res);
+
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(),exp2 = e2))
+      equation
+        (fx1,f1) = allTermsForCref(e1, cr, inFunc);
+        (fx2,f2) = allTermsForCref(e2, cr, inFunc);
+        f2 = List.map(f2, negate);
+        fx2 = List.map(fx2, negate);
+        res = listAppend(f1, f2);
+        resx = listAppend(fx1, fx2);
+      then
+        (resx,res);
+
     // terms( a*(b+c)) => {a*b, c*b}
     case (DAE.BINARY(e1,DAE.MUL(_),e2))
       guard inFunc(e2,cr)
