@@ -2860,3 +2860,46 @@ void DeleteConnectorFromTLMBusCommand::undo()
   mpGraphicsView->getModelWidget()->associateBusWithConnector(StringHandler::getLastWordAfterDot(mTLMBus),
                                                               StringHandler::getLastWordAfterDot(mConnectorName));
 }
+
+UpdateTLMParametersCommand::UpdateTLMParametersCommand(LineAnnotation *pConnectionLineAnnotation,
+                                                       const oms3_tlm_connection_parameters_t oldTLMParameters,
+                                                       const oms3_tlm_connection_parameters_t newTLMParameters, UndoCommand *pParent)
+  : UndoCommand(pParent)
+{
+  mpConnectionLineAnnotation = pConnectionLineAnnotation;
+  mOldTLMParameters = oldTLMParameters;
+  mNewTLMParameters = newTLMParameters;
+}
+
+/*!
+ * \brief UpdateTLMParametersCommand::redoInternal
+ * redoInternal the UpdateTLMParametersCommand.
+ */
+void UpdateTLMParametersCommand::redoInternal()
+{
+  if (!OMSProxy::instance()->setTLMConnectionParameters(mpConnectionLineAnnotation->getStartComponentName(),
+                                                        mpConnectionLineAnnotation->getEndComponentName(), &mNewTLMParameters)) {
+    setFailed(true);
+    return;
+  }
+
+  mpConnectionLineAnnotation->setDelay(QString::number(mNewTLMParameters.delay));
+  mpConnectionLineAnnotation->setAlpha(QString::number(mNewTLMParameters.alpha));
+  mpConnectionLineAnnotation->setZf(QString::number(mNewTLMParameters.linearimpedance));
+  mpConnectionLineAnnotation->setZfr(QString::number(mNewTLMParameters.angularimpedance));
+}
+
+/*!
+ * \brief UpdateTLMParametersCommand::undo
+ * Undo the UpdateTLMParametersCommand.
+ */
+void UpdateTLMParametersCommand::undo()
+{
+  OMSProxy::instance()->setTLMConnectionParameters(mpConnectionLineAnnotation->getStartComponentName(),
+                                                   mpConnectionLineAnnotation->getEndComponentName(), &mOldTLMParameters);
+
+  mpConnectionLineAnnotation->setDelay(QString::number(mOldTLMParameters.delay));
+  mpConnectionLineAnnotation->setAlpha(QString::number(mOldTLMParameters.alpha));
+  mpConnectionLineAnnotation->setZf(QString::number(mOldTLMParameters.linearimpedance));
+  mpConnectionLineAnnotation->setZfr(QString::number(mOldTLMParameters.angularimpedance));
+}

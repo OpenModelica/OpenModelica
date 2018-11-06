@@ -109,7 +109,8 @@ public:
   bool addConnection(QString crefA, QString crefB);
   bool addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance);
   bool deleteConnection(QString crefA, QString crefB);
-  bool updateConnection(QString crefA, QString crefB, const oms3_connection_t *pConnection);
+  bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
+  bool setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters);
   bool initialize(QString ident);
   bool simulate_asynchronous(QString ident/*, int* terminate*/);
   bool reset(QString ident);

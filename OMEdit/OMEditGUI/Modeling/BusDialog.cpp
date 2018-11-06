@@ -1691,7 +1691,21 @@ void TLMConnectionDialog::addTLMConnection()
     AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
     mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
   } else {
-    /*! @todo Edit the TLM connection */
+    oms3_tlm_connection_parameters_t oldTLMParameters;
+    oldTLMParameters.delay = mpConnectionLineAnnotation->getDelay().toDouble();
+    oldTLMParameters.alpha = mpConnectionLineAnnotation->getAlpha().toDouble();
+    oldTLMParameters.linearimpedance = mpConnectionLineAnnotation->getZf().toDouble();
+    oldTLMParameters.angularimpedance = mpConnectionLineAnnotation->getZfr().toDouble();
+
+    oms3_tlm_connection_parameters_t newTLMParameters;
+    newTLMParameters.delay = mpDelayTextBox->text().toDouble();
+    newTLMParameters.alpha = mpAlphaTextBox->text().toDouble();
+    newTLMParameters.linearimpedance = mpLinearImpedanceTextBox->text().toDouble();
+    newTLMParameters.angularimpedance = mpAngularImpedanceTextBox->text().toDouble();
+
+    UpdateTLMParametersCommand *pUpdateTLMParametersCommand = new UpdateTLMParametersCommand(mpConnectionLineAnnotation, oldTLMParameters,
+                                                                                             newTLMParameters);
+    mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateTLMParametersCommand);
   }
   mpGraphicsView->getModelWidget()->updateModelText();
   accept();

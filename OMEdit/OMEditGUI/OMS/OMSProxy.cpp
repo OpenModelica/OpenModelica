@@ -981,20 +981,39 @@ bool OMSProxy::deleteConnection(QString crefA, QString crefB)
 }
 
 /*!
- * \brief OMSProxy::updateConnection
- * Updates the connection
+ * \brief OMSProxy::setConnectionGeometry
+ * Sets the connection geometry.
  * \param crefA
  * \param crefB
- * \param pConnection
+ * \param pGeometry
  * \return
  */
-bool OMSProxy::updateConnection(QString crefA, QString crefB, const oms3_connection_t* pConnection)
+bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry)
 {
-  QString command = "oms3_updateConnection";
+  QString command = "oms3_setConnectionGeometry";
   QStringList args;
   args << crefA << crefB;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_updateConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pConnection);
+  oms_status_enu_t status = oms3_setConnectionGeometry(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setTLMConnectionParameters
+ * Sets the TLM parameters of a connection.
+ * \param crefA
+ * \param crefB
+ * \param pParameters
+ * \return
+ */
+bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters)
+{
+  QString command = "oms3_setTLMConnectionParameters";
+  QStringList args;
+  args << crefA << crefB;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTLMConnectionParameters(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pParameters);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

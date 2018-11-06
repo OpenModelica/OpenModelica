@@ -626,4 +626,17 @@ private:
   GraphicsView *mpGraphicsView;
 };
 
+class UpdateTLMParametersCommand : public UndoCommand
+{
+public:
+  UpdateTLMParametersCommand(LineAnnotation *pConnectionLineAnnotation, const oms3_tlm_connection_parameters_t oldTLMParameters,
+                             const oms3_tlm_connection_parameters_t newTLMParameters, UndoCommand *pParent = 0);
+  void redoInternal();
+  void undo();
+private:
+  LineAnnotation *mpConnectionLineAnnotation;
+  oms3_tlm_connection_parameters_t mOldTLMParameters;
+  oms3_tlm_connection_parameters_t mNewTLMParameters;
+};
+
 #endif // COMMANDS_H

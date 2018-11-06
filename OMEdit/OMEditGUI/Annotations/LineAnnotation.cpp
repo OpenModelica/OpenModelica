@@ -1058,56 +1058,26 @@ void LineAnnotation::setAligned(bool aligned)
 void LineAnnotation::updateOMSConnection()
 {
   // connection geometry
-  ssd_connection_geometry_t* pConnectionGeometry = new ssd_connection_geometry_t;
+  ssd_connection_geometry_t connectionGeometry;
   QList<QPointF> points = mPoints;
   if (points.size() >= 2) {
     points.removeFirst();
     points.removeLast();
   }
-  pConnectionGeometry->n = points.size();
+  connectionGeometry.n = points.size();
   if (points.size() == 0) {
-    pConnectionGeometry->pointsX = NULL;
-    pConnectionGeometry->pointsY = NULL;
+    connectionGeometry.pointsX = NULL;
+    connectionGeometry.pointsY = NULL;
   } else {
-    pConnectionGeometry->pointsX = new double[points.size()];
-    pConnectionGeometry->pointsY = new double[points.size()];
+    connectionGeometry.pointsX = new double[points.size()];
+    connectionGeometry.pointsY = new double[points.size()];
   }
   for (int i = 0 ; i < points.size() ; i++) {
-    pConnectionGeometry->pointsX[i] = points.at(i).x();
-    pConnectionGeometry->pointsY[i] = points.at(i).y();
+    connectionGeometry.pointsX[i] = points.at(i).x();
+    connectionGeometry.pointsY[i] = points.at(i).y();
   }
-  // connection
-  oms3_connection_t connection;
-  // connection type
-  connection.type = getOMSConnectionType();
-  QString conA = QString("%1.%2").arg(StringHandler::getLastWordAfterDot(StringHandler::removeLastWordAfterDot(getStartComponentName())))
-                 .arg(StringHandler::getLastWordAfterDot(getStartComponentName()));
-  connection.conA = new char[conA.toStdString().size() + 1];
-  strcpy(connection.conA, conA.toStdString().c_str());
-  QString conB = QString("%1.%2").arg(StringHandler::getLastWordAfterDot(StringHandler::removeLastWordAfterDot(getEndComponentName())))
-                 .arg(StringHandler::getLastWordAfterDot(getEndComponentName()));
-  connection.conB = new char[conB.toStdString().size() + 1];
-  strcpy(connection.conB, conB.toStdString().c_str());
-  connection.geometry = pConnectionGeometry;
-  if (connection.type == oms3_connection_tlm) {
-    connection.tlmparameters = new oms3_tlm_connection_parameters_t;
-    connection.tlmparameters->delay = mDelay.toDouble();
-    connection.tlmparameters->alpha = mAlpha.toDouble();
-    connection.tlmparameters->linearimpedance = mZf.toDouble();
-    connection.tlmparameters->angularimpedance = mZfr.toDouble();
-  } else {
-    connection.tlmparameters = NULL;
-  }
-  OMSProxy::instance()->updateConnection(getStartComponentName(), getEndComponentName(), &connection);
 
-  delete[] connection.conA;
-  delete[] connection.conB;
-  if (connection.tlmparameters) {
-    delete connection.tlmparameters;
-  }
-  delete[] pConnectionGeometry->pointsX;
-  delete[] pConnectionGeometry->pointsY;
-  delete pConnectionGeometry;
+  OMSProxy::instance()->setConnectionGeometry(getStartComponentName(), getEndComponentName(), &connectionGeometry);
 }
 
 void LineAnnotation::showOMSConnection()
@@ -1116,6 +1086,10 @@ void LineAnnotation::showOMSConnection()
       && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSBusConnector())) {
     BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
     pBusConnectionDialog->exec();
+  } else if ((mpStartComponent && mpStartComponent->getLibraryTreeItem()->getOMSTLMBusConnector())
+             && (mpEndComponent && mpEndComponent->getLibraryTreeItem()->getOMSTLMBusConnector())) {
+    TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(mpGraphicsView, this, false);
+    pTLMBusConnectionDialog->exec();
   }
 }
 
