@@ -124,7 +124,7 @@ OMSProxy::OMSProxy()
   mTotalOMSCallsTime = 0.0;
   // OMSimulator global settings
   setCommandLineOption("--suppressPath=true");
-  setLogFile(QString(Utilities::tempDirectory() + "/omsllog.txt").toStdString().c_str());
+  setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt").toStdString().c_str());
   setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
   setLoggingCallback();
 }
