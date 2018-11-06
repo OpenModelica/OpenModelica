@@ -123,8 +123,10 @@ OMSProxy::OMSProxy()
   mpCommunicationLogFile = fopen(communicationLogFilePath.toStdString().c_str(), "w");
   mTotalOMSCallsTime = 0.0;
   // OMSimulator global settings
+  setCommandLineOption("--suppressPath=true");
   setLogFile(QString(Utilities::tempDirectory() + "/omsllog.txt").toStdString().c_str());
   setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
+  setLoggingCallback();
 }
 
 OMSProxy::~OMSProxy()
@@ -1047,6 +1049,23 @@ void OMSProxy::setLoggingLevel(int logLevel)
   LOG_COMMAND(command, args);
   oms2_setLoggingLevel(logLevel);
   logResponse(command, oms_status_ok, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::setCommandLineOption
+ * Sets the command line option.
+ * \param cmd
+ * \return
+ */
+bool OMSProxy::setCommandLineOption(QString cmd)
+{
+  QString command = "oms3_setCommandLineOption";
+  QStringList args;
+  args << cmd;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setCommandLineOption(cmd.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
 }
 
 /*!

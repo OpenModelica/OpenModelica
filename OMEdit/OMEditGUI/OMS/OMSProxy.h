@@ -114,6 +114,7 @@ public:
   bool simulate_asynchronous(QString ident/*, int* terminate*/);
   bool reset(QString ident);
   void setLoggingLevel(int logLevel);
+  bool setCommandLineOption(QString cmd);
   void setLogFile(QString filename);
   void setTempDirectory(QString path);
   void setWorkingDirectory(QString path);

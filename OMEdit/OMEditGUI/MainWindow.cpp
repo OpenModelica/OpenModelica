@@ -157,8 +157,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   OMSProxy::create();
   // Create an object of OptionsDialog
   OptionsDialog::create();
-  // We set the logging callback for OMS API here after creating OptionsDialog so don't get annoying temp directory message.
-  OMSProxy::instance()->setLoggingCallback();
   SplashScreen::instance()->showMessage(tr("Loading Widgets"), Qt::AlignRight, Qt::white);
   // apply MessagesWidget settings
   MessagesWidget::instance()->applyMessagesSettings();
