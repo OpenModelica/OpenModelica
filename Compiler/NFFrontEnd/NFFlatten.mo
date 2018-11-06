@@ -694,14 +694,18 @@ function addIterator_traverse
   input output Expression exp;
   input ComponentRef prefix;
   input Subscript subscript;
+protected
+  String restString, prefixString = ComponentRef.toString(prefix);
+  Integer prefixLength = stringLength(prefixString);
 algorithm
   exp := match exp
     local
       ComponentRef restCref;
     case Expression.CREF(cref = ComponentRef.CREF(restCref = restCref))
       algorithm
-        if ComponentRef.isEqual(restCref, prefix) then
-          exp.cref := ComponentRef.addSubscript(subscript, exp.cref);
+        restString := ComponentRef.toString(restCref);
+        if prefixLength <= stringLength(restString) and prefixString == substring(restString, 1, prefixLength) then
+          exp.cref := ComponentRef.setSubscripts(subscript :: ComponentRef.getSubscripts(exp.cref), exp.cref);
         end if;
       then
         exp;

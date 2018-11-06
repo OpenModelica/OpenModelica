@@ -48,6 +48,7 @@ protected
   import NFClass.Class;
   import Restriction = NFRestriction;
   import ComplexType = NFComplexType;
+  import Dimension = NFDimension;
 
 public
   type Face = enumeration(INSIDE, OUTSIDE);
@@ -205,6 +206,7 @@ protected
     input DAE.ElementSource source;
     input ConnectorType cty;
     input output list<Connector> conns = {};
+    input list<Dimension> dims = {} "accumulated dimensions if not NF_SCALARIZE";
   algorithm
     conns := match ty
       local
@@ -214,9 +216,9 @@ protected
 
       case Type.COMPLEX(complexTy = ct as ComplexType.CONNECTOR())
         algorithm
-          conns := splitImpl2(name, face, source, ct.potentials, conns);
-          conns := splitImpl2(name, face, source, ct.flows, conns);
-          conns := splitImpl2(name, face, source, ct.streams, conns);
+          conns := splitImpl2(name, face, source, ct.potentials, conns, dims);
+          conns := splitImpl2(name, face, source, ct.flows, conns, dims);
+          conns := splitImpl2(name, face, source, ct.streams, conns, dims);
         then
           conns;
 
@@ -224,26 +226,27 @@ protected
         algorithm
           tree := Class.classTree(InstNode.getClass(ty.cls));
           conns := splitImpl2(name, face, source,
-            arrayList(ClassTree.getComponents(tree)), conns);
+            arrayList(ClassTree.getComponents(tree)), conns, dims);
         then
           conns;
 
       case Type.ARRAY()
         algorithm
+          t := Type.arrayElementType(ty);
           if Flags.isSet(Flags.NF_SCALARIZE) then
-            t := Type.arrayElementType(ty);
             for c in ComponentRef.scalarize(name) loop
-              conns := splitImpl(c, t, face, source, cty, conns);
+              conns := splitImpl(c, t, face, source, cty, conns, dims);
             end for;
           else
             if not Type.isEmptyArray(ty) then
-              conns := CONNECTOR(name, ty, face, cty, source) :: conns;
+              conns := splitImpl(name, t, face, source, cty, conns,
+                                 listAppend(dims, ty.dimensions));
             end if;
           end if;
         then
           conns;
 
-      else CONNECTOR(name, ty, face, cty, source) :: conns;
+      else CONNECTOR(name, Type.liftArrayLeftList(ty, dims), face, cty, source) :: conns;
     end match;
   end splitImpl;
 
@@ -253,6 +256,7 @@ protected
     input DAE.ElementSource source;
     input list<InstNode> comps;
     input output list<Connector> conns;
+    input list<Dimension> dims;
   protected
     Component c;
     ComponentRef cref;
@@ -264,7 +268,7 @@ protected
       ty := Component.getType(c);
       cty := Component.connectorType(c);
       cref := ComponentRef.append(ComponentRef.fromNode(comp, ty), name);
-      conns := splitImpl(cref, ty, face, source, cty, conns);
+      conns := splitImpl(cref, ty, face, source, cty, conns, dims);
     end for;
   end splitImpl2;
 

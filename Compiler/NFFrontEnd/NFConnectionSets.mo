@@ -71,12 +71,19 @@ package ConnectionSets
       listLength(connections.connections) + listLength(connections.flows));
 
     // Add flow variable to the sets, unless disabled by flag.
-    if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) then
+    // Do this here if NF_SCALARIZE to use fast addList for scalarized flows.
+    if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) and Flags.isSet(Flags.NF_SCALARIZE) then
       sets := List.fold(connections.flows, addConnector, sets);
     end if;
 
     // Add the connections.
     sets := List.fold1(connections.connections, addConnection, connections.broken, sets);
+
+    // Add remaining flow variables to the sets, unless disabled by flag.
+    // Do this after addConnection if not NF_SCALARIZE to get array dims right.
+    if not Flags.isSet(Flags.DISABLE_SINGLE_FLOW_EQ) and not Flags.isSet(Flags.NF_SCALARIZE) then
+      sets := List.fold(connections.flows, addSingleConnector, sets);
+    end if;
   end fromConnections;
 
   function addScalarConnector
@@ -93,6 +100,16 @@ package ConnectionSets
   algorithm
     sets := addList(Connector.split(conn), sets);
   end addConnector;
+
+  function addSingleConnector
+    "Adds a connector to the sets if it does not already exist"
+    input Connector conn;
+    input output ConnectionSets.Sets sets;
+  algorithm
+    for c in Connector.split(conn) loop
+      sets := find(c, sets);
+    end for;
+  end addSingleConnector;
 
   function addConnection
     "Adds a connection to the sets, which means merging the two sets that the
