@@ -23,6 +23,7 @@ IfEquation6.mos \
 IfEquationUnbalanced.mos \
 ModelBalance1.mos ModelBalance2.mos ModelBalance3.mos ModelBalance4.mos \
 ticket-2337.mos \
+ticket-5206.mos \
 WatchDog1AlgorithmWhen.mos WatchDog2EquationWhen.mos \
 WhenEquation.mos WhenEquation1.mos \
 WhenNoRetCall.mos \
