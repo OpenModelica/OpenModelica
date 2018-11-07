@@ -1214,7 +1214,7 @@ algorithm
     case Op.LESS then evalRelationLess(exp1, exp2);
     case Op.LESSEQ then evalRelationLessEq(exp1, exp2);
     case Op.GREATER then evalRelationGreater(exp1, exp2);
-    case Op.GREATEREQ then evalRelationGreater(exp1, exp2);
+    case Op.GREATEREQ then evalRelationGreaterEq(exp1, exp2);
     case Op.EQUAL then evalRelationEqual(exp1, exp2);
     case Op.NEQUAL then evalRelationNotEqual(exp1, exp2);
     else
