@@ -368,7 +368,7 @@ case component as CREF(componentRef=cr, ty=ty) then
   else if crefIsScalar(cr, context) then
     contextCref(cr, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   else
-    if crefSubIsScalar(cr) then
+    if boolAnd(intEq(listLength(crefSubs(cr)), listLength(crefDims(cr))), crefSubIsScalar(cr)) then
       // The array subscript results in a scalar
       let arrName = contextCref(crefStripLastSubs(cr), context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let arrayType = expTypeShort(ty)

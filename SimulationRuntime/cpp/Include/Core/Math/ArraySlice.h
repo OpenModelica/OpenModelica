@@ -101,14 +101,14 @@ class ArraySliceConst: public BaseArray<T> {
   ArraySliceConst(const BaseArray<T> &baseArray, const vector<Slice> &slice)
     : BaseArray<T>(baseArray.isStatic(), false)
     , _baseArray(baseArray)
-    , _isets(slice.size())
-    , _idxs(slice.size())
-    , _baseIdx(slice.size())
+    , _isets(baseArray.getNumDims())
+    , _idxs(baseArray.getNumDims())
+    , _baseIdx(baseArray.getNumDims())
     , _tmp_data(NULL) {
 
-    if (baseArray.getNumDims() != slice.size())
+    if (baseArray.getNumDims() < slice.size())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
-                                    "Wrong dimensions for ArraySlice");
+                                    "Wrong slices exceeding array dimensions");
     // create an explicit index set per dimension,
     // except for all indices that are indicated with an empty index set
     size_t dim, size;
@@ -144,6 +144,11 @@ class ArraySliceConst: public BaseArray<T> {
         // store dimension of array slice
         _dims.push_back(size);
       dit++;
+    }
+    // use all indices of remaining dims
+    for (; dim <= baseArray.getNumDims(); dim++) {
+      _isets[dim - 1] = NULL;
+      _dims.push_back(_baseArray.getDim(dim));
     }
   }
 

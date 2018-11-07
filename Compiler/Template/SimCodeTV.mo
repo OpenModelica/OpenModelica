@@ -3267,6 +3267,11 @@ package ComponentReference
     output list<DAE.ComponentRef> outCref;
   end expandCref;
 
+  function crefHasScalarSubscripts
+    input DAE.ComponentRef cr;
+    output Boolean hasScalarSubs;
+  end crefHasScalarSubscripts;
+
   function crefIsScalarWithAllConstSubs
     input DAE.ComponentRef inCref;
     output Boolean isScalar;
@@ -3340,11 +3345,6 @@ package Expression
     input list<DAE.Subscript> inSubs;
     output Boolean areConstant;
   end subscriptConstants;
-
-  function crefHasScalarSubscripts
-    input DAE.ComponentRef cr;
-    output Boolean hasScalarSubs;
-  end crefHasScalarSubscripts;
 
   function typeof
     input DAE.Exp inExp;
