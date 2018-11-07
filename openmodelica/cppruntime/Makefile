@@ -21,6 +21,7 @@ solveTest.mos \
 testArrayEquations.mos \
 testMatrixIO.mos \
 testVectorizedBlocks.mos \
+testVectorizedPowerSystem.mos \
 trapezoidTest.mos
 
 FAILINGTESTFILES= \
