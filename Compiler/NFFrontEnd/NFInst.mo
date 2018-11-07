@@ -2914,7 +2914,7 @@ algorithm
     case Class.INSTANCED_BUILTIN(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
         for c in cls_tree.components loop
-        updateImplicitVariabilityComp(c, evalAllParams);
+          updateImplicitVariabilityComp(c, evalAllParams);
         end for;
       then
         ();
@@ -3236,7 +3236,7 @@ end markStructuralParamsSubs;
 
 function markStructuralParamsSub
   input Subscript sub;
-  input output Integer dummy;
+  input output Integer dummy = 0;
 algorithm
   () := match sub
       case Subscript.UNTYPED() algorithm markStructuralParamsExp(sub.exp); then ();

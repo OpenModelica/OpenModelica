@@ -1447,6 +1447,13 @@ algorithm
     typedSubs := sub :: typedSubs;
     variability := Prefixes.variabilityMax(variability, var);
     i := i + 1;
+
+    // Mark parameter subscripts as structural so that they're evaluated.
+    // TODO: Ideally this shouldn't be needed, but the old frontend does it and
+    //       the backend relies on it.
+    if var == Variability.PARAMETER then
+      Inst.markStructuralParamsSub(sub);
+    end if;
   end for;
 
   typedSubs := listReverseInPlace(typedSubs);
