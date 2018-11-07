@@ -1049,7 +1049,8 @@ protected
     Expression arg;
     Variability var;
     Function fn;
-    Integer dim_size = -1, i = 1;
+    Dimension vector_dim = Dimension.fromInteger(1);
+    Boolean dim_found = false;
   algorithm
     Call.UNTYPED_CALL(ref = fn_ref, arguments = args, named_args = named_args) := call;
     assertNoNamedParams("vector", named_args, info);
@@ -1064,27 +1065,18 @@ protected
     // vector requires that at most one dimension is > 1, and that dimension
     // determines the type of the vector call.
     for dim in Type.arrayDims(ty) loop
-      if Dimension.isKnown(dim) then
-        if Dimension.size(dim) > 1 then
-          if dim_size == -1 then
-            dim_size := Dimension.size(dim);
-          else
-            Error.addSourceMessageAndFail(Error.NF_VECTOR_INVALID_DIMENSIONS,
-              {Type.toString(ty), Call.toString(call)}, info);
-          end if;
+      if not Dimension.isKnown(dim) or Dimension.size(dim) > 1 then
+        if dim_found then
+          Error.addSourceMessageAndFail(Error.NF_VECTOR_INVALID_DIMENSIONS,
+            {Type.toString(ty), Call.toString(call)}, info);
+        else
+          vector_dim := dim;
+          dim_found := true;
         end if;
       end if;
-
-      i := i + 1;
     end for;
 
-    // If the argument was scalar or an array where all dimensions where 1, set
-    // the dimension size to 1.
-    if dim_size == -1 then
-      dim_size := 1;
-    end if;
-
-    ty := Type.ARRAY(Type.arrayElementType(ty), {Dimension.fromInteger(dim_size)});
+    ty := Type.ARRAY(Type.arrayElementType(ty), {vector_dim});
     {fn} := Function.typeRefCache(fn_ref);
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
   end typeVectorCall;
