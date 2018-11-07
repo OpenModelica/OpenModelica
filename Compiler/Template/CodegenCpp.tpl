@@ -11567,7 +11567,7 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       <<
       for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
         <%preExp%>
-        <%if crefSubIsScalar(cref) then '<%crefPart%> = <%expPart%>' else '<%crefPart%>.assign(<%expPart%>)'%>;
+        <%crefPart%> = <%expPart%>;
       }
       >>
 end equationForLoop;

@@ -305,6 +305,18 @@ class ArraySlice: public ArraySliceConst<T> {
     , _baseIdx(ArraySliceConst<T>::_baseIdx) {
   }
 
+  ArraySlice<T>& operator=(const ArraySlice<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  ArraySlice<T>& operator=(const BaseArray<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
   virtual T& operator()(const vector<size_t> &idx) {
     return _baseArray(ArraySliceConst<T>::baseIdx(idx.size(), &idx[0]));
   }
