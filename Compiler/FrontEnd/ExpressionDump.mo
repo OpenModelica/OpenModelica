@@ -1475,6 +1475,18 @@ algorithm
       then
         res_str;
 
+    case (DAE.RSUB(exp=e, ix=i, fieldName=fs, ty=tp),level)
+      equation
+        gen_str = genStringNTime("   |", level);
+        new_level1 = level + 1;
+        ct = dumpExpStr(e, new_level1);
+        istr = intString(i);
+        s = stringAppendList({"[",istr,"]"});
+        tpStr = Types.unparseType(tp);
+        res_str = stringAppendList({gen_str,"RSUB ",s," fieldName: ",fs," tp: ",tpStr,"\n",ct,""});
+      then
+        res_str;
+
     case (DAE.BOX(exp=e),level)
       equation
         gen_str = genStringNTime("   |", level);
