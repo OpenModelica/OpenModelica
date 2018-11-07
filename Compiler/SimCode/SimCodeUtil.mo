@@ -310,7 +310,7 @@ algorithm
     end if;
 
     // generate equations for removed initial equations
-    (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempvars);
+    (removedInitialEquations, uniqueEqIndex, tempvars) := createNonlinearResidualEquations(inRemovedInitialEquationLst, uniqueEqIndex, tempvars, dlow.shared.functionTree);
 
     execStat("simCode: created initialization part");
 
@@ -1626,7 +1626,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, syst.orderedEqs, syst.orderedVars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex1, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, uniqueEqIndex, tempvars, shared.info, true);
+        (equations1, uniqueEqIndex1, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, uniqueEqIndex, tempvars, shared.info, true, shared.functionTree);
 
         eqSccMapping = appendSccIdx(uniqueEqIndex1-1, sccIndex, eqSccMapping);
         eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, e, eqBackendSimCodeMapping);
@@ -1850,7 +1850,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, iuniqueEqIndex, itempvars, ei, genDiscrete);
+        (equations1, uniqueEqIndex, tempvars) = createSingleComplexEqnCode(listHead(eqnlst), varlst, iuniqueEqIndex, itempvars, ei, genDiscrete, shared.functionTree);
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
     // A single when equation
@@ -2189,7 +2189,7 @@ algorithm
               prevarexp := Expression.expSub(varexp, prevarexp);
               (e2, _) := Expression.traverseExpBottomUp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
               eqn := BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-              (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
+              (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars, shared.functionTree);
               cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
               (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
               eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)};
@@ -2202,7 +2202,7 @@ algorithm
           end if;
           if not b then
             // non-linear
-            (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars);
+            (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars, shared.functionTree);
             cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
             (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
             eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false), NONE(), eqAttr)};
@@ -2817,6 +2817,7 @@ public function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
+  input DAE.FunctionTree funcTree;
   output list<SimCode.SimEqSystem> eqSystems = {};
   output Integer ouniqueEqIndex = iuniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars = itempvars;
@@ -2839,6 +2840,8 @@ algorithm
           DAE.Expand crefExpand;
           Integer uniqueEqIndex;
           BackendDAE.EquationAttributes eqAttr;
+          BackendDAE.Equation ifEq;
+          list<BackendDAE.Equation> resEqs;
 
         case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr), uniqueEqIndex) equation
           res_exp = Expression.createResidualExp(e1, e2);
@@ -2851,6 +2854,11 @@ algorithm
           res_exp = Expression.replaceDerOpInExp(res_exp);
           ouniqueEqIndex = uniqueEqIndex + 1;
         then SimCode.SES_RESIDUAL(uniqueEqIndex, res_exp, source, eqAttr) :: eqSystems;
+        // if equations
+        case (ifEq as BackendDAE.IF_EQUATION(), uniqueEqIndex) equation
+          resEqs = BackendEquation.equationToScalarResidualForm(ifEq, funcTree);
+          (eqSystlst,ouniqueEqIndex,otempvars) = createNonlinearResidualEquations(resEqs, uniqueEqIndex-1, otempvars, funcTree);
+        then eqSystlst;
 
         // An array equation
         case (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr), uniqueEqIndex) equation
@@ -3265,7 +3273,8 @@ algorithm
       end if;
       eqn_lst = BackendEquation.equationList(inEquationArray);
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
-      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
+
+      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars, inFuncs);
       // create symbolic jacobian for simulation
       (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, BackendDAEUtil.containsHomotopyCall, false);
@@ -3278,7 +3287,7 @@ algorithm
       end if;
       eqn_lst = BackendEquation.equationList(inEquationArray);
       crefs = BackendVariable.getAllCrefFromVariables(inVars);
-      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars);
+      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(eqn_lst, iuniqueEqIndex, itempvars, inFuncs);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(eqn_lst, BackendDAEUtil.containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, inVars.numberOfVars+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, mixedSystem, false), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN)}, uniqueEqIndex+1, tempvars);
 
@@ -3394,7 +3403,7 @@ algorithm
        reqns = BackendEquation.replaceDerOpInEquationList(reqns);
        // generate other equations
        (simequations, uniqueEqIndex, tempvars, nInnerVars, _) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
-       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars, ishared.functionTree);
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
@@ -3415,7 +3424,7 @@ algorithm
          reqns = BackendEquation.replaceDerOpInEquationList(reqns);
          // generate other equations
          (simequations, uniqueEqIndex, tempvars2, nInnerVars, _) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
-         (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2);
+         (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2, ishared.functionTree);
          simequations = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
@@ -3440,7 +3449,7 @@ algorithm
        tcrs = List.map(tvars, BackendVariable.varCref);
        // generate other equations
        (simequations, uniqueEqIndex, tempvars, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
-       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars);
+       (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars, ishared.functionTree);
        simequations = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
@@ -3465,7 +3474,7 @@ algorithm
          tcrs = List.map(tvars, BackendVariable.varCref);
          // generate other equations
          (simequations, uniqueEqIndex, tempvars2, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
-         (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2);
+         (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2, ishared.functionTree);
          simequations = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
@@ -5122,6 +5131,7 @@ protected function createSingleComplexEqnCode
   input list<SimCodeVar.SimVar> itempvars;
   input BackendDAE.ExtraInfo iextra;
   input Boolean genDiscrete;
+  input DAE.FunctionTree funcTree;
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
   output list<SimCodeVar.SimVar> otempvars;
@@ -5174,7 +5184,7 @@ algorithm
       // TODO: Fix createNonlinearResidualEquations support cases where
       //       solved variables are on rhs and also lhs. This is not
       //       considered yet there.
-      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({inEquation}, iuniqueEqIndex, itempvars);
+      (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations({inEquation}, iuniqueEqIndex, itempvars, funcTree);
       (_, homotopySupport) = BackendEquation.traverseExpsOfEquation(inEquation, BackendDAEUtil.containsHomotopyCall, false);
     then ({SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, crefs, 0, listLength(inVars)+listLength(tempvars)-listLength(itempvars), NONE(), homotopySupport, false, false), NONE(), eqAttr)}, uniqueEqIndex+1, tempvars);
 

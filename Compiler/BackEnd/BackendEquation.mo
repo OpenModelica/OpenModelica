@@ -1345,18 +1345,20 @@ algorithm
 
   outEquations := match (inEquation)
     local
-      DAE.Exp e, e1, e2, exp;
+      DAE.Exp e, e1, e2, exp, cond;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
       list<Integer> ds;
-      Integer size;
-      list<DAE.Exp> explst, explst2;
-      list<BackendDAE.Equation> eqns;
+      Integer size, i, branches;
+      list<DAE.Exp> explst, explst2, condExps;
+      list<BackendDAE.Equation> eqns, eqnsfalse;
+      list<list<BackendDAE.Equation>> eqnstrue;
       list<list<DAE.Subscript>> subslst;
       Real r;
       BackendDAE.EquationAttributes attr;
       list<DAE.ComponentRef> crlst, crlst2;
+      array<list<DAE.Exp>> expA;
 
     case (BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source, attr=attr)) equation
       ((_, eqns)) = List.fold3(explst,equationTupleToScalarResidualForm, e2, source, attr, (1, {}));
@@ -1424,6 +1426,42 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)) equation
       exp = Expression.createResidualExp(e1, e2);
     then {BackendDAE.RESIDUAL_EQUATION(exp, source, attr)};
+
+    case (BackendDAE.IF_EQUATION(conditions=condExps, eqnstrue=eqnstrue, eqnsfalse=eqnsfalse, source=source, attr=attr))
+      algorithm
+      branches := listLength(condExps);
+      expA := arrayCreate(branches, {});
+      // create array<list<exp>> with true branches
+      for eqLst in eqnstrue loop
+        i := 1;
+        for eq in eqLst loop
+          {BackendDAE.RESIDUAL_EQUATION(e1, _, _)} :=  equationToScalarResidualForm(eq, funcTree);
+          expA := Array.consToElement(i, e1, expA);
+          i := i + 1;
+        end for;
+      end for;
+      // add also else branches
+      i := 1;
+      for eq in eqnsfalse loop
+        {BackendDAE.RESIDUAL_EQUATION(e1, _, _)} :=  equationToScalarResidualForm(eq, funcTree);
+        expA := Array.consToElement(i, e1, expA);
+        i := i + 1;
+      end for;
+
+      eqns := {};
+      for i in 1:branches loop
+        explst := arrayGet(expA, i);
+        //get else branch
+        e2::explst := explst;
+        explst2 := condExps;
+        for e1 in explst loop
+          cond::explst2 := explst2;
+          e2 := DAE.IFEXP(cond, e1, e2);
+        end for;
+        eqns := BackendDAE.RESIDUAL_EQUATION(e2, source, attr)::eqns;
+        //BackendDump.printEquationList(eqns);
+      end for;
+    then eqns;
 
     case (backendEq as BackendDAE.RESIDUAL_EQUATION())
     then {backendEq};
@@ -1499,6 +1537,8 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Equation backendEq;
       BackendDAE.EquationAttributes eqAttr;
+      list<list<BackendDAE.Equation>> eqnstrue;
+      list<BackendDAE.Equation> eqnsfalse;
 
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, attr=eqAttr)) equation
       //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n", e2);
