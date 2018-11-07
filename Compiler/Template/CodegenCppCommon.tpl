@@ -59,14 +59,15 @@ template subscriptToCStr(Subscript subscript)
 end subscriptToCStr;
 
 template crefToCStrForArray(ComponentRef cr, Text& dims)
- "Convert array cref to cstr without subscripts at idents."
+ "Convert array cref to cstr. Skip subscripts if not NF_SCALARIZE."
 ::=
   match cr
   case CREF_IDENT(__) then
     let &dims+=listLength(subscriptLst)
     '<%ident%>_'
   case CREF_QUAL(__) then
-    '<%ident%>_P_<%crefToCStrForArray(componentRef,dims)%>'
+    let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStrForArray(subscriptLst)
+    '<%ident%><%subs%>_P_<%crefToCStrForArray(componentRef,dims)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStrForArray;
