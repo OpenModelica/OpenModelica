@@ -157,8 +157,6 @@ algorithm
   flat_model := EvalConstants.evaluate(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
   funcs := Flatten.collectFunctions(flat_model, name);
-  funcs := FunctionTree.map(funcs, SimplifyModel.simplifyFunction);
-  execStat("SimplifyModel.simplifyFunction");
 
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them

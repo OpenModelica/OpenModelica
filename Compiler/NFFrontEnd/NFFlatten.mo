@@ -86,6 +86,8 @@ import Ceval = NFCeval;
 import NFTyping.ExpOrigin;
 import SimplifyExp = NFSimplifyExp;
 import Restriction = NFRestriction;
+import EvalConstants = NFEvalConstants;
+import SimplifyModel = NFSimplifyModel;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -1505,6 +1507,8 @@ function flattenFunction
   input output FunctionTree funcs;
 algorithm
   if not Function.isCollected(fn) then
+    EvalConstants.evaluateFunction(fn);
+    SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);
 
     if not InstNode.isPartial(fn.node) then

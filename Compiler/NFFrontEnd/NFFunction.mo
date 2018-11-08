@@ -491,7 +491,7 @@ uniontype Function
     input Function fn;
   algorithm
     if Pointer.access(fn.status) <> FunctionStatus.BUILTIN then
-      Pointer.update(fn.status, FunctionStatus.COLLECTED);
+      Pointer.update(fn.status, FunctionStatus.SIMPLIFIED);
     end if;
   end markSimplified;
 

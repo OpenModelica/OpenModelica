@@ -450,8 +450,7 @@ algorithm
 end simplifyIfStmtBranches;
 
 function simplifyFunction
-  input Absyn.Path name;
-  input output Function func;
+  input Function func;
 protected
   Class cls;
   Algorithm fn_body;
@@ -485,7 +484,7 @@ algorithm
 
     for fn_der in func.derivatives loop
       for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
-        simplifyFunction(Function.name(der_fn), der_fn);
+        simplifyFunction(der_fn);
       end for;
     end for;
   end if;
