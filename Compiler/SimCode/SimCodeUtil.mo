@@ -1591,7 +1591,7 @@ algorithm
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, syst.orderedEqs, syst.orderedVars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1,_, uniqueEqIndex1, tempvars) = createSingleArrayEqnCode(true, eqnlst, varlst, uniqueEqIndex, tempvars, shared.info);
+        (equations1,_, uniqueEqIndex1, tempvars) = createSingleArrayEqnCode(true, eqnlst, varlst, uniqueEqIndex, tempvars, shared);
 
         eqSccMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, sccIndex, eqSccMapping);
         eqBackendSimCodeMapping = appendSccIdxRange(uniqueEqIndex, uniqueEqIndex1 - 1, e, eqBackendSimCodeMapping);
@@ -1828,12 +1828,12 @@ algorithm
       then (equations1, equations1, uniqueEqIndex, tempvars);
 
       // A single array equation
-    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(info = ei), BackendDAE.SINGLEARRAY())
+    case (_, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEARRAY())
       equation
         (eqnlst, varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, eqns, vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, BackendVariable.transformXToXd);
-        (equations1, noDiscEquations1, uniqueEqIndex, tempvars) = createSingleArrayEqnCode(genDiscrete, eqnlst, varlst, iuniqueEqIndex, itempvars, ei);
+        (equations1, noDiscEquations1, uniqueEqIndex, tempvars) = createSingleArrayEqnCode(genDiscrete, eqnlst, varlst, iuniqueEqIndex, itempvars, shared);
       then (equations1, noDiscEquations1, uniqueEqIndex, tempvars);
 
         // A single algorithm section for several variables.
@@ -5477,7 +5477,7 @@ protected function createSingleArrayEqnCode
   input list<BackendDAE.Var> inVars;
   input Integer iuniqueEqIndex;
   input list<SimCodeVar.SimVar> itempvars;
-  input BackendDAE.ExtraInfo iextra;
+  input BackendDAE.Shared shared;
   output list<SimCode.SimEqSystem> equations_;
   output list<SimCode.SimEqSystem> noDiscequations;
   output Integer ouniqueEqIndex;
@@ -5493,7 +5493,7 @@ algorithm
       inEquation.right := Expression.replaceDerOpInExp(inEquation.right);
     then inEquation;
     end match;
-  (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquation, inVars, iuniqueEqIndex, itempvars, iextra)
+  (equations_, noDiscequations, ouniqueEqIndex, otempvars) := matchcontinue(genDiscrete, inEquation, inVars)
     local
       list<Integer> ds;
       DAE.Exp e1, e2, lhse, rhse;
@@ -5502,35 +5502,24 @@ algorithm
       list<BackendDAE.Var> vars;
       DAE.ComponentRef cr, cr_1, left;
       BackendDAE.Variables evars, vars1;
-      BackendDAE.EquationArray eeqns, eqns_1;
-      FCore.Cache cache;
-      FCore.Graph graph;
       DAE.FunctionTree funcs;
       DAE.ElementSource source;
-      BackendDAE.Variables av;
-      BackendDAE.BackendDAE subsystem_dae;
       SimCode.SimEqSystem equation_;
       list<SimCode.SimEqSystem> eqSystlst;
-      BackendDAE.StrongComponents comps;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
       Integer uniqueEqIndex;
       String str;
       list<DAE.Dimension> dims;
       list<SimCodeVar.SimVar> tempvars;
       BackendDAE.EquationAttributes eqAttr;
-      BackendDAE.Equation eq1;
-      HashSet.HashSet ht;
-      list<DAE.ComponentRef> crefs, crefstmp;
+      list<DAE.ComponentRef> crefstmp;
       DAE.Type ty,basety;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
-
 
     // An array equation
     // {z1,z2,..} = rhsexp -> solved for {z1,z2,..}
     // => tmp = rhsexp;
     // z1 = tmp[1]; z2 = tmp[2] ....
-    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr)), _, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(dimSize=ds, left=e1, right=e2, source=source, attr=eqAttr)), _)
     guard Expression.isMatrix(e1) or Expression.isArray(e1)
     equation
       // Flattne multi-dimensional ARRAY{ARRAY} expressions
@@ -5556,7 +5545,7 @@ algorithm
 
     // An array equation
     // cref = rhsexp
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(cr_1, _), right=e2, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
     guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
     equation
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
@@ -5567,7 +5556,7 @@ algorithm
 
     // An array equation
     // lhsexp = cref
-    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2 as DAE.CREF(cr_1, _), source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_, _, _, _)
+    case (_, (BackendDAE.ARRAY_EQUATION(left=e1, right=e2 as DAE.CREF(cr_1, _), source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
     guard ComponentReference.crefEqual(cr_1, ComponentReference.crefStripLastSubs(cr))
     equation
       (e1, _) = BackendDAEUtil.collateArrExp(e1, NONE());
@@ -5576,10 +5565,24 @@ algorithm
       uniqueEqIndex = iuniqueEqIndex + 1;
     then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
 
+    // An array equation
+    // lhsexp = rhsexp
+    case (_, (BackendDAE.ARRAY_EQUATION(left=lhse, right=rhse, source=source, attr=eqAttr)), BackendDAE.VAR(varName=cr)::_)
+    equation
+      (lhse, _) = BackendDAEUtil.collateArrExp(lhse, NONE());
+      (rhse, _) = BackendDAEUtil.collateArrExp(rhse, NONE());
+      BackendDAE.SHARED(functionTree = funcs) = shared;
+      e1 = Expression.crefExp(cr);
+      e2 = ExpressionSolve.solve2(lhse, rhse, e1, SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
+      equation_ = SimCode.SES_ARRAY_CALL_ASSIGN(iuniqueEqIndex, e1, e2, source, eqAttr);
+      uniqueEqIndex = iuniqueEqIndex + 1;
+    then ({equation_}, {equation_}, uniqueEqIndex, itempvars);
+
     // failure
     else equation
+      BackendDAE.VAR(varName = cr)::_ = inVars;
       str = BackendDump.dumpEqnsStr(inEquations);
-      str = "for Eqn: " + str + "\narray equations currently only supported on form v = functioncall(...)";
+      str = "solving array equation: " + str + "\nfor variable: " + ComponentReference.crefStr(cr) + ".";
       Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;

@@ -304,7 +304,7 @@ algorithm
     end for;
   end if;
 
-  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), Type.REAL(), src)};
+  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), c.ty, src)};
 end generateFlowEquations;
 
 function makeFlowExp
