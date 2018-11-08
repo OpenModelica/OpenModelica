@@ -485,41 +485,51 @@ writeFile("fix-case-sensitive.py","#!/usr/bin/env python
 # Finds files *.html that have the same case-insensitive names and renames one or more of them
 # Example: Ab.html AB.html ab.html becomes: Ab.1.html ab.2.html AB.html
 
-import os
 import glob
-from subprocess import call
+import os
+import re
 
 def getFiles():
-  files = [f for f in glob.glob('*.html') if os.path.isfile(f)]
-  files.sort()
+  files = sorted([f for f in glob.glob('*.html') if os.path.isfile(f)], key=str.lower)
   return files
+
+def update(subst):
+  for file in glob.glob('*.html'):
+    if os.path.isfile(file):
+      with open (file, 'r' ) as f: orig = f.read()
+      patched = orig
+      for s in subst.items():
+        patched = re.sub('\\\\b'+s[0],s[1],patched)
+      if patched != orig:
+        with open (file, 'w' ) as f: f.write(patched)
+  return
 
 def makeCaseSensitive():
   files = getFiles()
-  visited = {}
+  last = ''
+  idx = 0
+  repls = {}
   for file in files:
     upper = file.upper()
-    if upper in visited:
-      nfile = file.split('.')
-      # Add a .1, .2, .3, etc to the name, before the .html
-      try:
-        nfile[-2] = str(int(nfile[-2]) + 1)
-      except:
-        nfile.insert(len(nfile)-1,'1')
-      nfile = '.'.join(nfile)
-      print('Renaming file %s to %s' % (file,nfile))
-      if os.path.isfile(nfile):
-        raise Exception('File already exists: ' + nfile)
-      for f in getFiles():
-        call(['sed','-i','s/%s/%s/g' % (file,nfile), f])
-      os.rename(file,nfile)
-      return False
-    visited[upper] = file
-  return True
+    if upper == last:
+      while True:
+        idx += 1
+        nfile = file.split('.')
+        nfile.insert(len(nfile)-1,str(idx))
+        nfile = '.'.join(nfile)
+        if not os.path.isfile(nfile):
+          print('Renaming file %s to %s' % (file,nfile))
+          repls[file] = nfile
+          os.rename(file, nfile)
+          break
+    else:
+      idx = 0
+    last = upper
+  return repls
 
 print('Running Python script: makeCaseSensitive')
-while not makeCaseSensitive():
-  pass
+repls = makeCaseSensitive()
+update(repls)
 ");
 
 // Make tarball (case-sensitive)
