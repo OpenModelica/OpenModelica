@@ -1412,7 +1412,9 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
       Component *pComponent = dynamic_cast<Component*>(pGraphicsItem->parentItem());
       if (pComponent) {
         Component *pRootComponent = pComponent->getRootParentComponent();
-        if (pRootComponent && !pRootComponent->isSelected()) {
+        if (pRootComponent && pRootComponent->isSelected()) {
+          return 0;
+        } else if (pRootComponent && !pRootComponent->isSelected()) {
           if (MainWindow::instance()->getConnectModeAction()->isChecked() && mViewType == StringHandler::Diagram &&
               !mpModelWidget->getLibraryTreeItem()->isSystemLibrary() &&
               ((pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->isConnector()) ||
@@ -5984,7 +5986,7 @@ void ModelWidget::drawOMSModelConnections()
       for (int i = 0 ; pConnections[i] ; i++) {
         // get start component
         QStringList startConnectionList = StringHandler::makeVariableParts(QString(pConnections[i]->conA));
-        if (startConnectionList.size() < 2) {
+        if (startConnectionList.size() < 1) {
           continue;
         }
         Component *pStartComponent = mpDiagramGraphicsView->getComponentObject(startConnectionList.at(0));
@@ -5995,19 +5997,35 @@ void ModelWidget::drawOMSModelConnections()
                                                      Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
-        // get start connector component
-        QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
-        Component *pStartConnectorComponent = getConnectorComponent(pStartComponent, startConnectorName);
-        if (!pStartConnectorComponent) {
-          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                     GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                     .arg(startConnectorName).arg(pConnections[i]->conA),
-                                                     Helper::scriptingKind, Helper::errorLevel));
-          continue;
+        Component *pStartConnectorComponent, *pStartBusConnectorComponent;
+        if (startConnectionList.size() > 1) {
+          // get start connector component
+          QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
+          pStartConnectorComponent = getConnectorComponent(pStartComponent, startConnectorName);
+          if (!pStartConnectorComponent) {
+            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                       GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                       .arg(startConnectorName).arg(pConnections[i]->conA),
+                                                       Helper::scriptingKind, Helper::errorLevel));
+            continue;
+          }
+          pStartBusConnectorComponent = pStartConnectorComponent;
+          // if the connector is part of a bus connector
+          if (pStartConnectorComponent->isInBus()) {
+            pStartBusConnectorComponent = getConnectorComponent(pStartComponent, pStartConnectorComponent->getBusComponent()->getName());
+          }
+        } else {
+          pStartConnectorComponent = pStartComponent;
+          pStartBusConnectorComponent = pStartConnectorComponent;
+          // if the connector is part of a bus connector
+          if (pStartConnectorComponent->isInBus()) {
+            pStartBusConnectorComponent = pStartConnectorComponent->getBusComponent();
+          }
         }
+
         // get end component
         QStringList endConnectionList = StringHandler::makeVariableParts(QString(pConnections[i]->conB));
-        if (endConnectionList.size() < 2) {
+        if (endConnectionList.size() < 1) {
           continue;
         }
         Component *pEndComponent = mpDiagramGraphicsView->getComponentObject(endConnectionList.at(0));
@@ -6018,25 +6036,30 @@ void ModelWidget::drawOMSModelConnections()
                                                      Helper::scriptingKind, Helper::errorLevel));
           continue;
         }
-        // get end connector component
-        QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
-        Component *pEndConnectorComponent = getConnectorComponent(pEndComponent, endConnectorName);
-        if (!pEndConnectorComponent) {
-          pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                     GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
-                                                     .arg(endConnectorName).arg(pConnections[i]->conB),
-                                                     Helper::scriptingKind, Helper::errorLevel));
-          continue;
-        }
-        // if the connector is part of a bus connector
-        Component *pStartBusConnectorComponent = pStartConnectorComponent;
-        if (pStartConnectorComponent->isInBus()) {
-          pStartBusConnectorComponent = getConnectorComponent(pStartComponent, pStartConnectorComponent->getBusComponent()->getName());
-        }
-
-        Component *pEndBusConnectorComponent = pEndConnectorComponent;
-        if (pEndConnectorComponent->isInBus()) {
-          pEndBusConnectorComponent = getConnectorComponent(pEndComponent, pEndConnectorComponent->getBusComponent()->getName());
+        Component *pEndConnectorComponent, *pEndBusConnectorComponent;
+        if (endConnectionList.size() > 1) {
+          // get end connector component
+          QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
+          pEndConnectorComponent = getConnectorComponent(pEndComponent, endConnectorName);
+          if (!pEndConnectorComponent) {
+            pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                       GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
+                                                       .arg(endConnectorName).arg(pConnections[i]->conB),
+                                                       Helper::scriptingKind, Helper::errorLevel));
+            continue;
+          }
+          pEndBusConnectorComponent = pEndConnectorComponent;
+          // if the connector is part of a bus connector
+          if (pEndConnectorComponent->isInBus()) {
+            pEndBusConnectorComponent = getConnectorComponent(pEndComponent, pEndConnectorComponent->getBusComponent()->getName());
+          }
+        } else {
+          pEndConnectorComponent = pEndComponent;
+          pEndBusConnectorComponent = pEndConnectorComponent;
+          // if the connector is part of a bus connector
+          if (pEndConnectorComponent->isInBus()) {
+            pEndBusConnectorComponent = pEndConnectorComponent->getBusComponent();
+          }
         }
 
         // default connection annotation
