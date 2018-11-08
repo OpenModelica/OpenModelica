@@ -143,7 +143,7 @@ def main():
   parser.add_option("--input-dir", help="Directory containing .txt reference files in the Buildings package format", type="string", dest="input_dir", default=os.path.abspath('.'))
   parser.add_option("--output-dir", help="Directory to generate csv-files in", type="string", dest="output_dir", default=os.path.abspath('.'))
   (options, args) = parser.parse_args()
-  if len(args)<>0:
+  if len(args)!=0:
     parser.error('This program does not take positional arguments')
   convertDir(options.input_dir,options.output_dir)
 if __name__ == '__main__':

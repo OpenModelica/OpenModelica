@@ -339,7 +339,7 @@ def linkreplace(link,filepath):
       result = regex.sub(repl,result)
     except:
       pass
-  if result <> link and not rehttp.match(result):
+  if result is not link and not rehttp.match(result):
     links.write('%s!%s\\n' % (filepath,ignorebookmark.sub(r'\\1',result)))
   return result
 
@@ -349,7 +349,7 @@ for filepath in sorted(glob.glob('*.html')):
 #  sys.stdout.write(tag)  # not much point in writing the tags to stdout
   sys.stderr.write(tag)
   pid = sub.call(['tidy', '-utf8', '-modify', '-asxhtml', '--add-xml-decl', 'yes', '-quiet', filepath])
-  if pid <> 2:
+  if pid != 2:
     with open(filepath,'r') as html_file:
       soup = BeautifulSoup(html_file, fromEncoding='utf-8')
       for a in soup.findAll('a'):
@@ -500,7 +500,7 @@ def update(subst):
       patched = orig
       for s in subst.items():
         patched = re.sub('\\\\b'+s[0],s[1],patched)
-      if patched != orig:
+      if patched is not orig:
         with open (file, 'w' ) as f: f.write(patched)
   return
 
@@ -540,19 +540,14 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print0 | tar cJf ModelicaDocumentation.tar.xz --dereference --null style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
+cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print | tar cJf ModelicaDocumentation.tar.xz --dereference style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
 system(cmd);
 getErrorString();
 
 // Make zip (case-insensitive)
 system("python ./fix-case-sensitive.py");
-"FindFiles.sh";
-system("bash FindFiles.sh");
 system("rm -f ModelicaDocumentation.zip");
-system("mkdir -p " + dirs);
-system("cp '" + py + "' '" + self + "' .");
-"tar";
-dirs;
+"zip";
 cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
 system(cmd);
 getErrorString();
