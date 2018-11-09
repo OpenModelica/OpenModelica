@@ -1503,11 +1503,13 @@ algorithm
 end collectExpFuncs_traverse;
 
 function flattenFunction
-  input Function fn;
+  input Function func;
   input output FunctionTree funcs;
+protected
+  Function fn = func;
 algorithm
   if not Function.isCollected(fn) then
-    EvalConstants.evaluateFunction(fn);
+    fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);
 

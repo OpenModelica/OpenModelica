@@ -432,6 +432,7 @@ uniontype Component
       case UNTYPED_COMPONENT() then component.binding;
       case TYPED_COMPONENT() then component.binding;
       case TYPE_ATTRIBUTE() then Modifier.binding(component.modifier);
+      else NFBinding.EMPTY_BINDING;
     end match;
   end getBinding;
 
@@ -452,6 +453,11 @@ uniontype Component
         then
           ();
 
+      case TYPE_ATTRIBUTE()
+        algorithm
+          component.modifier := Modifier.setBinding(binding, component.modifier);
+        then
+          ();
     end match;
   end setBinding;
 

@@ -39,6 +39,7 @@ import Type = NFType;
 import NFPrefixes.*;
 import List;
 import FunctionDerivative = NFFunctionDerivative;
+import NFModifier.Modifier;
 
 protected
 import ErrorExt;
@@ -1525,6 +1526,7 @@ uniontype Function
     if mapParameters then
       ctree := Class.classTree(cls);
       ClassTree.applyComponents(ctree, function mapExpParameter(mapFn = mapFn));
+      fn.returnType := makeReturnType(fn);
     end if;
 
     if mapBody then
@@ -1544,6 +1546,7 @@ uniontype Function
   protected
     Component comp;
     Binding binding, binding2;
+    Class cls;
   algorithm
     if not InstNode.isEmpty(node) then
       comp := InstNode.component(node);
@@ -1553,6 +1556,13 @@ uniontype Function
       if not referenceEq(binding, binding2) then
         comp := Component.setBinding(binding2, comp);
         InstNode.updateComponent(comp, node);
+      end if;
+
+      if not Component.isTypeAttribute(comp) and
+         not Type.isEnumeration(Component.getType(comp)) then
+        cls := InstNode.getClass(Component.classInstance(comp));
+        ClassTree.applyComponents(Class.classTree(cls),
+          function mapExpParameter(mapFn = mapFn));
       end if;
     end if;
   end mapExpParameter;
@@ -1867,7 +1877,7 @@ protected
     end match;
   end isValidParamState;
 
-  function makeReturnType
+  public function makeReturnType
     input Function fn;
     output Type returnType;
   protected

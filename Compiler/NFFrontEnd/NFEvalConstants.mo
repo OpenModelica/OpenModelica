@@ -392,7 +392,7 @@ algorithm
 end evaluateStmtBranch;
 
 function evaluateFunction
-  input Function func;
+  input output Function func;
 protected
   Class cls;
   Algorithm fn_body;
@@ -400,7 +400,7 @@ protected
 algorithm
   if not Function.isEvaluated(func) then
     Function.markEvaluated(func);
-    Function.mapExp(func, evaluateFuncExp);
+    func := Function.mapExp(func, evaluateFuncExp);
 
     for fn_der in func.derivatives loop
       for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
