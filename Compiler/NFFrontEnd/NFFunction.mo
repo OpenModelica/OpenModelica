@@ -1558,12 +1558,17 @@ uniontype Function
         InstNode.updateComponent(comp, node);
       end if;
 
-      if not Component.isTypeAttribute(comp) and
-         not Type.isEnumeration(Component.getType(comp)) then
-        cls := InstNode.getClass(Component.classInstance(comp));
-        ClassTree.applyComponents(Class.classTree(cls),
-          function mapExpParameter(mapFn = mapFn));
-      end if;
+      () := match comp
+        case Component.TYPED_COMPONENT()
+          algorithm
+            cls := InstNode.getClass(comp.classInst);
+            ClassTree.applyComponents(Class.classTree(cls),
+              function mapExpParameter(mapFn = mapFn));
+          then
+            ();
+
+        else ();
+      end match;
     end if;
   end mapExpParameter;
 
