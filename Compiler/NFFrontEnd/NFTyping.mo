@@ -2350,7 +2350,7 @@ algorithm
           match br
             case Equation.Branch.BRANCH(condition = cond, body = body)
               algorithm
-                (e1, var) := typeCondition(cond, next_origin, eq.source,
+                (e1, var) := typeCondition(cond, origin, eq.source,
                   Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
                 eqs1 := list(typeEquation(beq, next_origin) for beq in body);
               then
