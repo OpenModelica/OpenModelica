@@ -776,6 +776,7 @@ WhenIllegalContext4.mo \
 WhenInitial1.mo \
 WhenNested1.mo \
 WhenNested2.mo \
+WhenVariability1.mo \
 Wild1.mo \
 OCGTests.mos \
 
