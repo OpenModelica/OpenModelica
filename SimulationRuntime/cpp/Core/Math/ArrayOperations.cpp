@@ -224,7 +224,7 @@ template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d)
 {
   vector<size_t> ex = s.getDims();
-  for (int i=0; i<n; i++)
+  for (size_t i = ex.size(); i < n; i++)
     ex.push_back(1);
   d.setDims(ex);
   d.assign(s.getData());
@@ -447,12 +447,14 @@ void add_array_scalar(const BaseArray<T>& inputArray, T b, BaseArray<T>& outputA
 template <typename T>
 void usub_array(const BaseArray<T>& a, BaseArray<T>& b)
 {
-  const T* src_data = a.getData();
-  T* dst_data = b.getData();
-  size_t numElems =  a.getNumElems();
-  b.setDims(a.getDims());
-  for (size_t i = 0; i < numElems; i++)
-    dst_data[i] = -src_data[i];
+  size_t nelems =  a.getNumElems();
+  if (nelems > 0) {
+    b.setDims(a.getDims());
+    const T* data = a.getData();
+    T* result = b.getData();
+    for (size_t i = 0; i < nelems; i++)
+      result[i] = -data[i];
+  }
 }
 
 template <typename T>

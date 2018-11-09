@@ -193,7 +193,18 @@ class ArraySliceConst: public BaseArray<T> {
     if (n != getNumElems())
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Wrong number of elements in getDataCopy");
-    getDataDim(_idxs.size(), data);
+    if (n > 0) {
+      const T* base_data = _baseArray.getData();
+      if (base_data <= data && data < base_data + n) {
+        // in-situ access requires an internal copy to avoid side effects,
+        // e.g. v = v[n:-1:1]
+        const T* slice_data = getData();
+        std::copy(slice_data, slice_data + n, data);
+      }
+      else
+        // direct access
+        getDataDim(_idxs.size(), data);
+    }
   }
 
   virtual const T* getData() const {
