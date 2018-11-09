@@ -3119,7 +3119,7 @@ algorithm
                   all_params := false;
                 end if;
 
-                updateImplicitVariabilityEql(branch.body);
+                updateImplicitVariabilityEql(branch.body, inWhen);
               then
                 ();
           end match;
@@ -3178,7 +3178,7 @@ algorithm
         // 'when' is not allowed in 'for', so we only need to keep going if
         // we're already in a 'when'.
         if inWhen then
-          updateImplicitVariabilityStmts(stmt.body);
+          updateImplicitVariabilityStmts(stmt.body, true);
         end if;
       then
         ();
@@ -3189,7 +3189,7 @@ algorithm
         // we're already in a 'when.
         if inWhen then
           for branch in stmt.branches loop
-            updateImplicitVariabilityStmts(Util.tuple22(branch));
+            updateImplicitVariabilityStmts(Util.tuple22(branch), true);
           end for;
         end if;
       then
@@ -3208,7 +3208,7 @@ algorithm
         // 'when' is not allowed in 'while', so we only need to keep going if
         // we're already in a 'when.
         if inWhen then
-          updateImplicitVariabilityStmts(stmt.body);
+          updateImplicitVariabilityStmts(stmt.body, true);
         end if;
       then
         ();

@@ -2685,7 +2685,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, next_origin, st.source, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
+              e1 := typeCondition(cond, origin, st.source, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
               sts1 := list(typeStatement(bst, next_origin) for bst in body);
             then (e1, sts1);
           end match
