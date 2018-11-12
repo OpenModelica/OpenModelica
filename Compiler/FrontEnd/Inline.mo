@@ -792,7 +792,7 @@ algorithm
           ty1 = Expression.typeof(inExp1);
           ty2 = Expression.typeof(inExp2);
           ty2 = Types.traverseType(ty2, -1, Types.makeExpDimensionsUnknown);
-          b = Types.equivtypes(ty1,ty2);
+          b = Types.equivtypesOrRecordSubtypeOf(ty1,ty2);
         end if;
       then b;
   end match;
