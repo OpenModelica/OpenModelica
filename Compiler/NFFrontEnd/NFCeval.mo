@@ -312,17 +312,20 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isUnbound(binding) then
-    // If the component has no binding, try to use the start value if possible.
-    start_exp := evalComponentStartBinding(node, comp, cref, target, evalSubscripts);
+    // In some cases we need to construct a binding for the node, for example when
+    // a record has bindings on the fields but not on the record instance as a whole.
+    binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
 
-    if isSome(start_exp) then
-      // The component had a valid start value, return it.
-      SOME(exp) := start_exp;
-      return;
-    else
-      // Otherwise we might need to construct a binding, for example when a
-      // record has bindings on the fields but not on the record instance as a whole.
-      binding := makeComponentBinding(comp, node, Expression.toCref(defaultExp), target);
+    if Binding.isUnbound(binding) then
+      // If we couldn't construct a binding, try to use the start value instead.
+      start_exp := evalComponentStartBinding(node, comp, cref, target, evalSubscripts);
+
+      if isSome(start_exp) then
+        // The component had a valid start value. The value has already been
+        // evaluated by evalComponentStartBinding, so skip the rest of the function.
+        SOME(exp) := start_exp;
+        return;
+      end if;
     end if;
   end if;
 
