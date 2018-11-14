@@ -249,7 +249,7 @@ algorithm
             // add forIter subscript and use element type if var is array
             derVar := match var.varType
               case DAE.T_ARRAY(ty = ty)
-              then ComponentReference.crefSetLastSubs(derVar, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT("i", DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
+              then ComponentReference.crefApplySubs(derVar, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT("i", DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
               else derVar;
             end match;
             exp := DAE.CALL(Absyn.IDENT(name = "der"), {DAE.CREF(derVar, ty)}, DAE.callAttrBuiltinImpureReal);

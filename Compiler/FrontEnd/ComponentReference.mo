@@ -2430,6 +2430,43 @@ algorithm
   end match;
 end crefSetLastSubs;
 
+public function crefApplySubs
+  "Apply subs to the first componenentref ident that is of array type.
+   TODO: must not apply subs whose list length exceeds array dimensions.
+   author: rfranke"
+  input DAE.ComponentRef inComponentRef;
+  input list<DAE.Subscript> inSubs;
+  output DAE.ComponentRef outComponentRef;
+algorithm
+  outComponentRef := match inComponentRef
+    local
+      DAE.Ident id;
+      DAE.Type tp;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef cr;
+
+    case DAE.CREF_IDENT(ident = id, identType = tp as DAE.T_ARRAY(), subscriptLst = subs)
+      then
+        makeCrefIdent(id, tp, listAppend(subs, inSubs));
+
+    case DAE.CREF_QUAL(ident = id, identType = tp as DAE.T_ARRAY(), subscriptLst = subs, componentRef = cr)
+      then
+        makeCrefQual(id, tp, listAppend(subs, inSubs), cr);
+
+    case DAE.CREF_QUAL(ident = id, identType = tp, subscriptLst = subs, componentRef = cr)
+      equation
+        cr = crefApplySubs(cr, inSubs);
+      then
+        makeCrefQual(id, tp, subs, cr);
+
+    else
+      equation
+        Error.addInternalError("function ComponentReference.crefApplySubs to non array\n", sourceInfo());
+      then
+        fail();
+  end match;
+end crefApplySubs;
+
 public function crefSetType "
 sets the type of a cref."
   input DAE.ComponentRef inRef;
@@ -2771,25 +2808,39 @@ algorithm
 end crefStripLastSubs;
 
 public function crefStripIterSub
-  "Strips the last sub if it is equal to the given iter ident.
+  "Recursively looks up subscripts and strips the given iter sub.
    This gives an array variable that is defined in a for loop (no NF_SCALARIZE).
    author: rfranke"
   input DAE.ComponentRef inComponentRef;
   input DAE.Ident iter;
   output DAE.ComponentRef outComponentRef;
 protected
-  DAE.Ident index;
+  DAE.Ident ident, index;
+  DAE.Type ty;
+  list<DAE.Subscript> subs;
+  DAE.ComponentRef cref;
 algorithm
-  outComponentRef := match crefLastSubs(inComponentRef)
-    case {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))}
-    algorithm
-      if index == iter then
-        outComponentRef := crefStripLastSubs(inComponentRef);
-      else
-        outComponentRef := inComponentRef;
-      end if;
-    then outComponentRef;
-    else inComponentRef;
+  outComponentRef := match inComponentRef
+    case DAE.CREF_IDENT(ident = ident, identType = ty,
+      subscriptLst = subs as {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))})
+      then
+        makeCrefIdent(ident, ty, if index == iter then {} else subs);
+    case DAE.CREF_QUAL(ident = ident, identType = ty, componentRef = cref,
+      subscriptLst = subs as {DAE.INDEX(exp = DAE.CREF(componentRef = DAE.CREF_IDENT(ident = index)))})
+      algorithm
+        if index == iter then
+          subs := {};
+        else
+          cref := crefStripIterSub(cref, iter);
+        end if;
+      then
+        makeCrefQual(ident, ty, subs, cref);
+    case DAE.CREF_QUAL(ident = ident, identType = ty, componentRef = cref,
+      subscriptLst = subs)
+      then
+        makeCrefQual(ident, ty, subs, crefStripIterSub(cref, iter));
+    else
+      inComponentRef;
   end match;
 end crefStripIterSub;
 

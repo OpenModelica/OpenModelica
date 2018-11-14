@@ -2123,9 +2123,14 @@ algorithm
           then fail();
         end match;
         DAE.CREF(componentRef = DAE.CREF_IDENT(ident = iter)) := varexp;
-        cr := ComponentReference.crefSetLastSubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
+        cr := ComponentReference.crefApplySubs(v.varName, {DAE.INDEX(DAE.CREF(DAE.CREF_IDENT(iter, DAE.T_INTEGER_DEFAULT, {}), DAE.T_INTEGER_DEFAULT))});
         BackendDAE.SHARED(functionTree = funcs) := shared;
-        (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, Expression.crefExp(cr), SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
+        try
+          (exp_, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(e1, e2, Expression.crefExp(cr), SOME(funcs), SOME(iuniqueEqIndex), true, BackendDAEUtil.isSimulationDAE(shared));
+        else
+          Error.addInternalError("solving FOR_EQUATION body: " + BackendDump.equationString(eqn.body)  + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".", sourceInfo());
+          fail();
+        end try;
       then
         ({SimCode.SES_FOR_LOOP(iuniqueEqIndex, varexp, start, cond, cr, exp_, source, eqAttr)}, iuniqueEqIndex + 1, itempvars);
 
@@ -5582,7 +5587,7 @@ algorithm
     else equation
       BackendDAE.VAR(varName = cr)::_ = inVars;
       str = BackendDump.dumpEqnsStr(inEquations);
-      str = "solving array equation: " + str + "\nfor variable: " + ComponentReference.crefStr(cr) + ".";
+      str = "solving array equation: " + str + "\nfor variable: " + ComponentReference.printComponentRefStr(cr) + ".";
       Error.addInternalError(str, sourceInfo());
     then fail();
   end matchcontinue;
@@ -12676,9 +12681,15 @@ algorithm
           sv := BaseHashTable.get(cref, crefToSimVarHT);
         else
           // lookup array variable and add offset for array element
-          sv := BaseHashTable.get(ComponentReference.crefStripLastSubs(cref), crefToSimVarHT);
-          subs := ComponentReference.crefLastSubs(cref);
-          sv.name := ComponentReference.crefSetLastSubs(sv.name, subs);
+          if Flags.isSet(Flags.NF_SCALARIZE) then
+            sv := BaseHashTable.get(ComponentReference.crefStripLastSubs(cref), crefToSimVarHT);
+            subs := ComponentReference.crefLastSubs(cref);
+            sv.name := ComponentReference.crefSetLastSubs(sv.name, subs);
+          else
+            sv := BaseHashTable.get(ComponentReference.crefStripSubs(cref), crefToSimVarHT);
+            subs := ComponentReference.crefSubs(cref);
+            sv.name := ComponentReference.crefApplySubs(sv.name, subs);
+          end if;
           sv.variable_index := match sv.variable_index
             case SOME(index)
             then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);

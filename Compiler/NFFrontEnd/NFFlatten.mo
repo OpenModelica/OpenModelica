@@ -707,7 +707,7 @@ algorithm
       algorithm
         restString := ComponentRef.toString(restCref);
         if prefixLength <= stringLength(restString) and prefixString == substring(restString, 1, prefixLength) then
-          exp.cref := ComponentRef.setSubscripts(subscript :: ComponentRef.getSubscripts(exp.cref), exp.cref);
+          exp.cref := ComponentRef.applySubscripts({subscript}, exp.cref);
         end if;
       then
         exp;

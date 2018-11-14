@@ -319,8 +319,12 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
  "Helper function to cref."
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%>_<%subscriptsToCStr(subscriptLst, useFlatArrayNotation)%>'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr(componentRef,useFlatArrayNotation)%>'
+  case CREF_IDENT(__) then
+    let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStr(subscriptLst, useFlatArrayNotation)
+    '<%ident%>_<%subs%>'
+  case CREF_QUAL(__) then
+    let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStrForArray(subscriptLst)
+    '<%ident%><%subs%>_P_<%crefToCStr(componentRef, useFlatArrayNotation)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -1706,7 +1710,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '_discrete_events->pre(<%var1%>)'
 
   case CALL(path=IDENT(name="previous"), expLst={arg as CREF(__)}) then
-    '<%contextSystem(context)%><%cref(crefPrefixPrevious(arg.componentRef), useFlatArrayNotation)%>'
+    '<%daeExp(crefExp(crefPrefixPrevious(arg.componentRef)), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
 
   case CALL(path=IDENT(name="firstTick")) then
     '(<%contextSystem(context)%>_clockStart[clockIndex - 1] || <%contextSystem(context)%>_clockSubactive[clockIndex - 1])'

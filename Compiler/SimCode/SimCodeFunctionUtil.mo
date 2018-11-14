@@ -131,8 +131,10 @@ public function crefIsScalar
 algorithm
   if inFunctionContext(context) then
     isScalar := listEmpty(ComponentReference.crefLastSubs(cref));
-  else
+  elseif Flags.isSet(Flags.NF_SCALARIZE) then
     isScalar := ComponentReference.crefHasScalarSubscripts(cref);
+  else
+    isScalar := not ComponentReference.crefHaveSubs(cref);
   end if;
 end crefIsScalar;
 
