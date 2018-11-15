@@ -40,6 +40,7 @@
  */
 
 setDebugFlags("nogen") /* Don't generate dll/so-files when instantiating classes (performance) */;
+setCommandLineOptions("--noSimplify");
 
 // rmSymlinks
 // (false) should we keep readable names (nice online, if the server handles symbolic links), or
@@ -82,8 +83,6 @@ if getEnvironmentVar("GenerateDocTest") == "YES" then
   system("mkdir -p Icons");
 else
   system("find . -maxdepth 1 -name '*.html' -delete");
-  system("find Icons -maxdepth 1 -name '*.svg' -delete");
-
   commands:={"python "+py+" --quiet --output-dir Icons "+typeNameString(cl) for cl in getClassNames(builtin=false)};getErrorString();
   res:=system_parallel(commands);getErrorString();
   //system("rm -f *.json");getErrorString();
@@ -134,11 +133,6 @@ algorithm
   uri := OpenModelica.Scripting.stringReplace(uri,\"<\",\"x3C\");
   uri := OpenModelica.Scripting.stringReplace(uri,\">\",\"x3E\");
 end uriEncode;
-
-function notLast
-  input String str[:];
-  output String ostr[:] = str[1:end];
-end notLast;
 
 function last
   input String str[:];
@@ -212,7 +206,7 @@ protected
 algorithm
   docInfo := if item.docInfo[1] == \"\"
     then preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", item.comment, \"</pre>\")
-    else if OpenModelica.Scripting.regexBool(item.docInfo[1],\"<html>\") or OpenModelica.Scripting.regexBool(item.docInfo[1],\"<HTML>\")
+    else if OpenModelica.Scripting.regexBool(item.docInfo[1],\"<html>\", caseInsensitive=true)
     then \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1]
     else preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", toHtml(item.docInfo[1]), \"</pre>\");
   revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
@@ -460,6 +454,7 @@ system("rm -f tidy.links tidy.out tidy.err tidy.filtered");
 
 "Copying original HTML files to 'old-html-tmp'";
 writeFile("copyold.py","#!/usr/bin/env python
+import glob
 import os
 import shutil
 oldtmp = 'old-html-tmp'
