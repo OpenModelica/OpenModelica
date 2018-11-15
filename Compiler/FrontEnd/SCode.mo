@@ -4492,7 +4492,7 @@ protected function getElementWithId
   input String inId;
   output Element outElement;
 algorithm
-  outElement := matchcontinue(inProgram, inId)
+  outElement := match(inProgram, inId)
     local
       Program sp, rest;
       Element c, e;
@@ -4500,27 +4500,24 @@ algorithm
       Absyn.Ident i, n;
 
     case ((e as CLASS(name = n))::_, i)
-      equation
-        true = stringEq(n, i);
+      guard stringEq(n, i)
       then
         e;
 
     case ((e as COMPONENT(name = n))::_, i)
-      equation
-        true = stringEq(n, i);
+      guard stringEq(n, i)
       then
         e;
 
     case ((e as EXTENDS(baseClassPath = p))::_, i)
-      equation
-        true = stringEq(Absyn.pathString(p), i);
+      guard stringEq(Absyn.pathString(p), i)
       then
         e;
 
     case (_::rest, i)
       then getElementWithId(rest, i);
 
-  end matchcontinue;
+  end match;
 end getElementWithId;
 
 public function getElementWithPath

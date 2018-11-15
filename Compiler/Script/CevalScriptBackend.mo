@@ -7243,7 +7243,7 @@ function getClassComment "Returns the class comment of a Absyn.ClassDef"
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inClassDef)
+  match (inClassDef)
     local
       String str,res;
       Option<Absyn.Comment> cmt;
@@ -7258,7 +7258,7 @@ algorithm
       then Interactive.getStringComment(cmt);
     case (Absyn.CLASS_EXTENDS(comment = SOME(str))) then str;
     else "";
-  end matchcontinue;
+  end match;
 end getClassComment;
 
 protected function getAnnotationInEquation
