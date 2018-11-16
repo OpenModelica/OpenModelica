@@ -202,7 +202,8 @@ SOURCES += main.cpp \
   Component/FMUProperties.cpp \
   OMS/InstantiateDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
-  OMS/OMSSimulationOutputWidget.cpp
+  OMS/OMSSimulationOutputWidget.cpp \
+  Animation/TimeManager.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -290,7 +291,8 @@ HEADERS  += Util/Helper.h \
   OMS/InstantiateDialog.h \
   OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \
-  OMS/OMSSimulationOutputWidget.h
+  OMS/OMSSimulationOutputWidget.h \
+  Animation/TimeManager.h
 
 CONFIG(osg) {
 
@@ -313,8 +315,7 @@ SOURCES += Animation/AbstractAnimationWindow.cpp \
   Animation/VisualizerFMU.cpp \
   Animation/FMUSettingsDialog.cpp \
   Animation/FMUWrapper.cpp \
-  Animation/Shapes.cpp \
-  Animation/TimeManager.cpp
+  Animation/Shapes.cpp
 
 greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
   HEADERS += Animation/OpenGLWidget.h
@@ -334,7 +335,6 @@ HEADERS += Animation/AbstractAnimationWindow.h \
   Animation/FMUSettingsDialog.h \
   Animation/FMUWrapper.h \
   Animation/Shapes.h \
-  Animation/TimeManager.h \
   Animation/rapidxml.hpp
 }
 
