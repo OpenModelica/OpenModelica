@@ -44,17 +44,16 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
     _startTime(startTime),
     _endTime(endTime),
     _pause(true),
-    mSpeedUp(1.0),
-    _visualTimer()
+    mSpeedUp(1.0)
 {
   mpUpdateSceneTimer = new QTimer;
   mpUpdateSceneTimer->setInterval(100);
+  rt_ext_tp_tick_realtime(&_visualTimer);
 }
 
 void TimeManager::updateTick()
 {
-  _visualTimer.tick();
-  _realTime = _visualTimer.time_m() / 1000.0;
+  _realTime = rt_ext_tp_tock(&_visualTimer)*1e9;
 }
 
 int TimeManager::getTimeFraction()

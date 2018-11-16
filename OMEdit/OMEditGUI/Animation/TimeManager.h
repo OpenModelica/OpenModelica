@@ -37,7 +37,7 @@
 
 #include <cmath>
 
-#include <osg/Timer>
+#include <util/rtclock.h>
 
 #include <QTimer>
 
@@ -109,7 +109,7 @@ class TimeManager
   //! This variable indicates if the simulation/visualization currently pauses.
   bool _pause;
   double mSpeedUp;
-  osg::Timer _visualTimer;
+  rtclock_t _visualTimer;
   QTimer *mpUpdateSceneTimer;
 };
 
