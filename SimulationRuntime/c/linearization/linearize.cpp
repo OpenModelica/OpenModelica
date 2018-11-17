@@ -39,26 +39,29 @@
 #include <sstream>
 #include <string>
 
-
 using namespace std;
 
-static string array2string(double* array, int row, int col){
-
+static string array2string(double* array, int row, int col)
+{
   int i=0;
   int j=0;
   ostringstream retVal(ostringstream::out);
   retVal.precision(16);
-  for(i=0;i<row;i++){
+  for(i=0; i<row; i++)
+  {
     int k = i;
-    for(j=0;j<col-1;j++){
-      retVal << array[k] << ",";
+    for(j=0; j<col-1; j++)
+    {
+      retVal << array[k] << ", ";
       k += row;
     }
-    if(col > 0) {
+    if(col > 0)
+    {
       retVal << array[k];
     }
-    if(!((i+1) == row) && !(col == 0)) {
-      retVal << ";";
+    if((i+1 != row) && (col != 0))
+    {
+      retVal << "; ";
     }
   }
   return retVal.str();
@@ -477,9 +480,9 @@ int linearize(DATA* data, threadData_t *threadData)
     /* Need to do this before changing anything so that we get a proper z0 */
     if(do_data_recovery > 0){
         if(size_z){
-            strZ0 = array2string(&data->localData[0]->realVars[2*size_A],1,size_z);
+            strZ0 = "{" + array2string(&data->localData[0]->realVars[2*size_A],1,size_z) + "}";
         }else{
-            strZ0 = "i for i in 1:0";
+            strZ0 = "zeros(0)";
         }
     }
 
@@ -537,14 +540,14 @@ int linearize(DATA* data, threadData_t *threadData)
     //   inside the curly braces for x0 and u0. {for i in in 1:0} will create an
     //   empty array if needed.
     if(size_A)
-      strX = array2string(data->localData[0]->realVars,1,size_A);
+      strX = "{" + array2string(data->localData[0]->realVars, 1, size_A) + "}";
     else
-      strX = "i for i in 1:0";
+      strX = "zeros(0)";
 
     if(size_Inputs)
-      strU = array2string(data->simulationInfo->inputVars,1,size_Inputs);
+      strU = "{" + array2string(data->simulationInfo->inputVars, 1, size_Inputs) + "}";
     else
-      strU = "i for i in 1:0";
+      strU = "zeros(0)";
 
     free(matrixA);
     free(matrixB);

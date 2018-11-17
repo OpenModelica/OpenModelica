@@ -4519,107 +4519,120 @@ template functionlinearmodel(ModelInfo modelInfo, String modelNamePrefix) "templ
 ::=
   match modelInfo
   case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
-    let matrixA = genMatrix("A", varInfo.numStateVars, varInfo.numStateVars)
-    let matrixB = genMatrix("B", varInfo.numStateVars, varInfo.numInVars)
-    let matrixC = genMatrix("C", varInfo.numOutVars, varInfo.numStateVars)
-    let matrixD = genMatrix("D", varInfo.numOutVars, varInfo.numInVars)
-    let matrixCz = genMatrix("Cz", varInfo.numAlgVars, varInfo.numStateVars)
-    let matrixDz = genMatrix("Dz", varInfo.numAlgVars, varInfo.numInVars)
-    let vectorX = genVector("x", varInfo.numStateVars, 0)
-    let vectorU = genVector("u", varInfo.numInVars, 1)
-    let vectorY = genVector("y", varInfo.numOutVars, 2)
-    let vectorZ = genVector("z", varInfo.numAlgVars, 2)
+    let matrixA = genMatrix("A", "n", "n", varInfo.numStateVars, varInfo.numStateVars)
+    let matrixB = genMatrix("B", "n", "p", varInfo.numStateVars, varInfo.numInVars)
+    let matrixC = genMatrix("C", "q", "n", varInfo.numOutVars, varInfo.numStateVars)
+    let matrixD = genMatrix("D", "q", "p", varInfo.numOutVars, varInfo.numInVars)
+    let matrixCz = genMatrix("Cz", "nz", "n", varInfo.numAlgVars, varInfo.numStateVars)
+    let matrixDz = genMatrix("Dz", "nz", "p", varInfo.numAlgVars, varInfo.numInVars)
+    let vectorX = genVector("x", "n", varInfo.numStateVars, 0)
+    let vectorU = genVector("u", "p", varInfo.numInVars, 1)
+    let vectorY = genVector("y", "q", varInfo.numOutVars, 2)
+    let vectorZ = genVector("z", "nz", varInfo.numAlgVars, 2)
     //string def_proctedpart("\n  Real x[<%varInfo.numStateVars%>](start=x0);\n  Real u[<%varInfo.numInVars%>](start=u0);\n  output Real y[<%varInfo.numOutVars%>];\n");
     <<
     const char *<%symbolName(modelNamePrefix,"linear_model_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states\n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs\n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs\n"
-      "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
-      "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n"
+      "\n"
+      "  parameter Real x0[n] = %s;\n"
+      "  parameter Real u0[p] = %s;\n"
+      "\n"
       <%matrixA%>
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
+      "\n"
       <%vectorX%>
       <%vectorU%>
       <%vectorY%>
-      "\n  <%getVarName(vars.stateVars, "x", varInfo.numStateVars )%><% getVarName(vars.inputVars, "u", varInfo.numInVars) %><%getVarName(vars.outputVars, "y", varInfo.numOutVars) %>\n"
+      "\n"
+      <%getVarName(vars.stateVars, "x")%>
+      <%getVarName(vars.inputVars, "u")%>
+      <%getVarName(vars.outputVars, "y")%>
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
     {
-      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%>; // states\n  parameter Integer k = <%varInfo.numInVars%>; // top-level inputs\n  parameter Integer l = <%varInfo.numOutVars%>; // top-level outputs\n  parameter Integer nz = <%varInfo.numAlgVars%>; // data recovery variables\n"
-      "  parameter Real x0[<%varInfo.numStateVars%>] = {%s};\n"
-      "  parameter Real u0[<%varInfo.numInVars%>] = {%s};\n"
-      "  parameter Real z0[<%varInfo.numAlgVars%>] = {%s};\n"
+      return "model linear_<%underscorePath(name)%>\n  parameter Integer n = <%varInfo.numStateVars%> \"number of states\";\n  parameter Integer p = <%varInfo.numInVars%> \"number of inputs\";\n  parameter Integer q = <%varInfo.numOutVars%> \"number of outputs\";\n  parameter Integer nz = <%varInfo.numAlgVars%> \"data recovery variables\";\n"
+      "\n"
+      "  parameter Real x0[<%varInfo.numStateVars%>] = %s;\n"
+      "  parameter Real u0[<%varInfo.numInVars%>] = %s;\n"
+      "  parameter Real z0[<%varInfo.numAlgVars%>] = %s;\n"
+      "\n"
       <%matrixA%>
       <%matrixB%>
       <%matrixC%>
       <%matrixD%>
       <%matrixCz%>
       <%matrixDz%>
+      "\n"
       <%vectorX%>
       <%vectorU%>
       <%vectorY%>
       <%vectorZ%>
-      "\n<%getVarName(vars.stateVars, "x", varInfo.numStateVars)%><% getVarName(vars.inputVars, "u", varInfo.numInVars)%><%getVarName(vars.outputVars, "y", varInfo.numOutVars)%><%getVarName(vars.algVars, "z", varInfo.numAlgVars)%>\n"
+      "\n"
+      <%getVarName(vars.stateVars, "x")%>
+      <%getVarName(vars.inputVars, "u")%>
+      <%getVarName(vars.outputVars, "y")%>
+      <%getVarName(vars.algVars, "z")%>
       "equation\n  der(x) = A * x + B * u;\n  y = C * x + D * u;\n  z = Cz * x + Dz * u;\nend linear_<%underscorePath(name)%>;\n";
     }
     >>
   end match
 end functionlinearmodel;
 
-template getVarName(list<SimVar> simVars, String arrayName, Integer arraySize) "template getVarName
+template getVarName(list<SimVar> simVars, String arrayName) "template getVarName
   Generates name for a varables."
 ::=
   simVars |> var hasindex arrindex fromindex 1 =>
     (match var
     case SIMVAR(__) then
-      <<  Real '<%arrayName%>_<%crefStrNoUnderscore(name)%>' = <%arrayName%>[<%arrindex%>];\n>>
+      <<"  Real '<%arrayName%>_<%crefStrNoUnderscore(name)%>' = <%arrayName%>[<%arrindex%>];\n">>
     end match)
   ; empty
 end getVarName;
 
-template genMatrix(String name, Integer row, Integer col) "template genMatrix
+template genMatrix(String name, String row, String col, Integer rowI, Integer colI) "template genMatrix
   Generates Matrix for linear model"
 ::=
-  match row
+  match rowI
   case 0 then
-    <<"  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);%s\n">>
+    <<"  parameter Real <%name%>[<%row%>, <%col%>] = zeros(<%row%>, <%col%>);%s\n">>
   case _ then
-    match col
+    match colI
     case 0 then
-      <<"  parameter Real <%name%>[<%row%>,<%col%>] = zeros(<%row%>,<%col%>);%s\n">>
+      <<"  parameter Real <%name%>[<%row%>, <%col%>] = zeros(<%row%>, <%col%>);%s\n">>
     case _ then
-      <<"  parameter Real <%name%>[<%row%>,<%col%>] = [%s];\n">>
+      <<"  parameter Real <%name%>[<%row%>, <%col%>] = [%s];\n">>
     end match
   end match
 end genMatrix;
 
-template genVector(String name, Integer numIn, Integer flag) "template genVector
+template genVector(String name, String num, Integer numI, Integer flag) "template genVector
   Generates variables Vectors for linear model"
 ::=
   match flag
   case 0 then
-    match numIn
+    match numI
     case 0 then
-      <<"  Real <%name%>[<%numIn%>];\n">>
+      <<"  Real <%name%>[<%num%>];\n">>
     case _ then
-      <<"  Real <%name%>[<%numIn%>](start=<%name%>0);\n">>
+      <<"  Real <%name%>[<%num%>](start=<%name%>0);\n">>
     end match
   case 1 then
-    match numIn
+    match numI
     case 0 then
-      <<"  input Real <%name%>[<%numIn%>];\n">>
+      <<"  input Real <%name%>[<%num%>];\n">>
     case _ then
-      <<"  input Real <%name%>[<%numIn%>](start= <%name%>0);\n">>
+      <<"  input Real <%name%>[<%num%>](start=<%name%>0);\n">>
     end match
   case 2 then
-    match numIn
+    match numI
     case 0 then
-      <<"  output Real <%name%>[<%numIn%>];\n">>
+      <<"  output Real <%name%>[<%num%>];\n">>
     case _ then
-      <<"  output Real <%name%>[<%numIn%>];\n">>
+      <<"  output Real <%name%>[<%num%>];\n">>
     end match
   end match
 end genVector;
