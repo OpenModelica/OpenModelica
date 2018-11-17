@@ -60,27 +60,23 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 // "
 // true
 // "model linear_mathFuncsTest
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 6;
-//   // top-level outputs
-//   parameter Integer nz = 8;
-//   // data recovery variables
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 6 \"number of outputs\";
+//   parameter Integer nz = 8 \"data recovery variables\";
 //   parameter Real x0[2] = {-2, 1};
-//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real u0[0] = zeros(0);
 //   parameter Real z0[8] = {0, 1, 0, -2, 0, -2, -2, -2};
-//   parameter Real A[2, 2] = [0, 0; 0, 0];
-//   parameter Real B[2, 0] = zeros(2, 0);
-//   parameter Real C[6, 2] = [0.9999999991328683, 1.999999999376403; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0, 0; 0, 0];
-//   parameter Real D[6, 0] = zeros(6, 0);
-//   parameter Real Cz[8, 2] = [0, 0; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0, 0; 0, 0];
-//   parameter Real Dz[8, 0] = zeros(8, 0);
-//   Real x[2](start = x0);
-//   input Real u[0];
-//   output Real y[6];
-//   output Real z[8];
+//   parameter Real A[n, n] = [0, 0; 0, 0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = [0.9999999991328683, 1.999999999376403; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0, 0; 0, 0];
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [0, 0; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0.9999999991328683, 1.999999999376403; 0, 0; 0, 0; 0, 0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_x' = x[1];
 //   Real 'x_y' = x[2];
 //   Real 'y_r1' = y[1];
@@ -128,21 +124,18 @@ readFile("linear_mathFuncsTest.log"); // Check that output log is empty
 // "
 // true
 // "model linear_mathFuncsTest
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 6;
-//   // top-level outputs
-//   parameter Real x0[2] = {-2, 1};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real A[2, 2] = [0, 0; 0, 0];
-//   parameter Real B[2, 0] = zeros(2, 0);
-//   parameter Real C[6, 2] = [1, 2; 0, 0; 1, 2; 0, 0; 0, 0; 0, 0];
-//   parameter Real D[6, 0] = zeros(6, 0);
-//   Real x[2](start = x0);
-//   input Real u[0];
-//   output Real y[6];
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 6 \"number of outputs\";
+//   parameter Real x0[n] = {-2, 1};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0, 0; 0, 0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = [1, 2; 0, 0; 1, 2; 0, 0; 0, 0; 0, 0];
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
 //   Real 'x_x' = x[1];
 //   Real 'x_y' = x[2];
 //   Real 'y_r1' = y[1];

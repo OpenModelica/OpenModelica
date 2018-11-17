@@ -37,21 +37,18 @@ list(linear_testDrumBoilerLin);
 // "
 // true
 // "model linear_testDrumBoilerLin
-//   parameter Integer n = 3;
-//   // states
-//   parameter Integer k = 2;
-//   // top-level inputs
-//   parameter Integer l = 4;
-//   // top-level outputs
-//   parameter Real x0[3] = {0, 67, 100000};
-//   parameter Real u0[2] = {0, 0};
-//   parameter Real A[3, 3] = [-0, -0.008333333333333333, -0; 0.01043953430921842, -0.01043953430921842, 0; 0.1178989396709045, -0.1178989396709045, 0];
-//   parameter Real B[3, 2] = [0, 0; -0.001308242749261165, 0.0001170710024614629; -19.14622757506173, 8.475892309753018];
-//   parameter Real C[4, 3] = [0, 0, 0.0001439468903880629; 0, 1, 0; 0, 0, 1e-05; 0, 0, 0];
-//   parameter Real D[4, 2] = [0, 0; 0, 0; 0, 0; 1, 0];
-//   Real x[3](start = x0);
-//   input Real u[2](start = u0);
-//   output Real y[4];
+//   parameter Integer n = 3 \"number of states\";
+//   parameter Integer p = 2 \"number of inputs\";
+//   parameter Integer q = 4 \"number of outputs\";
+//   parameter Real x0[n] = {0, 67, 100000};
+//   parameter Real u0[p] = {0, 0};
+//   parameter Real A[n, n] = [-0, -0.008333333333333333, -0; 0.01043953430921842, -0.01043953430921842, 0; 0.1178989396709045, -0.1178989396709045, 0];
+//   parameter Real B[n, p] = [0, 0; -0.001308242749261165, 0.0001170710024614632; -19.14622757506175, 8.475892309753029];
+//   parameter Real C[q, n] = [0, 0, 0.0001439468903880629; 0, 1, 0; 0, 0, 1e-05; 0, 0, 0];
+//   parameter Real D[q, p] = [0, 0; 0, 0; 0, 0; 1, 0];
+//   Real x[n](start = x0);
+//   input Real u[p](start = u0);
+//   output Real y[q];
 //   Real 'x_controller.x' = x[1];
 //   Real 'x_evaporator.V_l' = x[2];
 //   Real 'x_evaporator.p' = x[3];

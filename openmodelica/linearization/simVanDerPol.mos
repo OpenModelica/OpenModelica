@@ -43,27 +43,23 @@ readFile("linear_VanDerPol.log"); // Check that output log is empty
 // "
 // true
 // "model linear_VanDerPol
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Integer nz = 0;
-//   // data recovery variables
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 0 \"data recovery variables\";
 //   parameter Real x0[2] = {1, 2};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real z0[0] = {i for i in 1:0};
-//   parameter Real A[2, 2] = [0, 1.000000001354202; -2.200000078615666, 0];
-//   parameter Real B[2, 0] = zeros(2, 0);
-//   parameter Real C[0, 2] = zeros(0, 2);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[0, 2] = zeros(0, 2);
-//   parameter Real Dz[0, 0] = zeros(0, 0);
-//   Real x[2](start = x0);
-//   input Real u[0];
-//   output Real y[0];
-//   output Real z[0];
+//   parameter Real u0[0] = zeros(0);
+//   parameter Real z0[0] = zeros(0);
+//   parameter Real A[n, n] = [0, 1.000000001354202; -2.200000078615666, 0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = zeros(nz, n);
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_x' = x[1];
 //   Real 'x_y' = x[2];
 // equation
@@ -97,21 +93,18 @@ readFile("linear_VanDerPol.log"); // Check that output log is empty
 // "
 // true
 // "model linear_VanDerPol
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Real x0[2] = {1, 2};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real A[2, 2] = [0, 1; -2.2, 0];
-//   parameter Real B[2, 0] = zeros(2, 0);
-//   parameter Real C[0, 2] = zeros(0, 2);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   Real x[2](start = x0);
-//   input Real u[0];
-//   output Real y[0];
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {1, 2};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0, 1; -2.2, 0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
 //   Real 'x_x' = x[1];
 //   Real 'x_y' = x[2];
 // equation

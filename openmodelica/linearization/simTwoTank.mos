@@ -49,21 +49,18 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 // "
 // true
 // "model linear_twoflattankmodel
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 1;
-//   // top-level inputs
-//   parameter Integer l = 1;
-//   // top-level outputs
-//   parameter Real x0[2] = {2, 1};
-//   parameter Real u0[1] = {0};
-//   parameter Real A[2, 2] = [-0.5, 0.5; 2, -3];
-//   parameter Real B[2, 1] = [0.5; 0];
-//   parameter Real C[1, 2] = [0, 0.5];
-//   parameter Real D[1, 1] = [0];
-//   Real x[2](start = x0);
-//   input Real u[1](start = u0);
-//   output Real y[1];
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 1 \"number of inputs\";
+//   parameter Integer q = 1 \"number of outputs\";
+//   parameter Real x0[n] = {2, 1};
+//   parameter Real u0[p] = {0};
+//   parameter Real A[n, n] = [-0.5, 0.5; 2, -3];
+//   parameter Real B[n, p] = [0.5; 0];
+//   parameter Real C[q, n] = [0, 0.5];
+//   parameter Real D[q, p] = [0];
+//   Real x[n](start = x0);
+//   input Real u[p](start = u0);
+//   output Real y[q];
 //   Real 'x_h1' = x[1];
 //   Real 'x_h2' = x[2];
 //   Real 'u_F' = u[1];
@@ -99,27 +96,23 @@ readFile("linear_twoflattankmodel.log"); // Check that output log is empty
 // "
 // true
 // "model linear_twoflattankmodel
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 1;
-//   // top-level inputs
-//   parameter Integer l = 1;
-//   // top-level outputs
-//   parameter Integer nz = 3;
-//   // data recovery variables
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 1 \"number of inputs\";
+//   parameter Integer q = 1 \"number of outputs\";
+//   parameter Integer nz = 3 \"data recovery variables\";
 //   parameter Real x0[2] = {2, 1};
 //   parameter Real u0[1] = {0};
 //   parameter Real z0[3] = {0, 2, 1};
-//   parameter Real A[2, 2] = [-0.4999999873490973, 0.5000000165041055; 1.999999949396389, -3.000000034050615];
-//   parameter Real B[2, 1] = [0.500000000677101; 0];
-//   parameter Real C[1, 2] = [0, 0.4999999840170964];
-//   parameter Real D[1, 1] = [0];
-//   parameter Real Cz[3, 2] = [0, 0; 0.9999999746981947, -1.000000033008211; 0, 0.4999999840170964];
-//   parameter Real Dz[3, 1] = [1; 0; 0];
-//   Real x[2](start = x0);
-//   input Real u[1](start = u0);
-//   output Real y[1];
-//   output Real z[3];
+//   parameter Real A[n, n] = [-0.4999999873490973, 0.5000000165041055; 1.999999949396389, -3.000000034050615];
+//   parameter Real B[n, p] = [0.500000000677101; 0];
+//   parameter Real C[q, n] = [0, 0.4999999840170964];
+//   parameter Real D[q, p] = [0];
+//   parameter Real Cz[nz, n] = [0, 0; 0.9999999746981947, -1.000000033008211; 0, 0.4999999840170964];
+//   parameter Real Dz[nz, p] = [1; 0; 0];
+//   Real x[n](start = x0);
+//   input Real u[p](start = u0);
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_h1' = x[1];
 //   Real 'x_h2' = x[2];
 //   Real 'u_F' = u[1];

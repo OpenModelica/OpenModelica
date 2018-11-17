@@ -55,21 +55,18 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // ""
 // true
 // "model linear_TestKV
-//   parameter Integer n = 1;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Real x0[1] = {0};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real A[1, 1] = [2];
-//   parameter Real B[1, 0] = zeros(1, 0);
-//   parameter Real C[0, 1] = zeros(0, 1);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   Real x[1](start = x0);
-//   input Real u[0];
-//   output Real y[0];
+//   parameter Integer n = 1 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {0};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [2];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
 //   Real 'x_x' = x[1];
 // equation
 //   der(x) = A * x + B * u;
@@ -100,27 +97,23 @@ readFile("linear_TestKV.log"); // Check that output log is empty
 // "
 // true
 // "model linear_TestKV
-//   parameter Integer n = 1;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Integer nz = 1;
-//   // data recovery variables
+//   parameter Integer n = 1 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 1 \"data recovery variables\";
 //   parameter Real x0[1] = {0};
-//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real u0[0] = zeros(0);
 //   parameter Real z0[1] = {2.909297426825682};
-//   parameter Real A[1, 1] = [2.000000002708404];
-//   parameter Real B[1, 0] = zeros(1, 0);
-//   parameter Real C[0, 1] = zeros(0, 1);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[1, 1] = [0];
-//   parameter Real Dz[1, 0] = zeros(1, 0);
-//   Real x[1](start = x0);
-//   input Real u[0];
-//   output Real y[0];
-//   output Real z[1];
+//   parameter Real A[n, n] = [2.000000002708404];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_x' = x[1];
 //   Real 'z_s' = z[1];
 // equation

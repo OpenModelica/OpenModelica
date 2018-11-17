@@ -68,27 +68,23 @@ readFile("linear_A.log"); // Check that output log is empty
 // "
 // true
 // "model linear_A
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Integer nz = 3;
-//   // data recovery variables
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 3 \"data recovery variables\";
 //   parameter Real x0[2] = {-2, 1};
-//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real u0[0] = zeros(0);
 //   parameter Real z0[3] = {0.6741566175213496, -0.8485706626022138, 0.7398222220154177};
-//   parameter Real A[2, 2] = [-0.4604482876736256, 0; -0.8245962493467056, 0];
-//   parameter Real B[2, 0] = zeros(2, 0);
-//   parameter Real C[0, 2] = zeros(0, 2);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[3, 2] = [-0.2302241438368128, 0; -0.8245962493467056, 0; -0.3117082989521443, 0];
-//   parameter Real Dz[3, 0] = zeros(3, 0);
-//   Real x[2](start = x0);
-//   input Real u[0];
-//   output Real y[0];
-//   output Real z[3];
+//   parameter Real A[n, n] = [-0.4604482876736256, 0; -0.8245962493467056, 0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [-0.2302241438368128, 0; -0.8245962493467056, 0; -0.3117082989521443, 0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_x' = x[1];
 //   Real 'x_y' = x[2];
 //   Real 'z_$cse1' = z[1];
@@ -125,21 +121,18 @@ readFile("linear_A.log"); // Check that output log is empty
 // "
 // true
 // "model linear_A
-//   parameter Integer n = 2;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Real x0[2] = {-2, 1};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real A[2, 2] = [-0.4604484021611328, -0; -0.8245965690721939, -0];
-//   parameter Real B[2, 0] = zeros(2, 0);
-//   parameter Real C[0, 2] = zeros(0, 2);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   Real x[2](start = x0);
-//   input Real u[0];
-//   output Real y[0];
+//   parameter Integer n = 2 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {-2, 1};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [-0.4604484021611328, -0; -0.8245965690721939, -0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
 //   Real 'x_x' = x[1];
 //   Real 'x_y' = x[2];
 // equation

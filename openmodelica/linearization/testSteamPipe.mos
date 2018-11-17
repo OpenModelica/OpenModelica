@@ -37,21 +37,18 @@ list(linear_testSteamPipeLin);
 // ""
 // true
 // "model linear_testSteamPipeLin
-//   parameter Integer n = 4;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Real x0[4] = {3100000, 3100000, 1000000, 1000000};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real A[4, 4] = [0, 0, -7.506579624472663, 7.506579624472661; 0, 0, 7.506579624472663, -15.01315924894532; 0, 0, -27.8910278969507, 27.8910278969507; 0, 0, 27.8910278969507, -55.78205579390141];
-//   parameter Real B[4, 0] = zeros(4, 0);
-//   parameter Real C[0, 4] = zeros(0, 4);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   Real x[4](start = x0);
-//   input Real u[0];
-//   output Real y[0];
+//   parameter Integer n = 4 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {3100000, 3100000, 1000000, 1000000};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0, 0, -7.506579624472663, 7.506579624472661; 0, 0, 7.506579624472663, -15.01315924894532; 0, 0, -27.8910278969507, 27.8910278969507; 0, 0, 27.8910278969507, -55.78205579390141];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
 //   Real 'x_h[1]' = x[1];
 //   Real 'x_h[2]' = x[2];
 //   Real 'x_p[1]' = x[3];

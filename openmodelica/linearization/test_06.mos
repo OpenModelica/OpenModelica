@@ -63,21 +63,18 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "model linear_simple__test
-//   parameter Integer n = 1;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Real x0[1] = {0};
-//   parameter Real u0[0] = {i for i in 1:0};
-//   parameter Real A[1, 1] = [0];
-//   parameter Real B[1, 0] = zeros(1, 0);
-//   parameter Real C[0, 1] = zeros(0, 1);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   Real x[1](start = x0);
-//   input Real u[0];
-//   output Real y[0];
+//   parameter Integer n = 1 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Real x0[n] = {0};
+//   parameter Real u0[p] = zeros(0);
+//   parameter Real A[n, n] = [0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
 //   Real 'x_i1' = x[1];
 // equation
 //   der(x) = A * x + B * u;
@@ -109,27 +106,23 @@ readFile("linear_simple__test.log"); // Check that output log is empty
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // "model linear_simple__test
-//   parameter Integer n = 1;
-//   // states
-//   parameter Integer k = 0;
-//   // top-level inputs
-//   parameter Integer l = 0;
-//   // top-level outputs
-//   parameter Integer nz = 3;
-//   // data recovery variables
+//   parameter Integer n = 1 \"number of states\";
+//   parameter Integer p = 0 \"number of inputs\";
+//   parameter Integer q = 0 \"number of outputs\";
+//   parameter Integer nz = 3 \"data recovery variables\";
 //   parameter Real x0[1] = {0};
-//   parameter Real u0[0] = {i for i in 1:0};
+//   parameter Real u0[0] = zeros(0);
 //   parameter Real z0[3] = {0, 0, 0};
-//   parameter Real A[1, 1] = [0];
-//   parameter Real B[1, 0] = zeros(1, 0);
-//   parameter Real C[0, 1] = zeros(0, 1);
-//   parameter Real D[0, 0] = zeros(0, 0);
-//   parameter Real Cz[3, 1] = [0; 0; 0];
-//   parameter Real Dz[3, 0] = zeros(3, 0);
-//   Real x[1](start = x0);
-//   input Real u[0];
-//   output Real y[0];
-//   output Real z[3];
+//   parameter Real A[n, n] = [0];
+//   parameter Real B[n, p] = zeros(n, p);
+//   parameter Real C[q, n] = zeros(q, n);
+//   parameter Real D[q, p] = zeros(q, p);
+//   parameter Real Cz[nz, n] = [0; 0; 0];
+//   parameter Real Dz[nz, p] = zeros(nz, p);
+//   Real x[n](start = x0);
+//   input Real u[p];
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_i1' = x[1];
 //   Real 'z_u' = z[1];
 //   Real 'z_u1' = z[2];

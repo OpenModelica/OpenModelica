@@ -49,21 +49,18 @@ readFile("linear_p_nonlinsys.log"); // Check that output log is empty
 // "
 // true
 // "model linear_p_nonlinsys
-//   parameter Integer n = 3;
-//   // states
-//   parameter Integer k = 1;
-//   // top-level inputs
-//   parameter Integer l = 2;
-//   // top-level outputs
-//   parameter Real x0[3] = {1, 1, 2};
-//   parameter Real u0[1] = {0};
-//   parameter Real A[3, 3] = [0, 0, 0; 0, 6, -2; 0, 4, -6];
-//   parameter Real B[3, 1] = [0; 0; 0];
-//   parameter Real C[2, 3] = [0, 0, 0; 0, 0, 0];
-//   parameter Real D[2, 1] = [0; 0];
-//   Real x[3](start = x0);
-//   input Real u[1](start = u0);
-//   output Real y[2];
+//   parameter Integer n = 3 \"number of states\";
+//   parameter Integer p = 1 \"number of inputs\";
+//   parameter Integer q = 2 \"number of outputs\";
+//   parameter Real x0[n] = {1, 1, 2};
+//   parameter Real u0[p] = {0};
+//   parameter Real A[n, n] = [0, 0, 0; 0, 6, -2; 0, 4, -6];
+//   parameter Real B[n, p] = [0; 0; 0];
+//   parameter Real C[q, n] = [0, 0, 0; 0, 0, 0];
+//   parameter Real D[q, p] = [0; 0];
+//   Real x[n](start = x0);
+//   input Real u[p](start = u0);
+//   output Real y[q];
 //   Real 'x_b1.x' = x[1];
 //   Real 'x_c1.x1' = x[2];
 //   Real 'x_c1.x2' = x[3];
@@ -101,27 +98,23 @@ readFile("linear_p_nonlinsys.log"); // Check that output log is empty
 // "
 // true
 // "model linear_p_nonlinsys
-//   parameter Integer n = 3;
-//   // states
-//   parameter Integer k = 1;
-//   // top-level inputs
-//   parameter Integer l = 2;
-//   // top-level outputs
-//   parameter Integer nz = 6;
-//   // data recovery variables
+//   parameter Integer n = 3 \"number of states\";
+//   parameter Integer p = 1 \"number of inputs\";
+//   parameter Integer q = 2 \"number of outputs\";
+//   parameter Integer nz = 6 \"data recovery variables\";
 //   parameter Real x0[3] = {1, 1, 2};
 //   parameter Real u0[1] = {0};
 //   parameter Real z0[6] = {0, -6, -6, 0, 0, 0};
-//   parameter Real A[3, 3] = [0, 0, 0; 0, 5.999999994797209, -2.000000002708405; 0, 3.999999998752807, -6.000000017010549];
-//   parameter Real B[3, 1] = [0; 0; 0];
-//   parameter Real C[2, 3] = [0, 0, 0; 0, 0, 0];
-//   parameter Real D[2, 1] = [0; 0];
-//   parameter Real Cz[6, 3] = [0, 0, 0; 0, 9.999999993550016, -8.000000019718954; 0, 9.999999993550016, -8.000000019718954; 0, 0, 0; 0, 0, 0; 0, 0, 0];
-//   parameter Real Dz[6, 1] = [0; 0; 0; 1; 0; 0];
-//   Real x[3](start = x0);
-//   input Real u[1](start = u0);
-//   output Real y[2];
-//   output Real z[6];
+//   parameter Real A[n, n] = [0, 0, 0; 0, 5.999999994797209, -2.000000002708405; 0, 3.999999998752807, -6.000000017010549];
+//   parameter Real B[n, p] = [0; 0; 0];
+//   parameter Real C[q, n] = [0, 0, 0; 0, 0, 0];
+//   parameter Real D[q, p] = [0; 0];
+//   parameter Real Cz[nz, n] = [0, 0, 0; 0, 9.999999993550016, -8.000000019718954; 0, 9.999999993550016, -8.000000019718954; 0, 0, 0; 0, 0, 0; 0, 0, 0];
+//   parameter Real Dz[nz, p] = [0; 0; 0; 1; 0; 0];
+//   Real x[n](start = x0);
+//   input Real u[p](start = u0);
+//   output Real y[q];
+//   output Real z[nz];
 //   Real 'x_b1.x' = x[1];
 //   Real 'x_c1.x1' = x[2];
 //   Real 'x_c1.x2' = x[3];
