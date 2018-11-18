@@ -135,7 +135,7 @@ protected
     annotation(Include="
 static inline modelica_metatype GC_get_prof_stats_modelica()
 {
-#if (GC_VERSION_MAJOR == 7) && (GC_VERSION_MINOR >= 5)
+#if ((GC_VERSION_MAJOR == 7) && (GC_VERSION_MINOR >= 5)) || (GC_VERSION_MAJOR >= 8)
   struct GC_prof_stats_s info;
   GC_get_prof_stats(&info,sizeof(struct GC_prof_stats_s));
   return mmc_mk_box10(
