@@ -88,9 +88,9 @@ public:
   virtual T& operator()(const vector<size_t>& idx) = 0;
   virtual void assign(const T* data) = 0;
   virtual void assign(const BaseArray<T>& b) = 0;
+  virtual void assign(const T& value) = 0; // fill value
   virtual std::vector<size_t> getDims() const = 0;
   virtual int getDim(size_t dim) const = 0; // { (int)getDims()[dim - 1]; }
-
   virtual size_t getNumElems() const = 0;
   virtual size_t getNumDims() const = 0;
   virtual void setDims(const std::vector<size_t>& v) = 0;
@@ -269,6 +269,17 @@ public:
     else
       std::transform(_ref_array, _ref_array + nelems, b.getData(),
                      _ref_array, CopyCArray2RefArray<T>());
+  }
+
+  /**
+   * Assigns value reference to each array element
+   * @param value  new value for each element
+   * a.assign(value)
+   */
+  virtual void assign(const T& value)
+  {
+    for (size_t i = 0; i < nelems; i++)
+      *_ref_array[i] = value;
   }
 
   /**
@@ -754,6 +765,20 @@ class StatArray : public BaseArray<T>
         throw std::runtime_error("Cannot assign to uninitialized StatArray!");
       assert(b.getNumElems() == nelems);
       b.getDataCopy(_data, nelems);
+    }
+  }
+
+  /**
+   * Assigns value to each array element
+   * @param value  new array value
+   * a.assign(value)
+   */
+  virtual void assign(const T& value)
+  {
+    if (nelems > 0) {
+      if (_data == NULL)
+        throw std::runtime_error("Cannot assign value to uninitialized StatArray!");
+      std::fill(_data, _data + nelems, value);
     }
   }
 
@@ -1395,6 +1420,12 @@ class DynArray : public BaseArray<T>
   {
     if (_nelems > 0)
       std::copy(data, data + _nelems, _array_data);
+  }
+
+  virtual void assign(const T& value)
+  {
+    if (_nelems > 0)
+      std::fill(_array_data, _array_data + _nelems, value);
   }
 
   virtual void resize(const std::vector<size_t>& dims)

@@ -176,6 +176,11 @@ class ArraySliceConst: public BaseArray<T> {
                                   "Can't assign array to ArraySliceConst");
   }
 
+  virtual void assign(const T& value) {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                  "Can't assign value to ArraySliceConst");
+  }
+
   virtual std::vector<size_t> getDims() const {
     return _dims;
   }
@@ -340,6 +345,10 @@ class ArraySlice: public ArraySliceConst<T> {
     setDataDim(_idxs.size(), otherArray.getData());
   }
 
+  virtual void assign(const T& value) {
+    setEachDim(_idxs.size(), value);
+  }
+
   virtual T& operator()(size_t i) {
     return _baseArray(ArraySliceConst<T>::baseIdx(1, &i));
   }
@@ -389,6 +398,26 @@ class ArraySlice: public ArraySliceConst<T> {
         _baseArray(_baseIdx) = data[processed++];
     }
     return processed;
+  }
+
+  /**
+   * recursive method for muli-dimensional fill of each element
+   */
+  void setEachDim(size_t dim, const T& value) {
+    const BaseArray<int> *iset = ArraySliceConst<T>::_isets[dim - 1];
+    size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
+    if (size == 0)
+      size = _baseArray.getDim(dim);
+    for (size_t i = 1; i <= size; i++) {
+      if (iset)
+        _baseIdx[dim - 1] = iset->getNumElems() > 0? (*iset)(i): i;
+      else
+        _baseIdx[dim - 1] = _idxs[dim - 1].size() > 0? _idxs[dim - 1][i - 1]: i;
+      if (dim > 1)
+        setEachDim(dim - 1, value);
+      else
+        _baseArray(_baseIdx) = value;
+    }
   }
 };
 /** @} */ // end of math
