@@ -2154,6 +2154,9 @@ algorithm
     case Absyn.Exp.CALL()
       then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
 
+    case Absyn.Exp.PARTEVALFUNCTION()
+      then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, info);
+
     case Absyn.Exp.END() then Expression.END();
 
     else
@@ -2342,6 +2345,32 @@ algorithm
         Subscript.fromExp(exp);
   end match;
 end instSubscript;
+
+function instPartEvalFunction
+  input Absyn.ComponentRef func;
+  input Absyn.FunctionArgs args;
+  input InstNode scope;
+  input SourceInfo info;
+  output Expression outExp;
+algorithm
+  outExp := match args
+    case Absyn.FUNCTIONARGS(args = {}, argNames = {})
+      then instCref(func, scope, info);
+
+    case Absyn.FUNCTIONARGS()
+      algorithm
+
+      then
+        fail();
+
+    case Absyn.FOR_ITER_FARG()
+      algorithm
+        print("Invalid argument to function partial application\n");
+      then
+        fail();
+
+  end match;
+end instPartEvalFunction;
 
 function instSections
   input InstNode node;

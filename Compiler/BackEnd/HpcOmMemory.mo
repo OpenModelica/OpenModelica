@@ -359,10 +359,10 @@ import Util;
           //Get not optimized variables (e.g. paramters that are not part of the task graph)
           //--------------------------------------------------------------------------------
           notOptimizedVars = getNotOptimizedVarsByCacheLineMapping(scVarCLMapping, allVarsMapping, simCodeVarTypes);
-          notOptimizedVarsFloatOpt = List.map(Util.tuple41(notOptimizedVars), function arrayGet(allVarsMapping));
-          notOptimizedVarsIntOpt = List.map(Util.tuple42(notOptimizedVars), function arrayGet(allVarsMapping));
-          notOptimizedVarsBoolOpt = List.map(Util.tuple43(notOptimizedVars), function arrayGet(allVarsMapping));
-          notOptimizedVarsStringOpt = List.map(Util.tuple44(notOptimizedVars), function arrayGet(allVarsMapping));
+          notOptimizedVarsFloatOpt = List.map(Util.tuple41(notOptimizedVars), function arrayGet(arr = allVarsMapping));
+          notOptimizedVarsIntOpt = List.map(Util.tuple42(notOptimizedVars), function arrayGet(arr = allVarsMapping));
+          notOptimizedVarsBoolOpt = List.map(Util.tuple43(notOptimizedVars), function arrayGet(arr = allVarsMapping));
+          notOptimizedVarsStringOpt = List.map(Util.tuple44(notOptimizedVars), function arrayGet(arr = allVarsMapping));
 
           notOptimizedVarsFloat = List.map(notOptimizedVarsFloatOpt, Util.getOption);
           notOptimizedVarsInt = List.map(notOptimizedVarsIntOpt, Util.getOption);

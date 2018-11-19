@@ -1129,8 +1129,11 @@ expression[int allowPartEvalFunc] returns [void* ast] :
   ;
 
 part_eval_function_expression returns [void* ast]
-@init { cr.ast = 0; fc = 0; } :
-  FUNCTION cr=component_reference fc=function_call { ast = Absyn__PARTEVALFUNCTION(cr.ast, fc); }
+@init { cr.ast = 0; args = 0; } :
+  FUNCTION cr=component_reference LPAR (args=named_arguments)? RPAR
+  {
+    ast = Absyn__PARTEVALFUNCTION(cr.ast, Absyn__FUNCTIONARGS(mmc_mk_nil(), or_nil(args)));
+  }
   ;
 
 if_expression returns [void* ast]
