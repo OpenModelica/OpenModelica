@@ -1,0 +1,275 @@
+// name:     testVectorizedSolarSystem
+// keywords: vectorized components, array equations, for loops
+// status: correct
+// teardown_command: rm -f *VectorizedSolarSystemTest*
+
+setCommandLineOptions("--std=3.3"); getErrorString();
+setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();
+setCommandLineOptions("--preOptModules-=removeSimpleEquations"); getErrorString();
+setCommandLineOptions("--postOptModules-=removeSimpleEquations"); getErrorString();
+setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
+setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+
+loadModel(Modelica); getErrorString();
+loadFile("VectorizedSolarSystem.mo"); getErrorString();
+
+simulate(VectorizedSolarSystemTest); getErrorString();
+
+val(grid.P_grid, 0.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (7)
+// ========================================
+// 1: grid.terms.v:VARIABLE(flow=false unit = "V" )  type: Real[1000]  [1000]
+// 2: grid.terms.i:VARIABLE(flow=true unit = "A" )  type: Real[1000]  [1000]
+// 3: grid.P_grid:VARIABLE(flow=false unit = "W" )  type: Real 
+// 4: plant.on:VARIABLE(flow=false )  "Plant status" type: Boolean[1000]  [1000]
+// 5: plant.P_solar:VARIABLE(flow=false unit = "W" )  "Solar power" type: Real[1000]  [1000]
+// 6: plant.term.v:VARIABLE(flow=false unit = "V" )  type: Real[1000]  [1000]
+// 7: plant.term.i:VARIABLE(flow=true unit = "A" )  type: Real[1000]  [1000]
+//
+//
+// Equations (7, 7)
+// ========================================
+// 1/1 (1000): plant.term.v = grid.terms.v   [dynamic |0|0|0|0|]
+// 2/1001 (1000): plant.term.i + grid.terms.i = 0.0   [dynamic |0|0|0|0|]
+// 3/2001 (1000): for $i in 1 : 1000 loop 
+//     plant[$i].term.v * plant[$i].term.i = if plant[$i].on then plant[$i].eta * plant[$i].P_solar else 0.0; end for;    [dynamic |0|0|0|0|]
+// 4/3001 (1000): for i in 1 : 1000 loop 
+//     grid.terms[i].v = grid.V; end for;    [dynamic |0|0|0|0|]
+// 5/4001 (1): 0.0 = grid.P_grid + grid.terms.v * grid.terms.i   [dynamic |0|0|0|0|]
+// 6/4002 (1000): plant.P_solar = /*Real[max(div(n * 100 - 100, 100) + 1, 0)]*/(100:100:100000)   [binding |0|0|0|0|]
+// 7/5002 (1000): plant.on = true   [binding |0|0|0|0|]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: grid.V:PARAM(flow=false unit = "V" )  = 1000.0  type: Real 
+// 2: grid.n:PARAM(flow=false )  = 1000  type: Integer 
+// 3: plant.eta:PARAM(flow=false )  = 0.9  "Efficiency" type: Real[1000]  [1000]
+// 4: n:PARAM(flow=false )  = 1000  type: Integer 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Samples (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+//
+// ########################################
+// dumpDAE
+// ########################################
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (7)
+// ========================================
+// 1: grid.terms.v:VARIABLE(flow=false unit = "V" )  type: Real[1000]  [1000]
+// 2: grid.terms.i:VARIABLE(flow=true unit = "A" )  type: Real[1000]  [1000]
+// 3: grid.P_grid:VARIABLE(flow=false unit = "W" )  type: Real 
+// 4: plant.on:VARIABLE(flow=false )  "Plant status" type: Boolean[1000]  [1000]
+// 5: plant.P_solar:VARIABLE(flow=false unit = "W" )  "Solar power" type: Real[1000]  [1000]
+// 6: plant.term.v:VARIABLE(flow=false unit = "V" )  type: Real[1000]  [1000]
+// 7: plant.term.i:VARIABLE(flow=true unit = "A" )  type: Real[1000]  [1000]
+//
+//
+// Equations (7, 7)
+// ========================================
+// 1/1 (1000): plant.term.v = grid.terms.v   [dynamic |0|0|0|0|]
+// 2/1001 (1000): plant.term.i + grid.terms.i = 0.0   [dynamic |0|0|0|0|]
+// 3/2001 (1000): for $i in 1 : 1000 loop 
+//     plant[$i].term.v * plant[$i].term.i = if plant[$i].on then plant[$i].eta * plant[$i].P_solar else 0.0; end for;    [dynamic |0|0|0|0|]
+// 4/3001 (1000): for i in 1 : 1000 loop 
+//     grid.terms[i].v = grid.V; end for;    [dynamic |0|0|0|0|]
+// 5/4001 (1): grid.P_grid = -grid.terms.v * grid.terms.i   [dynamic |0|0|0|0|]
+// 6/4002 (1000): plant.P_solar = 100.0:100.0:100000.0   [binding |0|0|0|0|]
+// 7/5002 (1000): plant.on = true   [binding |0|0|0|0|]
+//
+//
+// Simple Equations (0, 0)
+// ========================================
+//
+//
+// State Sets
+// ========================================
+//
+//
+// Matching
+// ========================================
+// 7 variables and equations
+// var 1 is solved in eqn 4
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 5
+// var 4 is solved in eqn 7
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 1
+// var 7 is solved in eqn 3
+//
+//
+// StrongComponents
+// ========================================
+// Array  {{7:4}}
+// Array  {{6:5}}
+// {4:1}
+// Array  {{1:6}}
+// {3:7}
+// Array  {{2:2}}
+// {5:3}
+//
+//
+//
+// BackendDAEType: simulation
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: grid.V:PARAM(flow=false unit = "V" )  = 1000.0  type: Real 
+// 2: grid.n:PARAM(flow=false )  = 1000  type: Integer 
+// 3: plant.eta:PARAM(flow=false )  = 0.9  "Efficiency" type: Real[1000]  [1000]
+// 4: n:PARAM(flow=false )  = 1000  type: Integer 
+//
+//
+// Known variables only depending on states and inputs - localKnownVars (0)
+// ========================================
+//
+//
+// External Objects (0)
+// ========================================
+//
+//
+// Classes of External Objects (0)
+// ========================================
+//
+//
+// Alias Variables (0)
+// ========================================
+//
+//
+// Simple Shared Equations (0, 0)
+// ========================================
+//
+//
+// Initial Equations (0, 0)
+// ========================================
+//
+//
+// Zero Crossings (0)
+// ========================================
+//
+//
+// Relations (0)
+// ========================================
+//
+//
+// Samples (0)
+// ========================================
+//
+//
+// Constraints (0)
+// ========================================
+//
+//
+// Base partitions (0)
+// ========================================
+//
+//
+// Sub partitions (0)
+// ========================================
+//
+//
+// record SimulationResult
+//     resultFile = "VectorizedSolarSystemTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'VectorizedSolarSystemTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 45045000.0
+// endResult
