@@ -35,7 +35,7 @@
 #define COMMANDS_H
 
 #include "Modeling/ModelWidgetContainer.h"
-#include "Component/FMUProperties.h"
+#include "OMS/ElementPropertiesDialog.h"
 
 class UndoCommand : public QUndoCommand
 {
@@ -474,17 +474,17 @@ private:
   Component *mpDiagramComponent;
 };
 
-class FMUPropertiesCommand : public UndoCommand
+class ElementPropertiesCommand : public UndoCommand
 {
 public:
-  FMUPropertiesCommand(Component *pComponent, QString name, FMUProperties oldFMUProperties, FMUProperties newFMUProperties,
-                       UndoCommand *pParent = 0);
+  ElementPropertiesCommand(Component *pComponent, QString name, ElementProperties oldElementProperties,
+                           ElementProperties newElementProperties, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   Component *mpComponent;
-  FMUProperties mOldFMUProperties;
-  FMUProperties mNewFMUProperties;
+  ElementProperties mOldElementProperties;
+  ElementProperties mNewElementProperties;
 };
 
 class AddIconCommand : public UndoCommand

@@ -55,7 +55,7 @@ FunctionArgumentDialog::FunctionArgumentDialog(LibraryTreeItem *pLibraryTreeItem
 
   // Function arguments
   QList<ComponentInfo*> components = mpLibraryTreeItem->getModelWidget()->getComponentsList();
-  QGroupBox *pInputsGroupBox = new QGroupBox(tr("Inputs"));
+  QGroupBox *pInputsGroupBox = new QGroupBox(Helper::inputs);
   QGridLayout *pInputsGridLayout = new QGridLayout;
   pInputsGridLayout->setAlignment(Qt::AlignTop);
   int row = 0;

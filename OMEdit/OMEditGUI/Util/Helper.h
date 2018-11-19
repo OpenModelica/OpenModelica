@@ -156,6 +156,7 @@ public:
   static QString general;
   static QString output;
   static QString parameters;
+  static QString inputs;
   static QString name;
   static QString comment;
   static QString path;
@@ -400,7 +401,6 @@ public:
   static QString startTime;
   static QString stopTime;
   static QString status;
-  static QString fmuProperties;
   static QString speed;
   static QString instantiateOMSModelTip;
   static QString terminateInstantiation;

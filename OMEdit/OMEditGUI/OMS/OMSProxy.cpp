@@ -1208,156 +1208,108 @@ void OMSProxy::setLoggingCallback()
 /*!
  * \brief OMSProxy::getReal
  * Gets the real variable value.
- * \param signal
+ * \param cref
  * \param value
  * \return
  */
-bool OMSProxy::getReal(QString signal, double *value)
+bool OMSProxy::getReal(QString cref, double *value)
 {
-  oms_status_enu_t status = oms2_getReal(signal.toStdString().c_str(), value);
+  QString command = "oms3_getReal";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getReal(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::setReal
  * Sets the real variable value.
- * \param signal
+ * \param cref
  * \param value
  * \return
  */
-bool OMSProxy::setReal(QString signal, double value)
+bool OMSProxy::setReal(QString cref, double value)
 {
-  oms_status_enu_t status = oms2_setReal(signal.toStdString().c_str(), value);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getRealParameter
- * Gets the real parameter value.
- * \param signal
- * \param pValue
- * \return
- */
-bool OMSProxy::getRealParameter(QString signal, double* pValue)
-{
-  oms_status_enu_t status = oms2_getRealParameter(signal.toStdString().c_str(), pValue);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setRealParameter
- * Sets the real parameter value.
- * \param signal
- * \param value
- * \return
- */
-bool OMSProxy::setRealParameter(const char* signal, double value)
-{
-  oms_status_enu_t status = oms2_setRealParameter(signal, value);
+  QString command = "oms3_setReal";
+  QStringList args;
+  args << cref << QString::number(value);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setReal(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::getInteger
  * Gets the integer variable value.
- * \param signal
+ * \param cref
  * \param value
  * \return
  */
-bool OMSProxy::getInteger(QString signal, int *value)
+bool OMSProxy::getInteger(QString cref, int *value)
 {
-  oms_status_enu_t status = oms2_getInteger(signal.toStdString().c_str(), value);
+  QString command = "oms3_getInteger";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getInteger(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::setInteger
  * Sets the integer variable value.
- * \param signal
+ * \param cref
  * \param value
  * \return
  */
-bool OMSProxy::setInteger(QString signal, int value)
+bool OMSProxy::setInteger(QString cref, int value)
 {
-  oms_status_enu_t status = oms2_setInteger(signal.toStdString().c_str(), value);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getIntegerParameter
- * Gets the integer parameter value.
- * \param signal
- * \param pValue
- * \return
- */
-bool OMSProxy::getIntegerParameter(QString signal, int* pValue)
-{
-  oms_status_enu_t status = oms2_getIntegerParameter(signal.toStdString().c_str(), pValue);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setIntegerParameter
- * Sets the integer parameter value.
- * \param signal
- * \param value
- * \return
- */
-bool OMSProxy::setIntegerParameter(const char* signal, int value)
-{
-  oms_status_enu_t status = oms2_setIntegerParameter(signal, value);
+  QString command = "oms3_setInteger";
+  QStringList args;
+  args << cref << QString::number(value);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setInteger(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::getBoolean
  * Gets the boolean variable value.
- * \param signal
+ * \param cref
  * \param value
  * \return
  */
-bool OMSProxy::getBoolean(QString signal, bool *value)
+bool OMSProxy::getBoolean(QString cref, bool *value)
 {
-  oms_status_enu_t status = oms2_getBoolean(signal.toStdString().c_str(), value);
+  QString command = "oms3_getBoolean";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getBoolean(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
  * \brief OMSProxy::setBoolean
  * Sets the boolean variable value.
- * \param signal
+ * \param cref
  * \param value
  * \return
  */
-bool OMSProxy::setBoolean(QString signal, bool value)
+bool OMSProxy::setBoolean(QString cref, bool value)
 {
-  oms_status_enu_t status = oms2_setBoolean(signal.toStdString().c_str(), value);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getBooleanParameter
- * Gets the boolean parameter value.
- * \param signal
- * \param pValue
- * \return
- */
-bool OMSProxy::getBooleanParameter(QString signal, bool* pValue)
-{
-  oms_status_enu_t status = oms2_getBooleanParameter(signal.toStdString().c_str(), pValue);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setBooleanParameter
- * Sets the boolean parameter value.
- * \param signal
- * \param value
- * \return
- */
-bool OMSProxy::setBooleanParameter(const char* signal, bool value)
-{
-  oms_status_enu_t status = oms2_setBooleanParameter(signal, value);
+  QString command = "oms3_setBoolean";
+  QStringList args;
+  args << cref << (value ? "true" : "false");
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setBoolean(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 

@@ -35,7 +35,7 @@
 #include "MainWindow.h"
 #include "Component.h"
 #include "ComponentProperties.h"
-#include "FMUProperties.h"
+#include "OMS/ElementPropertiesDialog.h"
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
@@ -1456,8 +1456,8 @@ void Component::handleOMSComponentDoubleClick()
   } else if (mpLibraryTreeItem && mpLibraryTreeItem->getOMSTLMBusConnector()) {
     AddTLMBusDialog *pAddTLMBusDialog = new AddTLMBusDialog(QList<Component*>(), mpLibraryTreeItem, mpGraphicsView);
     pAddTLMBusDialog->exec();
-  } else if (mpLibraryTreeItem && mpLibraryTreeItem->getFMUInfo()) {
-    showFMUPropertiesDialog();
+  } else if (mpLibraryTreeItem && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+    showElementPropertiesDialog();
   }
 }
 
@@ -1829,9 +1829,9 @@ void Component::createActions()
   mpSubModelAttributesAction->setStatusTip(tr("Shows the submodel attributes"));
   connect(mpSubModelAttributesAction, SIGNAL(triggered()), SLOT(showSubModelAttributes()));
   // FMU Properties Action
-  mpFMUPropertiesAction = new QAction(Helper::fmuProperties, mpGraphicsView);
-  mpFMUPropertiesAction->setStatusTip(tr("Shows the FMU Properties dialog"));
-  connect(mpFMUPropertiesAction, SIGNAL(triggered()), SLOT(showFMUPropertiesDialog()));
+  mpElementPropertiesAction = new QAction(Helper::properties, mpGraphicsView);
+  mpElementPropertiesAction->setStatusTip(tr("Shows the Properties dialog"));
+  connect(mpElementPropertiesAction, SIGNAL(triggered()), SLOT(showElementPropertiesDialog()));
 }
 
 void Component::createResizerItems()
@@ -2902,14 +2902,15 @@ void Component::showSubModelAttributes()
 }
 
 /*!
- * \brief Component::showFMUPropertiesDialog
- * Slot that opens up the FMUPropertiesDialog Dialog.
+ * \brief Component::showElementPropertiesDialog
+ * Slot that opens up the ElementPropertiesDialog Dialog.
  */
-void Component::showFMUPropertiesDialog()
+void Component::showElementPropertiesDialog()
 {
-  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && mpLibraryTreeItem->getFMUInfo()) {
-    FMUPropertiesDialog *pFMUPropertiesDialog = new FMUPropertiesDialog(this, MainWindow::instance());
-    pFMUPropertiesDialog->exec();
+  if (mpLibraryTreeItem && mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
+      && (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement())) {
+    ElementPropertiesDialog *pElementPropertiesDialog = new ElementPropertiesDialog(this, MainWindow::instance());
+    pElementPropertiesDialog->exec();
   }
 }
 
@@ -2986,8 +2987,8 @@ void Component::contextMenuEvent(QGraphicsSceneContextMenuEvent *event)
         menu.addAction(pComponent->getSubModelAttributesAction());
         break;
       case LibraryTreeItem::OMS:
-        if (pComponent->getLibraryTreeItem()->isComponentElement()) {
-          menu.addAction(pComponent->getFMUPropertiesAction());
+        if (pComponent->getLibraryTreeItem()->isSystemElement() || pComponent->getLibraryTreeItem()->isComponentElement()) {
+          menu.addAction(pComponent->getElementPropertiesAction());
         }
         break;
     }

@@ -31,31 +31,32 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef FMUPROPERTIES_H
-#define FMUPROPERTIES_H
+#ifndef ELEMENTPROPERTIESDIALOG_H
+#define ELEMENTPROPERTIESDIALOG_H
 
-#include "Component.h"
+#include "Component/Component.h"
 
-class FMUProperties
+class ElementProperties
 {
 public:
-  FMUProperties();
+  ElementProperties();
 
   QList<QString> mParameterValues;
   QList<QString> mInputValues;
 };
 
-class FMUPropertiesDialog : public QDialog
+class ElementPropertiesDialog : public QDialog
 {
   Q_OBJECT
 public:
-  FMUPropertiesDialog(Component *pComponent, QWidget *pParent = 0);
+  ElementPropertiesDialog(Component *pComponent, QWidget *pParent = 0);
 private:
   Component *mpComponent;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
+  QTabWidget *mpTabWidget;
   QGroupBox *mpGeneralGroupBox;
   Label *mpDescriptionLabel;
   Label *mpDescriptionValueLabel;
@@ -90,12 +91,12 @@ private:
   QList<QLineEdit*> mParameterLineEdits;
   QList<Label*> mInputLabels;
   QList<QLineEdit*> mInputLineEdits;
-  FMUProperties mOldFMUProperties;
+  ElementProperties mOldElementProperties;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
-  void updateFMUParameters();
+  void updateProperties();
 };
 
-#endif // FMUPROPERTIES_H
+#endif // ELEMENTPROPERTIESDIALOG_H

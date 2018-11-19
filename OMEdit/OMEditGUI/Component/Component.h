@@ -205,7 +205,7 @@ public:
   QAction* getOpenClassAction() {return mpOpenClassAction;}
   QAction* getViewDocumentationAction() {return mpViewDocumentationAction;}
   QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
-  QAction* getFMUPropertiesAction() {return mpFMUPropertiesAction;}
+  QAction* getElementPropertiesAction() {return mpElementPropertiesAction;}
   ComponentInfo* getComponentInfo() {return mpComponentInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Component*> getInheritedComponentsList() {return mInheritedComponentsList;}
@@ -277,7 +277,7 @@ private:
   QAction *mpOpenClassAction;
   QAction *mpViewDocumentationAction;
   QAction *mpSubModelAttributesAction;
-  QAction *mpFMUPropertiesAction;
+  QAction *mpElementPropertiesAction;
   ResizerItem *mpBottomLeftResizerItem;
   ResizerItem *mpTopLeftResizerItem;
   ResizerItem *mpTopRightResizerItem;
@@ -374,7 +374,7 @@ public slots:
   void openClass();
   void viewDocumentation();
   void showSubModelAttributes();
-  void showFMUPropertiesDialog();
+  void showElementPropertiesDialog();
   void updateDynamicSelect(double time);
 protected:
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);
