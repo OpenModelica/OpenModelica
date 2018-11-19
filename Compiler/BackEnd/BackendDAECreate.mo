@@ -699,6 +699,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ElementSource src;
       DAE.Exp e1, e2;
+      DAE.Dimensions dims;
       BackendDAE.EquationAttributes attr;
       BackendDAE.Var var;
       list<BackendDAE.Equation> assert_eqs;
@@ -717,7 +718,12 @@ algorithm
         outVars := lowerDynamicVar(inElement, inFunctions) :: outVars;
         e1 := Expression.crefExp(cr);
         attr := BackendDAE.EQ_ATTR_DEFAULT_BINDING;
-        outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
+        (_, dims) := ComponentReference.crefTypeFull2(cr);
+        if listEmpty(dims) then
+          outEqns := BackendDAE.EQUATION(e1, e2, src, attr) :: outEqns;
+        else
+          outEqns := BackendDAE.ARRAY_EQUATION(Expression.dimensionsSizes(dims), e1, e2, src, attr) :: outEqns;
+        end if;
       then
         ();
 
