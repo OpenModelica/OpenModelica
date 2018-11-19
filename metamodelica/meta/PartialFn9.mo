@@ -55,8 +55,8 @@ function runTest
   output Integer e;
   Integer d;
 algorithm
-  d := testTestFunc(c,function testFunc2(0,arg2=0));
-  e := testTestFunc(d,function testFunc3(0,arg3=1,arg4=0));
+  d := testTestFunc(c,function testFunc2(x=0,arg2=0));
+  e := testTestFunc(d,function testFunc3(x=0,arg3=1,arg4=0));
 end runTest;
 
 end PartialFn9;

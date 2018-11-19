@@ -33,7 +33,7 @@ model PartialFn11
   Real y;
 equation
   x = 2.0;
-  y = CallerFn(x, function FullFn(1.5,7.5));
+  y = CallerFn(x, function FullFn(extraReal1 = 1.5, extraReal2 = 7.5));
 end PartialFn11;
 
 // class PartialFn11

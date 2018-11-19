@@ -30,7 +30,7 @@ function TestFn
   input Real inReal;
   output Real outReal;
 algorithm
-  outReal := CallerFn(inReal, function FullFn(1.5,7.5));
+  outReal := CallerFn(inReal, function FullFn(extraReal1 = 1.5, extraReal2 = 7.5));
 end TestFn;
 
 model PartialFn13
