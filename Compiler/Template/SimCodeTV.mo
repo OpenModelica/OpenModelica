@@ -3233,6 +3233,11 @@ package ComponentReference
     output list<DAE.Subscript> subs;
   end crefSubs;
 
+  function crefTypeFull
+    input DAE.ComponentRef inRef;
+    output DAE.Type res;
+  end crefTypeFull;
+
   function crefLastType
     input DAE.ComponentRef inRef;
     output DAE.Type res;

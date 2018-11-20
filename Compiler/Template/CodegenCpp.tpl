@@ -11570,7 +11570,10 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       <<
       for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
         <%preExp%>
-        <%crefPart%> = <%expPart%>;
+        <%if isArrayType(crefTypeFull(cref)) then
+          '<%crefPart%>.assign(<%expPart%>);'
+        else
+          '<%crefPart%> = <%expPart%>;'%>
       }
       >>
 end equationForLoop;
