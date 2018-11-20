@@ -2397,6 +2397,13 @@ algorithm
       then
         exp;
 
+    // Scalar product of any expression with zeros
+    case (_, _)
+      equation
+        true = Expression.isZero(inVector1) or Expression.isZero(inVector2);
+      then
+        Expression.makeConstZero(DAE.T_REAL_DEFAULT);
+
   end match;
 end simplifyScalarProduct;
 

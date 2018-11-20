@@ -1056,6 +1056,7 @@ algorithm
     // case for arrays
     case ((e as DAE.CREF(ty = DAE.T_ARRAY())), _, _, diffType, _) guard ( match diffType case BackendDAE.GENERIC_GRADIENT() then false; else true; end match )
       equation
+        true = Flags.isSet(Flags.NF_SCALARIZE); // only expand if scalarize
         (e1,true) = Expression.extendArrExp(e,false);
         (res, outFunctionTree) = differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
       then
@@ -1070,7 +1071,7 @@ algorithm
     case (DAE.CREF(componentRef = cr, ty = tp), _, _, _, _)
       equation
         true = ComponentReference.crefEqual(cr, inDiffwrtCref);
-        one = Expression.makeConstOne(tp);
+        (one,_) = Expression.makeOneExpression(Expression.arrayDimension(tp));
       then
         (one, inFunctionTree);
 

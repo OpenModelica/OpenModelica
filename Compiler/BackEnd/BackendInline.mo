@@ -210,8 +210,13 @@ algorithm
         (e1_1,source,b1,_) = Inline.inlineExp(e1,fns,source);
         (e2_1,source,b2,_) = Inline.inlineExp(e2,fns,source);
         true = b1 or b2;
+        eqn = match (e1_1, e2_1)
+          case (DAE.ARRAY(array = {e1}), DAE.ARRAY(array = {e2}))
+          then BackendDAE.EQUATION(e1,e2,source,attr); // flatten if size==1
+          else BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr);
+        end match;
       then
-        (BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr),true);
+        (eqn, true);
 
     case(BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), _)
       equation
