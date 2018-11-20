@@ -3928,6 +3928,84 @@ void ModelWidget::createModelWidgetComponents()
 }
 
 /*!
+ * \brief ModelWidget::drawOMSModelElement
+ * Draws the OMS model element i.e, system, FMU or table.
+ */
+ShapeAnnotation* ModelWidget::drawOMSModelElement()
+{
+  if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
+    // Draw bitmap with icon source
+    QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
+    QFileInfo fileInfo(url.toLocalFile());
+    BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpIconGraphicsView);
+    pBitmapAnnotation->initializeTransformation();
+    pBitmapAnnotation->drawCornerItems();
+    pBitmapAnnotation->setCornerItemsActiveOrPassive();
+    mpIconGraphicsView->addShapeToList(pBitmapAnnotation);
+    mpIconGraphicsView->addItem(pBitmapAnnotation);
+    return pBitmapAnnotation;
+  } else {
+    // Rectangle shape as base
+    RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
+    pRectangleAnnotation->initializeTransformation();
+    if (mpLibraryTreeItem->isSystemElement()) {
+      pRectangleAnnotation->setLineColor(QColor(128, 128, 0));
+      pRectangleAnnotation->setFillColor(Qt::white);
+    } else if (mpLibraryTreeItem->isFMUComponent()) {
+      pRectangleAnnotation->setFillColor(Qt::white);
+    } else if (mpLibraryTreeItem->isTableComponent()) {
+      pRectangleAnnotation->setLinePattern(StringHandler::LineNone);
+      if (mpLibraryTreeItem->getSubModelPath().endsWith(".csv")) {
+        pRectangleAnnotation->setFillColor(QColor(0, 148, 21));
+      } else {
+        pRectangleAnnotation->setFillColor(QColor(3, 75, 220));
+      }
+    }
+    pRectangleAnnotation->drawCornerItems();
+    pRectangleAnnotation->setCornerItemsActiveOrPassive();
+    mpIconGraphicsView->addShapeToList(pRectangleAnnotation);
+    mpIconGraphicsView->addItem(pRectangleAnnotation);
+    // Text for name
+    TextAnnotation *pTextAnnotation = new TextAnnotation(mpIconGraphicsView);
+    pTextAnnotation->initializeTransformation();
+    if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isFMUComponent()) {
+      QList<QPointF> extents;
+      extents << QPointF(-100, 80) << QPointF(100, 40);
+      pTextAnnotation->setExtents(extents);
+      if (mpLibraryTreeItem->isSystemElement()) {
+        pTextAnnotation->setLineColor(QColor(128, 128, 0));
+      }
+    } else if (mpLibraryTreeItem->isTableComponent()) {
+      pTextAnnotation->setLineColor(Qt::white);
+    }
+    pTextAnnotation->drawCornerItems();
+    pTextAnnotation->setCornerItemsActiveOrPassive();
+    mpIconGraphicsView->addShapeToList(pTextAnnotation);
+    mpIconGraphicsView->addItem(pTextAnnotation);
+    // Text for further information
+    if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isFMUComponent()) {
+      TextAnnotation *pInfoTextAnnotation = new TextAnnotation(mpIconGraphicsView);
+      pInfoTextAnnotation->initializeTransformation();
+      QList<QPointF> extents;
+      extents << QPointF(-100, -40) << QPointF(100, -80);
+      pInfoTextAnnotation->setExtents(extents);
+      if (mpLibraryTreeItem->isSystemElement()) {
+        pInfoTextAnnotation->setLineColor(QColor(128, 128, 0));
+        pInfoTextAnnotation->setTextString(OMSProxy::getSystemTypeShortString(mpLibraryTreeItem->getSystemType()));
+      } else {
+        pInfoTextAnnotation->setTextString(QString("%1 %2").arg(OMSProxy::getFMUKindString(mpLibraryTreeItem->getFMUInfo()->fmiKind))
+                                           .arg(QString(mpLibraryTreeItem->getFMUInfo()->fmiVersion)));
+      }
+      pInfoTextAnnotation->drawCornerItems();
+      pInfoTextAnnotation->setCornerItemsActiveOrPassive();
+      mpIconGraphicsView->addShapeToList(pInfoTextAnnotation);
+      mpIconGraphicsView->addItem(pInfoTextAnnotation);
+    }
+    return pRectangleAnnotation;
+  }
+}
+
+/*!
  * \brief ModelWidget::getConnectorComponent
  * Finds the Port Component within the Component.
  * \param pConnectorComponent
@@ -5880,32 +5958,8 @@ void ModelWidget::drawOMSModelIconElements()
   if (mpLibraryTreeItem->isTopLevel()) {
     return;
   } else if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
-    if (mpLibraryTreeItem->getOMSElement()->geometry && mpLibraryTreeItem->getOMSElement()->geometry->iconSource) {
-      // Draw bitmap with icon source
-      QUrl url(mpLibraryTreeItem->getOMSElement()->geometry->iconSource);
-      QFileInfo fileInfo(url.toLocalFile());
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(fileInfo.absoluteFilePath(), mpIconGraphicsView);
-      pBitmapAnnotation->initializeTransformation();
-      pBitmapAnnotation->drawCornerItems();
-      pBitmapAnnotation->setCornerItemsActiveOrPassive();
-      mpIconGraphicsView->addShapeToList(pBitmapAnnotation);
-      mpIconGraphicsView->addItem(pBitmapAnnotation);
-    } else {
-      // Rectangle shape as base
-      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpIconGraphicsView);
-      pRectangleAnnotation->initializeTransformation();
-      pRectangleAnnotation->drawCornerItems();
-      pRectangleAnnotation->setCornerItemsActiveOrPassive();
-      mpIconGraphicsView->addShapeToList(pRectangleAnnotation);
-      mpIconGraphicsView->addItem(pRectangleAnnotation);
-      // Text for name
-      TextAnnotation *pTextAnnotation = new TextAnnotation(mpIconGraphicsView);
-      pTextAnnotation->initializeTransformation();
-      pTextAnnotation->drawCornerItems();
-      pTextAnnotation->setCornerItemsActiveOrPassive();
-      mpIconGraphicsView->addShapeToList(pTextAnnotation);
-      mpIconGraphicsView->addItem(pTextAnnotation);
-    }
+    drawOMSModelElement();
+    // draw connectors
     for (int i = 0 ; i < mpLibraryTreeItem->childrenSize() ; i++) {
       LibraryTreeItem *pChildLibraryTreeItem = mpLibraryTreeItem->childAt(i);
       if (pChildLibraryTreeItem->getOMSConnector()

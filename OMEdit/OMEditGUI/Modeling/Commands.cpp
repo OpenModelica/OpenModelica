@@ -2270,15 +2270,9 @@ void AddIconCommand::redoInternal()
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
       }
-      // Add new bitmap shape
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mIcon, mpGraphicsView);
-      pBitmapAnnotation->initializeTransformation();
-      pBitmapAnnotation->drawCornerItems();
-      pBitmapAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addShapeToList(pBitmapAnnotation);
-      mpGraphicsView->addItem(pBitmapAnnotation);
+      ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
-      pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
+      pElementLibraryTreeItem->emitShapeAdded(pShapeAnnotation, mpGraphicsView);
     }
   }
 }
@@ -2303,22 +2297,9 @@ void AddIconCommand::undo()
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
       }
-      // Rectangle shape as base
-      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpGraphicsView);
-      pRectangleAnnotation->initializeTransformation();
-      pRectangleAnnotation->drawCornerItems();
-      pRectangleAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addShapeToList(pRectangleAnnotation);
-      mpGraphicsView->addItem(pRectangleAnnotation);
-      // Text for name
-      TextAnnotation *pTextAnnotation = new TextAnnotation(mpGraphicsView);
-      pTextAnnotation->initializeTransformation();
-      pTextAnnotation->drawCornerItems();
-      pTextAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addShapeToList(pTextAnnotation);
-      mpGraphicsView->addItem(pTextAnnotation);
+      ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
-      pElementLibraryTreeItem->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+      pElementLibraryTreeItem->emitShapeAdded(pShapeAnnotation, mpGraphicsView);
     }
   }
 }
@@ -2418,22 +2399,9 @@ void DeleteIconCommand::redoInternal()
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
       }
-      // Rectangle shape as base
-      RectangleAnnotation *pRectangleAnnotation = new RectangleAnnotation(mpGraphicsView);
-      pRectangleAnnotation->initializeTransformation();
-      pRectangleAnnotation->drawCornerItems();
-      pRectangleAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addShapeToList(pRectangleAnnotation);
-      mpGraphicsView->addItem(pRectangleAnnotation);
-      // Text for name
-      TextAnnotation *pTextAnnotation = new TextAnnotation(mpGraphicsView);
-      pTextAnnotation->initializeTransformation();
-      pTextAnnotation->drawCornerItems();
-      pTextAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addShapeToList(pTextAnnotation);
-      mpGraphicsView->addItem(pTextAnnotation);
+      ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
-      pElementLibraryTreeItem->emitShapeAdded(pRectangleAnnotation, mpGraphicsView);
+      pElementLibraryTreeItem->emitShapeAdded(pShapeAnnotation, mpGraphicsView);
     }
   }
 }
@@ -2461,15 +2429,9 @@ void DeleteIconCommand::undo()
         mpGraphicsView->deleteShapeFromList(pShapeAnnotation);
         mpGraphicsView->removeItem(pShapeAnnotation);
       }
-      // Add new bitmap shape
-      BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mIcon, mpGraphicsView);
-      pBitmapAnnotation->initializeTransformation();
-      pBitmapAnnotation->drawCornerItems();
-      pBitmapAnnotation->setCornerItemsActiveOrPassive();
-      mpGraphicsView->addShapeToList(pBitmapAnnotation);
-      mpGraphicsView->addItem(pBitmapAnnotation);
+      ShapeAnnotation *pShapeAnnotation = mpGraphicsView->getModelWidget()->drawOMSModelElement();
       pElementLibraryTreeItem->handleIconUpdated();
-      pElementLibraryTreeItem->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
+      pElementLibraryTreeItem->emitShapeAdded(pShapeAnnotation, mpGraphicsView);
     }
   }
 }

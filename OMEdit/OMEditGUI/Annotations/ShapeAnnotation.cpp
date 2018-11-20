@@ -1684,6 +1684,7 @@ void ShapeAnnotation::contextMenuEvent(QGraphicsSceneContextMenuEvent *pEvent)
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
     BitmapAnnotation *pBitmapAnnotation = dynamic_cast<BitmapAnnotation*>(this);
     if (pBitmapAnnotation && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getOMSElement()) {
+      menu.addAction(MainWindow::instance()->getAddOrEditIconAction());
       menu.addAction(MainWindow::instance()->getDeleteIconAction());
     } else {
       return;

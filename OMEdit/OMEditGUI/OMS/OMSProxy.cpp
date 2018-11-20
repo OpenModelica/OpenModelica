@@ -198,6 +198,27 @@ QString OMSProxy::getSystemTypeString(oms_system_enu_t type)
 }
 
 /*!
+ * \brief OMSProxy::getSystemTypeShortString
+ * Returns the oms_system_enu_t as short string.
+ * \param type
+ * \return
+ */
+QString OMSProxy::getSystemTypeShortString(oms_system_enu_t type)
+{
+  switch (type) {
+    case oms_system_tlm:
+      return "TLM";
+    case oms_system_wc:
+      return "WC";
+    case oms_system_sc:
+      return "SC";
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+/*!
  * \brief OMSProxy::getFMUKindString
  * Returns the oms_fmi_kind_enu_t as string.
  * \param kind

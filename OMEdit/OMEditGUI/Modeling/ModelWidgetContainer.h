@@ -422,6 +422,7 @@ public:
   void loadConnections();
   void getModelConnections();
   void createModelWidgetComponents();
+  ShapeAnnotation* drawOMSModelElement();
   Component* getConnectorComponent(Component *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
   void reDrawModelWidget();
