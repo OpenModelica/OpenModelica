@@ -27,10 +27,10 @@ model VectorizedPowerSystemTest
 
   PowerSystems.Generic.FixedVoltageSource fixedVoltageSource1;
   inner PowerSystems.System system;
-  PowerSystems.Generic.FixedCurrent[n] fixedCurrent1(I = 100:100:100 * n, phi = 0.1:0.1:0.1 * n);
+  PowerSystems.Generic.FixedLoad[n] fixedLoad1(P = 1e6:1e6:1e6 * n, phi = 0.1:0.1:0.1 * n);
   BusBar busBar1;
 equation
-  connect(busBar1.terminal_n, fixedCurrent1.terminal);
+  connect(busBar1.terminal_n, fixedLoad1.terminal);
   connect(fixedVoltageSource1.terminal, busBar1.terminal_p);
 end VectorizedPowerSystemTest;
 
@@ -127,12 +127,12 @@ package PowerSystems  "Library for electrical power systems"
         output Voltage[n] v "phase voltages";
       end phaseVoltages;
 
-      replaceable partial function phaseCurrents  "Return phase currents"
+      replaceable partial function phasePowers  "Return phase powers"
         extends Modelica.Icons.Function;
-        input Current I "system current";
+        input SI.ActivePower P "active system power";
         input SI.Angle phi = 0 "phase angle";
-        output Current[n] i "phase currents";
-      end phaseCurrents;
+        output SI.Power[n] p "phase powers";
+      end phasePowers;
 
       replaceable partial function phasePowers_vi  "Return phase powers"
         extends Modelica.Icons.Function;
@@ -193,15 +193,15 @@ package PowerSystems  "Library for electrical power systems"
         annotation(Inline = true);
       end phaseVoltages;
 
-      redeclare function phaseCurrents  "Return phase currents"
+      redeclare function phasePowers  "Return phase powers"
         extends Modelica.Icons.Function;
-        input Current I "system current";
+        input SI.ActivePower P "active system power";
         input SI.Angle phi = 0 "phase angle";
-        output Current[n] i "phase currents";
+        output SI.Power[n] p "phase powers";
       algorithm
-        i := {I};
+        p := {P};
         annotation(Inline = true);
-      end phaseCurrents;
+      end phasePowers;
 
       redeclare function phasePowers_vi  "Return phase powers"
         extends Modelica.Icons.Function;
@@ -266,13 +266,13 @@ package PowerSystems  "Library for electrical power systems"
       terminal.v = PhaseSystem.phaseVoltages(V, PhaseSystem.thetaRel(terminal.theta));
     end FixedVoltageSource;
 
-    model FixedCurrent
+    model FixedLoad
       extends PowerSystems.Generic.Ports.PartialLoad;
-      parameter SI.Current I = 0 "rms value of constant current";
+      parameter SI.Power P = 0 "rms value of constant active power";
       parameter SI.Angle phi = 0 "phase angle";
     equation
-      terminal.i = PhaseSystem.phaseCurrents(I, phi);
-    end FixedCurrent;
+      PhaseSystem.phasePowers_vi(terminal.v, terminal.i) = PhaseSystem.phasePowers(P, phi);
+    end FixedLoad;
 
     package Ports  "Interfaces for generic components"
       extends Modelica.Icons.InterfacesPackage;
@@ -354,6 +354,7 @@ package PowerSystems  "Library for electrical power systems"
       type Voltage = MSI.Voltage(displayUnit = "kV");
       type Current = MSI.Current;
       type Power = MSI.Power(displayUnit = "MW");
+      type ActivePower = MSI.ActivePower(displayUnit = "MW");
     end SI;
 
     type SystemFrequency = enumeration(Parameter "Parameter f", Signal "Signal omega_in", Average "Average generators") "Options for specification of frequency in system object";
@@ -374,7 +375,7 @@ package PowerSystems  "Library for electrical power systems"
       end equalityConstraint;
     end ReferenceAngle;
   end Types;
-  annotation(version = "0.7 dev", versionDate = "2018-02-05");
+  annotation(version = "1.0.0", versionDate = "2018-11-12");
 end PowerSystems;
 
 package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation"
@@ -534,6 +535,7 @@ package Modelica  "Modelica Standard Library - Version 3.2.2"
     type Current = ElectricCurrent;
     type ElectricPotential = Real(final quantity = "ElectricPotential", final unit = "V");
     type Voltage = ElectricPotential;
+    type ActivePower = Real(final quantity = "Power", final unit = "W");
     type FaradayConstant = Real(final quantity = "FaradayConstant", final unit = "C/mol");
   end SIunits;
   annotation(version = "3.2.2", versionBuild = 3, versionDate = "2016-04-03", dateModified = "2016-04-03 08:44:41Z");

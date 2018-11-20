@@ -3,10 +3,7 @@
 // status: correct
 // teardown_command: rm -f *VectorizedSolarSystemTest*
 
-setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();
-setCommandLineOptions("--preOptModules-=removeSimpleEquations"); getErrorString();
-setCommandLineOptions("--postOptModules-=removeSimpleEquations"); getErrorString();
 setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
 setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
@@ -19,12 +16,6 @@ simulate(VectorizedSolarSystemTest); getErrorString();
 val(grid.P_grid, 0.0);
 
 // Result:
-// true
-// ""
-// true
-// ""
-// true
-// ""
 // true
 // ""
 // true
@@ -87,10 +78,10 @@ val(grid.P_grid, 0.0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (4)
 // ========================================
-// 1: grid.V:PARAM(flow=false unit = "V" )  = 1000.0  type: Real 
-// 2: grid.n:PARAM(flow=false )  = 1000  type: Integer 
-// 3: plant.eta:PARAM(flow=false )  = 0.9  "Efficiency" type: Real[1000]  [1000]
-// 4: n:PARAM(flow=false )  = 1000  type: Integer 
+// 1: n:PARAM(flow=false )  = 1000  type: Integer 
+// 2: plant.eta:PARAM(flow=false )  = 0.9  "Efficiency" type: Real[1000]  [1000]
+// 3: grid.n:PARAM(flow=false )  = 1000  type: Integer 
+// 4: grid.V:PARAM(flow=false unit = "V" )  = 1000.0  type: Real 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
