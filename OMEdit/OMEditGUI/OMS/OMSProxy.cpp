@@ -290,6 +290,27 @@ QString OMSProxy::getCausalityString(oms_causality_enu_t causality)
 }
 
 /*!
+ * \brief OMSProxy::getInterpolationString
+ * Returns the oms_tlm_interpolation_t as string.
+ * \param interpolation
+ * \return
+ */
+QString OMSProxy::getInterpolationString(oms_tlm_interpolation_t interpolation)
+{
+  switch (interpolation) {
+    case oms_tlm_no_interpolation:
+      return "No interpolation";
+    case oms_tlm_coarse_grained:
+      return "Coarse grained";
+    case oms_tlm_fine_grained:
+      return "Fine grained";
+    default:
+      // should never be reached
+      return "";
+  }
+}
+
+/*!
  * \brief OMSProxy::statusToBool
  * Converts the oms_status_enu_t to bool.
  * \param status

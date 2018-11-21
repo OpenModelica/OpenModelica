@@ -1453,7 +1453,8 @@ Component* GraphicsView::connectorComponentAtPosition(QPoint position)
                (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel &&
                 pComponent->getComponentType() == Component::Port) ||
                (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS &&
-                (pComponent->getLibraryTreeItem()->getOMSConnector() || pComponent->getComponentType() == Component::Port)))) {
+                (pComponent->getLibraryTreeItem()->getOMSConnector() || pComponent->getLibraryTreeItem()->getOMSBusConnector()
+                 || pComponent->getLibraryTreeItem()->getOMSTLMBusConnector() || pComponent->getComponentType() == Component::Port)))) {
             return pComponent;
           }
         }

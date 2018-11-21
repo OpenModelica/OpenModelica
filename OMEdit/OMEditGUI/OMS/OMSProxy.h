@@ -66,6 +66,7 @@ public:
   static QString getFMUKindString(oms_fmi_kind_enu_t kind);
   static QString getSignalTypeString(oms_signal_type_enu_t type);
   static QString getCausalityString(oms_causality_enu_t causality);
+  static QString getInterpolationString(oms_tlm_interpolation_t interpolation);
 
   bool statusToBool(oms_status_enu_t status);
 

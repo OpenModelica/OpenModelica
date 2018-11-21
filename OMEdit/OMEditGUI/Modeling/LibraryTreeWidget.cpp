@@ -398,9 +398,12 @@ QString LibraryTreeItem::getTooltip() const {
                 .arg(Helper::name).arg(mName)
                 .arg(Helper::type).arg("Bus");
     } else if (mpOMSTLMBusConnector) {
-      tooltip = QString("%1 %2<br />%3: %4")
+      tooltip = QString("%1 %2<br />%3: %4<br />%5: %6<br />%7: %8<br />%9: %10<br />%11: %12")
                 .arg(Helper::name).arg(mName)
-                .arg(Helper::type).arg("TLM Bus");
+                .arg(Helper::type).arg("TLM Bus")
+                .arg("Domain").arg(QString(mpOMSTLMBusConnector->domain))
+                .arg("Dimensions").arg(QString::number(mpOMSTLMBusConnector->dimensions))
+                .arg("Interpolation").arg(OMSProxy::getInterpolationString(mpOMSTLMBusConnector->interpolation));
     }
   } else {
     tooltip = QString("%1 %2\n%3: %4")
@@ -476,7 +479,20 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     } else if (mpOMSBusConnector) {
       return QIcon(":/Resources/icons/bus-connector.svg");
     } else if (mpOMSTLMBusConnector) {
-      return QIcon(":/Resources/icons/tlm-bus-connector.svg");
+      QString domain = QString(mpOMSTLMBusConnector->domain);
+      if (domain.compare("input") == 0) {
+        return QIcon(":/Resources/icons/tlm-input-bus-connector.svg");
+      } else if (domain.compare("output") == 0) {
+        return QIcon(":/Resources/icons/tlm-output-bus-connector.svg");
+      } else if (domain.compare("rotational") == 0) {
+        return QIcon(":/Resources/icons/tlm-rotational-bus-connector.svg");
+      } else if (domain.compare("hydraulic") == 0) {
+        return QIcon(":/Resources/icons/tlm-hydraulic-bus-connector.svg");
+      } else if (domain.compare("electric") == 0) {
+        return QIcon(":/Resources/icons/tlm-electric-bus-connector.svg");
+      } else {
+        return QIcon(":/Resources/icons/tlm-mechanical-bus-connector.svg");
+      }
     }
   } else if (mLibraryType == LibraryTreeItem::Modelica) {
     switch (getRestriction()) {

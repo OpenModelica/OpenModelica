@@ -200,7 +200,12 @@
         <file>Resources/icons/boolean-input-connector.svg</file>
         <file>Resources/icons/boolean-output-connector.svg</file>
         <file>Resources/icons/bus-connector.svg</file>
-        <file>Resources/icons/tlm-bus-connector.svg</file>
+        <file>Resources/icons/tlm-input-bus-connector.svg</file>
+        <file>Resources/icons/tlm-output-bus-connector.svg</file>
+        <file>Resources/icons/tlm-rotational-bus-connector.svg</file>
+        <file>Resources/icons/tlm-hydraulic-bus-connector.svg</file>
+        <file>Resources/icons/tlm-electric-bus-connector.svg</file>
+        <file>Resources/icons/tlm-mechanical-bus-connector.svg</file>
         <file>Resources/icons/instantiate.svg</file>
     </qresource>
 </RCC>
