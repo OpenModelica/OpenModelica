@@ -376,7 +376,7 @@ int functionJacC(DATA* data, threadData_t *threadData, double* jac){
     data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
     if(ACTIVE_STREAM(LOG_JAC))
     {
-      printf("Caluculate one col:\n");
+      printf("Calculate one col:\n");
       for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
         infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo->analyticJacobians[index].seedVars[j]);
     }
@@ -414,7 +414,7 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
     data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
     if(ACTIVE_STREAM(LOG_JAC))
     {
-      printf("Caluculate one col:\n");
+      printf("Calculate one col:\n");
       for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++) {
         infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo->analyticJacobians[index].seedVars[j]);
       }
@@ -464,6 +464,7 @@ int linearize(DATA* data, threadData_t *threadData)
     double* matrixCz = 0;
     double* matrixDz = 0;
     string strA, strB, strC, strD, strCz, strDz, strX, strU, strZ0, filename;
+	std::size_t pos, pos1, pos2;
 
     assertStreamPrint(threadData,0!=matrixA,"calloc failed");
     assertStreamPrint(threadData,0!=matrixB,"calloc failed");
@@ -560,12 +561,31 @@ int linearize(DATA* data, threadData_t *threadData)
 
     /* Use the result file name rather than the model name so that the linear file name can be changed with the -r flag, however strip _res.mat from the filename */
     filename = string(data->modelData->resultFileName) + ".mo";
-    filename = filename.substr(0, filename.rfind("_res.mat")) + ".mo";
+	pos = filename.rfind("_res.mat");
+	if (pos != std::string::npos)
+	{
+      // not found, use the modelFilePrefix
+	  filename = string(data->modelData->modelFilePrefix) + ".mo";
+	}
+	else
+	{
+      filename = filename.substr(0, pos) + ".mo";
+	}
 #if defined(__MINGW32__) || defined(_MSC_VER)
-    if(filename.rfind('\\') >= filename.length()) {
+    pos1 = filename.rfind('\\');
+	pos2 = filename.rfind('/');
+	if (pos1 < pos2)
+	{
+      pos = pos2;
+	}
+	else
+	{
+      pos = pos1;
+	}
+    if(pos >= filename.length()) {
       filename = "linear_" + filename;
     }else{
-      filename.replace(filename.rfind('\\'), 1, "\\linear_");
+      filename.replace(pos, 1, "/linear_");
     }
 #else
     if(filename.rfind('/') >= filename.length()) {
