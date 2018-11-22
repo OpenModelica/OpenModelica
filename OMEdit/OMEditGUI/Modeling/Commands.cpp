@@ -2643,7 +2643,7 @@ void DeleteConnectorFromBusCommand::undo()
  * \param pParent
  */
 AddTLMBusCommand::AddTLMBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
-                                   bool openingClass, QString domain, int dimension, oms_tlm_interpolation_t interpolation,
+                                   bool openingClass, oms_tlm_domain_t domain, int dimension, oms_tlm_interpolation_t interpolation,
                                    UndoCommand *pParent)
   : UndoCommand(pParent)
 {

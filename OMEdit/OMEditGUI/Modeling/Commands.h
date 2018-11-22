@@ -580,7 +580,7 @@ class AddTLMBusCommand : public UndoCommand
 {
 public:
   AddTLMBusCommand(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, GraphicsView *pGraphicsView,
-                   bool openingClass, QString domain, int dimension, oms_tlm_interpolation_t interpolation, UndoCommand *pParent = 0);
+                   bool openingClass, oms_tlm_domain_t domain, int dimension, oms_tlm_interpolation_t interpolation, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
@@ -591,7 +591,7 @@ private:
   GraphicsView *mpDiagramGraphicsView;
   bool mOpeningClass;
   GraphicsView *mpGraphicsView;
-  QString mDomain;
+  oms_tlm_domain_t mDomain;
   int mDimension;
   oms_tlm_interpolation_t mInterpolation;
   Component *mpIconComponent;

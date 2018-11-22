@@ -507,13 +507,13 @@ bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
  * \param interpolation
  * \return
  */
-bool OMSProxy::addTLMBus(QString cref, QString domain, int dimensions, const oms_tlm_interpolation_t interpolation)
+bool OMSProxy::addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation)
 {
   QString command = "oms3_addTLMBus";
   QStringList args;
-  args << cref << domain << QString::number(dimensions) << QString::number(interpolation);
+  args << cref << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_addTLMBus(cref.toStdString().c_str(), domain.toStdString().c_str(), dimensions, interpolation);
+  oms_status_enu_t status = oms3_addTLMBus(cref.toStdString().c_str(), domain, dimensions, interpolation);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -611,29 +611,25 @@ bool OMSProxy::getComponentType(QString cref, oms_component_enu_t *pType)
   return statusToBool(status);
 }
 
-
-
 /*!
- * \brief OMSProxy::newFMIModel
- * Creates a new FMI model.
- * \param ident
+ * \brief OMSProxy::getTLMVariableTypes
+ * Gets the TLM variables types based on the domain, dimensions and interpoation.
+ * \param domain
+ * \param dimensions
+ * \param interpolation
+ * \param types
+ * \param descriptions
  * \return
  */
-bool OMSProxy::newFMIModel(QString ident)
+bool OMSProxy::getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions, const oms_tlm_interpolation_t interpolation,
+                                   char ***types, char ***descriptions)
 {
-  oms_status_enu_t status = oms2_newFMIModel(ident.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::newTLMModel
- * Creates a new TLM model.
- * \param ident
- * \return
- */
-bool OMSProxy::newTLMModel(QString ident)
-{
-  oms_status_enu_t status = oms2_newTLMModel(ident.toStdString().c_str());
+  QString command = "oms3_getTLMVariableTypes";
+  QStringList args;
+  args << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getTLMVariableTypes(domain, dimensions, interpolation, types, descriptions);
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 

@@ -56,6 +56,8 @@ public:
   Component* getComponent() {return mpComponent;}
   QString getTLMType() const {return mTLMType;}
   void setTLMType(const QString &tlmType) {mTLMType = tlmType;}
+  QString getTLMTypeDescription() const {return mTLMTypeDescription;}
+  void setTLMTypeDescription(const QString &tlmTypeDescription) {mTLMTypeDescription = tlmTypeDescription;}
   ConnectorItem* parent() const {return mpParentConnectorItem;}
   int childrenSize() const {return mChildren.size();}
   void insertChild(int row, ConnectorItem *pConnectorItem) {mChildren.insert(row, pConnectorItem);}
@@ -69,6 +71,7 @@ private:
   QString mText;
   Component *mpComponent;
   QString mTLMType;
+  QString mTLMTypeDescription;
   ConnectorItem *mpParentConnectorItem;
   QList<ConnectorItem*> mChildren;
   bool mChecked;
@@ -86,15 +89,22 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
   Qt::ItemFlags flags(const QModelIndex &index) const;
-  QModelIndex connectorItemIndex(const ConnectorItem *pConnectorItem) const;
-  ConnectorItem* getRootConnectorItem() {return mpRootConnectorItem;}
+  QModelIndex connectorItemIndex(const ConnectorItem *pConnectorItem, const int column = 0) const;
   ConnectorItem* createConnectorItem(Component *pComponent, ConnectorItem *pParent);
+
+  ConnectorItem* getRootConnectorItem() {return mpRootConnectorItem;}
   void setColumnCount(int columnCount) {mColumnCount = columnCount;}
+  QStringList getTLMTypes() const {return mTLMTypes;}
+  void setTLMTypes(const QStringList &tlmTypes) {mTLMTypes = tlmTypes;}
+  QStringList getTLMTypesDescriptions() const {return mTLMTypesDescriptions;}
+  void setTLMTypesDescriptions(const QStringList &tlmTypesDescriptions) {mTLMTypesDescriptions = tlmTypesDescriptions;}
 
 private:
   ConnectorItem *mpRootConnectorItem;
   int mColumnCount;
-  QModelIndex connectorItemIndexHelper(const ConnectorItem *pConnectorItem, const ConnectorItem *pParentConnectorItem,
+  QStringList mTLMTypes;
+  QStringList mTLMTypesDescriptions;
+  QModelIndex connectorItemIndexHelper(const ConnectorItem *pConnectorItem, const int column, const ConnectorItem *pParentConnectorItem,
                                        const QModelIndex &parentIndex) const;
 };
 
@@ -145,7 +155,7 @@ private:
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpDomainLabel;
-  QLineEdit *mpDomainTextBox;
+  QComboBox *mpDomainComboBox;
   Label *mpDimensionLabel;
   QSpinBox *mpDimensionSpinBox;
   Label *mpInterpolationLabel;
@@ -159,6 +169,7 @@ private:
   QDialogButtonBox *mpButtonBox;
   void markExistingTLMBusConnectors(ConnectorItem *pParentConnectorItem, QList<Component*> components);
 private slots:
+  void fetchTLMTypes();
   void addTLMBus();
 };
 

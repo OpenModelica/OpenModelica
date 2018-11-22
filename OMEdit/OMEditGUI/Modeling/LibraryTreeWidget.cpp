@@ -479,19 +479,20 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     } else if (mpOMSBusConnector) {
       return QIcon(":/Resources/icons/bus-connector.svg");
     } else if (mpOMSTLMBusConnector) {
-      QString domain = QString(mpOMSTLMBusConnector->domain);
-      if (domain.compare("input") == 0) {
-        return QIcon(":/Resources/icons/tlm-input-bus-connector.svg");
-      } else if (domain.compare("output") == 0) {
-        return QIcon(":/Resources/icons/tlm-output-bus-connector.svg");
-      } else if (domain.compare("rotational") == 0) {
-        return QIcon(":/Resources/icons/tlm-rotational-bus-connector.svg");
-      } else if (domain.compare("hydraulic") == 0) {
-        return QIcon(":/Resources/icons/tlm-hydraulic-bus-connector.svg");
-      } else if (domain.compare("electric") == 0) {
-        return QIcon(":/Resources/icons/tlm-electric-bus-connector.svg");
-      } else {
-        return QIcon(":/Resources/icons/tlm-mechanical-bus-connector.svg");
+      switch (mpOMSTLMBusConnector->domain) {
+        case oms_tlm_domain_input:
+          return QIcon(":/Resources/icons/tlm-input-bus-connector.svg");
+        case oms_tlm_domain_output:
+          return QIcon(":/Resources/icons/tlm-output-bus-connector.svg");
+        case oms_tlm_domain_rotational:
+          return QIcon(":/Resources/icons/tlm-rotational-bus-connector.svg");
+        case oms_tlm_domain_hydraulic:
+          return QIcon(":/Resources/icons/tlm-hydraulic-bus-connector.svg");
+        case oms_tlm_domain_electric:
+          return QIcon(":/Resources/icons/tlm-electric-bus-connector.svg");
+        case oms_tlm_domain_mechanical:
+        default:
+          return QIcon(":/Resources/icons/tlm-mechanical-bus-connector.svg");
       }
     }
   } else if (mLibraryType == LibraryTreeItem::Modelica) {

@@ -1666,25 +1666,32 @@ void Component::drawOMSComponent()
     QList<QPointF> extents;
     extents << QPointF(-100, -100) << QPointF(100, 100);
     pTLMBusRectangleAnnotation->setExtents(extents);
-    QString domain = QString(mpLibraryTreeItem->getOMSTLMBusConnector()->domain);
-    if (domain.compare("input") == 0) {
-      pTLMBusRectangleAnnotation->setLineColor(QColor(0, 0, 127));
-      pTLMBusRectangleAnnotation->setFillColor(QColor(0, 0, 127));
-    } else if (domain.compare("output") == 0) {
-      pTLMBusRectangleAnnotation->setLineColor(QColor(0, 0, 127));
-      pTLMBusRectangleAnnotation->setFillColor(QColor(255, 255, 255));
-    } else if (domain.compare("rotational") == 0) { // rotational = turquoise
-      pTLMBusRectangleAnnotation->setLineColor(QColor(100, 255, 255));
-      pTLMBusRectangleAnnotation->setFillColor(QColor(100, 255, 255));
-    } else if (domain.compare("hydraulic") == 0) { // hydraulic = green
-      pTLMBusRectangleAnnotation->setLineColor(QColor(100, 255, 100));
-      pTLMBusRectangleAnnotation->setFillColor(QColor(100, 255, 100));
-    } else if (domain.compare("electric") == 0) { // electric = yellow
-      pTLMBusRectangleAnnotation->setLineColor(QColor(255, 255, 100));
-      pTLMBusRectangleAnnotation->setFillColor(QColor(255, 255, 100));
-    } else { // mechanical or other = blue
-      pTLMBusRectangleAnnotation->setLineColor(QColor(100, 100, 255));
-      pTLMBusRectangleAnnotation->setFillColor(QColor(100, 100, 255));
+    switch (mpLibraryTreeItem->getOMSTLMBusConnector()->domain) {
+      case oms_tlm_domain_input:
+        pTLMBusRectangleAnnotation->setLineColor(QColor(0, 0, 127));
+        pTLMBusRectangleAnnotation->setFillColor(QColor(0, 0, 127));
+        break;
+      case oms_tlm_domain_output:
+        pTLMBusRectangleAnnotation->setLineColor(QColor(0, 0, 127));
+        pTLMBusRectangleAnnotation->setFillColor(QColor(255, 255, 255));
+        break;
+      case oms_tlm_domain_rotational:
+        pTLMBusRectangleAnnotation->setLineColor(QColor(100, 255, 255));
+        pTLMBusRectangleAnnotation->setFillColor(QColor(100, 255, 255));
+        break;
+      case oms_tlm_domain_hydraulic:
+        pTLMBusRectangleAnnotation->setLineColor(QColor(100, 255, 100));
+        pTLMBusRectangleAnnotation->setFillColor(QColor(100, 255, 100));
+        break;
+      case oms_tlm_domain_electric:
+        pTLMBusRectangleAnnotation->setLineColor(QColor(255, 255, 100));
+        pTLMBusRectangleAnnotation->setFillColor(QColor(255, 255, 100));
+        break;
+      case oms_tlm_domain_mechanical:
+      default:
+        pTLMBusRectangleAnnotation->setLineColor(QColor(100, 100, 255));
+        pTLMBusRectangleAnnotation->setFillColor(QColor(100, 100, 255));
+        break;
     }
     pTLMBusRectangleAnnotation->setFillPattern(StringHandler::FillSolid);
     mShapesList.append(pTLMBusRectangleAnnotation);

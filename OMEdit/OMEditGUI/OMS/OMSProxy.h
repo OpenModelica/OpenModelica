@@ -80,15 +80,15 @@ public:
   bool getBus(QString cref, oms3_busconnector_t **pBusConnector);
   bool addConnectorToBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
-  bool addTLMBus(QString cref, QString domain, int dimensions, const oms_tlm_interpolation_t interpolation);
+  bool addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation);
   bool getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector);
   bool addConnectorToTLMBus(QString busCref, QString connectorCref, QString type);
   bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
   bool addSubModel(QString cref, QString fmuPath);
   bool getComponentType(QString cref, oms_component_enu_t *pType);
+  bool getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions, const oms_tlm_interpolation_t interpolation,
+                           char ***types, char ***descriptions);
 
-  bool newFMIModel(QString ident);
-  bool newTLMModel(QString ident);
   bool unloadModel(QString ident);
   bool addFMU(QString modelIdent, QString fmuPath, QString fmuIdent);
   bool addTable(QString modelIdent, QString tablePath, QString tableIdent);

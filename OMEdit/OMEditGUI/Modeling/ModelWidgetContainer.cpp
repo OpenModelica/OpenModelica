@@ -6007,7 +6007,7 @@ void ModelWidget::drawOMSModelIconElements()
                              .arg(Utilities::mapToCoOrdinateSystem(y, 0, 1, -100, 100));
         AddTLMBusCommand *pAddTLMBusCommand = new AddTLMBusCommand(pChildLibraryTreeItem->getName(), pChildLibraryTreeItem,
                                                                    annotation, mpIconGraphicsView, true,
-                                                                   QString(pChildLibraryTreeItem->getOMSTLMBusConnector()->domain),
+                                                                   pChildLibraryTreeItem->getOMSTLMBusConnector()->domain,
                                                                    pChildLibraryTreeItem->getOMSTLMBusConnector()->dimensions,
                                                                    pChildLibraryTreeItem->getOMSTLMBusConnector()->interpolation);
         mpUndoStack->push(pAddTLMBusCommand);
