@@ -1462,6 +1462,24 @@ bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
 }
 
 /*!
+ * \brief OMSProxy::setLoggingInterval
+ * Sets the logging interval.
+ * \param cref
+ * \param loggingInterval
+ * \return
+ */
+bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
+{
+  QString command = "oms3_setLoggingInterval";
+  QStringList args;
+  args << cref << QString::number(loggingInterval);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setLoggingInterval(cref.toStdString().c_str(), loggingInterval);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::setMasterAlgorithm
  * Set master algorithm variant that shall be used (default: "standard").
  *

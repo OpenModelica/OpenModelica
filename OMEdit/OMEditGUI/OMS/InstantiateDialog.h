@@ -60,6 +60,8 @@ private:
   QLineEdit *mpResultFileTextBox;
   Label *mpResultFileBufferSizeLabel;
   QSpinBox *mpResultFileBufferSizeSpinBox;
+  Label *mpLoggingIntervalLabel;
+  QLineEdit *mpLoggingIntervalTextBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

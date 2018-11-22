@@ -76,6 +76,9 @@ InstantiateDialog::InstantiateDialog(LibraryTreeItem *pLibraryTreeItem, QWidget 
   mpResultFileBufferSizeSpinBox = new QSpinBox;
   mpResultFileBufferSizeSpinBox->setRange(1, INT_MAX);
   mpResultFileBufferSizeSpinBox->setValue(mpLibraryTreeItem->mOMSSimulationOptions.getResultFileBufferSize());
+  // logging interval
+  mpLoggingIntervalLabel = new Label(tr("Logging Interval:"));
+  mpLoggingIntervalTextBox = new QLineEdit("0");
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -104,7 +107,9 @@ InstantiateDialog::InstantiateDialog(LibraryTreeItem *pLibraryTreeItem, QWidget 
   pMainLayout->addWidget(mpResultFileTextBox, 4, 1);
   pMainLayout->addWidget(mpResultFileBufferSizeLabel, 5, 0);
   pMainLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
-  pMainLayout->addWidget(mpButtonBox, 6, 0, 1, 2);
+  pMainLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
+  pMainLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
+  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 2);
   setLayout(pMainLayout);
 }
 
@@ -131,6 +136,7 @@ void InstantiateDialog::instantiate()
                                       mpResultFileBufferSizeSpinBox->value());
   mpLibraryTreeItem->mOMSSimulationOptions.setResultFileName(mpResultFileTextBox->text());
   mpLibraryTreeItem->mOMSSimulationOptions.setResultFileBufferSize(mpResultFileBufferSizeSpinBox->value());
+  OMSProxy::instance()->setLoggingInterval(mpLibraryTreeItem->getNameStructure(), mpLoggingIntervalTextBox->text().toDouble());
 
   if (mpLibraryTreeItem->getModelWidget()) {
     mpLibraryTreeItem->getModelWidget()->updateModelText();

@@ -137,6 +137,7 @@ public:
   bool setStopTime(QString cref, double stopTime);
   bool setFixedStepSize(QString cref, double stepSize);
   bool setResultFile(QString cref, QString filename, int bufferSize);
+  bool setLoggingInterval(QString cref, double loggingInterval);
   bool setMasterAlgorithm(QString cref, QString masterAlgorithm);
   bool exists(QString cref);
 };
