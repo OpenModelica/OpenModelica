@@ -1054,10 +1054,13 @@ protected
         list<TypedArg> typedArgs;
         list<TypedNamedArg> typedNamedArgs;
         String name;
+        ExpOrigin.Type next_origin;
 
       case UNTYPED_CALL()
         algorithm
           typedArgs := {};
+          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+
           for arg in call.arguments loop
             (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
             typedArgs := (arg, arg_ty, arg_var) :: typedArgs;

@@ -812,6 +812,8 @@ public constant Message OPERATOR_OVERLOADING_INVALID_OUTPUT_TYPE = MESSAGE(341, 
   Util.gettext("Output ‘%s‘ in operator %s must be of type %s, got type %s."));
 public constant Message OPERATOR_NOT_ENCAPSULATED = MESSAGE(342, TRANSLATION(), ERROR(),
   Util.gettext("Operator %s is not encapsulated."));
+public constant Message NO_SUCH_INPUT_PARAMETER = MESSAGE(343, TRANSLATION(), ERROR(),
+  Util.gettext("Function %s has no input parameter named %s."));
 public constant Message INITIALIZATION_NOT_FULLY_SPECIFIED = MESSAGE(496, TRANSLATION(), WARNING(),
   Util.gettext("The initial conditions are not fully specified. %s."));
 public constant Message INITIALIZATION_OVER_SPECIFIED = MESSAGE(497, TRANSLATION(), WARNING(),

@@ -2348,28 +2348,25 @@ end instSubscript;
 
 function instPartEvalFunction
   input Absyn.ComponentRef func;
-  input Absyn.FunctionArgs args;
+  input Absyn.FunctionArgs funcArgs;
   input InstNode scope;
   input SourceInfo info;
   output Expression outExp;
+protected
+  ComponentRef fn_ref;
+  list<Absyn.NamedArg> nargs;
+  list<Expression> args;
+  list<String> arg_names;
 algorithm
-  outExp := match args
-    case Absyn.FUNCTIONARGS(args = {}, argNames = {})
-      then instCref(func, scope, info);
+  Absyn.FunctionArgs.FUNCTIONARGS(argNames = nargs) := funcArgs;
+  outExp := instCref(func, scope, info);
 
-    case Absyn.FUNCTIONARGS()
-      algorithm
-
-      then
-        fail();
-
-    case Absyn.FOR_ITER_FARG()
-      algorithm
-        print("Invalid argument to function partial application\n");
-      then
-        fail();
-
-  end match;
+  if not listEmpty(nargs) then
+    fn_ref := Expression.toCref(outExp);
+    args := list(instExp(arg.argValue, scope, info) for arg in nargs);
+    arg_names := list(arg.argName for arg in nargs);
+    outExp := Expression.PARTIAL_FUNCTION_APPLICATION(fn_ref, args, arg_names, Type.UNKNOWN());
+  end if;
 end instPartEvalFunction;
 
 function instSections
@@ -2418,7 +2415,7 @@ algorithm
     case (SCode.PARTS(), _)
       algorithm
         origin := if isFunction then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
-        iorigin := intBitOr(origin, ExpOrigin.INITIAL);
+        iorigin := ExpOrigin.setFlag(origin, ExpOrigin.INITIAL);
 
         eq := instEquations(parts.normalEquationLst, scope, origin);
         ieq := instEquations(parts.initialEquationLst, scope, iorigin);
@@ -2535,7 +2532,7 @@ algorithm
         exp1 := instExp(scodeEq.expLeft, scope, info);
         exp2 := instExp(scodeEq.expRight, scope, info);
 
-        if intBitAnd(origin, ExpOrigin.WHEN) > 0 and not checkLhsInWhen(exp1) then
+        if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) and not checkLhsInWhen(exp1) then
           Error.addSourceMessage(Error.WHEN_EQ_LHS, {Expression.toString(exp1)}, info);
           fail();
         end if;
@@ -2544,7 +2541,7 @@ algorithm
 
     case SCode.EEquation.EQ_CONNECT(info = info)
       algorithm
-        if intBitAnd(origin, ExpOrigin.WHEN) > 0 then
+        if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
             {Dump.printComponentRefStr(scodeEq.crefLeft),
              Dump.printComponentRefStr(scodeEq.crefRight)}, info);
@@ -2560,7 +2557,7 @@ algorithm
       algorithm
         oexp := instExpOpt(scodeEq.range, scope, info);
         (for_scope, iter) := addIteratorToScope(scodeEq.index, scope, scodeEq.info);
-        next_origin := intBitOr(origin, ExpOrigin.FOR);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
         eql := instEEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
         Equation.FOR(iter, oexp, eql, makeSource(scodeEq.comment, info));
@@ -2571,7 +2568,7 @@ algorithm
         expl := list(instExp(c, scope, info) for c in scodeEq.condition);
 
         // Instantiate each branch and pair it up with a condition.
-        next_origin := intBitOr(origin, ExpOrigin.IF);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.IF);
         branches := {};
         for branch in scodeEq.thenBranch loop
           eql := instEEquations(branch, scope, next_origin);
@@ -2590,13 +2587,13 @@ algorithm
 
     case SCode.EEquation.EQ_WHEN(info = info)
       algorithm
-        if intBitAnd(origin, ExpOrigin.WHEN) > 0 then
+        if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) then
           Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
-        elseif intBitAnd(origin, ExpOrigin.INITIAL) > 0 then
+        elseif ExpOrigin.flagSet(origin, ExpOrigin.INITIAL) then
           Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
         end if;
 
-        next_origin := intBitOr(origin, ExpOrigin.WHEN);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHEN);
         exp1 := instExp(scodeEq.condition, scope, info);
         eql := instEEquations(scodeEq.eEquationLst, scope, next_origin);
         branches := {Equation.makeBranch(exp1, eql)};
@@ -2625,7 +2622,7 @@ algorithm
 
     case SCode.EEquation.EQ_REINIT(info = info)
       algorithm
-        if intBitAnd(origin, ExpOrigin.WHEN) == 0 then
+        if ExpOrigin.flagNotSet(origin, ExpOrigin.WHEN) then
           Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
           fail();
         end if;
@@ -2713,7 +2710,7 @@ algorithm
       algorithm
         oexp := instExpOpt(scodeStmt.range, scope, info);
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, scope, info);
-        next_origin := intBitOr(origin, ExpOrigin.FOR);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
         stmtl := instStatements(scodeStmt.forBody, for_scope, next_origin);
       then
         Statement.FOR(iter, oexp, stmtl, makeSource(scodeStmt.comment, info));
@@ -2721,7 +2718,7 @@ algorithm
     case SCode.Statement.ALG_IF(info = info)
       algorithm
         branches := {};
-        next_origin := intBitOr(origin, ExpOrigin.FOR);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
 
         for branch in (scodeStmt.boolExpr, scodeStmt.trueBranch) :: scodeStmt.elseIfBranch loop
           exp1 := instExp(Util.tuple21(branch), scope, info);
@@ -2739,9 +2736,9 @@ algorithm
     case SCode.Statement.ALG_WHEN_A(info = info)
       algorithm
         if origin > 0 then
-          if intBitAnd(origin, ExpOrigin.WHEN) > 0 then
+          if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) then
             Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
-          elseif intBitAnd(origin, ExpOrigin.INITIAL) > 0 then
+          elseif ExpOrigin.flagSet(origin, ExpOrigin.INITIAL) then
             Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
           else
             Error.addSourceMessageAndFail(Error.INVALID_WHEN_STATEMENT_CONTEXT, {}, info);
@@ -2751,7 +2748,7 @@ algorithm
         branches := {};
         for branch in scodeStmt.branches loop
           exp1 := instExp(Util.tuple21(branch), scope, info);
-          next_origin := intBitOr(origin, ExpOrigin.WHEN);
+          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHEN);
           stmtl := instStatements(Util.tuple22(branch), scope, next_origin);
           branches := (exp1, stmtl) :: branches;
         end for;
@@ -2787,7 +2784,7 @@ algorithm
     case SCode.Statement.ALG_WHILE(info = info)
       algorithm
         exp1 := instExp(scodeStmt.boolExpr, scope, info);
-        next_origin := intBitOr(origin, ExpOrigin.WHILE);
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHILE);
         stmtl := instStatements(scodeStmt.whileBody, scope, next_origin);
       then
         Statement.WHILE(exp1, stmtl, makeSource(scodeStmt.comment, info));

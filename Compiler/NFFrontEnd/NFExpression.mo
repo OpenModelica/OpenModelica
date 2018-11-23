@@ -48,6 +48,7 @@ protected
   import TypeCheck = NFTypeCheck;
   import ValuesUtil;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import Types;
 
 public
   import Absyn.Path;
@@ -305,6 +306,13 @@ public
   record CLKCONST "Clock constructors"
     ClockKind clk "Clock kinds";
   end CLKCONST;
+
+  record PARTIAL_FUNCTION_APPLICATION
+    ComponentRef fn;
+    list<Expression> args;
+    list<String> argNames;
+    Type ty;
+  end PARTIAL_FUNCTION_APPLICATION;
 
   function isArray
     input Expression exp;
@@ -631,6 +639,17 @@ public
         then
           comp;
 
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          PARTIAL_FUNCTION_APPLICATION(fn = cr, args = expl) := exp2;
+          comp := ComponentRef.compare(exp1.fn, cr);
+
+          if comp == 0 then
+            comp := compareList(exp1.args, expl);
+          end if;
+        then
+          comp;
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -712,10 +731,11 @@ public
       case UNBOX()           then exp.ty;
       case SUBSCRIPTED_EXP() then exp.ty;
       case TUPLE_ELEMENT()   then exp.ty;
-      case RECORD_ELEMENT()   then exp.ty;
+      case RECORD_ELEMENT()  then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case EMPTY()           then exp.ty;
+      case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -742,7 +762,8 @@ public
       case UNBOX()           algorithm exp.ty := ty; then ();
       case SUBSCRIPTED_EXP() algorithm exp.ty := ty; then ();
       case TUPLE_ELEMENT()   algorithm exp.ty := ty; then ();
-      case RECORD_ELEMENT()   algorithm exp.ty := ty; then ();
+      case RECORD_ELEMENT()  algorithm exp.ty := ty; then ();
+      case PARTIAL_FUNCTION_APPLICATION() algorithm exp.ty := ty; then ();
       else ();
     end match;
   end setType;
@@ -1376,6 +1397,9 @@ public
       case RECORD_ELEMENT() then toString(exp.recordExp) + "[field: " + exp.fieldName + "]";
       case MUTABLE() then toString(Mutable.access(exp.exp));
       case EMPTY() then "#EMPTY#";
+      case PARTIAL_FUNCTION_APPLICATION()
+        then "function " + ComponentRef.toString(exp.fn) + "(" + stringDelimitList(
+          list(n + " = " + Expression.toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
 
       else anyString(exp);
     end match;
@@ -1457,7 +1481,7 @@ public
         Boolean swap;
         DAE.Exp dae1, dae2;
         list<String> names;
-        ClockKind clk;
+        Function.Function fn;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -1466,8 +1490,8 @@ public
       case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
         then DAE.ENUM_LITERAL(Absyn.suffixPath(ty.typePath, exp.name), exp.index);
 
-      case CLKCONST(clk)
-        then DAE.CLKCONST(ClockKind.toDAE(clk));
+      case CLKCONST()
+        then DAE.CLKCONST(ClockKind.toDAE(exp.clk));
 
       case CREF()
         then DAE.CREF(ComponentRef.toDAE(exp.cref), Type.toDAE(exp.ty));
@@ -1540,6 +1564,15 @@ public
 
       case RECORD_ELEMENT()
         then DAE.RSUB(toDAE(exp.recordExp), exp.index, exp.fieldName, Type.toDAE(exp.ty));
+
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          fn :: _ := Function.Function.typeRefCache(exp.fn);
+        then
+          DAE.PARTEVALFUNCTION(Function.Function.nameConsiderBuiltin(fn),
+                               list(toDAE(arg) for arg in exp.args),
+                               Type.toDAE(exp.ty),
+                               Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
       else
         algorithm
@@ -1768,6 +1801,12 @@ public
       case MUTABLE()
         algorithm
           Mutable.update(exp.exp, map(Mutable.access(exp.exp), func));
+        then
+          exp;
+
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          exp.args := list(map(e, func) for e in exp.args);
         then
           exp;
 
@@ -2103,6 +2142,12 @@ public
         then
           exp;
 
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          exp.args := list(func(e) for e in exp.args);
+        then
+          exp;
+
       else exp;
     end match;
   end mapShallow;
@@ -2395,6 +2440,7 @@ public
       case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
       case BOX() then fold(exp.exp, func, arg);
       case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
+      case PARTIAL_FUNCTION_APPLICATION() then foldList(exp.args, func, arg);
       else arg;
     end match;
 
@@ -2651,6 +2697,7 @@ public
       case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
       case BOX() algorithm apply(exp.exp, func); then ();
       case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
+      case PARTIAL_FUNCTION_APPLICATION() algorithm applyList(exp.args, func); then ();
       else ();
     end match;
 
@@ -2978,6 +3025,13 @@ public
         then
           exp;
 
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          (expl, arg) := List.map1Fold(exp.args, mapFold, func, arg);
+          exp.args := expl;
+        then
+          exp;
+
       else exp;
     end match;
 
@@ -3297,6 +3351,13 @@ public
         then
           exp;
 
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          (expl, arg) := List.mapFold(exp.args, func, arg);
+          exp.args := expl;
+        then
+          exp;
+
       else exp;
     end match;
   end mapFoldShallow;
@@ -3597,12 +3658,9 @@ public
       case SUBSCRIPTED_EXP()
         then contains(exp.exp, func) or Subscript.listContainsExp(exp.subscripts, func);
 
-      case TUPLE_ELEMENT()
-        then contains(exp.tupleExp, func);
-
-      case RECORD_ELEMENT()
-        then contains(exp.recordExp, func);
-
+      case TUPLE_ELEMENT() then contains(exp.tupleExp, func);
+      case RECORD_ELEMENT() then contains(exp.recordExp, func);
+      case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
       case BOX() then contains(exp.exp, func);
       else false;
     end match;
@@ -3778,7 +3836,7 @@ public
     input ExpOrigin.Type origin;
     output Boolean iter;
   algorithm
-    if intBitAnd(origin, ExpOrigin.FOR) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FOR) then
       iter := contains(exp, isIterator);
     else
       iter := false;
@@ -4270,6 +4328,7 @@ public
       case TUPLE_ELEMENT() then variability(exp.tupleExp);
       case RECORD_ELEMENT() then variability(exp.recordExp);
       case BOX() then variability(exp.exp);
+      case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());

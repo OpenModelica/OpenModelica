@@ -1065,7 +1065,7 @@ algorithm
       algorithm
         // Print a warning for == or <> with Real operands in a model.
         o := operator.op;
-        if intBitAnd(origin, ExpOrigin.FUNCTION) == 0 and (o == Op.EQUAL or o == Op.NEQUAL) then
+        if ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) and (o == Op.EQUAL or o == Op.NEQUAL) then
           Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL,
             {"<NO COMPONENT>", Expression.toString(outExp), Operator.symbol(operator)}, info);
         end if;
@@ -1601,16 +1601,83 @@ function matchExpressions
         output Type compatibleType;
         output MatchKind matchKind;
 algorithm
-  (exp1, compatibleType, matchKind) :=
-    matchTypes(type1, type2, exp1, allowUnknown);
-
-  if isIncompatibleMatch(matchKind) then
-    (exp2, compatibleType, matchKind) :=
-      matchTypes(type2, type1, exp2, allowUnknown);
+  // Return true if the references are the same.
+  if referenceEq(type1, type2) then
+    compatibleType := type1;
+    matchKind := MatchKind.EXACT;
+    return;
   end if;
+
+  // Check if the types are different kinds of types.
+  if valueConstructor(type1) <> valueConstructor(type2) then
+    // If the types are not of the same kind we might need to type cast one of
+    // the expressions to make them compatible.
+    (exp1, exp2, compatibleType, matchKind) :=
+      matchExpressions_cast(exp1, type1, exp2, type2, allowUnknown);
+    return;
+  end if;
+
+  // The types are of the same kind, so we only need to match on one of them.
+  matchKind := MatchKind.EXACT;
+  compatibleType := match type1
+    case Type.INTEGER() then type1;
+    case Type.REAL() then type1;
+    case Type.STRING() then type1;
+    case Type.BOOLEAN() then type1;
+    case Type.CLOCK() then type1;
+
+    case Type.ENUMERATION()
+      algorithm
+        matchKind := matchEnumerationTypes(type1, type2);
+      then
+        type1;
+
+    case Type.ENUMERATION_ANY() then type1;
+
+    case Type.ARRAY()
+      algorithm
+        (exp1, exp2, compatibleType, matchKind) :=
+          matchArrayExpressions(exp1, type1, exp2, type2, allowUnknown);
+      then
+        compatibleType;
+
+    case Type.TUPLE()
+      algorithm
+        (exp1, compatibleType, matchKind) :=
+          matchTupleTypes(type1, type2, exp1, allowUnknown);
+      then
+        compatibleType;
+
+    case Type.UNKNOWN()
+      algorithm
+        matchKind := if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+      then
+        type1;
+
+    case Type.COMPLEX()
+      algorithm
+        // TODO: This needs more work to handle e.g. type casting of complex expressions.
+        (exp1, compatibleType, matchKind) :=
+          matchComplexTypes(type1, type2, exp1, allowUnknown);
+      then
+        compatibleType;
+
+    case Type.METABOXED()
+      algorithm
+        (exp1, exp2, compatibleType, matchKind) :=
+          matchBoxedExpressions(exp1, type1, exp2, type2, allowUnknown);
+      then
+        compatibleType;
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+      then
+        fail();
+
+  end match;
 end matchExpressions;
 
-public
 function matchTypes
   input Type actualType;
   input Type expectedType;
@@ -1639,7 +1706,7 @@ algorithm
 
   // The types are of the same kind, so we only need to match on one of them.
   matchKind := MatchKind.EXACT;
-  compatibleType := match (actualType)
+  compatibleType := match actualType
     case Type.INTEGER() then actualType;
     case Type.REAL() then actualType;
     case Type.STRING() then actualType;
@@ -1648,6 +1715,7 @@ algorithm
 
     case Type.ENUMERATION()
       algorithm
+        matchKind := matchEnumerationTypes(actualType, expectedType);
       then
         actualType;
 
@@ -1704,6 +1772,81 @@ algorithm
 
   end match;
 end matchTypes;
+
+function matchExpressions_cast
+  input output Expression exp1;
+  input Type type1;
+  input output Expression exp2;
+  input Type type2;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output MatchKind matchKind;
+algorithm
+  (compatibleType, matchKind) := match (type1, type2)
+    // Integer can be cast to Real.
+    case (Type.INTEGER(), Type.REAL())
+      algorithm
+        exp1 := Expression.typeCastElements(exp1, type2);
+      then
+        (type2, MatchKind.CAST);
+
+    case (Type.REAL(), Type.INTEGER())
+      algorithm
+        exp2 := Expression.typeCastElements(exp2, type1);
+      then
+        (type1, MatchKind.CAST);
+
+    // This case takes care of equations where the lhs is a non-tuple and the rhs a
+    // function call returning a tuple, in which case only the first element of the
+    // tuple is used. exp1 should never be a tuple here, since any tuple expression
+    // not alone on the rhs of an equation is "tuple subscripted" by Typing.typeExp.
+    case (_, Type.TUPLE(types = compatibleType :: _))
+      algorithm
+        exp2 := Expression.tupleElement(exp2, compatibleType, 1);
+        (exp2, compatibleType, matchKind) :=
+          matchTypes(compatibleType, type1, exp2, allowUnknown);
+
+        if isCompatibleMatch(matchKind) then
+          matchKind := MatchKind.CAST;
+        end if;
+      then
+        (compatibleType, matchKind);
+
+    case (Type.UNKNOWN(), _)
+      then (type2, if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE);
+
+    case (_, Type.UNKNOWN())
+      then (type1, if allowUnknown then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE);
+
+    case (Type.METABOXED(), _)
+      algorithm
+        (exp1, exp2, compatibleType, matchKind) :=
+          matchExpressions(Expression.unbox(exp1), type1.ty, exp2, type2, allowUnknown);
+      then
+        (compatibleType, matchKind);
+
+    case (_, Type.METABOXED())
+      algorithm
+        (exp1, exp2, compatibleType, matchKind) :=
+          matchExpressions(exp1, type1, Expression.unbox(exp2), type2.ty, allowUnknown);
+      then
+        (compatibleType, matchKind);
+
+    case (_, Type.POLYMORPHIC())
+      algorithm
+        exp1 := Expression.box(exp1);
+      then
+        (Type.box(type1), MatchKind.GENERIC);
+
+    case (Type.POLYMORPHIC(), _)
+      algorithm
+        exp2 := Expression.box(exp2);
+      then
+        (Type.box(type2), MatchKind.GENERIC);
+
+    else (Type.UNKNOWN(), MatchKind.NOT_COMPATIBLE);
+  end match;
+end matchExpressions_cast;
 
 function matchComplexTypes
   input Type actualType;
@@ -1935,6 +2078,44 @@ algorithm
   end for;
 end matchFunctionParameters;
 
+function matchEnumerationTypes
+  input Type type1;
+  input Type type2;
+  output MatchKind matchKind;
+protected
+  list<String> lits1, lits2;
+algorithm
+  Type.ENUMERATION(literals = lits1) := type1;
+  Type.ENUMERATION(literals = lits2) := type2;
+
+  matchKind := if List.isEqualOnTrue(lits1, lits2, stringEqual)
+    then MatchKind.EXACT else MatchKind.NOT_COMPATIBLE;
+end matchEnumerationTypes;
+
+function matchArrayExpressions
+  input output Expression exp1;
+  input Type type1;
+  input output Expression exp2;
+  input Type type2;
+  input Boolean allowUnknown;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Type ety1, ety2;
+  list<Dimension> dims1, dims2;
+algorithm
+  Type.ARRAY(elementType = ety1, dimensions = dims1) := type1;
+  Type.ARRAY(elementType = ety2, dimensions = dims2) := type2;
+
+  // Check that the element types are compatible.
+  (exp1, exp2, compatibleType, matchKind) :=
+    matchExpressions(exp1, ety1, exp2, ety2, allowUnknown);
+
+  // If the element types are compatible, check the dimensions too.
+  (compatibleType, matchKind) :=
+    matchArrayDims(dims1, dims2, compatibleType, matchKind, allowUnknown);
+end matchArrayExpressions;
+
 function matchArrayTypes
   input Type arrayType1;
   input Type arrayType2;
@@ -1945,8 +2126,6 @@ function matchArrayTypes
 protected
   Type ety1, ety2;
   list<Dimension> dims1, dims2;
-  Dimension dim1, dim2;
-  Boolean compat;
 algorithm
   Type.ARRAY(elementType = ety1, dimensions = dims1) := arrayType1;
   Type.ARRAY(elementType = ety2, dimensions = dims2) := arrayType2;
@@ -1956,31 +2135,70 @@ algorithm
     matchTypes(ety1, ety2, expression, allowUnknown);
 
   // If the element types are compatible, check the dimensions too.
-  if isCompatibleMatch(matchKind) then
-    // The arrays must have the same number of dimensions.
-    if listLength(dims1) == listLength(dims2) then
-      // We lift the array which means we have to iterate in theopposite order
-      dims1 := listReverse(dims1);
-      dims2 := listReverse(dims2);
-      while not listEmpty(dims1) loop
-        dim1 :: dims1 := dims1;
-        dim2 :: dims2 := dims2;
+  (compatibleType, matchKind) :=
+    matchArrayDims(dims1, dims2, compatibleType, matchKind, allowUnknown);
+end matchArrayTypes;
 
-        // And the dimensions must be equal.
-        (dim1, compat) := matchDimensions(dim1, dim2, allowUnknown);
+function matchArrayDims
+  input list<Dimension> dims1;
+  input list<Dimension> dims2;
+  input output Type ty;
+  input output MatchKind matchKind;
+  input Boolean allowUnknown;
+protected
+  list<Dimension> rest_dims2 = dims2, cdims = {};
+  Dimension dim2;
+  Boolean compat;
+algorithm
+  if not isCompatibleMatch(matchKind) then
+    return;
+  end if;
 
-        if not compat then
-          matchKind := MatchKind.NOT_COMPATIBLE;
-          break;
-        end if;
+  // The array types must have the same number of dimensions.
+  if listLength(dims1) <> listLength(dims2) then
+    matchKind := MatchKind.NOT_COMPATIBLE;
+    return;
+  end if;
 
-        compatibleType := Type.liftArrayLeft(compatibleType, dim1);
-      end while;
-    else
+  // The dimensions of both array types must be compatible.
+  for dim1 in dims1 loop
+    dim2 :: rest_dims2 := rest_dims2;
+    (dim1, compat) := matchDimensions(dim1, dim2, allowUnknown);
+
+    if not compat then
       matchKind := MatchKind.NOT_COMPATIBLE;
+      break;
+    end if;
+
+    cdims := dim1 :: cdims;
+  end for;
+
+  ty := Type.ARRAY(ty, listReverseInPlace(cdims));
+end matchArrayDims;
+
+function matchDimensions
+  input Dimension dim1;
+  input Dimension dim2;
+  input Boolean allowUnknown;
+  output Dimension compatibleDim;
+  output Boolean compatible;
+algorithm
+  if Dimension.isEqual(dim1, dim2) then
+    compatibleDim := dim1;
+    compatible := true;
+  else
+    if not Dimension.isKnown(dim1) then
+      compatibleDim := dim2;
+      compatible := true;
+    elseif not Dimension.isKnown(dim2) then
+      compatibleDim := dim1;
+      compatible := true;
+    else
+      compatibleDim := dim1;
+      compatible := false;
     end if;
   end if;
-end matchArrayTypes;
+end matchDimensions;
 
 function matchTupleTypes
   input Type tupleType1;
@@ -2011,29 +2229,30 @@ algorithm
   end for;
 end matchTupleTypes;
 
-function matchDimensions
-  input Dimension dim1;
-  input Dimension dim2;
+function matchBoxedExpressions
+  input output Expression exp1;
+  input Type type1;
+  input output Expression exp2;
+  input Type type2;
   input Boolean allowUnknown;
-  output Dimension compatibleDim;
-  output Boolean compatible;
+        output Type compatibleType;
+        output MatchKind matchKind;
+protected
+  Expression e1, e2;
 algorithm
-  if Dimension.isEqual(dim1, dim2) then
-    compatibleDim := dim1;
-    compatible := true;
-  else
-    if not Dimension.isKnown(dim1) then
-      compatibleDim := dim2;
-      compatible := true;
-    elseif not Dimension.isKnown(dim2) then
-      compatibleDim := dim1;
-      compatible := true;
-    else
-      compatibleDim := dim1;
-      compatible := false;
-    end if;
+  e1 := Expression.unbox(exp1);
+  e2 := Expression.unbox(exp2);
+
+  (e1, e2, compatibleType, matchKind) :=
+    matchExpressions(e1, Type.unbox(type1), e2, Type.unbox(type2), allowUnknown);
+
+  if isCastMatch(matchKind) then
+    exp1 := Expression.box(e1);
+    exp2 := Expression.box(e2);
   end if;
-end matchDimensions;
+
+  compatibleType := Type.box(compatibleType);
+end matchBoxedExpressions;
 
 function matchTypes_cast
   input Type actualType;

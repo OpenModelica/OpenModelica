@@ -671,7 +671,7 @@ public
           case FunctionType.FUNCTION_REFERENCE
             then DAE.T_FUNCTION_REFERENCE_FUNC(Function.isBuiltin(ty.fn), Function.makeDAEType(ty.fn));
           case FunctionType.FUNCTIONAL_VARIABLE
-            then DAE.T_FUNCTION_REFERENCE_VAR(Function.makeDAEType(ty.fn));
+            then DAE.T_FUNCTION_REFERENCE_VAR(Function.makeDAEType(ty.fn, true));
         end match;
       case Type.NORETCALL() then DAE.T_NORETCALL_DEFAULT;
       case Type.UNKNOWN() then DAE.T_UNKNOWN_DEFAULT;

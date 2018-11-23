@@ -1498,6 +1498,14 @@ algorithm
       then
         ();
 
+    case Expression.PARTIAL_FUNCTION_APPLICATION()
+      algorithm
+        for f in Function.getRefCache(exp.fn) loop
+          funcs := flattenFunction(f, funcs);
+        end for;
+      then
+        ();
+
     else ();
   end match;
 end collectExpFuncs_traverse;

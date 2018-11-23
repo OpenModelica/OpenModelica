@@ -531,7 +531,7 @@ protected
     end if;
 
     // pre/change may not be used in a function context.
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -570,7 +570,7 @@ protected
     Type ety;
   algorithm
     // der may not be used in a function context.
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"der"}, info);
       fail();
     end if;
@@ -659,7 +659,7 @@ protected
     CallAttributes ca;
   algorithm
     // edge may not be used in a function context.
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"edge"}, info);
       fail();
     end if;
@@ -950,7 +950,7 @@ protected
     {fn} := Function.typeRefCache(fnRef);
     ty := Type.liftArrayLeftList(fillType, dims);
 
-    if evaluated and intBitAnd(origin, ExpOrigin.FUNCTION) == 0 then
+    if evaluated and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
       callExp := Ceval.evalBuiltinFill(ty_args);
     else
       callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FILL_FUNC, ty_args, variability, ty));
@@ -1286,7 +1286,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector) => Integer"}, info);
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -1334,7 +1334,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector)"}, info);
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -1373,7 +1373,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -1421,7 +1421,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Integer = 0)"}, info);
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -1471,7 +1471,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -1506,7 +1506,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
-    if intBitAnd(origin, ExpOrigin.FUNCTION) > 0 then
+    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
@@ -1588,7 +1588,7 @@ protected
     end if;
 
     {arg} := args;
-    (arg, ty, variability) := Typing.typeExp(arg, intBitOr(origin, ExpOrigin.NOEVENT), info);
+    (arg, ty, variability) := Typing.typeExp(arg, ExpOrigin.setFlag(origin, ExpOrigin.NOEVENT), info);
 
     {fn} := Function.typeRefCache(fn_ref);
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));

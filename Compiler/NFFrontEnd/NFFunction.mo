@@ -1203,6 +1203,16 @@ uniontype Function
     end if;
   end typeNodeCache;
 
+  function getRefCache
+    input ComponentRef fnRef;
+    output list<Function> functions;
+  protected
+    InstNode fn_node;
+  algorithm
+    fn_node := InstNode.classScope(ComponentRef.node(fnRef));
+    CachedData.FUNCTION(funcs = functions) := InstNode.getFuncCache(fn_node);
+  end getRefCache;
+
   function typeFunction
     input output Function fn;
   algorithm
@@ -1273,6 +1283,97 @@ uniontype Function
     comp := Component.setType(Type.box(Component.getType(comp)), comp);
     InstNode.updateComponent(comp, component);
   end boxFunctionParameter;
+
+  function typePartialApplication
+    input output Expression exp;
+    input ExpOrigin.Type origin;
+    input SourceInfo info;
+          output Type ty;
+          output Variability variability;
+  protected
+    ComponentRef fn_ref;
+    list<Expression> args, ty_args = {};
+    list<String> arg_names, rest_names;
+    String arg_name;
+    Expression arg_exp;
+    Type arg_ty;
+    Variability arg_var;
+    Function fn;
+    ExpOrigin.Type next_origin = ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+    list<InstNode> inputs;
+    list<Slot> slots;
+  algorithm
+    Expression.PARTIAL_FUNCTION_APPLICATION(fn = fn_ref, args = args, argNames = arg_names) := exp;
+    // TODO: Handle overloaded functions?
+    fn :: _ := typeRefCache(fn_ref);
+    inputs := fn.inputs;
+    slots := fn.slots;
+    rest_names := arg_names;
+
+    variability := if Function.isImpure(fn) or Function.isOMImpure(fn)
+      then Variability.PARAMETER else Variability.CONSTANT;
+
+    for arg in args loop
+      (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+
+      arg_name :: rest_names := rest_names;
+      (arg, inputs, slots) :=
+        applyPartialApplicationArg(arg_name, arg, arg_ty, inputs, slots, fn, info);
+
+      ty_args := Expression.box(arg) :: ty_args;
+      variability := Prefixes.variabilityMax(variability, arg_var);
+    end for;
+
+    fn.inputs := inputs;
+    fn.slots := slots;
+    ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE);
+    exp := Expression.PARTIAL_FUNCTION_APPLICATION(fn_ref, listReverseInPlace(ty_args), arg_names, ty);
+  end typePartialApplication;
+
+  function applyPartialApplicationArg
+    input String argName;
+    input output Expression argExp;
+    input Type argType;
+    input list<InstNode> inputs;
+    input list<Slot> slots;
+    input Function fn;
+    input SourceInfo info;
+          output list<InstNode> outInputs = {};
+          output list<Slot> outSlots = {};
+  protected
+    InstNode i;
+    list<InstNode> rest_inputs = inputs;
+    Slot s;
+    list<Slot> rest_slots = slots;
+    TypeCheck.MatchKind mk;
+  algorithm
+    while not listEmpty(rest_inputs) loop
+      i :: rest_inputs := rest_inputs;
+      s :: rest_slots := rest_slots;
+
+      if s.name == argName then
+        (argExp, _, mk) := TypeCheck.matchTypes(argType, InstNode.getType(i), argExp, true);
+
+        if TypeCheck.isIncompatibleMatch(mk) then
+          Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH,
+            {Absyn.pathString(name(fn)), argName, Expression.toString(argExp),
+             Type.toString(argType), Type.toString(InstNode.getType(i))}, info);
+          fail();
+        end if;
+
+        outInputs := listAppend(listReverseInPlace(outInputs), rest_inputs);
+        outSlots := listAppend(listReverseInPlace(outSlots), rest_slots);
+        return;
+      end if;
+
+      outInputs := i :: outInputs;
+      outSlots := s :: outSlots;
+    end while;
+
+    Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
+      {Absyn.pathString(name(fn)), argName}, info);
+    fail();
+  end applyPartialApplicationArg;
 
   function isBuiltin
     input Function fn;
@@ -1452,10 +1553,12 @@ uniontype Function
 
   function makeDAEType
     input Function fn;
-    output DAE.Type ty;
+    input Boolean boxTypes = false;
+    output DAE.Type outType;
   protected
     list<DAE.FuncArg> params = {};
     String pname;
+    Type ty;
     DAE.Type ptype;
     DAE.Const pconst;
     DAE.VarParallelism ppar;
@@ -1465,7 +1568,8 @@ uniontype Function
     for param in fn.inputs loop
       comp := InstNode.component(param);
       pname := InstNode.name(param);
-      ptype := Type.toDAE(Component.getType(comp));
+      ty := Component.getType(comp);
+      ptype := Type.toDAE(if boxTypes then Type.box(ty) else ty);
       pconst := Prefixes.variabilityToDAEConst(Component.variability(comp));
       ppar := Prefixes.parallelismToDAE(Component.parallelism(comp));
       pdefault := Util.applyOption(Binding.typedExp(Component.getBinding(comp)), Expression.toDAE);
@@ -1473,7 +1577,8 @@ uniontype Function
     end for;
 
     params := listReverse(params);
-    ty := DAE.T_FUNCTION(params, Type.toDAE(fn.returnType), fn.attributes, fn.path);
+    ty := if boxTypes then Type.box(fn.returnType) else fn.returnType;
+    outType := DAE.T_FUNCTION(params, Type.toDAE(ty), fn.attributes, fn.path);
   end makeDAEType;
 
   function getBody
