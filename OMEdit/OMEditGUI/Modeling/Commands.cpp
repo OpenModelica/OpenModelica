@@ -2839,11 +2839,15 @@ void UpdateTLMParametersCommand::undo()
 }
 
 
-SystemSimulationInformationCommand::SystemSimulationInformationCommand(QString fixedStepSize,
+SystemSimulationInformationCommand::SystemSimulationInformationCommand(TLMSystemSimulationInformation *pTLMSystemSimulationInformation,
+                                                                       WCSystemSimulationInformation *pWCSystemSimulationInformation,
+                                                                       SCSystemSimulationInformation *pSCSystemSimulationInformation,
                                                                        LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
-  mFixedStepSize = fixedStepSize;
+  mpTLMSystemSimulationInformation = pTLMSystemSimulationInformation;
+  mpWCSystemSimulationInformation = pWCSystemSimulationInformation;
+  mpSCSystemSimulationInformation = pSCSystemSimulationInformation;
   mpLibraryTreeItem = pLibraryTreeItem;
   setText(QString("System %1 simulation information").arg(mpLibraryTreeItem->getNameStructure()));
 }
@@ -2854,9 +2858,18 @@ SystemSimulationInformationCommand::SystemSimulationInformationCommand(QString f
  */
 void SystemSimulationInformationCommand::redoInternal()
 {
-  if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(), mFixedStepSize.toDouble())) {
-    setFailed(true);
-    return;
+  if (mpLibraryTreeItem->isTLMSystem()) {
+    if (!OMSProxy::instance()->setTLMSocketData(mpLibraryTreeItem->getNameStructure(), mpTLMSystemSimulationInformation->mIpAddress,
+                                                mpTLMSystemSimulationInformation->mManagerPort,
+                                                mpTLMSystemSimulationInformation->mMonitorPort)) {
+      setFailed(true);
+      return;
+    }
+  } else if (mpLibraryTreeItem->isWCSystem()) {
+    if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(), mpWCSystemSimulationInformation->mFixedStepSize)) {
+      setFailed(true);
+      return;
+    }
   }
 }
 

@@ -55,12 +55,12 @@ ElementProperties::ElementProperties()
 ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget *pParent)
   : QDialog(pParent)
 {
-  setWindowTitle(QString("%1 - %2 %3").arg(Helper::applicationName, pComponent->getName(), Helper::properties));
+  mpComponent = pComponent;
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::properties, pComponent->getName()));
   setAttribute(Qt::WA_DeleteOnClose);
   setMinimumWidth(400);
-  mpComponent = pComponent;
   // heading
-  mpHeading = Utilities::getHeadingLabel(QString("%1 %2").arg(pComponent->getName(), Helper::properties));
+  mpHeading = Utilities::getHeadingLabel(QString("%1- %2").arg(Helper::properties, pComponent->getName()));
   // horizontal line
   mpHorizontalLine = Utilities::getHeadingLine();
   // Create the name label and text box

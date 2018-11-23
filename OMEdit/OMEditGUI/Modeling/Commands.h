@@ -36,6 +36,7 @@
 
 #include "Modeling/ModelWidgetContainer.h"
 #include "OMS/ElementPropertiesDialog.h"
+#include "OMS/SystemSimulationInformationDialog.h"
 
 class UndoCommand : public QUndoCommand
 {
@@ -642,11 +643,16 @@ private:
 class SystemSimulationInformationCommand : public UndoCommand
 {
 public:
-  SystemSimulationInformationCommand(QString fixedStepSize, LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent = 0);
+  SystemSimulationInformationCommand(TLMSystemSimulationInformation *pTLMSystemSimulationInformation,
+                                     WCSystemSimulationInformation *pWCSystemSimulationInformation,
+                                     SCSystemSimulationInformation *pSCSystemSimulationInformation,
+                                     LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
-  QString mFixedStepSize;
+  TLMSystemSimulationInformation *mpTLMSystemSimulationInformation;
+  WCSystemSimulationInformation *mpWCSystemSimulationInformation;
+  SCSystemSimulationInformation *mpSCSystemSimulationInformation;
   LibraryTreeItem *mpLibraryTreeItem;
 };
 

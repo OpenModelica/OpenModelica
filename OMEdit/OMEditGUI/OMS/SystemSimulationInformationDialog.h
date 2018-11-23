@@ -40,6 +40,39 @@
 
 class GraphicsView;
 class Label;
+
+class TLMSystemSimulationInformation
+{
+public:
+  TLMSystemSimulationInformation();
+
+  QString mIpAddress;
+  int mManagerPort;
+  int mMonitorPort;
+};
+
+class WCSystemSimulationInformation
+{
+public:
+  WCSystemSimulationInformation();
+
+  double mFixedStepSize;
+  double mTolerance;
+};
+
+class SCSystemSimulationInformation
+{
+public:
+  SCSystemSimulationInformation();
+
+  QString mDescription;
+  double mAbsoluteTolerance;
+  double mRelativeTolerance;
+  double mMinimumStepSize;
+  double mMaximumStepSize;
+  double mInitialStepSize;
+};
+
 class SystemSimulationInformationDialog : public QDialog
 {
   Q_OBJECT
@@ -49,6 +82,14 @@ private:
   GraphicsView *mpGraphicsView;
   Label *mpHeading;
   QFrame *mpHorizontalLine;
+  // TLM system simulation information
+  Label *mpIpAddressLabel;
+  QLineEdit *mpIpAddressTextBox;
+  Label *mpManagerPortLabel;
+  QLineEdit *mpManagerPortTextBox;
+  Label *mpMonitorPortLabel;
+  QLineEdit *mpMonitorPortTextBox;
+  // WC system simulation information
   Label *mpFixedStepSizeLabel;
   QLineEdit *mpFixedStepSizeTextBox;
   Label *mpToleranceLabel;

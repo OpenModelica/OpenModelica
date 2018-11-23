@@ -280,44 +280,6 @@ QString LibraryTreeItem::getClassText(LibraryTreeModel *pLibraryTreeModel)
 }
 
 /*!
- * \brief LibraryTreeItem::isSystemElement
- * Returns true if the element is system.
- * \return
- */
-bool LibraryTreeItem::isSystemElement() const
-{
-  return (mpOMSElement && (mpOMSElement->type == oms_element_system));
-}
-
-/*!
- * \brief LibraryTreeItem::isComponentElement
- * Returns true if the element is component.
- * \return
- */
-bool LibraryTreeItem::isComponentElement() const
-{
-  return (mpOMSElement && (mpOMSElement->type == oms_element_component));
-}
-
-/*!
- * \brief LibraryTreeItem::isFMUComponent
- * \return
- */
-bool LibraryTreeItem::isFMUComponent() const
-{
-  return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));
-}
-
-/*!
- * \brief LibraryTreeItem::isTableComponent
- * \return
- */
-bool LibraryTreeItem::isTableComponent() const
-{
-  return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));
-}
-
-/*!
  * \brief LibraryTreeItem::getOMSElementGeometry
  * \return
  */
@@ -425,15 +387,12 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
     if (isTopLevel()) {
       return QIcon(":/Resources/icons/model-icon.svg");
     } else if (isSystemElement()) {
-      switch (mSystemType) {
-        case oms_system_tlm:
-          return QIcon(":/Resources/icons/tlm-system-icon.svg");
-        case oms_system_wc:
-          return QIcon(":/Resources/icons/wc-system-icon.svg");
-        case oms_system_sc:
-          return QIcon(":/Resources/icons/sc-system-icon.svg");
-        default:
-          break;
+      if (isTLMSystem()) {
+        return QIcon(":/Resources/icons/tlm-system-icon.svg");
+      } else if (isWCSystem()) {
+        return QIcon(":/Resources/icons/wc-system-icon.svg");
+      } else {
+        return QIcon(":/Resources/icons/sc-system-icon.svg");
       }
     } else if (isFMUComponent()) {
       return QIcon(":/Resources/icons/fmu-icon.svg");

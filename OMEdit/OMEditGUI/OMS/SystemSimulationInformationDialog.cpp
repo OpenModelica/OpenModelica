@@ -38,6 +38,29 @@
 #include <QGridLayout>
 #include <QMessageBox>
 
+TLMSystemSimulationInformation::TLMSystemSimulationInformation()
+{
+  mIpAddress = "";
+  mManagerPort = 0;
+  mMonitorPort = 0;
+}
+
+WCSystemSimulationInformation::WCSystemSimulationInformation()
+{
+  mFixedStepSize = 0.0;
+  mTolerance = 0.0;
+}
+
+SCSystemSimulationInformation::SCSystemSimulationInformation()
+{
+  mDescription = "";
+  mAbsoluteTolerance = 0.0;
+  mRelativeTolerance = 0.0;
+  mMinimumStepSize = 0.0;
+  mMaximumStepSize = 0.0;
+  mInitialStepSize = 0.0;
+}
+
 /*!
  * \class SystemSimulationInformationDialog
  * \brief A dialog for system simulation information.
@@ -49,19 +72,43 @@
 SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsView *pGraphicsView)
   : QDialog(pGraphicsView)
 {
-  setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::systemSimulationInformation));
   mpGraphicsView = pGraphicsView;
+  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, Helper::systemSimulationInformation,
+                                             mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getName()));
+  setAttribute(Qt::WA_DeleteOnClose);
   // set heading
-  mpHeading = Utilities::getHeadingLabel(Helper::systemSimulationInformation);
+  mpHeading = Utilities::getHeadingLabel(QString("%1 - %2").arg(Helper::systemSimulationInformation,
+                                                                mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getName()));
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
-  // fixed step size
-  mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
-  mpFixedStepSizeTextBox = new QLineEdit;
-  // tolerance
-  mpToleranceLabel = new Label("Tolerance:");
-  mpToleranceTextBox = new QLineEdit;
+
+  QIntValidator *pIntValidator = new QIntValidator(this);
+  QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
+
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
+    // IP address
+    mpIpAddressLabel = new Label(tr("IP Adress:"));
+    mpIpAddressTextBox = new QLineEdit("127.0.1.1");
+    // manager port
+    mpManagerPortLabel = new Label(tr("Manager Port:"));
+    mpManagerPortTextBox = new QLineEdit("11117");
+    mpManagerPortTextBox->setValidator(pIntValidator);
+    // monitor port
+    mpMonitorPortLabel = new Label(tr("Monitor Port:"));
+    mpMonitorPortTextBox = new QLineEdit("12117");
+    mpMonitorPortTextBox->setValidator(pIntValidator);
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isWCSystem()) {
+    // fixed step size
+    mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
+    mpFixedStepSizeTextBox = new QLineEdit;
+    mpFixedStepSizeTextBox->setValidator(pDoubleValidator);
+    // tolerance
+    mpToleranceLabel = new Label("Tolerance:");
+    mpToleranceTextBox = new QLineEdit;
+    mpToleranceTextBox->setValidator(pDoubleValidator);
+  } else { // oms_system_sc
+
+  }
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -78,11 +125,23 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsVie
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpHeading, 0, 0, 1, 2);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(mpFixedStepSizeLabel, 2, 0);
-  pMainLayout->addWidget(mpFixedStepSizeTextBox, 2, 1);
-  pMainLayout->addWidget(mpToleranceLabel, 3, 0);
-  pMainLayout->addWidget(mpToleranceTextBox, 3, 1);
-  pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 2, Qt::AlignRight);
+  int row = 2;
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
+    pMainLayout->addWidget(mpIpAddressLabel, row, 0);
+    pMainLayout->addWidget(mpIpAddressTextBox, row++, 1);
+    pMainLayout->addWidget(mpManagerPortLabel, row, 0);
+    pMainLayout->addWidget(mpManagerPortTextBox, row++, 1);
+    pMainLayout->addWidget(mpMonitorPortLabel, row, 0);
+    pMainLayout->addWidget(mpMonitorPortTextBox, row++, 1);
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isWCSystem()) {
+    pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
+    pMainLayout->addWidget(mpFixedStepSizeTextBox, row++, 1);
+    pMainLayout->addWidget(mpToleranceLabel, row, 0);
+    pMainLayout->addWidget(mpToleranceTextBox, row++, 1);
+  } else { // oms_system_sc
+
+  }
+  pMainLayout->addWidget(mpButtonBox, row++, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
 }
 
@@ -92,14 +151,50 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsVie
  */
 void SystemSimulationInformationDialog::setSystemSimulationInformation()
 {
-  if (mpFixedStepSizeTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), Helper::ok);
-    return;
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
+    if (mpIpAddressTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("IP Address"), Helper::ok);
+      return;
+    }
+    if (mpManagerPortTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Manager Port"), Helper::ok);
+      return;
+    }
+    if (mpMonitorPortTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Monitor Port"), Helper::ok);
+      return;
+    }
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isWCSystem()) {
+    if (mpFixedStepSizeTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), Helper::ok);
+      return;
+    }
+  } else { // oms_system_sc
+
   }
 
+  TLMSystemSimulationInformation tlmSystemSimulationInformation;
+  WCSystemSimulationInformation wcSystemSimulationInformation;
+  SCSystemSimulationInformation scSystemSimulationInformation;
+
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
+    tlmSystemSimulationInformation.mIpAddress = mpIpAddressTextBox->text();
+    tlmSystemSimulationInformation.mManagerPort = mpManagerPortTextBox->text().toInt();
+    tlmSystemSimulationInformation.mMonitorPort = mpMonitorPortTextBox->text().toInt();
+  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isWCSystem()) {
+    wcSystemSimulationInformation.mFixedStepSize = mpFixedStepSizeTextBox->text().toDouble();
+    wcSystemSimulationInformation.mTolerance = mpToleranceTextBox->text().toDouble();
+  } else { // oms_system_sc
+
+  }
+  // system simulation information command
   SystemSimulationInformationCommand *pSystemSimulationInformationCommand;
-  pSystemSimulationInformationCommand = new SystemSimulationInformationCommand(mpFixedStepSizeTextBox->text(),
+  pSystemSimulationInformationCommand = new SystemSimulationInformationCommand(&tlmSystemSimulationInformation, &wcSystemSimulationInformation,
+                                                                               &scSystemSimulationInformation,
                                                                                mpGraphicsView->getModelWidget()->getLibraryTreeItem());
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pSystemSimulationInformationCommand);
   if (!pSystemSimulationInformationCommand->isFailed()) {

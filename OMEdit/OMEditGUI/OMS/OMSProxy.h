@@ -136,6 +136,7 @@ public:
   bool getStopTime(QString cref, double* stopTime);
   bool setStopTime(QString cref, double stopTime);
   bool setFixedStepSize(QString cref, double stepSize);
+  bool setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort);
   bool setResultFile(QString cref, QString filename, int bufferSize);
   bool setLoggingInterval(QString cref, double loggingInterval);
   bool setMasterAlgorithm(QString cref, QString masterAlgorithm);

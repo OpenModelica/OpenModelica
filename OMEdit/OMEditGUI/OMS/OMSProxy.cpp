@@ -1432,12 +1432,31 @@ bool OMSProxy::setStopTime(QString cref, double stopTime)
  */
 bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
 {
-  ;
   QString command = "oms3_setFixedStepSize";
   QStringList args;
   args << cref << QString::number(stepSize);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setFixedStepSize(cref.toStdString().c_str(), stepSize);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setTLMSocketData
+ * Sets the TLM system socket data.
+ * \param cref
+ * \param address
+ * \param managerPort
+ * \param monitorPort
+ * \return
+ */
+bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort)
+{
+  QString command = "oms3_setTLMSocketData";
+  QStringList args;
+  args << cref << address << QString::number(managerPort) << QString::number(monitorPort);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTLMSocketData(cref.toStdString().c_str(), address.toStdString().c_str(), managerPort, monitorPort);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

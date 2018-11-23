@@ -62,9 +62,9 @@ SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
     mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
     mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
   } else if (pLibraryTreeItem->isSystemElement()) {
-    if (pLibraryTreeItem->getSystemType() == oms_system_tlm) {
+    if (pLibraryTreeItem->isTLMSystem()) {
       mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
-    } else if (pLibraryTreeItem->getSystemType() == oms_system_wc) {
+    } else if (pLibraryTreeItem->isWCSystem()) {
       mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
     }
   }

@@ -126,12 +126,15 @@ public:
   bool isNonExisting() const {return mNonExisting;}
   void setOMSElement(oms3_element_t *pOMSComponent) {mpOMSElement = pOMSComponent;}
   oms3_element_t* getOMSElement() const {return mpOMSElement;}
-  bool isSystemElement() const;
-  bool isComponentElement() const;
-  bool isFMUComponent() const;
-  bool isTableComponent() const;
+  bool isSystemElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_system));}
+  bool isComponentElement() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component));}
+  bool isFMUComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_fmu));}
+  bool isTableComponent() const {return (mpOMSElement && (mpOMSElement->type == oms_element_component) && (mComponentType == oms_component_table));}
   void setSystemType(oms_system_enu_t type) {mSystemType = type;}
   oms_system_enu_t getSystemType() {return mSystemType;}
+  bool isTLMSystem() const {return mSystemType == oms_system_tlm;}
+  bool isWCSystem() const {return mSystemType == oms_system_wc;}
+  bool isSCSystem() const {return mSystemType == oms_system_sc;}
   void setComponentType(oms_component_enu_t type) {mComponentType = type;}
   oms_component_enu_t getComponentType() {return mComponentType;}
   ssd_element_geometry_t getOMSElementGeometry();
