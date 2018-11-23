@@ -35,7 +35,7 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
-#include "Modeling/BusDialog.h"
+#include "OMS/BusDialog.h"
 
 #include <QPainter>
 

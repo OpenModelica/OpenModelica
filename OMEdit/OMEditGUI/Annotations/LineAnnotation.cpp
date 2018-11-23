@@ -36,7 +36,7 @@
 #include "LineAnnotation.h"
 #include "Modeling/ItemDelegate.h"
 #include "Modeling/Commands.h"
-#include "Modeling/BusDialog.h"
+#include "OMS/BusDialog.h"
 
 #include <QMessageBox>
 

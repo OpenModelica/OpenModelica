@@ -133,7 +133,6 @@ SOURCES += main.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
-  Modeling/BusDialog.cpp \
   Search/SearchWidget.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
@@ -199,7 +198,10 @@ SOURCES += main.cpp \
   Traceability/TraceabilityGraphViewWidget.cpp \
   Traceability/TraceabilityInformationURI.cpp \
   OMS/OMSProxy.cpp \
+  OMS/ModelDialog.cpp \
+  OMS/BusDialog.cpp \
   OMS/ElementPropertiesDialog.cpp \
+  OMS/SystemSimulationInformationDialog.cpp \
   OMS/InstantiateDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
@@ -220,7 +222,6 @@ HEADERS  += Util/Helper.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \
-  Modeling/BusDialog.h \
   Search/SearchWidget.h \
   Options/OptionsDialog.h \
   Editors/BaseEditor.h \
@@ -287,7 +288,10 @@ HEADERS  += Util/Helper.h \
   Traceability/TraceabilityGraphViewWidget.h \
   Traceability/TraceabilityInformationURI.h \
   OMS/OMSProxy.h \
+  OMS/ModelDialog.h \
+  OMS/BusDialog.h \
   OMS/ElementPropertiesDialog.h \
+  OMS/SystemSimulationInformationDialog.h \
   OMS/InstantiateDialog.h \
   OMS/OMSSimulationOptions.h \
   OMS/OMSSimulationDialog.h \

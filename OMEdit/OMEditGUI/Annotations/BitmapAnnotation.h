@@ -65,25 +65,4 @@ public slots:
   void duplicate();
 };
 
-class AddOrEditIconDialog : public QDialog
-{
-  Q_OBJECT
-public:
-  AddOrEditIconDialog(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView, QWidget *pParent = 0);
-private:
-  ShapeAnnotation *mpShapeAnnotation;
-  GraphicsView *mpGraphicsView;
-  Label *mpFileLabel;
-  QLineEdit *mpFileTextBox;
-  QPushButton *mpBrowseFileButton;
-  QScrollArea *mpPreviewImageScrollArea;
-  Label *mpPreviewImageLabel;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-public slots:
-  void browseImageFile();
-  void addOrEditIcon();
-};
-
 #endif // BITMAPANNOTATION_H

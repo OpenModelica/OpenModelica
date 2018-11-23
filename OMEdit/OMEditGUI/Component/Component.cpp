@@ -39,7 +39,7 @@
 #include "Modeling/Commands.h"
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
-#include "Modeling/BusDialog.h"
+#include "OMS/BusDialog.h"
 
 #include <QMessageBox>
 #include <QMenu>

@@ -52,7 +52,9 @@
 #include "Animation/ThreeDViewer.h"
 #endif
 #include "OMS/OMSProxy.h"
-#include "Modeling/BusDialog.h"
+#include "OMS/ModelDialog.h"
+#include "OMS/BusDialog.h"
+#include "OMS/SystemSimulationInformationDialog.h"
 
 #include <QNetworkReply>
 

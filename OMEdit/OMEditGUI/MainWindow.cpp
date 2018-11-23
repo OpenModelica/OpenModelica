@@ -32,7 +32,6 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-
 #include "MainWindow.h"
 /* Keep PlotWindowContainer on top to include OSG first */
 #include "Plotting/PlotWindowContainer.h"
@@ -42,6 +41,7 @@
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
+#include "OMS/ModelDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
