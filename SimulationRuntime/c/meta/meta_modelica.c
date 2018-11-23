@@ -337,14 +337,14 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix, modelica_metaty
   }
 
   if (numslots > 0 && ctor == 0) { /* TUPLE */
-	/* Pointers.mo, pointer are saved as tuples, check if we have it in the stack so we break the cycle */
-	data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
-	if (listMember(data, stack))
-	{
+    /* Pointers.mo, pointer are saved as tuples, check if we have it in the stack so we break the cycle */
+    data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+    if (listMember(data, stack))
+    {
       checkAnyStringBufSize(ix,12);
       ix += sprintf(anyStringBuf+ix, "(Pointer())");
       return ix;
-	}
+    }
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, "(");
     for (i = 0; i < numslots; i++) {
@@ -369,7 +369,7 @@ inline static mmc_sint_t anyStringWork(void* any, mmc_sint_t ix, modelica_metaty
   if (numslots==1 && ctor==1) /* SOME(x) */ {
     checkAnyStringBufSize(ix,6);
     ix += sprintf(anyStringBuf+ix, "SOME(");
-    ix = anyStringWork(data, ix, stack);
+    ix = anyStringWork(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any), 1)), ix, stack);
     checkAnyStringBufSize(ix,2);
     ix += sprintf(anyStringBuf+ix, ")");
     return ix;
