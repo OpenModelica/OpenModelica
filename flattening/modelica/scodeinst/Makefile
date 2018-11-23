@@ -636,6 +636,9 @@ OperatorOverloadConstructorSimple.mo \
 OperatorOverloadError1.mo \
 PackageConstant1.mo \
 ParameterBug.mos \
+PartialApplication1.mo \
+PartialApplicationInvalidArg1.mo \
+PartialApplicationInvalidArg2.mo \
 Prefix1.mo \
 Prefix2.mo \
 Prefix3.mo \
