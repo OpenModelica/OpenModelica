@@ -4195,7 +4195,7 @@ void LibraryWidget::openOMSModelFile(QFileInfo fileInfo, bool showProgress)
         if (showProgress) {
           MainWindow::instance()->getStatusBar()->clearMessage();
         }
-        OMSProxy::instance()->unloadModel(modelName);
+        OMSProxy::instance()->omsDelete(modelName);
         return;
       }
     }

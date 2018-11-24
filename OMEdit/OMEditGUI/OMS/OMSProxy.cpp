@@ -109,7 +109,7 @@ void OMSProxy::create()
  */
 void OMSProxy::destroy()
 {
-  oms2_setLoggingCallback(0);
+  oms3_setLoggingCallback(0);
   mpInstance->deleteLater();
 }
 
@@ -328,64 +328,36 @@ bool OMSProxy::statusToBool(oms_status_enu_t status)
 }
 
 /*!
- * \brief OMSProxy::newModel
+ * \brief OMSProxy::addBus
+ * Adds a bus.
  * \param cref
  * \return
  */
-bool OMSProxy::newModel(QString cref)
+bool OMSProxy::addBus(QString cref)
 {
-  QString command = "oms3_newModel";
+  QString command = "oms3_addBus";
   QStringList args;
   args << cref;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_newModel(cref.toStdString().c_str());
+  oms_status_enu_t status = oms3_addBus(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
- * \brief OMSProxy::omsDelete
- * \param cref
+ * \brief OMSProxy::addConnection
+ * Adds the connection
+ * \param crefA
+ * \param crefB
  * \return
  */
-bool OMSProxy::omsDelete(QString cref)
+bool OMSProxy::addConnection(QString crefA, QString crefB)
 {
-  oms_status_enu_t status = oms3_delete(cref.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addSystem
- * Adds a system to a model.
- * \param cref
- * \param type
- * \return
- */
-bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
-{
-  QString command = "oms3_addSystem";
+  QString command = "oms3_addConnection";
   QStringList args;
-  args << cref << QString::number(type);
+  args << crefA << crefB;
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_addSystem(cref.toStdString().c_str(), type);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getSystemType
- * Get the system type.
- * \param cref
- * \param pType
- * \return
- */
-bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
-{
-  QString command = "oms3_getSystemType";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getSystemType(cref.toStdString().c_str(), pType);
+  oms_status_enu_t status = oms3_addConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -410,59 +382,6 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
 }
 
 /*!
- * \brief OMSProxy::getConnector
- * Gets the connector.
- * \param cref
- * \param pConnector
- * \return
- */
-bool OMSProxy::getConnector(QString cref, oms_connector_t **pConnector)
-{
-  QString command = "oms3_getConnector";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getConnector(cref.toStdString().c_str(), pConnector);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addBus
- * Adds a bus.
- * \param cref
- * \return
- */
-bool OMSProxy::addBus(QString cref)
-{
-  QString command = "oms3_addBus";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_addBus(cref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getBus
- * Gets the bus.
- * \param cref
- * \param pBusConnector
- * \return
- */
-bool OMSProxy::getBus(QString cref, oms3_busconnector_t **pBusConnector)
-{
-  QString command = "oms3_getBus";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getBus(cref.toStdString().c_str(), pBusConnector);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::addConnectorToBus
  * Adds a connector to a bus.
  * \param busCref
@@ -476,62 +395,6 @@ bool OMSProxy::addConnectorToBus(QString busCref, QString connectorCref)
   args << busCref << connectorCref;
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addConnectorToBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::deleteConnectorFromBus
- * Deletes a connector from a bus.
- * \param busCref
- * \param connectorCref
- * \return
- */
-bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
-{
-  QString command = "oms3_deleteConnectorFromBus";
-  QStringList args;
-  args << busCref << connectorCref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_deleteConnectorFromBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addTLMBus
- * Adds a tlm bus.
- * \param cref
- * \param domain
- * \param dimensions
- * \param interpolation
- * \return
- */
-bool OMSProxy::addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation)
-{
-  QString command = "oms3_addTLMBus";
-  QStringList args;
-  args << cref << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_addTLMBus(cref.toStdString().c_str(), domain, dimensions, interpolation);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getTLMBus
- * Gets the bus.
- * \param cref
- * \param pTLMBusConnector
- * \return
- */
-bool OMSProxy::getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector)
-{
-  QString command = "oms3_getTLMBus";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getTLMBus(cref.toStdString().c_str(), pTLMBusConnector);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -557,24 +420,6 @@ bool OMSProxy::addConnectorToTLMBus(QString busCref, QString connectorCref, QStr
 }
 
 /*!
- * \brief OMSProxy::deleteConnectorFromTLMBus
- * Deletes a connector from a tlm bus.
- * \param busCref
- * \param connectorCref
- * \return
- */
-bool OMSProxy::deleteConnectorFromTLMBus(QString busCref, QString connectorCref)
-{
-  QString command = "oms3_deleteConnectorFromTLMBus";
-  QStringList args;
-  args << busCref << connectorCref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_deleteConnectorFromTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::addSubModel
  * Adds the submodel to the system
  * \param busCref
@@ -594,6 +439,175 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
 }
 
 /*!
+ * \brief OMSProxy::addSystem
+ * Adds a system to a model.
+ * \param cref
+ * \param type
+ * \return
+ */
+bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
+{
+  QString command = "oms3_addSystem";
+  QStringList args;
+  args << cref << QString::number(type);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_addSystem(cref.toStdString().c_str(), type);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addTLMBus
+ * Adds a tlm bus.
+ * \param cref
+ * \param domain
+ * \param dimensions
+ * \param interpolation
+ * \return
+ */
+bool OMSProxy::addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation)
+{
+  QString command = "oms3_addTLMBus";
+  QStringList args;
+  args << cref << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_addTLMBus(cref.toStdString().c_str(), domain, dimensions, interpolation);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::addTLMConnection
+ * Adds a TLM connection.
+ * \param crefA
+ * \param crefB
+ * \param delay
+ * \param alpha
+ * \param linearimpedance
+ * \param angularimpedance
+ * \return
+ */
+bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance)
+{
+  QString command = "oms3_addTLMConnection";
+  QStringList args;
+  args << crefA << crefB << QString::number(delay) << QString::number(alpha)
+       << QString::number(linearimpedance) << QString::number(angularimpedance);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_addTLMConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), delay, alpha,
+                                                  linearimpedance, angularimpedance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::cancelSimulation_asynchronous
+ * Cancels the current model asynchronous simulation.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::cancelSimulation_asynchronous(QString cref)
+{
+  QString command = "oms3_cancelSimulation_asynchronous";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_cancelSimulation_asynchronous(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::deleteConnection
+ * Deletes the connection
+ * \param crefA
+ * \param crefB
+ * \return
+ */
+bool OMSProxy::deleteConnection(QString crefA, QString crefB)
+{
+  QString command = "oms3_deleteConnection";
+  QStringList args;
+  args << crefA << crefB;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_deleteConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::deleteConnectorFromBus
+ * Deletes a connector from a bus.
+ * \param busCref
+ * \param connectorCref
+ * \return
+ */
+bool OMSProxy::deleteConnectorFromBus(QString busCref, QString connectorCref)
+{
+  QString command = "oms3_deleteConnectorFromBus";
+  QStringList args;
+  args << busCref << connectorCref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_deleteConnectorFromBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::deleteConnectorFromTLMBus
+ * Deletes a connector from a tlm bus.
+ * \param busCref
+ * \param connectorCref
+ * \return
+ */
+bool OMSProxy::deleteConnectorFromTLMBus(QString busCref, QString connectorCref)
+{
+  QString command = "oms3_deleteConnectorFromTLMBus";
+  QStringList args;
+  args << busCref << connectorCref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_deleteConnectorFromTLMBus(busCref.toStdString().c_str(), connectorCref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getBoolean
+ * Gets the boolean variable value.
+ * \param cref
+ * \param value
+ * \return
+ */
+bool OMSProxy::getBoolean(QString cref, bool *value)
+{
+  QString command = "oms3_getBoolean";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getBoolean(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getBus
+ * Gets the bus.
+ * \param cref
+ * \param pBusConnector
+ * \return
+ */
+bool OMSProxy::getBus(QString cref, oms3_busconnector_t **pBusConnector)
+{
+  QString command = "oms3_getBus";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getBus(cref.toStdString().c_str(), pBusConnector);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getComponentType
  * Get the component type.
  * \param cref
@@ -607,6 +621,224 @@ bool OMSProxy::getComponentType(QString cref, oms_component_enu_t *pType)
   args << cref;
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getComponentType(cref.toStdString().c_str(), pType);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getConnections
+ * Get the model connections
+ * \param cref
+ * \param pConnections
+ * \return
+ */
+bool OMSProxy::getConnections(QString cref, oms3_connection_t*** pConnections)
+{
+  QString command = "oms3_getConnections";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getConnections(cref.toStdString().c_str(), pConnections);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getConnector
+ * Gets the connector.
+ * \param cref
+ * \param pConnector
+ * \return
+ */
+bool OMSProxy::getConnector(QString cref, oms_connector_t **pConnector)
+{
+  QString command = "oms3_getConnector";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getConnector(cref.toStdString().c_str(), pConnector);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getElement
+ * Gets the model element
+ * \param cref
+ * \param pElement
+ * \return
+ */
+bool OMSProxy::getElement(QString cref, oms3_element_t** pElement)
+{
+  QString command = "oms3_getElement";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getElement(cref.toStdString().c_str(), pElement);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getElements
+ * Get the model elements
+ * \param cref
+ * \param pElements
+ * \return
+ */
+bool OMSProxy::getElements(QString cref, oms3_element_t*** pElements)
+{
+  QString command = "oms3_getElements";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getElements(cref.toStdString().c_str(), pElements);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getFMUInfo
+ * Gets the FMU info.
+ * \param cref
+ * \param pFmuInfo
+ * \return
+ */
+bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
+{
+  QString command = "oms3_getFMUInfo";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getInteger
+ * Gets the integer variable value.
+ * \param cref
+ * \param value
+ * \return
+ */
+bool OMSProxy::getInteger(QString cref, int *value)
+{
+  QString command = "oms3_getInteger";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getInteger(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getReal
+ * Gets the real variable value.
+ * \param cref
+ * \param value
+ * \return
+ */
+bool OMSProxy::getReal(QString cref, double *value)
+{
+  QString command = "oms3_getReal";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getReal(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStartTime
+ * Get the start time from the model.
+ * \param cref
+ * \param startTime
+ * \return
+ */
+bool OMSProxy::getStartTime(QString cref, double* startTime)
+{
+  QString command = "oms3_getStartTime";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getStartTime(cref.toStdString().c_str(), startTime);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStopTime
+ * Get the stop time from the model.
+ * \param cref
+ * \param stopTime
+ * \return
+ */
+bool OMSProxy::getStopTime(QString cref, double* stopTime)
+{
+  QString command = "oms3_getStopTime";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getStopTime(cref.toStdString().c_str(), stopTime);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getFMUPath
+ * Returns the submodel path.
+ * \param cref
+ * \param pPath
+ * \return
+ */
+bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
+{
+  QString command = "oms3_getSubModelPath";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  char* path = NULL;
+  oms_status_enu_t status = oms3_getSubModelPath(cref.toStdString().c_str(), &path);
+  *pPath = QString(path);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getSystemType
+ * Get the system type.
+ * \param cref
+ * \param pType
+ * \return
+ */
+bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
+{
+  QString command = "oms3_getSystemType";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getSystemType(cref.toStdString().c_str(), pType);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getTLMBus
+ * Gets the bus.
+ * \param cref
+ * \param pTLMBusConnector
+ * \return
+ */
+bool OMSProxy::getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector)
+{
+  QString command = "oms3_getTLMBus";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_getTLMBus(cref.toStdString().c_str(), pTLMBusConnector);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -634,29 +866,529 @@ bool OMSProxy::getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions
 }
 
 /*!
- * \brief OMSProxy::unloadModel
- * Unloads the model.
- * \param ident
+ * \brief OMSProxy::instantiate
+ * Instantiates the model and enter the instantiated state.
+ * \param cref
  * \return
  */
-bool OMSProxy::unloadModel(QString ident)
+bool OMSProxy::instantiate(QString cref)
 {
-  oms_status_enu_t status = oms2_unloadModel(ident.toStdString().c_str());
+  QString command = "oms3_instantiate";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_instantiate(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
 
 /*!
- * \brief OMSProxy::renameModel
- * Renames a model or a FMU.
- * \param identOld
- * \param identNew
+ * \brief OMSProxy::initialize
+ * Initializes a model (works for both FMI and TLM).
+ * \param cref
  * \return
  */
-bool OMSProxy::rename(QString identOld, QString identNew)
+bool OMSProxy::initialize(QString cref)
 {
-  oms_status_enu_t status = oms2_rename(identOld.toStdString().c_str(), identNew.toStdString().c_str());
+  QString command = "oms3_initialize";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_initialize(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
+
+/*!
+ * \brief OMSProxy::list
+ * Lists the contents of a model.
+ * Since memory is allocated so we need to call free.
+ * \param cref
+ * \param pContents
+ * \return
+ */
+bool OMSProxy::list(QString cref, QString *pContents)
+{
+  QString command = "oms3_list";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  char* contents = NULL;
+  oms_status_enu_t status = oms3_list(cref.toStdString().c_str(), &contents);
+  if (contents) {
+    *pContents = QString(contents);
+    free(contents);
+  }
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::loadModel
+ * Loads the model.
+ * \param filename
+ * \param pModelName
+ * \return
+ */
+bool OMSProxy::loadModel(QString filename, QString* pModelName)
+{
+  QString command = "oms3_import";
+  QStringList args;
+  args << filename;
+  LOG_COMMAND(command, args);
+  char* cref = NULL;
+  oms_status_enu_t status = oms3_import(filename.toStdString().c_str(), &cref);
+  *pModelName = QString(cref);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::newModel
+ * \param cref
+ * \return
+ */
+bool OMSProxy::newModel(QString cref)
+{
+  QString command = "oms3_newModel";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_newModel(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::omsDelete
+ * \param cref
+ * \return
+ */
+bool OMSProxy::omsDelete(QString cref)
+{
+  oms_status_enu_t status = oms3_delete(cref.toStdString().c_str());
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::saveModel
+ * Saves the model.
+ * \param cref
+ * \param filename
+ * \return
+ */
+bool OMSProxy::saveModel(QString cref, QString filename)
+{
+  QString command = "oms3_export";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_export(cref.toStdString().c_str(), filename.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setBoolean
+ * Sets the boolean variable value.
+ * \param cref
+ * \param value
+ * \return
+ */
+bool OMSProxy::setBoolean(QString cref, bool value)
+{
+  QString command = "oms3_setBoolean";
+  QStringList args;
+  args << cref << (value ? "true" : "false");
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setBoolean(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setBusGeometry
+ * Sets the bus geometry.
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
+{
+  QString command = "oms3_setBusGeometry";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setBusGeometry(cref.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setCommandLineOption
+ * Sets the command line option.
+ * \param cmd
+ * \return
+ */
+bool OMSProxy::setCommandLineOption(QString cmd)
+{
+  QString command = "oms3_setCommandLineOption";
+  QStringList args;
+  args << cmd;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setCommandLineOption(cmd.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setConnectionGeometry
+ * Sets the connection geometry.
+ * \param crefA
+ * \param crefB
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry)
+{
+  QString command = "oms3_setConnectionGeometry";
+  QStringList args;
+  args << crefA << crefB;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setConnectionGeometry(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setConnectorGeometry
+ * Sets the connector geometry.
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
+{
+  QString command = "oms3_setConnectorGeometry";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setConnectorGeometry(cref.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setCommunicationInterval
+ * Set the fixed step size for the simulation.
+ * \param cref
+ * \param stepSize
+ * \return
+ */
+bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
+{
+  QString command = "oms3_setFixedStepSize";
+  QStringList args;
+  args << cref << QString::number(stepSize);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setFixedStepSize(cref.toStdString().c_str(), stepSize);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setElementGeometry
+ * Sets the element geometry
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
+{
+  QString command = "oms3_setElementGeometry";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setLoggingCallback
+ * Sets the logging callback.
+ */
+void OMSProxy::setLoggingCallback()
+{
+  QString command = "oms3_setLoggingCallback";
+  QStringList args;
+  LOG_COMMAND(command, args);
+  oms3_setLoggingCallback(loggingCallback);
+  logResponse(command, oms_status_ok, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::setLogFile
+ * Sets the log file.
+ * \param filename
+ */
+void OMSProxy::setLogFile(QString filename)
+{
+  QString command = "oms3_setLogFile";
+  QStringList args;
+  args << "\"" + filename + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setLogFile(filename.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::setLoggingInterval
+ * Sets the logging interval.
+ * \param cref
+ * \param loggingInterval
+ * \return
+ */
+bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
+{
+  QString command = "oms3_setLoggingInterval";
+  QStringList args;
+  args << cref << QString::number(loggingInterval);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setLoggingInterval(cref.toStdString().c_str(), loggingInterval);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setDebugLogging
+ * Sets the logging level.
+ * \param logLevel
+ */
+void OMSProxy::setLoggingLevel(int logLevel)
+{
+  QString command = "oms3_setLoggingLevel";
+  QStringList args;
+  args << QString::number(logLevel);
+  LOG_COMMAND(command, args);
+  oms3_setLoggingLevel(logLevel);
+  logResponse(command, oms_status_ok, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::setInteger
+ * Sets the integer variable value.
+ * \param cref
+ * \param value
+ * \return
+ */
+bool OMSProxy::setInteger(QString cref, int value)
+{
+  QString command = "oms3_setInteger";
+  QStringList args;
+  args << cref << QString::number(value);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setInteger(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setReal
+ * Sets the real variable value.
+ * \param cref
+ * \param value
+ * \return
+ */
+bool OMSProxy::setReal(QString cref, double value)
+{
+  QString command = "oms3_setReal";
+  QStringList args;
+  args << cref << QString::number(value);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setReal(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setResultFile
+ * Set the result file for the simulation.
+ * \param cref
+ * \param filename
+ * \param bufferSize
+ * \return
+ */
+bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
+{
+  QString command = "oms3_setResultFile";
+  QStringList args;
+  args << cref << "\"" + filename + "\"" << QString::number(bufferSize);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), bufferSize);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStartTime
+ * Set the start time of the simulation.
+ * \param cref
+ * \param startTime
+ * \return
+ */
+bool OMSProxy::setStartTime(QString cref, double startTime)
+{
+  QString command = "oms3_setStartTime";
+  QStringList args;
+  args << cref << QString::number(startTime);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setStartTime(cref.toStdString().c_str(), startTime);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setStopTime
+ * Set the stop time of the simulation.
+ * \param cref
+ * \param stopTime
+ * \return
+ */
+bool OMSProxy::setStopTime(QString cref, double stopTime)
+{
+  QString command = "oms3_setStopTime";
+  QStringList args;
+  args << cref << QString::number(stopTime);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setStopTime(cref.toStdString().c_str(), stopTime);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setTempDirectory
+ * Sets the temp directory.
+ * \param path
+ */
+void OMSProxy::setTempDirectory(QString path)
+{
+  QString command = "oms3_setTempDirectory";
+  QStringList args;
+  args << "\"" + path + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTempDirectory(path.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::setTLMBusGeometry
+ * Sets the tlm bus geometry.
+ * \param cref
+ * \param pGeometry
+ * \return
+ */
+bool OMSProxy::setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
+{
+  QString command = "oms3_setTLMBusGeometry";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTLMBusGeometry(cref.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setTLMConnectionParameters
+ * Sets the TLM parameters of a connection.
+ * \param crefA
+ * \param crefB
+ * \param pParameters
+ * \return
+ */
+bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters)
+{
+  QString command = "oms3_setTLMConnectionParameters";
+  QStringList args;
+  args << crefA << crefB;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTLMConnectionParameters(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pParameters);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setTLMSocketData
+ * Sets the TLM system socket data.
+ * \param cref
+ * \param address
+ * \param managerPort
+ * \param monitorPort
+ * \return
+ */
+bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort)
+{
+  QString command = "oms3_setTLMSocketData";
+  QStringList args;
+  args << cref << address << QString::number(managerPort) << QString::number(monitorPort);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTLMSocketData(cref.toStdString().c_str(), address.toStdString().c_str(), managerPort, monitorPort);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setWorkingDirectory
+ * Sets the working directory.
+ * \param path
+ */
+void OMSProxy::setWorkingDirectory(QString path)
+{
+  QString command = "oms3_setWorkingDirectory";
+  QStringList args;
+  args << "\"" + path + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setWorkingDirectory(path.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::simulate_asynchronous
+ * Starts the asynchronous simulation.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::simulate_asynchronous(QString cref)
+{
+  QString command = "oms3_simulate_asynchronous";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_simulate_asynchronous(cref.toStdString().c_str(), simulateCallback);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::terminate
+ * Terminates the model.
+ * \param cref
+ * \return
+ */
+bool OMSProxy::terminate(QString cref)
+{
+  QString command = "oms3_terminate";
+  QStringList args;
+  args << cref;
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_terminate(cref.toStdString().c_str());
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+
+
 
 /*!
  * \brief OMSProxy::addFMU
@@ -700,22 +1432,15 @@ bool OMSProxy::deleteSubModel(QString modelIdent, QString subModelIdent)
 }
 
 /*!
- * \brief OMSProxy::loadModel
- * Loads the model.
- * \param filename
- * \param pModelName
+ * \brief OMSProxy::renameModel
+ * Renames a model or a FMU.
+ * \param identOld
+ * \param identNew
  * \return
  */
-bool OMSProxy::loadModel(QString filename, QString* pModelName)
+bool OMSProxy::rename(QString identOld, QString identNew)
 {
-  QString command = "oms3_import";
-  QStringList args;
-  args << filename;
-  LOG_COMMAND(command, args);
-  char* cref = NULL;
-  oms_status_enu_t status = oms3_import(filename.toStdString().c_str(), &cref);
-  *pModelName = QString(cref);
-  logResponse(command, status, &commandTime);
+  oms_status_enu_t status = oms2_rename(identOld.toStdString().c_str(), identNew.toStdString().c_str());
   return statusToBool(status);
 }
 
@@ -753,752 +1478,6 @@ bool OMSProxy::loadString(QString contents, QString* pModelName)
 }
 
 /*!
- * \brief OMSProxy::saveModel
- * Saves the model.
- * \param cref
- * \param filename
- * \return
- */
-bool OMSProxy::saveModel(QString cref, QString filename)
-{
-  QString command = "oms3_export";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_export(cref.toStdString().c_str(), filename.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::list
- * Lists the contents of a model.
- * Since memory is allocated so we need to call free.
- * \param cref
- * \param pContents
- * \return
- */
-bool OMSProxy::list(QString cref, QString *pContents)
-{
-  QString command = "oms3_list";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  char* contents = NULL;
-  oms_status_enu_t status = oms3_list(cref.toStdString().c_str(), &contents);
-  if (contents) {
-    *pContents = QString(contents);
-    free(contents);
-  }
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getElement
- * Gets the model element
- * \param cref
- * \param pElement
- * \return
- */
-bool OMSProxy::getElement(QString cref, oms3_element_t** pElement)
-{
-  QString command = "oms3_getElement";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getElement(cref.toStdString().c_str(), pElement);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setElementGeometry
- * Sets the element geometry
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry)
-{
-  QString command = "oms3_setElementGeometry";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setElementGeometry(cref.toStdString().c_str(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getElements
- * Get the model elements
- * \param cref
- * \param pElements
- * \return
- */
-bool OMSProxy::getElements(QString cref, oms3_element_t*** pElements)
-{
-  QString command = "oms3_getElements";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getElements(cref.toStdString().c_str(), pElements);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getFMUPath
- * Returns the submodel path.
- * \param cref
- * \param pPath
- * \return
- */
-bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
-{
-  QString command = "oms3_getSubModelPath";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  char* path = NULL;
-  oms_status_enu_t status = oms3_getSubModelPath(cref.toStdString().c_str(), &path);
-  *pPath = QString(path);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getFMUInfo
- * Gets the FMU info.
- * \param cref
- * \param pFmuInfo
- * \return
- */
-bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
-{
-  QString command = "oms3_getFMUInfo";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setConnectorGeometry
- * Sets the connector geometry.
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
-{
-  QString command = "oms3_setConnectorGeometry";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setConnectorGeometry(cref.toStdString().c_str(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setBusGeometry
- * Sets the bus geometry.
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
-{
-  QString command = "oms3_setBusGeometry";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setBusGeometry(cref.toStdString().c_str(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setTLMBusGeometry
- * Sets the tlm bus geometry.
- * \param cref
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry)
-{
-  QString command = "oms3_setTLMBusGeometry";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setTLMBusGeometry(cref.toStdString().c_str(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getConnections
- * Get the model connections
- * \param cref
- * \param pConnections
- * \return
- */
-bool OMSProxy::getConnections(QString cref, oms3_connection_t*** pConnections)
-{
-  QString command = "oms3_getConnections";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getConnections(cref.toStdString().c_str(), pConnections);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addConnection
- * Adds the connection
- * \param crefA
- * \param crefB
- * \return
- */
-bool OMSProxy::addConnection(QString crefA, QString crefB)
-{
-  QString command = "oms3_addConnection";
-  QStringList args;
-  args << crefA << crefB;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_addConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addTLMConnection
- * Adds a TLM connection.
- * \param crefA
- * \param crefB
- * \param delay
- * \param alpha
- * \param linearimpedance
- * \param angularimpedance
- * \return
- */
-bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance)
-{
-  QString command = "oms3_addTLMConnection";
-  QStringList args;
-  args << crefA << crefB << QString::number(delay) << QString::number(alpha)
-       << QString::number(linearimpedance) << QString::number(angularimpedance);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_addTLMConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), delay, alpha,
-                                                  linearimpedance, angularimpedance);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::deleteConnection
- * Deletes the connection
- * \param crefA
- * \param crefB
- * \return
- */
-bool OMSProxy::deleteConnection(QString crefA, QString crefB)
-{
-  QString command = "oms3_deleteConnection";
-  QStringList args;
-  args << crefA << crefB;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_deleteConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setConnectionGeometry
- * Sets the connection geometry.
- * \param crefA
- * \param crefB
- * \param pGeometry
- * \return
- */
-bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry)
-{
-  QString command = "oms3_setConnectionGeometry";
-  QStringList args;
-  args << crefA << crefB;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setConnectionGeometry(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pGeometry);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setTLMConnectionParameters
- * Sets the TLM parameters of a connection.
- * \param crefA
- * \param crefB
- * \param pParameters
- * \return
- */
-bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters)
-{
-  QString command = "oms3_setTLMConnectionParameters";
-  QStringList args;
-  args << crefA << crefB;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setTLMConnectionParameters(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pParameters);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::instantiate
- * Instantiates the model and enter the instantiated state.
- * \param cref
- * \return
- */
-bool OMSProxy::instantiate(QString cref)
-{
-  QString command = "oms3_instantiate";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_instantiate(cref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::initialize
- * Initializes a model (works for both FMI and TLM).
- * \param cref
- * \return
- */
-bool OMSProxy::initialize(QString cref)
-{
-  QString command = "oms3_initialize";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_initialize(cref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::simulate_asynchronous
- * Starts the asynchronous simulation.
- * \param cref
- * \return
- */
-bool OMSProxy::simulate_asynchronous(QString cref)
-{
-  QString command = "oms3_simulate_asynchronous";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_simulate_asynchronous(cref.toStdString().c_str(), simulateCallback);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::cancelSimulation_asynchronous
- * Cancels the current model asynchronous simulation.
- * \param cref
- * \return
- */
-bool OMSProxy::cancelSimulation_asynchronous(QString cref)
-{
-  QString command = "oms3_cancelSimulation_asynchronous";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_cancelSimulation_asynchronous(cref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::terminate
- * Terminates the model.
- * \param cref
- * \return
- */
-bool OMSProxy::terminate(QString cref)
-{
-  QString command = "oms3_terminate";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_terminate(cref.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::reset
- * Reset the model after a simulation run.
- * \param ident
- * \return
- */
-bool OMSProxy::reset(QString ident)
-{
-  oms_status_enu_t status = oms2_reset(ident.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setDebugLogging
- * Sets the logging level.
- * \param logLevel
- */
-void OMSProxy::setLoggingLevel(int logLevel)
-{
-  QString command = "oms2_setLoggingLevel";
-  QStringList args;
-  args << QString::number(logLevel);
-  LOG_COMMAND(command, args);
-  oms2_setLoggingLevel(logLevel);
-  logResponse(command, oms_status_ok, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::setCommandLineOption
- * Sets the command line option.
- * \param cmd
- * \return
- */
-bool OMSProxy::setCommandLineOption(QString cmd)
-{
-  QString command = "oms3_setCommandLineOption";
-  QStringList args;
-  args << cmd;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setCommandLineOption(cmd.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setLogFile
- * Sets the log file.
- * \param filename
- */
-void OMSProxy::setLogFile(QString filename)
-{
-  QString command = "oms3_setLogFile";
-  QStringList args;
-  args << "\"" + filename + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setLogFile(filename.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::setTempDirectory
- * Sets the temp directory.
- * \param path
- */
-void OMSProxy::setTempDirectory(QString path)
-{
-  QString command = "oms3_setTempDirectory";
-  QStringList args;
-  args << "\"" + path + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setTempDirectory(path.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::setWorkingDirectory
- * Sets the working directory.
- * \param path
- */
-void OMSProxy::setWorkingDirectory(QString path)
-{
-  QString command = "oms3_setWorkingDirectory";
-  QStringList args;
-  args << "\"" + path + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setWorkingDirectory(path.toStdString().c_str());
-  logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::setLoggingCallback
- * Sets the logging callback.
- */
-void OMSProxy::setLoggingCallback()
-{
-  QString command = "oms2_setLoggingCallback";
-  QStringList args;
-  LOG_COMMAND(command, args);
-  oms2_setLoggingCallback(loggingCallback);
-  logResponse(command, oms_status_ok, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::getReal
- * Gets the real variable value.
- * \param cref
- * \param value
- * \return
- */
-bool OMSProxy::getReal(QString cref, double *value)
-{
-  QString command = "oms3_getReal";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getReal(cref.toStdString().c_str(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setReal
- * Sets the real variable value.
- * \param cref
- * \param value
- * \return
- */
-bool OMSProxy::setReal(QString cref, double value)
-{
-  QString command = "oms3_setReal";
-  QStringList args;
-  args << cref << QString::number(value);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setReal(cref.toStdString().c_str(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getInteger
- * Gets the integer variable value.
- * \param cref
- * \param value
- * \return
- */
-bool OMSProxy::getInteger(QString cref, int *value)
-{
-  QString command = "oms3_getInteger";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getInteger(cref.toStdString().c_str(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setInteger
- * Sets the integer variable value.
- * \param cref
- * \param value
- * \return
- */
-bool OMSProxy::setInteger(QString cref, int value)
-{
-  QString command = "oms3_setInteger";
-  QStringList args;
-  args << cref << QString::number(value);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setInteger(cref.toStdString().c_str(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::getBoolean
- * Gets the boolean variable value.
- * \param cref
- * \param value
- * \return
- */
-bool OMSProxy::getBoolean(QString cref, bool *value)
-{
-  QString command = "oms3_getBoolean";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getBoolean(cref.toStdString().c_str(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setBoolean
- * Sets the boolean variable value.
- * \param cref
- * \param value
- * \return
- */
-bool OMSProxy::setBoolean(QString cref, bool value)
-{
-  QString command = "oms3_setBoolean";
-  QStringList args;
-  args << cref << (value ? "true" : "false");
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setBoolean(cref.toStdString().c_str(), value);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setStartTime
- * Get the start time from the model.
- * \param cref
- * \param startTime
- * \return
- */
-bool OMSProxy::getStartTime(QString cref, double* startTime)
-{
-  QString command = "oms3_getStartTime";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getStartTime(cref.toStdString().c_str(), startTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setStartTime
- * Set the start time of the simulation.
- * \param cref
- * \param startTime
- * \return
- */
-bool OMSProxy::setStartTime(QString cref, double startTime)
-{
-  QString command = "oms3_setStartTime";
-  QStringList args;
-  args << cref << QString::number(startTime);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setStartTime(cref.toStdString().c_str(), startTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setStopTime
- * Get the stop time from the model.
- * \param cref
- * \param stopTime
- * \return
- */
-bool OMSProxy::getStopTime(QString cref, double* stopTime)
-{
-  QString command = "oms3_getStopTime";
-  QStringList args;
-  args << cref;
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_getStopTime(cref.toStdString().c_str(), stopTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setStopTime
- * Set the stop time of the simulation.
- * \param cref
- * \param stopTime
- * \return
- */
-bool OMSProxy::setStopTime(QString cref, double stopTime)
-{
-  QString command = "oms3_setStopTime";
-  QStringList args;
-  args << cref << QString::number(stopTime);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setStopTime(cref.toStdString().c_str(), stopTime);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setCommunicationInterval
- * Set the fixed step size for the simulation.
- * \param cref
- * \param stepSize
- * \return
- */
-bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
-{
-  QString command = "oms3_setFixedStepSize";
-  QStringList args;
-  args << cref << QString::number(stepSize);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setFixedStepSize(cref.toStdString().c_str(), stepSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setTLMSocketData
- * Sets the TLM system socket data.
- * \param cref
- * \param address
- * \param managerPort
- * \param monitorPort
- * \return
- */
-bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort)
-{
-  QString command = "oms3_setTLMSocketData";
-  QStringList args;
-  args << cref << address << QString::number(managerPort) << QString::number(monitorPort);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setTLMSocketData(cref.toStdString().c_str(), address.toStdString().c_str(), managerPort, monitorPort);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setResultFile
- * Set the result file for the simulation.
- * \param cref
- * \param filename
- * \param bufferSize
- * \return
- */
-bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
-{
-  QString command = "oms3_setResultFile";
-  QStringList args;
-  args << cref << "\"" + filename + "\"" << QString::number(bufferSize);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), bufferSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setLoggingInterval
- * Sets the logging interval.
- * \param cref
- * \param loggingInterval
- * \return
- */
-bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
-{
-  QString command = "oms3_setLoggingInterval";
-  QStringList args;
-  args << cref << QString::number(loggingInterval);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms3_setLoggingInterval(cref.toStdString().c_str(), loggingInterval);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::setMasterAlgorithm
  * Set master algorithm variant that shall be used (default: "standard").
  *
@@ -1527,4 +1506,16 @@ bool OMSProxy::setMasterAlgorithm(QString cref, QString masterAlgorithm)
 bool OMSProxy::exists(QString cref)
 {
   return oms2_exists(cref.toStdString().c_str());
+}
+
+/*!
+ * \brief OMSProxy::reset
+ * Reset the model after a simulation run.
+ * \param ident
+ * \return
+ */
+bool OMSProxy::reset(QString ident)
+{
+  oms_status_enu_t status = oms2_reset(ident.toStdString().c_str());
+  return statusToBool(status);
 }

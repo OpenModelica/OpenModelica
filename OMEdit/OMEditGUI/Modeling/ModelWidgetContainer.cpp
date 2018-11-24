@@ -4347,7 +4347,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
     // model name has changed
     if (mpLibraryTreeItem->getNameStructure().compare(modelName) != 0) {
       // unload the old model from OMSimulator
-      OMSProxy::instance()->unloadModel(mpLibraryTreeItem->getNameStructure());
+      OMSProxy::instance()->omsDelete(mpLibraryTreeItem->getNameStructure());
       // Update to the new name
       mpLibraryTreeItem->setName(modelName);
       mpLibraryTreeItem->setNameStructure(modelName);
