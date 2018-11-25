@@ -1117,13 +1117,13 @@ public
   algorithm
     subscriptedExp := match (startExp, stepExp)
       case (Expression.INTEGER(), SOME(Expression.INTEGER(iidx)))
-        then Expression.INTEGER(startExp.value + index * iidx - 1);
+        then Expression.INTEGER(startExp.value + (index - 1) * iidx);
 
       case (Expression.INTEGER(), _)
         then Expression.INTEGER(startExp.value + index - 1);
 
       case (Expression.REAL(), SOME(Expression.REAL(ridx)))
-        then Expression.REAL(startExp.value + index * ridx - 1);
+        then Expression.REAL(startExp.value + (index - 1) * ridx);
 
       case (Expression.REAL(), _)
         then Expression.REAL(startExp.value + index - 1.0);
