@@ -17,12 +17,20 @@ model VectorizedPowerSystemTest
     PS.Current I = PhaseSystem.systemCurrent(i);
     SI.Angle phi = PhaseSystem.phase(v) - PhaseSystem.phase(i);
   equation
-    terminal_n.v = fill(terminal_p.v, n_n);
-    //terminal_p.i = sum(terminal_n[i].i for i in 1:n_n);
+    //terminal_n.v = fill(terminal_p.v, n_n);
+    //terminal_p.i = -sum(terminal_n[i].i for i in 1:n_n);
     for i in 1:PS.n loop
       terminal_p.i[i] = -sum(terminal_n[:].i[i]);
     end for;
-    //Connections.branch(terminal_p.theta, terminal_n.theta);
+    for i in 1:n_n loop
+      terminal_n[i].v = terminal_p.v;
+      Connections.branch(terminal_p.theta, terminal_n[i].theta);
+    end for;
+    if PS.m > 0 then
+      for i in 1:n_n loop
+        terminal_n[i].theta = terminal_p.theta;
+      end for;
+    end if;
   end BusBar;
 
   PowerSystems.Generic.FixedVoltageSource fixedVoltageSource1;

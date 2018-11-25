@@ -229,9 +229,10 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 9/17 (1): busBar1.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
 // 10/18 (1): busBar1.i = busBar1.terminal_p.i   [dynamic |0|0|0|0|]
 // 11/19 (1): busBar1.p = {busBar1.v * busBar1.i}   [dynamic |0|0|0|0|]
-// 12/20 (3): busBar1.terminal_n.v = {busBar1.terminal_p.v, busBar1.terminal_p.v, busBar1.terminal_p.v}   [dynamic |0|0|0|0|]
-// 13/23 (1): for i in 1 : 1 loop 
+// 12/20 (1): for i in 1 : 1 loop 
 //     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
+// 13/21 (3): for i in 1 : 3 loop 
+//     busBar1.terminal_n[i].v = busBar1.terminal_p.v; end for;    [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -385,8 +386,12 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ========================================
 //
 //
-// Simple Shared Equations (0, 0)
+// Simple Shared Equations (1, 1)
 // ========================================
+// 1/1 (0): for i in 1 : 3 loop 
+//     algorithm
+//   branch(busBar1.terminal_p.theta, busBar1.terminal_n[i].theta);
+// ; end for;    [dynamic |0|0|0|0|]
 //
 //
 // Initial Equations (0, 0)
@@ -586,9 +591,10 @@ val(fixedVoltageSource1.p[1], 1.0);
 // 9/17 (1): busBar1.v = busBar1.terminal_p.v   [dynamic |0|0|0|0|]
 // 10/18 (1): busBar1.i = busBar1.terminal_p.i   [dynamic |0|0|0|0|]
 // 11/19 (1): busBar1.p = {busBar1.v * busBar1.i}   [dynamic |0|0|0|0|]
-// 12/20 (3): busBar1.terminal_n.v = {busBar1.terminal_p.v, busBar1.terminal_p.v, busBar1.terminal_p.v}   [dynamic |0|0|0|0|]
-// 13/23 (1): for i in 1 : 1 loop 
+// 12/20 (1): for i in 1 : 1 loop 
 //     busBar1.terminal_p.i[i] = -sum(busBar1.terminal_n[:].i[i]); end for;    [dynamic |0|0|0|0|]
+// 13/21 (3): for i in 1 : 3 loop 
+//     busBar1.terminal_n[i].v = busBar1.terminal_p.v; end for;    [dynamic |0|0|0|0|]
 //
 //
 // Simple Equations (0, 0)
@@ -605,9 +611,9 @@ val(fixedVoltageSource1.p[1], 1.0);
 // var 1 is solved in eqn 11
 // var 2 is solved in eqn 10
 // var 3 is solved in eqn 9
-// var 4 is solved in eqn 12
+// var 4 is solved in eqn 13
 // var 5 is solved in eqn 2
-// var 6 is solved in eqn 13
+// var 6 is solved in eqn 12
 // var 7 is solved in eqn 3
 // var 8 is solved in eqn 1
 // var 9 is solved in eqn 8
@@ -619,7 +625,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // StrongComponents
 // ========================================
-// {13:6}
+// {12:6}
 // Array  {{10:2}}
 // Array  {{6:13}}
 // Array  {{4:12}}
@@ -627,7 +633,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Array  {{3:7}}
 // Array  {{9:3}}
 // Array  {{11:1}}
-// Array  {{12:4}}
+// {13:4}
 // Array  {{1:8}}
 // {8:9}
 // Array  {{2:5}}
@@ -888,8 +894,12 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ========================================
 //
 //
-// Simple Shared Equations (0, 0)
+// Simple Shared Equations (1, 1)
 // ========================================
+// 1/1 (0): for i in 1 : 3 loop 
+//     algorithm
+//   branch(busBar1.terminal_p.theta, busBar1.terminal_n[i].theta);
+// ; end for;    [dynamic |0|0|0|0|]
 //
 //
 // Initial Equations (0, 0)
