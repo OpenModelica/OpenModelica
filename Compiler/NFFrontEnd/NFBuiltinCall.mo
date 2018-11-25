@@ -38,6 +38,7 @@ encapsulated package NFBuiltinCall
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
   import Type = NFType;
+  import Subscript = NFSubscript;
 
 protected
   import Config;
@@ -1531,14 +1532,19 @@ protected
         Type ty2;
         InstNode node;
         Boolean valid_cref;
-        ComponentRef rest_cref;
 
       case Expression.CREF()
         algorithm
           valid_cref := match arg.cref
             case ComponentRef.CREF(node = node, origin = NFComponentRef.Origin.CREF,
-                restCref = ComponentRef.CREF(ty = ty2, origin = NFComponentRef.Origin.CREF,
-                restCref = rest_cref))
+                restCref = ComponentRef.CREF(ty = ty2, origin = NFComponentRef.Origin.CREF))
+              algorithm
+                ty2 := match ty2
+                  case Type.ARRAY()
+                    guard listLength(ComponentRef.subscriptsAllFlat(arg.cref)) == listLength(ty2.dimensions)
+                    then ty2.elementType;
+                  else ty2;
+                end match;
               then Class.isOverdetermined(InstNode.getClass(node)) and
                    Type.isConnector(ty2);
 
