@@ -1652,6 +1652,8 @@ uniontype Function
     Component comp;
     Binding binding, binding2;
     Class cls;
+    Type ty;
+    Boolean dirty = false;
   algorithm
     if not InstNode.isEmpty(node) then
       comp := InstNode.component(node);
@@ -1660,12 +1662,19 @@ uniontype Function
 
       if not referenceEq(binding, binding2) then
         comp := Component.setBinding(binding2, comp);
-        InstNode.updateComponent(comp, node);
+        dirty := true;
       end if;
 
       () := match comp
         case Component.TYPED_COMPONENT()
           algorithm
+            ty := Type.mapDims(comp.ty, function Dimension.mapExp(func = mapFn));
+
+            if not referenceEq(ty, comp.ty) then
+              comp.ty := ty;
+              dirty := true;
+            end if;
+
             cls := InstNode.getClass(comp.classInst);
             ClassTree.applyComponents(Class.classTree(cls),
               function mapExpParameter(mapFn = mapFn));
@@ -1674,6 +1683,10 @@ uniontype Function
 
         else ();
       end match;
+
+      if dirty then
+        InstNode.updateComponent(comp, node);
+      end if;
     end if;
   end mapExpParameter;
 

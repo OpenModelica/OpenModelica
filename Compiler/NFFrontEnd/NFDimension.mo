@@ -311,5 +311,34 @@ public
     end match;
   end variability;
 
+  function mapExp
+    input Dimension dim;
+    input MapFunc func;
+    output Dimension outDim;
+
+    partial function MapFunc
+      input output Expression e;
+    end MapFunc;
+  algorithm
+    outDim := match dim
+      local
+        Expression e1, e2;
+
+      case UNTYPED(dimension = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then dim else UNTYPED(e2, dim.isProcessing);
+
+      case EXP(exp = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then dim else EXP(e2, dim.var);
+
+      else dim;
+    end match;
+  end mapExp;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;
