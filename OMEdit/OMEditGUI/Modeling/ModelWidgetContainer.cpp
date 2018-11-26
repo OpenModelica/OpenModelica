@@ -7030,9 +7030,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
   MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
   MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem));
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && (omsSystem || omsSubmodel));
-  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && (omsSystem));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && (omsSystem  && (!pLibraryTreeItem->isTLMSystem())));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && omsModel);
   MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(pLibraryTreeItem && pLibraryTreeItem->isInstantiated());
