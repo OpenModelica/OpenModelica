@@ -1643,8 +1643,8 @@ algorithm
 
     case Type.TUPLE()
       algorithm
-        (exp1, compatibleType, matchKind) :=
-          matchTupleTypes(type1, type2, exp1, allowUnknown);
+        (exp2, compatibleType, matchKind) :=
+          matchTupleTypes(type2, type1, exp2, allowUnknown);
       then
         compatibleType;
 
