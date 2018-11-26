@@ -1062,7 +1062,7 @@ protected
           next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
 
           for arg in call.arguments loop
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_origin, info);
             typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
           end for;
 
@@ -1071,7 +1071,7 @@ protected
           typedNamedArgs := {};
           for narg in call.named_args loop
             (name,arg) := narg;
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_origin, info);
             typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
           end for;
 

@@ -1089,6 +1089,12 @@ algorithm
       then
         (e1, ty, var1);
 
+    case Expression.CAST()
+      algorithm
+        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+      then
+        typeExp(exp.exp, next_origin, info);
+
     // Subscripted expressions are assumed to already be typed.
     case Expression.SUBSCRIPTED_EXP()
       then (exp, exp.ty, Expression.variability(exp));
