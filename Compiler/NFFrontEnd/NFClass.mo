@@ -284,6 +284,24 @@ uniontype Class
     end match;
   end setClassTree;
 
+  function classTreeApply
+    input output Class cls;
+    input FuncType func;
+
+    partial function FuncType
+      input output ClassTree tree;
+    end FuncType;
+  algorithm
+    () := match cls
+      case Class.PARTIAL_CLASS()     algorithm cls.elements := func(cls.elements); then ();
+      case Class.EXPANDED_CLASS()    algorithm cls.elements := func(cls.elements); then ();
+      case Class.PARTIAL_BUILTIN()   algorithm cls.elements := func(cls.elements); then ();
+      case Class.INSTANCED_CLASS()   algorithm cls.elements := func(cls.elements); then ();
+      case Class.INSTANCED_BUILTIN() algorithm cls.elements := func(cls.elements); then ();
+      else ();
+    end match;
+  end classTreeApply;
+
   function getModifier
     input Class cls;
     output Modifier modifier;

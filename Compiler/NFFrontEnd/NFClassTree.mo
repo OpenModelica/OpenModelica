@@ -704,6 +704,25 @@ public
       tree := FLAT_TREE(ltree, listArray({}), comps, listArray({}), DuplicateTree.new());
     end fromRecordConstructor;
 
+    function clone
+      input ClassTree tree;
+      output ClassTree outTree;
+    algorithm
+      outTree := match tree
+        local
+          array<InstNode> clss;
+
+        case EXPANDED_TREE()
+          algorithm
+            clss := arrayCopy(tree.classes);
+            clss := Array.mapNoCopy(clss, InstNode.clone);
+          then
+            EXPANDED_TREE(tree.tree, clss, tree.components, tree.exts, tree.imports, tree.duplicates);
+
+        else tree;
+      end match;
+    end clone;
+
     function mapRedeclareChains
       input ClassTree tree;
       input FuncT func;

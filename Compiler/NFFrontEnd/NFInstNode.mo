@@ -50,6 +50,7 @@ protected
 import List;
 import ConvertDAE = NFConvertDAE;
 import Restriction = NFRestriction;
+import NFClassTree.ClassTree;
 
 public
 uniontype InstNodeType
@@ -1454,6 +1455,27 @@ uniontype InstNode
       else false;
     end match;
   end isPartial;
+
+  function clone
+    input output InstNode node;
+  algorithm
+    () := match node
+      local
+        Class cls;
+
+      case CLASS_NODE()
+        algorithm
+          cls := Pointer.access(node.cls);
+          cls := Class.classTreeApply(cls, ClassTree.clone);
+          node.cls := Pointer.create(cls);
+          node.caches := CachedData.empty();
+        then
+          ();
+
+      else ();
+    end match;
+  end clone;
+
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");
