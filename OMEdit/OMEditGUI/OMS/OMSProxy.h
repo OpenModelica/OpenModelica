@@ -114,8 +114,8 @@ public:
   bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setFixedStepSize(QString cref, double stepSize);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
-  void setLoggingCallback();
   void setLogFile(QString filename);
+  void setLoggingCallback();
   bool setLoggingInterval(QString cref, double loggingInterval);
   void setLoggingLevel(int logLevel);
   bool setInteger(QString signal, int value);

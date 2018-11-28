@@ -239,7 +239,7 @@ void OMSimulatorHighlighter::initializeSettings()
                   << "\\bssd:SimulationInformation\\b"
                   << "\\bssd:Annotations\\b"
                   << "\\bssd:Annotation\\b"
-                  << "\\btlm:Master\\b"
+                  << "\\boms:TlmMaster\\b"
                   << "\\bssd:Elements\\b"
                   << "\\boms:Bus\\b"
                   << "\\boms:Signals\\b"

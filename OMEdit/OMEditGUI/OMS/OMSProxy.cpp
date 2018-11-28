@@ -1115,19 +1115,6 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
 }
 
 /*!
- * \brief OMSProxy::setLoggingCallback
- * Sets the logging callback.
- */
-void OMSProxy::setLoggingCallback()
-{
-  QString command = "oms3_setLoggingCallback";
-  QStringList args;
-  LOG_COMMAND(command, args);
-  oms3_setLoggingCallback(loggingCallback);
-  logResponse(command, oms_status_ok, &commandTime);
-}
-
-/*!
  * \brief OMSProxy::setLogFile
  * Sets the log file.
  * \param filename
@@ -1140,6 +1127,19 @@ void OMSProxy::setLogFile(QString filename)
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setLogFile(filename.toStdString().c_str());
   logResponse(command, status, &commandTime);
+}
+
+/*!
+ * \brief OMSProxy::setLoggingCallback
+ * Sets the logging callback.
+ */
+void OMSProxy::setLoggingCallback()
+{
+  QString command = "oms3_setLoggingCallback";
+  QStringList args;
+  LOG_COMMAND(command, args);
+  oms3_setLoggingCallback(loggingCallback);
+  logResponse(command, oms_status_ok, &commandTime);
 }
 
 /*!
