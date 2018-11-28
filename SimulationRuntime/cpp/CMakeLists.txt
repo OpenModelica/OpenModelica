@@ -91,6 +91,8 @@ OPTION(TRILINOS_ROOT "TRILINOS ROOT" "")
 OPTION(USE_CPP_03 "USE_CPP_03" OFF)
 
 #Set Variables
+SET(MODELICAEXTERNALCDIR  "${CMAKE_SOURCE_DIR}/../../3rdParty/ModelicaExternalC/C-Sources")
+
 IF(NOT FMU_TARGET)
  IF(MSVC)
   SET(LIBINSTALLEXT "lib/omc/cpp/msvc" CACHE STRINGz "library directory")
@@ -112,6 +114,12 @@ SET(SolverName ${LIBPREFIX}Solver${LIBSUFFIX})
 SET(SystemName ${LIBPREFIX}System${LIBSUFFIX})
 SET(OMCFactoryName ${LIBPREFIX}OMCFactory${LIBSUFFIX})
 SET(MathName ${LIBPREFIX}Math${LIBSUFFIX})
+
+SET(ModelicaExternalName ModelicaExternalC) # only static version
+SET(ModelicaTablesName ModelicaStandardTables) # only static version
+SET(ModelicaIOName ModelicaIO) # only static version
+SET(ModelicaMatIOName ModelicaMatIO) # only static version
+SET(LibZName zlib) # only static version
 
 SET(SimulationSettings ${LIBPREFIX}SimulationSettings${LIBSUFFIX})
 SET(SimControllerName ${LIBPREFIX}SimController${LIBSUFFIX})
@@ -837,6 +845,7 @@ add_subdirectory(Core/Solver)
 add_subdirectory(Core/Math)
 add_subdirectory(Core/Utils/Modelica)
 add_subdirectory(Core/Utils/extension)
+add_subdirectory(Core/ModelicaExternalC)
 
 if(NOT FMU_TARGET)
   # add projects for generating a simulator
