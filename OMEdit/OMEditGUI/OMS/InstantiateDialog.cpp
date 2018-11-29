@@ -79,6 +79,10 @@ InstantiateDialog::InstantiateDialog(LibraryTreeItem *pLibraryTreeItem, QWidget 
   // logging interval
   mpLoggingIntervalLabel = new Label(tr("Logging Interval:"));
   mpLoggingIntervalTextBox = new QLineEdit("0");
+  // signal filter
+  mpSignalFilterLabel = new Label(tr("Signal Filter:"));
+  mpSignalFilterTextBox = new QLineEdit;
+  mpSignalFilterTextBox->setToolTip(tr("Leave empty to include all signals otherwise use a regex to filter."));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -109,7 +113,9 @@ InstantiateDialog::InstantiateDialog(LibraryTreeItem *pLibraryTreeItem, QWidget 
   pMainLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
   pMainLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
   pMainLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
-  pMainLayout->addWidget(mpButtonBox, 7, 0, 1, 2);
+  pMainLayout->addWidget(mpSignalFilterLabel, 7, 0);
+  pMainLayout->addWidget(mpSignalFilterTextBox, 7, 1);
+  pMainLayout->addWidget(mpButtonBox, 8, 0, 1, 2);
   setLayout(pMainLayout);
 }
 
@@ -137,6 +143,9 @@ void InstantiateDialog::instantiate()
   mpLibraryTreeItem->mOMSSimulationOptions.setResultFileName(mpResultFileTextBox->text());
   mpLibraryTreeItem->mOMSSimulationOptions.setResultFileBufferSize(mpResultFileBufferSizeSpinBox->value());
   OMSProxy::instance()->setLoggingInterval(mpLibraryTreeItem->getNameStructure(), mpLoggingIntervalTextBox->text().toDouble());
+  if (!mpSignalFilterTextBox->text().isEmpty()) {
+    OMSProxy::instance()->setSignalFilter(mpLibraryTreeItem->getNameStructure(), mpSignalFilterTextBox->text());
+  }
 
   if (mpLibraryTreeItem->getModelWidget()) {
     mpLibraryTreeItem->getModelWidget()->updateModelText();

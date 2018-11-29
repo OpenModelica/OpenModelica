@@ -62,6 +62,8 @@ private:
   QSpinBox *mpResultFileBufferSizeSpinBox;
   Label *mpLoggingIntervalLabel;
   QLineEdit *mpLoggingIntervalTextBox;
+  Label *mpSignalFilterLabel;
+  QLineEdit *mpSignalFilterTextBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

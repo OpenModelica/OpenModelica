@@ -121,6 +121,7 @@ public:
   bool setInteger(QString signal, int value);
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString filename, int bufferSize);
+  bool setSignalFilter(QString cref, QString regex);
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
   void setTempDirectory(QString path);

@@ -337,7 +337,7 @@ bool OMSProxy::addBus(QString cref)
 {
   QString command = "oms3_addBus";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addBus(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -355,7 +355,7 @@ bool OMSProxy::addConnection(QString crefA, QString crefB)
 {
   QString command = "oms3_addConnection";
   QStringList args;
-  args << crefA << crefB;
+  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -374,7 +374,7 @@ bool OMSProxy::addConnector(QString cref, oms_causality_enu_t causality, oms_sig
 {
   QString command = "oms3_addConnector";
   QStringList args;
-  args << cref << QString::number(causality) << QString::number(type);
+  args << "\"" + cref + "\"" << QString::number(causality) << QString::number(type);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addConnector(cref.toStdString().c_str(), causality, type);
   logResponse(command, status, &commandTime);
@@ -431,7 +431,7 @@ bool OMSProxy::addSubModel(QString cref, QString fmuPath)
 {
   QString command = "oms3_addSubModel";
   QStringList args;
-  args << cref << fmuPath;
+  args << "\"" + cref + "\"" << fmuPath;
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addSubModel(cref.toStdString().c_str(), fmuPath.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -449,7 +449,7 @@ bool OMSProxy::addSystem(QString cref, oms_system_enu_t type)
 {
   QString command = "oms3_addSystem";
   QStringList args;
-  args << cref << QString::number(type);
+  args << "\"" + cref + "\"" << QString::number(type);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addSystem(cref.toStdString().c_str(), type);
   logResponse(command, status, &commandTime);
@@ -469,7 +469,7 @@ bool OMSProxy::addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, 
 {
   QString command = "oms3_addTLMBus";
   QStringList args;
-  args << cref << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
+  args << "\"" + cref + "\"" << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addTLMBus(cref.toStdString().c_str(), domain, dimensions, interpolation);
   logResponse(command, status, &commandTime);
@@ -491,7 +491,7 @@ bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, doub
 {
   QString command = "oms3_addTLMConnection";
   QStringList args;
-  args << crefA << crefB << QString::number(delay) << QString::number(alpha)
+  args << "\"" + crefA + "\"" << "\"" + crefB + "\"" << QString::number(delay) << QString::number(alpha)
        << QString::number(linearimpedance) << QString::number(angularimpedance);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_addTLMConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str(), delay, alpha,
@@ -510,7 +510,7 @@ bool OMSProxy::cancelSimulation_asynchronous(QString cref)
 {
   QString command = "oms3_cancelSimulation_asynchronous";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_cancelSimulation_asynchronous(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -528,7 +528,7 @@ bool OMSProxy::deleteConnection(QString crefA, QString crefB)
 {
   QString command = "oms3_deleteConnection";
   QStringList args;
-  args << crefA << crefB;
+  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_deleteConnection(crefA.toStdString().c_str(), crefB.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -582,7 +582,7 @@ bool OMSProxy::getBoolean(QString cref, bool *value)
 {
   QString command = "oms3_getBoolean";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getBoolean(cref.toStdString().c_str(), value);
   logResponse(command, status, &commandTime);
@@ -600,7 +600,7 @@ bool OMSProxy::getBus(QString cref, oms3_busconnector_t **pBusConnector)
 {
   QString command = "oms3_getBus";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getBus(cref.toStdString().c_str(), pBusConnector);
   logResponse(command, status, &commandTime);
@@ -618,7 +618,7 @@ bool OMSProxy::getComponentType(QString cref, oms_component_enu_t *pType)
 {
   QString command = "oms3_getComponentType";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getComponentType(cref.toStdString().c_str(), pType);
   logResponse(command, status, &commandTime);
@@ -636,7 +636,7 @@ bool OMSProxy::getConnections(QString cref, oms3_connection_t*** pConnections)
 {
   QString command = "oms3_getConnections";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getConnections(cref.toStdString().c_str(), pConnections);
   logResponse(command, status, &commandTime);
@@ -654,7 +654,7 @@ bool OMSProxy::getConnector(QString cref, oms_connector_t **pConnector)
 {
   QString command = "oms3_getConnector";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getConnector(cref.toStdString().c_str(), pConnector);
   logResponse(command, status, &commandTime);
@@ -672,7 +672,7 @@ bool OMSProxy::getElement(QString cref, oms3_element_t** pElement)
 {
   QString command = "oms3_getElement";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getElement(cref.toStdString().c_str(), pElement);
   logResponse(command, status, &commandTime);
@@ -690,7 +690,7 @@ bool OMSProxy::getElements(QString cref, oms3_element_t*** pElements)
 {
   QString command = "oms3_getElements";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getElements(cref.toStdString().c_str(), pElements);
   logResponse(command, status, &commandTime);
@@ -708,7 +708,7 @@ bool OMSProxy::getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo)
 {
   QString command = "oms3_getFMUInfo";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getFMUInfo(cref.toStdString().c_str(), pFmuInfo);
   logResponse(command, status, &commandTime);
@@ -726,7 +726,7 @@ bool OMSProxy::getInteger(QString cref, int *value)
 {
   QString command = "oms3_getInteger";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getInteger(cref.toStdString().c_str(), value);
   logResponse(command, status, &commandTime);
@@ -744,7 +744,7 @@ bool OMSProxy::getReal(QString cref, double *value)
 {
   QString command = "oms3_getReal";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getReal(cref.toStdString().c_str(), value);
   logResponse(command, status, &commandTime);
@@ -762,7 +762,7 @@ bool OMSProxy::getStartTime(QString cref, double* startTime)
 {
   QString command = "oms3_getStartTime";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getStartTime(cref.toStdString().c_str(), startTime);
   logResponse(command, status, &commandTime);
@@ -780,7 +780,7 @@ bool OMSProxy::getStopTime(QString cref, double* stopTime)
 {
   QString command = "oms3_getStopTime";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getStopTime(cref.toStdString().c_str(), stopTime);
   logResponse(command, status, &commandTime);
@@ -798,7 +798,7 @@ bool OMSProxy::getSubModelPath(QString cref, QString* pPath)
 {
   QString command = "oms3_getSubModelPath";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   char* path = NULL;
   oms_status_enu_t status = oms3_getSubModelPath(cref.toStdString().c_str(), &path);
@@ -818,7 +818,7 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
 {
   QString command = "oms3_getSystemType";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getSystemType(cref.toStdString().c_str(), pType);
   logResponse(command, status, &commandTime);
@@ -836,7 +836,7 @@ bool OMSProxy::getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector
 {
   QString command = "oms3_getTLMBus";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_getTLMBus(cref.toStdString().c_str(), pTLMBusConnector);
   logResponse(command, status, &commandTime);
@@ -875,7 +875,7 @@ bool OMSProxy::instantiate(QString cref)
 {
   QString command = "oms3_instantiate";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_instantiate(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -892,7 +892,7 @@ bool OMSProxy::initialize(QString cref)
 {
   QString command = "oms3_initialize";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_initialize(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -911,7 +911,7 @@ bool OMSProxy::list(QString cref, QString *pContents)
 {
   QString command = "oms3_list";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   char* contents = NULL;
   oms_status_enu_t status = oms3_list(cref.toStdString().c_str(), &contents);
@@ -952,7 +952,7 @@ bool OMSProxy::newModel(QString cref)
 {
   QString command = "oms3_newModel";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_newModel(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -981,7 +981,7 @@ bool OMSProxy::saveModel(QString cref, QString filename)
 {
   QString command = "oms3_export";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_export(cref.toStdString().c_str(), filename.toStdString().c_str());
   logResponse(command, status, &commandTime);
@@ -999,7 +999,7 @@ bool OMSProxy::setBoolean(QString cref, bool value)
 {
   QString command = "oms3_setBoolean";
   QStringList args;
-  args << cref << (value ? "true" : "false");
+  args << "\"" + cref + "\"" << (value ? "true" : "false");
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setBoolean(cref.toStdString().c_str(), value);
   logResponse(command, status, &commandTime);
@@ -1017,7 +1017,7 @@ bool OMSProxy::setBusGeometry(QString cref, const ssd_connector_geometry_t* pGeo
 {
   QString command = "oms3_setBusGeometry";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setBusGeometry(cref.toStdString().c_str(), pGeometry);
   logResponse(command, status, &commandTime);
@@ -1053,7 +1053,7 @@ bool OMSProxy::setConnectionGeometry(QString crefA, QString crefB, const ssd_con
 {
   QString command = "oms3_setConnectionGeometry";
   QStringList args;
-  args << crefA << crefB;
+  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setConnectionGeometry(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pGeometry);
   logResponse(command, status, &commandTime);
@@ -1071,7 +1071,7 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
 {
   QString command = "oms3_setConnectorGeometry";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setConnectorGeometry(cref.toStdString().c_str(), pGeometry);
   logResponse(command, status, &commandTime);
@@ -1089,7 +1089,7 @@ bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
 {
   QString command = "oms3_setFixedStepSize";
   QStringList args;
-  args << cref << QString::number(stepSize);
+  args << "\"" + cref + "\"" << QString::number(stepSize);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setFixedStepSize(cref.toStdString().c_str(), stepSize);
   logResponse(command, status, &commandTime);
@@ -1107,7 +1107,7 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
 {
   QString command = "oms3_setElementGeometry";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setElementGeometry(cref.toStdString().c_str(), pGeometry);
   logResponse(command, status, &commandTime);
@@ -1153,7 +1153,7 @@ bool OMSProxy::setLoggingInterval(QString cref, double loggingInterval)
 {
   QString command = "oms3_setLoggingInterval";
   QStringList args;
-  args << cref << QString::number(loggingInterval);
+  args << "\"" + cref + "\"" << QString::number(loggingInterval);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setLoggingInterval(cref.toStdString().c_str(), loggingInterval);
   logResponse(command, status, &commandTime);
@@ -1186,7 +1186,7 @@ bool OMSProxy::setInteger(QString cref, int value)
 {
   QString command = "oms3_setInteger";
   QStringList args;
-  args << cref << QString::number(value);
+  args << "\"" + cref + "\"" << QString::number(value);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setInteger(cref.toStdString().c_str(), value);
   logResponse(command, status, &commandTime);
@@ -1204,7 +1204,7 @@ bool OMSProxy::setReal(QString cref, double value)
 {
   QString command = "oms3_setReal";
   QStringList args;
-  args << cref << QString::number(value);
+  args << "\"" + cref + "\"" << QString::number(value);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setReal(cref.toStdString().c_str(), value);
   logResponse(command, status, &commandTime);
@@ -1223,9 +1223,27 @@ bool OMSProxy::setResultFile(QString cref, QString filename, int bufferSize)
 {
   QString command = "oms3_setResultFile";
   QStringList args;
-  args << cref << "\"" + filename + "\"" << QString::number(bufferSize);
+  args << "\"" + cref + "\"" << "\"" + filename + "\"" << QString::number(bufferSize);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setResultFile(cref.toStdString().c_str(), filename.toStdString().c_str(), bufferSize);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setSignalFilter
+ * Sets the signal filter.
+ * \param cref
+ * \param regex
+ * \return
+ */
+bool OMSProxy::setSignalFilter(QString cref, QString regex)
+{
+  QString command = "oms3_setSignalFilter";
+  QStringList args;
+  args << "\"" + cref + "\"" << "\"" + regex + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setSignalFilter(cref.toStdString().c_str(), regex.toStdString().c_str());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1241,7 +1259,7 @@ bool OMSProxy::setStartTime(QString cref, double startTime)
 {
   QString command = "oms3_setStartTime";
   QStringList args;
-  args << cref << QString::number(startTime);
+  args << "\"" + cref + "\"" << QString::number(startTime);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setStartTime(cref.toStdString().c_str(), startTime);
   logResponse(command, status, &commandTime);
@@ -1259,7 +1277,7 @@ bool OMSProxy::setStopTime(QString cref, double stopTime)
 {
   QString command = "oms3_setStopTime";
   QStringList args;
-  args << cref << QString::number(stopTime);
+  args << "\"" + cref + "\"" << QString::number(stopTime);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setStopTime(cref.toStdString().c_str(), stopTime);
   logResponse(command, status, &commandTime);
@@ -1292,7 +1310,7 @@ bool OMSProxy::setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* p
 {
   QString command = "oms3_setTLMBusGeometry";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setTLMBusGeometry(cref.toStdString().c_str(), pGeometry);
   logResponse(command, status, &commandTime);
@@ -1311,7 +1329,7 @@ bool OMSProxy::setTLMConnectionParameters(QString crefA, QString crefB, const om
 {
   QString command = "oms3_setTLMConnectionParameters";
   QStringList args;
-  args << crefA << crefB;
+  args << "\"" + crefA + "\"" << "\"" + crefB + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setTLMConnectionParameters(crefA.toStdString().c_str(), crefB.toStdString().c_str(), pParameters);
   logResponse(command, status, &commandTime);
@@ -1331,7 +1349,7 @@ bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, 
 {
   QString command = "oms3_setTLMSocketData";
   QStringList args;
-  args << cref << address << QString::number(managerPort) << QString::number(monitorPort);
+  args << "\"" + cref + "\"" << address << QString::number(managerPort) << QString::number(monitorPort);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_setTLMSocketData(cref.toStdString().c_str(), address.toStdString().c_str(), managerPort, monitorPort);
   logResponse(command, status, &commandTime);
@@ -1363,7 +1381,7 @@ bool OMSProxy::simulate_asynchronous(QString cref)
 {
   QString command = "oms3_simulate_asynchronous";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_simulate_asynchronous(cref.toStdString().c_str(), simulateCallback);
   logResponse(command, status, &commandTime);
@@ -1380,7 +1398,7 @@ bool OMSProxy::terminate(QString cref)
 {
   QString command = "oms3_terminate";
   QStringList args;
-  args << cref;
+  args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms3_terminate(cref.toStdString().c_str());
   logResponse(command, status, &commandTime);
