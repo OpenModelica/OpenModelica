@@ -1425,25 +1425,7 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
       pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    /* We don't use the editor undo/redo in MainWindow::undo/redo for OMSimulator.
-     * So always update the text and don't use the updateText flag.
-     */
-    if (!pLibraryTreeItem->getModelWidget()) {
-      showModelWidget(pLibraryTreeItem, false);
-    }
-    if (pLibraryTreeItem->getModelWidget() && !pLibraryTreeItem->getModelWidget()->getEditor()) {
-      pLibraryTreeItem->getModelWidget()->createModelWidgetComponents();
-    }
-    QString contents;
-    if (OMSProxy::instance()->list(pLibraryTreeItem->getNameStructure(), &contents)) {
-      pLibraryTreeItem->setClassText(contents);
-      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
-        OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-        if (pOMSimulatorEditor) {
-          pOMSimulatorEditor->setPlainText(contents);
-        }
-      }
-    }
+    updateOMSLibraryTreeItemClassText(pLibraryTreeItem);
   }
 }
 
@@ -2299,6 +2281,29 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
 }
 
 /*!
+ * \brief LibraryTreeModel::updateOMSLibraryTreeItemClassText
+ * Updates the OMSimulator model or system contents.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::updateOMSLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem->isTopLevel() || pLibraryTreeItem->isSystemElement()) {
+    pLibraryTreeItem->setIsSaved(false);
+    updateLibraryTreeItem(pLibraryTreeItem);
+    QString contents;
+    if (OMSProxy::instance()->list(pLibraryTreeItem->getNameStructure(), &contents)) {
+      pLibraryTreeItem->setClassText(contents);
+      if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getEditor()) {
+        OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
+        if (pOMSimulatorEditor) {
+          pOMSimulatorEditor->setPlainText(contents);
+        }
+      }
+    }
+  }
+}
+
+/*!
  * \brief LibraryTreeModel::readLibraryTreeItemClassTextFromText
  * Reads the contents of the Modelica class nested in another class.
  * \param pLibraryTreeItem
@@ -2440,6 +2445,21 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
     }
   } else {
     qDebug() << "Unable to create LibraryTreeItems, unknown library type.";
+  }
+}
+
+/*!
+ * \brief LibraryTreeModel::updateOMSChildLibraryTreeItemClassText
+ * Updates the OMSimulator model or systems contents recursivly.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeModel::updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem->isTopLevel() || pLibraryTreeItem->isSystemElement()) {
+    updateOMSLibraryTreeItemClassText(pLibraryTreeItem);
+    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+      updateOMSChildLibraryTreeItemClassText(pLibraryTreeItem->child(i));
+    }
   }
 }
 
@@ -2628,7 +2648,7 @@ void LibraryTreeModel::createOMSConnectorLibraryTreeItems(LibraryTreeItem *pLibr
     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->connectors[j] ; j++) {
       QString name = pLibraryTreeItem->getOMSElement()->connectors[j]->name;
       createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
-                            pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0, pLibraryTreeItem->getOMSElement()->connectors[j]);
+                            true, pLibraryTreeItem, 0, pLibraryTreeItem->getOMSElement()->connectors[j]);
     }
   }
 }
@@ -2644,7 +2664,7 @@ void LibraryTreeModel::createOMSBusConnectorLibraryTreeItems(LibraryTreeItem *pL
     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->busconnectors[j] ; j++) {
       QString name = pLibraryTreeItem->getOMSElement()->busconnectors[j]->name;
       createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
-                            pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0, 0, pLibraryTreeItem->getOMSElement()->busconnectors[j]);
+                            true, pLibraryTreeItem, 0, 0, pLibraryTreeItem->getOMSElement()->busconnectors[j]);
     }
   }
 }
@@ -2660,7 +2680,7 @@ void LibraryTreeModel::createOMSTLMBusConnectorLibraryTreeItems(LibraryTreeItem 
     for (int j = 0 ; pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j] ; j++) {
       QString name = pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]->name;
       createLibraryTreeItem(name, QString("%1.%2").arg(pLibraryTreeItem->getNameStructure()).arg(name), pLibraryTreeItem->getFileName(),
-                            pLibraryTreeItem->isSaved(), pLibraryTreeItem, 0, 0, 0, pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]);
+                            true, pLibraryTreeItem, 0, 0, 0, pLibraryTreeItem->getOMSElement()->tlmbusconnectors[j]);
     }
   }
 }

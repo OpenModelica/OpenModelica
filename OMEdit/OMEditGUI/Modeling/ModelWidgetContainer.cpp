@@ -3880,23 +3880,15 @@ void ModelWidget::createModelWidgetComponents()
       }
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
-      // Only the top level OMSimualtor models will have the editor.
-      if (mpLibraryTreeItem->isTopLevel()) {
+      // Only the top level OMSimualtor models or systems will have the editor.
+      if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement()) {
         connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
-        // create an xml editor for CompositeModel
+        // create an editor
         mpEditor = new OMSimulatorEditor(this);
         mpEditor->getPlainTextEdit()->setReadOnly(true);
         OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
-        if (mpLibraryTreeItem->getFileName().isEmpty()) {
-          QString contents;
-          if (OMSProxy::instance()->list(mpLibraryTreeItem->getNameStructure(), &contents)) {
-            pOMSimulatorEditor->setPlainText(contents, false);
-            mpLibraryTreeItem->setClassText(contents);
-          }
-        } else {
-          pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
-        }
+        pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
         OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(),
                                                                                      mpEditor->getPlainTextEdit());
         mpEditor->hide(); // set it hidden so that Find/Replace action can get correct value.
@@ -4418,12 +4410,19 @@ void ModelWidget::updateModelText()
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Don't allow updating the child LibraryTreeItems of OMS model
-  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS
-      && mpLibraryTreeItem->parent() != pLibraryTreeModel->getRootLibraryTreeItem()) {
+  if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS && !mpLibraryTreeItem->isTopLevel()) {
     if (mpLibraryTreeItem->parent()->getModelWidget()) {
       mpLibraryTreeItem->parent()->getModelWidget()->updateModelText();
     } else {
       pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem->parent());
+    }
+    // set the library node not saved.
+    mpLibraryTreeItem->setIsSaved(false);
+    pLibraryTreeModel->updateLibraryTreeItem(mpLibraryTreeItem);
+    if (mpLibraryTreeItem->isComponentElement()) {
+      pLibraryTreeModel->updateOMSChildLibraryTreeItemClassText(mpLibraryTreeItem->parent());
+    } else {
+      pLibraryTreeModel->updateOMSChildLibraryTreeItemClassText(mpLibraryTreeItem);
     }
     return;
   }

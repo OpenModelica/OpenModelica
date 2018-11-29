@@ -312,10 +312,12 @@ private:
                                          const QModelIndex &parentIndex) const;
   LibraryTreeItem* getLibraryTreeItemFromFileHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName, int lineNumber);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
+  void updateOMSLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   void readLibraryTreeItemClassTextFromText(LibraryTreeItem *pLibraryTreeItem, QString contents);
   QString readLibraryTreeItemClassTextFromFile(LibraryTreeItem *pLibraryTreeItem);
 public:
   void createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem);
+  void updateOMSChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
 private:
   LibraryTreeItem* createLibraryTreeItemImpl(QString name, LibraryTreeItem *pParentLibraryTreeItem, bool isSaved = true,
                                              bool isSystemLibrary = false, bool load = false, int row = -1);
