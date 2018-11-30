@@ -3139,5 +3139,49 @@ algorithm
   end match;
 end getEquationLHS;
 
+public function scalarComplexEquations
+"This function splits tuples and record in single equations,
+ to avoid non-linear loops.
+ e.g.: R(a,b) = R(2*x,3*y) => r.a = 2*x; r.b = 3*y
+       (a,b) = (2*g(x)[1],3*g(x)[2]) => a = 2*g(x)[1]; b = 3*g(x)[2]
+  Used after some equations have been differentiated.
+"
+  input BackendDAE.Equation inEquation;
+  input DAE.FunctionTree funcTree;
+  output list<BackendDAE.Equation> outEquations;
+algorithm
+
+  outEquations := match (inEquation)
+    local
+      DAE.Exp e1, e2;
+      DAE.ElementSource source;
+      list<DAE.Exp> explst, explst2;
+      list<BackendDAE.Equation> eqns;
+      BackendDAE.EquationAttributes attr;
+
+    case (BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(explst), right=DAE.TUPLE(explst2), source=source, attr=attr))
+    equation
+      true = listLength(explst) == listLength(explst2);
+      eqns = List.threadMap2(explst, explst2, generateEquation, source, attr);
+    then eqns;
+
+    case (BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr))
+    guard ((Expression.isRecordCall(e1, funcTree) or Expression.isRecord(e1)) and
+           (Expression.isRecordCall(e2, funcTree) or Expression.isRecord(e2))
+          )
+    equation
+      explst = Expression.splitRecord(e1, Expression.typeof(e1));
+      explst2 = Expression.splitRecord(e2, Expression.typeof(e2));
+      true = listLength(explst) == listLength(explst2);
+      eqns = List.threadMap2(explst, explst2, generateEquation, source, attr);
+    then eqns;
+
+    else
+    then {inEquation};
+
+  end match;
+end scalarComplexEquations;
+
+
 annotation(__OpenModelica_Interface="backend");
 end BackendEquation;

@@ -2338,6 +2338,7 @@ protected function deriveAll
 protected
   BackendDAE.Variables allVars;
   BackendDAE.Equation currDerivedEquation;
+  list<BackendDAE.Equation> tmpEquations;
   list<BackendDAE.Var> solvedvars;
   list<Integer> ass2_1 = ass2, solvedfor;
   Boolean b;
@@ -2352,7 +2353,8 @@ algorithm
       end if;
 
       (currDerivedEquation, outFunctions) := Differentiate.differentiateEquation(currEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(), outFunctions);
-      outDerivedEquations := currDerivedEquation::outDerivedEquations;
+      tmpEquations := BackendEquation.scalarComplexEquations(currDerivedEquation, outFunctions);
+      outDerivedEquations := listAppend(tmpEquations, outDerivedEquations);
 
       if Flags.isSet(Flags.JAC_DUMP_EQN) then
         BackendDump.printEquationList(outDerivedEquations);
