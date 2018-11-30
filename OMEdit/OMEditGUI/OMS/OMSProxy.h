@@ -128,6 +128,7 @@ public:
   bool setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
   bool setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters);
   bool setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort);
+  bool setTolerance(QString cref, double tolerance);
   void setWorkingDirectory(QString path);
   bool simulate_asynchronous(QString cref);
   bool terminate(QString cref);

@@ -2870,6 +2870,10 @@ void SystemSimulationInformationCommand::redoInternal()
       setFailed(true);
       return;
     }
+    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpWCSystemSimulationInformation->mTolerance)) {
+      setFailed(true);
+      return;
+    }
   }
 }
 

@@ -1357,6 +1357,24 @@ bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, 
 }
 
 /*!
+ * \brief OMSProxy::setTolerance
+ * Sets the tolerance.
+ * \param cref
+ * \param tolerance
+ * \return
+ */
+bool OMSProxy::setTolerance(QString cref, double tolerance)
+{
+  QString command = "oms3_setTolerance";
+  QStringList args;
+  args << "\"" + cref + "\"" << QString::number(tolerance);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms3_setTolerance(cref.toStdString().c_str(), tolerance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::setWorkingDirectory
  * Sets the working directory.
  * \param path
