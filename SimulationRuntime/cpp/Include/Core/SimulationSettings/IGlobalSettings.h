@@ -72,7 +72,7 @@ public:
   virtual LogSettings getLogSettings() = 0;
   virtual void setLogSettings(LogSettings) = 0;
   virtual void setAlarmTime(unsigned int) = 0;
-   virtual unsigned int getAlarmTime() = 0;
+  virtual unsigned int getAlarmTime() = 0;
 
   virtual OutputFormat getOutputFormat() = 0;
   virtual void setOutputFormat(OutputFormat) = 0;
@@ -94,6 +94,9 @@ public:
   virtual string getResultsFileName() = 0;
   virtual void setRuntimeLibrarypath(string) = 0;
   virtual string getRuntimeLibrarypath() = 0;
+  ///< Directory for input files, like init.xml
+  virtual string getInputPath() = 0;
+  virtual void setInputPath(string) = 0;
 
   virtual void setNonLinearSolverContinueOnError(bool) = 0;
   virtual bool getNonLinearSolverContinueOnError() = 0;

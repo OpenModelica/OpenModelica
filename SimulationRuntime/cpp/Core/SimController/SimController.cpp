@@ -161,6 +161,9 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->setEmitResults(simsettings.emitResults);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
+        global_settings->setInputPath(simsettings.inputPath);
+        global_settings->setOutputPath(simsettings.outputPath);
+
         /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
 
         ISolverSettings* solver_settings = _config->getSolverSettings();

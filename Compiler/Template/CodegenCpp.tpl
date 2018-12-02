@@ -5791,20 +5791,7 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__))  th
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initializeFreeVariables()
    {
       #if !defined(FMU_BUILD)
-        #if defined(__vxworks)
-        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "/SYSTEM/bundles/com.boschrexroth.<%modelname%>/<%fileNamePrefix%>_init.xml"));
-        #else
-         <%if (Flags.getConfigBool(Flags.LABELED_REDUCTION)) then
-            <<
-            _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml",_dimRHS));
-            >>
-            else
-            <<
-            _reader  =  shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%makefileParams.compileDir%>/<%fileNamePrefix%>_init.xml"));
-            >>
-            %>
-
-        #endif
+        _reader  = shared_ptr<IPropertyReader>(new XmlPropertyReader(_global_settings, "<%fileNamePrefix%>_init.xml"));
         _reader->readInitialValues(*this, getSimVars());
       #endif
 

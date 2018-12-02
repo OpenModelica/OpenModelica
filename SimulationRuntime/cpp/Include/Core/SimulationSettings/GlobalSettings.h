@@ -29,6 +29,9 @@ public:
   virtual void setInfoOutput(bool);
   virtual bool useEndlessSim();
   virtual void useEndlessSim(bool);
+  ///path for input files, like init xml
+  virtual string getInputPath();
+  virtual void setInputPath(string);
   ///path for simulation results in textfile
   virtual string getOutputPath();
   virtual void setOutputPath(string);
@@ -73,6 +76,7 @@ private:
       _endless_sim,
       _nonLinSolverContinueOnError;
   string
+      _input_path,
       _output_path,
       _selected_solver,
       _selected_lin_solver,

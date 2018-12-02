@@ -12,7 +12,7 @@
 XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::string propertyFile)
   : IPropertyReader()
   ,_globalSettings(globalSettings)
-  ,_propertyFile(propertyFile)
+  ,_propertyFile(globalSettings->getInputPath() + string("/") + propertyFile)
   ,_isInitialized(false)
 {
 }

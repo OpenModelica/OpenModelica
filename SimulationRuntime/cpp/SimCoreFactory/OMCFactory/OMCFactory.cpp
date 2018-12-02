@@ -307,6 +307,8 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("nls-continue", po::bool_switch()->default_value(false), "non linear solver will continue if it can not reach the given precision")
           ("runtime-library,R", po::value<string>(), "path to cpp runtime libraries")
           ("modelica-system-library,M",  po::value<string>(), "path to Modelica library")
+          ("input-path", po::value< string >(), "directory with input files, like init xml (defaults to modelica-system-library)")
+          ("output-path", po::value< string >(), "directory for output files, like results (defaults to modelica-system-library)")
           ("results-file,F", po::value<vector<string> >(),"name of results file")
           ("start-time,S", po::value< double >()->default_value(0.0), "simulation start time")
           ("stop-time,E", po::value< double >()->default_value(1.0), "simulation stop time")
@@ -401,6 +403,16 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"Modelica library path is not set");
 
+     string inputPath, outputPath;
+     if (vm.count("input-path"))
+         inputPath = vm["input-path"].as<string>();
+     else
+         inputPath = modelica_lib_path;
+     if (vm.count("output-path"))
+         outputPath = vm["output-path"].as<string>();
+     else
+         outputPath = modelica_lib_path;
+
      string resultsfilename;
      if (vm.count("results-file"))
      {
@@ -453,7 +465,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver,linSolver,nonLinSolver,starttime,stoptime,stepsize,1e-24,0.01,tolerance,resultsfilename,timeOut,outputPointType,logSettings,nlsContinueOnError,solverThreads,outputFormat,emitResults};
+     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -592,6 +604,8 @@ void OMCFactory::fillArgumentsToReplace()
   _argumentsToReplace.insert(pair<string,string>("-port", "--log-port"));
   _argumentsToReplace.insert(pair<string,string>("-alarm", "--alarm"));
   _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
+  _argumentsToReplace.insert(pair<string,string>("-inputPath", "--input-path"));
+  _argumentsToReplace.insert(pair<string,string>("-outputPath", "--output-path"));
 }
 
 pair<shared_ptr<ISimController>,SimSettings>

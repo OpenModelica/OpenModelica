@@ -23,6 +23,8 @@ struct SimSettings
   int solverThreads;
   OutputFormat outputFormat;
   EmitResults emitResults;
+  string inputPath;
+  string outputPath;
 };
 
 /**

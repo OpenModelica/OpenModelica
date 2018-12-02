@@ -64,12 +64,14 @@ class FMU2GlobalSettings : public IGlobalSettings
   ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
   virtual bool            getInfoOutput() { return false; }
   virtual void            setInfoOutput(bool) {}
-  virtual string          getOutputPath() { return "./"; }
+  virtual string          getOutputPath() { return "."; }
+  virtual string          getInputPath() { return "."; }
   virtual LogSettings     getLogSettings() { return LogSettings(LF_FMI2); }
   virtual void            setLogSettings(LogSettings) {}
   virtual OutputPointType getOutputPointType() { return OPT_ALL; };
   virtual void            setOutputPointType(OutputPointType) {};
   virtual void            setOutputPath(string) {}
+  virtual void            setInputPath(string) {}
   virtual string          getSelectedSolver() { return "euler"; }
   virtual void            setSelectedSolver(string) {}
   virtual string          getSelectedLinSolver() { return "dgesvSolver"; }

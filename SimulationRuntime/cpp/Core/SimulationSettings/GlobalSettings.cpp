@@ -135,6 +135,16 @@ void GlobalSettings::setOutputPath(string path)
   _output_path = path;
 }
 
+string GlobalSettings::getInputPath()
+{
+  return _input_path;
+}
+
+void GlobalSettings::setInputPath(string path)
+{
+  _input_path = path;
+}
+
 string GlobalSettings::getSelectedSolver()
 {
   return _selected_solver;
