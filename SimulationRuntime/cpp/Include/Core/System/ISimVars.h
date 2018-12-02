@@ -27,6 +27,14 @@ public:
      virtual  void setBoolVarsVector(const bool* vars) = 0;
      virtual  void setStringVarsVector(const string* vars) = 0;
 
+    /*Methods to get sizes of variable vectors*/
+    virtual size_t getDimString() const = 0;
+    virtual size_t getDimBool() const = 0;
+    virtual size_t getDimInt() const = 0;
+    virtual size_t getDimPreVars() const = 0;
+    virtual size_t getDimReal() const = 0;
+    virtual size_t getDimStateVars() const = 0;
+    virtual size_t getStateVectorIndex() const = 0;
 
      /*Methods for initialize model array variables in simvars memory*/
     virtual double* initRealArrayVar(size_t size,size_t start_index)= 0;

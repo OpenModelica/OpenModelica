@@ -111,9 +111,6 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual int& getPreVar(const int& var);
     virtual bool& getPreVar(const bool& var);
 
-  protected:
-    void create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
-
     virtual size_t getDimString() const;
     virtual size_t getDimBool() const;
     virtual size_t getDimInt() const;
@@ -121,6 +118,9 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual size_t getDimReal() const;
     virtual size_t getDimStateVars() const;
     virtual size_t getStateVectorIndex() const;
+
+  protected:
+    void create(size_t dim_real, size_t dim_int, size_t dim_bool, size_t dim_string, size_t dim_pre_vars, size_t dim_state_vars, size_t state_index);
 
     void *alignedMalloc(size_t required_bytes, size_t alignment);
     void alignedFree(void* p);

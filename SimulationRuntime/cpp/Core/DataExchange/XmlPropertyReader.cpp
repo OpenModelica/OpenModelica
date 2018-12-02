@@ -16,14 +16,6 @@ XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::strin
   ,_isInitialized(false)
 {
 }
-XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::string propertyFile,int dimRHS)
-  : IPropertyReader()
-  ,_globalSettings(globalSettings)
-  ,_propertyFile(propertyFile)
-  ,_isInitialized(false)
-  ,_dimRHS(dimRHS)
-{
-}
 XmlPropertyReader::~XmlPropertyReader()
 {
 }
@@ -173,13 +165,13 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
         }
       }
 
-    int derSize=_dimRHS;
-    for(int i=0; i<derSize;i++)
-    {
-      string name="der";
-      string descripton="der";
-      _derVars.addOutputVar(name, descripton, derVars+i, false);
-    }
+      size_t derSize = sim_vars->getDimStateVars();
+      string name = "der";
+      string descripton = "der";
+      for (size_t i = 0; i < derSize; i++)
+      {
+        _derVars.addOutputVar(name, descripton, derVars + i, false);
+      }
 
       LOGGER_WRITE_END(LC_INIT, LL_DEBUG);
     }
