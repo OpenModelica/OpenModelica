@@ -758,7 +758,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSaveExperimentAnnotationCheckBox->setVisible(true);
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(true);
     mpSimulateCheckBox->setVisible(true);
-    mpInteractiveSimulationPortNumberTextBox->setEnabled(true);
   } else {
     mIsReSimulate = true;
     mClassName = simulationOptions.getClassName();
@@ -767,13 +766,14 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSimulationHeading->setText(QString(Helper::reSimulation).append(" - ").append(mClassName));
     // apply simulation options
     applySimulationOptions(simulationOptions);
+    mpInteractiveSimulationGroupBox->setChecked(false);
+    mpInteractiveSimulationGroupBox->setEnabled(false);
     mpCflagsTextBox->setDisabled(true);
     mpFileNameTextBox->setDisabled(true);
     // save simulation settings
     mpSaveExperimentAnnotationCheckBox->setVisible(false);
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(false);
     mpSimulateCheckBox->setVisible(false);
-    mpInteractiveSimulationPortNumberTextBox->setEnabled(false);
   }
 }
 
@@ -828,9 +828,16 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   // Interval
   mpIntervalTextBox->setText(QString::number(simulationOptions.getStepSize()));
   // Interactive simulation
-  mpInteractiveSimulationGroupBox->setChecked(simulationOptions.isInteractiveSimulation());
-  mpInteractiveSimulationPortNumberTextBox->setText(QString::number(simulationOptions.getInteractiveSimulationPortNumber()));
-  mpInteractiveSimulationStepCheckBox->setChecked(simulationOptions.isInteractiveSimulationWithSteps());
+  QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
+  if (targetLanguage.compare("C") == 0) {
+    mpInteractiveSimulationGroupBox->setEnabled(true);
+    mpInteractiveSimulationGroupBox->setChecked(simulationOptions.isInteractiveSimulation());
+    mpInteractiveSimulationPortNumberTextBox->setText(QString::number(simulationOptions.getInteractiveSimulationPortNumber()));
+    mpInteractiveSimulationStepCheckBox->setChecked(simulationOptions.isInteractiveSimulationWithSteps());
+  } else {
+    mpInteractiveSimulationGroupBox->setChecked(false);
+    mpInteractiveSimulationGroupBox->setEnabled(false);
+  }
   // output format
   bool state = mpOutputFormatComboBox->blockSignals(true);
   currentIndex = mpOutputFormatComboBox->findText(simulationOptions.getOutputFormat(), Qt::MatchExactly);
@@ -849,7 +856,9 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   }
   // Result filename
   mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName, simulationOptions.getOutputFormat()));
-  mpResultFileNameTextBox->setText(simulationOptions.getResultFileName());
+  if (!simulationOptions.isInteractiveSimulation()) {
+    mpResultFileNameTextBox->setText(simulationOptions.getResultFileName());
+  }
   // Variable filter
   mpVariableFilterTextBox->setText(simulationOptions.getVariableFilter());
   // Protected Variabels

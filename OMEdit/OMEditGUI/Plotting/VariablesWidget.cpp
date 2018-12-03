@@ -569,7 +569,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   endInsertRows();
   // set the newly inserted VariablesTreeItem active
   mpActiveVariablesTreeItem = pTopVariablesTreeItem;
-  if (simulationOptions.isValid()) {
+  if (simulationOptions.isValid() && !simulationOptions.isInteractiveSimulation()) {
     pTopVariablesTreeItem->setActive();
   }
   /* open the model_init.xml file for reading */
@@ -1432,15 +1432,20 @@ void VariablesWidget::reSimulate(bool showSetup)
   pVariablesTreeItem = pVariablesTreeItem->rootParent();
   SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
   if (simulationOptions.isValid()) {
-    simulationOptions.setReSimulate(true);
-    updateInitXmlFile(simulationOptions);
-    if (showSetup) {
-      MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
+    if (simulationOptions.isInteractiveSimulation()) {
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
+                               tr("You cannot re-simulate an interactive simulation."), Helper::ok);
     } else {
-      MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
+      simulationOptions.setReSimulate(true);
+      updateInitXmlFile(simulationOptions);
+      if (showSetup) {
+        MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
+      } else {
+        MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
+      }
     }
   } else {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), Helper::ok);
   }
 }
@@ -2205,7 +2210,9 @@ void VariablesWidget::showContextMenu(QPoint point)
     QAction *pSetResultActiveAction = new QAction(tr("Set Active"), this);
     pSetResultActiveAction->setData(pVariablesTreeItem->getVariableName());
     pSetResultActiveAction->setStatusTip(tr("An active item is used for the visualization"));
-    pSetResultActiveAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid() && !pVariablesTreeItem->isActive());
+    pSetResultActiveAction->setEnabled(pVariablesTreeItem->getSimulationOptions().isValid()
+                                       && !pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()
+                                       && !pVariablesTreeItem->isActive());
     connect(pSetResultActiveAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(setVariableTreeItemActive()));
 
     QMenu menu(this);
