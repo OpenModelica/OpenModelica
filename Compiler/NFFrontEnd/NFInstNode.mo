@@ -1384,7 +1384,8 @@ uniontype InstNode
 
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls), scopePath(clsNode));
+                state := Restriction.toDAE(Class.restriction(cls),
+                                           scopePath(clsNode, includeRoot = true));
               then
                 DAE.Type.T_COMPLEX(state, {}, NONE());
 
@@ -1426,7 +1427,8 @@ uniontype InstNode
 
             else
               algorithm
-                state := Restriction.toDAE(Class.restriction(cls), scopePath(clsNode));
+                state := Restriction.toDAE(Class.restriction(cls),
+                                           scopePath(clsNode, includeRoot = true));
                 vars := ConvertDAE.makeTypeVars(clsNode);
                 outType := DAE.Type.T_COMPLEX(state, vars, NONE());
                 Pointer.update(clsNode.cls, Class.DAE_TYPE(outType));
