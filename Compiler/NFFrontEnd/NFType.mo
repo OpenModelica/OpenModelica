@@ -448,6 +448,18 @@ public
     end match;
   end firstTupleType;
 
+  function nthTupleType
+    input Type ty;
+    input Integer n;
+    output Type outTy;
+  algorithm
+    outTy := match ty
+      case TUPLE() then listGet(ty.types, n);
+      case ARRAY() then Type.ARRAY(nthTupleType(ty.elementType, n), ty.dimensions);
+      else ty;
+    end match;
+  end nthTupleType;
+
   function arrayElementType
     "Returns the common type of the elements in an array, or just the type
      itself if it's not an array type."

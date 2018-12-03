@@ -4116,17 +4116,30 @@ public
     input Expression exp;
     output Boolean hasArrayCall;
   algorithm
-    hasArrayCall := fold(exp, hasArrayCall2, false);
+    hasArrayCall := contains(exp, hasArrayCall2);
   end hasArrayCall;
 
   function hasArrayCall2
     input Expression exp;
-    input output Boolean hasArrayCall;
+    output Boolean hasArrayCall;
+  protected
+    Call call;
+    Type ty;
   algorithm
     hasArrayCall := match exp
-      case CALL() then hasArrayCall or
-                       (Type.isArray(Call.typeOf(exp.call)) and Call.isVectorizeable(exp.call));
-      else hasArrayCall;
+      case CALL(call = call)
+        algorithm
+          ty := Call.typeOf(call);
+        then
+          Type.isArray(ty) and Call.isVectorizeable(call);
+
+      case TUPLE_ELEMENT(tupleExp = CALL(call = call))
+        algorithm
+          ty := Type.nthTupleType(Call.typeOf(call), exp.index);
+        then
+          Type.isArray(ty) and Call.isVectorizeable(call);
+
+      else false;
     end match;
   end hasArrayCall2;
 
