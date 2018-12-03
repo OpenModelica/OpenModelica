@@ -2079,7 +2079,7 @@ algorithm
       algorithm
         expl := list(instExp(e, scope, info) for e in absynExp.arrayExp);
       then
-        Expression.ARRAY(Type.UNKNOWN(), expl);
+        Expression.makeArray(Type.UNKNOWN(), expl);
 
     case Absyn.Exp.MATRIX()
       algorithm

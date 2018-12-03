@@ -308,12 +308,12 @@ algorithm
 
         if dim_size == 0 then
           // Result is Array[0], return empty array expression.
-          outExp := Expression.ARRAY(ty, {});
+          outExp := Expression.makeEmptyArray(ty);
         elseif dim_size == 1 then
           // Result is Array[1], return array with the single element.
           (Expression.ARRAY(elements = {e}), _) := ExpandExp.expand(e);
           exp := Expression.replaceIterator(exp, iter, e);
-          exp := Expression.ARRAY(ty, {exp});
+          exp := Expression.makeArray(ty, {exp});
           outExp := simplify(exp);
         else
           fail();
@@ -361,8 +361,8 @@ algorithm
         dims := Type.arrayDims(Expression.typeOf(sizeExp.exp));
 
         if List.all(dims, function Dimension.isKnown(allowExp = true)) then
-          exp := Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(dims))}),
-                                  list(Dimension.sizeExp(d) for d in dims));
+          exp := Expression.makeArray(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(dims))}),
+                                      list(Dimension.sizeExp(d) for d in dims));
         else
           exp := sizeExp;
         end if;

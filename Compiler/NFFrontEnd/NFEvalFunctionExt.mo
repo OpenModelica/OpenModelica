@@ -596,8 +596,9 @@ algorithm
     // Vector variable, matrix value => convert value to vector.
     case (Type.ARRAY(dimensions = {_}),
           Expression.ARRAY(ty = Type.ARRAY(dimensions = {_, _})))
-      then Expression.ARRAY(Type.unliftArray(value.ty),
-                            list(Expression.arrayScalarElement(e) for e in value.elements));
+      then Expression.makeArray(Type.unliftArray(value.ty),
+                                list(Expression.arrayScalarElement(e) for e in value.elements),
+                                literal = true);
 
     else value;
   end match;

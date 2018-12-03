@@ -191,6 +191,7 @@ public
   record ARRAY
     Type ty;
     list<Expression> elements;
+    Boolean literal "True if the array is known to only contain literal expressions.";
   end ARRAY;
 
   record MATRIX "The array concatentation operator [a,b; c,d]; this should be removed during type-checking"
@@ -793,7 +794,7 @@ public
           el := list(typeCastElements(e, ty) for e in el);
           t := Type.setArrayElementType(t, ty);
         then
-          ARRAY(t, el);
+          ARRAY(t, el, exp.literal);
 
       case (UNARY(), _)
         then UNARY(exp.operator, typeCastElements(exp.exp, ty));
@@ -842,20 +843,40 @@ public
     STRING(value=value) := exp;
   end stringValue;
 
+  function makeArray
+    input Type ty;
+    input list<Expression> expl;
+    input Boolean literal = false;
+    output Expression outExp;
+  algorithm
+    outExp := ARRAY(ty, expl, literal);
+    annotation(__OpenModelica_EarlyInline = true);
+  end makeArray;
+
+  function makeEmptyArray
+    input Type ty;
+    output Expression outExp;
+  algorithm
+    outExp := ARRAY(ty, {}, true);
+    annotation(__OpenModelica_EarlyInline = true);
+  end makeEmptyArray;
+
   function makeIntegerArray
     input list<Integer> values;
     output Expression exp;
   algorithm
-    exp := ARRAY(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(values))}),
-                 list(INTEGER(v) for v in values));
+    exp := makeArray(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(listLength(values))}),
+                     list(INTEGER(v) for v in values),
+                     literal = true);
   end makeIntegerArray;
 
   function makeRealArray
     input list<Real> values;
     output Expression exp;
   algorithm
-    exp := ARRAY(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(values))}),
-                 list(REAL(v) for v in values));
+    exp := makeArray(Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(values))}),
+                     list(REAL(v) for v in values),
+                     literal = true);
   end makeRealArray;
 
   function makeRealMatrix
@@ -867,12 +888,12 @@ public
   algorithm
     if listEmpty(values) then
       ty := Type.ARRAY(Type.REAL(), {Dimension.fromInteger(0), Dimension.UNKNOWN()});
-      exp := ARRAY(ty, {});
+      exp := makeEmptyArray(ty);
     else
       ty := Type.ARRAY(Type.REAL(), {Dimension.fromInteger(listLength(listHead(values)))});
-      expl := list(ARRAY(ty, list(REAL(v) for v in row)) for row in values);
+      expl := list(makeArray(ty, list(REAL(v) for v in row), literal = true) for row in values);
       ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
-      exp := ARRAY(ty, expl);
+      exp := makeArray(ty, expl, literal = true);
     end if;
   end makeRealMatrix;
 
@@ -955,7 +976,7 @@ public
         algorithm
           expl := list(applyIndexSubscriptTypename(ty, i) for i in sub.indices);
         then
-          ARRAY(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
+          makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl, literal = true);
 
     end match;
   end applySubscriptTypename;
@@ -996,6 +1017,7 @@ public
     list<Expression> expl;
     Type ty;
     Integer el_count;
+    Boolean literal;
   algorithm
     sub := Subscript.expandSlice(subscript);
 
@@ -1007,7 +1029,7 @@ public
           if listEmpty(restSubscripts) then
             outExp := exp;
           else
-            ARRAY(ty = ty, elements = expl) := exp;
+            ARRAY(ty = ty, elements = expl, literal = literal) := exp;
             s :: rest_subs := restSubscripts;
             expl := list(applySubscript(s, e, rest_subs) for e in expl);
 
@@ -1015,13 +1037,14 @@ public
             ty := if el_count > 0 then typeOf(listHead(expl)) else
                                        Type.subscript(ty, restSubscripts);
             ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
-            outExp := ARRAY(ty, expl);
+            outExp := makeArray(ty, expl, literal);
           end if;
         then
           outExp;
 
       case Subscript.EXPANDED_SLICE()
         algorithm
+          ARRAY(literal = literal) := exp;
           expl := list(applyIndexSubscriptArray(exp, i, restSubscripts) for i in sub.indices);
 
           el_count := listLength(expl);
@@ -1029,7 +1052,7 @@ public
                                      Type.subscript(typeOf(exp), restSubscripts);
           ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
         then
-          ARRAY(ty, expl);
+          makeArray(ty, expl, literal);
     end match;
   end applySubscriptArray;
 
@@ -1080,7 +1103,7 @@ public
           expl := list(applyIndexSubscriptRange(exp, i) for i in sub.indices);
           RANGE(ty = ty) := exp;
         then
-          ARRAY(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
+          makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
 
     end match;
   end applySubscriptRange;
@@ -1273,7 +1296,7 @@ public
 
     if List.hasOneElement(inDims) then
       Error.assertion(dimsize == listLength(inExps), "Length mismatch in arrayFromList.", sourceInfo());
-      outExp := ARRAY(ty,inExps);
+      outExp := makeArray(ty,inExps);
       return;
     end if;
 
@@ -1281,7 +1304,7 @@ public
 
     newlst := {};
     for arrexp in partexps loop
-      newlst := ARRAY(ty,arrexp)::newlst;
+      newlst := makeArray(ty,arrexp)::newlst;
     end for;
 
     newlst := listReverse(newlst);
@@ -1680,7 +1703,7 @@ public
           else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
 
       case CREF() then CREF(exp.ty, mapCref(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, list(map(e, func) for e in exp.elements));
+      case ARRAY() then ARRAY(exp.ty, list(map(e, func) for e in exp.elements), exp.literal);
       case MATRIX() then MATRIX(list(list(map(e, func) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2018,7 +2041,7 @@ public
           else CLKCONST(ClockKind.SOLVER_CLOCK(e3, e4));
 
       case CREF() then CREF(exp.ty, mapCrefShallow(exp.cref, func));
-      case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements));
+      case ARRAY() then ARRAY(exp.ty, list(func(e) for e in exp.elements), exp.literal);
       case MATRIX() then MATRIX(list(list(func(e) for e in row) for row in exp.elements));
 
       case RANGE(step = SOME(e2))
@@ -2892,7 +2915,7 @@ public
         algorithm
           (expl, arg) := List.map1Fold(exp.elements, mapFold, func, arg);
         then
-          ARRAY(exp.ty, expl);
+          ARRAY(exp.ty, expl, exp.literal);
 
       case RANGE(step = SOME(e2))
         algorithm
@@ -3231,7 +3254,7 @@ public
         algorithm
           (expl, arg) := List.mapFold(exp.elements, func, arg);
         then
-          ARRAY(exp.ty, expl);
+          ARRAY(exp.ty, expl, exp.literal);
 
       case RANGE(step = oe)
         algorithm
@@ -3972,7 +3995,7 @@ public
       end for;
 
       arr_ty := Type.liftArrayLeft(arr_ty, dim);
-      exp := Expression.ARRAY(arr_ty, expl);
+      exp := Expression.makeArray(arr_ty, expl, literal = isLiteral(exp));
     end for;
   end fillType;
 
@@ -3984,8 +4007,10 @@ public
       case Type.REAL() then REAL(0.0);
       case Type.INTEGER() then INTEGER(0);
       case Type.ARRAY()
-        then ARRAY(ty, List.fill(makeZero(Type.unliftArray(ty)),
-                                 Dimension.size(listHead(ty.dimensions))));
+        then ARRAY(ty,
+                   List.fill(makeZero(Type.unliftArray(ty)),
+                             Dimension.size(listHead(ty.dimensions))),
+                   literal = true);
     end match;
   end makeZero;
 
@@ -3997,8 +4022,10 @@ public
       case Type.REAL() then REAL(1.0);
       case Type.INTEGER() then INTEGER(1);
       case Type.ARRAY()
-        then ARRAY(ty, List.fill(makeZero(Type.unliftArray(ty)),
-                                 Dimension.size(listHead(ty.dimensions))));
+        then ARRAY(ty,
+                   List.fill(makeZero(Type.unliftArray(ty)),
+                             Dimension.size(listHead(ty.dimensions))),
+                   literal = true);
     end match;
   end makeOne;
 
@@ -4012,8 +4039,10 @@ public
       case Type.BOOLEAN() then BOOLEAN(true);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, List.last(ty.literals), listLength(ty.literals));
       case Type.ARRAY()
-        then ARRAY(ty, List.fill(makeMaxValue(Type.unliftArray(ty)),
-                                 Dimension.size(listHead(ty.dimensions))));
+        then ARRAY(ty,
+                   List.fill(makeMaxValue(Type.unliftArray(ty)),
+                             Dimension.size(listHead(ty.dimensions))),
+                   literal = true);
     end match;
   end makeMaxValue;
 
@@ -4027,8 +4056,10 @@ public
       case Type.BOOLEAN() then BOOLEAN(false);
       case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
       case Type.ARRAY()
-        then ARRAY(ty, List.fill(makeMaxValue(Type.unliftArray(ty)),
-                                 Dimension.size(listHead(ty.dimensions))));
+        then makeArray(ty,
+                       List.fill(makeMaxValue(Type.unliftArray(ty)),
+                                 Dimension.size(listHead(ty.dimensions))),
+                       literal = true);
     end match;
   end makeMinValue;
 
@@ -4152,17 +4183,18 @@ public
     Type ty, row_ty;
     list<Expression> expl;
     list<list<Expression>> matrix;
+    Boolean literal;
   algorithm
-    ARRAY(Type.ARRAY(ty, dim1 :: dim2 :: rest_dims), expl) := arrayExp;
+    ARRAY(Type.ARRAY(ty, dim1 :: dim2 :: rest_dims), expl, literal) := arrayExp;
 
     if not listEmpty(expl) then
       row_ty := Type.ARRAY(ty, dim1 :: rest_dims);
       matrix := list(arrayElements(e) for e in expl);
       matrix := List.transposeList(matrix);
-      expl := list(ARRAY(row_ty, row) for row in matrix);
+      expl := list(makeArray(row_ty, row, literal) for row in matrix);
     end if;
 
-    outExp := ARRAY(Type.ARRAY(ty, dim2 :: dim1 :: rest_dims), expl);
+    outExp := makeArray(Type.ARRAY(ty, dim2 :: dim1 :: rest_dims), expl, literal);
   end transposeArray;
 
   function makeIdentityMatrix
@@ -4191,10 +4223,10 @@ public
         row := zero :: row;
       end for;
 
-      rows := Expression.ARRAY(row_ty, row) :: rows;
+      rows := makeArray(row_ty, row, literal = true) :: rows;
     end for;
 
-    matrix := ARRAY(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows);
+    matrix := makeArray(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows, literal = true);
   end makeIdentityMatrix;
 
   function promote
@@ -4249,7 +4281,7 @@ public
 
       // An array, promote each element in the array.
       case (ARRAY(), ty :: rest_ty)
-        then ARRAY(ty, list(promote2(e, false, dims, rest_ty) for e in exp.elements));
+        then makeArray(ty, list(promote2(e, false, dims, rest_ty) for e in exp.elements));
 
       // An expression with array type, but which is not an array expression.
       // Such an expression can't be promoted here, so we create a promote call instead.
@@ -4271,7 +4303,7 @@ public
         algorithm
           outExp := exp;
           for ty in listReverse(types) loop
-            outExp := ARRAY(ty, {outExp});
+            outExp := makeArray(ty, {outExp});
           end for;
         then
           outExp;
@@ -4501,7 +4533,7 @@ public
           index := Class.lookupComponentIndex(elementName, cls);
           ty := InstNode.getType(Class.nthComponent(index, cls));
         then
-          ARRAY(ty, {});
+          makeArray(ty, {});
 
       case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
@@ -4540,13 +4572,13 @@ public
       case RECORD() then listGet(recordExp.elements, index);
 
       case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
-        then ARRAY(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))), {});
+        then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
 
       case ARRAY()
         algorithm
           expl := list(nthRecordElement(index, e) for e in recordExp.elements);
         then
-          ARRAY(Type.setArrayElementType(recordExp.ty, Expression.typeOf(listHead(expl))), expl);
+          makeArray(Type.setArrayElementType(recordExp.ty, Expression.typeOf(listHead(expl))), expl);
 
       else
         algorithm

@@ -151,10 +151,11 @@ algorithm
       then evalTypename(exp.ty, exp, target);
 
     case Expression.ARRAY()
-      algorithm
-        exp.elements := list(evalExp(e, target) for e in exp.elements);
-      then
-        exp;
+      then if exp.literal then exp
+           else
+             Expression.makeArray(exp.ty,
+               list(evalExp(e, target) for e in exp.elements),
+               literal = true);
 
     case Expression.RANGE()
       algorithm
@@ -266,6 +267,51 @@ algorithm
     else oexp;
   end match;
 end evalExpOpt;
+
+function evalExpPartial
+  "Evaluates the parts of an expression that are possible to evaluate. This
+   means leaving parts of the expression that contains e.g. iterators or mutable
+   expressions. This can be used to optimize an expression that is expected to
+   be evaluated many times, for example the expression in an array constructor."
+  input Expression exp;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+  input Boolean evaluated = true;
+  output Expression outExp;
+  output Boolean outEvaluated "True if the whole expression is evaluated, otherwise false.";
+protected
+  Expression e, e1, e2;
+  Boolean eval1, eval2;
+algorithm
+  (e, outEvaluated) :=
+    Expression.mapFoldShallow(exp, function evalExpPartial(target = target), true);
+
+  outExp := match e
+    case Expression.CREF()
+      algorithm
+        if ComponentRef.isIterator(e.cref) then
+          // Don't evaluate iterators.
+          outExp := e;
+          outEvaluated := false;
+        else
+          // Crefs can be evaluated even if they have non-evaluated subscripts.
+          outExp := evalCref(e.cref, e, target, evalSubscripts = false);
+        end if;
+      then
+        outExp;
+
+    // Don't evaluate mutable expressions. While they could technically be
+    // evaluated they're usually used as mutable iterators.
+    case Expression.MUTABLE()
+      algorithm
+        outEvaluated := false;
+      then
+        e;
+
+    else if outEvaluated then evalExp(e, target) else e;
+  end match;
+
+  outEvaluated := evaluated and outEvaluated;
+end evalExpPartial;
 
 function evalCref
   input ComponentRef cref;
@@ -531,7 +577,7 @@ algorithm
         expl := list(makeComponentBinding2(e, name) for e in exp.elements);
         ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), dim);
       then
-        Expression.ARRAY(ty, expl);
+        Expression.makeArray(ty, expl, literal = true);
 
     case Expression.SUBSCRIPTED_EXP()
       then Expression.SUBSCRIPTED_EXP(makeComponentBinding2(exp.exp, name), exp.subscripts, exp.ty);
@@ -660,7 +706,8 @@ algorithm
     end match;
   end if;
 
-  exp := Expression.ARRAY(Type.ARRAY(ty, {Dimension.fromInteger(listLength(expl))}), expl);
+  exp := Expression.makeArray(Type.ARRAY(ty, {Dimension.fromInteger(listLength(expl))}),
+                              expl, literal = true);
 end evalRange;
 
 function printFailedEvalError
@@ -724,8 +771,9 @@ algorithm
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
-      then Expression.ARRAY(exp1.ty,
-        list(evalBinaryAdd(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements));
+      then Expression.makeArray(exp1.ty,
+        list(evalBinaryAdd(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
+        literal = true);
 
     else
       algorithm
@@ -750,8 +798,9 @@ algorithm
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
-      then Expression.ARRAY(exp1.ty,
-        list(evalBinarySub(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements));
+      then Expression.makeArray(exp1.ty,
+        list(evalBinarySub(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
+        literal = true);
 
     else
       algorithm
@@ -776,8 +825,9 @@ algorithm
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
-      then Expression.ARRAY(exp1.ty,
-        list(evalBinaryMul(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements));
+      then Expression.makeArray(exp1.ty,
+        list(evalBinaryMul(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
+        literal = true);
 
     else
       algorithm
@@ -799,8 +849,9 @@ algorithm
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
-      then Expression.ARRAY(exp1.ty,
-        list(evalBinaryDiv(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements));
+      then Expression.makeArray(exp1.ty,
+        list(evalBinaryDiv(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
+        literal = true);
 
     else
       algorithm
@@ -822,8 +873,9 @@ algorithm
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
-      then Expression.ARRAY(exp1.ty,
-        list(evalBinaryPow(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements));
+      then Expression.makeArray(exp1.ty,
+        list(evalBinaryPow(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
+        literal = true);
 
     else
       algorithm
@@ -848,8 +900,9 @@ function evalBinaryScalarArray
 algorithm
   exp := match arrayExp
     case Expression.ARRAY()
-      then Expression.ARRAY(arrayExp.ty,
-        list(evalBinaryScalarArray(scalarExp, e, opFunc) for e in arrayExp.elements));
+      then Expression.makeArray(arrayExp.ty,
+        list(evalBinaryScalarArray(scalarExp, e, opFunc) for e in arrayExp.elements),
+        literal = true);
 
     else opFunc(scalarExp, arrayExp);
   end match;
@@ -870,7 +923,8 @@ algorithm
   exp := match arrayExp
     case Expression.ARRAY()
       then Expression.ARRAY(arrayExp.ty,
-        list(evalBinaryArrayScalar(e, scalarExp, opFunc) for e in arrayExp.elements));
+        list(evalBinaryArrayScalar(e, scalarExp, opFunc) for e in arrayExp.elements),
+        literal = true);
 
     else opFunc(arrayExp, scalarExp);
   end match;
@@ -890,7 +944,7 @@ algorithm
       algorithm
         expl := list(evalBinaryScalarProduct(vectorExp, e) for e in expl);
       then
-        Expression.ARRAY(Type.ARRAY(ty, {m}), expl);
+        Expression.makeArray(Type.ARRAY(ty, {m}), expl, literal = true);
 
     else
       algorithm
@@ -916,7 +970,7 @@ algorithm
       algorithm
         expl := list(evalBinaryScalarProduct(e, vectorExp) for e in expl);
       then
-        Expression.ARRAY(Type.ARRAY(ty, {n}), expl);
+        Expression.makeArray(Type.ARRAY(ty, {n}), expl, literal = true);
 
     else
       algorithm
@@ -984,8 +1038,9 @@ algorithm
           exp := Expression.makeZero(mat_ty);
         else
           row_ty := Type.ARRAY(elem_ty, {p});
-          expl1 := list(Expression.ARRAY(row_ty, list(evalBinaryScalarProduct(r, c) for c in expl2)) for r in expl1);
-          exp := Expression.ARRAY(mat_ty, expl1);
+          expl1 := list(Expression.makeArray(row_ty,
+            list(evalBinaryScalarProduct(r, c) for c in expl2), literal = true) for r in expl1);
+          exp := Expression.makeArray(mat_ty, expl1, literal = true);
         end if;
       then
         exp;
@@ -1132,7 +1187,7 @@ algorithm
         expl := list(evalLogicBinaryAnd(e1, e2, target)
                      threaded for e1 in exp1.elements, e2 in expl);
       then
-        Expression.ARRAY(Type.setArrayElementType(exp1.ty, Type.BOOLEAN()), expl);
+        Expression.makeArray(Type.setArrayElementType(exp1.ty, Type.BOOLEAN()), expl, literal = true);
 
     else
       algorithm
@@ -1162,7 +1217,7 @@ algorithm
         expl := list(evalLogicBinaryOr(e1, e2, target)
                      threaded for e1 in exp1.elements, e2 in expl);
       then
-        Expression.ARRAY(Type.setArrayElementType(exp1.ty, Type.BOOLEAN()), expl);
+        Expression.makeArray(Type.setArrayElementType(exp1.ty, Type.BOOLEAN()), expl, literal = true);
 
     else
       algorithm
@@ -1590,7 +1645,7 @@ protected
 algorithm
   ty := Expression.typeOf(listHead(args));
   ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(args)));
-  result := Expression.ARRAY(ty, args);
+  result := Expression.makeArray(ty, args, literal = true);
 end evalBuiltinArray;
 
 function evalBuiltinAsin
@@ -1711,6 +1766,7 @@ protected
   Expression zero;
   list<Expression> elems, row, rows = {};
   Integer n, i = 1;
+  Boolean e_lit, arg_lit = true;
 algorithm
   result := match arg
     case Expression.ARRAY(elements = elems)
@@ -1729,16 +1785,18 @@ algorithm
           end for;
 
           row := e :: row;
+          e_lit := Expression.isLiteral(e);
+          arg_lit := arg_lit and e_lit;
 
           for j in i:n-1 loop
             row := zero :: row;
           end for;
 
           i := i + 1;
-          rows := Expression.ARRAY(row_ty, row) :: rows;
+          rows := Expression.makeArray(row_ty, row, e_lit) :: rows;
         end for;
       then
-        Expression.ARRAY(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows);
+        Expression.makeArray(Type.liftArrayLeft(row_ty, Dimension.fromInteger(n)), rows, arg_lit);
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -1820,7 +1878,7 @@ algorithm
 
     arr := list(result for e in 1:dim_size);
     arr_ty := Type.liftArrayLeft(arr_ty, Dimension.fromInteger(dim_size));
-    result := Expression.ARRAY(arr_ty, arr);
+    result := Expression.makeArray(arr_ty, arr, Expression.isLiteral(fillValue));
   end for;
 end evalBuiltinFill2;
 
@@ -1942,7 +2000,7 @@ algorithm
           ty := Type.liftArrayLeft(Type.arrayElementType(ty), dim2);
           expl := list(evalBuiltinMatrix2(e, ty) for e in arg.elements);
           ty := Type.liftArrayLeft(ty, dim1);
-          result := Expression.ARRAY(ty, expl);
+          result := Expression.makeArray(ty, expl);
         end if;
       then
         result;
@@ -1970,7 +2028,9 @@ function evalBuiltinMatrix2
 algorithm
   result := match arg
     case Expression.ARRAY()
-      then Expression.ARRAY(ty, list(Expression.toScalar(e) for e in arg.elements));
+      then Expression.makeArray(ty,
+                                list(Expression.toScalar(e) for e in arg.elements),
+                                arg.literal);
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -1993,7 +2053,7 @@ algorithm
 
         if Expression.isEmpty(result) then
           result := Expression.CALL(Call.makeTypedCall(fn,
-            {Expression.ARRAY(ty, {})}, Variability.CONSTANT, Type.arrayElementType(ty)));
+            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Type.arrayElementType(ty)));
         end if;
       then
         result;
@@ -2039,7 +2099,7 @@ algorithm
 
         if Expression.isEmpty(result) then
           result := Expression.CALL(Call.makeTypedCall(fn,
-            {Expression.ARRAY(ty, {})}, Variability.CONSTANT, Type.arrayElementType(ty)));
+            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Type.arrayElementType(ty)));
         end if;
       then
         result;
@@ -2239,17 +2299,18 @@ protected
   Expression x1, x2, x3, y1, y2, y3;
   Type ty;
   Expression zero;
+  Boolean literal;
 algorithm
   result := match arg
-    case Expression.ARRAY(ty = ty, elements = {x1, x2, x3})
+    case Expression.ARRAY(ty = ty, elements = {x1, x2, x3}, literal = literal)
       algorithm
         zero := Expression.makeZero(Type.arrayElementType(ty));
-        y1 := Expression.ARRAY(ty, {zero, Expression.negate(x3), x2});
-        y2 := Expression.ARRAY(ty, {x3, zero, Expression.negate(x1)});
-        y3 := Expression.ARRAY(ty, {Expression.negate(x2), x1, zero});
+        y1 := Expression.makeArray(ty, {zero, Expression.negate(x3), x2}, literal);
+        y2 := Expression.makeArray(ty, {x3, zero, Expression.negate(x1)}, literal);
+        y3 := Expression.makeArray(ty, {Expression.negate(x2), x1, zero}, literal);
         ty := Type.liftArrayLeft(ty, Dimension.fromInteger(3));
       then
-        Expression.ARRAY(ty, {y1, y2, y3});
+        Expression.makeArray(ty, {y1, y2, y3}, literal);
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -2376,10 +2437,10 @@ algorithm
             expl := (if i > j then arrayGet(mat[j], i) else arrayGet(mat[i], j)) :: expl;
           end for;
 
-          accum := Expression.ARRAY(row_ty, expl) :: accum;
+          accum := Expression.makeArray(row_ty, expl, literal = true) :: accum;
         end for;
       then
-        Expression.ARRAY(arg.ty, accum);
+        Expression.makeArray(arg.ty, accum, literal = true);
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -2414,19 +2475,21 @@ protected
   Type ty;
   list<Expression> arr;
   list<list<Expression>> arrl;
+  Boolean literal;
 algorithm
   result := match arg
     case Expression.ARRAY(ty = Type.ARRAY(elementType = ty,
                                           dimensions = dim1 :: dim2 :: rest_dims),
-                          elements = arr)
+                          elements = arr,
+                          literal = literal)
       algorithm
         arrl := list(Expression.arrayElements(e) for e in arr);
         arrl := List.transposeList(arrl);
         ty := Type.liftArrayLeft(ty, dim1);
-        arr := list(Expression.ARRAY(ty, expl) for expl in arrl);
+        arr := list(Expression.makeArray(ty, expl, literal) for expl in arrl);
         ty := Type.liftArrayLeft(ty, dim2);
       then
-        Expression.ARRAY(ty, arr);
+        Expression.makeArray(ty, arr, literal);
 
     else algorithm printWrongArgsError(getInstanceName(), {arg}, sourceInfo()); then fail();
   end match;
@@ -2442,7 +2505,7 @@ algorithm
   expl := Expression.fold(arg, evalBuiltinVector2, {});
   ty := Type.liftArrayLeft(Type.arrayElementType(Expression.typeOf(arg)),
     Dimension.fromInteger(listLength(expl)));
-  result := Expression.ARRAY(ty, listReverse(expl));
+  result := Expression.makeArray(ty, listReverse(expl), literal = true);
 end evalBuiltinVector;
 
 function evalBuiltinVector2
@@ -2626,7 +2689,8 @@ protected
   list<Expression> ranges;
   list<Mutable<Expression>> iters;
 algorithm
-  (e, ranges, iters) := createIterationRanges(exp, iterators);
+  e := evalExpPartial(exp);
+  (e, ranges, iters) := createIterationRanges(e, iterators);
   result := evalArrayConstructor2(e, ty, ranges, iters);
 end evalArrayConstructor;
 
@@ -2678,7 +2742,7 @@ algorithm
       expl := evalArrayConstructor2(exp, el_ty, ranges_rest, iters_rest) :: expl;
     end while;
 
-    result := Expression.ARRAY(ty, listReverseInPlace(expl));
+    result := Expression.makeArray(ty, listReverseInPlace(expl), literal = true);
   end if;
 end evalArrayConstructor2;
 
@@ -2700,7 +2764,8 @@ protected
   list<Mutable<Expression>> iters;
   ReductionFn red_fn;
 algorithm
-  (e, ranges, iters) := createIterationRanges(exp, iterators);
+  e := evalExpPartial(exp);
+  (e, ranges, iters) := createIterationRanges(e, iterators);
 
   (red_fn, default_exp) := match Absyn.pathString(Function.name(fn))
     case "sum" then (evalBinaryAdd, Expression.makeZero(ty));
@@ -2781,7 +2846,7 @@ algorithm
     (outExp, ty) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
     expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(ty));
     dim := Dimension.fromInteger(listLength(expl), Variability.PARAMETER);
-    outExp := Expression.ARRAY(Type.ARRAY(Type.INTEGER(), {dim}), expl);
+    outExp := Expression.makeArray(Type.ARRAY(Type.INTEGER(), {dim}), expl);
   end if;
 end evalSize;
 

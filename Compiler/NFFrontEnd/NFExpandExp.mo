@@ -121,7 +121,7 @@ public
       case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
           if Type.hasZeroDimension(crefExp.ty) then
-            arrayExp := Expression.ARRAY(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.fromInteger(0)}), {});
+            arrayExp := Expression.makeEmptyArray(Type.ARRAY(Type.arrayElementType(crefExp.ty), {Dimension.fromInteger(0)}));
             expanded := true;
           elseif Type.hasKnownSize(crefExp.ty) then
             subs := expandCref2(crefExp.cref);
@@ -194,7 +194,7 @@ public
           expl := list(expandCref4(rest, idx :: comb, accum, restSubs, cref, crefType) for idx in slice);
           arr_ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)), Dimension.fromExpList(expl));
         then
-          Expression.ARRAY(arr_ty, expl);
+          Expression.makeArray(arr_ty, expl);
 
       else expandCref4(listRest(subs), listHead(subs) :: comb, accum, restSubs, cref, crefType);
     end match;
@@ -209,13 +209,13 @@ public
         list<Expression> lits;
 
       case Type.ARRAY(elementType = Type.BOOLEAN())
-        then Expression.ARRAY(ty, {Expression.BOOLEAN(false), Expression.BOOLEAN(true)});
+        then Expression.makeArray(ty, {Expression.BOOLEAN(false), Expression.BOOLEAN(true)}, true);
 
       case Type.ARRAY(elementType = Type.ENUMERATION())
         algorithm
           lits := Expression.makeEnumLiterals(ty.elementType);
         then
-          Expression.ARRAY(ty, lits);
+          Expression.makeArray(ty, lits, true);
 
       else
         algorithm
@@ -370,11 +370,13 @@ public
       local
         list<Expression> expl;
 
+      case Expression.ARRAY(literal = true) then exp;
+
       case Expression.ARRAY()
         algorithm
           expl := list(expandBuiltinGeneric2(e, fn, ty, var, attr) for e in exp.elements);
         then
-          Expression.ARRAY(Type.setArrayElementType(exp.ty, ty), expl);
+          Expression.makeArray(Type.setArrayElementType(exp.ty, ty), expl);
 
       else Expression.CALL(Call.TYPED_CALL(fn, ty, var, {exp}, attr));
     end match;
@@ -439,7 +441,7 @@ public
         expl := expandArrayConstructor2(exp, el_ty, ranges_rest, iters_rest) :: expl;
       end while;
 
-      result := Expression.ARRAY(ty, listReverseInPlace(expl));
+      result := Expression.makeArray(ty, listReverseInPlace(expl));
     end if;
   end expandArrayConstructor2;
 
@@ -461,7 +463,7 @@ public
           dims := Type.dimensionCount(ty);
           expl := list(Expression.SIZE(e, SOME(Expression.INTEGER(i))) for i in 1:dims);
         then
-          Expression.ARRAY(Type.ARRAY(ty, {Dimension.fromInteger(dims)}), expl);
+          Expression.makeArray(Type.ARRAY(ty, {Dimension.fromInteger(dims)}), expl);
 
       // Size with an index is scalar, and thus already maximally expanded.
       else exp;
@@ -557,7 +559,7 @@ public
       expl := list(func(e1, eop, e2) threaded for e1 in expl1, e2 in expl2);
     end if;
 
-    exp := Expression.ARRAY(ty, expl);
+    exp := Expression.makeArray(ty, expl);
   end expandBinaryElementWise2;
 
   function expandBinaryScalarArray
@@ -642,7 +644,7 @@ public
         if expanded then
           // c[i] = a * b[:, i] for i in 1:m
           expl := list(makeScalarProduct(exp1, e2) for e2 in expl);
-          outExp := Expression.ARRAY(ty, expl);
+          outExp := Expression.makeArray(ty, expl);
         else
           outExp := exp;
         end if;
@@ -678,7 +680,7 @@ public
         if expanded then
           // c[i] = a[i, :] * b for i in 1:n
           expl := list(makeScalarProduct(e1, exp2) for e1 in expl);
-          outExp := Expression.ARRAY(ty, expl);
+          outExp := Expression.makeArray(ty, expl);
         else
           outExp := exp;
         end if;
@@ -779,8 +781,8 @@ public
     else
       // c[i, j] = a[i, :] * b[:, j] for i in 1:n, j in 1:p.
       row_ty := Type.ARRAY(ty, {p});
-      expl1 := list(Expression.ARRAY(row_ty, makeBinaryMatrixProduct2(e, expl2)) for e in expl1);
-      exp := Expression.ARRAY(mat_ty, expl1);
+      expl1 := list(Expression.makeArray(row_ty, makeBinaryMatrixProduct2(e, expl2)) for e in expl1);
+      exp := Expression.makeArray(mat_ty, expl1);
     end if;
   end makeBinaryMatrixProduct;
 
@@ -999,7 +1001,7 @@ public
           t := Type.unliftArray(ty);
           expl := list(expandGeneric2(rest_subs, exp, t, s :: accum) for s in sub);
         then
-          Expression.ARRAY(ty, expl);
+          Expression.makeArray(ty, expl);
 
       case {}
         algorithm

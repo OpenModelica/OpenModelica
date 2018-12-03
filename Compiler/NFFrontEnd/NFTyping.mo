@@ -1567,7 +1567,7 @@ algorithm
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
-  arrayExp := Expression.ARRAY(arrayType, expl2);
+  arrayExp := Expression.makeArray(arrayType, expl2);
 end typeArray;
 
 function typeMatrix "The array concatenation operator"

@@ -355,7 +355,7 @@ algorithm
         end if;
 
         outType := Type.setArrayElementType(type1, ty);
-        outExp := Expression.ARRAY(outType, expl);
+        outExp := Expression.makeArray(outType, expl, literal = exp1.literal and exp2.literal);
       then
         (outExp, outType);
 

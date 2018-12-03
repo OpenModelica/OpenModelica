@@ -991,7 +991,7 @@ algorithm
         (n, strs) := System.regex(str, re, i, extended, insensitive);
         expl := list(Expression.STRING(s) for s in strs);
         strs_ty := Type.ARRAY(Type.STRING(), {Dimension.fromInteger(i)});
-        strs_exp := Expression.ARRAY(strs_ty, expl);
+        strs_exp := Expression.makeArray(strs_ty, expl, true);
       then
         Expression.TUPLE(Type.TUPLE({Type.INTEGER(), strs_ty}, NONE()),
                          {Expression.INTEGER(n), strs_exp});

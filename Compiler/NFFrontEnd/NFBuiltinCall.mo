@@ -200,7 +200,7 @@ public
       fail();
     end if;
 
-    arrayExp := Expression.ARRAY(Type.UNKNOWN(), posArgs);
+    arrayExp := Expression.makeArray(Type.UNKNOWN(), posArgs);
   end makeArrayExp;
 
   function makeCatExp

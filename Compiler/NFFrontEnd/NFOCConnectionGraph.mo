@@ -538,7 +538,7 @@ algorithm
           print("- NFOCConnectionGraph.addUniqueRoots(" + ComponentRef.toString(root) + ", " + Expression.toString(inMessage) + ")\n");
         end if;
         graph = GRAPH(updateGraph,definiteRoots,potentialRoots,(root,inMessage)::uniqueRoots,branches,connections);
-        graph = addUniqueRoots(graph, Expression.ARRAY(ty, rest), inMessage);
+        graph = addUniqueRoots(graph, Expression.makeArray(ty, rest), inMessage);
       then
         graph;
 
@@ -1378,7 +1378,7 @@ algorithm
               end if;
               lst = List.fill(Expression.INTEGER(1), listLength(lst)); // TODO! FIXME! actually implement this correctly
             then
-              Expression.ARRAY(Type.INTEGER(), lst);
+              Expression.makeArray(Type.INTEGER(), lst);
         end match;
       then
         res;
