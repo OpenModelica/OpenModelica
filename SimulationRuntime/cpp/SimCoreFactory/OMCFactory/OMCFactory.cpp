@@ -333,7 +333,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      descHidden.add_options()
           ("ignored", po::value<vector<string> >(), "ignored options")
           ("unrecognized", po::value<vector<string> >(), "unsupported options")
-          ("solverThreads", po::value<int>()->default_value(1), "number of threads that can be used by the solver")
+          ("solver-threads", po::value<int>()->default_value(1), "number of threads that can be used by the solver")
           ;
 
      po::options_description descAll("All options");
@@ -377,7 +377,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      double stoptime = vm["stop-time"].as<double>();
      double stepsize =vm["step-size"].as<double>();
      bool nlsContinueOnError = vm["nls-continue"].as<bool>();
-     int solverThreads = vm["solverThreads"].as<int>();
+     int solverThreads = vm["solver-threads"].as<int>();
 
      if (!(stepsize > 0.0))
          stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
