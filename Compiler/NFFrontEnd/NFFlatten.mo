@@ -1264,6 +1264,13 @@ algorithm
   () := match ty
     local
       InstNode con, de;
+      Function fn;
+
+    case Type.FUNCTION(fn = fn)
+      algorithm
+        funcs := flattenFunction(fn, funcs);
+      then
+        ();
 
     // Collect external object structors.
     case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor = con, destructor = de))
@@ -1492,9 +1499,9 @@ algorithm
       then
         ();
 
-    case Expression.CREF(ty = Type.FUNCTION(fn = fn))
+    case Expression.CREF()
       algorithm
-        funcs := flattenFunction(fn, funcs);
+        funcs := collectTypeFuncs(exp.ty, funcs);
       then
         ();
 
