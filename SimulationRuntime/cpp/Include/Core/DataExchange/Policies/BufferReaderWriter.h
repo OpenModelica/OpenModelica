@@ -21,7 +21,7 @@ class BufferReaderWriter : public ContainerManager
 {
     //typedef TextFileWriter<dim_1,dim_2> TextwriterType;
 public:
-    BufferReaderWriter(unsigned long size, string output_path, string file_name)
+    BufferReaderWriter(unsigned long size, string file_name)
         : ContainerManager(),
             _buffer_pos(0)
     {
@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void init(/*string output_path,string file_name*/std::string output_path, std::string file_name, size_t dim)
+    void init(std::string file_name, size_t dim)
     {
     }
     /**

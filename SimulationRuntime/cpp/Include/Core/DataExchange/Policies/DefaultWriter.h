@@ -14,7 +14,7 @@
 class DefaultWriter : public ContainerManager
 {
  public:
-    DefaultWriter(unsigned long size, string output_path, string file_name)
+    DefaultWriter(unsigned long size, string file_name)
             : ContainerManager()
 
     {
@@ -25,7 +25,7 @@ class DefaultWriter : public ContainerManager
 
     }
 
-    void init(std::string output_path, std::string file_name,size_t dim)
+    void init(std::string file_name, size_t dim)
     {
 
     }

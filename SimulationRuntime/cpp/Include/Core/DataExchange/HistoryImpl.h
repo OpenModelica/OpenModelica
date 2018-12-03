@@ -20,7 +20,7 @@ class HistoryImpl : public IHistory,
 {
 public:
   HistoryImpl(IGlobalSettings& globalSettings,size_t dim)
-    : ResultsPolicy((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(),globalSettings.getOutputPath(),globalSettings.getResultsFileName())
+    : ResultsPolicy((globalSettings.getEndTime()-globalSettings.getStartTime())/globalSettings.gethOutput(), globalSettings.getResultsFileName())
     , _globalSettings(globalSettings)
     , _dim(dim)
   {
@@ -40,7 +40,7 @@ public:
 
   virtual void init()
   {
-    ResultsPolicy::init(_globalSettings.getOutputPath(), _globalSettings.getResultsFileName(),_dim);
+    ResultsPolicy::init(_globalSettings.getResultsFileName(), _dim);
   }
 
   virtual void getOutputNames(vector<string>& output_names)

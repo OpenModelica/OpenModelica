@@ -16,11 +16,10 @@ const char EXTENSION = ',';
 class TextFileWriter : public ContainerManager
 {
  public:
-    TextFileWriter(unsigned long size, string output_path, string file_name)
+    TextFileWriter(unsigned long size, string file_name)
             : ContainerManager(),
               _output_stream(),
               _curser_position(0),
-              _output_path(output_path),
               _file_name(file_name)
     {
     }
@@ -31,16 +30,15 @@ class TextFileWriter : public ContainerManager
             _output_stream.close();
     }
 
-    void init(std::string output_path, std::string file_name,size_t dim)
+    void init(std::string file_name, size_t dim)
     {
         _file_name = file_name;
-        _output_path = output_path;
         if (_output_stream.is_open())
             _output_stream.close();
-        std::stringstream res_output_path;
-        res_output_path << output_path << file_name;
-        _output_stream.open(res_output_path.str().c_str(), ios::out);
 
+        _output_stream.open(file_name.c_str(), ios::out);
+        if (_output_stream.fail())
+          throw ModelicaSimulationError(DATASTORAGE, string("Failed to open results file ") + file_name);
     }
     void read(ublas::matrix<double>& R, ublas::matrix<double>& dR)
     {
@@ -150,7 +148,6 @@ class TextFileWriter : public ContainerManager
 
     std::fstream _output_stream;
     unsigned int _curser_position;       ///< Controls current Curser-Position
-    std::string _output_path;
     std::string _file_name;
     vector<string> _var_outputs;
 };
