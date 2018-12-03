@@ -1879,7 +1879,8 @@ protected
   ComplexType cty;
 algorithm
   cty := match restriction
-    case Restriction.RECORD() then makeRecordComplexType(node, cls);
+    case Restriction.RECORD()
+      then makeRecordComplexType(InstNode.classScope(InstNode.getDerivedNode(node)), cls);
     else ComplexType.CLASS();
   end match;
 

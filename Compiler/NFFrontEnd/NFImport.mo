@@ -112,10 +112,7 @@ public
   algorithm
     node := match imp
       case Absyn.Import.NAMED_IMPORT()
-        algorithm
-          node := Lookup.lookupImport(imp.path, scope, info);
-        then
-          InstNode.rename(imp.name, node);
+        then Lookup.lookupImport(imp.path, scope, info);
 
       case Absyn.Import.QUAL_IMPORT()
         then Lookup.lookupImport(imp.path, scope, info);
