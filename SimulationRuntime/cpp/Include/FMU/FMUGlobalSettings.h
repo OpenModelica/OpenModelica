@@ -32,8 +32,8 @@ public:
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
     virtual bool getInfoOutput() { return false; }
     virtual void setInfoOutput(bool) {}
-    virtual string    getOutputPath() { return "."; }
-    virtual string    getInputPath() { return "."; }
+    virtual string    getOutputPath() { return "./"; }
+    virtual string    getInputPath() { return "./"; }
     virtual LogSettings getLogSettings() {return LogSettings(LF_FMI);}
     virtual void setLogSettings(LogSettings) {}
     virtual OutputPointType getOutputPointType() { return OPT_ALL; };

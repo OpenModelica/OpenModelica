@@ -1576,7 +1576,7 @@ template simulationResults(Boolean test, SimCode simCode ,Text& extraFuncs,Text&
 ::=
   match simCode
     case SIMCODE(modelInfo=MODELINFO(__),makefileParams=MAKEFILE_PARAMS(__),simulationSettingsOpt = SOME(settings as SIMULATION_SETTINGS(__))) then
-      let results = if test then ""  else '<%makefileParams.compileDir%>/'
+      let results = if test then ""  else '<%makefileParams.compileDir%>'
       <<
       <%results%><%fileNamePrefix%>_res.<%settings.outputFormat%>
       >>
@@ -2280,9 +2280,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-T"] = "<%tol%>";
       opts["-I"] = "<%solver%>";
       opts["-P"] = "<%outputtype%>";
-      opts["-R"] = "<%simulationLibDir(simulationCodeTarget(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-R"] = "<%simulationLibDir(simulationCodeTarget(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-M"] = "<%moLib%>";
-      opts["-F"] = "<%simulationResults(getRunningTestsuite(),simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-F"] = "<%simulationResults(getRunningTestsuite(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["--solver-threads"] = "<%if(intGt(getConfigInt(NUM_PROC), 0)) then getConfigInt(NUM_PROC) else 1%>";
       <%if (stringEq(settings.outputFormat, "empty")) then 'opts["-O"] = "none";' else ""%>
       <%

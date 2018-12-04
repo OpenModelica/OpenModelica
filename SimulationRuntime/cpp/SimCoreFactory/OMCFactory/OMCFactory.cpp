@@ -89,6 +89,12 @@ class LoggerXMLTCP: public LoggerXML
   std::stringstream _sstream;
 };
 
+inline void normalizePath(std::string& path)
+{
+  if (path.length() > 0 && path[path.length() - 1] != '/')
+    path += "/";
+}
+
 /**
  * Implementation of OMCFactory
  */
@@ -382,15 +388,16 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      if (!(stepsize > 0.0))
          stepsize = (stoptime - starttime) / vm["number-of-intervals"].as<int>();
 
-     double tolerance =vm["tolerance"].as<double>();
-     string solver =  vm["solver"].as<string>();
-     string nonLinSolver =  vm["non-lin-solver"].as<string>();
-     string linSolver =  vm["lin-solver"].as<string>();
-     unsigned int timeOut =  vm["alarm"].as<unsigned int>();
+     double tolerance = vm["tolerance"].as<double>();
+     string solver = vm["solver"].as<string>();
+     string nonLinSolver = vm["non-lin-solver"].as<string>();
+     string linSolver = vm["lin-solver"].as<string>();
+     unsigned int timeOut = vm["alarm"].as<unsigned int>();
      if (vm.count("runtime-library"))
      {
          //cout << "runtime library path set to " << vm["runtime-library"].as<string>() << endl;
          runtime_lib_path = vm["runtime-library"].as<string>();
+         normalizePath(runtime_lib_path);
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"runtime libraries path is not set");
@@ -398,18 +405,23 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      if (vm.count("modelica-system-library"))
      {
          //cout << "Modelica library path set to " << vm["Modelica-system-library"].as<string>()  << endl;
-         modelica_lib_path =vm["modelica-system-library"].as<string>();
+         modelica_lib_path = vm["modelica-system-library"].as<string>();
+         normalizePath(modelica_lib_path);
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"Modelica library path is not set");
 
      string inputPath, outputPath;
-     if (vm.count("input-path"))
+     if (vm.count("input-path")) {
          inputPath = vm["input-path"].as<string>();
+         normalizePath(inputPath);
+     }
      else
          inputPath = modelica_lib_path;
-     if (vm.count("output-path"))
+     if (vm.count("output-path")) {
          outputPath = vm["output-path"].as<string>();
+         normalizePath(outputPath);
+     }
      else
          outputPath = modelica_lib_path;
 
