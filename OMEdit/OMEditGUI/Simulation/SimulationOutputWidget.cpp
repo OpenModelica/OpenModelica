@@ -583,11 +583,8 @@ void SimulationOutputWidget::simulationProcessStarted()
   mpProgressBar->setTextVisible(true);
   mpCancelButton->setText(Helper::cancelSimulation);
   mpCancelButton->setEnabled(true);
-  // save the last modified datetime of result file.
-  QFileInfo resultFileInfo(QString(mSimulationOptions.getWorkingDirectory()).append("/").append(mSimulationOptions.getFullResultFileName()));
-  if (resultFileInfo.exists()) {
-    mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
-  }
+  // save the current datetime as last modified datetime for result file.
+  mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   mpArchivedSimulationItem->setStatus(Helper::running);
 }
 
