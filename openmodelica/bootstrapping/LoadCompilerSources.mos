@@ -254,6 +254,7 @@ if true then /* Suppress output */
     prefixPath + "Util/HashTable5.mo",
   //   prefixPath + "Util/HashTable6.mo",
     prefixPath + "Util/HashTableCG.mo",
+    prefixPath + "Util/HashTableCrefSimVar.mo",
     prefixPath + "Util/HashTableCrILst.mo",
     prefixPath + "Util/HashTableCrIntToExp.mo",
     prefixPath + "Util/HashTableCrToCrEqLst.mo",
