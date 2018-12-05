@@ -157,10 +157,12 @@ void SimulationOutputTree::copyMessages()
     foreach (QModelIndex modelIndex, modelIndexes) {
       SimulationMessage *pSimulationMessage = static_cast<SimulationMessage*>(modelIndex.internalPointer());
       if (pSimulationMessage) {
-        textToCopy.append(QString("%1 | %2 | %3")
-                          .arg(pSimulationMessage->mStream)
-                          .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
-                          .arg(pSimulationMessage->mText));
+        /* Ticket:4778 Remove HTML formatting. */
+//        textToCopy.append(QString("%1 | %2 | %3")
+//                          .arg(pSimulationMessage->mStream)
+//                          .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
+//                          .arg(pSimulationMessage->mText));
+        textToCopy.append(QString(pSimulationMessage->mText).remove("<p>").remove("</p>"));
       }
     }
     QApplication::clipboard()->setText(textToCopy.join("\n"));
@@ -622,15 +624,14 @@ void SimulationOutputWidget::simulationProcessStarted()
  */
 void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-  QString escaped = QString(output).toHtmlEscaped();
-#else /* Qt4 */
-  QString escaped = Qt::escape(output);
-#endif
-
   mpGeneratedFilesTabWidget->setTabEnabled(0, true);
   if (isOutputStructured()) {
     if (textFormat) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+      QString escaped = QString(output).toHtmlEscaped();
+#else /* Qt4 */
+      QString escaped = Qt::escape(output);
+#endif
       output = QString("<message stream=\"stdout\" type=\"%1\" text=\"%2\" />")
           .arg(StringHandler::getSimulationMessageTypeString(type))
           .arg(escaped);
