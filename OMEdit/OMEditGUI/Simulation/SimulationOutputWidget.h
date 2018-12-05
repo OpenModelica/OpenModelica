@@ -100,6 +100,7 @@ private:
   QPushButton *mpCancelButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
+  QList<QString> mGeneratedAlgLoopFilesList;
   SimulationOutputHandler *mpSimulationOutputHandler;
   bool mIsOutputStructured;
   QTextBrowser *mpSimulationOutputTextBrowser;
