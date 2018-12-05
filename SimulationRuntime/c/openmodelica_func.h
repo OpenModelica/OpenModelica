@@ -242,18 +242,18 @@ const int INDEX_JAC_D;
  * Return-value 0: jac is present
  * Return-value 1: jac is not present
  */
-int (*initialAnalyticJacobianA)(void* data, threadData_t *threadData);
-int (*initialAnalyticJacobianB)(void* data, threadData_t *threadData);
-int (*initialAnalyticJacobianC)(void* data, threadData_t *threadData);
-int (*initialAnalyticJacobianD)(void* data, threadData_t *threadData);
+int (*initialAnalyticJacobianA)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*initialAnalyticJacobianB)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*initialAnalyticJacobianC)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*initialAnalyticJacobianD)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
 
 /*
  * These functions calculate specific jacobian column.
  */
-int (*functionJacA_column)(void* data, threadData_t *threadData);
-int (*functionJacB_column)(void* data, threadData_t *threadData);
-int (*functionJacC_column)(void* data, threadData_t *threadData);
-int (*functionJacD_column)(void* data, threadData_t *threadData);
+int (*functionJacA_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+int (*functionJacB_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+int (*functionJacC_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
+int (*functionJacD_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 
 /*#endif*/
 
@@ -332,8 +332,8 @@ void (*read_input_fmu)(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
 /*
  * FMU continuous partial derivative functions
  */
-int (*initialPartialFMIDER)(void* data, threadData_t *threadData);
-int (*functionJacFMIDER_column)(void* data, threadData_t *threadData);
+int (*initialPartialFMIDER)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*functionJacFMIDER_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 const int INDEX_JAC_FMIDER;
 
 };

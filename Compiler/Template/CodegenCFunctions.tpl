@@ -4045,8 +4045,44 @@ template contextCref(ComponentRef cr, Context context, Text &auxFunction)
       >>
     else "_" + System.unquoteIdentifier(crefStr(cr))
     )
+  case JACOBIAN_CONTEXT(jacHT=SOME(_)) then jacCrefs(cr, context, 0)
   else cref(cr)
 end contextCref;
+
+template contextCrefOld(ComponentRef cr, Context context, Text &auxFunction, Integer ix)
+  "Generates code for a component reference depending on which context we're in."
+::=
+  match context
+  case FUNCTION_CONTEXT(__)
+  case PARALLEL_FUNCTION_CONTEXT(__) then
+    (match cr
+    case CREF_QUAL(identType = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state))) then
+      let &preExp = buffer ""
+      let &varDecls = buffer ""
+      let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
+      let recPtr = tempDecl(rec_name + "*", &varDecls)
+      let dimsLenStr = listLength(crefSubs(cr))
+      let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeDimensionExp(exp, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
+      <<
+      ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCref(componentRef, context, &auxFunction)%>
+      >>
+    else "_" + System.unquoteIdentifier(crefStr(cr))
+    )
+  case JACOBIAN_CONTEXT(jacHT=SOME(_)) then jacCrefs(cr, context, ix)
+  else crefOld(cr, ix)
+end contextCrefOld;
+
+template jacCrefs(ComponentRef cr, Context context, Integer ix)
+  "Generates code for jacobian variables."
+::=
+ match context
+   case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+     match simVarFromHT(cr, jacHT)
+     case SIMVAR(varKind=BackendDAE.JAC_VAR()) then 'jacobian->resultVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+     case SIMVAR(varKind=BackendDAE.JAC_DIFF_VAR()) then 'jacobian->tmpVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+     case SIMVAR(varKind=BackendDAE.SEED_VAR()) then 'jacobian->seedVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+     case SIMVAR(index=-2) then crefOld(cr, ix)
+end jacCrefs;
 
 template contextCrefIsPre(ComponentRef cr, Context context, Text &auxFunction, Boolean isPre)
   "Generates code for a component reference depending on which context we're in."
@@ -4084,7 +4120,9 @@ end cref;
 ::=
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
-  case CREF_IDENT(ident = "time") then "data->localData[<%ix%>]->timeValue"
+  case CREF_IDENT(ident = "time") then 'data->localData[<%ix%>]->timeValue'
+  case CREF_IDENT(ident = "__OMC_DT") then "data->simulationInfo->inlineData->dt"
+  case CREF_IDENT(ident = "__HOM_LAMBDA") then "data->simulationInfo->lambda"
   case WILD(__) then ''
   else crefToCStr(cr, ix, false, false)
 end crefOld;
@@ -4125,9 +4163,9 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart)
   case SIMVAR(aliasvar=ALIAS(varName=varName)) then crefToCStr(varName, ix, isPre, isStart)
   case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart)%>)'
   case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart)%>)'
-  case SIMVAR(varKind=JAC_VAR())
-  case SIMVAR(varKind=JAC_DIFF_VAR())
-  case SIMVAR(varKind=SEED_VAR())
+  case SIMVAR(varKind=JAC_VAR()) then 'parentJacobian->resultVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+  case SIMVAR(varKind=JAC_DIFF_VAR()) then 'parentJacobian->tmpVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
+  case SIMVAR(varKind=SEED_VAR()) then 'parentJacobian->seedVars[<%index%>] /* <%escapeCComments(crefStrNoUnderscore(name))%> <%variabilityString(varKind)%> */'
   case SIMVAR(varKind=DAE_RESIDUAL_VAR())
   case SIMVAR(varKind=DAE_AUX_VAR())
   case SIMVAR(index=-2)
@@ -5229,6 +5267,7 @@ template daeExpRelationSim(Exp exp, Context context, Text &preExp,
 match exp
 case rel as RELATION(__) then
   match context
+  case JACOBIAN_CONTEXT(__)
   case DAE_MODE_CONTEXT(__)
   case SIMULATION_CONTEXT(__) then
     match rel.optionExpisASUB

@@ -143,31 +143,33 @@ int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+
   int nth = 0;
-  int nnz = data->simulationInfo->analyticJacobians[index].sparsePattern.numberOfNoneZeros;
+  int nnz = jacobian->sparsePattern.numberOfNoneZeros;
 
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeRows; i++)
+  for(i=0; i < jacobian->sizeRows; i++)
   {
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1;
+    jacobian->seedVars[i] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData);
+    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, systemData->parentJacobian);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
+    for(j = 0; j < jacobian->sizeCols; j++)
     {
-      if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
+      if(jacobian->seedVars[j] == 1)
       {
-        ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j-1];
-        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j+1])
+        ii = jacobian->sparsePattern.leadindex[j-1];
+        while(ii < jacobian->sparsePattern.leadindex[j+1])
         {
-          l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
-          /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -data->simulationInfo->analyticJacobians[index].resultVars[l]); */
-          systemData->setAElement(i, l, -data->simulationInfo->analyticJacobians[index].resultVars[l], nth, (void*) systemData, threadData);
+          l  = jacobian->sparsePattern.index[ii];
+          /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", i, l, nth, -jacobian->resultVars[l]); */
+          systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
         };
       }
     }
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0;
+    jacobian->seedVars[i] = 0;
   }
 
   return 0;
@@ -193,7 +195,7 @@ static int wrapper_fvec_lis(double* x, double* f, void** data, int sysNumber)
  */
 
 int
-solveLis(DATA *data, threadData_t *threadData, int sysNumber)
+solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
@@ -210,7 +212,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
 
   /* set old values as start value for the iteration */
   for(i=0; i<n; i++){
-    err = lis_vector_set_value(LIS_INS_VALUE, i, systemData->x[i], solverData->x);
+    err = lis_vector_set_value(LIS_INS_VALUE, i, aux_x[i], solverData->x);
   }
 
   rt_ext_tp_tick(&(solverData->timeClock));
@@ -237,7 +239,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
     lis_matrix_assemble(solverData->A);
 
     /* calculate vector b (rhs) */
-    memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
+    memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
     wrapper_fvec_lis(solverData->work, systemData->b, dataAndThreadData, sysNumber);
     /* set b vector */
     for(i=0; i<n; i++){
@@ -283,15 +285,15 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
 
     if (1 == systemData->method){
       /* take the solution */
-      lis_vector_get_values(solverData->x, 0, solverData->n_row, systemData->x);
+      lis_vector_get_values(solverData->x, 0, solverData->n_row, aux_x);
       for(i = 0; i < solverData->n_row; ++i)
-        systemData->x[i] += solverData->work[i];
+        aux_x[i] += solverData->work[i];
 
       /* update inner equations */
-      wrapper_fvec_lis(systemData->x, solverData->work, dataAndThreadData, sysNumber);
+      wrapper_fvec_lis(aux_x, solverData->work, dataAndThreadData, sysNumber);
     } else {
       /* write solution */
-      lis_vector_get_values(solverData->x, 0, solverData->n_row, systemData->x);
+      lis_vector_get_values(solverData->x, 0, solverData->n_row, aux_x);
     }
 
     if (ACTIVE_STREAM(LOG_LS_V))
@@ -300,7 +302,7 @@ solveLis(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
 
       messageClose(LOG_LS_V);
     }

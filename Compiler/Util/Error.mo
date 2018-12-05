@@ -1144,6 +1144,9 @@ public constant Message SAVE_ENCRYPTED_CLASS_ERROR = MESSAGE(7022, SCRIPTING(), 
   Util.gettext("Cannot save the encrypted class. Encrypted classes are read-only."));
 public constant Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = MESSAGE(7023, SCRIPTING(), ERROR(),
   Util.gettext("Cannot access encrypted and protected class contents."));
+public constant Message INVALID_NONLINEAR_JACOBIAN_COMPONENT = MESSAGE(7024, TRANSLATION(), ERROR(),
+  Util.gettext("Jacobian %s contains non-linear components. This indicates a singular system or internal generation errors."));
+
 
 protected
 

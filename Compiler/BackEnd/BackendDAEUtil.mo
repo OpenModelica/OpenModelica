@@ -142,6 +142,16 @@ algorithm
   end match;
 end isSimulationDAE;
 
+public function isJacobianDAE
+  input BackendDAE.Shared inShared;
+  output Boolean res;
+algorithm
+  res := match(inShared)
+    case (BackendDAE.SHARED(backendDAEType=BackendDAE.JACOBIAN())) then true;
+    else false;
+  end match;
+end isJacobianDAE;
+
 /*************************************************
  * checkBackendDAE and stuff
  ************************************************/

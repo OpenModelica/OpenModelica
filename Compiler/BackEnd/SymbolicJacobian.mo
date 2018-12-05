@@ -1972,6 +1972,7 @@ algorithm
     outFunctionTree := shared.functionTree;
     if not onlySparsePattern then
       (symbolicJacobian, outFunctionTree) := createJacobian(inBackendDAE,inDiffVars, inStateVars, inInputVars, inParameterVars, inDifferentiatedVars, inVars, inName);
+      true := checkForNonLinearStrongComponents(symbolicJacobian);
       outJacobian := SOME(symbolicJacobian);
     else
       outJacobian := NONE();
@@ -2294,14 +2295,14 @@ algorithm
        try
         (_, _) := BackendVariable.getVarSingle(currVar, inAllVars);
         currVar := ComponentReference.crefPrefixDer(currVar);
-        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, cref, inMatrixName);
         r1 := BackendVariable.copyVarNewName(derivedCref, v);
         r1 := BackendVariable.setVarKind(r1, BackendDAE.STATE_DER());
         r1.unreplaceable := true;
         index := index + 1;
       else
         currVar := ComponentReference.crefPrefixDer(currVar);
-        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, cref, inMatrixName);
         r1 := BackendVariable.copyVarNewName(derivedCref, v);
         r1 := BackendVariable.setVarKind(r1, BackendDAE.STATE_DER());
       end try;
@@ -2311,13 +2312,13 @@ algorithm
     case((v as BackendDAE.VAR(varName=currVar))::restVar, cref, _, index, _, _) algorithm
       try
         (_, _) := BackendVariable.getVarSingle(currVar, inAllVars);
-        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, cref, inMatrixName);
         r1 := BackendVariable.copyVarNewName(derivedCref, v);
         r1 := BackendVariable.setVarKind(r1, BackendDAE.VARIABLE());
         r1.unreplaceable := true;
         index := index + 1;
       else
-        derivedCref := Differentiate.createDifferentiatedCrefName(currVar, cref, inMatrixName);
+        derivedCref := ComponentReference.createDifferentiatedCrefName(currVar, cref, inMatrixName);
         r1 := BackendVariable.copyVarNewName(derivedCref, v);
         r1 := BackendVariable.setVarKind(r1, BackendDAE.VARIABLE());
       end try;
@@ -3699,6 +3700,60 @@ algorithm
     case (eqn,(vars,_,repl)) then (eqn,false,(vars,false,repl));
   end matchcontinue;
 end rhsConstant2;
+
+// =============================================================================
+// Function detects non-linear strong component in symbolic jacobians
+//  - non-linear components should never appear in symbolic jacobian and
+//    indicate an singular or wrong system
+//  - this modules stops compiling and outputs an error, otherwise we
+//    would get error at runtime compiling
+// =============================================================================
+
+function checkForNonLinearStrongComponents
+"Checks for non-linear algebraic strong compontents and break if some found."
+  input BackendDAE.SymbolicJacobian symbolicJacobian;
+  output Boolean result;
+protected
+  BackendDAE.BackendDAE jacBDAE;
+  String name;
+algorithm
+  (jacBDAE, name, _, _, _) := symbolicJacobian;
+  try
+    _ := BackendDAEUtil.mapEqSystem(jacBDAE, checkForNonLinearStrongComponents_work);
+    result := true;
+  else
+    Error.addMessage(Error.INVALID_NONLINEAR_JACOBIAN_COMPONENT, {name});
+    result := false;
+  end try;
+end checkForNonLinearStrongComponents;
+
+function checkForNonLinearStrongComponents_work
+  input output BackendDAE.EqSystem syst;
+  input output BackendDAE.Shared shared;
+protected
+  BackendDAE.StrongComponents comps;
+algorithm
+  try
+    BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := syst;
+    for comp in comps loop
+      () := match (comp)
+        local
+          BackendDAE.JacobianType jacTp;
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NONLINEAR())
+          then fail();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NO_ANALYTIC())
+          then fail();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_GENERIC())
+          then fail();
+        case BackendDAE.TORNSYSTEM(linear=false)
+          then fail();
+         else ();
+      end match;
+    end for;
+  else
+    fail();
+  end try;
+end checkForNonLinearStrongComponents_work;
 
 annotation(__OpenModelica_Interface="backend");
 end SymbolicJacobian;

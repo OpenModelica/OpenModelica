@@ -123,24 +123,27 @@ int getAnalyticalJacobian(DATA* data, threadData_t *threadData, int sysNumber)
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
 
   const int index = systemData->jacobianIndex;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
+  ANALYTIC_JACOBIAN* parentJacobian = systemData->parentJacobian;
+
   int nth = 0;
-  int nnz = data->simulationInfo->analyticJacobians[index].sparsePattern.numberOfNoneZeros;
+  int nnz = jacobian->sparsePattern.numberOfNoneZeros;
 
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeRows; i++)
+  for(i=0; i < jacobian->sizeRows; i++)
   {
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1;
+    jacobian->seedVars[i] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData);
+    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
+    for(j = 0; j < jacobian->sizeCols; j++)
     {
-      if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
+      if(jacobian->seedVars[j] == 1)
       {
-        ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j];
-        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j+1])
+        ii = jacobian->sparsePattern.leadindex[j];
+        while(ii < jacobian->sparsePattern.leadindex[j+1])
         {
-          l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
-          systemData->setAElement(i, l, -data->simulationInfo->analyticJacobians[index].resultVars[l], nth, (void*) systemData, threadData);
+          l  = jacobian->sparsePattern.index[ii];
+          systemData->setAElement(i, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
           nth++;
           ii++;
         };
@@ -148,7 +151,7 @@ int getAnalyticalJacobian(DATA* data, threadData_t *threadData, int sysNumber)
     };
 
     /* de-activate seed variable for the corresponding color */
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0;
+    jacobian->seedVars[i] = 0;
   }
 
   return 0;
@@ -174,7 +177,7 @@ static int residual_wrapper(double* x, double* f, void** data, int sysNumber)
  * author: wbraun
  */
 int
-solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
+solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   LINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->linearSystemData[sysNumber]);
@@ -214,7 +217,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
     }
 
     /* calculate vector b (rhs) */
-    memcpy(solverData->work, systemData->x, sizeof(double)*solverData->n_row);
+    memcpy(solverData->work, aux_x, sizeof(double)*solverData->n_row);
     residual_wrapper(solverData->work, systemData->b, dataAndThreadData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
@@ -225,7 +228,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
   {
     infoStreamPrint(LOG_LS_V, 1, "Old solution x:");
     for(i = 0; i < solverData->n_row; ++i)
-      infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+      infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
     messageClose(LOG_LS_V);
 
     infoStreamPrint(LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
@@ -292,13 +295,13 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
     if (1 == systemData->method){
       /* take the solution */
       for(i = 0; i < solverData->n_row; ++i)
-        systemData->x[i] += systemData->b[i];
+        aux_x[i] += systemData->b[i];
 
       /* update inner equations */
-      residual_wrapper(systemData->x, solverData->work, dataAndThreadData, sysNumber);
+      residual_wrapper(aux_x, solverData->work, dataAndThreadData, sysNumber);
     } else {
       /* the solution is automatically in x */
-      memcpy(systemData->x, systemData->b, sizeof(double)*systemData->size);
+      memcpy(aux_x, systemData->b, sizeof(double)*systemData->size);
     }
 
     if (ACTIVE_STREAM(LOG_LS_V))
@@ -307,7 +310,7 @@ solveKlu(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
 
       messageClose(LOG_LS_V);
     }

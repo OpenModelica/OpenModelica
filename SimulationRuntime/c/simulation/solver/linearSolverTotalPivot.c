@@ -324,33 +324,34 @@ int getAnalyticalJacobianTotalPivot(DATA* data, threadData_t *threadData, double
   LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[currentSys]);
 
   const int index = systemData->jacobianIndex;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[systemData->jacobianIndex]);
 
   memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
 
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sparsePattern.maxColors; i++)
+  for(i=0; i < jacobian->sparsePattern.maxColors; i++)
   {
     /* activate seed variable for the corresponding color */
-    for(ii=0; ii < data->simulationInfo->analyticJacobians[index].sizeCols; ii++)
-      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-        data->simulationInfo->analyticJacobians[index].seedVars[ii] = 1;
+    for(ii=0; ii < jacobian->sizeCols; ii++)
+      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+        jacobian->seedVars[ii] = 1;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData);
+    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, systemData->parentJacobian);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeCols; j++)
+    for(j = 0; j < jacobian->sizeCols; j++)
     {
-      if(data->simulationInfo->analyticJacobians[index].seedVars[j] == 1)
+      if(jacobian->seedVars[j] == 1)
       {
-        ii = data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j];
-        while(ii < data->simulationInfo->analyticJacobians[index].sparsePattern.leadindex[j+1]) {
-          l  = data->simulationInfo->analyticJacobians[index].sparsePattern.index[ii];
-          k  = j*data->simulationInfo->analyticJacobians[index].sizeRows + l;
-          jac[k] = data->simulationInfo->analyticJacobians[index].resultVars[l];
+        ii = jacobian->sparsePattern.leadindex[j];
+        while(ii < jacobian->sparsePattern.leadindex[j+1]) {
+          l  = jacobian->sparsePattern.index[ii];
+          k  = j*jacobian->sizeRows + l;
+          jac[k] = jacobian->resultVars[l];
           ii++;
         }
       }
       /* de-activate seed variable for the corresponding color */
-      if(data->simulationInfo->analyticJacobians[index].sparsePattern.colorCols[j]-1 == i) {
-        data->simulationInfo->analyticJacobians[index].seedVars[j] = 0;
+      if(jacobian->sparsePattern.colorCols[j]-1 == i) {
+        jacobian->seedVars[j] = 0;
       }
     }
 
@@ -381,7 +382,7 @@ static int wrapper_fvec_totalpivot(double* x, double* f, void** data, int sysNum
  *
  *  \author bbachmann
  */
-int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
+int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   void *dataAndThreadData[2] = {data, threadData};
   int i, j;
@@ -404,9 +405,8 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
          eqSystemNumber, (int) systemData->size,
          data->localData[0]->timeValue);
 
-
   debugVectorDoubleLS(LOG_LS_V,"SCALING",systemData->nominal,n);
-  debugVectorDoubleLS(LOG_LS_V,"Old VALUES",systemData->x,n);
+  debugVectorDoubleLS(LOG_LS_V,"Old VALUES",aux_x,n);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   if (0 == systemData->method){
@@ -431,7 +431,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
       assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
     /* calculate vector b (rhs) -> -b is last column of matrix Ab */
-    wrapper_fvec_totalpivot(systemData->x, solverData->Ab + n*n, dataAndThreadData, sysNumber);
+    wrapper_fvec_totalpivot(aux_x, solverData->Ab + n*n, dataAndThreadData, sysNumber);
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
@@ -451,11 +451,11 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
     debugVectorDoubleLS(LOG_LS_V, "SOLUTION:", solverData->x, n+1);
     if (1 == systemData->method){
       /* add the solution to old solution vector*/
-      vecAddLS(n, systemData->x, solverData->x, systemData->x);
-      wrapper_fvec_totalpivot(systemData->x, solverData->b, dataAndThreadData, sysNumber);
+      vecAddLS(n, aux_x, solverData->x, aux_x);
+      wrapper_fvec_totalpivot(aux_x, solverData->b, dataAndThreadData, sysNumber);
     } else {
        /* take the solution */
-       vecCopyLS(n, solverData->x, systemData->x);
+       vecCopyLS(n, solverData->x, aux_x);
     }
 
     if (ACTIVE_STREAM(LOG_LS_V)){
@@ -463,7 +463,7 @@ int solveTotalPivot(DATA *data, threadData_t *threadData, int sysNumber)
       infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
       for(i=0; i<systemData->size; ++i)
       {
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], systemData->x[i]);
+        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
       }
       messageClose(LOG_LS_V);
     }

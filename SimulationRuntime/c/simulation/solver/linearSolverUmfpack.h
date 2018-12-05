@@ -68,7 +68,7 @@ typedef struct DATA_UMFPACK
 
 int allocateUmfPackData(int n_row, int n_col, int nz, void **data);
 int freeUmfPackData(void **data);
-int solveUmfPack(DATA *data, threadData_t *threadData, int sysNumber);
+int solveUmfPack(DATA *data, threadData_t *threadData, int sysNumbe, double* aux_x);
 
 #endif
 #endif

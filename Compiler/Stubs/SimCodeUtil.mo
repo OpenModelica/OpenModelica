@@ -32,6 +32,14 @@ algorithm
   assert(false, getInstanceName());
 end cref2simvar;
 
+function simVarFromHT<A,B>
+  input A inCref;
+  input B simCode;
+  output SimCodeVar.SimVar outSimVar;
+algorithm
+  assert(false, getInstanceName());
+end simVarFromHT;
+
 function codegenExpSanityCheck
   input output DAE.Exp e;
   input SimCodeFunction.Context context;

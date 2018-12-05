@@ -46,12 +46,17 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
   TRACE_PUSH
   long i = 0;
   STATE_SET_DATA *set = NULL;
+  unsigned int jacIndex;
+  ANALYTIC_JACOBIAN* jacobian;
 
   /* go troug all state sets*/
   for(i=0; i<data->modelData->nStateSets; i++)
   {
     set = &(data->simulationInfo->stateSetData[i]);
-    if(set->initialAnalyticalJacobian(data, threadData))
+    jacIndex = set->jacobianIndex;
+    jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
+
+    if(set->initialAnalyticalJacobian(data, threadData, jacobian))
     {
       throwStreamPrint(threadData, "can not initialze Jacobians for dynamic state selection");
     }
@@ -139,64 +144,67 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
   TRACE_PUSH
   unsigned int i, j, k, l, ii;
   unsigned int jacIndex = data->simulationInfo->stateSetData[index].jacobianIndex;
-  unsigned int nrows = data->simulationInfo->analyticJacobians[jacIndex].sizeRows;
-  unsigned int ncols = data->simulationInfo->analyticJacobians[jacIndex].sizeCols;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
+
+  unsigned int nrows = jacobian->sizeRows;
+  unsigned int ncols = jacobian->sizeCols;
   double* jac = data->simulationInfo->stateSetData[index].J;
+
 
   /* set all elements to zero */
   memset(jac, 0, (nrows*ncols*sizeof(double)));
 
-  for(i=0; i < data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.maxColors; i++)
+  for(i=0; i < jacobian->sparsePattern.maxColors; i++)
   {
-    for(ii=0; ii < data->simulationInfo->analyticJacobians[jacIndex].sizeCols; ii++)
-      if(data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i)
-        data->simulationInfo->analyticJacobians[jacIndex].seedVars[ii] = 1;
+    for(ii=0; ii < jacobian->sizeCols; ii++)
+      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+        jacobian->seedVars[ii] = 1;
 
 /*
     if(ACTIVE_STREAM(LOG_DSS_JAC))
     {
       infoStreamPrint(LOG_DSS_JAC, 1, "Caluculate one col:");
-      for(l=0; l < data->simulationInfo->analyticJacobians[jacIndex].sizeCols; l++)
-        infoStreamPrint(LOG_DSS_JAC, 0, "seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f", l, data->simulationInfo->analyticJacobians[jacIndex].seedVars[l]);
+      for(l=0; l < jacobian->sizeCols; l++)
+        infoStreamPrint(LOG_DSS_JAC, 0, "seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f", l, jacobian->seedVars[l]);
       messageClose(LOG_DSS_JAC);
     }
 */
-    (data->simulationInfo->stateSetData[index].analyticalJacobianColumn)(data, threadData);
+    (data->simulationInfo->stateSetData[index].analyticalJacobianColumn)(data, threadData, jacobian, NULL);
 
-    for(j=0; j < data->simulationInfo->analyticJacobians[jacIndex].sizeCols; j++)
+    for(j=0; j < jacobian->sizeCols; j++)
     {
-      if(data->simulationInfo->analyticJacobians[jacIndex].seedVars[j] == 1)
+      if(jacobian->seedVars[j] == 1)
       {
-        ii = data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.leadindex[j];
+        ii = jacobian->sparsePattern.leadindex[j];
 
         /* infoStreamPrint(LOG_DSS_JAC, 0, "take for %d -> %d\n", j, ii); */
 
-        while(ii < data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.leadindex[j+1])
+        while(ii < jacobian->sparsePattern.leadindex[j+1])
         {
-          l  = data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.index[ii];
-          k  = j*data->simulationInfo->analyticJacobians[jacIndex].sizeRows + l;
-          jac[k] = data->simulationInfo->analyticJacobians[jacIndex].resultVars[l];
-          /* infoStreamPrint(LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, data->simulationInfo->analyticJacobians[jacIndex].resultVars[l]); */
+          l  = jacobian->sparsePattern.index[ii];
+          k  = j*jacobian->sizeRows + l;
+          jac[k] = jacobian->resultVars[l];
+          /* infoStreamPrint(LOG_DSS_JAC, 0, "write %d. in jac[%d]-[%d, %d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, jacobian->resultVars[l]); */
           ii++;
         };
       }
     }
-    for(ii=0; ii < data->simulationInfo->analyticJacobians[jacIndex].sizeCols; ii++)
-      if(data->simulationInfo->analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i)
-        data->simulationInfo->analyticJacobians[jacIndex].seedVars[ii] = 0;
+    for(ii=0; ii < jacobian->sizeCols; ii++)
+      if(jacobian->sparsePattern.colorCols[ii]-1 == i)
+        jacobian->seedVars[ii] = 0;
   }
 
   if(ACTIVE_STREAM(LOG_DSS_JAC))
   {
-    char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[jacIndex].sizeCols*20);
+    char *buffer = (char*)malloc(sizeof(char)*jacobian->sizeCols*20);
 
-    infoStreamPrint(LOG_DSS_JAC, 1, "jacobian %dx%d [id: %d]", data->simulationInfo->analyticJacobians[jacIndex].sizeRows, data->simulationInfo->analyticJacobians[jacIndex].sizeCols, jacIndex);
+    infoStreamPrint(LOG_DSS_JAC, 1, "jacobian %dx%d [id: %d]", jacobian->sizeRows, jacobian->sizeCols, jacIndex);
 
-    for(i=0; i<data->simulationInfo->analyticJacobians[jacIndex].sizeRows; i++)
+    for(i=0; i<jacobian->sizeRows; i++)
     {
       buffer[0] = 0;
-      for(j=0; j < data->simulationInfo->analyticJacobians[jacIndex].sizeCols; j++)
-        sprintf(buffer, "%s%.5e ", buffer, jac[i*data->simulationInfo->analyticJacobians[jacIndex].sizeCols+j]);
+      for(j=0; j < jacobian->sizeCols; j++)
+        sprintf(buffer, "%s%.5e ", buffer, jac[i*jacobian->sizeCols+j]);
       infoStreamPrint(LOG_DSS_JAC, 0, "%s", buffer);
     }
     messageClose(LOG_DSS_JAC);

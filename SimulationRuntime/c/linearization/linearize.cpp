@@ -288,37 +288,38 @@ int functionJacBD_num(DATA* data, threadData_t *threadData, double *matrixB, dou
 int functionJacA(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_A;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeCols; i++)
+  for(i=0; i < jacobian->sizeCols; i++)
   {
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
+    jacobian->seedVars[i] = 1.0;
     if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
+      for(j=0;  j < jacobian->sizeCols;j++)
       {
-        infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo->analyticJacobians[index].seedVars[j]);
+        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
       }
     }
 
-    data->callback->functionJacA_column(data, threadData);
+    data->callback->functionJacA_column(data, threadData, jacobian, NULL);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
+    for(j = 0; j < jacobian->sizeRows; j++)
     {
-      jac[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
-      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo->analyticJacobians[index].resultVars[j]);
+      jac[k++] = jacobian->resultVars[j];
+      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0.0;
+    jacobian->seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
     infoStreamPrint(LOG_JAC,0,"Print jac:");
-    for(i=0;  i < data->simulationInfo->analyticJacobians[index].sizeRows;i++)
+    for(i=0;  i < jacobian->sizeRows;i++)
     {
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++) {
-        printf("% .5e ",jac[i+j*data->simulationInfo->analyticJacobians[index].sizeCols]);
+      for(j=0;  j < jacobian->sizeCols;j++) {
+        printf("% .5e ",jac[i+j*jacobian->sizeCols]);
       }
       printf("\n");
     }
@@ -329,37 +330,39 @@ int functionJacA(DATA* data, threadData_t *threadData, double* jac){
 int functionJacB(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_B;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
+
   unsigned int i,j,k;
   k = 0;
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeCols; i++)
+  for(i=0; i < jacobian->sizeCols; i++)
   {
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
+    jacobian->seedVars[i] = 1.0;
     if(ACTIVE_STREAM(LOG_JAC))
     {
       printf("Caluculate one col:\n");
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
+      for(j=0;  j < jacobian->sizeCols;j++)
       {
-        infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo->analyticJacobians[index].seedVars[j]);
+        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
       }
     }
 
-    data->callback->functionJacB_column(data, threadData);
+    data->callback->functionJacB_column(data, threadData, jacobian, NULL);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
+    for(j = 0; j < jacobian->sizeRows; j++)
     {
-      jac[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
-      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo->analyticJacobians[index].resultVars[j]);
+      jac[k++] = jacobian->resultVars[j];
+      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0.0;
+    jacobian->seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
     infoStreamPrint(LOG_JAC, 0, "Print jac:");
-    for(i=0;  i < data->simulationInfo->analyticJacobians[index].sizeRows;i++)
+    for(i=0;  i < jacobian->sizeRows;i++)
     {
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo->analyticJacobians[index].sizeCols]);
+      for(j=0;  j < jacobian->sizeCols;j++)
+        printf("% .5e ",jac[i+j*jacobian->sizeCols]);
       printf("\n");
     }
   }
@@ -369,35 +372,36 @@ int functionJacB(DATA* data, threadData_t *threadData, double* jac){
 int functionJacC(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_C;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeCols; i++)
+  for(i=0; i < jacobian->sizeCols; i++)
   {
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
+    jacobian->seedVars[i] = 1.0;
     if(ACTIVE_STREAM(LOG_JAC))
     {
-      printf("Calculate one col:\n");
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
-        infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo->analyticJacobians[index].seedVars[j]);
+      printf("Caluculate one col:\n");
+      for(j=0;  j < jacobian->sizeCols;j++)
+        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
     }
 
-    data->callback->functionJacC_column(data, threadData);
+    data->callback->functionJacC_column(data, threadData, jacobian, NULL);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
+    for(j = 0; j < jacobian->sizeRows; j++)
     {
-      jac[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
-      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo->analyticJacobians[index].resultVars[j]);
+      jac[k++] = jacobian->resultVars[j];
+      infoStreamPrint(LOG_JAC,0,"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0.0;
+    jacobian->seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
     infoStreamPrint(LOG_JAC, 0, "Print jac:");
-    for(i=0;  i < data->simulationInfo->analyticJacobians[index].sizeRows;i++)
+    for(i=0;  i < jacobian->sizeRows;i++)
     {
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo->analyticJacobians[index].sizeCols]);
+      for(j=0;  j < jacobian->sizeCols;j++)
+        printf("% .5e ",jac[i+j*jacobian->sizeCols]);
       printf("\n");
     }
   }
@@ -407,36 +411,37 @@ int functionJacC(DATA* data, threadData_t *threadData, double* jac){
 int functionJacD(DATA* data, threadData_t *threadData, double* jac){
 
   const int index = data->callback->INDEX_JAC_D;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
   unsigned int i,j,k;
   k = 0;
-  for(i=0; i < data->simulationInfo->analyticJacobians[index].sizeCols; i++)
+  for(i=0; i < jacobian->sizeCols; i++)
   {
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 1.0;
+    jacobian->seedVars[i] = 1.0;
     if(ACTIVE_STREAM(LOG_JAC))
     {
-      printf("Calculate one col:\n");
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++) {
-        infoStreamPrint(LOG_JAC,0,"seed: data->simulationInfo->analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo->analyticJacobians[index].seedVars[j]);
+      printf("Caluculate one col:\n");
+      for(j=0;  j < jacobian->sizeCols;j++) {
+        infoStreamPrint(LOG_JAC,0,"seed: jacobian->seedVars[%d]= %f",j,jacobian->seedVars[j]);
       }
     }
 
-    data->callback->functionJacD_column(data, threadData);
+    data->callback->functionJacD_column(data, threadData, jacobian, NULL);
 
-    for(j = 0; j < data->simulationInfo->analyticJacobians[index].sizeRows; j++)
+    for(j = 0; j < jacobian->sizeRows; j++)
     {
-      jac[k++] = data->simulationInfo->analyticJacobians[index].resultVars[j];
-      infoStreamPrint(LOG_JAC,0, "write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,data->simulationInfo->analyticJacobians[index].resultVars[j]);
+      jac[k++] = jacobian->resultVars[j];
+      infoStreamPrint(LOG_JAC,0, "write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k-1,i,j,jac[k-1],i,jacobian->resultVars[j]);
     }
 
-    data->simulationInfo->analyticJacobians[index].seedVars[i] = 0.0;
+    jacobian->seedVars[i] = 0.0;
   }
   if(ACTIVE_STREAM(LOG_JAC))
   {
     infoStreamPrint(LOG_JAC, 0, "Print jac:");
-    for(i=0;  i < data->simulationInfo->analyticJacobians[index].sizeRows;i++)
+    for(i=0;  i < jacobian->sizeRows;i++)
     {
-      for(j=0;  j < data->simulationInfo->analyticJacobians[index].sizeCols;j++)
-        printf("% .5e ",jac[i+j*data->simulationInfo->analyticJacobians[index].sizeCols]);
+      for(j=0;  j < jacobian->sizeCols;j++)
+        printf("% .5e ",jac[i+j*jacobian->sizeCols]);
       printf("\n");
     }
   }
@@ -508,22 +513,26 @@ int linearize(DATA* data, threadData_t *threadData)
     if (data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sizeTmpVars > 0){
         /* Retrieve symbolic Jacobian */
         /* Determine Matrix A */
-        if(!data->callback->initialAnalyticJacobianA(data, threadData)){
+        ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+        if(!data->callback->initialAnalyticJacobianA(data, threadData, jacobian)){
             assertStreamPrint(threadData,0==functionJacA(data, threadData, matrixA),"Error, can not get Matrix A ");
         }
 
         /* Determine Matrix B */
-        if(!data->callback->initialAnalyticJacobianB(data, threadData)){
+        jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_B]);
+        if(!data->callback->initialAnalyticJacobianB(data, threadData, jacobian)){
             assertStreamPrint(threadData,0==functionJacB(data, threadData, matrixB),"Error, can not get Matrix B ");
         }
 
         /* Determine Matrix C */
-        if(!data->callback->initialAnalyticJacobianC(data, threadData)){
+        jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_C]);
+        if(!data->callback->initialAnalyticJacobianC(data, threadData, jacobian)){
             assertStreamPrint(threadData,0==functionJacC(data, threadData, matrixC),"Error, can not get Matrix C ");
         }
 
         /* Determine Matrix D */
-        if(!data->callback->initialAnalyticJacobianD(data, threadData)){
+        jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_D]);
+        if(!data->callback->initialAnalyticJacobianD(data, threadData, jacobian)){
             assertStreamPrint(threadData,0==functionJacD(data, threadData, matrixD),"Error, can not get Matrix D ");
         }
     }

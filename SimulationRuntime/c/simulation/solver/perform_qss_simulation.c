@@ -90,12 +90,14 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   modelica_real *qik, *xik, *derXik, *tq, *tx, *tqp, *nQh, *dQ;
   modelica_real diffQ = 0.0, dTnextQ = 0.0, nextQ = 0.0;
   modelica_integer* der = NULL;
+  const int index = data->callback->INDEX_JAC_A;
+  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[index]);
 
   solverInfo->currentTime = simInfo->startTime;
 
   warningStreamPrint(LOG_STDOUT, 0, "This QSS method is under development and should not be used yet.");
 
-  if (data->callback->initialAnalyticJacobianA(data, threadData))
+  if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
   {
     infoStreamPrint(LOG_STDOUT, 0, "Jacobian or sparse pattern is not generated or failed to initialize.");
     return UNKNOWN;

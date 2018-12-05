@@ -88,10 +88,11 @@ uniontype JacobianMatrix
     Integer maxColorCols;
     Integer jacobianIndex;
     Integer partitionIndex;
+    Option<HashTableCrefSimVar.HashTable> crefsHT; // all jacobian variables
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0);
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, 0, -1, 0, NONE());
 
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
@@ -411,6 +412,7 @@ uniontype LinearSystem
     list<DAE.ElementSource> sources;
     Integer indexLinearSystem;
     Integer nUnknowns "Number of variables that are solved in this system. Needed because 'crefs' only contains the iteration variables.";
+    Boolean partOfJac "if TRUE then this system is part of a jacobian matrix";
   end LINEARSYSTEM;
 end LinearSystem;
 

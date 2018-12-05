@@ -487,9 +487,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   comp->_has_jacobian = 0;
   comp->fmiDerJac = NULL;
   if (comp->fmuData->callback->initialPartialFMIDER != NULL){
-    if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData)) {
+    if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData, comp->fmiDerJac)) {
       comp->_has_jacobian = 1;
-      comp->fmiDerJac = &(comp->fmuData->simulationInfo->analyticJacobians[comp->fmuData->callback->INDEX_JAC_FMIDER]);
     }
   }
 
@@ -1018,7 +1017,7 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
    * More efficient code could only evaluate the equations needed for the
    * known variables only */
   setThreadData(comp);
-  fmudata->callback->functionJacFMIDER_column(fmudata, td);
+  fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
   resetThreadData(comp);
 
   /* Write the results to dvUnknown array */

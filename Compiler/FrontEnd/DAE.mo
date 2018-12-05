@@ -61,6 +61,7 @@ public type StartValue = Option<Exp>;
 public constant String UNIQUEIO = "$unique$outer$";
 
 public constant String derivativeNamePrefix = "$DER";
+public constant String partialDerivativeNamePrefix = "$pDER";
 public constant String preNamePrefix = "$PRE";
 public constant String previousNamePrefix = "$CLKPRE";
 public constant String startNamePrefix = "$START";

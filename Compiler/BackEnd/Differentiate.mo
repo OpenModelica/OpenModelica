@@ -1200,7 +1200,7 @@ algorithm
         //Take care! state means => der(state)
         false = BackendVariable.isStateVar(var);
 
-        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
+        cr = ComponentReference.createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
       then
         (res, inFunctionTree);
@@ -1212,7 +1212,7 @@ algorithm
         //Take care! state means => der(state)
         false = BackendVariable.isStateVar(var);
 
-        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
+        cr = ComponentReference.createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = DAE.CREF(cr, tp);
       then
         (res, inFunctionTree);
@@ -1256,37 +1256,6 @@ algorithm
   outCref := ComponentReference.crefSetLastSubs(outCref, subs);
   outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
 end createDiffedCrefName;
-
-public function createDifferentiatedCrefName
-  input DAE.ComponentRef inCref;
-  input DAE.ComponentRef inX;
-  input String inMatrixName;
-  output DAE.ComponentRef outCref;
-protected
- list<DAE.Subscript> subs;
- constant Boolean debug = false;
-algorithm
-  if debug then print("inCref: " + ComponentReference.printComponentRefStr(inCref) +"\n"); end if;
-
-  // move subs and and type to lastCref, to move type replace by last type
-  // and move last cref type to the last cref.
-  subs := ComponentReference.crefLastSubs(inCref);
-  outCref := ComponentReference.crefStripLastSubs(inCref);
-  outCref := ComponentReference.replaceSubsWithString(outCref);
-  if debug then print("after full type  " + Types.printTypeStr(ComponentReference.crefTypeConsiderSubs(inCref)) + "\n"); end if;
-  outCref := ComponentReference.crefSetLastType(outCref, DAE.T_UNKNOWN_DEFAULT);
-  if debug then print("after strip: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
-
-  // join crefs
-  outCref := ComponentReference.joinCrefs(outCref, ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix + inMatrixName, DAE.T_UNKNOWN_DEFAULT, {}));
-  outCref := ComponentReference.joinCrefs(outCref, inX);
-  if debug then print("after join: " + ComponentReference.printComponentRefListStr(ComponentReference.expandCref(outCref, true)) + "\n"); end if;
-
-  // fix subs and type of the last cref
-  outCref := ComponentReference.crefSetLastSubs(outCref, subs);
-  outCref := ComponentReference.crefSetLastType(outCref, ComponentReference.crefLastType(inCref));
-  if debug then print("outCref: " + ComponentReference.printComponentRefStr(outCref) +"\n"); end if;
-end createDifferentiatedCrefName;
 
 public function createSeedCrefName
   input DAE.ComponentRef inCref;
@@ -1382,7 +1351,7 @@ algorithm
         cr = Expression.expCref(e);
         tp = Expression.typeof(e);
         cr = ComponentReference.crefPrefixDer(cr);
-        cr = createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
+        cr = ComponentReference.createDifferentiatedCrefName(cr, inDiffwrtCref, matrixName);
         res = Expression.makeCrefExp(cr, tp);
 
         b = ComponentReference.crefEqual(DAE.CREF_IDENT("$",DAE.T_REAL_DEFAULT,{}), inDiffwrtCref);

@@ -51,7 +51,7 @@ typedef void* LS_SOLVER_DATA;
 int initializeLinearSystems(DATA *data, threadData_t *threadData);
 int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData);
 int freeLinearSystems(DATA *data, threadData_t *threadData);
-int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber);
+int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x);
 int check_linear_solutions(DATA *data, int printFailingSystems);
 void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel);
 

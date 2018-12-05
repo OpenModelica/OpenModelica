@@ -554,7 +554,7 @@ int nlsSparseSymJac(N_Vector vecX, N_Vector vecFX, SlsMat Jac, void *userData, N
         analyticJacobian->seedVars[ii] = 1.0;
       }
     }
-    ((nlsData->analyticalJacobianColumn))(data, threadData);
+    ((nlsData->analyticalJacobianColumn))(data, threadData, analyticJacobian, NULL);
 
     for(ii = 0; ii < kinsolData->size; ii++)
     {

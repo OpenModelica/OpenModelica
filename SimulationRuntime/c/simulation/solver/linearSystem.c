@@ -90,22 +90,22 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     linsys[i].failed = 0;
 
     /* allocate system data */
-    linsys[i].x = (double*) malloc(size*sizeof(double));
     linsys[i].b = (double*) malloc(size*sizeof(double));
 
     /* check if analytical jacobian is created */
     if (1 == linsys[i].method)
     {
+      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
       if(linsys[i].jacobianIndex != -1)
       {
         assertStreamPrint(threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       }
-      if(linsys[i].initialAnalyticalJacobian(data, threadData))
+      if(linsys[i].initialAnalyticalJacobian(data, threadData, jacobian))
       {
         linsys[i].jacobianIndex = -1;
         throwStreamPrint(threadData, "Failed to initialize the jacobian for torn linear system %d.", (int)linsys[i].equationIndex);
       }
-      nnz = data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex].sparsePattern.numberOfNoneZeros;
+      nnz = jacobian->sparsePattern.numberOfNoneZeros;
       linsys[i].nnz = nnz;
     }
 
@@ -294,7 +294,6 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     /* free system and solver data */
-    free(linsys[i].x);
     free(linsys[i].b);
     free(linsys[i].nominal);
     free(linsys[i].min);
@@ -394,7 +393,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
  *
  *  \author wbraun
  */
-int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
+int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
   TRACE_PUSH
   int success;
@@ -413,7 +412,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
     {
   #if !defined(OMC_MINIMAL_RUNTIME)
     case LSS_LIS:
-      success = solveLis(data, threadData, sysNumber);
+      success = solveLis(data, threadData, sysNumber, aux_x);
       break;
   #else
     case LSS_LIS_NOT_AVAILABLE:
@@ -422,10 +421,10 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
   #endif
   #ifdef WITH_UMFPACK
     case LSS_KLU:
-      success = solveKlu(data, threadData, sysNumber);
+      success = solveKlu(data, threadData, sysNumber, aux_x);
       break;
     case LSS_UMFPACK:
-      success = solveUmfPack(data, threadData, sysNumber);
+      success = solveUmfPack(data, threadData, sysNumber, aux_x);
       if (!success && linsys->strictTearingFunctionCall != NULL){
         debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
         success = linsys->strictTearingFunctionCall(data, threadData);
@@ -447,20 +446,20 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
     switch(data->simulationInfo->lsMethod)
     {
     case LS_LAPACK:
-      success = solveLapack(data, threadData, sysNumber);
+      success = solveLapack(data, threadData, sysNumber, aux_x);
       break;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
     case LS_LIS:
-      success = solveLis(data, threadData, sysNumber);
+      success = solveLis(data, threadData, sysNumber, aux_x);
       break;
   #endif
   #ifdef WITH_UMFPACK
     case LS_KLU:
-      success = solveKlu(data, threadData, sysNumber);
+      success = solveKlu(data, threadData, sysNumber, aux_x);
       break;
     case LS_UMFPACK:
-      success = solveUmfPack(data, threadData, sysNumber);
+      success = solveUmfPack(data, threadData, sysNumber, aux_x);
       if (!success && linsys->strictTearingFunctionCall != NULL){
         debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
         success = linsys->strictTearingFunctionCall(data, threadData);
@@ -474,11 +473,11 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
   #endif
 
     case LS_TOTALPIVOT:
-      success = solveTotalPivot(data, threadData, sysNumber);
+      success = solveTotalPivot(data, threadData, sysNumber, aux_x);
       break;
 
     case LS_DEFAULT:
-      success = solveLapack(data, threadData, sysNumber);
+      success = solveLapack(data, threadData, sysNumber, aux_x);
 
       /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
       if (!success && linsys->strictTearingFunctionCall != NULL){
@@ -501,7 +500,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber)
           logLevel = LOG_STDOUT;
         }
         warningStreamPrint(logLevel, 0, "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
-        success = solveTotalPivot(data, threadData, sysNumber);
+        success = solveTotalPivot(data, threadData, sysNumber, aux_x);
         linsys->failed = 1;
       }else{
         linsys->failed = 0;

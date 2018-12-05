@@ -440,7 +440,8 @@ ida_solver_initial(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo
       idaData->jacobianMethod == COLOREDSYMJAC ||
       idaData->jacobianMethod == SYMJAC))
   {
-    if (data->callback->initialAnalyticJacobianA(data, threadData))
+    ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian))
     {
       infoStreamPrint(LOG_STDOUT, 0, "Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       idaData->jacobianMethod = INTERNALNUMJAC;
@@ -1444,7 +1445,7 @@ int jacColoredSymbolicalDense(double tt, N_Vector yy, N_Vector yp, N_Vector rr, 
       }
     }
 
-    data->callback->functionJacA_column(data, threadData);
+    data->callback->functionJacA_column(data, threadData, jacData, NULL);
     increaseJacContext(data);
 
     for(ii = 0; ii < idaData->N; ii++)
@@ -1724,7 +1725,7 @@ jacColoredSymbolicalSparse(double tt, N_Vector yy, N_Vector yp, N_Vector rr, Sls
       }
     }
 
-    data->callback->functionJacA_column(data, threadData);
+    data->callback->functionJacA_column(data, threadData, jacData, NULL);
     increaseJacContext(data);
 
     for(ii = 0; ii < idaData->N; ii++)

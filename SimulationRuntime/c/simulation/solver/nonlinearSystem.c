@@ -380,8 +380,9 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     /* check if analytical jacobian is created */
     if(nonlinsys[i].jacobianIndex != -1)
     {
+      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[nonlinsys[i].jacobianIndex]);
       assertStreamPrint(threadData, 0 != nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
-      if(nonlinsys[i].initialAnalyticalJacobian(data, threadData))
+      if(nonlinsys[i].initialAnalyticalJacobian(data, threadData, jacobian))
       {
         nonlinsys[i].jacobianIndex = -1;
       }
