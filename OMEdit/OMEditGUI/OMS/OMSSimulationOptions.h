@@ -47,7 +47,7 @@ public:
     setStopTime(1);
     setWorkingDirectory("");
     setResultFileName("");
-    setResultFileBufferSize(1);
+    setResultFileBufferSize(100);
   }
 
   void setIsValid(bool isValid) {mValid = isValid;}

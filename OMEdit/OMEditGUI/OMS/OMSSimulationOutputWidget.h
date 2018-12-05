@@ -61,7 +61,7 @@ private:
   QPushButton *mpCancelSimulationButton;
   ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
-  int mIsSimulationRunning;
+  bool mIsSimulationRunning;
 signals:
   void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
 public slots:

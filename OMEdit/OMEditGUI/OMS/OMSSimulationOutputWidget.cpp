@@ -84,17 +84,16 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(OMSSimulationOptions omsSim
   } else {
     mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   }
-  mIsSimulationRunning = 0;
+  mIsSimulationRunning = false;
   // initialize the model
   if (OMSProxy::instance()->initialize(mOMSSimulationOptions.getModelName())) {
     // start the asynchronous simulation
     qRegisterMetaType<oms_status_enu_t>("oms_status_enu_t");
     connect(this, SIGNAL(sendSimulationProgress(QString,double,oms_status_enu_t)), SLOT(simulationProgress(QString,double,oms_status_enu_t)));
-    mIsSimulationRunning = 1;
     if (OMSProxy::instance()->simulate_asynchronous(mOMSSimulationOptions.getModelName())) {
+      mIsSimulationRunning = true;
       mpCancelSimulationButton->setEnabled(true);
     } else {
-      mIsSimulationRunning = 0;
       mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is failed. %2")
                                .arg(mOMSSimulationOptions.getModelName())
                                .arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
@@ -144,6 +143,7 @@ void OMSSimulationOutputWidget::cancelSimulation()
     }
     mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is cancelled.").arg(mOMSSimulationOptions.getModelName()));
     mpProgressBar->setValue(mpProgressBar->maximum());
+    mIsSimulationRunning = false;
     mpCancelSimulationButton->setEnabled(false);
   }
 }
@@ -164,9 +164,9 @@ void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, o
     if (qFloor(time) >= mOMSSimulationOptions.getStopTime()) {
       mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is finished.").arg(mOMSSimulationOptions.getModelName()));
       mpProgressBar->setValue(mpProgressBar->maximum());
+      mIsSimulationRunning = false;
       mpCancelSimulationButton->setEnabled(false);
       mpArchivedOMSSimulationItem->setStatus(Helper::finished);
-      mIsSimulationRunning = 0;
       // terminate the model after the simulation is finished successfully.
       LibraryTreeItem *pLibraryTreeItem;
       pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(ident);
