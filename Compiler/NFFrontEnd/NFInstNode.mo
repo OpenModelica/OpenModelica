@@ -442,6 +442,17 @@ uniontype InstNode
     end while;
   end hasParentExpandableConnector;
 
+  function isOperator
+    input InstNode node;
+    output Boolean op;
+  algorithm
+    op := match node
+      case CLASS_NODE() then SCode.isOperator(node.definition);
+      case INNER_OUTER_NODE() then isOperator(node.innerNode);
+      else false;
+    end match;
+  end isOperator;
+
   function name
     input InstNode node;
     output String name;

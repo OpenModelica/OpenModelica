@@ -554,6 +554,10 @@ public
             // Copy the local classes into the new class array, and set the
             // class we're instantiating to be their parent.
             for c in old_clss loop
+              if not InstNode.isOperator(c) then
+                c := InstNode.clone(c);
+              end if;
+
               c := InstNode.setParent(clsNode, c);
 
               // If the class is outer, check that it's valid and link it with

@@ -431,7 +431,6 @@ algorithm
         checkExtendsLoop(base_node, base_path, info);
         checkReplaceableBaseClass(base_nodes, base_path, info);
         base_node := expand(base_node);
-        base_node := InstNode.clone(base_node);
 
         ext := InstNode.setNodeType(InstNodeType.BASE_CLASS(scope, def), base_node);
 
@@ -657,7 +656,6 @@ algorithm
   end if;
 
   ext_node := expand(ext_node);
-  ext_node := InstNode.clone(ext_node);
 
   // Fetch the needed information from the class definition and construct a EXPANDED_DERIVED.
   cls := InstNode.getClass(node);
