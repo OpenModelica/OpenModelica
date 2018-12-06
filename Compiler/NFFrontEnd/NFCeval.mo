@@ -325,8 +325,8 @@ protected
   list<Subscript> subs;
 algorithm
   exp := match cref
-    case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE(),
-                           origin = NFComponentRef.Origin.CREF)
+    case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
+      guard not ComponentRef.isIterator(cref)
       then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts);
 
     else defaultExp;
@@ -353,7 +353,7 @@ algorithm
   exp_origin := if InstNode.isFunction(InstNode.explicitParent(node))
     then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
 
-  Typing.typeComponentBinding(node, exp_origin);
+  Typing.typeComponentBinding(node, exp_origin, typeChildren = false);
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
 

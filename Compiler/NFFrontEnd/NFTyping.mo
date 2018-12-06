@@ -753,6 +753,7 @@ end typeBindings;
 function typeComponentBinding
   input InstNode component;
   input ExpOrigin.Type origin;
+  input Boolean typeChildren = true;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c;
@@ -807,7 +808,10 @@ algorithm
         end if;
 
         InstNode.updateComponent(c, node);
-        typeBindings(c.classInst, component, origin);
+
+        if typeChildren then
+          typeBindings(c.classInst, component, origin);
+        end if;
       then
         ();
 
@@ -821,7 +825,9 @@ algorithm
           InstNode.updateComponent(c, node);
         end if;
 
-        typeBindings(c.classInst, component, origin);
+        if typeChildren then
+          typeBindings(c.classInst, component, origin);
+        end if;
       then
         ();
 
