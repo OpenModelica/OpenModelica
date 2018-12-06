@@ -385,6 +385,7 @@ ForStatement2.mo \
 ForStatementArray.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
+func1.mo \
 func2.mo \
 FuncBuiltinAbs.mo \
 FuncBuiltinCeil.mo \
@@ -816,7 +817,6 @@ expconn4.mo \
 expconn5.mo \
 expconn6.mo \
 expconn7.mo \
-func1.mo \
 FuncBuiltinEnumTypeName.mo \
 ImportShadowing1.mo \
 InnerOuterExtends1.mo \
