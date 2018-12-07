@@ -70,7 +70,6 @@ import Operator = NFOperator;
 public
   uniontype CallAttributes
     record CALL_ATTR
-      Type ty "The type of the return value, if several return values this is undefined";
       Boolean tuple_ "tuple" ;
       Boolean builtin "builtin Function call" ;
       Boolean isImpure "if the function has prefix *impure* is true, else false";
@@ -81,9 +80,10 @@ public
 
     function toDAE
       input CallAttributes attr;
+      input Type returnType;
       output DAE.CallAttributes fattr;
     algorithm
-      fattr := DAE.CALL_ATTR(Type.toDAE(attr.ty), attr.tuple_, attr.builtin,
+      fattr := DAE.CALL_ATTR(Type.toDAE(returnType), attr.tuple_, attr.builtin,
         attr.isImpure, attr.isFunctionPointerCall, attr.inlineType, attr.tailCall);
     end toDAE;
   end CallAttributes;
@@ -297,7 +297,6 @@ uniontype Call
     CallAttributes ca;
   algorithm
     ca := CallAttributes.CALL_ATTR(
-      returnType,
       Type.isTuple(returnType),
       Function.isBuiltin(fn),
       Function.isImpure(fn),
@@ -685,7 +684,7 @@ uniontype Call
         then DAE.CALL(
           Function.nameConsiderBuiltin(call.fn),
           list(Expression.toDAE(e) for e in call.arguments),
-          CallAttributes.toDAE(call.attributes));
+          CallAttributes.toDAE(call.attributes, call.ty));
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm

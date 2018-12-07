@@ -588,7 +588,13 @@ algorithm
     case Expression.BOOLEAN()
       then simplify(if cond.value then tb else fb);
 
-    else Expression.IF(cond, simplify(tb), simplify(fb));
+    else
+      algorithm
+        tb := simplify(tb);
+        fb := simplify(fb);
+      then
+        if Expression.isEqual(tb, fb) then tb else Expression.IF(cond, tb, fb);
+
   end match;
 end simplifyIf;
 

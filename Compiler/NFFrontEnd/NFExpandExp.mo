@@ -353,7 +353,6 @@ public
   algorithm
     Call.TYPED_CALL(fn, ty, var, {arg}, attr) := call;
     ty := Type.arrayElementType(ty);
-    attr.ty := ty;
 
     (arg, true) := expand(arg);
     outExp := expandBuiltinGeneric2(arg, fn, ty, var, attr);

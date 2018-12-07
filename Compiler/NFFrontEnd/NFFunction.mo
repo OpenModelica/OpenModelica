@@ -1475,6 +1475,23 @@ uniontype Function
     end if;
   end isSpecialBuiltin;
 
+  function isSubscriptableBuiltin
+    input Function fn;
+    output Boolean scalarBuiltin;
+  protected
+  algorithm
+    if not isBuiltin(fn) then
+      scalarBuiltin := false;
+    else
+      scalarBuiltin := match Absyn.pathFirstIdent(Function.nameConsiderBuiltin(fn))
+        case "change" then true;
+        case "der" then true;
+        case "pre" then true;
+        else false;
+      end match;
+    end if;
+  end isSubscriptableBuiltin;
+
   function isImpure
     input Function fn;
     output Boolean isImpure = fn.attributes.isImpure;

@@ -932,6 +932,9 @@ public
       case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR())
         then applySubscriptArrayConstructor(subscript, exp.call, restSubscripts);
 
+      case CALL()
+        then applySubscriptCall(subscript, exp, restSubscripts);
+
       case IF() then applySubscriptIf(subscript, exp, restSubscripts);
 
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
@@ -1162,6 +1165,36 @@ public
 
     end match;
   end applyIndexSubscriptRange2;
+
+  function applySubscriptCall
+    input Subscript subscript;
+    input Expression exp;
+    input list<Subscript> restSubscripts;
+    output Expression outExp;
+  protected
+    Call call;
+  algorithm
+    CALL(call = call) := exp;
+
+    outExp := match call
+      local
+        Expression arg;
+        Type ty;
+
+      case Call.TYPED_CALL(arguments = {arg})
+        guard Function.Function.isSubscriptableBuiltin(call.fn)
+        algorithm
+          arg := applySubscript(subscript, arg, restSubscripts);
+          ty := Type.copyDims(typeOf(arg), call.ty);
+        then
+          CALL(Call.TYPED_CALL(call.fn, ty, call.var, {arg}, call.attributes));
+
+      case Call.TYPED_ARRAY_CONSTRUCTOR()
+        then applySubscriptArrayConstructor(subscript, call, restSubscripts);
+
+      else makeSubscriptedExp(subscript :: restSubscripts, exp);
+    end match;
+  end applySubscriptCall;
 
   function applySubscriptArrayConstructor
     input Subscript subscript;

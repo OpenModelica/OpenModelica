@@ -515,12 +515,16 @@ public
     input Type dstType;
     output Type ty;
   algorithm
-    ty := match dstType
-      case ARRAY()
-        then ARRAY(dstType.elementType, arrayDims(srcType));
+    if listEmpty(arrayDims(srcType)) then
+      ty := arrayElementType(dstType);
+    else
+      ty := match dstType
+        case ARRAY()
+          then ARRAY(dstType.elementType, arrayDims(srcType));
 
-      else ARRAY(dstType, arrayDims(srcType));
-    end match;
+        else ARRAY(dstType, arrayDims(srcType));
+      end match;
+    end if;
   end copyDims;
 
   function nthDimension
