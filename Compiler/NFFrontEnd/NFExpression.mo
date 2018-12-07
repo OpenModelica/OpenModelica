@@ -491,7 +491,7 @@ public
           ARRAY(ty = ty, elements = expl) := exp2;
           comp := valueCompare(ty, exp1.ty);
         then
-          if comp then compareList(exp1.elements, expl) else comp;
+          if comp == 0 then compareList(exp1.elements, expl) else comp;
 
       case RANGE()
         algorithm
