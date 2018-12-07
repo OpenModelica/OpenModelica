@@ -58,19 +58,19 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint has 2549 equation(s) and 2549 variable(s).
-// 1963 of these are trivial equation(s)."
+// 1957 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint has 2355 equation(s) and 2355 variable(s).
-// 1775 of these are trivial equation(s)."
+// 1772 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint has 2366 equation(s) and 2366 variable(s).
-// 1788 of these are trivial equation(s)."
+// 1785 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Constraints.UniversalConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Constraints.UniversalConstraint has 2641 equation(s) and 2641 variable(s).
-// 1997 of these are trivial equation(s)."
+// 1994 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum has 1299 equation(s) and 1299 variable(s).
@@ -78,11 +78,11 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip has 1553 equation(s) and 1553 variable(s).
-// 1154 of these are trivial equation(s)."
+// 1151 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque has 1734 equation(s) and 1734 variable(s).
-// 1268 of these are trivial equation(s)."
+// 1262 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.FreeBody has 1295 equation(s) and 1295 variable(s).
@@ -118,7 +118,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2 has 2934 equation(s) and 2934 variable(s).
-// 2355 of these are trivial equation(s)."
+// 2352 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheel has 1051 equation(s) and 1051 variable(s).
@@ -194,7 +194,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.ActuatedDrive has 1525 equation(s) and 1525 variable(s).
-// 1124 of these are trivial equation(s)."
+// 1121 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.BevelGear1D completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.BevelGear1D has 1752 equation(s) and 1752 variable(s).
@@ -202,7 +202,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GearConstraint has 1843 equation(s) and 1843 variable(s).
-// 1382 of these are trivial equation(s)."
+// 1379 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.GyroscopicEffects has 2273 equation(s) and 2273 variable(s).
@@ -210,7 +210,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive completed successfully.
 // Class Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive has 1848 equation(s) and 1848 variable(s).
-// 1335 of these are trivial equation(s)."
+// 1332 of these are trivial equation(s)."
 // ""
 // true
 // ""
