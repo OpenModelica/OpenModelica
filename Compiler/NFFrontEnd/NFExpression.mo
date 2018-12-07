@@ -431,6 +431,7 @@ public
         Call c;
         list<Subscript> subs;
         ClockKind clk1, clk2;
+        Mutable<Expression> me;
 
       case INTEGER()
         algorithm
@@ -510,6 +511,13 @@ public
           TUPLE(elements = expl) := exp2;
         then
           compareList(exp1.elements, expl);
+
+      case RECORD()
+        algorithm
+          RECORD(path = p, elements = expl) := exp2;
+          comp := Absyn.pathCompare(exp1.path, p);
+        then
+          if comp == 0 then compareList(exp1.elements, expl) else comp;
 
       case CALL()
         algorithm
@@ -650,6 +658,24 @@ public
           end if;
         then
           comp;
+
+      case BOX()
+        algorithm
+          BOX(exp = e2) := exp2;
+        then
+          compare(exp1.exp, e2);
+
+      case MUTABLE()
+        algorithm
+          MUTABLE(exp = me) := exp2;
+        then
+          compare(Mutable.access(exp1.exp), Mutable.access(me));
+
+      case EMPTY()
+        algorithm
+          EMPTY(ty = ty) := exp2;
+        then
+          valueCompare(exp1.ty, ty);
 
       else
         algorithm
