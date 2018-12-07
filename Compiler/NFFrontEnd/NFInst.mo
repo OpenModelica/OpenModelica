@@ -656,6 +656,7 @@ algorithm
   end if;
 
   ext_node := expand(ext_node);
+  ext_node := InstNode.clone(ext_node);
 
   // Fetch the needed information from the class definition and construct a EXPANDED_DERIVED.
   cls := InstNode.getClass(node);
