@@ -42,6 +42,8 @@ done
 cd common && git checkout master && cd ..
 git add common
 
+echo Back on $PWD
+
 # add all the submodules we need!
 git add OMCompiler OMEdit OMNotebook doc testsuite OMPlot OMOptim OMSimulator OMShell
 
@@ -52,4 +54,10 @@ git push --set-upstream origin ${BRANCH}
 git push --tags
 git pull
 git fetch --tags
+
+# check if all is fine
+echo OpenModelica glue project tag
+git describe --match "v*.*" --always
+echo OpenModelica submodule tags
+git submodule foreach "git describe --match "v*.*" --always"
 
