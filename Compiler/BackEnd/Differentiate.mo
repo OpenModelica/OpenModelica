@@ -741,6 +741,19 @@ algorithm
     case DAE.RANGE()
     then (inExp, inFunctionTree);
 
+    case DAE.REDUCTION()
+      algorithm
+        (res1, functionTree) := differentiateExp(inExp.expr, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+
+        if not referenceEq(inExp.expr, res1) then
+          res := DAE.REDUCTION(inExp.reductionInfo, res1, inExp.iterators);
+          res := ExpressionSimplify.simplify1(res);
+        else
+          res := inExp;
+        end if;
+      then
+        (res, functionTree);
+
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
       s1 = ExpressionDump.printExpStr(inExp);
