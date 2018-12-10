@@ -158,6 +158,8 @@ CevalZeros1.mo \
 ClassAsComponentError.mo \
 ClassAttributes1.mo \
 ClassAttributes2.mo \
+ClassAttributes3.mo \
+ClassAttributes4.mo \
 ClassExtends1.mo \
 ClassExtends2.mo \
 ClassExtends3.mo \
