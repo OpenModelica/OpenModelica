@@ -1571,7 +1571,7 @@ algorithm
     Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl) := outerAttr;
     cty := Prefixes.mergeConnectorType(cty, innerAttr.connectorType, node);
     var := Prefixes.variabilityMin(var, innerAttr.variability);
-    dir := Prefixes.mergeDirection(dir, innerAttr.direction, node);
+    dir := Prefixes.mergeDirection(dir, innerAttr.direction, node, allowSame = true);
     attr := Component.Attributes.ATTRIBUTES(cty, par, var, dir, io, fin, redecl, repl);
   end if;
 end mergeDerivedAttributes;

@@ -375,12 +375,15 @@ function mergeDirection
   input Direction outerDir;
   input Direction innerDir;
   input InstNode node;
+  input Boolean allowSame = false;
   output Direction dir;
 algorithm
   if outerDir == Direction.NONE then
     dir := innerDir;
   elseif innerDir == Direction.NONE then
     dir := outerDir;
+  elseif allowSame and outerDir == innerDir then
+    dir := innerDir;
   else
     printPrefixError(directionString(outerDir), directionString(innerDir), node);
   end if;
