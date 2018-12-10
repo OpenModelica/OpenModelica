@@ -33,7 +33,6 @@
 
 #include "OMSProxy.h"
 #include "Util/Helper.h"
-#include "Modeling/MessagesWidget.h"
 #include "MainWindow.h"
 #include "OMSSimulationDialog.h"
 #include "OMSSimulationOutputWidget.h"
@@ -68,14 +67,15 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
       level = Helper::notificationLevel;
       break;
   }
-  MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                        QString(message), Helper::scriptingKind, level));
-//  qDebug() << type << message;
+  emit OMSProxy::instance()->logGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                       QString(message), Helper::scriptingKind, level));
+
+//  qDebug() << "loggingCallback" << type << message;
 }
 
 void simulateCallback(const char* ident, double time, oms_status_enu_t status)
 {
-  //qDebug() << "simulateCallback" << ident << time << status;
+//  qDebug() << "simulateCallback" << ident << time << status;
   QList<OMSSimulationOutputWidget*> OMSSimulationOutputWidgetList;
   OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
@@ -127,6 +127,8 @@ OMSProxy::OMSProxy()
   setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt").toStdString().c_str());
   setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
   setLoggingCallback();
+  qRegisterMetaType<MessageItem>("MessageItem");
+  connect(this, SIGNAL(logGUIMessage(MessageItem)), MessagesWidget::instance(), SLOT(addGUIMessage(MessageItem)));
 }
 
 OMSProxy::~OMSProxy()
@@ -174,6 +176,8 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *resp
     mTotalOMSCallsTime += (double)responseTime->elapsed() / 1000;
     fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number((double)responseTime->elapsed() / 1000)).arg(QString::number(mTotalOMSCallsTime)).arg(firstLine).toStdString().c_str(),  mpCommunicationLogFile);
   }
+
+  MainWindow::instance()->printStandardOutAndErrorFilesMessages();
 }
 
 /*!

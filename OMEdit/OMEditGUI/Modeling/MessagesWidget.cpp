@@ -47,6 +47,26 @@
  * \brief Holds the error message data.
  */
 /*!
+ * \brief MessageItem::MessageItem
+ */
+MessageItem::MessageItem()
+{
+  mMessageItemType = MessageItem::Modelica;
+  mTime = QTime::currentTime().toString();
+  mFileName = "";
+  mReadOnly = false;
+  mLineStart = 0;
+  mColumnStart = 0;
+  mLineEnd = 0;
+  mColumnEnd = 0;
+  mMessage = "";
+  mErrorKind = StringHandler::NoOMErrorKind;
+  mErrorType = StringHandler::NoOMError;
+}
+
+/*!
+ * \brief MessageItem::MessageItem
+ * \param type
  * \param filename - the error filename.
  * \param readOnly - the error file readOnly state.
  * \param lineStart - the index where the error starts.
@@ -54,11 +74,11 @@
  * \param lineEnd - the index where the error ends.
  * \param columnEnd - the indexed column where the error ends.
  * \param message - the error message.
- * \param kind - the error kind.
- * \param level - the error level.
+ * \param errorKind - the error kind.
+ * \param errorType - the error type.
  */
-MessageItem::MessageItem(MessageItemType type, QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message,
-                         QString errorKind, QString errorType)
+MessageItem::MessageItem(MessageItemType type, QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd,
+                         int columnEnd, QString message, QString errorKind, QString errorType)
   : mMessageItemType(type)
 {
   mTime = QTime::currentTime().toString();

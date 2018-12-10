@@ -58,6 +58,7 @@ public:
   StringHandler::OpenModelicaErrorKinds mErrorKind;
   StringHandler::OpenModelicaErrors mErrorType;
 public:
+  MessageItem();
   MessageItem(MessageItemType type ,QString filename, bool readOnly, int lineStart, int columnStart, int lineEnd, int columnEnd, QString message, QString errorKind,
               QString errorType);
   MessageItemType getMessageItemType() {return mMessageItemType;}
@@ -122,10 +123,10 @@ public:
   MessageWidget* getErrorMessageWidget() {return mpErrorMessageWidget;}
   void resetMessagesNumber();
   void applyMessagesSettings();
-  void addGUIMessage(MessageItem messageItem);
 signals:
   void MessageAdded();
 public slots:
+  void addGUIMessage(MessageItem messageItem);
   void clearMessages();
 };
 

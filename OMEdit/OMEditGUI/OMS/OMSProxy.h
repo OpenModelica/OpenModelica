@@ -35,6 +35,7 @@
 #define OMSPROXY_H
 
 #include "OMSimulator.h"
+#include "Modeling/MessagesWidget.h"
 
 #include <QObject>
 #include <QTime>
@@ -143,6 +144,8 @@ public:
   bool setMasterAlgorithm(QString cref, QString masterAlgorithm);
   bool exists(QString cref);
   bool reset(QString ident);
+signals:
+  void logGUIMessage(MessageItem messageItem);
 };
 
 #endif // OMSPROXY_H

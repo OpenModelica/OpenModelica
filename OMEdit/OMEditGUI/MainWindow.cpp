@@ -1241,6 +1241,42 @@ void MainWindow::findFileAndGoToLine(QString fileName, QString lineNumber)
   }
 }
 
+/*!
+ * \brief MainWindow::printStandardOutAndErrorFilesMessages
+ * Reads the omeditoutput.txt and omediterror.txt files and add the data to Messages Browser if there is any.
+ */
+void MainWindow::printStandardOutAndErrorFilesMessages()
+{
+  // read stdout file
+  QFile outputFile(Utilities::tempDirectory() + "/omeditoutput.txt");
+  if (outputFile.open(QIODevice::ReadOnly)) {
+    static qint64 outputFilePosition = 0;
+    if (outputFile.seek(outputFilePosition)) {
+      QString outputFileData = outputFile.readAll();
+      if (!outputFileData.isEmpty()) {
+        outputFilePosition = outputFile.pos();
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, outputFileData,
+                                                              Helper::scriptingKind, Helper::notificationLevel));
+      }
+    }
+    outputFile.close();
+  }
+  // read stderr file
+  QFile errorFile(Utilities::tempDirectory() + "/omediterror.txt");
+  if (errorFile.open(QIODevice::ReadOnly)) {
+    static qint64 errorFilePosition = 0;
+    if (errorFile.seek(errorFilePosition)) {
+      QString errorFileData = errorFile.readAll();
+      if (!errorFileData.isEmpty()) {
+        errorFilePosition = errorFile.pos();
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorFileData,
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+    }
+    errorFile.close();
+  }
+}
+
 void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
                                       const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
