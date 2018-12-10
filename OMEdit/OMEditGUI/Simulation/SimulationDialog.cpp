@@ -1768,6 +1768,10 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
             }
           }
         }
+        /* ticket:5234 Make sure we always set the MainWindow as active after the simulation. */
+        MainWindow::instance()->raise();
+        MainWindow::instance()->activateWindow();
+        MainWindow::instance()->setWindowState(MainWindow::instance()->windowState() & (~Qt::WindowMinimized | Qt::WindowActive));
       } else {
         // stay in current perspective and show variables browser
         MainWindow::instance()->getVariablesDockWidget()->show();
