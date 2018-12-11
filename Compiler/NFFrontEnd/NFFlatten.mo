@@ -1505,6 +1505,12 @@ algorithm
       then
         ();
 
+    case Expression.RECORD()
+      algorithm
+        funcs := collectTypeFuncs(exp.ty, funcs);
+      then
+        ();
+
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       algorithm
         for f in Function.getRefCache(exp.fn) loop
