@@ -67,8 +67,8 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
       level = Helper::notificationLevel;
       break;
   }
-  emit OMSProxy::instance()->logGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
-                                                       QString(message), Helper::scriptingKind, level));
+  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                           QString(message), Helper::scriptingKind, level));
 
 //  qDebug() << "loggingCallback" << type << message;
 }

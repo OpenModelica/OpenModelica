@@ -70,6 +70,7 @@ public:
   static QString getInterpolationString(oms_tlm_interpolation_t interpolation);
 
   bool statusToBool(oms_status_enu_t status);
+  void emitLogGUIMessage(MessageItem messageItem) {emit logGUIMessage(messageItem);}
 
   bool addBus(QString cref);
   bool addConnection(QString crefA, QString crefB);
