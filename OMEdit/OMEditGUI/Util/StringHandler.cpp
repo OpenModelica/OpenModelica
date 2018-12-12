@@ -1686,9 +1686,10 @@ QString StringHandler::toCamelCase(QString str)
  * \brief StringHandler::getLeadingSpaces
  * Returns a map with line number and number of leading spaces in that line.
  * \param contents
+ * \param tabWidth
  * \return
  */
-QMap<int, int> StringHandler::getLeadingSpaces(QString contents)
+QMap<int, int> StringHandler::getLeadingSpaces(QString contents, int tabWidth)
 {
   QMap<int, int> leadingSpacesMap;
   int startLeadingSpaces, leadingSpaces = 0;
@@ -1700,9 +1701,9 @@ QMap<int, int> StringHandler::getLeadingSpaces(QString contents)
       startLeadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
       leadingSpaces = startLeadingSpaces;
     } else {
-      leadingSpaces = qMin(startLeadingSpaces, StringHandler::getLeadingSpacesSize(currentLine));
+      leadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
     }
-    leadingSpacesMap.insert(lineNumber, leadingSpaces);
+    leadingSpacesMap.insert(lineNumber, leadingSpaces + tabWidth);
     lineNumber++;
   }
   return leadingSpacesMap;

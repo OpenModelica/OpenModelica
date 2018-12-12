@@ -155,7 +155,7 @@ public:
   static QColor getSimulationMessageTypeColor(StringHandler::SimulationMessageType type);
   static QString makeClassNameRelative(QString draggedClassName, QString droppedClassName);
   static QString toCamelCase(QString str);
-  static QMap<int, int> getLeadingSpaces(QString contents);
+  static QMap<int, int> getLeadingSpaces(QString contents, int tabWidth);
   static int getLeadingSpacesSize(QString str);
   static bool isFileWritAble(QString filePath);
   static bool containsSpace(QString str);

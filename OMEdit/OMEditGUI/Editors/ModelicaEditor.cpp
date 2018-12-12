@@ -257,7 +257,7 @@ void ModelicaEditor::storeLeadingSpaces(QMap<int, int> leadingSpacesMap)
   while (block.isValid()) {
     TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(block);
     if (pTextBlockUserData) {
-      pTextBlockUserData->setLeadingSpaces(leadingSpacesMap.value(block.blockNumber() + 1, 0));
+      pTextBlockUserData->setLeadingSpaces(leadingSpacesMap.value(block.blockNumber() + 1, -1));
     }
     block = block.next();
   }
@@ -270,27 +270,21 @@ void ModelicaEditor::storeLeadingSpaces(QMap<int, int> leadingSpacesMap)
  */
 QString ModelicaEditor::getPlainText()
 {
-  if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
+  LibraryTreeItem *pLibraryTreeItem = mpModelWidget->getLibraryTreeItem();
+  if (pLibraryTreeItem->isInPackageOneFile()) {
     QString text;
     QTextBlock block = mpPlainTextEdit->document()->firstBlock();
     while (block.isValid()) {
       TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(block);
       if (pTextBlockUserData) {
         if (pTextBlockUserData->getLeadingSpaces() == -1) {
-          TextBlockUserData *pFirstBlockUserData = BaseEditorDocumentLayout::userData(mpPlainTextEdit->document()->firstBlock());
-          if (pFirstBlockUserData) {
-            pTextBlockUserData->setLeadingSpaces(pFirstBlockUserData->getLeadingSpaces());
-          } else {
-            pTextBlockUserData->setLeadingSpaces(0);
-          }
+          pTextBlockUserData->setLeadingSpaces(pLibraryTreeItem->getNestedLevelInPackage());
         }
         text += QString(pTextBlockUserData->getLeadingSpaces(), ' ');
       }
       text += block.text();
       block = block.next();
-      if (block.isValid()) { // not last block
-        text += "\n";
-      }
+      text += "\n";
     }
     return text;
   } else {
@@ -328,7 +322,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
   QString contents = text;
   // store and remove leading spaces
   if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
-    leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
+    leadingSpacesMap = StringHandler::getLeadingSpaces(contents, mpModelWidget->getLibraryTreeItem()->getNestedLevelInPackage());
     contents = removeLeadingSpaces(contents);
   }
   // Only set the text when it is really new

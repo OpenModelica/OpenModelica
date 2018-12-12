@@ -517,6 +517,22 @@ bool LibraryTreeItem::isInPackageOneFile()
 }
 
 /*!
+ * \brief LibraryTreeItem::getNestedLevelInPackage
+ * Returns the nested level of class in a package if they are stored in a same file.
+ * \return
+ */
+int LibraryTreeItem::getNestedLevelInPackage() const
+{
+  int level = 0;
+  LibraryTreeItem *pParentLibraryTreeItem = parent();
+  while (pParentLibraryTreeItem->getFileName().compare(getFileName()) == 0) {
+    level++;
+    pParentLibraryTreeItem = pParentLibraryTreeItem->parent();
+  }
+  return level * 2;
+}
+
+/*!
  * \brief LibraryTreeItem::insertChild
  * Inserts a child LibraryTreeItem at the given position.
  * \param position

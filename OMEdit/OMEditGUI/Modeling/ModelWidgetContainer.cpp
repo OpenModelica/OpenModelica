@@ -4217,7 +4217,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
     if (mpLibraryTreeItem->isInPackageOneFile()) {
-      mpLibraryTreeItem->setClassText(stringToLoad);
+      pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
     // update child classes

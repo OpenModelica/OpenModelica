@@ -154,6 +154,7 @@ public:
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
   bool isInPackageOneFile();
+  int getNestedLevelInPackage() const;
   void insertChild(int position, LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* child(int row);
   void moveChild(int from, int to);
