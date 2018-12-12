@@ -1346,9 +1346,9 @@ algorithm
       equation
          //TODO: remove inline
         (DAE.EQUALITY_EXPS(e1_1,e2_1), source) = Inline.simplifyAndForceInlineEquationExp(DAE.EQUALITY_EXPS(e1,e2), (SOME(functionTree), {DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}), source);
-        size = Expression.sizeOf(Expression.typeof(e1_1));
+        eqns = lowerExtendedRecordEqn(e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC,functionTree,inIEquations);
       then
-        (inEquations,inREquations,BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inIEquations);
+        (inEquations,inREquations,eqns);
 
     // equalityConstraint equations, moved to removed equations
     case DAE.ARRAY_EQUATION(dimension=dims, exp = e1 as DAE.ARRAY(array={}),array = e2 as DAE.CALL(path=path),source = source)
