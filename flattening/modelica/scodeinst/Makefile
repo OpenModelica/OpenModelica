@@ -658,6 +658,8 @@ RecordBinding1.mo \
 RecordBinding2.mo \
 RecordBinding3.mo \
 RecordBinding4.mo \
+RecordConstructor1.mo \
+RecordConstructor2.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
 RecursiveExtends1.mo \
