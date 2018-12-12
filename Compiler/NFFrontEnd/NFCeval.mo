@@ -595,6 +595,7 @@ protected
   ClassTree tree;
   array<InstNode> comps;
   list<Expression> fields;
+  list<String> field_names;
   Type ty;
   InstNode c;
   ComponentRef cr;
@@ -602,15 +603,18 @@ algorithm
   tree := Class.classTree(InstNode.getClass(typeNode));
   comps := ClassTree.getComponents(tree);
   fields := {};
+  field_names := {};
 
   for i in arrayLength(comps):-1:1 loop
     c := comps[i];
     ty := InstNode.getType(c);
     cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
     fields := Expression.CREF(ty, cr) :: fields;
+    field_names := InstNode.name(c) :: field_names;
   end for;
 
-  exp := Expression.RECORD(InstNode.scopePath(recordNode), recordType, fields);
+  ty := Type.setRecordFields(field_names, recordType);
+  exp := Expression.RECORD(InstNode.scopePath(recordNode), ty, fields);
   exp := evalExp(exp);
 end makeRecordBindingExp;
 

@@ -101,7 +101,7 @@ algorithm
   Inst.instExpressions(ctor_node);
 
   // Collect the record fields.
-  (inputs, locals) := collectRecordParams(InstNode.getClass(ctor_node));
+  (inputs, locals) := collectRecordParams(ctor_node);
 
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
@@ -121,37 +121,29 @@ algorithm
 end instDefaultConstructor;
 
 function collectRecordParams
-  input Class recClass;
+  input InstNode recNode;
   output list<InstNode> inputs = {};
   output list<InstNode> locals = {};
 protected
-  Class cls;
-  array<InstNode> components;
-  InstNode n;
-  Component comp;
+  array<InstNode> comps;
+  array<Mutable<InstNode>> pcomps;
   ClassTree tree;
 algorithm
-  tree := Class.classTree(recClass);
+  tree := Class.classTree(InstNode.getClass(recNode));
 
   () := match tree
-    case ClassTree.FLAT_TREE(components = components)
+    case ClassTree.FLAT_TREE(components = comps)
       algorithm
-        for i in arrayLength(components):-1:1 loop
-          n := components[i];
+        for i in arrayLength(comps):-1:1 loop
+          (inputs, locals) := collectRecordParam(comps[i], inputs, locals);
+        end for;
+      then
+        ();
 
-          if InstNode.isEmpty(n) then
-            continue;
-          end if;
-
-          comp := InstNode.component(n);
-
-          if InstNode.isProtected(n) or
-             Component.isConst(comp) and Component.hasBinding(comp) then
-            locals := n :: locals;
-          else
-            n := InstNode.updateComponent(Component.makeInput(comp), n);
-            inputs := n :: inputs;
-          end if;
+    case ClassTree.INSTANTIATED_TREE(components = pcomps)
+      algorithm
+        for i in arrayLength(pcomps):-1:1 loop
+          (inputs, locals) := collectRecordParam(Mutable.access(pcomps[i]), inputs, locals);
         end for;
       then
         ();
@@ -164,6 +156,30 @@ algorithm
 
   end match;
 end collectRecordParams;
+
+function collectRecordParam
+  input InstNode component;
+  input output list<InstNode> inputs;
+  input output list<InstNode> locals;
+protected
+  Component comp;
+algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
+  if InstNode.isProtected(component) then
+    locals := component :: locals;
+  end if;
+
+  comp := InstNode.component(component);
+
+  if Component.isConst(comp) and Component.hasBinding(comp) then
+    locals := component :: locals;
+  else
+    inputs := component :: inputs;
+  end if;
+end collectRecordParam;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

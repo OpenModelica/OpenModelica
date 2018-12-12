@@ -800,6 +800,21 @@ public
     end match;
   end lookupRecordFieldType;
 
+  function setRecordFields
+    input list<String> fields;
+    input output Type recordType;
+  algorithm
+    recordType := match recordType
+      local
+        InstNode rec_node;
+
+      case COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_node))
+        then COMPLEX(recordType.cls, ComplexType.RECORD(rec_node, fields));
+
+      else recordType;
+    end match;
+  end setRecordFields;
+
   function enumName
     input Type ty;
     output Absyn.Path name;
