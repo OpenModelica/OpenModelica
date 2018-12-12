@@ -1892,12 +1892,12 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
+  list<String> inputs;
   list<String> fields;
 algorithm
   cls_node := if SCode.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  fields := list(InstNode.name(c) for c guard not InstNode.isEmpty(c) in
-    ClassTree.getComponents(Class.classTree(cls)));
+  fields := list(InstNode.name(c) for c in Record.collectRecordParams(cls));
   ty := ComplexType.RECORD(cls_node, fields);
 end makeRecordComplexType;
 

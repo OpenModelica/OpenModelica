@@ -453,6 +453,12 @@ function visibilityToDAE
     DAE.VarVisibility.PUBLIC() else DAE.VarVisibility.PROTECTED();
 end visibilityToDAE;
 
+function visibilityToSCode
+  input Visibility vis;
+  output SCode.Visibility scodeVis = if vis == Visibility.PUBLIC then
+    SCode.Visibility.PUBLIC() else SCode.Visibility.PROTECTED();
+end visibilityToSCode;
+
 function visibilityString
   input Visibility vis;
   output String str = if vis == Visibility.PUBLIC then "public" else "protected";

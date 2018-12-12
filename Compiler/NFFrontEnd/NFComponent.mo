@@ -124,17 +124,19 @@ uniontype Component
       Replaceable isReplaceable;
     end ATTRIBUTES;
 
-   function toDAE
-     input Attributes ina;
-     output DAE.Attributes outa;
-   algorithm
-     outa := DAE.ATTR(connectorTypeToDAE(ina.connectorType)
-                      , parallelismToSCode(ina.parallelism)
-                      , variabilityToSCode(ina.variability)
-                      , directionToAbsyn(ina.direction)
-                      , innerOuterToAbsyn(ina.innerOuter)
-                      , SCode.PUBLIC() // TODO: Use the actual visibility.
-                     );
+    function toDAE
+      input Attributes ina;
+      input Visibility vis;
+      output DAE.Attributes outa;
+    algorithm
+      outa := DAE.ATTR(
+        connectorTypeToDAE(ina.connectorType),
+        parallelismToSCode(ina.parallelism),
+        variabilityToSCode(ina.variability),
+        directionToAbsyn(ina.direction),
+        innerOuterToAbsyn(ina.innerOuter),
+        visibilityToSCode(vis)
+      );
     end toDAE;
 
     function toString

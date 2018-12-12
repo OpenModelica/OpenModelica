@@ -1088,6 +1088,10 @@ protected
   DAE.Var type_var;
 algorithm
   typeVars := match cls as InstNode.getClass(complexCls)
+    case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())
+      then list(makeTypeRecordVar(c) for c guard not InstNode.isEmpty(c)
+             in ClassTree.getComponents(cls.elements));
+
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE())
       then list(makeTypeVar(c) for c guard not (InstNode.isOnlyOuter(c) or InstNode.isEmpty(c))
              in ClassTree.getComponents(cls.elements));
@@ -1101,17 +1105,45 @@ function makeTypeVar
   output DAE.Var typeVar;
 protected
   Component comp;
+  Component.Attributes attr;
 algorithm
   comp := InstNode.component(InstNode.resolveOuter(component));
+  attr := Component.getAttributes(comp);
 
   typeVar := DAE.TYPES_VAR(
     InstNode.name(component),
-    Component.Attributes.toDAE(Component.getAttributes(comp)),
+    Component.Attributes.toDAE(attr, InstNode.visibility(component)),
     Type.toDAE(Component.getType(comp)),
     Binding.toDAE(Component.getBinding(comp)),
     NONE()
   );
 end makeTypeVar;
+
+function makeTypeRecordVar
+  input InstNode component;
+  output DAE.Var typeVar;
+protected
+  Component comp;
+  Component.Attributes attr;
+  Visibility vis;
+algorithm
+  comp := InstNode.component(component);
+  attr := Component.getAttributes(comp);
+
+  if Component.isConst(comp) and Component.hasBinding(comp) then
+    vis := Visibility.PROTECTED;
+  else
+    vis := InstNode.visibility(component);
+  end if;
+
+  typeVar := DAE.TYPES_VAR(
+    InstNode.name(component),
+    Component.Attributes.toDAE(attr, vis),
+    Type.toDAE(Component.getType(comp)),
+    Binding.toDAE(Component.getBinding(comp)),
+    NONE()
+  );
+end makeTypeRecordVar;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFConvertDAE;

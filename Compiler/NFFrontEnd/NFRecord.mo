@@ -101,7 +101,7 @@ algorithm
   Inst.instExpressions(ctor_node);
 
   // Collect the record fields.
-  (inputs, locals) := collectRecordParams(ctor_node);
+  (inputs, locals) := collectRecordParams(InstNode.getClass(ctor_node));
 
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
@@ -121,7 +121,7 @@ algorithm
 end instDefaultConstructor;
 
 function collectRecordParams
-  input InstNode recNode;
+  input Class recClass;
   output list<InstNode> inputs = {};
   output list<InstNode> locals = {};
 protected
@@ -131,8 +131,7 @@ protected
   Component comp;
   ClassTree tree;
 algorithm
-  Error.assertion(InstNode.isClass(recNode), getInstanceName() + " got non-class node", sourceInfo());
-  tree := Class.classTree(InstNode.getClass(recNode));
+  tree := Class.classTree(recClass);
 
   () := match tree
     case ClassTree.FLAT_TREE(components = components)
