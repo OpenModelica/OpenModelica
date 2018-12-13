@@ -32,7 +32,7 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
 // <message stream=\"solver\" type=\"info\" text=\"Cvode: linear solver setups 'nsetups' = 22\" />
 // <message stream=\"solver\" type=\"info\" text=\"Cvode: nonlinear iterations 'nni' = 23\" />
 // <message stream=\"solver\" type=\"info\" text=\"Cvode: convergence failures 'ncfn' = 0\" />
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: number of evaluateODE calls 'eODE' = 86\" />
+// <message stream=\"solver\" type=\"info\" text=\"Cvode: number of evaluateODE calls 'eODE' = 88\" />
 // </message>
 // "
 // end SimulationResult;
