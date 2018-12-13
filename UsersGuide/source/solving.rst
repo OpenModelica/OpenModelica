@@ -53,6 +53,9 @@ solver for specific simulation problems:
 :ref:`maxIntegrationOrder <simflag-maxintegrationorder>`,
 :ref:`noEquidistantTimeGrid <simflag-noequidistanttimegrid>`.
 
+
+.. _sundials_ida :
+
 IDA
 ~~~
 
@@ -108,6 +111,22 @@ are till now not tested very well.
 - symSolver - Symbolic inline solver (requires :ref:`--symSolver <omcflag-symSolver>`) - fixed step-size, order 1
 - symSolverSsc - Symbolic implicit inline Euler with step-size control (requires :ref:`--symSolver<omcflag-symSolver>`) - step-size control, order 1-2
 - qss - A QSS solver
+
+DAE Mode Simulation
+-------------------
+
+Beside the default ODE simulation, OpenModelica is able to simulate models in
+`DAE mode`. The `DAE mode` is enabled by the flag :ref:`--daeMode <omcflag-daeMode>`.
+In general the whole equation system of a model is passed to the DAE integrator, 
+including all algebraic loops. This reduces the amount of work that needs to be
+done in the post optimization phase of the OpenModelica backend. 
+Thus models with large algebraic loops might compile faster in `DAE mode`.
+
+Once a model is compiled in `DAE mode` the simulation can be only performed 
+with :ref:`SUNDIALS/IDA <sundials_ida>` integrator and with enabled 
+:ref:`-daeMode <simflag-daeMode>` simulation flag. Both are enabled 
+automatically by default, when a simulation run is started.
+
 
 References
 ~~~~~~~~~~
