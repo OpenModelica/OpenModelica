@@ -5082,12 +5082,24 @@ case BINARY(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
-    'add_alloc_scalar_<%type%>(<% if isArrayType(typeof(exp1)) then '<%e2%>, &<%e1%>' else '<%e1%>, &<%e2%>' %>)'
+    let tvar = tempDecl(type, &varDecls)
+    if isArrayType(typeof(exp1)) then
+      let &preExp += '<%tvar%> = <%e1%>;<%\n%>'
+      'add_alloc_scalar_<%type%>(<%e2%>, &<%tvar%>)'
+    else
+      let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
+      'add_alloc_scalar_<%type%>(<%e1%>, &<%tvar%>)'
   case SUB_SCALAR_ARRAY(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
-    'sub_alloc_scalar_<%type%>(<% if isArrayType(typeof(exp1)) then '<%e2%>, &<%e1%>' else '<%e1%>, &<%e2%>' %>)'
+    let tvar = tempDecl(type, &varDecls)
+    if isArrayType(typeof(exp1)) then
+      let &preExp += '<%tvar%> = <%e1%>;<%\n%>'
+      'sub_alloc_scalar_<%type%>(<%e2%>, &<%tvar%>)'
+    else
+      let &preExp += '<%tvar%> = <%e2%>;<%\n%>'
+      'sub_alloc_scalar_<%type%>(<%e1%>, &<%tvar%>)'
   case MUL_SCALAR_PRODUCT(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_scalar"
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_scalar"
