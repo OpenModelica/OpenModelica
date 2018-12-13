@@ -170,6 +170,7 @@ algorithm
 
   if InstNode.isProtected(component) then
     locals := component :: locals;
+    return;
   end if;
 
   comp := InstNode.component(component);
