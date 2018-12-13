@@ -627,7 +627,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         pParentVariablesTreeItem = pTopVariablesTreeItem;
       }
       QString findVariable;
-      /* if last item of non-array or seccond to last of array*/
+      /* if last item of non-array or second to last of array*/
       if (((variables.size() == count && !QRegExp("\\[\\d+\\]").exactMatch(variable)) ||
               (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())))
               && plotVariable.startsWith("der(")) {
@@ -651,7 +651,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       }
       if ((pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem)) != NULL) {
         QString addVar;
-        //if seccond to last of array, add der(
+        //if second to last of array, add der(
         if ((variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())) && plotVariable.startsWith("der("))
           addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
         else
@@ -675,26 +675,24 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
       QVector<QVariant> variableData;
       /*if last but one of array derivative*/
-      if(variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last()) && plotVariable.startsWith("der(")){
+      if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last()) && plotVariable.startsWith("der(")) {
         variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(") << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
       }
       /* if last item of non-array derivative*/
       else if (variables.size() == count && !QRegExp("\\[\\d+\\]").exactMatch(variable) && plotVariable.startsWith("der(")) {
         variableData << filePath << fileName << fileName + "." + plotVariable << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
       }
-      /* if last item of array*/
-      else if (variables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(variable)){
-          QString fullVarName;
-          if (plotVariable.startsWith("der(")){
-              int nDer = (plotVariable.lastIndexOf("der(")/4)+1;
-              fullVarName = pParentVariablesTreeItem->getVariableName().left(pParentVariablesTreeItem->getVariableName().size()-nDer) + variable + QString(")").repeated(nDer);
-          }
-          else
-              fullVarName = pParentVariablesTreeItem->getVariableName() + variable;
-          variableData << filePath << fileName << fullVarName << variable;
+      /*if last but one of array previous*/
+      else if (variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last()) && plotVariable.startsWith("previous(")) {
+        variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(") << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
       }
-      else if (variables.size() == count && plotVariable.startsWith("previous(")) {
+      /* if last item of non-array previous*/
+      else if (variables.size() == count && !QRegExp("\\[\\d+\\]").exactMatch(variable) && plotVariable.startsWith("previous(")) {
         variableData << filePath << fileName << fileName + "." + plotVariable << StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
+      }
+      /* if last item of array derivative*/
+      else if (variables.size() == count && QRegExp("\\[\\d+\\]").exactMatch(variable)) {
+        variableData << filePath << fileName << fileName + "." + plotVariable << variable;
       } else {
         variableData << filePath << fileName << pParentVariablesTreeItem->getVariableName() + "." + variable << variable;
       }
@@ -756,7 +754,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       pParentVariablesTreeItem->insertChild(row, pVariablesTreeItem);
       endInsertRows();
       QString addVar;
-      //if seccond to last of array, add der(
+      //if second to last of array, add der(
       if ((variables.size() == count+1 && QRegExp("\\[\\d+\\]").exactMatch(variables.last())) && plotVariable.startsWith("der("))
         addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
       else
