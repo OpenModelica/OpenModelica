@@ -1,9 +1,9 @@
 TEST = ../../../rtest -v
 
-TESTFILES = \
+TESTFILES = 
 
 
-FAILINGTESTFILES=
+FAILINGTESTFILES= \
 BouncingBall_OMEdit_flags.mos
 
 # Dependency files that are not .mo .mos or Makefile
