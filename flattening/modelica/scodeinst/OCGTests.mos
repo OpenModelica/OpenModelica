@@ -177,7 +177,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // 6759 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 completed successfully.
-// Class Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 has 2052 equation(s) and 2055 variable(s).
+// Class Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1 has 2055 equation(s) and 2055 variable(s).
 // 1496 of these are trivial equation(s)."
 // ""
 // "Check of Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2 completed successfully.
