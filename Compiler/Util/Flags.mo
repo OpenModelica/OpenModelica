@@ -1334,12 +1334,9 @@ constant ConfigFlag NO_TEARING_FOR_COMPONENT = CONFIG_FLAG(93, "noTearingForComp
 constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
   NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Experimental: Enable continuous-time state machine prototype"));
-
 constant ConfigFlag DAE_MODE = CONFIG_FLAG(95, "daeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Generates code to simulate models in DAE mode. The whole system is passed directly to the DAE solver"+
-               "SUNDIALS/IDA and no algebraic solver are involed for the simulation process."));
-
+  Util.gettext("Generates code to simulate models in DAE mode. The whole system is passed directly to the DAE solver SUNDIALS/IDA and no algebraic solver is involved in the simulation process."));
 constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}),
   SOME(STRING_OPTION({"replace", "append"})),
