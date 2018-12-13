@@ -29,7 +29,7 @@ equation
 end Test;
 ");getErrorString();
 
-setCommandLineOptions("--maxSizeNonlinearTearing=0 --daeMode=all");getErrorString();
+setCommandLineOptions("--maxSizeNonlinearTearing=0 --daeMode");getErrorString();
 
 // Test 1 well-scaled model
 //loadString("model Test1 extends Test(N=100); end Test1;");

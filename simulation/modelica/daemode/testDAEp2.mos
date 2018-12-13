@@ -6,7 +6,7 @@
 loadFile("./testDAEPackage.mo");
 getErrorString();
 
-setCommandLineOptions("+daeMode=new");
+setCommandLineOptions("--daeMode");
 simulate(testDAE.p2, tolerance = 1e-10);
 getErrorString();
 

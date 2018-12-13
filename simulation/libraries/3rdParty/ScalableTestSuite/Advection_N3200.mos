@@ -3,7 +3,7 @@
 
 loadFile("Advection_N3200.mo");getErrorString();
 
-setCommandLineOptions("--daeMode=dynamic -d=nogen");
+setCommandLineOptions("--daeMode -d=nogen");
 extraSimFlags := "-mei=4000 -daeMode -s=ida -idaLS=klu --equationsPerFile=200";
 setCFlags(getCFlags() + " -Os");
 
