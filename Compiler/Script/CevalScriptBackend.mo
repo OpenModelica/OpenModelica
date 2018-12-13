@@ -468,7 +468,7 @@ algorithm
   GlobalScript.SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, _, options, outputFormat, variableFilter, cflags, simflags) := inSimOpt;
   if UseOtimica then
     method := DAE.SCONST("optimization");
-  elseif  Flags.getConfigEnum(Flags.DAE_MODE) > 1 then
+  elseif  Flags.getConfigBool(Flags.DAE_MODE) then
     method := DAE.SCONST("ida");
   end if;
   numberOfIntervals := if UseOtimica then DAE.ICONST(50) else numberOfIntervals;
@@ -3331,7 +3331,7 @@ protected function callTranslateModel
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  if Flags.getConfigEnum(Flags.DAE_MODE) > 1 then
+  if Flags.getConfigBool(Flags.DAE_MODE) then
     (outCache, outStringLst, outFileDir, resultValues) :=
     SimCodeMain.translateModelDAEMode(inCache,inEnv,className,inFileNamePrefix,
     inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));

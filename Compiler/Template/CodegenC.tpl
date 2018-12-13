@@ -1162,7 +1162,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       data.modelData = &modelData;
       data.simulationInfo = &simInfo;
       measure_time_flag = <% if profileHtml() then "5" else if profileSome() then "1" else if profileAll() then "2" else "0" /* Would be good if this was not a global variable...*/ %>;
-      compiledInDAEMode = <%intSub(Flags.getConfigEnum(Flags.DAE_MODE), 1)%>;
+      compiledInDAEMode = <% if Flags.getConfigBool(Flags.DAE_MODE) then 1 else 0%>;
       compiledWithSymSolver = <% intSub(Flags.getConfigEnum(Flags.SYM_SOLVER), 0) %>;
       <%mainInit%>
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
@@ -1189,7 +1189,7 @@ end simulationFile;
 template simulationFileHeader(String fileNamePrefix)
   "Generates header part of simulation file."
 ::=
-    let daeHeader = if intGt(Flags.getConfigEnum(Flags.DAE_MODE), 1) then '#include "<%fileNamePrefix%>_16dae.h"'
+    let daeHeader = if Flags.getConfigBool(Flags.DAE_MODE) then '#include "<%fileNamePrefix%>_16dae.h"'
     <<
     #include "<%fileNamePrefix%>_model.h"
     <%daeHeader%>

@@ -1336,13 +1336,9 @@ constant ConfigFlag CT_STATE_MACHINES = CONFIG_FLAG(94, "ctStateMachines",
   Util.gettext("Experimental: Enable continuous-time state machine prototype"));
 
 constant ConfigFlag DAE_MODE = CONFIG_FLAG(95, "daeMode",
-  NONE(), EXTERNAL(), ENUM_FLAG(1, {("none", 1), ("all",2), ("dynamic",3), ("new",4)}),
-  SOME(STRING_OPTION({"none", "all", "dynamic"})),
-  Util.gettext("Generates additional code for DAE mode, where the equations are not causelized, when one of the following option is selected:\n"+
-               "all     : In this mode all equations are passed to the integrator.\n"+
-               "dynamic : In this mode only the equation for the dynamic part of the system are passed to the integrator."+
-               "new     : This option enables the new daeMode. Currently alpha development status.\n")
-);
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Generates code to simulate models in DAE mode. The whole system is passed directly to the DAE solver"+
+               "SUNDIALS/IDA and no algebraic solver are involed for the simulation process."));
 
 constant ConfigFlag INLINE_METHOD = CONFIG_FLAG(96, "inlineMethod",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("replace",1), ("append",2)}),
