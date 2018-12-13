@@ -2475,12 +2475,7 @@ algorithm
   //  fail();
   //end if;
 
-  // @adrpo: here we see if we have any overconstrained connectors in the connect
-  // if we do, we generate equation:
-  // zeros(:) = OverconstrainedType.equalityConstraint(lhs.overconstrained_component, rhs.overconstrained_component)
-  eql := NFOCConnectionGraph.generateEqualityConstraintEquation(lhs, lhs_ty, rhs, rhs_ty, origin, source);
-
-  connEq := Equation.CONNECT(lhs, rhs, eql, source);
+  connEq := Equation.CONNECT(lhs, rhs, {}, source);
 end typeConnect;
 
 function typeExpandableConnectors

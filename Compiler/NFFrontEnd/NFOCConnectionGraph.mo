@@ -171,7 +171,6 @@ algorithm
     eql := match eq
       case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                             rhs = Expression.CREF(ty = ty2, cref = rhs),
-                            broken = eqlBroken,
                             source = source)
         algorithm
           added := false;
@@ -197,7 +196,8 @@ algorithm
                     lhs := ComponentRef.stripSubscripts(lhs);
                     rhs := ComponentRef.stripSubscripts(rhs);
 
-                    graph := addConnection(graph, lhs, rhs, eqlBroken);
+                    eq.broken := generateEqualityConstraintEquation(eq.lhs, ty1, eq.rhs, ty2, ExpOrigin.EQUATION, source);
+                    graph := addConnection(graph, lhs, rhs, eq.broken);
                     added := true;
                     break;
                   end if;
