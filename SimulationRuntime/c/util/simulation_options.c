@@ -499,7 +499,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
   /* FLAG_S */
-  "  Value specifies the integration method.",
+  "  Value specifies the integration method. For additional information see the :ref:`User's Guide <cruntime-integration-methods>`",
   /* FLAG_SINGLE */
   "  Output results in single precision (mat-format only).",
   /* FLAG_SOLVER_STEPS */
