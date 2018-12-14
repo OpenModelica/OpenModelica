@@ -625,6 +625,7 @@ OperatorNonEncapsulated1.mo \
 OperatorOverloadArrayOp1.mo \
 OperatorOverloadArrayOp2.mo \
 OperatorOverloadArrayOp3.mo \
+OperatorOverloadArrayOp4.mo \
 OperatorOverloadBinaryAmbiguous.mo \
 OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
