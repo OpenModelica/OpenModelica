@@ -742,6 +742,7 @@ Terminate1.mo \
 TerminateInvalid1.mo \
 TerminateInvalid2.mo \
 TestSampleNoClock.mos \
+Ticket5249.mo \
 Time1.mo \
 Time2.mo \
 Time3.mo \

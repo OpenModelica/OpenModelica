@@ -86,7 +86,7 @@ for(@ARGV){
     print("  -cppruntime   Run ONLY the slow cppruntime tests.\n");
     print("  -nocpp        Do not run any cppruntime tests.\n");
     print("  -f            Only run fast tests.\n");
-    print("  -file         Reads testcases from the given file instead of from a makefile.\n");
+    print("  -file=file    Reads testcases from the given file instead of from a makefile.\n");
     print("  -jN           Use N threads.\n");
     print("  -nodb         Don't store timing data.\n");
     print("  -nosavedb     Don't overwrite stored timing data.\n");
