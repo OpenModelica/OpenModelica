@@ -762,6 +762,9 @@ algorithm
 
     case Binding.TYPED_BINDING()
       algorithm
+        if binding.isFlattened then
+          return;
+        end if;
         bind_exp := binding.bindingExp;
         pars := listRest(binding.parents);
 
@@ -795,6 +798,7 @@ algorithm
         end if;
 
         binding.bindingExp := flattenExp(bind_exp, prefix);
+        binding.isFlattened := true;
       then
         binding;
 

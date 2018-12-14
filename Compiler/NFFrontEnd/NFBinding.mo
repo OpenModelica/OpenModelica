@@ -80,6 +80,7 @@ uniontype Binding
     list<InstNode> parents;
     Boolean isEach;
     Boolean evaluated;
+    Boolean isFlattened;
     SourceInfo info;
   end TYPED_BINDING;
 
@@ -193,6 +194,8 @@ public
   function setTypedExp
     input Expression exp;
     input output Binding binding;
+  protected
+    Type ty1, ty2;
   algorithm
     () := match binding
       case TYPED_BINDING()
@@ -278,7 +281,7 @@ public
           ty := Expression.typeOf(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldBinding.parents, fieldBinding.isEach, fieldBinding.evaluated, fieldBinding.info);
+          TYPED_BINDING(exp, ty, var, fieldBinding.parents, fieldBinding.isEach, fieldBinding.evaluated, fieldBinding.isFlattened, fieldBinding.info);
 
       case FLAT_BINDING()
         algorithm

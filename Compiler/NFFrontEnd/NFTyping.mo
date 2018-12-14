@@ -866,7 +866,7 @@ algorithm
         info := Binding.getInfo(binding);
         (exp, ty, var) := typeExp(exp, origin, info);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.parents, binding.isEach, false, binding.info);
+        Binding.TYPED_BINDING(exp, ty, var, binding.parents, binding.isEach, false, false, binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -929,7 +929,7 @@ algorithm
           fail();
         end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, condition.parents, false, false, info);
+        Binding.TYPED_BINDING(exp, ty, var, condition.parents, false, false, false, info);
 
   end match;
 end typeComponentCondition;
