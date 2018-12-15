@@ -52,7 +52,7 @@ def classToFileName(cl):
   The file-system dislikes directory separators, and scripts dislike tokens that expand to other names.
   This function uses the same replacement rules as the OpenModelica documentation-generating script.
   """
-  return cl.replace("/","Division").replace("*","Multiplication")
+  return cl.replace("/","Division").replace("*","Multiplication").replace("<","x3C").replace(">","x3E")
 
 exp_float = '[+-]?\d+(?:.\d+)?(?:e[+-]?\d+)?'
 
