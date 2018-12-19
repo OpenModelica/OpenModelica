@@ -2356,10 +2356,8 @@ void NotebookWindow::keyReleaseEvent(QKeyEvent *event)
       vector<Cell *> cells = subject_->getSelection();
       if( !cells.empty() )
       {
-        subject_->cursorDeleteCell();
+        deleteCurrentCellAsk();
         event->setAccepted( true );
-
-        updateChapterCounters();
       }
       else
         QMainWindow::keyReleaseEvent(event);
