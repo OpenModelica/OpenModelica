@@ -2477,16 +2477,7 @@ void NotebookWindow::openFile(const QString filename)
 
       updateRecentFiles(filename_);
 
-      if(subject_->isOpen())
-      {
-        application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
-      }
-      else
-      {
-        subject_ = new CellDocument(app_, QString::null);
-        subject_->executeCommand(new OpenFileCommand(filename_));
-        subject_->attach(this);
-      }
+      application()->commandCenter()->executeCommand(new OpenFileCommand(filename_));
     }
     else
     {
