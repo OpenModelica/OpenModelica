@@ -295,7 +295,7 @@ def getGraphicsForClass(modelicaClass):
                     fname = os.path.join(baseDir, g[8].strip('"'))
                 if os.path.exists(fname):
                     with open(fname, "rb") as f_p:
-                        graphicsObj['href'] = "data:image;base64,"+base64.b64encode(f_p.read())
+                        graphicsObj['href'] = "data:image;base64,"+str(base64.b64encode(f_p.read()))
                 else:
                     logger.error("Could not find bitmap file {0}".format(g[8]))
                     graphicsObj['href'] = g[8].strip('"')
@@ -998,7 +998,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 ]
 
                 for (stopValue, idx) in stopValues:
-                    gradient.add_stop_color(offset=stopValue, color='rgb({0}, {1}, {2})'.format(colors[idx][0], colors[idx][1], colors[idx][2]), opacity=1)
+                    gradient.add_stop_color(offset=stopValue, color='rgb({0}, {1}, {2})'.format(int(colors[idx][0]), int(colors[idx][1]), int(colors[idx][2])), opacity=1)
 
                 definitions.add(gradient)
             elif graphics['type'] == 'Rectangle':
