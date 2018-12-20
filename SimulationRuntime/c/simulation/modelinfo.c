@@ -289,8 +289,8 @@ static int getVarIdByName(DATA *data, const char* varName)
       return data->modelData->integerParameterData[i].info.id;
 
   for(i=0;i<data->modelData->nVariablesBoolean;++i)
-    if (strcmp(varName, data->modelData->integerParameterData[i].info.name) == 0)
-      return data->modelData->integerParameterData[i].info.id;
+    if (strcmp(varName, data->modelData->booleanVarsData[i].info.name) == 0)
+      return data->modelData->booleanVarsData[i].info.id;
 
   for(i=0;i<data->modelData->nParametersBoolean;++i)
     if (strcmp(varName, data->modelData->booleanParameterData[i].info.name) == 0)
