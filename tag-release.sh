@@ -1,5 +1,6 @@
 #!/bin/bash
 # script to tag the release and commit the changes
+set -x #echo on
 
 TAG=$1 # the tag
 BRANCH=$2 # the maintenance/vXXX branch
