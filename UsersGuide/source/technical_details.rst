@@ -46,7 +46,7 @@ dataInfo
   Is an n x 4 integer matrix containing information for each variable (in the
   same order as the name and description matrices).
 
-  - ``dataInfo(i,1)`` is ``1`` or ``2``, saying if variable i is stored in the data_1 or data_2 matrix. If it is ``0`, it is the abscissa (time variable).
+  - ``dataInfo(i,1)`` is ``1`` or ``2``, saying if variable i is stored in the data_1 or data_2 matrix. If it is ``0``, it is the abscissa (time variable).
   - ``dataInfo(i,2)`` contains the index in the data_1 or data_2 matrix.
     The index is 1-based and may contain several variables pointing to the same row (alias variables).
     A negative value means that the variable is a negated alias variable.
