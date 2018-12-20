@@ -904,7 +904,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
       rv = SystemImpl__createDirectory(str_2);
   }
 
-  if (str_1 == "")
+  if (strcmp(str_1, "") == 0)
     rv = 0;
 
   char targetFile[100];

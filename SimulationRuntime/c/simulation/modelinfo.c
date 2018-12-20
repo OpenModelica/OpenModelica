@@ -235,7 +235,6 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
   fprintf(fout, "</variable>\n");
 }
 
-
 static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *outputPath, const char *modelFilePrefix, DATA *data) {
   int i;
   for(i=0; i<data->modelData->modelDataXml.nFunctions; i++) {
@@ -269,13 +268,52 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, co
   }
 }
 
-static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml) {
+
+static int getVarIdByName(DATA *data, const char* varName)
+{
+  int i;
+  for(i=0;i<data->modelData->nVariablesReal;++i)
+    if (strcmp(varName, data->modelData->realVarsData[i].info.name) == 0)
+      return data->modelData->realVarsData[i].info.id;
+
+  for(i=0;i<data->modelData->nParametersReal;++i)
+    if (strcmp(varName, data->modelData->realParameterData[i].info.name) == 0)
+      return data->modelData->realParameterData[i].info.id;
+
+  for(i=0;i<data->modelData->nVariablesInteger;++i)
+    if (strcmp(varName, data->modelData->integerVarsData[i].info.name) == 0)
+      return data->modelData->integerVarsData[i].info.id;
+
+  for(i=0;i<data->modelData->nParametersInteger;++i)
+    if (strcmp(varName, data->modelData->integerParameterData[i].info.name) == 0)
+      return data->modelData->integerParameterData[i].info.id;
+
+  for(i=0;i<data->modelData->nVariablesBoolean;++i)
+    if (strcmp(varName, data->modelData->integerParameterData[i].info.name) == 0)
+      return data->modelData->integerParameterData[i].info.id;
+
+  for(i=0;i<data->modelData->nParametersBoolean;++i)
+    if (strcmp(varName, data->modelData->booleanParameterData[i].info.name) == 0)
+      return data->modelData->booleanParameterData[i].info.id;
+
+  for(i=0;i<data->modelData->nVariablesString;++i)
+    if (strcmp(varName, data->modelData->stringVarsData[i].info.name) == 0)
+      return data->modelData->stringVarsData[i].info.id;
+
+  for(i=0;i<data->modelData->nParametersString;++i)
+    if (strcmp(varName, data->modelData->stringParameterData[i].info.name) == 0)
+      return data->modelData->stringParameterData[i].info.id;
+
+  return 0;
+}
+
+static void printEquations(FILE *fout, int n, MODEL_DATA_XML *xml, DATA *data) {
   int i,j;
   for(i=0; i<n; i++) {
     indent(fout,2);fprintf(fout, "<equation id=\"eq%d\">\n", modelInfoGetEquation(xml,i).id);
     indent(fout,4);fprintf(fout, "<refs>\n");
     for(j=0; j<modelInfoGetEquation(xml,i).numVar; j++) {
-      indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", 0 /* modelInfoGetEquation(xml,i).vars[j]->id */);
+      indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", getVarIdByName(data, modelInfoGetEquation(xml,i).vars[j]));
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
     indent(fout,4);fprintf(fout, "<calcinfo time=\"%f\" count=\"%lu\"/>\n", rt_accumulated(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoGetEquation(xml,i).id), (long) rt_ncall(SIM_TIMER_FIRST_FUNCTION + xml->nFunctions + xml->nProfileBlocks + modelInfoGetEquation(xml,i).id));
@@ -439,7 +477,7 @@ int printModelInfo(DATA *data, threadData_t *threadData, const char *outputPath,
   fprintf(fout, "</functions>\n");
 
   fprintf(fout, "<equations>\n");
-  printEquations(fout, data->modelData->modelDataXml.nEquations, &data->modelData->modelDataXml);
+  printEquations(fout, data->modelData->modelDataXml.nEquations, &data->modelData->modelDataXml, data);
   fprintf(fout, "</equations>\n");
 
   fprintf(fout, "<profileblocks>\n");

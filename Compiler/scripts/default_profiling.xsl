@@ -133,7 +133,7 @@
   <table>
   <tr><th class="name">Name</th><th>Variables</th></tr>
   <xsl:for-each select="equations/equation">
-    <tr><td class="name"><a name="{@id}"><xsl:value-of select="@name"/></a></td>
+    <tr><td class="name"><a name="{@id}"><xsl:value-of select="@id"/></a></td>
     <td><xsl:choose>
       <xsl:when test="count(refs/ref)=0">&nbsp;</xsl:when>
       <xsl:otherwise><xsl:for-each select="refs/ref"><a href="#{@refid}"><xsl:value-of select="id(@refid)/@name"/></a><xsl:if test="position() != last()">, </xsl:if>
