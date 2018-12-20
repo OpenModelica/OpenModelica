@@ -309,7 +309,7 @@ writeFile(filetmp, "</body>\n</html>", append = true);
 writeFile("Tidy.py","#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import with_statement
-from BeautifulSoup import BeautifulSoup
+from bs4 import BeautifulSoup
 import subprocess as sub
 import re
 import glob
