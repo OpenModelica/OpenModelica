@@ -9304,6 +9304,7 @@ protected
   constant Boolean debug=false;
   constant Boolean alwaysCheck=false;
   SourceInfo info;
+  String str;
 algorithm
   varsArray := syst.orderedVars;
   eqsArray := syst.orderedEqs;
@@ -9321,6 +9322,18 @@ algorithm
 
   solvedVars := arrayCreate(arrayLength(mT), 0);
   solvedEqs := arrayCreate(arrayLength(m), {});
+
+  for i in 1:arrayLength(m) /* Not eqnSize; that is the size including arrays */ loop
+    _equation := BackendEquation.get(eqsArray, i);
+    info := BackendEquation.equationInfo(_equation);
+    eqSize := BackendEquation.equationSize(_equation);
+    count := listLength(arrayGet(m, i));
+    if eqSize > count then
+      str := stringDelimitList(list(ComponentReference.printComponentRefStr(BackendVariable.varCref(BackendVariable.getVarAt(varsArray, j))) for j in arrayGet(m, i)), ", ");
+      Error.addInternalError(BackendDump.equationString(_equation) + " has size size " + String(eqSize) + " but " + String(count) + " variables ("+ str +")", info);
+      return;
+    end if;
+  end for;
 
   if debug then
     print("Got adjacency matrix "+String(varSize)+" "+String(arrayLength(m))+" "+String(eqnSize)+" "+String(arrayLength(mT))+"...\n");
@@ -9414,6 +9427,29 @@ algorithm
   true := 0 == errors;
   if alwaysCheck and varSize == eqnSize then
     return;
+  end if;
+  if debug then
+    for i in 1:arrayLength(mT) /* = varSize */ loop
+      var := BackendVariable.getVarAt(varsArray, i);
+      if 0 == arrayGet(solvedVars, i) then
+        print("Remaining unsolved variable:" + ComponentReference.printComponentRefStr(var.varName) + "\n");
+      end if;
+    end for;
+    for i in 1:arrayLength(m) /* = varSize */ loop
+      _equation := BackendEquation.get(eqsArray, i);
+      eqnSize := BackendEquation.equationSize(_equation);
+      count := listLength(arrayGet(solvedEqs, i));
+      if eqnSize <> count then
+        vars := arrayGet(m, i);
+        print("Remaining vars: " + stringDelimitList(list(String(j) for j in vars), ", ") + "\n");
+        if count > 0 then
+          str := stringDelimitList(list(ComponentReference.printComponentRefStr(Util.tuple21(e)) for e in arrayGet(solvedEqs, i)), ", ");
+          print("Remaining equation (already solved "+str+"): " + BackendDump.equationString(_equation) + "\n");
+        else
+          print("Remaining equation: " + BackendDump.equationString(_equation) + "\n");
+        end if;
+      end if;
+    end for;
   end if;
   fail();
 end checkIncidenceMatrixSolvability;
