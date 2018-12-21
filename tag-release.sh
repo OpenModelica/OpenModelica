@@ -15,9 +15,8 @@ for dir in OMCompiler OMEdit OMNotebook doc testsuite; do
   cd $dir
   echo Tagging ${dir} to ${TAG}
   git checkout ${BRANCH}
-  # update common to master!
-  cd common && git checkout master && cd ..
-  git add common
+  # update common to master if it exists!
+  [ -d ./common ] && cd common && git checkout master && cd .. &&  git add common
   git commit --allow-empty -m "${TAG}"
   git tag -a -m "${TAG}" ${TAG}
   git push --set-upstream origin ${BRANCH}
