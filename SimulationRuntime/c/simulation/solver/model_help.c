@@ -894,14 +894,14 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
     tmpSimData.timeValue = 0;
     /* buffer for all variable values */
     tmpSimData.realVars = (modelica_real*) calloc(data->modelData->nVariablesReal, sizeof(modelica_real));
-    assertStreamPrint(threadData, 0 != tmpSimData.realVars, "out of memory");
+    assertStreamPrint(threadData, 0 == data->modelData->nVariablesReal || 0 != tmpSimData.realVars, "out of memory");
     tmpSimData.integerVars = (modelica_integer*) calloc(data->modelData->nVariablesInteger, sizeof(modelica_integer));
-    assertStreamPrint(threadData, 0 != tmpSimData.integerVars, "out of memory");
+    assertStreamPrint(threadData, 0 == data->modelData->nVariablesInteger || 0 != tmpSimData.integerVars, "out of memory");
     tmpSimData.booleanVars = (modelica_boolean*) calloc(data->modelData->nVariablesBoolean, sizeof(modelica_boolean));
-    assertStreamPrint(threadData, 0 != tmpSimData.booleanVars, "out of memory");
+    assertStreamPrint(threadData, 0 == data->modelData->nVariablesBoolean || 0 != tmpSimData.booleanVars, "out of memory");
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
     tmpSimData.stringVars = (modelica_string*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesString * sizeof(modelica_string));
-    assertStreamPrint(threadData, 0 != tmpSimData.stringVars, "out of memory");
+    assertStreamPrint(threadData, 0 == data->modelData->nVariablesString || 0 != tmpSimData.stringVars, "out of memory");
 #endif
     appendRingData(data->simulationData, &tmpSimData);
   }
@@ -1045,7 +1045,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->extObjs = NULL;
   data->simulationInfo->extObjs = (void**) calloc(data->modelData->nExtObjs, sizeof(void*));
 
-  assertStreamPrint(threadData, 0 != data->simulationInfo->extObjs, "error allocating external objects");
+  assertStreamPrint(threadData, 0 == data->modelData->nExtObjs || 0 != data->simulationInfo->extObjs, "error allocating external objects");
 
 #if !defined(OMC_MINIMAL_LOGGING)
   /* initial chattering info */
@@ -1083,7 +1083,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* initial delay */
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   data->simulationInfo->delayStructure = (RINGBUFFER**)malloc(data->modelData->nDelayExpressions * sizeof(RINGBUFFER*));
-  assertStreamPrint(threadData, 0 != data->simulationInfo->delayStructure, "out of memory");
+  assertStreamPrint(threadData, 0 == data->modelData->nDelayExpressions || 0 != data->simulationInfo->delayStructure, "out of memory");
 
   for(i=0; i<data->modelData->nDelayExpressions; i++)
     data->simulationInfo->delayStructure[i] = allocRingBuffer(1024, sizeof(TIME_AND_VALUE));
