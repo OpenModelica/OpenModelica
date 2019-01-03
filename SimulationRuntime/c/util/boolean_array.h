@@ -57,6 +57,11 @@ static OMC_INLINE modelica_boolean boolean_get_4D(const boolean_array_t a, size_
     return boolean_get(a, getIndex_4D(a.dim_size,i,j,k,l));
 }
 
+static OMC_INLINE modelica_boolean boolean_get_5D(const boolean_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+    return boolean_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
 /* Setting the fields of a boolean_array */
 extern void boolean_array_create(boolean_array_t *dest, modelica_boolean *data, int ndims, ...);
 

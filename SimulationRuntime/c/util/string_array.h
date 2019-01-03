@@ -41,6 +41,26 @@ static OMC_INLINE modelica_string string_get(const string_array_t a, size_t i)
     return ((modelica_string *) a.data)[i];
 }
 
+static OMC_INLINE modelica_string string_get_2D(const string_array_t a, size_t i, size_t j)
+{
+  return string_get(a, getIndex_2D(a.dim_size,i,j));
+}
+
+static OMC_INLINE modelica_string string_get_3D(const string_array_t a, size_t i, size_t j, size_t k)
+{
+  return string_get(a, getIndex_3D(a.dim_size,i,j,k));
+}
+
+static OMC_INLINE modelica_string string_get_4D(const string_array_t a, size_t i, size_t j, size_t k, size_t l)
+{
+  return string_get(a, getIndex_4D(a.dim_size,i,j,k,l));
+}
+
+static OMC_INLINE modelica_string string_get_5D(const string_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+  return string_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
 /* Setting the fields of a string_array */
 extern void string_array_create(string_array_t *dest, modelica_string *data, int ndims, ...);
 

@@ -59,6 +59,11 @@ static OMC_INLINE modelica_real real_get_4D(const real_array_t a, size_t i, size
   return real_get(a, getIndex_4D(a.dim_size,i,j,k,l));
 }
 
+static OMC_INLINE modelica_real real_get_5D(const real_array_t a, size_t i, size_t j, size_t k, size_t l, size_t m)
+{
+  return real_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
+}
+
 /* Setting the fields of a real_array */
 extern void real_array_create(real_array_t *dest, modelica_real *data, int ndims, ...);
 

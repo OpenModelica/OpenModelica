@@ -37,8 +37,9 @@
 #include "omc_msvc.h"
 
 static OMC_INLINE size_t getIndex_2D(_index_t *dim, int i, int j) {return i*dim[1]+j;}
-static OMC_INLINE size_t getIndex_3D(_index_t *dim, int i, int j, int k) {return i*dim[1]*dim[2]+j*dim[2]+k;}
-static OMC_INLINE size_t getIndex_4D(_index_t *dim, int i, int j, int k, int l) {return i*dim[1]*dim[2]*dim[3]+j*dim[2]*dim[3]+k*dim[3]+l;}
+static OMC_INLINE size_t getIndex_3D(_index_t *dim, int i, int j, int k) {return (i*dim[1]+j)*dim[2]+k;}
+static OMC_INLINE size_t getIndex_4D(_index_t *dim, int i, int j, int k, int l) {return ((i*dim[1]+j)*dim[2]+k)*dim[3]+l;}
+static OMC_INLINE size_t getIndex_5D(_index_t *dim, int i, int j, int k, int l, int m) {return (((i*dim[1]+j)*dim[2]+k)*dim[3]+l)*dim[4]+m;}
 
 /* Settings the fields of a base_array */
 void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap);
