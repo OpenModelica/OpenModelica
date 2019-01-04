@@ -184,6 +184,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	
 // 	Jacobian idx: 5
 // 	
+// 	Jacobian idx: 6
+// 	
 //
 // modelInfo: 
 // ========================================
@@ -197,7 +199,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -384,6 +386,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	
 // 	Jacobian idx: 6
 // 	
+// 	Jacobian idx: 7
+// 	
 //
 // modelInfo: 
 // ========================================
@@ -397,7 +401,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

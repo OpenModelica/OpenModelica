@@ -92,11 +92,11 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // casual set:
 // 55:  (LINEAR) index:2 jacobian: true
 // 	40: x1=(-x2) - $cse4 [Real ]
-// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-12 (global)] [Real ]
+// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-012 (global)] [Real ]
 // 	42: x4=0.25 * (-$cse5) * x2 - (-0.5) * x3 [Real ]
-// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-12 (global)] [Real ]
+// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-012 (global)] [Real ]
 // 	44: x6=$cse4 * x4 + 5.0 * x5 [Real ]
-// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-12 (global)] [Real ]
+// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-012 (global)] [Real ]
 // 	46: x8=$cse5 * x6 + x7 [Real ]
 // 	47: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
 // 	
@@ -179,11 +179,11 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // casual set:
 // 55:  (LINEAR) index:2 jacobian: true
 // 	40: x1=(-x2) - $cse4 [Real ]
-// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-12 (global)] [Real ]
+// 	41: x3=(2.0 * x2 + x1) / $cse4 [constraints: abs($cse4) > 1e-012 (global)] [Real ]
 // 	42: x4=0.25 * (-$cse5) * x2 - (-0.5) * x3 [Real ]
-// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-12 (global)] [Real ]
+// 	43: x5=((-2.0) * x4 + x3) / $cse5 [constraints: abs($cse5) > 1e-012 (global)] [Real ]
 // 	44: x6=$cse4 * x4 + 5.0 * x5 [Real ]
-// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-12 (global)] [Real ]
+// 	45: x7=(-2.0) * (x5 + x6) / $cse6 [constraints: abs($cse6) > 1e-012 (global)] [Real ]
 // 	46: x8=$cse5 * x6 + x7 [Real ]
 // 	47: (-7.0) * x8 - $cse4 + x7 (RESIDUAL)
 // 	
@@ -375,6 +375,8 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 // 	
 // 	Jacobian idx: 6
 // 	
+// 	Jacobian idx: 7
+// 	
 //
 // modelInfo: 
 // ========================================
@@ -396,10 +398,10 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "dynamicTearing2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'dynamicTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'dynamicTearing2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_DT_CONS'",
 //     messages = "stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_DT_CONS       | info    | The following global constraint is violated:
-// |                 | |       | abs($cse4) > 1e-12
+// |                 | |       | abs($cse4) > 1e-012
 // stdout            | warning | The default linear solver fails, the fallback solver with total pivoting is started at time 0.000000. That might raise performance issues, for more information use -lv LOG_LS.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

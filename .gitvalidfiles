@@ -256,3 +256,4 @@
 ./simulation/modelica/hpcom/ReferenceGraphs/SimpleResistor_TaskGraphODE.graphml
 ./special/FmuExportCrossCompile/fmu-run.sh
 ./special/FmuExportCrossCompile/single-fmu-run.sh
+./openmodelica/uncertainties/Splitter1_Sx.csv

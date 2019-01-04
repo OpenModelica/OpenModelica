@@ -177,6 +177,8 @@ val(h_i[5], 1.0); getErrorString();
 // 	
 // 	Jacobian idx: 3
 // 	
+// 	Jacobian idx: 4
+// 	
 //
 // modelInfo: 
 // ========================================
@@ -204,7 +206,7 @@ val(h_i[5], 1.0); getErrorString();
 // 	outVars: ppS (Real, )  , delta_hv (Real, )  , delta_hd (Real, )  , h_idealGas (Real, )  , 
 // record SimulationResult
 //     resultFile = "TestFalseIterationNLS_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestFalseIterationNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'TestFalseIterationNLS', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -217,7 +219,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.672367152385719e-316
+// 2.994315439165665e-315
 // ""
 // 0.0
 // ""
@@ -233,7 +235,7 @@ val(h_i[5], 1.0); getErrorString();
 // ""
 // -1.0
 // ""
-// 1.674850919200492e-316
+// 2.994563815847143e-315
 // ""
 // 0.0
 // ""

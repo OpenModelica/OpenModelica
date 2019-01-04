@@ -15,6 +15,7 @@ CantiliverBeam.mos
 DEPENDENCIES = \
 *.mo \
 *.mos \
+*.csv  \
 Makefile 
 
 
