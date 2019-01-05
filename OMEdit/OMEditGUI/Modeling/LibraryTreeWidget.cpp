@@ -159,6 +159,17 @@ LibraryTreeItem::~LibraryTreeItem()
   mChildren.clear();
 }
 
+QString LibraryTreeItem::getWhereToMoveFMU()
+{
+  QString nameTemplate = OptionsDialog::instance()->getFMIPage()->getMoveFMUTextBox()->text();
+  QString underscorePlaceholder = getNameStructure();
+  underscorePlaceholder.replace('.', '_');
+  return nameTemplate
+          .replace(FMIPage::FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER, getNameStructure())
+          .replace(FMIPage::FMU_FULL_CLASS_NAME_UNDERSCORES_PLACEHOLDER, underscorePlaceholder)
+          .replace(FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER, getName());
+}
+
 /*!
  * \brief LibraryTreeItem::setClassInformation
  * Sets the OMCInterface::getClassInformation_res

@@ -782,6 +782,9 @@ void OptionsDialog::readFMISettings()
   if (mpSettings->contains("FMIExport/FMUName")) {
     mpFMIPage->getFMUNameTextBox()->setText(mpSettings->value("FMIExport/FMUName").toString());
   }
+  if (mpSettings->contains("FMIExport/MoveFMU")) {
+    mpFMIPage->getMoveFMUTextBox()->setText(mpSettings->value("FMIExport/MoveFMU").toString());
+  }
   // read platforms
   QStringList platforms = mpSettings->value("FMIExport/Platforms").toStringList();
   foreach (QString platform, platforms) {
@@ -1273,6 +1276,7 @@ void OptionsDialog::saveFMISettings()
   mpSettings->setValue("FMIExport/Version", mpFMIPage->getFMIExportVersion());
   mpSettings->setValue("FMIExport/Type", mpFMIPage->getFMIExportType());
   mpSettings->setValue("FMIExport/FMUName", mpFMIPage->getFMUNameTextBox()->text());
+  mpSettings->setValue("FMIExport/MoveFMU", mpFMIPage->getMoveFMUTextBox()->text());
   // save platforms
   QStringList platforms;
   QString linking = mpFMIPage->getLinkingComboBox()->itemData(mpFMIPage->getLinkingComboBox()->currentIndex()).toString();
@@ -4456,6 +4460,18 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpFMUNameLabel = new Label(tr("FMU Name:"));
   mpFMUNameTextBox = new QLineEdit;
   mpFMUNameTextBox->setPlaceholderText("<default>");
+  // Move FMU after build
+  mpMoveFMULabel = new Label(tr("Move FMU:"));
+  mpMoveFMUTextBox = new QLineEdit;
+  mpMoveFMUTextBox->setPlaceholderText(tr("<directory name or full file name with placeholders>"));
+  mpBrowseFMUDirectoryButton = new QPushButton(Helper::browse);
+  mpBrowseFMUDirectoryButton->setAutoDefault(false);
+  connect(mpBrowseFMUDirectoryButton, SIGNAL(clicked()), SLOT(selectFMUDirectory()));
+  // placeholder count may change, don't invalidate translation
+  mpMoveFMUTextBox->setToolTip(tr("Placeholders:\n") +
+                               FMIPage::FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER + tr(" i.e.,") + " Modelica.Electrical.Analog.Examples.ChuaCircuit\n" +
+                               FMIPage::FMU_FULL_CLASS_NAME_UNDERSCORES_PLACEHOLDER + tr(" i.e.,") + " Modelica_Electrical_Analog_Examples_ChuaCircuit\n" +
+                               FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER + tr(" i.e.,") + " ChuaCircuit");
 #ifdef WIN32
   QStringList paths = QString(getenv("PATH")).split(";");
 #else
@@ -4488,11 +4504,14 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   // set the export group box layout
   QGridLayout *pExportLayout = new QGridLayout;
   pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pExportLayout->addWidget(mpVersionGroupBox, 0, 0, 1, 2);
-  pExportLayout->addWidget(mpTypeGroupBox, 1, 0, 1, 2);
+  pExportLayout->addWidget(mpVersionGroupBox, 0, 0, 1, 3);
+  pExportLayout->addWidget(mpTypeGroupBox, 1, 0, 1, 3);
   pExportLayout->addWidget(mpFMUNameLabel, 2, 0);
-  pExportLayout->addWidget(mpFMUNameTextBox, 2, 1);
-  pExportLayout->addWidget(mpPlatformsGroupBox, 3, 0, 1, 2);
+  pExportLayout->addWidget(mpFMUNameTextBox, 2, 1, 1, 2);
+  pExportLayout->addWidget(mpMoveFMULabel, 3, 0);
+  pExportLayout->addWidget(mpMoveFMUTextBox, 3, 1);
+  pExportLayout->addWidget(mpBrowseFMUDirectoryButton, 3, 2);
+  pExportLayout->addWidget(mpPlatformsGroupBox, 4, 0, 1, 3);
   mpExportGroupBox->setLayout(pExportLayout);
   // import groupbox
   mpImportGroupBox = new QGroupBox(tr("Import"));
@@ -4510,6 +4529,10 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pMainLayout->addWidget(mpImportGroupBox);
   setLayout(pMainLayout);
 }
+
+const QString FMIPage::FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER = "{Full.Name}";
+const QString FMIPage::FMU_FULL_CLASS_NAME_UNDERSCORES_PLACEHOLDER = "{Full_Name}";
+const QString FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER = "{shortName}";
 
 /*!
  * \brief FMIPage::setFMIExportVersion
@@ -4569,6 +4592,12 @@ QString FMIPage::getFMIExportType()
   } else {
     return "me_cs";
   }
+}
+
+void FMIPage::selectFMUDirectory()
+{
+  mpMoveFMUTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
+                                                                .arg(Helper::chooseDirectory), NULL));
 }
 
 /*!

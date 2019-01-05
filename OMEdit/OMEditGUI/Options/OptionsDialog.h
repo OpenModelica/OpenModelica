@@ -874,9 +874,14 @@ public:
   void setFMIExportType(QString type);
   QString getFMIExportType();
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
+  QLineEdit* getMoveFMUTextBox() {return mpMoveFMUTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
+
+  static const QString FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER;
+  static const QString FMU_FULL_CLASS_NAME_UNDERSCORES_PLACEHOLDER;
+  static const QString FMU_SHORT_CLASS_NAME_PLACEHOLDER;
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpExportGroupBox;
@@ -888,11 +893,16 @@ private:
   QRadioButton *mpCoSimulationRadioButton;
   QRadioButton *mpModelExchangeCoSimulationRadioButton;
   Label *mpFMUNameLabel;
+  Label *mpMoveFMULabel;
   QLineEdit *mpFMUNameTextBox;
+  QLineEdit *mpMoveFMUTextBox;
+  QPushButton *mpBrowseFMUDirectoryButton;
   QGroupBox *mpPlatformsGroupBox;
   QComboBox *mpLinkingComboBox;
   QGroupBox *mpImportGroupBox;
   QCheckBox *mpDeleteFMUDirectoryAndModelCheckBox;
+public slots:
+  void selectFMUDirectory();
 };
 
 class TLMPage : public QWidget

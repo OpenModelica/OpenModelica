@@ -93,6 +93,7 @@ public:
   const QString& getName() const {return mName;}
   void setNameStructure(QString nameStructure) {mNameStructure = nameStructure;}
   const QString& getNameStructure() {return mNameStructure;}
+  QString getWhereToMoveFMU();
   void setClassInformation(OMCInterface::getClassInformation_res classInformation);
   void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() const {return mFileName;}

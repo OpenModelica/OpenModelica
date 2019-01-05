@@ -895,6 +895,7 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   QString version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
   QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
   QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
+  QString newFmuName = pLibraryTreeItem->getWhereToMoveFMU();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms;
   if (!pSettings->contains("FMIExport/Platforms")) {
@@ -913,7 +914,24 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
                                                           Helper::scriptingKind, Helper::warningLevel));
   }
   QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
-  if (!fmuFileName.isEmpty()) {
+  if (!fmuFileName.isEmpty()) { // FMU was generated
+    if (!newFmuName.isEmpty()) { // FMU should be moved
+      QDir newNameAsDir(newFmuName);
+      QString whereToMove;
+      if (newNameAsDir.exists()) {
+        whereToMove = newNameAsDir.filePath(pLibraryTreeItem->getNameStructure() + ".fmu");
+      } else {
+        whereToMove = newFmuName;
+      }
+      QFile(whereToMove).remove();
+      if (QFile(fmuFileName).rename(whereToMove)) {
+        fmuFileName = whereToMove;
+      } else {
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
+                                                              GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(whereToMove),
+                                                              Helper::scriptingKind, Helper::errorLevel));
+      }
+    }
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0,
                                                           GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
                                                           Helper::scriptingKind, Helper::notificationLevel));
