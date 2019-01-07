@@ -148,7 +148,7 @@ public
       case Op.ADD               then if Type.isArray(op.ty) then DAE.ADD_ARR(ty) else DAE.ADD(ty);
       case Op.SUB               then if Type.isArray(op.ty) then DAE.SUB_ARR(ty) else DAE.SUB(ty);
       case Op.MUL               then if Type.isArray(op.ty) then DAE.MUL_ARR(ty) else DAE.MUL(ty);
-      case Op.DIV               then DAE.DIV(ty);
+      case Op.DIV               then if Type.isArray(op.ty) then DAE.DIV_ARR(ty) else DAE.DIV(ty);
       case Op.POW               then DAE.POW(ty);
       case Op.ADD_SCALAR_ARRAY  algorithm swapArguments := true; then DAE.ADD_ARRAY_SCALAR(ty);
       case Op.ADD_ARRAY_SCALAR  then DAE.ADD_ARRAY_SCALAR(ty);
