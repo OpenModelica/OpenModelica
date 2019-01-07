@@ -15766,8 +15766,161 @@ protected function transformPathedClassInClass
     output Absyn.Class outClass;
   end FuncType;
 algorithm
-  outClass := inClass;
+  outClass := match inPath
+    case Absyn.Path.IDENT()
+      then transformClassInClass(inPath.name, inFunc, inClass);
+
+    case Absyn.Path.QUALIFIED()
+      then transformClassInClass(inPath.name,
+        function transformPathedClassInClass(inPath = inPath.path, inFunc = inFunc),
+        inClass);
+
+    case Absyn.Path.FULLYQUALIFIED()
+      then transformPathedClassInClass(inPath.path, inClass, inFunc);
+
+  end match;
 end transformPathedClassInClass;
+
+function transformClassInClass
+  input String name;
+  input FuncType func;
+  input output Absyn.Class cls;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+protected
+  Absyn.ClassDef body = cls.body;
+algorithm
+  () := match body
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        body.classParts := List.findMap(body.classParts,
+          function transformClassInClassPart(name = name, func = func));
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        body.parts := List.findMap(body.parts,
+          function transformClassInClassPart(name = name, func = func));
+      then
+        ();
+
+    else ();
+  end match;
+
+  cls.body := body;
+end transformClassInClass;
+
+function transformClassInClassPart
+  input String name;
+  input FuncType func;
+  input output Absyn.ClassPart part;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match part
+    local
+      list<Absyn.ElementItem> items;
+
+    case Absyn.ClassPart.PUBLIC()
+      algorithm
+        (items, found) := List.findMap(part.contents,
+          function transformClassInElementItem(name = name, func = func));
+        part.contents := items;
+      then
+        found;
+
+    case Absyn.ClassPart.PROTECTED()
+      algorithm
+        (items, found) := List.findMap(part.contents,
+          function transformClassInElementItem(name = name, func = func));
+        part.contents := items;
+      then
+        found;
+
+    else false;
+  end match;
+end transformClassInClassPart;
+
+function transformClassInElementItem
+  input String name;
+  input FuncType func;
+  input output Absyn.ElementItem item;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match item
+    local
+      Absyn.Element e;
+
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        (e, found) := transformClassInElement(name, func, item.element);
+        item.element := e;
+      then
+        found;
+
+    else false;
+  end match;
+end transformClassInElementItem;
+
+function transformClassInElement
+  input String name;
+  input FuncType func;
+  input output Absyn.Element element;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match element
+    local
+      Absyn.ElementSpec spec;
+
+    case Absyn.Element.ELEMENT()
+      algorithm
+        (spec, found) := transformClassInElementSpec(name, func, element.specification);
+        element.specification := spec;
+      then
+        found;
+
+    else false;
+  end match;
+end transformClassInElement;
+
+function transformClassInElementSpec
+  input String name;
+  input FuncType func;
+  input output Absyn.ElementSpec spec;
+        output Boolean found;
+
+  partial function FuncType
+    input output Absyn.Class cls;
+  end FuncType;
+algorithm
+  found := match spec
+    local
+      Absyn.Class cls;
+
+    case Absyn.ElementSpec.CLASSDEF(class_ = cls)
+      guard cls.name == name
+      algorithm
+        spec.class_ := func(cls);
+      then
+        true;
+
+    else false;
+  end match;
+end transformClassInElementSpec;
 
 protected function modificationToAbsyn
 " This function takes a list of NamedArg and returns an Absyn.Modification option.
