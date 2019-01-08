@@ -4654,7 +4654,9 @@ public
     input Expression exp;
     output Expression outExp;
   algorithm
-    outExp := match exp
+    outExp := ExpandExp.expand(exp);
+
+    outExp := match outExp
       local
         InstNode cls;
         array<InstNode> comps;
@@ -4673,7 +4675,13 @@ public
             fields := CREF(ty, field_cr) :: fields;
           end for;
         then
-          RECORD(InstNode.scopePath(cls), exp.ty, fields);
+          RECORD(InstNode.scopePath(cls), outExp.ty, fields);
+
+      case ARRAY()
+        algorithm
+          outExp.elements := list(splitRecordCref(e) for e in outExp.elements);
+        then
+          outExp;
 
       else exp;
     end match;
