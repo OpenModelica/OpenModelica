@@ -12051,6 +12051,7 @@ public function expandExpression
  "
 
   input DAE.Exp inExp;
+  input Boolean expandRecord;
   output list<DAE.Exp> outExps;
 algorithm
   (outExps) := match (inExp)
@@ -12064,13 +12065,13 @@ algorithm
 
     case (DAE.CREF(cr,_))
       algorithm
-        crlst := ComponentReference.expandCref(cr,true);
+        crlst := ComponentReference.expandCref(cr, expandRecord);
         outExps := List.map(crlst, crefToExp);
       then outExps;
 
     case (DAE.UNARY(operator=DAE.UMINUS()))
       algorithm
-        expl := list(DAE.UNARY(inExp.operator, exp) for exp in expandExpression(inExp.exp));
+        expl := list(DAE.UNARY(inExp.operator, exp) for exp in expandExpression(inExp.exp, expandRecord));
       then expl;
 
     case (DAE.BINARY())
@@ -12078,8 +12079,8 @@ algorithm
         // TODO! FIXME! we should change the type in the operator,
         // i.e. use Types.unliftArray on the type inside the operator
         op := inExp.operator;
-        expl1 := expandExpression(inExp.exp1);
-        expl2 := expandExpression(inExp.exp2);
+        expl1 := expandExpression(inExp.exp1, expandRecord);
+        expl2 := expandExpression(inExp.exp2, expandRecord);
         // TODO! FIXME! maybe we should also support (array op scalar)
         // make sure the lists have the same length
         if listLength(expl1) <> listLength(expl2) then
@@ -12097,7 +12098,7 @@ algorithm
 
     case DAE.ARRAY(_,_,expl)
       algorithm
-        expl := List.mapFlat(expl,expandExpression);
+        expl := List.mapFlat(expl, function expandExpression(expandRecord = expandRecord));
       then expl;
 
     else
@@ -12159,7 +12160,7 @@ algorithm
       equation
         i = dimensionSize(id);
         j = dimensionSize(jd);
-        expl = expandExpression(inExp);
+        expl = expandExpression(inExp, expandRecord = false);
         mat = makeMatrix(expl, j);
         e = DAE.MATRIX(ty, i, mat);
       then
@@ -12168,7 +12169,7 @@ algorithm
     // CASE for Array
     case DAE.CREF(ty=ty as DAE.T_ARRAY())
       equation
-        expl = expandExpression(inExp);
+        expl = expandExpression(inExp, expandRecord = false);
         e = DAE.ARRAY(ty, true, expl);
       then
         (e, true);

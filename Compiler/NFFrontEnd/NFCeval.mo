@@ -519,7 +519,10 @@ algorithm
       algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
         binding := Binding.CEVAL_BINDING(exp, {node});
-        InstNode.updateComponent(Component.setBinding(binding, component), node);
+
+        if not ComponentRef.hasSubscripts(cref) then
+          InstNode.updateComponent(Component.setBinding(binding, component), node);
+        end if;
       then
         binding;
 
@@ -530,7 +533,10 @@ algorithm
         exp := makeRecordBindingExp(component.classInst, rec_node, component.ty, cref);
         exp := splitRecordArrayExp(exp);
         binding := Binding.CEVAL_BINDING(exp, {node});
-        InstNode.updateComponent(Component.setBinding(binding, component), node);
+
+        if not ComponentRef.hasSubscripts(cref) then
+          InstNode.updateComponent(Component.setBinding(binding, component), node);
+        end if;
       then
         binding;
 

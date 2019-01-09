@@ -164,7 +164,6 @@ protected
   list<Connector> cl1, cl2, lhsl, rhsl;
   Equation replaceEq;
   Expression exp;
-  Boolean added = false;
 algorithm
   // go over all equations, connect, Connection.branch
   for eq in flatModel.equations loop
@@ -173,7 +172,6 @@ algorithm
                             rhs = Expression.CREF(ty = ty2, cref = rhs),
                             source = source)
         algorithm
-          added := false;
           if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs))
           then
             cl1 := NFConnections.makeConnectors(lhs, ty1, source);
@@ -193,19 +191,12 @@ algorithm
                     lhs := getOverconstrainedCref(lhs);
                     rhs := getOverconstrainedCref(rhs);
 
-                    lhs := ComponentRef.stripSubscripts(lhs);
-                    rhs := ComponentRef.stripSubscripts(rhs);
-
                     eq.broken := generateEqualityConstraintEquation(eq.lhs, ty1, eq.rhs, ty2, ExpOrigin.EQUATION, source);
                     graph := addConnection(graph, lhs, rhs, eq.broken);
-                    added := true;
                     break;
                   end if;
                 end if;
               end for;
-              if added then
-                break;
-              end if;
             end for;
           end if;
         then

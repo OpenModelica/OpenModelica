@@ -2424,9 +2424,9 @@ algorithm
 
       // Record()-tmp = 0
       /* Expand the tmp record and any arrays */
-      e1lst = Expression.expandExpression(e1_1);
+      e1lst = Expression.expandExpression(e1_1, expandRecord = true);
       /* Expand the varLst. Each var might be an array or record. */
-      e2lst = List.mapFlat(e2lst, Expression.expandExpression);
+      e2lst = List.mapFlat(e2lst, function Expression.expandExpression(expandRecord = true));
       /* pair each of the expanded expressions to coressponding one*/
       exptl = List.threadTuple(e1lst, e2lst);
       /* Create residual equations for each pair*/
