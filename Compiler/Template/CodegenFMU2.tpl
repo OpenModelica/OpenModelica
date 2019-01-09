@@ -140,7 +140,7 @@ case SIMCODE(__) then
     needsExecutionTool="false"
     canHandleVariableCommunicationStepSize="true"
     canInterpolateInputs="false"
-    maxOutputDerivativeOrder="1"
+    maxOutputDerivativeOrder="0"
     canRunAsynchronuously = "false"
     canBeInstantiatedOnlyOncePerProcess="false"
     canNotUseMemoryManagementFunctions="false"

@@ -301,7 +301,7 @@ template Implementation()
         canHandleEvents="true"
         canBeInstantiatedOnlyOncePerProcess="false"
         canInterpolateInputs="true"
-        maxOutputDerivativeOrder="1"/>
+        maxOutputDerivativeOrder="0"/>
     </CoSimulation_StandAlone>
   </Implementation>
   >>
