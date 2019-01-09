@@ -483,6 +483,21 @@ template daeExpCallBuiltin(Exp exp)
   case CALL(path=IDENT(name="abs"),expLst={exp1}) then 'fabs(<%daeExp(exp1)%>)'
   case CALL(path=IDENT(name="min"),expLst={exp1,exp2},attr=CALL_ATTR(ty=T_REAL(__))) then 'fmin(<%daeExp(exp1)%>,<%daeExp(exp2)%>)'
   case CALL(path=IDENT(name="max"),expLst={exp1,exp2},attr=CALL_ATTR(ty=T_REAL(__))) then 'fmax(<%daeExp(exp1)%>,<%daeExp(exp2)%>)'
+  case CALL(path=IDENT(name=name as "sin"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "cos"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "tan"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "asin"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "acos"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "atan"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "sinh"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "cosh"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "tanh"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "exp"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "log"),expLst={exp1})
+  case CALL(path=IDENT(name=name as "log10"),expLst={exp1})
+    then '<%name%>(<%daeExp(exp1)%>)'
+  case CALL(path=IDENT(name=name as "atan2"),expLst={exp1,exp2})
+    then '<%name%>(<%daeExp(exp1)%>,<%daeExp(exp2)%>)'
   /* TODO: Generate used builtin functions before SimCode */
   case CALL(path=IDENT(name="mod"),expLst=exp1::exp2::_) then 'om_mod(<%daeExp(exp1)%>,<%daeExp(exp2)%>)'
   /* TODO: pre needs to be handled in a special way */
