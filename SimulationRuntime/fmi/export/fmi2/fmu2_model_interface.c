@@ -637,7 +637,12 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode...")
 
+  setThreadData(comp);
+  comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
+  comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
   comp->state = modelEventMode;
+  resetThreadData(comp);
+
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
   return fmi2OK;
 }
