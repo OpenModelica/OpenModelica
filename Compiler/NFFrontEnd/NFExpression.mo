@@ -4701,6 +4701,12 @@ public
         then
           ();
 
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR())
+        algorithm
+          exp.call := Call.retype(exp.call);
+        then
+          ();
+
       else ();
     end match;
   end retype;

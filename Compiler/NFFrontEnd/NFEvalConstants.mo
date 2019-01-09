@@ -168,7 +168,7 @@ algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
           function evaluateExpTraverser(isExternalArg = Call.isExternal(exp.call)), false);
       then
-        outExp;
+        if outChanged then Expression.retype(outExp) else outExp;
 
     else
       algorithm

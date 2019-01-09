@@ -810,6 +810,30 @@ uniontype Call
     end match;
   end isVectorizeable;
 
+  function retype
+    input output Call call;
+  algorithm
+    () := match call
+      local
+        Type ty;
+        list<Dimension> dims;
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        algorithm
+          dims := {};
+
+          for i in listReverse(call.iters) loop
+            dims := listAppend(Type.arrayDims(Expression.typeOf(Util.tuple22(i))), dims);
+          end for;
+
+          call.ty := Type.liftArrayLeftList(Type.arrayElementType(call.ty), dims);
+        then
+          ();
+
+      else ();
+    end match;
+  end retype;
+
 protected
   function instNormalCall
     input Absyn.ComponentRef functionName;

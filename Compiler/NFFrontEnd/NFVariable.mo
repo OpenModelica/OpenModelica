@@ -97,6 +97,7 @@ public
   protected
     IOStream.IOStream s;
     Boolean first;
+    Binding b;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
 
@@ -122,9 +123,15 @@ public
           s := IOStream.append(s, ", ");
         end if;
 
+        b := Util.tuple22(a);
+
+        if Binding.isEach(b) then
+          s := IOStream.append(s, "each ");
+        end if;
+
         s := IOStream.append(s, Util.tuple21(a));
         s := IOStream.append(s, " = ");
-        s := IOStream.append(s, Binding.toString(Util.tuple22(a)));
+        s := IOStream.append(s, Binding.toString(b));
       end for;
 
       s := IOStream.append(s, ")");
