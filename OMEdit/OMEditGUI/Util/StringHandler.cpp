@@ -1686,10 +1686,9 @@ QString StringHandler::toCamelCase(QString str)
  * \brief StringHandler::getLeadingSpaces
  * Returns a map with line number and number of leading spaces in that line.
  * \param contents
- * \param tabWidth
  * \return
  */
-QMap<int, int> StringHandler::getLeadingSpaces(QString contents, int tabWidth)
+QMap<int, int> StringHandler::getLeadingSpaces(QString contents)
 {
   QMap<int, int> leadingSpacesMap;
   int startLeadingSpaces, leadingSpaces = 0;
@@ -1701,9 +1700,9 @@ QMap<int, int> StringHandler::getLeadingSpaces(QString contents, int tabWidth)
       startLeadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
       leadingSpaces = startLeadingSpaces;
     } else {
-      leadingSpaces = StringHandler::getLeadingSpacesSize(currentLine);
+      leadingSpaces = qMin(startLeadingSpaces, StringHandler::getLeadingSpacesSize(currentLine));
     }
-    leadingSpacesMap.insert(lineNumber, leadingSpaces + tabWidth);
+    leadingSpacesMap.insert(lineNumber, leadingSpaces);
     lineNumber++;
   }
   return leadingSpacesMap;
@@ -1756,6 +1755,23 @@ bool StringHandler::containsSpace(QString str)
     }
   }
   return false;
+}
+
+/*!
+ * \brief StringHandler::trimmedEnd
+ * Trims the whitespace from the end of the string.
+ * \param str
+ * \return
+ */
+QString StringHandler::trimmedEnd(const QString &str)
+{
+  int n = str.size() - 1;
+  for (; n >= 0; --n) {
+    if (!str.at(n).isSpace()) {
+      return str.left(n + 1);
+    }
+  }
+  return "";
 }
 
 /*!

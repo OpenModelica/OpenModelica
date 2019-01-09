@@ -4174,7 +4174,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   LibraryTreeItem *pParentLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(mpLibraryTreeItem);
   removeDynamicResults(); // show static values during editing
   if (pParentLibraryTreeItem != mpLibraryTreeItem) {
-    stringToLoad = mpLibraryTreeItem->getClassTextBefore() + modelicaText + mpLibraryTreeItem->getClassTextAfter();
+    stringToLoad = mpLibraryTreeItem->getClassTextBefore() + StringHandler::trimmedEnd(modelicaText) + "\n" + mpLibraryTreeItem->getClassTextAfter();
   } else {
     stringToLoad = modelicaText;
   }

@@ -278,13 +278,24 @@ QString ModelicaEditor::getPlainText()
       TextBlockUserData *pTextBlockUserData = BaseEditorDocumentLayout::userData(block);
       if (pTextBlockUserData) {
         if (pTextBlockUserData->getLeadingSpaces() == -1) {
-          pTextBlockUserData->setLeadingSpaces(pLibraryTreeItem->getNestedLevelInPackage());
+          TextBlockUserData *pFirstBlockUserData = BaseEditorDocumentLayout::userData(mpPlainTextEdit->document()->firstBlock());
+          if (pFirstBlockUserData) {
+            if (pFirstBlockUserData->getLeadingSpaces() == -1) {
+              pTextBlockUserData->setLeadingSpaces(pLibraryTreeItem->getNestedLevelInPackage());
+            } else {
+              pTextBlockUserData->setLeadingSpaces(pFirstBlockUserData->getLeadingSpaces());
+            }
+          } else {
+            pTextBlockUserData->setLeadingSpaces(0);
+          }
         }
         text += QString(pTextBlockUserData->getLeadingSpaces(), ' ');
       }
       text += block.text();
       block = block.next();
-      text += "\n";
+      if (block.isValid()) { // not last block
+        text += "\n";
+      }
     }
     return text;
   } else {
@@ -322,7 +333,7 @@ void ModelicaEditor::setPlainText(const QString &text, bool useInserText)
   QString contents = text;
   // store and remove leading spaces
   if (mpModelWidget->getLibraryTreeItem()->isInPackageOneFile()) {
-    leadingSpacesMap = StringHandler::getLeadingSpaces(contents, mpModelWidget->getLibraryTreeItem()->getNestedLevelInPackage());
+    leadingSpacesMap = StringHandler::getLeadingSpaces(contents);
     contents = removeLeadingSpaces(contents);
   }
   // Only set the text when it is really new
