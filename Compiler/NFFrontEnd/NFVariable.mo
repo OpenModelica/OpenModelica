@@ -41,6 +41,7 @@ encapsulated uniontype NFVariable
 
 protected
   import Variable = NFVariable;
+  import IOStream;
 
 public
   record VARIABLE
@@ -88,6 +89,56 @@ public
     input Variable variable;
     output Boolean isEmpty = Type.isEmptyArray(variable.ty);
   end isEmptyArray;
+
+  function toString
+    input Variable var;
+    input String indent = "";
+    output String str;
+  protected
+    IOStream.IOStream s;
+    Boolean first;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+
+    s := IOStream.append(s, indent);
+
+    if var.visibility == Visibility.PROTECTED then
+      s := IOStream.append(s, "protected ");
+    end if;
+
+    s := IOStream.append(s, Component.Attributes.toString(var.attributes, var.ty));
+    s := IOStream.append(s, Type.toString(var.ty));
+    s := IOStream.append(s, " ");
+    s := IOStream.append(s, ComponentRef.toString(var.name));
+
+    if not listEmpty(var.typeAttributes) then
+      s := IOStream.append(s, "(");
+
+      first := true;
+      for a in var.typeAttributes loop
+        if first then
+          first := false;
+        else
+          s := IOStream.append(s, ", ");
+        end if;
+
+        s := IOStream.append(s, Util.tuple21(a));
+        s := IOStream.append(s, " = ");
+        s := IOStream.append(s, Binding.toString(Util.tuple22(a)));
+      end for;
+
+      s := IOStream.append(s, ")");
+    end if;
+
+    if Binding.isBound(var.binding) then
+      s := IOStream.append(s, " = ");
+      s := IOStream.append(s, Binding.toString(var.binding));
+    end if;
+
+    s := IOStream.append(s, ";");
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toString;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

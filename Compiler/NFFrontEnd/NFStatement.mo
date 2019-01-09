@@ -420,6 +420,7 @@ public
 
   function toString
     input Statement stmt;
+    input String indent = "";
     output String str;
   algorithm
     str := match stmt
@@ -427,51 +428,52 @@ public
         String s1, s2;
 
       case ASSIGNMENT()
-        then Expression.toString(stmt.lhs) + " := " + Expression.toString(stmt.rhs);
+        then indent + Expression.toString(stmt.lhs) + " := " + Expression.toString(stmt.rhs) + ";";
 
       case FUNCTION_ARRAY_INIT()
-        then "array init " + stmt.name;
+        then indent + "array init " + stmt.name;
 
       case FOR()
         algorithm
           s1 := if isSome(stmt.range) then " in " + Expression.toString(Util.getOption(stmt.range)) else "";
-          s2 := toStringList(stmt.body);
+          s2 := toStringList(stmt.body, indent + "  ");
         then
-          "for " + InstNode.name(stmt.iterator) + s1 + " loop\n" + s2 + "end for";
+          indent + "for " + InstNode.name(stmt.iterator) + s1 + " loop\n" + s2 + indent + "end for;";
 
       case IF()
-        then branchString(listHead(stmt.branches), "if", true) +
-             stringDelimitList(list(branchString(b, "if", false) for b in listRest(stmt.branches)), "\n") +
-             "\nend if";
+        then branchString(listHead(stmt.branches), "if", indent, true) +
+             stringDelimitList(list(branchString(b, "if", indent, false) for b in listRest(stmt.branches)), "\n") +
+             indent + "end if;";
 
       case WHEN()
-        then branchString(listHead(stmt.branches), "when", true) +
-             stringDelimitList(list(branchString(b, "when", false) for b in listRest(stmt.branches)), "\n") +
-             "\nwhen if";
+        then branchString(listHead(stmt.branches), "when", indent, true) +
+             stringDelimitList(list(branchString(b, "when", indent, false) for b in listRest(stmt.branches)), "\n") +
+             indent + "when if;";
 
       case ASSERT()
-        then "assert(" + Expression.toString(stmt.condition) + ", " +
-             Expression.toString(stmt.message) + ", " + Expression.toString(stmt.level) + ")";
+        then indent + "assert(" + Expression.toString(stmt.condition) + ", " +
+             Expression.toString(stmt.message) + ", " + Expression.toString(stmt.level) + ");";
 
       case TERMINATE()
-        then "terminate( " + Expression.toString(stmt.message) + ")";
+        then indent + "terminate( " + Expression.toString(stmt.message) + ");";
 
       case NORETCALL()
-        then Expression.toString(stmt.exp);
+        then indent + Expression.toString(stmt.exp) + ";";
 
       case WHILE()
-        then "while " + Expression.toString(stmt.condition) + " then\n" +
-             toStringList(stmt.body) + "\nend while";
+        then indent + "while " + Expression.toString(stmt.condition) + " then\n" +
+             toStringList(stmt.body, indent + "  ") + "\nend while;";
 
-      case RETURN() then "return";
-      case BREAK() then "break";
-      else "#UNKNOWN STATEMENT#";
+      case RETURN() then indent + "return;";
+      case BREAK() then indent + "break;";
+      else indent + "#UNKNOWN STATEMENT#";
     end match;
   end toString;
 
   function branchString
     input tuple<Expression, list<Statement>> branch;
     input String stmtType;
+    input String indent;
     input Boolean firstBranch;
     output String str;
   protected
@@ -480,15 +482,16 @@ public
   algorithm
     (cond, body) := branch;
 
-    str := (if firstBranch then stmtType elseif Expression.isTrue(cond) then "else" else "else" + stmtType) +
-           " " + Expression.toString(cond) + "then\n" + toStringList(body);
+    str := indent + (if firstBranch then stmtType elseif Expression.isTrue(cond) then "else" else "else" + stmtType) +
+      " " + Expression.toString(cond) + " then\n" + toStringList(body, indent + "  ");
   end branchString;
 
   function toStringList
     input list<Statement> stmtl;
+    input String indent = "";
     output String str;
   algorithm
-    str := List.toString(stmtl, toString, "", " " , "\n  ", "", false) + "\n";
+    str := List.toString(stmtl, function toString(indent = indent), "", "", "\n", "", false) + "\n";
   end toStringList;
 
 annotation(__OpenModelica_Interface="frontend");

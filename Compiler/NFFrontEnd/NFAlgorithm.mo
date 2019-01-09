@@ -119,5 +119,12 @@ public
     end for;
   end foldExpList;
 
+  function toString
+    input Algorithm alg;
+    output String str;
+  algorithm
+    str := Statement.toStringList(alg.statements);
+  end toString;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFAlgorithm;

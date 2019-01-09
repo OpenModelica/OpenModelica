@@ -145,9 +145,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(vars, eql, ieql, alg, ialg, cmt);
+        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, cmt);
 
-    else FlatModel.FLAT_MODEL(vars, {}, {}, {}, {}, cmt);
+      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, cmt);
   end match;
 
   execStat(getInstanceName() + "(" + name + ")");

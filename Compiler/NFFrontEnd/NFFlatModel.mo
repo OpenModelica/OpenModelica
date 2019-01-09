@@ -34,7 +34,15 @@ encapsulated uniontype NFFlatModel
   import Algorithm = NFAlgorithm;
   import Variable = NFVariable;
 
+protected
+  import Statement = NFStatement;
+  import IOStream;
+
+  import FlatModel = NFFlatModel;
+
+public
   record FLAT_MODEL
+    String name;
     list<Variable> variables;
     list<Equation> equations;
     list<Equation> initialEquations;
@@ -42,6 +50,60 @@ encapsulated uniontype NFFlatModel
     list<Algorithm> initialAlgorithms;
     Option<SCode.Comment> comment;
   end FLAT_MODEL;
+
+  function toString
+    input FlatModel flatModel;
+    output String str;
+  protected
+    IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+
+    s := IOStream.append(s, "class " + flatModel.name + "\n");
+    s := toString2(flatModel.variables, function Variable.toString(indent = "  "), "", s);
+    s := toString2(flatModel.initialEquations, function Equation.toString(indent = "  "), "initial equation", s);
+    s := toString2(flatModel.equations, function Equation.toString(indent = "  "), "equation", s);
+
+    for alg in flatModel.initialAlgorithms loop
+      s := toString2(alg.statements, function Statement.toString(indent = "  "), "initial algorithm", s);
+    end for;
+
+    for alg in flatModel.algorithms loop
+      s := toString2(alg.statements, function Statement.toString(indent = "  "), "algorithm", s);
+    end for;
+
+    s := IOStream.append(s, "end " + flatModel.name + ";\n");
+
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toString;
+
+protected
+  function toString2<T>
+    input list<T> elements;
+    input FuncT toStringFunc;
+    input String header;
+    input output IOStream.IOStream s;
+
+    partial function FuncT
+      input T element;
+      output String str;
+    end FuncT;
+  algorithm
+    if listEmpty(elements) then
+      return;
+    end if;
+
+    if not stringEmpty(header) then
+      s := IOStream.append(s, header);
+      s := IOStream.append(s, "\n");
+    end if;
+
+    for e in elements loop
+      s := IOStream.append(s, toStringFunc(e));
+      s := IOStream.append(s, "\n");
+    end for;
+  end toString2;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

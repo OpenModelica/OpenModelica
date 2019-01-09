@@ -60,14 +60,15 @@ public
 
     function toString
       input Branch branch;
+      input String indent = "";
       output String str;
     algorithm
       str := match branch
         case BRANCH()
-          then Expression.toString(branch.condition) + " then\n" + toStringList(branch.body);
+          then Expression.toString(branch.condition) + " then\n" + toStringList(branch.body, indent + "  ");
 
         case INVALID_BRANCH()
-          then toString(branch.branch);
+          then toString(branch.branch, indent);
       end match;
     end toString;
 
@@ -643,6 +644,7 @@ public
 
   function toString
     input Equation eq;
+    input String indent = "";
     output String str;
   algorithm
     str := match eq
@@ -650,46 +652,48 @@ public
         String s1, s2;
 
       case EQUALITY()
-        then Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        then indent + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";";
 
       case CREF_EQUALITY()
-        then ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs);
+        then indent + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs) + ";";
 
       case ARRAY_EQUALITY()
-        then Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs);
+        then indent + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";";
 
       case CONNECT()
-        then "connect(" + Expression.toString(eq.lhs) + ", " + Expression.toString(eq.rhs) + ")";
+        then indent + "connect(" + Expression.toString(eq.lhs) + ", " + Expression.toString(eq.rhs) + ");";
 
       case FOR()
         algorithm
           s1 := if isSome(eq.range) then " in " + Expression.toString(Util.getOption(eq.range)) else "";
-          s2 := toStringList(eq.body);
+          s2 := toStringList(eq.body, indent + "  ");
         then
-          "for " + InstNode.name(eq.iterator) + s1 + " loop\n" + s2 + "end for";
+          indent + "for " + InstNode.name(eq.iterator) + s1 + " loop\n" + s2 + indent + "end for;";
 
       case IF()
-        then "if " + Branch.toString(listHead(eq.branches)) +
-             List.toString(listRest(eq.branches), Branch.toString, "", "elseif ", "\nelseif ", "", false) +
-             "\nend if";
+        then indent + "if " + Branch.toString(listHead(eq.branches)) +
+             List.toString(listRest(eq.branches), function Branch.toString(indent = indent), "",
+                           indent + "elseif ", "\n" + indent + "elseif ", "", false) +
+             indent + "end if;";
 
       case WHEN()
-        then "when " + Branch.toString(listHead(eq.branches)) +
-             List.toString(listRest(eq.branches), Branch.toString, "", "elsewhen ", "\nelsewhen ", "", false) +
-             "\nend when";
+        then indent + "when " + Branch.toString(listHead(eq.branches)) +
+             List.toString(listRest(eq.branches), function Branch.toString(indent = indent), "",
+                           indent + "elsewhen ", "\n" + indent + "elsewhen ", "", false) +
+             indent + "end when;";
 
       case ASSERT()
         then "assert(" + Expression.toString(eq.condition) + ", " +
-             Expression.toString(eq.message) + ", " + Expression.toString(eq.level) + ")";
+             Expression.toString(eq.message) + ", " + Expression.toString(eq.level) + ");";
 
       case TERMINATE()
-        then "terminate( " + Expression.toString(eq.message) + ")";
+        then "terminate( " + Expression.toString(eq.message) + ");";
 
       case REINIT()
-        then "reinit(" + Expression.toString(eq.cref) + ", " + Expression.toString(eq.reinitExp) + ")";
+        then "reinit(" + Expression.toString(eq.cref) + ", " + Expression.toString(eq.reinitExp) + ");";
 
       case NORETCALL()
-        then Expression.toString(eq.exp);
+        then Expression.toString(eq.exp) + ";";
 
       else "#UNKNOWN EQUATION#";
     end match;
@@ -697,9 +701,10 @@ public
 
   function toStringList
     input list<Equation> eql;
+    input String indent = "";
     output String str;
   algorithm
-    str := List.toString(eql, toString, "", "  ", "\n  ", "", false) + "\n";
+    str := List.toString(eql, function toString(indent = indent), "", "", "\n", "", false) + "\n";
   end toStringList;
 
 annotation(__OpenModelica_Interface="frontend");
