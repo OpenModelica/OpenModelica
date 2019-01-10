@@ -177,9 +177,10 @@ public
   function split
     "Splits a connector into its primitive components."
     input Connector conn;
+    input Boolean splitArrays = Flags.isSet(Flags.NF_SCALARIZE);
     output list<Connector> connl;
   algorithm
-    connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty);
+    connl := splitImpl(conn.name, conn.ty, conn.face, conn.source, conn.cty, splitArrays);
   end split;
 
 protected
@@ -205,8 +206,9 @@ protected
     input Face face;
     input DAE.ElementSource source;
     input ConnectorType cty;
+    input Boolean splitArrays;
     input output list<Connector> conns = {};
-    input list<Dimension> dims = {} "accumulated dimensions if not NF_SCALARIZE";
+    input list<Dimension> dims = {} "accumulated dimensions if splitArrays = false";
   algorithm
     conns := match ty
       local
@@ -216,9 +218,9 @@ protected
 
       case Type.COMPLEX(complexTy = ct as ComplexType.CONNECTOR())
         algorithm
-          conns := splitImpl2(name, face, source, ct.potentials, conns, dims);
-          conns := splitImpl2(name, face, source, ct.flows, conns, dims);
-          conns := splitImpl2(name, face, source, ct.streams, conns, dims);
+          conns := splitImpl2(name, face, source, ct.potentials, splitArrays, conns, dims);
+          conns := splitImpl2(name, face, source, ct.flows, splitArrays, conns, dims);
+          conns := splitImpl2(name, face, source, ct.streams, splitArrays, conns, dims);
         then
           conns;
 
@@ -226,20 +228,20 @@ protected
         algorithm
           tree := Class.classTree(InstNode.getClass(ty.cls));
           conns := splitImpl2(name, face, source,
-            arrayList(ClassTree.getComponents(tree)), conns, dims);
+            arrayList(ClassTree.getComponents(tree)), splitArrays, conns, dims);
         then
           conns;
 
       case Type.ARRAY()
         algorithm
           t := Type.arrayElementType(ty);
-          if Flags.isSet(Flags.NF_SCALARIZE) then
+          if splitArrays then
             for c in ComponentRef.scalarize(name) loop
-              conns := splitImpl(c, t, face, source, cty, conns, dims);
+              conns := splitImpl(c, t, face, source, cty, splitArrays, conns, dims);
             end for;
           else
             if not Type.isEmptyArray(ty) then
-              conns := splitImpl(name, t, face, source, cty, conns,
+              conns := splitImpl(name, t, face, source, cty, splitArrays, conns,
                                  listAppend(dims, ty.dimensions));
             end if;
           end if;
@@ -255,6 +257,7 @@ protected
     input Face face;
     input DAE.ElementSource source;
     input list<InstNode> comps;
+    input Boolean splitArrays;
     input output list<Connector> conns;
     input list<Dimension> dims;
   protected
@@ -268,7 +271,7 @@ protected
       ty := Component.getType(c);
       cty := Component.connectorType(c);
       cref := ComponentRef.append(ComponentRef.fromNode(comp, ty), name);
-      conns := splitImpl(cref, ty, face, source, cty, conns, dims);
+      conns := splitImpl(cref, ty, face, source, cty, splitArrays, conns, dims);
     end for;
   end splitImpl2;
 

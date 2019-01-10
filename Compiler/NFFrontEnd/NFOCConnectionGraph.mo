@@ -172,15 +172,14 @@ algorithm
                             rhs = Expression.CREF(ty = ty2, cref = rhs),
                             source = source)
         algorithm
-          if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs))
-          then
+          if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
             cl1 := NFConnections.makeConnectors(lhs, ty1, source);
             cl2 := NFConnections.makeConnectors(rhs, ty2, source);
             for c1 in cl1 loop
               c2 :: cl2 := cl2;
 
-              lhsl := Connector.split(c1);
-              rhsl := Connector.split(c2);
+              lhsl := Connector.split(c1, splitArrays = false);
+              rhsl := Connector.split(c2, splitArrays = false);
 
               for cc1 in lhsl loop
                 cc2 :: rhsl := rhsl;
