@@ -3,26 +3,27 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 BooleanNetwork1.mos \
 BouncingBall.mos \
+EnumerationTest.mos \
+FMIExercise.mos \
 HelloFMIWorld.mos \
 HelloFMIWorldEvent.mos \
+initialization.mos \
 IntegerNetwork1.mos \
+Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
+Modelica.Blocks.Sources.BooleanPulse.mos \
+Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
 testAssert.mos \
-testChangeParam.mos \
 testBug2764.mos \
 testBug3034.mos \
 testBug3049.mos \
 testBug3763.mos \
 testBug3846.mos \
+testChangeParam.mos \
+testDisableDep.mos \
 testDiscreteStructe.mos \
 testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ZeroStates.mos \
-EnumerationTest.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-FMIExercise.mos \
-testDisableDep.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
