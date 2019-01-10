@@ -618,7 +618,7 @@ algorithm
     cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
     field_exp := Expression.CREF(ty, cr);
 
-    if Component.variability(InstNode.component(c)) <= Variability.STRUCTURAL_PARAMETER then
+    if Component.variability(InstNode.component(c)) <= Variability.PARAMETER then
       field_exp := evalExp(field_exp);
     end if;
 
