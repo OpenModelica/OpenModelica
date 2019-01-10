@@ -87,6 +87,10 @@ private:
   Label *mpNeedsExecutionToolValueLabel;
   Label *mpProvidesDirectionalDerivativeLabel;
   Label *mpProvidesDirectionalDerivativeValueLabel;
+  Label *mpCanInterpolateInputsLabel;
+  Label *mpCanInterpolateInputsValueLabel;
+  Label *mpMaxOutputDerivativeOrderLabel;
+  Label *mpMaxOutputDerivativeOrderValueLabel;
   QList<Label*> mParameterLabels;
   QList<QLineEdit*> mParameterLineEdits;
   QList<Label*> mInputLabels;

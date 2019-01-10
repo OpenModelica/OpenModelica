@@ -124,6 +124,10 @@ ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget 
     mpNeedsExecutionToolValueLabel = new Label(pFMUInfo->needsExecutionTool ? "true" : "false");
     mpProvidesDirectionalDerivativeLabel = new Label("providesDirectionalDerivative:");
     mpProvidesDirectionalDerivativeValueLabel = new Label(pFMUInfo->providesDirectionalDerivative ? "true" : "false");
+    mpCanInterpolateInputsLabel = new Label("canInterpolateInputs:");
+    mpCanInterpolateInputsValueLabel = new Label(pFMUInfo->canInterpolateInputs ? "true" : "false");
+    mpMaxOutputDerivativeOrderLabel = new Label("maxOutputDerivativeOrder:");
+    mpMaxOutputDerivativeOrderValueLabel = new Label(QString::number(pFMUInfo->maxOutputDerivativeOrder));
     QGridLayout *pCapabilitiesGridLayout = new QGridLayout;
     pCapabilitiesGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pCapabilitiesGridLayout->addWidget(mpCanBeInstantiatedOnlyOncePerProcessLabel, 0, 0);
@@ -140,6 +144,10 @@ ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget 
     pCapabilitiesGridLayout->addWidget(mpNeedsExecutionToolValueLabel, 5, 1);
     pCapabilitiesGridLayout->addWidget(mpProvidesDirectionalDerivativeLabel, 6, 0);
     pCapabilitiesGridLayout->addWidget(mpProvidesDirectionalDerivativeValueLabel, 6, 1);
+    pCapabilitiesGridLayout->addWidget(mpCanInterpolateInputsLabel, 7, 0);
+    pCapabilitiesGridLayout->addWidget(mpCanInterpolateInputsValueLabel, 7, 1);
+    pCapabilitiesGridLayout->addWidget(mpMaxOutputDerivativeOrderLabel, 8, 0);
+    pCapabilitiesGridLayout->addWidget(mpMaxOutputDerivativeOrderValueLabel, 8, 1);
     mpCapabilitiesGroupBox->setLayout(pCapabilitiesGridLayout);
     // info tab widget
     QWidget *pInfoWidget = new QWidget;
