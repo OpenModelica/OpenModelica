@@ -154,6 +154,7 @@ streams.log \
 redeclare.log \
 fmi_me_10.log \
 fmi_me_20.log \
+omsimulator.log \
 fmi_cs_st.log \
 uncertainties.log \
 scodeinst.log \
@@ -385,7 +386,7 @@ simulationqss.log: omc-diff
 	@echo $@ done
 frontEndUnitCheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile test > $@
-	@echo $@ done	
+	@echo $@ done
 simulationunitcheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile test > $@
 	@echo $@ done
@@ -475,6 +476,9 @@ fmi_me_10.log: omc-diff
 	@echo $@ done
 fmi_me_20.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0/ -f Makefile test > $@
+	@echo $@ done
+omsimulator.log: omc-diff
+	$(MAKE) -C omsimulator/ -f Makefile test > $@
 	@echo $@ done
 fmi_cs_st.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile test > $@
@@ -668,7 +672,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/records -f Makefile clean
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
 	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile clean
-	
 
 clean_g_3 :
 	$(MAKE) -C flattening/libraries/msl22/modelicaAdditions -f Makefile clean
@@ -692,6 +695,7 @@ clean_g_4:
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0 -f Makefile clean
+	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/siemens -f Makefile clean
 	$(MAKE) -C simulation/libraries/msl32 -f Makefile clean

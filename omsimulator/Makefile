@@ -1,34 +1,9 @@
-TEST = ../../../../rtest -v
+TEST = ../rtest -v
 
 TESTFILES = \
-BooleanNetwork1.mos \
-BouncingBall.mos \
-EnumerationTest.mos \
-FMIExercise.mos \
-HelloFMIWorld.mos \
-HelloFMIWorldEvent.mos \
-IntegerNetwork1.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-testAssert.mos \
-testBug2764.mos \
-testBug3034.mos \
-testBug3049.mos \
-testBug3763.mos \
-testBug3846.mos \
-testChangeParam.mos \
-testDisableDep.mos \
-testDiscreteStructe.mos \
-testInitialEquationsFMI.mos \
-TestSourceCodeFMU.mos \
-ZeroStates.mos \
+initialization.mos \
 
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES= \
-Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-testExperimentalFMU.mos
+FAILINGTESTFILES = \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -36,8 +11,6 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-
-
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
