@@ -536,12 +536,75 @@ algorithm
   se1 := simplify(e1);
   se2 := simplify(e2);
 
-  if Expression.isLiteral(se1) and Expression.isLiteral(se2) then
-    binaryExp := Ceval.evalLogicBinaryOp(se1, op, se2, EvalTarget.IGNORE_ERRORS());
-  elseif not (referenceEq(e1, se1) and referenceEq(e2, se2)) then
-    binaryExp := Expression.LBINARY(se1, op, se2);
-  end if;
+  binaryExp := match op.op
+    case Op.AND then simplifyLogicBinaryAnd(se1, op, se2);
+    case Op.OR then simplifyLogicBinaryOr(se1, op, se2);
+  end match;
 end simplifyLogicBinary;
+
+function simplifyLogicBinaryAnd
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression exp;
+algorithm
+  exp := match (exp1, exp2)
+    local
+      list<Expression> expl;
+      Operator o;
+
+    // false and e => false
+    case (Expression.BOOLEAN(false), _) then exp1;
+    // e and false => false
+    case (_, Expression.BOOLEAN(false)) then exp2;
+    // true and e => e
+    case (Expression.BOOLEAN(true), _)  then exp2;
+    // e and true => e
+    case (_, Expression.BOOLEAN(true))  then exp1;
+
+    case (Expression.ARRAY(), Expression.ARRAY())
+      algorithm
+        o := Operator.unlift(op);
+        expl := list(simplifyLogicBinaryAnd(e1, o, e2)
+                     threaded for e1 in exp1.elements, e2 in exp2.elements);
+      then
+        Expression.makeArray(Operator.typeOf(op), expl);
+
+    else Expression.LBINARY(exp1, op, exp2);
+  end match;
+end simplifyLogicBinaryAnd;
+
+function simplifyLogicBinaryOr
+  input Expression exp1;
+  input Operator op;
+  input Expression exp2;
+  output Expression exp;
+algorithm
+  exp := match (exp1, exp2)
+    local
+      list<Expression> expl;
+      Operator o;
+
+    // true or e => true
+    case (Expression.BOOLEAN(true), _) then exp1;
+    // e or true => true
+    case (_, Expression.BOOLEAN(true)) then exp2;
+    // false or e => e
+    case (Expression.BOOLEAN(false), _) then exp2;
+    // e or false => e
+    case (_, Expression.BOOLEAN(false)) then exp1;
+
+    case (Expression.ARRAY(), Expression.ARRAY())
+      algorithm
+        o := Operator.unlift(op);
+        expl := list(simplifyLogicBinaryAnd(e1, o, e2)
+                     threaded for e1 in exp1.elements, e2 in exp2.elements);
+      then
+        Expression.makeArray(Operator.typeOf(op), expl);
+
+    else Expression.LBINARY(exp1, op, exp2);
+  end match;
+end simplifyLogicBinaryOr;
 
 function simplifyLogicUnary
   input output Expression unaryExp;

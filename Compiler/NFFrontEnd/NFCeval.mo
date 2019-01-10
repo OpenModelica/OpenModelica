@@ -605,6 +605,7 @@ protected
   Type ty;
   InstNode c;
   ComponentRef cr;
+  Expression field_exp;
 algorithm
   tree := Class.classTree(InstNode.getClass(typeNode));
   comps := ClassTree.getComponents(tree);
@@ -615,13 +616,18 @@ algorithm
     c := comps[i];
     ty := InstNode.getType(c);
     cr := ComponentRef.CREF(c, {}, ty, NFComponentRef.Origin.CREF, cref);
-    fields := Expression.CREF(ty, cr) :: fields;
+    field_exp := Expression.CREF(ty, cr);
+
+    if Component.variability(InstNode.component(c)) <= Variability.STRUCTURAL_PARAMETER then
+      field_exp := evalExp(field_exp);
+    end if;
+
+    fields := field_exp :: fields;
     field_names := InstNode.name(c) :: field_names;
   end for;
 
   ty := Type.setRecordFields(field_names, recordType);
   exp := Expression.RECORD(InstNode.scopePath(recordNode), ty, fields);
-  exp := evalExp(exp);
 end makeRecordBindingExp;
 
 function splitRecordArrayExp
