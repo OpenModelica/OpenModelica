@@ -93,14 +93,14 @@ endif
 RESULTS_HFILES = simulation_result_ia.h simulation_result.h simulation_result_csv.h simulation_result_mat4.h MatVer4.h simulation_result_plt.h simulation_result_wall.h
 RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_result_mat4.cpp MatVer4.cpp simulation_result_plt.cpp simulation_result_wall.cpp
 
-SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) socket$(OBJ_EXT)
+SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) ../dataReconciliation/dataReconciliation$(OBJ_EXT) socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
 SIM_OBJS_C_FMI=modelinfo$(OBJ_EXT) simulation_input_xml$(OBJ_EXT)
 else
 SIM_OBJS_C_FMI=
 endif
 SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT) omc_simulation_util$(OBJ_EXT)
-SIM_HFILES = options.h simulation_input_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h socket.h omc_simulation_util.h
+SIM_HFILES = options.h simulation_input_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h ../dataReconciliation/dataReconciliation.h socket.h omc_simulation_util.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
@@ -185,7 +185,7 @@ FMI_ME_OBJS = $(GCOBJSPATH_MINIMAL:$(BUILDPATH)/%=%) $(UTILOBJSPATH:$(BUILDPATH)
 FMI_ME_OBJS_BUILDPATH = $(FMI_ME_OBJS:./external_solvers/%=$(BUILDPATH)/external_solvers/%)
 
 ALL_HEADERS = $(METAHFILESPATH) $(GCFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPATH) $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(OPTIMIZATIONHFILESPATH) $(RESULTSHFILESPATH) $(SIMHFILESPATH)
-ALL_PATHS = $(METAPATH) $(FMIPATH) $(GCPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/
+ALL_PATHS = $(METAPATH) $(FMIPATH) $(GCPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/ dataReconciliation/
 ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*$(OBJ_EXT)
 
 BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) ./meta/meta_modelica_catch$(OBJ_EXT)

@@ -8610,7 +8610,8 @@ algorithm
                               {},
                               ei,
                               emptyPartitionsInfo(),
-                              BackendDAE.emptyDAEModeData
+                              BackendDAE.emptyDAEModeData,
+                              NONE()
                               );
 end createEmptyShared;
 

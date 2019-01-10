@@ -64,7 +64,7 @@
 #include "openmodelica_func.h"
 #include "meta/meta_modelica.h"
 
-#include "linearize.h"
+#include "linearization/linearize.h"
 #include "options.h"
 #include "simulation_runtime.h"
 #include "simulation_input_xml.h"
@@ -85,6 +85,7 @@
 #include "omc_config.h"
 #include "simulation/solver/initialization/initialization.h"
 #include "simulation/solver/dae_mode.h"
+#include "dataReconciliation/dataReconciliation.h"
 
 #ifdef _OMC_QSS_LIB
   #include "solver_qss/solver_qss.h"
@@ -514,6 +515,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
 
   if (omc_flag[FLAG_ALARM]) {
     alarm(0);
+  }
+
+  if(0 == retVal && omc_flag[FLAG_DATA_RECONCILE])
+  {
+	infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Starting!");
+	infoStreamPrint(LOG_STDOUT, 0, data->modelData->modelName);
+	retVal = dataReconciliation(data, threadData);
+	infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
   }
 
   if(0 == retVal && create_linearmodel) {

@@ -45,6 +45,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_EMBEDDED_SERVER_PORT */         "embeddedServerPort",
   /* FLAG_MAT_SYNC */                     "mat_sync",
   /* FLAG_EMIT_PROTECTED */               "emit_protected",
+  /* FLAG_DATA_RECONCILE_Eps */           "eps",
   /* FLAG_F */                            "f",
   /* FLAG_HELP */                         "help",
   /* FLAG_HOMOTOPY_ADAPT_BEND */          "homAdaptBend",
@@ -128,12 +129,14 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */                "overrideFile",
   /* FLAG_PORT */                         "port",
   /* FLAG_R */                            "r",
+  /* FLAG_DATA_RECONCILE  */              "reconcile",
   /* FLAG_RT */                           "rt",
   /* FLAG_S */                            "s",
   /* FLAG_SINGLE_PRECISION */             "single",
   /* FLAG_SOLVER_STEPS */                 "steps",
   /* FLAG_STEADY_STATE */                 "steadyState",
   /* FLAG_STEADY_STATE_TOL */             "steadyStateTol",
+  /* FLAG_DATA_RECONCILE_Sx */            "sx",
   /* FLAG_UP_HESSIAN */                   "keepHessian",
   /* FLAG_W */                            "w",
 
@@ -155,6 +158,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_EMBEDDED_SERVER_PORT */         "[int (default 4841)] value specifies the port number used by the embedded server",
   /* FLAG_MAT_SYNC */                     "[int (default 0)] syncs the mat file header after emitting every N time-points (default disabled)",
   /* FLAG_EMIT_PROTECTED */               "emits protected variables to the result-file",
+  /* FLAG_DATA_RECONCILE_Eps */           "value specifies the number of convergence iteration to be performed for DataReconciliation",
   /* FLAG_F */                            "value specifies a new setup XML file to the generated simulation code",
   /* FLAG_HELP */                         "get detailed information that specifies the command-line flag",
   /* FLAG_HOMOTOPY_ADAPT_BEND */          "[double (default 0.5)] maximum trajectory bending to accept the homotopy step",
@@ -238,12 +242,14 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_OVERRIDE_FILE */                "will override the variables or the simulation settings in the XML setup file with the values from the file",
   /* FLAG_PORT */                         "value specifies the port for simulation status (default disabled)",
   /* FLAG_R */                            "value specifies a new result file than the default Model_res.mat",
+  /* FLAG_DATA_RECONCILE */               "Run the DataReconciliation algorithm for constrained equation",
   /* FLAG_RT */                           "value specifies the scaling factor for real-time synchronization (0 disables)",
   /* FLAG_S */                            "value specifies the integration method",
   /* FLAG_SINGLE */                       "output in single precision",
   /* FLAG_SOLVER_STEPS */                 "dumps the number of integration steps into the result file",
   /* FLAG_STEADY_STATE */                 "aborts if steady state is reached",
   /* FLAG_STEADY_STATE_TOL */             "[double (default 1e-3)] This relative tolerance is used to detect steady state.",
+  /* FLAG_DATA_RECONCILE_Sx */            "value specifies a csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
 
@@ -283,6 +289,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Syncs the mat file header after emitting every N time-points.",
   /* FLAG_EMIT_PROTECTED */
   "  Emits protected variables to the result-file.",
+  /* FLAG_DATA_RECONCILE_Eps */
+  "  Value specifies the number of convergence iteration to be performed for DataReconciliation",
   /* FLAG_F */
   "  Value specifies a new setup XML file to the generated simulation code.\n",
   /* FLAG_HELP */
@@ -495,6 +503,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the name of the output result file.\n"
   "  The default file-name is based on the model name and output format.\n"
   "  For example: Model_res.mat.",
+  /* FLAG_DATA_RECONCILE */
+  "  Run the DataReconciliation algorithm for constrained equation",
   /* FLAG_RT */
   "  Value specifies the scaling factor for real-time synchronization (0 disables).\n"
   "  A value > 1 means the simulation takes a longer time to simulate.\n",
@@ -508,6 +518,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Aborts the simulation if steady state is reached.",
   /* FLAG_STEADY_STATE_TOL */
   "  This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol",
+  /* FLAG_DATA_RECONCILE_Sx */
+  "  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation",
   /* FLAG_UP_HESSIAN */
   "  Value specifies the number of steps, which keep Hessian matrix constant.",
   /* FLAG_W */
@@ -531,6 +543,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_EMBEDDED_SERVER_PORT */         FLAG_TYPE_OPTION,
   /* FLAG_MAT_SYNC */                     FLAG_TYPE_OPTION,
   /* FLAG_EMIT_PROTECTED */               FLAG_TYPE_FLAG,
+  /* FLAG_DATA_RECONCILE_Eps */           FLAG_TYPE_OPTION,
   /* FLAG_F */                            FLAG_TYPE_OPTION,
   /* FLAG_HELP */                         FLAG_TYPE_OPTION,
   /* FLAG_HOMOTOPY_ADAPT_BEND */          FLAG_TYPE_OPTION,
@@ -614,12 +627,14 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_OVERRIDE_FILE */                FLAG_TYPE_OPTION,
   /* FLAG_PORT */                         FLAG_TYPE_OPTION,
   /* FLAG_R */                            FLAG_TYPE_OPTION,
+  /* FLAG_DATA_RECONCILE */               FLAG_TYPE_FLAG,
   /* FLAG_RT */                           FLAG_TYPE_OPTION,
   /* FLAG_S */                            FLAG_TYPE_OPTION,
   /* FLAG_SINGLE */                       FLAG_TYPE_FLAG,
   /* FLAG_SOLVER_STEPS */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE_TOL */             FLAG_TYPE_OPTION,
+  /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
   /* FLAG_W */                            FLAG_TYPE_FLAG
 };

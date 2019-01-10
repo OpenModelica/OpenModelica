@@ -167,7 +167,8 @@ algorithm
                                                     BackendDAE.SIMULATION(),
                                                     symjacs,inExtraInfo,
                                                     BackendDAEUtil.emptyPartitionsInfo(),
-                                                    BackendDAE.emptyDAEModeData
+                                                    BackendDAE.emptyDAEModeData,
+                                                    NONE()
                                                     ));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   BackendDAEUtil.checkIncidenceMatrixSolvability(syst, functionTree);

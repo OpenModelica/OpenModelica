@@ -165,11 +165,13 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacF_column")%>(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN *thisJacobian, ANALYTIC_JACOBIAN *parentJacobian);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_frame")%>(void);
     extern const char* <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>(void);
     extern int <%symbolName(modelNamePrefixStr,"mayer")%>(DATA* data, modelica_real** res, short *);
@@ -1058,6 +1060,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%functionOutput(modelInfo, modelNamePrefixStr)%>
 
+    <%functionSetC(modelInfo, modelNamePrefixStr)%>
+
     <%functionDAE(allEquations, modelNamePrefixStr)%>
 
     <%functionLocalKnownVars(localKnownVars, modelNamePrefixStr)%>
@@ -1092,6 +1096,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"input_function_init")%>,
        <%symbolName(modelNamePrefixStr,"input_function_updateStartValues")%>,
        <%symbolName(modelNamePrefixStr,"output_function")%>,
+       <%symbolName(modelNamePrefixStr,"setc_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
@@ -1110,14 +1115,17 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"INDEX_JAC_B")%>,
        <%symbolName(modelNamePrefixStr,"INDEX_JAC_C")%>,
        <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
+       <%symbolName(modelNamePrefixStr,"INDEX_JAC_F")%>,
        <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
        <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
        <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
        <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
+       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>,
        <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
        <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
+       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
        <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
        <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
        <%symbolName(modelNamePrefixStr,"mayer")%>,
@@ -1279,6 +1287,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData->nRelations = <%varInfo.numRelations%>;
     data->modelData->nMathEvents = <%varInfo.numMathEventFunctions%>;
     data->modelData->nExtObjs = <%varInfo.numExternalObjects%>;
+
     <% match isModelExchangeFMU
     case "1.0" then "data->modelData->modelDataXml.fileName = NULL;"
     case "" then 'data->modelData->modelDataXml.fileName = "<%fileNamePrefix%>_info.json";'
@@ -1304,6 +1313,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
 
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
+    data->modelData->nSetcVars = <%varInfo.numSetcVars%>;
     >>
   end match
 end populateModelInfo;
@@ -1685,6 +1695,30 @@ template functionOutput(ModelInfo modelInfo, String modelNamePrefix)
     >>
   end match
 end functionOutput;
+
+
+template functionSetC(ModelInfo modelInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  match modelInfo
+  case MODELINFO(vars=SIMVARS(__)) then
+    <<
+    int <%symbolName(modelNamePrefix,"setc_function")%>(DATA *data, threadData_t *threadData)
+    {
+      TRACE_PUSH
+
+      <%vars.dataReconSetcVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
+        'data->simulationInfo->setcVars[<%i0%>] = <%cref(name)%>;'
+        ;separator="\n"
+      %>
+
+      TRACE_POP
+      return 0;
+    }
+    >>
+  end match
+end functionSetC;
+
 
 template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelNamePrefix)
   "Generates function initSample() in simulation file."

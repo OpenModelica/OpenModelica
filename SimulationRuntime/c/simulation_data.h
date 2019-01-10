@@ -548,6 +548,7 @@ typedef struct MODEL_DATA
 
   long nSensitivityVars;
   long nSensitivityParamVars;
+  long nSetcVars;
 }MODEL_DATA;
 
 typedef struct CLOCK_DATA {
@@ -648,6 +649,8 @@ typedef struct SIMULATION_INFO
 
   modelica_real* inputVars;
   modelica_real* outputVars;
+  modelica_real* setcVars;
+
   EXTERNAL_INPUT external_input;
 
   modelica_real* sensitivityMatrix;    /* used by integrator for sensitivity mode  */

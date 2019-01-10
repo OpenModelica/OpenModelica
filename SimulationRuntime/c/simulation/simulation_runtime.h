@@ -47,6 +47,7 @@
 #include <string.h>
 
 #include "linearization/linearize.h"
+#include "dataReconciliation/dataReconciliation.h"
 #include "simulation/results/simulation_result.h"
 
 #ifdef __cplusplus

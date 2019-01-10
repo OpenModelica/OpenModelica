@@ -325,6 +325,7 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     data->callback->functionODE(data, threadData);
     data->callback->functionAlgebraics(data, threadData);
     data->callback->output_function(data, threadData);
+    data->callback->setc_function(data, threadData);
     data->callback->function_storeDelayed(data, threadData);
 
     for (i = 0; i < STATES; i++)

@@ -275,6 +275,10 @@ protected
   SimCodeVar.SimVar dtSimVar;
   BackendDAE.Var dtVar;
   HashTableSimCodeEqCache.HashTable eqCache;
+  BackendDAE.Jacobian dataReconJac;
+  BackendDAE.Variables setcVars;
+  list<SimCodeVar.SimVar> tmpsetcVars;
+  SimCode.JacobianMatrix dataReconSimJac;
 
   constant Boolean debug = false;
 algorithm
@@ -466,6 +470,17 @@ algorithm
     (inlineEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(inlineEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
+    // Generate jacobian code for DataReconciliation
+    //if Flags.isSet(Flags.UNCERTAINTIES) then
+      if Util.isSome(shared.dataReconciliationData) then
+        BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
+        (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
+        ({dataReconSimJac}, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
+        SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
+       SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
+      end if;
+    //end if;
+
     // collect symbolic jacobians from state selection
     (stateSets, modelInfo, SymbolicJacsStateSelect, SymbolicJacsStateSelectInternal) :=  addAlgebraicLoopsModelInfoStateSets(stateSets, modelInfo);
     if debug then execStat("simCode: collect and index LS/NLS in modelInfo"); end if;
@@ -477,7 +492,7 @@ algorithm
       if debug then execStat("simCode: create FMI model structure"); end if;
     end if;
     // collect symbolic jacobians in linear loops of the overall jacobians
-    (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
+    (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex, shared);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
     SymbolicJacs := listAppend(SymbolicJacsFMI, SymbolicJacs);
     SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
@@ -538,7 +553,21 @@ algorithm
       varInfo.numSensitivityParameters := countSenParams;
       modelInfo.varInfo := varInfo;
     end if;
-
+    // Generates c code for setC-results which calculates c(x,y) for dataReconciliation
+    if Util.isSome(shared.dataReconciliationData) then
+        tmpSimVars := modelInfo.vars;
+        //BackendDAE.DATA_RECON(dataReconJac,setcVars) := Util.getOption(shared.dataReconciliationData);
+       ((tmpsetcVars, _)) :=  BackendVariable.traverseBackendDAEVars(setcVars, traversingdlowvarToSimvar, ({}, emptyVars));
+        tmpsetcVars := rewriteIndex(tmpsetcVars, 0);
+        tmpSimVars.dataReconSetcVars := tmpsetcVars;
+        modelInfo.vars := tmpSimVars;
+        // set varInfo nsetcvars
+        varInfo := modelInfo.varInfo;
+        varInfo.numSetcVars := listLength(tmpsetcVars);
+        modelInfo.varInfo := varInfo;
+        //print("\n simcode gen setc:*****"+anyString(tmpsetcVars) + "\n lenght of vars :" +anyString(listLength(tmpsetcVars)));
+    end if;
+    //print("\n created model_info:"+ anyString(modelInfo.varInfo.numSetcVars)+ "\n setcvars" + anyString(modelInfo.vars.dataReconSetcVars));
     backendMapping := setBackendVarMapping(inBackendDAE, crefToSimVarHT, modelInfo, backendMapping);
     //dumpBackendMapping(backendMapping);
 
@@ -4050,6 +4079,7 @@ public function createJacobianLinearCode
   input BackendDAE.SymbolicJacobians inSymjacs;
   input SimCode.ModelInfo inModelInfo;
   input Integer iuniqueEqIndex;
+  input BackendDAE.Shared shared;
   output list<SimCode.JacobianMatrix> res = {};
   output Integer ouniqueEqIndex;
 algorithm
@@ -4057,13 +4087,23 @@ algorithm
     local
       SimCode.HashTableCrefToSimVar crefSimVarHT;
       SimCode.JacobianMatrix tmpJac;
+      list<String> matrixnames;
     case (_, _, _)
       equation
         // b = Flags.disableDebug(Flags.EXEC_STAT);
         crefSimVarHT = createCrefToSimVarHT(inModelInfo);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
-        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, {"A", "B", "C", "D"}, {});
+
+        // This is used to set the matrixnames for Linearization and DataReconciliation procedure
+        // For dataReconciliation F is set in earlier order which cause index problem for linearization matrix and hence identify if
+        // dataReconciliation is involved and pass the matrix names
+        if Util.isSome(shared.dataReconciliationData) then
+           matrixnames={"A", "B", "C", "D"};
+        else
+           matrixnames={"A", "B", "C", "D", "F"};
+        end if;
+        (res, ouniqueEqIndex) = createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ = Flags.set(Flags.EXEC_STAT, b);
       then (res,ouniqueEqIndex);
   end match;
@@ -6402,7 +6442,7 @@ algorithm
   numTimeEvents := numTimeEvents;
   numRelations := numRelations;
   varInfo := SimCode.VARINFO(numZeroCrossings, numTimeEvents, numRelations, numMathEventFunctions, nx, ny, ndy, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0);
+          next, ny_string, np_string, na_string, 0, 0, 0, 0, numStateSets,0,numOptimizeConstraints, numOptimizeFinalConstraints, 0,0);
 end createVarInfo;
 
 protected function evaluateStartValues"evaluates functions in the start values in the variableAttributes"
@@ -6854,6 +6894,7 @@ protected type SimVarsIndex = enumeration(
   stringConst,
 
   sensitivity,
+  setcvars,
   jacobian,
   seed
 );
@@ -6984,7 +7025,8 @@ algorithm
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.seed)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeConstraints)),
     Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.realOptimizeFinalConstraints)),
-    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity))
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.sensitivity)),
+    Dangerous.arrayGetNoBoundsChecking(simVars, Integer(SimVarsIndex.setcvars))
   );
   GC.free(simVars);
 end createVars;
@@ -9833,11 +9875,11 @@ algorithm
                    paramVars, intParamVars, boolParamVars, stringParamVars,
                    constVars, intConstVars, boolConstVars, stringConstVars,
                    sensitivityVars, extObjVars, jacobianVars, seedVars,
-                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars;
+                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,setcVars;
      tpl intpl;
 
     case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars), _, intpl)
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars), _, intpl)
          equation
            (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
            (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
@@ -9865,10 +9907,11 @@ algorithm
            (realOptimizeConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeConstraintsVars, func, intpl);
            (realOptimizeFinalConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeFinalConstraintsVars, func, intpl);
            (sensitivityVars, intpl) = List.mapFoldTuple(sensitivityVars, func, intpl);
+           (setcVars, intpl) = List.mapFoldTuple(setcVars, func, intpl);
 
 
          then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars), intpl);
+                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars), intpl);
     case (_, _, _) then fail();
   end match;
 end traveseSimVars;

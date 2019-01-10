@@ -43,6 +43,8 @@ RUNTIME_HEADERS = \
 
 RUNTIMELINEAR_HEADERS = ./linearization/linearize.h
 
+RUNTIMEDATARECONCILE_HEADERS = ./dataReconciliation/dataReconciliation.h
+
 RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerLocalFunction.h ./optimization/OptimizerInterface.h
 
 RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
@@ -190,7 +192,7 @@ libOpenModelicaFMIRuntimeC.dylib: $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) Makefile.o
 	@rm -f $@
 	$(CC) -shared -o $@ $(FMIOBJSPATH) $(GCOBJPATH_MINIMAL) $(LDFLAGS_SIM) -undefined dynamic_lookup -install_name '@rpath/$@'
 
-MKBUILDDIR=@(mkdir -p "$(BUILDPATH)" && cd "$(BUILDPATH)" && mkdir -p $(GCPATH) $(METAPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(RESULTSPATH) $(SIMPATH) $(OPTIMIZATIONPATH)/DataManagement $(OPTIMIZATIONPATH)/eval_all $(FMIPATH) $(OPTIMIZATIONPATH) linearization external_solvers)
+MKBUILDDIR=@(mkdir -p "$(BUILDPATH)" && cd "$(BUILDPATH)" && mkdir -p $(GCPATH) $(METAPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(RESULTSPATH) $(SIMPATH) $(OPTIMIZATIONPATH)/DataManagement $(OPTIMIZATIONPATH)/eval_all $(FMIPATH) $(OPTIMIZATIONPATH) linearization dataReconciliation external_solvers)
 $(GCOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(GCHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -227,6 +229,10 @@ $(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIM
 	$(MKBUILDDIR)
 	$(CXX) -c -Ilinearization/ $(CXXFLAGS) -o $@ $<
 
+$(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp dataReconciliation/dataReconciliation.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
+	$(MKBUILDDIR)
+	$(CXX) -c -IdataReconciliation/ $(CXXFLAGS) -o $@ $<
+
 $(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
@@ -259,6 +265,7 @@ bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(RUNTIMEMETA_HEADERS) $(builddir_inc)/c/meta/
 	cp -p $(RUNTIMEMETAGC_HEADERS) $(builddir_inc)/c/gc/
 	cp -p $(RUNTIMEUTIL_HEADERS) $(builddir_inc)/c/util/
+	cp -p $(RUNTIMEDATARECONCILE_HEADERS) $(builddir_inc)/c/dataReconciliation/
 
 fmi-runtime: sourcedist
 	$(MAKE) -f $(LIBMAKEFILE) "$(LIBSIMULATIONFMI)" OMC_MINIMAL_RUNTIME=1 OMC_FMI_RUNTIME=1 BUILDPATH=build/fmi OMC_NUM_NONLINEAR_SYSTEMS=1 OMC_NUM_LINEAR_SYSTEMS=1 OMC_NUM_MIXED_SYSTEMS=1

@@ -133,6 +133,7 @@ uniontype Shared "Data shared for all equation-systems"
     ExtraInfo info "contains extra info that we send around like the model name";
     PartitionsInfo partitionsInfo;
     BackendDAEModeData daeModeData "DAEMode Data";
+    Option<DataReconciliationData> dataReconciliationData;
   end SHARED;
 end Shared;
 
@@ -184,6 +185,14 @@ uniontype BackendDAEType "BackendDAEType to indicate different types of BackendD
   record INLINESYSTEM    "Type for inline system BackendDAE.DAE"             end INLINESYSTEM;
   record DAEMODESYSTEM   "Type for DAEmode system BackendDAE.DAE"            end DAEMODESYSTEM;
 end BackendDAEType;
+
+uniontype DataReconciliationData
+  record DATA_RECON
+    Jacobian symbolicJacobian "SET_S w.r.t ...";
+    Variables setcVars "setc solved vars";
+    // ... maybe more DATA for the code generation
+  end DATA_RECON;
+end DataReconciliationData;
 
 //
 //  variables and equations definition

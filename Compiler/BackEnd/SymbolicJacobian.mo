@@ -2440,7 +2440,7 @@ algorithm
     end match for component in inComps);
 end calculateJacobiansComponents;
 
-protected function prepareTornStrongComponentData
+public function prepareTornStrongComponentData
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input list<Integer> inIterationvarsInts;
@@ -2759,7 +2759,7 @@ algorithm
   end match;
 end isRecordInvoled;
 
-protected function getSymbolicJacobian "author: wbraun
+public function getSymbolicJacobian "author: wbraun
   This function creates a symbolic Jacobian column for non-linear systems and
   tearing systems."
   input BackendDAE.Variables inDiffVars;

@@ -271,6 +271,7 @@ uniontype VarInfo "Number of variables of various types in a Modelica model."
     Integer numOptimizeConstraints;
     Integer numOptimizeFinalConstraints;
     Integer numSensitivityParameters;
+    Integer numSetcVars;
   end VARINFO;
 end VarInfo;
 

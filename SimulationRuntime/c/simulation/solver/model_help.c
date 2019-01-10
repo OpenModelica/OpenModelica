@@ -984,6 +984,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* buffer for inputs and outputs values */
   data->simulationInfo->inputVars = (modelica_real*) calloc(data->modelData->nInputVars, sizeof(modelica_real));
   data->simulationInfo->outputVars = (modelica_real*) calloc(data->modelData->nOutputVars, sizeof(modelica_real));
+  data->simulationInfo->setcVars = (modelica_real*) calloc(data->modelData->nSetcVars, sizeof(modelica_real));
 
 #if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
   /* buffer for mixed systems */
@@ -1214,6 +1215,7 @@ void deInitializeDataStruc(DATA *data)
   /* free inputs and output */
   free(data->simulationInfo->inputVars);
   free(data->simulationInfo->outputVars);
+  free(data->simulationInfo->setcVars);
 
   /* free external objects buffer */
   free(data->simulationInfo->extObjs);

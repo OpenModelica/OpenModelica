@@ -122,6 +122,10 @@ int (*input_function_init)(DATA*, threadData_t*);
 int (*input_function_updateStartValues)(DATA*, threadData_t*);
 int (*output_function)(DATA*, threadData_t*);
 
+/* functions for setc data_reconciliation */
+int (*setc_function)(DATA*, threadData_t*);
+
+
 /* function for storing value histories of delayed expressions
  * called from functionDAE_output()
  */
@@ -236,6 +240,7 @@ const int INDEX_JAC_A;
 const int INDEX_JAC_B;
 const int INDEX_JAC_C;
 const int INDEX_JAC_D;
+const int INDEX_JAC_F;
 
 /*
  * These functions initialize specific jacobians.
@@ -246,6 +251,7 @@ int (*initialAnalyticJacobianA)(void* data, threadData_t *threadData, ANALYTIC_J
 int (*initialAnalyticJacobianB)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
 int (*initialAnalyticJacobianC)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
 int (*initialAnalyticJacobianD)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+int (*initialAnalyticJacobianF)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
 
 /*
  * These functions calculate specific jacobian column.
@@ -254,7 +260,7 @@ int (*functionJacA_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBI
 int (*functionJacB_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 int (*functionJacC_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 int (*functionJacD_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
-
+int (*functionJacF_column)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian, ANALYTIC_JACOBIAN* parentJacobian);
 /*#endif*/
 
 const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */

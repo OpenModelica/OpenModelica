@@ -33,6 +33,7 @@ $(builddir_lib_omc) \
 $(builddir_inc)/c/ \
 $(builddir_inc)/c/gc/ \
 $(builddir_inc)/c/linearization/ \
+$(builddir_inc)/c/dataReconciliation/ \
 $(builddir_inc)/c/optimization/ \
 $(builddir_inc)/c/simulation/ \
 $(builddir_inc)/c/simulation/results/ \

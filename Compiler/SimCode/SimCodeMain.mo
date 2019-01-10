@@ -1098,7 +1098,7 @@ protected
   Option<SimCode.JacobianMatrix> daeModeSP;
   Option<SimCode.DaeModeData> daeModeData;
   SimCode.DaeModeConfig daeModeConf;
-
+  list<String> matrixnames;
   list<list<SimCode.SimEqSystem>> daeEquations;
   list<SimCodeVar.SimVar> residualVars, algebraicStateVars, auxiliaryVars;
 
@@ -1190,7 +1190,13 @@ algorithm
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
     (parameterEquations, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfo(parameterEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-    (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, {"A", "B", "C", "D"}, {});
+    // check for datareconciliation is present and pass the matrixnames
+    if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
+      matrixnames := {"A", "B", "C", "D"};
+    else
+      matrixnames := {"A", "B", "C", "D", "F"};
+    end if;
+    (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := SimCodeUtil.addAlgebraicLoopsModelInfoSymJacs(symJacs, modelInfo);
 
     // collect jacobian equation only for equantion info file

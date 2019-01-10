@@ -88,6 +88,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/results)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/util)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/dataReconciliation)
 
 # Subdirectorys
 ADD_SUBDIRECTORY(math-support)
@@ -136,6 +137,8 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/dataReconciliation)
+
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -213,6 +216,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/dataReconciliation)
 
   INCLUDE_DIRECTORIES(${dir})
 
@@ -346,6 +350,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/dataReconciliation)
 
   # OMDEV PATH
   IF(NOT OMDEV)
@@ -433,6 +438,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/dataReconciliation)
 
   # OMDEV PATH
   IF(NOT OMDEV)
