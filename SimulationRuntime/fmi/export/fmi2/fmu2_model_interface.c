@@ -562,6 +562,22 @@ fmi2Status fmi2SetupExperiment(fmi2Component c, fmi2Boolean toleranceDefined, fm
 
 fmi2Status fmi2EnterInitializationMode(fmi2Component c)
 {
+  ModelInstance *comp = (ModelInstance *)c;
+
+  if (invalidState(comp, "fmi2EnterInitializationMode", modelInstantiated, ~0))
+    return fmi2Error;
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode...")
+
+  setZCtol(comp->tolerance); /* set zero-crossing tolerance */
+  setStartValues(comp);
+  copyStartValuestoInitValues(comp->fmuData);
+  comp->state = modelInitializationMode;
+
+  return fmi2OK;
+}
+
+fmi2Status fmi2ExitInitializationMode(fmi2Component c)
+{
   fmi2Status res = fmi2Error;
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
@@ -570,69 +586,6 @@ fmi2Status fmi2EnterInitializationMode(fmi2Component c)
   int done=0;
 
   threadData->currentErrorStage = ERROR_SIMULATION;
-  if (invalidState(comp, "fmi2EnterInitializationMode", modelInstantiated, ~0))
-    return fmi2Error;
-
-  setThreadData(comp);
-
-  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode...")
-  /* set zero-crossing tolerance */
-  setZCtol(comp->tolerance);
-
-  setStartValues(comp);
-  copyStartValuestoInitValues(comp->fmuData);
-
-  /* try */
-  MMC_TRY_INTERNAL(simulationJumpBuffer)
-    threadData->mmc_jumper = threadData->simulationJumpBuffer;
-
-    if (initialization(comp->fmuData, comp->threadData, "", "", 0.0)) {
-      comp->state = modelError;
-      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
-    }
-    else
-    {
-      /*TODO: Simulation stop time is need to calculate in before hand all sample events
-                  We shouldn't generate them all in beforehand */
-      initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
-#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
-      initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
-#endif
-      /* due to an event overwrite old values */
-      overwriteOldSimulationData(comp->fmuData);
-
-      comp->eventInfo.terminateSimulation = fmi2False;
-      comp->eventInfo.valuesOfContinuousStatesChanged = fmi2True;
-
-      /* Get next event time (sample calls)*/
-      nextSampleEvent = 0;
-      nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-      if (nextSampleEvent == -1) {
-        comp->eventInfo.nextEventTimeDefined = fmi2False;
-      } else {
-        comp->eventInfo.nextEventTimeDefined = fmi2True;
-        comp->eventInfo.nextEventTime = nextSampleEvent;
-        fmi2EventUpdate(comp, &(comp->eventInfo));
-      }
-      comp->state = modelInitializationMode;
-      FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeed")
-      res = fmi2OK;
-    }
-    done = 1;
-  /* catch */
-  MMC_CATCH_INTERNAL(simulationJumpBuffer)
-  threadData->mmc_jumper = old_jmp;
-
-  if (!done) {
-    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: terminated by an assertion.")
-  }
-  resetThreadData(comp);
-  return res;
-}
-
-fmi2Status fmi2ExitInitializationMode(fmi2Component c)
-{
-  ModelInstance *comp = (ModelInstance *)c;
   if (invalidState(comp, "fmi2ExitInitializationMode", modelInitializationMode, ~0))
     return fmi2Error;
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode...")
@@ -640,11 +593,60 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   setThreadData(comp);
   comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
   comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = threadData->simulationJumpBuffer;
+
+  if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
+  {
+    comp->state = modelError;
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
+  }
+  else
+  {
+    /* TODO: Simulation stop time is needed to calculate the sample events beforehand. */
+    initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
+    initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
+#endif
+    /* overwrite old values due to an event */
+    overwriteOldSimulationData(comp->fmuData);
+
+    comp->eventInfo.terminateSimulation = fmi2False;
+    comp->eventInfo.valuesOfContinuousStatesChanged = fmi2True;
+
+    /* get next event time (sample calls) */
+    nextSampleEvent = 0;
+    nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
+    if (nextSampleEvent == -1)
+    {
+      comp->eventInfo.nextEventTimeDefined = fmi2False;
+    }
+    else
+    {
+      comp->eventInfo.nextEventTimeDefined = fmi2True;
+      comp->eventInfo.nextEventTime = nextSampleEvent;
+      fmi2EventUpdate(comp, &(comp->eventInfo));
+    }
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeed")
+    res = fmi2OK;
+  }
+  done = 1;
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
+
+  if (!done)
+  {
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: terminated by an assertion.")
+  }
+
   comp->state = modelEventMode;
   resetThreadData(comp);
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
-  return fmi2OK;
+  return res;
 }
 
 /*

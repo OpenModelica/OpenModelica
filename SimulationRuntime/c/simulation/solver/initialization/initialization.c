@@ -605,7 +605,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   infoStreamPrint(LOG_INIT, 0, "### START INITIALIZATION ###");
 
-  setAllParamsToStart(data);
+  if (strcmp(pInitMethod, "fmi"))
+    setAllParamsToStart(data);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* import start values from extern mat-file */
@@ -621,7 +622,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   }
 #endif
   /* set up all variables with their start-values */
-  setAllVarsToStart(data);
+  if (strcmp(pInitMethod, "fmi"))
+    setAllVarsToStart(data);
 
   if(!(pInitFile && strcmp(pInitFile, ""))) {
     data->callback->updateBoundParameters(data, threadData);
@@ -633,7 +635,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   updateStaticDataOfNonlinearSystems(data, threadData);
 
   /* if there are user-specified options, use them! */
-  if (pInitMethod && strcmp(pInitMethod, "")) {
+  if (pInitMethod && (strcmp(pInitMethod, "") && strcmp(pInitMethod, "fmi"))) {
     initMethod = IIM_UNKNOWN;
 
     for (i=1; i<IIM_MAX; ++i) {
