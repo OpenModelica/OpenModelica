@@ -1838,14 +1838,6 @@ algorithm
       DAE.Type tp;
       Integer i;
 
-    case (_, _, _, _, _, _)
-      equation
-        true = Expression.isArray(e1) or Expression.isMatrix(e1);
-        true = Expression.isArray(e2) or Expression.isMatrix(e2);
-        ea1 = Expression.flattenArrayExpToList(e1);
-        ea2 = Expression.flattenArrayExpToList(e2);
-      then generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
-
     // array type with record
     case (_, _, _, _, _, _)
       equation
@@ -1858,6 +1850,14 @@ algorithm
         //For COMPLEX_EQUATION
         //i = List.fold(ds, intMul, 1);
       then BackendDAE.ARRAY_EQUATION(ds, e1, e2, source, inEqAttributes)::iAcc;
+
+    case (_, _, _, _, _, _)
+      equation
+        true = Expression.isArray(e1) or Expression.isMatrix(e1);
+        true = Expression.isArray(e2) or Expression.isMatrix(e2);
+        ea1 = Expression.flattenArrayExpToList(e1);
+        ea2 = Expression.flattenArrayExpToList(e2);
+      then generateEquations(ea1, ea2, source, inEqAttributes, iAcc);
 
     case (_, _, _, _, _, _)
       equation
