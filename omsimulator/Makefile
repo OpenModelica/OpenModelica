@@ -2,6 +2,7 @@ TEST = ../rtest -v
 
 TESTFILES = \
 initialization.mos \
+initialization2.mos \
 
 FAILINGTESTFILES = \
 
