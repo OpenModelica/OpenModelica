@@ -135,6 +135,19 @@ public
         then
           ARRAY_RANGE(values);
 
+      // enumeration type based range
+      case Expression.TYPENAME(ty = Type.ARRAY(elementType = ty as Type.ENUMERATION(literals = literals)))
+        algorithm
+          values := {};
+          istep := 0;
+
+          for l in literals loop
+            istep := istep + 1;
+            values := Expression.ENUM_LITERAL(ty, l, istep) :: values;
+          end for;
+        then
+          ARRAY_RANGE(values);
+
       else INVALID_RANGE(exp);
 
     end match;

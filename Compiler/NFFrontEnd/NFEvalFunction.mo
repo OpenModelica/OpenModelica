@@ -488,6 +488,8 @@ function evaluateStatement
   input Statement stmt;
   output FlowControl ctrl;
 algorithm
+  // adrpo: we really need some error handling here to detect which statement cannot be evaluated
+  // try
   ctrl := match stmt
     case Statement.ASSIGNMENT() then evaluateAssignment(stmt.lhs, stmt.rhs);
     case Statement.FOR()        then evaluateFor(stmt.iterator, stmt.range, stmt.body, stmt.source);
@@ -504,6 +506,10 @@ algorithm
         fail();
 
   end match;
+  //else
+  //   Error.assertion(false, getInstanceName() + " failed to evaluate statement " + Statement.toString(stmt) + "\n", sourceInfo());
+  //   fail();
+  //end try;
 end evaluateStatement;
 
 function evaluateAssignment
