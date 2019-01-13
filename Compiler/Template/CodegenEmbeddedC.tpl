@@ -466,6 +466,8 @@ template daeExpBinary(Exp exp1, Operator op, Exp exp2, Exp origExp)
   case ADD(__) then '(<%daeExp(exp1)%>)+(<%daeExp(exp2)%>)'
   case SUB(__) then '(<%daeExp(exp1)%>)-(<%daeExp(exp2)%>)'
   case MUL(__) then '(<%daeExp(exp1)%>)*(<%daeExp(exp2)%>)'
+  case DIV(__) then '(<%daeExp(exp1)%>)/(<%daeExp(exp2)%>)' // TODO: some division by zero handling will be needed
+  case POW(__) then 'pow((<%daeExp(exp1)%>),(<%daeExp(exp2)%>))' // TODO: check sqrt of < 0
 
   case GREATER(__) then '(<%daeExp(exp1)%>)>(<%daeExp(exp2)%>)'
   case GREATEREQ(__) then '(<%daeExp(exp1)%>)>=(<%daeExp(exp2)%>)'
@@ -500,6 +502,10 @@ template daeExpCallBuiltin(Exp exp)
     then '<%name%>(<%daeExp(exp1)%>,<%daeExp(exp2)%>)'
   /* TODO: Generate used builtin functions before SimCode */
   case CALL(path=IDENT(name="mod"),expLst=exp1::exp2::_) then 'om_mod(<%daeExp(exp1)%>,<%daeExp(exp2)%>)'
+  /* no events for foor and ceil */
+  case CALL(path=IDENT(name="floor"),expLst=exp1::exp2::_) then 'floor(<%daeExp(exp1)%>)'
+  case CALL(path=IDENT(name="ceil"),expLst=exp1::exp2::_) then 'ceil(<%daeExp(exp1)%>)'
+
   /* TODO: pre needs to be handled in a special way */
   case CALL(path=IDENT(name="pre"),expLst={exp1}) then daeExp(exp1)
   case CALL(__) then error(sourceInfo(), 'daeExpCallBuiltin: Not supported: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
