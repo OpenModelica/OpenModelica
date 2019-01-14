@@ -54,8 +54,8 @@ system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization2.lua");
 // ""
 // true
 // ""
-// info:    No result file will be created
 // info:    maximum step size for 'test.root': 0.100000
+// info:    No result file will be created
 // info:    Initialization
 // info:      A.y: 2.3
 // info:      B.x: 2.3
