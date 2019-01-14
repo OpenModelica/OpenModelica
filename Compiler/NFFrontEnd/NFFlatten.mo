@@ -1265,7 +1265,7 @@ function collectTypeFuncs
   input Type ty;
   input output FunctionTree funcs;
 algorithm
-  () := match ty
+  () := match Type.arrayElementType(ty)
     local
       InstNode con, de;
       Function fn;
