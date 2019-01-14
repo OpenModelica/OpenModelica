@@ -44,6 +44,7 @@ protected
   import NFComponent.Component;
   import Util;
   import ElementSource;
+  import IOStream;
 
 public
   uniontype Branch
@@ -58,19 +59,24 @@ public
       list<Error.TotalMessage> errors;
     end INVALID_BRANCH;
 
-    function toString
+    function toStream
       input Branch branch;
-      input String indent = "";
-      output String str;
+      input String indent;
+      input output IOStream.IOStream s;
     algorithm
-      str := match branch
+      s := match branch
         case BRANCH()
-          then Expression.toString(branch.condition) + " then\n" + toStringList(branch.body, indent + "  ");
+          algorithm
+            s := IOStream.append(s, Expression.toString(branch.condition));
+            s := IOStream.append(s, " then\n");
+            s := toStreamList(branch.body, indent + "  ", s);
+          then
+            s;
 
         case INVALID_BRANCH()
-          then toString(branch.branch, indent);
+          then toStream(branch.branch, indent, s);
       end match;
-    end toString;
+    end toStream;
 
     function triggerErrors
       input Branch branch;
@@ -646,66 +652,193 @@ public
     input Equation eq;
     input String indent = "";
     output String str;
+  protected
+    IOStream.IOStream s;
   algorithm
-    str := match eq
-      local
-        String s1, s2;
-
-      case EQUALITY()
-        then indent + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";";
-
-      case CREF_EQUALITY()
-        then indent + ComponentRef.toString(eq.lhs) + " = " + ComponentRef.toString(eq.rhs) + ";";
-
-      case ARRAY_EQUALITY()
-        then indent + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";";
-
-      case CONNECT()
-        then indent + "connect(" + Expression.toString(eq.lhs) + ", " + Expression.toString(eq.rhs) + ");";
-
-      case FOR()
-        algorithm
-          s1 := if isSome(eq.range) then " in " + Expression.toString(Util.getOption(eq.range)) else "";
-          s2 := toStringList(eq.body, indent + "  ");
-        then
-          indent + "for " + InstNode.name(eq.iterator) + s1 + " loop\n" + s2 + indent + "end for;";
-
-      case IF()
-        then indent + "if " + Branch.toString(listHead(eq.branches)) +
-             List.toString(listRest(eq.branches), function Branch.toString(indent = indent), "",
-                           indent + "elseif ", "\n" + indent + "elseif ", "", false) +
-             indent + "end if;";
-
-      case WHEN()
-        then indent + "when " + Branch.toString(listHead(eq.branches)) +
-             List.toString(listRest(eq.branches), function Branch.toString(indent = indent), "",
-                           indent + "elsewhen ", "\n" + indent + "elsewhen ", "", false) +
-             indent + "end when;";
-
-      case ASSERT()
-        then "assert(" + Expression.toString(eq.condition) + ", " +
-             Expression.toString(eq.message) + ", " + Expression.toString(eq.level) + ");";
-
-      case TERMINATE()
-        then "terminate( " + Expression.toString(eq.message) + ");";
-
-      case REINIT()
-        then "reinit(" + Expression.toString(eq.cref) + ", " + Expression.toString(eq.reinitExp) + ");";
-
-      case NORETCALL()
-        then Expression.toString(eq.exp) + ";";
-
-      else "#UNKNOWN EQUATION#";
-    end match;
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStream(eq, indent, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
   end toString;
 
   function toStringList
     input list<Equation> eql;
     input String indent = "";
     output String str;
+  protected
+    IOStream.IOStream s;
   algorithm
-    str := List.toString(eql, function toString(indent = indent), "", "", "\n", "", false) + "\n";
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStreamList(eql, indent, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
   end toStringList;
+
+  function toStream
+    input Equation eq;
+    input String indent;
+    input output IOStream.IOStream s;
+  algorithm
+    s := IOStream.append(s, indent);
+
+    s := match eq
+      case EQUALITY()
+        algorithm
+          s := IOStream.append(s, Expression.toString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Expression.toString(eq.rhs));
+        then
+          s;
+
+      case CREF_EQUALITY()
+        algorithm
+          s := IOStream.append(s, ComponentRef.toString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, ComponentRef.toString(eq.rhs));
+        then
+          s;
+
+      case ARRAY_EQUALITY()
+        algorithm
+          s := IOStream.append(s, Expression.toString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Expression.toString(eq.rhs));
+        then
+          s;
+
+      case CONNECT()
+        algorithm
+          s := IOStream.append(s, "connect(");
+          s := IOStream.append(s, Expression.toString(eq.lhs));
+          s := IOStream.append(s, " = ");
+          s := IOStream.append(s, Expression.toString(eq.rhs));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case FOR()
+        algorithm
+          s := IOStream.append(s, "for ");
+          s := IOStream.append(s, InstNode.name(eq.iterator));
+
+          if isSome(eq.range) then
+            s := IOStream.append(s, " in ");
+            s := IOStream.append(s, Expression.toString(Util.getOption(eq.range)));
+          end if;
+
+          s := IOStream.append(s, " loop\n");
+          s := toStreamList(eq.body, indent + "  ", s);
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end for");
+        then
+          s;
+
+      case IF()
+        algorithm
+          s := IOStream.append(s, "if ");
+          s := Branch.toStream(listHead(eq.branches), indent, s);
+
+          for b in listRest(eq.branches) loop
+            s := IOStream.append(s, indent);
+            s := IOStream.append(s, "elseif ");
+            s := Branch.toStream(b, indent, s);
+          end for;
+
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end if");
+        then
+          s;
+
+      case WHEN()
+        algorithm
+          s := IOStream.append(s, "when ");
+          s := Branch.toStream(listHead(eq.branches), indent, s);
+
+          for b in listRest(eq.branches) loop
+            s := IOStream.append(s, indent);
+            s := IOStream.append(s, "elsewhen ");
+            s := Branch.toStream(b, indent, s);
+          end for;
+
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end when");
+        then
+          s;
+
+      case ASSERT()
+        algorithm
+          s := IOStream.append(s, "assert(");
+          s := IOStream.append(s, Expression.toString(eq.condition));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toString(eq.message));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toString(eq.level));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case TERMINATE()
+        algorithm
+          s := IOStream.append(s, "terminate(");
+          s := IOStream.append(s, Expression.toString(eq.message));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case REINIT()
+        algorithm
+          s := IOStream.append(s, "reinit(");
+          s := IOStream.append(s, Expression.toString(eq.cref));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toString(eq.reinitExp));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case NORETCALL()
+        then IOStream.append(s, Expression.toString(eq.exp));
+
+      else IOStream.append(s, "#UNKNOWN EQUATION#");
+    end match;
+  end toStream;
+
+  function toStreamList
+    input list<Equation> eql;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    Boolean prev_multi_line = false, multi_line;
+    Boolean first = true;
+  algorithm
+    for eq in eql loop
+      multi_line := isMultiLine(eq);
+
+      // Improve human parsability by separating statements that spans multiple
+      // lines (like if-equations) with newlines.
+      if first then
+        first := false;
+      elseif prev_multi_line or multi_line then
+        s := IOStream.append(s, "\n");
+      end if;
+
+      prev_multi_line := multi_line;
+
+      s := toStream(eq, indent, s);
+      s := IOStream.append(s, ";\n");
+    end for;
+  end toStreamList;
+
+  function isMultiLine
+    input Equation eq;
+    output Boolean singleLine;
+  algorithm
+    singleLine := match eq
+      case FOR() then true;
+      case IF() then true;
+      case WHEN() then true;
+      else false;
+    end match;
+  end isMultiLine;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEquation;

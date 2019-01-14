@@ -96,11 +96,21 @@ public
     output String str;
   protected
     IOStream.IOStream s;
+  algorithm
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStream(var, indent, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toString;
+
+  function toStream
+    input Variable var;
+    input String indent = "";
+    input output IOStream.IOStream s;
+  protected
     Boolean first;
     Binding b;
   algorithm
-    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-
     s := IOStream.append(s, indent);
 
     if var.visibility == Visibility.PROTECTED then
@@ -141,11 +151,7 @@ public
       s := IOStream.append(s, " = ");
       s := IOStream.append(s, Binding.toString(var.binding));
     end if;
-
-    s := IOStream.append(s, ";");
-    str := IOStream.string(s);
-    IOStream.delete(s);
-  end toString;
+  end toStream;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

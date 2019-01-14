@@ -40,6 +40,7 @@ protected
   import Statement = NFStatement;
   import ElementSource;
   import Util;
+  import IOStream;
 
 public
   record ASSIGNMENT
@@ -422,77 +423,183 @@ public
     input Statement stmt;
     input String indent = "";
     output String str;
-  algorithm
-    str := match stmt
-      local
-        String s1, s2;
-
-      case ASSIGNMENT()
-        then indent + Expression.toString(stmt.lhs) + " := " + Expression.toString(stmt.rhs) + ";";
-
-      case FUNCTION_ARRAY_INIT()
-        then indent + "array init " + stmt.name;
-
-      case FOR()
-        algorithm
-          s1 := if isSome(stmt.range) then " in " + Expression.toString(Util.getOption(stmt.range)) else "";
-          s2 := toStringList(stmt.body, indent + "  ");
-        then
-          indent + "for " + InstNode.name(stmt.iterator) + s1 + " loop\n" + s2 + indent + "end for;";
-
-      case IF()
-        then branchString(listHead(stmt.branches), "if", indent, true) +
-             stringDelimitList(list(branchString(b, "if", indent, false) for b in listRest(stmt.branches)), "\n") +
-             indent + "end if;";
-
-      case WHEN()
-        then branchString(listHead(stmt.branches), "when", indent, true) +
-             stringDelimitList(list(branchString(b, "when", indent, false) for b in listRest(stmt.branches)), "\n") +
-             indent + "when if;";
-
-      case ASSERT()
-        then indent + "assert(" + Expression.toString(stmt.condition) + ", " +
-             Expression.toString(stmt.message) + ", " + Expression.toString(stmt.level) + ");";
-
-      case TERMINATE()
-        then indent + "terminate( " + Expression.toString(stmt.message) + ");";
-
-      case NORETCALL()
-        then indent + Expression.toString(stmt.exp) + ";";
-
-      case WHILE()
-        then indent + "while " + Expression.toString(stmt.condition) + " then\n" +
-             toStringList(stmt.body, indent + "  ") + "\nend while;";
-
-      case RETURN() then indent + "return;";
-      case BREAK() then indent + "break;";
-      else indent + "#UNKNOWN STATEMENT#";
-    end match;
-  end toString;
-
-  function branchString
-    input tuple<Expression, list<Statement>> branch;
-    input String stmtType;
-    input String indent;
-    input Boolean firstBranch;
-    output String str;
   protected
-    Expression cond;
-    list<Statement> body;
+    IOStream.IOStream s;
   algorithm
-    (cond, body) := branch;
-
-    str := indent + (if firstBranch then stmtType elseif Expression.isTrue(cond) then "else" else "else" + stmtType) +
-      " " + Expression.toString(cond) + " then\n" + toStringList(body, indent + "  ");
-  end branchString;
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStream(stmt, indent, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
+  end toString;
 
   function toStringList
     input list<Statement> stmtl;
     input String indent = "";
     output String str;
+  protected
+    IOStream.IOStream s;
   algorithm
-    str := List.toString(stmtl, function toString(indent = indent), "", "", "\n", "", false) + "\n";
+    s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+    s := toStreamList(stmtl, indent, s);
+    str := IOStream.string(s);
+    IOStream.delete(s);
   end toStringList;
+
+  function toStream
+    input Statement stmt;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    String str;
+  algorithm
+    s := IOStream.append(s, indent);
+
+    s := match stmt
+      case ASSIGNMENT()
+        algorithm
+          s := IOStream.append(s, Expression.toString(stmt.lhs));
+          s := IOStream.append(s, " := ");
+          s := IOStream.append(s, Expression.toString(stmt.rhs));
+        then
+          s;
+
+      case FUNCTION_ARRAY_INIT()
+        algorithm
+          s := IOStream.append(s, "array init");
+          s := IOStream.append(s, stmt.name);
+        then
+          s;
+
+      case FOR()
+        algorithm
+          s := IOStream.append(s, "for ");
+          s := IOStream.append(s, InstNode.name(stmt.iterator));
+
+          if isSome(stmt.range) then
+            s := IOStream.append(s, " in ");
+            s := IOStream.append(s, Expression.toString(Util.getOption(stmt.range)));
+          end if;
+
+          s := IOStream.append(s, " loop\n");
+          s := toStreamList(stmt.body, indent + "  ", s);
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end for");
+        then
+          s;
+
+      case IF()
+        algorithm
+          str := "if ";
+
+          for b in stmt.branches loop
+            s := IOStream.append(s, str);
+            s := IOStream.append(s, Expression.toString(Util.tuple21(b)));
+            s := IOStream.append(s, " then\n");
+            s := toStreamList(Util.tuple22(b), indent + "  ", s);
+            s := IOStream.append(s, indent);
+            str := "elseif ";
+          end for;
+
+          s := IOStream.append(s, "end if");
+        then
+          s;
+
+      case WHEN()
+        algorithm
+          str := "when ";
+
+          for b in stmt.branches loop
+            s := IOStream.append(s, str);
+            s := IOStream.append(s, Expression.toString(Util.tuple21(b)));
+            s := IOStream.append(s, " then\n");
+            s := toStreamList(Util.tuple22(b), indent + "  ", s);
+            s := IOStream.append(s, indent);
+            str := "elsewhen ";
+          end for;
+
+          s := IOStream.append(s, "end when");
+        then
+          s;
+
+      case ASSERT()
+        algorithm
+          s := IOStream.append(s, "assert(");
+          s := IOStream.append(s, Expression.toString(stmt.condition));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toString(stmt.message));
+          s := IOStream.append(s, ", ");
+          s := IOStream.append(s, Expression.toString(stmt.level));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case TERMINATE()
+        algorithm
+          s := IOStream.append(s, "terminate(");
+          s := IOStream.append(s, Expression.toString(stmt.message));
+          s := IOStream.append(s, ")");
+        then
+          s;
+
+      case NORETCALL()
+        then IOStream.append(s, Expression.toString(stmt.exp));
+
+      case WHILE()
+        algorithm
+          s := IOStream.append(s, "while ");
+          s := IOStream.append(s, Expression.toString(stmt.condition));
+          s := IOStream.append(s, " then\n");
+          s := toStreamList(stmt.body, indent + "  ", s);
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "end while");
+        then
+          s;
+
+      case RETURN() then IOStream.append(s, "return");
+      case RETURN() then IOStream.append(s, "break");
+      else IOStream.append(s, "#UNKNOWN STATEMENT#");
+    end match;
+
+  end toStream;
+
+  function toStreamList
+    input list<Statement> stmtl;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    Boolean prev_multi_line = false, multi_line;
+    Boolean first = true;
+  algorithm
+    for stmt in stmtl loop
+      multi_line := isMultiLine(stmt);
+
+      // Improve human parsability by separating statements that spans multiple
+      // lines (like if-statements) with newlines.
+      if first then
+        first := false;
+      elseif prev_multi_line or multi_line then
+        s := IOStream.append(s, "\n");
+      end if;
+
+      prev_multi_line := multi_line;
+
+      s := toStream(stmt, indent, s);
+      s := IOStream.append(s, ";\n");
+    end for;
+  end toStreamList;
+
+  function isMultiLine
+    input Statement stmt;
+    output Boolean multiLine;
+  algorithm
+    multiLine := match stmt
+      case FOR() then true;
+      case IF() then true;
+      case WHEN() then true;
+      case WHILE() then true;
+      else false;
+    end match;
+  end isMultiLine;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFStatement;
