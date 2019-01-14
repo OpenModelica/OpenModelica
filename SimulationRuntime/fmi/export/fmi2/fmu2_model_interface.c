@@ -355,7 +355,8 @@ fmi2Status fmi2SetDebugLogging(fmi2Component c, fmi2Boolean loggingOn, size_t nC
 }
 
 fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2String fmuGUID, fmi2String fmuResourceLocation, const fmi2CallbackFunctions* functions,
-    fmi2Boolean visible, fmi2Boolean loggingOn) {
+    fmi2Boolean visible, fmi2Boolean loggingOn)
+{
   /*
   TODO: We should set the interface, but we can't until it's no longer a global variable.
   * The problem is that we might overwrite the main simulation's copy of the interface...
@@ -492,6 +493,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     }
   }
 
+  comp->_need_update = 1;
+
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Instantiate: GUID=%s", fmuGUID)
   resetThreadData(comp);
   return comp;
@@ -591,47 +594,51 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode...")
 
   setThreadData(comp);
-  comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
-  comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
   threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
-  if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
+  if (comp->_need_update)
   {
-    comp->state = modelError;
-    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
+    comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
+    if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
+    {
+      comp->state = modelError;
+      resetThreadData(comp);
+      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2EnterInitializationMode: failed")
+      return fmi2Error;
+    }
+  }
+
+  /* TODO: Simulation stop time is needed to calculate the sample events beforehand. */
+  initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
+  initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
+#endif
+  /* overwrite old values due to an event */
+  overwriteOldSimulationData(comp->fmuData);
+
+  comp->eventInfo.terminateSimulation = fmi2False;
+  comp->eventInfo.valuesOfContinuousStatesChanged = fmi2True;
+
+  /* get next event time (sample calls) */
+  nextSampleEvent = 0;
+  nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
+  if (nextSampleEvent == -1)
+  {
+    comp->eventInfo.nextEventTimeDefined = fmi2False;
   }
   else
   {
-    /* TODO: Simulation stop time is needed to calculate the sample events beforehand. */
-    initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
-#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
-    initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
-#endif
-    /* overwrite old values due to an event */
-    overwriteOldSimulationData(comp->fmuData);
-
-    comp->eventInfo.terminateSimulation = fmi2False;
-    comp->eventInfo.valuesOfContinuousStatesChanged = fmi2True;
-
-    /* get next event time (sample calls) */
-    nextSampleEvent = 0;
-    nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-    if (nextSampleEvent == -1)
-    {
-      comp->eventInfo.nextEventTimeDefined = fmi2False;
-    }
-    else
-    {
-      comp->eventInfo.nextEventTimeDefined = fmi2True;
-      comp->eventInfo.nextEventTime = nextSampleEvent;
-      fmi2EventUpdate(comp, &(comp->eventInfo));
-    }
-    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeed")
-    res = fmi2OK;
+    comp->eventInfo.nextEventTimeDefined = fmi2True;
+    comp->eventInfo.nextEventTime = nextSampleEvent;
+    fmi2EventUpdate(comp, &(comp->eventInfo));
   }
+  FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeed")
+  res = fmi2OK;
+
   done = 1;
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -713,12 +720,21 @@ fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
 #if NUMBER_OF_REALS > 0
   if (comp->_need_update)
   {
-    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-    overwriteOldSimulationData(comp->fmuData);
-    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    storePreValues(comp->fmuData);
+    if (modelInitializationMode == comp->state)
+    {
+      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
+      initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
+    }
+    else
+    {
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      overwriteOldSimulationData(comp->fmuData);
+      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+      storePreValues(comp->fmuData);
+    }
     comp->_need_update = 0;
   }
 
@@ -749,12 +765,21 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
   setThreadData(comp);
   if (comp->_need_update)
   {
-    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-    overwriteOldSimulationData(comp->fmuData);
-    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    storePreValues(comp->fmuData);
+    if (modelInitializationMode == comp->state)
+    {
+      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
+      initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
+    }
+    else
+    {
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      overwriteOldSimulationData(comp->fmuData);
+      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+      storePreValues(comp->fmuData);
+    }
     comp->_need_update = 0;
   }
 
@@ -784,12 +809,21 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
   setThreadData(comp);
   if (comp->_need_update)
   {
-    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-    overwriteOldSimulationData(comp->fmuData);
-    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    storePreValues(comp->fmuData);
+    if (modelInitializationMode == comp->state)
+    {
+      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
+      initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
+    }
+    else
+    {
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      overwriteOldSimulationData(comp->fmuData);
+      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+      storePreValues(comp->fmuData);
+    }
     comp->_need_update = 0;
   }
 
@@ -819,12 +853,21 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   setThreadData(comp);
   if (comp->_need_update)
   {
-    comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
-    overwriteOldSimulationData(comp->fmuData);
-    comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
-    storePreValues(comp->fmuData);
+    if (modelInitializationMode == comp->state)
+    {
+      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
+      initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
+    }
+    else
+    {
+      comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
+      overwriteOldSimulationData(comp->fmuData);
+      comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+      storePreValues(comp->fmuData);
+    }
     comp->_need_update = 0;
   }
   resetThreadData(comp);
@@ -1196,7 +1239,8 @@ fmi2Status fmi2GetDerivatives(fmi2Component c, fmi2Real derivatives[], size_t nx
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
-    if (comp->_need_update){
+    if (comp->_need_update)
+    {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       overwriteOldSimulationData(comp->fmuData);
       comp->_need_update = 0;
@@ -1242,7 +1286,8 @@ fmi2Status fmi2GetEventIndicators(fmi2Component c, fmi2Real eventIndicators[], s
 
 #if NUMBER_OF_EVENT_INDICATORS>0
     /* eval needed equations*/
-    if (comp->_need_update){
+    if (comp->_need_update)
+    {
       comp->fmuData->callback->functionODE(comp->fmuData, comp->threadData);
       comp->_need_update = 0;
     }
