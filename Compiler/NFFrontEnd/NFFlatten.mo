@@ -1238,28 +1238,30 @@ end evaluateEquationsConnOp;
 function collectComponentFuncs
   input Variable var;
   input output FunctionTree funcs;
-protected
-  Binding binding;
-  ComponentRef cref;
-  InstNode node;
-  Type ty;
 algorithm
   () := match var
-    case Variable.VARIABLE(ty = ty, binding = binding)
+    case Variable.VARIABLE()
       algorithm
-        // TODO: Collect functions from the component's type attributes.
+        funcs := collectTypeFuncs(var.ty, funcs);
+        funcs := collectBindingFuncs(var.binding, funcs);
 
-        funcs := collectTypeFuncs(ty, funcs);
-
-        // Collect functions used in the component's binding, if it has one.
-        if Binding.isExplicitlyBound(binding) then
-          funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
-        end if;
+        for attr in var.typeAttributes loop
+          funcs := collectBindingFuncs(Util.tuple22(attr), funcs);
+        end for;
       then
         ();
 
   end match;
 end collectComponentFuncs;
+
+function collectBindingFuncs
+  input Binding binding;
+  input output FunctionTree funcs;
+algorithm
+  if Binding.isExplicitlyBound(binding) then
+    funcs := collectExpFuncs(Binding.getTypedExp(binding), funcs);
+  end if;
+end collectBindingFuncs;
 
 function collectTypeFuncs
   input Type ty;
