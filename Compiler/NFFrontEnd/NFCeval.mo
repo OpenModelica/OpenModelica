@@ -2707,7 +2707,7 @@ protected
 algorithm
   e := evalExpPartial(exp);
   (e, ranges, iters) := createIterationRanges(e, iterators);
-  result := evalArrayConstructor2(e, ty, ranges, iters);
+  result := evalArrayConstructor2(e, ranges, iters);
 end evalArrayConstructor;
 
 function createIterationRanges
@@ -2731,18 +2731,17 @@ end createIterationRanges;
 
 function evalArrayConstructor2
   input Expression exp;
-  input Type ty;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
   output Expression result;
 protected
-  Expression range;
+  Expression range, e;
   list<Expression> ranges_rest, expl = {};
   Mutable<Expression> iter;
   list<Mutable<Expression>> iters_rest;
   ExpressionIterator range_iter;
   Expression value;
-  Type el_ty;
+  Type ty;
 algorithm
   if listEmpty(ranges) then
     result := evalExp(exp);
@@ -2750,14 +2749,20 @@ algorithm
     range :: ranges_rest := ranges;
     iter :: iters_rest := iterators;
     range_iter := ExpressionIterator.fromExp(range);
-    el_ty := Type.unliftArray(ty);
 
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      expl := evalArrayConstructor2(exp, el_ty, ranges_rest, iters_rest) :: expl;
+      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest) :: expl;
     end while;
 
+    if listEmpty(expl) then
+      ty := Type.unliftArray(Expression.typeOf(exp));
+    else
+      ty := Expression.typeOf(listHead(expl));
+    end if;
+
+    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
     result := Expression.makeArray(ty, listReverseInPlace(expl), literal = true);
   end if;
 end evalArrayConstructor2;
