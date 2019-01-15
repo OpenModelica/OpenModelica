@@ -1087,6 +1087,7 @@ algorithm
   Equation.FOR(iterator = iter, range = SOME(range), body = body) := forLoop;
 
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
+  range := flattenExp(range, prefix);
   range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
   range_iter := RangeIterator.fromExp(range);
 
