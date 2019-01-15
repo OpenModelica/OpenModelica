@@ -1522,7 +1522,7 @@ algorithm
           evalNormalCall(call.fn, args);
 
     case Call.TYPED_ARRAY_CONSTRUCTOR()
-      then evalArrayConstructor(call.exp, call.ty, call.iters);
+      then evalArrayConstructor(call.exp, call.iters);
 
     case Call.TYPED_REDUCTION()
       then evalReduction(call.fn, call.exp, call.ty, call.iters);
@@ -2697,17 +2697,26 @@ end evalSolverClock;
 
 function evalArrayConstructor
   input Expression exp;
-  input Type ty;
   input list<tuple<InstNode, Expression>> iterators;
   output Expression result;
 protected
   Expression e;
   list<Expression> ranges;
   list<Mutable<Expression>> iters;
+  list<Type> types = {};
+  Type ty;
 algorithm
   e := evalExpPartial(exp);
   (e, ranges, iters) := createIterationRanges(e, iterators);
-  result := evalArrayConstructor2(e, ranges, iters);
+
+  // Precompute all the types we're going to need for the arrays created.
+  ty := Expression.typeOf(e);
+  for r in ranges loop
+    ty := Type.liftArrayLeftList(ty, Type.arrayDims(Expression.typeOf(r)));
+    types := ty :: types;
+  end for;
+
+  result := evalArrayConstructor2(e, ranges, iters, types);
 end evalArrayConstructor;
 
 function createIterationRanges
@@ -2733,6 +2742,7 @@ function evalArrayConstructor2
   input Expression exp;
   input list<Expression> ranges;
   input list<Mutable<Expression>> iterators;
+  input list<Type> types;
   output Expression result;
 protected
   Expression range, e;
@@ -2742,27 +2752,22 @@ protected
   ExpressionIterator range_iter;
   Expression value;
   Type ty;
+  list<Type> rest_ty;
 algorithm
   if listEmpty(ranges) then
     result := evalExp(exp);
   else
     range :: ranges_rest := ranges;
     iter :: iters_rest := iterators;
+    ty :: rest_ty := types;
     range_iter := ExpressionIterator.fromExp(range);
 
     while ExpressionIterator.hasNext(range_iter) loop
       (range_iter, value) := ExpressionIterator.next(range_iter);
       Mutable.update(iter, value);
-      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest) :: expl;
+      expl := evalArrayConstructor2(exp, ranges_rest, iters_rest, rest_ty) :: expl;
     end while;
 
-    if listEmpty(expl) then
-      ty := Type.unliftArray(Expression.typeOf(exp));
-    else
-      ty := Expression.typeOf(listHead(expl));
-    end if;
-
-    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl)));
     result := Expression.makeArray(ty, listReverseInPlace(expl), literal = true);
   end if;
 end evalArrayConstructor2;
