@@ -1105,6 +1105,14 @@ algorithm
     case Expression.SUBSCRIPTED_EXP()
       then (exp, exp.ty, Expression.variability(exp));
 
+    case Expression.MUTABLE()
+      algorithm
+        e1 := Mutable.access(exp.exp);
+        (e1, ty, variability) := typeExp(e1, origin, info);
+        exp.exp := Mutable.create(e1);
+      then
+        (exp, ty, variability);
+
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       then Function.typePartialApplication(exp, origin, info);
 
