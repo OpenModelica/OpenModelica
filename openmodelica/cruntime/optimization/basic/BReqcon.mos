@@ -59,7 +59,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: In component <NO COMPONENT>, in relation u == path_u,  ==  on Real numbers is only allowed inside functions.
+// "Warning: In relation u == path_u,  ==  on Real numbers is only allowed inside functions.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
