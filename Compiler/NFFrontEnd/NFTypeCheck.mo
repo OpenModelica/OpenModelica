@@ -1318,7 +1318,7 @@ algorithm
         o := operator.op;
         if ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) and (o == Op.EQUAL or o == Op.NEQUAL) then
           Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL,
-            {"<NO COMPONENT>", Expression.toString(outExp), Operator.symbol(operator)}, info);
+            {Expression.toString(outExp), Operator.symbol(operator, "")}, info);
         end if;
       then
         valid;

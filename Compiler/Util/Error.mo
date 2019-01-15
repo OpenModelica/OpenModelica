@@ -831,7 +831,7 @@ public constant Message SETTING_FIXED_ATTRIBUTE = MESSAGE(503, TRANSLATION(), WA
 public constant Message FAILED_TO_EVALUATE_FUNCTION = MESSAGE(506, TRANSLATION(), ERROR(),
   Util.gettext("Failed to evaluate function: %s."));
 public constant Message WARNING_RELATION_ON_REAL = MESSAGE(509, TRANSLATION(), WARNING(),
-  Util.gettext("In component %s, in relation %s, %s on Real numbers is only allowed inside functions."));
+  Util.gettext("In relation %s, %s on Real numbers is only allowed inside functions."));
 public constant Message OUTER_MODIFICATION = MESSAGE(512, TRANSLATION(), WARNING(),
   Util.gettext("Ignoring the modification on outer element: %s."));
 public constant Message DERIVATIVE_NON_REAL = MESSAGE(514, TRANSLATION(), ERROR(),

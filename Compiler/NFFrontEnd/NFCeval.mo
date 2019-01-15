@@ -50,6 +50,7 @@ import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import Subscript = NFSubscript;
 import NFTyping.TypingError;
+import DAE;
 
 protected
 import NFFunction.Function;
@@ -61,6 +62,7 @@ import MetaModelica.Dangerous.*;
 import NFClass.Class;
 import TypeCheck = NFTypeCheck;
 import ExpandExp = NFExpandExp;
+import ElementSource;
 
 public
 uniontype EvalTarget
@@ -87,6 +89,10 @@ uniontype EvalTarget
     SourceInfo info;
   end GENERIC;
 
+  record STATEMENT
+    DAE.ElementSource source;
+  end STATEMENT;
+
   record IGNORE_ERRORS end IGNORE_ERRORS;
 
   function isRange
@@ -109,6 +115,7 @@ uniontype EvalTarget
       case RANGE() then true;
       case CONDITION() then true;
       case GENERIC() then true;
+      case STATEMENT() then true;
       else false;
     end match;
   end hasInfo;
@@ -123,6 +130,7 @@ uniontype EvalTarget
       case RANGE() then target.info;
       case CONDITION() then target.info;
       case GENERIC() then target.info;
+      case STATEMENT() then ElementSource.getInfo(target.source);
       else Absyn.dummyInfo;
     end match;
   end getInfo;
@@ -196,7 +204,7 @@ algorithm
         exp1 := evalExp(exp.exp1, target);
         exp2 := evalExp(exp.exp2, target);
       then
-        evalBinaryOp(exp1, exp.operator, exp2);
+        evalBinaryOp(exp1, exp.operator, exp2, target);
 
     case Expression.UNARY()
       algorithm
@@ -738,13 +746,14 @@ function evalBinaryOp
   input Expression exp1;
   input Operator op;
   input Expression exp2;
+  input EvalTarget target = EvalTarget.IGNORE_ERRORS();
   output Expression exp;
 algorithm
   exp := match op.op
     case Op.ADD then evalBinaryAdd(exp1, exp2);
     case Op.SUB then evalBinarySub(exp1, exp2);
     case Op.MUL then evalBinaryMul(exp1, exp2);
-    case Op.DIV then evalBinaryDiv(exp1, exp2);
+    case Op.DIV then evalBinaryDiv(exp1, exp2, target);
     case Op.POW then evalBinaryPow(exp1, exp2);
     case Op.ADD_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryAdd);
     case Op.ADD_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryAdd);
@@ -756,8 +765,10 @@ algorithm
     case Op.MUL_MATRIX_VECTOR then evalBinaryMulMatrixVector(exp1, exp2);
     case Op.SCALAR_PRODUCT then evalBinaryScalarProduct(exp1, exp2);
     case Op.MATRIX_PRODUCT then evalBinaryMatrixProduct(exp1, exp2);
-    case Op.DIV_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryDiv);
-    case Op.DIV_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryDiv);
+    case Op.DIV_SCALAR_ARRAY
+      then evalBinaryScalarArray(exp1, exp2, function evalBinaryDiv(target = target));
+    case Op.DIV_ARRAY_SCALAR
+      then evalBinaryArrayScalar(exp1, exp2, function evalBinaryDiv(target = target));
     case Op.POW_SCALAR_ARRAY then evalBinaryScalarArray(exp1, exp2, evalBinaryPow);
     case Op.POW_ARRAY_SCALAR then evalBinaryArrayScalar(exp1, exp2, evalBinaryPow);
     case Op.POW_MATRIX then evalBinaryPowMatrix(exp1, exp2);
@@ -857,16 +868,29 @@ end evalBinaryMul;
 function evalBinaryDiv
   input Expression exp1;
   input Expression exp2;
+  input EvalTarget target;
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
+    case (_, Expression.REAL(0.0))
+      algorithm
+        if EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.DIVISION_BY_ZERO,
+            {Expression.toString(exp1), Expression.toString(exp2)}, EvalTarget.getInfo(target));
+          fail();
+        else
+          exp := Expression.BINARY(exp1, Operator.makeDiv(Type.REAL()), exp2);
+        end if;
+      then
+        exp;
+
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value / exp2.value);
 
     case (Expression.ARRAY(), Expression.ARRAY())
       guard listLength(exp1.elements) == listLength(exp2.elements)
       then Expression.makeArray(exp1.ty,
-        list(evalBinaryDiv(e1, e2) threaded for e1 in exp1.elements, e2 in exp2.elements),
+        list(evalBinaryDiv(e1, e2, target) threaded for e1 in exp1.elements, e2 in exp2.elements),
         literal = true);
 
     else

@@ -56,6 +56,7 @@ import NFTyping.ExpOrigin;
 import SCode;
 import NFPrefixes.Variability;
 import EvalFunctionExt = NFEvalFunctionExt;
+import NFCeval.EvalTarget;
 
 encapsulated package ReplTree
   import BaseAvlTree;
@@ -163,7 +164,7 @@ algorithm
 
   if lang == "builtin" then
     // Functions defined as 'external "builtin"', delegate to Ceval.
-    result := Ceval.evalBuiltinCall(fn, args, NFCeval.EvalTarget.IGNORE_ERRORS());
+    result := Ceval.evalBuiltinCall(fn, args, EvalTarget.IGNORE_ERRORS());
   elseif isKnownExternalFunc(name, ann) then
     // External functions that we know how to evaluate without generating code.
     // TODO: Move this to EvalFunctionExt and unify evaluateKnownExternal and
@@ -491,11 +492,11 @@ algorithm
   // adrpo: we really need some error handling here to detect which statement cannot be evaluated
   // try
   ctrl := match stmt
-    case Statement.ASSIGNMENT() then evaluateAssignment(stmt.lhs, stmt.rhs);
+    case Statement.ASSIGNMENT() then evaluateAssignment(stmt.lhs, stmt.rhs, stmt.source);
     case Statement.FOR()        then evaluateFor(stmt.iterator, stmt.range, stmt.body, stmt.source);
-    case Statement.IF()         then evaluateIf(stmt.branches);
+    case Statement.IF()         then evaluateIf(stmt.branches, stmt.source);
     case Statement.ASSERT()     then evaluateAssert(stmt.condition, stmt);
-    case Statement.NORETCALL()  then evaluateNoRetCall(stmt.exp);
+    case Statement.NORETCALL()  then evaluateNoRetCall(stmt.exp, stmt.source);
     case Statement.WHILE()      then evaluateWhile(stmt.condition, stmt.body, stmt.source);
     case Statement.RETURN()     then FlowControl.RETURN;
     case Statement.BREAK()      then FlowControl.BREAK;
@@ -515,9 +516,10 @@ end evaluateStatement;
 function evaluateAssignment
   input Expression lhsExp;
   input Expression rhsExp;
+  input DAE.ElementSource source;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  assignVariable(lhsExp, Ceval.evalExp(rhsExp));
+  assignVariable(lhsExp, Ceval.evalExp(rhsExp, EvalTarget.STATEMENT(source)));
 end evaluateAssignment;
 
 public
@@ -715,7 +717,7 @@ protected
   list<Statement> body = forBody;
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
 algorithm
-  range_exp := Ceval.evalExp(Util.getOption(range));
+  range_exp := Ceval.evalExp(Util.getOption(range), EvalTarget.STATEMENT(source));
   range_iter := RangeIterator.fromExp(range_exp);
 
   if RangeIterator.hasNext(range_iter) then
@@ -748,6 +750,7 @@ end evaluateFor;
 
 function evaluateIf
   input list<tuple<Expression, list<Statement>>> branches;
+  input DAE.ElementSource source;
   output FlowControl ctrl;
 protected
   Expression cond;
@@ -756,7 +759,7 @@ algorithm
   for branch in branches loop
     (cond, body) := branch;
 
-    if Expression.isTrue(Ceval.evalExp(cond)) then
+    if Expression.isTrue(Ceval.evalExp(cond, EvalTarget.STATEMENT(source))) then
       ctrl := evaluateStatements(body);
       return;
     end if;
@@ -770,13 +773,14 @@ function evaluateAssert
   input Statement assertStmt;
   output FlowControl ctrl = FlowControl.NEXT;
 protected
-  Expression msg, lvl;
+  Expression cond, msg, lvl;
   DAE.ElementSource source;
+  EvalTarget target = EvalTarget.STATEMENT(Statement.source(assertStmt));
 algorithm
-  if Expression.isFalse(Ceval.evalExp(condition)) then
+  if Expression.isFalse(Ceval.evalExp(condition, target)) then
     Statement.ASSERT(message = msg, level = lvl, source = source) := assertStmt;
-    msg := Ceval.evalExp(msg);
-    lvl := Ceval.evalExp(lvl);
+    msg := Ceval.evalExp(msg, target);
+    lvl := Ceval.evalExp(lvl, target);
 
     () := match (msg, lvl)
       case (Expression.STRING(), Expression.ENUM_LITERAL(name = "warning"))
@@ -804,9 +808,10 @@ end evaluateAssert;
 
 function evaluateNoRetCall
   input Expression callExp;
+  input DAE.ElementSource source;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  Ceval.evalExp(callExp);
+  Ceval.evalExp(callExp, EvalTarget.STATEMENT(source));
 end evaluateNoRetCall;
 
 function evaluateWhile
@@ -816,8 +821,9 @@ function evaluateWhile
   output FlowControl ctrl = FlowControl.NEXT;
 protected
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
+  EvalTarget target = EvalTarget.STATEMENT(source);
 algorithm
-  while Expression.isTrue(Ceval.evalExp(condition)) loop
+  while Expression.isTrue(Ceval.evalExp(condition, target)) loop
     ctrl := evaluateStatements(body);
 
     if ctrl <> FlowControl.NEXT then

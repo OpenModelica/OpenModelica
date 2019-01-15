@@ -2057,8 +2057,7 @@ algorithm
         verifyOp(op);
         opString = ExpressionDump.relopSymbol(op);
         stmtString = ExpressionDump.printExpStr(e1) + opString + ExpressionDump.printExpStr(e2);
-        pre_str = PrefixUtil.printPrefixStr3(pre);
-        Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString}, inInfo);
+        Error.addSourceMessage(Error.WARNING_RELATION_ON_REAL, {stmtString,opString}, inInfo);
       then
         ();
     else ();
