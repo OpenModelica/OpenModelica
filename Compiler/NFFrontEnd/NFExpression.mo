@@ -325,6 +325,16 @@ public
     end match;
   end isArray;
 
+  function isEmptyArray
+    input Expression exp;
+    output Boolean emptyArray;
+  algorithm
+    emptyArray := match exp
+      case ARRAY(elements = {}) then true;
+      else false;
+    end match;
+  end isEmptyArray;
+
   function isCref
     input Expression exp;
     output Boolean isCref;

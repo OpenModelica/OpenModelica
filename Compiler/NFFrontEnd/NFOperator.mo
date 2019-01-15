@@ -436,5 +436,32 @@ public
     outOp := OPERATOR(ty, o);
   end makeArrayScalar;
 
+  function stripEW
+    input output Operator op;
+  algorithm
+    () := match op.op
+      case Op.ADD_EW algorithm op.op := Op.ADD; then ();
+      case Op.SUB_EW algorithm op.op := Op.SUB; then ();
+      case Op.MUL_EW algorithm op.op := Op.MUL; then ();
+      case Op.DIV_EW algorithm op.op := Op.DIV; then ();
+      case Op.POW_EW algorithm op.op := Op.POW; then ();
+      else ();
+    end match;
+  end stripEW;
+
+  function isElementWise
+    input Operator op;
+    output Boolean ew;
+  algorithm
+    ew := match op.op
+      case Op.ADD_EW then true;
+      case Op.SUB_EW then true;
+      case Op.MUL_EW then true;
+      case Op.DIV_EW then true;
+      case Op.POW_EW then true;
+      else false;
+    end match;
+  end isElementWise;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFOperator;

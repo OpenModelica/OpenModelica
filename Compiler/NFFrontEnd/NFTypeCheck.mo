@@ -185,7 +185,7 @@ protected
   list<Function> candidates;
   Type ety1, ety2;
 algorithm
-  op_str := Operator.symbol(op,"'");
+  op_str := Operator.symbol(Operator.stripEW(op), "'");
   ety1 := Type.arrayElementType(type1);
   ety2 := Type.arrayElementType(type2);
 
@@ -201,7 +201,13 @@ algorithm
     printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
   end if;
 
-  (outExp, outType) := matchOverloadedBinaryOperator(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+  if Operator.isElementWise(op) then
+    (outExp, outType) := checkOverloadedBinaryArrayEW(
+      exp1, type1, var1, Operator.stripEW(op), exp2, type2, var2, candidates, info);
+  else
+    (outExp, outType) := matchOverloadedBinaryOperator(
+      exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+  end if;
 end checkOverloadedBinaryOperator;
 
 function matchOverloadedBinaryOperator
@@ -245,20 +251,17 @@ algorithm
       ErrorExt.rollBack("NFTypeCheck:implicitConstruction");
 
       if Type.isArray(type1) or Type.isArray(type2) then
-        oop := op.op;
-
-        if oop == Op.ADD or oop == Op.SUB then
-          (outExp, outType) :=
-            checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
-        elseif oop == Op.MUL then
-          (outExp, outType) :=
-            checkOverloadedBinaryArrayMul(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
-        elseif oop == Op.DIV then
-          (outExp, outType) :=
-            checkOverloadedBinaryArrayDiv(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
-        else
-          printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
-        end if;
+        (outExp, outType) := match op.op
+          case Op.ADD then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+          case Op.SUB then checkOverloadedBinaryArrayAddSub(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+          case Op.MUL then checkOverloadedBinaryArrayMul(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+          case Op.DIV then checkOverloadedBinaryArrayDiv(exp1, type1, var1, op, exp2, type2, var2, candidates, info);
+          else
+            algorithm
+              printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
+            then
+              fail();
+        end match;
       else
         printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info, showErrors);
       end if;
@@ -361,7 +364,7 @@ algorithm
         end if;
 
         outType := Type.setArrayElementType(type1, ty);
-        outExp := Expression.makeArray(outType, expl, literal = exp1.literal and exp2.literal);
+        outExp := Expression.makeArray(outType, expl);
       then
         (outExp, outType);
 
@@ -572,6 +575,115 @@ algorithm
     printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
   end if;
 end checkOverloadedBinaryArrayDiv;
+
+function checkOverloadedBinaryArrayEW
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input list<Function> candidates;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  Expression e1, e2;
+  MatchKind mk;
+  list<Expression> expl1, expl2;
+  Type ty;
+algorithm
+  if Type.isArray(type1) and Type.isArray(type2) then
+    (e1, e2, _, mk) := matchExpressions(exp1, type1, exp2, type2, true);
+  else
+    (e1, e2, _, mk) := matchExpressions(exp1, Type.arrayElementType(type1),
+                                        exp2, Type.arrayElementType(type2), true);
+  end if;
+
+  if not isCompatibleMatch(mk) then
+    printUnresolvableTypeError(Expression.BINARY(e1, op, e2), {type1, type2}, info);
+  end if;
+
+  e1 := ExpandExp.expand(exp1);
+  e2 := ExpandExp.expand(exp2);
+
+  (outExp, outType) := checkOverloadedBinaryArrayEW2(
+    e1, type1, var1, op, e2, type2, var2, candidates, info);
+end checkOverloadedBinaryArrayEW;
+
+function checkOverloadedBinaryArrayEW2
+  input Expression exp1;
+  input Type type1;
+  input Variability var1;
+  input Operator op;
+  input Expression exp2;
+  input Type type2;
+  input Variability var2;
+  input list<Function> candidates;
+  input SourceInfo info;
+  output Expression outExp;
+  output Type outType;
+protected
+  Expression e2;
+  list<Expression> expl, expl1, expl2;
+  Type ty, ty1, ty2;
+  Boolean is_array1, is_array2;
+algorithm
+  is_array1 := Type.isArray(type1);
+  is_array2 := Type.isArray(type2);
+
+  if is_array1 or is_array2 then
+    expl := {};
+
+    if Expression.isEmptyArray(exp1) or Expression.isEmptyArray(exp2) then
+      ty1 := Type.arrayElementType(type1);
+      ty2 := Type.arrayElementType(type2);
+
+      try
+        (_, ty) := matchOverloadedBinaryOperator(
+          Expression.EMPTY(ty1), ty1, var1, op,
+          Expression.EMPTY(ty2), ty2, var2, candidates, info);
+      else
+        printUnresolvableTypeError(Expression.BINARY(exp1, op, exp2), {type1, type2}, info);
+      end try;
+    elseif is_array1 and is_array2 then
+      ty1 := Type.unliftArray(type1);
+      ty2 := Type.unliftArray(type2);
+      expl1 := Expression.arrayElements(exp1);
+      expl2 := Expression.arrayElements(exp2);
+
+      for e in expl1 loop
+        e2 :: expl2 := expl2;
+        (e, ty) := checkOverloadedBinaryArrayEW2(e, ty1, var1, op, e2, ty2, var2, candidates, info);
+        expl := e :: expl;
+      end for;
+    elseif is_array1 then
+      ty1 := Type.unliftArray(type1);
+      expl1 := Expression.arrayElements(exp1);
+
+      for e in expl1 loop
+        (e, ty) := checkOverloadedBinaryArrayEW2(e, ty1, var1, op, exp2, type2, var2, candidates, info);
+        expl := e :: expl;
+      end for;
+    elseif is_array2 then
+      ty2 := Type.unliftArray(type2);
+      expl2 := Expression.arrayElements(exp2);
+
+      for e in expl2 loop
+        (e, ty) := checkOverloadedBinaryArrayEW2(exp1, type1, var1, op, e, ty2, var2, candidates, info);
+        expl := e :: expl;
+      end for;
+    end if;
+
+    outType := Type.setArrayElementType(type1, ty);
+    outExp := Expression.makeArray(outType, listReverseInPlace(expl));
+  else
+    (outExp, outType) := matchOverloadedBinaryOperator(
+      exp1, type1, var1, op,
+      exp2, type2, var2, candidates, info);
+  end if;
+end checkOverloadedBinaryArrayEW2;
 
 function implicitConstructAndMatch
   input list<Function> candidates;
