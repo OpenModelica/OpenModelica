@@ -2738,7 +2738,7 @@ algorithm
         if isSome(stepExp) then
           SOME(step_exp) := stepExp;
           var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
-          dim_exp := Expression.BINARY(dim_exp, Operator.makeDiv(Type.REAL()), startExp);
+          dim_exp := Expression.BINARY(dim_exp, Operator.makeDiv(Type.REAL()), step_exp);
           dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.REAL()), Expression.REAL(5e-15));
         end if;
 
