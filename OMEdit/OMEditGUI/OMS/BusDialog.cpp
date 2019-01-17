@@ -1384,7 +1384,7 @@ BusConnectionDialog::BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
   mpOutputInputConnectionsTableView->setSelectionBehavior(QAbstractItemView::SelectItems);
   mpOutputInputConnectionsTableView->setSelectionMode(QAbstractItemView::SingleSelection);
   // start bus input output connectors
-  oms3_busconnector_t *pStartBus = pStartLibraryTreeItem->getOMSBusConnector();
+  oms_busconnector_t *pStartBus = pStartLibraryTreeItem->getOMSBusConnector();
   QStringList startBusInputConnectors, startBusOutputConnectors;
   if (pStartBus && pStartBus->connectors) {
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -1411,7 +1411,7 @@ BusConnectionDialog::BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
   startBusInputConnectors.sort();
   startBusOutputConnectors.sort();
   // end bus input output connectors
-  oms3_busconnector_t *pEndBus = pEndLibraryTreeItem->getOMSBusConnector();
+  oms_busconnector_t *pEndBus = pEndLibraryTreeItem->getOMSBusConnector();
   QStringList endBusInputConnectors, endBusOutputConnectors;
   if (pEndBus && pEndBus->connectors) {
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -1441,7 +1441,7 @@ BusConnectionDialog::BusConnectionDialog(GraphicsView *pGraphicsView, LineAnnota
   if (!addCase) {
     for (int i = 0 ; i < mpGraphicsView->getConnectionsList().size() ; ++i) {
       LineAnnotation *pAtomicConnectionLineAnnotation = mpGraphicsView->getConnectionsList().at(i);
-      if (pAtomicConnectionLineAnnotation && pAtomicConnectionLineAnnotation->getOMSConnectionType() == oms3_connection_single) {
+      if (pAtomicConnectionLineAnnotation && pAtomicConnectionLineAnnotation->getOMSConnectionType() == oms_connection_single) {
         QString startConnectorName = StringHandler::getLastWordAfterDot(pAtomicConnectionLineAnnotation->getStartComponentName());
         QString endConnectorName = StringHandler::getLastWordAfterDot(pAtomicConnectionLineAnnotation->getEndComponentName());
         if (startBusInputConnectors.contains(startConnectorName) && endBusOutputConnectors.contains(endConnectorName)) {
@@ -1603,7 +1603,7 @@ void BusConnectionDialog::addAtomicConnection(QString startConnectorName, QStrin
   if (pStartComponent && pEndComponent) {
     LineAnnotation *pNewConnectionLineAnnotation = new LineAnnotation("", 0, 0, mpGraphicsView);
     pNewConnectionLineAnnotation->updateShape(mpConnectionLineAnnotation);
-    pNewConnectionLineAnnotation->setOMSConnectionType(oms3_connection_single);
+    pNewConnectionLineAnnotation->setOMSConnectionType(oms_connection_single);
     pNewConnectionLineAnnotation->setStartComponentName(pStartComponent->getLibraryTreeItem()->getNameStructure());
     pNewConnectionLineAnnotation->setEndComponentName(pEndComponent->getLibraryTreeItem()->getNameStructure());
     AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(pNewConnectionLineAnnotation, true);
@@ -1639,7 +1639,7 @@ void BusConnectionDialog::addBusConnection()
     LibraryTreeItem *pEndLibraryTreeItem = mpConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem();
     mpConnectionLineAnnotation->setEndComponentName(pEndLibraryTreeItem->getNameStructure());
 
-    mpConnectionLineAnnotation->setOMSConnectionType(oms3_connection_bus);
+    mpConnectionLineAnnotation->setOMSConnectionType(oms_connection_bus);
     mpConnectionLineAnnotation->setLineThickness(0.5);
 
     AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
@@ -1757,18 +1757,18 @@ void TLMConnectionDialog::addTLMConnection()
     mpConnectionLineAnnotation->setAlpha(mpAlphaTextBox->text());
     mpConnectionLineAnnotation->setZf(mpLinearImpedanceTextBox->text());
     mpConnectionLineAnnotation->setZfr(mpAngularImpedanceTextBox->text());
-    mpConnectionLineAnnotation->setOMSConnectionType(oms3_connection_tlm);
+    mpConnectionLineAnnotation->setOMSConnectionType(oms_connection_tlm);
 
     AddConnectionCommand *pAddConnectionCommand = new AddConnectionCommand(mpConnectionLineAnnotation, true);
     mpGraphicsView->getModelWidget()->getUndoStack()->push(pAddConnectionCommand);
   } else {
-    oms3_tlm_connection_parameters_t oldTLMParameters;
+    oms_tlm_connection_parameters_t oldTLMParameters;
     oldTLMParameters.delay = mpConnectionLineAnnotation->getDelay().toDouble();
     oldTLMParameters.alpha = mpConnectionLineAnnotation->getAlpha().toDouble();
     oldTLMParameters.linearimpedance = mpConnectionLineAnnotation->getZf().toDouble();
     oldTLMParameters.angularimpedance = mpConnectionLineAnnotation->getZfr().toDouble();
 
-    oms3_tlm_connection_parameters_t newTLMParameters;
+    oms_tlm_connection_parameters_t newTLMParameters;
     newTLMParameters.delay = mpDelayTextBox->text().toDouble();
     newTLMParameters.alpha = mpAlphaTextBox->text().toDouble();
     newTLMParameters.linearimpedance = mpLinearImpedanceTextBox->text().toDouble();

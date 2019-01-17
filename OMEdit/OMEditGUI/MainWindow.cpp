@@ -4377,7 +4377,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
           Helper::applicationIntroText,
           GIT_SHA,
           Helper::OpenModelicaVersion,
-          oms3_getVersion());
+          oms_getVersion());
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);

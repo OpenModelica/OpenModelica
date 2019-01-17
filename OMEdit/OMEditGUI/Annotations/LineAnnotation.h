@@ -126,8 +126,8 @@ public:
   QString getZfr() {return mZfr;}
   void setAlpha(QString alpha) {mAlpha = alpha;}
   QString getAlpha() {return mAlpha;}
-  void setOMSConnectionType(oms3_connection_type_enu_t connectionType) {mOMSConnectionType = connectionType;}
-  oms3_connection_type_enu_t getOMSConnectionType() {return mOMSConnectionType;}
+  void setOMSConnectionType(oms_connection_type_enu_t connectionType) {mOMSConnectionType = connectionType;}
+  oms_connection_type_enu_t getOMSConnectionType() {return mOMSConnectionType;}
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
   void setShapeFlags(bool enable);
@@ -158,7 +158,7 @@ protected:
   QString mZf;
   QString mZfr;
   QString mAlpha;
-  oms3_connection_type_enu_t mOMSConnectionType;
+  oms_connection_type_enu_t mOMSConnectionType;
   bool mActiveState;
 public slots:
   void handleComponentMoved();

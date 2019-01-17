@@ -57,7 +57,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -87,7 +87,7 @@ LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Component *pPa
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   setPos(mOrigin);
   setRotation(mRotation);
@@ -126,7 +126,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Component *pSt
   setReset(true);
   setSynchronize(false);
   setPriority(1);
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   if (mLineType == LineAnnotation::ConnectionType) {
     /* Use the linecolor of the first shape from icon layer of start component for the connection line.
@@ -212,7 +212,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pStartComponent, C
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -251,7 +251,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Component *pSta
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -291,7 +291,7 @@ LineAnnotation::LineAnnotation(QString annotation, Component *pComponent, Graphi
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   parseShapeAnnotation(annotation);
   /* make the points relative to origin */
@@ -323,7 +323,7 @@ LineAnnotation::LineAnnotation(Component *pParent)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();
@@ -360,7 +360,7 @@ LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
   setZf("");
   setZfr("");
   setAlpha("");
-  setOMSConnectionType(oms3_connection_single);
+  setOMSConnectionType(oms_connection_single);
   setActiveState(false);
   // set the default values
   GraphicItem::setDefaults();

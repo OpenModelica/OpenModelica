@@ -66,7 +66,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Component *pComponent, QWidget 
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpComponent->getName());
-  /*! @todo Remove the following line once oms3_rename is available for elements.
+  /*! @todo Remove the following line once oms_rename is available for elements.
    * And then fix the OMSRenameCommand accordingly.
    */
   mpNameTextBox->setDisabled(true);

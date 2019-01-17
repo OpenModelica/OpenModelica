@@ -1427,9 +1427,9 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(LibraryTreeItem::Librar
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createLibraryTreeItem(QString name, QString nameStructure, QString path, bool isSaved,
-                                                         LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
-                                                         oms_connector_t *pOMSConnector, oms3_busconnector_t *pOMSBusConnector,
-                                                         oms3_tlmbusconnector_t *pOMSTLMBusConnector, int row)
+                                                         LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
+                                                         oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector,
+                                                         oms_tlmbusconnector_t *pOMSTLMBusConnector, int row)
 {
   if (row == -1) {
     row = pParentLibraryTreeItem->childrenSize();
@@ -2529,9 +2529,9 @@ void LibraryTreeModel::createLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem)
       }
     }
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
-    // we only call oms3_getElements on the model
+    // we only call oms_getElements on the model
     if (pLibraryTreeItem->isTopLevel()) {
-      oms3_element_t** pElements = NULL;
+      oms_element_t** pElements = NULL;
       if (OMSProxy::instance()->getElements(pLibraryTreeItem->getNameStructure(), &pElements)) {
         for (int i = 0 ; pElements[i] ; i++) {
           QString name = QString(pElements[i]->name);
@@ -2708,9 +2708,9 @@ LibraryTreeItem* LibraryTreeModel::createLibraryTreeItemImpl(LibraryTreeItem::Li
  * \return
  */
 LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QString nameStructure, QString path, bool isSaved,
-                                                                LibraryTreeItem *pParentLibraryTreeItem, oms3_element_t *pOMSElement,
-                                                                oms_connector_t *pOMSConnector, oms3_busconnector_t *pOMSBusConnector,
-                                                                oms3_tlmbusconnector_t *pOMSTLMBusConnector)
+                                                                LibraryTreeItem *pParentLibraryTreeItem, oms_element_t *pOMSElement,
+                                                                oms_connector_t *pOMSConnector, oms_busconnector_t *pOMSBusConnector,
+                                                                oms_tlmbusconnector_t *pOMSTLMBusConnector)
 {
   OMCInterface::getClassInformation_res classInformation;
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation,

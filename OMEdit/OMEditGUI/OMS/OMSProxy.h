@@ -86,12 +86,12 @@ public:
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
   bool getBoolean(QString signal, bool* value);
-  bool getBus(QString cref, oms3_busconnector_t **pBusConnector);
+  bool getBus(QString cref, oms_busconnector_t **pBusConnector);
   bool getComponentType(QString cref, oms_component_enu_t *pType);
-  bool getConnections(QString cref, oms3_connection_t ***pConnections);
+  bool getConnections(QString cref, oms_connection_t ***pConnections);
   bool getConnector(QString cref, oms_connector_t **pConnector);
-  bool getElement(QString cref, oms3_element_t **pElement);
-  bool getElements(QString cref, oms3_element_t ***pElements);
+  bool getElement(QString cref, oms_element_t **pElement);
+  bool getElements(QString cref, oms_element_t ***pElements);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int* value);
   bool getReal(QString cref, double* value);
@@ -99,7 +99,7 @@ public:
   bool getStopTime(QString cref, double* stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
   bool getSystemType(QString cref, oms_system_enu_t *pType);
-  bool getTLMBus(QString cref, oms3_tlmbusconnector_t **pTLMBusConnector);
+  bool getTLMBus(QString cref, oms_tlmbusconnector_t **pTLMBusConnector);
   bool getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions, const oms_tlm_interpolation_t interpolation,
                            char ***types, char ***descriptions);
   bool instantiate(QString cref);
@@ -128,7 +128,7 @@ public:
   bool setStopTime(QString cref, double stopTime);
   void setTempDirectory(QString path);
   bool setTLMBusGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
-  bool setTLMConnectionParameters(QString crefA, QString crefB, const oms3_tlm_connection_parameters_t *pParameters);
+  bool setTLMConnectionParameters(QString crefA, QString crefB, const oms_tlm_connection_parameters_t *pParameters);
   bool setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort);
   bool setTolerance(QString cref, double tolerance);
   void setWorkingDirectory(QString path);

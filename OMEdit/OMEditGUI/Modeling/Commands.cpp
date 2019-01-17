@@ -1819,7 +1819,7 @@ void AddSystemCommand::redoInternal()
   }
   if (!mpLibraryTreeItem) {
     // get the oms_element_t
-    oms3_element_t *pOMSElement = 0;
+    oms_element_t *pOMSElement = 0;
     OMSProxy::instance()->getElement(nameStructure, &pOMSElement);
     // Create a LibraryTreeItem for system
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -1908,7 +1908,7 @@ void AddSubModelCommand::redoInternal()
   }
   if (!mpLibraryTreeItem) {
     // get the oms_element_t
-    oms3_element_t *pOMSElement = 0;
+    oms_element_t *pOMSElement = 0;
     OMSProxy::instance()->getElement(nameStructure, &pOMSElement);
     // Create a LibraryTreeItem for system
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -2523,8 +2523,8 @@ void AddBusCommand::redoInternal()
     }
   }
   if (!mpLibraryTreeItem) {
-    // get oms3_busconnector_t
-    oms3_busconnector_t *pOMSBusConnector = 0;
+    // get oms_busconnector_t
+    oms_busconnector_t *pOMSBusConnector = 0;
     OMSProxy::instance()->getBus(nameStructure, &pOMSBusConnector);
     // Create a LibraryTreeItem for bus connector
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -2680,8 +2680,8 @@ void AddTLMBusCommand::redoInternal()
     }
   }
   if (!mpLibraryTreeItem) {
-    // get oms3_busconnector_t
-    oms3_tlmbusconnector_t *pOMSTLMBusConnector = 0;
+    // get oms_busconnector_t
+    oms_tlmbusconnector_t *pOMSTLMBusConnector = 0;
     OMSProxy::instance()->getTLMBus(nameStructure, &pOMSTLMBusConnector);
     // Create a LibraryTreeItem for bus connector
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
@@ -2799,8 +2799,8 @@ void DeleteConnectorFromTLMBusCommand::undo()
 }
 
 UpdateTLMParametersCommand::UpdateTLMParametersCommand(LineAnnotation *pConnectionLineAnnotation,
-                                                       const oms3_tlm_connection_parameters_t oldTLMParameters,
-                                                       const oms3_tlm_connection_parameters_t newTLMParameters, UndoCommand *pParent)
+                                                       const oms_tlm_connection_parameters_t oldTLMParameters,
+                                                       const oms_tlm_connection_parameters_t newTLMParameters, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpConnectionLineAnnotation = pConnectionLineAnnotation;

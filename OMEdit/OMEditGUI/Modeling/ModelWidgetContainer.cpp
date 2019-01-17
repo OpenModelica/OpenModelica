@@ -610,7 +610,7 @@ bool GraphicsView::addConnectionToClass(LineAnnotation *pConnectionLineAnnotatio
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::OMS) {
     // if TLM connection
     bool connectionSuccessful = false;
-    if (pConnectionLineAnnotation->getOMSConnectionType() == oms3_connection_tlm) {
+    if (pConnectionLineAnnotation->getOMSConnectionType() == oms_connection_tlm) {
       connectionSuccessful = OMSProxy::instance()->addTLMConnection(pConnectionLineAnnotation->getStartComponentName(),
                                                                     pConnectionLineAnnotation->getEndComponentName(),
                                                                     pConnectionLineAnnotation->getDelay().toDouble(),
@@ -1731,8 +1731,8 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
         && pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector()
         && pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()
         && pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector()) {
-      oms3_busconnector_t *pStartBus = pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector();
-      oms3_busconnector_t *pEndBus = pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector();
+      oms_busconnector_t *pStartBus = pConnectionLineAnnotation->getStartComponent()->getLibraryTreeItem()->getOMSBusConnector();
+      oms_busconnector_t *pEndBus = pConnectionLineAnnotation->getEndComponent()->getLibraryTreeItem()->getOMSBusConnector();
       // start bus connectors
       QStringList startBusConnectors;
       if (pStartBus->connectors) {
@@ -1749,7 +1749,7 @@ void GraphicsView::deleteConnection(LineAnnotation *pConnectionLineAnnotation)
       }
       // Delete the atomic connections before deleting the actual bus connection.
       foreach (LineAnnotation *pAtomicConnectionLineAnnotation, mConnectionsList) {
-        if (pAtomicConnectionLineAnnotation->getOMSConnectionType() == oms3_connection_single) {
+        if (pAtomicConnectionLineAnnotation->getOMSConnectionType() == oms_connection_single) {
           if (pStartBus->connectors) {
             for (int i = 0; pStartBus->connectors[i] ; ++i) {
               if (startBusConnectors.contains(pAtomicConnectionLineAnnotation->getStartComponent()->getName())
@@ -4308,7 +4308,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
       setModelClassPathLabel(mpLibraryTreeItem->getNameStructure());
     }
     // Update the OMS element
-    oms3_element_t *pOMSElement = 0;
+    oms_element_t *pOMSElement = 0;
     OMSProxy::instance()->getElement(mpLibraryTreeItem->getNameStructure(), &pOMSElement);
     mpLibraryTreeItem->setOMSElement(pOMSElement);
     // remove the children
@@ -6036,7 +6036,7 @@ void ModelWidget::drawOMSModelConnections()
 {
   if (mpLibraryTreeItem->isSystemElement()) {
     MessagesWidget *pMessagesWidget = MessagesWidget::instance();
-    oms3_connection_t** pConnections = NULL;
+    oms_connection_t** pConnections = NULL;
     if (OMSProxy::instance()->getConnections(mpLibraryTreeItem->getNameStructure(), &pConnections)) {
       for (int i = 0 ; pConnections[i] ; i++) {
         // get start component
@@ -6158,7 +6158,7 @@ void ModelWidget::drawOMSModelConnections()
           pConnectionLineAnnotation->setVisible(false);
         }
         // Check if bus connection
-        if (pConnections[i]->type == oms3_connection_bus || pConnections[i]->type == oms3_connection_tlm) {
+        if (pConnections[i]->type == oms_connection_bus || pConnections[i]->type == oms_connection_tlm) {
           pConnectionLineAnnotation->setLineThickness(0.5);
         }
       }
@@ -6210,7 +6210,7 @@ void ModelWidget::dissociateBusWithConnector(QString busName, QString connectorN
 void ModelWidget::associateBusWithConnectors(Component *pBusComponent, GraphicsView *pGraphicsView)
 {
   if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSBusConnector()) {
-    oms3_busconnector_t *pBusConnector = pBusComponent->getLibraryTreeItem()->getOMSBusConnector();
+    oms_busconnector_t *pBusConnector = pBusComponent->getLibraryTreeItem()->getOMSBusConnector();
     if (pBusConnector->connectors) {
       for (int i = 0 ; pBusConnector->connectors[i] ; i++) {
         Component *pConnectorComponent = pGraphicsView->getComponentObject(QString(pBusConnector->connectors[i]));
@@ -6220,7 +6220,7 @@ void ModelWidget::associateBusWithConnectors(Component *pBusComponent, GraphicsV
       }
     }
   } else if (pBusComponent && pBusComponent->getLibraryTreeItem() && pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector()) {
-    oms3_tlmbusconnector_t *pTLMBusConnector = pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector();
+    oms_tlmbusconnector_t *pTLMBusConnector = pBusComponent->getLibraryTreeItem()->getOMSTLMBusConnector();
     if (pTLMBusConnector->connectornames) {
       for (int i = 0 ; pTLMBusConnector->connectornames[i] ; i++) {
         Component *pConnectorComponent = pGraphicsView->getComponentObject(QString(pTLMBusConnector->connectornames[i]));
