@@ -1223,45 +1223,6 @@ void GraphicsView::fitInViewInternal()
 }
 
 /*!
- * \brief GraphicsView::addSystem
- * Adds a system to a model.
- * \param name
- * \param type
- */
-void GraphicsView::addSystem(QString name, oms_system_enu_t type)
-{
-
-}
-
-/*!
- * \brief GraphicsView::addSubModel
- * Adds the submodel to the OMS model.
- * \param name
- * \param path
- */
-void GraphicsView::addSubModel(QString name, QString path)
-{
-  QFileInfo fileInfo(path);
-  OMSProxy::instance()->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  if (fileInfo.suffix().compare("fmu") == 0) {
-    OMSProxy::instance()->addFMU(mpModelWidget->getLibraryTreeItem()->getNameStructure(), fileInfo.absoluteFilePath(), name);
-  } else {
-    OMSProxy::instance()->addTable(mpModelWidget->getLibraryTreeItem()->getNameStructure(), fileInfo.absoluteFilePath(), name);
-  }
-  OMSProxy::instance()->setWorkingDirectory(OptionsDialog::instance()->getOMSimulatorPage()->getWorkingDirectory());
-}
-
-/*!
- * \brief GraphicsView::deleteSubModel
- * Deletes the submodel from OMS model.
- * \param name
- */
-void GraphicsView::deleteSubModel(QString name)
-{
-  OMSProxy::instance()->deleteSubModel(mpModelWidget->getLibraryTreeItem()->getNameStructure(), name);
-}
-
-/*!
  * \brief GraphicsView::createActions
  * Creates the actions for the GraphicsView.
  */

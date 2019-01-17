@@ -836,6 +836,12 @@ void OptionsDialog::readTLMSettings()
  */
 void OptionsDialog::readOMSimulatorSettings()
 {
+  // read command line options
+  if (mpSettings->contains("OMSimulator/commandLineOptions")) {
+    QString commandLineOptions = mpSettings->value("OMSimulator/commandLineOptions").toString();
+    mpOMSimulatorPage->getCommandLineOptionsTextBox()->setText(commandLineOptions);
+    OMSProxy::instance()->setCommandLineOption(commandLineOptions);
+  }
   // read working directory
   if (mpSettings->contains("OMSimulator/workingDirectory")) {
     mpOMSimulatorPage->setWorkingDirectory(mpSettings->value("OMSimulator/workingDirectory").toString());
@@ -1315,6 +1321,11 @@ void OptionsDialog::saveTLMSettings()
  */
 void OptionsDialog::saveOMSimulatorSettings()
 {
+  // set command line options
+  mpSettings->setValue("OMSimulator/commandLineOptions", mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
+  // first clear all the command line options and then set the new
+  OMSProxy::instance()->setCommandLineOption("--clearAllOptions=true");
+  OMSProxy::instance()->setCommandLineOption(mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
   // set working directory
   mpSettings->setValue("OMSimulator/workingDirectory", mpOMSimulatorPage->getWorkingDirectory());
   OMSProxy::instance()->setWorkingDirectory(mpOMSimulatorPage->getWorkingDirectory());
@@ -4751,6 +4762,10 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
   mpGeneralGroupBox = new QGroupBox(Helper::general);
+  // command line options
+  mpCommandLineOptionsLabel = new Label(tr("Command Line Options:"));
+  mpCommandLineOptionsTextBox = new QLineEdit("--suppressPath=true");
+  mpCommandLineOptionsTextBox->setToolTip(tr("Space separated list of command line options e.g., --suppressPath=true --ignoreInitialUnknowns=true"));
   // working directory
   mpWorkingDirectoryLabel = new Label(Helper::workingDirectory);
   mpWorkingDirectoryTextBox = new QLineEdit(Utilities::tempDirectory());
@@ -4766,11 +4781,13 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   // set the layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryLabel, 0, 0);
-  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryTextBox, 0, 1);
-  pGeneralGroupBoxLayout->addWidget(mpBrowseWorkingDirectoryButton, 0, 2);
-  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 1, 0);
-  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 1, 1, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpCommandLineOptionsLabel, 0, 0);
+  pGeneralGroupBoxLayout->addWidget(mpCommandLineOptionsTextBox, 0, 1, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
+  pGeneralGroupBoxLayout->addWidget(mpBrowseWorkingDirectoryButton, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelLabel, 2, 0);
+  pGeneralGroupBoxLayout->addWidget(mpLoggingLevelComboBox, 2, 1, 1, 2);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);

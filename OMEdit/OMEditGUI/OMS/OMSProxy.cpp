@@ -123,7 +123,7 @@ OMSProxy::OMSProxy()
   mpCommunicationLogFile = fopen(communicationLogFilePath.toStdString().c_str(), "w");
   mTotalOMSCallsTime = 0.0;
   // OMSimulator global settings
-  setCommandLineOption("--suppressPath=true");
+  //setCommandLineOption("--suppressPath=true");
   setLogFile(QString(Utilities::tempDirectory() + "/omslog.txt").toStdString().c_str());
   setTempDirectory(Utilities::tempDirectory().toStdString().c_str());
   setLoggingCallback();
@@ -1427,63 +1427,6 @@ bool OMSProxy::terminate(QString cref)
   return statusToBool(status);
 }
 
-
-
-
-/*!
- * \brief OMSProxy::addFMU
- * Adds the FMU to the model
- * \param modelIdent
- * \param fmuPath
- * \param fmuIdent
- * \return
- */
-bool OMSProxy::addFMU(QString modelIdent, QString fmuPath, QString fmuIdent)
-{
-  oms_status_enu_t status = oms2_addFMU(modelIdent.toStdString().c_str(), fmuPath.toStdString().c_str(), fmuIdent.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::addTable
- * Adds the table to the model
- * \param modelIdent
- * \param fmuPath
- * \param fmuIdent
- * \return
- */
-bool OMSProxy::addTable(QString modelIdent, QString tablePath, QString tableIdent)
-{
-  oms_status_enu_t status = oms2_addTable(modelIdent.toStdString().c_str(), tablePath.toStdString().c_str(), tableIdent.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::deleteSubModel
- * Deletes the submodel from the model
- * \param modelIdent
- * \param subModelIdent
- * \return
- */
-bool OMSProxy::deleteSubModel(QString modelIdent, QString subModelIdent)
-{
-  oms_status_enu_t status = oms2_deleteSubModel(modelIdent.toStdString().c_str(), subModelIdent.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::renameModel
- * Renames a model or a FMU.
- * \param identOld
- * \param identNew
- * \return
- */
-bool OMSProxy::rename(QString identOld, QString identNew)
-{
-  oms_status_enu_t status = oms2_rename(identOld.toStdString().c_str(), identNew.toStdString().c_str());
-  return statusToBool(status);
-}
-
 /*!
  * \brief OMSProxy::parseString
  * Parses a model string and returns a model name.
@@ -1493,13 +1436,14 @@ bool OMSProxy::rename(QString identOld, QString identNew)
  */
 bool OMSProxy::parseString(QString contents, QString *pModelName)
 {
-  char* ident = NULL;
-  oms_status_enu_t status = oms2_parseString(contents.toStdString().c_str(), &ident);
-  if (ident) {
-    *pModelName = QString(ident);
-    free(ident);
-  }
-  return statusToBool(status);
+//  char* ident = NULL;
+//  oms_status_enu_t status = oms2_parseString(contents.toStdString().c_str(), &ident);
+//  if (ident) {
+//    *pModelName = QString(ident);
+//    free(ident);
+//  }
+//  return statusToBool(status);
+  return false;
 }
 
 /*!
@@ -1511,51 +1455,9 @@ bool OMSProxy::parseString(QString contents, QString *pModelName)
  */
 bool OMSProxy::loadString(QString contents, QString* pModelName)
 {
-  char* ident = NULL;
-  oms_status_enu_t status = oms2_loadString(contents.toStdString().c_str(), &ident);
-  *pModelName = QString(ident);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setMasterAlgorithm
- * Set master algorithm variant that shall be used (default: "standard").
- *
- * Supported master algorithms: "standard"
- *
- * Experimental master algorithms (no stable API!): "pctpl", "pmrchannela", "pmrchannelcv", "pmrchannelm"
- *
- * \param cref
- * \param masterAlgorithm
- * \return
- */
-bool OMSProxy::setMasterAlgorithm(QString cref, QString masterAlgorithm)
-{
-  oms_status_enu_t status = oms2_setMasterAlgorithm(cref.toStdString().c_str(), masterAlgorithm.toStdString().c_str());
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::exists
- * This function returns 1 if a given cref exists in the scope,
- * otherwise 0. It can be used to check for models, sub-models such
- * as FMUs, and solver instances.
- * \param cref
- * \return
- */
-bool OMSProxy::exists(QString cref)
-{
-  return oms2_exists(cref.toStdString().c_str());
-}
-
-/*!
- * \brief OMSProxy::reset
- * Reset the model after a simulation run.
- * \param ident
- * \return
- */
-bool OMSProxy::reset(QString ident)
-{
-  oms_status_enu_t status = oms2_reset(ident.toStdString().c_str());
-  return statusToBool(status);
+//  char* ident = NULL;
+//  oms_status_enu_t status = oms2_loadString(contents.toStdString().c_str(), &ident);
+//  *pModelName = QString(ident);
+//  return statusToBool(status);
+  return false;
 }

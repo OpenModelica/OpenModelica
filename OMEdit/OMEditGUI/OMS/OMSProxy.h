@@ -135,16 +135,8 @@ public:
   bool simulate_asynchronous(QString cref);
   bool terminate(QString cref);
 
-
-  bool addFMU(QString modelIdent, QString fmuPath, QString fmuIdent);
-  bool addTable(QString modelIdent, QString tablePath, QString tableIdent);
-  bool deleteSubModel(QString modelIdent, QString subModelIdent);
-  bool rename(QString identOld, QString identNew);
   bool parseString(QString contents, QString* pModelName);
   bool loadString(QString contents, QString* pModelName);
-  bool setMasterAlgorithm(QString cref, QString masterAlgorithm);
-  bool exists(QString cref);
-  bool reset(QString ident);
 signals:
   void logGUIMessage(MessageItem messageItem);
 };
