@@ -65,6 +65,9 @@ class SCSystemSimulationInformation
 public:
   SCSystemSimulationInformation();
 
+  double mFixedStepSize;
+  double mTolerance;
+
   QString mDescription;
   double mAbsoluteTolerance;
   double mRelativeTolerance;

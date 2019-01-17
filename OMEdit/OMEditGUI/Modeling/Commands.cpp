@@ -2879,6 +2879,15 @@ void SystemSimulationInformationCommand::redoInternal()
       setFailed(true);
       return;
     }
+  } else if (mpLibraryTreeItem->isSCSystem()) {
+    if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(), mpSCSystemSimulationInformation->mFixedStepSize)) {
+      setFailed(true);
+      return;
+    }
+    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpSCSystemSimulationInformation->mTolerance)) {
+      setFailed(true);
+      return;
+    }
   }
 }
 

@@ -53,6 +53,9 @@ WCSystemSimulationInformation::WCSystemSimulationInformation()
 
 SCSystemSimulationInformation::SCSystemSimulationInformation()
 {
+  mFixedStepSize = 0.0;
+  mTolerance = 0.0;
+
   mDescription = "";
   mAbsoluteTolerance = 0.0;
   mRelativeTolerance = 0.0;
@@ -107,7 +110,14 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsVie
     mpToleranceTextBox = new QLineEdit;
     mpToleranceTextBox->setValidator(pDoubleValidator);
   } else { // oms_system_sc
-
+    // fixed step size
+    mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
+    mpFixedStepSizeTextBox = new QLineEdit;
+    mpFixedStepSizeTextBox->setValidator(pDoubleValidator);
+    // tolerance
+    mpToleranceLabel = new Label("Tolerance:");
+    mpToleranceTextBox = new QLineEdit;
+    mpToleranceTextBox->setValidator(pDoubleValidator);
   }
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -139,7 +149,10 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsVie
     pMainLayout->addWidget(mpToleranceLabel, row, 0);
     pMainLayout->addWidget(mpToleranceTextBox, row++, 1);
   } else { // oms_system_sc
-
+    pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
+    pMainLayout->addWidget(mpFixedStepSizeTextBox, row++, 1);
+    pMainLayout->addWidget(mpToleranceLabel, row, 0);
+    pMainLayout->addWidget(mpToleranceTextBox, row++, 1);
   }
   pMainLayout->addWidget(mpButtonBox, row++, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
@@ -174,7 +187,11 @@ void SystemSimulationInformationDialog::setSystemSimulationInformation()
       return;
     }
   } else { // oms_system_sc
-
+    if (mpFixedStepSizeTextBox->text().isEmpty()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg("Fixed Step Size"), Helper::ok);
+      return;
+    }
   }
 
   TLMSystemSimulationInformation tlmSystemSimulationInformation;
@@ -189,7 +206,8 @@ void SystemSimulationInformationDialog::setSystemSimulationInformation()
     wcSystemSimulationInformation.mFixedStepSize = mpFixedStepSizeTextBox->text().toDouble();
     wcSystemSimulationInformation.mTolerance = mpToleranceTextBox->text().toDouble();
   } else { // oms_system_sc
-
+    scSystemSimulationInformation.mFixedStepSize = mpFixedStepSizeTextBox->text().toDouble();
+    scSystemSimulationInformation.mTolerance = mpToleranceTextBox->text().toDouble();
   }
   // system simulation information command
   SystemSimulationInformationCommand *pSystemSimulationInformationCommand;

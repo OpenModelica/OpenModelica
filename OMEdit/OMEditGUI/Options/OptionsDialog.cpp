@@ -1324,7 +1324,7 @@ void OptionsDialog::saveOMSimulatorSettings()
   // set command line options
   mpSettings->setValue("OMSimulator/commandLineOptions", mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
   // first clear all the command line options and then set the new
-  OMSProxy::instance()->setCommandLineOption("--clearAllOptions=true");
+  OMSProxy::instance()->setCommandLineOption("--clearAllOptions");
   OMSProxy::instance()->setCommandLineOption(mpOMSimulatorPage->getCommandLineOptionsTextBox()->text());
   // set working directory
   mpSettings->setValue("OMSimulator/workingDirectory", mpOMSimulatorPage->getWorkingDirectory());
