@@ -698,7 +698,7 @@ algorithm
 
     // If we found a binding, get the binding for the field from it.
     if Binding.isBound(binding) then
-      binding := Binding.recordFieldBinding(InstNode.name(component), binding);
+      binding := Binding.recordFieldBinding(component, binding);
     end if;
   else
     binding := NFBinding.EMPTY_BINDING;

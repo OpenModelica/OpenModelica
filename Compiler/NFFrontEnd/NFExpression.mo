@@ -4588,6 +4588,7 @@ public
         Class cls;
         Type ty;
         Integer index;
+        list<Expression> expl;
 
       case RECORD(ty = Type.COMPLEX(cls = node))
         algorithm
@@ -4607,9 +4608,11 @@ public
       case ARRAY(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
           index := Class.lookupComponentIndex(elementName, InstNode.getClass(node));
-          recordExp.elements := list(nthRecordElement(index, e) for e in recordExp.elements);
+          expl := list(nthRecordElement(index, e) for e in recordExp.elements);
+          ty := Type.liftArrayLeft(Expression.typeOf(listHead(expl)),
+                                   Dimension.fromInteger(listLength(expl)));
         then
-          recordExp;
+          Expression.makeArray(ty, expl, recordExp.literal);
 
       else
         algorithm
