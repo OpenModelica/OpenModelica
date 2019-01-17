@@ -84,7 +84,7 @@ LibraryTreeItem::LibraryTreeItem()
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
   setSubModelPath("");
-  setModelState(oms_modelState_terminated);
+  setModelState(oms_modelState_virgin);
 }
 
 /*!
@@ -146,7 +146,7 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setOMSTLMBusConnector(0);
   setFMUInfo(0);
   setSubModelPath("");
-  setModelState(oms_modelState_terminated);
+  setModelState(oms_modelState_virgin);
 }
 
 /*!
