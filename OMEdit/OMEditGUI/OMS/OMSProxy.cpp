@@ -1367,13 +1367,13 @@ bool OMSProxy::setTLMSocketData(QString cref, QString address, int managerPort, 
  * \param tolerance
  * \return
  */
-bool OMSProxy::setTolerance(QString cref, double tolerance)
+bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relativeTolerance)
 {
   QString command = "oms_setTolerance";
   QStringList args;
-  args << "\"" + cref + "\"" << QString::number(tolerance);
+  args << "\"" + cref + "\"" << QString::number(absoluteTolerance) << QString::number(relativeTolerance);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTolerance(cref.toStdString().c_str(), tolerance, tolerance);
+  oms_status_enu_t status = oms_setTolerance(cref.toStdString().c_str(), absoluteTolerance, relativeTolerance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

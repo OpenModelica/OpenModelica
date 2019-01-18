@@ -48,13 +48,15 @@ TLMSystemSimulationInformation::TLMSystemSimulationInformation()
 WCSystemSimulationInformation::WCSystemSimulationInformation()
 {
   mFixedStepSize = 0.0;
-  mTolerance = 0.0;
+  mAbsoluteTolerance = 0.0;
+  mRelativeTolerance = 0.0;
 }
 
 SCSystemSimulationInformation::SCSystemSimulationInformation()
 {
   mFixedStepSize = 0.0;
-  mTolerance = 0.0;
+  mAbsoluteTolerance = 0.0;
+  mRelativeTolerance = 0.0;
 
   mDescription = "";
   mAbsoluteTolerance = 0.0;
@@ -105,19 +107,27 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsVie
     mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
     mpFixedStepSizeTextBox = new QLineEdit;
     mpFixedStepSizeTextBox->setValidator(pDoubleValidator);
-    // tolerance
-    mpToleranceLabel = new Label("Tolerance:");
-    mpToleranceTextBox = new QLineEdit;
-    mpToleranceTextBox->setValidator(pDoubleValidator);
+    // absolute tolerance
+    mpAbsoluteToleranceLabel = new Label("Absolute Tolerance:");
+    mpAbsoluteToleranceTextBox = new QLineEdit;
+    mpAbsoluteToleranceTextBox->setValidator(pDoubleValidator);
+    // relative tolerance
+    mpRelativeToleranceLabel = new Label("Relative Tolerance:");
+    mpRelativeToleranceTextBox = new QLineEdit;
+    mpRelativeToleranceTextBox->setValidator(pDoubleValidator);
   } else { // oms_system_sc
     // fixed step size
     mpFixedStepSizeLabel = new Label(tr("Fixed Step Size:"));
     mpFixedStepSizeTextBox = new QLineEdit;
     mpFixedStepSizeTextBox->setValidator(pDoubleValidator);
-    // tolerance
-    mpToleranceLabel = new Label("Tolerance:");
-    mpToleranceTextBox = new QLineEdit;
-    mpToleranceTextBox->setValidator(pDoubleValidator);
+    // absolute tolerance
+    mpAbsoluteToleranceLabel = new Label("Absolute Tolerance:");
+    mpAbsoluteToleranceTextBox = new QLineEdit;
+    mpAbsoluteToleranceTextBox->setValidator(pDoubleValidator);
+    // relative tolerance
+    mpRelativeToleranceLabel = new Label("Relative Tolerance:");
+    mpRelativeToleranceTextBox = new QLineEdit;
+    mpRelativeToleranceTextBox->setValidator(pDoubleValidator);
   }
   // buttons
   mpOkButton = new QPushButton(Helper::ok);
@@ -146,13 +156,17 @@ SystemSimulationInformationDialog::SystemSimulationInformationDialog(GraphicsVie
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isWCSystem()) {
     pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
     pMainLayout->addWidget(mpFixedStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpToleranceLabel, row, 0);
-    pMainLayout->addWidget(mpToleranceTextBox, row++, 1);
+    pMainLayout->addWidget(mpAbsoluteToleranceLabel, row, 0);
+    pMainLayout->addWidget(mpAbsoluteToleranceTextBox, row++, 1);
+    pMainLayout->addWidget(mpRelativeToleranceLabel, row, 0);
+    pMainLayout->addWidget(mpRelativeToleranceTextBox, row++, 1);
   } else { // oms_system_sc
     pMainLayout->addWidget(mpFixedStepSizeLabel, row, 0);
     pMainLayout->addWidget(mpFixedStepSizeTextBox, row++, 1);
-    pMainLayout->addWidget(mpToleranceLabel, row, 0);
-    pMainLayout->addWidget(mpToleranceTextBox, row++, 1);
+    pMainLayout->addWidget(mpAbsoluteToleranceLabel, row, 0);
+    pMainLayout->addWidget(mpAbsoluteToleranceTextBox, row++, 1);
+    pMainLayout->addWidget(mpRelativeToleranceLabel, row, 0);
+    pMainLayout->addWidget(mpRelativeToleranceTextBox, row++, 1);
   }
   pMainLayout->addWidget(mpButtonBox, row++, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
@@ -204,10 +218,12 @@ void SystemSimulationInformationDialog::setSystemSimulationInformation()
     tlmSystemSimulationInformation.mMonitorPort = mpMonitorPortTextBox->text().toInt();
   } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isWCSystem()) {
     wcSystemSimulationInformation.mFixedStepSize = mpFixedStepSizeTextBox->text().toDouble();
-    wcSystemSimulationInformation.mTolerance = mpToleranceTextBox->text().toDouble();
+    wcSystemSimulationInformation.mAbsoluteTolerance = mpAbsoluteToleranceTextBox->text().toDouble();
+    wcSystemSimulationInformation.mRelativeTolerance = mpRelativeToleranceTextBox->text().toDouble();
   } else { // oms_system_sc
     scSystemSimulationInformation.mFixedStepSize = mpFixedStepSizeTextBox->text().toDouble();
-    scSystemSimulationInformation.mTolerance = mpToleranceTextBox->text().toDouble();
+    wcSystemSimulationInformation.mAbsoluteTolerance = mpAbsoluteToleranceTextBox->text().toDouble();
+    wcSystemSimulationInformation.mRelativeTolerance = mpRelativeToleranceTextBox->text().toDouble();
   }
   // system simulation information command
   SystemSimulationInformationCommand *pSystemSimulationInformationCommand;

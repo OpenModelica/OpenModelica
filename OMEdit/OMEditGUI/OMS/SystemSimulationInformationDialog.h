@@ -57,7 +57,8 @@ public:
   WCSystemSimulationInformation();
 
   double mFixedStepSize;
-  double mTolerance;
+  double mAbsoluteTolerance;
+  double mRelativeTolerance;
 };
 
 class SCSystemSimulationInformation
@@ -66,7 +67,6 @@ public:
   SCSystemSimulationInformation();
 
   double mFixedStepSize;
-  double mTolerance;
 
   QString mDescription;
   double mAbsoluteTolerance;
@@ -95,8 +95,10 @@ private:
   // WC system simulation information
   Label *mpFixedStepSizeLabel;
   QLineEdit *mpFixedStepSizeTextBox;
-  Label *mpToleranceLabel;
-  QLineEdit *mpToleranceTextBox;
+  Label *mpAbsoluteToleranceLabel;
+  QLineEdit *mpAbsoluteToleranceTextBox;
+  Label *mpRelativeToleranceLabel;
+  QLineEdit *mpRelativeToleranceTextBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

@@ -2875,7 +2875,8 @@ void SystemSimulationInformationCommand::redoInternal()
       setFailed(true);
       return;
     }
-    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpWCSystemSimulationInformation->mTolerance)) {
+    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpWCSystemSimulationInformation->mAbsoluteTolerance,
+                                            mpWCSystemSimulationInformation->mRelativeTolerance)) {
       setFailed(true);
       return;
     }
@@ -2884,7 +2885,8 @@ void SystemSimulationInformationCommand::redoInternal()
       setFailed(true);
       return;
     }
-    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpSCSystemSimulationInformation->mTolerance)) {
+    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpSCSystemSimulationInformation->mAbsoluteTolerance,
+                                            mpSCSystemSimulationInformation->mRelativeTolerance)) {
       setFailed(true);
       return;
     }
