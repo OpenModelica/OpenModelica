@@ -1373,7 +1373,7 @@ bool OMSProxy::setTolerance(QString cref, double tolerance)
   QStringList args;
   args << "\"" + cref + "\"" << QString::number(tolerance);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTolerance(cref.toStdString().c_str(), tolerance);
+  oms_status_enu_t status = oms_setTolerance(cref.toStdString().c_str(), tolerance, tolerance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
