@@ -1053,6 +1053,7 @@ protected
           next_origin := intBitOr(origin, ExpOrigin.FOR);
           (arg, ty) := Typing.typeExp(call.exp, next_origin, info);
           {fn} := Function.typeRefCache(call.ref);
+          TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
         then
           (TYPED_REDUCTION(fn, ty, variability, arg, iters), ty, variability);
 

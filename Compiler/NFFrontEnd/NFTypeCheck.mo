@@ -78,6 +78,8 @@ import MetaModelica.Dangerous.*;
 import OperatorOverloading = NFOperatorOverloading;
 import ExpandExp = NFExpandExp;
 import NFFunction.Slot;
+import Util;
+import System;
 
 public
 type MatchKind = enumeration(
@@ -3014,6 +3016,61 @@ algorithm
     end match;
   end if;
 end checkDimensionType;
+
+function checkReductionType
+  input Type ty;
+  input Absyn.Path name;
+  input Expression exp;
+  input SourceInfo info;
+protected
+  Type ety;
+  String err;
+algorithm
+  err := match name
+    case Absyn.Path.IDENT("sum")
+      then
+        match Type.arrayElementType(ty)
+          case Type.INTEGER() then "";
+          case Type.REAL() then "";
+          else "Integer or Real";
+        end match;
+
+    case Absyn.Path.IDENT("product")
+      then
+        match ty
+          case Type.INTEGER() then "";
+          case Type.REAL() then "";
+          else "scalar Integer or Real";
+        end match;
+
+    case Absyn.Path.IDENT("min")
+      then
+        match ty
+          case Type.INTEGER() then "";
+          case Type.REAL() then "";
+          case Type.BOOLEAN() then "";
+          case Type.ENUMERATION() then "";
+          else "scalar enumeration, Boolean, Integer or Real";
+        end match;
+
+    case Absyn.Path.IDENT("max")
+      then
+        match ty
+          case Type.INTEGER() then "";
+          case Type.REAL() then "";
+          case Type.BOOLEAN() then "";
+          case Type.ENUMERATION() then "";
+          else "scalar enumeration, Boolean, Integer or Real";
+        end match;
+
+    else "";
+  end match;
+
+  if not stringEmpty(err) then
+    Error.addSourceMessageAndFail(Error.INVALID_REDUCTION_TYPE,
+      {Expression.toString(exp), Type.toString(ty), Absyn.pathString(name), err}, info);
+  end if;
+end checkReductionType;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTypeCheck;
