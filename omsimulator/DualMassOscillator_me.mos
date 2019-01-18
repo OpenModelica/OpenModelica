@@ -8,39 +8,39 @@ buildModelFMU(DualMassOscillator.System1, version="2.0", fmuType="me", platforms
 buildModelFMU(DualMassOscillator.System2, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
 writeFile("DualMassOscillator_me.lua", "
-oms3_setCommandLineOption(\"--suppressPath=true\")
-oms3_setTempDirectory(\"./temp-DualMassOscillator_me/\")
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-DualMassOscillator_me/\")
 
-oms3_newModel(\"DualMassOscillator\")
-oms3_addSystem(\"DualMassOscillator.root\", oms_system_sc)
-oms3_addSubModel(\"DualMassOscillator.root.system1\", \"DualMassOscillator.System1.fmu\")
-oms3_addSubModel(\"DualMassOscillator.root.system2\", \"DualMassOscillator.System2.fmu\")
+oms_newModel(\"DualMassOscillator\")
+oms_addSystem(\"DualMassOscillator.root\", oms_system_sc)
+oms_addSubModel(\"DualMassOscillator.root.system1\", \"DualMassOscillator.System1.fmu\")
+oms_addSubModel(\"DualMassOscillator.root.system2\", \"DualMassOscillator.System2.fmu\")
 
-oms3_addConnection(\"DualMassOscillator.root.system1.F\", \"DualMassOscillator.root.system2.F\")
-oms3_addConnection(\"DualMassOscillator.root.system1.s1\", \"DualMassOscillator.root.system2.s1\")
-oms3_addConnection(\"DualMassOscillator.root.system1.v1\", \"DualMassOscillator.root.system2.v1\")
-oms3_addConnection(\"DualMassOscillator.root.system1.a1\", \"DualMassOscillator.root.system2.a1\")
+oms_addConnection(\"DualMassOscillator.root.system1.F\", \"DualMassOscillator.root.system2.F\")
+oms_addConnection(\"DualMassOscillator.root.system1.s1\", \"DualMassOscillator.root.system2.s1\")
+oms_addConnection(\"DualMassOscillator.root.system1.v1\", \"DualMassOscillator.root.system2.v1\")
+oms_addConnection(\"DualMassOscillator.root.system1.a1\", \"DualMassOscillator.root.system2.a1\")
 
-oms3_setResultFile(\"DualMassOscillator\", \"\")
-oms3_setStopTime(\"DualMassOscillator\", 0.1)
-oms3_setFixedStepSize(\"DualMassOscillator.root\", 1e-4)
-oms3_setTolerance(\"DualMassOscillator.root\", 1e-6)
+oms_setResultFile(\"DualMassOscillator\", \"\")
+oms_setStopTime(\"DualMassOscillator\", 0.1)
+oms_setFixedStepSize(\"DualMassOscillator.root\", 1e-4)
+oms_setTolerance(\"DualMassOscillator.root\", 1e-6)
 
-oms3_instantiate(\"DualMassOscillator\")
-oms3_setReal(\"DualMassOscillator.root.system2.s2_start\", 2.5)
+oms_instantiate(\"DualMassOscillator\")
+oms_setReal(\"DualMassOscillator.root.system2.s2_start\", 2.5)
 
-oms3_initialize(\"DualMassOscillator\")
+oms_initialize(\"DualMassOscillator\")
 print(\"info:    Initialization\")
-print(\"info:      system1.s1: \" .. oms3_getReal(\"DualMassOscillator.root.system1.s1\"))
-print(\"info:      system2.s2: \" .. oms3_getReal(\"DualMassOscillator.root.system2.s2\"))
+print(\"info:      system1.s1: \" .. oms_getReal(\"DualMassOscillator.root.system1.s1\"))
+print(\"info:      system2.s2: \" .. oms_getReal(\"DualMassOscillator.root.system2.s2\"))
 
-oms3_simulate(\"DualMassOscillator\")
+oms_simulate(\"DualMassOscillator\")
 print(\"info:    Simulation\")
-print(\"info:      system1.s1: \" .. oms3_getReal(\"DualMassOscillator.root.system1.s1\"))
-print(\"info:      system2.s2: \" .. oms3_getReal(\"DualMassOscillator.root.system2.s2\"))
+print(\"info:      system1.s1: \" .. oms_getReal(\"DualMassOscillator.root.system1.s1\"))
+print(\"info:      system2.s2: \" .. oms_getReal(\"DualMassOscillator.root.system2.s2\"))
 
-oms3_terminate(\"DualMassOscillator\")
-oms3_delete(\"DualMassOscillator\")
+oms_terminate(\"DualMassOscillator\")
+oms_delete(\"DualMassOscillator\")
 "); getErrorString();
 
 system(getInstallationDirectoryPath() + "/bin/OMSimulator --ignoreInitialUnknowns=true DualMassOscillator_me.lua");

@@ -19,31 +19,31 @@ end initialization;"); getErrorString();
 buildModelFMU(initialization, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
 
 writeFile("initialization.lua", "
-oms3_setCommandLineOption(\"--suppressPath=true\")
-oms3_setTempDirectory(\"./temp-initialization/\")
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-initialization/\")
 
-oms3_newModel(\"test\")
-oms3_addSystem(\"test.root\", oms_system_sc)
-oms3_addSubModel(\"test.root.A\", \"initialization.fmu\")
-oms3_setResultFile(\"test\", \"\")
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.A\", \"initialization.fmu\")
+oms_setResultFile(\"test\", \"\")
 
-oms3_instantiate(\"test\")
-oms3_setReal(\"test.root.A.x_start\", 1.5)
+oms_instantiate(\"test\")
+oms_setReal(\"test.root.A.x_start\", 1.5)
 
-oms3_initialize(\"test\")
+oms_initialize(\"test\")
 print(\"info:    Initialization\")
-print(\"info:      A.x_start: \" .. oms3_getReal(\"test.root.A.x_start\"))
-print(\"info:      A.x:       \" .. oms3_getReal(\"test.root.A.x\"))
-print(\"info:      A.w:       \" .. oms3_getReal(\"test.root.A.w\"))
+print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
+print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+print(\"info:      A.w:       \" .. oms_getReal(\"test.root.A.w\"))
 
-oms3_simulate(\"test\")
+oms_simulate(\"test\")
 print(\"info:    Simulation\")
-print(\"info:      A.x_start: \" .. oms3_getReal(\"test.root.A.x_start\"))
-print(\"info:      A.x:       \" .. oms3_getReal(\"test.root.A.x\"))
-print(\"info:      A.w:       \" .. oms3_getReal(\"test.root.A.w\"))
+print(\"info:      A.x_start: \" .. oms_getReal(\"test.root.A.x_start\"))
+print(\"info:      A.x:       \" .. oms_getReal(\"test.root.A.x\"))
+print(\"info:      A.w:       \" .. oms_getReal(\"test.root.A.w\"))
 
-oms3_terminate(\"test\")
-oms3_delete(\"test\")
+oms_terminate(\"test\")
+oms_delete(\"test\")
 "); getErrorString();
 
 system(getInstallationDirectoryPath() + "/bin/OMSimulator initialization.lua");
