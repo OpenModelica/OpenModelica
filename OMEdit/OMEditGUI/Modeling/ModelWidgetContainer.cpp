@@ -3841,8 +3841,8 @@ void ModelWidget::createModelWidgetComponents()
       }
       connect(mpDiagramViewToolButton, SIGNAL(toggled(bool)), SLOT(showDiagramView(bool)));
       pViewButtonsHorizontalLayout->addWidget(mpDiagramViewToolButton);
-      // Only the top level OMSimualtor models or systems will have the editor.
-      if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement()) {
+      // Only the top level OMSimualtor models or systems or components will have the editor.
+      if (mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
         connect(mpTextViewToolButton, SIGNAL(toggled(bool)), SLOT(showTextView(bool)));
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
         // create an editor
