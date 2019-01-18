@@ -696,6 +696,10 @@ redeclare3.mo \
 redeclare4.mo \
 redeclare7.mo \
 redeclare9.mo \
+ReductionInvalidTypeSum.mo \
+ReductionInvalidTypeProduct.mo \
+ReductionInvalidTypeMin.mo \
+ReductionInvalidTypeMax.mo \
 Reinit1.mo \
 Reinit2.mo \
 ReinitInvalid1.mo \
