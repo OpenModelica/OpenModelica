@@ -1243,68 +1243,78 @@ function typeCrefDim
   input SourceInfo info;
   output Dimension dim;
   output TypingError error;
-algorithm
-  (dim, error) := match cref
-    case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
-      then typeComponentDim(cref.node, dimIndex, listLength(cref.subscripts), origin, info);
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got invalid cref.", sourceInfo());
-      then
-        fail();
-
-  end match;
-end typeCrefDim;
-
-function typeComponentDim
-  input InstNode component;
-  input Integer dimIndex;
-  input Integer offset "The number of dimensions to skip due to subscripts.";
-  input ExpOrigin.Type origin;
-  input SourceInfo info;
-  output Dimension dim;
-  output TypingError error;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  list<ComponentRef> crl;
+  list<Subscript> subs;
+  Integer index, dim_count, dim_total = 0;
+  InstNode node;
+  Component c;
+  Type ty;
 algorithm
-  (dim, error) := match c
-    local
-      Dimension d;
-      Type ty;
-      Integer index, dim_count;
+  // TODO: If the cref has subscripts it becomes trickier to correctly calculate
+  //       the dimension. For now we take the easy way out and just type the
+  //       whole cref, but doing so might introduce unnecessary cycles.
+  if ComponentRef.hasSubscripts(cref) then
+    (_, ty) := typeCref(cref, origin, info);
+    (dim, error) := nthDimensionBoundsChecked(ty, dimIndex);
+    return;
+  end if;
 
-    // An untyped component, get the requested dimension from the component and type it.
-    case Component.UNTYPED_COMPONENT()
-      algorithm
-        index := dimIndex + offset;
-        dim_count := arrayLength(c.dimensions);
+  // Loop through the cref in reverse, reducing the index by the number of
+  // dimensions each component has until we find a component that the index is
+  // valid for. This is done even if the index is 0 or negative, since the loop
+  // also sums up the total number of dimensions which is needed to give a good
+  // error message.
+  crl := ComponentRef.toListReverse(cref);
+  index := dimIndex;
 
-        if index < 1 then
-          error := TypingError.OUT_OF_BOUNDS(max(dim_count - offset, 0));
-          d := Dimension.UNKNOWN();
-        elseif index > dim_count then
-          node := InstNode.parent(node);
+  for cr in crl loop
+    () := match cr
+      case ComponentRef.CREF(node = InstNode.COMPONENT_NODE(), subscripts = subs)
+        algorithm
+          node := InstNode.resolveOuter(cr.node);
+          c := InstNode.component(node);
 
-          if InstNode.isComponent(node) then
-            (d, error) := typeComponentDim(node, dimIndex - dim_count, offset - dim_count, origin, info);
-          else
-            error := TypingError.OUT_OF_BOUNDS(max(dim_count - offset, 0));
-            d := Dimension.UNKNOWN();
-          end if;
-        else
-          error := TypingError.NO_ERROR();
-          d := typeDimension(c.dimensions, index, node, c.binding, origin, c.info);
-        end if;
-      then
-        (d, error);
+          dim_count := match c
+            case Component.UNTYPED_COMPONENT()
+              algorithm
+                dim_count := arrayLength(c.dimensions);
 
-    // A typed component, get the requested dimension from its type.
-    else nthDimensionBoundsChecked(Component.getType(c), dimIndex, offset);
+                if index <= dim_count and index > 0 then
+                  error := TypingError.NO_ERROR();
+                  dim := typeDimension(c.dimensions, index, node, c.binding, origin, c.info);
+                  return;
+                end if;
+              then
+                dim_count;
 
-  end match;
-end typeComponentDim;
+            case Component.TYPED_COMPONENT()
+              algorithm
+                dim_count := Type.dimensionCount(c.ty);
+
+                if index <= dim_count and index > 0 then
+                  error := TypingError.NO_ERROR();
+                  dim := Type.nthDimension(c.ty, index);
+                  return;
+                end if;
+              then
+                dim_count;
+
+            else 0;
+          end match;
+
+          index := index - dim_count;
+          dim_total := dim_total + dim_count;
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  dim := Dimension.UNKNOWN();
+  error := TypingError.OUT_OF_BOUNDS(dim_total);
+end typeCrefDim;
 
 function nthDimensionBoundsChecked
   "Returns the requested dimension from the given type, along with a TypingError
