@@ -57,6 +57,21 @@ static inline void mmc_init_stackoverflow(threadData_t *threadData)
 void mmc_init_stackoverflow(threadData_t *threadData);
 #endif
 
+#if defined(linux)
+static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData)
+{
+  if (oldThreadData)
+    threadData->stackBottom = oldThreadData->stackBottom;
+  else
+    mmc_init_stackoverflow(threadData);
+}
+#else
+static inline void mmc_init_stackoverflow_fast(threadData_t *threadData, threadData_t *oldThreadData)
+{
+  mmc_init_stackoverflow(threadData);
+}
+#endif
+
 #ifndef __has_builtin
   #define __has_builtin(x) 0  /* Compatibility with non-clang compilers */
 #endif
