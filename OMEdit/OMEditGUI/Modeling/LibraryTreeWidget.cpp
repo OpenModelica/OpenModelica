@@ -3628,7 +3628,7 @@ void LibraryTreeView::callFunction()
   if (functionArgumentDialog.exec() == QDialog::Accepted) {
     QString cmd = functionArgumentDialog.getFunctionCallCommand();
     MainWindow::instance()->getOMCProxy()->openOMCLoggerWidget();
-    MainWindow::instance()->getOMCProxy()->sendCommand(cmd);
+    MainWindow::instance()->getOMCProxy()->sendCommand(cmd, true);
   }
 }
 

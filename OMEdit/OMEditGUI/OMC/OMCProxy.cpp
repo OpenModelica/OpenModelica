@@ -252,12 +252,12 @@ void OMCProxy::quitOMC()
  * Sends the user commands to OMC.
  * \param expression - is used to send command as a string.
  */
-void OMCProxy::sendCommand(const QString expression)
+void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 {
   // write command to the commands log.
   QTime commandTime;
   commandTime.start();
-  logCommand(expression, &commandTime);
+  logCommand(expression, &commandTime, saveToHistory);
   // TODO: Call this in a thread that loops over received messages? Avoid MMC_TRY_TOP all the time, etc
   void *reply_str = NULL;
   threadData_t *threadData = mpOMCInterface->threadData;
@@ -311,7 +311,7 @@ QString OMCProxy::getResult()
  * \param command - the command to write
  * \param commandTime - the command start time
  */
-void OMCProxy::logCommand(QString command, QTime *commandTime)
+void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistory)
 {
   if (isLoggingEnabled()) {
     // insert the command to the logger window.
@@ -319,11 +319,13 @@ void OMCProxy::logCommand(QString command, QTime *commandTime)
     QTextCharFormat format;
     format.setFont(font);
     Utilities::insertText(mpOMCLoggerTextBox, command + "\n", format);
-    // add the expression to commands list
-    mCommandsList.append(command);
-    // set the current command index.
-    mCurrentCommandIndex = mCommandsList.count();
-    mpExpressionTextBox->setText("");
+    if (saveToHistory) {
+      // add the expression to commands list
+      mCommandsList.append(command);
+      // set the current command index.
+      mCurrentCommandIndex = mCommandsList.count();
+      mpExpressionTextBox->setText("");
+    }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
       fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toStdString().c_str(), mpCommunicationLogFile);
@@ -403,7 +405,7 @@ void OMCProxy::sendCustomExpression()
   if (mpExpressionTextBox->text().isEmpty())
     return;
 
-  sendCommand(mpExpressionTextBox->text());
+  sendCommand(mpExpressionTextBox->text(), true);
   mpExpressionTextBox->setText("");
 }
 

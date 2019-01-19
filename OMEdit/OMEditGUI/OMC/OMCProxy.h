@@ -87,7 +87,7 @@ public:
   void getNextCommand();
   bool initializeOMC(threadData_t *threadData);
   void quitOMC();
-  void sendCommand(const QString expression);
+  void sendCommand(const QString expression, bool saveToHistory = false);
   void setResult(QString value);
   QString getResult();
   void exitApplication();
@@ -257,7 +257,8 @@ public:
 signals:
   void commandFinished();
 public slots:
-  void logCommand(QString command, QTime *commandTime);
+  void logCommand(QString command, QTime *commandTime) { logCommand(command, commandTime, false); }
+  void logCommand(QString command, QTime *commandTime, bool saveToHistory);
   void logResponse(QString command, QString response, QTime *responseTime);
   void showException(QString exception);
   void openOMCLoggerWidget();
