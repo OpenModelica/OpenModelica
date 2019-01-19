@@ -56,7 +56,7 @@ struct dataAndSys {
   int sysNumber;
 };
 
-static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* data);
+static void wrapper_fvec_hybrj(const integer* n, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* data);
 
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
@@ -305,7 +305,7 @@ static int getAnalyticalJacobian(struct dataAndSys* dataSys, double* jac)
  *
  *
  */
-static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* dataAndSysNum)
+static void wrapper_fvec_hybrj(const integer* n, const double* x, double* f, double* fjac, const integer* ldjac, const integer* iflag, void* dataAndSysNum)
 {
   int i,j;
   struct dataAndSys *dataSys = (struct dataAndSys*) dataAndSysNum;
@@ -400,8 +400,6 @@ static int wrapper_fvec_hybrj(const integer* n, const double* x, double* f, doub
     throwStreamPrint(NULL, "Well, this is embarrasing. The non-linear solver should never call this case.%d", (int)*iflag);
     break;
   }
-
-  return 0;
 }
 
 /*! \fn solve non-linear system with hybrd method

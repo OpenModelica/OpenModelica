@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 extern
-int hybrj_( int(*) (const integer*, const double*, double*, double *, const integer*, const integer*, void*),  const integer *n, double *x, double *fvec, double *fjac, const integer *ldfjac,
+void hybrj_( void(*) (const integer*, const double*, double*, double *, const integer*, const integer*, void*),  const integer *n, double *x, double *fvec, double *fjac, const integer *ldfjac,
   const double *xtol, const integer *axfev, double *diag, const integer *mode,
   const double *factor, const integer *nprint, integer *info, integer *nfev, integer *njev,
   double *r, integer *lr, double *qtf, double *wa1, double *wa2,
