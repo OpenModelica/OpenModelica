@@ -45,8 +45,22 @@ void GitCommands::destroy()
 GitCommands::GitCommands(QWidget *pParent)
   : QObject(pParent)
 {
-  mpGitProcess = new QProcess;
-// mpGitProcess = 0;
+}
+QString GitCommands::getGitStdout(const QStringList &args)
+{
+  return getGitStdout("", args);
+}
+QString GitCommands::getGitStdout(const QString &fileName, const QStringList &args)
+{
+  QProcess gitProcess;
+  if (!fileName.isEmpty()) {
+    QFileInfo fileInfo(fileName);
+    gitProcess.setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
+  }
+  gitProcess.start("git", args);
+  gitProcess.waitForFinished();
+  QString output = gitProcess.readAllStandardOutput();
+  return output;
 }
 
 /*!
@@ -56,27 +70,16 @@ GitCommands::GitCommands(QWidget *pParent)
  */
 void GitCommands::logCurrentFile(QString currentFile)
 {
-  QFileInfo fileInfo(MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName());
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "log" << currentFile);
-  mpGitProcess->waitForFinished();
-  QByteArray bytes = mpGitProcess->readAllStandardOutput();
-  QStringList lines = QString(bytes).split("\n");
+  QString output = getGitStdout(
+    MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName(),
+    QStringList() << "log" << currentFile
+  );
+  QStringList lines = output.split("\n");
   foreach (QString line, lines) {
     if(!line.isEmpty())
       qDebug () << line; //emit logString(line);
     }
 }
-
-//void GitCommands::readGitStandardOutput()
-//{
-//  QByteArray bytes = mpGitProcess->readAllStandardOutput();
-//  QStringList lines = QString(bytes).split("\n");
-//  foreach (QString line, lines) {
-//    if(!line.isEmpty())
-//      qDebug ()<<"readGitStandaroutput" << line; //emit logString(line);
-//    }
-//}
 
 /*!
  * \brief GitCommands::stageCurrentFileForCommit
@@ -85,11 +88,10 @@ void GitCommands::logCurrentFile(QString currentFile)
  */
 void GitCommands::stageCurrentFileForCommit(QString currentFile)
 {
-  QFileInfo fileInfo(MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName());
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "add" << currentFile);
-  mpGitProcess->waitForFinished();
-  QString stage = mpGitProcess->readAllStandardOutput();
+  getGitStdout(
+        MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName(),
+        QStringList() << "add" << currentFile
+  );
 }
 /*!
  * \brief GitCommands::unstageCurrentFileFromCommit
@@ -98,11 +100,10 @@ void GitCommands::stageCurrentFileForCommit(QString currentFile)
  */
 void GitCommands::unstageCurrentFileFromCommit(QString currentFile)
 {
-  QFileInfo fileInfo(MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName());
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "reset" << "HEAD" << "--"<< currentFile);
-  mpGitProcess->waitForFinished();
-  QString unstage = mpGitProcess->readAllStandardOutput();
+  getGitStdout(
+        MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName(),
+        QStringList() << "reset" << "HEAD" << "--"<< currentFile
+  );
 }
 
 /*!
@@ -112,11 +113,10 @@ void GitCommands::unstageCurrentFileFromCommit(QString currentFile)
  */
 void GitCommands::cleanWorkingDirectory()
 {
-  QFileInfo fileInfo(MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName());
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "clean" <<"-f");
-  mpGitProcess->waitForFinished();
-  QString clean = mpGitProcess->readAllStandardOutput();
+  getGitStdout(
+        MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()->getLibraryTreeItem()->getFileName(),
+        QStringList() << "clean" <<"-f"
+  );
 }
 
 /*!
@@ -132,14 +132,7 @@ void GitCommands::createGitRepository(QString repositoryPath)
                          QString("A version control repository could not be created in %1").arg(repositoryPath), Helper::ok);
   }
   else {
-    QStringList args;
-    args << "init";
-    runGitCommand(repositoryPath, args);
-
-//    mpGitProcess->setWorkingDirectory(repositoryPath);
-//    mpGitProcess->start("git", QStringList() << "init");
-//    mpGitProcess->waitForFinished();
-    QString createRepo = mpGitProcess->readAllStandardOutput();
+    QString createRepo = getGitStdout(repositoryPath, QStringList() << "init");
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, "", false, 0, 0, 0, 0, createRepo,
                                               Helper::scriptingKind, Helper::notificationLevel));
 
@@ -169,9 +162,7 @@ void GitCommands::addStructuresToRepository(QString repositoryPath)
  */
 bool GitCommands::isGitInstalled()
 {
-  mpGitProcess->start("git", QStringList() << "--version");
-  mpGitProcess->waitForFinished();
-  QString git = mpGitProcess->readAllStandardOutput();
+  QString git = getGitStdout(QStringList() << "--version");
   /* Check for git installation */
   if(!git.isEmpty()){
     return true ;
@@ -187,13 +178,9 @@ bool GitCommands::isGitInstalled()
  */
 bool GitCommands::isSavedUnderGitRepository(QString filePath)
 {
-  QFileInfo fileInfo(filePath);
-  QString repository = fileInfo.absoluteDir().absolutePath();
-//  mpGitProcess = new QProcess;
-  mpGitProcess->setWorkingDirectory(repository);
-  mpGitProcess->start("git", QStringList() << "rev-parse" << "--is-inside-work-tree");
-  mpGitProcess->waitForFinished();
-  QString isGitRepository =  mpGitProcess->readAllStandardOutput();
+  QString isGitRepository = getGitStdout(
+        filePath, QStringList() << "rev-parse" << "--is-inside-work-tree"
+  );
   if(!isGitRepository.isEmpty())
      return true;
   return false;
@@ -206,12 +193,10 @@ bool GitCommands::isSavedUnderGitRepository(QString filePath)
  */
 QStringList GitCommands::getUntrackedFiles(QString workingDirectory)
 {
-  QFileInfo fileInfo(workingDirectory);
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "ls-files" << "--other" << "--exclude-standard");
-  mpGitProcess->waitForFinished();
-  QByteArray untrackedFilesOutput =  mpGitProcess->readAllStandardOutput();
-  QStringList untrackedFilesList = QString(untrackedFilesOutput).split("\n");
+  QString untrackedFilesOutput = getGitStdout(
+        workingDirectory, QStringList() << "ls-files" << "--other" << "--exclude-standard"
+  );
+  QStringList untrackedFilesList = untrackedFilesOutput.split("\n");
   return untrackedFilesList;
 }
 
@@ -222,12 +207,8 @@ QStringList GitCommands::getUntrackedFiles(QString workingDirectory)
  */
 QStringList GitCommands::getChangedFiles(QString filePath)
 {
-  QFileInfo fileInfo(filePath);
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "status"<< "--porcelain" << filePath);
-  mpGitProcess->waitForFinished();
-  QByteArray changedFilesOutput =  mpGitProcess->readAllStandardOutput();
-  QStringList changedFilesOutputList = QString(changedFilesOutput).split("\n");
+  QString changedFilesOutput = getGitStdout(filePath, QStringList() << "status"<< "--porcelain" << filePath);
+  QStringList changedFilesOutputList = changedFilesOutput.split("\n");
   return changedFilesOutputList;
 }
 
@@ -238,13 +219,7 @@ QStringList GitCommands::getChangedFiles(QString filePath)
  */
 QString GitCommands::getSingleFileStatus(QString fileName)
 {
-//  QFileInfo fileInfo(filePath);
-//  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  mpGitProcess->start("git", QStringList() << "status"<< "--porcelain" << fileName);
-  mpGitProcess->waitForFinished();
-  QByteArray changedFileOutput =  mpGitProcess->readAllStandardOutput();
-  QString status = QString(changedFileOutput);
-  return status;
+  return getGitStdout(QStringList() << "status"<< "--porcelain" << fileName);
 }
 
 
@@ -255,13 +230,7 @@ QString GitCommands::getSingleFileStatus(QString fileName)
  */
 QString GitCommands::getRepositoryName(QString filePath)
 {
-  QFileInfo fileInfo(filePath);
-  QString repository = fileInfo.absoluteDir().absolutePath();
-  mpGitProcess->setWorkingDirectory(repository);
-  mpGitProcess->start("git", QStringList() << "rev-parse" << "--show-toplevel");
-  mpGitProcess->waitForFinished();
-  QString repositoryName =  mpGitProcess->readAllStandardOutput();
-  return repositoryName;
+  return getGitStdout(filePath, QStringList() << "rev-parse" << "--show-toplevel");
 }
 
 /*!
@@ -271,13 +240,7 @@ QString GitCommands::getRepositoryName(QString filePath)
  */
 QString GitCommands::getBranchName(QString filePath)
 {
-  QFileInfo fileInfo(filePath);
-  QString repository = fileInfo.absoluteDir().absolutePath();
-  mpGitProcess->setWorkingDirectory(repository);
-  mpGitProcess->start("git", QStringList() << "rev-parse" << "--abbrev-ref" << "HEAD");
-  mpGitProcess->waitForFinished();
-  QString branchName =  mpGitProcess->readAllStandardOutput();
-  return branchName;
+  return getGitStdout(filePath, QStringList() << "rev-parse" << "--abbrev-ref" << "HEAD");
 }
 
 /*!
@@ -287,10 +250,7 @@ QString GitCommands::getBranchName(QString filePath)
  */
 QString GitCommands::getAuthorName()
 {
-  mpGitProcess->start("git", QStringList() << "config" << "user.name");
-  mpGitProcess->waitForFinished();
-  QString author =  mpGitProcess->readAllStandardOutput();
-  return author;
+  return getGitStdout(QStringList() << "config" << "user.name");
 }
 
 /*!
@@ -300,10 +260,7 @@ QString GitCommands::getAuthorName()
  */
 QString GitCommands::getEmailName()
 {
-  mpGitProcess->start("git", QStringList() << "config" << "user.email");
-  mpGitProcess->waitForFinished();
-  QString email =  mpGitProcess->readAllStandardOutput();
-  return email;
+  return getGitStdout(QStringList() << "config" << "user.email");
 }
 
 /*!
@@ -313,13 +270,7 @@ QString GitCommands::getEmailName()
  */
 QString GitCommands::getGitHash(QString fileName)
 {
-  QFileInfo fileInfo(fileName);
-  QString filePath = fileInfo.absoluteDir().absolutePath();
-  mpGitProcess->setWorkingDirectory(filePath);
-  mpGitProcess->start("git", QStringList() << "hash-object" << fileName);
-  mpGitProcess->waitForFinished();
-  QString gitHash =  mpGitProcess->readAllStandardOutput();
-  return gitHash;
+  return getGitStdout(fileName, QStringList() << "hash-object" << fileName);
 }
 
 /*!
@@ -329,11 +280,7 @@ QString GitCommands::getGitHash(QString fileName)
  */
 void GitCommands::commitFiles(QString repositoryPath, QString commitMessage)
 {
-  QFileInfo fileInfo(repositoryPath);
-  QString directory = fileInfo.absoluteDir().absolutePath();
-  mpGitProcess->setWorkingDirectory(directory);
-  mpGitProcess->start("git", QStringList() << "commit" <<"-m" << commitMessage);
-  mpGitProcess->waitForFinished();
+  getGitStdout(repositoryPath, QStringList() << "commit" <<"-m" << commitMessage);
 }
 
 /*!
@@ -343,40 +290,7 @@ void GitCommands::commitFiles(QString repositoryPath, QString commitMessage)
  */
 QString GitCommands::commitAndGetFileHash(QString fileName, QString activity)
 {
-  mpGitProcess->start("git", QStringList() << "add" << fileName);
-  mpGitProcess->waitForFinished();
-  mpGitProcess->start("git", QStringList() << "commit" << fileName <<"-m" << activity);
-  mpGitProcess->waitForFinished();
+  getGitStdout(QStringList() << "add" << fileName);
+  getGitStdout(QStringList() << "commit" << fileName << "-m" << activity);
   return getGitHash(fileName);
-}
-
-void GitCommands::runGitCommand(QString repositoryPath, QStringList args)
-{
-//  mpGitProcess = new QProcess;
-  QFileInfo fileInfo(repositoryPath);
-  // mpGitProcess = new QProcess;
-  mpGitProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  // qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
-  // connect(mpGitProcess, SIGNAL(started()), SLOT(gitProcessStarted()));
-  connect(mpGitProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGitStandardOutput()));
-  connect(mpGitProcess, SIGNAL(readyReadStandardError()), SLOT(readGitStandardError()));
-  // connect(mpGitProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(gitProcessFinished(int,QProcess::ExitStatus)));
-  // start the process
-  mpGitProcess->start("git",args);
-  mpGitProcess->waitForFinished();
-}
-
-void GitCommands::readGitStandardOutput()
-{
-  qDebug()<< mpGitProcess->readAllStandardOutput();
-//  mpGitProcess->kill();
-  //emit sendManagerOutput(QString(mpManagerProcess->readAllStandardOutput()), StringHandler::Unknown);
-}
-
-void GitCommands::readGitStandardError()
-{
-  qDebug("error");
-  qDebug()<<mpGitProcess->readAllStandardError();
-//  mpGitProcess->kill();
-  //emit sendManagerOutput(QString(mpManagerProcess->readAllStandardError()), StringHandler::Error);
 }

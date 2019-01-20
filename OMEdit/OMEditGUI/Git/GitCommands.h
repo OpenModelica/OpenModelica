@@ -22,10 +22,11 @@ private:
   static void destroy();
   GitCommands(QWidget *pParent = 0);
   static GitCommands *mpInstance;
+  static QString getGitStdout(const QStringList &args);
+  static QString getGitStdout(const QString &fileName, const QStringList &args);
 public:
 //  GitCommands(QObject *pParent = 0);
   static GitCommands* instance() {return mpInstance;}
-  QProcess* getGitProcess() {return mpGitProcess;}
   void logCurrentFile(QString currentFile);
   void stageCurrentFileForCommit(QString currentFile);
   void unstageCurrentFileFromCommit(QString currentFile);
@@ -45,14 +46,13 @@ public:
   void commitFiles(QString repositoryPath, QString commitMessage);
   QString commitAndGetFileHash(QString fileName, QString activity);
 private:
-  QProcess *mpGitProcess;
   QString mGitProgram;
   QStringList mGitArguments;
   void runGitCommand(QString driectory, QStringList args);
 private slots:
 //  void gitProcessStarted();
-  void readGitStandardOutput();
-  void readGitStandardError();
+//  void readGitStandardOutput();
+//  void readGitStandardError();
 //  void gitProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 //signals:
 //  void sendGitProcessStarted();
