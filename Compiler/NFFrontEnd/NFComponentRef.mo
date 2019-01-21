@@ -428,8 +428,7 @@ public
   end subscriptsAllFlat;
 
   function subscriptsN
-    "Returns the subscripts of the N first parts of a cref in reverse order.
-     Fails if the cref has fewer than N parts."
+    "Returns the subscripts of the N first parts of a cref in reverse order."
     input ComponentRef cref;
     input Integer n;
     output list<list<Subscript>> subscripts = {};
@@ -438,6 +437,10 @@ public
     ComponentRef rest = cref;
   algorithm
     for i in 1:n loop
+      if isEmpty(rest) then
+        break;
+      end if;
+
       CREF(subscripts = subs, restCref = rest) := rest;
       subscripts := subs :: subscripts;
     end for;
