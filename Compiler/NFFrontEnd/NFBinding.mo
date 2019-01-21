@@ -259,6 +259,16 @@ public
     end match;
   end isRecordExp;
 
+  function isCrefExp
+    input Binding binding;
+    output Boolean isCref;
+  algorithm
+    isCref := match binding
+      case TYPED_BINDING(bindingExp = Expression.CREF()) then true;
+      else false;
+    end match;
+  end isCrefExp;
+
   function recordFieldBinding
     input InstNode fieldNode;
     input Binding recordBinding;

@@ -761,7 +761,8 @@ protected
   InstNode cls;
   MatchKind matchKind;
   String name;
-  Variability comp_var, comp_eff_var, bind_var;
+  Variability comp_var, comp_eff_var, bind_var, bind_eff_var;
+  Component.Attributes attrs;
 algorithm
   if InstNode.isEmpty(component) then
     return;
@@ -770,7 +771,7 @@ algorithm
   c := InstNode.component(node);
 
   () := match c
-    case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING())
+    case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
       algorithm
         name := InstNode.name(component);
         binding := c.binding;
@@ -783,14 +784,25 @@ algorithm
           binding := TypeCheck.matchBinding(binding, c.ty, name, node);
           comp_var := Component.variability(c);
           comp_eff_var := Prefixes.effectiveVariability(comp_var);
-          bind_var := Prefixes.effectiveVariability(Binding.variability(binding));
+          bind_var := Binding.variability(binding);
+          bind_eff_var := Prefixes.effectiveVariability(bind_var);
 
-          if bind_var > comp_eff_var and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
+          if bind_eff_var > comp_eff_var and ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING, {
               name, Prefixes.variabilityString(comp_eff_var),
-              "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_var)},
+              "'" + Binding.toString(c.binding) + "'", Prefixes.variabilityString(bind_eff_var)},
               Binding.getInfo(binding));
             fail();
+          end if;
+
+          // Mark parameters that have a structural cref as binding as also
+          // structural. This is perhaps not optimal, but is required right now
+          // to avoid structural singularity and other issues.
+          if bind_var == Variability.STRUCTURAL_PARAMETER and
+             comp_var == Variability.PARAMETER and
+             Binding.isCrefExp(binding) then
+            attrs.variability := bind_var;
+            c.attributes := attrs;
           end if;
         else
           if Binding.isBound(c.condition) then
