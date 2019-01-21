@@ -805,8 +805,7 @@ void nlsKinsolConfigPrint(NLS_KINSOL_DATA *kinsolData, NONLINEAR_SYSTEM_DATA *nl
   _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, xScaling),
       "xScaling", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
 
-  _omc_printVectorWithEquationInfo(_omc_createVector(kinsolData->size, fScaling),
-      "fScaling", LOG_NLS_V, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber));
+  _omc_printVector(_omc_createVector(kinsolData->size, fScaling), "fScaling", LOG_NLS_V);
 
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL F tolerance: %g", (*(KINMem)kinsolData->kinsolMemory).kin_fnormtol);
   infoStreamPrint(LOG_NLS_V, 0, "KINSOL minimal step size %g", (*(KINMem)kinsolData->kinsolMemory).kin_scsteptol);
