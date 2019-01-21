@@ -1175,10 +1175,6 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
 void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList,
                                                  SimulationOptions simulationOptions)
 {
-  mpVariablesTreeView->setSortingEnabled(false);
-  /* In order to improve the response time of insertVariablesItems function we should clear the filter and collapse all the items. */
-  mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
-  mpVariablesTreeView->collapseAll();
   /* Show results in model diagram if it is present in ModelWidgetContainer
    * and if switch to plotting perspective is disabled
    */
@@ -1201,6 +1197,10 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   bool variableItemDeleted = false;
   variableItemDeleted = mpVariablesTreeModel->removeVariableTreeItem(fileName);
 
+  mpVariablesTreeView->setSortingEnabled(false);
+  /* In order to improve the response time of insertVariablesItems function we should clear the filter and collapse all the items. */
+  mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
+  mpVariablesTreeView->collapseAll();
   /* add the plot variables */
   mpVariablesTreeModel->insertVariablesItems(fileName, filePath, variablesList, simulationOptions);
 
