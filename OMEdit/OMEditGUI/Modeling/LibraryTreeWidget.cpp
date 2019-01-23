@@ -689,7 +689,7 @@ void LibraryTreeItem::tryToComplete(QSet<QString> &result, const QString &lastPa
     }
 
     const QList<ComponentInfo*> &components = baseClasses[bc]->getComponentsList();
-    if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getComponentType() == LibraryTreeItem::Modelica) {
+    if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
       for (int i = 0; i < components.size(); ++i) {
         if (components[i]->getName().startsWith(lastPart))
           result.insert(components[i]->getName());
