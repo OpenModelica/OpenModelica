@@ -61,6 +61,7 @@ SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
     mpTypeComboBox->addItem(Helper::systemTLM, oms_system_tlm);
     mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
     mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
+    mpTypeComboBox->setCurrentIndex(1);
   } else if (pLibraryTreeItem->isSystemElement()) {
     if (pLibraryTreeItem->isTLMSystem()) {
       mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
