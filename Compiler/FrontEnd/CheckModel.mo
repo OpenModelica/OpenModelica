@@ -45,6 +45,7 @@ protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
+protected import ExecStat;
 protected import Expression;
 protected import Flags;
 protected import HashSet;
@@ -63,10 +64,12 @@ protected
   list<DAE.Element> eqns, lst;
   HashSet.HashSet hs;
 algorithm
+  ExecStat.execStat("CheckModel - start counting");
   DAE.DAE(lst) := inDAELst;
   hs := HashSet.emptyHashSet();
   (varSize, eqnSize, eqns, hs) := List.fold(lst, countVarEqnSize, (0, 0, {}, hs));
   simpleEqnSize := countSimpleEqnSize(eqns, 0, hs);
+  ExecStat.execStat("CheckModel - end counting");
 end checkModel;
 
 protected type CountVarEqnFoldArg =

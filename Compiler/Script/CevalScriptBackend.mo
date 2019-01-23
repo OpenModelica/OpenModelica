@@ -3042,6 +3042,7 @@ algorithm
     if Flags.isSet(Flags.GC_PROF) then
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
+	ExecStat.execStat("FrontEnd - DAE generated");
     odae := SOME(dae);
   else
     // Return odae=NONE(); needed to update cache and symbol table if we fail
