@@ -785,6 +785,7 @@ When1.mo \
 When2.mo \
 When3.mo \
 When4.mo \
+When5.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
