@@ -161,7 +161,7 @@ void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, o
   if (status < oms_status_warning) {
     int progress = (time * 100) / mOMSSimulationOptions.getStopTime();
     mpProgressBar->setValue(progress);
-    if (qFloor(time) >= mOMSSimulationOptions.getStopTime()) {
+    if (time >= mOMSSimulationOptions.getStopTime()) {
       mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is finished.").arg(mOMSSimulationOptions.getModelName()));
       mpProgressBar->setValue(mpProgressBar->maximum());
       mIsSimulationRunning = false;
