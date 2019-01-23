@@ -96,7 +96,7 @@
 #endif
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
-#define BASIC_LDFLAGS_RT " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -Wl,-Bdynamic -lsundials_idas -lsundials_kinsol -lsundials_nvecserial -Wl,-Bstatic -lipopt -lcoinmumps -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic"
+#define BASIC_LDFLAGS_RT " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -lsundials_idas -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic"
 #define LDFLAGS_RT " -lOpenModelicaRuntimeC" BASIC_LDFLAGS_RT
 #define LDFLAGS_RT_SIM " -Wl,-Bstatic -lSimulationRuntimeC -Wl,-Bdynamic" BASIC_LDFLAGS_RT " -lwsock32 -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic"
 #define LDFLAGS_RT_SOURCE_FMU " -Wl,-Bstatic -lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic"
