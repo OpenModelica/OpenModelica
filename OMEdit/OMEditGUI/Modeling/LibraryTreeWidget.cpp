@@ -4607,6 +4607,12 @@ void LibraryWidget::saveAsLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
     pDuplicateClassDialog->exec();
   } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::CompositeModel) {
     saveAsCompositeModelLibraryTreeItem(pLibraryTreeItem);
+  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+    if (pLibraryTreeItem->isTopLevel()) {
+      saveAsOMSLibraryTreeItem(pLibraryTreeItem);
+    } else {
+      saveAsLibraryTreeItem(pLibraryTreeItem->parent());
+    }
   } else {
     QMessageBox::information(this, Helper::applicationName + " - " + Helper::error, GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
                              .arg(tr("Unable to save the file, unknown library type.")), Helper::ok);
@@ -4967,19 +4973,15 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
  */
 void LibraryWidget::saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName)
 {
-  if (pLibraryTreeItem->isTopLevel()
-      || (pLibraryTreeItem->isSystemElement())
-      || (pLibraryTreeItem->parent()->isSystemElement() && pLibraryTreeItem->getOMSConnector())) {
-    pLibraryTreeItem->setIsSaved(true);
-    pLibraryTreeItem->setFileName(fileName);
-    if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
-      pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
-      pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
-    }
-    mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
-    for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-      saveOMSLibraryTreeItemHelper(pLibraryTreeItem->child(i), fileName);
-    }
+  pLibraryTreeItem->setIsSaved(true);
+  pLibraryTreeItem->setFileName(fileName);
+  if (pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
+    pLibraryTreeItem->getModelWidget()->setWindowTitle(pLibraryTreeItem->getName());
+    pLibraryTreeItem->getModelWidget()->setModelFilePathLabel(fileName);
+  }
+  mpLibraryTreeModel->updateLibraryTreeItem(pLibraryTreeItem);
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    saveOMSLibraryTreeItemHelper(pLibraryTreeItem->child(i), fileName);
   }
 }
 
@@ -5014,6 +5016,31 @@ bool LibraryWidget::saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibrar
     return false;
   }
   return saveCompositeModelLibraryTreeItem(pLibraryTreeItem, fileName);
+}
+
+/*!
+ * \brief LibraryWidget::saveAsOMSLibraryTreeItem
+ * Save as OMSimulator model.
+ * \param pLibraryTreeItem
+ * \return
+ */
+bool LibraryWidget::saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
+{
+  QString fileName;
+  QString name = pLibraryTreeItem->getName();
+  fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
+                                            Helper::omsFileTypes, NULL, "ssp", &name);
+  if (fileName.isEmpty()) { // if user press ESC
+    return false;
+  }
+
+  if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
+    /* mark the file as saved and update the labels. */
+    saveOMSLibraryTreeItemHelper(pLibraryTreeItem, fileName);
+  } else {
+    return false;
+  }
+  return true;
 }
 
 /*!

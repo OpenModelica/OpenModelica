@@ -504,6 +504,7 @@ private:
   void saveOMSLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  bool saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
