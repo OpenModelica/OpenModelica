@@ -92,9 +92,11 @@ public:
   bool getConnector(QString cref, oms_connector_t **pConnector);
   bool getElement(QString cref, oms_element_t **pElement);
   bool getElements(QString cref, oms_element_t ***pElements);
+  bool getFixedStepSize(QString cref, double* stepSize);
   bool getFMUInfo(QString cref, const oms_fmu_info_t** pFmuInfo);
   bool getInteger(QString signal, int* value);
   bool getReal(QString cref, double* value);
+  bool getSolver(QString cref, oms_solver_enu_t* solver);
   bool getStartTime(QString cref, double* startTime);
   bool getStopTime(QString cref, double* stopTime);
   bool getSubModelPath(QString cref, QString* pPath);
@@ -102,6 +104,8 @@ public:
   bool getTLMBus(QString cref, oms_tlmbusconnector_t **pTLMBusConnector);
   bool getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions, const oms_tlm_interpolation_t interpolation,
                            char ***types, char ***descriptions);
+  bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
+  bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
   bool instantiate(QString cref);
   bool initialize(QString cref);
   bool list(QString cref, QString *pContents);
@@ -114,8 +118,8 @@ public:
   bool setCommandLineOption(QString cmd);
   bool setConnectionGeometry(QString crefA, QString crefB, const ssd_connection_geometry_t *pGeometry);
   bool setConnectorGeometry(QString cref, const ssd_connector_geometry_t* pGeometry);
-  bool setFixedStepSize(QString cref, double stepSize);
   bool setElementGeometry(QString cref, const ssd_element_geometry_t* pGeometry);
+  bool setFixedStepSize(QString cref, double stepSize);
   void setLogFile(QString filename);
   void setLoggingCallback();
   bool setLoggingInterval(QString cref, double loggingInterval);
@@ -124,6 +128,7 @@ public:
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString filename, int bufferSize);
   bool setSignalFilter(QString cref, QString regex);
+  bool setSolver(QString cref, oms_solver_enu_t solver);
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
   void setTempDirectory(QString path);
@@ -131,6 +136,7 @@ public:
   bool setTLMConnectionParameters(QString crefA, QString crefB, const oms_tlm_connection_parameters_t *pParameters);
   bool setTLMSocketData(QString cref, QString address, int managerPort, int monitorPort);
   bool setTolerance(QString cref, double absoluteTolerance, double relativeTolerance);
+  bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
   void setWorkingDirectory(QString path);
   bool simulate_asynchronous(QString cref);
   bool terminate(QString cref);

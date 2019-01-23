@@ -33,6 +33,7 @@
 
 #include "InstantiateDialog.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "SystemSimulationInformationDialog.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 
@@ -62,6 +63,20 @@ InstantiateDialog::InstantiateDialog(LibraryTreeItem *pLibraryTreeItem, QWidget 
   }
   // Horizontal separator
   mpHorizontalLine = Utilities::getHeadingLine();
+  // system simulation information
+  mpSystemSimulationInformationWidget = 0;
+  QGroupBox *pSystemSimulationInformationGroupBox = 0;
+  LibraryTreeItem *pRootSystemLibraryTreeItem = 0;
+  if (mpLibraryTreeItem->childrenSize() > 0) {
+    pRootSystemLibraryTreeItem = mpLibraryTreeItem->childAt(0);
+    if (pRootSystemLibraryTreeItem && pRootSystemLibraryTreeItem->getModelWidget()) {
+      mpSystemSimulationInformationWidget = new SystemSimulationInformationWidget(pRootSystemLibraryTreeItem->getModelWidget());
+      pSystemSimulationInformationGroupBox = new QGroupBox(Helper::systemSimulationInformation);
+      QHBoxLayout *pSystemSimulationInformationGroupBoxLayout = new QHBoxLayout;
+      pSystemSimulationInformationGroupBoxLayout->addWidget(mpSystemSimulationInformationWidget);
+      pSystemSimulationInformationGroupBox->setLayout(pSystemSimulationInformationGroupBoxLayout);
+    }
+  }
   // start time
   mpStartTimeLabel = new Label(QString("%1:").arg(Helper::startTime));
   mpStartTimeTextBox = new QLineEdit(QString::number(mpLibraryTreeItem->mOMSSimulationOptions.getStartTime()));
@@ -103,19 +118,22 @@ InstantiateDialog::InstantiateDialog(LibraryTreeItem *pLibraryTreeItem, QWidget 
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpSimulationHeading, 0, 0, 1, 2);
   pMainLayout->addWidget(mpHorizontalLine, 1, 0, 1, 2);
-  pMainLayout->addWidget(mpStartTimeLabel, 2, 0);
-  pMainLayout->addWidget(mpStartTimeTextBox, 2, 1);
-  pMainLayout->addWidget(mpStopTimeLabel, 3, 0);
-  pMainLayout->addWidget(mpStopTimeTextBox, 3, 1);
-  pMainLayout->addWidget(mpResultFileLabel, 4, 0);
-  pMainLayout->addWidget(mpResultFileTextBox, 4, 1);
-  pMainLayout->addWidget(mpResultFileBufferSizeLabel, 5, 0);
-  pMainLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
-  pMainLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
-  pMainLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
-  pMainLayout->addWidget(mpSignalFilterLabel, 7, 0);
-  pMainLayout->addWidget(mpSignalFilterTextBox, 7, 1);
-  pMainLayout->addWidget(mpButtonBox, 8, 0, 1, 2);
+  if (pSystemSimulationInformationGroupBox) {
+    pMainLayout->addWidget(pSystemSimulationInformationGroupBox, 2, 0, 1, 2);
+  }
+  pMainLayout->addWidget(mpStartTimeLabel, 3, 0);
+  pMainLayout->addWidget(mpStartTimeTextBox, 3, 1);
+  pMainLayout->addWidget(mpStopTimeLabel, 4, 0);
+  pMainLayout->addWidget(mpStopTimeTextBox, 4, 1);
+  pMainLayout->addWidget(mpResultFileLabel, 5, 0);
+  pMainLayout->addWidget(mpResultFileTextBox, 5, 1);
+  pMainLayout->addWidget(mpResultFileBufferSizeLabel, 6, 0);
+  pMainLayout->addWidget(mpResultFileBufferSizeSpinBox, 6, 1);
+  pMainLayout->addWidget(mpLoggingIntervalLabel, 7, 0);
+  pMainLayout->addWidget(mpLoggingIntervalTextBox, 7, 1);
+  pMainLayout->addWidget(mpSignalFilterLabel, 8, 0);
+  pMainLayout->addWidget(mpSignalFilterTextBox, 8, 1);
+  pMainLayout->addWidget(mpButtonBox, 9, 0, 1, 2);
   setLayout(pMainLayout);
 }
 
@@ -131,6 +149,10 @@ void InstantiateDialog::instantiate()
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
     return;
+  }
+
+  if (mpSystemSimulationInformationWidget) {
+    mpSystemSimulationInformationWidget->setSystemSimulationInformation();
   }
 
   // set the simulation settings

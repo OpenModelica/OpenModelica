@@ -325,6 +325,7 @@ bool OMSProxy::statusToBool(oms_status_enu_t status)
   switch (status) {
     case oms_status_ok:
     case oms_status_warning:
+    case oms_status_pending:
       return true;
     default:
       return false;
@@ -702,6 +703,24 @@ bool OMSProxy::getElements(QString cref, oms_element_t*** pElements)
 }
 
 /*!
+ * \brief OMSProxy::getFixedStepSize
+ * Gets the fixed step size.
+ * \param cref
+ * \param stepSize
+ * \return
+ */
+bool OMSProxy::getFixedStepSize(QString cref, double *stepSize)
+{
+  QString command = "oms_getFixedStepSize";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getFixedStepSize(cref.toStdString().c_str(), stepSize);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::getFMUInfo
  * Gets the FMU info.
  * \param cref
@@ -751,6 +770,24 @@ bool OMSProxy::getReal(QString cref, double *value)
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_getReal(cref.toStdString().c_str(), value);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getSolver
+ * Gets the solver.
+ * \param cref
+ * \param solver
+ * \return
+ */
+bool OMSProxy::getSolver(QString cref, oms_solver_enu_t *solver)
+{
+  QString command = "oms_getSolver";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getSolver(cref.toStdString().c_str(), solver);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -865,6 +902,45 @@ bool OMSProxy::getTLMVariableTypes(oms_tlm_domain_t domain, const int dimensions
   args << QString::number(domain) << QString::number(dimensions) << QString::number(interpolation);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_getTLMVariableTypes(domain, dimensions, interpolation, types, descriptions);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getTolerance
+ * Gets the tolerance.
+ * \param cref
+ * \param absoluteTolerance
+ * \param relativeTolerance
+ * \return
+ */
+bool OMSProxy::getTolerance(QString cref, double *absoluteTolerance, double *relativeTolerance)
+{
+  QString command = "oms_getTolerance";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getTolerance(cref.toStdString().c_str(), absoluteTolerance, relativeTolerance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::getVariableStepSize
+ * Gets the variable step size.
+ * \param cref
+ * \param initialStepSize
+ * \param minimumStepSize
+ * \param maximumStepSize
+ * \return
+ */
+bool OMSProxy::getVariableStepSize(QString cref, double *initialStepSize, double *minimumStepSize, double *maximumStepSize)
+{
+  QString command = "oms_getVariableStepSize";
+  QStringList args;
+  args << "\"" + cref + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_getVariableStepSize(cref.toStdString().c_str(), initialStepSize, minimumStepSize, maximumStepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1083,24 +1159,6 @@ bool OMSProxy::setConnectorGeometry(QString cref, const ssd_connector_geometry_t
 }
 
 /*!
- * \brief OMSProxy::setCommunicationInterval
- * Set the fixed step size for the simulation.
- * \param cref
- * \param stepSize
- * \return
- */
-bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
-{
-  QString command = "oms_setFixedStepSize";
-  QStringList args;
-  args << "\"" + cref + "\"" << QString::number(stepSize);
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setFixedStepSize(cref.toStdString().c_str(), stepSize);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::setElementGeometry
  * Sets the element geometry
  * \param cref
@@ -1114,6 +1172,24 @@ bool OMSProxy::setElementGeometry(QString cref, const ssd_element_geometry_t* pG
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_setElementGeometry(cref.toStdString().c_str(), pGeometry);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setCommunicationInterval
+ * Set the fixed step size for the simulation.
+ * \param cref
+ * \param stepSize
+ * \return
+ */
+bool OMSProxy::setFixedStepSize(QString cref, double stepSize)
+{
+  QString command = "oms_setFixedStepSize";
+  QStringList args;
+  args << "\"" + cref + "\"" << QString::number(stepSize);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_setFixedStepSize(cref.toStdString().c_str(), stepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1253,6 +1329,24 @@ bool OMSProxy::setSignalFilter(QString cref, QString regex)
 }
 
 /*!
+ * \brief OMSProxy::setSolver
+ * Sets the solver.
+ * \param cref
+ * \param solver
+ * \return
+ */
+bool OMSProxy::setSolver(QString cref, oms_solver_enu_t solver)
+{
+  QString command = "oms_setSolver";
+  QStringList args;
+  args << "\"" + cref + "\"" << "\"" + QString::number(solver) + "\"";
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_setSolver(cref.toStdString().c_str(), solver);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
  * \brief OMSProxy::setStartTime
  * Set the start time of the simulation.
  * \param cref
@@ -1374,6 +1468,26 @@ bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relat
   args << "\"" + cref + "\"" << QString::number(absoluteTolerance) << QString::number(relativeTolerance);
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_setTolerance(cref.toStdString().c_str(), absoluteTolerance, relativeTolerance);
+  logResponse(command, status, &commandTime);
+  return statusToBool(status);
+}
+
+/*!
+ * \brief OMSProxy::setVariableStepSize
+ * Sets the variable step size.
+ * \param cref
+ * \param initialStepSize
+ * \param minimumStepSize
+ * \param maximumStepSize
+ * \return
+ */
+bool OMSProxy::setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize)
+{
+  QString command = "oms_setVariableStepSize";
+  QStringList args;
+  args << "\"" + cref + "\"" << QString::number(initialStepSize) << QString::number(minimumStepSize) << QString::number(maximumStepSize);
+  LOG_COMMAND(command, args);
+  oms_status_enu_t status = oms_setVariableStepSize(cref.toStdString().c_str(), initialStepSize, minimumStepSize, maximumStepSize);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }

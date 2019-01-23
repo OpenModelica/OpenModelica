@@ -644,15 +644,13 @@ class SystemSimulationInformationCommand : public UndoCommand
 {
 public:
   SystemSimulationInformationCommand(TLMSystemSimulationInformation *pTLMSystemSimulationInformation,
-                                     WCSystemSimulationInformation *pWCSystemSimulationInformation,
-                                     SCSystemSimulationInformation *pSCSystemSimulationInformation,
+                                     WCSCSystemSimulationInformation *pWCSCSystemSimulationInformation,
                                      LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   TLMSystemSimulationInformation *mpTLMSystemSimulationInformation;
-  WCSystemSimulationInformation *mpWCSystemSimulationInformation;
-  SCSystemSimulationInformation *mpSCSystemSimulationInformation;
+  WCSCSystemSimulationInformation *mpWCSCSystemSimulationInformation;
   LibraryTreeItem *mpLibraryTreeItem;
 };
 

@@ -1230,7 +1230,11 @@ void GraphicsView::createActions()
 {
   bool isSystemLibrary = mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView();
   // Graphics View Properties Action
-  mpPropertiesAction = new QAction(Helper::properties, this);
+  if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    mpPropertiesAction = new QAction(Helper::systemSimulationInformation, this);
+  } else {
+    mpPropertiesAction = new QAction(Helper::properties, this);
+  }
   connect(mpPropertiesAction, SIGNAL(triggered()), SLOT(showGraphicsViewProperties()));
   // rename Action
   mpRenameAction = new QAction(Helper::rename, this);
@@ -1933,8 +1937,21 @@ void GraphicsView::showGraphicsViewProperties()
     GraphicsViewProperties *pGraphicsViewProperties = new GraphicsViewProperties(this);
     pGraphicsViewProperties->exec();
   } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    SystemSimulationInformationDialog *pSystemSimulationInformationDialog = new SystemSimulationInformationDialog(this);
-    pSystemSimulationInformationDialog->exec();
+    ModelWidget *pModelWidget = 0;
+    if (mpModelWidget->getLibraryTreeItem()->isTopLevel()) {
+      if (mpModelWidget->getLibraryTreeItem()->childrenSize() > 0) {
+        LibraryTreeItem *pSystemLibraryTreeItem = mpModelWidget->getLibraryTreeItem()->childAt(0);
+        if (pSystemLibraryTreeItem && pSystemLibraryTreeItem->getModelWidget()) {
+          pModelWidget = pSystemLibraryTreeItem->getModelWidget();
+        }
+      }
+    } else {
+      pModelWidget = mpModelWidget;
+    }
+    if (pModelWidget) {
+      SystemSimulationInformationDialog *pSystemSimulationInformationDialog = new SystemSimulationInformationDialog(pModelWidget);
+      pSystemSimulationInformationDialog->exec();
+    }
   }
 }
 
@@ -2788,6 +2805,10 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       if (mpModelWidget->getLibraryTreeItem()->isTopLevel() || mpModelWidget->getLibraryTreeItem()->isSystemElement()) {
         menu.addSeparator();
         menu.addAction(MainWindow::instance()->getAddSystemAction());
+        if (mpModelWidget->getLibraryTreeItem()->isTopLevel()) {
+          menu.addSeparator();
+          menu.addAction(mpPropertiesAction);
+        }
       }
       if (mpModelWidget->getLibraryTreeItem()->isSystemElement() || mpModelWidget->getLibraryTreeItem()->isComponentElement()) {
         menu.addSeparator();
@@ -6994,9 +7015,12 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
   MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
   MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
-  MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && omsModel);
-  MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(pLibraryTreeItem && pLibraryTreeItem->isInstantiated());
-  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && omsModel && MainWindow::instance()->getOMSInstantiateModelAction()->isChecked());
+  MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && (omsModel || omsSystem || omsSubmodel));
+  if (pLibraryTreeItem) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
+    MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isInstantiated());
+  }
+  MainWindow::instance()->getOMSSimulationSetupAction()->setEnabled(enabled && (omsModel || omsSystem || omsSubmodel) && MainWindow::instance()->getOMSInstantiateModelAction()->isChecked());
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);

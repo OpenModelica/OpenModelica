@@ -743,20 +743,24 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
  */
 void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked)
 {
-  if (checked) {
-    InstantiateDialog *pInstantiateDialog = new InstantiateDialog(pLibraryTreeItem);
-    // if user cancels the instantiation
-    if (!pInstantiateDialog->exec()) {
-      mpOMSInstantiateModelAction->setChecked(false);
-    }
-  } else {
-    if (!OMSProxy::instance()->terminate(pLibraryTreeItem->getNameStructure())) {
-      mpOMSInstantiateModelAction->setChecked(true);
+  // get the top level LibraryTreeItem
+  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
+  if (pTopLevelLibraryTreeItem) {
+    if (checked) {
+      InstantiateDialog *pInstantiateDialog = new InstantiateDialog(pTopLevelLibraryTreeItem);
+      // if user cancels the instantiation
+      if (!pInstantiateDialog->exec()) {
+        mpOMSInstantiateModelAction->setChecked(false);
+      }
     } else {
-      mpOMSInstantiateModelAction->setText(Helper::instantiateModel);
-      mpOMSInstantiateModelAction->setText(Helper::instantiateOMSModelTip);
-      mpOMSSimulateAction->setEnabled(false);
-      pLibraryTreeItem->setModelState(oms_modelState_virgin);
+      if (!OMSProxy::instance()->terminate(pTopLevelLibraryTreeItem->getNameStructure())) {
+        mpOMSInstantiateModelAction->setChecked(true);
+      } else {
+        mpOMSInstantiateModelAction->setText(Helper::instantiateModel);
+        mpOMSInstantiateModelAction->setText(Helper::instantiateOMSModelTip);
+        mpOMSSimulateAction->setEnabled(false);
+        pTopLevelLibraryTreeItem->setModelState(oms_modelState_virgin);
+      }
     }
   }
 }
@@ -768,10 +772,14 @@ void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool che
  */
 void MainWindow::simulateOMSModel(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (!mpOMSSimulationDialog) {
-    mpOMSSimulationDialog = new OMSSimulationDialog(this);
+  // get the top level LibraryTreeItem
+  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItem(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()));
+  if (pTopLevelLibraryTreeItem) {
+    if (!mpOMSSimulationDialog) {
+      mpOMSSimulationDialog = new OMSSimulationDialog(this);
+    }
+    mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
   }
-  mpOMSSimulationDialog->simulate(pLibraryTreeItem);
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)

@@ -42,6 +42,7 @@
 #include <QDialogButtonBox>
 
 class LibraryTreeItem;
+class SystemSimulationInformationWidget;
 
 class InstantiateDialog : public QDialog
 {
@@ -52,6 +53,7 @@ private:
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpSimulationHeading;
   QFrame *mpHorizontalLine;
+  SystemSimulationInformationWidget *mpSystemSimulationInformationWidget;
   Label *mpStartTimeLabel;
   QLineEdit *mpStartTimeTextBox;
   Label *mpStopTimeLabel;

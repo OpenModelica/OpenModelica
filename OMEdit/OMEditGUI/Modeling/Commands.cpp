@@ -2845,14 +2845,12 @@ void UpdateTLMParametersCommand::undo()
 
 
 SystemSimulationInformationCommand::SystemSimulationInformationCommand(TLMSystemSimulationInformation *pTLMSystemSimulationInformation,
-                                                                       WCSystemSimulationInformation *pWCSystemSimulationInformation,
-                                                                       SCSystemSimulationInformation *pSCSystemSimulationInformation,
+                                                                       WCSCSystemSimulationInformation *pWCSCSystemSimulationInformation,
                                                                        LibraryTreeItem *pLibraryTreeItem, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpTLMSystemSimulationInformation = pTLMSystemSimulationInformation;
-  mpWCSystemSimulationInformation = pWCSystemSimulationInformation;
-  mpSCSystemSimulationInformation = pSCSystemSimulationInformation;
+  mpWCSCSystemSimulationInformation = pWCSCSystemSimulationInformation;
   mpLibraryTreeItem = pLibraryTreeItem;
   setText(QString("System %1 simulation information").arg(mpLibraryTreeItem->getNameStructure()));
 }
@@ -2870,23 +2868,37 @@ void SystemSimulationInformationCommand::redoInternal()
       setFailed(true);
       return;
     }
-  } else if (mpLibraryTreeItem->isWCSystem()) {
-    if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(), mpWCSystemSimulationInformation->mFixedStepSize)) {
+  } else if (mpLibraryTreeItem->isWCSystem() || mpLibraryTreeItem->isSCSystem()) {
+    // set solver
+    if (!OMSProxy::instance()->setSolver(mpLibraryTreeItem->getNameStructure(), mpWCSCSystemSimulationInformation->mDescription)) {
       setFailed(true);
       return;
     }
-    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpWCSystemSimulationInformation->mAbsoluteTolerance,
-                                            mpWCSystemSimulationInformation->mRelativeTolerance)) {
-      setFailed(true);
-      return;
+    // set step size
+    switch (mpWCSCSystemSimulationInformation->mDescription) {
+      case oms_solver_wc_mav:
+      case oms_solver_sc_cvode:
+        if (!OMSProxy::instance()->setVariableStepSize(mpLibraryTreeItem->getNameStructure(),
+                                                       mpWCSCSystemSimulationInformation->mInitialStepSize,
+                                                       mpWCSCSystemSimulationInformation->mMinimumStepSize,
+                                                       mpWCSCSystemSimulationInformation->mMaximumStepSize)) {
+          setFailed(true);
+          return;
+        }
+        break;
+      case oms_solver_wc_ma:
+      case oms_solver_sc_explicit_euler:
+      default:
+        if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(),
+                                                    mpWCSCSystemSimulationInformation->mFixedStepSize)) {
+          setFailed(true);
+          return;
+        }
+        break;
     }
-  } else if (mpLibraryTreeItem->isSCSystem()) {
-    if (!OMSProxy::instance()->setFixedStepSize(mpLibraryTreeItem->getNameStructure(), mpSCSystemSimulationInformation->mFixedStepSize)) {
-      setFailed(true);
-      return;
-    }
-    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpSCSystemSimulationInformation->mAbsoluteTolerance,
-                                            mpSCSystemSimulationInformation->mRelativeTolerance)) {
+    // set tolerance
+    if (!OMSProxy::instance()->setTolerance(mpLibraryTreeItem->getNameStructure(), mpWCSCSystemSimulationInformation->mAbsoluteTolerance,
+                                            mpWCSCSystemSimulationInformation->mRelativeTolerance)) {
       setFailed(true);
       return;
     }
@@ -2899,5 +2911,5 @@ void SystemSimulationInformationCommand::redoInternal()
  */
 void SystemSimulationInformationCommand::undo()
 {
-
+  qDebug() << "SystemSimulationInformationCommand::undo() not implemented.";
 }

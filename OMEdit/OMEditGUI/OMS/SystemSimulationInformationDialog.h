@@ -34,11 +34,14 @@
 #ifndef SYSTEMSIMULATIONINFORMATIONDIALOG_H
 #define SYSTEMSIMULATIONINFORMATIONDIALOG_H
 
+#include "OMSimulator.h"
+
 #include <QDialog>
 #include <QLineEdit>
+#include <QComboBox>
 #include <QDialogButtonBox>
 
-class GraphicsView;
+class ModelWidget;
 class Label;
 
 class TLMSystemSimulationInformation
@@ -51,40 +54,28 @@ public:
   int mMonitorPort;
 };
 
-class WCSystemSimulationInformation
+class WCSCSystemSimulationInformation
 {
 public:
-  WCSystemSimulationInformation();
+  WCSCSystemSimulationInformation();
 
+  oms_solver_enu_t mDescription;
   double mFixedStepSize;
-  double mAbsoluteTolerance;
-  double mRelativeTolerance;
-};
-
-class SCSystemSimulationInformation
-{
-public:
-  SCSystemSimulationInformation();
-
-  double mFixedStepSize;
-
-  QString mDescription;
-  double mAbsoluteTolerance;
-  double mRelativeTolerance;
+  double mInitialStepSize;
   double mMinimumStepSize;
   double mMaximumStepSize;
-  double mInitialStepSize;
+  double mAbsoluteTolerance;
+  double mRelativeTolerance;
 };
 
-class SystemSimulationInformationDialog : public QDialog
+class SystemSimulationInformationWidget : public QWidget
 {
   Q_OBJECT
 public:
-  SystemSimulationInformationDialog(GraphicsView *pGraphicsView);
+  SystemSimulationInformationWidget(ModelWidget *pModelWidget);
+  bool setSystemSimulationInformation();
 private:
-  GraphicsView *mpGraphicsView;
-  Label *mpHeading;
-  QFrame *mpHorizontalLine;
+  ModelWidget *mpModelWidget;
   // TLM system simulation information
   Label *mpIpAddressLabel;
   QLineEdit *mpIpAddressTextBox;
@@ -92,13 +83,34 @@ private:
   QLineEdit *mpManagerPortTextBox;
   Label *mpMonitorPortLabel;
   QLineEdit *mpMonitorPortTextBox;
-  // WC system simulation information
+  // WC/SC system simulation information
+  Label *mpSolverLabel;
+  QComboBox *mpSolverComboBox;
   Label *mpFixedStepSizeLabel;
   QLineEdit *mpFixedStepSizeTextBox;
+  Label *mpInitialStepSizeLabel;
+  QLineEdit *mpInitialStepSizeTextBox;
+  Label *mpMinimumStepSizeLabel;
+  QLineEdit *mpMinimumStepSizeTextBox;
+  Label *mpMaximumStepSizeLabel;
+  QLineEdit *mpMaximumStepSizeTextBox;
   Label *mpAbsoluteToleranceLabel;
   QLineEdit *mpAbsoluteToleranceTextBox;
   Label *mpRelativeToleranceLabel;
   QLineEdit *mpRelativeToleranceTextBox;
+private slots:
+  void solverChanged(int index);
+};
+
+class SystemSimulationInformationDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  SystemSimulationInformationDialog(ModelWidget *pModelWidget);
+private:
+  Label *mpHeading;
+  QFrame *mpHorizontalLine;
+  SystemSimulationInformationWidget *mpSystemSimulationInformationWidget;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
