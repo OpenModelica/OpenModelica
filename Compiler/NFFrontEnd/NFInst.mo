@@ -2606,7 +2606,7 @@ algorithm
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
       then
-        Equation.WHEN(branches, makeSource(scodeEq.comment, info));
+        Equation.WHEN(listReverse(branches), makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_ASSERT(info = info)
       algorithm
