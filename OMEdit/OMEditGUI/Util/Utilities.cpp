@@ -65,6 +65,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // create the filter text box
   mpFilterTextBox = new QLineEdit;
   mpFilterTextBox->installEventFilter(this);
+  // filter timer
+  mpFilterTimer = new QTimer;
+  mpFilterTimer->setSingleShot(true);
   // show hide button
   mpShowHideButton = new QToolButton;
   QString text = tr("Show/hide filters");

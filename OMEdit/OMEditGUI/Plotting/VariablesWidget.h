@@ -182,6 +182,7 @@ class VariablesWidget : public QWidget
   Q_OBJECT
 public:
   VariablesWidget(QWidget *pParent = 0);
+  TreeSearchFilters* getTreeSearchFilters() {return mpTreeSearchFilters;}
   QComboBox* getSimulationTimeComboBox() {return mpSimulationTimeComboBox;}
   VariableTreeProxyModel* getVariableTreeProxyModel() {return mpVariableTreeProxyModel;}
   VariablesTreeModel* getVariablesTreeModel() {return mpVariablesTreeModel;}

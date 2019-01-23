@@ -1054,8 +1054,10 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   // tree search filters
   mpTreeSearchFilters = new TreeSearchFilters(this);
   mpTreeSearchFilters->getFilterTextBox()->setPlaceholderText(Helper::filterVariables);
+  mpTreeSearchFilters->getFilterTimer()->setInterval(OptionsDialog::instance()->getPlottingPage()->getFilterIntervalSpinBox()->value() * 1000);
   connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(returnPressed()), SLOT(findVariables()));
-  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(findVariables()));
+  connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), mpTreeSearchFilters->getFilterTimer(), SLOT(start()));
+  connect(mpTreeSearchFilters->getFilterTimer(), SIGNAL(timeout()), SLOT(findVariables()));
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(findVariables()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(findVariables()));
   // simulation time label and combobox

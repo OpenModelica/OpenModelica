@@ -105,6 +105,7 @@ class TreeSearchFilters : public QWidget
 public:
   TreeSearchFilters(QWidget *pParent = 0);
   QLineEdit* getFilterTextBox() {return mpFilterTextBox;}
+  QTimer* getFilterTimer() {return mpFilterTimer;}
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
   QPushButton* getExpandAllButton() {return mpExpandAllButton;}
@@ -113,6 +114,7 @@ public:
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
   QLineEdit *mpFilterTextBox;
+  QTimer *mpFilterTimer;
   QToolButton *mpShowHideButton;
   QWidget *mpFiltersWidget;
   QComboBox *mpSyntaxComboBox;

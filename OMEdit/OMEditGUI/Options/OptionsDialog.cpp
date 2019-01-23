@@ -41,6 +41,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/MessagesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
+#include "Plotting/VariablesWidget.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Editors/HTMLEditor.h"
 #include <limits>
@@ -717,6 +718,9 @@ void OptionsDialog::readPlottingSettings()
   if (mpSettings->contains("curvestyle/thickness")) {
     mpPlottingPage->setCurveThickness(mpSettings->value("curvestyle/thickness").toFloat());
   }
+  if (mpSettings->contains("variableFilter/interval")) {
+    mpPlottingPage->getFilterIntervalSpinBox()->setValue(mpSettings->value("variableFilter/interval").toInt());
+  }
 }
 
 //! Reads the Fiagro section settings from omedit.ini
@@ -1239,6 +1243,9 @@ void OptionsDialog::savePlottingSettings()
 
   mpSettings->setValue("curvestyle/pattern", mpPlottingPage->getCurvePattern());
   mpSettings->setValue("curvestyle/thickness", mpPlottingPage->getCurveThickness());
+  // save variable filter interval
+  mpSettings->setValue("variableFilter/interval", mpPlottingPage->getFilterIntervalSpinBox()->value());
+  MainWindow::instance()->getVariablesWidget()->getTreeSearchFilters()->getFilterTimer()->setInterval(mpPlottingPage->getFilterIntervalSpinBox()->value() * 1000);
 }
 
 //! Saves the Figaro section settings to omedit.ini
@@ -4156,12 +4163,30 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   pCurveStyleLayout->addWidget(mpCurveThicknessLabel, 1, 0);
   pCurveStyleLayout->addWidget(mpCurveThicknessSpinBox, 1, 1);
   mpCurveStyleGroupBox->setLayout(pCurveStyleLayout);
+  // variable filter interval
+  mpVariableFilterGroupBox = new QGroupBox(tr("Variable Filter"));
+  mpFilterIntervalHelpLabel = new Label(tr("Adds a delay, specified as Filter Interval, in filtering the variables.\n"
+                                           "Set the value to 0 if you don't want any delay."));
+  mpFilterIntervalLabel = new Label(tr("Filter Interval:"));
+  mpFilterIntervalSpinBox = new QSpinBox;
+  mpFilterIntervalSpinBox->setSuffix(tr(" seconds"));
+  mpFilterIntervalSpinBox->setRange(0, std::numeric_limits<int>::max());
+  mpFilterIntervalSpinBox->setValue(2);
+  // variable filter layout
+  QGridLayout *pVariableFilterGridLayout = new QGridLayout;
+  pVariableFilterGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pVariableFilterGridLayout->addWidget(mpFilterIntervalHelpLabel, 0, 0, 1, 2);
+  pVariableFilterGridLayout->addWidget(mpFilterIntervalLabel, 1, 0);
+  pVariableFilterGridLayout->addWidget(mpFilterIntervalSpinBox, 1, 1);
+  mpVariableFilterGroupBox->setLayout(pVariableFilterGridLayout);
+  // main layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->addWidget(mpGeneralGroupBox);
   pMainLayout->addWidget(mpPlottingViewModeGroupBox);
   pMainLayout->addWidget(mpCurveStyleGroupBox);
+  pMainLayout->addWidget(mpVariableFilterGroupBox);
   setLayout(pMainLayout);
 }
 
@@ -4222,7 +4247,6 @@ qreal PlottingPage::getCurveThickness()
 {
   return mpCurveThicknessSpinBox->value();
 }
-
 
 //! @class FigaroPage
 //! @brief Creates an interface for Figaro settings.

@@ -784,6 +784,7 @@ public:
   int getCurvePattern();
   void setCurveThickness(qreal thickness);
   qreal getCurveThickness();
+  QSpinBox* getFilterIntervalSpinBox() {return mpFilterIntervalSpinBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
@@ -796,6 +797,11 @@ private:
   QComboBox *mpCurvePatternComboBox;
   Label *mpCurveThicknessLabel;
   DoubleSpinBox *mpCurveThicknessSpinBox;
+  QGroupBox *mpVariableFilterGroupBox;
+  Label *mpFilterIntervalHelpLabel;
+  Label *mpFilterIntervalLabel;
+  QSpinBox *mpFilterIntervalSpinBox;
+
 };
 
 class FigaroPage : public QWidget
