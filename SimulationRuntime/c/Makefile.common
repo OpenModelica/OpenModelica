@@ -225,13 +225,9 @@ $(RESULTSOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp $(RESULTSFILESPATH) $(COMMON_
 	$(MKBUILDDIR)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
-$(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
+$(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp linearization/linearize.cpp dataReconciliation/dataReconciliation.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CXX) -c -Ilinearization/ $(CXXFLAGS) -o $@ $<
-
-$(SIMOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.cpp dataReconciliation/dataReconciliation.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
-	$(MKBUILDDIR)
-	$(CXX) -c -IdataReconciliation/ $(CXXFLAGS) -o $@ $<
+	$(CXX) -c -Ilinearization/ -IdataReconciliation/ $(CXXFLAGS) -o $@ $<
 
 $(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 	@echo Deps: $(SIMHFILESPATH) $(COMMON_HEADERS)

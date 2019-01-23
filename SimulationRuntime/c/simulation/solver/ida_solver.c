@@ -56,6 +56,11 @@
 
 #ifdef WITH_SUNDIALS
 
+/* adrpo: on mingw link with static sundials */
+#if defined(__MINGW32__)
+#define LINK_SUNDIALS_STATIC
+#endif
+
 /* readability */
 #define SCALE_MODE 0
 #define RESCALE_MODE 1

@@ -41,6 +41,11 @@
 
 #ifdef WITH_SUNDIALS
 
+/* adrpo: on mingw link with static sundials */
+#if defined(__MINGW32__)
+#define LINK_SUNDIALS_STATIC
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h> /* memcpy */
