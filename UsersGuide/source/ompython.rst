@@ -177,7 +177,7 @@ The object constructor requires a minimum of 2 input arguments which are strings
 -  The second input argument must be a string with the name of the Modelica model
    including the namespace if the model is wrapped within a Modelica package.
 
--  The third input argument is used to specify the list of dependent libraries e.g.,
+-  The third input argument is used to specify the list of dependent libraries or dependent Modelica files e.g.,
 
 >>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall",["Modelica"])
 
