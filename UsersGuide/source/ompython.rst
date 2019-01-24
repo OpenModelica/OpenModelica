@@ -124,11 +124,7 @@ For example:
   from OMPython import OMCSessionZMQ
   omc = OMCSessionZMQ()
   cmds = [
-    "loadModel(Modelica)",
-    "model test end test;",
     'loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")',
-    "getIconAnnotation(Modelica.Electrical.Analog.Basic.Resistor)",
-    "getElementsInfo(Modelica.Electrical.Analog.Basic.Resistor)",
     "simulate(BouncingBall)",
     "plot(h)"
     ]
@@ -167,8 +163,11 @@ objects. A list of API functionality is described below.
 
 To get started, create a ModelicaSystem object:
 
+>>> from OMPython import OMCSessionZMQ
+>>> omc = OMCSessionZMQ()
+>>> model_path=omc.sendExpression("getInstallationDirectoryPath()") + "/share/doc/omc/testmodels/"
 >>> from OMPython import ModelicaSystem
->>> mod=ModelicaSystem("BouncingBall.mo","BouncingBall")
+>>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall")
 
 The object constructor requires a minimum of 2 input arguments which are strings, and may need a third string input argument.
 
@@ -180,7 +179,7 @@ The object constructor requires a minimum of 2 input arguments which are strings
 
 -  The third input argument is used to specify the list of dependent libraries e.g.,
 
->>> mod=ModelicaSystem("BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics"])
+>>> mod=ModelicaSystem(model_path + "BouncingBall.mo","BouncingBall",["Modelica"])
 
 -  By default ModelicaSystem uses OMCSessionZMQ but if you want to use OMCSession
    then pass the argument `useCorba=True` to the constructor.
