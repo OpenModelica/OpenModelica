@@ -1153,6 +1153,11 @@ Plotting
 
   -  *Thickness* – Sets the curve thickness.
 
+Variable filter
+
+  - *Filter Interval* - Delay in filtering the variables. Set the value to 0
+    if you don't want any delay.
+
 Figaro
 ~~~~~~
 
