@@ -249,6 +249,12 @@ algorithm
   Flags.setConfigBool(Flags.SHOW_ANNOTATIONS, show);
 end setShowAnnotations;
 
+public function showStructuralAnnotations
+  output Boolean show;
+algorithm
+  show := Flags.getConfigBool(Flags.SHOW_STRUCTURAL_ANNOTATIONS);
+end showStructuralAnnotations;
+
 public function showStartOrigin
   output Boolean show;
 algorithm

@@ -130,6 +130,10 @@ package Config
     output Boolean outShowAnnotations;
   end showAnnotations;
 
+  function showStructuralAnnotations
+    output Boolean outShowAnnotations;
+  end showStructuralAnnotations;
+
   function showStartOrigin
     output Boolean show;
   end showStartOrigin;
@@ -216,6 +220,10 @@ uniontype functionList
   end FUNCTION_LIST;
 end functionList;
 
+function filterStructuralMods
+  input SCode.Mod mod;
+  output SCode.Mod outMod;
+end filterStructuralMods;
 
 end DAEDump;
 

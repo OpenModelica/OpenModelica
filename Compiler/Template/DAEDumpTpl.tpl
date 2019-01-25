@@ -1032,19 +1032,19 @@ template dumpCompAnnotation(Option<SCode.Comment> comment)
 end dumpCompAnnotation;
 
 template dumpCommentAnnotation(Option<SCode.Comment> comment)
-::=
-if Config.showAnnotations() then
-  match comment
-    case SOME(cmt) then
-      dumpCommentAnnotationNoOpt(cmt)
+::= match comment case SOME(cmt) then dumpCommentAnnotationNoOpt(cmt)
 end dumpCommentAnnotation;
 
 template dumpCommentAnnotationNoOpt(SCode.Comment comment)
 ::=
-if Config.showAnnotations() then
   match comment
     case SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = ann_mod))) then
-      'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
+      if Config.showAnnotations() then
+        'annotation<%SCodeDumpTpl.dumpModifier(ann_mod, SCodeDump.defaultOptions)%>'
+      else if Config.showStructuralAnnotations() then
+        let ann_str = SCodeDumpTpl.dumpModifier(DAEDump.filterStructuralMods(ann_mod), SCodeDump.defaultOptions)
+        if ann_str then
+          'annotation<%ann_str%>'
 end dumpCommentAnnotationNoOpt;
 
 template dumpCommentOpt(Option<SCode.Comment> comment)

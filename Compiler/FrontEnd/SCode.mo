@@ -656,6 +656,30 @@ algorithm
   end match;
 end stripSubmod;
 
+function filterSubMods
+  "Removes submods from a modifier based on a filter function."
+  input output Mod mod;
+  input FilterFunc filter;
+
+  partial function FilterFunc
+    input SubMod submod;
+    output Boolean keep;
+  end FilterFunc;
+algorithm
+  mod := match mod
+    case MOD()
+      algorithm
+        mod.subModLst := list(m for m guard filter(m) in mod.subModLst);
+      then
+        match mod
+          case MOD(subModLst = {}, binding = NONE()) then NOMOD();
+          else mod;
+        end match;
+
+    else mod;
+  end match;
+end filterSubMods;
+
 public function getElementNamed
 "Return the Element with the name given as first argument from the Class."
   input Ident inIdent;

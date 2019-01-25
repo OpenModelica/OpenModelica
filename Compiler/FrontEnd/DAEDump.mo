@@ -748,9 +748,18 @@ algorithm
       SCode.Mod ann_mod;
 
     case (SOME(SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(ann_mod)))), _, _)
-      equation
-        true = Config.showAnnotations();
-        ann = inPrefix + "annotation" + SCodeDump.printModStr(ann_mod,SCodeDump.defaultOptions) + inSuffix;
+      algorithm
+        if Config.showAnnotations() then
+          ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;
+        elseif Config.showStructuralAnnotations() then
+          ann_mod := filterStructuralMods(ann_mod);
+
+          if not SCode.isEmptyMod(ann_mod) then
+            ann := inPrefix + "annotation" + SCodeDump.printModStr(ann_mod, SCodeDump.defaultOptions) + inSuffix;
+          end if;
+        else
+          ann := "";
+        end if;
       then
         ann;
 
@@ -758,6 +767,27 @@ algorithm
 
   end matchcontinue;
 end dumpAnnotationStr;
+
+public function filterStructuralMods
+  input output SCode.Mod mod;
+algorithm
+  mod := SCode.filterSubMods(mod, filterStructuralMod);
+end filterStructuralMods;
+
+public function filterStructuralMod
+  input SCode.SubMod mod;
+  output Boolean keep;
+algorithm
+  keep := match mod.ident
+    case "Evaluate" then true;
+    case "Inline" then true;
+    case "LateInline" then true;
+    case "derivative" then true;
+    case "inverse" then true;
+    case "smoothOrder" then true;
+    else false;
+  end match;
+end filterStructuralMod;
 
 public function dumpCommentAnnotationStr
   input Option<SCode.Comment> inComment;

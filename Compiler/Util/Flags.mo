@@ -1477,6 +1477,10 @@ constant ConfigFlag SINGLE_INSTANCE_AGLSOLVER = CONFIG_FLAG(127, "singleInstance
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Sets to instantiate only  one algebraic loop solver all algebraic loops"));
 
+constant ConfigFlag SHOW_STRUCTURAL_ANNOTATIONS = CONFIG_FLAG(128, "showStructuralAnnotations",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Util.gettext("Show annotations affecting the solution process in the flattened code."));
+
 protected
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1608,7 +1612,8 @@ constant list<ConfigFlag> allConfigFlags = {
   POST_OPT_MODULES_DAE,
   EVAL_LOOP_LIMIT,
   EVAL_RECURSION_LIMIT,
-  SINGLE_INSTANCE_AGLSOLVER
+  SINGLE_INSTANCE_AGLSOLVER,
+  SHOW_STRUCTURAL_ANNOTATIONS
 };
 
 public function new
