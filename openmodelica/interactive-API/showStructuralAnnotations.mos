@@ -1,0 +1,52 @@
+// name: showStructuralAnnotations
+// keywords: 
+// status: correct
+// cflags: --showStructuralAnnotations
+//
+// Tests the showStructuralAnnotations flag.
+//
+
+loadString("
+  model A
+    annotation(derivative = A_der);
+  end A;
+
+  model A_der
+  end A_der;
+
+  model B
+    annotation(Inline = true, smoothOrder = 1);
+  end B;
+
+  model C
+    annotation(NotStructural = true, LateInline = true);
+  end C;
+
+  model D
+    annotation(NotStructural = true);
+  end D;
+");
+
+instantiateModel(A);
+instantiateModel(B);
+instantiateModel(C);
+instantiateModel(D);
+
+// Result:
+// true
+// "class A
+//   annotation(derivative = A_der);
+// end A;
+// "
+// "class B
+//   annotation(Inline = true, smoothOrder = 1);
+// end B;
+// "
+// "class C
+//   annotation(LateInline = true);
+// end C;
+// "
+// "class D
+// end D;
+// "
+// endResult
