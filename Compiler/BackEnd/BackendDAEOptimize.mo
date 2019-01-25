@@ -313,11 +313,11 @@ algorithm
 
     case (syst, shared)
       algorithm
-        ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate (
+        ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqns (
             syst.orderedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
             (shared.globalKnownVars, shared.aliasVars, false))
         );
-        ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate (
+        ((_, (_, _, true))) := BackendDAEUtil.traverseBackendDAEExpsEqns (
             syst.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls,
             (shared.globalKnownVars, shared.aliasVars, false))
         );
@@ -407,8 +407,8 @@ protected
 algorithm
   shared := inDAE.shared;
   BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.globalKnownVars, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
+  BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
   (shared.eventInfo, _) := traverseEventInfoExps(shared.eventInfo, Expression.traverseSubexpressionsHelper, (traverserExpsimplifyTimeIndepFuncCalls, (shared.globalKnownVars, shared.aliasVars, false)));
   outDAE := BackendDAE.DAE(inDAE.eqs, shared);
 end simplifyTimeIndepFuncCallsShared;
@@ -3534,8 +3534,8 @@ algorithm
 
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs, removedEqs=removedEqs)
     algorithm
-      BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserreplaceEdgeChange, false);
-      BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(removedEqs, traverserreplaceEdgeChange, false);
+      BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserreplaceEdgeChange, false);
+      BackendDAEUtil.traverseBackendDAEExpsEqns(removedEqs, traverserreplaceEdgeChange, false);
     then (isyst, true);
 
     else (isyst, inChanged);
@@ -3589,7 +3589,7 @@ algorithm
       BackendDAE.Shared shared;
     case BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=remeqns))
       algorithm
-        BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns, traverserreplaceEdgeChange, false);
+        BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns, traverserreplaceEdgeChange, false);
       then BackendDAE.DAE(systs, shared);
   end match;
 end replaceEdgeChangeShared;
@@ -5501,8 +5501,8 @@ protected function applyRewriteRulesBackend0
 algorithm
   try
     BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(isyst.orderedVars, traverserapplyRewriteRulesBackend, false);
-    BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(isyst.orderedEqs, traverserapplyRewriteRulesBackend, false);
-    BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(isyst.removedEqs, traverserapplyRewriteRulesBackend, false);
+    BackendDAEUtil.traverseBackendDAEExpsEqns(isyst.orderedEqs, traverserapplyRewriteRulesBackend, false);
+    BackendDAEUtil.traverseBackendDAEExpsEqns(isyst.removedEqs, traverserapplyRewriteRulesBackend, false);
     outChanged := true;
   else
     outChanged := false;
@@ -5549,8 +5549,8 @@ protected
 algorithm
   shared := inDAE.shared;
   BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(shared.globalKnownVars, traverserapplyRewriteRulesBackend, false);
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, traverserapplyRewriteRulesBackend, false);
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, traverserapplyRewriteRulesBackend, false);
+  BackendDAEUtil.traverseBackendDAEExpsEqns(shared.initialEqs, traverserapplyRewriteRulesBackend, false);
+  BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, traverserapplyRewriteRulesBackend, false);
   // not sure if we should apply the rules on the event info!
   // (ei, _) := traverseEventInfoExps(eventInfo, traverserapplyRewriteRulesBackend, false);
   outDAE := BackendDAE.DAE(inDAE.eqs, shared);

@@ -326,7 +326,7 @@ algorithm
           Util.profilerreset1();
           Util.profilerstart1();
         // replace evaluated parametes
-        //_ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, replaceFinalParameter, BackendVariable.daeGlobalKnownVars(shared));
+        //_ = BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, replaceFinalParameter, BackendVariable.daeGlobalKnownVars(shared));
 
         subsyst = BackendDAEUtil.createEqSystem(vars, eqns);
         (subsyst, m, _) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE(), SOME(funcs));

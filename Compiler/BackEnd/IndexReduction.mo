@@ -3336,7 +3336,7 @@ algorithm
   vars := BackendVariable.addVars(dummyvars, vars);
   // perform replacement rules
   (osyst.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceDummyDerivativesVar, ht);
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( osyst.orderedEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( osyst.orderedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
   // extend assignments
   ass1 := Array.expand(nv1-nv, ass1, -1);
@@ -3473,7 +3473,7 @@ algorithm
   vars := BackendVariable.addVars(dummvars,vars);
   // perform replacement rules
   (osyst.orderedVars, _) := BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceDummyDerivativesVar, oHt);
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( osyst.orderedEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( osyst.orderedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, oHt) );
 end addAllDummyStates;
 
@@ -3643,9 +3643,9 @@ algorithm
         // create dummy_der vars and change deselected states to dummy states
         ((vars, ht)) = List.fold1(dummyStates, makeDummyVarandDummyDerivative, level, (syst.orderedVars, iHt));
         (syst.orderedVars, _) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars, replaceDummyDerivativesVar, ht);
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( syst.orderedEqs, Expression.traverseSubexpressionsHelper,
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqns( syst.orderedEqs, Expression.traverseSubexpressionsHelper,
                                                                  (replaceDummyDerivativesExp, ht) );
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( syst.orderedEqs, Expression.traverseSubexpressionsHelper,
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqns( syst.orderedEqs, Expression.traverseSubexpressionsHelper,
                                                                  (replaceFirstOrderDerivativesExp, repl) );
       then (syst, ht);
   end match;
@@ -3796,11 +3796,11 @@ protected
 algorithm
   BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.aliasVars, replaceDummyDerivativesVar, ht);
   BackendVariable.traverseBackendDAEVarsWithUpdate(outShared.globalKnownVars, replaceDummyDerivativesVar, ht);
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outShared.initialEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( outShared.initialEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outSyst.removedEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( outSyst.removedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
-  BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate( outShared.removedEqs, Expression.traverseSubexpressionsHelper,
+  BackendDAEUtil.traverseBackendDAEExpsEqns( outShared.removedEqs, Expression.traverseSubexpressionsHelper,
                                                        (replaceDummyDerivativesExp, ht) );
 end replaceDummyDerivatives;
 

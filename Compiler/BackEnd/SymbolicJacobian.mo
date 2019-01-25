@@ -442,7 +442,7 @@ algorithm
       list<DAE.Exp> explst;
       String s;
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) equation
-      ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
+      ((_, explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesUsed, (BackendVariable.daeGlobalKnownVars(inShared), {}));
       s = stringDelimitList(List.map(explst, ExpressionDump.printExpStr), "\n");
       Error.addMessage(Error.DERIVATIVE_INPUT, {s});
     then (BackendDAEUtil.setEqSystEqs(isyst, orderedEqs), true);

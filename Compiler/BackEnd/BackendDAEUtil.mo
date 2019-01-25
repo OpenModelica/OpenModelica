@@ -6321,8 +6321,8 @@ algorithm
     BackendDAE.DAE(systs, shared) := inBackendDAE;
     outTypeA := List.fold1(systs, traverseBackendDAEExpsEqSystemWithUpdate, func, inTypeA);
     outTypeA := traverseBackendDAEExpsVarsWithUpdate(shared.globalKnownVars, func, outTypeA);
-    outTypeA := traverseBackendDAEExpsEqnsWithUpdate(shared.initialEqs, func, outTypeA);
-    outTypeA := traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, func, outTypeA);
+    outTypeA := traverseBackendDAEExpsEqns(shared.initialEqs, func, outTypeA);
+    outTypeA := traverseBackendDAEExpsEqns(shared.removedEqs, func, outTypeA);
   else
     (_, _, name) := System.dladdr(func);
     Error.addInternalError("traverseBackendDAEExpsNoCopyWithUpdate failed for " + name, sourceInfo());
@@ -6367,8 +6367,8 @@ public function traverseBackendDAEExpsEqSystemWithUpdate "This function goes thr
   end FuncExpType;
 algorithm
   outTypeA := traverseBackendDAEExpsVarsWithUpdate(syst.orderedVars, func, inTypeA);
-  outTypeA := traverseBackendDAEExpsEqnsWithUpdate(syst.orderedEqs, func, outTypeA);
-  outTypeA := traverseBackendDAEExpsEqnsWithUpdate(syst.removedEqs, func, outTypeA);
+  outTypeA := traverseBackendDAEExpsEqns(syst.orderedEqs, func, outTypeA);
+  outTypeA := traverseBackendDAEExpsEqns(syst.removedEqs, func, outTypeA);
 end traverseBackendDAEExpsEqSystemWithUpdate;
 
 public function traverseBackendDAEExpsVars "Helper for traverseBackendDAEExps"
@@ -6771,7 +6771,8 @@ algorithm
  end match;
 end traverseBackendDAEAttrDistribution;
 
-public function traverseBackendDAEExpsEqns<T> "author: lochel"
+public function traverseBackendDAEExpsEqns<T> "author: lochel
+  Traverse all expressions of an equation array and apply modifications to them."
   input BackendDAE.EquationArray equationArray;
   input FuncExpType func;
   input output T extraArg;
@@ -6838,38 +6839,6 @@ algorithm
     fail();
   end try;
 end traverseBackendDAEExpsEqnsWithStop;
-
-public function traverseBackendDAEExpsEqnsWithUpdate<T> "author: lochel"
-  input BackendDAE.EquationArray equationArray;
-  input FuncExpType func;
-  input output T extraArg;
-
-  partial function FuncExpType
-    input output DAE.Exp exp;
-    input output T extraArg;
-  end FuncExpType;
-protected
-  String name;
-  BackendDAE.Equation e, new_e;
-algorithm
-  try
-    for i in 1:ExpandableArray.getLastUsedIndex(equationArray) loop
-      if ExpandableArray.occupied(i, equationArray) then
-        e := ExpandableArray.get(i, equationArray);
-        (new_e, extraArg) := BackendEquation.traverseExpsOfEquation(e, func, extraArg);
-        if not referenceEq(e, new_e) then
-          ExpandableArray.update(i, new_e, equationArray);
-        end if;
-      end if;
-    end for;
-  else
-    if Flags.isSet(Flags.FAILTRACE) then
-      (_, _, name) := System.dladdr(func);
-      Error.addInternalError("BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate failed for " + name, sourceInfo());
-    end if;
-    fail();
-  end try;
-end traverseBackendDAEExpsEqnsWithUpdate;
 
 public function traverseBackendDAEExpsOptEqn "author: Frenkel TUD 2010-11
   Helper for traverseExpsOfEquation."

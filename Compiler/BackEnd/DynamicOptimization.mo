@@ -456,7 +456,7 @@ algorithm
     case BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) algorithm
       vars := BackendVariable.daeGlobalKnownVars(outShared);
 
-      ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
+      ((_, idercr, icr, varLst)) := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, traverserinputDerivativesForDynOpt, (vars, idercr, icr, varLst));
       if listEmpty(idercr) then
         fail();
       end if;

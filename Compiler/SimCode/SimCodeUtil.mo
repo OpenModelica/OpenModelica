@@ -6583,8 +6583,8 @@ algorithm
     //BackendDump.dumpVariables(vars,"VAR BEFORE");
     //BackendDump.dumpEquationList(eqLst,"EQS BEFORE");
   eqs := BackendEquation.copyEquationArray(systIn.orderedEqs);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs,replaceCrefWithStartValue,globalKnownVars);
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs,replaceCrefWithStartValue,vars);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,replaceCrefWithStartValue,globalKnownVars);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs,replaceCrefWithStartValue,vars);
     //BackendDump.dumpEquationList(eqLst,"EQS AFTER");
   vars1 := BackendVariable.listVar1(noStartVarLst);
   syst := BackendDAEUtil.createEqSystem(vars1, eqs);

@@ -169,7 +169,7 @@ algorithm
     execStat("collectInitialBindings (initialization)");
 
     // replace initial(), sample(...), delay(...) and homotopy(...)
-    useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunctions, false);
+    useHomotopy := BackendDAEUtil.traverseBackendDAEExpsEqns(eqns, simplifyInitialFunctions, false);
     execStat("simplifyInitialFunctions (initialization)");
 
     vars := BackendVariable.rehashVariables(vars);
@@ -2581,11 +2581,11 @@ protected
   BackendDAE.Shared shared = inDAE.shared;
 algorithm
   for eqs in outDAE.eqs loop
-    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, removeInitializationStuff1, false);
-    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.removedEqs, removeInitializationStuff1, false);
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.orderedEqs, removeInitializationStuff1, false);
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.removedEqs, removeInitializationStuff1, false);
   end for;
 
-  _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(shared.removedEqs, removeInitializationStuff1, false);
+  _ := BackendDAEUtil.traverseBackendDAEExpsEqns(shared.removedEqs, removeInitializationStuff1, false);
   for eq in BackendEquation.equationList(shared.removedEqs) loop
     removedEqsList := match BackendEquation.equationKind(eq)
       case BackendDAE.INITIAL_EQUATION() then removedEqsList;
@@ -2652,8 +2652,8 @@ public function replaceHomotopyWithSimplified
   output BackendDAE.BackendDAE outDAE = inDAE;
 algorithm
   for eqs in outDAE.eqs loop
-    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);
-    _ := BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqs.removedEqs, replaceHomotopyWithSimplified1, false);
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.orderedEqs, replaceHomotopyWithSimplified1, false);
+    _ := BackendDAEUtil.traverseBackendDAEExpsEqns(eqs.removedEqs, replaceHomotopyWithSimplified1, false);
   end for;
   outDAE.eqs := list(BackendDAEUtil.clearEqSyst(eqs) for eqs in outDAE.eqs);
 end replaceHomotopyWithSimplified;
