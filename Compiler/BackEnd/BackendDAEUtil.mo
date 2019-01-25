@@ -1865,55 +1865,90 @@ algorithm
   end match;
 end reduceEqSystem;
 
-public function createAliasVarsForOutputStates
-" creates for every state that is also output an
-  alias variable $outputStateAlias.stateName and
-  the corresponding equation"
-  input BackendDAE.BackendDAE inBDAE;
-  output BackendDAE.BackendDAE outBDAE = inBDAE;
+public function introduceOutputAliases
+  input output BackendDAE.BackendDAE dae;
 protected
   BackendDAE.EqSystems systems, returnSysts = {};
-  BackendDAE.Variables vars;
+  BackendDAE.Variables vars, newVars;
   BackendDAE.EquationArray eqs;
-  list<BackendDAE.Var> states;
-  DAE.ComponentRef newCref;
+  list<BackendDAE.Equation> newEqns;
+  DAE.ComponentRef newCref, cref;
   BackendDAE.Var newVar;
   BackendDAE.Equation newEqn;
+  HashSet.HashSet topLevelOutputs = HashSet.emptyHashSet();
 algorithm
-  systems := inBDAE.eqs;
+  systems := dae.eqs;
   for system in systems loop
-    eqs  := system.orderedEqs;
+    eqs := system.orderedEqs;
     vars := system.orderedVars;
-    states := BackendVariable.getAllStateVarFromVariables(vars);
-    if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
-      states := listAppend(states, BackendVariable.getAllClockedStatesFromVariables(vars));
-    end if;
-    for v in states loop
-      if BackendVariable.isVarOnTopLevelAndOutput(v) then
-        // generate new output var and add it
-        newCref := ComponentReference.prependStringCref(BackendDAE.outputStateAliasPrefix, BackendVariable.varCref(v));
-        newVar := BackendVariable.copyVarNewName(newCref, v);
-        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
-        vars := BackendVariable.addVar(newVar, vars);
+    newVars := BackendVariable.emptyVarsSized(realInt(intReal(BackendVariable.varsSize(vars)) * 1.4));
+    newEqns := {};
 
-        //update states to remove the output direction
-        v := BackendVariable.setVarDirection(v, DAE.BIDIR());
-        vars := BackendVariable.addVar(v, vars);
+    for v in BackendVariable.varList(vars) loop
+      if not BackendVariable.isVarOnTopLevelAndOutput(v) then
+        newVars := BackendVariable.addVar(v, newVars);
+      else
+        cref := BackendVariable.varCref(v);
+        topLevelOutputs := BaseHashSet.add(cref, topLevelOutputs);
+
+        // generate new internal alias var
+        newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cref);
+        newVar := BackendVariable.copyVarNewName(newCref, v);
+        newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
+        newVars := BackendVariable.addVar(newVar, newVars);
+
+        // update output to ordinary variable
+        v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
+        v := BackendVariable.removeFixedAttribute(v);
+        v := BackendVariable.removeStartAttribute(v);
+        newVars := BackendVariable.addVar(v, newVars);
 
         // generate new equation and add it
-        newEqn := BackendEquation.generateEquation(Expression.crefToExp(newCref), Expression.crefToExp(BackendVariable.varCref(v)), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
-        eqs := BackendEquation.add(newEqn, eqs);
+        newEqn := BackendEquation.generateEquation(Expression.crefToExp(cref), Expression.crefToExp(newCref), DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+        newEqns := newEqn::newEqns;
       end if;
     end for;
-    system.orderedVars := vars;
+
+    _ := traverseBackendDAEExpsEqns(eqs, introduceOutputAliases_eqs, topLevelOutputs);
+    eqs := BackendEquation.addList(newEqns, eqs);
+    system.orderedVars := newVars;
     system.orderedEqs := eqs;
-    system := BackendDAEUtil.clearEqSyst(system);
     returnSysts := system::returnSysts;
   end for;
+
   returnSysts := listReverse(returnSysts);
-  outBDAE.eqs := returnSysts;
-  outBDAE := BackendDAEUtil.transformBackendDAE(outBDAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-end createAliasVarsForOutputStates;
+  dae.eqs := returnSysts;
+end introduceOutputAliases;
+
+protected function introduceOutputAliases_eqs
+  input DAE.Exp inExp;
+  input HashSet.HashSet inStates;
+  output DAE.Exp outExp;
+  output HashSet.HashSet outStates;
+algorithm
+  (outExp, outStates) := Expression.traverseExpBottomUp(inExp, introduceOutputAliases_eqs2, inStates);
+end introduceOutputAliases_eqs;
+
+protected function introduceOutputAliases_eqs2
+  input DAE.Exp inExp;
+  input HashSet.HashSet inStates;
+  output DAE.Exp outExp;
+  output HashSet.HashSet outStates = inStates;
+algorithm
+  outExp := match inExp
+    local
+      DAE.Exp e1;
+      DAE.ComponentRef cr, newCref;
+
+    // replace der(cr) with der(<outputAliasPrefix> + cr)
+    case e1 as DAE.CREF(componentRef=cr) guard BaseHashSet.has(cr, inStates) algorithm
+      newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cr);
+      e1.componentRef := newCref;
+    then e1;
+
+    else inExp;
+  end match;
+end introduceOutputAliases_eqs2;
 
 protected function translateArrayList
   input Integer inElement;
@@ -7623,6 +7658,7 @@ end selectMatchingAlgorithm;
 public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (Uncertainties.dataReconciliation, "dataReconciliation"),
     (UnitCheck.unitChecking, "unitChecking"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
@@ -7663,7 +7699,6 @@ end allPreOptimizationModules;
 public function allPostOptimizationModules
   "This list contains all back end sim-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPostOptimizationModules = {
-    (BackendDAEUtil.createAliasVarsForOutputStates, "createAliasVarsForOutputStates"),
     (BackendInline.lateInlineFunction, "lateInlineFunction"),
     (DynamicOptimization.simplifyConstraints, "simplifyConstraints"),
     (CommonSubExpression.wrapFunctionCalls, "wrapFunctionCalls"),

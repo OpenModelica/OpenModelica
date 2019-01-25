@@ -774,7 +774,7 @@ algorithm
       list<BackendDAE.Equation> removedInitialEquationLst;
       Real fsize;
       Option<DAE.DAElist> odae;
-      Option<list<String>> strOptPostOptModules;
+      Option<list<String>> strPreOptModules;
       Boolean isFMI2;
       String fmiVersion;
       BackendDAE.SymbolicJacobians fmiDer;
@@ -844,10 +844,10 @@ algorithm
         else false;
       end match;
       // FMI 2.0: enable postOptModule to create alias variables for output states
-      strOptPostOptModules := if isFMI2 then SOME("createAliasVarsForOutputStates"::BackendDAEUtil.getPostOptModulesString()) else NONE();
+      strPreOptModules := if isFMI2 then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
 
       //BackendDump.printBackendDAE(dlow);
-      (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPostOptModules=strOptPostOptModules);
+      (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);
 
       // generate derivatives
       if isFMI2 and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then

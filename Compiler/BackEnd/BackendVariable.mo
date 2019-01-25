@@ -102,6 +102,22 @@ algorithm
   outVar.values := DAEUtil.setFixedAttr(oattr, SOME(DAE.BCONST(inBoolean)));
 end setVarFixed;
 
+public function removeFixedAttribute
+  input output BackendDAE.Var var;
+algorithm
+  if isSome(var.values) then
+    var.values := DAEUtil.setFixedAttr(var.values, NONE());
+  end if;
+end removeFixedAttribute;
+
+public function removeStartAttribute
+  input output BackendDAE.Var var;
+algorithm
+  if isSome(var.values) then
+    var.values := DAEUtil.setStartAttrOption(var.values, NONE());
+  end if;
+end removeStartAttribute;
+
 public function varFixed "author: PA
   Extracts the fixed attribute of a variable.
   The default fixed value is used if not found. Default is true for parameters
