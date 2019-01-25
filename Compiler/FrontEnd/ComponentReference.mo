@@ -3271,7 +3271,8 @@ algorithm
         // Pad the list of subscripts with : if necessary to fill out all dimensions.
         missing_subs = listLength(dims) - listLength(subs);
         if missing_subs > 0 then
-          subs = listAppend(subs, List.fill(DAE.WHOLEDIM(), missing_subs));
+          subs = listAppend(subs, List.fill(DAE.WHOLEDIM(), missing_subs))
+            annotation(__OpenModelica_DisableListAppendWarning=true);
         end if;
 
         // Use the subscripts to generate only the wanted elements.
@@ -3289,7 +3290,8 @@ algorithm
         // Pad the list of subscripts with : if necessary to fill out all dimensions.
         missing_subs = listLength(dims) - listLength(subs);
         if missing_subs > 0 then
-          subs = listAppend(subs, List.fill(DAE.WHOLEDIM(), missing_subs));
+          subs = listAppend(subs, List.fill(DAE.WHOLEDIM(), missing_subs))
+            annotation(__OpenModelica_DisableListAppendWarning=true);
         end if;
         // Use the subscripts to generate only the wanted elements.
       then

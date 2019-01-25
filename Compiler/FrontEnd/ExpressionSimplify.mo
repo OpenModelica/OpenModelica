@@ -1556,7 +1556,7 @@ algorithm
 
     case (1, _)
       equation
-        expl = List.map(inExpList, Expression.matrixToArray);
+        expl = List.map(inExpList, simplifyCatArg);
       then
         simplifyCat2(inDim, expl, {}, false);
 
@@ -1564,6 +1564,21 @@ algorithm
 
   end match;
 end simplifyCat;
+
+function simplifyCatArg
+  input DAE.Exp arg;
+  output DAE.Exp outArg;
+algorithm
+  outArg := match arg
+    local
+      DAE.Dimension dim;
+
+    case DAE.MATRIX() then Expression.matrixToArray(arg);
+    case DAE.CREF(ty = DAE.T_ARRAY(dims = {dim})) guard Expression.dimensionKnown(dim)
+      then DAE.ARRAY(arg.ty, true, Expression.expandExpression(arg, false));
+    else arg;
+  end match;
+end simplifyCatArg;
 
 protected function simplifyCat2
   input Integer dim;

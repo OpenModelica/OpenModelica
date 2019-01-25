@@ -287,7 +287,6 @@ algorithm
           case DAE.CALL(attr=DAE.CALL_ATTR(builtin=true), path=Absyn.IDENT("listAppend"), expLst=(e1 as DAE.CREF())::_)
             guard Expression.expEqual(lhs, e1)
             algorithm
-              print(stringDelimitList(list(SCodeDump.printCommentAndAnnotationStr(comment) for comment in ElementSource.getCommentsFromSource(source)), "\n"));
               if Flags.isSet(Flags.LIST_REVERSE_WRONG_ORDER) and not max(SCode.commentHasBooleanNamedAnnotation(comment, "__OpenModelica_DisableListAppendWarning") for comment in ElementSource.getCommentsFromSource(source)) then
                 Error.addSourceMessage(Error.LIST_REVERSE_WRONG_ORDER, {ExpressionDump.printExpStr(e1)}, ElementSource.getElementSourceFileInfo(source));
                 fail();
