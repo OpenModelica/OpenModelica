@@ -52,8 +52,8 @@ getErrorString();
 // true
 // ""
 // "CSTRModel.fmu"
-// "[openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable $outputStateAlias_cA has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
-// [openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable cA.$pDERFMIDER.dummyVarFMIDER has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// "[openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable cA has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
+// [openmodelica/cppruntime/fmu/modelExchange/2.0/CSTR.mo:24:3-28:72:writable] Warning: Variable $outputAlias_cA.$pDERFMIDER.dummyVarFMIDER has attribute stateSelect=StateSelect.always, but was selected as a continuous variable.
 // "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -91,8 +91,9 @@ getErrorString();
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"previous(T)\"
+//     name=\"previous(_D_outputAlias_TK)\"
 //     valueReference=\"0\"
+//     description=\"Coolant temperature\"
 //     variability=\"discrete\"
 //     causality=\"local\"
 //     clockIndex=\"1\"
@@ -101,18 +102,18 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
-//     name=\"previous(TK)\"
+//     name=\"previous(_D_outputAlias_cA)\"
 //     valueReference=\"1\"
-//     description=\"Coolant temperature\"
+//     description=\"Concentration\"
 //     variability=\"discrete\"
 //     causality=\"local\"
 //     clockIndex=\"1\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\" nominal=\"100.0\" unit=\"degC\"/>
+//     <Real start=\"0.0\" unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
-//     name=\"previous(cA)\"
+//     name=\"previous(_D_outputAlias_cB)\"
 //     valueReference=\"2\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
@@ -123,18 +124,17 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
-//     name=\"previous(cB)\"
+//     name=\"previous(T)\"
 //     valueReference=\"3\"
-//     description=\"Concentration\"
 //     variability=\"discrete\"
 //     causality=\"local\"
 //     clockIndex=\"1\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\" unit=\"mol/l\"/>
+//     <Real start=\"0.0\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"der(T)\"
+//     name=\"der(_D_outputAlias_TK)\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -144,7 +144,7 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
-//     name=\"der(TK)\"
+//     name=\"der(_D_outputAlias_cA)\"
 //     valueReference=\"5\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -154,7 +154,7 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
-//     name=\"der(cA)\"
+//     name=\"der(_D_outputAlias_cB)\"
 //     valueReference=\"6\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -164,7 +164,7 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"8\" -->
 //   <ScalarVariable
-//     name=\"der(cB)\"
+//     name=\"der(T)\"
 //     valueReference=\"7\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -204,34 +204,37 @@ getErrorString();
 //   </ScalarVariable>
 //   <!-- Index of variable = \"12\" -->
 //   <ScalarVariable
-//     name=\"_D_outputStateAlias_TK\"
+//     name=\"_D_outputAlias_TK\"
 //     valueReference=\"11\"
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     clockIndex=\"1\"
+//     previous=\"1\"
 //     initial=\"exact\">
 //     <Real start=\"112.9\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"13\" -->
 //   <ScalarVariable
-//     name=\"_D_outputStateAlias_cA\"
+//     name=\"_D_outputAlias_cA\"
 //     valueReference=\"12\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     clockIndex=\"1\"
+//     previous=\"2\"
 //     initial=\"exact\">
 //     <Real start=\"2.14\" unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"14\" -->
 //   <ScalarVariable
-//     name=\"_D_outputStateAlias_cB\"
+//     name=\"_D_outputAlias_cB\"
 //     valueReference=\"13\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     clockIndex=\"1\"
+//     previous=\"3\"
 //     initial=\"exact\">
 //     <Real start=\"1.09\" unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -262,7 +265,7 @@ getErrorString();
 //     variability=\"discrete\"
 //     causality=\"local\"
 //     clockIndex=\"1\"
-//     previous=\"1\"
+//     previous=\"4\"
 //     initial=\"exact\">
 //     <Real start=\"114.2\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
@@ -282,11 +285,10 @@ getErrorString();
 //     valueReference=\"18\"
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
-//     causality=\"local\"
+//     causality=\"output\"
 //     clockIndex=\"1\"
-//     previous=\"2\"
-//     initial=\"exact\">
-//     <Real start=\"112.9\" nominal=\"100.0\" unit=\"degC\"/>
+//     initial=\"calculated\">
+//     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"20\" -->
 //   <ScalarVariable
@@ -304,11 +306,10 @@ getErrorString();
 //     valueReference=\"20\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"local\"
+//     causality=\"output\"
 //     clockIndex=\"1\"
-//     previous=\"3\"
-//     initial=\"exact\">
-//     <Real start=\"2.14\" unit=\"mol/l\"/>
+//     initial=\"calculated\">
+//     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"22\" -->
 //   <ScalarVariable
@@ -316,11 +317,10 @@ getErrorString();
 //     valueReference=\"21\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
-//     causality=\"local\"
+//     causality=\"output\"
 //     clockIndex=\"1\"
-//     previous=\"4\"
-//     initial=\"exact\">
-//     <Real start=\"1.09\" unit=\"mol/l\"/>
+//     initial=\"calculated\">
+//     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"23\" -->
 //   <ScalarVariable
@@ -542,15 +542,15 @@ getErrorString();
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"12\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"13\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//       <Unknown index=\"14\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
-//     </Outputs>
-//     <DiscreteStates>
-//       <Unknown index=\"17\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //       <Unknown index=\"19\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //       <Unknown index=\"21\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //       <Unknown index=\"22\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//     </Outputs>
+//     <DiscreteStates>
+//       <Unknown index=\"12\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"13\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"14\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
+//       <Unknown index=\"17\" dependencies=\"1 2 3 4 15 18 20\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //     </DiscreteStates>
 //   </ModelStructure>
 // </fmiModelDescription>

@@ -55,26 +55,53 @@ readFile("modelDescription.tmp.xml");
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"p1\"
+//     name=\"_D_outputAlias_p1\"
 //     valueReference=\"0\"
 //     variability=\"continuous\"
-//     causality=\"output\"
-//     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
-//     name=\"p2\"
+//     name=\"_D_outputAlias_p2\"
 //     valueReference=\"1\"
 //     variability=\"continuous\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     initial=\"exact\">
 //     <Real start=\"5000000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
-//     name=\"p3\"
+//     name=\"_D_outputAlias_p3\"
 //     valueReference=\"2\"
+//     variability=\"continuous\"
+//     causality=\"local\"
+//     initial=\"calculated\">
+//     <Real min=\"0.0\" nominal=\"10000000.0\" unit=\"Pa\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"4\" -->
+//   <ScalarVariable
+//     name=\"p1\"
+//     valueReference=\"3\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"exact\">
+//     <Real start=\"100000.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"5\" -->
+//   <ScalarVariable
+//     name=\"p2\"
+//     valueReference=\"4\"
+//     variability=\"continuous\"
+//     causality=\"output\"
+//     initial=\"exact\">
+//     <Real start=\"200000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"6\" -->
+//   <ScalarVariable
+//     name=\"p3\"
+//     valueReference=\"5\"
 //     variability=\"continuous\"
 //     causality=\"output\"
 //     initial=\"exact\">
@@ -83,9 +110,9 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"5\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"6\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Outputs>
 //   </ModelStructure>
 // </fmiModelDescription>

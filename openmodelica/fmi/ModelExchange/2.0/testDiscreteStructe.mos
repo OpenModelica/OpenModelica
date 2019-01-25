@@ -71,7 +71,7 @@ readFile("modelDescription.tmp.xml");
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
-//     name=\"previous(y1)\"
+//     name=\"previous(_D_outputAlias_y1)\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -81,7 +81,7 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
-//     name=\"previous(y2)\"
+//     name=\"previous(_D_outputAlias_y2)\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -91,7 +91,7 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
-//     name=\"der(y1)\"
+//     name=\"der(_D_outputAlias_y1)\"
 //     valueReference=\"2\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -101,7 +101,7 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
-//     name=\"der(y2)\"
+//     name=\"der(_D_outputAlias_y2)\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
 //     causality=\"local\"
@@ -111,21 +111,23 @@ readFile("modelDescription.tmp.xml");
 //   </ScalarVariable>
 //   <!-- Index of variable = \"5\" -->
 //   <ScalarVariable
-//     name=\"_D_outputStateAlias_y1\"
+//     name=\"_D_outputAlias_y1\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     clockIndex=\"1\"
+//     previous=\"1\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
-//     name=\"_D_outputStateAlias_y2\"
+//     name=\"_D_outputAlias_y2\"
 //     valueReference=\"5\"
 //     variability=\"discrete\"
-//     causality=\"output\"
+//     causality=\"local\"
 //     clockIndex=\"1\"
+//     previous=\"2\"
 //     initial=\"exact\">
 //     <Real start=\"0.0\"/>
 //   </ScalarVariable>
@@ -153,22 +155,20 @@ readFile("modelDescription.tmp.xml");
 //     name=\"y1\"
 //     valueReference=\"8\"
 //     variability=\"discrete\"
-//     causality=\"local\"
+//     causality=\"output\"
 //     clockIndex=\"1\"
-//     previous=\"1\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     initial=\"calculated\">
+//     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"10\" -->
 //   <ScalarVariable
 //     name=\"y2\"
 //     valueReference=\"9\"
 //     variability=\"discrete\"
-//     causality=\"local\"
+//     causality=\"output\"
 //     clockIndex=\"1\"
-//     previous=\"2\"
-//     initial=\"exact\">
-//     <Real start=\"0.0\"/>
+//     initial=\"calculated\">
+//     <Real/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"11\" -->
 //   <ScalarVariable
@@ -200,12 +200,12 @@ readFile("modelDescription.tmp.xml");
 //   </ModelVariables>
 //   <ModelStructure>
 //     <Outputs>
-//       <Unknown index=\"5\" dependencies=\"1 7\" dependenciesKind=\"dependent dependent\" />
-//       <Unknown index=\"6\" dependencies=\"1 2 7\" dependenciesKind=\"dependent dependent dependent\" />
-//     </Outputs>
-//     <DiscreteStates>
 //       <Unknown index=\"9\" dependencies=\"1 7\" dependenciesKind=\"dependent dependent\" />
 //       <Unknown index=\"10\" dependencies=\"1 2 7\" dependenciesKind=\"dependent dependent dependent\" />
+//     </Outputs>
+//     <DiscreteStates>
+//       <Unknown index=\"5\" dependencies=\"1 7\" dependenciesKind=\"dependent dependent\" />
+//       <Unknown index=\"6\" dependencies=\"1 2 7\" dependenciesKind=\"dependent dependent dependent\" />
 //     </DiscreteStates>
 //   </ModelStructure>
 // </fmiModelDescription>
