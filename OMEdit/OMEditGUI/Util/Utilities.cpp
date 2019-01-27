@@ -421,6 +421,13 @@ void CodeColorsWidget::pickColor()
   emit colorUpdated();
 }
 
+QString Utilities::escapeForHtmlNonSecure(const QString &str)
+{
+  return QString(str)
+     .replace("& ", "&amp;") // should be the first replacement
+     .replace("< ", "&lt;");
+}
+
 /*!
  * \brief Utilities::tempDirectory
  * Returns the application temporary directory.

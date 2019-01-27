@@ -393,6 +393,12 @@ bool ComponentInfo::operator!=(const ComponentInfo &componentInfo) const
   return !operator==(componentInfo);
 }
 
+QString ComponentInfo::getHTMLDescription() const
+{
+  return QString("<b>%1</b><br/>&nbsp;&nbsp;&nbsp;&nbsp;%2 <i>\"%3\"<i>")
+      .arg(mClassName, mName, Utilities::escapeForHtmlNonSecure(mComment));
+}
+
 /*!
  * \brief ComponentInfo::isModiferClassRecord
  * Returns true if a modifier class is a record.

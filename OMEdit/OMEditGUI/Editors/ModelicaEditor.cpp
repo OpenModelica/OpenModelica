@@ -81,8 +81,17 @@ void ModelicaEditor::popUpCompleter()
     QList<CompleterItem> codesnippets = getCodeSnippets();
     mpPlainTextEdit->insertCompleterCodeSnippets(codesnippets);
   }
-  QStringList symbols = getCodeSymbols(word);
-  mpPlainTextEdit->insertCompleterSymbols(symbols);
+  QList<CompleterItem> classes, components;
+  getCompletionSymbols(word, classes, components);
+
+  std::sort(classes.begin(), classes.end());
+  classes.erase(std::unique(classes.begin(), classes.end()), classes.end());
+
+  std::sort(components.begin(), components.end());
+  components.erase(std::unique(components.begin(), components.end()), components.end());
+
+  mpPlainTextEdit->insertCompleterSymbols(classes);
+  mpPlainTextEdit->insertCompleterSymbols(components);
 
   QCompleter *completer = mpPlainTextEdit->completer();
   QRect cr = mpPlainTextEdit->cursorRect();
@@ -156,7 +165,7 @@ QString ModelicaEditor::wordUnderCursor()
   return mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin);
 }
 
-QStringList ModelicaEditor::getCodeSymbols(QString word)
+void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components)
 {
   QStringList nameComponents = word.split('.');
   QString lastPart;
@@ -169,12 +178,9 @@ QStringList ModelicaEditor::getCodeSymbols(QString word)
 
   QList<LibraryTreeItem*> contexts = getCandidateContexts(nameComponents);
 
-  QSet<QString> symbols;
   for (int i = 0; i < contexts.size(); ++i) {
-    contexts[i]->tryToComplete(symbols, lastPart);
+    contexts[i]->tryToComplete(classes, components, lastPart);
   }
-
-  return QStringList::fromSet(symbols);
 }
 
 /*!

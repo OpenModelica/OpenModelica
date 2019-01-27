@@ -676,7 +676,7 @@ LibraryTreeItem *LibraryTreeItem::getComponentsClass(const QString &name)
   return 0;
 }
 
-void LibraryTreeItem::tryToComplete(QSet<QString> &result, const QString &lastPart)
+void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QList<CompleterItem> &completionComponents, const QString &lastPart)
 {
   QList<LibraryTreeItem*> baseClasses = getInheritedClassesDeepList();
 
@@ -685,14 +685,14 @@ void LibraryTreeItem::tryToComplete(QSet<QString> &result, const QString &lastPa
     for (int i = 0; i < classes.size(); ++i) {
       if (classes[i]->getName().startsWith(lastPart) &&
               classes[i]->getNameStructure().compare("OMEdit.Search.Feature") != 0)
-        result.insert(classes[i]->getName());
+        completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
 
     const QList<ComponentInfo*> &components = baseClasses[bc]->getComponentsList();
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
       for (int i = 0; i < components.size(); ++i) {
         if (components[i]->getName().startsWith(lastPart))
-          result.insert(components[i]->getName());
+          completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
       }
     }
   }
@@ -857,6 +857,12 @@ void LibraryTreeItem::updateChildrenNameStructure()
 bool LibraryTreeItem::isInstantiated()
 {
   return mModelState == oms_modelState_instantiated;
+}
+
+QString LibraryTreeItem::getHTMLDescription() const
+{
+  return QString("<b>%1</b> %2<br/>&nbsp;&nbsp;&nbsp;&nbsp;<i>\"%3\"</i><br/>...")
+      .arg(mClassInformation.restriction, mName, Utilities::escapeForHtmlNonSecure(mClassInformation.comment));
 }
 
 /*!

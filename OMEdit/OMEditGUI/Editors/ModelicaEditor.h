@@ -62,7 +62,7 @@ public:
   static LibraryTreeItem *deepResolve(LibraryTreeItem *pItem, QStringList nameComponents);
   QList<LibraryTreeItem *> getCandidateContexts(QStringList nameComponents);
   static void tryToCompleteInSingleContext(QStringList &result, LibraryTreeItem *pItem, QString lastPart);
-  QStringList getCodeSymbols(QString word);
+  void getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components);
   static QList<CompleterItem> getCodeSnippets();
 private:
   QString mLastValidText;

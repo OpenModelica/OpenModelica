@@ -214,10 +214,24 @@ class CompleterItem
 {
 public:
   CompleterItem() {}
-  CompleterItem(QString key , QString value , QString select);
+  CompleterItem(const QString &key, const QString &value, const QString &select);
+  CompleterItem(const QString &value, const QString &description);
   QString mKey;
   QString mValue;
   QString mSelect;
+  QString mDescription;
+
+  // Supposing two items with equal keys and different descriptions are
+  // different enough to show both and hoping that if the above two fields
+  // are identical, then other fields would be identical as well...
+  bool operator<(const CompleterItem &other) const
+  {
+    return (mKey < other.mKey) || ((mKey == other.mKey) && (mDescription == other.mDescription));
+  }
+  bool operator==(const CompleterItem &other) const
+  {
+    return mKey == other.mKey && mDescription == other.mDescription;
+  }
 };
 
 Q_DECLARE_METATYPE(CompleterItem)
@@ -232,7 +246,7 @@ public:
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
   void clearCompleter();
-  void insertCompleterSymbols(QStringList symbols);
+  void insertCompleterSymbols(QList<CompleterItem> symbols);
   void insertCompleterKeywords(QStringList keywords);
   void insertCompleterTypes(QStringList types);
   void insertCompleterCodeSnippets(QList<CompleterItem> items);

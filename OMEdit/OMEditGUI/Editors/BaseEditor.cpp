@@ -754,11 +754,24 @@ bool PlainTextEdit::eventFilter(QObject *pObject, QEvent *pEvent)
  * The constructor is set from outside depending on which editor is used (eg.) MetaModelicaEditor,
  * ModelicaEditor,CEditor etc..
  */
-CompleterItem::CompleterItem(QString key, QString value, QString select)
+CompleterItem::CompleterItem(const QString &key, const QString &value, const QString &select)
+  : mKey(key), mValue(value), mSelect(select)
 {
-  mKey=key;
-  mValue=value;
-  mSelect=select;
+  int ind = value.indexOf(select, 0);
+  if (ind < 0) {
+    mDescription = value;
+  } else {
+    mDescription = QString("<b>%1</b><i>%2</i>%3").arg(
+          QStringRef(&value).left(ind).toString(),
+          select,
+          QStringRef(&value).right(value.size() - select.size() - ind).toString()
+        ).replace("\n", "<br/>");
+  }
+}
+
+CompleterItem::CompleterItem(const QString &value, const QString &description)
+  : mKey(value), mValue(value), mSelect(value), mDescription(description)
+{
 }
 
 void PlainTextEdit::clearCompleter()
@@ -766,12 +779,12 @@ void PlainTextEdit::clearCompleter()
   mpStandardItemModel->clear();
 }
 
-void PlainTextEdit::insertCompleterSymbols(QStringList symbols)
+void PlainTextEdit::insertCompleterSymbols(QList<CompleterItem> symbols)
 {
   for (int i = 0; i < symbols.size(); ++i) {
-    QStandardItem *pStandardItem = new QStandardItem(symbols[i]);
+    QStandardItem *pStandardItem = new QStandardItem(symbols[i].mKey);
     pStandardItem->setIcon(QIcon(":/Resources/icons/completerSymbol.svg"));
-    pStandardItem->setData(QVariant::fromValue(CompleterItem(symbols[i], symbols[i], "")), Qt::UserRole);
+    pStandardItem->setData(QVariant::fromValue(symbols[i]), Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }
 }
@@ -1545,7 +1558,7 @@ void PlainTextEdit::showCompletionItemToolTip(const QModelIndex &index)
   if (pTextEditorPage->getAutoCompleteCheckBox()->isChecked()) {
     QVariant value = index.data(Qt::UserRole);
     CompleterItem completerItem = qvariant_cast<CompleterItem>(value);
-    mpCompleterToolTipLabel->setText(completerItem.mValue);
+    mpCompleterToolTipLabel->setText(completerItem.mDescription);
     mpCompleterToolTipWidget->adjustSize();
     QRect rect = mpCompleter->popup()->visualRect(index);
     mpCompleterToolTipWidget->move(mpCompleter->popup()->mapToGlobal(QPoint(rect.x() + mpCompleter->popup()->width() + 2, rect.y() + 2)));

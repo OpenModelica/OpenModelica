@@ -127,6 +127,7 @@ public:
   // operator overloading
   bool operator==(const ComponentInfo &componentInfo) const;
   bool operator!=(const ComponentInfo &componentInfo) const;
+  QString getHTMLDescription() const;
 private:
   QString mClassName;
   QString mName;

@@ -434,6 +434,7 @@ namespace Utilities {
     AlwaysDeleteBom = 2
   };
 
+  QString escapeForHtmlNonSecure(const QString &str);
   QString& tempDirectory();
   QSettings* getApplicationSettings();
   void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);

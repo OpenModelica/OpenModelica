@@ -44,6 +44,7 @@
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 
+class CompleterItem;
 class GraphicsView;
 class ModelWidget;
 class ShapeAnnotation;
@@ -165,7 +166,7 @@ public:
   QList<LibraryTreeItem*> getInheritedClassesDeepList();
   LibraryTreeItem *getDirectComponentsClass(const QString &name);
   LibraryTreeItem *getComponentsClass(const QString &name);
-  void tryToComplete(QSet<QString> &result, const QString &lastPart);
+  void tryToComplete(QList<CompleterItem> &completionClasses, QList<CompleterItem> &completionComponents, const QString &lastPart);
   void removeChild(LibraryTreeItem *pLibraryTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
@@ -183,6 +184,7 @@ public:
   void emitConnectionAdded(LineAnnotation *pConnectionLineAnnotation) {emit connectionAdded(pConnectionLineAnnotation);}
   void emitCoOrdinateSystemUpdated(GraphicsView *pGraphicsView) {emit coOrdinateSystemUpdated(pGraphicsView);}
   bool isInstantiated();
+  QString getHTMLDescription() const;
 
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
