@@ -525,6 +525,11 @@ algorithm
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       binding_exp := Ceval.evalExp(binding_exp);
+    elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
+      try
+        binding_exp := Ceval.evalExp(binding_exp);
+      else
+      end try;
     else
       binding_exp := SimplifyExp.simplify(binding_exp);
     end if;
