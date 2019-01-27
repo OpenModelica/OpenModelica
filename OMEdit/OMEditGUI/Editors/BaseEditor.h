@@ -246,7 +246,7 @@ public:
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   LineNumberArea* getLineNumberArea() {return mpLineNumberArea;}
   void clearCompleter();
-  void insertCompleterSymbols(QList<CompleterItem> symbols);
+  void insertCompleterSymbols(QList<CompleterItem> symbols, const QString &iconResource);
   void insertCompleterKeywords(QStringList keywords);
   void insertCompleterTypes(QStringList types);
   void insertCompleterCodeSnippets(QList<CompleterItem> items);

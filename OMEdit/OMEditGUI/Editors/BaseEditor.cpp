@@ -779,11 +779,11 @@ void PlainTextEdit::clearCompleter()
   mpStandardItemModel->clear();
 }
 
-void PlainTextEdit::insertCompleterSymbols(QList<CompleterItem> symbols)
+void PlainTextEdit::insertCompleterSymbols(QList<CompleterItem> symbols, const QString &iconResource)
 {
   for (int i = 0; i < symbols.size(); ++i) {
     QStandardItem *pStandardItem = new QStandardItem(symbols[i].mKey);
-    pStandardItem->setIcon(QIcon(":/Resources/icons/completerSymbol.svg"));
+    pStandardItem->setIcon(QIcon(iconResource));
     pStandardItem->setData(QVariant::fromValue(symbols[i]), Qt::UserRole);
     mpStandardItemModel->appendRow(pStandardItem);
   }

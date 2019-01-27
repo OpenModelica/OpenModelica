@@ -90,8 +90,8 @@ void ModelicaEditor::popUpCompleter()
   std::sort(components.begin(), components.end());
   components.erase(std::unique(components.begin(), components.end()), components.end());
 
-  mpPlainTextEdit->insertCompleterSymbols(classes);
-  mpPlainTextEdit->insertCompleterSymbols(components);
+  mpPlainTextEdit->insertCompleterSymbols(classes, ":/Resources/icons/completerClass.svg");
+  mpPlainTextEdit->insertCompleterSymbols(components, ":/Resources/icons/completerComponent.svg");
 
   QCompleter *completer = mpPlainTextEdit->completer();
   QRect cr = mpPlainTextEdit->cursorRect();

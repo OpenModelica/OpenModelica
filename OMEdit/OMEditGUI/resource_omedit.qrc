@@ -207,6 +207,7 @@
         <file>Resources/icons/tlm-electric-bus-connector.svg</file>
         <file>Resources/icons/tlm-mechanical-bus-connector.svg</file>
         <file>Resources/icons/instantiate.svg</file>
-        <file>Resources/icons/completerSymbol.svg</file>
+        <file>Resources/icons/completerComponent.svg</file>
+        <file>Resources/icons/completerClass.svg</file>
     </qresource>
 </RCC>
