@@ -712,6 +712,10 @@ protected
 algorithm
   exp1 := inExp1; exp2 := inExp2;
   for fn in candidates loop
+    if listLength(fn.inputs) <> 2 then
+      continue;
+    end if;
+
     in1 :: in2 :: _ := fn.inputs;
     arg1_ty := InstNode.getType(in1);
     arg2_ty := InstNode.getType(in2);
