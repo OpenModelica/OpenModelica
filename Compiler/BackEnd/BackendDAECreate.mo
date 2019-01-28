@@ -1430,6 +1430,12 @@ algorithm
       then
         (eqns,reqns,ieqns);
 
+    case DAE.INITIAL_ASSERT()
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEquations,inREquations,inIEquations, DAE.NOT_EXPAND(), inInitialization);
+      then
+        (eqns,reqns,ieqns);
+
     case DAE.TERMINATE(message=msg,source=source)
       then
         (inEquations,inREquations,BackendDAE.ALGORITHM(0, DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}), source, DAE.NOT_EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC)::inIEquations);
