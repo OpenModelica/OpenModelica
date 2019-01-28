@@ -88,6 +88,7 @@ import SimplifyExp = NFSimplifyExp;
 import Restriction = NFRestriction;
 import EvalConstants = NFEvalConstants;
 import SimplifyModel = NFSimplifyModel;
+import InstNodeType = NFInstNode.InstNodeType;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -649,7 +650,11 @@ algorithm
       algorithm
         iter := match ComponentRef.node(prefix)
           case prefix_node as InstNode.COMPONENT_NODE()
-            then InstNode.COMPONENT_NODE("$i", prefix_node.visibility, Pointer.create(Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE, Component.info(Pointer.access(prefix_node.component)))), prefix_node.parent);
+            then InstNode.COMPONENT_NODE(
+              "$i", prefix_node.visibility,
+              Pointer.create(Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE,
+                             Component.info(Pointer.access(prefix_node.component)))),
+              prefix_node.parent, InstNodeType.NORMAL_COMP());
         end match;
         {Dimension.INTEGER(size = stop)} := dimensions;
         range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));
@@ -679,7 +684,11 @@ algorithm
       algorithm
         iter := match ComponentRef.node(prefix)
           case prefix_node as InstNode.COMPONENT_NODE()
-            then InstNode.COMPONENT_NODE("$i", prefix_node.visibility, Pointer.create(Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE, Component.info(Pointer.access(prefix_node.component)))), prefix_node.parent);
+            then InstNode.COMPONENT_NODE(
+              "$i", prefix_node.visibility,
+              Pointer.create(Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE,
+                             Component.info(Pointer.access(prefix_node.component)))),
+              prefix_node.parent, InstNodeType.NORMAL_COMP());
         end match;
         {Dimension.INTEGER(size = stop)} := dimensions;
         range := Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(stop));

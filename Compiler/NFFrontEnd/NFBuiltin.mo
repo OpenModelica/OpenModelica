@@ -160,25 +160,35 @@ constant ClassTree REAL_CLASS_TREE = ClassTree.FLAT_TREE(
   listArrayLiteral({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("unit", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("displayUnit", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("min", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("max", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("nominal", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.REAL(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("unbounded", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("stateSelect", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(STATESELECT_TYPE, Modifier.NOMOD())), InstNode.EMPTY_NODE())
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(STATESELECT_TYPE,
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
   DuplicateTree.EMPTY());
@@ -208,15 +218,20 @@ constant ClassTree INTEGER_CLASS_TREE = ClassTree.FLAT_TREE(
   listArrayLiteral({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("min", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("max", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.INTEGER(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(), Modifier.NOMOD())), InstNode.EMPTY_NODE())
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
   DuplicateTree.EMPTY());
@@ -240,11 +255,14 @@ constant ClassTree BOOLEAN_CLASS_TREE = ClassTree.FLAT_TREE(
   listArrayLiteral({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(), Modifier.NOMOD())), InstNode.EMPTY_NODE())
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
   DuplicateTree.EMPTY());
@@ -271,11 +289,14 @@ constant ClassTree STRING_CLASS_TREE = ClassTree.FLAT_TREE(
   listArrayLiteral({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(), Modifier.NOMOD())), InstNode.EMPTY_NODE())
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.BOOLEAN(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
   DuplicateTree.EMPTY());
@@ -333,11 +354,14 @@ constant ClassTree CLOCK_CLASS_TREE = ClassTree.FLAT_TREE(
   listArrayLiteral({}),
   listArrayLiteral({
     InstNode.COMPONENT_NODE("quantity", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.STRING(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("start", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(), Modifier.NOMOD())), InstNode.EMPTY_NODE()),
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP()),
     InstNode.COMPONENT_NODE("fixed", Visibility.PUBLIC,
-      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(), Modifier.NOMOD())), InstNode.EMPTY_NODE())
+      Pointer.createImmutable(Component.TYPE_ATTRIBUTE(Type.CLOCK(),
+      Modifier.NOMOD())), InstNode.EMPTY_NODE(), InstNodeType.NORMAL_COMP())
   }),
   listArray({}), // TODO: #4895: This should be listArrayLiteral too, but causes compilation issues.
   DuplicateTree.EMPTY());
@@ -362,7 +386,8 @@ constant InstNode TIME =
       NFComponent.INPUT_ATTR,
       NONE(),
       Absyn.dummyInfo)),
-    InstNode.EMPTY_NODE());
+    InstNode.EMPTY_NODE(),
+    InstNodeType.NORMAL_COMP());
 
 constant ComponentRef TIME_CREF = ComponentRef.CREF(TIME, {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY());
 

@@ -81,7 +81,8 @@ constant Component INT_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NO
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   Visibility.PUBLIC,
-  Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(INT_COMPONENT), InstNode.EMPTY_NODE(),
+  InstNodeType.NORMAL_COMP());
 
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
@@ -89,7 +90,8 @@ constant Component REAL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_N
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   Visibility.PUBLIC,
-  Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(REAL_COMPONENT), InstNode.EMPTY_NODE(),
+  InstNodeType.NORMAL_COMP());
 
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
@@ -97,7 +99,8 @@ constant Component BOOL_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_N
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   Visibility.PUBLIC,
-  Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(BOOL_COMPONENT), InstNode.EMPTY_NODE(),
+  InstNodeType.NORMAL_COMP());
 
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
@@ -105,7 +108,8 @@ constant Component STRING_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   Visibility.PUBLIC,
-  Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(STRING_COMPONENT), InstNode.EMPTY_NODE(),
+  InstNodeType.NORMAL_COMP());
 
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
@@ -113,7 +117,8 @@ constant Component ENUM_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_N
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   Visibility.PUBLIC,
-  Pointer.createImmutable(ENUM_COMPONENT), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(ENUM_COMPONENT), InstNode.EMPTY_NODE(),
+  InstNodeType.NORMAL_COMP());
 
 // Integer(e)
 constant array<NFInstNode.CachedData> EMPTY_NODE_CACHE = listArrayLiteral({
@@ -289,7 +294,8 @@ constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_
 
 constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
   Visibility.PUBLIC,
-  Pointer.createImmutable(CLOCK_COMPONENT), InstNode.EMPTY_NODE());
+  Pointer.createImmutable(CLOCK_COMPONENT), InstNode.EMPTY_NODE(),
+  InstNodeType.NORMAL_COMP());
 
 constant InstNode CLOCK_DUMMY_NODE = NFInstNode.CLASS_NODE("Clock",
   DUMMY_ELEMENT, Visibility.PUBLIC, Pointer.createImmutable(Class.NOT_INSTANTIATED()),

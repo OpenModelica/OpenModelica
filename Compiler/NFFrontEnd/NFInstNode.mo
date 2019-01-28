@@ -80,6 +80,13 @@ uniontype InstNodeType
   record ROOT_CLASS
     "The root of the instance tree, i.e. the class that the instantiation starts from."
   end ROOT_CLASS;
+
+  record NORMAL_COMP
+  end NORMAL_COMP;
+
+  record REDECLARED_COMP
+    InstNode parent "The parent of the replaced component";
+  end REDECLARED_COMP;
 end InstNodeType;
 
 encapsulated package NodeTree
@@ -226,6 +233,7 @@ uniontype InstNode
     Visibility visibility;
     Pointer<Component> component;
     InstNode parent "The instance that this component is part of.";
+    InstNodeType nodeType;
   end COMPONENT_NODE;
 
   record INNER_OUTER_NODE
@@ -288,7 +296,7 @@ uniontype InstNode
   algorithm
     SCode.COMPONENT(name = name, prefixes = SCode.PREFIXES(visibility = vis)) := definition;
     node := COMPONENT_NODE(name, Prefixes.visibilityFromSCode(vis),
-      Pointer.create(Component.new(definition)), parent);
+      Pointer.create(Component.new(definition)), parent, InstNodeType.NORMAL_COMP());
   end newComponent;
 
   function newExtends
@@ -313,7 +321,8 @@ uniontype InstNode
     input InstNode parent;
     output InstNode node;
   algorithm
-    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component), parent);
+    node := COMPONENT_NODE(name, Visibility.PUBLIC, Pointer.create(component),
+                           parent, InstNodeType.NORMAL_COMP());
   end fromComponent;
 
   function isClass
@@ -760,6 +769,12 @@ uniontype InstNode
         then
           ();
 
+      case COMPONENT_NODE()
+        algorithm
+          node.nodeType := nodeType;
+        then
+          ();
+
       else ();
     end match;
   end setNodeType;
@@ -859,8 +874,13 @@ uniontype InstNode
     output list<InstNode> scopes;
   algorithm
     scopes := match node
+      local
+        InstNode parent;
+
       case CLASS_NODE() then scopeListClass(node, node.nodeType, includeRoot, accumScopes);
       case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
+      case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+        then scopeList(parent, includeRoot, node :: accumScopes);
       case COMPONENT_NODE() then scopeList(node.parent, includeRoot, node :: accumScopes);
       case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
       else accumScopes;

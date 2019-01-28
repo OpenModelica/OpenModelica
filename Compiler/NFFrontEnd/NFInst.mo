@@ -1400,6 +1400,8 @@ protected
   Component.Attributes attr;
   array<Dimension> dims;
   Option<SCode.Comment> cmt;
+  InstNode rdcl_node;
+  InstNodeType rdcl_type;
 algorithm
   // Check that the redeclare element actually is a component.
   if not InstNode.isComponent(redeclareNode) then
@@ -1409,9 +1411,11 @@ algorithm
     fail();
   end if;
 
-  instComponent(redeclareNode, outerAttr, constrainingMod, true);
+  rdcl_type := InstNodeType.REDECLARED_COMP(InstNode.parent(originalNode));
+  rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
+  instComponent(rdcl_node, outerAttr, constrainingMod, true);
   orig_comp := InstNode.component(originalNode);
-  rdcl_comp := InstNode.component(redeclareNode);
+  rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
     case (Component.UNTYPED_COMPONENT(), Component.UNTYPED_COMPONENT())
