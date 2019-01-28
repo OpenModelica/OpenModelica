@@ -1,0 +1,45 @@
+// name: testTicket5294
+// keywords: initialization, if equations
+// status: correct
+// cflags:
+// teardown_command: rm -rf  output.log
+//
+
+loadString("
+model A
+  Real x,xd;
+  parameter Real lb=5, ub=10;
+equation
+initial equation
+  if x<ub then
+    assert(der(x)>49, \"Call ub assert\\n\");
+  end if;
+  if x<lb then
+    assert(der(x)<49, \"Call lb assert\\n\");
+  end if;
+equation
+  der(x) = sin(x*time)+lb*ub;
+  xd = der(x);
+end A;
+");
+getErrorString();
+
+simulate(A);
+getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'A', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Simulation execution failed for model: A
+// assert            | warning | The following assertion has been violated during initialization at time 0.000000
+// |                 | |       | if x < lb then der(x) < 49.0 else true
+// assert            | error   | Call lb assert
+// assert            | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// "
+// endResult

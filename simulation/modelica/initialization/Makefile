@@ -53,6 +53,7 @@ startValue1.mos \
 startValue2.mos \
 startValue3.mos \
 terminate.mos \
+testIfAssert.mos \
 underdeterminedTest1.mos \
 underdeterminedTest2.mos \
 underdeterminedTest3.mos \
