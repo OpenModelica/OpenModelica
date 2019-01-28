@@ -271,13 +271,14 @@ algorithm
         ty := Expression.typeOf(e);
         dim := Type.nthDimension(ty, 1);
 
-        if Dimension.isOne(dim) then
-          e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
-          body := Statement.mapExpList(stmt.body,
-            function Expression.replaceIterator(iterator = stmt.iterator, iteratorValue = e));
-          body := simplifyStatements(body);
-          statements := listAppend(body, statements);
-        elseif not Dimension.isZero(dim) then
+        //if Dimension.isOne(dim) then
+        //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
+        //  body := Statement.mapExpList(stmt.body,
+        //    function Expression.replaceIterator(iterator = stmt.iterator, iteratorValue = e));
+        //  body := simplifyStatements(body);
+        //  statements := listAppend(listReverse(body), statements);
+        //elseif not Dimension.isZero(dim) then
+        if not Dimension.isZero(dim) then
           stmt.range := SOME(SimplifyExp.simplify(e));
           stmt.body := simplifyStatements(stmt.body);
           statements := stmt :: statements;
@@ -375,7 +376,7 @@ algorithm
           if Expression.isTrue(cond) then
             if listEmpty(accum) then
               // If it's the first branch, remove the if and keep only the branch body.
-              elements := listAppend(listReverse(simplifyEquations(body)), elements);
+              elements := listAppend(simplifyEquations(body), elements);
               return;
             else
               // Otherwise just discard the rest of the branches.
