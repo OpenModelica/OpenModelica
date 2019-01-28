@@ -2226,19 +2226,27 @@ algorithm
   (osyst,oshared) := matchcontinue (isyst, ishared)
     local
       BackendDAE.Variables vars, globalKnownVars;
-      BackendDAE.EquationArray eqns;
+      BackendDAE.EquationArray eqns, initialEqs;
       list<BackendDAE.Equation> eqnslst, asserts;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      Boolean systChanged;
 
     case ( syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),
-           shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars) )
+           shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars, initialEqs=initialEqs) )
       algorithm
         // traverse the equations
         eqnslst := BackendEquation.equationList(eqns);
         // traverse equations in reverse order, than branch equations of if equaitions need no reverse
-        ((eqnslst,asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
+        ((eqnslst,asserts,systChanged)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
         syst.orderedEqs := BackendEquation.listEquation(eqnslst);
+
+        // traverse the initial equations
+        eqnslst := BackendEquation.equationList(initialEqs);
+        // traverse equations in reverse order, than branch equations of if equaitions need no reverse
+        ((eqnslst,asserts,true)) := List.fold31(listReverse(eqnslst), simplifyIfEquationsFinder, globalKnownVars, {},{},systChanged);
+        shared.initialEqs := BackendEquation.listEquation(eqnslst);
+
         syst := BackendDAEUtil.clearEqSyst(syst);
         syst := BackendEquation.requationsAddDAE(asserts, syst);
       then (syst, shared);
