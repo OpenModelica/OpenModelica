@@ -1098,8 +1098,8 @@ algorithm
 
   while RangeIterator.hasNext(range_iter) loop
     (range_iter, val) := RangeIterator.next(range_iter);
-    unrolled_body := list(Equation.mapExp(eq,
-      function Expression.replaceIterator(iterator = iter, iteratorValue = val)) for eq in body);
+    unrolled_body := Equation.mapExpList(body,
+      function Expression.replaceIterator(iterator = iter, iteratorValue = val));
     unrolled_body := flattenEquations(unrolled_body, prefix);
     equations := listAppend(unrolled_body, equations);
   end while;

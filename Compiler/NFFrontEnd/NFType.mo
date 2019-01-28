@@ -822,6 +822,16 @@ public
     ENUMERATION(typePath = name) := ty;
   end enumName;
 
+  function enumSize
+    input Type ty;
+    output Integer size;
+  protected
+    list<String> literals;
+  algorithm
+    ENUMERATION(literals = literals) := ty;
+    size := listLength(literals);
+  end enumSize;
+
   function box
     input Type ty;
     output Type boxedType;

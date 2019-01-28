@@ -46,6 +46,7 @@ import NFBinding.Binding;
 import Variable = NFVariable;
 import Algorithm = NFAlgorithm;
 import Dimension = NFDimension;
+import Subscript = NFSubscript;
 
 protected
 import MetaModelica.Dangerous.*;
@@ -250,6 +251,8 @@ algorithm
     local
       Expression e, lhs, rhs;
       Type ty;
+      Dimension dim;
+      list<Statement> body;
 
     case Statement.ASSIGNMENT()
       algorithm
@@ -265,8 +268,17 @@ algorithm
 
     case Statement.FOR(range = SOME(e))
       algorithm
-        if not Type.isEmptyArray(Expression.typeOf(e)) then
-          stmt.range := SimplifyExp.simplifyOpt(stmt.range);
+        ty := Expression.typeOf(e);
+        dim := Type.nthDimension(ty, 1);
+
+        if Dimension.isOne(dim) then
+          e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
+          body := Statement.mapExpList(stmt.body,
+            function Expression.replaceIterator(iterator = stmt.iterator, iteratorValue = e));
+          body := simplifyStatements(body);
+          statements := listAppend(body, statements);
+        elseif not Dimension.isZero(dim) then
+          stmt.range := SOME(SimplifyExp.simplify(e));
           stmt.body := simplifyStatements(stmt.body);
           statements := stmt :: statements;
         end if;
@@ -363,7 +375,7 @@ algorithm
           if Expression.isTrue(cond) then
             if listEmpty(accum) then
               // If it's the first branch, remove the if and keep only the branch body.
-              elements := listAppend(simplifyEquations(body), elements);
+              elements := listAppend(listReverse(simplifyEquations(body)), elements);
               return;
             else
               // Otherwise just discard the rest of the branches.
@@ -431,7 +443,7 @@ algorithm
     if Expression.isTrue(cond) then
       if listEmpty(accum) then
         // If it's the first branch, remove the if and keep only the branch body.
-        elements := listAppend(simplifyFunc(body), elements);
+        elements := listAppend(listReverse(simplifyFunc(body)), elements);
         return;
       else
         // Otherwise just discard the rest of the branches.

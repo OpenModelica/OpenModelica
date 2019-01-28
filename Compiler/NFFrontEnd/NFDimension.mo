@@ -218,9 +218,21 @@ public
   algorithm
     isZero := match dim
       case INTEGER() then dim.size == 0;
+      case ENUM() then Type.enumSize(dim.enumType) == 0;
       else false;
     end match;
   end isZero;
+
+  function isOne
+    input Dimension dim;
+    output Boolean isOne;
+  algorithm
+    isOne := match dim
+      case INTEGER() then dim.size == 1;
+      case ENUM() then Type.enumSize(dim.enumType) == 1;
+      else false;
+    end match;
+  end isOne;
 
   function subscriptType
     "Returns the expected type of a subscript for the given dimension."
