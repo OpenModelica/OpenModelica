@@ -680,25 +680,6 @@ The realtime synchronization is done by OMEdit so no additional time synchroniza
 
 .. _omedit-interactive :
 
-Instead of a result file, OMEdit can load Functional Mock-up Units to retrieve the data for the animation of multibody systems.
-Just like opening a mat-file from the animation-plotting view, one can open an FMU-file.
-Necessarily, the FMU has to be generated with the *+d=visxml* flag activated, so that a scene description file is generated in the same directory as the FMU.
-Currently, only FMU 1.0 and FMU 2.0 model exchange are supported.
-When choosing an FMU, the simulation settings window pops up to choose solver and step size.
-Afterwards, the model initializes and can be simulated by pressing the play button.
-
-Interactive Realtime Animation of FMUs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-FMUs can be simulated with realtime user interaction.
-A possible solution is to equip the model with an interaction model from the Modelica_DeviceDrivers library (https://github.com/modelica/Modelica_DeviceDrivers).
-The realtime synchronization is done by OMEdit so no additional time synchronization model is necessary.
-
- .. figure :: media/interactive_model.png
-  :name: An interactive multibody system model using Modelic_DeviceDrivers models.
-
-  
-  
 Interactive Simulation
 ----------------------
 
