@@ -81,6 +81,16 @@ public
         input Entry entry2;
         output Boolean isEqual = index(entry1) == index(entry2);
       end isEqual;
+
+      function isImport
+        input Entry entry;
+        output Boolean isImport;
+      algorithm
+        isImport := match entry
+          case IMPORT() then true;
+          else false;
+        end match;
+      end isImport;
     end Entry;
 
     import BaseAvlTree;
@@ -1763,6 +1773,13 @@ public
       Integer old_id = LookupTree.Entry.index(oldEntry);
       DuplicateTree.EntryType ty;
     algorithm
+      // Overwrite the existing entry if it's an import. This happens when a
+      // class both imports and inherits the same name.
+      if LookupTree.Entry.isImport(oldEntry) then
+        entry := newEntry;
+        return;
+      end if;
+
       dups := Mutable.access(duplicates);
       opt_dup_entry := DuplicateTree.getOpt(dups, name);
 
