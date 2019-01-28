@@ -190,6 +190,7 @@ equation
 
   ca1 = -ca2;
   c1 = ca2 * ca3;
+  c1 = 1 - c2;
 end OperatorOverloadComplex;
 
 // Result:
@@ -373,5 +374,6 @@ end OperatorOverloadComplex;
 //   c8 = Complex.'0'();
 //   ca1 = Complex.'-'.negateArr(ca2);
 //   c1 = Complex.'*'.scalarProduct(ca2, ca3);
+//   c1 = Complex.'-'.subtract(Complex.'constructor'.fromReal(1.0, 0.0), c2);
 // end OperatorOverloadComplex;
 // endResult
