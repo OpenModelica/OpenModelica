@@ -669,7 +669,7 @@ When choosing an FMU, the simulation settings window pops up to choose solver an
 Afterwards, the model initializes and can be simulated by pressing the play button.
 
 Interactive Realtime Animation of FMUs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 FMUs can be simulated with realtime user interaction.
 A possible solution is to equip the model with an interaction model from the Modelica_DeviceDrivers library (https://github.com/modelica/Modelica_DeviceDrivers).
