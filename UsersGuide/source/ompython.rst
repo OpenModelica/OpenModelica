@@ -250,8 +250,8 @@ Standard set methods
 
 Two calling possibilities are accepted using setXXXs(),where "XXX" can be any of above functions.
 
-- setXXX(k) with K being a sequence of keyword assignments (e.g.) (name = value).
-- setXXX(D) with D being a dictionary with quantity names as keywords and values.
+- setXXX(K) with K being a sequence of keyword assignments (e.g.) (name = value).
+- setXXX(**D) with D being a dictionary with quantity names as keywords and values, being expanded by ** into the form of K.
 
 Usage of setMethods
 ~~~~~~~~~~~~~~~~~~~
