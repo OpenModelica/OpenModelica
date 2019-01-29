@@ -875,7 +875,7 @@ function convertInitialAlgorithms
   input list<Algorithm> algorithms;
   input output list<DAE.Element> elements;
 algorithm
-  for alg in algorithms loop
+  for alg in listReverse(algorithms) loop
     elements := convertInitialAlgorithm(alg, elements);
   end for;
 end convertInitialAlgorithms;

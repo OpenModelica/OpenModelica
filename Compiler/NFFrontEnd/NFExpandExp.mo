@@ -943,13 +943,11 @@ public
     input Type ty;
     output Expression outExp;
     output Boolean expanded;
-  protected
-    Type ety = Type.arrayElementType(ty);
   algorithm
     (outExp, expanded) := expand(exp);
 
     if expanded then
-      outExp := Expression.mapArrayElements(outExp, function Expression.typeCast(castTy = ety));
+      outExp := Expression.typeCastElements(outExp, ty);
     else
       outExp := exp;
     end if;

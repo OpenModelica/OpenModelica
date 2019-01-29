@@ -817,7 +817,7 @@ public
   algorithm
     exp := match (exp, ty)
       local
-        Type t;
+        Type t, ety;
         list<Expression> el;
 
       case (INTEGER(), Type.REAL())
@@ -827,13 +827,19 @@ public
 
       case (ARRAY(ty = t, elements = el), _)
         algorithm
-          el := list(typeCastElements(e, ty) for e in el);
+          ety := Type.arrayElementType(ty);
+          el := list(typeCastElements(e, ety) for e in el);
           t := Type.setArrayElementType(t, ty);
         then
           ARRAY(t, el, exp.literal);
 
       case (UNARY(), _)
         then UNARY(exp.operator, typeCastElements(exp.exp, ty));
+
+      case (IF(), _)
+        then IF(exp.condition,
+                typeCastElements(exp.trueBranch, ty),
+                typeCastElements(exp.falseBranch, ty));
 
       else
         algorithm

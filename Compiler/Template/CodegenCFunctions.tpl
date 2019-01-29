@@ -2193,7 +2193,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
   case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
     case "integer" then
-      'pack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
+      'pack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);<%\n%>'
     else ""
   case SIMEXTARG(isInput = false, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
@@ -2315,6 +2315,12 @@ template extFunCallVarcopy(SimExtArg arg, Text &auxFunction)
  "Helper to extFunCall."
 ::=
 match arg
+case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
+  // Inputs that have been packed should be unpacked after the external call.
+  match expTypeShort(ty)
+  case "integer" then
+  'unpack_integer_array(&<%contextCref(c,contextFunction,&auxFunction)%>);'
+  else ""
 case SIMEXTARG(outputIndex=0) then ""
 case SIMEXTARG(outputIndex=oi, isArray=true, cref=c, type_=ty) then
   match expTypeShort(ty)
