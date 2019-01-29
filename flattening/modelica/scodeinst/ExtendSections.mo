@@ -52,9 +52,9 @@ end ExtendSections;
 //   b = 2.0;
 //   y = 2.0;
 // initial algorithm
-//   w := 5.0;
-// initial algorithm
 //   d := 4.0;
+// initial algorithm
+//   w := 5.0;
 // equation
 //   a = 1.0;
 //   x = 4.0;

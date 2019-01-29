@@ -12,6 +12,6 @@ end IfExpression3;
 // Result:
 // class IfExpression3
 //   parameter Boolean b = true;
-//   Real x = /*Real*/(if b then 1 else 2);
+//   Real x = if b then 1.0 else 2.0;
 // end IfExpression3;
 // endResult
