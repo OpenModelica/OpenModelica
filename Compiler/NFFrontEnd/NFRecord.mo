@@ -163,22 +163,23 @@ function collectRecordParam
   input output list<InstNode> locals;
 protected
   Component comp;
+  InstNode comp_node = InstNode.resolveInner(component);
 algorithm
-  if InstNode.isEmpty(component) then
+  if InstNode.isEmpty(comp_node) then
     return;
   end if;
 
-  if InstNode.isProtected(component) then
-    locals := component :: locals;
+  if InstNode.isProtected(comp_node) then
+    locals := comp_node :: locals;
     return;
   end if;
 
-  comp := InstNode.component(component);
+  comp := InstNode.component(comp_node);
 
   if Component.isConst(comp) and Component.hasBinding(comp) then
-    locals := component :: locals;
+    locals := comp_node :: locals;
   else
-    inputs := component :: inputs;
+    inputs := comp_node :: inputs;
   end if;
 end collectRecordParam;
 
