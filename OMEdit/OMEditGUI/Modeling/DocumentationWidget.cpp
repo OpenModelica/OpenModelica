@@ -821,6 +821,8 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
         LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
         pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
       }
+      /* ticket:5190 Save the class when documentation save button is hit. */
+      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
       mEditType = EditType::None;
       showDocumentation(pNextLibraryTreeItem ? pNextLibraryTreeItem : pLibraryTreeItem);
     }
