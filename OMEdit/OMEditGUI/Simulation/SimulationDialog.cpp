@@ -975,6 +975,11 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   return result;
 }
 
+/*!
+ * \brief SimulationDialog::createSimulationOptions
+ * Creates the SimulationOptions
+ * \return
+ */
 SimulationOptions SimulationDialog::createSimulationOptions()
 {
   SimulationOptions simulationOptions;
@@ -983,7 +988,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setStopTime(mpStopTimeTextBox->text());
   simulationOptions.setMethod(mpMethodComboBox->currentText());
   simulationOptions.setTolerance(mpToleranceTextBox->text());
-  simulationOptions.setJacobian(mpJacobianComboBox->itemData(mpJacobianComboBox->currentIndex()).toString());
+  simulationOptions.setJacobian(mpJacobianComboBox->currentText());
   simulationOptions.setRootFinding(mpRootFindingCheckBox->isChecked());
   simulationOptions.setRestartAfterEvent(mpRestartAfterEventCheckBox->isChecked());
   simulationOptions.setInitialStepSize(mpInitialStepSizeTextBox->text());
