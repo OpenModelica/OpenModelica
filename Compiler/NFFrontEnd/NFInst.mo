@@ -2475,6 +2475,8 @@ algorithm
     // generation only seems to support C.
     case "C" then ();
     case "FORTRAN 77" then ();
+    // Not in the specification, but used by libraries and allowed by other tools.
+    case "Fortran 77" then ();
     case "builtin" then ();
     else
       algorithm
