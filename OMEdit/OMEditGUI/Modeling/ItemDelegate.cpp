@@ -154,6 +154,10 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight());
     painter->restore();
   }
+  /* ticket:5050 Use Qt::ElideRight for value column. Other columns use Qt::ElideMiddle. */
+  if (parent() && (qobject_cast<VariablesTreeView*>(parent())) && index.column() == 1) {
+    opt.textElideMode = Qt::ElideRight;
+  }
   /* if rich text flag is set */
   if (mDrawRichText) {
     QAbstractTextDocumentLayout::PaintContext ctx;
