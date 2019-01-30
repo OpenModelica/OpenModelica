@@ -686,7 +686,7 @@ algorithm
 
       case (Expression.REAL(), Expression.REAL(), Expression.REAL())
         algorithm
-          expl := list(Expression.REAL(r) for r in start.value:step.value:stop.value);
+          expl := evalRangeReal(start.value, step.value, stop.value);
         then
           (Type.REAL(), expl);
 
@@ -706,7 +706,7 @@ algorithm
 
       case (Expression.REAL(), Expression.REAL())
         algorithm
-          expl := list(Expression.REAL(r) for r in start.value:stop.value);
+          expl := evalRangeReal(start.value, 1.0, stop.value);
         then
           (Type.REAL(), expl);
 
@@ -733,6 +733,32 @@ algorithm
   exp := Expression.makeArray(Type.ARRAY(ty, {Dimension.fromInteger(listLength(expl))}),
                               expl, literal = true);
 end evalRange;
+
+function evalRangeReal
+  input Real start;
+  input Real step;
+  input Real stop;
+  output list<Expression> result;
+protected
+  Integer steps;
+algorithm
+  steps := Util.realRangeSize(start, step, stop);
+
+  // Real ranges are tricky, make sure that start and stop are reproduced
+  // exactly if they are part of the range.
+  if steps == 0 then
+    result := {};
+    return;
+  elseif steps == 1 then
+    result := {Expression.REAL(start)};
+  else
+    result := {Expression.REAL(stop)};
+    for i in steps-1:-1:1 loop
+      result := Expression.REAL(start + i * step) :: result;
+    end for;
+    result := Expression.REAL(start) :: result;
+  end if;
+end evalRangeReal;
 
 function printFailedEvalError
   input String name;
