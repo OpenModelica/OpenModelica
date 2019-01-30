@@ -187,7 +187,7 @@ $(UMFPACK_LIB_TARGET): 3rdParty/SuiteSparse/CMakeLists.txt
 umfpack: $(UMFPACK_LIB_TARGET)
 
 umfpack-clean:
-	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && make clean ; fi
+	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && $(MAKE) clean ; fi
 	rm -rf 3rdParty/SuiteSparse/build
 	rm -rf $(OMBUILDDIR)/include/omc/c/suitesparse
 	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
@@ -292,7 +292,7 @@ $(builddir_lib_omc)/$(LIBCMINPACKLIB): 3rdParty/CMinpack/build/Makefile
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	#This is a bad idea, because the cache contains the absolute path to cmake that was used for build -> if the cmake location has changed, the clean command will fail
-	#if test -f 3rdParty/CMinpack/build/Makefile; then make -C 3rdParty/CMinpack/build clean; fi
+	#if test -f 3rdParty/CMinpack/build/Makefile; then $(MAKE) -C 3rdParty/CMinpack/build clean; fi
 	#rm -f 3rdParty/CMinpack/build/Makefile
 	rm -rf 3rdParty/CMinpack/build
 
@@ -318,19 +318,19 @@ libzmq-clean:
 
 metis: $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT): 3rdParty/metis-5.1.0/CMakeLists.txt
-	(cd 3rdParty/metis-5.1.0 && $(CMAKE) ./ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" make)
+	(cd 3rdParty/metis-5.1.0 && $(CMAKE) ./ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE))
 	cp 3rdParty/metis-5.1.0/libmetis/libmetis$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 metis-clean:
-	test ! -f 3rdParty/metis-5.1.0/Makefile || make -C 3rdParty/metis-5.1.0 clean
+	test ! -f 3rdParty/metis-5.1.0/Makefile || $(MAKE) -C 3rdParty/metis-5.1.0 clean
 	rm -rf 3rdParty/metis-5.1.0/CMakeCache.txt 3rdParty/metis-5.1.0/libmetis/libmetis.a 3rdParty/metis-5.1.0/CMakeFiles 3rdParty/metis-5.1.0/Makefile 3rdParty/metis-5.1.0/cmake_install.cmake 3rdParty/metis-5.1.0/include/CMakeFiles 3rdParty/metis-5.1.0/include/Makefile 3rdParty/metis-5.1.0/include/cmake_install.cmake 3rdParty/metis-5.1.0/libmetis/CMakeFiles 3rdParty/metis-5.1.0/libmetis/Makefile 3rdParty/metis-5.1.0/libmetis/cmake_install.cmake 3rdParty/metis-5.1.0/programs/CMakeFiles 3rdParty/metis-5.1.0/programs/Makefile 3rdParty/metis-5.1.0/programs/cmake_install.cmake
 
 Cdaskr: 3rdParty/Cdaskr/solver/libcdaskr.a
 3rdParty/Cdaskr/solver/libcdaskr.a:
 	test -d 3rdParty/Cdaskr/solver
-	(cd 3rdParty/Cdaskr/solver && make -f Makefile CC="$(CC)" CFLAGS="$(CFLAGS)")
+	(cd 3rdParty/Cdaskr/solver && $(MAKE) -f Makefile CC="$(CC)" CFLAGS="$(CFLAGS)")
 
 Cdaskr-clean:
-	cd 3rdParty/Cdaskr/solver && make -f Makefile clean
+	cd 3rdParty/Cdaskr/solver && $(MAKE) -f Makefile clean
 
 testfast: test
 
@@ -365,7 +365,7 @@ distclean: clean
 fmil-clean:
 	rm -rf 3rdParty/FMIL/build 3rdParty/FMIL/install 3rdParty/FMIL/Makefile
 gc-clean:
-	if test -f 3rdParty/gc/Makefile; then make -C 3rdParty/gc distclean; fi
+	if test -f 3rdParty/gc/Makefile; then $(MAKE) -C 3rdParty/gc distclean; fi
 	rm -f 3rdParty/gc/Makefile
 bootstrap-clean:
 	$(MAKE) -C Compiler/boot clean -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
@@ -526,7 +526,7 @@ nox: 3rdParty/trilinos-nox/CMakeLists.txt
 	  || cp -pf 3rdParty/trilinos-nox/build/bin/* "$(builddir_lib_omc)/cpp"
 
 clean-nox:
-	test -d 3rdParty/trilinos-nox/build && cd 3rdParty/trilinos-nox/build && make clean
+	test -d 3rdParty/trilinos-nox/build && cd 3rdParty/trilinos-nox/build && $(MAKE) clean
 	rm -rf $(OMBUILDDIR)/include/omc/cpp/trilinos-nox
 	rm -f $(builddir_lib_omc)/cpp/lib{belos,loca,ml,nox,teuchos}*
 
