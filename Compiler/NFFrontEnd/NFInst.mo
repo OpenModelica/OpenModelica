@@ -123,6 +123,8 @@ algorithm
     Flags.set(Flags.NF_EXPAND_FUNC_ARGS, false);
   end if;
 
+  System.setUsesCardinality(false);
+
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);
   name := Absyn.pathString(classPath);

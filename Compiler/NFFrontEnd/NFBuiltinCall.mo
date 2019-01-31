@@ -1311,6 +1311,8 @@ protected
     ty := Type.INTEGER();
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, ty));
     // TODO: Check cardinality restrictions, 3.7.2.3.
+
+    System.setUsesCardinality(true);
   end typeCardinalityCall;
 
   function typeBranchCall
