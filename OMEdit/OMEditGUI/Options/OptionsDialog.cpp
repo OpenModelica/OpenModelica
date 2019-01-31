@@ -550,10 +550,16 @@ void OptionsDialog::readSimulationSettings()
     }
   }
   if (mpSettings->contains("simulation/targetCompiler")) {
-    int currentIndex = mpSimulationPage->getTargetCompilerComboBox()->findData(mpSettings->value("simulation/targetCompiler"), Qt::UserRole, Qt::MatchExactly);
+    int currentIndex = mpSimulationPage->getTargetBuildComboBox()->findData(mpSettings->value("simulation/targetCompiler"), Qt::UserRole, Qt::MatchExactly);
     if (currentIndex > -1) {
-      mpSimulationPage->getTargetCompilerComboBox()->setCurrentIndex(currentIndex);
+      mpSimulationPage->getTargetBuildComboBox()->setCurrentIndex(currentIndex);
     }
+  }
+  if (mpSettings->contains("simulation/compiler")) {
+    mpSimulationPage->getCompilerComboBox()->lineEdit()->setText(mpSettings->value("simulation/compiler").toString());
+  }
+  if (mpSettings->contains("simulation/cxxCompiler")) {
+    mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->setText(mpSettings->value("simulation/cxxCompiler").toString());
   }
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getOMCCommandLineOptionsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
@@ -1134,13 +1140,21 @@ void OptionsDialog::saveSimulationSettings()
   // save index reduction
   mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
-  // save +simCodeTarget
+  // save target language
   mpSettings->setValue("simulation/targetLanguage", mpSimulationPage->getTargetLanguageComboBox()->currentText());
-  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
-  // save +target
-  QString target = mpSimulationPage->getTargetCompilerComboBox()->itemData(mpSimulationPage->getTargetCompilerComboBox()->currentIndex()).toString();
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
+  // save target build
+  QString target = mpSimulationPage->getTargetBuildComboBox()->itemData(mpSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
   mpSettings->setValue("simulation/targetCompiler", target);
-  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("+target=%1").arg(target));
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--target=%1").arg(target));
+  // save compiler
+  QString compiler = mpSimulationPage->getCompilerComboBox()->lineEdit()->text();
+  mpSettings->setValue("simulation/compiler", compiler);
+  MainWindow::instance()->getOMCProxy()->setCompiler(compiler);
+  // save cxxcompiler
+  QString cxxCompiler = mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->text();
+  mpSettings->setValue("simulation/cxxCompiler", cxxCompiler);
+  MainWindow::instance()->getOMCProxy()->setCXXCompiler(cxxCompiler);
   // save command line options ste manually by user. This will override above options.
   if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCCommandLineOptionsTextBox()->text())) {
     mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCCommandLineOptionsTextBox()->text());
@@ -3505,22 +3519,40 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
     i++;
   }
   mpTargetLanguageComboBox->setCurrentIndex(mpTargetLanguageComboBox->findText("C"));
-  // Compiler
-  mpCompilerLabel = new Label(tr("Target Compiler:"));
-  mpTargetCompilerComboBox = new QComboBox;
+  // Target Build
+  mpTargetBuildLabel = new Label(tr("Target Build:"));
+  mpTargetBuildComboBox = new QComboBox;
 #ifdef Q_OS_WIN
-  mpTargetCompilerComboBox->addItem("MinGW GCC (gcc)", "gcc");
-  mpTargetCompilerComboBox->addItem("Visual Studio (msvc)", "msvc");
-  mpTargetCompilerComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
-  mpTargetCompilerComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
-  mpTargetCompilerComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
-  mpTargetCompilerComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
+  mpTargetBuildComboBox->addItem("MinGW", "gcc");
+  mpTargetBuildComboBox->addItem("Visual Studio (msvc)", "msvc");
+  mpTargetBuildComboBox->addItem("Visual Studio 2010 (msvc10)", "msvc10");
+  mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
+  mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
+  mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
 #else
-  mpTargetCompilerComboBox->addItem("GCC", "gcc");
-  mpTargetCompilerComboBox->addItem("Clang", "clang");
+  mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif
-  mpTargetCompilerComboBox->addItem("vxworks69", "vxworks69");
-  mpTargetCompilerComboBox->addItem("debugrt", "debugrt");
+  mpTargetBuildComboBox->addItem("vxworks69", "vxworks69");
+  mpTargetBuildComboBox->addItem("debugrt", "debugrt");
+  connect(mpTargetBuildComboBox, SIGNAL(currentIndexChanged(int)), SLOT(targetBuildChanged(int)));
+  // C Compiler
+  mpCompilerLabel = new Label(tr("C Compiler:"));
+  mpCompilerComboBox = new QComboBox;
+  mpCompilerComboBox->setEditable(true);
+  mpCompilerComboBox->lineEdit()->setText(MainWindow::instance()->getOMCProxy()->getCompiler());
+  mpCompilerComboBox->addItem("gcc");
+#ifdef Q_OS_UNIX
+  mpCompilerComboBox->addItem("clang");
+#endif
+  // CXX Compiler
+  mpCXXCompilerLabel = new Label(tr("CXX Compiler:"));
+  mpCXXCompilerComboBox = new QComboBox;
+  mpCXXCompilerComboBox->setEditable(true);
+  mpCXXCompilerComboBox->lineEdit()->setText(MainWindow::instance()->getOMCProxy()->getCXXCompiler());
+  mpCXXCompilerComboBox->addItem("g++", "g++");
+#ifdef Q_OS_UNIX
+  mpCXXCompilerComboBox->addItem("clang++", "clang++");
+#endif
   // OMC CommandLineOptions
   mpOMCCommandLineOptionsLabel = new Label(QString("%1:").arg(Helper::OMCCommandLineOptions));
   mpOMCCommandLineOptionsLabel->setToolTip(Helper::OMCCommandLineOptionsTip);
@@ -3576,19 +3608,23 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1, 1, 2);
   pSimulationLayout->addWidget(mpTargetLanguageLabel, 2, 0);
   pSimulationLayout->addWidget(mpTargetLanguageComboBox, 2, 1, 1, 2);
-  pSimulationLayout->addWidget(mpCompilerLabel, 3, 0);
-  pSimulationLayout->addWidget(mpTargetCompilerComboBox, 3, 1, 1, 2);
-  pSimulationLayout->addWidget(mpOMCCommandLineOptionsLabel, 4, 0);
-  pSimulationLayout->addWidget(mpOMCCommandLineOptionsTextBox, 4, 1);
-  pSimulationLayout->addWidget(mpOMCCommandLineOptionsHelpButton, 4, 2);
-  pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, 5, 0, 1, 3);
-  pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, 6, 0, 1, 3);
-  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 7, 0, 1, 3);
-  pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, 8, 0, 1, 3);
-  pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, 9, 0, 1, 3);
-  pSimulationLayout->addWidget(mpDeleteIntermediateCompilationFilesCheckBox, 10, 0, 1, 3);
-  pSimulationLayout->addWidget(mpDeleteEntireSimulationDirectoryCheckBox, 11, 0, 1, 3);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 12, 0, 1, 3);
+  pSimulationLayout->addWidget(mpTargetBuildLabel, 3, 0);
+  pSimulationLayout->addWidget(mpTargetBuildComboBox, 3, 1, 1, 2);
+  pSimulationLayout->addWidget(mpCompilerLabel, 4, 0);
+  pSimulationLayout->addWidget(mpCompilerComboBox, 4, 1, 1, 2);
+  pSimulationLayout->addWidget(mpCXXCompilerLabel, 5, 0);
+  pSimulationLayout->addWidget(mpCXXCompilerComboBox, 5, 1, 1, 2);
+  pSimulationLayout->addWidget(mpOMCCommandLineOptionsLabel, 6, 0);
+  pSimulationLayout->addWidget(mpOMCCommandLineOptionsTextBox, 6, 1);
+  pSimulationLayout->addWidget(mpOMCCommandLineOptionsHelpButton, 6, 2);
+  pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, 7, 0, 1, 3);
+  pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, 8, 0, 1, 3);
+  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 9, 0, 1, 3);
+  pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, 10, 0, 1, 3);
+  pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, 11, 0, 1, 3);
+  pSimulationLayout->addWidget(mpDeleteIntermediateCompilationFilesCheckBox, 12, 0, 1, 3);
+  pSimulationLayout->addWidget(mpDeleteEntireSimulationDirectoryCheckBox, 13, 0, 1, 3);
+  pSimulationLayout->addWidget(mpOutputGroupBox, 14, 0, 1, 3);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -3634,6 +3670,22 @@ void SimulationPage::updateMatchingAlgorithmToolTip(int index)
 void SimulationPage::updateIndexReductionToolTip(int index)
 {
   mpIndexReductionMethodComboBox->setToolTip(mpIndexReductionMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
+}
+
+/*!
+ * \brief SimulationPage::targetBuildChanged
+ * Enable/Disable the Compiler and CXX Compiler fields.
+ * \param index
+ */
+void SimulationPage::targetBuildChanged(int index)
+{
+  if (mpTargetBuildComboBox->itemData(index).toString() == "gcc") {
+    mpCompilerComboBox->setEnabled(true);
+    mpCXXCompilerComboBox->setEnabled(true);
+  } else {
+    mpCompilerComboBox->setEnabled(false);
+    mpCXXCompilerComboBox->setEnabled(false);
+  }
 }
 
 /*!

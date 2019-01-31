@@ -235,6 +235,10 @@ public:
   int numProcessors();
   QString help(QString topic);
   OMCInterface::getConfigFlagValidOptions_res getConfigFlagValidOptions(QString topic);
+  QString getCompiler();
+  bool setCompiler(QString compiler);
+  QString getCXXCompiler();
+  bool setCXXCompiler(QString compiler);
   bool setDebugFlags(QString flags);
   bool exportToFigaro(QString className, QString directory, QString database, QString mode, QString options, QString processor);
   bool copyClass(QString className, QString newClassName, QString withIn);

@@ -1478,12 +1478,12 @@ void SimulationDialog::performSimulation()
   QApplication::restoreOverrideCursor();
   mIsReSimulate = false;
   if (isTranslationSuccessful) {
-    // check if we can compile using the target compiler
+    // check if we can compile using the target build
     SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
-    QString targetCompiler = pSimulationPage->getTargetCompilerComboBox()->itemData(pSimulationPage->getTargetCompilerComboBox()->currentIndex()).toString();
-    if ((targetCompiler.compare("vxworks69") == 0) || (targetCompiler.compare("debugrt") == 0)) {
-      QString msg = tr("Generated code for the target compiler <b>%1</b> at %2.").arg(targetCompiler)
-          .arg(simulationOptions.getWorkingDirectory());
+    QString targetBuild = pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString();
+    if ((targetBuild.compare("vxworks69") == 0) || (targetBuild.compare("debugrt") == 0)) {
+      QString msg = tr("Generated code for the target build <b>%1</b> at %2.").arg(targetBuild)
+                    .arg(simulationOptions.getWorkingDirectory());
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, msg, Helper::scriptingKind,
                                                             Helper::notificationLevel));
       return;

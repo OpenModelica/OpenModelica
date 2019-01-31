@@ -2728,6 +2728,48 @@ OMCInterface::getConfigFlagValidOptions_res OMCProxy::getConfigFlagValidOptions(
 }
 
 /*!
+ * \brief OMCProxy::getCCompiler
+ * Gets the default C compiler.
+ * \return
+ */
+QString OMCProxy::getCompiler()
+{
+  return mpOMCInterface->getCompiler();
+}
+
+/*!
+ * \brief OMCProxy::setCompiler
+ * Sets the C compiler.
+ * \param compiler
+ * \return
+ */
+bool OMCProxy::setCompiler(QString compiler)
+{
+  return mpOMCInterface->setCompiler(compiler);
+}
+
+/*!
+ * \brief OMCProxy::getCXXCompiler
+ * Gets the default CXX compiler.
+ * \return
+ */
+QString OMCProxy::getCXXCompiler()
+{
+  return mpOMCInterface->getCXXCompiler();
+}
+
+/*!
+ * \brief OMCProxy::setCXXCompiler
+ * Sets the CXX compiler.
+ * \param compiler
+ * \return
+ */
+bool OMCProxy::setCXXCompiler(QString compiler)
+{
+  return mpOMCInterface->setCXXCompiler(compiler);
+}
+
+/*!
  * \brief OMCProxy::setDebugFlags
  * \param debugFlags
  * \return

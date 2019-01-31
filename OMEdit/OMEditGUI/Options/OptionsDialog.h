@@ -597,7 +597,9 @@ public:
   QComboBox* getMatchingAlgorithmComboBox() {return mpMatchingAlgorithmComboBox;}
   QComboBox* getIndexReductionMethodComboBox() {return mpIndexReductionMethodComboBox;}
   QComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
-  QComboBox* getTargetCompilerComboBox() {return mpTargetCompilerComboBox;}
+  QComboBox* getTargetBuildComboBox() {return mpTargetBuildComboBox;}
+  QComboBox* getCompilerComboBox() {return mpCompilerComboBox;}
+  QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
   QLineEdit* getOMCCommandLineOptionsTextBox() {return mpOMCCommandLineOptionsTextBox;}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
@@ -617,8 +619,12 @@ private:
   QComboBox *mpIndexReductionMethodComboBox;
   Label *mpTargetLanguageLabel;
   QComboBox *mpTargetLanguageComboBox;
+  Label *mpTargetBuildLabel;
+  QComboBox *mpTargetBuildComboBox;
   Label *mpCompilerLabel;
-  QComboBox *mpTargetCompilerComboBox;
+  QComboBox *mpCompilerComboBox;
+  Label *mpCXXCompilerLabel;
+  QComboBox *mpCXXCompilerComboBox;
   Label *mpOMCCommandLineOptionsLabel;
   QLineEdit *mpOMCCommandLineOptionsTextBox;
   QToolButton *mpOMCCommandLineOptionsHelpButton;
@@ -635,6 +641,7 @@ private:
 public slots:
   void updateMatchingAlgorithmToolTip(int index);
   void updateIndexReductionToolTip(int index);
+  void targetBuildChanged(int index);
   void showOMCCommandLineOptionsHelp();
 };
 
