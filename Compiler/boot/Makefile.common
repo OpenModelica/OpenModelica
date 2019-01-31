@@ -1,14 +1,3 @@
-ifeq ($(OS),Windows_NT)
-  SED = sed
-else
-  UNAME := $(shell uname)
-  ifeq ($(UNAME),Darwin)
-    SED = gsed
-  else
-    SED = sed
-  endif
-endif
-
 ifeq ($(wildcard $(OMC)),)
 all:
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-from-tarball
@@ -29,7 +18,7 @@ generate-files-in-steps:
 
 GEN_DIR=build/
 
-PATCH_SOURCES=$(SED) -i 's/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/' build/_main.c
+PATCH_SOURCES=sed -i=.bak 's/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/' build/_main.c
 
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 
@@ -63,7 +52,7 @@ bootstrap-from-tarball:
 	# Patch _main.c to avoid a new tarball
 	$(MAKE) -f $(defaultMakefileTarget) patch-files
 	$(PATCH_SOURCES)
-	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | $(SED) 's/\([.][0-9]*\)\?[.]patch//'`" || exit 1; done
+	cd build && for x in ../patches/*.patch; do patch -i "$$x"  "`basename $$x | sed 's/\([.][0-9]*\)\?[.]patch//'`" || exit 1; done
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
@@ -101,7 +90,7 @@ make-bootstrap-tarball: clean
 	test ! -f Makefile.depends || rm Makefile.depends
 	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
 	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
-	sed -i -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "s/ *[/][*].*[*][/]\([;)]\?\) *$$/\1/" -e "s/^ *[/][*].*[*][/]\(;\?\) */\1/" -e "/^ *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
+	sed -i.bak -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "s/ *[/][*].*[*][/]\([;)]\?\) *$$/\1/" -e "s/^ *[/][*].*[*][/]\(;\?\) */\1/" -e "/^ *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
 	tar cf bootstrap-sources.tar $(GEN_DIR) Makefile.sources
 	xz --best --force bootstrap-sources.tar
 
