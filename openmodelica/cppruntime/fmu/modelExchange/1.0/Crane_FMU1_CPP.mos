@@ -4,7 +4,7 @@
 // teardown_command: rm -rf binaries sources modelDescription.xml *cranes_crane*
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
 translateModelFMU(cranes.crane, version="1.0"); getErrorString();

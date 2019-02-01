@@ -3,10 +3,13 @@
 // status: correct
 // teardown_command: rm -rf ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph_* ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.exe ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.cpp ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.makefile ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.libs ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.log output.log *.o *.c *.h
 
-loadModel(ThermoPower); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
+loadFile("TestWaterFlow1DFV2ph.mo"); getErrorString();
 simulate(ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // record SimulationResult

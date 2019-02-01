@@ -6,7 +6,7 @@
 //
 
 setCommandLineOptions("--simCodeTarget=XML"); getErrorString();
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 translateModel(Modelica.Blocks.Examples.PID_Controller); getErrorString();
 loadFile("BouncingBall.mo"); getErrorString();
 translateModel(BouncingBall); getErrorString();
@@ -55,7 +55,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   numberOfContinuousStates=\"6\"
 //   numberOfEventIndicators=\"5\"
 //   >
-//   
+//
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
@@ -73,7 +73,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.phi\" description=\"Absolute rotation angle of component\" valueReference=\"1\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
@@ -85,7 +85,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.w\" description=\"Absolute angular velocity of component (= der(phi))\" valueReference=\"2\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"rad/s\" />
@@ -97,7 +97,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"integrator.y\" description=\"Connector of Real output signal\" valueReference=\"3\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"integrator.y_start\" fixed=\"false\"    />
@@ -109,7 +109,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.phi_rel\" description=\"Relative rotation angle (= flange_b.phi - flange_a.phi)\" valueReference=\"4\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"rad\" displayUnit=\"deg\"/>
@@ -121,7 +121,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.w_rel\" description=\"Relative angular velocity (= der(phi_rel))\" valueReference=\"5\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"   unit=\"rad/s\" />
@@ -133,7 +133,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"der(PI.I.y)\" description=\"der(Connector of Real output signal)\" valueReference=\"6\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
 //       <QualifiedName>
@@ -145,7 +145,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(inertia1.phi)\" description=\"der(Absolute rotation angle of component)\" valueReference=\"7\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"Hz\" />
@@ -157,7 +157,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(inertia2.w)\" description=\"der(Absolute angular velocity of component (= der(phi)))\" valueReference=\"8\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s-2\" />
@@ -169,7 +169,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(integrator.y)\" description=\"der(Connector of Real output signal)\" valueReference=\"9\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -181,7 +181,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(spring.phi_rel)\" description=\"der(Relative rotation angle (= flange_b.phi - flange_a.phi))\" valueReference=\"10\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"Hz\" />
@@ -193,7 +193,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(spring.w_rel)\" description=\"der(Relative angular velocity (= der(phi_rel)))\" valueReference=\"11\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s-2\" />
@@ -205,7 +205,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"der(inertia1.w)\" description=\"Absolute angular velocity of component (= der(phi))\" valueReference=\"12\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"    />
 //       <QualifiedName>
@@ -216,7 +216,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(loadTorque.phi)\" description=\"Angle of flange with respect to support (= flange.phi - support.phi)\" valueReference=\"13\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -228,7 +228,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.I.u\" description=\"Connector of Real input signal\" valueReference=\"14\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -241,7 +241,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.P.u\" description=\"Input signal connector\" valueReference=\"15\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -254,7 +254,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.P.y\" description=\"Output signal connector\" valueReference=\"16\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -267,7 +267,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.u3\" description=\"Connector 3 of Real input signals\" valueReference=\"17\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -280,7 +280,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.y\" description=\"Connector of Real output signals\" valueReference=\"18\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -293,7 +293,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addSat.u2\" description=\"Connector of Real input signal 2\" valueReference=\"19\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -306,7 +306,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addSat.y\" description=\"Connector of Real output signal\" valueReference=\"20\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -319,7 +319,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.controlError\" description=\"Control error (set point - measurement)\" valueReference=\"21\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -331,7 +331,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.y\" description=\"Connector of actuator output signal\" valueReference=\"22\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"    />
@@ -343,7 +343,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.a\" description=\"Absolute angular acceleration of component (= der(w))\" valueReference=\"23\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"   unit=\"rad/s2\" />
@@ -355,7 +355,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.w\" description=\"Absolute angular velocity of component (= der(phi))\" valueReference=\"24\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"rad/s\" />
@@ -367,7 +367,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.a\" description=\"Absolute angular acceleration of component (= der(w))\" valueReference=\"25\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"5.0\" fixed=\"false\"   unit=\"rad/s2\" />
@@ -379,7 +379,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.Ta1\"  valueReference=\"26\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s\" />
@@ -391,7 +391,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.Ta2\"  valueReference=\"27\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s\" />
@@ -403,7 +403,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.Te\"  valueReference=\"28\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s\" />
@@ -415,7 +415,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.Tv\"  valueReference=\"29\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s\" />
@@ -427,7 +427,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.aux1[1]\"  valueReference=\"30\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -445,7 +445,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.aux2[1]\"  valueReference=\"31\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -463,7 +463,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.sd_max\"  valueReference=\"32\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -475,7 +475,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.sdd\"  valueReference=\"33\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"    />
@@ -487,7 +487,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.sdd_max\"  valueReference=\"34\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -499,7 +499,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.y[1]\" description=\"Connector of Real output signals\" valueReference=\"35\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"    />
@@ -517,7 +517,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.phi\" description=\"Angle of flange with respect to support (= flange.phi - support.phi)\" valueReference=\"36\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"rad\" displayUnit=\"deg\"/>
@@ -529,7 +529,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.phi_support\" description=\"Absolute angle of support flange\" valueReference=\"37\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -541,7 +541,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"speedSensor.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"38\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"N.m\" />
@@ -554,7 +554,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.a_rel\" description=\"Relative angular acceleration (= der(w_rel))\" valueReference=\"39\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"rad/s2\" />
@@ -566,7 +566,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.lossPower\" description=\"Loss power leaving component via heatPort (&gt; 0, if heat is flowing out of component)\" valueReference=\"40\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"W\" />
@@ -578,7 +578,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.tau\" description=\"Torque between flanges (= flange_b.tau)\" valueReference=\"41\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"N.m\" />
@@ -590,7 +590,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.tau_c\" description=\"Spring torque\" valueReference=\"42\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"N.m\" />
@@ -602,7 +602,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.tau_d\" description=\"Damping torque\" valueReference=\"43\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"false\"   unit=\"N.m\" />
@@ -614,7 +614,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"torque.phi_support\" description=\"Absolute angle of support flange\" valueReference=\"44\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -626,7 +626,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"kinematicPTP.noWphase\"  valueReference=\"45\" variability=\"discrete\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean />
 //       <QualifiedName>
@@ -637,7 +637,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"PI.Dzero.y\" description=\"Connector of Real output signal\" valueReference=\"46\" variability=\"continuous\" causality=\"internal\" alias=\"PI.Dzero.k\">
 //       <Real     />
 //       <QualifiedName>
@@ -649,7 +649,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.u1\" description=\"Connector 1 of Real input signals\" valueReference=\"47\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
 //       <Real     />
@@ -662,7 +662,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.u2\" description=\"Connector 2 of Real input signals\" valueReference=\"48\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real     />
@@ -675,7 +675,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.y\" description=\"Connector of Real output signals\" valueReference=\"49\" variability=\"continuous\" causality=\"internal\" alias=\"PI.I.u\">
 //       <Real     />
@@ -688,7 +688,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addP.u1\" description=\"Connector of Real input signal 1\" valueReference=\"50\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
 //       <Real     />
@@ -701,7 +701,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addP.u2\" description=\"Connector of Real input signal 2\" valueReference=\"51\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real     />
@@ -714,7 +714,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addP.y\" description=\"Connector of Real output signal\" valueReference=\"52\" variability=\"continuous\" causality=\"internal\" alias=\"PI.P.u\">
 //       <Real     />
@@ -727,7 +727,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.u1\" description=\"Connector 1 of Real input signals\" valueReference=\"53\" variability=\"continuous\" causality=\"internal\" alias=\"PI.P.y\">
 //       <Real     />
@@ -740,7 +740,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.u2\" description=\"Connector 2 of Real input signals\" valueReference=\"54\" variability=\"continuous\" causality=\"internal\" alias=\"PI.Dzero.k\">
 //       <Real     />
@@ -753,7 +753,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.u3\" description=\"Connector 3 of Real input signals\" valueReference=\"55\" variability=\"continuous\" causality=\"internal\" alias=\"PI.I.y\">
 //       <Real     />
@@ -766,7 +766,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addSat.u1\" description=\"Connector of Real input signal 1\" valueReference=\"56\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real     />
@@ -779,7 +779,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainPID.u\" description=\"Input signal connector\" valueReference=\"57\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addPID.y\">
 //       <Real     />
@@ -792,7 +792,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainPID.y\" description=\"Output signal connector\" valueReference=\"58\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.u2\">
 //       <Real     />
@@ -805,7 +805,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainTrack.u\" description=\"Input signal connector\" valueReference=\"59\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.y\">
 //       <Real     />
@@ -818,7 +818,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainTrack.y\" description=\"Output signal connector\" valueReference=\"60\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addI.u3\">
 //       <Real     />
@@ -831,7 +831,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.limiter.u\" description=\"Connector of Real input signal\" valueReference=\"61\" variability=\"continuous\" causality=\"internal\" alias=\"PI.addSat.u2\">
 //       <Real     />
@@ -844,7 +844,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.limiter.y\" description=\"Connector of Real output signal\" valueReference=\"62\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real     />
@@ -857,7 +857,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.u_m\" description=\"Connector of measurement input signal\" valueReference=\"63\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real     />
@@ -869,7 +869,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.u_s\" description=\"Connector of setpoint input signal\" valueReference=\"64\" variability=\"continuous\" causality=\"internal\" alias=\"integrator.y\">
 //       <Real     />
@@ -881,7 +881,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"65\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -894,7 +894,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"66\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real    unit=\"N.m\" />
@@ -907,7 +907,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"67\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -920,7 +920,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"68\" variability=\"continuous\" causality=\"internal\" alias=\"spring.tau\">
 //       <Real    unit=\"N.m\" />
@@ -933,7 +933,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"69\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -946,7 +946,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"70\" variability=\"continuous\" causality=\"internal\" alias=\"-spring.tau\">
 //       <Real    unit=\"N.m\" />
@@ -959,7 +959,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"71\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -972,7 +972,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"72\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.tau_constant\">
 //       <Real    unit=\"N.m\" />
@@ -985,7 +985,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.phi\" description=\"Absolute rotation angle of component\" valueReference=\"73\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -997,7 +997,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"integrator.u\" description=\"Connector of Real input signal\" valueReference=\"74\" variability=\"continuous\" causality=\"internal\" alias=\"kinematicPTP.y[1]\">
 //       <Real     />
@@ -1009,7 +1009,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"75\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -1022,7 +1022,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"76\" variability=\"continuous\" causality=\"internal\" alias=\"-loadTorque.tau_constant\">
 //       <Real    unit=\"N.m\" />
@@ -1035,7 +1035,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.tau\" description=\"Accelerating torque acting at flange (= -flange.tau)\" valueReference=\"77\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.tau_constant\">
 //       <Real    unit=\"N.m\" />
@@ -1047,7 +1047,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.w\" description=\"Angular velocity of flange with respect to support (= der(phi))\" valueReference=\"78\" variability=\"continuous\" causality=\"internal\" alias=\"inertia2.w\">
 //       <Real    unit=\"rad/s\" />
@@ -1059,7 +1059,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"speedSensor.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"79\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -1072,7 +1072,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"speedSensor.w\" description=\"Absolute angular velocity of flange as output signal\" valueReference=\"80\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.w\">
 //       <Real    unit=\"rad/s\" />
@@ -1084,7 +1084,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.flange_a.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"81\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -1097,7 +1097,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.flange_a.tau\" description=\"Cut torque in the flange\" valueReference=\"82\" variability=\"continuous\" causality=\"internal\" alias=\"-spring.tau\">
 //       <Real    unit=\"N.m\" />
@@ -1110,7 +1110,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.flange_b.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"83\" variability=\"continuous\" causality=\"internal\" alias=\"loadTorque.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -1123,7 +1123,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.flange_b.tau\" description=\"Cut torque in the flange\" valueReference=\"84\" variability=\"continuous\" causality=\"internal\" alias=\"spring.tau\">
 //       <Real    unit=\"N.m\" />
@@ -1136,7 +1136,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"torque.flange.phi\" description=\"Absolute rotation angle of flange\" valueReference=\"85\" variability=\"continuous\" causality=\"internal\" alias=\"inertia1.phi\">
 //       <Real    unit=\"rad\" displayUnit=\"deg\"/>
@@ -1149,7 +1149,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"torque.flange.tau\" description=\"Cut torque in the flange\" valueReference=\"86\" variability=\"continuous\" causality=\"internal\" alias=\"-PI.y\">
 //       <Real    unit=\"N.m\" />
@@ -1162,7 +1162,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"torque.tau\" description=\"Accelerating torque acting at flange (= -flange.tau)\" valueReference=\"87\" variability=\"continuous\" causality=\"internal\" alias=\"PI.y\">
 //       <Real    unit=\"N.m\" />
@@ -1174,7 +1174,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"PI.Dzero.k\" description=\"Constant output value\" valueReference=\"88\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
 //       <QualifiedName>
@@ -1186,7 +1186,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.I.k\" description=\"Integrator gain\" valueReference=\"89\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"1\" />
@@ -1199,7 +1199,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.I.y_start\" description=\"Initial or guess value of output (= state)\" valueReference=\"90\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1212,7 +1212,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Nd\" description=\"The higher Nd, the more ideal the derivative block\" valueReference=\"91\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"10.0\" fixed=\"true\" min=\"1e-13\"   />
@@ -1224,7 +1224,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Ni\" description=\"Ni*Ti is time constant of anti-windup compensation\" valueReference=\"92\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.1\" fixed=\"true\" min=\"1e-13\"   />
@@ -1236,7 +1236,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.P.k\" description=\"Gain value multiplied with input signal\" valueReference=\"93\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
@@ -1249,7 +1249,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Td\" description=\"Time constant of Derivative block\" valueReference=\"94\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.1\" fixed=\"true\" min=\"0.0\"  unit=\"s\" />
@@ -1261,7 +1261,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.Ti\" description=\"Time constant of Integrator block\" valueReference=\"95\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.1\" fixed=\"true\" min=\"1e-60\"  unit=\"s\" />
@@ -1273,7 +1273,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.k1\" description=\"Gain of upper input\" valueReference=\"96\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1286,7 +1286,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.k2\" description=\"Gain of middle input\" valueReference=\"97\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"-1.0\" fixed=\"true\"    />
@@ -1299,7 +1299,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addI.k3\" description=\"Gain of lower input\" valueReference=\"98\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1312,7 +1312,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addP.k1\" description=\"Gain of upper input\" valueReference=\"99\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1325,7 +1325,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addP.k2\" description=\"Gain of lower input\" valueReference=\"100\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"-1.0\" fixed=\"true\"    />
@@ -1338,7 +1338,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.k1\" description=\"Gain of upper input\" valueReference=\"101\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1351,7 +1351,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.k2\" description=\"Gain of middle input\" valueReference=\"102\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1364,7 +1364,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addPID.k3\" description=\"Gain of lower input\" valueReference=\"103\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1377,7 +1377,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addSat.k1\" description=\"Gain of upper input\" valueReference=\"104\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1390,7 +1390,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.addSat.k2\" description=\"Gain of lower input\" valueReference=\"105\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"-1.0\" fixed=\"true\"    />
@@ -1403,7 +1403,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainPID.k\" description=\"Gain value multiplied with input signal\" valueReference=\"106\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
@@ -1416,7 +1416,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.gainTrack.k\" description=\"Gain value multiplied with input signal\" valueReference=\"107\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
@@ -1429,7 +1429,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.k\" description=\"Gain of controller\" valueReference=\"108\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"100.0\" fixed=\"true\" min=\"0.0\"  unit=\"1\" />
@@ -1441,7 +1441,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.limiter.uMax\" description=\"Upper limits of input signals\" valueReference=\"109\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"    />
@@ -1454,7 +1454,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.limiter.uMin\" description=\"Lower limits of input signals\" valueReference=\"110\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1467,7 +1467,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.wd\" description=\"Set-point weight for Derivative block (0..1)\" valueReference=\"111\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\" min=\"0.0\"   />
@@ -1479,7 +1479,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.wp\" description=\"Set-point weight for Proportional block (0..1)\" valueReference=\"112\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"0.0\"   />
@@ -1491,7 +1491,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.xd_start\" description=\"Initial or guess value for state of derivative block\" valueReference=\"113\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
@@ -1503,7 +1503,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.xi_start\" description=\"Initial or guess value value for integrator output (= integrator state)\" valueReference=\"114\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
@@ -1515,7 +1515,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.yMax\" description=\"Upper limit of output\" valueReference=\"115\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"12.0\" fixed=\"true\"    />
@@ -1527,7 +1527,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.yMin\" description=\"Lower limit of output\" valueReference=\"116\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1539,7 +1539,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.y_start\" description=\"Initial value of output\" valueReference=\"117\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
@@ -1551,7 +1551,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"driveAngle\" description=\"Reference distance to move\" valueReference=\"118\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.570796326794897\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
@@ -1562,7 +1562,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.J\" description=\"Moment of inertia\" valueReference=\"119\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"0.0\"  unit=\"kg.m2\" />
@@ -1574,7 +1574,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.J\" description=\"Moment of inertia\" valueReference=\"120\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"2.0\" fixed=\"true\" min=\"0.0\"  unit=\"kg.m2\" />
@@ -1586,7 +1586,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"integrator.k\" description=\"Integrator gain\" valueReference=\"121\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"1\" />
@@ -1598,7 +1598,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"integrator.y_start\" description=\"Initial or guess value of output (= state)\" valueReference=\"122\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"    />
@@ -1610,7 +1610,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.deltaq[1]\" description=\"Distance to move\" valueReference=\"123\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1628,7 +1628,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.p_deltaq[1]\"  valueReference=\"124\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1646,7 +1646,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.p_qd_max[1]\"  valueReference=\"125\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1664,7 +1664,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.p_qdd_max[1]\"  valueReference=\"126\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real     />
@@ -1682,7 +1682,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.qd_max[1]\" description=\"Maximum velocities der(q)\" valueReference=\"127\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
@@ -1700,7 +1700,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.qdd_max[1]\" description=\"Maximum accelerations der(qd)\" valueReference=\"128\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"1e-60\"   />
@@ -1718,7 +1718,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.startTime\" description=\"Time instant at which movement starts\" valueReference=\"129\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.5\" fixed=\"true\"   unit=\"s\" />
@@ -1730,7 +1730,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.tau_constant\" description=\"Constant torque (if negative, torque is acting as load in positive direction of rotation)\" valueReference=\"130\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"10.0\" fixed=\"true\"   unit=\"N.m\" />
@@ -1742,7 +1742,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.c\" description=\"Spring constant\" valueReference=\"131\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"10000.0\" fixed=\"true\" min=\"0.0\"  unit=\"N.m/rad\" />
@@ -1754,7 +1754,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.d\" description=\"Damping constant\" valueReference=\"132\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"100.0\" fixed=\"true\" min=\"0.0\"  unit=\"N.m.s/rad\" />
@@ -1766,7 +1766,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.phi_nominal\" description=\"Nominal value of phi_rel (used for scaling)\" valueReference=\"133\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0001\" fixed=\"true\" min=\"0.0\"  unit=\"rad\" displayUnit=\"rad\"/>
@@ -1778,7 +1778,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.phi_rel0\" description=\"Unstretched spring angle\" valueReference=\"134\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.0\" fixed=\"true\"   unit=\"rad\" displayUnit=\"deg\"/>
@@ -1790,7 +1790,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"PI.I.initType\" description=\"Type of initialization (1: no init, 2: steady state, 3,4: initial output)\" valueReference=\"135\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"2\" fixed=\"true\"/>
 //       <QualifiedName>
@@ -1802,7 +1802,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.controllerType\" description=\"Type of controller\" valueReference=\"136\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"2\" fixed=\"true\"/>
@@ -1814,7 +1814,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.initType\" description=\"Type of initialization (1: no init, 2: steady state, 3: initial state, 4: initial output)\" valueReference=\"137\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"2\" fixed=\"true\"/>
@@ -1826,7 +1826,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia1.stateSelect\" description=\"Priority to use phi and w as states\" valueReference=\"138\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"3\" fixed=\"true\"/>
@@ -1838,7 +1838,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"inertia2.stateSelect\" description=\"Priority to use phi and w as states\" valueReference=\"139\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"3\" fixed=\"true\"/>
@@ -1850,7 +1850,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"integrator.initType\" description=\"Type of initialization (1: no init, 2: steady state, 3,4: initial output)\" valueReference=\"140\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"3\" fixed=\"true\"/>
@@ -1862,7 +1862,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"kinematicPTP.nout\" description=\"Number of outputs\" valueReference=\"141\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Integer start=\"1\" fixed=\"true\"  />
@@ -1874,7 +1874,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.stateSelect\" description=\"Priority to use phi_rel and w_rel as states\" valueReference=\"142\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"4\" fixed=\"true\"/>
@@ -1886,7 +1886,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"PI.limiter.limitsAtInit\" description=\"Has no longer an effect and is only kept for backwards compatibility (the implementation uses now the homotopy operator)\" valueReference=\"143\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
 //       <QualifiedName>
@@ -1898,7 +1898,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.limiter.strict\" description=\"= true, if strict limits with noEvent(..)\" valueReference=\"144\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1911,7 +1911,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.limitsAtInit\" description=\"= false, if limits are ignored during initialization\" valueReference=\"145\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1923,7 +1923,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.strict\" description=\"= true, if strict limits with noEvent(..)\" valueReference=\"146\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1935,7 +1935,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.with_D\"  valueReference=\"147\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1947,7 +1947,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"PI.with_I\"  valueReference=\"148\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"1\" fixed=\"true\"/>
@@ -1959,7 +1959,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"loadTorque.useSupport\" description=\"= true, if support flange enabled, otherwise implicitly grounded\" valueReference=\"149\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1971,7 +1971,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"spring.useHeatPort\" description=\"=true, if heatPort is enabled\" valueReference=\"150\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1983,7 +1983,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"torque.useSupport\" description=\"= true, if support flange enabled, otherwise implicitly grounded\" valueReference=\"151\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean start=\"0\" fixed=\"true\"/>
@@ -1995,7 +1995,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"PI.unitTime\"  valueReference=\"152\" variability=\"constant\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s\" />
 //       <QualifiedName>
@@ -2006,7 +2006,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentConstant</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //   </ModelVariables>
 //
 //   <equ:BindingEquations>
@@ -2605,7 +2605,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:LogGeq>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2636,7 +2636,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:Else>
 //         </fun:If>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2673,7 +2673,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:Else>
 //         </fun:If>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -2687,7 +2687,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"w\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2711,7 +2711,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Sub>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2729,7 +2729,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2747,7 +2747,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2765,7 +2765,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2789,7 +2789,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -2803,7 +2803,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"a\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -2817,7 +2817,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"w_rel\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -2981,7 +2981,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:Else>
 //         </fun:If>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3011,7 +3011,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -3037,7 +3037,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3055,7 +3055,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Sub>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -3069,7 +3069,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"w\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3102,7 +3102,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Mul>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3123,7 +3123,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3172,7 +3172,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Add>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3193,7 +3193,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3258,7 +3258,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:If>
 //         </exp:Smooth>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3282,7 +3282,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3300,7 +3300,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Sub>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -3314,7 +3314,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"a_rel\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -3328,7 +3328,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"a\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3362,7 +3362,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Mul>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3383,7 +3383,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3430,7 +3430,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Add>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -3453,7 +3453,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Mul>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3471,7 +3471,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Sub>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3489,8 +3489,8 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
-//      
+//     </equ:Equation>
+//
 //   </equ:DynamicEquations>
 //
 //   <equ:InitialEquations>
@@ -3686,7 +3686,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3722,7 +3722,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3745,7 +3745,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Abs>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3781,7 +3781,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3804,7 +3804,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Abs>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3822,7 +3822,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3847,37 +3847,37 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:Message>
 //         </fun:Assertion>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3887,7 +3887,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3896,7 +3896,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:Identifier>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3909,7 +3909,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"phi\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3922,12 +3922,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"a\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3940,22 +3940,22 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"w_rel\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -3966,7 +3966,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:Der>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3980,7 +3980,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Der>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -3998,7 +3998,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4022,7 +4022,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Mul>
 //         </exp:Sub>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4040,7 +4040,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Sub>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4064,12 +4064,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4093,7 +4093,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Sub>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //           <exp:Sub>
@@ -4167,17 +4167,17 @@ readFile("Bug3857.xml"); getErrorString();
 //             </exp:Homotopy>
 //           </exp:Sub>;
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4198,12 +4198,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4215,7 +4215,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"y_start\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -4227,7 +4227,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:Der>
 //         <exp:RealLiteral>0.0</exp:RealLiteral>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4250,7 +4250,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4297,7 +4297,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4315,27 +4315,27 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Add>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4384,13 +4384,13 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
-//      
+//     </equ:Equation>
+//
 //   </equ:InitialEquations>
 //
 //   <fun:Algorithm>
@@ -4466,7 +4466,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   numberOfContinuousStates=\"2\"
 //   numberOfEventIndicators=\"1\"
 //   >
-//   
+//
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
@@ -4482,7 +4482,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"v\"  valueReference=\"1\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"m/s\" />
@@ -4493,7 +4493,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"der(h)\"  valueReference=\"2\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"m.s-1\" />
 //       <QualifiedName>
@@ -4503,7 +4503,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"der(v)\"  valueReference=\"3\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"m.s-2\" />
@@ -4514,7 +4514,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"$whenCondition1\" description=\"h &lt; 0.0\" valueReference=\"4\" variability=\"discrete\" causality=\"internal\" alias=\"noAlias\">
 //       <Boolean />
 //       <QualifiedName>
@@ -4524,7 +4524,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"e\" description=\"Coefficient of restitution\" valueReference=\"5\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.8\" fixed=\"true\"    />
 //       <QualifiedName>
@@ -4534,7 +4534,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"h0\" description=\"Initial height\" valueReference=\"6\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"m\" />
@@ -4545,7 +4545,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //   </ModelVariables>
 //
 //   <equ:BindingEquations>
@@ -4581,7 +4581,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:RealLiteral>0.0</exp:RealLiteral>
 //         </exp:LogLt>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -4591,7 +4591,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         </exp:Der>
 //         <exp:RealLiteral>-9.81</exp:RealLiteral>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -4603,7 +4603,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"v\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:When>
 //       <equ:Condition>
 //         <exp:Identifier>
@@ -4643,12 +4643,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"v\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4659,12 +4659,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"v\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4674,12 +4674,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"h0\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //   </equ:InitialEquations>
 //
 //   <fun:Algorithm>
@@ -4706,7 +4706,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   numberOfContinuousStates=\"1\"
 //   numberOfEventIndicators=\"1\"
 //   >
-//   
+//
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
@@ -4722,7 +4722,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"der(T)\" description=\"der(Temperature)\" valueReference=\"1\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s-1.K\" />
 //       <QualifiedName>
@@ -4732,7 +4732,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"T_inf\" description=\"Ambient temperature\" valueReference=\"2\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"298.15\" fixed=\"false\" min=\"0.0\"  unit=\"K\" />
 //       <QualifiedName>
@@ -4742,7 +4742,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"A\" description=\"Surface area\" valueReference=\"3\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\" min=\"0.0\"  unit=\"m2\" />
 //       <QualifiedName>
@@ -4752,7 +4752,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"T0\" description=\"Initial temperature\" valueReference=\"4\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"363.15\" fixed=\"true\" min=\"0.0\"  unit=\"K\" />
@@ -4763,7 +4763,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"c_p\" description=\"Specific heat\" valueReference=\"5\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.2\" fixed=\"true\" min=\"0.0\"  unit=\"J/(K.kg)\" />
@@ -4774,7 +4774,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"h\" description=\"Convective cooling coefficient\" valueReference=\"6\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.7\" fixed=\"true\" min=\"0.0\"  unit=\"W/(m2.K)\" />
@@ -4785,7 +4785,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"m\" description=\"Mass of thermal capacitance\" valueReference=\"7\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"0.1\" fixed=\"true\" min=\"0.0\"  unit=\"kg\" />
@@ -4796,7 +4796,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //   </ModelVariables>
 //
 //   <equ:BindingEquations>
@@ -4857,7 +4857,7 @@ readFile("Bug3857.xml"); getErrorString();
 //             <exp:LogLeq>
 //               <exp:Time>time</exp:Time>
 //               <exp:RealLiteral>0.5</exp:RealLiteral>
-//             </exp:LogLeq> 
+//             </exp:LogLeq>
 //           </fun:Condition>
 //           <fun:Statements>
 //             <exp:RealLiteral>298.15</exp:RealLiteral>
@@ -4876,7 +4876,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:Else>
 //         </fun:If>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -4913,7 +4913,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Mul>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //   </equ:DynamicEquations>
 //
 //   <equ:InitialEquations>
@@ -4927,9 +4927,9 @@ readFile("Bug3857.xml"); getErrorString();
 //     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Identifier>
@@ -4939,12 +4939,12 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"T0\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //   </equ:InitialEquations>
 //
 //   <fun:Algorithm>
@@ -4971,7 +4971,7 @@ readFile("Bug3857.xml"); getErrorString();
 //   numberOfContinuousStates=\"1\"
 //   numberOfEventIndicators=\"0\"
 //   >
-//   
+//
 //   <VendorAnnotations>
 //   </VendorAnnotations>
 //
@@ -4987,7 +4987,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>state</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"der(T)\"  valueReference=\"1\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"s-1.K\" />
 //       <QualifiedName>
@@ -4997,7 +4997,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>derivative</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"Q\"  valueReference=\"2\" variability=\"continuous\" causality=\"internal\" alias=\"noAlias\">
 //       <Real    unit=\"W\" />
 //       <QualifiedName>
@@ -5007,7 +5007,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>algebraic</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //     <ScalarVariable name=\"C\"  valueReference=\"3\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"1.0\" fixed=\"true\"   unit=\"J/K\" />
 //       <QualifiedName>
@@ -5017,7 +5017,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"Qcapacity\"  valueReference=\"4\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"25.0\" fixed=\"true\"   unit=\"W\" />
@@ -5028,7 +5028,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"Tamb\"  valueReference=\"5\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"285.0\" fixed=\"true\"   unit=\"K\" />
@@ -5039,7 +5039,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"Tbar\"  valueReference=\"6\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"295.0\" fixed=\"true\"   unit=\"K\" />
@@ -5050,7 +5050,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //
 //     <ScalarVariable name=\"h\"  valueReference=\"7\" variability=\"parameter\" causality=\"internal\" alias=\"noAlias\">
 //       <Real start=\"2.0\" fixed=\"true\"   unit=\"W/K\" />
@@ -5061,7 +5061,7 @@ readFile("Bug3857.xml"); getErrorString();
 //       <TimePoint index=\"0\" isLinear=\"true\"/>
 //     </isLinearTimedVariables>
 //       <VariableCategory>independentParameter</VariableCategory>
-//     </ScalarVariable> 
+//     </ScalarVariable>
 //   </ModelVariables>
 //
 //   <equ:BindingEquations>
@@ -5135,7 +5135,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Arguments>
 //         </exp:FunctionCall>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
 //         <exp:Der>
@@ -5167,7 +5167,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </exp:Identifier>
 //         </exp:Div>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //   </equ:DynamicEquations>
 //
 //   <equ:InitialEquations>
@@ -5189,17 +5189,17 @@ readFile("Bug3857.xml"); getErrorString();
 //           <exp:QualifiedNamePart name=\"T\"/>
 //         </exp:Identifier>
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //     <equ:Equation>
 //       <exp:Sub>
-//          
+//
 //       </exp:Sub>
-//     </equ:Equation>  
+//     </equ:Equation>
 //   </equ:InitialEquations>
 //
 //   <fun:Algorithm>
@@ -5238,7 +5238,7 @@ readFile("Bug3857.xml"); getErrorString();
 //         <fun:Assign>
 //           <exp:Identifier>
 //             <exp:QualifiedNamePart name=\"heat\"/>
-//           </exp:Identifier> 
+//           </exp:Identifier>
 //           <fun:Expression>
 //             <exp:FunctionCall>
 //               <exp:Name>
@@ -5259,7 +5259,7 @@ readFile("Bug3857.xml"); getErrorString();
 //           </fun:Expression>
 //         </fun:Assign>
 //       </fun:Algorithm>
-//     </fun:Function> 
+//     </fun:Function>
 //   </fun:FunctionsList>
 //
 //

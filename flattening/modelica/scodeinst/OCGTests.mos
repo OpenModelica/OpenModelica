@@ -1,12 +1,12 @@
 // name: OCGTests.mos [OCG]
 // status: correct
 // cflags: -d=newInst
-// 
+//
 //
 // tests the overconstrained connection graph
-// 
+//
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint); getErrorString();
@@ -35,7 +35,7 @@ checkModel(Modelica.Mechanics.MultiBody.Examples.Elementary.UserDefinedGravityFi
 checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.Engine1b_analytic); getErrorString();
-checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6	); getErrorString();
+checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6 ); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar1); getErrorString();
 checkModel(Modelica.Mechanics.MultiBody.Examples.Loops.Fourbar2); getErrorString();

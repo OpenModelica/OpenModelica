@@ -1,10 +1,10 @@
 // name:      Tearing7-celMC3
 // keywords:  tearing
 // status:    correct
-// cflags: 	 +d=backenddaeinfo
+// cflags:   +d=backenddaeinfo
 
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 loadFile("Tearing7.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();

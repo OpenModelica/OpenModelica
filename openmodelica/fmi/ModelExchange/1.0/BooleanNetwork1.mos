@@ -4,7 +4,7 @@
 // teardown_command: rm -rf binaries sources modelDescription.xml BooleanNetwork1.fmu BooleanNetwork1_me_FMU.mo BooleanNetwork1.lib* BooleanNetwork1.so BooleanNetwork1.dll BooleanNetwork1_*.c BooleanNetwork1_*.h BooleanNetwork1_*.o BooleanNetwork1_*.json
 // Boolean variables, Boolean input variable, no continuous-time states, time events
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 loadFile("BooleanNetwork1.mo"); getErrorString();
 
 simulate(BooleanNetwork1, stopTime=10, numberOfIntervals=150, variableFilter="y|y1|y2|y3|y4|Q|QI"); getErrorString();

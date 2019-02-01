@@ -1428,5 +1428,5 @@ end Aufgabe3_3;
   end Aufgabe4_4b;
 
 
-  annotation (uses(Modelica(version="3.2")));
+  annotation (uses(Modelica(version="3.2.2")));
 end ServoSystem3;

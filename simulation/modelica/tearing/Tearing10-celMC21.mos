@@ -1,10 +1,10 @@
 // name:      Tearing10-celMC21
 // keywords:  tearing
 // status:    correct
-// cflags: 	 +d=backenddaeinfo
+// cflags:   +d=backenddaeinfo
 
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica,{"3.2.2"}); getErrorString();
 loadFile("Tearing10.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();

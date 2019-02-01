@@ -1,11 +1,11 @@
 // name: Bug4248.mos
-// keywords: 
+// keywords:
 // status: correct
 //
 // Tests that the simulation works correctly after a call to an API function
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 
 loadFile("./IMCNominalOperation.mo"); getErrorString();
 

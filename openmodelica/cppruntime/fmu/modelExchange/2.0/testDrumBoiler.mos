@@ -5,7 +5,7 @@
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 loadString("
 model DrumBoilerModel
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs = true);

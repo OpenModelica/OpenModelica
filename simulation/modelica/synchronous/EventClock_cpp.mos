@@ -2,7 +2,7 @@
 // keywords: synchronous clocked equations
 // status: correct
 
-loadModel(Modelica, languageStandard="3.3");getErrorString();
+loadModel(Modelica, {"3.2.2"}, languageStandard="3.3");getErrorString();
 loadFile("EventClock.mo");getErrorString();
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();

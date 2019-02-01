@@ -5,7 +5,7 @@
 
 setCommandLineOptions("+std=3.3"); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 loadModel(Modelica_Synchronous); getErrorString();
 simulate(Modelica_Synchronous.Examples.Systems.ControlledMixingUnit); getErrorString();
 simulate(Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscretizedContinuousController); getErrorString();

@@ -6,7 +6,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="1.0"); getErrorString();
 importFMU("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu", loglevel=0); getErrorString();
 loadFile("Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo"); getErrorString();

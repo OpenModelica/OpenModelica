@@ -11,7 +11,7 @@ simulate(ServoSystem3.Aufgabe4_2);  getErrorString();
 // true
 // ""
 // true
-// "Warning: Requested package Modelica of version 3.2, but this package was already loaded with version 3.2.2. You might experience problems if these versions are incompatible.
+// "Warning: Requested package Modelica of version 3.2.2, but this package was already loaded with version 3.2.3. You might experience problems if these versions are incompatible.
 // "
 // record SimulationResult
 //     resultFile = "ServoSystem3.Aufgabe4_2_res.mat",

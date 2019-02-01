@@ -1,7 +1,7 @@
 //name: Test13
 //status: correct
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.2"});
 getErrorString();
 
 

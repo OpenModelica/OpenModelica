@@ -5,7 +5,7 @@
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.2"}); getErrorString();
 loadFile("TestSwitch1.mo"); getErrorString();
 loadFile("TestSwitch2.mo"); getErrorString();
 loadFile("IdealSwitchStiff.mo"); getErrorString();
