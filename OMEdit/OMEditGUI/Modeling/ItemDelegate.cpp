@@ -154,9 +154,17 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight());
     painter->restore();
   }
-  /* ticket:5050 Use Qt::ElideRight for value column. Other columns use Qt::ElideMiddle. */
+  /* ticket:5050 Use Qt::ElideRight for value column only if the value is a double in non-scientific notation.
+   * If the value is in scientific notation then use Qt::ElideMiddle.
+   * Other columns use Qt::ElideMiddle. */
   if (parent() && (qobject_cast<VariablesTreeView*>(parent())) && index.column() == 1) {
-    opt.textElideMode = Qt::ElideRight;
+    bool isDouble;
+    text.toDouble(&isDouble);
+    if (isDouble && !(text.contains('e') || text.contains('E'))) {
+      opt.textElideMode = Qt::ElideRight;
+    } else {
+      opt.textElideMode = Qt::ElideMiddle;
+    }
   }
   /* if rich text flag is set */
   if (mDrawRichText) {
