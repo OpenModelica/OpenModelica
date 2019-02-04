@@ -762,9 +762,9 @@ CompleterItem::CompleterItem(const QString &key, const QString &value, const QSt
     mDescription = value;
   } else {
     mDescription = QString("<b>%1</b><i>%2</i>%3").arg(
-          QStringRef(&value).left(ind).toString(),
+          value.left(ind),
           select,
-          QStringRef(&value).right(value.size() - select.size() - ind).toString()
+          value.right(value.size() - select.size() - ind)
         ).replace("\n", "<br/>");
   }
 }
