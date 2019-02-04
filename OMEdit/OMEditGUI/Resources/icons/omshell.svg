@@ -14,9 +14,8 @@
    height="48px"
    id="svg1306"
    sodipodi:version="0.32"
-   inkscape:version="0.48.0 r9654"
-   sodipodi:docname="utilities-omshell-large.pdf"
-   inkscape:export-filename="/home/andreas/projekt/bild/tango/terminal4.png"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="omshell.svg"
    inkscape:export-xdpi="240.00000"
    inkscape:export-ydpi="240.00000"
    inkscape:output_extension="org.inkscape.output.svg.inkscape"
@@ -291,7 +290,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="11.313708"
-     inkscape:cx="24.201466"
+     inkscape:cx="9.4406113"
      inkscape:cy="22.975484"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -299,12 +298,12 @@
      inkscape:document-units="px"
      inkscape:window-width="926"
      inkscape:window-height="818"
-     inkscape:window-x="0"
-     inkscape:window-y="30"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:showpageshadow="false"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="1" />
   <metadata
      id="metadata1311">
     <rdf:RDF>
@@ -313,7 +312,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
         <dc:date>2005-10-15</dc:date>
         <dc:creator>
           <cc:Agent>
@@ -495,15 +494,14 @@
        transform="translate(4.375000,-6.250000e-2)" />
     <text
        xml:space="preserve"
-       style="font-size:18px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Arial;-inkscape-font-specification:Arial"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:0%;font-family:Arial;-inkscape-font-specification:Arial;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none"
        x="7.8665628"
        y="27.759069"
-       id="text4133"
-       sodipodi:linespacing="125%"><tspan
+       id="text4133"><tspan
          sodipodi:role="line"
          id="tspan4135"
          x="7.8665628"
          y="27.759069"
-         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#ffffff;font-family:Courier New;-inkscape-font-specification:Courier New Bold">OMS</tspan></text>
+         style="font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:18px;line-height:1.25;font-family:'Courier New';-inkscape-font-specification:'Courier New Bold';fill:#ffffff">OMS</tspan></text>
   </g>
 </svg>
