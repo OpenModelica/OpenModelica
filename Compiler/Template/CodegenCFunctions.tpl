@@ -1908,6 +1908,10 @@ case var as VARIABLE(__) then
     <%preExp%>
     <%params%>
     >>
+  // Treat shared array literals like other arrays, i.e. copy them. Array
+  // outputs in functions might otherwise end up pointing to shared literals,
+  // causing a segfault if such an array is then assigned to.
+  case SOME(arr as SHARED_LITERAL(__))
   case SOME(arr as ARRAY(__)) then
     let arrayExp = '<%daeExp(arr, contextFunction, &varInits, &varDecls, &auxFunction)%>'
     'copy_<%expTypeShort(var.ty)%>_array(<%arrayExp%>, &<%lhsVarName%>);<%\n%>'
