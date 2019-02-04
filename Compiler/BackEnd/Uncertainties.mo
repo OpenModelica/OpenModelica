@@ -438,7 +438,7 @@ algorithm
         /* Prepare Torn systems for Jacobians */
         //create the Set-S equation to BackendDae innerequation structure
         sets_inner_equations=createInnerEquations(tempsetS,var);
-        (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,knowns,tempsetC,sets_inner_equations,shared.functionTree);
+        (outDiffVars,outResidualVars,outOtherVars,outResidualEqns,outOtherEqns)=SymbolicJacobian.prepareTornStrongComponentData(allVars,allEqs,listReverse(knowns),tempsetC,sets_inner_equations,shared.functionTree);
         // Dump the torn systems
         /*
         BackendDump.dumpVariables(outDiffVars,"Jacobian_knownVariables");
@@ -611,9 +611,9 @@ algorithm
 
    print("\n\nAutomatic Verification Steps of DataReconciliation Algorithm"+ "\n" + UNDERLINE + "\n");
 
-   var:=List.map1r(knowns,BackendVariable.getVarAt,allVars);
+   var:=List.map1r(listReverse(knowns),BackendVariable.getVarAt,allVars);
    convar:=List.map1r(constantvars,BackendVariable.getVarAt,allVars);
-   BackendDump.dumpVarList(var,"knownVariables:"+dumplistInteger(knowns));
+   BackendDump.dumpVarList(var,"knownVariables:"+dumplistInteger(listReverse(knowns)));
    BackendDump.dumpVarList(convar,"ConstantVariables:"+dumplistInteger(constantvars));
    print("-SET_C:"+ dumplistInteger(setc)+ "\n" + "-SET_S:" + dumplistInteger(sets) +"\n\n");
 
