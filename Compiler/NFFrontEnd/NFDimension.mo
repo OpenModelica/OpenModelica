@@ -288,7 +288,7 @@ public
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
       case UNKNOWN()
-        then Expression.SIZE(Expression.CREF(Type.INTEGER(), ComponentRef.stripSubscripts(cref)),
+        then Expression.SIZE(Expression.CREF(Type.UNKNOWN(), ComponentRef.stripSubscripts(cref)),
                              SOME(Expression.INTEGER(index)));
     end match;
   end endExp;

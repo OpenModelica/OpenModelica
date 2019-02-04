@@ -1174,34 +1174,39 @@ function typeExpDim
   output Dimension dim;
   output Option<Expression> typedExp = NONE();
   output TypingError error;
+protected
+  Type ty;
+  Expression e;
 algorithm
-  (dim, error) := match exp
-    local
-      Type ty;
-      Expression e;
+  ty := Expression.typeOf(exp);
 
-    // An untyped array, use typeArrayDim to get the dimension.
-    case Expression.ARRAY(ty = Type.UNKNOWN())
-      then typeArrayDim(exp, dimIndex);
+  if Type.isKnown(ty) then
+    // If the expression has already been typed, just get the dimension from the type.
+    (dim, error) := nthDimensionBoundsChecked(ty, dimIndex);
+    typedExp := SOME(exp);
+  else
+    // Otherwise we try to type as little as possible of the expression to get
+    // the dimension we need, to avoid introducing unnecessary cycles.
+    (dim, error) := match exp
+      // An untyped array, use typeArrayDim to get the dimension.
+      case Expression.ARRAY(ty = Type.UNKNOWN())
+        then typeArrayDim(exp, dimIndex);
 
-    // A typed array, fetch the dimension from its type.
-    case Expression.ARRAY()
-      then nthDimensionBoundsChecked(exp.ty, dimIndex);
+      // A cref, use typeCrefDim to get the dimension.
+      case Expression.CREF()
+        then typeCrefDim(exp.cref, dimIndex, origin, info);
 
-    // A cref, use typeCrefDim to get the dimension.
-    case Expression.CREF()
-      then typeCrefDim(exp.cref, dimIndex, origin, info);
+      // Any other expression, type the whole expression and get the dimension
+      // from the type.
+      else
+        algorithm
+          (e, ty, _) := typeExp(exp, origin, info);
+          typedExp := SOME(e);
+        then
+          nthDimensionBoundsChecked(ty, dimIndex);
 
-    // Any other expression, type the whole expression and get the dimension
-    // from the type.
-    else
-      algorithm
-        (e, ty, _) := typeExp(exp, origin, info);
-        typedExp := SOME(e);
-      then
-        nthDimensionBoundsChecked(ty, dimIndex);
-
-  end match;
+    end match;
+  end if;
 end typeExpDim;
 
 function typeArrayDim

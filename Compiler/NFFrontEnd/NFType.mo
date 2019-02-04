@@ -427,6 +427,16 @@ public
     end match;
   end isUnknown;
 
+  function isKnown
+    input Type ty;
+    output Boolean isKnown;
+  algorithm
+    isKnown := match ty
+      case UNKNOWN() then false;
+      else true;
+    end match;
+  end isKnown;
+
   function isPolymorphic
     input Type ty;
     output Boolean isPolymorphic;
