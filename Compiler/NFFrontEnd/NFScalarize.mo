@@ -70,7 +70,9 @@ algorithm
   end for;
 
   flatModel.variables := listReverseInPlace(vars);
+  flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref);
   flatModel.equations := scalarizeEquations(flatModel.equations);
+  flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref);
   flatModel.initialEquations := scalarizeEquations(flatModel.initialEquations);
   flatModel.algorithms := list(scalarizeAlgorithm(a) for a in flatModel.algorithms);
   flatModel.initialAlgorithms := list(scalarizeAlgorithm(a) for a in flatModel.initialAlgorithms);
@@ -111,7 +113,7 @@ algorithm
     (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
 
     if Binding.isBound(binding) then
-      binding_iter := ExpressionIterator.fromExp(Binding.getTypedExp(binding));
+      binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
       bind_var := Binding.variability(binding);
 
       for cr in crefs loop
@@ -127,6 +129,7 @@ algorithm
       end for;
     end if;
   else
+    var.binding := Binding.mapExp(var.binding, expandComplexCref);
     vars := var :: vars;
   end if;
 end scalarizeVariable;
@@ -168,6 +171,32 @@ algorithm
     attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER)) :: attrs;
   end for;
 end nextTypeAttributes;
+
+function expandComplexCref
+  input output Expression exp;
+algorithm
+  exp := Expression.map(exp, expandComplexCref_traverser);
+end expandComplexCref;
+
+function expandComplexCref_traverser
+  input output Expression exp;
+algorithm
+  () := match exp
+    case Expression.CREF(ty = Type.ARRAY())
+      algorithm
+        // Expand crefs where any of the prefix nodes are arrays. For example if
+        // b in a.b.c is SomeType[2] we expand it into {a.b[1].c, a.b[2].c}.
+        // TODO: This is only done due to backend issues and shouldn't be
+        //       necessary.
+        if ComponentRef.isComplexArray(exp.cref) then
+          exp := ExpandExp.expand(exp);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end expandComplexCref_traverser;
 
 function scalarizeEquations
   input list<Equation> eql;

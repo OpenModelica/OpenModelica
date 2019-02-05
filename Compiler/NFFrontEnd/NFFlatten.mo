@@ -997,7 +997,7 @@ algorithm
         algorithm
           // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
-          eql := flattenEquations(eql, prefix);
+          eql := listReverseInPlace(flattenEquations(eql, prefix));
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then

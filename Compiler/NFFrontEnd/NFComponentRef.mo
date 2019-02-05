@@ -850,5 +850,29 @@ public
     end match;
   end depth;
 
+  function isComplexArray
+    input ComponentRef cref;
+    output Boolean complexArray;
+  algorithm
+    complexArray := match cref
+      case CREF() then isComplexArray2(cref.restCref);
+      else false;
+    end match;
+  end isComplexArray;
+
+  function isComplexArray2
+    input ComponentRef cref;
+    output Boolean complexArray;
+  algorithm
+    complexArray := match cref
+      case CREF(ty = Type.ARRAY())
+        guard Type.isArray(Type.subscript(cref.ty, cref.subscripts))
+        then true;
+
+      case CREF() then isComplexArray2(cref.restCref);
+      else false;
+    end match;
+  end isComplexArray2;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;
