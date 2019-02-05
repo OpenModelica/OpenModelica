@@ -3129,6 +3129,7 @@ algorithm
 
         (_,scode_builtin) := FBuiltin.getInitialFunctions();
         scodeP := listAppend(scode_builtin, SymbolTable.getSCode());
+        ExecStat.execStat("FrontEnd - Absyn->SCode");
 
         (dae, funcs) := NFInst.instClassInProgram(className, scodeP);
 
