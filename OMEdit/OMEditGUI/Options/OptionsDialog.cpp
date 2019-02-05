@@ -1150,10 +1150,16 @@ void OptionsDialog::saveSimulationSettings()
   // save compiler
   QString compiler = mpSimulationPage->getCompilerComboBox()->lineEdit()->text();
   mpSettings->setValue("simulation/compiler", compiler);
+  if (compiler.isEmpty()) {
+    compiler = mpSimulationPage->getCompilerComboBox()->lineEdit()->placeholderText();
+  }
   MainWindow::instance()->getOMCProxy()->setCompiler(compiler);
   // save cxxcompiler
   QString cxxCompiler = mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->text();
   mpSettings->setValue("simulation/cxxCompiler", cxxCompiler);
+  if (cxxCompiler.isEmpty()) {
+    cxxCompiler = mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->placeholderText();
+  }
   MainWindow::instance()->getOMCProxy()->setCXXCompiler(cxxCompiler);
   // save command line options ste manually by user. This will override above options.
   if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCCommandLineOptionsTextBox()->text())) {
@@ -3539,20 +3545,22 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpCompilerLabel = new Label(tr("C Compiler:"));
   mpCompilerComboBox = new QComboBox;
   mpCompilerComboBox->setEditable(true);
-  mpCompilerComboBox->lineEdit()->setText(MainWindow::instance()->getOMCProxy()->getCompiler());
+  mpCompilerComboBox->addItem("");
   mpCompilerComboBox->addItem("gcc");
 #ifdef Q_OS_UNIX
   mpCompilerComboBox->addItem("clang");
 #endif
+  mpCompilerComboBox->lineEdit()->setPlaceholderText(MainWindow::instance()->getOMCProxy()->getCompiler());
   // CXX Compiler
   mpCXXCompilerLabel = new Label(tr("CXX Compiler:"));
   mpCXXCompilerComboBox = new QComboBox;
   mpCXXCompilerComboBox->setEditable(true);
-  mpCXXCompilerComboBox->lineEdit()->setText(MainWindow::instance()->getOMCProxy()->getCXXCompiler());
-  mpCXXCompilerComboBox->addItem("g++", "g++");
+  mpCXXCompilerComboBox->addItem("");
+  mpCXXCompilerComboBox->addItem("g++");
 #ifdef Q_OS_UNIX
-  mpCXXCompilerComboBox->addItem("clang++", "clang++");
+  mpCXXCompilerComboBox->addItem("clang++");
 #endif
+  mpCXXCompilerComboBox->lineEdit()->setPlaceholderText(MainWindow::instance()->getOMCProxy()->getCXXCompiler());
   // OMC CommandLineOptions
   mpOMCCommandLineOptionsLabel = new Label(QString("%1:").arg(Helper::OMCCommandLineOptions));
   mpOMCCommandLineOptionsLabel->setToolTip(Helper::OMCCommandLineOptionsTip);
