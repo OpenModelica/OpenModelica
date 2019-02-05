@@ -320,8 +320,8 @@ instantiateModel(Modelica.Blocks.Examples.BooleanNetwork1); getErrorString();
 //   set1.y = if set1.firstActiveIndex == 0 then if set1.use_pre_as_default then pre(set1.y) else set1.y_default else set1.expr[set1.firstActiveIndex];
 //   falling.y = edge(falling.not_u);
 //   changing.y = change(changing.u);
-//   triggeredAdd.local_reset = false;
 //   triggeredAdd.local_set = 0;
+//   triggeredAdd.local_reset = false;
 //   when {triggeredAdd.trigger, triggeredAdd.local_reset} then
 //     triggeredAdd.y = if triggeredAdd.local_reset then triggeredAdd.local_set else pre(triggeredAdd.y) + triggeredAdd.u;
 //   end when;
