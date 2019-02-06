@@ -9084,33 +9084,21 @@ algorithm
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
 
-    // first try without instantiating, if class is in parents
-    case ((SCode.CLASS()),cdef,env)
-      equation
-        ErrorExt.setCheckpoint("getInheritedClassesHelper");
-        lst = getBaseClasses(cdef, env);
-        failure({} = lst);
-        ErrorExt.rollBack("getInheritedClassesHelper");
-      then
-        lst;
-
-    // clear any messages that may have been added
-    case ((SCode.CLASS()),_,_)
-      equation
-        ErrorExt.rollBack("getInheritedClassesHelper");
-      then
-        fail();
-
-    // if that fails, instantiate, which takes more time
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,env)
-      equation
+      algorithm
         ErrorExt.setCheckpoint("getInheritedClassesHelper");
-        env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
+        if SCode.isDerivedClass(c) then
+          // for derived classes search in the parent
+          env_2 := env;
+        else
+          // for non-derived classes search from self
+          env2 := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
+          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+          (_,env_2,_,_,_) :=
+            Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-        lst = getBaseClasses(cdef, env_2);
+          end if;
+        lst := getBaseClasses(cdef, env_2);
         ErrorExt.rollBack("getInheritedClassesHelper");
       then
         lst;
@@ -9458,7 +9446,7 @@ protected function getNthInheritedClass2
   input FCore.Graph inEnv4;
   output String outString;
 algorithm
-  outString := matchcontinue (inClass1,inClass2,inInteger3,inEnv4)
+  outString := match (inClass1,inClass2,inInteger3,inEnv4)
     local
       list<Absyn.ComponentRef> lst;
       Integer n_1,n;
@@ -9471,30 +9459,26 @@ algorithm
       ClassInf.State ci_state;
       SCode.Encapsulated encflag;
       SCode.Restriction restr;
-    /* First try without instantiating, if class is in parents */
-    case ((SCode.CLASS()),cdef,n,env)
-      equation
-        lst = getBaseClasses(cdef, env);
-        cref = listGet(lst, n);
-        path = Absyn.crefToPath(cref);
-        str = Absyn.pathString(path);
-      then
-        str;
-    /* If that fails, instantiate, which takes more time */
+
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
-      equation
-        env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-        lst = getBaseClasses(cdef, env_2);
-        cref = listGet(lst, n);
-        path = Absyn.crefToPath(cref);
-        str = Absyn.pathString(path);
+      algorithm
+        // for derived classes, search in parents
+        if SCode.isDerivedClass(c) then
+          lst := getBaseClasses(cdef, env);
+        else // for non-derived classes, search from inside the class
+          env2 := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
+          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+          (_,env_2,_,_,_) :=
+            Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
+              DAE.NOMOD(), Prefix.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+          lst := getBaseClasses(cdef, env_2);
+        end if;
+        cref := listGet(lst, n);
+        path := Absyn.crefToPath(cref);
+        str := Absyn.pathString(path);
       then
         str;
-  end matchcontinue;
+  end match;
 end getNthInheritedClass2;
 
 public function getComponentCount
