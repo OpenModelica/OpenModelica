@@ -301,6 +301,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
@@ -365,6 +366,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
+    pPlotWindow->setXLabel(QString("time (%1)").arg(pPlotWindow->getTimeUnit()));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     pPlotWindow->setSubWindow(pSubWindow);

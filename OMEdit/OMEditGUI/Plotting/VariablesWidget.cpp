@@ -2149,11 +2149,12 @@ void VariablesWidget::timeUnitChanged(QString unit)
     if (!pPlotWindow) {
       return;
     }
-    if (pPlotWindow->getPlotType()==PlotWindow::PLOTARRAY ||
-        pPlotWindow->getPlotType()==PlotWindow::PLOTARRAYPARAMETRIC) {
+    if (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY ||
+        pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
       pPlotWindow->setTimeUnit(unit);
       pPlotWindow->updateTimeText(unit);
-    } else {
+    } else if (pPlotWindow->getPlotType() == PlotWindow::PLOT ||
+               pPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
       if (convertUnit.unitsCompatible) {
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
