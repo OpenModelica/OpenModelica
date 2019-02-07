@@ -35,6 +35,8 @@
 
 extern const char* System_modelicaPlatform();
 extern const char* System_dirname(const char* str);
+extern const char* System_realpath(const char *path);
+extern const char* System_stringReplace(const char* str, const char* source, const char* target);
 char* _replace(const char* source_str,
                const char* search_str,
                const char* replace_str);
