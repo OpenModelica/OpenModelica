@@ -153,8 +153,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (5, 5)
 // ========================================
 // 1/1 (1): system.thetaRef / time = system.omega_internal   [dynamic |0|0|0|0|]
-// 2/2 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
-// 3/3 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
+// 2/2 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
+// 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
 // 4/4 (1): 0.0 = -system.thetaRel   [unknown |0|0|0|0|]
 // 5/5 (1): system.thetaRef = system.theta   [binding |0|0|0|0|]
 //
@@ -687,8 +687,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Equations (5, 5)
 // ========================================
 // 1/1 (1): system.omega_internal = system.thetaRef / time   [dynamic |0|0|0|0|]
-// 2/2 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
-// 3/3 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
+// 2/2 (1): system.omega = 314.1592653589793   [dynamic |0|0|0|0|]
+// 3/3 (1): system.thetaRef = system.omega * time   [dynamic |0|0|0|0|]
 // 4/4 (1): system.thetaRel = 0.0   [unknown |0|0|0|0|]
 // 5/5 (1): system.theta = system.thetaRef   [binding |0|0|0|0|]
 //
@@ -705,8 +705,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ========================================
 // 5 variables and equations
 // var 1 is solved in eqn 1
-// var 2 is solved in eqn 3
-// var 3 is solved in eqn 2
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 5
 //
@@ -714,8 +714,8 @@ val(fixedVoltageSource1.p[1], 1.0);
 // StrongComponents
 // ========================================
 // {4:4}
-// {3:2}
-// {2:3}
+// {2:2}
+// {3:3}
 // {5:5}
 // {1:1}
 //
