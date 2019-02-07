@@ -863,7 +863,7 @@ void DuplicateClassDialog::duplicateClass()
     if (mpLibraryTreeItem->getSaveContentsType() != LibraryTreeItem::SaveFolderStructure) {
       QString fileName = mpPathTextBox->text().isEmpty() ? mpNameTextBox->text() : mpPathTextBox->text() + "." + mpNameTextBox->text();
       if (!pParentLibraryTreeItem->isRootItem() && pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveInOneFile) {
-        fileName = pParentLibraryTreeItem->getFileName();
+        fileName = pParentLibraryTreeItem->getNameStructure();
       }
       QString classText = MainWindow::instance()->getOMCProxy()->listFile(fileName);
       QString beforeClassText;
