@@ -178,7 +178,7 @@ void printMatrix(double* matrix, int rows, int cols, string name)
 		for (int j=0;j<cols;j++)
 		{
 			//cout << setprecision(5);
-			cout << std::right << setw(15) << setprecision(5) << matrix[i+j*rows];
+			cout << std::right << setw(15) << matrix[i+j*rows];
 		}
 		cout << "\n";
 	}
@@ -198,7 +198,7 @@ void printMatrixWithHeaders(double* matrix, int rows, int cols, vector<string> h
 		for (int j=0;j<cols;j++)
 		{
 			//cout << setprecision(5);
-			cout << std::right << setw(15) << setprecision(5) << matrix[i+j*rows];
+			cout << std::right << setw(15) << matrix[i+j*rows];
 			//printf("% .5e ", matrix[i+j*rows]);
 		}
 		cout << "\n";
@@ -340,18 +340,27 @@ matrixData solveReconciledX(matrixData x, matrixData Sx, matrixData Ft, matrixDa
 	// Sx*Ft
 	double* tmpMatrixAf = (double*)calloc(Sx.rows*Ft.column,sizeof(double));
 	solveMatrixMultiplication(Sx.data,Ft.data,Sx.rows,Sx.column,Ft.rows,Ft.column,tmpMatrixAf);
-
-	//(Sx*Ft)*Fstar
+	//printMatrix(tmpMatrixAf,Sx.rows,Ft.column,"Sx*Ft");
+	//(Sx*Ft)*fstar
 	double* tmpMatrixBf = (double*)calloc(Sx.rows*Fstar.column,sizeof(double));
 	solveMatrixMultiplication(tmpMatrixAf,Fstar.data,Sx.rows,Ft.column,Fstar.rows,Fstar.column,tmpMatrixBf);
+	//printMatrix(tmpMatrixBf,Sx.rows,Fstar.column,"(Sx*Ft*fstar)");
 
 	matrixData rhs= {Sx.rows,Fstar.column,tmpMatrixBf};
 	//matrixData rhs = Calculate_Sx_Ft_Fstar(Sx,Ft,Fstar);
 
 	double* reconciledX = (double*)calloc(x.rows*x.column,sizeof(double));
 	solveMatrixSubtraction(x,rhs,reconciledX);
-
 	//printMatrix(reconciledX,x.rows,x.column,"reconciled X^cap ===> (x - (Sx*Ft*fstar))");
+	if(ACTIVE_STREAM(LOG_JAC))
+	{
+		cout << "Calculations of Reconciled_x ==> (x - (Sx*Ft*f*))" << "\n";
+		cout << "====================================================";
+		printMatrix(tmpMatrixAf,Sx.rows,Ft.column,"Sx*Ft");
+		printMatrix(tmpMatrixBf,Sx.rows,Fstar.column,"(Sx*Ft*f*)");
+		printMatrix(reconciledX,x.rows,x.column,"x - (Sx*Ft*f*))");
+		cout << "***** Completed ****** \n\n";
+	}
 	matrixData recon_x = {x.rows,x.column,reconciledX};
 	//free(reconciledX);
 	free(tmpMatrixAf);
@@ -374,15 +383,23 @@ matrixData solveReconciledSx(matrixData Sx, matrixData Ft, matrixData Fstar)
 	//(Sx*Ft)*Fstar
 	double* tmpMatrixB = (double*)calloc(Sx.rows*Fstar.column,sizeof(double));
 	solveMatrixMultiplication(tmpMatrixA,Fstar.data,Sx.rows,Ft.column,Fstar.rows,Fstar.column,tmpMatrixB);
-	//printMatrix1(tmpMatrixB,Sx.rows,Fstar.column,"Reconciled-(Sx*Ft*Fstar)");
+	//printMatrix(tmpMatrixB,Sx.rows,Fstar.column,"Reconciled-(Sx*Ft*Fstar)");
 
 	matrixData rhs= {Sx.rows,Fstar.column,tmpMatrixB};
 
 	//matrixData rhs = Calculate_Sx_Ft_Fstar(Sx,Ft,Fstar);
 	double* reconciledSx = (double*)calloc(Sx.rows*Sx.column,sizeof(double));
 	solveMatrixSubtraction(Sx,rhs,reconciledSx);
-
 	//printMatrix(reconciledSx,Sx.rows,Sx.column,"reconciled Sx ===> (Sx - (Sx*Ft*Fstar))");
+	if(ACTIVE_STREAM(LOG_JAC))
+	{
+		cout << "Calculations of Reconciled_Sx ===> (Sx - (Sx*Ft*F*))" << "\n";
+		cout << "============================================";
+		printMatrix(tmpMatrixA,Sx.rows,Ft.column,"(Sx*Ft)");
+		printMatrix(tmpMatrixB,Sx.rows,Fstar.column,"(Sx*Ft*F*)");
+		printMatrix(reconciledSx,Sx.rows,Sx.column,"Sx - (Sx*Ft*F*))");
+		cout << "***** Completed ****** \n\n";
+	}
 	matrixData recon_sx ={Sx.rows,Sx.column,reconciledSx};
 	//free(reconciledSx);
 	free(tmpMatrixA);
@@ -432,12 +449,15 @@ matrixData getTransposeMatrix(matrixData jacF)
 	int rows=jacF.column;
 	int cols=jacF.rows;
 	double* jacFT = (double*)calloc(rows*cols,sizeof(double)); // allocate for Matrix F-transpose
-	for (int i=0;i<rows; i++)
+	int k=0;
+	for (int i=0;i<jacF.rows; i++)
 	{
-		for (int j=0;j<cols;j++)
+		for (int j=0;j<jacF.column;j++)
 		{
 			// Perform matrix transpose store the elements in column major
-			jacFT[i*cols+j]= jacF.data[i+j*rows];
+			//cout << (i1*jacF.rows+j1) << " index :" << (i1+j1*jacF.rows) << " value is: " << jacF.data[i1+j1*jacF.rows] << "\n";
+			jacFT[k++]= jacF.data[i+j*jacF.rows];
+
 		}
 	}
 	matrixData Ft_data ={rows,cols,jacFT};
@@ -495,6 +515,8 @@ inputData getInputDataFromStartAttribute(csvData Sx_result, matrixData Sx, DATA*
 			{
 				tempx[h] = data->simulationInfo->inputVars[in];
 				index.push_back(in);
+				//cout << knowns[in] << "  start value :" << data->simulationInfo->inputVars[in] << "\n";
+				//cout << "fetch index :" << in << "\n";
 			}
 		}
 	}
@@ -702,20 +724,24 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	matrixData jacF = getJacobianMatrixF(data,threadData);
 	matrixData jacFt = getTransposeMatrix(jacF);
 
-	//printMatrix(jacF.data,jacF.rows,jacF.column,"checknewJacobian_F");
-	//printMatrix(jacFt.data,jacFt.rows,jacFt.column,"checknewJacobian_Ft");
+	printMatrix(jacF.data,jacF.rows,jacF.column,"F");
+	printMatrix(jacFt.data,jacFt.rows,jacFt.column,"Ft");
+
 
 	double* setc = (double*)calloc(data->modelData->nSetcVars,sizeof(double)); // allocate data for setc array
 	// store the setc data to compute for convergence as setc will be overriddeen with new values
 	double* tmpsetc = (double*)calloc(data->modelData->nSetcVars,sizeof(double));
 
-	/* loop to store the data C(x,y) rhs side */
-	for (int i=0; i < data->modelData->nSetcVars; i++)
+	/* loop to store the data C(x,y) rhs side, get the elements in reverse order */
+	int t=0;
+	for (int i=data->modelData->nSetcVars; i > 0; i--)
 	{
-		setc[i]=data->simulationInfo->setcVars[i];
-		tmpsetc[i]=data->simulationInfo->setcVars[i];
-		//cout << "array_setc_vars:=>" << setc[i] << "\n";
+		setc[t]=data->simulationInfo->setcVars[i-1];
+		tmpsetc[t]=data->simulationInfo->setcVars[i-1];
+		t++;
+		//cout << "array_setc_vars:=>" << t << ":" << data->simulationInfo->setcVars[i-1] << "\n";
 	}
+
 	int nsetcvars= data->modelData->nSetcVars;
 	matrixData vector_c = {nsetcvars,1,tmpsetc};
 	//allocate data for matrix multiplication F*Sx
@@ -727,7 +753,15 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	double * tmpmatrixD = (double*)calloc(jacF.rows*jacFt.column,sizeof(double));
 	solveMatrixMultiplication(tmpmatrixC,jacFt.data,jacF.rows,Sx.column,jacFt.rows,jacFt.column,tmpmatrixD);
 	//printMatrix(tmpmatrixD,jacF.rows,jacFt.column,"F*Sx*Ft");
-
+	//printMatrix(setc,nsetcvars,1,"c(x,y)");
+	if(ACTIVE_STREAM(LOG_JAC))
+	{
+		cout << "Calculations of Matrix (F*Sx*Ft) f* = c(x,y) " << "\n";
+		cout << "============================================";
+		printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*Sx");
+		printMatrix(tmpmatrixD,jacF.rows,jacFt.column,"F*Sx*Ft");
+		printMatrix(setc,nsetcvars,1,"c(x,y)");
+	}
 	/*
 	 * calculate f* for covariance matrix (F*Sx*Ftranspose).F*= c(x,y)
 	 * matrix setc will be overridden with new values which is the output
@@ -736,13 +770,23 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	 * B = setc
 	 */
 	solveSystemFstar(jacF.rows,1,tmpmatrixD,setc);
-	//printMatrix(setc,jacF.rows,1,"x^cap_f*");
-
+	//printMatrix(setc,jacF.rows,1,"f*");
+	if(ACTIVE_STREAM(LOG_JAC))
+	{
+		printMatrix(setc,jacF.rows,1,"f*");
+		cout << "***** Completed ****** \n\n";
+	}
 	matrixData tmpxcap ={x.rows,1,x.data};
 	matrixData tmpfstar = {jacF.rows,1,setc};
 	matrixData reconciled_X = solveReconciledX(tmpxcap,Sx,jacFt,tmpfstar);
 	//printMatrix(reconciled_X.data,reconciled_X.rows,reconciled_X.column,"reconciled_X ===> (x - (Sx*Ft*fstar))");
-
+	if(ACTIVE_STREAM(LOG_JAC))
+	{
+		cout << "Calculations of Matrix (F*Sx*Ft) F* = F*Sx " << "\n";
+		cout << "===============================================";
+		printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*Sx");
+		printMatrix(tmpmatrixD,jacF.rows,jacFt.column,"F*Sx*Ft");
+	}
 	/*
 	 * calculate F* for covariance matrix (F*Sx*Ftranspose).F*= (F*Sx)
 	 * matrix C will be overridden with new values which is the output
@@ -752,50 +796,53 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	 */
 	solveSystemFstar(jacF.rows,Sx.column,tmpmatrixD,tmpmatrixC);
 	//printMatrix(tmpmatrixC,jacF.rows,Sx.column,"Sx_F*");
+	if(ACTIVE_STREAM(LOG_JAC))
+	{
+		printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*");
+		cout << "***** Completed ****** \n\n";
+	}
 
 	matrixData tmpFstar = {jacF.rows,Sx.column,tmpmatrixC};
 	matrixData reconciled_Sx = solveReconciledSx(Sx,jacFt,tmpFstar);
 	//printMatrix(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,"reconciled Sx ===> (Sx - (Sx*Ft*Fstar))");
 
 	double value = solveConvergence(data,reconciled_X,reconciled_Sx,x,Sx,jacF,vector_c,tmpfstar);
-	if(value > eps && iterationcount==1)
+	if(value > eps )
 	{
-		cout << "J*/r > " << eps << ", Value not Converged, Starting the Convergence Iteration \n";
-		cout << "=========================================================================\n\n";
+		cout << "J*/r" << "(" << value << ")"  << " > " << eps << ", Value not Converged \n";
+		cout << "==========================================\n\n";
 	}
 	if(value > eps)
 	{
-		cout << "Running Convergence iteration: " << iterationcount << "\n";
-		cout << "================================" << "\n";
-		cout << "J*/r :=" << value << "\n";
-		printMatrix(jacF.data,jacF.rows,jacF.column,"F");
-		printMatrix(setc,jacF.rows,1,"f*");
-		printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*");
+		cout << "Running Convergence iteration: " << iterationcount << " with the following reconciled values:" << "\n";
+		cout << "========================================================================" << "\n";
+		//cout << "J*/r :=" << value << "\n";
+		//printMatrix(jacF.data,jacF.rows,jacF.column,"F");
+		//printMatrix(jacFt.data,jacFt.rows,jacFt.column,"Ft");
+		//printMatrix(setc,jacF.rows,1,"f*");
+		//printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*");
 		printMatrixWithHeaders(reconciled_X.data,reconciled_X.rows,reconciled_X.column,headers,"reconciled_X ===> (x - (Sx*Ft*fstar))");
 		printMatrixWithHeaders(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,headers,"reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))");
 		//free(x.data);
 		//free(Sx.data);
 		x.data=reconciled_X.data;
-		Sx.data=reconciled_Sx.data;
+		//Sx.data=reconciled_Sx.data;
 		iterationcount++;
 		return RunReconciliation(data, threadData, x, Sx, jacF, jacFt,eps,iterationcount,headers);
 	}
 	if(value < eps && iterationcount==1)
 	{
-		cout << "J*/r < " << eps << ", Convergence iteration not required \n\n";
+		cout << "J*/r" << "(" << value << ")"  << " > " << eps << ", Convergence iteration not required \n\n";
 	}
 	else
 	{
-		cout << "*****Convergence Completed******* \n\n";
+		cout << "***** Value Converged, Convergence Completed******* \n\n";
 	}
-	cout << "Final Results\n";
+	cout << "Final Results:\n";
 	cout << "=============\n";
 	cout << "Total Iteration to Converge : " << iterationcount << "\n";
 	cout << "Final Converged Value(J*/r) : " << value << "\n";
 	cout << "Epselon                     : " << eps << "\n";
-	printMatrix(jacF.data,jacF.rows,jacF.column,"F");
-	printMatrix(setc,jacF.rows,1,"f*");
-	printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*");
 	printMatrixWithHeaders(reconciled_X.data,reconciled_X.rows,reconciled_X.column,headers,"reconciled_X ===> (x - (Sx*Ft*fstar))");
 	printMatrixWithHeaders(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,headers,"reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))");
 	free(tmpFstar.data);
@@ -833,8 +880,8 @@ int dataReconciliation(DATA* data, threadData_t *threadData)
 	cout<< "\n\nInitial Data" << "\n" << "=============\n";
 	printMatrixWithHeaders(x.data,x.rows,x.column,Sx_data.headers,"X");
 	printMatrixWithHeaders(Sx.data,Sx.rows,Sx.column,Sx_data.headers,"Sx");
-	printMatrix(jacF.data,jacF.rows,jacF.column,"F");
-	printMatrix(jacFt.data,jacFt.rows,jacFt.column,"Ft");
+	//printMatrix(jacF.data,jacF.rows,jacF.column,"F");
+	//printMatrix(jacFt.data,jacFt.rows,jacFt.column,"Ft");
 	// Start the Algorithm
 	RunReconciliation(data,threadData,x,Sx,jacF,jacFt,atof(epselon),1,Sx_data.headers);
 	free(Sx.data);
