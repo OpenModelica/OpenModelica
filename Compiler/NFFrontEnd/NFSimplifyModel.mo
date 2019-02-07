@@ -376,7 +376,9 @@ algorithm
           if Expression.isTrue(cond) then
             if listEmpty(accum) then
               // If it's the first branch, remove the if and keep only the branch body.
-              elements := listAppend(simplifyEquations(body), elements);
+              for eq in body loop
+                elements := simplifyEquation(eq, elements);
+              end for;
               return;
             else
               // Otherwise just discard the rest of the branches.

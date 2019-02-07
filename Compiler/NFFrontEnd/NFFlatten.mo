@@ -997,7 +997,7 @@ algorithm
         algorithm
           // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
-          eql := listReverseInPlace(flattenEquations(eql, prefix));
+          eql := flattenEquations(eql, prefix);
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
@@ -1022,12 +1022,12 @@ algorithm
               equations := listAppend(eql, equations);
             else
               // Otherwise, append this branch.
-              bl := Equation.makeBranch(cond, eql, var) :: bl;
+              bl := Equation.makeBranch(cond, listReverseInPlace(eql), var) :: bl;
             end if;
           elseif not Expression.isFalse(cond) then
             // Only add the branch to the list of branches if the condition is not
             // literal false, otherwise just drop it since it will never trigger.
-            bl := Equation.makeBranch(cond, eql, var) :: bl;
+            bl := Equation.makeBranch(cond, listReverseInPlace(eql), var) :: bl;
           end if;
         then
           bl;
