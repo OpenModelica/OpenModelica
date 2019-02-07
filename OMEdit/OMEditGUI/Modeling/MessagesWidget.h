@@ -115,6 +115,8 @@ private:
   MessageWidget *mpWarningMessageWidget;
   MessageWidget *mpErrorMessageWidget;
 
+  QStringList mSuppressMessagesList;
+
 public:
   static MessagesWidget* instance() {return mpInstance;}
   MessageWidget* getAllMessageWidget() {return mpAllMessageWidget;}

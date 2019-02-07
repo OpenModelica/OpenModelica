@@ -388,6 +388,15 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mpMessagesTabWidget->addTab(mpWarningMessageWidget, tr("Warnings"));
   mpErrorMessageWidget = new MessageWidget;
   mpMessagesTabWidget->addTab(mpErrorMessageWidget, tr("Errors"));
+  mSuppressMessagesList.clear();
+#ifdef Q_OS_WIN
+  // nothing
+#elif Q_OS_MAC
+  mSuppressMessagesList << "modalSession has been exited prematurely*"; /* This warning is fixed in latest Qt versions but out OSX build still uses old Qt. */
+#else
+  mSuppressMessagesList << "libpng warning*" /* libpng warning comes from QWebView default images. */
+                        << "Gtk-Message:*" /* Gtk warning comes when Qt tries to open the native dialogs. */;
+#endif
   // Main Layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
@@ -426,6 +435,15 @@ void MessagesWidget::applyMessagesSettings()
  */
 void MessagesWidget::addGUIMessage(MessageItem messageItem)
 {
+  // suppress the unnecessary qt warning messages
+  foreach (QString suppressMessage, mSuppressMessagesList) {
+    QRegExp rx(suppressMessage);
+    rx.setPatternSyntax(QRegExp::Wildcard);
+    if (rx.exactMatch(messageItem.getMessage())) {
+      return;
+    }
+  }
+
   switch (messageItem.getErrorType()) {
     case StringHandler::Notification:
       mpNotificationMessageWidget->addGUIMessage(messageItem);
