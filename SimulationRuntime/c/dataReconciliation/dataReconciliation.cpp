@@ -754,6 +754,15 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	solveMatrixMultiplication(tmpmatrixC,jacFt.data,jacF.rows,Sx.column,jacFt.rows,jacFt.column,tmpmatrixD);
 	//printMatrix(tmpmatrixD,jacF.rows,jacFt.column,"F*Sx*Ft");
 	//printMatrix(setc,nsetcvars,1,"c(x,y)");
+	/*
+	 * Copy tmpmatrixC and tmpmatrixD to avoid loss of data
+	 * when calculating F*
+	 */
+	matrixData cpytmpmatrixC = {jacF.rows,Sx.column,tmpmatrixC};
+	matrixData cpytmpmatrixD = {jacF.rows,jacFt.column,tmpmatrixD};
+	matrixData tmpmatrixC1 = copyMatrix(cpytmpmatrixC);
+	matrixData tmpmatrixD1 = copyMatrix(cpytmpmatrixD);
+
 	if(ACTIVE_STREAM(LOG_JAC))
 	{
 		cout << "Calculations of Matrix (F*Sx*Ft) f* = c(x,y) " << "\n";
@@ -784,25 +793,27 @@ int RunReconciliation(DATA* data, threadData_t *threadData, inputData x, matrixD
 	{
 		cout << "Calculations of Matrix (F*Sx*Ft) F* = F*Sx " << "\n";
 		cout << "===============================================";
-		printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*Sx");
-		printMatrix(tmpmatrixD,jacF.rows,jacFt.column,"F*Sx*Ft");
+		//printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*Sx");
+		//printMatrix(tmpmatrixD,jacF.rows,jacFt.column,"F*Sx*Ft");
+		printMatrix(tmpmatrixC1.data,tmpmatrixC1.rows,tmpmatrixC1.column,"F*Sx");
+		printMatrix(tmpmatrixD1.data,tmpmatrixD1.rows,tmpmatrixD1.column,"F*Sx*Ft");
 	}
 	/*
 	 * calculate F* for covariance matrix (F*Sx*Ftranspose).F*= (F*Sx)
-	 * matrix C will be overridden with new values which is the output
+	 * tmpmatrixC1 will be overridden with new values which is the output
 	 * for the calculation A *x =B
 	 * A = tmpmatrixD
 	 * B = tmpmatrixC
 	 */
-	solveSystemFstar(jacF.rows,Sx.column,tmpmatrixD,tmpmatrixC);
+	solveSystemFstar(jacF.rows,Sx.column,tmpmatrixD1.data,tmpmatrixC1.data);
 	//printMatrix(tmpmatrixC,jacF.rows,Sx.column,"Sx_F*");
 	if(ACTIVE_STREAM(LOG_JAC))
 	{
-		printMatrix(tmpmatrixC,jacF.rows,Sx.column,"F*");
+		printMatrix(tmpmatrixC1.data,jacF.rows,Sx.column,"F*");
 		cout << "***** Completed ****** \n\n";
 	}
 
-	matrixData tmpFstar = {jacF.rows,Sx.column,tmpmatrixC};
+	matrixData tmpFstar = {jacF.rows,Sx.column,tmpmatrixC1.data};
 	matrixData reconciled_Sx = solveReconciledSx(Sx,jacFt,tmpFstar);
 	//printMatrix(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,"reconciled Sx ===> (Sx - (Sx*Ft*Fstar))");
 
