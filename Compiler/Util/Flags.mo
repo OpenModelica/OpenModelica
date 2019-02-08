@@ -1280,7 +1280,7 @@ constant ConfigFlag INIT_OPT_MODULES = CONFIG_FLAG(77, "initOptModules",
   Util.gettext("Sets the initialization optimization modules to use in the back end. See --help=optmodules for more info."));
 
 constant ConfigFlag MAX_MIXED_DETERMINED_INDEX = CONFIG_FLAG(78, "maxMixedDeterminedIndex",
-  NONE(), EXTERNAL(), INT_FLAG(3), NONE(),
+  NONE(), EXTERNAL(), INT_FLAG(10), NONE(),
   Util.gettext("Sets the maximum mixed-determined index that is handled by the initialization."));
 constant ConfigFlag USE_LOCAL_DIRECTION = CONFIG_FLAG(79, "useLocalDirection",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),

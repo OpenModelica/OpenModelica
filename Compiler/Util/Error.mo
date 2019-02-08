@@ -977,7 +977,7 @@ public constant Message VAR_NO_REMAINING_EQN = MESSAGE(582, SYMBOLIC(), WARNING(
 public constant Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = MESSAGE(583, TRANSLATION(), NOTIFICATION(),
   Util.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
 public constant Message MIXED_DETERMINED = MESSAGE(584, SYMBOLIC(), ERROR(),
-  Util.gettext("The given system is mixed-determined.   [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\"."));
+  Util.gettext("The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values."));
 public constant Message STACK_OVERFLOW_DETAILED = MESSAGE(584, SCRIPTING(), ERROR(),
   Util.gettext("Stack overflow occurred while evaluating %s:\n%s"));
 public constant Message NF_VECTOR_INVALID_DIMENSIONS = MESSAGE(585, TRANSLATION(), ERROR(),
