@@ -205,6 +205,10 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCancelButton = new QPushButton(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelCompilationOrSimulation()));
+  mpOpenTransformationalDebuggerButton = new QToolButton;
+  mpOpenTransformationalDebuggerButton->setIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
+  mpOpenTransformationalDebuggerButton->setToolTip(tr("Open Transformational Debugger"));
+  connect(mpOpenTransformationalDebuggerButton, SIGNAL(clicked()), SLOT(openTransformationalDebugger()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   // Generated Files tab widget
@@ -348,10 +352,11 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(5, 5, 5, 5);
-  pMainLayout->addWidget(mpProgressLabel, 0, 0, 1, 2);
+  pMainLayout->addWidget(mpProgressLabel, 0, 0, 1, 3);
   pMainLayout->addWidget(mpProgressBar, 1, 0);
   pMainLayout->addWidget(mpCancelButton, 1, 1);
-  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 2);
+  pMainLayout->addWidget(mpOpenTransformationalDebuggerButton, 1, 2);
+  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 3);
   setLayout(pMainLayout);
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions, this);
@@ -711,6 +716,23 @@ void SimulationOutputWidget::cancelCompilationOrSimulation()
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
+  }
+}
+
+/*!
+ * \brief SimulationOutputWidget::openTransformationalDebugger
+ * Slot activated when mpOpenTransformationalDebuggerButton clicked SIGNAL is raised.\n
+ * Opens the transformational debugger.
+ */
+void SimulationOutputWidget::openTransformationalDebugger()
+{
+  QString fileName = QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName());
+  /* open the model_info.json file */
+  if (QFileInfo(fileName).exists()) {
+    MainWindow::instance()->showTransformationsWidget(fileName);
+  } else {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
   }
 }
 
