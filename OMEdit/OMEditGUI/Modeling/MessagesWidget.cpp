@@ -391,7 +391,7 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mSuppressMessagesList.clear();
 #ifdef Q_OS_WIN
   // nothing
-#elif Q_OS_MAC
+#elif defined(Q_OS_MAC)
   mSuppressMessagesList << "modalSession has been exited prematurely*"; /* This warning is fixed in latest Qt versions but out OSX build still uses old Qt. */
 #else
   mSuppressMessagesList << "libpng warning*" /* libpng warning comes from QWebView default images. */
