@@ -1999,7 +1999,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
           /* fprintf(stderr, "found dir match: %ld %s - ok=%d\n", i, ent->d_name, ok); */
         }
         entlen = strlen(ent->d_name);
-        if (!ok && ((entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo")) || entlen > 4 && 0==strcmp(ent->d_name+entlen-4,".moc")) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+        if (!ok && ((entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo")) || (entlen > 4 && 0==strcmp(ent->d_name+entlen-4,".moc"))) && regularFileExistsInDirectory(mp,"",ent->d_name)) {
           /* fprintf(stderr, "found match file: %ld %s - ok=%d\n", i, ent->d_name, ok); */
           res[i].fileIsDir=0;
           ok=1;
