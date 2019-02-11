@@ -667,11 +667,19 @@ function simplifyCast
   output Expression castExp;
 algorithm
   castExp := match (ty, exp)
+    local
+      Type ety;
+
     case (Type.REAL(), Expression.INTEGER())
       then Expression.REAL(intReal(exp.value));
 
     case (Type.ARRAY(elementType = Type.REAL()), Expression.ARRAY())
-      then Expression.mapArrayElements(exp, function simplifyCast(ty = Type.REAL()));
+      algorithm
+        ety := Type.unliftArray(ty);
+        exp.elements := list(simplifyCast(e, ety) for e in exp.elements);
+        exp.ty := Type.setArrayElementType(exp.ty, Type.arrayElementType(ty));
+      then
+        exp;
 
     else Expression.CAST(ty, exp);
   end match;
