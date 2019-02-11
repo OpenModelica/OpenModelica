@@ -30,6 +30,7 @@
  */
 
 function boolAnd
+  "Logically combine two Booleans with 'and' operator"
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
@@ -39,6 +40,7 @@ algorithm
 end boolAnd;
 
 function boolOr
+  "Logically combine two Booleans with 'or' operator"
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
@@ -48,6 +50,7 @@ algorithm
 end boolOr;
 
 function boolNot
+  "Logically invert Boolean value using 'not' operator"
   input Boolean b;
   output Boolean nb;
 algorithm
@@ -56,6 +59,7 @@ algorithm
 end boolNot;
 
 function boolEq
+  "Compares two Booleans"
   input Boolean b1;
   input Boolean b2;
   output Boolean b;
@@ -65,6 +69,7 @@ algorithm
 end boolEq;
 
 function boolString
+  "Returns \"true\" or \"false\" string"
   input Boolean b;
   output String str;
 algorithm
@@ -73,6 +78,7 @@ algorithm
 end boolString;
 
 function intAdd
+  "Adds two Integer values"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -82,6 +88,7 @@ algorithm
 end intAdd;
 
 function intSub
+  "Subtracts two Integer values"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -91,6 +98,7 @@ algorithm
 end intSub;
 
 function intMul
+  "Multiplies two Integer values"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -100,6 +108,7 @@ algorithm
 end intMul;
 
 function intDiv
+  "Divides two Integer values"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -109,6 +118,7 @@ algorithm
 end intDiv;
 
 function intMod
+  "Calculates remainder of Integer division i1/i2"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -118,6 +128,7 @@ algorithm
 end intMod;
 
 function intMax
+  "Returns the bigger one of two Integer values"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -127,6 +138,7 @@ algorithm
 end intMax;
 
 function intMin
+  "Returns the smaller one of two Integer values"
   input Integer i1;
   input Integer i2;
   output Integer i;
@@ -136,6 +148,7 @@ algorithm
 end intMin;
 
 function intAbs
+  "Returns the absolute value of Integer i"
   input Integer i;
   output Integer oi;
 algorithm
@@ -144,6 +157,7 @@ algorithm
 end intAbs;
 
 function intNeg
+  "Returns negative value of Integer i"
   input Integer i;
   output Integer oi;
 algorithm
@@ -152,6 +166,7 @@ algorithm
 end intNeg;
 
 function intLt
+  "Returns whether Integer i1 is smaller than Integer i2"
   input Integer i1;
   input Integer i2;
   output Boolean b;
@@ -161,6 +176,7 @@ algorithm
 end intLt;
 
 function intLe
+  "Returns whether Integer i1 is smaller than or equal to Integer i2"
   input Integer i1;
   input Integer i2;
   output Boolean b;
@@ -170,6 +186,7 @@ algorithm
 end intLe;
 
 function intEq
+  "Returns whether Integer i1 is equal to Integer i2"
   input Integer i1;
   input Integer i2;
   output Boolean b;
@@ -179,6 +196,7 @@ algorithm
 end intEq;
 
 function intNe
+  "Returns whether Integer i1 is not equal to Integer i2"
   input Integer i1;
   input Integer i2;
   output Boolean b;
@@ -188,6 +206,7 @@ algorithm
 end intNe;
 
 function intGe
+  "Returns whether Integer i1 is greater than or equal to Integer i2"
   input Integer i1;
   input Integer i2;
   output Boolean b;
@@ -197,6 +216,7 @@ algorithm
 end intGe;
 
 function intGt
+  "Returns whether Integer i1 is greater than Integer i2"
   input Integer i1;
   input Integer i2;
   output Boolean b;
@@ -206,65 +226,72 @@ algorithm
 end intGt;
 
 function intBitNot
+  "Returns bitwise inverted Integer number of i"
   input Integer i;
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise and (like C, ~i).</p>
+<p>Bitwise not (like C, ~i).</p>
 </html>"));
 end intBitNot;
 
 function intBitAnd
+  "Returns bitwise 'and' of Integers i1 and i2"
   input Integer i1;
   input Integer i2;
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise and (like C, i1 &amp; i2).</p>
+<p>Bitwise and (like C, i1 &amp; i2).</p>
 </html>"));
 end intBitAnd;
 
 function intBitOr
+  "Returns bitwise 'or' of Integers i1 and i2"
   input Integer i1;
   input Integer i2;
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise or (like C, i1 | i2).</p>
+<p>Bitwise or (like C, i1 | i2).</p>
 </html>"));
 end intBitOr;
 
 function intBitXor
+  "Returns bitwise 'xor' of Integers i1 and i2"
   input Integer i1;
   input Integer i2;
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise exclusive or (like C, i1 ^ i2).</p>
+<p>Bitwise exclusive or (like C, i1 ^ i2).</p>
 </html>"));
 end intBitXor;
 
 function intBitLShift
+  "Returns bitwise left shift of Integer i by s bits"
   input Integer i;
   input Integer s;
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise left shift (like C, i << s).</p>
+<p>Bitwise left shift (like C, i << s).</p>
 </html>"));
 end intBitLShift;
 
 function intBitRShift
+  "Returns bitwise right shift of Integer i by s bits"
   input Integer i;
   input Integer s;
   output Integer o;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Bit-wise right shift (like C, i >> s).</p>
+<p>Bitwise right shift (like C, i >> s).</p>
 </html>"));
 end intBitRShift;
 
 function intReal
+  "Converts Integer to Real"
   input Integer i;
   output Real r;
 algorithm
@@ -273,6 +300,7 @@ algorithm
 end intReal;
 
 function intString
+  "Converts Integer to String"
   input Integer i;
   output String s;
   external "builtin";
