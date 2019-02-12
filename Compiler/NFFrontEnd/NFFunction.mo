@@ -1616,9 +1616,8 @@ uniontype Function
   end hasUnboxArgs;
 
   function hasUnboxArgsAnnotation
-    input SCode.Element def;
-    output Boolean res =
-      SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_UnboxArguments");
+    input SCode.Comment cmt;
+    output Boolean res = SCode.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_UnboxArguments");
   end hasUnboxArgsAnnotation;
 
   function hasOptionalArgument
@@ -1856,15 +1855,15 @@ protected
   end makeSlot;
 
   function hasOMPure
-    input SCode.Element def;
+    input SCode.Comment cmt;
     output Boolean res =
-      not SCode.hasBooleanNamedAnnotationInClass(def, "__OpenModelica_Impure");
+      not SCode.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure");
   end hasOMPure;
 
   function hasImpure
-    input SCode.Element def;
+    input SCode.Comment cmt;
     output Boolean res =
-      SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
+      SCode.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
   end hasImpure;
 
   function getBuiltin
@@ -1872,6 +1871,32 @@ protected
     output DAE.FunctionBuiltin builtin = if SCode.isBuiltinElement(def) then
        DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
   end getBuiltin;
+
+  function mergeFunctionAnnotations
+    "Merges the function's comments from inherited classes."
+    input list<SCode.Comment> comments;
+    output SCode.Comment outComment;
+  protected
+    Option<String> comment = NONE();
+    SCode.Mod mod = SCode.NOMOD(), mod2;
+  algorithm
+    for cmt in comments loop
+      if isNone(comment) then
+        comment := cmt.comment;
+      end if;
+
+      mod := match cmt
+        case SCode.COMMENT(annotation_ = SOME(SCode.ANNOTATION(modification = mod2)))
+          then SCode.mergeModifiers(mod2, mod);
+        else mod;
+      end match;
+    end for;
+
+    outComment := match mod
+      case SCode.NOMOD() then SCode.COMMENT(NONE(), comment);
+      else SCode.COMMENT(SOME(SCode.ANNOTATION(mod)), comment);
+    end match;
+  end mergeFunctionAnnotations;
 
   function makeAttributes
     input InstNode node;
@@ -1884,6 +1909,8 @@ protected
     SCode.Restriction res;
     SCode.FunctionRestriction fres;
     Boolean is_partial;
+    list<SCode.Comment> cmts;
+    SCode.Comment cmt;
   algorithm
     def := InstNode.definition(node);
     res := SCode.getClassRestriction(def);
@@ -1892,6 +1919,9 @@ protected
 
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
     is_partial := SCode.isPartial(def);
+
+    cmts := InstNode.getComments(node);
+    cmt := mergeFunctionAnnotations(cmts);
 
     attr := matchcontinue fres
       local
@@ -1907,11 +1937,11 @@ protected
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCode.isBuiltinFunction(def, in_params, out_params);
-          inline_ty := InstUtil.classIsInlineFunc(def);
-          is_impure := is_impure or hasImpure(def);
-          has_unbox_args := hasUnboxArgsAnnotation(def);
+          inline_ty := InstUtil.commentIsInlineFunc(cmt);
+          is_impure := is_impure or hasImpure(cmt);
+          has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL());
 
       // Parallel function: there are some builtin functions.
@@ -1920,18 +1950,18 @@ protected
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCode.isBuiltinFunction(def, in_params, out_params);
-          inline_ty := InstUtil.classIsInlineFunc(def);
-          has_unbox_args := hasUnboxArgsAnnotation(def);
+          inline_ty := InstUtil.commentIsInlineFunc(cmt);
+          has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION());
 
       // Parallel function: non-builtin.
       case SCode.FunctionRestriction.FR_PARALLEL_FUNCTION()
         algorithm
-          inline_ty := InstUtil.classIsInlineFunc(def);
+          inline_ty := InstUtil.commentIsInlineFunc(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), false, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
             getBuiltin(def), DAE.FP_PARALLEL_FUNCTION());
 
       // Kernel functions: never builtin and never inlined.
@@ -1942,15 +1972,15 @@ protected
       // Normal function.
       else
         algorithm
-          inline_ty := InstUtil.classIsInlineFunc(def);
+          inline_ty := InstUtil.commentIsInlineFunc(cmt);
 
           // In Modelica 3.2 and before, external functions with side-effects are not marked.
           is_impure := SCode.isRestrictionImpure(res,
               Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') or
               not listEmpty(outputs)) or
-            SCode.hasBooleanNamedAnnotationInClass(def, "__ModelicaAssociation_Impure");
+            SCode.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(def), is_impure, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
             getBuiltin(def), DAE.FP_NON_PARALLEL());
 
     end matchcontinue;

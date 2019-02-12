@@ -1509,6 +1509,22 @@ uniontype InstNode
     end match;
   end clone;
 
+  function getComments
+    input InstNode node;
+    input list<SCode.Comment> accumCmts = {};
+    output list<SCode.Comment> cmts;
+  algorithm
+    cmts := match node
+      local
+        SCode.Comment cmt;
+        Class cls;
+
+      case CLASS_NODE(definition = SCode.CLASS(cmt = cmt))
+        then cmt :: Class.getDerivedComments(Pointer.access(node.cls), accumCmts);
+
+      else accumCmts;
+    end match;
+  end getComments;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

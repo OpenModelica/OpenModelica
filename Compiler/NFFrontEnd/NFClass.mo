@@ -602,6 +602,16 @@ uniontype Class
     end match;
   end lastBaseClass;
 
+  function getDerivedComments
+    input Class cls;
+    input output list<SCode.Comment> cmts;
+  algorithm
+    cmts := match cls
+      case EXPANDED_DERIVED() then InstNode.getComments(cls.baseClass, cmts);
+      case TYPED_DERIVED() then InstNode.getComments(cls.baseClass, cmts);
+      else cmts;
+    end match;
+  end getDerivedComments;
 end Class;
 
 annotation(__OpenModelica_Interface="frontend");
