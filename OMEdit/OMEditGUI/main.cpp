@@ -44,7 +44,7 @@
  * - Dr. Henning Kiel - <a href="mailto:henning.kiel@w-hs.de">henning.kiel@w-hs.de</a>
  * - Haris Kapidzic
  * - Abhinn Kothari
- * - Lennart Ochel - <a href="mailto:lennart.ochel@fh-bielefeld.de">lennart.ochel@fh-bielefeld.de</a>
+ * - Lennart Ochel - <a href="mailto:lennart.ochel@liu.se">lennart.ochel@liu.se</a>
  * - Volker Waurich - <a href="mailto:volker.waurich@tu-dresden.de">volker.waurich@tu-dresden.de</a>
  * - Rüdiger Franke
  * - Martin Flehmig

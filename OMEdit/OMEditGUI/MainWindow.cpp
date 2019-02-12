@@ -4381,7 +4381,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<li>Dr. Henning Kiel - <u><a href=\"mailto:henning.kiel@w-hs.de\">henning.kiel@w-hs.de</a></u></li>"
      "<li>Haris Kapidzic</li>"
      "<li>Abhinn Kothari</li>"
-     "<li>Lennart Ochel - <u><a href=\"mailto:lennart.ochel@fh-bielefeld.de\">lennart.ochel@fh-bielefeld.de</a></u></li>"
+     "<li>Lennart Ochel - <u><a href=\"mailto:lennart.ochel@liu.se\">lennart.ochel@liu.se</a></u></li>"
      "<li>Volker Waurich - <u><a href=\"mailto:volker.waurich@tu-dresden.de\">volker.waurich@tu-dresden.de</a></u></li>"
      "<li>Rüdiger Franke</li>"
      "<li>Martin Flehmig</li>"
