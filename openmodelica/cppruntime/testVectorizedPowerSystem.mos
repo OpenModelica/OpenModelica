@@ -45,7 +45,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: system.initime:DISCRETE(flow=false unit = "s" )  type: Real 
+// 1: system.initime:DISCRETE(unit = "s" )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -71,7 +71,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: busBar1.phi:VARIABLE(flow=false unit = "rad" )  type: Real 
+// 1: busBar1.phi:VARIABLE(unit = "rad" )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -95,7 +95,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: busBar1.I:VARIABLE(flow=false unit = "A" nominal = 1.0 )  type: Real 
+// 1: busBar1.I:VARIABLE(unit = "A" nominal = 1.0 )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -119,7 +119,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: busBar1.V:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  type: Real 
+// 1: busBar1.V:VARIABLE(unit = "V" nominal = 1000.0 )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -144,10 +144,10 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Variables (5)
 // ========================================
 // 1: system.omega_internal:VARIABLE(flow=false protected = true )  type: Real 
-// 2: system.omega:VARIABLE(flow=false start = 314.1592653589793 unit = "rad/s" )  type: Real 
-// 3: system.thetaRef:VARIABLE(flow=false unit = "rad" )  "angle of reference frame" type: Real 
-// 4: system.thetaRel:VARIABLE(flow=false unit = "rad" )  "angle relative to reference frame" type: Real 
-// 5: system.theta:VARIABLE(flow=false start = 0.0 unit = "rad" )  "system angle" type: Real 
+// 2: system.omega:VARIABLE(start = 314.1592653589793 unit = "rad/s" )  type: Real 
+// 3: system.thetaRef:VARIABLE(unit = "rad" )  "angle of reference frame" type: Real 
+// 4: system.thetaRel:VARIABLE(unit = "rad" )  "angle relative to reference frame" type: Real 
+// 5: system.theta:VARIABLE(start = 0.0 unit = "rad" )  "system angle" type: Real 
 //
 //
 // Equations (5, 5)
@@ -175,7 +175,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: fixedVoltageSource1.phi:VARIABLE(flow=false unit = "rad" )  type: Real 
+// 1: fixedVoltageSource1.phi:VARIABLE(unit = "rad" )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -199,17 +199,17 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (13)
 // ========================================
-// 1: busBar1.p:VARIABLE(flow=false unit = "W" )  type: Real[1]  [1]
-// 2: busBar1.i:VARIABLE(flow=false start = busBar1.i_start unit = "A" nominal = 1.0 )  type: Real[1]  [1]
-// 3: busBar1.v:VARIABLE(flow=false start = busBar1.v_start unit = "V" nominal = 1000.0 )  type: Real[1]  [1]
+// 1: busBar1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
+// 2: busBar1.i:VARIABLE(start = busBar1.i_start unit = "A" nominal = 1.0 )  type: Real[1]  [1]
+// 3: busBar1.v:VARIABLE(start = busBar1.v_start unit = "V" nominal = 1000.0 )  type: Real[1]  [1]
 // 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
 // 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
 // 6: busBar1.terminal_p.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
 // 7: busBar1.terminal_p.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
 // 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
 // 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
-// 10: fixedLoad1.p:VARIABLE(flow=false unit = "W" )  type: Real[3, 1]  [3,1]
-// 11: fixedVoltageSource1.p:VARIABLE(flow=false unit = "W" )  type: Real[1]  [1]
+// 10: fixedLoad1.p:VARIABLE(unit = "W" )  type: Real[3, 1]  [3,1]
+// 11: fixedVoltageSource1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
 // 12: fixedVoltageSource1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
 // 13: fixedVoltageSource1.terminal.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
 //
@@ -348,26 +348,26 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (20)
 // ========================================
-// 1: busBar1.n_n:PARAM(flow=false )  = 3  type: Integer 
-// 2: busBar1.i_start:PARAM(flow=false unit = "A" nominal = 1.0 )  = {0.0}  "Start value for current" type: Real[1]  [1]
-// 3: busBar1.v_start:PARAM(flow=false unit = "V" nominal = 1000.0 )  = {0.0}  "Start value for voltage drop" type: Real[1]  [1]
-// 4: fixedLoad1.v_start:PARAM(flow=false unit = "V" nominal = 1000.0 )  = {1.0}  "Start value for voltage drop" type: Real[3, 1]  [3,1]
-// 5: fixedLoad1.P:PARAM(flow=false unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3]  [3]
-// 6: fixedLoad1.phi:PARAM(flow=false unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3]  [3]
-// 7: system.synRef:PARAM(flow=false final = true )  = true  type: Boolean 
-// 8: system.w_nom:PARAM(flow=false unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real 
-// 9: system.omega_nom:PARAM(flow=false unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real 
-// 10: system.dynType:PARAM(flow=false min = PowerSystems.Types.Dynamics.FreeInitial max = PowerSystems.Types.Dynamics.SteadyState final = true )  = PowerSystems.Types.Dynamics.SteadyInitial  "transient or steady-state model" type: enumeration(FreeInitial, FixedInitial, SteadyInitial, SteadyState) 
-// 11: system.refType:PARAM(flow=false min = PowerSystems.Types.ReferenceFrame.Synchron max = PowerSystems.Types.ReferenceFrame.Inertial final = true )  = PowerSystems.Types.ReferenceFrame.Synchron  "reference frame (3-phase)" type: enumeration(Synchron, Inertial) 
-// 12: system.alpha0:PARAM(flow=false unit = "rad" final = true )  = 0.0  "phase angle" type: Real 
-// 13: system.f_lim:PARAM(flow=false unit = "Hz" final = true )  = {25.0, 100.0}  "limit frequencies (for supervision of average frequency)" type: Real[2]  [2]
-// 14: system.f_nom:PARAM(flow=false unit = "Hz" final = true )  = 50.0  "nominal frequency" type: Real 
-// 15: system.f:PARAM(flow=false unit = "Hz" final = true )  = 50.0  "frequency if type is parameter, else initial frequency" type: Real 
-// 16: system.fType:PARAM(flow=false min = PowerSystems.Types.SystemFrequency.Parameter max = PowerSystems.Types.SystemFrequency.Average final = true )  = PowerSystems.Types.SystemFrequency.Parameter  "system frequency type" type: enumeration(Parameter, Signal, Average) 
-// 17: fixedVoltageSource1.V:PARAM(flow=false unit = "V" nominal = 1000.0 )  = 10000.0  "value of constant voltage" type: Real 
-// 18: fixedVoltageSource1.definiteReference:PARAM(flow=false final = true )  = false  "serve as definite root" type: Boolean 
-// 19: fixedVoltageSource1.potentialReference:PARAM(flow=false final = true )  = true  "serve as potential root" type: Boolean 
-// 20: n:PARAM(flow=false )  = 3  "number of loads" type: Integer 
+// 1: busBar1.n_n:PARAM()  = 3  type: Integer 
+// 2: busBar1.i_start:PARAM(unit = "A" nominal = 1.0 )  = {0.0}  "Start value for current" type: Real[1]  [1]
+// 3: busBar1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {0.0}  "Start value for voltage drop" type: Real[1]  [1]
+// 4: fixedLoad1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {1.0}  "Start value for voltage drop" type: Real[3, 1]  [3,1]
+// 5: fixedLoad1.P:PARAM(unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3]  [3]
+// 6: fixedLoad1.phi:PARAM(unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3]  [3]
+// 7: system.synRef:PARAM(final = true )  = true  type: Boolean 
+// 8: system.w_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real 
+// 9: system.omega_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real 
+// 10: system.dynType:PARAM(min = PowerSystems.Types.Dynamics.FreeInitial max = PowerSystems.Types.Dynamics.SteadyState final = true )  = PowerSystems.Types.Dynamics.SteadyInitial  "transient or steady-state model" type: enumeration(FreeInitial, FixedInitial, SteadyInitial, SteadyState) 
+// 11: system.refType:PARAM(min = PowerSystems.Types.ReferenceFrame.Synchron max = PowerSystems.Types.ReferenceFrame.Inertial final = true )  = PowerSystems.Types.ReferenceFrame.Synchron  "reference frame (3-phase)" type: enumeration(Synchron, Inertial) 
+// 12: system.alpha0:PARAM(unit = "rad" final = true )  = 0.0  "phase angle" type: Real 
+// 13: system.f_lim:PARAM(unit = "Hz" final = true )  = {25.0, 100.0}  "limit frequencies (for supervision of average frequency)" type: Real[2]  [2]
+// 14: system.f_nom:PARAM(unit = "Hz" final = true )  = 50.0  "nominal frequency" type: Real 
+// 15: system.f:PARAM(unit = "Hz" final = true )  = 50.0  "frequency if type is parameter, else initial frequency" type: Real 
+// 16: system.fType:PARAM(min = PowerSystems.Types.SystemFrequency.Parameter max = PowerSystems.Types.SystemFrequency.Average final = true )  = PowerSystems.Types.SystemFrequency.Parameter  "system frequency type" type: enumeration(Parameter, Signal, Average) 
+// 17: fixedVoltageSource1.V:PARAM(unit = "V" nominal = 1000.0 )  = 10000.0  "value of constant voltage" type: Real 
+// 18: fixedVoltageSource1.definiteReference:PARAM(final = true )  = false  "serve as definite root" type: Boolean 
+// 19: fixedVoltageSource1.potentialReference:PARAM(final = true )  = true  "serve as potential root" type: Boolean 
+// 20: n:PARAM()  = 3  "number of loads" type: Integer 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
@@ -561,17 +561,17 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (13)
 // ========================================
-// 1: busBar1.p:VARIABLE(flow=false unit = "W" )  type: Real[1]  [1]
-// 2: busBar1.i:VARIABLE(flow=false start = busBar1.i_start unit = "A" nominal = 1.0 )  type: Real[1]  [1]
-// 3: busBar1.v:VARIABLE(flow=false start = busBar1.v_start unit = "V" nominal = 1000.0 )  type: Real[1]  [1]
+// 1: busBar1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
+// 2: busBar1.i:VARIABLE(start = busBar1.i_start unit = "A" nominal = 1.0 )  type: Real[1]  [1]
+// 3: busBar1.v:VARIABLE(start = busBar1.v_start unit = "V" nominal = 1000.0 )  type: Real[1]  [1]
 // 4: busBar1.terminal_n.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
 // 5: busBar1.terminal_n.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
 // 6: busBar1.terminal_p.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
 // 7: busBar1.terminal_p.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
 // 8: fixedLoad1.terminal.v:VARIABLE(flow=false start = fixedLoad1.v_start unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[3, 1]  [3,1]
 // 9: fixedLoad1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[3, 1]  [3,1]
-// 10: fixedLoad1.p:VARIABLE(flow=false unit = "W" )  type: Real[3, 1]  [3,1]
-// 11: fixedVoltageSource1.p:VARIABLE(flow=false unit = "W" )  type: Real[1]  [1]
+// 10: fixedLoad1.p:VARIABLE(unit = "W" )  type: Real[3, 1]  [3,1]
+// 11: fixedVoltageSource1.p:VARIABLE(unit = "W" )  type: Real[1]  [1]
 // 12: fixedVoltageSource1.terminal.i:VARIABLE(flow=true unit = "A" nominal = 1.0 )  "current vector" type: Real[1]  [1]
 // 13: fixedVoltageSource1.terminal.v:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  "voltage vector" type: Real[1]  [1]
 //
@@ -645,7 +645,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: fixedVoltageSource1.phi:VARIABLE(flow=false unit = "rad" )  type: Real 
+// 1: fixedVoltageSource1.phi:VARIABLE(unit = "rad" )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -678,10 +678,10 @@ val(fixedVoltageSource1.p[1], 1.0);
 // Variables (5)
 // ========================================
 // 1: system.omega_internal:VARIABLE(flow=false protected = true )  type: Real 
-// 2: system.omega:VARIABLE(flow=false start = 314.1592653589793 unit = "rad/s" )  type: Real 
-// 3: system.thetaRef:VARIABLE(flow=false unit = "rad" )  "angle of reference frame" type: Real 
-// 4: system.thetaRel:VARIABLE(flow=false unit = "rad" )  "angle relative to reference frame" type: Real 
-// 5: system.theta:VARIABLE(flow=false start = 0.0 unit = "rad" )  "system angle" type: Real 
+// 2: system.omega:VARIABLE(start = 314.1592653589793 unit = "rad/s" )  type: Real 
+// 3: system.thetaRef:VARIABLE(unit = "rad" )  "angle of reference frame" type: Real 
+// 4: system.thetaRel:VARIABLE(unit = "rad" )  "angle relative to reference frame" type: Real 
+// 5: system.theta:VARIABLE(start = 0.0 unit = "rad" )  "system angle" type: Real 
 //
 //
 // Equations (5, 5)
@@ -725,7 +725,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: busBar1.V:VARIABLE(flow=false unit = "V" nominal = 1000.0 )  type: Real 
+// 1: busBar1.V:VARIABLE(unit = "V" nominal = 1000.0 )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -757,7 +757,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: busBar1.I:VARIABLE(flow=false unit = "A" nominal = 1.0 )  type: Real 
+// 1: busBar1.I:VARIABLE(unit = "A" nominal = 1.0 )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -789,7 +789,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: busBar1.phi:VARIABLE(flow=false unit = "rad" )  type: Real 
+// 1: busBar1.phi:VARIABLE(unit = "rad" )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -821,7 +821,7 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Variables (1)
 // ========================================
-// 1: system.initime:DISCRETE(flow=false unit = "s" )  type: Real 
+// 1: system.initime:DISCRETE(unit = "s" )  type: Real 
 //
 //
 // Equations (1, 1)
@@ -856,26 +856,26 @@ val(fixedVoltageSource1.p[1], 1.0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (20)
 // ========================================
-// 1: busBar1.n_n:PARAM(flow=false )  = 3  type: Integer 
-// 2: busBar1.i_start:PARAM(flow=false unit = "A" nominal = 1.0 )  = {0.0}  "Start value for current" type: Real[1]  [1]
-// 3: busBar1.v_start:PARAM(flow=false unit = "V" nominal = 1000.0 )  = {0.0}  "Start value for voltage drop" type: Real[1]  [1]
-// 4: fixedLoad1.v_start:PARAM(flow=false unit = "V" nominal = 1000.0 )  = {1.0}  "Start value for voltage drop" type: Real[3, 1]  [3,1]
-// 5: fixedLoad1.P:PARAM(flow=false unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3]  [3]
-// 6: fixedLoad1.phi:PARAM(flow=false unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3]  [3]
-// 7: system.synRef:PARAM(flow=false final = true )  = true  type: Boolean 
-// 8: system.w_nom:PARAM(flow=false unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real 
-// 9: system.omega_nom:PARAM(flow=false unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real 
-// 10: system.dynType:PARAM(flow=false min = PowerSystems.Types.Dynamics.FreeInitial max = PowerSystems.Types.Dynamics.SteadyState final = true )  = PowerSystems.Types.Dynamics.SteadyInitial  "transient or steady-state model" type: enumeration(FreeInitial, FixedInitial, SteadyInitial, SteadyState) 
-// 11: system.refType:PARAM(flow=false min = PowerSystems.Types.ReferenceFrame.Synchron max = PowerSystems.Types.ReferenceFrame.Inertial final = true )  = PowerSystems.Types.ReferenceFrame.Synchron  "reference frame (3-phase)" type: enumeration(Synchron, Inertial) 
-// 12: system.alpha0:PARAM(flow=false unit = "rad" final = true )  = 0.0  "phase angle" type: Real 
-// 13: system.f_lim:PARAM(flow=false unit = "Hz" final = true )  = {25.0, 100.0}  "limit frequencies (for supervision of average frequency)" type: Real[2]  [2]
-// 14: system.f_nom:PARAM(flow=false unit = "Hz" final = true )  = 50.0  "nominal frequency" type: Real 
-// 15: system.f:PARAM(flow=false unit = "Hz" final = true )  = 50.0  "frequency if type is parameter, else initial frequency" type: Real 
-// 16: system.fType:PARAM(flow=false min = PowerSystems.Types.SystemFrequency.Parameter max = PowerSystems.Types.SystemFrequency.Average final = true )  = PowerSystems.Types.SystemFrequency.Parameter  "system frequency type" type: enumeration(Parameter, Signal, Average) 
-// 17: fixedVoltageSource1.V:PARAM(flow=false unit = "V" nominal = 1000.0 )  = 10000.0  "value of constant voltage" type: Real 
-// 18: fixedVoltageSource1.definiteReference:PARAM(flow=false final = true )  = false  "serve as definite root" type: Boolean 
-// 19: fixedVoltageSource1.potentialReference:PARAM(flow=false final = true )  = true  "serve as potential root" type: Boolean 
-// 20: n:PARAM(flow=false )  = 3  "number of loads" type: Integer 
+// 1: busBar1.n_n:PARAM()  = 3  type: Integer 
+// 2: busBar1.i_start:PARAM(unit = "A" nominal = 1.0 )  = {0.0}  "Start value for current" type: Real[1]  [1]
+// 3: busBar1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {0.0}  "Start value for voltage drop" type: Real[1]  [1]
+// 4: fixedLoad1.v_start:PARAM(unit = "V" nominal = 1000.0 )  = {1.0}  "Start value for voltage drop" type: Real[3, 1]  [3,1]
+// 5: fixedLoad1.P:PARAM(unit = "W" )  = 1000000.0:1000000.0:3000000.0  "rms value of constant active power" type: Real[3]  [3]
+// 6: fixedLoad1.phi:PARAM(unit = "rad" )  = 0.1:0.1:0.3  "phase angle" type: Real[3]  [3]
+// 7: system.synRef:PARAM(final = true )  = true  type: Boolean 
+// 8: system.w_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nom r.p.m." type: Real 
+// 9: system.omega_nom:PARAM(unit = "rad/s" final = true )  = 314.1592653589793  "nominal angular frequency" type: Real 
+// 10: system.dynType:PARAM(min = PowerSystems.Types.Dynamics.FreeInitial max = PowerSystems.Types.Dynamics.SteadyState final = true )  = PowerSystems.Types.Dynamics.SteadyInitial  "transient or steady-state model" type: enumeration(FreeInitial, FixedInitial, SteadyInitial, SteadyState) 
+// 11: system.refType:PARAM(min = PowerSystems.Types.ReferenceFrame.Synchron max = PowerSystems.Types.ReferenceFrame.Inertial final = true )  = PowerSystems.Types.ReferenceFrame.Synchron  "reference frame (3-phase)" type: enumeration(Synchron, Inertial) 
+// 12: system.alpha0:PARAM(unit = "rad" final = true )  = 0.0  "phase angle" type: Real 
+// 13: system.f_lim:PARAM(unit = "Hz" final = true )  = {25.0, 100.0}  "limit frequencies (for supervision of average frequency)" type: Real[2]  [2]
+// 14: system.f_nom:PARAM(unit = "Hz" final = true )  = 50.0  "nominal frequency" type: Real 
+// 15: system.f:PARAM(unit = "Hz" final = true )  = 50.0  "frequency if type is parameter, else initial frequency" type: Real 
+// 16: system.fType:PARAM(min = PowerSystems.Types.SystemFrequency.Parameter max = PowerSystems.Types.SystemFrequency.Average final = true )  = PowerSystems.Types.SystemFrequency.Parameter  "system frequency type" type: enumeration(Parameter, Signal, Average) 
+// 17: fixedVoltageSource1.V:PARAM(unit = "V" nominal = 1000.0 )  = 10000.0  "value of constant voltage" type: Real 
+// 18: fixedVoltageSource1.definiteReference:PARAM(final = true )  = false  "serve as definite root" type: Boolean 
+// 19: fixedVoltageSource1.potentialReference:PARAM(final = true )  = true  "serve as potential root" type: Boolean 
+// 20: n:PARAM()  = 3  "number of loads" type: Integer 
 //
 //
 // Known variables only depending on states and inputs - localKnownVars (0)
