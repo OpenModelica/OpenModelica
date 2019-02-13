@@ -38,7 +38,8 @@ import Type = NFType;
 type ConnectorType = enumeration(
   POTENTIAL,
   FLOW,
-  STREAM
+  STREAM,
+  NON_CONNECTOR
 );
 
 type Parallelism = enumeration(
@@ -101,6 +102,7 @@ algorithm
     case ConnectorType.POTENTIAL then DAE.ConnectorType.POTENTIAL();
     case ConnectorType.FLOW then DAE.ConnectorType.FLOW();
     case ConnectorType.STREAM then DAE.ConnectorType.STREAM(NONE());
+    case ConnectorType.NON_CONNECTOR then DAE.ConnectorType.NON_CONNECTOR();
   end match;
 end connectorTypeToDAE;
 

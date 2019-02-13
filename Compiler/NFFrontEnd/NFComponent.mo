@@ -62,7 +62,7 @@ constant Component.Attributes DEFAULT_ATTR =
   );
 constant Component.Attributes INPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
+    ConnectorType.NON_CONNECTOR,
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.INPUT,
@@ -74,7 +74,7 @@ constant Component.Attributes INPUT_ATTR =
 
 constant Component.Attributes OUTPUT_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
+    ConnectorType.NON_CONNECTOR,
     Parallelism.NON_PARALLEL,
     Variability.CONTINUOUS,
     Direction.OUTPUT,
@@ -86,7 +86,7 @@ constant Component.Attributes OUTPUT_ATTR =
 
 constant Component.Attributes CONSTANT_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
+    ConnectorType.NON_CONNECTOR,
     Parallelism.NON_PARALLEL,
     Variability.CONSTANT,
     Direction.NONE,
@@ -98,7 +98,7 @@ constant Component.Attributes CONSTANT_ATTR =
 
 constant Component.Attributes IMPL_DISCRETE_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.POTENTIAL,
+    ConnectorType.NON_CONNECTOR,
     Parallelism.NON_PARALLEL,
     Variability.IMPLICITLY_DISCRETE,
     Direction.NONE,
@@ -653,7 +653,7 @@ uniontype Component
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
       case DELETED_COMPONENT() then connectorType(component.component);
-      else ConnectorType.POTENTIAL;
+      else ConnectorType.NON_CONNECTOR;
     end match;
   end connectorType;
 

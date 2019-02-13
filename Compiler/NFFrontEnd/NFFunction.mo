@@ -1778,7 +1778,7 @@ protected
     var := Component.variability(InstNode.component(component));
 
     // Function components may not be connectors.
-    if cty <> ConnectorType.POTENTIAL then
+    if cty == ConnectorType.FLOW or cty == ConnectorType.STREAM then
       Error.addSourceMessage(Error.INNER_OUTER_FORMAL_PARAMETER,
         {Prefixes.connectorTypeString(cty), InstNode.name(component)},
         InstNode.info(component));
