@@ -130,6 +130,7 @@ SystemSimulationInformationWidget::SystemSimulationInformationWidget(ModelWidget
   if (mpModelWidget->getLibraryTreeItem()->isWCSystem()) { // oms_system_wc
     mpSolverComboBox->addItem("oms-ma", oms_solver_wc_ma);
     mpSolverComboBox->addItem("oms-mav", oms_solver_wc_mav);
+    mpSolverComboBox->addItem("oms-mav-2", oms_solver_wc_mav2);
   } else if (mpModelWidget->getLibraryTreeItem()->isSCSystem()) { // oms_system_sc
     mpSolverComboBox->addItem("cvode", oms_solver_sc_cvode);
     mpSolverComboBox->addItem("explicit-euler", oms_solver_sc_explicit_euler);
@@ -191,6 +192,7 @@ void SystemSimulationInformationWidget::solverChanged(int index)
 
   switch (solver) {
     case oms_solver_wc_mav:
+    case oms_solver_wc_mav2:
     case oms_solver_sc_cvode:
       mpInitialStepSizeTextBox->setEnabled(true);
       mpMinimumStepSizeTextBox->setEnabled(true);
@@ -237,6 +239,7 @@ bool SystemSimulationInformationWidget::setSystemSimulationInformation()
     oms_solver_enu_t solver = (oms_solver_enu_t)mpSolverComboBox->itemData(mpSolverComboBox->currentIndex()).toInt();
     switch (solver) {
       case oms_solver_wc_mav:
+      case oms_solver_wc_mav2:
       case oms_solver_sc_cvode:
         if (mpInitialStepSizeTextBox->text().isEmpty()) {
           QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),

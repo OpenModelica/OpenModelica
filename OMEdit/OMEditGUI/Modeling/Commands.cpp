@@ -2868,6 +2868,7 @@ void SystemSimulationInformationCommand::redoInternal()
     // set step size
     switch (mpWCSCSystemSimulationInformation->mDescription) {
       case oms_solver_wc_mav:
+      case oms_solver_wc_mav2:
       case oms_solver_sc_cvode:
         if (!OMSProxy::instance()->setVariableStepSize(mpLibraryTreeItem->getNameStructure(),
                                                        mpWCSCSystemSimulationInformation->mInitialStepSize,
