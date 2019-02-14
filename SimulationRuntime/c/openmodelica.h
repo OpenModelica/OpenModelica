@@ -183,6 +183,8 @@ static inline int sign(double v)
 #define OMC_DISABLE_OPT __attribute__((optnone))
 #elif defined(__GNUC__)
 #define OMC_DISABLE_OPT __attribute__((optimize(0)))
+#elif defined(_MSC_VER)
+#define OMC_DISABLE_OPT /* nothing */
 #endif
 #endif
 

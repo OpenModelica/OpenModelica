@@ -2051,6 +2051,7 @@ algorithm
   (strs,names) := matchcontinue exp
     local
       String str;
+      list<String> strs1, strs2, names1, names2;
 
     // seems lapack can show on Lapack form or lapack (different case) (MLS revision 6155)
     // Lapack on MinGW/Windows is linked against f2c
@@ -2078,9 +2079,19 @@ algorithm
 
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
-      equation
-        true = "-" == stringGetStringChar(str, 1);
-      then ({str},{});
+      algorithm
+        if str=="ModelicaStandardTables" then
+          (strs1,names1) := getLibraryStringInMSVCFormat(Absyn.STRING("ModelicaIO"));
+          (strs2,names2) := getLibraryStringInMSVCFormat(Absyn.STRING("ModelicaMatIO"));
+          strs := listAppend(strs1, strs2);
+          names := listAppend(names1, names2);
+        else
+          strs := {};
+          names := {};
+        end if;
+        true := "-" == stringGetStringChar(str, 1);
+        strs := str::strs;
+      then (strs,names);
 
     case Absyn.STRING(str)
       equation
