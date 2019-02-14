@@ -368,6 +368,9 @@ algorithm
       streams := c :: streams;
     elseif cty == ConnectorType.POTENTIAL then
       pots := c :: pots;
+    else
+      Error.addInternalError("Invalid connector type on component " + InstNode.name(c), InstNode.info(c));
+      fail();
     end if;
   end for;
 

@@ -98,7 +98,7 @@ constant Component.Attributes CONSTANT_ATTR =
 
 constant Component.Attributes IMPL_DISCRETE_ATTR =
   Component.Attributes.ATTRIBUTES(
-    ConnectorType.NON_CONNECTOR,
+    ConnectorType.POTENTIAL,
     Parallelism.NON_PARALLEL,
     Variability.IMPLICITLY_DISCRETE,
     Direction.NONE,
