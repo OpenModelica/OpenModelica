@@ -1261,20 +1261,6 @@ GraphicsViewProperties::GraphicsViewProperties(GraphicsView *pGraphicsView)
   if (!mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTopLevel()) {
     mpTabWidget->setTabEnabled(1, false);
   }
-  // OMC CommandLineOptions tab
-  QWidget *pOMCCommandLineOptionsWidget = new QWidget;
-  mpOMCCommandLineOptionsLabel = new Label(Helper::OMCCommandLineOptionsTip);
-  mpOMCCommandLineOptionsTextBox = new QPlainTextEdit;
-  // get the command line options annotation
-  mOMCCommandLineOptions = pOMCProxy->getCommandLineOptionsAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure());
-  mpOMCCommandLineOptionsTextBox->insertPlainText(mOMCCommandLineOptions);
-  // OMC CommandLineOptions tab layout
-  QGridLayout *pOMCCommandLineOptionsGridLayout = new QGridLayout;
-  pOMCCommandLineOptionsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pOMCCommandLineOptionsGridLayout->addWidget(mpOMCCommandLineOptionsLabel, 0, 0);
-  pOMCCommandLineOptionsGridLayout->addWidget(mpOMCCommandLineOptionsTextBox, 1, 0);
-  pOMCCommandLineOptionsWidget->setLayout(pOMCCommandLineOptionsGridLayout);
-  mpTabWidget->addTab(pOMCCommandLineOptionsWidget, Helper::OMCCommandLineOptions);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1434,8 +1420,7 @@ void GraphicsViewProperties::saveGraphicsViewProperties()
   UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand;
   pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(mpGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem,
                                                                      mpCopyProperties->isChecked(), oldVersion, mpVersionTextBox->text(),
-                                                                     oldUsesAnnotationString, newUsesAnnotationString, mOMCCommandLineOptions,
-                                                                     mpOMCCommandLineOptionsTextBox->toPlainText());
+                                                                     oldUsesAnnotationString, newUsesAnnotationString);
   mpGraphicsView->getModelWidget()->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
   mpGraphicsView->getModelWidget()->updateModelText();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {

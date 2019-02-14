@@ -70,6 +70,7 @@ class OMSimulatorPage;
 class TraceabilityPage;
 class TabSettings;
 class StackFramesWidget;
+class TranslationFlagsWidget;
 
 class OptionsDialog : public QDialog
 {
@@ -600,13 +601,11 @@ class SimulationPage : public QWidget
   Q_OBJECT
 public:
   SimulationPage(OptionsDialog *pOptionsDialog);
-  QComboBox* getMatchingAlgorithmComboBox() {return mpMatchingAlgorithmComboBox;}
-  QComboBox* getIndexReductionMethodComboBox() {return mpIndexReductionMethodComboBox;}
+  TranslationFlagsWidget *getTranslationFlagsWidget() const {return mpTranslationFlagsWidget;}
   QComboBox* getTargetLanguageComboBox() {return mpTargetLanguageComboBox;}
   QComboBox* getTargetBuildComboBox() {return mpTargetBuildComboBox;}
   QComboBox* getCompilerComboBox() {return mpCompilerComboBox;}
   QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
-  QLineEdit* getOMCCommandLineOptionsTextBox() {return mpOMCCommandLineOptionsTextBox;}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
@@ -619,10 +618,8 @@ public:
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpSimulationGroupBox;
-  Label *mpMatchingAlgorithmLabel;
-  QComboBox *mpMatchingAlgorithmComboBox;
-  Label *mpIndexReductionMethodLabel;
-  QComboBox *mpIndexReductionMethodComboBox;
+  QGroupBox *mpTranslationFlagsGroupBox;
+  TranslationFlagsWidget *mpTranslationFlagsWidget;
   Label *mpTargetLanguageLabel;
   QComboBox *mpTargetLanguageComboBox;
   Label *mpTargetBuildLabel;
@@ -631,9 +628,6 @@ private:
   QComboBox *mpCompilerComboBox;
   Label *mpCXXCompilerLabel;
   QComboBox *mpCXXCompilerComboBox;
-  Label *mpOMCCommandLineOptionsLabel;
-  QLineEdit *mpOMCCommandLineOptionsTextBox;
-  QToolButton *mpOMCCommandLineOptionsHelpButton;
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
@@ -645,10 +639,7 @@ private:
   QRadioButton *mpStructuredRadioButton;
   QRadioButton *mpFormattedTextRadioButton;
 public slots:
-  void updateMatchingAlgorithmToolTip(int index);
-  void updateIndexReductionToolTip(int index);
   void targetBuildChanged(int index);
-  void showOMCCommandLineOptionsHelp();
 };
 
 class MessagesPage : public QWidget

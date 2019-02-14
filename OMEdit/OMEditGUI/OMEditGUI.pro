@@ -157,6 +157,7 @@ SOURCES += main.cpp \
   Component/ComponentProperties.cpp \
   Component/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
+  Simulation/TranslationFlagsWidget.cpp \
   Simulation/SimulationDialog.cpp \
   Simulation/SimulationOutputWidget.cpp \
   Simulation/SimulationProcessThread.cpp \
@@ -213,7 +214,6 @@ HEADERS  += Util/Helper.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
-  Simulation/SimulationOptions.h \
   Modeling/MessagesWidget.h \
   Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
@@ -246,6 +246,8 @@ HEADERS  += Util/Helper.h \
   Component/ComponentProperties.h \
   Component/Transformation.h \
   Modeling/DocumentationWidget.h \
+  Simulation/SimulationOptions.h \
+  Simulation/TranslationFlagsWidget.h \
   Simulation/SimulationDialog.h \
   Simulation/SimulationOutputWidget.h \
   Simulation/SimulationProcessThread.h \

@@ -44,6 +44,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Editors/HTMLEditor.h"
+#include "Simulation/TranslationFlagsWidget.h"
 #include <limits>
 
 /*!
@@ -536,16 +537,43 @@ void OptionsDialog::readGraphicalViewsSettings()
 void OptionsDialog::readSimulationSettings()
 {
   if (mpSettings->contains("simulation/matchingAlgorithm")) {
-    int currentIndex = mpSimulationPage->getMatchingAlgorithmComboBox()->findText(mpSettings->value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
+    int currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->findText(mpSettings->value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
     if (currentIndex > -1) {
-      mpSimulationPage->getMatchingAlgorithmComboBox()->setCurrentIndex(currentIndex);
+      mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->setCurrentIndex(currentIndex);
     }
   }
   if (mpSettings->contains("simulation/indexReductionMethod")) {
-    int currentIndex = mpSimulationPage->getIndexReductionMethodComboBox()->findText(mpSettings->value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
+    int currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->findText(mpSettings->value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
     if (currentIndex > -1) {
-      mpSimulationPage->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
+      mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->setCurrentIndex(currentIndex);
     }
+  }
+  // read initialization
+  if (mpSettings->contains("simulation/initialization")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->setChecked(mpSettings->value("simulation/initialization").toBool());
+  }
+  // read evaluate all parameters
+  if (mpSettings->contains("simulation/evaluateAllParameters")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->setChecked(mpSettings->value("simulation/evaluateAllParameters").toBool());
+  }
+  // read NLS analytic jacobian
+  if (mpSettings->contains("simulation/NLSanalyticJacobian")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->setChecked(mpSettings->value("simulation/NLSanalyticJacobian").toBool());
+  }
+  // save pedantic mode
+  if (mpSettings->contains("simulation/pedantic")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getPedanticCheckBox()->setChecked(mpSettings->value("simulation/pedantic").toBool());
+  }
+  // save parmodauto
+  if (mpSettings->contains("simulation/parmodauto")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->setChecked(mpSettings->value("simulation/parmodauto").toBool());
+  }
+  // save new instantiation
+  if (mpSettings->contains("simulation/newInst")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getNewInstantiationCheckBox()->setChecked(mpSettings->value("simulation/newInst").toBool());
+  }
+  if (mpSettings->contains("simulation/OMCFlags")) {
+    mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
   if (mpSettings->contains("simulation/targetLanguage")) {
     int currentIndex = mpSimulationPage->getTargetLanguageComboBox()->findText(mpSettings->value("simulation/targetLanguage").toString(), Qt::MatchExactly);
@@ -564,9 +592,6 @@ void OptionsDialog::readSimulationSettings()
   }
   if (mpSettings->contains("simulation/cxxCompiler")) {
     mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->setText(mpSettings->value("simulation/cxxCompiler").toString());
-  }
-  if (mpSettings->contains("simulation/OMCFlags")) {
-    mpSimulationPage->getOMCCommandLineOptionsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
   if (mpSettings->contains("simulation/ignoreCommandLineOptionsAnnotation")) {
     mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->setChecked(mpSettings->value("simulation/ignoreCommandLineOptionsAnnotation").toBool());
@@ -1139,11 +1164,27 @@ void OptionsDialog::saveSimulationSettings()
   // clear command line options before saving new ones
   MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
   // save matching algorithm
-  mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
-  MainWindow::instance()->getOMCProxy()->setMatchingAlgorithm(mpSimulationPage->getMatchingAlgorithmComboBox()->currentText());
+  mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText());
   // save index reduction
-  mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
-  MainWindow::instance()->getOMCProxy()->setIndexReductionMethod(mpSimulationPage->getIndexReductionMethodComboBox()->currentText());
+  mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->currentText());
+  // save initialization
+  mpSettings->setValue("simulation/initialization", mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->isChecked());
+  // save evaluate all parameters
+  mpSettings->setValue("simulation/evaluateAllParameters", mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked());
+  // save NLS analytic jacobian
+  mpSettings->setValue("simulation/NLSanalyticJacobian", mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked());
+  // save pedantic mode
+  mpSettings->setValue("simulation/pedantic", mpSimulationPage->getTranslationFlagsWidget()->getPedanticCheckBox()->isChecked());
+  // save parmodauto
+  mpSettings->setValue("simulation/parmodauto", mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked());
+  // save new instantiation
+  mpSettings->setValue("simulation/newInst", mpSimulationPage->getTranslationFlagsWidget()->getNewInstantiationCheckBox()->isChecked());
+  // save command line options
+  if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {
+    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text());
+  } else {
+    mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
+  }
   // save target language
   mpSettings->setValue("simulation/targetLanguage", mpSimulationPage->getTargetLanguageComboBox()->currentText());
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--simCodeTarget=%1").arg(mpSimulationPage->getTargetLanguageComboBox()->currentText()));
@@ -1165,12 +1206,6 @@ void OptionsDialog::saveSimulationSettings()
     cxxCompiler = mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->placeholderText();
   }
   MainWindow::instance()->getOMCProxy()->setCXXCompiler(cxxCompiler);
-  // save command line options ste manually by user. This will override above options.
-  if (MainWindow::instance()->getOMCProxy()->setCommandLineOptions(mpSimulationPage->getOMCCommandLineOptionsTextBox()->text())) {
-    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getOMCCommandLineOptionsTextBox()->text());
-  } else {
-    mpSimulationPage->getOMCCommandLineOptionsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
-  }
   // save ignore command line options
   mpSettings->setValue("simulation/ignoreCommandLineOptionsAnnotation", mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked());
   if (mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
@@ -3500,40 +3535,24 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  // Matching Algorithm
   mpSimulationGroupBox = new QGroupBox(Helper::simulation);
-  mpMatchingAlgorithmLabel = new Label(tr("Matching Algorithm:"));
-  OMCInterface::getAvailableMatchingAlgorithms_res matchingAlgorithms;
-  matchingAlgorithms = MainWindow::instance()->getOMCProxy()->getAvailableMatchingAlgorithms();
-  mpMatchingAlgorithmComboBox = new QComboBox;
-  int i = 0;
-  foreach (QString matchingAlgorithmChoice, matchingAlgorithms.allChoices) {
-    mpMatchingAlgorithmComboBox->addItem(matchingAlgorithmChoice);
-    mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithms.allComments[i], Qt::ToolTipRole);
-    i++;
-  }
-  connect(mpMatchingAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateMatchingAlgorithmToolTip(int)));
-  mpMatchingAlgorithmComboBox->setCurrentIndex(mpMatchingAlgorithmComboBox->findText(MainWindow::instance()->getOMCProxy()->getMatchingAlgorithm()));
-  // Index Reduction Method
-  mpIndexReductionMethodLabel = new Label(tr("Index Reduction Method:"));
-  OMCInterface::getAvailableIndexReductionMethods_res indexReductionMethods;
-  indexReductionMethods = MainWindow::instance()->getOMCProxy()->getAvailableIndexReductionMethods();
-  mpIndexReductionMethodComboBox = new QComboBox;
-  i = 0;
-  foreach (QString indexReductionChoice, indexReductionMethods.allChoices) {
-    mpIndexReductionMethodComboBox->addItem(indexReductionChoice);
-    mpIndexReductionMethodComboBox->setItemData(i, indexReductionMethods.allComments[i], Qt::ToolTipRole);
-    i++;
-  }
-  connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
-  mpIndexReductionMethodComboBox->setCurrentIndex(mpIndexReductionMethodComboBox->findText(MainWindow::instance()->getOMCProxy()->getIndexReductionMethod()));
+  // Translation Flags
+  mpTranslationFlagsGroupBox = new QGroupBox(Helper::translationFlags);
+  mpTranslationFlagsWidget = new TranslationFlagsWidget(this);
+  SimulationOptions simulationOptions;
+  mpTranslationFlagsWidget->applySimulationOptions(simulationOptions);
+  // Translation Flags layout
+  QGridLayout *pTranslationFlagsGridLayout = new QGridLayout;
+  pTranslationFlagsGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pTranslationFlagsGridLayout->addWidget(mpTranslationFlagsWidget, 0, 0);
+  mpTranslationFlagsGroupBox->setLayout(pTranslationFlagsGridLayout);
   // Target Language
   mpTargetLanguageLabel = new Label(tr("Target Language:"));
   OMCInterface::getConfigFlagValidOptions_res simCodeTarget = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("simCodeTarget");
   mpTargetLanguageComboBox = new QComboBox;
   mpTargetLanguageComboBox->addItems(simCodeTarget.validOptions);
   mpTargetLanguageComboBox->setToolTip(simCodeTarget.mainDescription);
-  i = 0;
+  int i = 0;
   foreach (QString description, simCodeTarget.descriptions) {
     mpTargetLanguageComboBox->setItemData(i, description, Qt::ToolTipRole);
     i++;
@@ -3575,14 +3594,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpCXXCompilerComboBox->addItem("clang++");
 #endif
   mpCXXCompilerComboBox->lineEdit()->setPlaceholderText(MainWindow::instance()->getOMCProxy()->getCXXCompiler());
-  // OMC CommandLineOptions
-  mpOMCCommandLineOptionsLabel = new Label(QString("%1:").arg(Helper::OMCCommandLineOptions));
-  mpOMCCommandLineOptionsLabel->setToolTip(Helper::OMCCommandLineOptionsTip);
-  mpOMCCommandLineOptionsTextBox = new QLineEdit("-d=initialization");
-  mpOMCCommandLineOptionsHelpButton = new QToolButton;
-  mpOMCCommandLineOptionsHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
-  mpOMCCommandLineOptionsHelpButton->setToolTip(tr("OMC command line options help"));
-  connect(mpOMCCommandLineOptionsHelpButton, SIGNAL(clicked()), SLOT(showOMCCommandLineOptionsHelp()));
   // ignore command line options annotation checkbox
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
@@ -3624,29 +3635,24 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   // set the layout of simulation group
   QGridLayout *pSimulationLayout = new QGridLayout;
   pSimulationLayout->setAlignment(Qt::AlignTop);
-  pSimulationLayout->addWidget(mpMatchingAlgorithmLabel, 0, 0);
-  pSimulationLayout->addWidget(mpMatchingAlgorithmComboBox, 0, 1, 1, 2);
-  pSimulationLayout->addWidget(mpIndexReductionMethodLabel, 1, 0);
-  pSimulationLayout->addWidget(mpIndexReductionMethodComboBox, 1, 1, 1, 2);
-  pSimulationLayout->addWidget(mpTargetLanguageLabel, 2, 0);
-  pSimulationLayout->addWidget(mpTargetLanguageComboBox, 2, 1, 1, 2);
-  pSimulationLayout->addWidget(mpTargetBuildLabel, 3, 0);
-  pSimulationLayout->addWidget(mpTargetBuildComboBox, 3, 1, 1, 2);
-  pSimulationLayout->addWidget(mpCompilerLabel, 4, 0);
-  pSimulationLayout->addWidget(mpCompilerComboBox, 4, 1, 1, 2);
-  pSimulationLayout->addWidget(mpCXXCompilerLabel, 5, 0);
-  pSimulationLayout->addWidget(mpCXXCompilerComboBox, 5, 1, 1, 2);
-  pSimulationLayout->addWidget(mpOMCCommandLineOptionsLabel, 6, 0);
-  pSimulationLayout->addWidget(mpOMCCommandLineOptionsTextBox, 6, 1);
-  pSimulationLayout->addWidget(mpOMCCommandLineOptionsHelpButton, 6, 2);
-  pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, 7, 0, 1, 3);
-  pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, 8, 0, 1, 3);
-  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, 9, 0, 1, 3);
-  pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, 10, 0, 1, 3);
-  pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, 11, 0, 1, 3);
-  pSimulationLayout->addWidget(mpDeleteIntermediateCompilationFilesCheckBox, 12, 0, 1, 3);
-  pSimulationLayout->addWidget(mpDeleteEntireSimulationDirectoryCheckBox, 13, 0, 1, 3);
-  pSimulationLayout->addWidget(mpOutputGroupBox, 14, 0, 1, 3);
+  int row = 0;
+  pSimulationLayout->addWidget(mpTranslationFlagsGroupBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpTargetLanguageLabel, row, 0);
+  pSimulationLayout->addWidget(mpTargetLanguageComboBox, row++, 1);
+  pSimulationLayout->addWidget(mpTargetBuildLabel, row, 0);
+  pSimulationLayout->addWidget(mpTargetBuildComboBox, row++, 1);
+  pSimulationLayout->addWidget(mpCompilerLabel, row, 0);
+  pSimulationLayout->addWidget(mpCompilerComboBox, row++, 1);
+  pSimulationLayout->addWidget(mpCXXCompilerLabel, row, 0);
+  pSimulationLayout->addWidget(mpCXXCompilerComboBox, row++, 1);
+  pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpDeleteIntermediateCompilationFilesCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpDeleteEntireSimulationDirectoryCheckBox, row++, 0, 1, 2);
+  pSimulationLayout->addWidget(mpOutputGroupBox, row++, 0, 1, 2);
   mpSimulationGroupBox->setLayout(pSimulationLayout);
   // set the layout
   QVBoxLayout *pLayout = new QVBoxLayout;
@@ -3675,26 +3681,6 @@ QString SimulationPage::getOutputMode()
 }
 
 /*!
- * \brief SimulationPage::updateMatchingAlgorithmToolTip
- * Updates the matching algorithm combobox tooltip.
- * \param index
- */
-void SimulationPage::updateMatchingAlgorithmToolTip(int index)
-{
-  mpMatchingAlgorithmComboBox->setToolTip(mpMatchingAlgorithmComboBox->itemData(index, Qt::ToolTipRole).toString());
-}
-
-/*!
- * \brief SimulationPage::updateIndexReductionToolTip
- * Updates the index reduction combobox tooltip.
- * \param index
- */
-void SimulationPage::updateIndexReductionToolTip(int index)
-{
-  mpIndexReductionMethodComboBox->setToolTip(mpIndexReductionMethodComboBox->itemData(index, Qt::ToolTipRole).toString());
-}
-
-/*!
  * \brief SimulationPage::targetBuildChanged
  * Enable/Disable the Compiler and CXX Compiler fields.
  * \param index
@@ -3707,22 +3693,6 @@ void SimulationPage::targetBuildChanged(int index)
   } else {
     mpCompilerComboBox->setEnabled(false);
     mpCXXCompilerComboBox->setEnabled(false);
-  }
-}
-
-/*!
- * \brief SimulationPage::showOMCCommandLineOptionsHelp
- * Slot activated when mpOMCCommandLineOptionsHelpButton clicked signal is raised.\n
- * Opens the omchelptext.html page of OpenModelica users guide.
- */
-void SimulationPage::showOMCCommandLineOptionsHelp()
-{
-  QUrl omcHelpTextPath (QString("file:///").append(QString(Helper::OpenModelicaHome).replace("\\", "/"))
-                        .append("/share/doc/omc/OpenModelicaUsersGuide/omchelptext.html"));
-  if (!QDesktopServices::openUrl(omcHelpTextPath)) {
-    QString errorMessage = GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(omcHelpTextPath.toString());
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "", false, 0, 0, 0, 0, errorMessage, Helper::scriptingKind,
-                                                          Helper::errorLevel));
   }
 }
 

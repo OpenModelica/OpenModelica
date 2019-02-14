@@ -383,10 +383,10 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
-QString Helper::OMCCommandLineOptions;
-QString Helper::OMCCommandLineOptionsTip;
+QString Helper::translationFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
+QString Helper::saveOpenModelicaCommandLineOptionsAnnotation;
 QString Helper::item;
 QString Helper::bold;
 QString Helper::italic;
@@ -408,6 +408,7 @@ QString Helper::terminateInstantiation;
 QString Helper::terminateInstantiationTip;
 QString Helper::archivedSimulations;
 QString Helper::systemSimulationInformation;
+QString Helper::translationFlags;
 
 void Helper::initHelperVariables()
 {
@@ -674,10 +675,10 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
-  Helper::OMCCommandLineOptions = tr("OMC Command Line Options");
-  Helper::OMCCommandLineOptionsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
-  Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model");
-  Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save __OpenModelica_simulationFlags annotation inside model");
+  Helper::translationFlagsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
+  Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model i.e., experiment annotation");
+  Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation");
+  Helper::saveOpenModelicaCommandLineOptionsAnnotation = tr("Save translation flags inside model i.e., __OpenModelica_commandLineOptions annotation");
   Helper::item = tr("item");
   Helper::bold = tr("Bold");
   Helper::italic = tr("Italic");
@@ -699,6 +700,7 @@ void Helper::initHelperVariables()
   Helper::terminateInstantiationTip = tr("Terminates the model instantiation");
   Helper::archivedSimulations = tr("Archived Simulations");
   Helper::systemSimulationInformation = tr("System Simulation Information");
+  Helper::translationFlags = tr("Translation Flags");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -828,8 +830,9 @@ QString GUIMessages::getMessage(int type)
     case UNABLE_FIND_COMPONENT_IN_INITIALSTATE:
       return tr("Unable to find component %1 while parsing initialState(%2).");
     case SELECT_SIMULATION_OPTION:
-      return tr("Select at least one of the following options, <br /><br />* %1<br />* %2<br />* %3")
+      return tr("Select at least one of the following options, <br /><br />* %1<br />* %2<br />* %3<br />* %4")
           .arg(Helper::saveExperimentAnnotation)
+          .arg(Helper::saveOpenModelicaCommandLineOptionsAnnotation)
           .arg(Helper::saveOpenModelicaSimulationFlagsAnnotation)
           .arg(Helper::simulate);
     case INVALID_TRANSITION_CONDITION:

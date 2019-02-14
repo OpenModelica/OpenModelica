@@ -385,10 +385,10 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
-  static QString OMCCommandLineOptions;
-  static QString OMCCommandLineOptionsTip;
+  static QString translationFlagsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;
+  static QString saveOpenModelicaCommandLineOptionsAnnotation;
   static QString item;
   static QString bold;
   static QString italic;
@@ -410,6 +410,7 @@ public:
   static QString terminateInstantiationTip;
   static QString archivedSimulations;
   static QString systemSimulationInformation;
+  static QString translationFlags;
 };
 
 class GUIMessages : public QObject

@@ -46,9 +46,15 @@ class SimulationOptions
 public:
   SimulationOptions()
   {
+    // General
     setClassName("");
     setStartTime("0");
     setStopTime("1");
+    setNumberofIntervals(500);
+    setStepSize(0.002);
+    setInteractiveSimulation(false);
+    setInteractiveSimulationWithSteps(false);
+    setInteractiveSimulationPortNumber(4841);
     setMethod("dassl");
     setTolerance("1e-6");
     setJacobian("");
@@ -63,17 +69,17 @@ public:
     setLaunchTransformationalDebugger(false);
     setLaunchAlgorithmicDebugger(false);
     setSimulateWithAnimation(false);
-    setNumberofIntervals(500);
-    setStepSize(0.002);
-    setOutputFormat("mat");
-    setSinglePrecision(false);
-    setFileNamePrefix("");
-    setResultFileName("");
-    setVariableFilter(".*");
-    setProtectedVariables(false);
-    setEquidistantTimeGrid(true);
-    setStoreVariablesAtEvents(true);
-    setShowGeneratedFiles(false);
+    // Translation
+    setMatchingAlgorithm("PFPlusExt");
+    setIndexReductionMethod("dynamicStateSelection");
+    setInitialization(true);
+    setEvaluateAllParameters(true);
+    setNLSanalyticJacobian(true);
+    setPedantic(false);
+    setParmodauto(false);
+    setNewInstantiation(false);
+    setAdditionalTranslationFlags("");
+    // Simulation
     setModelSetupFile("");
     setInitializationMethod("");
     setEquationSystemInitializationFile("");
@@ -88,14 +94,23 @@ public:
     setEnableAllWarnings(true);
     setLogStreams(QStringList() << "LOG_STATS");
     setAdditionalSimulationFlags("");
-    setInteractiveSimulationPortNumber(4841);
+    // Output
+    setOutputFormat("mat");
+    setSinglePrecision(false);
+    setFileNamePrefix("");
+    setResultFileName("");
+    setVariableFilter(".*");
+    setProtectedVariables(false);
+    setEquidistantTimeGrid(true);
+    setStoreVariablesAtEvents(true);
+    setShowGeneratedFiles(false);
+
+    setSimulationFlags(QStringList());
     setIsValid(false);
     setReSimulate(false);
     setWorkingDirectory("");
     setFileName("");
     setTargetLanguage("C");
-    setInteractiveSimulation(false);
-    setInteractiveSimulationWithSteps(false);
   }
 
   void setClassName(QString className) {mClassName = className;}
@@ -104,6 +119,16 @@ public:
   QString getStartTime() {return mStartTime;}
   void setStopTime(QString stopTime) {mStopTime = stopTime;}
   QString getStopTime() {return mStopTime;}
+  void setNumberofIntervals(int numberofIntervals) {mNumberofIntervals = numberofIntervals;}
+  int getNumberofIntervals() {return mNumberofIntervals;}
+  void setStepSize(qreal stepSize) {mStepSize = stepSize;}
+  qreal getStepSize() {return mStepSize;}
+  void setInteractiveSimulation(bool interactiveSim) {mInteractiveSimulation = interactiveSim;}
+  bool isInteractiveSimulation() {return mInteractiveSimulation;}
+  void setInteractiveSimulationWithSteps(bool withSteps) {mInteractiveSimulationWithSteps = withSteps;}
+  bool isInteractiveSimulationWithSteps() {return mInteractiveSimulationWithSteps;}
+  void setInteractiveSimulationPortNumber(int port) { mInteractiveSimulationPortNumber = port;}
+  int getInteractiveSimulationPortNumber() {return mInteractiveSimulationPortNumber;}
   void setMethod(QString method) {mMethod = method;}
   QString getMethod() {return mMethod;}
   void setTolerance(QString tolerance) {mTolerance = tolerance;}
@@ -132,30 +157,26 @@ public:
   bool getLaunchAlgorithmicDebugger() {return mLaunchAlgorithmicDebugger;}
   void setSimulateWithAnimation(bool simulateWithAnimation) {mSimulateWithAnimation = simulateWithAnimation;}
   bool getSimulateWithAnimation() {return mSimulateWithAnimation;}
-  void setNumberofIntervals(int numberofIntervals) {mNumberofIntervals = numberofIntervals;}
-  int getNumberofIntervals() {return mNumberofIntervals;}
-  void setStepSize(qreal stepSize) {mStepSize = stepSize;}
-  qreal getStepSize() {return mStepSize;}
-  void setOutputFormat(QString outputFormat) {mOutputFormat = outputFormat;}
-  QString getOutputFormat() {return mOutputFormat;}
-  void setSinglePrecision(bool singlePrecision) {mSinglePrecision = singlePrecision;}
-  bool getSinglePrecision() {return mSinglePrecision;}
-  void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
-  QString getFileNamePrefix() {return mFileNamePrefix;}
-  QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
-  void setResultFileName(QString resultFileName) {mResultFileName = resultFileName;}
-  QString getResultFileName() {return mResultFileName;}
-  QString getFullResultFileName() {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
-  void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
-  QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
-  void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
-  bool getProtectedVariables() {return mProtectedVariables;}
-  void setEquidistantTimeGrid(bool equidistantTimeGrid) {mEquidistantTimeGrid = equidistantTimeGrid;}
-  bool getEquidistantTimeGrid() {return mEquidistantTimeGrid;}
-  void setStoreVariablesAtEvents(bool storeVariablesAtEvents) {mStoreVariablesAtEvents = storeVariablesAtEvents;}
-  bool getStoreVariablesAtEvents() {return mStoreVariablesAtEvents;}
-  void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
-  bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
+
+  void setMatchingAlgorithm(const QString &matchingAlgorithm) {mMatchingAlgorithm = matchingAlgorithm;}
+  QString getMatchingAlgorithm() const {return mMatchingAlgorithm;}
+  void setIndexReductionMethod(const QString &indexReductionMethod) {mIndexReductionMethod = indexReductionMethod;}
+  QString getIndexReductionMethod() const {return mIndexReductionMethod;}
+  void setInitialization(bool initialization) {mInitialization = initialization;}
+  bool getInitialization() const {return mInitialization;}
+  void setEvaluateAllParameters(bool evaluateAllParameters) {mEvaluateAllParameters = evaluateAllParameters;}
+  bool getEvaluateAllParameters() const {return mEvaluateAllParameters;}
+  void setNLSanalyticJacobian(bool nlsAnalyticJacobian) {mNLSanalyticJacobian = nlsAnalyticJacobian;}
+  bool getNLSanalyticJacobian() const {return mNLSanalyticJacobian;}
+  void setPedantic(bool pedantic) {mPedantic = pedantic;}
+  bool getPedantic() const {return mPedantic;}
+  void setParmodauto(bool parmodauto) {mParmodauto = parmodauto;}
+  bool getParmodauto() const {return mParmodauto;}
+  void setNewInstantiation(bool newInstantiation) {mNewInstantiation = newInstantiation;}
+  bool getNewInstantiation() const {return mNewInstantiation;}
+  void setAdditionalTranslationFlags(QString additionalTranslationFlags) {mAdditionalTranslationFlags = additionalTranslationFlags;}
+  QString getAdditionalTranslationFlags() const {return mAdditionalTranslationFlags;}
+
   void setModelSetupFile(QString modelSetupFile) {mModelSetupFile = modelSetupFile;}
   QString getModelSetupFile() {return mModelSetupFile;}
   void setInitializationMethod(QString initializationMethod) {mInitializationMethod = initializationMethod;}
@@ -184,8 +205,27 @@ public:
   QStringList getLogStreams() {return mLogStreams;}
   void setAdditionalSimulationFlags(QString additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
   QString getAdditionalSimulationFlags() {return mAdditionalSimulationFlags;}
-  void setInteractiveSimulationPortNumber(int port) { mInteractiveSimulationPortNumber = port;}
-  int getInteractiveSimulationPortNumber() {return mInteractiveSimulationPortNumber;}
+
+  void setOutputFormat(QString outputFormat) {mOutputFormat = outputFormat;}
+  QString getOutputFormat() {return mOutputFormat;}
+  void setSinglePrecision(bool singlePrecision) {mSinglePrecision = singlePrecision;}
+  bool getSinglePrecision() {return mSinglePrecision;}
+  void setFileNamePrefix(QString fileNamePrefix) {mFileNamePrefix = fileNamePrefix;}
+  QString getFileNamePrefix() {return mFileNamePrefix;}
+  QString getOutputFileName() const {return mFileNamePrefix.isEmpty() ? mClassName : mFileNamePrefix;}
+  void setResultFileName(QString resultFileName) {mResultFileName = resultFileName;}
+  QString getResultFileName() {return mResultFileName;}
+  QString getFullResultFileName() {return mResultFileName.isEmpty() ? getOutputFileName() + "_res." + mOutputFormat : mResultFileName;}
+  void setVariableFilter(QString variableFilter) {mVariableFilter = variableFilter;}
+  QString getVariableFilter() {return mVariableFilter.isEmpty() ? ".*" : mVariableFilter;}
+  void setProtectedVariables(bool protectedVariables) {mProtectedVariables = protectedVariables;}
+  bool getProtectedVariables() {return mProtectedVariables;}
+  void setEquidistantTimeGrid(bool equidistantTimeGrid) {mEquidistantTimeGrid = equidistantTimeGrid;}
+  bool getEquidistantTimeGrid() {return mEquidistantTimeGrid;}
+  void setStoreVariablesAtEvents(bool storeVariablesAtEvents) {mStoreVariablesAtEvents = storeVariablesAtEvents;}
+  bool getStoreVariablesAtEvents() {return mStoreVariablesAtEvents;}
+  void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
+  bool getShowGeneratedFiles() {return mShowGeneratedFiles;}
 
   void setSimulationFlags(QStringList simulationFlags) {mSimulationFlags = simulationFlags;}
   QStringList getSimulationFlags() {return mSimulationFlags;}
@@ -193,21 +233,21 @@ public:
   bool isValid() {return mValid;}
   void setReSimulate(bool reSimulate) {mReSimulate = reSimulate;}
   bool isReSimulate() {return mReSimulate;}
-  void setInteractiveSimulation(bool interactiveSim) {mInteractiveSimulation = interactiveSim;}
-  bool isInteractiveSimulation() {return mInteractiveSimulation;}
-  void setInteractiveSimulationWithSteps(bool withSteps) {mInteractiveSimulationWithSteps = withSteps;}
-  bool isInteractiveSimulationWithSteps() {return mInteractiveSimulationWithSteps;}
   void setWorkingDirectory(QString workingDirectory) {mWorkingDirectory = workingDirectory;}
   QString getWorkingDirectory() const {return mWorkingDirectory;}
   void setFileName(QString fileName) {mFileName = fileName;}
   QString getFileName() const {return mFileName;}
   void setTargetLanguage(QString targetLanguage) {mTargetLanguage = targetLanguage;}
   QString getTargetLanguage() const {return mTargetLanguage;}
-
 private:
   QString mClassName;
   QString mStartTime;
   QString mStopTime;
+  int mNumberofIntervals;
+  qreal mStepSize;
+  bool mInteractiveSimulation;
+  bool mInteractiveSimulationWithSteps;
+  int mInteractiveSimulationPortNumber;
   QString mMethod;
   QString mTolerance;
   QString mJacobian;
@@ -222,17 +262,17 @@ private:
   bool mLaunchTransformationalDebugger;
   bool mLaunchAlgorithmicDebugger;
   bool mSimulateWithAnimation;
-  int mNumberofIntervals;
-  qreal mStepSize;
-  QString mOutputFormat;
-  bool mSinglePrecision;
-  QString mFileNamePrefix;
-  QString mResultFileName;
-  QString mVariableFilter;
-  bool mProtectedVariables;
-  bool mEquidistantTimeGrid;
-  bool mStoreVariablesAtEvents;
-  bool mShowGeneratedFiles;
+  // Translation
+  QString mMatchingAlgorithm;
+  QString mIndexReductionMethod;
+  bool mInitialization;
+  bool mEvaluateAllParameters;
+  bool mNLSanalyticJacobian;
+  bool mPedantic;
+  bool mParmodauto;
+  bool mNewInstantiation;
+  QString mAdditionalTranslationFlags;
+  // simulation flags
   QString mModelSetupFile;
   QString mInitializationMethod;
   QString mEquationSystemInitializationFile;
@@ -247,13 +287,20 @@ private:
   bool mEnableAllWarnings;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
-  int mInteractiveSimulationPortNumber;
-  bool mInteractiveSimulationWithSteps;
+  // output
+  QString mOutputFormat;
+  bool mSinglePrecision;
+  QString mFileNamePrefix;
+  QString mResultFileName;
+  QString mVariableFilter;
+  bool mProtectedVariables;
+  bool mEquidistantTimeGrid;
+  bool mStoreVariablesAtEvents;
+  bool mShowGeneratedFiles;
 
   QStringList mSimulationFlags;
   bool mValid;
   bool mReSimulate;
-  bool mInteractiveSimulation;
   QString mWorkingDirectory;
   QString mFileName;
   QString mTargetLanguage;

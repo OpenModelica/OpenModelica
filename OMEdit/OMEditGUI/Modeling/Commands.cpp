@@ -1425,8 +1425,7 @@ void DeleteInitialStateCommand::undo()
 UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem,
                                                              CoOrdinateSystem newCoOrdinateSystem, bool copyProperties, QString oldVersion,
                                                              QString newVersion, QString oldUsesAnnotationString,
-                                                             QString newUsesAnnotationString, QString oldOMCCommandLineOptions,
-                                                             QString newOMCCommandLineOptions, UndoCommand *pParent)
+                                                             QString newUsesAnnotationString, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mpGraphicsView = pGraphicsView;
@@ -1437,8 +1436,6 @@ UpdateCoOrdinateSystemCommand::UpdateCoOrdinateSystemCommand(GraphicsView *pGrap
   mNewVersion = newVersion;
   mOldUsesAnnotationString = oldUsesAnnotationString;
   mNewUsesAnnotationString = newUsesAnnotationString;
-  mOldOMCCommandLineOptions = oldOMCCommandLineOptions;
-  mNewOMCCommandLineOptions = newOMCCommandLineOptions;
   setText(QString("Update %1 CoOrdinate System").arg(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure()));
 }
 
@@ -1482,9 +1479,6 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mNewUsesAnnotationString);
   }
-  // omc CommandLineOptions
-  QString flagsAnnotation = QString("annotate=__OpenModelica_commandLineOptions(\"%1\")").arg(mNewOMCCommandLineOptions);
-  pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), flagsAnnotation);
 }
 
 /*!
@@ -1536,9 +1530,6 @@ void UpdateCoOrdinateSystemCommand::undo()
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
   }
-  // omc CommandLineOptions
-  QString flagsAnnotation = QString("annotate=__OpenModelica_commandLineOptions(\"%1\")").arg(mOldOMCCommandLineOptions);
-  pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), flagsAnnotation);
 }
 
 /*!

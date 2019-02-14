@@ -300,8 +300,7 @@ class UpdateCoOrdinateSystemCommand : public UndoCommand
 public:
   UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, CoOrdinateSystem oldCoOrdinateSystem, CoOrdinateSystem newCoOrdinateSystem,
                                 bool copyProperties, QString oldVersion, QString newVersion, QString oldUsesAnnotationString,
-                                QString newUsesAnnotationString, QString oldOMCCommandLineOptions, QString newOMCCommandLineOptions,
-                                UndoCommand *pParent = 0);
+                                QString newUsesAnnotationString, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
@@ -313,8 +312,6 @@ private:
   QString mNewVersion;
   QString mOldUsesAnnotationString;
   QString mNewUsesAnnotationString;
-  QString mOldOMCCommandLineOptions;
-  QString mNewOMCCommandLineOptions;
 };
 
 class UpdateClassAnnotationCommand : public UndoCommand

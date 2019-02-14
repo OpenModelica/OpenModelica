@@ -345,37 +345,12 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   setCentralWidget(pCentralwidget);
   // Load and add user defined Modelica libraries into the Library Widget.
   mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
-  // set the matching algorithm.
-  mpOMCProxy->setMatchingAlgorithm(OptionsDialog::instance()->getSimulationPage()->getMatchingAlgorithmComboBox()->currentText());
-  // set the index reduction methods.
-  mpOMCProxy->setIndexReductionMethod(OptionsDialog::instance()->getSimulationPage()->getIndexReductionMethodComboBox()->currentText());
-  // set the OMC CommandLineOptions.
-  if (!OptionsDialog::instance()->getSimulationPage()->getOMCCommandLineOptionsTextBox()->text().isEmpty()) {
-    mpOMCProxy->setCommandLineOptions(OptionsDialog::instance()->getSimulationPage()->getOMCCommandLineOptionsTextBox()->text());
-  }
+  // set command line options
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
   }
-  mpOMCProxy->setCommandLineOptions(QString("--simCodeTarget=%1").arg(OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText()));
-  QString target = OptionsDialog::instance()->getSimulationPage()->getTargetBuildComboBox()->itemData(OptionsDialog::instance()->getSimulationPage()->getTargetBuildComboBox()->currentIndex()).toString();
-  mpOMCProxy->setCommandLineOptions(QString("--target=%1").arg(target));
-  QString compiler = OptionsDialog::instance()->getSimulationPage()->getCompilerComboBox()->lineEdit()->text();
-  if (compiler.isEmpty()) {
-    compiler = OptionsDialog::instance()->getSimulationPage()->getCompilerComboBox()->lineEdit()->placeholderText();
-  }
-  mpOMCProxy->setCompiler(compiler);
-  QString cxxCompiler = OptionsDialog::instance()->getSimulationPage()->getCXXCompilerComboBox()->lineEdit()->text();
-  if (cxxCompiler.isEmpty()) {
-    cxxCompiler = OptionsDialog::instance()->getSimulationPage()->getCXXCompilerComboBox()->lineEdit()->placeholderText();
-  }
-  mpOMCProxy->setCXXCompiler(cxxCompiler);
-  if (OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("--ignoreCommandLineOptionsAnnotation=true");
-  }
-  if (OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("--ignoreSimulationFlagsAnnotation=true");
-  }
-  // restore OMEdit widgets state
+  OptionsDialog::instance()->saveSimulationSettings();
+    // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());

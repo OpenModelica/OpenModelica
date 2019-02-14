@@ -56,6 +56,7 @@
 class Label;
 class SimulationOutputWidget;
 class LibraryTreeItem;
+class TranslationFlagsWidget;
 
 class ArchivedSimulationItem : public QTreeWidgetItem
 {
@@ -139,22 +140,9 @@ private:
 #if !defined(WITHOUT_OSG)
   QCheckBox *mpLaunchAnimationCheckBox;
 #endif
-  // Output Tab
-  QWidget *mpOutputTab;
-  Label *mpOutputFormatLabel;
-  QComboBox *mpOutputFormatComboBox;
-  QCheckBox *mpSinglePrecisionCheckBox;
-  Label *mpFileNameLabel;
-  QLineEdit *mpFileNameTextBox;
-  Label *mpResultFileNameLabel;
-  QLineEdit *mpResultFileNameTextBox;
-  Label *mpResultFileName;
-  Label *mpVariableFilterLabel;
-  QLineEdit *mpVariableFilterTextBox;
-  QCheckBox *mpProtectedVariablesCheckBox;
-  QCheckBox *mpEquidistantTimeGridCheckBox;
-  QCheckBox *mpStoreVariablesAtEventsCheckBox;
-  QCheckBox *mpShowGeneratedFilesCheckBox;
+  // Translation Tab
+  QWidget *mpTranslationTab;
+  TranslationFlagsWidget *mpTranslationFlagsWidget;
   // Simulation Flags Tab
   QWidget *mpSimulationFlagsTab;
   QScrollArea *mpSimulationFlagsTabScrollArea;
@@ -193,12 +181,29 @@ private:
   Label *mpInteractiveSimulationPortLabel;
   QLineEdit *mpInteractiveSimulationPortNumberTextBox;
   QCheckBox *mpInteractiveSimulationStepCheckBox;
+  // Output Tab
+  QWidget *mpOutputTab;
+  Label *mpOutputFormatLabel;
+  QComboBox *mpOutputFormatComboBox;
+  QCheckBox *mpSinglePrecisionCheckBox;
+  Label *mpFileNameLabel;
+  QLineEdit *mpFileNameTextBox;
+  Label *mpResultFileNameLabel;
+  QLineEdit *mpResultFileNameTextBox;
+  Label *mpResultFileName;
+  Label *mpVariableFilterLabel;
+  QLineEdit *mpVariableFilterTextBox;
+  QCheckBox *mpProtectedVariablesCheckBox;
+  QCheckBox *mpEquidistantTimeGridCheckBox;
+  QCheckBox *mpStoreVariablesAtEventsCheckBox;
+  QCheckBox *mpShowGeneratedFilesCheckBox;
   // Archived Simulation Flags Tab
   QWidget *mpArchivedSimulationsTab;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;
   QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;
+  QCheckBox *mpSaveTranslationFlagsAnnotationCheckBox;
   QCheckBox *mpSimulateCheckBox;
   // buttons
   QPushButton *mpOkButton;
@@ -222,6 +227,7 @@ private:
   void showSimulationOutputWidget(SimulationOutputWidget *pSimulationOutputWidget);
   void saveExperimentAnnotation();
   void saveSimulationFlagsAnnotation();
+  void saveTranslationFlagsAnnotation();
   void performSimulation();
   void saveDialogGeometry();
   void killSimulationProcess(int port);
