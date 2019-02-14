@@ -95,6 +95,12 @@ algorithm
       case ConnectorType.POTENTIAL then potfunc(set);
       case ConnectorType.FLOW then generateFlowEquations(set);
       case ConnectorType.STREAM then generateStreamEquations(set, flowThreshold);
+      else
+        algorithm
+          Error.addInternalError("Invalid connector type on set "
+            + List.toString(set, Connector.toString, "", "{", ", ", "}", true), sourceInfo());
+        then
+          fail();
     end match;
 
     equations := listAppend(set_eql, equations);

@@ -457,12 +457,14 @@ end checkComponentAttributes;
 function checkConnectorType
   input InstNode node;
   output Boolean isConnector;
+protected
+  InstNode dnode = InstNode.getDerivedNode(node);
 algorithm
-  if InstNode.isEmpty(node) or InstNode.isInnerOuterNode(node) then
+  if InstNode.isEmpty(dnode) or InstNode.isInnerOuterNode(dnode) then
     isConnector := false;
   else
-    isConnector := Class.isConnectorClass(InstNode.getClass(node)) or
-                   checkConnectorType(InstNode.parent(node));
+    isConnector := Class.isConnectorClass(InstNode.getClass(dnode)) or
+                   checkConnectorType(InstNode.parent(dnode));
   end if;
 end checkConnectorType;
 
