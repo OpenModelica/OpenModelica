@@ -2089,8 +2089,12 @@ algorithm
           strs := {};
           names := {};
         end if;
-        true := "-" == stringGetStringChar(str, 1);
-        strs := str::strs;
+        if System.regularFileExists(str) or "-" == stringGetStringChar(str, 1) then
+          strs := str::strs;
+        else
+          strs := (str + ".lib")::strs;
+          names := str::names;
+        end if;
       then (strs,names);
 
     case Absyn.STRING(str)
