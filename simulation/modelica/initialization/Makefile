@@ -84,6 +84,8 @@ OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperatu
 redundantInitialEquations.mos \
 conflictingStartValues.mos \
 conflictingStartValues2.mos \
+Ticket5340.mos \
+
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
