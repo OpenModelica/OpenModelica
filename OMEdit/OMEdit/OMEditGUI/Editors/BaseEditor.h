@@ -215,6 +215,7 @@ class CompleterItem
 public:
   CompleterItem() {}
   CompleterItem(const QString &key, const QString &value, const QString &select);
+  CompleterItem(const QString &key, const QString &value, const QString &select, const QString &description);
   CompleterItem(const QString &value, const QString &description);
   QString mKey;
   QString mValue;

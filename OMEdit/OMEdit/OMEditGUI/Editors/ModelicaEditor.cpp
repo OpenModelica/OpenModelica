@@ -93,6 +93,10 @@ void ModelicaEditor::popUpCompleter()
   mpPlainTextEdit->insertCompleterSymbols(classes, ":/Resources/icons/completerClass.svg");
   mpPlainTextEdit->insertCompleterSymbols(components, ":/Resources/icons/completerComponent.svg");
 
+  QList<CompleterItem> annotations;
+  getCompletionAnnotations(stringAfterWord("annotation"), annotations);
+  mpPlainTextEdit->insertCompleterSymbols(annotations, ":/Resources/icons/completerAnnotation.svg");
+
   QCompleter *completer = mpPlainTextEdit->completer();
   QRect cr = mpPlainTextEdit->cursorRect();
   cr.setWidth(completer->popup()->sizeHintForColumn(0)+ completer->popup()->verticalScrollBar()->sizeHint().width());
@@ -165,6 +169,22 @@ QString ModelicaEditor::wordUnderCursor()
   return mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin);
 }
 
+/*!
+ * \brief Returns the substring from the last occurrence of `word` to the cursor position
+ * \param word Starting word of the substring
+ * \return Resulting substring or Null QString if no `word` occurrence found up to the cursor position
+ */
+QString ModelicaEditor::stringAfterWord(const QString &word)
+{
+  int pos = mpPlainTextEdit->textCursor().position();
+  QString plainText = mpPlainTextEdit->document()->toPlainText();
+  int index = plainText.lastIndexOf(word, pos);
+  if (index == -1)
+    return QString();
+  else
+    return plainText.mid(index, pos - index);
+}
+
 void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components)
 {
   QStringList nameComponents = word.split('.');
@@ -181,6 +201,103 @@ void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &cl
   for (int i = 0; i < contexts.size(); ++i) {
     contexts[i]->tryToComplete(classes, components, lastPart);
   }
+}
+
+/*!
+ * \brief Looks up the root for annotation auto completion information
+ */
+LibraryTreeItem *ModelicaEditor::getAnnotationCompletionRoot()
+{
+  LibraryTreeItem *pLibraryRoot = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem();
+  LibraryTreeItem *pModelicaReference = 0;
+
+  for (int i = 0; i < pLibraryRoot->childrenSize(); ++i) {
+    if (pLibraryRoot->childAt(i)->getName() == "OpenModelica")
+      pModelicaReference = pLibraryRoot->childAt(i);
+  }
+
+  if (pModelicaReference) {
+    return deepResolve(pModelicaReference, QStringList() << "AutoCompletion" << "Annotations");
+  } else {
+    return 0;
+  }
+}
+
+/*!
+ * \brief Returns a collection of completion items for the parsed `stack` of nested annotations
+ * \param stack A stack of nested annotations (f.e. "annotation(uses(Modelica(ver|" becomes ["uses", "Modelica"]
+ * \param annotations Resulting collection of compeltion items
+ */
+void ModelicaEditor::getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations)
+{
+  LibraryTreeItem *pReference = getAnnotationCompletionRoot();
+  if (pReference) {
+    LibraryTreeItem *pAnnotation = deepResolve(pReference, stack);
+    if (pAnnotation) {
+      for (int i = 0; i < pAnnotation->childrenSize(); ++i) {
+        QString name = pAnnotation->childAt(i)->getName();
+        annotations << CompleterItem(name, name + "(", name, pAnnotation->childAt(i)->getHTMLDescription());
+      }
+      QList<ComponentInfo *> components = pAnnotation->getComponentsList();
+      for (int i = 0; i < components.size(); ++i) {
+        annotations << CompleterItem(components[i]->getName() + " = ", components[i]->getHTMLDescription());
+      }
+    }
+  }
+}
+
+/*!
+ * \brief Resolves the annotation under cursor as a stack of nested names and returns completions
+ * \param str A string starting with the "annotation" word up to the cursor position
+ * \param annotations Resulting collection of completion items
+ */
+void ModelicaEditor::getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations)
+{
+  QStringList stack;
+  int lastWordStart = 0;
+  bool insideWord = false;
+
+  if (str.isEmpty())
+    return;
+
+  for (int i = 0; i < str.size(); ++i) {
+    QChar ch = str[i];
+
+    // First, handle string literals
+    if (ch == '"') {
+      for (++i; i < str.size() && str[i] != '"'; ++i) {
+        if (str[i] == '\\')
+          ++i;
+      }
+      // skipped, restarting as usual
+      --i;
+      continue;
+    }
+
+    // Now, handle the stack of annotations
+    if (ch == '(') {
+      stack << str.mid(lastWordStart, i - lastWordStart).trimmed();
+    }
+    if (ch == ')') {
+      if (stack.isEmpty()) {
+        return; // not in an annotation at all
+      }
+      stack.pop_back();
+    }
+
+    // Last, account for boundaries of words to be placed in stack
+    bool partOfLiteral = ch.isLetterOrNumber() || ch == '_';
+    if (!insideWord && partOfLiteral) {
+      lastWordStart = i;
+    }
+    insideWord = partOfLiteral;
+  }
+
+  if (stack.isEmpty()) {
+    return;
+  }
+  stack.pop_front(); // pop 'annotation'
+  getCompletionAnnotations(stack, annotations);
 }
 
 /*!

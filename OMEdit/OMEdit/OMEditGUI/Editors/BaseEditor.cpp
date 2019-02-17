@@ -769,6 +769,11 @@ CompleterItem::CompleterItem(const QString &key, const QString &value, const QSt
   }
 }
 
+CompleterItem::CompleterItem(const QString &key, const QString &value, const QString &select, const QString &description)
+  : mKey(key), mValue(value), mSelect(select), mDescription(description)
+{
+}
+
 CompleterItem::CompleterItem(const QString &value, const QString &description)
   : mKey(value), mValue(value), mSelect(value), mDescription(description)
 {

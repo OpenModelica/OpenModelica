@@ -191,6 +191,7 @@ public:
   OMCInterface::getClassInformation_res mClassInformation;
   SimulationOptions mSimulationOptions;
   OMSSimulationOptions mOMSSimulationOptions;
+  const QList<ComponentInfo *> &getComponentsList();
 private:
   bool mIsRootItem;
   LibraryTreeItem *mpParentLibraryTreeItem;
@@ -198,7 +199,6 @@ private:
   QList<LibraryTreeItem*> mInheritedClasses;
   QList<ComponentInfo*> mComponents;
   bool mComponentsLoaded;
-  const QList<ComponentInfo *> &getComponentsList();
   LibraryType mLibraryType;
   bool mSystemLibrary;
   ModelWidget *mpModelWidget;
